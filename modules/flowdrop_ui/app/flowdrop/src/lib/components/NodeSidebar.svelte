@@ -73,13 +73,28 @@
   function handleNodeDragStart(event: DragEvent, nodeType: NodeMetadata): void {
     if (!event.dataTransfer) return;
     
+    // Extract initial config from configSchema with proper null checks
+    let initialConfig = {};
+    if (nodeType.configSchema && 
+        typeof nodeType.configSchema === 'object' && 
+        nodeType.configSchema.properties && 
+        typeof nodeType.configSchema.properties === 'object') {
+      
+      // JSON Schema format - extract defaults
+      Object.entries(nodeType.configSchema.properties).forEach(([key, prop]) => {
+        if (prop && typeof prop === 'object' && 'default' in prop) {
+          initialConfig[key] = prop.default;
+        }
+      });
+    }
+    
     // Create a new node instance from the node type
     const newNodeData = {
       type: "node",
       nodeType: nodeType.id,
       nodeData: {
         label: nodeType.name,
-        config: { ...nodeType.configSchema },
+        config: initialConfig,
         metadata: nodeType
       }
     };
@@ -131,13 +146,11 @@
       "processing": "Processing",
       "logic": "Logic",
       "data": "Data",
-      "helpers": "Helpers",
       "tools": "Tools",
       "vector stores": "Vector Stores",
       "embeddings": "Embeddings",
       "memories": "Memories",
-      "agents": "Agents",
-      "bundles": "Bundles"
+      "agents": "Agents"
     };
     return names[category] || category;
   }

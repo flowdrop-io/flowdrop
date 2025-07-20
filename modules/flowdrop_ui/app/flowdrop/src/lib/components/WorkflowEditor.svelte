@@ -25,6 +25,7 @@
   import CanvasBanner from "./CanvasBanner.svelte";
   import { workflowApi, nodeApi, setApiBaseUrl, setEndpointConfig } from "../services/api.js";
   import { v4 as uuidv4 } from "uuid";
+  import { tick } from "svelte";
   import type { EndpointConfig } from "../config/endpoints.js";
 
   interface Props {
@@ -51,6 +52,11 @@
       apiBaseUrl: props.apiBaseUrl
     });
     console.log('WorkflowEditor: props.nodes content:', props.nodes);
+    console.log('WorkflowEditor: availableNodes state:', {
+      count: availableNodes.length,
+      hasNodes: availableNodes.length > 0,
+      firstNode: availableNodes[0]?.name || 'none'
+    });
     
     if (!isInitialized) {
       if (props.workflow) {
@@ -93,8 +99,15 @@
    * Load nodes from API if not provided
    */
   async function loadNodesFromApi(): Promise<void> {
+    console.log('🔄 loadNodesFromApi called:', {
+      hasPropsNodes: !!props.nodes,
+      propsNodesLength: props.nodes?.length || 0,
+      firstPropsNode: props.nodes?.[0]?.name || 'none'
+    });
+    
     // If nodes are provided via props, use them
     if (props.nodes && props.nodes.length > 0) {
+      console.log('✅ Using nodes from props:', props.nodes.length, 'nodes');
       availableNodes = props.nodes;
       return;
     }
@@ -108,7 +121,12 @@
       const fetchedNodes = await nodeApi.getNodes();
       
       console.log('✅ Loaded', fetchedNodes.length, 'nodes from API');
+      console.log('🔍 First fetched node:', fetchedNodes[0]);
       availableNodes = fetchedNodes;
+      console.log('🔍 Updated availableNodes:', {
+        count: availableNodes.length,
+        firstNode: availableNodes[0]?.name || 'none'
+      });
       
     } catch (error) {
       console.error('❌ Failed to load nodes from API:', error);
@@ -142,9 +160,16 @@
     }
   }
 
-  // Load nodes when component mounts or when endpoint config changes
+  // Load nodes when component mounts, when endpoint config changes, or when props.nodes changes
   $effect(() => {
-    if (props.endpointConfig || props.apiBaseUrl) {
+    console.log('🔄 WorkflowEditor effect triggered:', {
+      hasEndpointConfig: !!props.endpointConfig,
+      hasApiBaseUrl: !!props.apiBaseUrl,
+      hasPropsNodes: !!props.nodes,
+      propsNodesLength: props.nodes?.length || 0
+    });
+    
+    if (props.endpointConfig || props.apiBaseUrl || props.nodes) {
       loadNodesFromApi();
     }
   });
@@ -390,7 +415,7 @@
         e.preventDefault();
         e.dataTransfer!.dropEffect = "copy";
       }}
-      ondrop={(e: DragEvent) => {
+      ondrop={async (e: DragEvent) => {
         e.preventDefault();
         
         // Get the data from the drag event
@@ -418,9 +443,27 @@
             } else {
               // New format (direct NodeMetadata)
               nodeType = parsedData;
+              
+              // Extract initial config from configSchema
+              let initialConfig = {};
+              if (nodeType.configSchema && typeof nodeType.configSchema === 'object') {
+                // If configSchema is a JSON Schema, extract default values
+                if (nodeType.configSchema.properties) {
+                  // JSON Schema format - extract defaults
+                  Object.entries(nodeType.configSchema.properties).forEach(([key, prop]) => {
+                    if (prop && typeof prop === 'object' && 'default' in prop) {
+                      initialConfig[key] = prop.default;
+                    }
+                  });
+                } else {
+                  // Simple object format - use as is
+                  initialConfig = { ...nodeType.configSchema };
+                }
+              }
+              
               nodeData = {
                 label: nodeType.name,
-                config: {},
+                config: initialConfig,
                 metadata: nodeType
               };
             }
@@ -438,9 +481,21 @@
               }
             };
 
-            // Add node
-            const updatedNodes = [...flowNodes, newNode];
-            flowNodes = updatedNodes;
+            // Debug logging
+            console.log('🎯 Created new node:', {
+              nodeId: newNodeId,
+              nodeData: nodeData,
+              newNode: newNode,
+              metadata: nodeData.metadata,
+              configSchema: nodeData.metadata?.configSchema,
+              configSchemaProperties: nodeData.metadata?.configSchema?.properties
+            });
+
+            // Add node with proper reactivity trigger
+            flowNodes = [...flowNodes, newNode];
+            
+            // Force a tick to ensure SvelteFlow updates
+            await tick();
           } catch (error) {
             console.error("Error parsing node data:", error);
           }

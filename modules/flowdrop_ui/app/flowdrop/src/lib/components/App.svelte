@@ -7,14 +7,17 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import WorkflowEditor from "$lib/components/WorkflowEditor.svelte";
-    import { api } from "$lib/services/api.js";
+    import { api, setEndpointConfig } from "$lib/services/api.js";
     import type { NodeMetadata, Workflow } from "$lib/types/index.js";
     import { getDefaultIcon } from '$lib/utils/icons.js';
+    import { sampleNodes } from "$lib/data/samples.js";
+    import { createEndpointConfig } from "$lib/config/endpoints.js";
   
     let nodes = $state<NodeMetadata[]>([]);
     let workflow = $state<Workflow | undefined>(undefined);
     let error = $state<string | null>(null);
     let loading = $state(true);
+    let apiConnected = $state(false);
   
     /**
      * Fetch node types from the server
@@ -28,11 +31,21 @@
         const fetchedNodes = await api.nodes.getNodes();
         
         console.log("✅ Fetched", fetchedNodes.length, "node types from server");
+        console.log("🔍 First node:", fetchedNodes[0]);
         nodes = fetchedNodes;
+        apiConnected = true;
+        error = null;
         
       } catch (err) {
         console.error("❌ Failed to fetch node types:", err);
-        error = err instanceof Error ? err.message : "Failed to load node types";
+        console.log("🔄 Falling back to sample data...");
+        
+        // Show error but don't block the UI
+        error = `API Error: ${err instanceof Error ? err.message : 'Unknown error'}. Using sample data.`;
+        
+        // Fallback to sample data
+        nodes = sampleNodes;
+        apiConnected = false;
       } finally {
         loading = false;
       }
@@ -44,10 +57,72 @@
     function retryLoad(): void {
       fetchNodeTypes();
     }
+
+    /**
+     * Test API connection
+     */
+    async function testApiConnection(): Promise<void> {
+      try {
+        const testUrl = '/api/flowdrop/nodes';
+        
+        console.log("🧪 Testing API connection to:", testUrl);
+        
+        const response = await fetch(testUrl);
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          console.log("✅ API connection successful:", data.data.length, "nodes found");
+          alert(`API connection successful! Found ${data.data.length} nodes.`);
+        } else {
+          console.log("❌ API connection failed:", data);
+          alert(`API connection failed: ${data.error || 'Unknown error'}`);
+        }
+      } catch (err) {
+        console.error("❌ API connection test failed:", err);
+        alert(`API connection test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
+    }
   
+    /**
+     * Initialize API endpoints
+     */
+    function initializeApiEndpoints(): void {
+      // Use relative paths for local development
+      const apiBaseUrl = import.meta.env.VITE_DRUPAL_API_URL || '/api/flowdrop';
+      
+      console.log("🔧 Initializing API endpoints with URL:", apiBaseUrl);
+      console.log("🔧 Current location:", window.location.href);
+      
+      const endpointConfig = createEndpointConfig(apiBaseUrl, {
+        auth: {
+          type: 'none' // No authentication for now
+        },
+        timeout: 10000, // 10 second timeout
+        retry: {
+          enabled: true,
+          maxAttempts: 2,
+          delay: 1000,
+          backoff: 'exponential'
+        }
+      });
+      
+      setEndpointConfig(endpointConfig);
+      console.log("✅ API endpoints configured");
+    }
+
     // Load node types on mount
     onMount(() => {
+      initializeApiEndpoints();
       fetchNodeTypes();
+    });
+
+    // Debug logging for nodes
+    $effect(() => {
+      console.log('🔍 App: nodes state changed:', {
+        count: nodes.length,
+        hasNodes: nodes.length > 0,
+        firstNode: nodes[0]?.name || 'none'
+      });
     });
   
     /**
@@ -93,7 +168,13 @@
       </div>
   
       <div class="flowdrop-navbar__end">
-       <!-- TODO: Add user menu -->
+        <!-- API Status Indicator -->
+        <div class="flowdrop-api-status">
+          <div class="flowdrop-api-status__indicator {apiConnected ? 'flowdrop-api-status__indicator--connected' : 'flowdrop-api-status__indicator--disconnected'}"></div>
+          <span class="flowdrop-text--xs flowdrop-text--gray">
+            {apiConnected ? 'API Connected' : 'Using Sample Data'}
+          </span>
+        </div>
       </div>
     </div>
   
@@ -123,6 +204,35 @@
                 type="button"
               >
                 Retry
+              </button>
+              <button
+                class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--primary"
+                onclick={() => { nodes = sampleNodes; error = null; }}
+                type="button"
+              >
+                Use Sample Data
+              </button>
+              <button
+                class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
+                onclick={() => { 
+                  const defaultUrl = '/api/flowdrop';
+                  const newUrl = prompt('Enter Drupal API URL:', defaultUrl);
+                  if (newUrl) {
+                    const endpointConfig = createEndpointConfig(newUrl);
+                    setEndpointConfig(endpointConfig);
+                    fetchNodeTypes();
+                  }
+                }}
+                type="button"
+              >
+                Set API URL
+              </button>
+              <button
+                class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
+                onclick={testApiConnection}
+                type="button"
+              >
+                Test API
               </button>
               <button
                 class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm"
@@ -218,6 +328,131 @@
     
     .flowdrop-status__indicator--error {
       background-color: #ef4444;
+    }
+    
+    .flowdrop-btn {
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .flowdrop-btn--sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.625rem;
+    }
+    
+    .flowdrop-btn--outline {
+      background-color: transparent;
+      border-color: #d1d5db;
+      color: #374151;
+    }
+    
+    .flowdrop-btn--outline:hover {
+      background-color: #f9fafb;
+      border-color: #9ca3af;
+    }
+    
+    .flowdrop-btn--primary {
+      background-color: #3b82f6;
+      border-color: #3b82f6;
+      color: #ffffff;
+    }
+    
+    .flowdrop-btn--primary:hover {
+      background-color: #2563eb;
+      border-color: #2563eb;
+    }
+    
+    .flowdrop-btn--ghost {
+      background-color: transparent;
+      border-color: transparent;
+      color: #6b7280;
+    }
+    
+    .flowdrop-btn--ghost:hover {
+      background-color: #f3f4f6;
+      color: #374151;
+    }
+    
+    .flowdrop-flex {
+      display: flex;
+    }
+    
+    .flowdrop-gap--2 {
+      gap: 0.5rem;
+    }
+    
+    .flowdrop-gap--3 {
+      gap: 0.75rem;
+    }
+    
+    .flowdrop-text--sm {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    
+    .flowdrop-text--xs {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+    
+    .flowdrop-text--lg {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+    
+    .flowdrop-text--gray {
+      color: #6b7280;
+    }
+    
+    .flowdrop-font--medium {
+      font-weight: 500;
+    }
+    
+    .flowdrop-font--bold {
+      font-weight: 700;
+    }
+    
+    .flowdrop-spinner {
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid #d1d5db;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .flowdrop-api-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      background-color: #f3f4f6;
+    }
+    
+    .flowdrop-api-status__indicator {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      transition: background-color 0.2s ease-in-out;
+    }
+    
+    .flowdrop-api-status__indicator--connected {
+      background-color: #10b981;
+    }
+    
+    .flowdrop-api-status__indicator--disconnected {
+      background-color: #6b7280;
     }
     
     .flowdrop-editor-container {

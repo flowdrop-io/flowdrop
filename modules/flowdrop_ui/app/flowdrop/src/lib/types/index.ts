@@ -7,7 +7,7 @@ import { ConnectionLineType } from "@xyflow/svelte";
 
 /**
  * Node category types for organizing nodes in the sidebar
- * Based on Langflow's actual categories
+ * Based on actual API response categories
  */
 export type NodeCategory = 
   | "inputs"
@@ -17,13 +17,11 @@ export type NodeCategory =
   | "processing"
   | "logic"
   | "data"
-  | "helpers"
   | "tools"
   | "vector stores"
   | "embeddings"
   | "memories"
-  | "agents"
-  | "bundles";
+  | "agents";
 
 /**
  * Node input/output types
@@ -94,14 +92,46 @@ export interface NodeMetadata {
   color?: string;
   inputs: NodePort[];
   outputs: NodePort[];
-  configSchema?: Record<string, unknown>;
+  configSchema?: ConfigSchema;
   tags?: string[];
 }
 
 /**
- * Node configuration data
+ * JSON Schema for node configuration
+ * Defines the structure and validation rules for node configuration
  */
-export interface NodeConfig {
+export interface ConfigSchema {
+  type: "object";
+  properties: Record<string, ConfigProperty>;
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
+/**
+ * Individual property definition in config schema
+ */
+export interface ConfigProperty {
+  type: "string" | "number" | "boolean" | "array" | "object";
+  title?: string;
+  description?: string;
+  default?: unknown;
+  enum?: unknown[];
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: string;
+  items?: ConfigProperty;
+  properties?: Record<string, ConfigProperty>;
+  [key: string]: unknown; // Allow additional JSON Schema properties
+}
+
+/**
+ * Node configuration values
+ * Key-value pairs of user-entered configuration values
+ */
+export interface ConfigValues {
   [key: string]: unknown;
 }
 
@@ -115,7 +145,7 @@ export interface WorkflowNode extends Node {
   deletable?: boolean;
   data: {
     label: string;
-    config: NodeConfig;
+    config: ConfigValues;
     metadata: NodeMetadata;
     isProcessing?: boolean;
     error?: string;

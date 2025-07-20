@@ -32,9 +32,42 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      placeholder: "Enter text here...",
-      defaultValue: "",
-      multiline: false
+      type: "object",
+      properties: {
+        placeholder: {
+          type: "string",
+          title: "Placeholder Text",
+          description: "Text to show when input is empty",
+          default: "Enter text here..."
+        },
+        defaultValue: {
+          type: "string",
+          title: "Default Value",
+          description: "Initial value for the text input",
+          default: ""
+        },
+        multiline: {
+          type: "boolean",
+          title: "Multiline",
+          description: "Allow multiple lines of text",
+          default: false
+        },
+        maxLength: {
+          type: "number",
+          title: "Maximum Length",
+          description: "Maximum number of characters allowed",
+          default: 1000,
+          minimum: 1,
+          maximum: 10000
+        },
+        showLabel: {
+          type: "boolean",
+          title: "Show Label",
+          description: "Display the input label",
+          default: true
+        }
+      },
+      required: ["placeholder"]
     },
     tags: ["input", "text", "user-input"]
   },
@@ -64,8 +97,27 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      allowedTypes: ["txt", "pdf", "docx", "csv", "json"],
-      maxSize: 10485760
+      type: "object",
+      properties: {
+        allowedTypes: {
+          type: "array",
+          title: "Allowed File Types",
+          description: "File extensions that can be uploaded",
+          default: ["txt", "pdf", "docx", "csv", "json"],
+          items: {
+            type: "string"
+          }
+        },
+        maxSize: {
+          type: "number",
+          title: "Maximum File Size",
+          description: "Maximum file size in bytes",
+          default: 10485760,
+          minimum: 1024,
+          maximum: 104857600
+        }
+      },
+      required: ["allowedTypes"]
     },
     tags: ["input", "file", "upload", "document"]
   },
@@ -95,10 +147,42 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      urls: [],
-      maxDepth: 1,
-      format: "text",
-      timeout: 30
+      type: "object",
+      properties: {
+        urls: {
+          type: "array",
+          title: "URLs",
+          description: "List of URLs to fetch",
+          default: [],
+          items: {
+            type: "string"
+          }
+        },
+        maxDepth: {
+          type: "number",
+          title: "Maximum Depth",
+          description: "Maximum depth for recursive fetching",
+          default: 1,
+          minimum: 1,
+          maximum: 10
+        },
+        format: {
+          type: "string",
+          title: "Output Format",
+          description: "Format of the fetched content",
+          default: "text",
+          enum: ["text", "json", "html"]
+        },
+        timeout: {
+          type: "number",
+          title: "Timeout",
+          description: "Request timeout in seconds",
+          default: 30,
+          minimum: 1,
+          maximum: 300
+        }
+      },
+      required: ["urls"]
     },
     tags: ["input", "url", "web", "fetch"]
   },
@@ -128,11 +212,46 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      urls: [],
-      method: "GET",
-      headers: {},
-      body: {},
-      timeout: 30
+      type: "object",
+      properties: {
+        urls: {
+          type: "array",
+          title: "API URLs",
+          description: "List of API endpoints to call",
+          default: [],
+          items: {
+            type: "string"
+          }
+        },
+        method: {
+          type: "string",
+          title: "HTTP Method",
+          description: "HTTP method to use for the request",
+          default: "GET",
+          enum: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        },
+        headers: {
+          type: "object",
+          title: "Headers",
+          description: "HTTP headers to include in the request",
+          default: {}
+        },
+        body: {
+          type: "object",
+          title: "Request Body",
+          description: "Request body data",
+          default: {}
+        },
+        timeout: {
+          type: "number",
+          title: "Timeout",
+          description: "Request timeout in seconds",
+          default: 30,
+          minimum: 1,
+          maximum: 300
+        }
+      },
+      required: ["urls", "method"]
     },
     tags: ["input", "api", "http", "rest"]
   },
@@ -822,7 +941,24 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      precision: 2
+      type: "object",
+      properties: {
+        operation: {
+          type: "string",
+          title: "Operation",
+          description: "Mathematical operation to perform",
+          default: "add",
+          enum: ["add", "subtract", "multiply", "divide", "power", "sqrt", "average", "min", "max", "median", "mode"]
+        },
+        precision: {
+          type: "integer",
+          title: "Precision",
+          description: "Number of decimal places",
+          default: 2,
+          minimum: 0,
+          maximum: 10
+        }
+      }
     },
     tags: ["tools", "calculator", "math", "compute"]
   },

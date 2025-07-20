@@ -596,7 +596,76 @@ components:
           description: Output ports
         configSchema:
           type: object
-          description: Configuration schema
+          description: Configuration schema for the node type
+          example:
+            type: "object"
+            properties:
+              operation:
+                type: "string"
+                title: "Operation"
+                description: "Mathematical operation to perform"
+                default: "add"
+                enum: ["add", "subtract", "multiply", "divide", "power", "sqrt", "average", "min", "max", "median", "mode"]
+              precision:
+                type: "integer"
+                title: "Precision"
+                description: "Number of decimal places"
+                default: 2
+                minimum: 0
+                maximum: 10
+          properties:
+            type:
+              type: string
+              description: Schema type (usually 'object')
+            properties:
+              type: object
+              description: Configuration properties
+              additionalProperties:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: Property type (string, number, boolean, array, object)
+                  title:
+                    type: string
+                    description: Property display title
+                  description:
+                    type: string
+                    description: Property description
+                  default:
+                    description: Default value for the property
+                  enum:
+                    type: array
+                    items:
+                      type: string
+                    description: Allowed values for enum properties
+                  required:
+                    type: boolean
+                    description: Whether the property is required
+                  minimum:
+                    type: number
+                    description: Minimum value for numeric properties
+                  maximum:
+                    type: number
+                    description: Maximum value for numeric properties
+                  minLength:
+                    type: integer
+                    description: Minimum length for string properties
+                  maxLength:
+                    type: integer
+                    description: Maximum length for string properties
+                  pattern:
+                    type: string
+                    description: Regex pattern for string validation
+                  format:
+                    type: string
+                    description: Format specification (email, uri, date-time, etc.)
+                  items:
+                    type: object
+                    description: Schema for array items
+                  additionalProperties:
+                    type: object
+                    description: Schema for additional object properties
         tags:
           type: array
           items:

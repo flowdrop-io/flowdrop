@@ -12,10 +12,11 @@
     Handle,
     type NodeProps 
   } from "@xyflow/svelte";
-  import type { WorkflowNode, NodePort } from "../types/index.js";
+  import type { WorkflowNode, NodePort, ConfigValues } from "../types/index.js";
   import Icon from "@iconify/svelte";
   import { getNodeIcon } from "../utils/icons.js";
   import { getDataTypeColorToken, getCategoryColorToken } from "../utils/colors.js";
+  import ConfigForm from "./ConfigForm.svelte";
 
   interface Props {
     data: WorkflowNode["data"] & { nodeId?: string };
@@ -24,9 +25,25 @@
   }
 
   let props: Props = $props();
-  let isExpanded = $state(false);
+  let isExpanded = $state(true); // Temporarily force expansion for debugging
   let configValues = $state({ ...props.data.config });
   let isHandleInteraction = $state(false);
+
+  // Debug logging
+  $effect(() => {
+    console.log('🔧 WorkflowNode Debug:', {
+      nodeId: props.data.nodeId,
+      label: props.data.label,
+      config: props.data.config,
+      configSchema: props.data.metadata.configSchema,
+      configSchemaProperties: props.data.metadata.configSchema?.properties,
+      configValues: configValues,
+      isExpanded: isExpanded,
+      configKeys: Object.keys(configValues),
+      hasConfig: Object.keys(configValues).length > 0,
+      metadataKeys: Object.keys(props.data.metadata || {})
+    });
+  });
 
   /**
    * Handle configuration value changes
@@ -123,72 +140,22 @@
     <div class="flowdrop-workflow-node__config">
       <h4 class="flowdrop-workflow-node__config-title">Configuration</h4>
       <div class="flowdrop-workflow-node__config-content">
-        {#each Object.entries(configValues) as [key, value]}
-          <div class="flowdrop-form-control">
-            <label class="flowdrop-form-control__label" for={`config-${key}`}>
-              <span class="flowdrop-text--xs flowdrop-font--medium">{key}</span>
-            </label>
-            {#if typeof value === "string"}
-              <input
-                id={`config-${key}`}
-                type="text"
-                class="flowdrop-input flowdrop-input--sm"
-                value={value}
-                oninput={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target) handleConfigChange(key, target.value);
-                }}
-              />
-            {:else if typeof value === "number"}
-              <input
-                id={`config-${key}`}
-                type="number"
-                class="flowdrop-input flowdrop-input--sm"
-                value={value}
-                oninput={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target) {
-                    const value = Number(target.value);
-                    if (!isNaN(value)) {
-                      handleConfigChange(key, value);
-                    }
-                  }
-                }}
-              />
-            {:else if typeof value === "boolean"}
-              <div class="flowdrop-flex flowdrop-gap--3">
-                <input
-                  id={`config-${key}`}
-                  type="checkbox"
-                  class="flowdrop-toggle flowdrop-toggle--sm"
-                  checked={value}
-                  onchange={(e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target) handleConfigChange(key, target.checked);
-                  }}
-                />
-                <span class="flowdrop-text--xs">{key}</span>
-              </div>
-            {:else}
-              <textarea
-                id={`config-${key}`}
-                class="flowdrop-textarea flowdrop-textarea--sm"
-                placeholder="Enter value..."
-                value={JSON.stringify(value, null, 2)}
-                oninput={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target) {
-                    try {
-                      handleConfigChange(key, JSON.parse(target.value));
-                    } catch {
-                      handleConfigChange(key, target.value);
-                    }
-                  }
-                }}
-              ></textarea>
-            {/if}
-          </div>
-        {/each}
+        {#if props.data.metadata.configSchema}
+          <ConfigForm
+            schema={props.data.metadata.configSchema}
+            values={configValues}
+            on:change={({ detail }) => {
+              configValues = detail.values;
+              // Update the node's config in the workflow
+              props.data.config = detail.values;
+            }}
+            on:validate={({ detail }) => {
+              console.log('Config validation:', detail);
+            }}
+          />
+        {:else}
+          <p class="flowdrop-text--xs flowdrop-text--gray">No configuration schema available for this node type.</p>
+        {/if}
       </div>
     </div>
   {/if}
@@ -317,6 +284,34 @@
     line-height: 1;
   }
   
+  .flowdrop-workflow-node__expand-btn {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    background-color: #ffffff;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .flowdrop-workflow-node__expand-btn:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+    color: #374151;
+  }
+  
+  .flowdrop-workflow-node__expand-btn:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+  
   .flowdrop-workflow-node__status {
     width: 0.5rem;
     height: 0.5rem;
@@ -383,6 +378,30 @@
     flex-direction: column;
   }
   
+  .flowdrop-input {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    color: #111827;
+    background-color: rgba(255, 255, 255, 0.7);
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  
+  .flowdrop-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .flowdrop-input--sm {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
   .flowdrop-textarea {
     display: block;
     width: 100%;
@@ -405,6 +424,30 @@
   }
   
   .flowdrop-textarea--sm {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .flowdrop-select {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    color: #111827;
+    background-color: rgba(255, 255, 255, 0.7);
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  
+  .flowdrop-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .flowdrop-select--sm {
     padding: 0.375rem 0.5rem;
     font-size: 0.75rem;
   }
@@ -543,6 +586,22 @@
   
   .flowdrop-mt--1 {
     margin-top: 0.25rem;
+  }
+  
+  .flowdrop-mb--1 {
+    margin-bottom: 0.25rem;
+  }
+  
+  .flowdrop-gap--3 {
+    gap: 0.75rem;
+  }
+  
+  .flowdrop-flex {
+    display: flex;
+  }
+  
+  .flowdrop-items--center {
+    align-items: center;
   }
   
   @keyframes flowdrop-pulse {

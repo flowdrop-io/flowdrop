@@ -53,6 +53,14 @@ async function apiRequest<T>(
     const method = getEndpointMethod(endpointConfig, endpointKey);
     const headers = getEndpointHeaders(endpointConfig, endpointKey);
     
+    console.log('🔍 API request:', {
+      endpointKey,
+      endpointPath,
+      url,
+      method,
+      headers
+    });
+    
     const response = await fetch(url, {
       method,
       headers,
@@ -60,6 +68,7 @@ async function apiRequest<T>(
     });
 
     const data = await response.json();
+    console.log('🔍 Raw API response:', data);
     
     if (!response.ok) {
       throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
@@ -100,6 +109,8 @@ export const nodeApi = {
       'nodes.list',
       endpointConfig.endpoints.nodes.list + '?' + params.toString()
     );
+    console.log('🔍 API response:', response);
+    console.log('🔍 API response.data:', response.data);
     return response.data || [];
   },
 
