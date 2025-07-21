@@ -230,6 +230,7 @@
     box-shadow: var(--notes-node-box-shadow);
     transition: var(--notes-node-transition);
     overflow: hidden;
+    z-index: 5;
   }
 
   /* Background color overrides for different note types */

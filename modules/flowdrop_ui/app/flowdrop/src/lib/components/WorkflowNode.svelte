@@ -249,7 +249,8 @@
     border: 2px solid #e5e7eb;
     border-radius: 0.75rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    width: 18rem
+    width: 18rem;
+    z-index: 10;
   }
   
   .flowdrop-workflow-node--selected {
