@@ -6,6 +6,7 @@
     "dev": "vite dev",
     "build": "vite build && npm run prepack",
     "build:iife": "vite build --config vite.config.iife.ts",
+    "watch:build:iife": "npm-watch build:iife",
     "watch:build": "npm-watch build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
@@ -22,6 +23,17 @@
   },
   "watch": {
     "build": {
+      "ignore": "build",
+      "patterns": [
+        "src"
+      ],
+      "extensions": "js,ts,svelte,html,css,svg",
+      "quiet": true,
+      "legacyWatch": true,
+      "delay": 2500,
+      "runOnChangeOnly": false
+    },
+    "build:iife": {
       "ignore": "build",
       "patterns": [
         "src"
