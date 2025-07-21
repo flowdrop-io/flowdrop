@@ -7,8 +7,13 @@
   const dispatch = createEventDispatcher();
 
   const props = $props<{
-    config: NodeConfig;
-    isSelected?: boolean;
+    data: {
+      label: string;
+      config: NodeConfig;
+      metadata: any;
+      nodeId?: string;
+    };
+    selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
     isEditing?: boolean;
@@ -17,9 +22,22 @@
   // Internal state for edit mode
   let isInternalEditing = $state(false);
 
-  // Get note configuration with defaults
-  const noteContent = $derived((props.config?.content as string) || "Add your notes here...");
-  const noteType = $derived((props.config?.noteType as string) || "info");
+  // Reactive values that update when props change
+  let noteContent = $state((props.data.config?.content as string) || "Add your notes here...");
+  let noteType = $state((props.data.config?.noteType as string) || "info");
+
+  // Update reactive values when props change
+  $effect(() => {
+    const newContent = (props.data.config?.content as string) || "Add your notes here...";
+    const newType = (props.data.config?.noteType as string) || "info";
+    
+    if (noteContent !== newContent) {
+      noteContent = newContent;
+    }
+    if (noteType !== newType) {
+      noteType = newType;
+    }
+  });
 
   // Note type configuration
   const noteTypes = {
@@ -65,28 +83,29 @@
     }
   };
 
-  const currentType = $derived(noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info);
-  const renderedContent = $derived(marked.parse(noteContent));
+  // Reactive derived values
+  let currentType = $derived(noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info);
+  let renderedContent = $derived(marked.parse(noteContent));
 
   // Handle content updates
   function handleContentChange(event: Event) {
     const target = event.target as HTMLTextAreaElement;
-    if (props.config) {
-      props.config.content = target.value;
-      console.log('📝 NotesNode: Content updated:', props.config.content);
+    noteContent = target.value;
+    if (props.data.config) {
+      props.data.config.content = target.value;
       // Dispatch event to notify parent of config change
-      dispatch('configChange', { config: props.config });
+      dispatch("configChange", { config: props.data.config });
     }
   }
 
   // Handle note type changes
   function handleTypeChange(event: Event) {
     const target = event.target as HTMLSelectElement;
-    if (props.config) {
-      props.config.noteType = target.value;
-      console.log('📝 NotesNode: Type updated:', props.config.noteType);
+    noteType = target.value;
+    if (props.data.config) {
+      props.data.config.noteType = target.value;
       // Dispatch event to notify parent of config change
-      dispatch('configChange', { config: props.config });
+      dispatch("configChange", { config: props.data.config });
     }
   }
 
@@ -94,13 +113,13 @@
   function toggleEditMode() {
     isInternalEditing = !isInternalEditing;
     // Dispatch event to notify parent of state change
-    dispatch('editModeChange', { isEditing: isInternalEditing });
+    dispatch("editModeChange", { isEditing: isInternalEditing });
   }
 </script>
 
 <div
   class="flowdrop-notes-node"
-  class:flowdrop-notes-node--selected={props.isSelected}
+  class:flowdrop-notes-node--selected={props.selected}
   class:flowdrop-notes-node--processing={props.isProcessing}
   class:flowdrop-notes-node--error={props.isError}
 >
@@ -131,7 +150,7 @@
           placeholder="Write your note in Markdown..."
           value={noteContent}
           on:input={handleContentChange}
-        />
+        ></textarea>
       </div>
 
       <!-- Save/Cancel Buttons -->

@@ -131,7 +131,7 @@ export interface ConfigProperty {
   minLength?: number;
   maxLength?: number;
   pattern?: string;
-  format?: string;
+  format?: "multiline" | string; // Special format for multiline text
   items?: ConfigProperty;
   properties?: Record<string, ConfigProperty>;
   [key: string]: unknown; // Allow additional JSON Schema properties

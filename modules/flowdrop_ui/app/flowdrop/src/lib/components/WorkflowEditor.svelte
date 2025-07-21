@@ -47,18 +47,6 @@
   let nodeLoadError = $state<string | null>(null);
   
   $effect(() => {
-    console.log('WorkflowEditor: props received:', {
-      nodes: props.nodes?.length || 0,
-      workflow: props.workflow ? 'present' : 'none',
-      apiBaseUrl: props.apiBaseUrl
-    });
-    console.log('WorkflowEditor: props.nodes content:', props.nodes);
-    console.log('WorkflowEditor: availableNodes state:', {
-      count: availableNodes.length,
-      hasNodes: availableNodes.length > 0,
-      firstNode: availableNodes[0]?.name || 'none'
-    });
-    
     if (!isInitialized) {
       if (props.workflow) {
         flowNodes = props.workflow.nodes || [];
@@ -76,9 +64,7 @@
   
   // Update workflow name when props change
   $effect(() => {
-    console.log('🔄 WorkflowEditor: props.workflow changed:', props.workflow);
     if (props.workflow?.name) {
-      console.log('📝 Setting workflow name to:', props.workflow.name);
       workflowName = props.workflow.name;
     }
   });
@@ -101,15 +87,9 @@
    * Load nodes from API if not provided
    */
   async function loadNodesFromApi(): Promise<void> {
-    console.log('🔄 loadNodesFromApi called:', {
-      hasPropsNodes: !!props.nodes,
-      propsNodesLength: props.nodes?.length || 0,
-      firstPropsNode: props.nodes?.[0]?.name || 'none'
-    });
     
     // If nodes are provided via props, use them
     if (props.nodes && props.nodes.length > 0) {
-      console.log('✅ Using nodes from props:', props.nodes.length, 'nodes');
       availableNodes = props.nodes;
       return;
     }
@@ -119,16 +99,9 @@
       loadingNodes = true;
       nodeLoadError = null;
       
-      console.log('🔄 Loading nodes from API...');
       const fetchedNodes = await nodeApi.getNodes();
       
-      console.log('✅ Loaded', fetchedNodes.length, 'nodes from API');
-      console.log('🔍 First fetched node:', fetchedNodes[0]);
       availableNodes = fetchedNodes;
-      console.log('🔍 Updated availableNodes:', {
-        count: availableNodes.length,
-        firstNode: availableNodes[0]?.name || 'none'
-      });
       
     } catch (error) {
       console.error('❌ Failed to load nodes from API:', error);
@@ -164,12 +137,6 @@
 
   // Load nodes when component mounts, when endpoint config changes, or when props.nodes changes
   $effect(() => {
-    console.log('🔄 WorkflowEditor effect triggered:', {
-      hasEndpointConfig: !!props.endpointConfig,
-      hasApiBaseUrl: !!props.apiBaseUrl,
-      hasPropsNodes: !!props.nodes,
-      propsNodesLength: props.nodes?.length || 0
-    });
     
     if (props.endpointConfig || props.apiBaseUrl || props.nodes) {
       loadNodesFromApi();
@@ -194,11 +161,9 @@
       if (props.workflow?.id) {
         // Use the existing workflow ID
         workflowId = props.workflow.id;
-        console.log('💾 Saving existing workflow with ID:', workflowId);
       } else {
         // Generate a new UUID for a new workflow
         workflowId = uuidv4();
-        console.log('🆕 Creating new workflow with ID:', workflowId);
       }
 
       const workflow: Workflow = {
@@ -496,16 +461,6 @@
               }
             };
 
-            // Debug logging
-            console.log('🎯 Created new node:', {
-              nodeId: newNodeId,
-              nodeData: nodeData,
-              newNode: newNode,
-              metadata: nodeData.metadata,
-              configSchema: nodeData.metadata?.configSchema,
-              configSchemaProperties: nodeData.metadata?.configSchema?.properties
-            });
-
             // Add node with proper reactivity trigger
             flowNodes = [...flowNodes, newNode];
             
@@ -525,6 +480,14 @@
         elevateEdgesOnSelect={true}
         connectionLineType={ConnectionLineType.Bezier}
         fitView
+        onNodeUpdate={(event) => {
+          const { node } = event;
+          
+          // Update the node in our local state
+          flowNodes = flowNodes.map(n => 
+            n.id === node.id ? { ...n, data: { ...n.data, config: node.data.config } } : n
+          );
+        }}
       />
       <Controls />
       <Background />

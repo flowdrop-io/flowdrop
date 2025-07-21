@@ -144,6 +144,26 @@ The FlowdropNodeProcessor attribute now includes a `type` parameter that determi
 - `"note"` → Renders as `NotesNode.svelte` component
 - `"default"` → Renders as `WorkflowNode.svelte` component
 
+### **Multiline Text Support:**
+The schema now supports a special `"multiline"` format for string fields that need to capture longer text:
+
+```php
+'content' => [
+  'type' => 'string',
+  'title' => 'Note Content',
+  'description' => 'Documentation or comment text (supports Markdown)',
+  'format' => 'multiline',  // Renders as textarea instead of input
+  'default' => "# Workflow Notes\n\nAdd your documentation here...",
+],
+```
+
+**Fields with Multiline Support:**
+- **Notes**: `content` field
+- **Text Input**: `defaultValue` field
+- **Prompt Template**: `template` field
+- **Chat Model**: `systemPrompt` field
+- **Simple Agent**: `systemPrompt` field
+
 ### **Configuration Schema:**
 ```yaml
 # Drupal node type configuration
