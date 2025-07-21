@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { NodeConfig } from "../types/index.js";
   import Icon from "@iconify/svelte";
-  import { marked } from "marked";
   import { createEventDispatcher } from "svelte";
+  import MarkdownDisplay from "./MarkdownDisplay.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -85,7 +85,6 @@
 
   // Reactive derived values
   let currentType = $derived(noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info);
-  let renderedContent = $derived(marked.parse(noteContent));
 
   // Handle content updates
   function handleContentChange(event: Event) {
@@ -196,7 +195,10 @@
 
       <!-- Rendered markdown content -->
       <div class="flowdrop-notes-node__body">
-        <div class="flowdrop-notes-node__markdown">{@html renderedContent}</div>
+        <MarkdownDisplay 
+          content={noteContent} 
+          className="flowdrop-notes-node__markdown"
+        />
       </div>
 
       <!-- Processing indicator -->
@@ -437,59 +439,7 @@
     overflow-y: auto;
   }
 
-  .flowdrop-notes-node__markdown {
-    line-height: 1.6;
-  }
 
-  .flowdrop-notes-node__markdown h1,
-  .flowdrop-notes-node__markdown h2,
-  .flowdrop-notes-node__markdown h3,
-  .flowdrop-notes-node__markdown h4,
-  .flowdrop-notes-node__markdown h5,
-  .flowdrop-notes-node__markdown h6 {
-    margin: 0.75rem 0 0.5rem 0;
-    font-weight: 600;
-  }
-
-  .flowdrop-notes-node__markdown h1 { font-size: 1.5rem; }
-  .flowdrop-notes-node__markdown h2 { font-size: 1.25rem; }
-  .flowdrop-notes-node__markdown h3 { font-size: 1.125rem; }
-
-  .flowdrop-notes-node__markdown p {
-    margin: 0.5rem 0;
-  }
-
-  .flowdrop-notes-node__markdown ul,
-  .flowdrop-notes-node__markdown ol {
-    margin: 0.5rem 0;
-    padding-left: 1.5rem;
-  }
-
-  .flowdrop-notes-node__markdown li {
-    margin: 0.25rem 0;
-  }
-
-  .flowdrop-notes-node__markdown code {
-    background-color: rgba(0, 0, 0, 0.1);
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
-    font-size: 0.875em;
-  }
-
-  .flowdrop-notes-node__markdown pre {
-    background-color: rgba(0, 0, 0, 0.1);
-    padding: 0.75rem;
-    border-radius: 0.375rem;
-    overflow-x: auto;
-    margin: 0.5rem 0;
-  }
-
-  .flowdrop-notes-node__markdown blockquote {
-    border-left: 3px solid currentColor;
-    padding-left: 1rem;
-    margin: 0.5rem 0;
-    opacity: 0.8;
-  }
 
   .flowdrop-notes-node__processing {
     display: flex;

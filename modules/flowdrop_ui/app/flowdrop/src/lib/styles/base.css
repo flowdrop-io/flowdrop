@@ -1166,4 +1166,196 @@ body {
   --notes-node-error-border: var(--color-ref-red-200);
   --notes-node-note-bg: var(--color-ref-gray-50);
   --notes-node-note-border: var(--color-ref-gray-200);
-} 
+}
+
+/* Markdown Display Component Styles */
+/* These styles are used for dynamically rendered markdown content */
+
+/* Base markdown styling */
+.markdown-display {
+  line-height: 1.6;
+  color: inherit;
+}
+
+/* Headings */
+.markdown-display h1,
+.markdown-display h2,
+.markdown-display h3,
+.markdown-display h4,
+.markdown-display h5,
+.markdown-display h6 {
+  margin: 0.75rem 0 0.5rem 0;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-display h1 { 
+  font-size: 1.5rem; 
+  margin-top: 0;
+}
+
+.markdown-display h2 { 
+  font-size: 1.25rem; 
+}
+
+.markdown-display h3 { 
+  font-size: 1.125rem; 
+}
+
+.markdown-display h4 { 
+  font-size: 1rem; 
+}
+
+.markdown-display h5 { 
+  font-size: 0.875rem; 
+}
+
+.markdown-display h6 { 
+  font-size: 0.75rem; 
+}
+
+/* Paragraphs and text */
+.markdown-display p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.markdown-display p:first-child {
+  margin-top: 0;
+}
+
+.markdown-display p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+.markdown-display ul,
+.markdown-display ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-display li {
+  margin: 0.25rem 0;
+  line-height: 1.5;
+}
+
+.markdown-display ul li {
+  list-style-type: disc;
+}
+
+.markdown-display ol li {
+  list-style-type: decimal;
+}
+
+/* Code blocks and inline code */
+.markdown-display code {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.markdown-display pre {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875em;
+  line-height: 1.4;
+}
+
+.markdown-display pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/* Blockquotes */
+.markdown-display blockquote {
+  border-left: 3px solid currentColor;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Links */
+.markdown-display a {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.markdown-display a:hover {
+  color: #2563eb;
+  text-decoration-thickness: 2px;
+}
+
+/* Emphasis */
+.markdown-display strong {
+  font-weight: 600;
+}
+
+.markdown-display em {
+  font-style: italic;
+}
+
+/* Horizontal rules */
+.markdown-display hr {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
+}
+
+/* Tables */
+.markdown-display table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.markdown-display th,
+.markdown-display td {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.markdown-display th {
+  background-color: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+
+/* Images */
+.markdown-display img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+/* Compact variant for smaller spaces */
+.markdown-display--compact {
+  font-size: 0.875em;
+}
+
+.markdown-display--compact h1 { font-size: 1.25rem; }
+.markdown-display--compact h2 { font-size: 1.125rem; }
+.markdown-display--compact h3 { font-size: 1rem; }
+
+/* Large variant for emphasis */
+.markdown-display--large {
+  font-size: 1.125em;
+}
+
+.markdown-display--large h1 { font-size: 1.75rem; }
+.markdown-display--large h2 { font-size: 1.5rem; }
+.markdown-display--large h3 { font-size: 1.25rem; }
+
+ 
