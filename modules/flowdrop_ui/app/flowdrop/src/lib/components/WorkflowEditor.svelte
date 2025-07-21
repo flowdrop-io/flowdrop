@@ -480,14 +480,6 @@
         elevateEdgesOnSelect={true}
         connectionLineType={ConnectionLineType.Bezier}
         fitView
-        onNodeUpdate={(event) => {
-          const { node } = event;
-          
-          // Update the node in our local state
-          flowNodes = flowNodes.map(n => 
-            n.id === node.id ? { ...n, data: { ...n.data, config: node.data.config } } : n
-          );
-        }}
       />
       <Controls />
       <Background />
