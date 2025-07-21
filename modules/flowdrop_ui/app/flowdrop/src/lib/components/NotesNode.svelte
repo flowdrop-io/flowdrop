@@ -133,7 +133,7 @@
           id="note-type"
           class="flowdrop-notes-node__select"
           value={noteType}
-          on:change={handleTypeChange}
+          onchange={handleTypeChange}
         >
           {#each Object.entries(noteTypes) as [key, type]}
             <option value={key}>{type.name}</option>
@@ -149,7 +149,7 @@
           class="flowdrop-notes-node__textarea"
           placeholder="Write your note in Markdown..."
           value={noteContent}
-          on:input={handleContentChange}
+          oninput={handleContentChange}
         ></textarea>
       </div>
 
@@ -157,14 +157,14 @@
       <div class="flowdrop-notes-node__edit-actions">
         <button
           class="flowdrop-notes-node__btn flowdrop-notes-node__btn--save"
-          on:click={toggleEditMode}
+          onclick={toggleEditMode}
         >
           <Icon icon="mdi:check" />
           Save
         </button>
         <button
           class="flowdrop-notes-node__btn flowdrop-notes-node__btn--cancel"
-          on:click={toggleEditMode}
+          onclick={toggleEditMode}
         >
           <Icon icon="mdi:close" />
           Cancel
@@ -187,7 +187,7 @@
         </div>
         <button
           class="flowdrop-notes-node__edit-btn"
-          on:click={toggleEditMode}
+          onclick={toggleEditMode}
           title="Edit note"
         >
           <Icon icon="mdi:pencil" />
