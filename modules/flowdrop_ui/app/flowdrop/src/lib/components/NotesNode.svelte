@@ -118,7 +118,7 @@
 </script>
 
 <div
-  class="flowdrop-notes-node"
+  class="flowdrop-notes-node {currentType.bgColor}"
   class:flowdrop-notes-node--selected={props.selected}
   class:flowdrop-notes-node--processing={props.isProcessing}
   class:flowdrop-notes-node--error={props.isError}
@@ -174,7 +174,7 @@
   {:else}
     <!-- Display Mode -->
     <div
-      class="flowdrop-notes-node__content {currentType.bgColor} {currentType.borderColor} {currentType.textColor}"
+      class="flowdrop-notes-node__content {currentType.borderColor} {currentType.textColor}"
     >
       <!-- Header with icon, type, and edit button -->
       <div class="flowdrop-notes-node__header">
@@ -220,24 +220,51 @@
 
 <style>
   .flowdrop-notes-node {
-    min-width: 250px;
-    max-width: 500px;
-    border-radius: 0.5rem;
+    min-width: var(--notes-node-min-width);
+    max-width: var(--notes-node-max-width);
+    width: var(--notes-node-width);
+    border-radius: var(--notes-node-border-radius);
     border: 1px solid;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(8px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease-in-out;
+    background: var(--notes-node-background);
+    backdrop-filter: var(--notes-node-backdrop-filter);
+    box-shadow: var(--notes-node-box-shadow);
+    transition: var(--notes-node-transition);
     overflow: hidden;
   }
 
+  /* Background color overrides for different note types */
+  .flowdrop-notes-node.bg-blue-50 {
+    background-color: var(--notes-node-info-bg);
+    border-color: var(--notes-node-info-border);
+  }
+
+  .flowdrop-notes-node.bg-yellow-50 {
+    background-color: var(--notes-node-warning-bg);
+    border-color: var(--notes-node-warning-border);
+  }
+
+  .flowdrop-notes-node.bg-green-50 {
+    background-color: var(--notes-node-success-bg);
+    border-color: var(--notes-node-success-border);
+  }
+
+  .flowdrop-notes-node.bg-red-50 {
+    background-color: var(--notes-node-error-bg);
+    border-color: var(--notes-node-error-border);
+  }
+
+  .flowdrop-notes-node.bg-gray-50 {
+    background-color: var(--notes-node-note-bg);
+    border-color: var(--notes-node-note-border);
+  }
+
   .flowdrop-notes-node:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--notes-node-hover-box-shadow);
     transform: translateY(-1px);
   }
 
   .flowdrop-notes-node--selected {
-    box-shadow: 0 0 0 2px #3b82f6;
+    box-shadow: var(--notes-node-selected-box-shadow);
   }
 
   .flowdrop-notes-node--processing {
@@ -250,11 +277,15 @@
 
   /* Edit Mode Styles */
   .flowdrop-notes-node__edit {
-    padding: 1rem;
+    padding: var(--notes-node-padding);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   .flowdrop-notes-node__type-selector {
     margin-bottom: 1rem;
+    flex-shrink: 0;
   }
 
   .flowdrop-notes-node__label {
@@ -276,18 +307,22 @@
 
   .flowdrop-notes-node__textarea-container {
     margin-bottom: 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .flowdrop-notes-node__textarea {
     width: 100%;
     min-height: 120px;
+    flex: 1;
     padding: 0.75rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     font-size: 0.875rem;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     line-height: 1.5;
-    resize: vertical;
+    resize: none; /* Prevent resizing to maintain consistent size */
     background-color: white;
   }
 
@@ -302,6 +337,7 @@
     gap: 0.5rem;
     margin-top: 1rem;
     justify-content: flex-end;
+    flex-shrink: 0;
   }
 
   .flowdrop-notes-node__btn {
@@ -341,9 +377,12 @@
 
   /* Display Mode Styles */
   .flowdrop-notes-node__content {
-    padding: 1rem;
-    border-radius: 0.5rem;
+    padding: var(--notes-node-padding);
+    border-radius: var(--notes-node-border-radius);
     border: 1px solid;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   .flowdrop-notes-node__header {
@@ -351,6 +390,7 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 0.75rem;
+    flex-shrink: 0;
   }
 
   .flowdrop-notes-node__header-left {
@@ -392,6 +432,8 @@
 
   .flowdrop-notes-node__body {
     margin-bottom: 0.5rem;
+    flex: 1;
+    overflow-y: auto;
   }
 
   .flowdrop-notes-node__markdown {

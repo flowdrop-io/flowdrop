@@ -1141,4 +1141,29 @@ body {
   --cmp-node-color-lime: var(--color-ref-lime-500);
   --cmp-node-color-slate: var(--color-ref-slate-500);
   --cmp-node-color-purple: var(--color-ref-purple-600);
+
+  /* NotesNode component variables */
+  --notes-node-width: 500px;
+  --notes-node-min-width: 250px;
+  --notes-node-max-width: 500px;
+  --notes-node-border-radius: 0.5rem;
+  --notes-node-padding: 1rem;
+  --notes-node-background: rgba(255, 255, 255, 0.9);
+  --notes-node-backdrop-filter: blur(8px);
+  --notes-node-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --notes-node-hover-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --notes-node-selected-box-shadow: 0 0 0 2px #3b82f6;
+  --notes-node-transition: all 0.2s ease-in-out;
+  
+  /* Note type specific colors */
+  --notes-node-info-bg: var(--color-ref-blue-50);
+  --notes-node-info-border: var(--color-ref-blue-200);
+  --notes-node-warning-bg: var(--color-ref-yellow-50);
+  --notes-node-warning-border: var(--color-ref-yellow-200);
+  --notes-node-success-bg: var(--color-ref-green-50);
+  --notes-node-success-border: var(--color-ref-green-200);
+  --notes-node-error-bg: var(--color-ref-red-50);
+  --notes-node-error-border: var(--color-ref-red-200);
+  --notes-node-note-bg: var(--color-ref-gray-50);
+  --notes-node-note-border: var(--color-ref-gray-200);
 } 
