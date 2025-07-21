@@ -1,14 +1,14 @@
 # FlowDrop API Documentation
 
-This document describes the REST API endpoints for FlowDrop, a workflow editor for LLM applications.
+This document describes the REST API endpoints for FlowDrop, a Drupal-based workflow editor for LLM applications.
 
 ## Base URL
 
-All API endpoints are prefixed with `/api`.
+All API endpoints are prefixed with `/api/flowdrop`.
 
 ## Authentication
 
-Currently, the API does not require authentication. In a production environment, you should implement proper authentication and authorization.
+The API uses Drupal's permission system. All endpoints require appropriate Drupal permissions such as `access content` or `administer flowdrop_workflow`.
 
 ## Response Format
 
@@ -27,13 +27,13 @@ interface ApiResponse<T> {
 
 ### Get All Node Types
 
-**GET** `/api/nodes`
+**GET** `/api/flowdrop/nodes`
 
 Retrieve all available node types with optional filtering and pagination.
 
 #### Query Parameters
 
-- `category` (optional): Filter by node category (e.g., "llm", "input", "processing")
+- `category` (optional): Filter by node category (e.g., "ai", "data_processing", "input_output")
 - `search` (optional): Search in node names, descriptions, and tags
 - `limit` (optional): Maximum number of nodes to return (default: 100)
 - `offset` (optional): Number of nodes to skip (default: 0)
@@ -41,7 +41,7 @@ Retrieve all available node types with optional filtering and pagination.
 #### Example Request
 
 ```bash
-GET /api/nodes?category=llm&search=openai&limit=10
+GET /api/flowdrop/nodes?category=ai&search=openai&limit=10
 ```
 
 #### Example Response
@@ -51,20 +51,20 @@ GET /api/nodes?category=llm&search=openai&limit=10
   "success": true,
   "data": [
     {
-      "id": "openai-chat",
+      "id": "openai_chat_executor",
       "name": "OpenAI Chat",
       "description": "Chat completion using OpenAI's GPT models",
-      "category": "llm",
+      "category": "ai",
       "icon": "mdi:chat",
       "color": "#10a37f",
       "inputs": [
         {
-          "id": "prompt",
-          "name": "Prompt",
+          "id": "data",
+          "name": "Input Data",
           "type": "input",
-          "dataType": "string",
-          "required": true,
-          "description": "The input prompt for the model"
+          "dataType": "mixed",
+          "required": false,
+          "description": "Input data for the node"
         }
       ],
       "outputs": [
@@ -72,14 +72,40 @@ GET /api/nodes?category=llm&search=openai&limit=10
           "id": "response",
           "name": "Response",
           "type": "output",
-          "dataType": "text",
-          "description": "The model's response"
+          "dataType": "string",
+          "description": "The OpenAI response"
+        },
+        {
+          "id": "model",
+          "name": "Model",
+          "type": "output",
+          "dataType": "string",
+          "description": "The model used"
         }
       ],
       "configSchema": {
-        "model": "gpt-3.5-turbo",
-        "temperature": 0.7,
-        "maxTokens": 1000
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "default": "gpt-3.5-turbo",
+            "title": "Model"
+          },
+          "temperature": {
+            "type": "number",
+            "default": 0.7,
+            "title": "Temperature"
+          },
+          "maxTokens": {
+            "type": "integer",
+            "default": 1000,
+            "title": "Max Tokens"
+          },
+          "apiKey": {
+            "type": "string",
+            "title": "API Key"
+          }
+        }
       },
       "tags": ["openai", "gpt", "chat"]
     }
@@ -96,18 +122,14 @@ GET /api/nodes?category=llm&search=openai&limit=10
 
 ### Get Node Type by ID
 
-**GET** `/api/nodes/{id}`
+**GET** `/api/flowdrop/nodes/{id}`
 
-Retrieve a specific node type by its ID.
-
-#### Path Parameters
-
-- `id`: The unique identifier of the node type
+Retrieve metadata for a specific node type.
 
 #### Example Request
 
 ```bash
-GET /api/nodes/openai-chat
+GET /api/flowdrop/nodes/calculator
 ```
 
 #### Example Response
@@ -116,39 +138,56 @@ GET /api/nodes/openai-chat
 {
   "success": true,
   "data": {
-    "id": "openai-chat",
-    "name": "OpenAI Chat",
-    "description": "Chat completion using OpenAI's GPT models",
-    "category": "llm",
-    "icon": "mdi:chat",
-    "color": "#10a37f",
-    "inputs": [...],
-    "outputs": [...],
-    "configSchema": {...},
-    "tags": ["openai", "gpt", "chat"]
+    "id": "calculator",
+    "name": "Calculator",
+    "description": "Perform mathematical operations on input data",
+    "category": "data_processing",
+    "icon": "mdi:calculator",
+    "color": "#3b82f6",
+    "inputs": [
+      {
+        "id": "data",
+        "name": "Input Data",
+        "type": "input",
+        "dataType": "mixed",
+        "required": false,
+        "description": "Input data for the node"
+      }
+    ],
+    "outputs": [
+      {
+        "id": "result",
+        "name": "Result",
+        "type": "output",
+        "dataType": "number",
+        "description": "The calculated result"
+      }
+    ],
+    "configSchema": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": ["add", "subtract", "multiply", "divide", "power", "sqrt", "average", "min", "max", "median", "mode"],
+          "default": "add",
+          "title": "Operation"
+        },
+        "precision": {
+          "type": "integer",
+          "default": 2,
+          "title": "Precision"
+        }
+      }
+    }
   }
 }
 ```
 
-## Workflows API
+### Get Node Categories
 
-### Get All Workflows
+**GET** `/api/flowdrop/nodes/categories`
 
-**GET** `/api/workflows`
-
-Retrieve all saved workflows with optional filtering and pagination.
-
-#### Query Parameters
-
-- `search` (optional): Search in workflow names, descriptions, and tags
-- `limit` (optional): Maximum number of workflows to return (default: 50)
-- `offset` (optional): Number of workflows to skip (default: 0)
-
-#### Example Request
-
-```bash
-GET /api/workflows?search=chat&limit=10
-```
+Retrieve all available node categories.
 
 #### Example Response
 
@@ -157,173 +196,190 @@ GET /api/workflows?search=chat&limit=10
   "success": true,
   "data": [
     {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "name": "Chat Workflow",
-      "description": "A simple chat workflow",
-      "nodes": [
-        {
-          "id": "node-1",
-          "type": "workflowNode",
-          "position": { "x": 100, "y": 100 },
-          "data": {
-            "label": "Text Input",
-            "config": {},
-            "metadata": {...}
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "edge-1",
-          "source": "node-1",
-          "target": "node-2",
-          "sourceHandle": "text",
-          "targetHandle": "prompt"
-        }
-      ],
-      "metadata": {
-        "version": "1.0.0",
-        "createdAt": "2024-01-15T10:30:00.000Z",
-        "updatedAt": "2024-01-15T11:45:00.000Z",
-        "author": "user@example.com",
-        "tags": ["chat", "demo"]
-      }
+      "id": "ai",
+      "name": "AI Models",
+      "description": "Artificial Intelligence and machine learning models",
+      "icon": "mdi:brain",
+      "color": "#10a37f"
+    },
+    {
+      "id": "data_processing",
+      "name": "Data Processing",
+      "description": "Data manipulation and transformation nodes",
+      "icon": "mdi:database",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "input_output",
+      "name": "Input/Output",
+      "description": "Data input and output nodes",
+      "icon": "mdi:input",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "http",
+      "name": "HTTP Operations",
+      "description": "HTTP requests and webhook nodes",
+      "icon": "mdi:web",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "logic",
+      "name": "Logic & Control",
+      "description": "Conditional logic and control flow nodes",
+      "icon": "mdi:logic-gate",
+      "color": "#ef4444"
+    },
+    {
+      "id": "utility",
+      "name": "Utility",
+      "description": "Utility and helper nodes",
+      "icon": "mdi:tools",
+      "color": "#6b7280"
+    },
+    {
+      "id": "storage",
+      "name": "Storage",
+      "description": "Data storage and retrieval nodes",
+      "icon": "mdi:database",
+      "color": "#059669"
     }
-  ],
-  "message": "Found 1 workflows"
+  ]
+}
+```
+
+## Workflows API
+
+### List Workflows
+
+**GET** `/api/flowdrop/workflows`
+
+Retrieve all workflows with optional filtering.
+
+#### Query Parameters
+
+- `status` (optional): Filter by workflow status
+- `search` (optional): Search in workflow names and descriptions
+- `limit` (optional): Maximum number of workflows to return
+- `offset` (optional): Number of workflows to skip
+
+#### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "workflow_1",
+      "name": "Data Processing Pipeline",
+      "description": "Process and transform data using AI models",
+      "status": "active",
+      "created": "2024-01-15T10:30:00Z",
+      "updated": "2024-01-15T14:45:00Z",
+      "nodes": [...],
+      "edges": [...]
+    }
+  ]
 }
 ```
 
 ### Create Workflow
 
-**POST** `/api/workflows`
+**POST** `/api/flowdrop/workflows`
 
 Create a new workflow.
 
 #### Request Body
 
-```typescript
-{
-  name: string;           // Required: Workflow name
-  description?: string;   // Optional: Workflow description
-  nodes?: WorkflowNode[]; // Optional: Array of workflow nodes
-  edges?: WorkflowEdge[]; // Optional: Array of workflow edges
-  author?: string;        // Optional: Author of the workflow
-  tags?: string[];        // Optional: Array of tags
-}
-```
-
-#### Example Request
-
-```bash
-POST /api/workflows
-Content-Type: application/json
-
-{
-  "name": "My New Workflow",
-  "description": "A workflow for processing text",
-  "nodes": [],
-  "edges": [],
-  "author": "user@example.com",
-  "tags": ["text", "processing"]
-}
-```
-
-#### Example Response
-
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "workflow-1234567890-def456",
-    "name": "My New Workflow",
-    "description": "A workflow for processing text",
-    "nodes": [],
-    "edges": [],
-    "metadata": {
-      "version": "1.0.0",
-      "createdAt": "2024-01-15T12:00:00.000Z",
-      "updatedAt": "2024-01-15T12:00:00.000Z",
-      "author": "user@example.com",
-      "tags": ["text", "processing"]
+  "name": "My Workflow",
+  "description": "A workflow for processing data",
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "text_input",
+      "position": {"x": 100, "y": 100},
+      "config": {...}
     }
-  },
-  "message": "Workflow created successfully"
+  ],
+  "edges": [
+    {
+      "id": "edge_1",
+      "source": "node_1",
+      "target": "node_2",
+      "sourceHandle": "output",
+      "targetHandle": "input"
+    }
+  ]
 }
 ```
 
-### Get Workflow by ID
+### Get Workflow
 
-**GET** `/api/workflows/{id}`
+**GET** `/api/flowdrop/workflows/{id}`
 
-Retrieve a specific workflow by its ID.
-
-#### Path Parameters
-
-- `id`: The unique identifier of the workflow
-
-#### Example Request
-
-```bash
-GET /api/workflows/550e8400-e29b-41d4-a716-446655440000
-```
-
-#### Example Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "workflow-1234567890-abc123",
-    "name": "Chat Workflow",
-    "description": "A simple chat workflow",
-    "nodes": [...],
-    "edges": [...],
-    "metadata": {...}
-  }
-}
-```
+Retrieve a specific workflow by ID.
 
 ### Update Workflow
 
-**PUT** `/api/workflows/{id}`
+**PUT** `/api/flowdrop/workflows/{id}`
 
 Update an existing workflow.
 
-#### Path Parameters
+### Delete Workflow
 
-- `id`: The unique identifier of the workflow
+**DELETE** `/api/flowdrop/workflows/{id}`
+
+Delete a workflow.
+
+### Execute Workflow
+
+**POST** `/api/flowdrop/workflows/{id}/execute`
+
+Execute a workflow with optional input data.
 
 #### Request Body
 
-```typescript
+```json
 {
-  name?: string;           // Optional: New workflow name
-  description?: string;    // Optional: New workflow description
-  nodes?: WorkflowNode[];  // Optional: New array of workflow nodes
-  edges?: WorkflowEdge[];  // Optional: New array of workflow edges
-  metadata?: {             // Optional: Updated metadata
-    version?: string;
-    author?: string;
-    tags?: string[];
-  };
-}
-```
-
-#### Example Request
-
-```bash
-PUT /api/workflows/550e8400-e29b-41d4-a716-446655440000
-Content-Type: application/json
-
-{
-  "name": "Updated Chat Workflow",
-  "description": "An improved chat workflow",
-  "metadata": {
-    "tags": ["chat", "improved", "demo"]
+  "inputs": {
+    "node_1": "Hello, world!"
+  },
+  "config": {
+    "timeout": 30000,
+    "debug": false
   }
 }
 ```
+
+#### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "execution_id": "exec_123",
+    "status": "running",
+    "started_at": "2024-01-15T15:00:00Z",
+    "estimated_completion": "2024-01-15T15:00:30Z"
+  }
+}
+```
+
+## Executions API
+
+### Get Active Executions
+
+**GET** `/api/flowdrop/executions/active`
+
+Retrieve all currently active workflow executions.
+
+### Get Execution State
+
+**GET** `/api/flowdrop/executions/{id}/state`
+
+Get the current state of a workflow execution.
 
 #### Example Response
 
@@ -331,194 +387,252 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
-    "id": "workflow-1234567890-abc123",
-    "name": "Updated Chat Workflow",
-    "description": "An improved chat workflow",
-    "nodes": [...],
-    "edges": [...],
-    "metadata": {
-      "version": "1.0.0",
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "updatedAt": "2024-01-15T12:30:00.000Z",
-      "author": "user@example.com",
-      "tags": ["chat", "improved", "demo"]
-    }
-  },
-  "message": "Workflow updated successfully"
+    "id": "exec_123",
+    "workflow_id": "workflow_1",
+    "status": "completed",
+    "started_at": "2024-01-15T15:00:00Z",
+    "completed_at": "2024-01-15T15:00:25Z",
+    "results": {
+      "node_1": "Hello, world!",
+      "node_2": "Processed: Hello, world!"
+    },
+    "errors": [],
+    "logs": [
+      {
+        "timestamp": "2024-01-15T15:00:05Z",
+        "level": "info",
+        "message": "Node calculator executed successfully",
+        "node_id": "node_2"
+      }
+    ]
+  }
 }
 ```
 
-### Delete Workflow
+### Cancel Execution
 
-**DELETE** `/api/workflows/{id}`
+**POST** `/api/flowdrop/executions/{id}/cancel`
 
-Delete a workflow.
+Cancel a running workflow execution.
 
-#### Path Parameters
+### Get Execution Logs
 
-- `id`: The unique identifier of the workflow
+**GET** `/api/flowdrop/executions/{id}/logs`
 
-#### Example Request
+Retrieve detailed logs for a workflow execution.
 
-```bash
-DELETE /api/workflows/550e8400-e29b-41d4-a716-446655440000
-```
+## Node Types Reference
 
-#### Example Response
+### AI Models
 
-```json
-{
-  "success": true,
-  "data": null,
-  "message": "Workflow deleted successfully"
-}
-```
+#### OpenAI Chat (`openai_chat_executor`)
+- **Category**: AI
+- **Description**: Chat completion using OpenAI's GPT models
+- **Config**: model, temperature, maxTokens, apiKey
+- **Outputs**: response, model, temperature, tokens_used, finish_reason
 
-## Data Types
+#### OpenAI Embeddings (`openai_embeddings`)
+- **Category**: AI
+- **Description**: Generate text embeddings using OpenAI
+- **Config**: model, apiKey
+- **Outputs**: embeddings, model, dimensions
 
-### NodeMetadata
+#### HuggingFace Embeddings (`huggingface_embeddings`)
+- **Category**: AI
+- **Description**: Generate embeddings using HuggingFace models
+- **Config**: model, apiKey
+- **Outputs**: embeddings, model, dimensions
 
-```typescript
-interface NodeMetadata {
-  id: string;
-  name: string;
-  description: string;
-  category: NodeCategory;
-  icon?: string;
-  color?: string;
-  inputs: NodePort[];
-  outputs: NodePort[];
-  configSchema?: Record<string, unknown>;
-  tags?: string[];
-}
-```
+#### Simple Agent (`simple_agent`)
+- **Category**: AI
+- **Description**: Basic AI agent implementation
+- **Config**: agent_type, memory_size
+- **Outputs**: response, agent_state
 
-### NodePort
+### Data Processing
 
-```typescript
-interface NodePort {
-  id: string;
-  name: string;
-  type: "input" | "output";
-  dataType: NodeDataType;
-  required?: boolean;
-  description?: string;
-  defaultValue?: unknown;
-}
-```
+#### Calculator (`calculator`)
+- **Category**: Data Processing
+- **Description**: Perform mathematical operations
+- **Config**: operation, precision
+- **Outputs**: result, operation, precision
 
-### Workflow
+#### Dataframe Operations (`dataframe_operations`)
+- **Category**: Data Processing
+- **Description**: Advanced data manipulation
+- **Config**: operation, columns, rows, condition
+- **Outputs**: result, operation, input_rows, output_rows
 
-```typescript
-interface Workflow {
-  id: string;
-  name: string;
-  description?: string;
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  metadata?: {
-    version: string;
-    createdAt: string;
-    updatedAt: string;
-    author?: string;
-    tags?: string[];
-  };
-}
-```
+#### Data Operations (`data_operations`)
+- **Category**: Data Processing
+- **Description**: General data processing operations
+- **Config**: operation, parameters
+- **Outputs**: result, operation, metadata
 
-### WorkflowNode
+#### Data to Dataframe (`data_to_dataframe`)
+- **Category**: Data Processing
+- **Description**: Convert data to dataframe format
+- **Config**: format, options
+- **Outputs**: dataframe, schema, row_count
 
-```typescript
-interface WorkflowNode {
-  id: string;
-  type: string;
-  position: { x: number; y: number };
-  deletable?: boolean;
-  data: {
-    label: string;
-    config: Record<string, unknown>;
-    metadata: NodeMetadata;
-    isProcessing?: boolean;
-    error?: string;
-    nodeId?: string;
-  };
-}
-```
+### Input/Output
 
-### WorkflowEdge
+#### Text Input (`text_input`)
+- **Category**: Input/Output
+- **Description**: User input collection
+- **Config**: placeholder, default_value
+- **Outputs**: value
 
-```typescript
-interface WorkflowEdge {
-  id: string;
-  source: string;
-  target: string;
-  sourceHandle?: string;
-  targetHandle?: string;
-  type?: string;
-  selectable?: boolean;
-  deletable?: boolean;
-  data?: {
-    label?: string;
-    condition?: string;
-  };
-}
-```
+#### Text Output (`text_output`)
+- **Category**: Input/Output
+- **Description**: Display text results
+- **Config**: format, display_options
+- **Outputs**: formatted_text
+
+#### Chat Output (`chat_output`)
+- **Category**: Input/Output
+- **Description**: Chat interface output
+- **Config**: chat_format, display_options
+- **Outputs**: chat_message, timestamp
+
+#### File Upload (`file_upload`)
+- **Category**: Input/Output
+- **Description**: File upload handling
+- **Config**: allowed_types, max_size
+- **Outputs**: file_data, file_info
+
+### HTTP Operations
+
+#### URL Fetch (`url_fetch`)
+- **Category**: HTTP
+- **Description**: HTTP GET requests
+- **Config**: url, headers, timeout
+- **Outputs**: response, status_code, headers
+
+#### HTTP Request (`http_request`)
+- **Category**: HTTP
+- **Description**: Full HTTP client
+- **Config**: method, url, headers, body, timeout
+- **Outputs**: response, status_code, headers, body
+
+#### Webhook (`webhook`)
+- **Category**: HTTP
+- **Description**: Webhook endpoint handling
+- **Config**: endpoint, method, headers
+- **Outputs**: webhook_data, response
+
+### Logic & Control
+
+#### Conditional (`conditional`)
+- **Category**: Logic
+- **Description**: If/else logic branching
+- **Config**: condition, true_branch, false_branch
+- **Outputs**: result, branch_taken
+
+#### Loop (`loop`)
+- **Category**: Logic
+- **Description**: Iterative operations
+- **Config**: max_iterations, condition
+- **Outputs**: result, iterations, final_state
+
+### Utility
+
+#### DateTime (`datetime`)
+- **Category**: Utility
+- **Description**: Date/time operations
+- **Config**: operation, format, timezone
+- **Outputs**: result, formatted_date
+
+#### Regex Extractor (`regex_extractor`)
+- **Category**: Utility
+- **Description**: Pattern matching
+- **Config**: pattern, flags, group
+- **Outputs**: matches, groups
+
+#### Split Text (`split_text`)
+- **Category**: Utility
+- **Description**: Text segmentation
+- **Config**: delimiter, max_splits
+- **Outputs**: parts, count
+
+#### Conversation Buffer (`conversation_buffer`)
+- **Category**: Utility
+- **Description**: Chat history management
+- **Config**: max_messages, format
+- **Outputs**: buffer, message_count
+
+#### Structured Output (`structured_output`)
+- **Category**: Utility
+- **Description**: Formatted output generation
+- **Config**: format, template
+- **Outputs**: structured_data, format_used
+
+### Storage
+
+#### Save to File (`save_to_file`)
+- **Category**: Storage
+- **Description**: Save data to file
+- **Config**: filename, format, path
+- **Outputs**: file_path, file_size
+
+#### Chroma Vector Store (`chroma_vector_store`)
+- **Category**: Storage
+- **Description**: Vector database operations
+- **Config**: collection, operation, metadata
+- **Outputs**: result, operation_status
 
 ## Error Handling
-
-The API returns appropriate HTTP status codes and error messages:
-
-- `400 Bad Request`: Invalid request data
-- `404 Not Found`: Resource not found
-- `500 Internal Server Error`: Server error
 
 ### Error Response Format
 
 ```json
 {
   "success": false,
-  "error": "Error description",
-  "message": "Detailed error message"
+  "error": "Error message",
+  "code": "ERROR_CODE",
+  "details": {
+    "field": "Additional error details"
+  }
 }
 ```
 
+### Common Error Codes
+
+- `VALIDATION_ERROR`: Input validation failed
+- `NODE_NOT_FOUND`: Node type not found
+- `WORKFLOW_NOT_FOUND`: Workflow not found
+- `EXECUTION_FAILED`: Workflow execution failed
+- `PERMISSION_DENIED`: Insufficient permissions
+- `TIMEOUT`: Operation timed out
+- `MEMORY_LIMIT`: Memory limit exceeded
+
 ## Rate Limiting
 
-Currently, there are no rate limits implemented. In production, you should implement appropriate rate limiting to prevent abuse.
+The API implements rate limiting to prevent abuse:
 
-## Testing
+- **Node Discovery**: 100 requests per minute
+- **Workflow Operations**: 50 requests per minute
+- **Workflow Execution**: 10 requests per minute
 
-You can test the API using the built-in test page at `/api-test` which provides a user interface for testing all endpoints.
+Rate limit headers are included in responses:
+- `X-RateLimit-Limit`: Request limit per window
+- `X-RateLimit-Remaining`: Remaining requests in current window
+- `X-RateLimit-Reset`: Time when the rate limit resets
 
-## Client-Side Usage
+## Security Considerations
 
-The project includes a client-side API service (`src/lib/services/api.ts`) that provides convenient methods for interacting with the API:
+1. **Authentication**: All endpoints require appropriate Drupal permissions
+2. **Input Validation**: All inputs are validated against schemas
+3. **Output Sanitization**: All outputs are sanitized to prevent XSS
+4. **Logging**: All operations are logged for audit purposes
+5. **Error Handling**: Sensitive information is not exposed in error messages
 
-```typescript
-import { api } from "$lib/services/api.js";
+## Best Practices
 
-// Get all node types
-const nodes = await api.nodes.getNodes();
-
-// Create a workflow
-const workflow = await api.workflows.createWorkflow({
-  name: "My Workflow",
-  description: "A test workflow"
-});
-
-// Update a workflow
-const updatedWorkflow = await api.workflows.updateWorkflow(workflow.id, {
-  description: "Updated description"
-});
-```
-
-## Future Enhancements
-
-- Authentication and authorization
-- Workflow execution endpoints
-- Real-time collaboration
-- Version control for workflows
-- Plugin system for custom node types
-- Advanced search and filtering
-- Bulk operations
-- Export/import functionality 
+1. **Use HTTPS**: Always use HTTPS in production
+2. **Validate Inputs**: Always validate inputs before processing
+3. **Handle Errors**: Implement proper error handling
+4. **Monitor Usage**: Monitor API usage and performance
+5. **Cache Responses**: Cache static data like node metadata
+6. **Use Pagination**: Use pagination for large datasets
+7. **Implement Retries**: Implement retry logic for transient failures 

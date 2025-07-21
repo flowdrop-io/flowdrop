@@ -1,278 +1,290 @@
-# FlowDrop
+# FlowDrop - Drupal Workflow Editor
 
-A powerful Svelte Flow-based library for building workflows with a drag-and-drop interface. Inspired by tools like n8n, Langflow, and Flowise.
+A powerful visual workflow editor for Drupal that enables drag-and-drop creation of complex workflows with AI integration, data processing, and automation capabilities.
 
-## Features
+## 🚀 Features
 
-- 🎯 **Node-based Workflow Editor** - Drag and drop interface for building workflows
-- 🔌 **HTTP API Integration** - Fetch node definitions and manage workflows via REST API
-- 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
-- 🔧 **TypeScript Support** - Full TypeScript support with comprehensive type definitions
-- 🚀 **SvelteKit Ready** - Built for SvelteKit applications
-- 📦 **Modular Architecture** - Easy to extend and customize
+- **Visual Workflow Editor**: Drag-and-drop interface for building complex workflows
+- **AI Integration**: OpenAI, Anthropic, and other AI model integrations
+- **Data Processing**: Advanced data manipulation and transformation nodes
+- **HTTP Integration**: Webhook and API request capabilities
+- **File Operations**: Upload, download, and file processing
+- **Conditional Logic**: Advanced branching and decision-making nodes
+- **Real-time Execution**: Live workflow execution with status monitoring
+- **Drupal Native**: Built specifically for Drupal 10/11
 
-## Installation
+## 📁 Project Structure
 
-```bash
-npm install flowdrop
+```
+flowdrop/
+├── src/                          # Core PHP classes
+│   ├── Service/NodeRuntime/      # Node execution engine
+│   ├── Plugins/FlowdropNodeProcessor/  # 25+ node processors
+│   ├── Attribute/                # Plugin discovery attributes
+│   └── Exception/                # Custom exception classes
+├── modules/                      # Drupal sub-modules
+│   ├── flowdrop_workflow/        # Workflow entity management
+│   ├── flowdrop_ui/             # Svelte frontend application
+│   ├── flowdrop_node_type/      # Node type definitions
+│   ├── flowdrop_node_category/  # Node categorization
+│   ├── flowdrop_pipeline/       # Pipeline management
+│   ├── flowdrop_job/           # Job execution system
+│   ├── flowdrop_runner/        # Workflow execution engine
+│   └── flowdrop_ai/            # AI integration features
+├── js/                         # Drupal JavaScript integration
+└── config/                     # Drupal configuration
 ```
 
-## Quick Start
+## 🏗️ Architecture
 
-### 1. Basic Setup
+### Core Components
 
-```svelte
-<script lang="ts">
-  import { WorkflowEditor } from "flowdrop";
-  import type { FlowDropConfig } from "flowdrop";
+1. **Plugin System**: Attribute-based discovery of node processors
+2. **Node Runtime**: Execution engine for workflow nodes
+3. **Workflow Engine**: Drupal entity-based workflow management
+4. **Frontend**: Svelte-based visual editor
+5. **API Layer**: RESTful API for workflow operations
 
-  const config: FlowDropConfig = {
-    apiBaseUrl: "https://your-api.com",
-    theme: "auto",
-    enableDebug: true
-  };
-</script>
+### Node Categories
 
-<WorkflowEditor {config} />
-```
+- **AI Models**: OpenAI Chat, Embeddings, HuggingFace
+- **Data Processing**: Calculator, Dataframe Operations, Data Operations
+- **Input/Output**: Text Input, Chat Output, File Upload
+- **HTTP Operations**: URL Fetch, HTTP Request, Webhook
+- **Conditional Logic**: Conditional nodes, Loop operations
+- **Utility**: DateTime, Regex Extractor, Split Text
+- **Storage**: Save to File, Chroma Vector Store
 
-### 2. With Sample Data
-
-```svelte
-<script lang="ts">
-  import { WorkflowEditor, sampleWorkflow } from "flowdrop";
-  import type { FlowDropConfig } from "flowdrop";
-
-  const config: FlowDropConfig = {
-    apiBaseUrl: "https://your-api.com",
-    theme: "auto"
-  };
-</script>
-
-<WorkflowEditor {config} workflow={sampleWorkflow} />
-```
-
-### 3. Custom API Client
-
-```svelte
-<script lang="ts">
-  import { WorkflowEditor, FlowDropApiClient } from "flowdrop";
-  import type { FlowDropConfig } from "flowdrop";
-
-  const config: FlowDropConfig = {
-    apiBaseUrl: "https://your-api.com",
-    apiKey: "your-api-key"
-  };
-
-  const apiClient = new FlowDropApiClient(config.apiBaseUrl, config.apiKey);
-</script>
-
-<WorkflowEditor {config} />
-```
-
-## API Reference
-
-### Configuration
-
-```typescript
-interface FlowDropConfig {
-  apiBaseUrl: string;           // Your API endpoint
-  theme?: "light" | "dark" | "auto";
-  enableDebug?: boolean;
-  autoSave?: boolean;
-  autoSaveInterval?: number;    // milliseconds
-  maxUndoSteps?: number;
-  nodeSpacing?: number;
-  gridSize?: number;
-}
-```
-
-### Node Types
-
-The library supports various node categories:
-
-- **Models** - OpenAI, Anthropic, and other model providers
-- **Input/Output** - Text input, file upload, display output
-- **Processing** - Text transformation, data processing
-- **Conditional** - Logic gates, conditional flows
-- **Utility** - Helper functions, data manipulation
-- **Integration** - External service connections
-
-### Node Metadata Structure
-
-```typescript
-interface NodeMetadata {
-  id: string;
-  name: string;
-  description: string;
-  category: NodeCategory;
-  icon?: string;
-  color?: string;
-  inputs: NodePort[];
-  outputs: NodePort[];
-  configSchema?: Record<string, unknown>;
-  tags?: string[];
-}
-```
-
-### API Endpoints
-
-The library expects the following API endpoints:
-
-- `GET /api/nodes` - Fetch available node types
-- `GET /api/nodes?category={category}` - Fetch nodes by category
-- `GET /api/nodes/{id}` - Fetch specific node metadata
-- `POST /api/workflows` - Save workflow
-- `PUT /api/workflows/{id}` - Update workflow
-- `GET /api/workflows/{id}` - Load workflow
-- `GET /api/workflows` - List workflows
-- `DELETE /api/workflows/{id}` - Delete workflow
-- `POST /api/workflows/{id}/execute` - Execute workflow
-- `GET /api/executions/{id}` - Get execution status
-- `POST /api/executions/{id}/cancel` - Cancel execution
-
-## Components
-
-### WorkflowEditor
-
-The main component that provides the complete workflow editing experience.
-
-```svelte
-<WorkflowEditor
-  config={config}
-  workflow={workflow}
-  apiKey="optional-api-key"
-/>
-```
-
-### NodeSidebar
-
-A sidebar component that displays available nodes organized by category.
-
-```svelte
-<NodeSidebar
-  nodes={availableNodes}
-  loading={false}
-  on:nodeSelected={handleNodeSelected}
-  on:categoryChanged={handleCategoryChanged}
-  on:searchChanged={handleSearchChanged}
-/>
-```
-
-### WorkflowNode
-
-A customizable node component for displaying workflow nodes.
-
-```svelte
-<WorkflowNode
-  data={nodeData}
-  selected={false}
-  on:configChanged={handleConfigChange}
-  on:nodeSelected={handleNodeSelect}
-/>
-```
-
-## Events
-
-The library dispatches various events for integration:
-
-```typescript
-// Node events
-nodeSelected: { node: NodeMetadata }
-nodeAdded: { node: WorkflowNode }
-nodeRemoved: { nodeId: string }
-nodeUpdated: { node: WorkflowNode }
-
-// Edge events
-edgeAdded: { edge: WorkflowEdge }
-edgeRemoved: { edgeId: string }
-
-// Workflow events
-workflowSaved: { workflow: Workflow }
-workflowLoaded: { workflow: Workflow }
-
-// Execution events
-executionStarted: { workflowId: string }
-executionCompleted: { result: ExecutionResult }
-executionFailed: { error: string }
-```
-
-## Customization
-
-### Custom Node Types
-
-You can create custom node types by extending the base components:
-
-```svelte
-<script lang="ts">
-  import WorkflowNode from "flowdrop/WorkflowNode.svelte";
-  
-  // Custom node logic here
-</script>
-
-<div class="custom-node">
-  <!-- Your custom node UI -->
-</div>
-```
-
-### Custom Styling
-
-@TODO
-
-## Development
+## 🛠️ Installation
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- Drupal 10 or 11
+- PHP 8.1+
+- Node.js 18+ (for frontend development)
 
-### Setup
+### Installation Steps
+
+1. **Install the module**:
+   ```bash
+   # Copy to your Drupal modules directory
+   cp -r flowdrop /path/to/drupal/web/modules/custom/
+   ```
+
+2. **Enable the module**:
+   ```bash
+   ddev drush en flowdrop flowdrop_workflow flowdrop_ui
+   ```
+
+3. **Build the frontend**:
+   ```bash
+   cd modules/flowdrop_ui/app/flowdrop
+   npm install
+   npm run build:iife
+   ```
+
+4. **Clear Drupal cache**:
+   ```bash
+   ddev drush cr
+   ```
+
+## 🎯 Usage
+
+### Accessing the Workflow Editor
+
+1. Navigate to `/admin/structure/flowdrop-workflow`
+2. Create a new workflow or edit an existing one
+3. Use the visual editor to build your workflow
+
+### Creating Workflows
+
+1. **Add Nodes**: Drag nodes from the palette to the canvas
+2. **Configure Nodes**: Set parameters and configuration for each node
+3. **Connect Nodes**: Create connections between node inputs and outputs
+4. **Test Execution**: Use the execution panel to test your workflow
+5. **Save & Deploy**: Save your workflow for production use
+
+### Available Node Types
+
+#### AI Models
+- **OpenAI Chat**: GPT model integration
+- **OpenAI Embeddings**: Text embedding generation
+- **HuggingFace Embeddings**: Alternative embedding models
+- **Simple Agent**: Basic AI agent implementation
+
+#### Data Processing
+- **Calculator**: Mathematical operations
+- **Dataframe Operations**: Advanced data manipulation
+- **Data Operations**: General data processing
+- **Data to Dataframe**: Data format conversion
+
+#### Input/Output
+- **Text Input**: User input collection
+- **Text Output**: Display text results
+- **Chat Output**: Chat interface output
+- **File Upload**: File upload handling
+
+#### HTTP & Integration
+- **URL Fetch**: HTTP GET requests
+- **HTTP Request**: Full HTTP client
+- **Webhook**: Webhook endpoint handling
+
+#### Logic & Control
+- **Conditional**: If/else logic branching
+- **Loop**: Iterative operations
+- **Split Text**: Text segmentation
+
+#### Utility
+- **DateTime**: Date/time operations
+- **Regex Extractor**: Pattern matching
+- **Conversation Buffer**: Chat history management
+- **Structured Output**: Formatted output generation
+
+## 🔧 Development
+
+### Adding New Node Types
+
+1. **Create Node Class**:
+   ```php
+   <?php
+   
+   namespace Drupal\flowdrop\Plugins\FlowdropNodeProcessor;
+   
+   use Drupal\flowdrop\Attribute\FlowdropNodeProcessor;
+   
+   #[FlowdropNodeProcessor(
+     id: "my_custom_node",
+     label: new \Drupal\Core\StringTranslation\TranslatableMarkup("My Custom Node")
+   )]
+   class MyCustomNode extends AbstractFlowdropNodeProcessor {
+     
+     public function execute(array $inputs, array $config): array {
+       // Your node logic here
+       return ['result' => 'processed data'];
+     }
+     
+     public function getConfigSchema(): array {
+       return [
+         'type' => 'object',
+         'properties' => [
+           'mySetting' => ['type' => 'string'],
+         ],
+       ];
+     }
+   }
+   ```
+
+2. **Implement Required Methods**:
+   - `execute()`: Main node logic
+   - `getConfigSchema()`: Configuration schema
+   - `getInputSchema()`: Input validation schema
+   - `getOutputSchema()`: Output schema
+   - `validateInputs()`: Input validation
+
+### Frontend Development
+
+The frontend is a Svelte application located in `modules/flowdrop_ui/app/flowdrop/`.
 
 ```bash
-git clone https://github.com/your-repo/flowdrop.git
-cd flowdrop
-npm install
+cd modules/flowdrop_ui/app/flowdrop
+npm run dev          # Development server
+npm run build:iife   # Build for Drupal integration
+npm run test         # Run tests
 ```
 
-### Development Server
+## 📚 API Documentation
 
+### REST API Endpoints
+
+#### Workflows
+- `GET /api/flowdrop/workflows` - List workflows
+- `POST /api/flowdrop/workflows` - Create workflow
+- `GET /api/flowdrop/workflows/{id}` - Get workflow
+- `PUT /api/flowdrop/workflows/{id}` - Update workflow
+- `DELETE /api/flowdrop/workflows/{id}` - Delete workflow
+- `POST /api/flowdrop/workflows/{id}/execute` - Execute workflow
+
+#### Nodes
+- `GET /api/flowdrop/nodes` - List available nodes
+- `GET /api/flowdrop/nodes/{id}` - Get node metadata
+- `GET /api/flowdrop/nodes?category={category}` - Filter by category
+
+#### Executions
+- `GET /api/flowdrop/executions/active` - Active executions
+- `GET /api/flowdrop/executions/{id}/state` - Execution status
+
+### Node Configuration Schema
+
+Each node type defines its configuration schema:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "setting1": {
+      "type": "string",
+      "title": "Setting 1",
+      "description": "Description of setting"
+    },
+    "setting2": {
+      "type": "number",
+      "default": 0
+    }
+  }
+}
+```
+
+## 🔒 Security
+
+- All API endpoints require appropriate Drupal permissions
+- Input validation on all node processors
+- Exception handling for failed executions
+- Logging of all workflow operations
+
+## 🧪 Testing
+
+### Backend Testing
 ```bash
-npm run dev
+ddev drush test:run flowdrop
 ```
 
-### Build
-
+### Frontend Testing
 ```bash
-npm run build
+cd modules/flowdrop_ui/app/flowdrop
+npm run test:unit
+npm run test:e2e
 ```
 
-### Testing
+## 📝 Logging
 
-```bash
-npm run test
+Workflow execution is logged through Drupal's logging system:
+
+```php
+$this->loggerFactory->get('flowdrop')->info('Workflow executed', [
+  'workflow_id' => $workflowId,
+  'execution_time' => $executionTime,
+]);
 ```
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
+4. Add tests for new functionality
 5. Submit a pull request
 
-## License
+## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the same license as Drupal.
 
-## Support
+## 🆘 Support
 
-- 📚 [Documentation](https://flowdrop.dev)
-- 🐛 [Issue Tracker](https://github.com/your-repo/flowdrop/issues)
-- 💬 [Discussions](https://github.com/your-repo/flowdrop/discussions)
+For issues and questions:
+- Check the API documentation in `modules/flowdrop_ui/app/flowdrop/API.md`
+- Review the security guidelines in `modules/flowdrop_ui/app/flowdrop/SECURITY.md`
+- Create an issue in the project repository
 
-## Acknowledgments
+---
 
-- [Svelte Flow](https://github.com/xyflow/xyflow) - The underlying flow library
-- [DaisyUI](https://daisyui.com/) - Beautiful UI components
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
-- [SvelteKit](https://kit.svelte.dev/) - The web framework
+**FlowDrop** - Empowering Drupal with visual workflow automation.
