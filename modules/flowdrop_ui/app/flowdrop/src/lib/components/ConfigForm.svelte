@@ -250,17 +250,28 @@
               />
             {/if}
           {:else if property.type === "number"}
-            <!-- Number input -->
+            <!-- Number input as text field -->
             <input
               id={fieldName}
-              type="number"
+              type="text"
               class="flowdrop-form-input {validationErrors[fieldName] ? 'flowdrop-form-input--error' : ''}"
               value={localValues[fieldName] || ""}
-              min={property.minimum}
-              max={property.maximum}
-              step="any"
+              placeholder="Enter a number"
               disabled={props.disabled || false}
-              onchange={(e) => handleFieldChange(fieldName, parseFloat((e.target as HTMLInputElement).value))}
+              oninput={(e) => {
+                const value = (e.target as HTMLInputElement).value;
+                const numValue = value === "" ? 0 : parseFloat(value);
+                if (!isNaN(numValue)) {
+                  handleFieldChange(fieldName, numValue);
+                }
+              }}
+              onblur={(e) => {
+                const value = (e.target as HTMLInputElement).value;
+                const numValue = value === "" ? 0 : parseFloat(value);
+                if (!isNaN(numValue)) {
+                  handleFieldChange(fieldName, numValue);
+                }
+              }}
             />
           {:else if property.type === "boolean"}
             <!-- Checkbox -->
@@ -444,4 +455,6 @@
     color: #9ca3af;
     cursor: not-allowed;
   }
+
+
 </style> 
