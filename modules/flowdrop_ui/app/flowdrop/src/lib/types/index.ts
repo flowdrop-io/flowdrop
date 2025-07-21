@@ -82,11 +82,19 @@ export interface NodePort {
 }
 
 /**
+ * Node types for explicit component rendering
+ */
+export type NodeType = 
+  | "note"
+  | "default";
+
+/**
  * Node configuration metadata
  */
 export interface NodeMetadata {
   id: string;
   name: string;
+  type?: NodeType;
   description: string;
   category: NodeCategory;
   version: string;

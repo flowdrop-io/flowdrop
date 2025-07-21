@@ -87,6 +87,7 @@
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/package": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@types/marked": "^6.0.0",
     "@types/node": "^20",
     "@vitest/browser": "^3.2.3",
     "eslint": "^9.18.0",
@@ -116,6 +117,7 @@
   "dependencies": {
     "@types/uuid": "^10.0.0",
     "@xyflow/svelte": "~1.2",
+    "marked": "^16.1.1",
     "uuid": "^11.1.0"
   }
 }

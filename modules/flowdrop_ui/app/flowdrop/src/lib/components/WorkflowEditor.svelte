@@ -20,6 +20,7 @@
   import "@xyflow/svelte/dist/style.css";
   import NodeSidebar from "./NodeSidebar.svelte";
   import WorkflowNode from "./WorkflowNode.svelte";
+  import NotesNode from "./NotesNode.svelte";
   import type { WorkflowNode as WorkflowNodeType, NodeMetadata, Workflow, WorkflowEdge } from "../types/index.js";
   import { validateConnection, hasCycles } from "../utils/connections.js";
   import CanvasBanner from "./CanvasBanner.svelte";
@@ -84,7 +85,8 @@
   
   // Node types for Svelte Flow
   const nodeTypes = {
-    workflowNode: WorkflowNode
+    workflowNode: WorkflowNode,
+    note: NotesNode
   };
 
   $effect(() => {
@@ -213,6 +215,16 @@
       
       const savedWorkflow = await workflowApi.saveWorkflow(workflow);
       console.log("✅ Workflow saved successfully:", savedWorkflow);
+      console.log("📊 Saved workflow nodes:", flowNodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        label: node.data.label,
+        config: node.data.config
+      })));
+      
+      // Note: Notes node configurations (content, noteType) are automatically
+      // saved as part of the node.data.config object and will be restored
+      // when the workflow is loaded.
       
       // Update the workflow ID if it was a new workflow
       if (!props.workflow?.id) {
@@ -470,9 +482,12 @@
 
             const newNodeId = uuidv4();
             
+            // Determine node type based on metadata
+            const svelteFlowNodeType = nodeData.metadata?.type === "note" ? "note" : "workflowNode";
+            
             const newNode: WorkflowNodeType = {
               id: newNodeId,
-              type: "workflowNode",
+              type: svelteFlowNodeType,
               position, // Use the position calculated from the drop event
               deletable: true,
               data: {

@@ -16,6 +16,7 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Text Input",
+    type: "default",
     version: "1.0.0",
     description: "User text input field",
     category: "inputs",
@@ -53,6 +54,7 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "File Upload",
+    type: "default",
     version: "1.0.0",
     description: "File upload input with drag and drop support",
     category: "inputs",
@@ -90,6 +92,7 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Webhook",
+    type: "default",
     version: "1.0.0",
     description: "Receive data from external webhooks",
     category: "inputs",
@@ -1166,6 +1169,37 @@ export const sampleNodes: NodeMetadata[] = [
     },
     tags: ["tools", "date", "time", "format"]
   },
+  {
+    id: uuidv4(),
+    name: "Notes",
+    type: "note",
+    version: "1.0.0",
+    description: "Add documentation and comments to your workflow with Markdown support",
+    category: "tools",
+    icon: "mdi:note-text",
+    color: "#fbbf24",
+    inputs: [],
+    outputs: [],
+    configSchema: {
+      type: "object",
+      properties: {
+        content: {
+          type: "string",
+          title: "Note Content",
+          description: "Documentation or comment text (supports Markdown)",
+          default: "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!"
+        },
+        noteType: {
+          type: "string",
+          title: "Note Type",
+          description: "Visual style and color of the note",
+          default: "info",
+          enum: ["info", "warning", "success", "error", "note"]
+        }
+      }
+    },
+    tags: ["tools", "notes", "documentation", "comments", "markdown"]
+  },
 
   // ===== EMBEDDINGS CATEGORY =====
   {
@@ -1561,6 +1595,19 @@ export const sampleWorkflow: Workflow = {
           maxTokens: 1000
         },
         metadata: sampleNodes.find(n => n.name === "OpenAI")!
+      }
+    } as WorkflowNode,
+    {
+      id: uuidv4(),
+      type: "note",
+      position: { x: 500, y: 300 },
+      data: {
+        label: "Workflow Notes",
+        config: {
+          content: "# Simple Chat Workflow\n\nThis workflow demonstrates a basic chat interaction:\n\n1. **Text Input** - User enters a question\n2. **Split Text** - Breaks the input into manageable chunks\n3. **OpenAI** - Processes the chunks and generates a response\n4. **Chat Output** - Displays the final response\n\n## Usage\n- Drag a Notes node to add documentation\n- Double-click to edit in Markdown\n- Choose from 5 different note types",
+          noteType: "info"
+        },
+        metadata: sampleNodes.find(n => n.name === "Notes")!
       }
     } as WorkflowNode,
     {

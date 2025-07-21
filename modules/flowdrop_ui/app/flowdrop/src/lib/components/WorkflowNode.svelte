@@ -95,7 +95,7 @@
   aria-label="Workflow node: {props.data.metadata.name}"
   aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
-  <!-- Node Header -->
+  <!-- Default Node Header -->
   <div class="flowdrop-workflow-node__header">
     <div class="flowdrop-flex flowdrop-gap--3 flowdrop-items--center">
       <!-- Node Icon -->
