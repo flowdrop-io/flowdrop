@@ -37,10 +37,7 @@
     align-items: center;
   }
   
-  .flowdrop-canvas-banner__icon-svg {
-    font-size: 3.75rem;
-    margin-bottom: 1rem;
-  }
+
   
   .flowdrop-canvas-banner__title {
     font-size: 1.125rem;

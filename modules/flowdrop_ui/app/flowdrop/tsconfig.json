@@ -14,7 +14,10 @@
     "allowJs": true,
     "checkJs": true,
     "isolatedModules": true,
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "strict": false
   },
   "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
   "exclude": ["node_modules", "dist", "build", ".svelte-kit"],

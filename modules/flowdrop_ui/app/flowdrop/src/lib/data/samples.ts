@@ -8,8 +8,8 @@ import { v4 as uuidv4 } from "uuid";
 import { CATEGORY_ICONS } from "../utils/icons.js";
 
 /**
- * Sample node definitions for development
- * Full set matching Langflow's default categories
+ * Sample node data for development and testing
+ * These represent the available node types in the workflow editor
  */
 export const sampleNodes: NodeMetadata[] = [
   // ===== INPUTS CATEGORY =====
@@ -17,18 +17,18 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "Text Input",
     version: "1.0.0",
-    description: "Simple text input for user data",
+    description: "User text input field",
     category: "inputs",
-    icon: "mdi:text",
-    color: "#22c55e",
+    icon: "mdi:text-box",
+    color: "#10b981",
     inputs: [],
     outputs: [
       {
         id: "text",
         name: "Text",
         type: "output",
-        dataType: "string",
-        description: "The input text value"
+        dataType: "text",
+        description: "User entered text"
       }
     ],
     configSchema: {
@@ -36,224 +36,56 @@ export const sampleNodes: NodeMetadata[] = [
       properties: {
         placeholder: {
           type: "string",
-          title: "Placeholder Text",
-          description: "Text to show when input is empty",
-          default: "Enter text here..."
+          title: "Placeholder",
+          description: "Placeholder text for the input field",
+          default: "Enter text..."
         },
         defaultValue: {
           type: "string",
           title: "Default Value",
-          description: "Initial value for the text input",
+          description: "Default text value",
           default: ""
-        },
-        multiline: {
-          type: "boolean",
-          title: "Multiline",
-          description: "Allow multiple lines of text",
-          default: false
-        },
-        maxLength: {
-          type: "number",
-          title: "Maximum Length",
-          description: "Maximum number of characters allowed",
-          default: 1000,
-          minimum: 1,
-          maximum: 10000
-        },
-        showLabel: {
-          type: "boolean",
-          title: "Show Label",
-          description: "Display the input label",
-          default: true
         }
-      },
-      required: ["placeholder"]
+      }
     },
-    tags: ["input", "text", "user-input"]
+    tags: ["input", "text", "user"]
   },
   {
     id: uuidv4(),
-    name: "File",
+    name: "File Upload",
     version: "1.0.0",
-    description: "Upload and process files of various formats",
+    description: "File upload input with drag and drop support",
     category: "inputs",
     icon: "mdi:file-upload",
-    color: "#ef4444",
+    color: "#f59e0b",
     inputs: [],
     outputs: [
       {
-        id: "data",
-        name: "Data",
+        id: "file",
+        name: "File",
         type: "output",
         dataType: "file",
-        description: "File content as Data object"
-      },
-      {
-        id: "text",
-        name: "Text",
-        type: "output",
-        dataType: "text",
-        description: "File content as text"
+        description: "Uploaded file data"
       }
     ],
     configSchema: {
       type: "object",
       properties: {
-        allowedTypes: {
-          type: "array",
-          title: "Allowed File Types",
-          description: "File extensions that can be uploaded",
-          default: ["txt", "pdf", "docx", "csv", "json"],
-          items: {
-            type: "string"
-          }
+        accept: {
+          type: "string",
+          title: "Accepted File Types",
+          description: "Comma-separated list of accepted file types",
+          default: "*"
         },
         maxSize: {
           type: "number",
-          title: "Maximum File Size",
-          description: "Maximum file size in bytes",
-          default: 10485760,
-          minimum: 1024,
-          maximum: 104857600
+          title: "Maximum File Size (MB)",
+          description: "Maximum file size in megabytes",
+          default: 10
         }
-      },
-      required: ["allowedTypes"]
-    },
-    tags: ["input", "file", "upload", "document"]
-  },
-  {
-    id: uuidv4(),
-    name: "URL",
-    version: "1.0.0",
-    description: "Fetch content from URLs",
-    category: "inputs",
-    icon: "mdi:link",
-    color: "#3b82f6",
-    inputs: [],
-    outputs: [
-      {
-        id: "data",
-        name: "Data",
-        type: "output",
-        dataType: "text",
-        description: "Fetched content as text"
-      },
-      {
-        id: "dataframe",
-        name: "DataFrame",
-        type: "output",
-        dataType: "json",
-        description: "Structured data from URL"
       }
-    ],
-    configSchema: {
-      type: "object",
-      properties: {
-        urls: {
-          type: "array",
-          title: "URLs",
-          description: "List of URLs to fetch",
-          default: [],
-          items: {
-            type: "string"
-          }
-        },
-        maxDepth: {
-          type: "number",
-          title: "Maximum Depth",
-          description: "Maximum depth for recursive fetching",
-          default: 1,
-          minimum: 1,
-          maximum: 10
-        },
-        format: {
-          type: "string",
-          title: "Output Format",
-          description: "Format of the fetched content",
-          default: "text",
-          enum: ["text", "json", "html"]
-        },
-        timeout: {
-          type: "number",
-          title: "Timeout",
-          description: "Request timeout in seconds",
-          default: 30,
-          minimum: 1,
-          maximum: 300
-        }
-      },
-      required: ["urls"]
     },
-    tags: ["input", "url", "web", "fetch"]
-  },
-  {
-    id: uuidv4(),
-    name: "API Request",
-    version: "1.0.0",
-    description: "Make HTTP requests to APIs",
-    category: "inputs",
-    icon: "mdi:api",
-    color: "#8b5cf6",
-    inputs: [],
-    outputs: [
-      {
-        id: "data",
-        name: "Data",
-        type: "output",
-        dataType: "json",
-        description: "API response data"
-      },
-      {
-        id: "dataframe",
-        name: "DataFrame",
-        type: "output",
-        dataType: "json",
-        description: "Response as structured data"
-      }
-    ],
-    configSchema: {
-      type: "object",
-      properties: {
-        urls: {
-          type: "array",
-          title: "API URLs",
-          description: "List of API endpoints to call",
-          default: [],
-          items: {
-            type: "string"
-          }
-        },
-        method: {
-          type: "string",
-          title: "HTTP Method",
-          description: "HTTP method to use for the request",
-          default: "GET",
-          enum: ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        },
-        headers: {
-          type: "object",
-          title: "Headers",
-          description: "HTTP headers to include in the request",
-          default: {}
-        },
-        body: {
-          type: "object",
-          title: "Request Body",
-          description: "Request body data",
-          default: {}
-        },
-        timeout: {
-          type: "number",
-          title: "Timeout",
-          description: "Request timeout in seconds",
-          default: 30,
-          minimum: 1,
-          maximum: 300
-        }
-      },
-      required: ["urls", "method"]
-    },
-    tags: ["input", "api", "http", "rest"]
+    tags: ["input", "file", "upload"]
   },
   {
     id: uuidv4(),
@@ -262,7 +94,7 @@ export const sampleNodes: NodeMetadata[] = [
     description: "Receive data from external webhooks",
     category: "inputs",
     icon: "mdi:webhook",
-    color: "#06b6d4",
+    color: "#8b5cf6",
     inputs: [],
     outputs: [
       {
@@ -274,8 +106,22 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      endpoint: "",
-      method: "POST"
+      type: "object",
+      properties: {
+        endpoint: {
+          type: "string",
+          title: "Endpoint",
+          description: "Webhook endpoint URL",
+          default: ""
+        },
+        method: {
+          type: "string",
+          title: "HTTP Method",
+          description: "HTTP method for the webhook",
+          default: "POST",
+          enum: ["GET", "POST", "PUT", "DELETE"]
+        }
+      }
     },
     tags: ["input", "webhook", "external"]
   },
@@ -301,9 +147,27 @@ export const sampleNodes: NodeMetadata[] = [
     ],
     outputs: [],
     configSchema: {
-      showTimestamp: true,
-      maxLength: 2000,
-      markdown: true
+      type: "object",
+      properties: {
+        showTimestamp: {
+          type: "boolean",
+          title: "Show Timestamp",
+          description: "Display timestamp with messages",
+          default: true
+        },
+        maxLength: {
+          type: "number",
+          title: "Maximum Length",
+          description: "Maximum message length",
+          default: 2000
+        },
+        markdown: {
+          type: "boolean",
+          title: "Markdown Support",
+          description: "Enable markdown formatting",
+          default: true
+        }
+      }
     },
     tags: ["output", "chat", "display"]
   },
@@ -327,8 +191,21 @@ export const sampleNodes: NodeMetadata[] = [
     ],
     outputs: [],
     configSchema: {
-      showTimestamp: false,
-      maxLength: 1000
+      type: "object",
+      properties: {
+        showTimestamp: {
+          type: "boolean",
+          title: "Show Timestamp",
+          description: "Display timestamp with output",
+          default: false
+        },
+        maxLength: {
+          type: "number",
+          title: "Maximum Length",
+          description: "Maximum text length",
+          default: 1000
+        }
+      }
     },
     tags: ["output", "text", "display"]
   },
@@ -362,8 +239,21 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      template: "You are a helpful assistant. {input}",
-      variables: []
+      type: "object",
+      properties: {
+        template: {
+          type: "string",
+          title: "Template",
+          description: "Prompt template with variables",
+          default: "You are a helpful assistant. {input}"
+        },
+        variables: {
+          type: "array",
+          title: "Variables",
+          description: "List of available variables",
+          default: []
+        }
+      }
     },
     tags: ["prompt", "template", "variables"]
   },
@@ -403,8 +293,22 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      schema: {},
-      outputType: "json"
+      type: "object",
+      properties: {
+        schema: {
+          type: "object",
+          title: "Schema",
+          description: "JSON schema for structured output",
+          default: {}
+        },
+        outputType: {
+          type: "string",
+          title: "Output Type",
+          description: "Type of structured output",
+          default: "json",
+          enum: ["json", "xml", "yaml"]
+        }
+      }
     },
     tags: ["prompt", "structured", "output", "schema"]
   },
@@ -453,10 +357,38 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      model: "gpt-3.5-turbo",
-      temperature: 0.7,
-      maxTokens: 1000,
-      apiKey: ""
+      type: "object",
+      properties: {
+        model: {
+          type: "string",
+          title: "Model",
+          description: "OpenAI model to use",
+          default: "gpt-3.5-turbo",
+          enum: ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
+        },
+        temperature: {
+          type: "number",
+          title: "Temperature",
+          description: "Creativity level (0-2)",
+          default: 0.7,
+          minimum: 0,
+          maximum: 2
+        },
+        maxTokens: {
+          type: "number",
+          title: "Max Tokens",
+          description: "Maximum tokens to generate",
+          default: 1000,
+          minimum: 1,
+          maximum: 4000
+        },
+        apiKey: {
+          type: "string",
+          title: "API Key",
+          description: "OpenAI API key",
+          default: ""
+        }
+      }
     },
     tags: ["model", "openai", "gpt", "chat"]
   },
@@ -488,10 +420,38 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      model: "claude-3-sonnet-20240229",
-      temperature: 0.7,
-      maxTokens: 1000,
-      apiKey: ""
+      type: "object",
+      properties: {
+        model: {
+          type: "string",
+          title: "Model",
+          description: "Anthropic model to use",
+          default: "claude-3-sonnet-20240229",
+          enum: ["claude-3-sonnet-20240229", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
+        },
+        temperature: {
+          type: "number",
+          title: "Temperature",
+          description: "Creativity level (0-1)",
+          default: 0.7,
+          minimum: 0,
+          maximum: 1
+        },
+        maxTokens: {
+          type: "number",
+          title: "Max Tokens",
+          description: "Maximum tokens to generate",
+          default: 1000,
+          minimum: 1,
+          maximum: 4000
+        },
+        apiKey: {
+          type: "string",
+          title: "API Key",
+          description: "Anthropic API key",
+          default: ""
+        }
+      }
     },
     tags: ["model", "anthropic", "claude"]
   },
@@ -523,10 +483,38 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      model: "llama-3.1-8b-instant",
-      temperature: 0.7,
-      maxTokens: 1000,
-      apiKey: ""
+      type: "object",
+      properties: {
+        model: {
+          type: "string",
+          title: "Model",
+          description: "Groq model to use",
+          default: "llama-3.1-8b-instant",
+          enum: ["llama-3.1-8b-instant", "llama-3.1-70b-versatile", "mixtral-8x7b-32768"]
+        },
+        temperature: {
+          type: "number",
+          title: "Temperature",
+          description: "Creativity level (0-1)",
+          default: 0.7,
+          minimum: 0,
+          maximum: 1
+        },
+        maxTokens: {
+          type: "number",
+          title: "Max Tokens",
+          description: "Maximum tokens to generate",
+          default: 1000,
+          minimum: 1,
+          maximum: 4000
+        },
+        apiKey: {
+          type: "string",
+          title: "API Key",
+          description: "Groq API key",
+          default: ""
+        }
+      }
     },
     tags: ["model", "groq", "fast", "inference"]
   },
@@ -567,9 +555,31 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      chunkSize: 1000,
-      chunkOverlap: 200,
-      separator: "\n"
+      type: "object",
+      properties: {
+        chunkSize: {
+          type: "number",
+          title: "Chunk Size",
+          description: "Size of each text chunk",
+          default: 1000,
+          minimum: 1,
+          maximum: 10000
+        },
+        chunkOverlap: {
+          type: "number",
+          title: "Chunk Overlap",
+          description: "Overlap between chunks",
+          default: 200,
+          minimum: 0,
+          maximum: 1000
+        },
+        separator: {
+          type: "string",
+          title: "Separator",
+          description: "Text separator for splitting",
+          default: "\n"
+        }
+      }
     },
     tags: ["processing", "text", "split", "chunking"]
   },
@@ -601,10 +611,34 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      operation: "select_keys",
-      keys: [],
-      filterKey: "",
-      filterValue: ""
+      type: "object",
+      properties: {
+        operation: {
+          type: "string",
+          title: "Operation",
+          description: "Data operation to perform",
+          default: "select_keys",
+          enum: ["select_keys", "filter", "sort", "group"]
+        },
+        keys: {
+          type: "array",
+          title: "Keys",
+          description: "Keys to select or filter by",
+          default: []
+        },
+        filterKey: {
+          type: "string",
+          title: "Filter Key",
+          description: "Key to filter by",
+          default: ""
+        },
+        filterValue: {
+          type: "string",
+          title: "Filter Value",
+          description: "Value to filter by",
+          default: ""
+        }
+      }
     },
     tags: ["processing", "data", "operations"]
   },
@@ -636,10 +670,34 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      operation: "filter",
-      columnName: "",
-      filterValue: "",
-      ascending: true
+      type: "object",
+      properties: {
+        operation: {
+          type: "string",
+          title: "Operation",
+          description: "DataFrame operation to perform",
+          default: "filter",
+          enum: ["filter", "sort", "group", "aggregate"]
+        },
+        columnName: {
+          type: "string",
+          title: "Column Name",
+          description: "Column to operate on",
+          default: ""
+        },
+        filterValue: {
+          type: "string",
+          title: "Filter Value",
+          description: "Value to filter by",
+          default: ""
+        },
+        ascending: {
+          type: "boolean",
+          title: "Ascending",
+          description: "Sort in ascending order",
+          default: true
+        }
+      }
     },
     tags: ["processing", "dataframe", "table", "operations"]
   },
@@ -671,8 +729,22 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      pattern: "",
-      flags: "g"
+      type: "object",
+      properties: {
+        pattern: {
+          type: "string",
+          title: "Pattern",
+          description: "Regular expression pattern",
+          default: ""
+        },
+        flags: {
+          type: "string",
+          title: "Flags",
+          description: "Regex flags",
+          default: "g",
+          enum: ["g", "i", "m", "gi", "gm", "im", "gim"]
+        }
+      }
     },
     tags: ["processing", "regex", "extract", "pattern"]
   },
@@ -719,9 +791,31 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      filter_instruction: "",
-      sample_size: 1000,
-      max_size: 10000
+      type: "object",
+      properties: {
+        filter_instruction: {
+          type: "string",
+          title: "Filter Instruction",
+          description: "Instruction for filtering data",
+          default: ""
+        },
+        sample_size: {
+          type: "number",
+          title: "Sample Size",
+          description: "Number of samples to process",
+          default: 1000,
+          minimum: 1,
+          maximum: 10000
+        },
+        max_size: {
+          type: "number",
+          title: "Max Size",
+          description: "Maximum size of filtered data",
+          default: 10000,
+          minimum: 1,
+          maximum: 100000
+        }
+      }
     },
     tags: ["processing", "smart", "function", "model"]
   },
@@ -770,8 +864,22 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      operator: "equals",
-      caseSensitive: false
+      type: "object",
+      properties: {
+        operator: {
+          type: "string",
+          title: "Operator",
+          description: "Comparison operator",
+          default: "equals",
+          enum: ["equals", "not_equals", "greater_than", "less_than", "contains"]
+        },
+        caseSensitive: {
+          type: "boolean",
+          title: "Case Sensitive",
+          description: "Whether comparison is case sensitive",
+          default: false
+        }
+      }
     },
     tags: ["conditional", "logic", "routing", "if-else"]
   },
@@ -810,7 +918,17 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      maxIterations: 100
+      type: "object",
+      properties: {
+        maxIterations: {
+          type: "number",
+          title: "Max Iterations",
+          description: "Maximum number of loop iterations",
+          default: 100,
+          minimum: 1,
+          maximum: 1000
+        }
+      }
     },
     tags: ["conditional", "logic", "loop", "iteration"]
   },
@@ -844,7 +962,15 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      includeText: true
+      type: "object",
+      properties: {
+        includeText: {
+          type: "boolean",
+          title: "Include Text",
+          description: "Include text in DataFrame conversion",
+          default: true
+        }
+      }
     },
     tags: ["data", "dataframe", "convert", "table"]
   },
@@ -875,7 +1001,18 @@ export const sampleNodes: NodeMetadata[] = [
         description: "Converted Data object"
       }
     ],
-    configSchema: {},
+    configSchema: {
+      type: "object",
+      properties: {
+        format: {
+          type: "string",
+          title: "Format",
+          description: "Input data format",
+          default: "auto",
+          enum: ["auto", "json", "csv", "xml"]
+        }
+      }
+    },
     tags: ["data", "message", "convert"]
   },
   {
@@ -906,8 +1043,22 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      fileFormat: "json",
-      filePath: "./output/data.json"
+      type: "object",
+      properties: {
+        fileFormat: {
+          type: "string",
+          title: "File Format",
+          description: "Output file format",
+          default: "json",
+          enum: ["json", "csv", "txt", "xml"]
+        },
+        filePath: {
+          type: "string",
+          title: "File Path",
+          description: "Output file path",
+          default: "./output/data.json"
+        }
+      }
     },
     tags: ["data", "save", "file", "export"]
   },
@@ -997,8 +1148,21 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      format: "YYYY-MM-DD",
-      timezone: "UTC"
+      type: "object",
+      properties: {
+        format: {
+          type: "string",
+          title: "Format",
+          description: "Date/time format",
+          default: "YYYY-MM-DD"
+        },
+        timezone: {
+          type: "string",
+          title: "Timezone",
+          description: "Timezone for date operations",
+          default: "UTC"
+        }
+      }
     },
     tags: ["tools", "date", "time", "format"]
   },
@@ -1032,8 +1196,22 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      model: "text-embedding-3-small",
-      apiKey: ""
+      type: "object",
+      properties: {
+        model: {
+          type: "string",
+          title: "Model",
+          description: "OpenAI embedding model",
+          default: "text-embedding-3-small",
+          enum: ["text-embedding-3-small", "text-embedding-3-large"]
+        },
+        apiKey: {
+          type: "string",
+          title: "API Key",
+          description: "OpenAI API key",
+          default: ""
+        }
+      }
     },
     tags: ["embeddings", "openai", "vector"]
   },
@@ -1065,8 +1243,21 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      model: "sentence-transformers/all-MiniLM-L6-v2",
-      apiToken: ""
+      type: "object",
+      properties: {
+        model: {
+          type: "string",
+          title: "Model",
+          description: "HuggingFace model name",
+          default: "sentence-transformers/all-MiniLM-L6-v2"
+        },
+        apiToken: {
+          type: "string",
+          title: "API Token",
+          description: "HuggingFace API token",
+          default: ""
+        }
+      }
     },
     tags: ["embeddings", "huggingface", "vector"]
   },
@@ -1100,8 +1291,23 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      maxTokens: 2000,
-      returnMessages: true
+      type: "object",
+      properties: {
+        maxTokens: {
+          type: "number",
+          title: "Max Tokens",
+          description: "Maximum tokens in buffer",
+          default: 2000,
+          minimum: 100,
+          maximum: 10000
+        },
+        returnMessages: {
+          type: "boolean",
+          title: "Return Messages",
+          description: "Return messages in response",
+          default: true
+        }
+      }
     },
     tags: ["memory", "conversation", "history", "buffer"]
   },
@@ -1143,9 +1349,32 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      model: "gpt-3.5-turbo",
-      temperature: 0.7,
-      maxIterations: 5
+      type: "object",
+      properties: {
+        model: {
+          type: "string",
+          title: "Model",
+          description: "Chat model to use",
+          default: "gpt-3.5-turbo",
+          enum: ["gpt-3.5-turbo", "gpt-4", "claude-3-sonnet"]
+        },
+        temperature: {
+          type: "number",
+          title: "Temperature",
+          description: "Creativity level (0-1)",
+          default: 0.7,
+          minimum: 0,
+          maximum: 1
+        },
+        maxIterations: {
+          type: "number",
+          title: "Max Iterations",
+          description: "Maximum agent iterations",
+          default: 5,
+          minimum: 1,
+          maximum: 20
+        }
+      }
     },
     tags: ["agent", "orchestration", "tools"]
   },
@@ -1194,9 +1423,28 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      collectionName: "default",
-      persistDirectory: "./chroma_db",
-      distanceFunction: "cosine"
+      type: "object",
+      properties: {
+        collectionName: {
+          type: "string",
+          title: "Collection Name",
+          description: "Chroma collection name",
+          default: "default"
+        },
+        persistDirectory: {
+          type: "string",
+          title: "Persist Directory",
+          description: "Directory to persist data",
+          default: "./chroma_db"
+        },
+        distanceFunction: {
+          type: "string",
+          title: "Distance Function",
+          description: "Distance function for similarity",
+          default: "cosine",
+          enum: ["cosine", "euclidean", "manhattan"]
+        }
+      }
     },
     tags: ["integration", "vector-store", "chroma", "embeddings"]
   },
@@ -1236,9 +1484,27 @@ export const sampleNodes: NodeMetadata[] = [
       }
     ],
     configSchema: {
-      indexName: "default",
-      apiKey: "",
-      environment: "us-west1-gcp"
+      type: "object",
+      properties: {
+        indexName: {
+          type: "string",
+          title: "Index Name",
+          description: "Pinecone index name",
+          default: "default"
+        },
+        apiKey: {
+          type: "string",
+          title: "API Key",
+          description: "Pinecone API key",
+          default: ""
+        },
+        environment: {
+          type: "string",
+          title: "Environment",
+          description: "Pinecone environment",
+          default: "us-west1-gcp"
+        }
+      }
     },
     tags: ["integration", "vector-store", "pinecone", "embeddings"]
   }

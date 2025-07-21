@@ -147,10 +147,12 @@
       "logic": "Logic",
       "data": "Data",
       "tools": "Tools",
+      "helpers": "Helpers",
       "vector stores": "Vector Stores",
       "embeddings": "Embeddings",
       "memories": "Memories",
-      "agents": "Agents"
+      "agents": "Agents",
+      "bundles": "Bundles"
     };
     return names[category] || category;
   }
@@ -485,10 +487,6 @@
     align-items: center;
   }
   
-  .flowdrop-min-w--0 {
-    min-width: 0;
-  }
-  
   .flowdrop-truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -511,9 +509,5 @@
   
   .flowdrop-ml--0 {
     margin-left: 0;
-  }
-  
-  .flowdrop-m--0 {
-    margin: 0;
   }
 </style> 

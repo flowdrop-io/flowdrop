@@ -84,8 +84,8 @@ export const DEFAULT_COLORS = {
  * @param category - The node category
  * @returns The color configuration for the category
  */
-export function getCategoryColors(category: NodeCategory) {
-  return CATEGORY_COLOR_TOKENS[category] || DEFAULT_COLORS;
+export function getCategoryColors(category: NodeCategory): string {
+  return CATEGORY_COLOR_TOKENS[category] || "var(--color-ref-slate-500)";
 }
 
 /**
@@ -98,7 +98,7 @@ export function getCategoryBackground(category: NodeCategory): string {
 }
 
 /**
- * Get category accent color (for icons, highlights)
+ * Get category accent color
  * @param category - The node category
  * @returns The accent color class
  */
@@ -125,56 +125,63 @@ export function getCategoryBorder(category: NodeCategory): string {
 }
 
 /**
- * Get node colors based on category and status
+ * Get node colors based on category and state
  * @param category - The node category
- * @param isError - Whether the node has an error
+ * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
  * @param isSelected - Whether the node is selected
- * @returns The color configuration for the node
+ * @returns The color configuration object
  */
 export function getNodeColors(
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
   isSelected: boolean = false
-) {
+): { background: string; accent: string; text: string; border: string } {
+  const baseColor = getCategoryColors(category);
+  
   if (isError) {
     return {
-      background: "flowdrop-color--error-light",
-      accent: "flowdrop-color--error",
-      text: "flowdrop-color--error-text",
-      border: "flowdrop-color--error-border"
+      background: "var(--color-ref-red-50)",
+      accent: "var(--color-ref-red-500)",
+      text: "var(--color-ref-red-900)",
+      border: "var(--color-ref-red-200)"
     };
   }
   
   if (isProcessing) {
     return {
-      background: "flowdrop-color--warning-light",
-      accent: "flowdrop-color--warning",
-      text: "flowdrop-color--warning-text",
-      border: "flowdrop-color--warning-border"
+      background: "var(--color-ref-blue-50)",
+      accent: "var(--color-ref-blue-500)",
+      text: "var(--color-ref-blue-900)",
+      border: "var(--color-ref-blue-200)"
     };
   }
   
   if (isSelected) {
     return {
-      background: "flowdrop-color--primary-light",
-      accent: "flowdrop-color--primary",
-      text: "flowdrop-color--primary-text",
-      border: "flowdrop-color--primary-border"
+      background: "var(--color-ref-indigo-50)",
+      accent: "var(--color-ref-indigo-500)",
+      text: "var(--color-ref-indigo-900)",
+      border: "var(--color-ref-indigo-200)"
     };
   }
   
-  return getCategoryColors(category);
+  return {
+    background: baseColor,
+    accent: baseColor,
+    text: "var(--color-ref-slate-900)",
+    border: baseColor
+  };
 }
 
 /**
  * Get node background color
  * @param category - The node category
- * @param isError - Whether the node has an error
+ * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
  * @param isSelected - Whether the node is selected
- * @returns The background color class
+ * @returns The background color
  */
 export function getNodeBackground(
   category: NodeCategory,
@@ -188,10 +195,10 @@ export function getNodeBackground(
 /**
  * Get node accent color
  * @param category - The node category
- * @param isError - Whether the node has an error
+ * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
  * @param isSelected - Whether the node is selected
- * @returns The accent color class
+ * @returns The accent color
  */
 export function getNodeAccent(
   category: NodeCategory,
@@ -205,10 +212,10 @@ export function getNodeAccent(
 /**
  * Get node text color
  * @param category - The node category
- * @param isError - Whether the node has an error
+ * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
  * @param isSelected - Whether the node is selected
- * @returns The text color class
+ * @returns The text color
  */
 export function getNodeText(
   category: NodeCategory,
@@ -222,10 +229,10 @@ export function getNodeText(
 /**
  * Get node border color
  * @param category - The node category
- * @param isError - Whether the node has an error
+ * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
  * @param isSelected - Whether the node is selected
- * @returns The border color class
+ * @returns The border color
  */
 export function getNodeBorder(
   category: NodeCategory,
@@ -237,38 +244,10 @@ export function getNodeBorder(
 }
 
 /**
- * Data type color mapping for ports (used in WorkflowNode, etc.)
- * These use BEM color classes for consistency
- */
-export const dataTypeColors: Record<string, string> = {
-  string: "flowdrop-color--emerald",
-  text: "flowdrop-color--emerald",
-  number: "flowdrop-color--blue",
-  integer: "flowdrop-color--blue",
-  float: "flowdrop-color--blue",
-  boolean: "flowdrop-color--purple",
-  array: "flowdrop-color--amber",
-  list: "flowdrop-color--amber",
-  object: "flowdrop-color--orange",
-  json: "flowdrop-color--orange",
-  file: "flowdrop-color--red",
-  document: "flowdrop-color--red",
-  image: "flowdrop-color--pink",
-  picture: "flowdrop-color--pink",
-  audio: "flowdrop-color--indigo",
-  sound: "flowdrop-color--indigo",
-  video: "flowdrop-color--teal",
-  movie: "flowdrop-color--teal",
-  url: "flowdrop-color--cyan",
-  email: "flowdrop-color--cyan",
-  date: "flowdrop-color--lime",
-  datetime: "flowdrop-color--lime",
-  time: "flowdrop-color--lime"
-};
-
-/**
- * Get the color class for a given data type (default to slate)
+ * Get data type color
+ * @param dataType - The data type
+ * @returns The color for the data type
  */
 export function getDataTypeColor(dataType: string): string {
-  return dataTypeColors[dataType.toLowerCase()] || "flowdrop-color--slate";
+  return getDataTypeColorToken(dataType);
 } 

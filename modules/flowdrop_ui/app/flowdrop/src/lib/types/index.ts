@@ -18,10 +18,12 @@ export type NodeCategory =
   | "logic"
   | "data"
   | "tools"
+  | "helpers"
   | "vector stores"
   | "embeddings"
   | "memories"
-  | "agents";
+  | "agents"
+  | "bundles";
 
 /**
  * Node input/output types
@@ -111,7 +113,7 @@ export interface ConfigSchema {
  * Individual property definition in config schema
  */
 export interface ConfigProperty {
-  type: "string" | "number" | "boolean" | "array" | "object";
+  type: "string" | "number" | "boolean" | "array" | "object" | "integer";
   title?: string;
   description?: string;
   default?: unknown;
@@ -134,6 +136,11 @@ export interface ConfigProperty {
 export interface ConfigValues {
   [key: string]: unknown;
 }
+
+/**
+ * Node configuration type (alias for backward compatibility)
+ */
+export type NodeConfig = ConfigValues;
 
 /**
  * Extended node type for workflows

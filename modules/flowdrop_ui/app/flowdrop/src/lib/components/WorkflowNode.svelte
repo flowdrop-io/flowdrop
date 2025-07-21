@@ -366,137 +366,7 @@
     gap: 0.75rem;
   }
   
-  .flowdrop-form-control {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .flowdrop-form-control__label {
-    padding-bottom: 0.25rem;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .flowdrop-input {
-    display: block;
-    width: 100%;
-    padding: 0.375rem 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    line-height: 1.25rem;
-    color: #111827;
-    background-color: rgba(255, 255, 255, 0.7);
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  }
-  
-  .flowdrop-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-  
-  .flowdrop-input--sm {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.75rem;
-  }
-  
-  .flowdrop-textarea {
-    display: block;
-    width: 100%;
-    padding: 0.375rem 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    line-height: 1.25rem;
-    color: #111827;
-    background-color: rgba(255, 255, 255, 0.7);
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    resize: vertical;
-    min-height: 2.5rem;
-  }
-  
-  .flowdrop-textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-  
-  .flowdrop-textarea--sm {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.75rem;
-  }
-  
-  .flowdrop-select {
-    display: block;
-    width: 100%;
-    padding: 0.375rem 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    line-height: 1.25rem;
-    color: #111827;
-    background-color: rgba(255, 255, 255, 0.7);
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  }
-  
-  .flowdrop-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-  
-  .flowdrop-select--sm {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.75rem;
-  }
-  
-  .flowdrop-toggle {
-    appearance: none;
-    width: 2rem;
-    height: 1rem;
-    background-color: #d1d5db;
-    border-radius: 9999px;
-    position: relative;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
-  }
-  
-  .flowdrop-toggle:checked {
-    background-color: #3b82f6;
-  }
-  
-  .flowdrop-toggle::before {
-    content: "";
-    position: absolute;
-    width: 0.75rem;
-    height: 0.75rem;
-    background-color: #ffffff;
-    border-radius: 50%;
-    top: 0.125rem;
-    left: 0.125rem;
-    transition: transform 0.2s ease-in-out;
-  }
-  
-  .flowdrop-toggle:checked::before {
-    transform: translateX(1rem);
-  }
-  
-  .flowdrop-toggle--sm {
-    width: 1.5rem;
-    height: 0.75rem;
-  }
-  
-  .flowdrop-toggle--sm::before {
-    width: 0.5rem;
-    height: 0.5rem;
-    top: 0.125rem;
-    left: 0.125rem;
-  }
-  
-  .flowdrop-toggle--sm:checked::before {
-    transform: translateX(0.75rem);
-  }
+
   
   .flowdrop-workflow-node__ports {
     border-bottom: 1px solid #e5e7eb;
@@ -538,21 +408,7 @@
     background-color: #f9fafb;
   }
   
-  .flowdrop-workflow-node__handle {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    background-color: #3b82f6;
-    border: 2px solid #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    cursor: crosshair;
-    transition: all 0.2s ease-in-out;
-  }
-  
-  .flowdrop-workflow-node__handle:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
+
   
   .flowdrop-badge--sm {
     padding: 0.125rem 0.25rem;
@@ -573,10 +429,6 @@
     text-align: right;
   }
   
-  .flowdrop-min-w--0 {
-    min-width: 0;
-  }
-  
   .flowdrop-truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -585,10 +437,6 @@
   
   .flowdrop-mt--1 {
     margin-top: 0.25rem;
-  }
-  
-  .flowdrop-mb--1 {
-    margin-bottom: 0.25rem;
   }
   
   .flowdrop-gap--3 {
@@ -622,10 +470,5 @@
     outline: none;
   }
   
-  /* Configuration form styling */
-  .flowdrop-form-control input:focus,
-  .flowdrop-form-control textarea:focus {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
+
 </style> 
