@@ -107,20 +107,39 @@ export interface NodeMetadata {
 }
 
 /**
- * JSON Schema for node configuration
- * Defines the structure and validation rules for node configuration
+ * Common base interface for all schema properties
  */
-export interface ConfigSchema {
+export interface BaseProperty {
+  type: "string" | "number" | "boolean" | "array" | "object" | "integer" | "mixed" | "float";
+  description?: string;
+  title?: string;
+  default?: unknown;
+  enum?: unknown[];
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: string;
+  items?: BaseProperty;
+  properties?: Record<string, BaseProperty>;
+  [key: string]: unknown; // Allow additional JSON Schema properties
+}
+
+/**
+ * Common base interface for all schemas
+ */
+export interface BaseSchema {
   type: "object";
-  properties: Record<string, ConfigProperty>;
+  properties: Record<string, BaseProperty>;
   required?: string[];
   additionalProperties?: boolean;
 }
 
 /**
- * Individual property definition in config schema
+ * Configuration schema property with specific attributes
  */
-export interface ConfigProperty {
+export interface ConfigProperty extends BaseProperty {
   type: "string" | "number" | "boolean" | "array" | "object" | "integer";
   title?: string;
   description?: string;
@@ -136,6 +155,101 @@ export interface ConfigProperty {
   properties?: Record<string, ConfigProperty>;
   [key: string]: unknown; // Allow additional JSON Schema properties
 }
+
+/**
+ * Configuration schema interface
+ */
+export interface ConfigSchema extends BaseSchema {
+  properties: Record<string, ConfigProperty>;
+}
+
+/**
+ * Input schema property with specific attributes
+ */
+export interface InputProperty extends BaseProperty {
+  type: "string" | "number" | "boolean" | "array" | "object" | "integer" | "mixed";
+  title?: string;
+  description?: string;
+  required?: boolean;
+  default?: unknown;
+  enum?: unknown[];
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: "multiline" | string;
+  items?: InputProperty;
+  properties?: Record<string, InputProperty>;
+  [key: string]: unknown;
+}
+
+/**
+ * Input schema interface
+ */
+export interface InputSchema extends BaseSchema {
+  properties: Record<string, InputProperty>;
+}
+
+/**
+ * Output schema property with specific attributes
+ */
+export interface OutputProperty extends BaseProperty {
+  type: "string" | "number" | "boolean" | "array" | "object" | "integer" | "mixed" | "float";
+  description: string; // Required for outputs
+  title?: string;
+  default?: unknown;
+  enum?: unknown[];
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: string;
+  items?: OutputProperty;
+  properties?: Record<string, OutputProperty>;
+  [key: string]: unknown;
+}
+
+/**
+ * Output schema interface
+ */
+export interface OutputSchema extends BaseSchema {
+  properties: Record<string, OutputProperty>;
+}
+
+/**
+ * Union type for all schema types
+ */
+export type Schema = ConfigSchema | InputSchema | OutputSchema;
+
+/**
+ * Union type for all property types
+ */
+export type Property = ConfigProperty | InputProperty | OutputProperty;
+
+/**
+ * Schema type discriminator
+ */
+export type SchemaType = "config" | "input" | "output";
+
+/**
+ * Utility type to get the appropriate property type based on schema type
+ */
+export type SchemaProperty<T extends SchemaType> = 
+  T extends "config" ? ConfigProperty :
+  T extends "input" ? InputProperty :
+  T extends "output" ? OutputProperty :
+  never;
+
+/**
+ * Utility type to get the appropriate schema type based on schema type
+ */
+export type SchemaTypeMap<T extends SchemaType> = 
+  T extends "config" ? ConfigSchema :
+  T extends "input" ? InputSchema :
+  T extends "output" ? OutputSchema :
+  never;
 
 /**
  * Node configuration values
