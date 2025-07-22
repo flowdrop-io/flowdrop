@@ -16,7 +16,7 @@
   import Icon from "@iconify/svelte";
   import { getNodeIcon } from "../utils/icons.js";
   import { getDataTypeColorToken, getCategoryColorToken } from "../utils/colors.js";
-  import ConfigForm from "./ConfigForm.svelte";
+  import ConfigModal from "./ConfigModal.svelte";
 
   interface Props {
     data: WorkflowNode["data"] & { nodeId?: string };
@@ -25,9 +25,9 @@
   }
 
   let props: Props = $props();
-  let isExpanded = $state(true); // Temporarily force expansion for debugging
   let configValues = $state({ ...props.data.config });
   let isHandleInteraction = $state(false);
+  let isConfigModalOpen = $state(false);
 
   // Debug logging
   $effect(() => {
@@ -38,7 +38,6 @@
       configSchema: props.data.metadata.configSchema,
       configSchemaProperties: props.data.metadata.configSchema?.properties,
       configValues: configValues,
-      isExpanded: isExpanded,
       configKeys: Object.keys(configValues),
       hasConfig: Object.keys(configValues).length > 0,
       metadataKeys: Object.keys(props.data.metadata || {})
@@ -60,10 +59,33 @@
   }
 
   /**
-   * Toggle node expansion
+   * Open configuration modal
    */
-  function toggleExpansion(): void {
-    isExpanded = !isExpanded;
+  function openConfigModal(): void {
+    isConfigModalOpen = true;
+  }
+
+  /**
+   * Handle configuration save
+   */
+  function handleConfigSave({ detail }: { detail: { values: ConfigValues } }): void {
+    configValues = detail.values;
+    props.data.config = detail.values;
+    isConfigModalOpen = false;
+  }
+
+  /**
+   * Handle configuration cancel
+   */
+  function handleConfigCancel(): void {
+    isConfigModalOpen = false;
+  }
+
+  /**
+   * Handle configuration close
+   */
+  function handleConfigClose(): void {
+    isConfigModalOpen = false;
   }
 
   /**
@@ -116,17 +138,20 @@
         {#if props.data.error}
           <div class="flowdrop-workflow-node__status flowdrop-workflow-node__status--error" title="Error"></div>
         {/if}
-        <button
-          class="flowdrop-workflow-node__expand-btn"
-          onclick={(e) => {
-            e.stopPropagation();
-            toggleExpansion();
-          }}
-          type="button"
-          aria-label="{isExpanded ? 'Collapse' : 'Expand'} node configuration"
-        >
-          <span class="flowdrop-text--xs flowdrop-font--medium">{isExpanded ? "−" : "+"}</span>
-        </button>
+        {#if props.data.metadata.configSchema}
+          <button
+            class="flowdrop-workflow-node__config-btn"
+            onclick={(e) => {
+              e.stopPropagation();
+              openConfigModal();
+            }}
+            type="button"
+            aria-label="Configure node"
+            title="Configure node"
+          >
+            <Icon icon="mdi:cog" />
+          </button>
+        {/if}
       </div>
     </div>
     <!-- Node Description - on new line below -->
@@ -134,31 +159,6 @@
       {props.data.metadata.description}
     </p>
   </div>
-
-  <!-- Node Configuration (Expanded) -->
-  {#if isExpanded}
-    <div class="flowdrop-workflow-node__config">
-      <h4 class="flowdrop-workflow-node__config-title">Configuration</h4>
-      <div class="flowdrop-workflow-node__config-content">
-        {#if props.data.metadata.configSchema}
-          <ConfigForm
-            schema={props.data.metadata.configSchema}
-            values={configValues}
-            on:change={({ detail }) => {
-              configValues = detail.values;
-              // Update the node's config in the workflow
-              props.data.config = detail.values;
-            }}
-            on:validate={({ detail }) => {
-              console.log('Config validation:', detail);
-            }}
-          />
-        {:else}
-          <p class="flowdrop-text--xs flowdrop-text--gray">No configuration schema available for this node type.</p>
-        {/if}
-      </div>
-    </div>
-  {/if}
 
   <!-- Input Ports Container -->
   {#if props.data.metadata.inputs.length > 0}
@@ -175,7 +175,7 @@
               position={Position.Left}
               id={port.id}
               class="flowdrop-workflow-node__handle"
-              style="top: 50%; transform: translateY(-50%); margin-left: -16px;"
+              style="top: 50%; transform: translateY(-50%); margin-left: -32px;"
               role="button"
               tabindex={0}
               aria-label="Connect to {port.name} input port"
@@ -230,7 +230,7 @@
               position={Position.Right}
               id={port.id}
               class="flowdrop-workflow-node__handle"
-              style="top: 50%; transform: translateY(-50%); margin-right: -16px;"
+              style="top: 50%; transform: translateY(-50%); margin-right: -32px;"
               role="button"
               tabindex={0}
               aria-label="Connect from {port.name} output port"
@@ -241,6 +241,18 @@
     </div>
   {/if}
 </div>
+
+<!-- Configuration Modal -->
+<ConfigModal
+  isOpen={isConfigModalOpen}
+  nodeId={props.data.nodeId || 'unknown'}
+  nodeLabel={props.data.label}
+  configSchema={props.data.metadata.configSchema}
+  configValues={configValues}
+  on:save={handleConfigSave}
+  on:cancel={handleConfigCancel}
+  on:close={handleConfigClose}
+/>
 
 <style>
   .flowdrop-workflow-node {
@@ -284,7 +296,7 @@
     line-height: 1;
   }
   
-  .flowdrop-workflow-node__expand-btn {
+  .flowdrop-workflow-node__config-btn {
     width: 1.5rem;
     height: 1.5rem;
     border: 1px solid #d1d5db;
@@ -292,7 +304,6 @@
     background-color: #ffffff;
     color: #6b7280;
     font-size: 0.75rem;
-    font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -300,92 +311,55 @@
     transition: all 0.2s ease-in-out;
   }
   
-  .flowdrop-workflow-node__expand-btn:hover {
+  .flowdrop-workflow-node__config-btn:hover {
     background-color: #f3f4f6;
-    border-color: #9ca3af;
     color: #374151;
+    border-color: #9ca3af;
   }
   
-  .flowdrop-workflow-node__expand-btn:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  .flowdrop-workflow-node__config-btn:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
   }
   
   .flowdrop-workflow-node__status {
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.75rem;
+    height: 0.75rem;
     border-radius: 50%;
+    display: inline-block;
   }
   
   .flowdrop-workflow-node__status--processing {
     background-color: #f59e0b;
-    animation: flowdrop-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
   
   .flowdrop-workflow-node__status--error {
     background-color: #ef4444;
   }
   
-  .flowdrop-workflow-node__expand-btn {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 0.375rem;
-    background-color: #f3f4f6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6b7280;
-    transition: all 0.2s ease-in-out;
-    border: none;
-    cursor: pointer;
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
-  
-  .flowdrop-workflow-node__expand-btn:hover {
-    background-color: #e5e7eb;
-    color: #374151;
-  }
-  
-  .flowdrop-workflow-node__config {
-    padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    background-color: #f9fafb;
-  }
-  
-  .flowdrop-workflow-node__config-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  
-  .flowdrop-workflow-node__config-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-
   
   .flowdrop-workflow-node__ports {
-    border-bottom: 1px solid #e5e7eb;
-  }
-  
-  .flowdrop-workflow-node__ports:last-child {
-    border-bottom: none;
+    padding: 0.75rem 1rem;
   }
   
   .flowdrop-workflow-node__ports-header {
-    padding: 0.5rem 1rem;
-    background-color: #f3f4f6;
+    margin-bottom: 0.5rem;
   }
   
   .flowdrop-workflow-node__ports-title {
+    margin: 0;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #6b7280;
+    color: #374151;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -393,41 +367,101 @@
   .flowdrop-workflow-node__ports-list {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
   
   .flowdrop-workflow-node__port {
-    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    transition: background-color 0.2s ease-in-out;
+    padding: 0.25rem 0;
+    position: relative;
   }
   
-  .flowdrop-workflow-node__port:hover {
-    background-color: #f9fafb;
+  .flowdrop-workflow-node__handle {
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: #6b7280;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    cursor: crosshair;
+    transition: all 0.2s ease-in-out;
   }
   
-
+  .flowdrop-workflow-node__handle:hover {
+    background-color: #3b82f6;
+    transform: scale(1.2);
+  }
   
-  .flowdrop-badge--sm {
-    padding: 0.125rem 0.25rem;
+  .flowdrop-workflow-node__handle:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+  
+  .flowdrop-badge {
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
     font-size: 0.625rem;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   
   .flowdrop-badge--error {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: #ef4444;
+    color: #ffffff;
+  }
+  
+  .flowdrop-badge--sm {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+  }
+  
+  /* Utility classes */
+  .flowdrop-flex {
+    display: flex;
+  }
+  
+  .flowdrop-flex--1 {
+    flex: 1;
+  }
+  
+  .flowdrop-gap--2 {
+    gap: 0.5rem;
+  }
+  
+  .flowdrop-gap--3 {
+    gap: 0.75rem;
+  }
+  
+  .flowdrop-items--center {
+    align-items: center;
   }
   
   .flowdrop-justify--end {
     justify-content: flex-end;
   }
   
-  .flowdrop-text--right {
-    text-align: right;
+  .flowdrop-min-w--0 {
+    min-width: 0;
+  }
+  
+  .flowdrop-text--xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  .flowdrop-text--sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .flowdrop-text--gray {
+    color: #6b7280;
+  }
+  
+  .flowdrop-font--medium {
+    font-weight: 500;
   }
   
   .flowdrop-truncate {
@@ -440,36 +474,7 @@
     margin-top: 0.25rem;
   }
   
-  .flowdrop-gap--3 {
-    gap: 0.75rem;
+  .flowdrop-text--right {
+    text-align: right;
   }
-  
-  .flowdrop-flex {
-    display: flex;
-  }
-  
-  .flowdrop-items--center {
-    align-items: center;
-  }
-  
-  @keyframes flowdrop-pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-  
-  /* Focus styles for accessibility */
-  .flowdrop-workflow-node:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-  
-  .flowdrop-workflow-node:focus:not(:focus-visible) {
-    outline: none;
-  }
-  
-
 </style> 
