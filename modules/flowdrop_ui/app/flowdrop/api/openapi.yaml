@@ -1,0 +1,1136 @@
+openapi: 3.0.3
+info:
+  title: FlowDrop API
+  description: |
+    FlowDrop is a SvelteKit-based workflow editor for LLM applications, inspired by Langflow.
+    This API provides endpoints for managing workflows, node types, and workflow execution.
+    
+    ## Features
+    - Workflow CRUD operations
+    - Node type management
+    - Workflow execution and monitoring
+    - Import/Export workflows
+    - Real-time collaboration
+    
+    ## Authentication
+    API endpoints require authentication. Use Bearer token in Authorization header.
+    
+    ## Rate Limiting
+    - 100 requests per minute for authenticated users
+    - 10 requests per minute for unauthenticated users
+    
+    ## Error Handling
+    All errors return a consistent format with error code, message, and details.
+  version: 1.0.0
+  contact:
+    name: FlowDrop Support
+    email: support@flowdrop.dev
+    url: https://github.com/flowdrop/flowdrop
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.flowdrop.dev/v1
+    description: Production server
+  - url: https://staging-api.flowdrop.dev/v1
+    description: Staging server
+  - url: http://localhost:3000/api
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ===== HEALTH CHECK =====
+  /health:
+    get:
+      summary: Health check
+      description: Check if the API is running
+      tags:
+        - System
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  # ===== NODE TYPES =====
+  /nodes:
+    get:
+      summary: Get all node types
+      description: Retrieve all available node types, optionally filtered by category
+      tags:
+        - Node Types
+      parameters:
+        - name: category
+          in: query
+          description: Filter by node category
+          required: false
+          schema:
+            type: string
+            enum: [inputs, outputs, prompts, models, processing, logic, data, helpers, tools, vectorstores, embeddings, memories, agents, bundles]
+        - name: search
+          in: query
+          description: Search node types by name or description
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of results to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of node types
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /nodes/{id}:
+    get:
+      summary: Get node type by ID
+      description: Retrieve a specific node type by its ID
+      tags:
+        - Node Types
+      parameters:
+        - name: id
+          in: path
+          description: Node type ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Node type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTypeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ===== WORKFLOWS =====
+  /workflows:
+    get:
+      summary: Get all workflows
+      description: Retrieve all workflows for the authenticated user
+      tags:
+        - Workflows
+      parameters:
+        - name: search
+          in: query
+          description: Search workflows by name or description
+          required: false
+          schema:
+            type: string
+        - name: tags
+          in: query
+          description: Filter by tags (comma-separated)
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of results to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [created_at, updated_at, name]
+            default: updated_at
+        - name: order
+          in: query
+          description: Sort direction
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new workflow
+      description: Create a new workflow with the provided data
+      tags:
+        - Workflows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /workflows/{id}:
+    get:
+      summary: Get workflow by ID
+      description: Retrieve a specific workflow by its ID
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update workflow
+      description: Update an existing workflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
+      responses:
+        '200':
+          description: Workflow updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete workflow
+      description: Delete a workflow and all its associated data
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workflow deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ===== WORKFLOW EXECUTION =====
+  /workflows/{id}/execute:
+    post:
+      summary: Execute workflow
+      description: Execute a workflow with the provided inputs
+      tags:
+        - Execution
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteWorkflowRequest'
+      responses:
+        '202':
+          description: Workflow execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /executions/{id}:
+    get:
+      summary: Get execution status
+      description: Get the status and results of a workflow execution
+      tags:
+        - Execution
+      parameters:
+        - name: id
+          in: path
+          description: Execution ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution status and results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionStatusResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /executions/{id}/cancel:
+    post:
+      summary: Cancel execution
+      description: Cancel a running workflow execution
+      tags:
+        - Execution
+      parameters:
+        - name: id
+          in: path
+          description: Execution ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Execution cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ===== WORKFLOW IMPORT/EXPORT =====
+  /workflows/{id}/export:
+    get:
+      summary: Export workflow
+      description: Export a workflow as JSON
+      tags:
+        - Import/Export
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          description: Export format
+          required: false
+          schema:
+            type: string
+            enum: [json, yaml]
+            default: json
+      responses:
+        '200':
+          description: Workflow exported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /workflows/import:
+    post:
+      summary: Import workflow
+      description: Import a workflow from JSON
+      tags:
+        - Import/Export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '201':
+          description: Workflow imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ===== WORKFLOW VALIDATION =====
+  /workflows/validate:
+    post:
+      summary: Validate workflow
+      description: Validate a workflow structure without saving it
+      tags:
+        - Validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '200':
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  schemas:
+    # ===== COMMON TYPES =====
+    NodeCategory:
+      type: string
+      enum: [inputs, outputs, prompts, models, processing, logic, data, helpers, tools, vectorstores, embeddings, memories, agents, bundles]
+      description: Node category
+
+    NodeDataType:
+      type: string
+      enum: [string, number, boolean, array, object, file, image, audio, video, url, email, date, datetime]
+      description: Data type for node ports
+
+    # ===== NODE TYPES =====
+    NodePort:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Port ID
+        name:
+          type: string
+          description: Port name
+        type:
+          type: string
+          enum: [input, output]
+          description: Port type
+        dataType:
+          $ref: '#/components/schemas/NodeDataType'
+        required:
+          type: boolean
+          default: false
+          description: Whether the port is required
+        description:
+          type: string
+          description: Port description
+        defaultValue:
+          description: Default value for the port
+      required:
+        - id
+        - name
+        - type
+        - dataType
+
+    NodeMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Node type ID
+        name:
+          type: string
+          description: Node type name
+        description:
+          type: string
+          description: Node type description
+        category:
+          $ref: '#/components/schemas/NodeCategory'
+        version:
+          type: string
+          description: Node type version
+        icon:
+          type: string
+          description: Icon identifier
+        color:
+          type: string
+          description: Node color
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodePort'
+          description: Input ports
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodePort'
+          description: Output ports
+        configSchema:
+          type: object
+          description: Configuration schema for the node type
+          example:
+            type: "object"
+            properties:
+              operation:
+                type: "string"
+                title: "Operation"
+                description: "Mathematical operation to perform"
+                default: "add"
+                enum: ["add", "subtract", "multiply", "divide", "power", "sqrt", "average", "min", "max", "median", "mode"]
+              precision:
+                type: "integer"
+                title: "Precision"
+                description: "Number of decimal places"
+                default: 2
+                minimum: 0
+                maximum: 10
+          properties:
+            type:
+              type: string
+              description: Schema type (usually 'object')
+            properties:
+              type: object
+              description: Configuration properties
+              additionalProperties:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: Property type (string, number, boolean, array, object)
+                  title:
+                    type: string
+                    description: Property display title
+                  description:
+                    type: string
+                    description: Property description
+                  default:
+                    description: Default value for the property
+                  enum:
+                    type: array
+                    items:
+                      type: string
+                    description: Allowed values for enum properties
+                  required:
+                    type: boolean
+                    description: Whether the property is required
+                  minimum:
+                    type: number
+                    description: Minimum value for numeric properties
+                  maximum:
+                    type: number
+                    description: Maximum value for numeric properties
+                  minLength:
+                    type: integer
+                    description: Minimum length for string properties
+                  maxLength:
+                    type: integer
+                    description: Maximum length for string properties
+                  pattern:
+                    type: string
+                    description: Regex pattern for string validation
+                  format:
+                    type: string
+                    description: Format specification (email, uri, date-time, etc.)
+                  items:
+                    type: object
+                    description: Schema for array items
+                  additionalProperties:
+                    type: object
+                    description: Schema for additional object properties
+        tags:
+          type: array
+          items:
+            type: string
+          description: Node tags
+      required:
+        - id
+        - name
+        - description
+        - category
+        - version
+        - inputs
+        - outputs
+
+    # ===== WORKFLOW TYPES =====
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Node ID
+        type:
+          type: string
+          description: Node type ID
+        position:
+          type: object
+          properties:
+            x:
+              type: number
+              description: X coordinate
+            y:
+              type: number
+              description: Y coordinate
+          required:
+            - x
+            - y
+        data:
+          type: object
+          properties:
+            label:
+              type: string
+              description: Node label
+            config:
+              type: object
+              description: Node configuration
+            metadata:
+              $ref: '#/components/schemas/NodeMetadata'
+          required:
+            - label
+            - config
+            - metadata
+      required:
+        - id
+        - type
+        - position
+        - data
+
+    Edge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Edge ID
+        source:
+          type: string
+          format: uuid
+          description: Source node ID
+        target:
+          type: string
+          format: uuid
+          description: Target node ID
+        sourceHandle:
+          type: string
+          description: Source port ID
+        targetHandle:
+          type: string
+          description: Target port ID
+      required:
+        - id
+        - source
+        - target
+
+    WorkflowMetadata:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Workflow version
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        author:
+          type: string
+          description: Workflow author
+        tags:
+          type: array
+          items:
+            type: string
+          description: Workflow tags
+      required:
+        - version
+        - createdAt
+        - updatedAt
+
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Workflow ID
+        name:
+          type: string
+          description: Workflow name
+        description:
+          type: string
+          description: Workflow description
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+          description: Workflow nodes
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+          description: Workflow edges
+        metadata:
+          $ref: '#/components/schemas/WorkflowMetadata'
+      required:
+        - id
+        - name
+        - nodes
+        - edges
+        - metadata
+
+    # ===== REQUEST/RESPONSE TYPES =====
+    CreateWorkflowRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Workflow name
+        description:
+          type: string
+          description: Workflow description
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+
+    UpdateWorkflowRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Workflow name
+        description:
+          type: string
+          description: Workflow description
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+        tags:
+          type: array
+          items:
+            type: string
+
+    ExecuteWorkflowRequest:
+      type: object
+      properties:
+        inputs:
+          type: object
+          description: Input values for the workflow
+        options:
+          type: object
+          properties:
+            timeout:
+              type: integer
+              description: Execution timeout in seconds
+            maxSteps:
+              type: integer
+              description: Maximum execution steps
+          description: Execution options
+      required:
+        - inputs
+
+    # ===== RESPONSE TYPES =====
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the request was successful
+        data:
+          description: Response data
+        message:
+          type: string
+          description: Response message
+        error:
+          type: string
+          description: Error message (if any)
+
+    NodesResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/NodeMetadata'
+            pagination:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: Total number of items
+                limit:
+                  type: integer
+                  description: Items per page
+                offset:
+                  type: integer
+                  description: Items skipped
+                hasMore:
+                  type: boolean
+                  description: Whether there are more items
+
+    NodeTypeResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/NodeMetadata'
+
+    WorkflowsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Workflow'
+            pagination:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: Total number of workflows
+                limit:
+                  type: integer
+                  description: Workflows per page
+                offset:
+                  type: integer
+                  description: Workflows skipped
+                hasMore:
+                  type: boolean
+                  description: Whether there are more workflows
+
+    WorkflowResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Workflow'
+
+    ExecutionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                executionId:
+                  type: string
+                  format: uuid
+                  description: Execution ID
+                status:
+                  type: string
+                  enum: [pending, running, completed, failed, cancelled]
+                  description: Execution status
+                message:
+                  type: string
+                  description: Status message
+
+    ExecutionStatusResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                executionId:
+                  type: string
+                  format: uuid
+                  description: Execution ID
+                status:
+                  type: string
+                  enum: [pending, running, completed, failed, cancelled]
+                  description: Execution status
+                result:
+                  description: Execution result
+                error:
+                  type: string
+                  description: Error message
+                startTime:
+                  type: string
+                  format: date-time
+                  description: Execution start time
+                endTime:
+                  type: string
+                  format: date-time
+                  description: Execution end time
+                duration:
+                  type: number
+                  description: Execution duration in seconds
+                nodeResults:
+                  type: object
+                  description: Results from individual nodes
+
+    ValidationResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                valid:
+                  type: boolean
+                  description: Whether the workflow is valid
+                errors:
+                  type: array
+                  items:
+                    type: string
+                  description: Validation errors
+                warnings:
+                  type: array
+                  items:
+                    type: string
+                  description: Validation warnings
+                suggestions:
+                  type: array
+                  items:
+                    type: string
+                  description: Improvement suggestions
+
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              description: Error message
+            code:
+              type: string
+              description: Error code
+            details:
+              type: object
+              description: Additional error details
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Invalid request parameters"
+            code: "VALIDATION_ERROR"
+            details:
+              field: "name"
+              message: "Name is required"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Authentication required"
+            code: "UNAUTHORIZED"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Resource not found"
+            code: "NOT_FOUND"
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Validation failed"
+            code: "VALIDATION_ERROR"
+            details:
+              errors:
+                - "Node 'node-1' has invalid configuration"
+                - "Edge 'edge-1' connects to non-existent node"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Internal server error"
+            code: "INTERNAL_ERROR"
+
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Node Types
+    description: Node type management
+  - name: Workflows
+    description: Workflow CRUD operations
+  - name: Execution
+    description: Workflow execution and monitoring
+  - name: Import/Export
+    description: Workflow import and export
+  - name: Validation
+    description: Workflow validation 
