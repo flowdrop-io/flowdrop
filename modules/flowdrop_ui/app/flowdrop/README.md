@@ -19,7 +19,7 @@ A powerful visual workflow editor for Drupal that enables drag-and-drop creation
 flowdrop/
 ├── src/                          # Core PHP classes
 │   ├── Service/NodeRuntime/      # Node execution engine
-│   ├── Plugins/FlowdropNodeProcessor/  # 25+ node processors
+│   ├── Plugins/FlowDropNodeProcessor/  # 25+ node processors
 │   ├── Attribute/                # Plugin discovery attributes
 │   └── Exception/                # Custom exception classes
 ├── modules/                      # Drupal sub-modules
@@ -147,22 +147,22 @@ flowdrop/
 1. **Create Node Class**:
    ```php
    <?php
-   
-   namespace Drupal\flowdrop\Plugins\FlowdropNodeProcessor;
-   
-   use Drupal\flowdrop\Attribute\FlowdropNodeProcessor;
-   
-   #[FlowdropNodeProcessor(
+
+   namespace Drupal\flowdrop\Plugins\FlowDropNodeProcessor;
+
+   use Drupal\flowdrop\Attribute\FlowDropNodeProcessor;
+
+   #[FlowDropNodeProcessor(
      id: "my_custom_node",
      label: new \Drupal\Core\StringTranslation\TranslatableMarkup("My Custom Node")
    )]
-   class MyCustomNode extends AbstractFlowdropNodeProcessor {
-     
+   class MyCustomNode extends AbstractFlowDropNodeProcessor {
+
      public function execute(array $inputs, array $config): array {
        // Your node logic here
        return ['result' => 'processed data'];
      }
-     
+
      public function getConfigSchema(): array {
        return [
          'type' => 'object',

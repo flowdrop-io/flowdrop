@@ -124,16 +124,16 @@ The Notes node is fully integrated with the Drupal backend:
 
 ### **Drupal Plugin System:**
 - **Plugin ID**: `notes`
-- **Plugin Class**: `Drupal\flowdrop\Plugins\FlowdropNodeProcessor\Notes`
+- **Plugin Class**: `Drupal\flowdrop\Plugins\FlowDropNodeProcessor\Notes`
 - **Node Type Entity**: `flowdrop_node_type.flowdrop_node_type.notes.yml`
 - **API Endpoint**: `/api/flowdrop/nodes` returns Notes with `"type": "note"`
-- **Type Attribute**: `#[FlowdropNodeProcessor(id: 'notes', label: 'Notes', type: 'note')]`
+- **Type Attribute**: `#[FlowDropNodeProcessor(id: 'notes', label: 'Notes', type: 'note')]`
 
 ### **Type System:**
-The FlowdropNodeProcessor attribute now includes a `type` parameter that determines how nodes are rendered in the frontend:
+The FlowDropNodeProcessor attribute now includes a `type` parameter that determines how nodes are rendered in the frontend:
 
 ```php
-#[FlowdropNodeProcessor(
+#[FlowDropNodeProcessor(
   id: 'notes',
   label: new TranslatableMarkup('Notes'),
   type: 'note',  // Determines frontend rendering
@@ -235,4 +235,4 @@ The NotesNode component dispatches events to notify the parent of changes:
 - **Color**: `#fbbf24` (amber)
 - **Component**: `NotesNode.svelte`
 - **Markdown Parser**: `marked` library
-- **Modes**: Edit (with preview) and Display 
+- **Modes**: Edit (with preview) and Display
