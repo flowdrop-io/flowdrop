@@ -15,6 +15,7 @@
     nodes: NodeMetadata[];
     selectedCategory?: NodeCategory;
     searchQuery?: string;
+    onClose?: () => void;
   }
 
   let props: Props = $props();
@@ -201,6 +202,19 @@
     <div class="flowdrop-sidebar__title">
       <h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
     </div>
+    {#if props.onClose}
+      <button
+        class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm flowdrop-sidebar__close"
+        onclick={props.onClose}
+        type="button"
+        title="Close sidebar"
+        aria-label="Close components sidebar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="flowdrop-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    {/if}
   </div>
   
   <!-- Search Section -->
@@ -388,11 +402,18 @@
     background-color: #ffffff;
     border-bottom: 1px solid #e5e7eb;
     padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
   
   .flowdrop-sidebar__title {
     display: flex;
     align-items: center;
+  }
+
+  .flowdrop-sidebar__close {
+    margin-left: 0.5rem;
   }
   
   .flowdrop-sidebar__title h2 {

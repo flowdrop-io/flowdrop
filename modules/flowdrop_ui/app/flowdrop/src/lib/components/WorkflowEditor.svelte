@@ -61,6 +61,7 @@
 
   let workflowName = $state(props.workflow?.name || "Untitled Workflow");
   let isEditingTitle = $state(false);
+  let isSidebarCollapsed = $state(true); // Start with sidebar collapsed
   
   // Update workflow name when props change
   $effect(() => {
@@ -269,6 +270,27 @@
   }
 
   /**
+   * Toggle sidebar collapsed state
+   */
+  function toggleSidebar(): void {
+    isSidebarCollapsed = !isSidebarCollapsed;
+  }
+
+  /**
+   * Open sidebar (show components)
+   */
+  function openSidebar(): void {
+    isSidebarCollapsed = false;
+  }
+
+  /**
+   * Close sidebar
+   */
+  function closeSidebar(): void {
+    isSidebarCollapsed = true;
+  }
+
+  /**
    * Handle title input keydown
    */
   function handleTitleKeydown(event: KeyboardEvent): void {
@@ -283,10 +305,15 @@
 
 <SvelteFlowProvider>
 <div class="flowdrop-workflow-editor">
-  <!-- Node Sidebar -->
-  <NodeSidebar 
-    nodes={availableNodes} 
-  />
+  <!-- Node Sidebar - Conditionally rendered -->
+  {#if !isSidebarCollapsed}
+    <div class="flowdrop-sidebar-container" class:flowdrop-sidebar-container--visible={!isSidebarCollapsed}>
+      <NodeSidebar 
+        nodes={availableNodes}
+        onClose={closeSidebar}
+      />
+    </div>
+  {/if}
 
   <!-- Main Editor Area -->
   <div class="flowdrop-workflow-editor__main">
@@ -489,6 +516,21 @@
       {#if flowNodes.length === 0}
         <CanvasBanner title="Drag components here to start building" description="Use the sidebar to add components to your workflow" iconName="mdi:graph" />
       {/if}
+
+      <!-- Floating Add Components Button - Only show when sidebar is collapsed -->
+      {#if isSidebarCollapsed}
+        <button
+          class="flowdrop-floating-btn"
+          onclick={openSidebar}
+          type="button"
+          title="Add Components"
+          aria-label="Add components to workflow"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="flowdrop-floating-btn__icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
+      {/if}
     </div>
 
     <!-- Status Bar -->
@@ -508,6 +550,25 @@
     display: flex;
     height: 100%;
     background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    position: relative;
+  }
+  
+  .flowdrop-sidebar-container {
+    position: absolute;
+    top: 5rem;
+    left: 0;
+    bottom: 3.5rem;
+    width: 320px;
+    z-index: 500;
+    background: white;
+    border-right: 1px solid #e5e7eb;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .flowdrop-sidebar-container--visible {
+    transform: translateX(0);
   }
   
   .flowdrop-workflow-editor__main {
@@ -515,6 +576,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    transition: margin-left 0.3s ease-in-out;
   }
   
   .flowdrop-toolbar {
@@ -655,5 +717,47 @@
   :global(.flowdrop-workflow-editor .svelte-flow__handle) {
     pointer-events: all;
     cursor: crosshair;
+  }
+
+  /* Floating Add Button */
+  .flowdrop-floating-btn {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    width: 3rem;
+    height: 3rem;
+    background: #3b82f6;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), 0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease-in-out;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+
+  .flowdrop-floating-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4), 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .flowdrop-floating-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3), 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  .flowdrop-floating-btn__icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .flowdrop-floating-btn:hover .flowdrop-floating-btn__icon {
+    transform: scale(1.1);
   }
 </style> 
