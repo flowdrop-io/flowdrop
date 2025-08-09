@@ -8,6 +8,7 @@
   import {
     SvelteFlow,
     ConnectionLineType,
+    MarkerType,
     // @ts-ignore
     Controls,
     // @ts-ignore
@@ -74,6 +75,15 @@
   const nodeTypes = {
     workflowNode: WorkflowNode,
     note: NotesNode
+  };
+
+  const defaultEdgeOptions = {
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: '#374151',
+    },
   };
 
   $effect(() => {
@@ -494,15 +504,16 @@
         bind:nodes={flowNodes}
         bind:edges={flowEdges}
         {nodeTypes}
+        {defaultEdgeOptions}
         clickConnect={true}
         elevateEdgesOnSelect={true}
         connectionLineType={ConnectionLineType.Bezier}
-        snapToGrid={true}
+        snapToGrid
         snapGrid={[10, 10]}
         fitView
       />
       <Controls />
-      <Background variant="dots" gap={10} size={1} />
+      <Background variant="dots" gap={10} />
       <MiniMap />
      
       <!-- Drop Zone Indicator -->
@@ -614,12 +625,7 @@
     color: #3b82f6;
   }
   
-  .flowdrop-workflow-stats {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
+
   .flowdrop-text--error {
     color: #dc2626;
   }
