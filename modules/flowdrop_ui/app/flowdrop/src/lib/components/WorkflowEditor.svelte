@@ -356,16 +356,7 @@
               {workflowName}
             </button>
           {/if}
-          <div class="flowdrop-workflow-stats">
-            <span class="flowdrop-text--sm flowdrop-text--gray">{flowNodes.length} nodes</span>
-            <span class="flowdrop-text--sm flowdrop-text--gray">•</span>
-            <span class="flowdrop-text--sm flowdrop-text--gray">{flowEdges.length} connections</span>
 
-            {#if checkWorkflowCycles()}
-              <span class="flowdrop-text--sm flowdrop-text--gray">•</span>
-              <span class="flowdrop-text--sm flowdrop-font--medium flowdrop-text--error">⚠️ Cycles detected</span>
-            {/if}
-          </div>
         </div>
 
         <!-- Right side - Actions -->
@@ -537,7 +528,14 @@
     <div class="flowdrop-status-bar">
       <div class="flowdrop-status-bar__content">
         <div class="flowdrop-flex flowdrop-gap--4">
-          <span class="flowdrop-text--xs flowdrop-text--gray">All systems ready. You can start building your workflow.</span>
+          <span class="flowdrop-text--xs flowdrop-text--gray">{flowNodes.length} nodes</span>
+          <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
+          <span class="flowdrop-text--xs flowdrop-text--gray">{flowEdges.length} connections</span>
+
+          {#if checkWorkflowCycles()}
+            <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
+            <span class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error">⚠️ Cycles detected</span>
+          {/if}
         </div>
       </div>
     </div>
