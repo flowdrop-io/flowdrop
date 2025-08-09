@@ -28,7 +28,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "text",
         name: "Text",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "User entered text"
       }
     ],
@@ -143,7 +143,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "message",
         name: "Message",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Message to display"
       }
@@ -187,7 +187,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "text",
         name: "Text",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Text to display"
       }
@@ -237,7 +237,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "prompt",
         name: "Prompt",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Formatted prompt text"
       }
     ],
@@ -281,7 +281,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "message",
         name: "Message",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Input message"
       }
@@ -330,7 +330,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "prompt",
         name: "Prompt",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Input prompt for the model"
       },
@@ -338,7 +338,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "system_message",
         name: "System Message",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: false,
         description: "System message to set behavior"
       }
@@ -348,7 +348,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "response",
         name: "Response",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Model response"
       },
       {
@@ -408,7 +408,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "prompt",
         name: "Prompt",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Input prompt for the model"
       }
@@ -418,7 +418,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "response",
         name: "Response",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Model response"
       }
     ],
@@ -471,7 +471,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "prompt",
         name: "Prompt",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Input prompt for the model"
       }
@@ -481,7 +481,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "response",
         name: "Response",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Model response"
       }
     ],
@@ -536,7 +536,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "text",
         name: "Text",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Text to split"
       }
@@ -546,7 +546,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "chunks",
         name: "Chunks",
         type: "output",
-        dataType: "array",
+        dataType: "string[]",
         description: "Split text chunks"
       },
       {
@@ -717,7 +717,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "text",
         name: "Text",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Text to extract from"
       }
@@ -727,7 +727,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "matches",
         name: "Matches",
         type: "output",
-        dataType: "array",
+        dataType: "string[]",
         description: "Extracted matches"
       }
     ],
@@ -837,7 +837,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "input_text",
         name: "Input Text",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Text to evaluate"
       },
@@ -845,7 +845,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "match_text",
         name: "Match Text",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Text to compare against"
       }
@@ -855,14 +855,14 @@ export const sampleNodes: NodeMetadata[] = [
         id: "true_result",
         name: "True",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Output when condition is true"
       },
       {
         id: "false_result",
         name: "False",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Output when condition is false"
       }
     ],
@@ -899,7 +899,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "data",
         name: "Data",
         type: "input",
-        dataType: "array",
+        dataType: "json[]",
         required: true,
         description: "Data to iterate over"
       }
@@ -950,7 +950,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "data_list",
         name: "Data List",
         type: "input",
-        dataType: "array",
+        dataType: "json[]",
         required: true,
         description: "List of Data objects to convert"
       }
@@ -990,7 +990,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "message",
         name: "Message",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Message to convert"
       }
@@ -1041,7 +1041,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "confirmation",
         name: "Confirmation",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Save confirmation message"
       }
     ],
@@ -1080,7 +1080,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "expression",
         name: "Expression",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Mathematical expression to evaluate"
       }
@@ -1129,7 +1129,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "date",
         name: "Date",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: false,
         description: "Input date string"
       }
@@ -1139,7 +1139,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "formatted_date",
         name: "Formatted Date",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Formatted date string"
       },
       {
@@ -1215,7 +1215,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "text",
         name: "Text",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Text to embed"
       }
@@ -1225,7 +1225,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "embeddings",
         name: "Embeddings",
         type: "output",
-        dataType: "array",
+        dataType: "number[]",
         description: "Generated embeddings"
       }
     ],
@@ -1262,7 +1262,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "text",
         name: "Text",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Text to embed"
       }
@@ -1272,7 +1272,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "embeddings",
         name: "Embeddings",
         type: "output",
-        dataType: "array",
+        dataType: "number[]",
         description: "Generated embeddings"
       }
     ],
@@ -1310,7 +1310,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "message",
         name: "Message",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "Message to add to buffer"
       }
@@ -1320,7 +1320,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "history",
         name: "History",
         type: "output",
-        dataType: "array",
+        dataType: "string[]",
         description: "Conversation history"
       }
     ],
@@ -1360,7 +1360,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "message",
         name: "Message",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: true,
         description: "User message for agent"
       },
@@ -1368,7 +1368,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "tools",
         name: "Tools",
         type: "input",
-        dataType: "array",
+        dataType: "json[]",
         required: false,
         description: "Tools available to agent"
       }
@@ -1378,7 +1378,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "response",
         name: "Response",
         type: "output",
-        dataType: "text",
+        dataType: "string",
         description: "Agent response"
       }
     ],
@@ -1427,7 +1427,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "embeddings",
         name: "Embeddings",
         type: "input",
-        dataType: "array",
+        dataType: "number[]",
         required: true,
         description: "Embeddings to store"
       },
@@ -1435,7 +1435,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "query",
         name: "Query",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: false,
         description: "Query for similarity search"
       }
@@ -1445,7 +1445,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "results",
         name: "Results",
         type: "output",
-        dataType: "array",
+        dataType: "json[]",
         description: "Search results"
       },
       {
@@ -1495,7 +1495,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "embeddings",
         name: "Embeddings",
         type: "input",
-        dataType: "array",
+        dataType: "number[]",
         required: true,
         description: "Embeddings to store"
       },
@@ -1503,7 +1503,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "query",
         name: "Query",
         type: "input",
-        dataType: "text",
+        dataType: "string",
         required: false,
         description: "Query for similarity search"
       }
@@ -1513,7 +1513,7 @@ export const sampleNodes: NodeMetadata[] = [
         id: "results",
         name: "Results",
         type: "output",
-        dataType: "array",
+        dataType: "json[]",
         description: "Search results"
       }
     ],
@@ -1554,7 +1554,7 @@ export { CATEGORY_ICONS as categoryIcons };
 export const sampleWorkflow: Workflow = {
   id: uuidv4(),
   name: "Simple Chat Workflow",
-  description: "A basic workflow demonstrating text input, processing, and model response",
+  description: "A basic workflow demonstrating direct text input to AI model response",
   nodes: [
     {
       id: uuidv4(),
@@ -1604,7 +1604,7 @@ export const sampleWorkflow: Workflow = {
       data: {
         label: "Workflow Notes",
         config: {
-          content: "# Simple Chat Workflow\n\nThis workflow demonstrates a basic chat interaction:\n\n1. **Text Input** - User enters a question\n2. **Split Text** - Breaks the input into manageable chunks\n3. **OpenAI** - Processes the chunks and generates a response\n4. **Chat Output** - Displays the final response\n\n## Usage\n- Drag a Notes node to add documentation\n- Double-click to edit in Markdown\n- Choose from 5 different note types",
+          content: "# Simple Chat Workflow\n\nThis workflow demonstrates a basic chat interaction:\n\n1. **Text Input** - User enters a question\n2. **OpenAI** - Processes the input and generates a response\n3. **Chat Output** - Displays the final response\n\n## Port Types Used\n- **string** - Text data flows between all nodes\n- Only compatible types can connect (string → string)\n\n## Usage\n- Drag a Notes node to add documentation\n- Double-click to edit in Markdown\n- Choose from 5 different note types",
           noteType: "info"
         },
         metadata: sampleNodes.find(n => n.name === "Notes")!
@@ -1629,15 +1629,8 @@ export const sampleWorkflow: Workflow = {
     {
       id: uuidv4(),
       source: "text-input-1",
-      target: "split-text-1",
-      sourceHandle: "text",
-      targetHandle: "text"
-    } as WorkflowEdge,
-    {
-      id: uuidv4(),
-      source: "split-text-1",
       target: "openai-1",
-      sourceHandle: "chunks",
+      sourceHandle: "text",
       targetHandle: "prompt"
     } as WorkflowEdge,
     {

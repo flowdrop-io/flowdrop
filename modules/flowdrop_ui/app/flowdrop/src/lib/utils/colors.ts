@@ -4,7 +4,8 @@
  * Uses BEM syntax for CSS classes
  */
 
-import type { NodeCategory } from "../types/index.js";
+import type { NodeCategory, PortConfig, PortDataTypeConfig } from "../types/index.js";
+import { getPortCompatibilityChecker } from "./connections.js";
 
 /**
  * Category color mapping to reference tokens (CSS variables)
@@ -28,6 +29,7 @@ export const CATEGORY_COLOR_TOKENS: Record<NodeCategory, string> = {
 
 /**
  * Data type color mapping to reference tokens (CSS variables)
+ * @deprecated Use getDataTypeColorToken() with port configuration instead
  */
 export const DATA_TYPE_COLOR_TOKENS: Record<string, string> = {
   string: "var(--color-ref-emerald-500)",
@@ -63,10 +65,47 @@ export function getCategoryColorToken(category: NodeCategory): string {
 }
 
 /**
- * Get the reference color token for a data type
+ * Get the reference color token for a data type (configurable version)
  */
 export function getDataTypeColorToken(dataType: string): string {
+  try {
+    const checker = getPortCompatibilityChecker();
+    const config = checker.getDataTypeConfig(dataType);
+    if (config?.color) {
+      return config.color;
+    }
+  } catch (error) {
+    // Fallback to static color mapping if port checker not initialized
+    console.warn("Port compatibility checker not initialized, using fallback colors:", error);
+  }
+  
   return DATA_TYPE_COLOR_TOKENS[dataType.toLowerCase()] || "var(--color-ref-slate-500)";
+}
+
+/**
+ * Get data type configuration from port config
+ */
+export function getDataTypeConfig(dataType: string): PortDataTypeConfig | undefined {
+  try {
+    const checker = getPortCompatibilityChecker();
+    return checker.getDataTypeConfig(dataType);
+  } catch (error) {
+    console.warn("Port compatibility checker not initialized:", error);
+    return undefined;
+  }
+}
+
+/**
+ * Get all available data types from port configuration
+ */
+export function getAvailableDataTypes(): PortDataTypeConfig[] {
+  try {
+    const checker = getPortCompatibilityChecker();
+    return checker.getEnabledDataTypes();
+  } catch (error) {
+    console.warn("Port compatibility checker not initialized:", error);
+    return [];
+  }
 }
 
 /**
@@ -250,4 +289,69 @@ export function getNodeBorder(
  */
 export function getDataTypeColor(dataType: string): string {
   return getDataTypeColorToken(dataType);
+}
+
+/**
+ * Parse typed array notation and get display information
+ * @param dataType - The data type (e.g., "string[]", "number", "object[]")
+ * @returns Object with display information
+ */
+export function parseDataTypeDisplay(dataType: string): {
+  baseType: string;
+  isArray: boolean;
+  displayName: string;
+  elementType?: string;
+} {
+  // Check if it's a typed array (ends with [])
+  const isArray = dataType.endsWith("[]");
+  
+  if (isArray) {
+    const elementType = dataType.slice(0, -2); // Remove []
+    const config = getDataTypeConfig(dataType);
+    
+    return {
+      baseType: dataType,
+      isArray: true,
+      displayName: config?.name || `${elementType}[]`,
+      elementType: elementType
+    };
+  } else {
+    const config = getDataTypeConfig(dataType);
+    return {
+      baseType: dataType,
+      isArray: false,
+      displayName: config?.name || dataType,
+    };
+  }
+}
+
+/**
+ * Get formatted display text for a data type
+ * @param dataType - The data type
+ * @returns Formatted display text
+ */
+export function getDataTypeDisplayText(dataType: string): string {
+  const parsed = parseDataTypeDisplay(dataType);
+  return parsed.displayName;
+}
+
+/**
+ * Check if a data type represents an array
+ * @param dataType - The data type
+ * @returns True if it's an array type
+ */
+export function isArrayDataType(dataType: string): boolean {
+  return dataType.endsWith("[]") || dataType === "array" || dataType === "list";
+}
+
+/**
+ * Get the element type from an array data type
+ * @param arrayDataType - The array data type (e.g., "string[]")
+ * @returns The element type (e.g., "string") or null if not an array
+ */
+export function getArrayElementType(arrayDataType: string): string | null {
+  if (arrayDataType.endsWith("[]")) {
+    return arrayDataType.slice(0, -2);
+  }
+  return null;
 } 

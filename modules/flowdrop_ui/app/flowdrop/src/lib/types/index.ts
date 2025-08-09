@@ -26,47 +26,57 @@ export type NodeCategory =
   | "bundles";
 
 /**
- * Node input/output types
+ * Port data type configuration
  */
-export type NodeDataType = 
-  // Text and basic types
-  | "string"
-  | "text"
-  
-  // Numeric types
-  | "number"
-  | "integer"
-  | "float"
-  
-  // Boolean and logical types
-  | "boolean"
-  
-  // Collection types
-  | "array"
-  | "list"
-  
-  // Complex types
-  | "object"
-  | "json"
-  
-  // File types
-  | "file"
-  | "document"
-  
-  // Media types
-  | "image"
-  | "picture"
-  | "audio"
-  | "sound"
-  | "video"
-  | "movie"
-  
-  // Special types
-  | "url"
-  | "email"
-  | "date"
-  | "datetime"
-  | "time";
+export interface PortDataTypeConfig {
+  /** Unique identifier for the data type */
+  id: string;
+  /** Display name for the data type */
+  name: string;
+  /** Description of the data type */
+  description?: string;
+  /** Color for the data type (CSS color value) */
+  color: string;
+  /** Category grouping for the data type */
+  category?: string;
+  /** Alternative names/aliases for this data type */
+  aliases?: string[];
+  /** Whether this data type is enabled */
+  enabled?: boolean;
+}
+
+/**
+ * Port compatibility rule configuration
+ * Simple rule: sourceType can connect TO targetType
+ */
+export interface PortCompatibilityRule {
+  /** Source data type ID (what you're connecting FROM) */
+  from: string;
+  /** Target data type ID (what you're connecting TO) */
+  to: string;
+  /** Optional description of why this connection is allowed */
+  description?: string;
+}
+
+/**
+ * Complete port configuration system
+ */
+export interface PortConfig {
+  /** Available data types */
+  dataTypes: PortDataTypeConfig[];
+  /** Compatibility rules between data types */
+  compatibilityRules: PortCompatibilityRule[];
+  /** Default data type to use when none specified */
+  defaultDataType: string;
+  /** Version of the port configuration */
+  version?: string;
+}
+
+/**
+ * Node data type - now dynamic based on configuration
+ * Will be string literals of available data type IDs
+ */
+export type NodeDataType = string;
 
 /**
  * Node port configuration

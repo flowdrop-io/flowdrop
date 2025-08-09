@@ -2,41 +2,130 @@
  * Connection validation utilities for FlowDrop
  */
 
-import type { NodeMetadata, NodePort, NodeDataType, WorkflowNode, WorkflowEdge } from "../types/index.js";
+import type { 
+  NodeMetadata, 
+  NodePort, 
+  NodeDataType, 
+  WorkflowNode, 
+  WorkflowEdge, 
+  PortConfig,
+  PortCompatibilityRule,
+  PortDataTypeConfig 
+} from "../types/index.js";
 
 /**
- * Check if two data types are compatible for connection
+ * Configurable port compatibility checker
+ */
+export class PortCompatibilityChecker {
+  private portConfig: PortConfig;
+  private compatibilityMap: Map<string, Set<string>>;
+
+  constructor(portConfig: PortConfig) {
+    this.portConfig = portConfig;
+    this.compatibilityMap = new Map();
+    this.buildCompatibilityMap();
+  }
+
+  /**
+   * Build the compatibility map from configuration rules
+   */
+  private buildCompatibilityMap(): void {
+    this.compatibilityMap.clear();
+
+    // First, add direct type matches (every type is compatible with itself)
+    for (const dataType of this.portConfig.dataTypes) {
+      if (!this.compatibilityMap.has(dataType.id)) {
+        this.compatibilityMap.set(dataType.id, new Set());
+      }
+      this.compatibilityMap.get(dataType.id)!.add(dataType.id);
+    }
+
+    // Then add configured compatibility rules
+    for (const rule of this.portConfig.compatibilityRules) {
+      if (!this.compatibilityMap.has(rule.from)) {
+        this.compatibilityMap.set(rule.from, new Set());
+      }
+      this.compatibilityMap.get(rule.from)!.add(rule.to);
+    }
+
+    // Add alias support
+    for (const dataType of this.portConfig.dataTypes) {
+      if (dataType.aliases) {
+        for (const alias of dataType.aliases) {
+          // Make aliases point to the main type's compatibility set
+          const mainCompatibility = this.compatibilityMap.get(dataType.id);
+          if (mainCompatibility) {
+            this.compatibilityMap.set(alias, new Set(mainCompatibility));
+            
+            // Also make the main type compatible with the alias
+            mainCompatibility.add(alias);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if two data types are compatible for connection
+   */
+  public areDataTypesCompatible(outputType: NodeDataType, inputType: NodeDataType): boolean {
+    const compatibleTypes = this.compatibilityMap.get(outputType);
+    return compatibleTypes ? compatibleTypes.has(inputType) : false;
+  }
+
+  /**
+   * Get all compatible target types for a source type
+   */
+  public getCompatibleTypes(sourceType: NodeDataType): NodeDataType[] {
+    const compatibleTypes = this.compatibilityMap.get(sourceType);
+    return compatibleTypes ? Array.from(compatibleTypes) : [];
+  }
+
+  /**
+   * Get data type configuration by ID
+   */
+  public getDataTypeConfig(dataTypeId: string): PortDataTypeConfig | undefined {
+    return this.portConfig.dataTypes.find(dt => dt.id === dataTypeId || dt.aliases?.includes(dataTypeId));
+  }
+
+  /**
+   * Get all enabled data types
+   */
+  public getEnabledDataTypes(): PortDataTypeConfig[] {
+    return this.portConfig.dataTypes.filter(dt => dt.enabled !== false);
+  }
+}
+
+// Global instance - will be initialized with configuration
+let globalCompatibilityChecker: PortCompatibilityChecker | null = null;
+
+/**
+ * Initialize the global port compatibility checker
+ */
+export function initializePortCompatibility(portConfig: PortConfig): void {
+  globalCompatibilityChecker = new PortCompatibilityChecker(portConfig);
+}
+
+/**
+ * Get the global port compatibility checker
+ */
+export function getPortCompatibilityChecker(): PortCompatibilityChecker {
+  if (!globalCompatibilityChecker) {
+    throw new Error("Port compatibility checker not initialized. Call initializePortCompatibility() first.");
+  }
+  return globalCompatibilityChecker;
+}
+
+/**
+ * Check if two data types are compatible for connection (legacy function)
+ * @deprecated Use PortCompatibilityChecker.areDataTypesCompatible() instead
  */
 export function areDataTypesCompatible(outputType: NodeDataType, inputType: NodeDataType): boolean {
-  // Direct type matches
-  if (outputType === inputType) return true;
-  
-  // String can be converted to most types
-  if (outputType === "string") {
-    return ["string", "number", "boolean"].includes(inputType);
+  if (!globalCompatibilityChecker) {
+    // Fallback to basic compatibility for backward compatibility
+    return outputType === inputType;
   }
-  
-  // Number can be converted to string
-  if (outputType === "number") {
-    return ["string", "number"].includes(inputType);
-  }
-  
-  // Boolean can be converted to string
-  if (outputType === "boolean") {
-    return ["string", "boolean"].includes(inputType);
-  }
-  
-  // Object can be converted to string (JSON)
-  if (outputType === "object") {
-    return ["string", "object"].includes(inputType);
-  }
-  
-  // Array can be converted to string (JSON)
-  if (outputType === "array") {
-    return ["string", "array"].includes(inputType);
-  }
-  
-  return false;
+  return globalCompatibilityChecker.areDataTypesCompatible(outputType, inputType);
 }
 
 /**

@@ -145,6 +145,23 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  # ===== PORT CONFIGURATION =====
+  /port-config:
+    get:
+      summary: Get port configuration
+      description: Retrieve the port configuration including available data types and compatibility rules
+      tags:
+        - Configuration
+      responses:
+        '200':
+          description: Port configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortConfig'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   # ===== WORKFLOWS =====
   /workflows:
     get:
@@ -527,6 +544,78 @@ components:
       type: string
       enum: [string, number, boolean, array, object, file, image, audio, video, url, email, date, datetime]
       description: Data type for node ports
+
+    # ===== PORT CONFIGURATION =====
+    PortDataTypeConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the data type
+        name:
+          type: string
+          description: Display name for the data type
+        description:
+          type: string
+          description: Description of the data type
+        color:
+          type: string
+          description: Color for the data type (CSS color value)
+        category:
+          type: string
+          description: Category grouping for the data type
+        aliases:
+          type: array
+          items:
+            type: string
+          description: Alternative names/aliases for this data type
+        enabled:
+          type: boolean
+          default: true
+          description: Whether this data type is enabled
+      required:
+        - id
+        - name
+        - color
+
+    PortCompatibilityRule:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Source data type ID (what you're connecting FROM)
+        to:
+          type: string
+          description: Target data type ID (what you're connecting TO)
+        description:
+          type: string
+          description: Optional description of why this connection is allowed
+      required:
+        - from
+        - to
+
+    PortConfig:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Version of the port configuration
+        defaultDataType:
+          type: string
+          description: Default data type to use when none specified
+        dataTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortDataTypeConfig'
+          description: Available data types
+        compatibilityRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortCompatibilityRule'
+          description: Compatibility rules between data types
+      required:
+        - dataTypes
+        - defaultDataType
 
     # ===== NODE TYPES =====
     NodePort:

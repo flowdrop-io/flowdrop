@@ -5,9 +5,12 @@
 
 import { mount } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
-import type { Workflow, NodeMetadata } from './types/index.js';
+import type { Workflow, NodeMetadata, PortConfig } from './types/index.js';
 import type { EndpointConfig } from './config/endpoints.js';
 import { createEndpointConfig } from './config/endpoints.js';
+import { initializePortCompatibility } from './utils/connections.js';
+import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
+import { fetchPortConfig } from './services/portConfigApi.js';
 
 /**
  * Mount the WorkflowEditor component in a Drupal container
@@ -19,13 +22,15 @@ export async function mountWorkflowEditor(
     nodes?: NodeMetadata[];
     apiBaseUrl?: string;
     endpointConfig?: EndpointConfig;
+    portConfig?: PortConfig;
   } = {}
 ): Promise<any> {
   const {
     workflow,
     nodes = [],
     apiBaseUrl,
-    endpointConfig
+    endpointConfig,
+    portConfig
   } = options;
 
   // Create endpoint configuration
@@ -45,6 +50,23 @@ export async function mountWorkflowEditor(
   } else if (apiBaseUrl) {
     config = createEndpointConfig(apiBaseUrl);
   }
+
+  // Initialize port configuration
+  let finalPortConfig = portConfig;
+  
+  if (!finalPortConfig && config) {
+    // Try to fetch port configuration from API
+    try {
+      finalPortConfig = await fetchPortConfig(config);
+    } catch (error) {
+      console.warn("Failed to fetch port config from API, using default:", error);
+      finalPortConfig = DEFAULT_PORT_CONFIG;
+    }
+  } else if (!finalPortConfig) {
+    finalPortConfig = DEFAULT_PORT_CONFIG;
+  }
+  
+  initializePortCompatibility(finalPortConfig);
 
   // Create the Svelte component
   const app = mount(WorkflowEditor, {

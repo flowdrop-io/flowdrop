@@ -3,6 +3,7 @@
  */
 
 import type { EndpointConfig } from '../config/endpoints.js';
+import type { PortConfig } from './index.js';
 
 export interface WorkflowEditorConfig {
   /** API configuration with endpoints */
@@ -10,6 +11,9 @@ export interface WorkflowEditorConfig {
   
   /** Available node types loaded from API */
   nodeTypes?: NodeType[];
+  
+  /** Port configuration system */
+  ports: PortConfig;
   
   /** Theme configuration */
   theme: 'light' | 'dark' | 'auto';
