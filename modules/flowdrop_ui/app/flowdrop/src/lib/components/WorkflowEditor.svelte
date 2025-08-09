@@ -497,10 +497,12 @@
         clickConnect={true}
         elevateEdgesOnSelect={true}
         connectionLineType={ConnectionLineType.Bezier}
+        snapToGrid={true}
+        snapGrid={[10, 10]}
         fitView
       />
       <Controls />
-      <Background />
+      <Background variant="dots" gap={10} size={1} />
       <MiniMap />
      
       <!-- Drop Zone Indicator -->
