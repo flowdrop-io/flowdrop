@@ -505,6 +505,8 @@
         bind:edges={flowEdges}
         {nodeTypes}
         {defaultEdgeOptions}
+        minZoom={0.2}
+        maxZoom={3}
         clickConnect={true}
         elevateEdgesOnSelect={true}
         connectionLineType={ConnectionLineType.Bezier}
