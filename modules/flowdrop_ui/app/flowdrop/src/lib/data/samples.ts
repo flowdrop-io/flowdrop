@@ -1213,6 +1213,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "string",
         description: "HTTP status text"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -1398,6 +1405,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "json",
         description: "Processed JSON data"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -1488,6 +1502,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "json",
         description: "Processed output data"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -1564,6 +1585,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "number",
         description: "Calculation result"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -1630,6 +1658,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "number",
         description: "Unix timestamp"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -1718,6 +1753,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "mixed",
         description: "Optional output data"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -1935,9 +1977,9 @@ export const sampleNodes: NodeMetadata[] = [
         id: "tools",
         name: "Tools",
         type: "input",
-        dataType: "json[]",
+        dataType: "tool",
         required: false,
-        description: "Tools available to agent"
+        description: "Tool interfaces available to agent - connect to tool output ports"
       }
     ],
     outputs: [
