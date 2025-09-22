@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "@sveltejs/kit";
-import { sampleNodes } from "$lib/data/samples.js";
+import { sampleNodes, filterNodesForDemo } from "$lib/data/samples.js";
+import { getCurrentDemoConfig } from "$lib/config/demo.js";
 import type { NodeMetadata } from "$lib/types/index.js";
 
 /**
@@ -40,8 +41,10 @@ export const GET: RequestHandler = async ({ params }) => {
       );
     }
     
-    // Find the node by ID
-    const node = sampleNodes.find(n => n.id === id);
+    // Apply demo filtering first, then find the node by ID
+    const demoConfig = getCurrentDemoConfig();
+    const filteredNodes = filterNodesForDemo(sampleNodes, demoConfig);
+    const node = filteredNodes.find(n => n.id === id);
     
     if (!node) {
       return json(

@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "@sveltejs/kit";
-import { sampleNodes } from "$lib/data/samples.js";
+import { sampleNodes, filterNodesForDemo } from "$lib/data/samples.js";
+import { getCurrentDemoConfig } from "$lib/config/demo.js";
 import type { NodeMetadata, NodesResponse } from "$lib/types/index.js";
 
 /**
@@ -67,8 +68,9 @@ export const GET: RequestHandler = async ({ url }) => {
     // Validate and sanitize query parameters
     const { category, search, limit, offset } = validateQueryParams(url.searchParams);
     
-    // Start with all sample nodes
-    let filteredNodes: NodeMetadata[] = [...sampleNodes];
+    // Apply demo filtering first
+    const demoConfig = getCurrentDemoConfig();
+    let filteredNodes: NodeMetadata[] = filterNodesForDemo(sampleNodes, demoConfig);
     
     // Filter by category if specified
     if (category && category !== "all") {
