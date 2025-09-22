@@ -37,12 +37,6 @@ function analyzeWorkflow(workflow: StandardWorkflow) {
   const stats = adapter.getWorkflowStats(workflow);
   const validation = adapter.validateWorkflow(workflow);
   
-  console.log("Workflow Analysis:");
-  console.log(`- Total nodes: ${stats.totalNodes}`);
-  console.log(`- Total edges: ${stats.totalEdges}`);
-  console.log(`- Node types:`, stats.nodeTypeCounts);
-  console.log(`- Valid: ${validation.valid}`);
-  
   if (validation.errors.length > 0) {
     console.log("Errors:", validation.errors);
   }

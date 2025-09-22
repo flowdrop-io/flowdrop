@@ -24,12 +24,6 @@
   let filteredNodes = $derived(getFilteredNodes());
   let categories = $derived(getCategories());
 
-  // Debug logging
-  $effect(() => {
-    console.log('NodeSidebar: props.nodes received:', props.nodes?.length || 0, 'nodes');
-    console.log('NodeSidebar: props.nodes content:', props.nodes);
-  });
-
   /**
    * Get all unique categories from node types
    */
@@ -382,7 +376,7 @@
   /* Components Sidebar - Always Visible */
   .flowdrop-sidebar {
     width: 320px;
-    height: 100%;
+    height: 100vh; /* Use viewport height to ensure fixed height */
     background-color: #ffffff;
     border-right: 1px solid #e5e7eb;
     display: flex;
@@ -422,13 +416,16 @@
   
   .flowdrop-sidebar__content {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll; /* Changed from auto to scroll to always show scrollbar */
     scrollbar-width: thin;
     scrollbar-color: #d1d5db #f3f4f6;
+    padding-bottom: 4rem; /* Add padding to ensure content is scrollable above footer */
+    min-height: 0; /* Allow flex item to shrink below content size */
   }
   
   .flowdrop-sidebar__content::-webkit-scrollbar {
     width: 8px;
+    display: block; /* Ensure scrollbar is always visible */
   }
   
   .flowdrop-sidebar__content::-webkit-scrollbar-track {
@@ -438,6 +435,7 @@
   .flowdrop-sidebar__content::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 4px;
+    min-height: 20px; /* Ensure thumb has minimum height for visibility */
   }
   
   .flowdrop-sidebar__content::-webkit-scrollbar-thumb:hover {
@@ -449,6 +447,9 @@
     backdrop-filter: blur(8px);
     border-top: 1px solid #e5e7eb;
     padding: 0.5rem 0.75rem;
+    flex-shrink: 0; /* Prevent footer from shrinking */
+    position: relative;
+    z-index: 10; /* Ensure footer stays on top */
   }
   
   .flowdrop-node-list {

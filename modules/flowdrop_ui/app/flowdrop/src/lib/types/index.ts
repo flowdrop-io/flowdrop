@@ -84,7 +84,7 @@ export type NodeDataType = string;
 export interface NodePort {
   id: string;
   name: string;
-  type: "input" | "output";
+  type: "input" | "output" | "metadata";
   dataType: NodeDataType;
   required?: boolean;
   description?: string;
@@ -96,7 +96,8 @@ export interface NodePort {
  */
 export type NodeType = 
   | "note"
-  | "square"
+  | "simple"
+  | "tool"
   | "default";
 
 /**
@@ -308,6 +309,9 @@ export interface WorkflowEdge extends Edge {
   data?: {
     label?: string;
     condition?: string;
+    isToolConnection?: boolean;
+    targetNodeType?: string;
+    targetCategory?: string;
   };
 }
 

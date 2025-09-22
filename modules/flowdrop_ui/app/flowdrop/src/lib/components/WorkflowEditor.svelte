@@ -5,6 +5,7 @@
 -->
 
 <script lang="ts">
+	import { getDataTypeColor } from '$lib/utils/colors';
   import {
     SvelteFlow,
     ConnectionLineType,
@@ -24,6 +25,7 @@
   import WorkflowNode from "./WorkflowNode.svelte";
   import NotesNode from "./NotesNode.svelte";
   import SimpleNode from "./SimpleNode.svelte";
+  import ToolNode from "./ToolNode.svelte";
   import type { WorkflowNode as WorkflowNodeType, NodeMetadata, Workflow, WorkflowEdge } from "../types/index.js";
   import { validateConnection, hasCycles } from "../utils/connections.js";
   import CanvasBanner from "./CanvasBanner.svelte";
@@ -31,6 +33,7 @@
   import { v4 as uuidv4 } from "uuid";
   import { tick } from "svelte";
   import type { EndpointConfig } from "../config/endpoints.js";
+	import ConnectionLine from './ConnectionLine.svelte';
 
   interface Props {
     nodes?: NodeMetadata[];
@@ -81,17 +84,150 @@
   const nodeTypes = {
     workflowNode: WorkflowNode,
     note: NotesNode,
-    simple: SimpleNode
+    simple: SimpleNode,
+    tool: ToolNode
   };
 
-  const defaultEdgeOptions = {
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      width: 20,
-      height: 20,
-      color: '#374151',
-    },
-  };
+  // Remove default edge options to prevent arrow overlap
+  // We'll handle arrows in our custom connection handler
+  const defaultEdgeOptions = {};
+
+  /**
+   * Handle new connections between nodes
+   * Apply custom styling based on target node type and port type
+   */
+  function handleConnect(connection: any): void {
+    const { source, target, sourceHandle, targetHandle } = connection;
+    
+    // Find the target node to determine if it's a tool node
+    const targetNode = flowNodes.find(node => node.id === target);
+    const sourceNode = flowNodes.find(node => node.id === source);
+    
+    if (!targetNode || !sourceNode) return;
+    
+    // Create the new edge with custom styling
+    const newEdge: WorkflowEdge = {
+      id: `${source}-${target}-${sourceHandle || 'default'}-${targetHandle || 'default'}`,
+      source,
+      target,
+      sourceHandle,
+      targetHandle,
+      type: ConnectionLineType.Bezier,
+      selectable: true,
+      deletable: true,
+      data: {}
+    };
+
+    // Apply styling rules
+    applyConnectionStyling(newEdge, sourceNode, targetNode, sourceHandle, targetHandle);
+    
+    // Add the edge to the workflow
+    flowEdges = [...flowEdges, newEdge];
+  }
+
+  /**
+   * Apply custom styling to connection edges based on rules:
+   * - Dashed lines for connections to tool nodes
+   * - Arrow markers pointing towards input ports
+   */
+  function applyConnectionStyling(
+    edge: WorkflowEdge,
+    sourceNode: WorkflowNodeType,
+    targetNode: WorkflowNodeType,
+    sourceHandle?: string,
+    targetHandle?: string
+  ): void {
+    // Rule 1: Dashed lines for tool nodes
+    // A node is a tool node when it uses the ToolNode component,
+    // which happens when sourceNode.type === 'tool'
+    const isToolNode = sourceNode.type === 'tool';
+
+    // Use inline styles for dashed lines (more reliable than CSS classes)
+    if (isToolNode) {
+      (edge as any).style = {
+        "stroke-dasharray": '0 4 0',
+        stroke: 'amber !important'
+      };
+      edge.class = 'flowdrop--edge--tool';
+    } else {
+      (edge as any).style = {
+        stroke: 'grey'
+      };
+    }
+
+    // Store metadata in edge data for debugging
+    edge.data = {
+      ...edge.data,
+      isToolConnection: isToolNode,
+      targetNodeType: targetNode.type,
+      targetCategory: targetNode.data.metadata.category
+    };
+
+    // Rule 2: Always add arrow pointing towards input port
+    // This replaces the default arrows we removed
+    if (!isToolNode) {
+      edge.markerEnd = {
+        type: MarkerType.ArrowClosed,
+        width: 16,
+        height: 16,
+        color: 'grey'
+      };
+    }
+  }
+
+  /**
+   * Update existing edges with our custom styling rules
+   * This ensures all edges (including existing ones) follow our rules
+   */
+  function updateExistingEdgeStyles(): void {    
+    const updatedEdges = flowEdges.map(edge => {
+      // Find source and target nodes
+      const sourceNode = flowNodes.find(node => node.id === edge.source);
+      const targetNode = flowNodes.find(node => node.id === edge.target);
+      
+      if (!sourceNode || !targetNode) {
+        console.warn('Could not find nodes for edge:', edge.id);
+        return edge;
+      }
+      
+      // Create a copy of the edge and apply styling
+      const updatedEdge = { ...edge };
+      applyConnectionStyling(updatedEdge, sourceNode, targetNode, edge.sourceHandle, edge.targetHandle);
+      
+      return updatedEdge;
+    });
+    
+    // Update all edges at once
+    flowEdges = updatedEdges;
+  }
+
+  // Apply styling to existing edges whenever nodes change (not edges to avoid infinite loop)
+  $effect(() => {
+    if (flowNodes.length > 0 && flowEdges.length > 0 && availableNodes.length > 0) {
+      // Only update if we haven't already styled the edges
+      const needsUpdate = flowEdges.some(edge => {
+        const sourceNode = flowNodes.find(node => node.id === edge.source);
+        const targetNode = flowNodes.find(node => node.id === edge.target);
+        if (!sourceNode || !targetNode) return false;
+        
+        const isToolNode = sourceNode.type === 'tool';
+        const currentStyle = (edge as any).style;
+        
+        // Check if edge needs styling update
+        if (isToolNode && (!currentStyle || !currentStyle['stroke-dasharray'])) {
+          return true;
+        }
+        if (!isToolNode && currentStyle && currentStyle['stroke-dasharray']) {
+          return true;
+        }
+        return false;
+      });
+      
+      if (needsUpdate) {
+        updateExistingEdgeStyles();
+      }
+    }
+  });
 
   $effect(() => {
     if (props.endpointConfig) {
@@ -173,6 +309,11 @@
    * Global ConfigSidebar functions
    */
   function openConfigSidebar(node: WorkflowNodeType): void {
+    // If a different node's config sidebar is already open, close it first
+    if (selectedNodeForConfig && selectedNodeForConfig.id !== node.id) {
+      closeConfigSidebar();
+    }
+    
     selectedNodeForConfig = node;
     isConfigSidebarOpen = true;
   }
@@ -182,15 +323,37 @@
     selectedNodeForConfig = null;
   }
 
+  /**
+   * Helper function to map node types to Svelte Flow node types
+   */
+  function mapNodeType(nodeType: string): string {
+    switch (nodeType) {
+      case "note": return "note";
+      case "simple": return "simple";
+      case "tool": return "tool";
+      case "default": return "workflowNode"; // Map "default" to "workflowNode"
+      default: return "workflowNode";
+    }
+  }
+
   function handleConfigSave(newConfig: any): void {
     if (selectedNodeForConfig) {
       // Update the node's config
       selectedNodeForConfig.data.config = { ...newConfig };
       
+      // Determine if node type should change based on new config
+      const configNodeType = newConfig.nodeType;
+      const metadataType = selectedNodeForConfig.data.metadata?.type;
+      const newNodeType = configNodeType ? mapNodeType(configNodeType) : mapNodeType(metadataType || "default");
+      
       // Update the flowNodes array to trigger reactivity
       flowNodes = flowNodes.map(node => 
         node.id === selectedNodeForConfig?.id 
-          ? { ...node, data: { ...node.data, config: { ...newConfig } } }
+          ? { 
+              ...node, 
+              type: newNodeType, // Update node type based on configuration
+              data: { ...node.data, config: { ...newConfig } } 
+            }
           : node
       );
     }
@@ -225,13 +388,7 @@
       };
       
       const savedWorkflow = await workflowApi.saveWorkflow(workflow);
-      console.log("✅ Workflow saved successfully:", savedWorkflow);
-      console.log("📊 Saved workflow nodes:", flowNodes.map(node => ({
-        id: node.id,
-        type: node.type,
-        label: node.data.label,
-        config: node.data.config
-      })));
+
       
       // Note: Notes node configurations (content, noteType) are automatically
       // saved as part of the node.data.config object and will be restored
@@ -486,9 +643,12 @@
 
             const newNodeId = uuidv4();
             
-            // Determine node type based on metadata
-            const svelteFlowNodeType = nodeData.metadata?.type === "note" ? "note" : 
-                                     nodeData.metadata?.type === "simple" ? "simple" : "workflowNode";
+            // Determine node type based on configuration or metadata
+            // Priority: 1. nodeType from config, 2. type from metadata, 3. default fallback
+            const configNodeType = nodeData.config?.nodeType;
+            const metadataType = nodeData.metadata?.type;
+            
+            const svelteFlowNodeType = configNodeType ? mapNodeType(configNodeType) : mapNodeType(metadataType || "default");
             
             const newNode: WorkflowNodeType = {
               id: newNodeId,
@@ -518,11 +678,13 @@
         bind:edges={flowEdges}
         {nodeTypes}
         {defaultEdgeOptions}
+        onconnect={handleConnect}
         minZoom={0.2}
         maxZoom={3}
         clickConnect={true}
         elevateEdgesOnSelect={true}
         connectionLineType={ConnectionLineType.Bezier}
+        connectionLineComponent={ConnectionLine}
         snapGrid={[10, 10]}
         fitView
       />
@@ -714,6 +876,12 @@
     pointer-events: all;
     cursor: pointer;
   }
+
+
+  /* Enhanced arrow markers for input ports */
+  :global(.flowdrop-workflow-editor .svelte-flow__edge-marker) {
+    fill: currentColor;
+  }
   
   :global(.flowdrop-workflow-editor .svelte-flow__handle) {
     width: 18px;
@@ -723,15 +891,13 @@
     z-index: 10;
   }
   
-  :global(.flowdrop-workflow-editor .svelte-flow__handle:hover) {
-    transform: scale(1.2);
-  }
-
   /* Ensure our custom handles are clickable */
   :global(.flowdrop-workflow-editor .svelte-flow__handle) {
     pointer-events: all;
     cursor: crosshair;
   }
-
+  :global(.flowdrop--edge--tool path.svelte-flow__edge-path) {
+    stroke-dasharray: 5 5;
+  }
   /* Floating button styles removed - sidebar is now always visible */
 </style> 

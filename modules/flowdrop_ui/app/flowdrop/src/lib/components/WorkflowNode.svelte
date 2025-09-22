@@ -26,29 +26,22 @@
   let props: Props = $props();
   let isHandleInteraction = $state(false);
 
-  // Debug logging
-  $effect(() => {
-    console.log('🔧 WorkflowNode Debug:', {
-      nodeId: props.data.nodeId,
-      label: props.data.label,
-      config: props.data.config,
-      configSchema: props.data.metadata.configSchema,
-      configSchemaProperties: props.data.metadata.configSchema?.properties,
-      configKeys: Object.keys(props.data.config || {}),
-      hasConfig: Object.keys(props.data.config || {}).length > 0,
-      metadataKeys: Object.keys(props.data.metadata || {})
-    });
-  });
-
   /**
    * Handle configuration value changes - now handled by global ConfigSidebar
    */
   // Removed local config handling - now using global ConfigSidebar
 
   /**
-   * Handle node click - open configuration sidebar
+   * Handle node click - only handle selection, no config opening
    */
   function handleNodeClick(): void {
+    // Node selection is handled by Svelte Flow
+  }
+
+  /**
+   * Handle double-click to open config
+   */
+  function handleDoubleClick(): void {
     openConfigSidebar();
   }
 
@@ -82,6 +75,7 @@
   class="flowdrop-workflow-node"
   class:flowdrop-workflow-node--selected={props.selected}
   onclick={handleNodeClick}
+  ondblclick={handleDoubleClick}
   onmouseup={() => {
     isHandleInteraction = false;
   }}
@@ -91,7 +85,7 @@
   onkeydown={(e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      handleNodeClick();
+      handleDoubleClick();
     }
   }}
   aria-label="Workflow node: {props.data.metadata.name}"
@@ -141,7 +135,7 @@
               position={Position.Left}
               id={port.id}
               class="flowdrop-workflow-node__handle"
-              style="top: 50%; transform: translateY(-50%); margin-left: -32px;"
+              style="top: 50%; transform: translateY(-50%); margin-left: -32px; background-color: {getDataTypeColorToken(port.dataType)}; border-color: '#ffffff';"
               role="button"
               tabindex={0}
               aria-label="Connect to {port.name} input port"
@@ -196,7 +190,7 @@
               position={Position.Right}
               id={port.id}
               class="flowdrop-workflow-node__handle"
-              style="top: 50%; transform: translateY(-50%); margin-right: -32px;"
+              style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {getDataTypeColorToken(port.dataType)}; border-color: '#ffffff';"
               role="button"
               tabindex={0}
               aria-label="Connect from {port.name} output port"
@@ -206,6 +200,15 @@
       </div>
     </div>
   {/if}
+
+  <!-- Config button -->
+  <button
+    class="flowdrop-workflow-node__config-btn"
+    onclick={openConfigSidebar}
+    title="Configure node"
+  >
+    <Icon icon="mdi:cog" />
+  </button>
 </div>
 
 <!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
@@ -408,5 +411,36 @@
   
   .flowdrop-text--right {
     text-align: right;
+  }
+
+  .flowdrop-workflow-node__config-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+    backdrop-filter: blur(4px);
+    z-index: 15;
+    font-size: 0.875rem;
+  }
+
+  .flowdrop-workflow-node:hover .flowdrop-workflow-node__config-btn {
+    opacity: 1;
+  }
+
+  .flowdrop-workflow-node__config-btn:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+    color: #374151;
   }
 </style> 

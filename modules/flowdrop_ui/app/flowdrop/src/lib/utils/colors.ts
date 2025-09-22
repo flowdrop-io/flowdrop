@@ -54,7 +54,8 @@ export const DATA_TYPE_COLOR_TOKENS: Record<string, string> = {
   email: "var(--color-ref-cyan-500)",
   date: "var(--color-ref-lime-500)",
   datetime: "var(--color-ref-lime-500)",
-  time: "var(--color-ref-lime-500)"
+  time: "var(--color-ref-lime-500)",
+  tool: "var(--color-ref-amber-500)"
 };
 
 /**
@@ -76,7 +77,7 @@ export function getDataTypeColorToken(dataType: string): string {
     }
   } catch (error) {
     // Fallback to static color mapping if port checker not initialized
-    console.warn("Port compatibility checker not initialized, using fallback colors:", error);
+    // console.warn("Port compatibility checker not initialized, using fallback colors:", error);
   }
   
   return DATA_TYPE_COLOR_TOKENS[dataType.toLowerCase()] || "var(--color-ref-slate-500)";

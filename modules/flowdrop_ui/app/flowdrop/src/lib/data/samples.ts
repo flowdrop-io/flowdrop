@@ -35,6 +35,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "simple",
+          enum: ["simple", "default"],
+          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+        },
         placeholder: {
           type: "string",
           title: "Placeholder",
@@ -73,6 +81,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "simple",
+          enum: ["simple", "default"],
+          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+        },
         accept: {
           type: "string",
           title: "Accepted File Types",
@@ -111,6 +127,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "simple",
+          enum: ["simple", "default"],
+          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+        },
         endpoint: {
           type: "string",
           title: "Endpoint",
@@ -152,6 +176,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "simple",
+          enum: ["simple", "default"],
+          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+        },
         showTimestamp: {
           type: "boolean",
           title: "Show Timestamp",
@@ -196,6 +228,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "simple",
+          enum: ["simple", "default"],
+          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+        },
         showTimestamp: {
           type: "boolean",
           title: "Show Timestamp",
@@ -1149,6 +1189,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "tool",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         method: {
           type: "string",
           title: "HTTP Method",
@@ -1324,6 +1372,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "tool",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         operation: {
           type: "string",
           title: "Operation",
@@ -1404,6 +1460,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "tool",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         operation: {
           type: "string",
           title: "Operation",
@@ -1470,6 +1534,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "tool",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         operation: {
           type: "string",
           title: "Operation",
@@ -1526,6 +1598,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "tool",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         format: {
           type: "string",
           title: "Format",
@@ -1604,6 +1684,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "default",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         icon: {
           type: "string",
           title: "Icon",

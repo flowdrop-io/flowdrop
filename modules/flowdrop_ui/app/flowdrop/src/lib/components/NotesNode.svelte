@@ -129,8 +129,13 @@
     }
   }
 
-  // Handle node click to open sidebar
+  // Handle node click - only handle selection, no config opening
   function handleNodeClick(): void {
+    // Node selection is handled by Svelte Flow
+  }
+
+  // Handle double-click to open config
+  function handleDoubleClick(): void {
     openConfigSidebar();
   }
 
@@ -138,7 +143,7 @@
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      openConfigSidebar();
+      handleDoubleClick();
     }
   }
 </script>
@@ -149,6 +154,7 @@
   class:flowdrop-notes-node--processing={props.isProcessing}
   class:flowdrop-notes-node--error={props.isError}
   onclick={handleNodeClick}
+  ondblclick={handleDoubleClick}
   onkeydown={handleKeydown}
   role="button"
   tabindex="0"
@@ -249,6 +255,15 @@
       {/if}
     </div>
   {/if}
+
+  <!-- Config button -->
+  <button
+    class="flowdrop-notes-node__config-btn"
+    onclick={openConfigSidebar}
+    title="Configure note"
+  >
+    <Icon icon="mdi:cog" />
+  </button>
 </div>
 
 <style>
@@ -506,6 +521,37 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  .flowdrop-notes-node__config-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+    backdrop-filter: blur(4px);
+    z-index: 15;
+    font-size: 0.875rem;
+  }
+
+  .flowdrop-notes-node:hover .flowdrop-notes-node__config-btn {
+    opacity: 1;
+  }
+
+  .flowdrop-notes-node__config-btn:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+    color: #374151;
   }
 
   /* Responsive design */

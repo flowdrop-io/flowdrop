@@ -31,19 +31,6 @@
     localValues = { ...props.values };
   });
 
-  // Debug logging
-  $effect(() => {
-    console.log('🔧 ConfigForm Debug:', {
-      schema: props.schema,
-      schemaProperties: props.schema?.properties,
-      values: props.values,
-      disabled: props.disabled,
-      hasSchema: !!props.schema,
-      hasProperties: !!props.schema?.properties,
-      propertiesKeys: props.schema?.properties ? Object.keys(props.schema.properties) : []
-    });
-  });
-
   /**
    * Validate a single field against its schema
    */

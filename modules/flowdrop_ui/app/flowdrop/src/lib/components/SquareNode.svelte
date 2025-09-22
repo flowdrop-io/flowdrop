@@ -1,6 +1,6 @@
 <!--
-  Simple Node Component
-  A simple node with optional input and output ports
+  Square Node Component
+  A simple square node with optional input and output ports
   Styled with BEM syntax
 -->
 
@@ -13,7 +13,6 @@
   import type { NodeConfig } from "../types/index.js";
   import Icon from "@iconify/svelte";
   import { createEventDispatcher } from "svelte";
-	import { getDataTypeColor } from "$lib/utils/colors.js";
 
   const dispatch = createEventDispatcher();
 
@@ -32,10 +31,10 @@
 
   // Removed local config state - now using global ConfigSidebar
 
-  // Get the node icon from config or use default
-  let nodeIcon = $derived((props.data.config?.icon as string) || "mdi:square");
-  let nodeColor = $derived((props.data.config?.color as string) || "#6366f1");
-  let nodeLayout = $derived((props.data.config?.layout as string) || "normal");
+  // Get the square icon from config or use default
+  let squareIcon = $derived((props.data.config?.icon as string) || "mdi:square");
+  let squareColor = $derived((props.data.config?.color as string) || "#6366f1");
+  let squareLayout = $derived((props.data.config?.layout as string) || "normal");
 
   // Layout configurations
   const layoutConfig = {
@@ -53,8 +52,8 @@
     }
   };
 
-  let currentLayout = $derived(layoutConfig[nodeLayout as keyof typeof layoutConfig] || layoutConfig.normal);
-  let isCompact = $derived(nodeLayout === "compact");
+  let currentLayout = $derived(layoutConfig[squareLayout as keyof typeof layoutConfig] || layoutConfig.normal);
+  let isCompact = $derived(squareLayout === "compact");
 
   // Handle configuration sidebar - now using global ConfigSidebar
   function openConfigSidebar(): void {
@@ -62,7 +61,7 @@
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
         id: props.data.nodeId || "unknown",
-        type: "simple",
+        type: "square",
         data: props.data
       };
       props.data.onConfigOpen(nodeForConfig);
@@ -74,16 +73,16 @@
     openConfigSidebar();
   }
 
-  // Handle single click - only handle selection, no config opening
+  // Handle single click to open config
   function handleClick(): void {
-    // Node selection is handled by Svelte Flow
+    openConfigSidebar();
   }
 
   // Handle keyboard events
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      handleDoubleClick();
+      openConfigSidebar();
     }
   }
 
@@ -97,19 +96,18 @@
   <Handle
     type="target"
     position={Position.Left}
-    style="background-color: 'grey'; border-color: '#ffffff';"
     id="input"
   />
 {/if}
 
-<!-- Simple Node -->
+<!-- Square Node -->
 <div
-  class="flowdrop-simple-node"
-  class:flowdrop-simple-node--compact={isCompact}
-  class:flowdrop-simple-node--normal={!isCompact}
-  class:flowdrop-simple-node--selected={props.selected}
-  class:flowdrop-simple-node--processing={props.isProcessing}
-  class:flowdrop-simple-node--error={props.isError}
+  class="flowdrop-square-node"
+  class:flowdrop-square-node--compact={isCompact}
+  class:flowdrop-square-node--normal={!isCompact}
+  class:flowdrop-square-node--selected={props.selected}
+  class:flowdrop-square-node--processing={props.isProcessing}
+  class:flowdrop-square-node--error={props.isError}
   onclick={handleClick}
   ondblclick={handleDoubleClick}
   onkeydown={handleKeydown}
@@ -118,34 +116,34 @@
 >
   {#if isCompact}
     <!-- Compact Layout: Just centered icon -->
-    <div class="flowdrop-simple-node__compact-content">
+    <div class="flowdrop-square-node__compact-content">
       <Icon 
-        icon={nodeIcon} 
-        class="flowdrop-simple-node__compact-icon"
-        style="color: {nodeColor}; font-size: {currentLayout.iconSize};"
+        icon={squareIcon} 
+        class="flowdrop-square-node__compact-icon"
+        style="color: {squareColor}; font-size: {currentLayout.iconSize};"
       />
     </div>
   {:else}
     <!-- Normal Layout: Header with title and description -->
-    <div class="flowdrop-simple-node__header">
-      <div class="flowdrop-simple-node__header-content">
+    <div class="flowdrop-square-node__header">
+      <div class="flowdrop-square-node__header-content">
         <!-- Node Icon -->
-        <div class="flowdrop-simple-node__icon-container" style="background-color: {nodeColor}">
+        <div class="flowdrop-square-node__icon-container" style="background-color: {squareColor}">
           <Icon 
-            icon={nodeIcon} 
-            class="flowdrop-simple-node__icon"
+            icon={squareIcon} 
+            class="flowdrop-square-node__icon"
           />
         </div>
         
         <!-- Node Title -->
-        <h3 class="flowdrop-simple-node__title">
+        <h3 class="flowdrop-square-node__title">
           {props.data.label}
         </h3>
       </div>
       
       <!-- Node Description -->
-      <p class="flowdrop-simple-node__description">
-        {props.data.metadata?.description || "A configurable simple node"}
+      <p class="flowdrop-square-node__description">
+        {props.data.metadata?.description || "A configurable square node"}
       </p>
     </div>
   {/if}
@@ -153,21 +151,21 @@
 
   <!-- Processing indicator -->
   {#if props.isProcessing}
-    <div class="flowdrop-simple-node__processing">
-      <div class="flowdrop-simple-node__spinner"></div>
+    <div class="flowdrop-square-node__processing">
+      <div class="flowdrop-square-node__spinner"></div>
     </div>
   {/if}
 
   <!-- Error indicator -->
   {#if props.isError}
-    <div class="flowdrop-simple-node__error">
-      <Icon icon="mdi:alert-circle" class="flowdrop-simple-node__error-icon" />
+    <div class="flowdrop-square-node__error">
+      <Icon icon="mdi:alert-circle" class="flowdrop-square-node__error-icon" />
     </div>
   {/if}
 
   <!-- Config button -->
   <button
-    class="flowdrop-simple-node__config-btn"
+    class="flowdrop-square-node__config-btn"
     onclick={openConfigSidebar}
     title="Configure node"
   >
@@ -181,14 +179,13 @@
     type="source"
     position={Position.Right}
     id="output"
-    style="background-color: 'grey'; border-color: '#ffffff';"
   />
 {/if}
 
 <!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
 
 <style>
-  .flowdrop-simple-node {
+  .flowdrop-square-node {
     position: relative;
     background-color: #ffffff;
     border: 2px solid #e5e7eb;
@@ -203,49 +200,49 @@
   }
 
   /* Normal layout (default) */
-  .flowdrop-simple-node--normal {
+  .flowdrop-square-node--normal {
     width: 18rem;
   }
 
   /* Compact layout */
-  .flowdrop-simple-node--compact {
+  .flowdrop-square-node--compact {
     width: 80px;
     height: 80px;
     justify-content: center;
     align-items: center;
   }
 
-  .flowdrop-simple-node:hover {
+  .flowdrop-square-node:hover {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
-  .flowdrop-simple-node--selected {
+  .flowdrop-square-node--selected {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     border: 2px solid #3b82f6;
   }
 
-  .flowdrop-simple-node--processing {
+  .flowdrop-square-node--processing {
     opacity: 0.7;
   }
 
-  .flowdrop-simple-node--error {
+  .flowdrop-square-node--error {
     border-color: #ef4444 !important;
     background-color: #fef2f2 !important;
   }
 
-  .flowdrop-simple-node__header {
+  .flowdrop-square-node__header {
     padding: 1rem;
     background-color: #f9fafb;
     border-radius: 0.75rem;
   }
 
-  .flowdrop-simple-node__header-content {
+  .flowdrop-square-node__header-content {
     display: flex;
     align-items: center;
     gap: 0.75rem;
   }
 
-  .flowdrop-simple-node__icon-container {
+  .flowdrop-square-node__icon-container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -256,7 +253,7 @@
   }
 
   /* Compact layout styles */
-  .flowdrop-simple-node__compact-content {
+  .flowdrop-square-node__compact-content {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -264,41 +261,32 @@
     height: 100%;
   }
 
-  .flowdrop-simple-node__compact-icon {
+  .flowdrop-square-node__compact-icon {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
   }
 
-  .flowdrop-simple-node__title {
+  .flowdrop-square-node__title {
     font-size: 0.875rem;
     font-weight: 500;
     color: #1f2937;
     margin: 0;
     flex: 1;
     min-width: 0;
-    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .flowdrop-simple-node__description {
+  .flowdrop-square-node__description {
     font-size: 0.75rem;
     color: #6b7280;
     margin: 0.25rem 0 0 0;
-    line-height: 1.3;
-  }
-
-  /* Compact layout text constraints */
-  .flowdrop-simple-node--compact .flowdrop-simple-node__title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .flowdrop-simple-node--compact .flowdrop-simple-node__description {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  :global(.flowdrop-simple-node__icon) {
+  :global(.flowdrop-square-node__icon) {
     color: white;
     font-size: 1rem;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
@@ -306,13 +294,13 @@
 
   /* Label styling removed - now using header title */
 
-  .flowdrop-simple-node__processing {
+  .flowdrop-square-node__processing {
     position: absolute;
     top: 4px;
     right: 4px;
   }
 
-  .flowdrop-simple-node__spinner {
+  .flowdrop-square-node__spinner {
     width: 12px;
     height: 12px;
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -321,19 +309,19 @@
     animation: spin 1s linear infinite;
   }
 
-  .flowdrop-simple-node__error {
+  .flowdrop-square-node__error {
     position: absolute;
     top: 4px;
     right: 4px;
     color: #ef4444;
   }
 
-  :global(.flowdrop-simple-node__error-icon) {
+  :global(.flowdrop-square-node__error-icon) {
     width: 12px;
     height: 12px;
   }
 
-  .flowdrop-simple-node__config-btn {
+  .flowdrop-square-node__config-btn {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -354,11 +342,11 @@
     font-size: 0.875rem;
   }
 
-  .flowdrop-simple-node:hover .flowdrop-simple-node__config-btn {
+  .flowdrop-square-node:hover .flowdrop-square-node__config-btn {
     opacity: 1;
   }
 
-  .flowdrop-simple-node__config-btn:hover {
+  .flowdrop-square-node__config-btn:hover {
     background-color: #f9fafb;
     border-color: #d1d5db;
     color: #374151;
@@ -371,7 +359,7 @@
   }
 
   /* Handle styles - matching WorkflowNode exactly */
-  :global(.svelte-flow__node-simple .svelte-flow__handle) {
+  :global(.svelte-flow__node-square .svelte-flow__handle) {
     width: 18px !important;
     height: 18px !important;
     background-color: #6b7280 !important;
@@ -383,21 +371,21 @@
     pointer-events: auto !important;
   }
 
-  :global(.svelte-flow__node-simple .svelte-flow__handle-left) {
+  :global(.svelte-flow__node-square .svelte-flow__handle-left) {
     left: -6px !important;
   }
 
-  :global(.svelte-flow__node-simple .svelte-flow__handle-right) {
+  :global(.svelte-flow__node-square .svelte-flow__handle-right) {
     right: -6px !important;
   }
 
   /* Handle hover effects - matching WorkflowNode but without scale to avoid moving target */
-  :global(.svelte-flow__node-simple .svelte-flow__handle:hover) {
+  :global(.svelte-flow__node-square .svelte-flow__handle:hover) {
     background-color: #3b82f6 !important;
     /* Removed transform: scale(1.2) to prevent moving target issue */
   }
 
-  :global(.svelte-flow__node-simple .svelte-flow__handle:focus) {
+  :global(.svelte-flow__node-square .svelte-flow__handle:focus) {
     outline: 2px solid #3b82f6 !important;
     outline-offset: 2px !important;
   }
