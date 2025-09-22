@@ -1069,6 +1069,379 @@ export const sampleNodes: NodeMetadata[] = [
   // ===== TOOLS CATEGORY =====
   {
     id: uuidv4(),
+    name: "HTTP Request",
+    version: "1.0.0",
+    description: "Advanced HTTP client with full request/response handling, similar to n8n",
+    category: "tools",
+    icon: "mdi:web",
+    color: "#3b82f6",
+    inputs: [
+      {
+        id: "url",
+        name: "URL",
+        type: "input",
+        dataType: "string",
+        required: false,
+        description: "Request URL (can be set in config or via input)"
+      },
+      {
+        id: "headers",
+        name: "Headers",
+        type: "input",
+        dataType: "json",
+        required: false,
+        description: "Additional HTTP headers as JSON object"
+      },
+      {
+        id: "body",
+        name: "Body",
+        type: "input",
+        dataType: "mixed",
+        required: false,
+        description: "Request body (JSON, string, or form data)"
+      },
+      {
+        id: "query_params",
+        name: "Query Parameters",
+        type: "input",
+        dataType: "json",
+        required: false,
+        description: "URL query parameters as JSON object"
+      }
+    ],
+    outputs: [
+      {
+        id: "response",
+        name: "Response",
+        type: "output",
+        dataType: "json",
+        description: "Complete HTTP response object"
+      },
+      {
+        id: "body",
+        name: "Body",
+        type: "output",
+        dataType: "mixed",
+        description: "Response body (parsed JSON or raw text)"
+      },
+      {
+        id: "headers",
+        name: "Headers",
+        type: "output",
+        dataType: "json",
+        description: "Response headers as JSON object"
+      },
+      {
+        id: "status_code",
+        name: "Status Code",
+        type: "output",
+        dataType: "number",
+        description: "HTTP status code"
+      },
+      {
+        id: "status_text",
+        name: "Status Text",
+        type: "output",
+        dataType: "string",
+        description: "HTTP status text"
+      }
+    ],
+    configSchema: {
+      type: "object",
+      properties: {
+        method: {
+          type: "string",
+          title: "HTTP Method",
+          description: "HTTP request method",
+          default: "GET",
+          enum: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+        },
+        url: {
+          type: "string",
+          title: "URL",
+          description: "Request URL (overridden by input if provided)",
+          default: "https://api.example.com/endpoint"
+        },
+        authentication: {
+          type: "string",
+          title: "Authentication",
+          description: "Authentication method",
+          default: "none",
+          enum: ["none", "basic", "bearer", "api_key", "oauth2"]
+        },
+        auth_username: {
+          type: "string",
+          title: "Username",
+          description: "Username for basic authentication",
+          default: ""
+        },
+        auth_password: {
+          type: "string",
+          title: "Password",
+          description: "Password for basic authentication",
+          default: "",
+          format: "password"
+        },
+        auth_token: {
+          type: "string",
+          title: "Bearer Token",
+          description: "Bearer token for authentication",
+          default: "",
+          format: "password"
+        },
+        api_key_header: {
+          type: "string",
+          title: "API Key Header",
+          description: "Header name for API key authentication",
+          default: "X-API-Key"
+        },
+        api_key_value: {
+          type: "string",
+          title: "API Key Value",
+          description: "API key value",
+          default: "",
+          format: "password"
+        },
+        content_type: {
+          type: "string",
+          title: "Content Type",
+          description: "Request content type",
+          default: "application/json",
+          enum: [
+            "application/json",
+            "application/x-www-form-urlencoded",
+            "multipart/form-data",
+            "text/plain",
+            "text/xml",
+            "application/xml"
+          ]
+        },
+        timeout: {
+          type: "integer",
+          title: "Timeout (seconds)",
+          description: "Request timeout in seconds",
+          default: 30,
+          minimum: 1,
+          maximum: 300
+        },
+        follow_redirects: {
+          type: "boolean",
+          title: "Follow Redirects",
+          description: "Automatically follow HTTP redirects",
+          default: true
+        },
+        ssl_verify: {
+          type: "boolean",
+          title: "Verify SSL",
+          description: "Verify SSL certificates",
+          default: true
+        },
+        retry_attempts: {
+          type: "integer",
+          title: "Retry Attempts",
+          description: "Number of retry attempts on failure",
+          default: 0,
+          minimum: 0,
+          maximum: 5
+        },
+        retry_delay: {
+          type: "integer",
+          title: "Retry Delay (ms)",
+          description: "Delay between retry attempts in milliseconds",
+          default: 1000,
+          minimum: 100,
+          maximum: 10000
+        },
+        response_format: {
+          type: "string",
+          title: "Response Format",
+          description: "How to parse the response body",
+          default: "auto",
+          enum: ["auto", "json", "text", "binary", "xml"]
+        },
+        include_response_headers: {
+          type: "boolean",
+          title: "Include Response Headers",
+          description: "Include response headers in output",
+          default: true
+        },
+        custom_headers: {
+          type: "string",
+          title: "Custom Headers (JSON)",
+          description: "Custom headers as JSON string",
+          default: "{}",
+          format: "multiline"
+        },
+        user_agent: {
+          type: "string",
+          title: "User Agent",
+          description: "Custom User-Agent header",
+          default: "FlowDrop-HTTP-Client/1.0"
+        },
+        proxy_url: {
+          type: "string",
+          title: "Proxy URL",
+          description: "HTTP proxy URL (optional)",
+          default: ""
+        },
+        ignore_ssl_issues: {
+          type: "boolean",
+          title: "Ignore SSL Issues",
+          description: "Ignore SSL certificate errors (not recommended for production)",
+          default: false
+        }
+      }
+    },
+    tags: ["tools", "http", "api", "request", "n8n", "automation", "integration"]
+  },
+  {
+    id: uuidv4(),
+    name: "JSON",
+    version: "1.0.0",
+    description: "Parse, manipulate, and transform JSON data like n8n's JSON node",
+    category: "tools",
+    icon: "mdi:code-json",
+    color: "#f59e0b",
+    inputs: [
+      {
+        id: "json_input",
+        name: "JSON Input",
+        type: "input",
+        dataType: "mixed",
+        required: false,
+        description: "JSON data to process"
+      }
+    ],
+    outputs: [
+      {
+        id: "json_output",
+        name: "JSON Output",
+        type: "output",
+        dataType: "json",
+        description: "Processed JSON data"
+      }
+    ],
+    configSchema: {
+      type: "object",
+      properties: {
+        operation: {
+          type: "string",
+          title: "Operation",
+          description: "JSON operation to perform",
+          default: "parse",
+          enum: ["parse", "stringify", "extract", "merge", "filter", "transform", "validate"]
+        },
+        json_path: {
+          type: "string",
+          title: "JSON Path",
+          description: "JSONPath expression for extraction (e.g., $.data.items[*].name)",
+          default: "$"
+        },
+        merge_strategy: {
+          type: "string",
+          title: "Merge Strategy",
+          description: "How to merge JSON objects",
+          default: "deep",
+          enum: ["shallow", "deep", "overwrite"]
+        },
+        filter_expression: {
+          type: "string",
+          title: "Filter Expression",
+          description: "JavaScript expression for filtering (e.g., item.price > 100)",
+          default: ""
+        },
+        transform_expression: {
+          type: "string",
+          title: "Transform Expression",
+          description: "JavaScript expression for transformation",
+          default: "",
+          format: "multiline"
+        },
+        pretty_print: {
+          type: "boolean",
+          title: "Pretty Print",
+          description: "Format JSON output with indentation",
+          default: true
+        },
+        validate_schema: {
+          type: "string",
+          title: "JSON Schema",
+          description: "JSON Schema for validation (optional)",
+          default: "",
+          format: "multiline"
+        }
+      }
+    },
+    tags: ["tools", "json", "data", "transform", "n8n", "parse"]
+  },
+  {
+    id: uuidv4(),
+    name: "Set",
+    version: "1.0.0",
+    description: "Set and manipulate data values like n8n's Set node",
+    category: "tools",
+    icon: "mdi:variable",
+    color: "#10b981",
+    inputs: [
+      {
+        id: "input_data",
+        name: "Input Data",
+        type: "input",
+        dataType: "mixed",
+        required: false,
+        description: "Input data to process"
+      }
+    ],
+    outputs: [
+      {
+        id: "output_data",
+        name: "Output Data",
+        type: "output",
+        dataType: "json",
+        description: "Processed output data"
+      }
+    ],
+    configSchema: {
+      type: "object",
+      properties: {
+        operation: {
+          type: "string",
+          title: "Operation",
+          description: "Set operation to perform",
+          default: "set",
+          enum: ["set", "append", "prepend", "remove", "rename", "copy", "move"]
+        },
+        keep_only_set: {
+          type: "boolean",
+          title: "Keep Only Set Fields",
+          description: "Only keep the fields that are being set",
+          default: false
+        },
+        values: {
+          type: "string",
+          title: "Values (JSON)",
+          description: "Values to set as JSON object",
+          default: "{\n  \"key1\": \"value1\",\n  \"key2\": \"{{ $json.input_field }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+          format: "multiline"
+        },
+        include_binary_data: {
+          type: "boolean",
+          title: "Include Binary Data",
+          description: "Include binary data in output",
+          default: false
+        },
+        dot_notation: {
+          type: "boolean",
+          title: "Use Dot Notation",
+          description: "Support dot notation for nested properties (e.g., user.name)",
+          default: true
+        }
+      }
+    },
+    tags: ["tools", "set", "data", "transform", "n8n", "variables"]
+  },
+  {
+    id: uuidv4(),
     name: "Calculator",
     version: "1.0.0",
     description: "Perform mathematical calculations",
@@ -1199,6 +1572,73 @@ export const sampleNodes: NodeMetadata[] = [
       }
     },
     tags: ["tools", "notes", "documentation", "comments", "markdown"]
+  },
+  {
+    id: uuidv4(),
+    name: "Simple Node",
+    type: "simple",
+    version: "1.0.0",
+    description: "A simple node with optional input and output ports",
+    category: "tools",
+    icon: "mdi:square",
+    color: "#6366f1",
+    inputs: [
+      {
+        id: "input",
+        name: "Input",
+        type: "input",
+        dataType: "mixed",
+        required: false,
+        description: "Optional input data"
+      }
+    ],
+    outputs: [
+      {
+        id: "output",
+        name: "Output",
+        type: "output",
+        dataType: "mixed",
+        description: "Optional output data"
+      }
+    ],
+    configSchema: {
+      type: "object",
+      properties: {
+        icon: {
+          type: "string",
+          title: "Icon",
+          description: "Icon to display in the node (Iconify icon name)",
+          default: "mdi:square"
+        },
+        color: {
+          type: "string",
+          title: "Color",
+          description: "Background color of the node",
+          default: "#6366f1"
+        },
+        layout: {
+          type: "string",
+          title: "Layout",
+          description: "Layout style of the simple node",
+          default: "normal",
+          enum: ["compact", "normal"]
+        },
+        label: {
+          type: "string",
+          title: "Label",
+          description: "Custom label for the node",
+          default: "Simple Node"
+        },
+        description: {
+          type: "string",
+          title: "Description",
+          description: "Description of what this simple node does",
+          default: "",
+          format: "multiline"
+        }
+      }
+    },
+    tags: ["tools", "simple", "custom", "visual", "node"]
   },
 
   // ===== EMBEDDINGS CATEGORY =====

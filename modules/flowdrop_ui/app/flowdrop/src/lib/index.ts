@@ -48,6 +48,8 @@ export { EnhancedFlowDropApiClient } from "./api/enhanced-client.js";
 export { default as WorkflowEditor } from "./components/WorkflowEditor.svelte";
 export { default as NodeSidebar } from "./components/NodeSidebar.svelte";
 export { default as WorkflowNodeComponent } from "./components/WorkflowNode.svelte";
+export { default as SimpleNodeComponent } from "./components/SimpleNode.svelte";
+export { default as NotesNodeComponent } from "./components/NotesNode.svelte";
 export { default as CanvasBanner } from "./components/CanvasBanner.svelte";
 
 // Export sample data for development

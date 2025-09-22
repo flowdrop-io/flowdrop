@@ -16,18 +16,15 @@
   import Icon from "@iconify/svelte";
   import { getNodeIcon } from "../utils/icons.js";
   import { getDataTypeColorToken, getCategoryColorToken } from "../utils/colors.js";
-  import ConfigModal from "./ConfigModal.svelte";
 
   interface Props {
-    data: WorkflowNode["data"] & { nodeId?: string };
+    data: WorkflowNode["data"] & { nodeId?: string; onConfigOpen?: (node: any) => void };
     selected?: boolean;
     onPortClick?: (nodeId: string, portId: string, isOutput: boolean, event: MouseEvent) => void;
   }
 
   let props: Props = $props();
-  let configValues = $state({ ...props.data.config });
   let isHandleInteraction = $state(false);
-  let isConfigModalOpen = $state(false);
 
   // Debug logging
   $effect(() => {
@@ -37,56 +34,39 @@
       config: props.data.config,
       configSchema: props.data.metadata.configSchema,
       configSchemaProperties: props.data.metadata.configSchema?.properties,
-      configValues: configValues,
-      configKeys: Object.keys(configValues),
-      hasConfig: Object.keys(configValues).length > 0,
+      configKeys: Object.keys(props.data.config || {}),
+      hasConfig: Object.keys(props.data.config || {}).length > 0,
       metadataKeys: Object.keys(props.data.metadata || {})
     });
   });
 
   /**
-   * Handle configuration value changes
+   * Handle configuration value changes - now handled by global ConfigSidebar
    */
-  function handleConfigChange(key: string, value: unknown): void {
-    configValues = { ...configValues, [key]: value };
-  }
+  // Removed local config handling - now using global ConfigSidebar
 
   /**
-   * Handle node selection
+   * Handle node click - open configuration sidebar
    */
   function handleNodeClick(): void {
-    // Node selection is handled through events
+    openConfigSidebar();
   }
 
   /**
-   * Open configuration modal
+   * Handle configuration sidebar - now using global ConfigSidebar
    */
-  function openConfigModal(): void {
-    isConfigModalOpen = true;
+  function openConfigSidebar(): void {
+    if (props.data.onConfigOpen) {
+      // Create a WorkflowNodeType-like object for the global ConfigSidebar
+      const nodeForConfig = {
+        id: props.data.nodeId || "unknown",
+        type: "workflowNode",
+        data: props.data
+      };
+      props.data.onConfigOpen(nodeForConfig);
+    }
   }
 
-  /**
-   * Handle configuration save
-   */
-  function handleConfigSave({ detail }: { detail: { values: ConfigValues } }): void {
-    configValues = detail.values;
-    props.data.config = detail.values;
-    isConfigModalOpen = false;
-  }
-
-  /**
-   * Handle configuration cancel
-   */
-  function handleConfigCancel(): void {
-    isConfigModalOpen = false;
-  }
-
-  /**
-   * Handle configuration close
-   */
-  function handleConfigClose(): void {
-    isConfigModalOpen = false;
-  }
 
   /**
    * Handle node drag start
@@ -137,20 +117,6 @@
         {/if}
         {#if props.data.error}
           <div class="flowdrop-workflow-node__status flowdrop-workflow-node__status--error" title="Error"></div>
-        {/if}
-        {#if props.data.metadata.configSchema}
-          <button
-            class="flowdrop-workflow-node__config-btn"
-            onclick={(e) => {
-              e.stopPropagation();
-              openConfigModal();
-            }}
-            type="button"
-            aria-label="Configure node"
-            title="Configure node"
-          >
-            <Icon icon="mdi:cog" />
-          </button>
         {/if}
       </div>
     </div>
@@ -242,17 +208,7 @@
   {/if}
 </div>
 
-<!-- Configuration Modal -->
-<ConfigModal
-  isOpen={isConfigModalOpen}
-  nodeId={props.data.nodeId || 'unknown'}
-  nodeLabel={props.data.label}
-  configSchema={props.data.metadata.configSchema}
-  configValues={configValues}
-  on:save={handleConfigSave}
-  on:cancel={handleConfigCancel}
-  on:close={handleConfigClose}
-/>
+<!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
 
 <style>
   .flowdrop-workflow-node {
@@ -296,31 +252,6 @@
     line-height: 1;
   }
   
-  .flowdrop-workflow-node__config-btn {
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.25rem;
-    background-color: #ffffff;
-    color: #6b7280;
-    font-size: 0.75rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease-in-out;
-  }
-  
-  .flowdrop-workflow-node__config-btn:hover {
-    background-color: #f3f4f6;
-    color: #374151;
-    border-color: #9ca3af;
-  }
-  
-  .flowdrop-workflow-node__config-btn:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
   
   .flowdrop-workflow-node__status {
     width: 0.75rem;
@@ -378,26 +309,6 @@
     position: relative;
   }
   
-  .flowdrop-workflow-node__handle {
-    width: 0.75rem;
-    height: 0.75rem;
-    background-color: #6b7280;
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    cursor: crosshair;
-    transition: all 0.2s ease-in-out;
-  }
-  
-  .flowdrop-workflow-node__handle:hover {
-    background-color: #3b82f6;
-    transform: scale(1.2);
-  }
-  
-  .flowdrop-workflow-node__handle:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-  
   .flowdrop-badge {
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
@@ -417,6 +328,27 @@
     padding: 0.125rem 0.25rem;
   }
   
+  /* Handle styles */
+  :global(.flowdrop-workflow-node__handle) {
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: #6b7280;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+  }
+  
+  :global(.flowdrop-workflow-node__handle:hover) {
+    background-color: #3b82f6;
+    transform: scale(1.2);
+  }
+  
+  :global(.flowdrop-workflow-node__handle:focus) {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
   /* Utility classes */
   .flowdrop-flex {
     display: flex;

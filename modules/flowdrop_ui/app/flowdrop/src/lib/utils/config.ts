@@ -122,6 +122,11 @@ export function createDefaultConfig(apiBaseUrl: string): WorkflowEditorConfig {
       ...createDefaultAPIConfig(),
       endpoints: createEndpointConfig(apiBaseUrl),
     },
+    ports: {
+      dataTypes: [],
+      compatibilityRules: [],
+      defaultDataType: "mixed"
+    },
     execution: createDefaultExecutionConfig(),
     storage: createDefaultStorageConfig(),
   };

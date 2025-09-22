@@ -96,6 +96,7 @@ export interface NodePort {
  */
 export type NodeType = 
   | "note"
+  | "square"
   | "default";
 
 /**

@@ -15,7 +15,6 @@
     nodes: NodeMetadata[];
     selectedCategory?: NodeCategory;
     searchQuery?: string;
-    onClose?: () => void;
   }
 
   let props: Props = $props();
@@ -196,25 +195,17 @@
   }
 </script>
 
-<div class="flowdrop-sidebar">
+<!-- Components Sidebar - Always Visible -->
+<div 
+  class="flowdrop-sidebar"
+  role="complementary"
+  aria-label="Components sidebar"
+>
   <!-- Header -->
   <div class="flowdrop-sidebar__header">
     <div class="flowdrop-sidebar__title">
       <h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
     </div>
-    {#if props.onClose}
-      <button
-        class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm flowdrop-sidebar__close"
-        onclick={props.onClose}
-        type="button"
-        title="Close sidebar"
-        aria-label="Close components sidebar"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="flowdrop-icon">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    {/if}
   </div>
   
   <!-- Search Section -->
@@ -388,23 +379,26 @@
 </div>
 
 <style>
+  /* Components Sidebar - Always Visible */
   .flowdrop-sidebar {
-    background-color: #f3f4f6;
-    border-right: 1px solid #e5e7eb;
     width: 320px;
     height: 100%;
+    background-color: #ffffff;
+    border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
   }
   
   .flowdrop-sidebar__header {
-    background-color: #ffffff;
+    background-color: #f8fafc;
     border-bottom: 1px solid #e5e7eb;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-shrink: 0;
   }
   
   .flowdrop-sidebar__title {
@@ -412,9 +406,7 @@
     align-items: center;
   }
 
-  .flowdrop-sidebar__close {
-    margin-left: 0.5rem;
-  }
+  /* Close button styles removed - no longer needed */
   
   .flowdrop-sidebar__title h2 {
     font-size: 1rem;

@@ -12,6 +12,7 @@
       config: NodeConfig;
       metadata: any;
       nodeId?: string;
+      onConfigOpen?: (node: any) => void;
     };
     selected?: boolean;
     isProcessing?: boolean;
@@ -114,6 +115,32 @@
     // Dispatch event to notify parent of state change
     dispatch("editModeChange", { isEditing: isInternalEditing });
   }
+
+  // Handle configuration sidebar - now using global ConfigSidebar
+  function openConfigSidebar(): void {
+    if (props.data.onConfigOpen) {
+      // Create a WorkflowNodeType-like object for the global ConfigSidebar
+      const nodeForConfig = {
+        id: props.data.nodeId || "unknown",
+        type: "note",
+        data: props.data
+      };
+      props.data.onConfigOpen(nodeForConfig);
+    }
+  }
+
+  // Handle node click to open sidebar
+  function handleNodeClick(): void {
+    openConfigSidebar();
+  }
+
+  // Handle keyboard events
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openConfigSidebar();
+    }
+  }
 </script>
 
 <div
@@ -121,6 +148,10 @@
   class:flowdrop-notes-node--selected={props.selected}
   class:flowdrop-notes-node--processing={props.isProcessing}
   class:flowdrop-notes-node--error={props.isError}
+  onclick={handleNodeClick}
+  onkeydown={handleKeydown}
+  role="button"
+  tabindex="0"
 >
   {#if isInternalEditing || props.isEditing}
     <!-- Edit Mode -->
@@ -493,4 +524,7 @@
       min-height: 100px;
     }
   }
-</style> 
+</style>
+
+<!-- Configuration Sidebar -->
+<!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor --> 

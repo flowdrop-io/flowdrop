@@ -147,7 +147,7 @@
     <meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
   </svelte:head>
   
-  <div class="flowdrop-app" style="min-height: 1200px;">
+  <div class="flowdrop-app">
     <!-- Header -->
     <div class="flowdrop-navbar">
       <div class="flowdrop-navbar__start">
@@ -179,7 +179,7 @@
     </div>
   
     <!-- Main Content -->
-    <main class="flowdrop-main" style="height: calc(100vh - 60px);">
+    <main class="flowdrop-main">
       <!-- Status Display -->
       {#if loading}
         <div class="flowdrop-status flowdrop-status--loading">
@@ -247,7 +247,7 @@
       {/if}
   
       <!-- Workflow Editor -->
-      <div class="flowdrop-editor-container" style="height: {(loading || error) ? 'calc(100% - 60px)' : '100%'};">
+      <div class="flowdrop-editor-container">
         <WorkflowEditor 
           nodes={nodes}
           workflow={workflow}
@@ -258,7 +258,10 @@
   
   <style>
     .flowdrop-app {
+      height: 100vh;
       background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
+      display: flex;
+      flex-direction: column;
     }
     
     .flowdrop-navbar {
@@ -294,11 +297,13 @@
       width: 40px;
       height: 40px;
       font-size: 1.25rem;
-      margin-top: 15px;
     }
     
     .flowdrop-main {
+      flex: 1;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
     
     .flowdrop-status {
@@ -456,6 +461,7 @@
     }
     
     .flowdrop-editor-container {
+      flex: 1;
       position: relative;
     }
     

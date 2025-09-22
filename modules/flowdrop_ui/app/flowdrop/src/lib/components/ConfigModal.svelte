@@ -55,11 +55,12 @@
   <!-- Modal Backdrop -->
   <div 
     class="config-modal-backdrop"
-    on:click={handleBackdropClick}
-    on:keydown={handleKeydown}
+    onclick={handleBackdropClick}
+    onkeydown={handleKeydown}
     role="dialog"
     aria-modal="true"
     aria-labelledby="config-modal-title"
+    tabindex="-1"
   >
     <!-- Modal Container -->
     <div class="config-modal">
@@ -71,7 +72,7 @@
         <button
           type="button"
           class="config-modal__close-btn"
-          on:click={handleClose}
+          onclick={handleClose}
           aria-label="Close configuration modal"
         >
           <span aria-hidden="true">×</span>
@@ -97,14 +98,14 @@
         <button
           type="button"
           class="config-modal__btn config-modal__btn--secondary"
-          on:click={handleCancel}
+          onclick={handleCancel}
         >
           Cancel
         </button>
         <button
           type="button"
           class="config-modal__btn config-modal__btn--primary"
-          on:click={handleSave}
+          onclick={handleSave}
         >
           Save Configuration
         </button>
