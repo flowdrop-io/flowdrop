@@ -13,10 +13,17 @@
   import Icon from "@iconify/svelte";
 	import { getDataTypeColor } from "$lib/utils/colors";
 
-  interface Props {
+  const props = $props<{
     data: {
       label: string;
-      config: NodeConfig;
+      config: {
+        icon?: string;
+        color?: string;
+        toolName?: string;
+        toolDescription?: string;
+        toolVersion?: string;
+        parameters?: any[];
+      };
       metadata: any;
       nodeId?: string;
       onConfigOpen?: (node: any) => void;
@@ -24,25 +31,35 @@
     selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
-  }
+  }>();
 
-  interface NodeConfig {
-    icon?: string;
-    color?: string;
-    toolName?: string;
-    toolDescription?: string;
-    toolVersion?: string;
-    parameters?: any[];
-  }
-
-  const props = $props<Props>();
-
-  // Get the tool configuration from config or use defaults
-  let toolIcon = $derived((props.data.config?.icon as string) || "mdi:tools");
-  let toolColor = $derived((props.data.config?.color as string) || "#f59e0b");
-  let toolName = $derived((props.data.config?.toolName as string) || props.data.label || "Tool");
-  let toolDescription = $derived((props.data.config?.toolDescription as string) || "A configurable tool for agents");
-  let toolVersion = $derived((props.data.config?.toolVersion as string) || "1.0.0");
+  // Prioritize metadata over config for tool nodes (metadata is the node definition)
+  let toolIcon = $derived(
+    (props.data.metadata?.icon as string) || 
+    (props.data.config?.icon as string) || 
+    "mdi:tools"
+  );
+  let toolColor = $derived(
+    (props.data.metadata?.color as string) || 
+    (props.data.config?.color as string) || 
+    "#f59e0b"
+  );
+  let toolName = $derived(
+    (props.data.metadata?.name as string) || 
+    (props.data.config?.toolName as string) || 
+    props.data.label || 
+    "Tool"
+  );
+  let toolDescription = $derived(
+    (props.data.metadata?.description as string) || 
+    (props.data.config?.toolDescription as string) || 
+    "A configurable tool for agents"
+  );
+  let toolVersion = $derived(
+    (props.data.metadata?.version as string) || 
+    (props.data.config?.toolVersion as string) || 
+    "1.0.0"
+  );
 
   // Always has metadata port for tools
   let hasMetadataPort = $derived(true);
@@ -84,7 +101,7 @@
   <Handle
     type="source"
     position={Position.Right}
-    id={`${props.data.nodeId}-tool`}
+    id={`${props.data.nodeId}-output-tool`}
     style="background-color: {getDataTypeColor('tool')}; border-color: '#ffffff'; width: 16px; height: 16px;"
   />
 {/if}

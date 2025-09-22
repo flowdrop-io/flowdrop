@@ -133,7 +133,7 @@
             <Handle
               type="target"
               position={Position.Left}
-              id={`${props.data.nodeId}-${port.id}`}
+              id={`${props.data.nodeId}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); margin-left: -32px; background-color: {getDataTypeColorToken(port.dataType)}; border-color: '#ffffff';"
               role="button"
@@ -188,7 +188,7 @@
             <Handle
               type="source"
               position={Position.Right}
-              id={`${props.data.nodeId}-${port.id}`}
+              id={`${props.data.nodeId}-output-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {getDataTypeColorToken(port.dataType)}; border-color: '#ffffff';"
               role="button"

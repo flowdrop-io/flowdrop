@@ -108,7 +108,7 @@
     type="target"
     position={Position.Left}
     style="background-color: {getDataTypeColor(firstInputPort.dataType)}; border-color: '#ffffff';"
-    id={`${props.data.nodeId}-${firstInputPort.id}`}
+    id={`${props.data.nodeId}-input-${firstInputPort.id}`}
   />
 {/if}
 
@@ -190,7 +190,7 @@
   <Handle
     type="source"
     position={Position.Right}
-    id={`${props.data.nodeId}-${firstOutputPort.id}`}
+    id={`${props.data.nodeId}-output-${firstOutputPort.id}`}
     style="background-color: {getDataTypeColor(firstOutputPort.dataType)}; border-color: '#ffffff';"
   />
 {/if}
