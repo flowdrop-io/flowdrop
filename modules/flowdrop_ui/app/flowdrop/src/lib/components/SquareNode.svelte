@@ -13,6 +13,7 @@
   import type { NodeConfig } from "../types/index.js";
   import Icon from "@iconify/svelte";
   import { createEventDispatcher } from "svelte";
+  import { getDataTypeColor } from "$lib/utils/colors.js";
 
   const dispatch = createEventDispatcher();
 
@@ -31,29 +32,27 @@
 
   // Removed local config state - now using global ConfigSidebar
 
-  // Get the square icon from config or use default
-  let squareIcon = $derived((props.data.config?.icon as string) || "mdi:square");
-  let squareColor = $derived((props.data.config?.color as string) || "#6366f1");
-  let squareLayout = $derived((props.data.config?.layout as string) || "normal");
-
-  // Layout configurations
-  const layoutConfig = {
-    compact: { 
-      width: "80px", 
-      height: "80px", 
-      iconSize: "2rem",
-      showHeader: false 
-    },
-    normal: { 
-      width: "18rem", 
-      height: "auto", 
-      iconSize: "1rem",
-      showHeader: true 
-    }
+  // Prioritize metadata icon over config icon for square nodes (metadata is the node definition)
+  let squareIcon = $derived(
+    (props.data.metadata?.icon as string) || 
+    (props.data.config?.icon as string) || 
+    "mdi:square"
+  );
+  let squareColor = $derived(
+    (props.data.metadata?.color as string) || 
+    (props.data.config?.color as string) || 
+    "#6366f1"
+  );
+  // Square nodes are always compact (square layout)
+  const isCompact = true;
+  
+  // Layout configuration for square nodes (always compact)
+  const currentLayout = {
+    width: "80px", 
+    height: "80px", 
+    iconSize: "2rem",
+    showHeader: false 
   };
-
-  let currentLayout = $derived(layoutConfig[squareLayout as keyof typeof layoutConfig] || layoutConfig.normal);
-  let isCompact = $derived(squareLayout === "compact");
 
   // Handle configuration sidebar - now using global ConfigSidebar
   function openConfigSidebar(): void {
@@ -86,25 +85,26 @@
     }
   }
 
-  // Check if node has input/output ports
-  let hasInput = $derived(props.data.metadata?.inputs?.length > 0);
-  let hasOutput = $derived(props.data.metadata?.outputs?.length > 0);
+  // Get first input/output ports for square node representation
+  let firstInputPort = $derived(props.data.metadata?.inputs?.[0]);
+  let firstOutputPort = $derived(props.data.metadata?.outputs?.[0]);
+  let hasInput = $derived(!!firstInputPort);
+  let hasOutput = $derived(!!firstOutputPort);
 </script>
 
 <!-- Input Handle (optional) -->
-{#if hasInput}
+{#if hasInput && firstInputPort}
   <Handle
     type="target"
     position={Position.Left}
-    id="input"
+    style="background-color: {getDataTypeColor(firstInputPort.dataType)}; border-color: '#ffffff';"
+    id={`${props.data.nodeId}-${firstInputPort.id}`}
   />
 {/if}
 
 <!-- Square Node -->
 <div
-  class="flowdrop-square-node"
-  class:flowdrop-square-node--compact={isCompact}
-  class:flowdrop-square-node--normal={!isCompact}
+  class="flowdrop-square-node flowdrop-square-node--compact"
   class:flowdrop-square-node--selected={props.selected}
   class:flowdrop-square-node--processing={props.isProcessing}
   class:flowdrop-square-node--error={props.isError}
@@ -114,39 +114,14 @@
   role="button"
   tabindex="0"
 >
-  {#if isCompact}
-    <!-- Compact Layout: Just centered icon -->
-    <div class="flowdrop-square-node__compact-content">
-      <Icon 
-        icon={squareIcon} 
-        class="flowdrop-square-node__compact-icon"
-        style="color: {squareColor}; font-size: {currentLayout.iconSize};"
-      />
-    </div>
-  {:else}
-    <!-- Normal Layout: Header with title and description -->
-    <div class="flowdrop-square-node__header">
-      <div class="flowdrop-square-node__header-content">
-        <!-- Node Icon -->
-        <div class="flowdrop-square-node__icon-container" style="background-color: {squareColor}">
-          <Icon 
-            icon={squareIcon} 
-            class="flowdrop-square-node__icon"
-          />
-        </div>
-        
-        <!-- Node Title -->
-        <h3 class="flowdrop-square-node__title">
-          {props.data.label}
-        </h3>
-      </div>
-      
-      <!-- Node Description -->
-      <p class="flowdrop-square-node__description">
-        {props.data.metadata?.description || "A configurable square node"}
-      </p>
-    </div>
-  {/if}
+  <!-- Square Layout: Always compact with centered icon -->
+  <div class="flowdrop-square-node__compact-content">
+    <Icon 
+      icon={squareIcon} 
+      class="flowdrop-square-node__compact-icon"
+      style="color: {squareColor}; font-size: {currentLayout.iconSize};"
+    />
+  </div>
 
 
   <!-- Processing indicator -->
@@ -174,11 +149,12 @@
 </div>
 
 <!-- Output Handle (optional) -->
-{#if hasOutput}
+{#if hasOutput && firstOutputPort}
   <Handle
     type="source"
     position={Position.Right}
-    id="output"
+    style="background-color: {getDataTypeColor(firstOutputPort.dataType)}; border-color: '#ffffff';"
+    id={`${props.data.nodeId}-${firstOutputPort.id}`}
   />
 {/if}
 
@@ -199,12 +175,7 @@
     z-index: 10;
   }
 
-  /* Normal layout (default) */
-  .flowdrop-square-node--normal {
-    width: 18rem;
-  }
-
-  /* Compact layout */
+  /* Square layout (always compact) */
   .flowdrop-square-node--compact {
     width: 80px;
     height: 80px;
@@ -230,27 +201,6 @@
     background-color: #fef2f2 !important;
   }
 
-  .flowdrop-square-node__header {
-    padding: 1rem;
-    background-color: #f9fafb;
-    border-radius: 0.75rem;
-  }
-
-  .flowdrop-square-node__header-content {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .flowdrop-square-node__icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.375rem;
-    flex-shrink: 0;
-  }
 
   /* Compact layout styles */
   .flowdrop-square-node__compact-content {
@@ -261,36 +211,10 @@
     height: 100%;
   }
 
-  .flowdrop-square-node__compact-icon {
+  :global(.flowdrop-square-node__compact-icon) {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
   }
 
-  .flowdrop-square-node__title {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #1f2937;
-    margin: 0;
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .flowdrop-square-node__description {
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin: 0.25rem 0 0 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  :global(.flowdrop-square-node__icon) {
-    color: white;
-    font-size: 1rem;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-  }
 
   /* Label styling removed - now using header title */
 
@@ -362,8 +286,6 @@
   :global(.svelte-flow__node-square .svelte-flow__handle) {
     width: 18px !important;
     height: 18px !important;
-    background-color: #6b7280 !important;
-    border: 2px solid #ffffff !important;
     border-radius: 50% !important;
     transition: all 0.2s ease-in-out !important;
     cursor: pointer !important;
@@ -379,11 +301,6 @@
     right: -6px !important;
   }
 
-  /* Handle hover effects - matching WorkflowNode but without scale to avoid moving target */
-  :global(.svelte-flow__node-square .svelte-flow__handle:hover) {
-    background-color: #3b82f6 !important;
-    /* Removed transform: scale(1.2) to prevent moving target issue */
-  }
 
   :global(.svelte-flow__node-square .svelte-flow__handle:focus) {
     outline: 2px solid #3b82f6 !important;

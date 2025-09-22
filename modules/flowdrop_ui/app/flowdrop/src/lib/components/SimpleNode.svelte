@@ -87,18 +87,20 @@
     }
   }
 
-  // Check if node has input/output ports
-  let hasInput = $derived(props.data.metadata?.inputs?.length > 0);
-  let hasOutput = $derived(props.data.metadata?.outputs?.length > 0);
+  // Get first input/output ports for simple node representation
+  let firstInputPort = $derived(props.data.metadata?.inputs?.[0]);
+  let firstOutputPort = $derived(props.data.metadata?.outputs?.[0]);
+  let hasInput = $derived(!!firstInputPort);
+  let hasOutput = $derived(!!firstOutputPort);
 </script>
 
 <!-- Input Handle (optional) -->
-{#if hasInput}
+{#if hasInput && firstInputPort}
   <Handle
     type="target"
     position={Position.Left}
-    style="background-color: 'grey'; border-color: '#ffffff';"
-    id="input"
+    style="background-color: {getDataTypeColor(firstInputPort.dataType)}; border-color: '#ffffff';"
+    id={`${props.data.nodeId}-${firstInputPort.id}`}
   />
 {/if}
 
@@ -176,12 +178,12 @@
 </div>
 
 <!-- Output Handle (optional) -->
-{#if hasOutput}
+{#if hasOutput && firstOutputPort}
   <Handle
     type="source"
     position={Position.Right}
-    id="output"
-    style="background-color: 'grey'; border-color: '#ffffff';"
+    id={`${props.data.nodeId}-${firstOutputPort.id}`}
+    style="background-color: {getDataTypeColor(firstOutputPort.dataType)}; border-color: '#ffffff';"
   />
 {/if}
 
@@ -374,8 +376,6 @@
   :global(.svelte-flow__node-simple .svelte-flow__handle) {
     width: 18px !important;
     height: 18px !important;
-    background-color: #6b7280 !important;
-    border: 2px solid #ffffff !important;
     border-radius: 50% !important;
     transition: all 0.2s ease-in-out !important;
     cursor: pointer !important;
@@ -391,11 +391,6 @@
     right: -6px !important;
   }
 
-  /* Handle hover effects - matching WorkflowNode but without scale to avoid moving target */
-  :global(.svelte-flow__node-simple .svelte-flow__handle:hover) {
-    background-color: #3b82f6 !important;
-    /* Removed transform: scale(1.2) to prevent moving target issue */
-  }
 
   :global(.svelte-flow__node-simple .svelte-flow__handle:focus) {
     outline: 2px solid #3b82f6 !important;

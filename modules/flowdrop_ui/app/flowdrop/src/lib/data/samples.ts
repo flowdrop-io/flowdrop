@@ -17,7 +17,7 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "Text Input",
     type: "simple",
-    supportedTypes: ["simple", "default"],
+    supportedTypes: ["simple", "square", "default"],
     version: "1.0.0",
     description: "User text input field",
     category: "inputs",
@@ -41,8 +41,8 @@ export const sampleNodes: NodeMetadata[] = [
           title: "Node Type",
           description: "Choose the visual representation for this node",
           default: "simple",
-          enum: ["simple", "default"],
-          enumNames: ["Simple (compact layout)", "Default (standard workflow node)"]
+          enum: ["simple", "square", "default"],
+          enumNames: ["Simple (compact layout)", "Square (square layout)", "Default (standard workflow node)"]
         },
         placeholder: {
           type: "string",
@@ -64,7 +64,7 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "File Upload",
     type: "simple",
-    supportedTypes: ["simple", "default"],
+    supportedTypes: ["simple", "square", "default"],
     version: "1.0.0",
     description: "File upload input with drag and drop support",
     category: "inputs",
@@ -88,8 +88,8 @@ export const sampleNodes: NodeMetadata[] = [
           title: "Node Type",
           description: "Choose the visual representation for this node",
           default: "simple",
-          enum: ["simple", "default"],
-          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+          enum: ["simple", "square", "default"],
+          enumNames: ["Simple (compact layout)", "Square (square layout)", "Default (standard workflow node)"]
         },
         accept: {
           type: "string",
@@ -111,7 +111,7 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "Webhook",
     type: "simple",
-    supportedTypes: ["simple", "default"],
+    supportedTypes: ["simple", "square", "default"],
     version: "1.0.0",
     description: "Receive data from external webhooks",
     category: "inputs",
@@ -135,8 +135,8 @@ export const sampleNodes: NodeMetadata[] = [
           title: "Node Type",
           description: "Choose the visual representation for this node",
           default: "simple",
-          enum: ["simple", "default"],
-          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+          enum: ["simple", "square", "default"],
+          enumNames: ["Simple (compact layout)", "Square (square layout)", "Default (standard workflow node)"]
         },
         endpoint: {
           type: "string",
@@ -161,7 +161,7 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "Chat Output",
     type: "simple",
-    supportedTypes: ["simple", "default"],
+    supportedTypes: ["simple", "square", "default"],
     version: "1.0.0",
     description: "Display chat-style output with formatting",
     category: "outputs",
@@ -186,8 +186,8 @@ export const sampleNodes: NodeMetadata[] = [
           title: "Node Type",
           description: "Choose the visual representation for this node",
           default: "simple",
-          enum: ["simple", "default"],
-          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+          enum: ["simple", "square", "default"],
+          enumNames: ["Simple (compact layout)", "Square (square layout)", "Default (standard workflow node)"]
         },
         showTimestamp: {
           type: "boolean",
@@ -215,7 +215,7 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "Text Output",
     type: "simple",
-    supportedTypes: ["simple", "default"],
+    supportedTypes: ["simple", "square", "default"],
     version: "1.0.0",
     description: "Display plain text output",
     category: "outputs",
@@ -240,8 +240,8 @@ export const sampleNodes: NodeMetadata[] = [
           title: "Node Type",
           description: "Choose the visual representation for this node",
           default: "simple",
-          enum: ["simple", "default"],
-          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+          enum: ["simple", "square", "default"],
+          enumNames: ["Simple (compact layout)", "Square (square layout)", "Default (standard workflow node)"]
         },
         showTimestamp: {
           type: "boolean",
@@ -265,7 +265,7 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "Prompt",
     type: "simple",
-    supportedTypes: ["simple", "default"],
+    supportedTypes: ["simple", "square", "default"],
     version: "1.0.0",
     description: "Template-based prompt with variables",
     category: "prompts",
@@ -293,6 +293,14 @@ export const sampleNodes: NodeMetadata[] = [
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "simple",
+          enum: ["simple", "square", "default"],
+          enumNames: ["Simple (compact layout)", "Square (square layout)", "Default (standard workflow node)"]
+        },
         template: {
           type: "string",
           title: "Template",

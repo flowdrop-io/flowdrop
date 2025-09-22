@@ -84,7 +84,7 @@
   <Handle
     type="source"
     position={Position.Right}
-    id="tool"
+    id={`${props.data.nodeId}-tool`}
     style="background-color: {getDataTypeColor('tool')}; border-color: '#ffffff'; width: 16px; height: 16px;"
   />
 {/if}

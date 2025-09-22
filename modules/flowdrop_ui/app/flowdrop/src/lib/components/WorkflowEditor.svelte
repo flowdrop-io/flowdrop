@@ -25,6 +25,7 @@
   import WorkflowNode from "./WorkflowNode.svelte";
   import NotesNode from "./NotesNode.svelte";
   import SimpleNode from "./SimpleNode.svelte";
+  import SquareNode from "./SquareNode.svelte";
   import ToolNode from "./ToolNode.svelte";
   import type { WorkflowNode as WorkflowNodeType, NodeMetadata, Workflow, WorkflowEdge } from "../types/index.js";
   import { validateConnection, hasCycles } from "../utils/connections.js";
@@ -86,6 +87,7 @@
     workflowNode: WorkflowNode,
     note: NotesNode,
     simple: SimpleNode,
+    square: SquareNode,
     tool: ToolNode
   };
 
@@ -95,35 +97,12 @@
 
   /**
    * Handle new connections between nodes
-   * Apply custom styling based on target node type and port type
+   * Let SvelteFlow handle edge creation, styling will be applied via reactive effects
    */
   function handleConnect(connection: any): void {
-    const { source, target, sourceHandle, targetHandle } = connection;
-    
-    // Find the target node to determine if it's a tool node
-    const targetNode = flowNodes.find(node => node.id === target);
-    const sourceNode = flowNodes.find(node => node.id === source);
-    
-    if (!targetNode || !sourceNode) return;
-    
-    // Create the new edge with custom styling
-    const newEdge: WorkflowEdge = {
-      id: `${source}-${target}-${sourceHandle || 'default'}-${targetHandle || 'default'}`,
-      source,
-      target,
-      sourceHandle,
-      targetHandle,
-      type: ConnectionLineType.Bezier,
-      selectable: true,
-      deletable: true,
-      data: {}
-    };
-
-    // Apply styling rules
-    applyConnectionStyling(newEdge, sourceNode, targetNode, sourceHandle, targetHandle);
-    
-    // Add the edge to the workflow
-    flowEdges = [...flowEdges, newEdge];
+    // SvelteFlow will automatically create the edge due to bind:edges
+    // Our updateExistingEdgeStyles effect will apply styling automatically
+    console.log('Connection created:', connection);
   }
 
   /**
@@ -202,31 +181,11 @@
     flowEdges = updatedEdges;
   }
 
-  // Apply styling to existing edges whenever nodes change (not edges to avoid infinite loop)
+  // Apply styling to all edges when edges change
   $effect(() => {
     if (flowNodes.length > 0 && flowEdges.length > 0 && availableNodes.length > 0) {
-      // Only update if we haven't already styled the edges
-      const needsUpdate = flowEdges.some(edge => {
-        const sourceNode = flowNodes.find(node => node.id === edge.source);
-        const targetNode = flowNodes.find(node => node.id === edge.target);
-        if (!sourceNode || !targetNode) return false;
-        
-        const isToolNode = sourceNode.type === 'tool';
-        const currentStyle = (edge as any).style;
-        
-        // Check if edge needs styling update
-        if (isToolNode && (!currentStyle || !currentStyle['stroke-dasharray'])) {
-          return true;
-        }
-        if (!isToolNode && currentStyle && currentStyle['stroke-dasharray']) {
-          return true;
-        }
-        return false;
-      });
-      
-      if (needsUpdate) {
-        updateExistingEdgeStyles();
-      }
+      // Always update edge styles to ensure new edges get styled
+      updateExistingEdgeStyles();
     }
   });
 

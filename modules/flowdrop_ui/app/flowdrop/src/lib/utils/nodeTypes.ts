@@ -10,7 +10,8 @@ import type { NodeType, NodeMetadata } from "../types/index.js";
  */
 const NODE_TYPE_TO_COMPONENT_MAP: Record<NodeType, string> = {
   "note": "note",
-  "simple": "simple", 
+  "simple": "simple",
+  "square": "square", 
   "tool": "tool",
   "default": "workflowNode"
 };
