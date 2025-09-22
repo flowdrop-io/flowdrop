@@ -164,7 +164,7 @@
     background-color: #ffffff;
     border: 2px solid #e5e7eb;
     border-radius: 0.75rem;
-    width: 20rem;
+    width: 18rem;
     display: flex;
     flex-direction: column;
     cursor: pointer;
