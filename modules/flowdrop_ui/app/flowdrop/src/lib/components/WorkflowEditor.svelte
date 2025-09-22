@@ -34,6 +34,7 @@
   import { tick } from "svelte";
   import type { EndpointConfig } from "../config/endpoints.js";
 	import ConnectionLine from './ConnectionLine.svelte';
+  import { resolveComponentName, resolveNodeType } from "../utils/nodeTypes.js";
 
   interface Props {
     nodes?: NodeMetadata[];
@@ -323,35 +324,22 @@
     selectedNodeForConfig = null;
   }
 
-  /**
-   * Helper function to map node types to Svelte Flow node types
-   */
-  function mapNodeType(nodeType: string): string {
-    switch (nodeType) {
-      case "note": return "note";
-      case "simple": return "simple";
-      case "tool": return "tool";
-      case "default": return "workflowNode"; // Map "default" to "workflowNode"
-      default: return "workflowNode";
-    }
-  }
+  // Removed hardcoded mapNodeType function - now using resolveComponentName from utils/nodeTypes.js
 
   function handleConfigSave(newConfig: any): void {
     if (selectedNodeForConfig) {
       // Update the node's config
       selectedNodeForConfig.data.config = { ...newConfig };
       
-      // Determine if node type should change based on new config
-      const configNodeType = newConfig.nodeType;
-      const metadataType = selectedNodeForConfig.data.metadata?.type;
-      const newNodeType = configNodeType ? mapNodeType(configNodeType) : mapNodeType(metadataType || "default");
+      // Determine node type based on configuration and supported types
+      const newComponentName = resolveComponentName(selectedNodeForConfig.data.metadata, newConfig.nodeType);
       
       // Update the flowNodes array to trigger reactivity
       flowNodes = flowNodes.map(node => 
         node.id === selectedNodeForConfig?.id 
           ? { 
               ...node, 
-              type: newNodeType, // Update node type based on configuration
+              type: newComponentName, // Update node type based on configuration and supportedTypes
               data: { ...node.data, config: { ...newConfig } } 
             }
           : node
@@ -643,12 +631,8 @@
 
             const newNodeId = uuidv4();
             
-            // Determine node type based on configuration or metadata
-            // Priority: 1. nodeType from config, 2. type from metadata, 3. default fallback
-            const configNodeType = nodeData.config?.nodeType;
-            const metadataType = nodeData.metadata?.type;
-            
-            const svelteFlowNodeType = configNodeType ? mapNodeType(configNodeType) : mapNodeType(metadataType || "default");
+            // Determine node type based on configuration and supported types
+            const svelteFlowNodeType = resolveComponentName(nodeData.metadata, nodeData.config?.nodeType);
             
             const newNode: WorkflowNodeType = {
               id: newNodeId,

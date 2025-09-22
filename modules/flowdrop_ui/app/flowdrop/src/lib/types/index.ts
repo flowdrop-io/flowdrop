@@ -107,6 +107,12 @@ export interface NodeMetadata {
   id: string;
   name: string;
   type?: NodeType;
+  /** 
+   * Array of supported node types that this node can be rendered as.
+   * If not specified, defaults to the single 'type' field or 'default'.
+   * This allows nodes to support multiple rendering modes (e.g., both 'simple' and 'default').
+   */
+  supportedTypes?: NodeType[];
   description: string;
   category: NodeCategory;
   version: string;

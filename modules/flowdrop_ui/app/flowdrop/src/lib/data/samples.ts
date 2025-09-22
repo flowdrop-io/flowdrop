@@ -16,7 +16,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Text Input",
-    type: "default",
+    type: "simple",
+    supportedTypes: ["simple", "default"],
     version: "1.0.0",
     description: "User text input field",
     category: "inputs",
@@ -41,7 +42,7 @@ export const sampleNodes: NodeMetadata[] = [
           description: "Choose the visual representation for this node",
           default: "simple",
           enum: ["simple", "default"],
-          enumNames: ["Simple Node (compact/normal)", "Default Node (standard)"]
+          enumNames: ["Simple (compact layout)", "Default (standard workflow node)"]
         },
         placeholder: {
           type: "string",
@@ -62,7 +63,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "File Upload",
-    type: "default",
+    type: "simple",
+    supportedTypes: ["simple", "default"],
     version: "1.0.0",
     description: "File upload input with drag and drop support",
     category: "inputs",
@@ -108,7 +110,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Webhook",
-    type: "default",
+    type: "simple",
+    supportedTypes: ["simple", "default"],
     version: "1.0.0",
     description: "Receive data from external webhooks",
     category: "inputs",
@@ -157,6 +160,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Chat Output",
+    type: "simple",
+    supportedTypes: ["simple", "default"],
     version: "1.0.0",
     description: "Display chat-style output with formatting",
     category: "outputs",
@@ -209,6 +214,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Text Output",
+    type: "simple",
+    supportedTypes: ["simple", "default"],
     version: "1.0.0",
     description: "Display plain text output",
     category: "outputs",
@@ -257,6 +264,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Prompt",
+    type: "simple",
+    supportedTypes: ["simple", "default"],
     version: "1.0.0",
     description: "Template-based prompt with variables",
     category: "prompts",
@@ -303,6 +312,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Structured Output",
+    type: "default",
+    supportedTypes: ["default"],
     version: "1.0.0",
     description: "Generate structured output from models",
     category: "prompts",
@@ -360,6 +371,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "OpenAI",
+    type: "default",
+    supportedTypes: ["default"],
     version: "1.0.0",
     description: "OpenAI GPT models for text generation",
     category: "models",
@@ -438,6 +451,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Anthropic",
+    type: "default",
+    supportedTypes: ["default"],
     version: "1.0.0",
     description: "Anthropic Claude models for text generation",
     category: "models",
@@ -501,6 +516,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Groq",
+    type: "default",
+    supportedTypes: ["default"],
     version: "1.0.0",
     description: "Groq fast inference models",
     category: "models",
@@ -566,6 +583,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Split Text",
+    type: "default",
+    supportedTypes: ["default"],
     version: "1.0.0",
     description: "Split text into chunks for processing",
     category: "processing",
@@ -1110,6 +1129,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "HTTP Request",
+    type: "tool",
+    supportedTypes: ["tool", "default"],
     version: "1.0.0",
     description: "Advanced HTTP client with full request/response handling, similar to n8n",
     category: "tools",
@@ -1345,6 +1366,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "JSON",
+    type: "tool",
+    supportedTypes: ["tool", "default"],
     version: "1.0.0",
     description: "Parse, manipulate, and transform JSON data like n8n's JSON node",
     category: "tools",
@@ -1433,6 +1456,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Set",
+    type: "tool",
+    supportedTypes: ["tool", "default"],
     version: "1.0.0",
     description: "Set and manipulate data values like n8n's Set node",
     category: "tools",
@@ -1507,6 +1532,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Calculator",
+    type: "tool",
+    supportedTypes: ["tool", "default"],
     version: "1.0.0",
     description: "Perform mathematical calculations",
     category: "tools",
@@ -1564,6 +1591,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Date & Time",
+    type: "tool",
+    supportedTypes: ["tool", "default"],
     version: "1.0.0",
     description: "Handle date and time operations",
     category: "tools",
@@ -1626,6 +1655,7 @@ export const sampleNodes: NodeMetadata[] = [
     id: uuidv4(),
     name: "Notes",
     type: "note",
+    supportedTypes: ["note"],
     version: "1.0.0",
     description: "Add documentation and comments to your workflow with Markdown support",
     category: "tools",
@@ -1656,7 +1686,8 @@ export const sampleNodes: NodeMetadata[] = [
   {
     id: uuidv4(),
     name: "Simple Node",
-    type: "simple",
+    type: "tool",
+    supportedTypes: ["tool", "default"],
     version: "1.0.0",
     description: "A simple node with optional input and output ports",
     category: "tools",
@@ -1688,9 +1719,9 @@ export const sampleNodes: NodeMetadata[] = [
           type: "string",
           title: "Node Type",
           description: "Choose the visual representation for this node",
-          default: "default",
+          default: "tool",
           enum: ["tool", "default"],
-          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+          enumNames: ["Tool (specialized for agent tools)", "Default (standard workflow node)"]
         },
         icon: {
           type: "string",

@@ -61,6 +61,7 @@ export * from "./utils/icons.js";
 export * from "./utils/colors.js";
 export * from "./utils/connections.js";
 export * from "./utils/config.js";
+export * from "./utils/nodeTypes.js";
 
 // Export services
 export * from "./services/api.js";
