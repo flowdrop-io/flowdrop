@@ -32,9 +32,17 @@
 
   // Removed local config state - now using global ConfigSidebar
 
-  // Get the node icon from config or use default
-  let nodeIcon = $derived((props.data.config?.icon as string) || "mdi:square");
-  let nodeColor = $derived((props.data.config?.color as string) || "#6366f1");
+  // Prioritize metadata icon over config icon for simple nodes (metadata is the node definition)
+  let nodeIcon = $derived(
+    (props.data.metadata?.icon as string) || 
+    (props.data.config?.icon as string) || 
+    "mdi:square"
+  );
+  let nodeColor = $derived(
+    (props.data.metadata?.color as string) || 
+    (props.data.config?.color as string) || 
+    "#6366f1"
+  );
   let nodeLayout = $derived((props.data.config?.layout as string) || "normal");
 
   // Layout configurations
