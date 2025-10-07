@@ -9,10 +9,23 @@
     import WorkflowEditor from "$lib/components/WorkflowEditor.svelte";
     import { api, setEndpointConfig } from "$lib/services/api.js";
     import type { NodeMetadata, Workflow } from "$lib/types/index.js";
+    import type { WorkflowEditorConfig } from "$lib/types/config.js";
     import { getDefaultIcon } from '$lib/utils/icons.js';
     import { sampleNodes } from "$lib/data/samples.js";
     import { createEndpointConfig } from "$lib/config/endpoints.js";
+    import { createDefaultConfig, mergeConfig } from "$lib/utils/config.js";
   
+    // Configuration props for runtime customization
+    interface Props {
+      config?: Partial<WorkflowEditorConfig>;
+    }
+    
+    let { config = {} }: Props = $props();
+    
+    // Merge user config with defaults
+    const defaultConfig = createDefaultConfig('/api/flowdrop');
+    const finalConfig = mergeConfig(config, defaultConfig);
+    
     let nodes = $state<NodeMetadata[]>([]);
     let workflow = $state<Workflow | undefined>(undefined);
     let error = $state<string | null>(null);
@@ -147,7 +160,8 @@
     <meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
   </svelte:head>
   
-  <div class="flowdrop-app">
+  <div class="flowdrop-app" style="--flowdrop-navbar-height: {finalConfig.ui.navbarHeight}px;"
+>
     <!-- Header -->
     <div class="flowdrop-navbar">
       <div class="flowdrop-navbar__start">
@@ -267,7 +281,7 @@
     }
     
     .flowdrop-navbar {
-      height: 60px;
+      height: var(--flowdrop-navbar-height, 60px);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -300,6 +314,8 @@
       position: relative;
       display: flex;
       flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
     }
     
     .flowdrop-status {
@@ -463,16 +479,7 @@
     .flowdrop-editor-container {
       flex: 1;
       position: relative;
-    }
-    
-    /* Ensure full height for screens larger than 1200px */
-    @media (min-height: 1200px) {
-      :global(html), :global(body) {
-        height: 100%;
-      }
-      
-      :global(#svelte) {
-        height: 100%;
-      }
+      min-height: 0;
+      overflow: hidden;
     }
   </style>

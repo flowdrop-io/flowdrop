@@ -91,6 +91,9 @@ export interface UIConfig {
   /** Canvas padding */
   canvasPadding: number;
   
+  /** Navbar height in pixels (configurable at runtime) */
+  navbarHeight: number;
+  
   /** Zoom limits */
   zoom: {
     min: number;

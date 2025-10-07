@@ -44,6 +44,7 @@ export function createDefaultUIConfig(): UIConfig {
     gridSize: 20,
     nodeSpacing: 100,
     canvasPadding: 50,
+    navbarHeight: 60, // Default navbar height in pixels (current demo height)
     zoom: {
       min: 0.1,
       max: 2,
