@@ -143,7 +143,7 @@
   </script>
   
   <svelte:head>
-    <title>FlowDrop - LLM Workflow Editor</title>
+    <title>FlowDrop - Visual Workflow Manager</title>
     <meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
   </svelte:head>
   
@@ -152,15 +152,17 @@
     <div class="flowdrop-navbar">
       <div class="flowdrop-navbar__start">
         <!-- Logo and Title -->
-        <div class="flowdrop-flex flowdrop-gap--3">
-          <div class="flowdrop-logo flowdrop-logo--header">
-            FD
+        <a href="/" class="flowdrop-logo--container">
+          <div class="flowdrop-flex flowdrop-gap--3">
+            <div class="flowdrop-logo--header">
+              <img src="/logo.svg" alt="FlowDrop Logo" />
+            </div>
+            <div>
+              <h1 class="flowdrop-text--logo flowdrop-font--bold">FlowDrop</h1>
+              <p class="flowdrop-text--tagline flowdrop-text--gray">Visual Workflow Manager</p>
+            </div>
           </div>
-          <div>
-            <h1 class="flowdrop-text--lg flowdrop-font--bold">FlowDrop</h1>
-            <p class="flowdrop-text--xs flowdrop-text--gray">LLM Workflow Editor</p>
-          </div>
-        </div>
+        </a>  
       </div>
   
       <div class="flowdrop-navbar__center">
@@ -278,27 +280,21 @@
       display: flex;
       align-items: center;
     }
-    
-    .flowdrop-logo {
-      width: 2rem;
-      height: 2rem;
-      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-      border-radius: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 0.875rem;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    .flowdrop-logo--container {
+      text-decoration: none;
+      color: #000;
     }
-    
     .flowdrop-logo--header {
       width: 40px;
       height: 40px;
       font-size: 1.25rem;
+      padding: 2px;
     }
-    
+    .flowdrop-logo--header img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
     .flowdrop-main {
       flex: 1;
       position: relative;
@@ -404,10 +400,14 @@
       font-size: 0.75rem;
       line-height: 1rem;
     }
-    
-    .flowdrop-text--lg {
+
+    .flowdrop-text--tagline {
+      font-size: 0.75rem;
+      line-height: 0.5rem;
+    }
+    .flowdrop-text--logo {
       font-size: 1.125rem;
-      line-height: 1.75rem;
+      line-height: 0;
     }
     
     .flowdrop-text--gray {

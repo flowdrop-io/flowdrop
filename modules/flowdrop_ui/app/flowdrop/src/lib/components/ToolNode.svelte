@@ -61,8 +61,21 @@
     "1.0.0"
   );
 
-  // Always has metadata port for tools
-  let hasMetadataPort = $derived(true);
+  // Check for tool interface ports in metadata
+  let hasToolInputPort = $derived(
+    props.data.metadata?.inputs?.some(port => port.dataType === "tool") || false
+  );
+  let hasToolOutputPort = $derived(
+    props.data.metadata?.outputs?.some(port => port.dataType === "tool") || false
+  );
+  
+  // Get the actual tool ports for proper handle generation
+  let toolInputPort = $derived(
+    props.data.metadata?.inputs?.find(port => port.dataType === "tool")
+  );
+  let toolOutputPort = $derived(
+    props.data.metadata?.outputs?.find(port => port.dataType === "tool")
+  );
 
   // Handle configuration sidebar - using global ConfigSidebar
   function openConfigSidebar(): void {
@@ -96,13 +109,13 @@
   }
 </script>
 
-<!-- Metadata Handle (special tool port) -->
-{#if hasMetadataPort}
+<!-- Tool Input Handle (optional) -->
+{#if hasToolInputPort && toolInputPort}
   <Handle
-    type="source"
-    position={Position.Right}
-    id={`${props.data.nodeId}-output-tool`}
-    style="background-color: {getDataTypeColor('tool')}; border-color: '#ffffff'; width: 16px; height: 16px;"
+    type="target"
+    position={Position.Left}
+    id={`${props.data.nodeId}-input-${toolInputPort.id}`}
+    style="background-color: {getDataTypeColor('tool')}; border-color: '#ffffff';"
   />
 {/if}
 
@@ -174,6 +187,16 @@
     <Icon icon="mdi:cog" />
   </button>
 </div>
+
+<!-- Tool Output Handle (optional) -->
+{#if hasToolOutputPort && toolOutputPort}
+  <Handle
+    type="source"
+    position={Position.Right}
+    id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
+    style="background-color: {getDataTypeColor('tool')}; border-color: '#ffffff';"
+  />
+{/if}
 
 <style>
   .flowdrop-tool-node {

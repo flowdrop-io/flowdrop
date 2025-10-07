@@ -1963,6 +1963,8 @@ export const sampleNodes: NodeMetadata[] = [
     category: "agents",
     icon: "mdi:account-cog",
     color: "#06b6d4",
+    type: "default",
+    supportedTypes: ["default", "tool"],
     inputs: [
       {
         id: "message",
@@ -1988,11 +1990,27 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "string",
         description: "Agent response"
+      },
+      {
+        id: "tools",
+        name: "Tools",
+        type: "input",
+        dataType: "tool",
+        required: false,
+        description: "Tool interfaces available to agent - connect to tool output ports"
       }
     ],
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "default",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         model: {
           type: "string",
           title: "Model",
@@ -2249,6 +2267,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "json",
         description: "Search statistics and relevance information"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -2303,10 +2328,10 @@ export const sampleNodes: NodeMetadata[] = [
     id: "demo-ai-content-analyzer",
     name: "AI Content Analyzer",
     type: "default",
-    supportedTypes: ["default"],
+    supportedTypes: ["default", "tool"],
     version: "1.0.0",
     description: "Analyze content for issues like acronym misuse, formatting problems, or content quality",
-    category: "models",
+    category: "agents",
     icon: "mdi:text-search",
     color: "#7c3aed",
     inputs: [
@@ -2325,6 +2350,14 @@ export const sampleNodes: NodeMetadata[] = [
         dataType: "string",
         required: true,
         description: "Instructions for what to analyze in the content"
+      },
+      {
+        id: "tools",
+        name: "Tools",
+        type: "input",
+        dataType: "tool",
+        required: false,
+        description: "Tools available to agent"
       }
     ],
     outputs: [
@@ -2348,11 +2381,27 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "number",
         description: "AI confidence in the analysis (0-1)"
+      },
+      {
+        id: "tools",
+        name: "Tools",
+        type: "input",
+        dataType: "tool",
+        required: false,
+        description: "Tools available to agent"
       }
     ],
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "default",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         model: {
           type: "string",
           title: "AI Model",
@@ -2395,10 +2444,10 @@ export const sampleNodes: NodeMetadata[] = [
     id: "demo-ai-content-editor",
     name: "AI Content Editor",
     type: "default",
-    supportedTypes: ["default"],
+    supportedTypes: ["default", "tool"],
     version: "1.0.0",
     description: "Make AI-powered edits to content based on analysis results and user instructions",
-    category: "models",
+    category: "agents",
     icon: "mdi:file-edit-outline",
     color: "#f59e0b",
     inputs: [
@@ -2425,6 +2474,14 @@ export const sampleNodes: NodeMetadata[] = [
         dataType: "string",
         required: true,
         description: "Specific instructions for how to edit the content"
+      },
+      {
+        id: "tools",
+        name: "Tools",
+        type: "input",
+        dataType: "tool",
+        required: false,
+        description: "Tools available to agent"
       }
     ],
     outputs: [
@@ -2448,11 +2505,27 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "json",
         description: "Detailed log of all changes made"
+      },
+      {
+        id: "tools",
+        name: "Tools",
+        type: "input",
+        dataType: "tool",
+        required: false,
+        description: "Tools available to agent"
       }
     ],
     configSchema: {
       type: "object",
       properties: {
+        nodeType: {
+          type: "string",
+          title: "Node Type",
+          description: "Choose the visual representation for this node",
+          default: "default",
+          enum: ["tool", "default"],
+          enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"]
+        },
         model: {
           type: "string",
           title: "AI Model",
@@ -2546,6 +2619,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "string",
         description: "URL for content reviewers to approve/reject changes"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -2642,6 +2722,13 @@ export const sampleNodes: NodeMetadata[] = [
         type: "output",
         dataType: "json",
         description: "Log of all date conversions performed"
+      },
+      {
+        id: "tool",
+        name: "Tool Interface",
+        type: "output",
+        dataType: "tool",
+        description: "Tool interface for agent connections - provides tool metadata and callable interface"
       }
     ],
     configSchema: {
@@ -2781,26 +2868,36 @@ export interface DemoConfig {
 }
 
 /**
- * Demo node whitelist - specific nodes we want to show in demo mode
+ * Demo node whitelist - Multi-agent content management scenario
+ * Main Agent + Specialized Sub-Agents + Tools
  */
 const DEMO_ALLOWED_NODE_IDS = [
-  // Demo-specific nodes for content management
-  "demo-chat-input",
-  "demo-drupal-search-rag", 
-  "demo-ai-content-analyzer",
-  "demo-ai-content-editor",
-  "demo-draft-creator",
-  "demo-date-format-converter",
-  "demo-chat-response",
+  // === MAIN CONVERSATIONAL AGENT ===
+  "demo-chat-input",           // User input interface
+  "sample-simple-agent",       // Main conversational agent (orchestrator)
+  "demo-chat-response",        // Response back to user
   
-  // Essential sample nodes for basic functionality
-  "sample-text-input",
-  "sample-chat-output",
-  "sample-openai",
-  "sample-anthropic",
-  "sample-notes",
-  "sample-simple-agent",
-  "sample-prompt"
+  // === SPECIALIZED SUB-AGENTS ===
+  "demo-ai-content-analyzer",  // Content analysis agent
+  "demo-ai-content-editor",    // Content editing agent
+  
+  // === TOOLS (for sub-agents to use) ===
+  "demo-drupal-search-rag",    // RAG tool for content search
+  "demo-draft-creator",        // Draft creation tool
+  "demo-date-format-converter", // Date formatting tool
+  
+  // === SUPPORTING NODES ===
+  "sample-openai",             // AI model for agents
+  "sample-anthropic",          // Alternative AI model
+  "sample-notes",              // Documentation
+  "sample-prompt",             // Prompt templates
+  "sample-text-input",         // Alternative input method
+  "sample-chat-output",        // Alternative output method
+  
+  // === TOOL INTERFACE NODES ===
+  "sample-http-request",       // For external API calls
+  "sample-json",               // JSON processing tool
+  "sample-set"                 // Data manipulation tool
 ];
 
 /**

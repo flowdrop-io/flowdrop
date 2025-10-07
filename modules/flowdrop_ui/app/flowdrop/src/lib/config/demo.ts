@@ -88,69 +88,69 @@ export const demoWorkflowConfig = {
  * Demo instructions for non-technical users
  */
 export const demoInstructions = {
-  title: "AI-Powered Content Management Demo",
-  description: "This demo shows how FlowDrop can help you manage and improve your Drupal content using AI.",
+  title: "Multi-Agent Content Management Demo",
+  description: "This demo shows how FlowDrop uses multiple AI agents working together to manage and improve your Drupal content.",
   
   steps: [
     {
       step: 1,
-      title: "Enter Instructions",
-      description: "Start by telling the AI what kind of content changes you need in the Chat Input node.",
+      title: "User Input",
+      description: "Start by telling the main agent what content management task you need.",
       example: "Find all blog posts about 'XB' and check if it's being used correctly as an acronym"
     },
     {
       step: 2,
-      title: "Search Content",
-      description: "The Drupal Search API RAG node will find relevant content from your site.",
-      note: "Uses AI-powered ranking to find the most relevant content"
+      title: "Main Agent Orchestration",
+      description: "The main conversational agent understands your request and coordinates with specialized sub-agents.",
+      note: "Acts as the intelligent orchestrator of the entire workflow"
     },
     {
       step: 3,
-      title: "Analyze Content",
-      description: "AI Content Analyzer reviews the content for issues like acronym misuse, formatting problems, or quality issues.",
-      note: "Configurable analysis rules and strictness levels"
+      title: "Content Analysis Agent",
+      description: "Specialized agent analyzes content using RAG search tools to find and examine relevant content.",
+      note: "Uses Drupal Search API RAG tool for intelligent content discovery"
     },
     {
       step: 4,
-      title: "Edit Content",
-      description: "AI Content Editor makes suggested improvements based on the analysis.",
-      note: "All changes are tracked and require human approval"
+      title: "Content Editor Agent", 
+      description: "Specialized agent makes improvements using available tools like date formatters and draft creators.",
+      note: "Has access to multiple tools and makes conservative, tracked changes"
     },
     {
       step: 5,
-      title: "Review Step (Optional)",
-      description: "Date Format Converter demonstrates additional review steps you can add.",
-      note: "Extract and standardize date formats across your content"
+      title: "Tool Integration",
+      description: "Sub-agents use specialized tools: RAG search, draft creation, date formatting, etc.",
+      note: "Tools are connected via special 'tool' interface ports"
     },
     {
       step: 6,
-      title: "Create Drafts",
-      description: "Draft Creator saves the improved content as draft versions in Drupal for review.",
-      note: "Integrates with Drupal's editorial workflow"
+      title: "Agent Collaboration",
+      description: "Sub-agents report back to the main agent with their findings and completed work.",
+      note: "Multi-agent coordination ensures comprehensive task completion"
     },
     {
       step: 7,
-      title: "Get Results",
-      description: "Chat Response provides a summary of what was accomplished and next steps.",
-      note: "Includes links to review and approve the changes"
+      title: "Orchestrated Response",
+      description: "Main agent compiles results from all sub-agents and provides a comprehensive response.",
+      note: "Includes summaries, draft links, and next steps for human review"
     }
   ],
   
   benefits: [
-    "Automated content quality improvement",
-    "Consistent style guide enforcement", 
-    "Human oversight and approval process",
-    "Detailed change tracking and logging",
-    "Integration with existing Drupal workflows",
-    "Scalable for bulk content updates"
+    "Multi-agent collaboration for complex tasks",
+    "Specialized agents for specific content management functions",
+    "Intelligent task orchestration and coordination", 
+    "Tool-based architecture for extensibility",
+    "Human oversight through draft approval process",
+    "Scalable agent-to-agent communication patterns"
   ],
   
   useCases: [
-    "Acronym standardization across all content",
-    "Date format consistency",
-    "Style guide enforcement",
-    "Content quality improvement",
-    "Bulk content updates",
-    "Editorial workflow automation"
+    "Multi-agent content analysis and improvement",
+    "Coordinated acronym standardization workflows",
+    "Agent-orchestrated style guide enforcement",
+    "Collaborative content quality assessment",
+    "Tool-assisted bulk content transformations",
+    "Intelligent editorial workflow automation"
   ]
 };
