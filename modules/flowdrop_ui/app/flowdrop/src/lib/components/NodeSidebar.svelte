@@ -525,4 +525,114 @@
 	.flowdrop-ml--0 {
 		margin-left: 0;
 	}
+
+	/* Form Elements - Matching App Design System */
+	.flowdrop-input {
+		padding: 0.625rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font-size: 0.875rem;
+		color: #111827;
+		background-color: #ffffff;
+		transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+		width: 100%;
+		height: 2.5rem;
+		box-sizing: border-box;
+	}
+
+	.flowdrop-input:focus {
+		outline: none;
+		border-color: #6b7280;
+		box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+	}
+
+	.flowdrop-input::placeholder {
+		color: #9ca3af;
+	}
+
+	.flowdrop-btn {
+		padding: 0.625rem 0.75rem;
+		border-radius: 0.375rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease-in-out;
+		border: 1px solid #d1d5db;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		background-color: #f9fafb;
+		color: #374151;
+		height: 2.5rem;
+		min-width: 2.5rem;
+		box-sizing: border-box;
+	}
+
+	.flowdrop-btn:hover {
+		background-color: #f3f4f6;
+		border-color: #9ca3af;
+	}
+
+	.flowdrop-btn:active {
+		background-color: #e5e7eb;
+		border-color: #6b7280;
+	}
+
+	.flowdrop-btn:focus {
+		outline: none;
+		box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+	}
+
+	.flowdrop-btn:disabled {
+		background-color: #9ca3af;
+		border-color: #9ca3af;
+		cursor: not-allowed;
+		opacity: 0.6;
+	}
+
+	/* Join component styles - Seamless integration */
+	.flowdrop-join {
+		display: flex;
+		width: 100%;
+		border-radius: 0.375rem;
+		overflow: hidden;
+		border: 1px solid #d1d5db;
+		background-color: #ffffff;
+	}
+
+	.flowdrop-join__item {
+		border: none;
+		border-radius: 0;
+		background-color: transparent;
+	}
+
+	.flowdrop-join__item:first-child {
+		border-right: 1px solid #d1d5db;
+		flex: 1;
+	}
+
+	.flowdrop-join__item:last-child {
+		border-left: none;
+		background-color: #f9fafb;
+		color: #374151;
+	}
+
+	.flowdrop-join__item:last-child:hover {
+		background-color: #f3f4f6;
+	}
+
+	.flowdrop-join:focus-within {
+		border-color: #6b7280;
+		box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+	}
+
+	/* Utility classes */
+	.flowdrop-w--full {
+		width: 100%;
+	}
+
+	.flowdrop-flex--1 {
+		flex: 1;
+	}
 </style>
