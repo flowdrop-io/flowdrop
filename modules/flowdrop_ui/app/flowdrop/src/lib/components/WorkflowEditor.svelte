@@ -9,13 +9,9 @@
 		SvelteFlow,
 		ConnectionLineType,
 		MarkerType,
-		// @ts-expect-error - Controls is not properly typed in @xyflow/svelte
 		Controls,
-		// @ts-expect-error - Background is not properly typed in @xyflow/svelte
 		Background,
-		// @ts-expect-error - MiniMap is not properly typed in @xyflow/svelte
 		MiniMap,
-		// @ts-expect-error - SvelteFlowProvider is not properly typed in @xyflow/svelte
 		SvelteFlowProvider
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
@@ -38,6 +34,7 @@
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
 	import { resolveComponentName } from '../utils/nodeTypes.js';
+	import { workflowStore, workflowActions, workflowNodes, workflowEdges } from '../stores/workflowStore.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -50,7 +47,7 @@
 		selectedNodeForConfig?: WorkflowNodeType | null;
 		openConfigSidebar?: (node: WorkflowNodeType) => void;
 		closeConfigSidebar?: () => void;
-		onWorkflowChange?: (workflow: Workflow) => void;
+		// Removed onWorkflowChange prop - no longer needed since global store is reactive
 	}
 
 	let props: Props = $props();
@@ -67,43 +64,30 @@
 
 	// Initialize from props only once, not on every re-render
 	let isInitialized = $state(false);
-	let flowNodes = $state<WorkflowNodeType[]>([]);
-	let flowEdges = $state<WorkflowEdge[]>([]);
 	let availableNodes = $state<NodeMetadata[]>([]);
+	
+	// Use global store for workflow state
+	// Add configuration functions to nodes for double-click functionality
+	let flowNodes = $derived($workflowNodes.map(node => ({
+		...node,
+		data: {
+			...node.data,
+			onConfigOpen: props.openConfigSidebar
+		}
+	})));
+	let flowEdges = $derived($workflowEdges);
 
 	$effect(() => {
-		if (!isInitialized) {
-			if (props.workflow) {
-				flowNodes = props.workflow.nodes || [];
-				flowEdges = props.workflow.edges || [];
-			} else {
-				flowNodes = [];
-				flowEdges = [];
-			}
+		if (!isInitialized && props.workflow) {
+			// Initialize the global store with the workflow data
+			workflowActions.initialize(props.workflow);
 			isInitialized = true;
 		}
 	});
 
-	// Update flowNodes and flowEdges when workflow prop changes
-	$effect(() => {
-		if (isInitialized && props.workflow) {
-			console.log('🔄 WorkflowEditor: Updating nodes and edges from workflow prop');
-			console.log('📊 Workflow nodes:', props.workflow.nodes?.length || 0);
-			console.log('🔗 Workflow edges:', props.workflow.edges?.length || 0);
-
-			// Update existing nodes to include onConfigOpen function
-			const updatedNodes = (props.workflow.nodes || []).map(node => ({
-				...node,
-				data: {
-					...node.data,
-					onConfigOpen: props.openConfigSidebar
-				}
-			}));
-
-			flowNodes = updatedNodes;
-			flowEdges = props.workflow.edges || [];
-		}
-	});
+	// Removed problematic $effect that was resetting workflow state on every change
+	// The workflow store should only be initialized once, not updated on every prop change
+	// This was causing the regression where new connections would be lost
 
 	// Sidebar is now always visible - removed toggle functionality
 
@@ -131,9 +115,20 @@
 		targetHandle?: string;
 	}): void {
 		// SvelteFlow will automatically create the edge due to bind:edges
-		// Our updateExistingEdgeStyles effect will apply styling automatically
 		console.log('Connection created:', connection);
+		
+		// Apply styling to the new edge (including arrows)
+		// We need to wait a tick for SvelteFlow to add the edge to flowEdges
+		setTimeout(() => {
+			updateExistingEdgeStyles();
+		}, 0);
+		
+		// No need to notify parent - global store is already reactive
 	}
+
+	// Removed problematic $effect that was causing circular dependencies
+	// The notifyWorkflowChange() calls are now handled by specific user actions
+	// like handleConnect, updateNodeConfiguration, and addNodeToWorkflow
 
 	/**
 	 * Apply custom styling to connection edges based on rules:
@@ -152,15 +147,10 @@
 
 		// Use inline styles for dashed lines (more reliable than CSS classes)
 		if (isToolNode) {
-			edge.style = {
-				'stroke-dasharray': '0 4 0',
-				stroke: 'amber !important'
-			} as Record<string, string>;
+			edge.style = 'stroke-dasharray: 0 4 0; stroke: amber !important;';
 			edge.class = 'flowdrop--edge--tool';
 		} else {
-			edge.style = {
-				stroke: 'grey'
-			} as Record<string, string>;
+			edge.style = 'stroke: grey;';
 		}
 
 		// Store metadata in edge data for debugging
@@ -205,8 +195,8 @@
 			return updatedEdge;
 		});
 
-		// Update all edges at once
-		flowEdges = updatedEdges;
+		// Update all edges at once using the store
+		workflowActions.updateEdges(updatedEdges);
 		
 		// Note: We don't notify parent of workflow changes here since this is just styling
 		// and would cause circular dependencies with the $effect that calls this function
@@ -227,6 +217,10 @@
 			setApiBaseUrl(props.apiBaseUrl);
 		}
 	});
+
+	// Removed unnecessary reactive effect that was notifying parent component
+	// The global store ($workflowStore) is already reactive and serves as the single source of truth
+	// Save functions use the global store directly, so no parent notification is needed
 
 	/**
 	 * Load nodes from API if not provided
@@ -283,8 +277,8 @@
 	 * Clear workflow
 	 */
 	function clearWorkflow(): void {
-		flowNodes = [];
-		flowEdges = [];
+		workflowActions.updateNodes([]);
+		workflowActions.updateEdges([]);
 	}
 
 	// ConfigSidebar functions are now handled by the parent App component
@@ -299,22 +293,16 @@
 			// Determine node type based on configuration and supported types
 			const newComponentName = resolveComponentName(
 				props.selectedNodeForConfig.data.metadata,
-				newConfig.nodeType
+				newConfig.nodeType as string
 			);
 
-			// Update the flowNodes array to trigger reactivity
-			flowNodes = flowNodes.map((node) =>
-				node.id === props.selectedNodeForConfig?.id
-					? {
-							...node,
-							type: newComponentName, // Update node type based on configuration and supportedTypes
-							data: { ...node.data, config: { ...newConfig } }
-						}
-					: node
-			);
+			// Update the node in the global store
+			workflowActions.updateNode(props.selectedNodeForConfig.id as string, {
+				type: newComponentName as string, // Update node type based on configuration and supportedTypes
+				data: { ...props.selectedNodeForConfig.data, config: { ...newConfig } }
+			});
 			
-			// Notify parent of workflow changes
-			notifyWorkflowChange();
+			// No need to notify parent - global store is already reactive
 		}
 		props.closeConfigSidebar?.();
 	}
@@ -322,23 +310,8 @@
 	/**
 	 * Notify parent component of workflow changes
 	 */
-	function notifyWorkflowChange(): void {
-		if (props.onWorkflowChange && isInitialized) {
-			const currentWorkflow = {
-				id: props.workflow?.id,
-				name: props.workflow?.name || 'Untitled Workflow',
-				nodes: flowNodes,
-				edges: flowEdges,
-				metadata: {
-					version: '1.0.0',
-					createdAt: props.workflow?.metadata?.createdAt || new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				}
-			};
-			console.log('🔄 WorkflowEditor: Notifying parent of workflow change');
-			props.onWorkflowChange(currentWorkflow);
-		}
-	}
+	// Removed notifyWorkflowChange function - no longer needed
+	// The global store serves as the single source of truth and is already reactive
 
 	// Remove the problematic $effect that causes circular dependencies
 	// Instead, we'll call notifyWorkflowChange() only on specific user actions
@@ -504,26 +477,24 @@
 							// Determine node type based on configuration and supported types
 							const svelteFlowNodeType = resolveComponentName(
 								nodeData.metadata,
-								nodeData.config?.nodeType
+								(nodeData.config?.nodeType as string) || 'default'
 							);
 
 							const newNode: WorkflowNodeType = {
 								id: newNodeId,
-								type: svelteFlowNodeType,
+								type: svelteFlowNodeType as string,
 								position, // Use the position calculated from the drop event
 								deletable: true,
 								data: {
 									...nodeData,
-									nodeId: newNodeId, // Use the same ID
-									onConfigOpen: props.openConfigSidebar // Pass the global config sidebar function
+									nodeId: newNodeId // Use the same ID
 								}
 							};
 
-							// Add node with proper reactivity trigger
-							flowNodes = [...flowNodes, newNode];
+							// Add node to the global store
+							workflowActions.addNode(newNode);
 							
-							// Notify parent of workflow changes
-							notifyWorkflowChange();
+							// No need to notify parent - global store is already reactive
 
 							// Force a tick to ensure SvelteFlow updates
 							await tick();

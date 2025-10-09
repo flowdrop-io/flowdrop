@@ -14,6 +14,7 @@
 	import type { NodeMetadata, Workflow, WorkflowNode } from '$lib/types/index.js';
 	import { sampleNodes } from '$lib/data/samples.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
+	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
 
 	// Configuration props for runtime customization
 	interface Props {
@@ -42,8 +43,8 @@
 	// WorkflowEditor reference for save functionality
 	let workflowEditorRef: WorkflowEditor | null = null;
 	
-	// Current workflow state (updated by WorkflowEditor)
-	let currentWorkflowState = $state<Workflow | null>(null);
+	// Removed currentWorkflowState - no longer needed
+	// The global store ($workflowStore) serves as the single source of truth
 
 	/**
 	 * Fetch node types from the server
@@ -153,13 +154,8 @@
 		selectedNodeForConfig = null;
 	}
 
-	/**
-	 * Handle workflow changes from WorkflowEditor
-	 */
-	function handleWorkflowChange(updatedWorkflow: Workflow): void {
-		console.log('🔄 App: Received workflow update from WorkflowEditor:', updatedWorkflow);
-		currentWorkflowState = updatedWorkflow;
-	}
+	// Removed handleWorkflowChange function - no longer needed
+	// The global store serves as the single source of truth and is already reactive
 
 	/**
 	 * Save workflow - exposed API function
@@ -172,8 +168,8 @@
 			const { workflowApi } = await import('$lib/services/api.js');
 			const { v4: uuidv4 } = await import('uuid');
 			
-			// Use current workflow state if available, otherwise fall back to initial workflow
-			const workflowToSave = currentWorkflowState || workflow;
+			// Use current workflow from global store
+			const workflowToSave = $workflowStore;
 			
 			if (!workflowToSave) {
 				console.warn('⚠️ No workflow data available to save');
@@ -191,7 +187,7 @@
 			// Create workflow object for saving
 			const finalWorkflow = {
 				id: workflowId,
-				name: workflowToSave.name || workflowToSave.label || 'Untitled Workflow',
+				name: workflowToSave.name || 'Untitled Workflow',
 				nodes: workflowToSave.nodes || [],
 				edges: workflowToSave.edges || [],
 				metadata: {
@@ -225,8 +221,8 @@
 		try {
 			console.log('📤 Starting workflow export from App component...');
 			
-			// Use current workflow state if available, otherwise fall back to initial workflow
-			const workflowToExport = currentWorkflowState || workflow;
+			// Use current workflow from global store
+			const workflowToExport = $workflowStore;
 			
 			if (!workflowToExport) {
 				console.warn('⚠️ No workflow data available to export');
@@ -236,7 +232,7 @@
 			// Create workflow object for export
 			const finalWorkflow = {
 				id: workflowToExport.id || 'untitled-workflow',
-				name: workflowToExport.name || workflowToExport.label || 'Untitled Workflow',
+				name: workflowToExport.name || 'Untitled Workflow',
 				nodes: workflowToExport.nodes || [],
 				edges: workflowToExport.edges || [],
 				metadata: {
@@ -426,7 +422,6 @@
 					{selectedNodeForConfig}
 					{openConfigSidebar}
 					{closeConfigSidebar}
-					onWorkflowChange={handleWorkflowChange}
 				/>
 			</div>
 

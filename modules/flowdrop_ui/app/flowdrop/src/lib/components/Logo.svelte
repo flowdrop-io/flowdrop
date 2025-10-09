@@ -121,7 +121,7 @@
 </div>
 
 <style>
-   .flowdrop-logo svg{
+   .flowdrop-logo :global(svg) {
       width: 100%;
       height: 100%;
    }
