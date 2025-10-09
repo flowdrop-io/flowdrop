@@ -19,8 +19,6 @@
 		SvelteFlowProvider
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import NodeSidebar from './NodeSidebar.svelte';
-	import ConfigSidebar from './ConfigSidebar.svelte';
 	import WorkflowNode from './WorkflowNode.svelte';
 	import NotesNode from './NotesNode.svelte';
 	import SimpleNode from './SimpleNode.svelte';
@@ -48,9 +46,23 @@
 		endpointConfig?: EndpointConfig;
 		height?: string | number;
 		width?: string | number;
+		isConfigSidebarOpen?: boolean;
+		selectedNodeForConfig?: WorkflowNodeType | null;
+		openConfigSidebar?: (node: WorkflowNodeType) => void;
+		closeConfigSidebar?: () => void;
 	}
 
 	let props: Props = $props();
+
+	// Debug logging for props
+	$effect(() => {
+		console.log('🔧 WorkflowEditor: Props received:', {
+			hasOpenConfigSidebar: !!props.openConfigSidebar,
+			hasCloseConfigSidebar: !!props.closeConfigSidebar,
+			selectedNodeForConfig: props.selectedNodeForConfig?.id,
+			isConfigSidebarOpen: props.isConfigSidebarOpen
+		});
+	});
 
 	// Initialize from props only once, not on every re-render
 	let isInitialized = $state(false);
@@ -78,16 +90,21 @@
 			console.log('📊 Workflow nodes:', props.workflow.nodes?.length || 0);
 			console.log('🔗 Workflow edges:', props.workflow.edges?.length || 0);
 
-			flowNodes = props.workflow.nodes || [];
+			// Update existing nodes to include onConfigOpen function
+			const updatedNodes = (props.workflow.nodes || []).map(node => ({
+				...node,
+				data: {
+					...node.data,
+					onConfigOpen: props.openConfigSidebar
+				}
+			}));
+
+			flowNodes = updatedNodes;
 			flowEdges = props.workflow.edges || [];
 		}
 	});
 
 	// Sidebar is now always visible - removed toggle functionality
-
-	// Global ConfigSidebar state
-	let isConfigSidebarOpen = $state(false);
-	let selectedNodeForConfig = $state<WorkflowNodeType | null>(null);
 
 	// Node types for Svelte Flow
 	const nodeTypes = {
@@ -266,40 +283,24 @@
 		flowEdges = [];
 	}
 
-	/**
-	 * Global ConfigSidebar functions
-	 */
-	function openConfigSidebar(node: WorkflowNodeType): void {
-		// If a different node's config sidebar is already open, close it first
-		if (selectedNodeForConfig && selectedNodeForConfig.id !== node.id) {
-			closeConfigSidebar();
-		}
-
-		selectedNodeForConfig = node;
-		isConfigSidebarOpen = true;
-	}
-
-	function closeConfigSidebar(): void {
-		isConfigSidebarOpen = false;
-		selectedNodeForConfig = null;
-	}
+	// ConfigSidebar functions are now handled by the parent App component
 
 	// Removed hardcoded mapNodeType function - now using resolveComponentName from utils/nodeTypes.js
 
 	function handleConfigSave(newConfig: Record<string, unknown>): void {
-		if (selectedNodeForConfig) {
+		if (props.selectedNodeForConfig) {
 			// Update the node's config
-			selectedNodeForConfig.data.config = { ...newConfig };
+			props.selectedNodeForConfig.data.config = { ...newConfig };
 
 			// Determine node type based on configuration and supported types
 			const newComponentName = resolveComponentName(
-				selectedNodeForConfig.data.metadata,
+				props.selectedNodeForConfig.data.metadata,
 				newConfig.nodeType
 			);
 
 			// Update the flowNodes array to trigger reactivity
 			flowNodes = flowNodes.map((node) =>
-				node.id === selectedNodeForConfig?.id
+				node.id === props.selectedNodeForConfig?.id
 					? {
 							...node,
 							type: newComponentName, // Update node type based on configuration and supportedTypes
@@ -308,7 +309,7 @@
 					: node
 			);
 		}
-		closeConfigSidebar();
+		props.closeConfigSidebar?.();
 	}
 
 	/**
@@ -398,9 +399,6 @@
 
 <SvelteFlowProvider>
 	<div class="flowdrop-workflow-editor" style="height: {typeof props.height === 'number' ? `${props.height}px` : props.height || '100%'}; width: {typeof props.width === 'number' ? `${props.width}px` : props.width || '100%'};">
-		<!-- Components Sidebar - Always Visible -->
-		<NodeSidebar nodes={availableNodes} />
-
 		<!-- Main Editor Area -->
 		<div class="flowdrop-workflow-editor__main">
 			<!-- Flow Canvas -->
@@ -485,7 +483,7 @@
 								data: {
 									...nodeData,
 									nodeId: newNodeId, // Use the same ID
-									onConfigOpen: openConfigSidebar // Pass the global config sidebar function
+									onConfigOpen: props.openConfigSidebar // Pass the global config sidebar function
 								}
 							};
 
@@ -553,26 +551,7 @@
 	</div>
 
 	<!-- Global Configuration Sidebar -->
-	{#if selectedNodeForConfig}
-		<ConfigSidebar
-			isOpen={isConfigSidebarOpen}
-			title={selectedNodeForConfig.data.label}
-			configSchema={selectedNodeForConfig.data.metadata?.configSchema}
-			configValues={selectedNodeForConfig.data.config}
-			nodeDetails={{
-				type: selectedNodeForConfig.data.metadata?.type || selectedNodeForConfig.type,
-				category: selectedNodeForConfig.data.metadata?.category || 'general',
-				description: selectedNodeForConfig.data.metadata?.description || 'Node configuration',
-				version: selectedNodeForConfig.data.metadata?.version,
-				tags: selectedNodeForConfig.data.metadata?.tags,
-				inputs: selectedNodeForConfig.data.metadata?.inputs,
-				outputs: selectedNodeForConfig.data.metadata?.outputs
-			}}
-			onSave={handleConfigSave}
-			onCancel={closeConfigSidebar}
-			onClose={closeConfigSidebar}
-		/>
-	{/if}
+	<!-- ConfigSidebar is now handled by the parent App component -->
 </SvelteFlowProvider>
 
 <style>
@@ -609,6 +588,9 @@
 		backdrop-filter: blur(8px);
 		border-top: 1px solid #e5e7eb;
 		padding: 0.75rem;
+		height: 40px;
+		display: flex;
+		align-items: center;
 	}
 
 	.flowdrop-status-bar__content {

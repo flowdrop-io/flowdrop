@@ -170,7 +170,7 @@
 </script>
 
 <!-- Components Sidebar - Always Visible -->
-<div class="flowdrop-sidebar" role="complementary" aria-label="Components sidebar">
+<div class="flowdrop-sidebar flowdrop-sidebar--container" role="complementary" aria-label="Components sidebar">
 	<!-- Header -->
 	<div class="flowdrop-sidebar__header">
 		<div class="flowdrop-sidebar__title">
@@ -377,6 +377,12 @@
 		flex-shrink: 0;
 	}
 
+	.flowdrop-sidebar--container {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
+
 	.flowdrop-sidebar__header {
 		background-color: #f8fafc;
 		border-bottom: 1px solid #e5e7eb;
@@ -442,6 +448,9 @@
 		flex-shrink: 0; /* Prevent footer from shrinking */
 		position: relative;
 		z-index: 10; /* Ensure footer stays on top */
+		height: 40px;
+		display: flex;
+		align-items: center;
 	}
 
 	.flowdrop-node-list {
