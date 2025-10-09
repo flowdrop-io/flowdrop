@@ -8,6 +8,7 @@
 
 <script lang="ts">
 	import { page } from '$app/stores';
+	import Icon from '@iconify/svelte';
 
 	interface NavbarAction {
 		label: string;
@@ -62,14 +63,7 @@
 					>
 						{#if action.icon}
 							<span class="flowdrop-navbar__action-icon">
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d={action.icon}
-									></path>
-								</svg>
+								<Icon icon={action.icon} class="w-4 h-4" />
 							</span>
 						{/if}
 						<span class="flowdrop-navbar__action-label">{action.label}</span>
@@ -196,7 +190,7 @@
 		align-items: center;
 	}
 
-	.flowdrop-navbar__action-icon svg {
+	.flowdrop-navbar__action-icon :global(svg) {
 		width: 1rem;
 		height: 1rem;
 	}

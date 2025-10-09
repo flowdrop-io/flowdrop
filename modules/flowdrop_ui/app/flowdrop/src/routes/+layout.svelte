@@ -21,13 +21,13 @@
 				{
 					label: 'Workflows',
 					href: '/',
-					icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+					icon: 'mdi:view-list',
 					variant: 'primary' as const
 				},
 				{
 					label: 'Create Workflow',
 					href: '/workflow/create',
-					icon: 'M12 4v16m8-8H4',
+					icon: 'mdi:plus',
 					variant: 'outline' as const
 				}
 			];
@@ -37,13 +37,13 @@
 				{
 					label: 'Back to Workflows',
 					href: '/',
-					icon: 'M10 19l-7-7m0 0l7-7m-7 7h18',
+					icon: 'mdi:arrow-left',
 					variant: 'outline' as const
 				},
 				{
 					label: 'Save Workflow',
 					href: '#',
-					icon: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4',
+					icon: 'mdi:content-save',
 					variant: 'primary' as const
 				}
 			];
@@ -53,19 +53,19 @@
 				{
 					label: 'Back to Workflows',
 					href: '/',
-					icon: 'M10 19l-7-7m0 0l7-7m-7 7h18',
+					icon: 'mdi:arrow-left',
 					variant: 'outline' as const
 				},
 				{
 					label: 'Save Changes',
 					href: '#',
-					icon: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4',
+					icon: 'mdi:content-save',
 					variant: 'primary' as const
 				},
 				{
 					label: 'Execute',
 					href: '#',
-					icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2v-8a2 2 0 012-2z',
+					icon: 'mdi:play',
 					variant: 'secondary' as const
 				}
 			];
@@ -75,13 +75,13 @@
 				{
 					label: 'Back to Workflow',
 					href: pathname.replace('/execute', ''),
-					icon: 'M10 19l-7-7m0 0l7-7m-7 7h18',
+					icon: 'mdi:arrow-left',
 					variant: 'outline' as const
 				},
 				{
 					label: 'Stop Execution',
 					href: '#',
-					icon: 'M21 12a9 9 0 11-18 0 9 9 0 0118 0z M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z',
+					icon: 'mdi:stop',
 					variant: 'primary' as const
 				}
 			];
@@ -91,13 +91,13 @@
 				{
 					label: 'Back to Workflow',
 					href: pathname.replace('/logs', ''),
-					icon: 'M10 19l-7-7m0 0l7-7m-7 7h18',
+					icon: 'mdi:arrow-left',
 					variant: 'outline' as const
 				},
 				{
 					label: 'Refresh Logs',
 					href: '#',
-					icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
+					icon: 'mdi:refresh',
 					variant: 'secondary' as const
 				}
 			];
@@ -108,7 +108,7 @@
 			{
 				label: 'Workflows',
 				href: '/',
-				icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+				icon: 'mdi:view-list',
 				variant: 'primary' as const
 			}
 		];

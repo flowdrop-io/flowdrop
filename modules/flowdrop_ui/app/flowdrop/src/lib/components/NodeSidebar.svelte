@@ -191,14 +191,7 @@
 				/>
 			</div>
 			<button class="flowdrop-btn flowdrop-join__item" aria-label="Search components">
-				<svg class="flowdrop-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-					></path>
-				</svg>
+				<Icon icon="mdi:magnify" class="flowdrop-icon" />
 			</button>
 		</div>
 	</div>
@@ -494,6 +487,11 @@
 	}
 
 	.flowdrop-icon {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	.flowdrop-icon :global(svg) {
 		width: 1rem;
 		height: 1rem;
 	}

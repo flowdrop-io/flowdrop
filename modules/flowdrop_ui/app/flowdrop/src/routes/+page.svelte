@@ -11,6 +11,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
+	import Icon from '@iconify/svelte';
 
 	/**
 	 * Workflow display type
@@ -169,14 +170,7 @@
 							class="flowdrop-search__input"
 						/>
 						<div class="flowdrop-search__icon">
-							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-								></path>
-							</svg>
+							<Icon icon="mdi:magnify" class="w-4 h-4" />
 						</div>
 					</div>
 
@@ -218,14 +212,7 @@
 			<div class="workflows-error">
 				<div class="workflows-error__content">
 					<div class="workflows-error__icon">
-						<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-							></path>
-						</svg>
+						<Icon icon="mdi:alert-circle" class="w-8 h-8" />
 					</div>
 					<h3>Failed to load workflows</h3>
 					<p>{error}</p>
@@ -245,11 +232,7 @@
 					onkeydown={(e) => e.key === 'Enter' && goto(`/workflow/${workflow.id}/edit`)}
 					>
 						<div class="workflow-card__icon">
-							<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-								<path
-									d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-								/>
-							</svg>
+							<Icon icon="mdi:file-document" class="w-5 h-5" />
 						</div>
 
 						<div class="workflow-card__content">
@@ -376,14 +359,7 @@
 					<div class="workflows-empty">
 						<div class="workflows-empty__content">
 							<div class="workflows-empty__icon">
-								<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="1"
-										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-									></path>
-								</svg>
+								<Icon icon="mdi:file-document-outline" class="w-12 h-12" />
 							</div>
 							<h3>No workflows found</h3>
 							<p>
@@ -474,7 +450,7 @@
 		color: #6b7280;
 	}
 
-	.flowdrop-search__icon svg {
+	.flowdrop-search__icon :global(svg) {
 		width: 1rem;
 		height: 1rem;
 	}
@@ -697,7 +673,7 @@
 		color: #9ca3af;
 	}
 
-	.workflows-empty__icon svg {
+	.workflows-empty__icon :global(svg) {
 		width: 3rem;
 		height: 3rem;
 	}
