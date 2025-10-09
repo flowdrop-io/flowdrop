@@ -46,6 +46,8 @@
 		workflow?: Workflow;
 		apiBaseUrl?: string;
 		endpointConfig?: EndpointConfig;
+		height?: string | number;
+		width?: string | number;
 	}
 
 	let props: Props = $props();
@@ -81,20 +83,11 @@
 		}
 	});
 
-	let workflowName = $state(props.workflow?.name || 'Untitled Workflow');
-	let isEditingTitle = $state(false);
 	// Sidebar is now always visible - removed toggle functionality
 
 	// Global ConfigSidebar state
 	let isConfigSidebarOpen = $state(false);
 	let selectedNodeForConfig = $state<WorkflowNodeType | null>(null);
-
-	// Update workflow name when props change
-	$effect(() => {
-		if (props.workflow?.name) {
-			workflowName = props.workflow.name;
-		}
-	});
 
 	// Node types for Svelte Flow
 	const nodeTypes = {
@@ -333,19 +326,19 @@
 				workflowId = uuidv4();
 			}
 
-			const workflow: Workflow = {
-				id: workflowId,
-				name: workflowName,
-				nodes: flowNodes,
-				edges: flowEdges,
-				metadata: {
-					version: '1.0.0',
-					createdAt: props.workflow?.metadata?.createdAt || new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				}
-			};
+		const workflow: Workflow = {
+			id: workflowId,
+			name: props.workflow?.name || 'Untitled Workflow',
+			nodes: flowNodes,
+			edges: flowEdges,
+			metadata: {
+				version: '1.0.0',
+				createdAt: props.workflow?.metadata?.createdAt || new Date().toISOString(),
+				updatedAt: new Date().toISOString()
+			}
+		};
 
-			const savedWorkflow = await workflowApi.saveWorkflow(workflow);
+		const savedWorkflow = await workflowApi.saveWorkflow(workflow);
 
 			// Note: Notes node configurations (content, noteType) are automatically
 			// saved as part of the node.data.config object and will be restored
@@ -372,7 +365,7 @@
 
 		const workflow: Workflow = {
 			id: workflowId,
-			name: workflowName,
+			name: props.workflow?.name || 'Untitled Workflow',
 			nodes: flowNodes,
 			edges: flowEdges,
 			metadata: {
@@ -399,167 +392,17 @@
 		return hasCycles(flowNodes, flowEdges);
 	}
 
-	/**
-	 * Handle title editing
-	 */
-	function startTitleEdit(): void {
-		isEditingTitle = true;
-		// Focus the input on next tick
-		setTimeout(() => {
-			const input = document.querySelector('#workflow-title') as HTMLInputElement;
-			if (input) input.focus();
-		}, 0);
-	}
-
-	/**
-	 * Save title changes
-	 */
-	function saveTitle(): void {
-		isEditingTitle = false;
-		// Update the workflow name in the save/export functions
-	}
-
-	/**
-	 * Cancel title editing
-	 */
-	function cancelTitleEdit(): void {
-		isEditingTitle = false;
-		workflowName = props.workflow?.name || 'Untitled Workflow';
-	}
-
 	// Removed sidebar toggle functions - sidebar is now always visible
-
-	/**
-	 * Handle title input keydown
-	 */
-	function handleTitleKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Enter') {
-			saveTitle();
-		} else if (event.key === 'Escape') {
-			cancelTitleEdit();
-		}
-	}
+	// Removed title editing functions - title is managed by the main layout
 </script>
 
 <SvelteFlowProvider>
-	<div class="flowdrop-workflow-editor">
+	<div class="flowdrop-workflow-editor" style="height: {typeof props.height === 'number' ? `${props.height}px` : props.height || '100%'}; width: {typeof props.width === 'number' ? `${props.width}px` : props.width || '100%'};">
 		<!-- Components Sidebar - Always Visible -->
 		<NodeSidebar nodes={availableNodes} />
 
 		<!-- Main Editor Area -->
 		<div class="flowdrop-workflow-editor__main">
-			<!-- Toolbar -->
-			<div class="flowdrop-toolbar">
-				<div class="flowdrop-toolbar__content">
-					<!-- Left side - Workflow info -->
-					<div class="flowdrop-toolbar__info">
-						{#if isEditingTitle}
-							<div class="flowdrop-flex flowdrop-gap--2">
-								<input
-									id="workflow-title"
-									type="text"
-									class="flowdrop-input flowdrop-input--lg"
-									bind:value={workflowName}
-									onkeydown={handleTitleKeydown}
-									onblur={saveTitle}
-								/>
-								<button
-									class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm"
-									onclick={saveTitle}
-									type="button"
-								>
-									✓
-								</button>
-								<button
-									class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm"
-									onclick={cancelTitleEdit}
-									type="button"
-								>
-									✕
-								</button>
-							</div>
-						{:else}
-							<button class="flowdrop-workflow-title" onclick={startTitleEdit} type="button">
-								{workflowName}
-							</button>
-						{/if}
-					</div>
-
-					<!-- Right side - Actions -->
-					<div class="flowdrop-toolbar__actions">
-						<!-- Workflow Actions -->
-						<div class="flowdrop-join">
-							<button
-								class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline flowdrop-join__item"
-								onclick={clearWorkflow}
-								type="button"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-									class="flowdrop-icon"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-									/>
-								</svg>
-
-								Clear
-							</button>
-							<button
-								class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline flowdrop-join__item"
-								onclick={exportWorkflow}
-								type="button"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-									class="flowdrop-icon"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-									/>
-								</svg>
-
-								Export
-							</button>
-							<button
-								class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline flowdrop-join__item"
-								onclick={saveWorkflow}
-								type="button"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-									class="flowdrop-icon"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"
-									/>
-								</svg>
-
-								Save
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<!-- Flow Canvas -->
 			<div
 				class="flowdrop-canvas"
@@ -751,54 +594,8 @@
 		transition: margin-left 0.3s ease-in-out;
 	}
 
-	.flowdrop-toolbar {
-		background-color: rgba(255, 255, 255, 0.8);
-		backdrop-filter: blur(8px);
-		border-bottom: 1px solid #e5e7eb;
-		padding: 1rem;
-		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-	}
-
-	.flowdrop-toolbar__content {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	.flowdrop-toolbar__info {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.flowdrop-workflow-title {
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: #111827;
-		cursor: pointer;
-		transition: color 0.2s ease-in-out;
-		background: transparent;
-		border: none;
-		padding: 0;
-	}
-
-	.flowdrop-workflow-title:hover {
-		color: #3b82f6;
-	}
-
 	.flowdrop-text--error {
 		color: #dc2626;
-	}
-
-	.flowdrop-toolbar__actions {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.flowdrop-icon {
-		width: 1.5rem;
-		height: 1.5rem;
 	}
 
 	.flowdrop-canvas {

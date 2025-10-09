@@ -27,6 +27,42 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
+	// Canvas dimensions
+	let canvasHeight = $state<string>('calc(100vh - 60px)'); // Default: full height minus navbar
+	let canvasWidth = $state<string>('100%'); // Default: full width
+
+	/**
+	 * Calculate optimal canvas dimensions
+	 * Takes into account navbar height and other page elements
+	 */
+	function calculateCanvasDimensions() {
+		// Get the navbar height from CSS variable or default to 60px
+		const navbarHeight = 60; // This should match --flowdrop-navbar-height from layout
+		
+		// Calculate available height (viewport height minus navbar)
+		const availableHeight = window.innerHeight - navbarHeight;
+		
+		// Set minimum and maximum constraints for optimal experience
+		const minHeight = 400; // Minimum usable height
+		const maxHeight = 1200; // Maximum height to prevent excessive scrolling
+		
+		// Calculate optimal height within constraints
+		const optimalHeight = Math.max(minHeight, Math.min(maxHeight, availableHeight));
+		
+		// Set dimensions
+		canvasHeight = `${optimalHeight}px`;
+		canvasWidth = '100%'; // Use full available width
+		
+		console.log('Canvas dimensions calculated:', {
+			viewportHeight: window.innerHeight,
+			navbarHeight,
+			availableHeight,
+			optimalHeight,
+			canvasHeight,
+			canvasWidth
+		});
+	}
+
 	// Fetch workflow data from API
 	async function fetchWorkflow() {
 		if (!workflowId) return;
@@ -72,7 +108,23 @@
 
 	// Load workflow on mount
 	onMount(() => {
+		// Calculate optimal canvas dimensions
+		calculateCanvasDimensions();
+		
+		// Fetch workflow data
 		fetchWorkflow();
+		
+		// Recalculate dimensions on window resize
+		const handleResize = () => {
+			calculateCanvasDimensions();
+		};
+		
+		window.addEventListener('resize', handleResize);
+		
+		// Cleanup
+		return () => {
+			window.removeEventListener('resize', handleResize);
+		};
 	});
 </script>
 
@@ -94,7 +146,7 @@
 			<button onclick={fetchWorkflow} class="retry-button">Retry</button>
 		</div>
 	{:else if workflow}
-		<App workflow={workflow as any} />
+		<App workflow={workflow as any} height={canvasHeight} width={canvasWidth} />
 	{:else}
 		<div class="no-workflow">
 			<h3>Workflow Not Found</h3>
@@ -105,9 +157,9 @@
 
 <style>
 	.workflow-edit-page {
-		height: 100vh;
 		display: flex;
 		flex-direction: column;
+		min-height: 100vh;
 	}
 
 	.loading-container,

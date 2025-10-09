@@ -15,9 +15,15 @@
 	// Configuration props for runtime customization
 	interface Props {
 		workflow?: Workflow;
+		height?: string | number;
+		width?: string | number;
 	}
 
-	let { workflow: initialWorkflow }: Props = $props();
+	let { 
+		workflow: initialWorkflow, 
+		height = '100vh', 
+		width = '100%' 
+	}: Props = $props();
 
 	let nodes = $state<NodeMetadata[]>([]);
 	let workflow = $state<Workflow | undefined>(initialWorkflow);
@@ -133,7 +139,7 @@
 	<meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
 
-<div class="flowdrop-app">
+<div class="flowdrop-app" style="height: {typeof height === 'number' ? `${height}px` : height}; width: {typeof width === 'number' ? `${width}px` : width};">
 	<!-- Main Content -->
 	<main class="flowdrop-main">
 		<!-- Status Display -->
@@ -207,17 +213,17 @@
 
 		<!-- Workflow Editor -->
 		<div class="flowdrop-editor-container">
-			<WorkflowEditor {nodes} {workflow} />
+			<WorkflowEditor {nodes} {workflow} {height} {width} />
 		</div>
 	</main>
 </div>
 
 <style>
 	.flowdrop-app {
-		height: 100vh;
 		background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
 		display: flex;
 		flex-direction: column;
+		overflow: hidden;
 	}
 
 	.flowdrop-main {
