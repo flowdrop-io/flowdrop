@@ -6,7 +6,7 @@
 import { mount } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
-import type { Workflow, NodeMetadata, PortConfig, WorkflowEditorConfig } from './types/index.js';
+import type { Workflow, NodeMetadata, PortConfig } from './types/index.js';
 import type { EndpointConfig } from './config/endpoints.js';
 import { createEndpointConfig } from './config/endpoints.js';
 import { initializePortCompatibility } from './utils/connections.js';
@@ -14,105 +14,102 @@ import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
 
 /**
+ * Return type for mounted Svelte app
+ */
+interface MountedSvelteApp {
+	destroy: () => void;
+	// Add any other methods from Svelte's mount return type as needed
+}
+
+/**
  * Mount the full FlowDrop App with configurable navbar height and other settings
  * This is the recommended way to mount the app for IIFE usage
  */
-export async function mountFlowDropApp(
-  container: HTMLElement,
-  config: Partial<WorkflowEditorConfig> = {}
-): Promise<any> {
-  // Create the Svelte App component with configuration
-  const app = mount(App, {
-    target: container,
-    props: {
-      config
-    }
-  });
+export async function mountFlowDropApp(container: HTMLElement): Promise<MountedSvelteApp> {
+	// Create the Svelte App component with configuration
+	const app = mount(App, {
+		target: container,
+		props: {}
+	}) as MountedSvelteApp;
 
-  return app;
+	return app;
 }
 
 /**
  * Mount the WorkflowEditor component in a Drupal container
  */
 export async function mountWorkflowEditor(
-  container: HTMLElement,
-  options: {
-    workflow?: Workflow;
-    nodes?: NodeMetadata[];
-    apiBaseUrl?: string;
-    endpointConfig?: EndpointConfig;
-    portConfig?: PortConfig;
-  } = {}
-): Promise<any> {
-  const {
-    workflow,
-    nodes = [],
-    apiBaseUrl,
-    endpointConfig,
-    portConfig
-  } = options;
+	container: HTMLElement,
+	options: {
+		workflow?: Workflow;
+		nodes?: NodeMetadata[];
+		apiBaseUrl?: string;
+		endpointConfig?: EndpointConfig;
+		portConfig?: PortConfig;
+	} = {}
+): Promise<MountedSvelteApp> {
+	const { workflow, nodes = [], apiBaseUrl, endpointConfig, portConfig } = options;
 
-  // Create endpoint configuration
-  let config: EndpointConfig | undefined;
-  
-  if (endpointConfig) {
-    // Merge with default configuration to ensure all required endpoints are present
-    const { createEndpointConfig, defaultEndpointConfig } = await import('./config/endpoints.js');
-    config = {
-      ...defaultEndpointConfig,
-      ...endpointConfig,
-      endpoints: {
-        ...defaultEndpointConfig.endpoints,
-        ...endpointConfig.endpoints,
-      },
-    };
-  } else if (apiBaseUrl) {
-    config = createEndpointConfig(apiBaseUrl);
-  }
+	// Create endpoint configuration
+	let config: EndpointConfig | undefined;
 
-  // Initialize port configuration
-  let finalPortConfig = portConfig;
-  
-  if (!finalPortConfig && config) {
-    // Try to fetch port configuration from API
-    try {
-      finalPortConfig = await fetchPortConfig(config);
-    } catch (error) {
-      console.warn("Failed to fetch port config from API, using default:", error);
-      finalPortConfig = DEFAULT_PORT_CONFIG;
-    }
-  } else if (!finalPortConfig) {
-    finalPortConfig = DEFAULT_PORT_CONFIG;
-  }
-  
-  initializePortCompatibility(finalPortConfig);
+	if (endpointConfig) {
+		// Merge with default configuration to ensure all required endpoints are present
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
+		config = {
+			...defaultEndpointConfig,
+			...endpointConfig,
+			endpoints: {
+				...defaultEndpointConfig.endpoints,
+				...endpointConfig.endpoints
+			}
+		};
+	} else if (apiBaseUrl) {
+		config = createEndpointConfig(apiBaseUrl);
+	}
 
-  // Create the Svelte component
-  const app = mount(WorkflowEditor, {
-    target: container,
-    props: {
-      workflow,
-      nodes,
-      endpointConfig: config
-    }
-  });
+	// Initialize port configuration
+	let finalPortConfig = portConfig;
 
-  return app;
+	if (!finalPortConfig && config) {
+		// Try to fetch port configuration from API
+		try {
+			finalPortConfig = await fetchPortConfig(config);
+		} catch (error) {
+			console.warn('Failed to fetch port config from API, using default:', error);
+			finalPortConfig = DEFAULT_PORT_CONFIG;
+		}
+	} else if (!finalPortConfig) {
+		finalPortConfig = DEFAULT_PORT_CONFIG;
+	}
+
+	initializePortCompatibility(finalPortConfig);
+
+	// Create the Svelte component
+	const app = mount(WorkflowEditor, {
+		target: container,
+		props: {
+			workflow,
+			nodes,
+			endpointConfig: config
+		}
+	}) as MountedSvelteApp;
+
+	return app;
 }
 
 /**
  * Unmount a Svelte app (works for both App and WorkflowEditor)
  */
-export function unmountFlowDropApp(app: any): void {
-  if (app && typeof app.destroy === 'function') {
-    app.destroy();
-  }
+export function unmountFlowDropApp(app: MountedSvelteApp): void {
+	if (app && typeof app.destroy === 'function') {
+		app.destroy();
+	}
 }
 
 /**
  * Unmount a Svelte app (alias for backward compatibility)
  */
-export function unmountWorkflowEditor(app: any): void {
-  unmountFlowDropApp(app);
-} 
+export function unmountWorkflowEditor(app: MountedSvelteApp): void {
+	unmountFlowDropApp(app);
+}

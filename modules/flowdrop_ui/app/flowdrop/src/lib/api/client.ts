@@ -2,269 +2,298 @@
  * API Client for FlowDrop Workflow Library
  */
 
-import type { 
-  NodeMetadata, 
-  Workflow, 
-  ExecutionResult,
-  ApiResponse,
-  NodesResponse,
-  WorkflowResponse,
-  WorkflowsResponse
-} from "../types/index.js";
+import type {
+	NodeMetadata,
+	Workflow,
+	ExecutionResult,
+	ApiResponse,
+	NodesResponse,
+	WorkflowResponse,
+	WorkflowsResponse
+} from '../types/index.js';
 
 /**
  * HTTP API client for FlowDrop
  */
 export class FlowDropApiClient {
-  private baseUrl: string;
-  private headers: Record<string, string>;
+	private baseUrl: string;
+	private headers: Record<string, string>;
 
-  constructor(baseUrl: string, apiKey?: string) {
-    this.baseUrl = baseUrl.replace(/\/$/, "");
-    this.headers = {
-      "Content-Type": "application/json",
-    };
+	constructor(baseUrl: string, apiKey?: string) {
+		this.baseUrl = baseUrl.replace(/\/$/, '');
+		this.headers = {
+			'Content-Type': 'application/json'
+		};
 
-    if (apiKey) {
-      this.headers["Authorization"] = `Bearer ${apiKey}`;
-    }
-  }
+		if (apiKey) {
+			this.headers['Authorization'] = `Bearer ${apiKey}`;
+		}
+	}
 
-  /**
-   * Make HTTP request with error handling
-   */
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const config: RequestInit = {
-      headers: this.headers,
-      ...options,
-    };
+	/**
+	 * Make HTTP request with error handling
+	 */
+	private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+		const url = `${this.baseUrl}${endpoint}`;
+		const config: RequestInit = {
+			headers: this.headers,
+			...options
+		};
 
-    try {
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+		try {
+			const response = await fetch(url, config);
 
-      const data = await response.json();
-      return data as T;
-    } catch (error) {
-      console.error("API request failed:", error);
-      throw new Error(`API request failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-  }
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
 
-  /**
-   * Fetch available node types and their metadata
-   */
-  async getAvailableNodes(): Promise<NodeMetadata[]> {
-    const response = await this.request<NodesResponse>("/api/nodes");
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to fetch available nodes");
-    }
+			const data = await response.json();
+			return data as T;
+		} catch (error) {
+			console.error('API request failed:', error);
+			throw new Error(
+				`API request failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+			);
+		}
+	}
 
-    return response.data;
-  }
+	/**
+	 * Fetch available node types and their metadata
+	 */
+	async getAvailableNodes(): Promise<NodeMetadata[]> {
+		const response = await this.request<NodesResponse>('/api/nodes');
 
-  /**
-   * Fetch nodes by category
-   */
-  async getNodesByCategory(category: string): Promise<NodeMetadata[]> {
-    const response = await this.request<NodesResponse>(`/api/nodes?category=${encodeURIComponent(category)}`);
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to fetch nodes by category");
-    }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to fetch available nodes');
+		}
 
-    return response.data;
-  }
+		return response.data;
+	}
 
-  /**
-   * Fetch a specific node's metadata
-   */
-  async getNodeMetadata(nodeId: string): Promise<NodeMetadata> {
-    const response = await this.request<ApiResponse<NodeMetadata>>(`/api/nodes/${encodeURIComponent(nodeId)}`);
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to fetch node metadata");
-    }
+	/**
+	 * Fetch nodes by category
+	 */
+	async getNodesByCategory(category: string): Promise<NodeMetadata[]> {
+		const response = await this.request<NodesResponse>(
+			`/api/nodes?category=${encodeURIComponent(category)}`
+		);
 
-    return response.data;
-  }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to fetch nodes by category');
+		}
 
-  /**
-   * Save a workflow
-   */
-  async saveWorkflow(workflow: Workflow): Promise<Workflow> {
-    const response = await this.request<WorkflowResponse>("/api/workflows", {
-      method: "POST",
-      body: JSON.stringify(workflow),
-    });
+		return response.data;
+	}
 
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to save workflow");
-    }
+	/**
+	 * Fetch a specific node's metadata
+	 */
+	async getNodeMetadata(nodeId: string): Promise<NodeMetadata> {
+		const response = await this.request<ApiResponse<NodeMetadata>>(
+			`/api/nodes/${encodeURIComponent(nodeId)}`
+		);
 
-    return response.data;
-  }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to fetch node metadata');
+		}
 
-  /**
-   * Update an existing workflow
-   */
-  async updateWorkflow(workflowId: string, workflow: Partial<Workflow>): Promise<Workflow> {
-    const response = await this.request<WorkflowResponse>(`/api/workflows/${encodeURIComponent(workflowId)}`, {
-      method: "PUT",
-      body: JSON.stringify(workflow),
-    });
+		return response.data;
+	}
 
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to update workflow");
-    }
+	/**
+	 * Save a workflow
+	 */
+	async saveWorkflow(workflow: Workflow): Promise<Workflow> {
+		const response = await this.request<WorkflowResponse>('/api/workflows', {
+			method: 'POST',
+			body: JSON.stringify(workflow)
+		});
 
-    return response.data;
-  }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to save workflow');
+		}
 
-  /**
-   * Load a workflow by ID
-   */
-  async loadWorkflow(workflowId: string): Promise<Workflow> {
-    const response = await this.request<WorkflowResponse>(`/api/workflows/${encodeURIComponent(workflowId)}`);
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to load workflow");
-    }
+		return response.data;
+	}
 
-    return response.data;
-  }
+	/**
+	 * Update an existing workflow
+	 */
+	async updateWorkflow(workflowId: string, workflow: Partial<Workflow>): Promise<Workflow> {
+		const response = await this.request<WorkflowResponse>(
+			`/api/workflows/${encodeURIComponent(workflowId)}`,
+			{
+				method: 'PUT',
+				body: JSON.stringify(workflow)
+			}
+		);
 
-  /**
-   * List all workflows
-   */
-  async listWorkflows(): Promise<Workflow[]> {
-    const response = await this.request<WorkflowsResponse>("/api/workflows");
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to list workflows");
-    }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to update workflow');
+		}
 
-    return response.data;
-  }
+		return response.data;
+	}
 
-  /**
-   * Delete a workflow
-   */
-  async deleteWorkflow(workflowId: string): Promise<void> {
-    const response = await this.request<ApiResponse<void>>(`/api/workflows/${encodeURIComponent(workflowId)}`, {
-      method: "DELETE",
-    });
+	/**
+	 * Load a workflow by ID
+	 */
+	async loadWorkflow(workflowId: string): Promise<Workflow> {
+		const response = await this.request<WorkflowResponse>(
+			`/api/workflows/${encodeURIComponent(workflowId)}`
+		);
 
-    if (!response.success) {
-      throw new Error(response.error || "Failed to delete workflow");
-    }
-  }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to load workflow');
+		}
 
-  /**
-   * Execute a workflow
-   */
-  async executeWorkflow(workflowId: string, inputs?: Record<string, unknown>): Promise<ExecutionResult> {
-    const response = await this.request<ApiResponse<ExecutionResult>>(`/api/workflows/${encodeURIComponent(workflowId)}/execute`, {
-      method: "POST",
-      body: JSON.stringify({ inputs }),
-    });
+		return response.data;
+	}
 
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to execute workflow");
-    }
+	/**
+	 * List all workflows
+	 */
+	async listWorkflows(): Promise<Workflow[]> {
+		const response = await this.request<WorkflowsResponse>('/api/workflows');
 
-    return response.data;
-  }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to list workflows');
+		}
 
-  /**
-   * Get execution status
-   */
-  async getExecutionStatus(executionId: string): Promise<ExecutionResult> {
-    const response = await this.request<ApiResponse<ExecutionResult>>(`/api/executions/${encodeURIComponent(executionId)}`);
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to get execution status");
-    }
+		return response.data;
+	}
 
-    return response.data;
-  }
+	/**
+	 * Delete a workflow
+	 */
+	async deleteWorkflow(workflowId: string): Promise<void> {
+		const response = await this.request<ApiResponse<void>>(
+			`/api/workflows/${encodeURIComponent(workflowId)}`,
+			{
+				method: 'DELETE'
+			}
+		);
 
-  /**
-   * Cancel workflow execution
-   */
-  async cancelExecution(executionId: string): Promise<void> {
-    const response = await this.request<ApiResponse<void>>(`/api/executions/${encodeURIComponent(executionId)}/cancel`, {
-      method: "POST",
-    });
+		if (!response.success) {
+			throw new Error(response.error || 'Failed to delete workflow');
+		}
+	}
 
-    if (!response.success) {
-      throw new Error(response.error || "Failed to cancel execution");
-    }
-  }
+	/**
+	 * Execute a workflow
+	 */
+	async executeWorkflow(
+		workflowId: string,
+		inputs?: Record<string, unknown>
+	): Promise<ExecutionResult> {
+		const response = await this.request<ApiResponse<ExecutionResult>>(
+			`/api/workflows/${encodeURIComponent(workflowId)}/execute`,
+			{
+				method: 'POST',
+				body: JSON.stringify({ inputs })
+			}
+		);
 
-  /**
-   * Get execution logs
-   */
-  async getExecutionLogs(executionId: string): Promise<string[]> {
-    const response = await this.request<ApiResponse<string[]>>(`/api/executions/${encodeURIComponent(executionId)}/logs`);
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to get execution logs");
-    }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to execute workflow');
+		}
 
-    return response.data;
-  }
+		return response.data;
+	}
 
-  /**
-   * Validate workflow configuration
-   */
-  async validateWorkflow(workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
-    const response = await this.request<ApiResponse<{ valid: boolean; errors: string[] }>>("/api/workflows/validate", {
-      method: "POST",
-      body: JSON.stringify(workflow),
-    });
+	/**
+	 * Get execution status
+	 */
+	async getExecutionStatus(executionId: string): Promise<ExecutionResult> {
+		const response = await this.request<ApiResponse<ExecutionResult>>(
+			`/api/executions/${encodeURIComponent(executionId)}`
+		);
 
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to validate workflow");
-    }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to get execution status');
+		}
 
-    return response.data;
-  }
+		return response.data;
+	}
 
-  /**
-   * Export workflow as JSON
-   */
-  async exportWorkflow(workflowId: string): Promise<string> {
-    const response = await this.request<ApiResponse<string>>(`/api/workflows/${encodeURIComponent(workflowId)}/export`);
-    
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to export workflow");
-    }
+	/**
+	 * Cancel workflow execution
+	 */
+	async cancelExecution(executionId: string): Promise<void> {
+		const response = await this.request<ApiResponse<void>>(
+			`/api/executions/${encodeURIComponent(executionId)}/cancel`,
+			{
+				method: 'POST'
+			}
+		);
 
-    return response.data;
-  }
+		if (!response.success) {
+			throw new Error(response.error || 'Failed to cancel execution');
+		}
+	}
 
-  /**
-   * Import workflow from JSON
-   */
-  async importWorkflow(workflowJson: string): Promise<Workflow> {
-    const response = await this.request<WorkflowResponse>("/api/workflows/import", {
-      method: "POST",
-      body: JSON.stringify({ workflow: workflowJson }),
-    });
+	/**
+	 * Get execution logs
+	 */
+	async getExecutionLogs(executionId: string): Promise<string[]> {
+		const response = await this.request<ApiResponse<string[]>>(
+			`/api/executions/${encodeURIComponent(executionId)}/logs`
+		);
 
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to import workflow");
-    }
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to get execution logs');
+		}
 
-    return response.data;
-  }
-} 
+		return response.data;
+	}
+
+	/**
+	 * Validate workflow configuration
+	 */
+	async validateWorkflow(workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
+		const response = await this.request<ApiResponse<{ valid: boolean; errors: string[] }>>(
+			'/api/workflows/validate',
+			{
+				method: 'POST',
+				body: JSON.stringify(workflow)
+			}
+		);
+
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to validate workflow');
+		}
+
+		return response.data;
+	}
+
+	/**
+	 * Export workflow as JSON
+	 */
+	async exportWorkflow(workflowId: string): Promise<string> {
+		const response = await this.request<ApiResponse<string>>(
+			`/api/workflows/${encodeURIComponent(workflowId)}/export`
+		);
+
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to export workflow');
+		}
+
+		return response.data;
+	}
+
+	/**
+	 * Import workflow from JSON
+	 */
+	async importWorkflow(workflowJson: string): Promise<Workflow> {
+		const response = await this.request<WorkflowResponse>('/api/workflows/import', {
+			method: 'POST',
+			body: JSON.stringify({ workflow: workflowJson })
+		});
+
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to import workflow');
+		}
+
+		return response.data;
+	}
+}

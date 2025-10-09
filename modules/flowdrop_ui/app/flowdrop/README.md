@@ -66,17 +66,20 @@ flowdrop/
 ### Installation Steps
 
 1. **Install the module**:
+
    ```bash
    # Copy to your Drupal modules directory
    cp -r flowdrop /path/to/drupal/web/modules/custom/
    ```
 
 2. **Enable the module**:
+
    ```bash
    ddev drush en flowdrop flowdrop_workflow flowdrop_ui
    ```
 
 3. **Build the frontend**:
+
    ```bash
    cd modules/flowdrop_ui/app/flowdrop
    npm install
@@ -107,34 +110,40 @@ flowdrop/
 ### Available Node Types
 
 #### AI Models
+
 - **OpenAI Chat**: GPT model integration
 - **OpenAI Embeddings**: Text embedding generation
 - **HuggingFace Embeddings**: Alternative embedding models
 - **Simple Agent**: Basic AI agent implementation
 
 #### Data Processing
+
 - **Calculator**: Mathematical operations
 - **Dataframe Operations**: Advanced data manipulation
 - **Data Operations**: General data processing
 - **Data to Dataframe**: Data format conversion
 
 #### Input/Output
+
 - **Text Input**: User input collection
 - **Text Output**: Display text results
 - **Chat Output**: Chat interface output
 - **File Upload**: File upload handling
 
 #### HTTP & Integration
+
 - **URL Fetch**: HTTP GET requests
 - **HTTP Request**: Full HTTP client
 - **Webhook**: Webhook endpoint handling
 
 #### Logic & Control
+
 - **Conditional**: If/else logic branching
 - **Loop**: Iterative operations
 - **Split Text**: Text segmentation
 
 #### Utility
+
 - **DateTime**: Date/time operations
 - **Regex Extractor**: Pattern matching
 - **Conversation Buffer**: Chat history management
@@ -145,6 +154,7 @@ flowdrop/
 ### Adding New Node Types
 
 1. **Create Node Class**:
+
    ```php
    <?php
 
@@ -197,6 +207,7 @@ npm run test         # Run tests
 ### REST API Endpoints
 
 #### Workflows
+
 - `GET /api/flowdrop/workflows` - List workflows
 - `POST /api/flowdrop/workflows` - Create workflow
 - `GET /api/flowdrop/workflows/{id}` - Get workflow
@@ -205,11 +216,13 @@ npm run test         # Run tests
 - `POST /api/flowdrop/workflows/{id}/execute` - Execute workflow
 
 #### Nodes
+
 - `GET /api/flowdrop/nodes` - List available nodes
 - `GET /api/flowdrop/nodes/{id}` - Get node metadata
 - `GET /api/flowdrop/nodes?category={category}` - Filter by category
 
 #### Executions
+
 - `GET /api/flowdrop/executions/active` - Active executions
 - `GET /api/flowdrop/executions/{id}/state` - Execution status
 
@@ -219,18 +232,18 @@ Each node type defines its configuration schema:
 
 ```json
 {
-  "type": "object",
-  "properties": {
-    "setting1": {
-      "type": "string",
-      "title": "Setting 1",
-      "description": "Description of setting"
-    },
-    "setting2": {
-      "type": "number",
-      "default": 0
-    }
-  }
+	"type": "object",
+	"properties": {
+		"setting1": {
+			"type": "string",
+			"title": "Setting 1",
+			"description": "Description of setting"
+		},
+		"setting2": {
+			"type": "number",
+			"default": 0
+		}
+	}
 }
 ```
 
@@ -244,11 +257,13 @@ Each node type defines its configuration schema:
 ## 🧪 Testing
 
 ### Backend Testing
+
 ```bash
 ddev drush test:run flowdrop
 ```
 
 ### Frontend Testing
+
 ```bash
 cd modules/flowdrop_ui/app/flowdrop
 npm run test:unit
@@ -273,6 +288,7 @@ Not accepting Contribution until the module stabilizes. Stay tuned.
 ## 🆘 Support
 
 For issues and questions:
+
 - Check the API documentation in `modules/flowdrop_ui/app/flowdrop/API.md`
 - Review the security guidelines in `modules/flowdrop_ui/app/flowdrop/SECURITY.md`
 - Create an issue in the project repository

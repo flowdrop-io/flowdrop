@@ -1,52 +1,56 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import path from 'path';
 
 export default defineConfig({
-  plugins: [
-    svelte()
-  ],
-  build: {
-    outDir: '../../build/flowdrop',
-    lib: {
-      entry: 'src/lib/index.ts',
-      name: 'FlowDrop',
-      fileName: (format) => `flowdrop.${format}.js`,
-      formats: ['iife', 'es']
-    },
-    rollupOptions: {
-      // For IIFE build, bundle all dependencies to make it self-contained
-      external: [
-        // Keep only truly external dependencies that should be global
-        // Remove @xyflow/svelte, @iconify/svelte, and uuid from external
-      ],
-      output: {
-        // Global variable name for IIFE
-        globals: {
-          // Only define globals for truly external dependencies
-          // svelte: 'Svelte', // Keep if Svelte should be external
-        },
-        // Ensure CSS is extracted
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name?.endsWith('.css')) {
-            return 'flowdrop.css';
-          }
-          return assetInfo.name || 'assets/[name]-[hash][extname]';
-        }
-      }
-    },
-    // Ensure we generate source maps
-    sourcemap: true,
-    // Minify for production
-    minify: 'terser',
-    // Target modern browsers
-    target: 'es2015'
-  },
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-    'process.env': '{}',
-  },
-  // Optimize dependencies
-  optimizeDeps: {
-    include: ['svelte', '@xyflow/svelte', '@iconify/svelte', 'uuid']
-  }
+	plugins: [svelte()],
+	resolve: {
+		alias: {
+			$lib: path.resolve('./src/lib')
+		}
+	},
+	build: {
+		outDir: '../../build/flowdrop',
+		lib: {
+			entry: 'src/lib/index.ts',
+			name: 'FlowDrop',
+			fileName: (format) => `flowdrop.${format}.js`,
+			formats: ['iife', 'es']
+		},
+		rollupOptions: {
+			// For IIFE build, bundle all dependencies to make it self-contained
+			external: [
+				// Keep only truly external dependencies that should be global
+				// Remove @xyflow/svelte, @iconify/svelte, and uuid from external
+			],
+			output: {
+				// Global variable name for IIFE
+				globals: {
+					// Only define globals for truly external dependencies
+					// svelte: 'Svelte', // Keep if Svelte should be external
+				},
+				// Ensure CSS is extracted
+				assetFileNames: (assetInfo) => {
+					if (assetInfo.name?.endsWith('.css')) {
+						return 'flowdrop.css';
+					}
+					return assetInfo.name || 'assets/[name]-[hash][extname]';
+				}
+			}
+		},
+		// Ensure we generate source maps
+		sourcemap: true,
+		// Minify for production
+		minify: 'terser',
+		// Target modern browsers
+		target: 'es2015'
+	},
+	define: {
+		'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+		'process.env': '{}'
+	},
+	// Optimize dependencies
+	optimizeDeps: {
+		include: ['svelte', '@xyflow/svelte', '@iconify/svelte', 'uuid']
+	}
 });

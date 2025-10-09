@@ -4,21 +4,21 @@ info:
   description: |
     FlowDrop is a SvelteKit-based workflow editor for LLM applications, inspired by Langflow.
     This API provides endpoints for managing workflows, node types, and workflow execution.
-    
+
     ## Features
     - Workflow CRUD operations
     - Node type management
     - Workflow execution and monitoring
     - Import/Export workflows
     - Real-time collaboration
-    
+
     ## Authentication
     API endpoints require authentication. Use Bearer token in Authorization header.
-    
+
     ## Rate Limiting
     - 100 requests per minute for authenticated users
     - 10 requests per minute for unauthenticated users
-    
+
     ## Error Handling
     All errors return a consistent format with error code, message, and details.
   version: 1.0.0
@@ -59,13 +59,13 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "healthy"
+                    example: 'healthy'
                   timestamp:
                     type: string
                     format: date-time
                   version:
                     type: string
-                    example: "1.0.0"
+                    example: '1.0.0'
 
   # ===== NODE TYPES =====
   /nodes:
@@ -81,7 +81,23 @@ paths:
           required: false
           schema:
             type: string
-            enum: [inputs, outputs, prompts, models, processing, logic, data, helpers, tools, vectorstores, embeddings, memories, agents, bundles]
+            enum:
+              [
+                inputs,
+                outputs,
+                prompts,
+                models,
+                processing,
+                logic,
+                data,
+                helpers,
+                tools,
+                vectorstores,
+                embeddings,
+                memories,
+                agents,
+                bundles
+              ]
         - name: search
           in: query
           description: Search node types by name or description
@@ -537,12 +553,43 @@ components:
     # ===== COMMON TYPES =====
     NodeCategory:
       type: string
-      enum: [inputs, outputs, prompts, models, processing, logic, data, helpers, tools, vectorstores, embeddings, memories, agents, bundles]
+      enum:
+        [
+          inputs,
+          outputs,
+          prompts,
+          models,
+          processing,
+          logic,
+          data,
+          helpers,
+          tools,
+          vectorstores,
+          embeddings,
+          memories,
+          agents,
+          bundles
+        ]
       description: Node category
 
     NodeDataType:
       type: string
-      enum: [string, number, boolean, array, object, file, image, audio, video, url, email, date, datetime]
+      enum:
+        [
+          string,
+          number,
+          boolean,
+          array,
+          object,
+          file,
+          image,
+          audio,
+          video,
+          url,
+          email,
+          date,
+          datetime
+        ]
       description: Data type for node ports
 
     # ===== PORT CONFIGURATION =====
@@ -687,18 +734,31 @@ components:
           type: object
           description: Configuration schema for the node type
           example:
-            type: "object"
+            type: 'object'
             properties:
               operation:
-                type: "string"
-                title: "Operation"
-                description: "Mathematical operation to perform"
-                default: "add"
-                enum: ["add", "subtract", "multiply", "divide", "power", "sqrt", "average", "min", "max", "median", "mode"]
+                type: 'string'
+                title: 'Operation'
+                description: 'Mathematical operation to perform'
+                default: 'add'
+                enum:
+                  [
+                    'add',
+                    'subtract',
+                    'multiply',
+                    'divide',
+                    'power',
+                    'sqrt',
+                    'average',
+                    'min',
+                    'max',
+                    'median',
+                    'mode'
+                  ]
               precision:
-                type: "integer"
-                title: "Precision"
-                description: "Number of decimal places"
+                type: 'integer'
+                title: 'Precision'
+                description: 'Number of decimal places'
                 default: 2
                 minimum: 0
                 maximum: 10
@@ -1156,11 +1216,11 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
-            error: "Invalid request parameters"
-            code: "VALIDATION_ERROR"
+            error: 'Invalid request parameters'
+            code: 'VALIDATION_ERROR'
             details:
-              field: "name"
-              message: "Name is required"
+              field: 'name'
+              message: 'Name is required'
 
     Unauthorized:
       description: Unauthorized
@@ -1170,8 +1230,8 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
-            error: "Authentication required"
-            code: "UNAUTHORIZED"
+            error: 'Authentication required'
+            code: 'UNAUTHORIZED'
 
     NotFound:
       description: Resource not found
@@ -1181,8 +1241,8 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
-            error: "Resource not found"
-            code: "NOT_FOUND"
+            error: 'Resource not found'
+            code: 'NOT_FOUND'
 
     ValidationError:
       description: Validation error
@@ -1192,8 +1252,8 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
-            error: "Validation failed"
-            code: "VALIDATION_ERROR"
+            error: 'Validation failed'
+            code: 'VALIDATION_ERROR'
             details:
               errors:
                 - "Node 'node-1' has invalid configuration"
@@ -1207,8 +1267,8 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
-            error: "Internal server error"
-            code: "INTERNAL_ERROR"
+            error: 'Internal server error'
+            code: 'INTERNAL_ERROR'
 
 tags:
   - name: System
@@ -1222,4 +1282,4 @@ tags:
   - name: Import/Export
     description: Workflow import and export
   - name: Validation
-    description: Workflow validation 
+    description: Workflow validation
