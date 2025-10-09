@@ -9,6 +9,7 @@
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
 	import ConfigSidebar from '$lib/components/ConfigSidebar.svelte';
+	import Navbar from '$lib/components/Navbar.svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
 	import type { NodeMetadata, Workflow, WorkflowNode } from '$lib/types/index.js';
 	import { sampleNodes } from '$lib/data/samples.js';
@@ -19,12 +20,14 @@
 		workflow?: Workflow;
 		height?: string | number;
 		width?: string | number;
+		showNavbar?: boolean;
 	}
 
 	let { 
 		workflow: initialWorkflow, 
 		height = '100vh', 
-		width = '100%' 
+		width = '100%',
+		showNavbar = false
 	}: Props = $props();
 
 	let nodes = $state<NodeMetadata[]>([]);
@@ -35,6 +38,12 @@
 	// ConfigSidebar state
 	let isConfigSidebarOpen = $state(false);
 	let selectedNodeForConfig = $state<WorkflowNode | null>(null);
+
+	// WorkflowEditor reference for save functionality
+	let workflowEditorRef: WorkflowEditor | null = null;
+	
+	// Current workflow state (updated by WorkflowEditor)
+	let currentWorkflowState = $state<Workflow | null>(null);
 
 	/**
 	 * Fetch node types from the server
@@ -144,6 +153,123 @@
 		selectedNodeForConfig = null;
 	}
 
+	/**
+	 * Handle workflow changes from WorkflowEditor
+	 */
+	function handleWorkflowChange(updatedWorkflow: Workflow): void {
+		console.log('🔄 App: Received workflow update from WorkflowEditor:', updatedWorkflow);
+		currentWorkflowState = updatedWorkflow;
+	}
+
+	/**
+	 * Save workflow - exposed API function
+	 */
+	async function saveWorkflow(): Promise<void> {
+		try {
+			console.log('💾 Starting workflow save from App component...');
+			
+			// Import necessary modules
+			const { workflowApi } = await import('$lib/services/api.js');
+			const { v4: uuidv4 } = await import('uuid');
+			
+			// Use current workflow state if available, otherwise fall back to initial workflow
+			const workflowToSave = currentWorkflowState || workflow;
+			
+			if (!workflowToSave) {
+				console.warn('⚠️ No workflow data available to save');
+				return;
+			}
+
+			// Determine the workflow ID
+			let workflowId: string;
+			if (workflowToSave.id) {
+				workflowId = workflowToSave.id;
+			} else {
+				workflowId = uuidv4();
+			}
+
+			// Create workflow object for saving
+			const finalWorkflow = {
+				id: workflowId,
+				name: workflowToSave.name || workflowToSave.label || 'Untitled Workflow',
+				nodes: workflowToSave.nodes || [],
+				edges: workflowToSave.edges || [],
+				metadata: {
+					version: '1.0.0',
+					createdAt: workflowToSave.metadata?.createdAt || new Date().toISOString(),
+					updatedAt: new Date().toISOString()
+				}
+			};
+
+			console.log('💾 Saving workflow:', finalWorkflow);
+			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+
+			// Update the workflow ID if it was a new workflow
+			if (!workflowToSave.id) {
+				console.log('🆕 New workflow created with ID:', savedWorkflow.id);
+			} else {
+				console.log('🔄 Existing workflow updated with ID:', savedWorkflow.id);
+			}
+			
+			console.log('✅ Workflow saved successfully from App component');
+		} catch (error) {
+			console.error('❌ Failed to save workflow from App component:', error);
+			throw error; // Re-throw so caller can handle
+		}
+	}
+
+	/**
+	 * Export workflow - exposed API function
+	 */
+	function exportWorkflow(): void {
+		try {
+			console.log('📤 Starting workflow export from App component...');
+			
+			// Use current workflow state if available, otherwise fall back to initial workflow
+			const workflowToExport = currentWorkflowState || workflow;
+			
+			if (!workflowToExport) {
+				console.warn('⚠️ No workflow data available to export');
+				return;
+			}
+
+			// Create workflow object for export
+			const finalWorkflow = {
+				id: workflowToExport.id || 'untitled-workflow',
+				name: workflowToExport.name || workflowToExport.label || 'Untitled Workflow',
+				nodes: workflowToExport.nodes || [],
+				edges: workflowToExport.edges || [],
+				metadata: {
+					version: '1.0.0',
+					createdAt: workflowToExport.metadata?.createdAt || new Date().toISOString(),
+					updatedAt: new Date().toISOString()
+				}
+			};
+
+			// Create and download the file
+			const dataStr = JSON.stringify(finalWorkflow, null, 2);
+			const dataBlob = new Blob([dataStr], { type: 'application/json' });
+			const url = URL.createObjectURL(dataBlob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `${finalWorkflow.name}.json`;
+			link.click();
+			URL.revokeObjectURL(url);
+			
+			console.log('✅ Workflow exported successfully from App component');
+		} catch (error) {
+			console.error('❌ Failed to export workflow from App component:', error);
+		}
+	}
+
+	// Expose save and export functions globally for external access
+	if (typeof window !== 'undefined') {
+		// @ts-ignore - Adding to window for external access
+		window.flowdropSave = saveWorkflow;
+		// @ts-ignore - Adding to window for external access
+		window.flowdropExport = exportWorkflow;
+	}
+
 	// Function to handle clicks outside the sidebar
 	function handleCanvasClick(event: MouseEvent): void {
 		// Check if the click is outside the right sidebar
@@ -164,14 +290,15 @@
 		fetchNodeTypes();
 	});
 
+	// Removed debug logging $effect to prevent potential circular dependencies
 	// Debug logging for nodes
-	$effect(() => {
-		console.log('🔍 App: nodes state changed:', {
-			count: nodes.length,
-			hasNodes: nodes.length > 0,
-			firstNode: nodes[0]?.name || 'none'
-		});
-	});
+	// $effect(() => {
+	//   console.log('🔍 App: nodes state changed:', {
+	//     count: nodes.length,
+	//     hasNodes: nodes.length > 0,
+	//     firstNode: nodes[0]?.name || 'none'
+	//   });
+	// });
 </script>
 
 <svelte:head>
@@ -180,6 +307,35 @@
 </svelte:head>
 
 <div class="flowdrop-app" style="height: {typeof height === 'number' ? `${height}px` : height}; width: {typeof width === 'number' ? `${width}px` : width};">
+	<!-- Navbar (conditionally rendered) -->
+	{#if showNavbar}
+		<Navbar 
+			primaryActions={[
+				{
+					label: 'Save',
+					href: '#save',
+					icon: 'heroicons:document-arrow-down',
+					variant: 'primary',
+					onclick: (e) => {
+						e.preventDefault();
+						saveWorkflow();
+					}
+				},
+				{
+					label: 'Export',
+					href: '#export', 
+					icon: 'heroicons:arrow-down-tray',
+					variant: 'outline',
+					onclick: (e) => {
+						e.preventDefault();
+						exportWorkflow();
+					}
+				}
+			]}
+			showStatus={true}
+		/>
+	{/if}
+
 	<!-- Main Content -->
 	<main class="flowdrop-main">
 		<!-- Status Display -->
@@ -261,6 +417,7 @@
 			<!-- Main Editor Area -->
 			<div class="flowdrop-editor-main" onclick={handleCanvasClick} onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()} role="button" tabindex="0" aria-label="Workflow canvas - click to close sidebar">
 				<WorkflowEditor 
+					bind:this={workflowEditorRef}
 					{nodes} 
 					{workflow} 
 					{height} 
@@ -269,6 +426,7 @@
 					{selectedNodeForConfig}
 					{openConfigSidebar}
 					{closeConfigSidebar}
+					onWorkflowChange={handleWorkflowChange}
 				/>
 			</div>
 

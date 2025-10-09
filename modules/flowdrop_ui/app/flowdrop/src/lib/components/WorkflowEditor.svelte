@@ -50,6 +50,7 @@
 		selectedNodeForConfig?: WorkflowNodeType | null;
 		openConfigSidebar?: (node: WorkflowNodeType) => void;
 		closeConfigSidebar?: () => void;
+		onWorkflowChange?: (workflow: Workflow) => void;
 	}
 
 	let props: Props = $props();
@@ -206,15 +207,18 @@
 
 		// Update all edges at once
 		flowEdges = updatedEdges;
+		
+		// Note: We don't notify parent of workflow changes here since this is just styling
+		// and would cause circular dependencies with the $effect that calls this function
 	}
 
-	// Apply styling to all edges when edges change
-	$effect(() => {
-		if (flowNodes.length > 0 && flowEdges.length > 0 && availableNodes.length > 0) {
-			// Always update edge styles to ensure new edges get styled
-			updateExistingEdgeStyles();
-		}
-	});
+	// Removed problematic $effect that was causing circular dependencies
+	// Edge styling will be handled when edges are first created or manually updated
+	// $effect(() => {
+	//   if (flowNodes.length > 0 && flowEdges.length > 0 && availableNodes.length > 0) {
+	//     updateExistingEdgeStyles();
+	//   }
+	// });
 
 	$effect(() => {
 		if (props.endpointConfig) {
@@ -308,9 +312,37 @@
 						}
 					: node
 			);
+			
+			// Notify parent of workflow changes
+			notifyWorkflowChange();
 		}
 		props.closeConfigSidebar?.();
 	}
+
+	/**
+	 * Notify parent component of workflow changes
+	 */
+	function notifyWorkflowChange(): void {
+		if (props.onWorkflowChange && isInitialized) {
+			const currentWorkflow = {
+				id: props.workflow?.id,
+				name: props.workflow?.name || 'Untitled Workflow',
+				nodes: flowNodes,
+				edges: flowEdges,
+				metadata: {
+					version: '1.0.0',
+					createdAt: props.workflow?.metadata?.createdAt || new Date().toISOString(),
+					updatedAt: new Date().toISOString()
+				}
+			};
+			console.log('🔄 WorkflowEditor: Notifying parent of workflow change');
+			props.onWorkflowChange(currentWorkflow);
+		}
+	}
+
+	// Remove the problematic $effect that causes circular dependencies
+	// Instead, we'll call notifyWorkflowChange() only on specific user actions
+	// like adding nodes, removing nodes, or updating configurations
 
 	/**
 	 * Save workflow
@@ -489,6 +521,9 @@
 
 							// Add node with proper reactivity trigger
 							flowNodes = [...flowNodes, newNode];
+							
+							// Notify parent of workflow changes
+							notifyWorkflowChange();
 
 							// Force a tick to ensure SvelteFlow updates
 							await tick();

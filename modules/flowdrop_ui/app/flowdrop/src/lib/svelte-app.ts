@@ -13,11 +13,21 @@ import { initializePortCompatibility } from './utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
 
+// Extend Window interface for global save/export functions
+declare global {
+	interface Window {
+		flowdropSave?: () => Promise<void>;
+		flowdropExport?: () => void;
+	}
+}
+
 /**
  * Return type for mounted Svelte app
  */
 interface MountedSvelteApp {
 	destroy: () => void;
+	save?: () => Promise<void>;
+	export?: () => void;
 	// Add any other methods from Svelte's mount return type as needed
 }
 
@@ -25,12 +35,83 @@ interface MountedSvelteApp {
  * Mount the full FlowDrop App with configurable navbar height and other settings
  * This is the recommended way to mount the app for IIFE usage
  */
-export async function mountFlowDropApp(container: HTMLElement): Promise<MountedSvelteApp> {
+export async function mountFlowDropApp(
+	container: HTMLElement,
+	options: {
+		workflow?: Workflow;
+		nodes?: NodeMetadata[];
+		apiBaseUrl?: string;
+		endpointConfig?: EndpointConfig;
+		portConfig?: PortConfig;
+		height?: string | number;
+		width?: string | number;
+		showNavbar?: boolean;
+	} = {}
+): Promise<MountedSvelteApp> {
+	const { workflow, nodes = [], apiBaseUrl, endpointConfig, portConfig, height = '100vh', width = '100%', showNavbar = false } = options;
+
+	// Create endpoint configuration
+	let config: EndpointConfig | undefined;
+
+	if (endpointConfig) {
+		// Merge with default configuration to ensure all required endpoints are present
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
+		config = {
+			...defaultEndpointConfig,
+			...endpointConfig,
+			endpoints: {
+				...defaultEndpointConfig.endpoints,
+				...endpointConfig.endpoints
+			}
+		};
+	} else if (apiBaseUrl) {
+		config = createEndpointConfig(apiBaseUrl);
+	}
+
+	// Initialize port configuration
+	let finalPortConfig = portConfig;
+
+	if (!finalPortConfig && config) {
+		// Try to fetch port configuration from API
+		try {
+			finalPortConfig = await fetchPortConfig(config);
+		} catch (error) {
+			console.warn('Failed to fetch port config from API, using default:', error);
+			finalPortConfig = DEFAULT_PORT_CONFIG;
+		}
+	} else if (!finalPortConfig) {
+		finalPortConfig = DEFAULT_PORT_CONFIG;
+	}
+
+	initializePortCompatibility(finalPortConfig);
+
 	// Create the Svelte App component with configuration
 	const app = mount(App, {
 		target: container,
-		props: {}
+		props: {
+			workflow,
+			height,
+			width,
+			showNavbar
+		}
 	}) as MountedSvelteApp;
+
+	// Expose save and export functionality
+	app.save = async () => {
+		if (typeof window !== 'undefined' && window.flowdropSave) {
+			await window.flowdropSave();
+		} else {
+			console.warn('⚠️ Save functionality not available');
+		}
+	};
+
+	app.export = () => {
+		if (typeof window !== 'undefined' && window.flowdropExport) {
+			window.flowdropExport();
+		} else {
+			console.warn('⚠️ Export functionality not available');
+		}
+	};
 
 	return app;
 }

@@ -7,14 +7,15 @@
 -->
 
 <script lang="ts">
-	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
+	import Logo from './Logo.svelte';
 
 	interface NavbarAction {
 		label: string;
 		href: string;
 		icon?: string;
 		variant?: 'primary' | 'secondary' | 'outline';
+		onclick?: (event: Event) => void;
 	}
 
 	interface Props {
@@ -24,8 +25,8 @@
 
 	let { primaryActions = [], showStatus = true }: Props = $props();
 
-	// Get current route for active state
-	let currentPath = $derived($page.url.pathname);
+	// Simple current path tracking without SvelteKit dependency
+	let currentPath = $state(typeof window !== 'undefined' ? window.location.pathname : '/');
 
 	function isActive(href: string): boolean {
 		if (href === '/') {
@@ -41,7 +42,7 @@
 		<a href="/" class="flowdrop-logo--container">
 			<div class="flowdrop-flex flowdrop-gap--3">
 				<div class="flowdrop-logo--header">
-					<img src="/logo.svg" alt="FlowDrop Logo" />
+					<Logo />
 				</div>
 				<div>
 					<h1 class="flowdrop-text--logo flowdrop-font--bold">FlowDrop</h1>
@@ -60,6 +61,7 @@
 						href={action.href}
 						class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant ||
 							'primary'} {isActive(action.href) ? 'flowdrop-navbar__action--active' : ''}"
+						onclick={action.onclick}
 					>
 						{#if action.icon}
 							<span class="flowdrop-navbar__action-icon">
@@ -112,12 +114,6 @@
 		height: 40px;
 		font-size: 1.25rem;
 		padding: 2px;
-	}
-
-	.flowdrop-logo--header img {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
 	}
 
 	.flowdrop-navbar__center {
