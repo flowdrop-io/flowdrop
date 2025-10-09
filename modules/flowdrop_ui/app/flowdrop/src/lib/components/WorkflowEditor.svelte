@@ -98,7 +98,10 @@
 			console.log('🔍 WorkflowEditor: Updating global store from currentWorkflow:', {
 				nodeCount: currentWorkflow.nodes.length,
 				edgeCount: currentWorkflow.edges.length,
-				nodePositions: currentWorkflow.nodes.map(node => ({ id: node.id, position: node.position }))
+				nodePositions: currentWorkflow.nodes.map(node => ({ id: node.id, position: node.position })),
+				workflowName: currentWorkflow.name,
+				versionId: currentWorkflow.metadata?.versionId,
+				updateNumber: currentWorkflow.metadata?.updateNumber
 			});
 			
 			workflowActions.updateWorkflow(currentWorkflow);
@@ -363,7 +366,11 @@
 
 
 	async function handleConfigSave(newConfig: Record<string, unknown>): Promise<void> {
+		console.log('🔧 WorkflowEditor: handleConfigSave called with:', newConfig);
+		
 		if (props.selectedNodeForConfig) {
+			console.log('🔧 WorkflowEditor: Updating config for node:', props.selectedNodeForConfig.id);
+			
 			// Wait for any pending DOM updates
 			await tick();
 			
@@ -375,6 +382,8 @@
 				props.selectedNodeForConfig.data.metadata,
 				newConfig.nodeType as string
 			);
+
+			console.log('🔧 WorkflowEditor: New component name:', newComponentName);
 
 			// Update the node in currentWorkflow
 			if (currentWorkflow) {
@@ -397,10 +406,14 @@
 					}
 				};
 				
+				console.log('🔧 WorkflowEditor: Updated currentWorkflow, calling updateGlobalStore');
 				// Update the global store
 				updateGlobalStore();
+			} else {
+				console.warn('⚠️ WorkflowEditor: No currentWorkflow available for config update');
 			}
-			
+		} else {
+			console.warn('⚠️ WorkflowEditor: No selectedNodeForConfig available for config update');
 		}
 		props.closeConfigSidebar?.();
 	}
@@ -628,6 +641,7 @@
 
 							// Add node to currentWorkflow
 							if (currentWorkflow) {
+								console.log('🔧 WorkflowEditor: Adding new node to currentWorkflow:', newNode.id);
 								currentWorkflow = {
 									...currentWorkflow,
 									nodes: [...currentWorkflow.nodes, newNode],
@@ -639,8 +653,11 @@
 									}
 								};
 								
+								console.log('🔧 WorkflowEditor: Updated currentWorkflow with new node, calling updateGlobalStore');
 								// Update the global store
 								updateGlobalStore();
+							} else {
+								console.warn('⚠️ WorkflowEditor: No currentWorkflow available for new node');
 							}
 							
 							// Wait for DOM update to ensure SvelteFlow updates

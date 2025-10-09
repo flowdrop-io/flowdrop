@@ -41,7 +41,13 @@
 
 	// ConfigSidebar state
 	let isConfigSidebarOpen = $state(false);
-	let selectedNodeForConfig = $state<WorkflowNode | null>(null);
+	let selectedNodeId = $state<string | null>(null);
+	
+	// Get the current node from the workflow store
+	let selectedNodeForConfig = $derived(() => {
+		if (!selectedNodeId || !$workflowStore) return null;
+		return $workflowStore.nodes.find(node => node.id === selectedNodeId) || null;
+	});
 
 	// WorkflowEditor reference for save functionality
 	let workflowEditorRef: WorkflowEditor | null = null;
@@ -145,18 +151,18 @@
 	function openConfigSidebar(node: WorkflowNode): void {
 		console.log('🔧 App: openConfigSidebar called with node:', node);
 		// Close if already open for the same node
-		if (isConfigSidebarOpen && selectedNodeForConfig?.id === node.id) {
+		if (isConfigSidebarOpen && selectedNodeId === node.id) {
 			closeConfigSidebar();
 			return;
 		}
-		selectedNodeForConfig = node;
+		selectedNodeId = node.id;
 		isConfigSidebarOpen = true;
-		console.log('🔧 App: ConfigSidebar state updated:', { isConfigSidebarOpen, selectedNodeForConfig: selectedNodeForConfig?.id });
+		console.log('🔧 App: ConfigSidebar state updated:', { isConfigSidebarOpen, selectedNodeId });
 	}
 
 	function closeConfigSidebar(): void {
 		isConfigSidebarOpen = false;
-		selectedNodeForConfig = null;
+		selectedNodeId = null;
 	}
 
 	// Removed handleWorkflowChange function - no longer needed
@@ -470,19 +476,19 @@
 					{width}
 					{endpointConfig}
 					{isConfigSidebarOpen}
-					{selectedNodeForConfig}
+					selectedNodeForConfig={selectedNodeForConfig()}
 					{openConfigSidebar}
 					{closeConfigSidebar}
 				/>
 			</div>
 
 			<!-- Right Sidebar - Configuration -->
-			{#if selectedNodeForConfig}
+			{#if selectedNodeForConfig()}
 				<div class="flowdrop-sidebar flowdrop-sidebar--right">
 					<div class="flowdrop-config-sidebar">
 						<!-- Header -->
 						<div class="flowdrop-config-sidebar__header">
-							<h2 class="flowdrop-config-sidebar__title">{selectedNodeForConfig.data.label}</h2>
+							<h2 class="flowdrop-config-sidebar__title">{selectedNodeForConfig().data.label}</h2>
 							<button 
 								class="flowdrop-config-sidebar__close"
 								onclick={closeConfigSidebar}
@@ -500,15 +506,15 @@
 								<div class="flowdrop-config-sidebar__details">
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Type:</span>
-										<span class="flowdrop-config-sidebar__detail-value">{selectedNodeForConfig.data.metadata?.type || selectedNodeForConfig.type}</span>
+										<span class="flowdrop-config-sidebar__detail-value">{selectedNodeForConfig().data.metadata?.type || selectedNodeForConfig().type}</span>
 									</div>
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Category:</span>
-										<span class="flowdrop-config-sidebar__detail-value">{selectedNodeForConfig.data.metadata?.category || 'general'}</span>
+										<span class="flowdrop-config-sidebar__detail-value">{selectedNodeForConfig().data.metadata?.category || 'general'}</span>
 									</div>
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Description:</span>
-										<p class="flowdrop-config-sidebar__detail-description">{selectedNodeForConfig.data.metadata?.description || 'Node configuration'}</p>
+										<p class="flowdrop-config-sidebar__detail-description">{selectedNodeForConfig().data.metadata?.description || 'Node configuration'}</p>
 									</div>
 								</div>
 							</div>
@@ -517,10 +523,24 @@
 							<div class="flowdrop-config-sidebar__section">
 								<h3 class="flowdrop-config-sidebar__section-title">Configuration</h3>
 								<div class="flowdrop-config-sidebar__form">
-									{#if selectedNodeForConfig.data.metadata?.configSchema}
+									{#if selectedNodeForConfig().data.metadata?.configSchema}
 										<!-- Debug: Log the config schema -->
-										{@const configSchema = selectedNodeForConfig.data.metadata.configSchema}
-										{@const configValues = selectedNodeForConfig.data.config || {}}
+										{@const configSchema = selectedNodeForConfig().data.metadata.configSchema}
+										{@const nodeConfig = selectedNodeForConfig().data.config || {}}
+										{@const configValues = (() => {
+											// Create a config object that merges defaults with existing values
+											const mergedConfig = {};
+											if (configSchema.properties) {
+												Object.entries(configSchema.properties).forEach(([key, field]) => {
+													const fieldConfig = field as any;
+													// Use existing value if available, otherwise use default
+													mergedConfig[key] = nodeConfig[key] !== undefined 
+														? nodeConfig[key] 
+														: fieldConfig.default;
+												});
+											}
+											return mergedConfig;
+										})()}
 										
 										<!-- Render configuration fields based on schema -->
 										{#if configSchema.properties}
@@ -535,7 +555,7 @@
 															id={key}
 															type="text"
 															class="flowdrop-config-sidebar__input"
-															value={String(configValues[key] || fieldConfig.default || '')}
+															bind:value={configValues[key]}
 															placeholder={String(fieldConfig.placeholder || '')}
 														/>
 													{:else if fieldConfig.type === 'number'}
@@ -543,7 +563,7 @@
 															id={key}
 															type="number"
 															class="flowdrop-config-sidebar__input"
-															value={String(configValues[key] || fieldConfig.default || '')}
+															bind:value={configValues[key]}
 															placeholder={String(fieldConfig.placeholder || '')}
 														/>
 													{:else if fieldConfig.type === 'boolean'}
@@ -552,12 +572,15 @@
 															type="checkbox"
 															class="flowdrop-config-sidebar__checkbox"
 															checked={Boolean(configValues[key] || fieldConfig.default || false)}
+															onchange={(e) => {
+																configValues[key] = e.currentTarget.checked;
+															}}
 														/>
 													{:else if fieldConfig.type === 'select' || fieldConfig.enum}
 														<select
 															id={key}
 															class="flowdrop-config-sidebar__select"
-															value={String(configValues[key] || fieldConfig.default || '')}
+															bind:value={configValues[key]}
 														>
 															{#if fieldConfig.enum}
 																{#each fieldConfig.enum as option}
@@ -576,7 +599,7 @@
 															id={key}
 															type="text"
 															class="flowdrop-config-sidebar__input"
-															value={String(configValues[key] || fieldConfig.default || '')}
+															bind:value={configValues[key]}
 															placeholder={String(fieldConfig.placeholder || '')}
 														/>
 													{/if}
@@ -610,7 +633,41 @@
 							<button 
 								class="flowdrop-config-sidebar__button flowdrop-config-sidebar__button--primary"
 								onclick={() => {
-									console.log('Config saved for node:', selectedNodeForConfig.id);
+									console.log('Config saved for node:', selectedNodeId);
+									
+									// Get the current config values from the form
+									const currentNode = selectedNodeForConfig();
+									if (selectedNodeId && currentNode) {
+										// Collect the current form values
+										const form = document.querySelector('.flowdrop-config-sidebar__form');
+										const updatedConfig: Record<string, unknown> = {};
+										
+										if (form) {
+											const inputs = form.querySelectorAll('input, select, textarea');
+											inputs.forEach((input: any) => {
+												if (input.id) {
+													if (input.type === 'checkbox') {
+														updatedConfig[input.id] = input.checked;
+													} else if (input.type === 'number') {
+														updatedConfig[input.id] = input.value ? Number(input.value) : input.value;
+													} else {
+														updatedConfig[input.id] = input.value;
+													}
+												}
+											});
+										}
+										
+										// Update the node in the workflow store with the current config
+										workflowActions.updateNode(selectedNodeId, {
+											data: {
+												...currentNode.data,
+												config: updatedConfig
+											}
+										});
+										
+										console.log('✅ Node configuration saved to workflow store:', updatedConfig);
+									}
+									
 									closeConfigSidebar();
 								}}
 							>
