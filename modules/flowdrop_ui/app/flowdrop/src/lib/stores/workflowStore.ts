@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { Workflow, WorkflowNodeType, WorkflowEdge } from '$lib/types';
+import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
 
 // Global workflow state
 export const workflowStore = writable<Workflow | null>(null);
@@ -10,32 +10,89 @@ export const workflowName = derived(workflowStore, ($workflow) => $workflow?.nam
 export const workflowNodes = derived(workflowStore, ($workflow) => $workflow?.nodes || []);
 export const workflowEdges = derived(workflowStore, ($workflow) => $workflow?.edges || []);
 export const workflowMetadata = derived(workflowStore, ($workflow) => $workflow?.metadata || {
+	version: "1.0.0",
 	createdAt: new Date().toISOString(),
-	updatedAt: new Date().toISOString()
+	updatedAt: new Date().toISOString(),
+	versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+	updateNumber: 0
 });
+
+// Helper function to check if workflow data has actually changed
+function hasWorkflowDataChanged(currentWorkflow: Workflow | null, newNodes: WorkflowNode[], newEdges: WorkflowEdge[]): boolean {
+	if (!currentWorkflow) return true;
+	
+	// Check if nodes have changed
+	if (currentWorkflow.nodes.length !== newNodes.length) return true;
+	
+	for (let i = 0; i < newNodes.length; i++) {
+		const currentNode = currentWorkflow.nodes[i];
+		const newNode = newNodes[i];
+		
+		if (!currentNode || !newNode) return true;
+		if (currentNode.id !== newNode.id) return true;
+		if (currentNode.position.x !== newNode.position.x || currentNode.position.y !== newNode.position.y) return true;
+		if (JSON.stringify(currentNode.data) !== JSON.stringify(newNode.data)) return true;
+	}
+	
+	// Check if edges have changed
+	if (currentWorkflow.edges.length !== newEdges.length) return true;
+	
+	for (let i = 0; i < newEdges.length; i++) {
+		const currentEdge = currentWorkflow.edges[i];
+		const newEdge = newEdges[i];
+		
+		if (!currentEdge || !newEdge) return true;
+		if (currentEdge.id !== newEdge.id) return true;
+		if (currentEdge.source !== newEdge.source || currentEdge.target !== newEdge.target) return true;
+	}
+	
+	return false;
+}
 
 // Actions for updating the workflow
 export const workflowActions = {
 	// Initialize workflow
 	initialize: (workflow: Workflow) => {
+		console.log('🔍 Debug: initialize called with:', workflow);
 		workflowStore.set(workflow);
+		console.log('🔍 Debug: workflow store initialized');
 	},
 
 	// Update the entire workflow
 	updateWorkflow: (workflow: Workflow) => {
+		console.log('🔍 Debug: updateWorkflow called with:', workflow);
 		workflowStore.set(workflow);
+		console.log('🔍 Debug: workflow store updated');
 	},
 
 	// Update nodes
-	updateNodes: (nodes: WorkflowNodeType[]) => {
+	updateNodes: (nodes: WorkflowNode[]) => {
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
+			
+		// Check if nodes have actually changed to prevent infinite loops
+		if (!hasWorkflowDataChanged($workflow, nodes, $workflow.edges)) {
+			console.log('🔍 Debug: Nodes unchanged, skipping update to prevent infinite loop');
+			return $workflow;
+		}
+		
+		// Generate unique version identifier
+		const versionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+		
+		console.log('🔍 Debug: Updating nodes with versionId:', versionId);
+		console.log('🔍 Debug: Node position changes detected:', nodes.map(node => ({
+			id: node.id,
+			position: node.position
+		})));
+			
 			return {
 				...$workflow,
 				nodes,
 				metadata: {
 					...$workflow.metadata,
-					updatedAt: new Date().toISOString()
+					updatedAt: new Date().toISOString(),
+					versionId,
+					updateNumber: ($workflow.metadata?.updateNumber || 0) + 1
 				}
 			};
 		});
@@ -45,12 +102,26 @@ export const workflowActions = {
 	updateEdges: (edges: WorkflowEdge[]) => {
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
+			
+			// Check if edges have actually changed to prevent infinite loops
+			if (!hasWorkflowDataChanged($workflow, $workflow.nodes, edges)) {
+				console.log('🔍 Debug: Edges unchanged, skipping update to prevent infinite loop');
+				return $workflow;
+			}
+			
+			// Generate unique version identifier
+			const versionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+			
+			console.log('🔍 Debug: Updating edges with versionId:', versionId);
+			
 			return {
 				...$workflow,
 				edges,
 				metadata: {
 					...$workflow.metadata,
-					updatedAt: new Date().toISOString()
+					updatedAt: new Date().toISOString(),
+					versionId,
+					updateNumber: ($workflow.metadata?.updateNumber || 0) + 1
 				}
 			};
 		});
@@ -72,7 +143,7 @@ export const workflowActions = {
 	},
 
 	// Add a node
-	addNode: (node: WorkflowNodeType) => {
+	addNode: (node: WorkflowNode) => {
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -133,7 +204,7 @@ export const workflowActions = {
 	},
 
 	// Update a specific node
-	updateNode: (nodeId: string, updates: Partial<WorkflowNodeType>) => {
+	updateNode: (nodeId: string, updates: Partial<WorkflowNode>) => {
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -152,12 +223,71 @@ export const workflowActions = {
 	// Clear the workflow
 	clear: () => {
 		workflowStore.set(null);
+	},
+
+	// Update workflow metadata
+	updateMetadata: (metadata: Partial<Workflow['metadata']>) => {
+		workflowStore.update(($workflow) => {
+			if (!$workflow) return null;
+			return {
+				...$workflow,
+				metadata: {
+					...$workflow.metadata,
+					...metadata,
+					updatedAt: new Date().toISOString()
+				}
+			};
+		});
+	},
+
+	// Batch update nodes and edges (useful for complex operations)
+	batchUpdate: (updates: {
+		nodes?: WorkflowNode[];
+		edges?: WorkflowEdge[];
+		name?: string;
+		metadata?: Partial<Workflow['metadata']>;
+	}) => {
+		workflowStore.update(($workflow) => {
+			if (!$workflow) return null;
+			return {
+				...$workflow,
+				...(updates.nodes && { nodes: updates.nodes }),
+				...(updates.edges && { edges: updates.edges }),
+				...(updates.name && { name: updates.name }),
+				metadata: {
+					...$workflow.metadata,
+					...(updates.metadata && { ...updates.metadata }),
+					updatedAt: new Date().toISOString()
+				}
+			};
+		});
 	}
 };
 
 // Derived store for workflow changes (useful for triggering saves)
 export const workflowChanged = derived(
 	[workflowNodes, workflowEdges, workflowName],
-	([nodes, edges, name]) => ({ nodes, edges, name }),
-	({ nodes, edges, name }) => ({ nodes, edges, name })
+	([nodes, edges, name]) => ({ nodes, edges, name })
+);
+
+// Derived store for workflow validation
+export const workflowValidation = derived(
+	[workflowNodes, workflowEdges],
+	([nodes, edges]) => ({
+		hasNodes: nodes.length > 0,
+		hasEdges: edges.length > 0,
+		nodeCount: nodes.length,
+		edgeCount: edges.length,
+		isValid: nodes.length > 0 && edges.length >= 0
+	})
+);
+
+// Derived store for workflow metadata changes
+export const workflowMetadataChanged = derived(
+	workflowMetadata,
+	(metadata) => ({
+		createdAt: metadata.createdAt,
+		updatedAt: metadata.updatedAt,
+		version: metadata.version || "1.0.0"
+	})
 );

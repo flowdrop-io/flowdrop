@@ -9,7 +9,8 @@ import type {
 	ApiResponse,
 	NodesResponse,
 	WorkflowResponse,
-	WorkflowsResponse
+	WorkflowsResponse,
+	PortConfig
 } from '../types/index.js';
 
 /**
@@ -61,7 +62,7 @@ export class FlowDropApiClient {
 	 * Fetch available node types and their metadata
 	 */
 	async getAvailableNodes(): Promise<NodeMetadata[]> {
-		const response = await this.request<NodesResponse>('/api/nodes');
+		const response = await this.request<NodesResponse>('/api/flowdrop/nodes');
 
 		if (!response.success || !response.data) {
 			throw new Error(response.error || 'Failed to fetch available nodes');
@@ -104,7 +105,7 @@ export class FlowDropApiClient {
 	 * Save a workflow
 	 */
 	async saveWorkflow(workflow: Workflow): Promise<Workflow> {
-		const response = await this.request<WorkflowResponse>('/api/workflows', {
+		const response = await this.request<WorkflowResponse>('/api/flowdrop/workflows', {
 			method: 'POST',
 			body: JSON.stringify(workflow)
 		});
@@ -154,7 +155,7 @@ export class FlowDropApiClient {
 	 * List all workflows
 	 */
 	async listWorkflows(): Promise<Workflow[]> {
-		const response = await this.request<WorkflowsResponse>('/api/workflows');
+		const response = await this.request<WorkflowsResponse>('/api/flowdrop/workflows');
 
 		if (!response.success || !response.data) {
 			throw new Error(response.error || 'Failed to list workflows');
@@ -252,7 +253,7 @@ export class FlowDropApiClient {
 	 */
 	async validateWorkflow(workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
 		const response = await this.request<ApiResponse<{ valid: boolean; errors: string[] }>>(
-			'/api/workflows/validate',
+			'/api/flowdrop/workflows/validate',
 			{
 				method: 'POST',
 				body: JSON.stringify(workflow)
@@ -285,13 +286,26 @@ export class FlowDropApiClient {
 	 * Import workflow from JSON
 	 */
 	async importWorkflow(workflowJson: string): Promise<Workflow> {
-		const response = await this.request<WorkflowResponse>('/api/workflows/import', {
+		const response = await this.request<WorkflowResponse>('/api/flowdrop/workflows/import', {
 			method: 'POST',
 			body: JSON.stringify({ workflow: workflowJson })
 		});
 
 		if (!response.success || !response.data) {
 			throw new Error(response.error || 'Failed to import workflow');
+		}
+
+		return response.data;
+	}
+
+	/**
+	 * Fetch port configuration
+	 */
+	async getPortConfig(): Promise<PortConfig> {
+		const response = await this.request<ApiResponse<PortConfig>>('/api/flowdrop/port-config');
+
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to fetch port configuration');
 		}
 
 		return response.data;

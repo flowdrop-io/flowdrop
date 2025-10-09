@@ -336,6 +336,8 @@ export interface Workflow {
 		updatedAt: string;
 		author?: string;
 		tags?: string[];
+		versionId?: string;
+		updateNumber?: number;
 	};
 }
 

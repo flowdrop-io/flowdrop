@@ -34,11 +34,11 @@
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
 	import { resolveComponentName } from '../utils/nodeTypes.js';
-	import { workflowStore, workflowActions, workflowNodes, workflowEdges } from '../stores/workflowStore.js';
+	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
-		workflow?: Workflow;
+		// workflow?: Workflow; // Removed - use global store directly
 		apiBaseUrl?: string;
 		endpointConfig?: EndpointConfig;
 		height?: string | number;
@@ -47,7 +47,6 @@
 		selectedNodeForConfig?: WorkflowNodeType | null;
 		openConfigSidebar?: (node: WorkflowNodeType) => void;
 		closeConfigSidebar?: () => void;
-		// Removed onWorkflowChange prop - no longer needed since global store is reactive
 	}
 
 	let props: Props = $props();
@@ -63,31 +62,90 @@
 	});
 
 	// Initialize from props only once, not on every re-render
-	let isInitialized = $state(false);
 	let availableNodes = $state<NodeMetadata[]>([]);
 	
-	// Use global store for workflow state
-	// Add configuration functions to nodes for double-click functionality
-	let flowNodes = $derived($workflowNodes.map(node => ({
-		...node,
-		data: {
-			...node.data,
-			onConfigOpen: props.openConfigSidebar
-		}
-	})));
-	let flowEdges = $derived($workflowEdges);
+	// Create a local currentWorkflow variable that we can control directly
+	let currentWorkflow = $state<Workflow | null>(null);
 
+	// Initialize currentWorkflow from global store
 	$effect(() => {
-		if (!isInitialized && props.workflow) {
-			// Initialize the global store with the workflow data
-			workflowActions.initialize(props.workflow);
-			isInitialized = true;
+		if ($workflowStore) {
+			currentWorkflow = $workflowStore;
 		}
 	});
 
-	// Removed problematic $effect that was resetting workflow state on every change
-	// The workflow store should only be initialized once, not updated on every prop change
-	// This was causing the regression where new connections would be lost
+	// Create local reactive variables that sync with currentWorkflow
+	let flowNodes = $state<WorkflowNodeType[]>([]);
+	let flowEdges = $state<WorkflowEdge[]>([]);
+
+	// Sync local state with currentWorkflow
+	$effect(() => {
+		if (currentWorkflow) {
+			flowNodes = currentWorkflow.nodes.map(node => ({
+				...node,
+				data: {
+					...node.data,
+					onConfigOpen: props.openConfigSidebar
+				}
+			}));
+			flowEdges = currentWorkflow.edges;
+		}
+	});
+
+	// Function to update the global store when currentWorkflow changes
+	function updateGlobalStore(): void {
+		if (currentWorkflow) {
+			console.log('🔍 WorkflowEditor: Updating global store from currentWorkflow:', {
+				nodeCount: currentWorkflow.nodes.length,
+				edgeCount: currentWorkflow.edges.length,
+				nodePositions: currentWorkflow.nodes.map(node => ({ id: node.id, position: node.position }))
+			});
+			
+			workflowActions.updateWorkflow(currentWorkflow);
+		}
+	}
+
+	// Function to update currentWorkflow when SvelteFlow changes nodes/edges
+	function updateCurrentWorkflowFromSvelteFlow(): void {
+		if (currentWorkflow) {
+			currentWorkflow = {
+				...currentWorkflow,
+				nodes: flowNodes,
+				edges: flowEdges,
+				metadata: {
+					...currentWorkflow.metadata,
+					updatedAt: new Date().toISOString(),
+					versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
+				}
+			};
+			
+			// Update the global store
+			updateGlobalStore();
+		}
+	}
+
+	// Track previous values to detect changes from SvelteFlow
+	let previousNodes = $state<WorkflowNodeType[]>([]);
+	let previousEdges = $state<WorkflowEdge[]>([]);
+
+	// Watch for changes from SvelteFlow and update currentWorkflow
+	$effect(() => {
+		// Check if nodes have changed from SvelteFlow
+		const nodesChanged = JSON.stringify(flowNodes) !== JSON.stringify(previousNodes);
+		const edgesChanged = JSON.stringify(flowEdges) !== JSON.stringify(previousEdges);
+		
+		if ((nodesChanged || edgesChanged) && currentWorkflow) {
+			console.log('🔍 WorkflowEditor: SvelteFlow changed nodes/edges, updating currentWorkflow');
+			updateCurrentWorkflowFromSvelteFlow();
+			
+			// Update previous values
+			previousNodes = JSON.parse(JSON.stringify(flowNodes));
+			previousEdges = JSON.parse(JSON.stringify(flowEdges));
+		}
+	});
+
+	// The global store should be initialized by the parent App component
 
 	// Sidebar is now always visible - removed toggle functionality
 
@@ -100,35 +158,34 @@
 		tool: ToolNode
 	};
 
-	// Remove default edge options to prevent arrow overlap
-	// We'll handle arrows in our custom connection handler
+	// Handle arrows in our custom connection handler
 	const defaultEdgeOptions = {};
 
 	/**
 	 * Handle new connections between nodes
 	 * Let SvelteFlow handle edge creation, styling will be applied via reactive effects
 	 */
-	function handleConnect(connection: {
+	async function handleConnect(connection: {
 		source: string;
 		target: string;
 		sourceHandle?: string;
 		targetHandle?: string;
-	}): void {
+	}): Promise<void> {
 		// SvelteFlow will automatically create the edge due to bind:edges
 		console.log('Connection created:', connection);
 		
-		// Apply styling to the new edge (including arrows)
-		// We need to wait a tick for SvelteFlow to add the edge to flowEdges
-		setTimeout(() => {
-			updateExistingEdgeStyles();
-		}, 0);
+		// Wait for DOM update before applying styling
+		await tick();
 		
-		// No need to notify parent - global store is already reactive
+		// Apply styling to the new edge (including arrows)
+		updateExistingEdgeStyles();
+		
+		// Update currentWorkflow with the new edge
+		if (currentWorkflow) {
+			updateCurrentWorkflowFromSvelteFlow();
+		}
 	}
 
-	// Removed problematic $effect that was causing circular dependencies
-	// The notifyWorkflowChange() calls are now handled by specific user actions
-	// like handleConnect, updateNodeConfiguration, and addNodeToWorkflow
 
 	/**
 	 * Apply custom styling to connection edges based on rules:
@@ -177,7 +234,10 @@
 	 * Update existing edges with our custom styling rules
 	 * This ensures all edges (including existing ones) follow our rules
 	 */
-	function updateExistingEdgeStyles(): void {
+	async function updateExistingEdgeStyles(): Promise<void> {
+		// Wait for any pending DOM updates
+		await tick();
+		
 		const updatedEdges = flowEdges.map((edge) => {
 			// Find source and target nodes
 			const sourceNode = flowNodes.find((node) => node.id === edge.source);
@@ -195,32 +255,42 @@
 			return updatedEdge;
 		});
 
-		// Update all edges at once using the store
-		workflowActions.updateEdges(updatedEdges);
-		
-		// Note: We don't notify parent of workflow changes here since this is just styling
-		// and would cause circular dependencies with the $effect that calls this function
+		// Update currentWorkflow with the styled edges
+		if (currentWorkflow) {
+			currentWorkflow = {
+				...currentWorkflow,
+				edges: updatedEdges,
+				metadata: {
+					...currentWorkflow.metadata,
+					updatedAt: new Date().toISOString(),
+					versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
+				}
+			};
+			
+			// Update the global store
+			updateGlobalStore();
+		}
 	}
 
-	// Removed problematic $effect that was causing circular dependencies
 	// Edge styling will be handled when edges are first created or manually updated
-	// $effect(() => {
-	//   if (flowNodes.length > 0 && flowEdges.length > 0 && availableNodes.length > 0) {
-	//     updateExistingEdgeStyles();
-	//   }
-	// });
 
+	// Configure endpoints and load nodes when props change
 	$effect(() => {
 		if (props.endpointConfig) {
 			setEndpointConfig(props.endpointConfig);
+			// Load nodes after setting endpoint config
+			loadNodesFromApi();
 		} else if (props.apiBaseUrl) {
 			setApiBaseUrl(props.apiBaseUrl);
+			// Load nodes after setting API base URL
+			loadNodesFromApi();
+		} else if (props.nodes) {
+			// If we have nodes prop, use them directly
+			availableNodes = props.nodes;
 		}
 	});
 
-	// Removed unnecessary reactive effect that was notifying parent component
-	// The global store ($workflowStore) is already reactive and serves as the single source of truth
-	// Save functions use the global store directly, so no parent notification is needed
 
 	/**
 	 * Load nodes from API if not provided
@@ -266,27 +336,37 @@
 		}
 	}
 
-	// Load nodes when component mounts, when endpoint config changes, or when props.nodes changes
-	$effect(() => {
-		if (props.endpointConfig || props.apiBaseUrl || props.nodes) {
-			loadNodesFromApi();
-		}
-	});
 
 	/**
 	 * Clear workflow
 	 */
 	function clearWorkflow(): void {
-		workflowActions.updateNodes([]);
-		workflowActions.updateEdges([]);
+		if (currentWorkflow) {
+			currentWorkflow = {
+				...currentWorkflow,
+				nodes: [],
+				edges: [],
+				metadata: {
+					...currentWorkflow.metadata,
+					updatedAt: new Date().toISOString(),
+					versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
+				}
+			};
+			
+			// Update the global store
+			updateGlobalStore();
+		}
 	}
 
 	// ConfigSidebar functions are now handled by the parent App component
 
-	// Removed hardcoded mapNodeType function - now using resolveComponentName from utils/nodeTypes.js
 
-	function handleConfigSave(newConfig: Record<string, unknown>): void {
+	async function handleConfigSave(newConfig: Record<string, unknown>): Promise<void> {
 		if (props.selectedNodeForConfig) {
+			// Wait for any pending DOM updates
+			await tick();
+			
 			// Update the node's config
 			props.selectedNodeForConfig.data.config = { ...newConfig };
 
@@ -296,62 +376,110 @@
 				newConfig.nodeType as string
 			);
 
-			// Update the node in the global store
-			workflowActions.updateNode(props.selectedNodeForConfig.id as string, {
-				type: newComponentName as string, // Update node type based on configuration and supportedTypes
-				data: { ...props.selectedNodeForConfig.data, config: { ...newConfig } }
-			});
+			// Update the node in currentWorkflow
+			if (currentWorkflow) {
+				currentWorkflow = {
+					...currentWorkflow,
+					nodes: currentWorkflow.nodes.map(node => 
+						node.id === props.selectedNodeForConfig.id 
+							? { 
+								...node, 
+								type: newComponentName as string,
+								data: { ...node.data, config: { ...newConfig } }
+							}
+							: node
+					),
+					metadata: {
+						...currentWorkflow.metadata,
+						updatedAt: new Date().toISOString(),
+						versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+						updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
+					}
+				};
+				
+				// Update the global store
+				updateGlobalStore();
+			}
 			
-			// No need to notify parent - global store is already reactive
 		}
 		props.closeConfigSidebar?.();
 	}
 
-	/**
-	 * Notify parent component of workflow changes
-	 */
-	// Removed notifyWorkflowChange function - no longer needed
-	// The global store serves as the single source of truth and is already reactive
-
-	// Remove the problematic $effect that causes circular dependencies
-	// Instead, we'll call notifyWorkflowChange() only on specific user actions
-	// like adding nodes, removing nodes, or updating configurations
 
 	/**
 	 * Save workflow
 	 */
 	async function saveWorkflow(): Promise<void> {
 		try {
+			// Wait for any pending DOM updates before saving
+			await tick();
+			
+		// Use current workflow from local variable
+		if (!currentWorkflow) {
+			console.warn('⚠️ No workflow data available to save');
+			return;
+		}
+
 			// Determine the workflow ID based on whether we have an existing workflow
 			let workflowId: string;
-			if (props.workflow?.id) {
+			if (currentWorkflow.id) {
 				// Use the existing workflow ID
-				workflowId = props.workflow.id;
+				workflowId = currentWorkflow.id;
 			} else {
 				// Generate a new UUID for a new workflow
 				workflowId = uuidv4();
 			}
 
-		const workflow: Workflow = {
-			id: workflowId,
-			name: props.workflow?.name || 'Untitled Workflow',
-			nodes: flowNodes,
-			edges: flowEdges,
-			metadata: {
-				version: '1.0.0',
-				createdAt: props.workflow?.metadata?.createdAt || new Date().toISOString(),
-				updatedAt: new Date().toISOString()
-			}
-		};
+			const workflow: Workflow = {
+				id: workflowId,
+				name: currentWorkflow.name || 'Untitled Workflow',
+				nodes: currentWorkflow.nodes || [],
+				edges: currentWorkflow.edges || [],
+				metadata: {
+					version: '1.0.0',
+					createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
+					updatedAt: new Date().toISOString()
+				}
+			};
 
-		const savedWorkflow = await workflowApi.saveWorkflow(workflow);
+			console.log('💾 WorkflowEditor: Saving workflow to Drupal:');
+			console.log('   - ID:', workflow.id);
+			console.log('   - Name:', workflow.name);
+			console.log('   - Nodes count:', workflow.nodes.length);
+			console.log('   - Edges count:', workflow.edges.length);
+			console.log('   - Full workflow object:', JSON.stringify(workflow, null, 2));
+
+			const savedWorkflow = await workflowApi.saveWorkflow(workflow);
+
+			console.log('✅ WorkflowEditor: Received workflow from Drupal:');
+			console.log('   - ID:', savedWorkflow.id);
+			console.log('   - Name:', savedWorkflow.name);
+			console.log('   - Nodes count:', savedWorkflow.nodes?.length || 0);
+			console.log('   - Edges count:', savedWorkflow.edges?.length || 0);
+
+			// Update the workflow ID if it changed (new workflow)
+			// Keep our current workflow state, only update ID and metadata from Drupal
+			if (savedWorkflow.id && savedWorkflow.id !== workflow.id) {
+				console.log('🔄 Updating workflow ID from', workflow.id, 'to', savedWorkflow.id);
+				workflowActions.batchUpdate({
+					nodes: workflow.nodes,
+					edges: workflow.edges,
+					name: workflow.name,
+					metadata: {
+						...workflow.metadata,
+						...savedWorkflow.metadata
+					}
+				});
+			}
+
+			console.log('🔍 WorkflowEditor: Workflow store after save:', $workflowStore);
 
 			// Note: Notes node configurations (content, noteType) are automatically
 			// saved as part of the node.data.config object and will be restored
 			// when the workflow is loaded.
 
 			// Update the workflow ID if it was a new workflow
-			if (!props.workflow?.id) {
+			if (!currentWorkflow.id) {
 				console.log('🆕 New workflow created with ID:', savedWorkflow.id);
 			} else {
 				console.log('🔄 Existing workflow updated with ID:', savedWorkflow.id);
@@ -365,18 +493,27 @@
 	/**
 	 * Export workflow
 	 */
-	function exportWorkflow(): void {
+	async function exportWorkflow(): Promise<void> {
+		// Wait for any pending DOM updates before exporting
+		await tick();
+		
+		// Use current workflow from local variable
+		if (!currentWorkflow) {
+			console.warn('⚠️ No workflow data available to export');
+			return;
+		}
+
 		// Use the same ID logic as saveWorkflow
-		const workflowId = props.workflow?.id || uuidv4();
+		const workflowId = currentWorkflow.id || uuidv4();
 
 		const workflow: Workflow = {
 			id: workflowId,
-			name: props.workflow?.name || 'Untitled Workflow',
-			nodes: flowNodes,
-			edges: flowEdges,
+			name: currentWorkflow.name || 'Untitled Workflow',
+			nodes: currentWorkflow.nodes || [],
+			edges: currentWorkflow.edges || [],
 			metadata: {
 				version: '1.0.0',
-				createdAt: props.workflow?.metadata?.createdAt || new Date().toISOString(),
+				createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
 				updatedAt: new Date().toISOString()
 			}
 		};
@@ -398,8 +535,6 @@
 		return hasCycles(flowNodes, flowEdges);
 	}
 
-	// Removed sidebar toggle functions - sidebar is now always visible
-	// Removed title editing functions - title is managed by the main layout
 </script>
 
 <SvelteFlowProvider>
@@ -491,13 +626,26 @@
 								}
 							};
 
-							// Add node to the global store
-							workflowActions.addNode(newNode);
+							// Add node to currentWorkflow
+							if (currentWorkflow) {
+								currentWorkflow = {
+									...currentWorkflow,
+									nodes: [...currentWorkflow.nodes, newNode],
+									metadata: {
+										...currentWorkflow.metadata,
+										updatedAt: new Date().toISOString(),
+										versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+										updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
+									}
+								};
+								
+								// Update the global store
+								updateGlobalStore();
+							}
 							
-							// No need to notify parent - global store is already reactive
-
-							// Force a tick to ensure SvelteFlow updates
+							// Wait for DOM update to ensure SvelteFlow updates
 							await tick();
+							
 						} catch (error) {
 							console.error('Error parsing node data:', error);
 						}
@@ -532,7 +680,6 @@
 					/>
 				{/if}
 
-				<!-- Floating button removed - sidebar is now always visible -->
 			</div>
 
 			<!-- Status Bar -->
@@ -556,8 +703,6 @@
 		</div>
 	</div>
 
-	<!-- Global Configuration Sidebar -->
-	<!-- ConfigSidebar is now handled by the parent App component -->
 </SvelteFlowProvider>
 
 <style>
@@ -569,7 +714,6 @@
 		position: relative;
 	}
 
-	/* Sidebar container styles removed - now using always-visible NodeSidebar */
 
 	.flowdrop-workflow-editor__main {
 		flex: 1;
@@ -674,5 +818,4 @@
 	:global(.flowdrop--edge--tool path.svelte-flow__edge-path) {
 		stroke-dasharray: 5 5;
 	}
-	/* Floating button styles removed - sidebar is now always visible */
 </style>

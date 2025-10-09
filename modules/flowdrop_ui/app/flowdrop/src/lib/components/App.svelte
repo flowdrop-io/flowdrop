@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
 	import ConfigSidebar from '$lib/components/ConfigSidebar.svelte';
@@ -14,6 +14,7 @@
 	import type { NodeMetadata, Workflow, WorkflowNode } from '$lib/types/index.js';
 	import { sampleNodes } from '$lib/data/samples.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
+	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
 
 	// Configuration props for runtime customization
@@ -32,9 +33,11 @@
 	}: Props = $props();
 
 	let nodes = $state<NodeMetadata[]>([]);
-	let workflow = $state<Workflow | undefined>(initialWorkflow);
+	// Remove workflow prop - use global store directly
+	// let workflow = $derived($workflowStore || initialWorkflow);
 	let error = $state<string | null>(null);
 	let loading = $state(true);
+	let endpointConfig = $state<EndpointConfig | null>(null);
 
 	// ConfigSidebar state
 	let isConfigSidebarOpen = $state(false);
@@ -110,14 +113,14 @@
 	/**
 	 * Initialize API endpoints
 	 */
-	function initializeApiEndpoints(): void {
+	async function initializeApiEndpoints(): Promise<void> {
 		// Use relative paths for local development
 		const apiBaseUrl = import.meta.env.VITE_DRUPAL_API_URL || '/api/flowdrop';
 
 		console.log('🔧 Initializing API endpoints with URL:', apiBaseUrl);
 		console.log('🔧 Current location:', window.location.href);
 
-		const endpointConfig = createEndpointConfig(apiBaseUrl, {
+		const config = createEndpointConfig(apiBaseUrl, {
 			auth: {
 				type: 'none' // No authentication for now
 			},
@@ -130,7 +133,9 @@
 			}
 		});
 
-		setEndpointConfig(endpointConfig);
+		setEndpointConfig(config);
+		// Store the configuration for passing to WorkflowEditor
+		endpointConfig = config;
 		console.log('✅ API endpoints configured');
 	}
 
@@ -163,6 +168,9 @@
 	async function saveWorkflow(): Promise<void> {
 		try {
 			console.log('💾 Starting workflow save from App component...');
+			
+			// Wait for any pending DOM updates before saving
+			await tick();
 			
 			// Import necessary modules
 			const { workflowApi } = await import('$lib/services/api.js');
@@ -197,15 +205,39 @@
 				}
 			};
 
-			console.log('💾 Saving workflow:', finalWorkflow);
+			console.log('💾 Saving workflow to Drupal:');
+			console.log('   - ID:', finalWorkflow.id);
+			console.log('   - Name:', finalWorkflow.name);
+			console.log('   - Nodes count:', finalWorkflow.nodes.length);
+			console.log('   - Edges count:', finalWorkflow.edges.length);
+			console.log('   - Full workflow object:', JSON.stringify(finalWorkflow, null, 2));
+			
 			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
 
-			// Update the workflow ID if it was a new workflow
-			if (!workflowToSave.id) {
+			console.log('✅ Received workflow from Drupal:');
+			console.log('   - ID:', savedWorkflow.id);
+			console.log('   - Name:', savedWorkflow.name);
+			console.log('   - Nodes count:', savedWorkflow.nodes?.length || 0);
+			console.log('   - Edges count:', savedWorkflow.edges?.length || 0);
+
+			// Update the workflow ID if it changed (new workflow)
+			// Keep our current workflow state, only update ID and metadata from Drupal
+			if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
 				console.log('🆕 New workflow created with ID:', savedWorkflow.id);
+				workflowActions.batchUpdate({
+					nodes: finalWorkflow.nodes,
+					edges: finalWorkflow.edges,
+					name: finalWorkflow.name,
+					metadata: {
+						...finalWorkflow.metadata,
+						...savedWorkflow.metadata
+					}
+				});
 			} else {
-				console.log('🔄 Existing workflow updated with ID:', savedWorkflow.id);
+				console.log('🔄 Existing workflow saved - keeping current state');
 			}
+
+			console.log('🔍 Workflow store after save:', $workflowStore);
 			
 			console.log('✅ Workflow saved successfully from App component');
 		} catch (error) {
@@ -217,9 +249,12 @@
 	/**
 	 * Export workflow - exposed API function
 	 */
-	function exportWorkflow(): void {
+	async function exportWorkflow(): Promise<void> {
 		try {
 			console.log('📤 Starting workflow export from App component...');
+			
+			// Wait for any pending DOM updates before exporting
+			await tick();
 			
 			// Use current workflow from global store
 			const workflowToExport = $workflowStore;
@@ -281,20 +316,36 @@
 
 
 	// Load node types on mount
-	onMount(() => {
-		initializeApiEndpoints();
-		fetchNodeTypes();
+	onMount(async () => {
+		await initializeApiEndpoints();
+		await fetchNodeTypes();
+		
+		// Initialize the workflow store if we have an initial workflow
+		if (initialWorkflow) {
+			workflowActions.initialize(initialWorkflow);
+		}
 	});
 
-	// Removed debug logging $effect to prevent potential circular dependencies
-	// Debug logging for nodes
-	// $effect(() => {
-	//   console.log('🔍 App: nodes state changed:', {
-	//     count: nodes.length,
-	//     hasNodes: nodes.length > 0,
-	//     firstNode: nodes[0]?.name || 'none'
-	//   });
-	// });
+	// Monitor workflow store changes for testing node drag updates
+	$effect(() => {
+		const currentWorkflow = $workflowStore;
+		if (currentWorkflow) {
+			console.log('🔍 App: Workflow store updated:', {
+				id: currentWorkflow.id,
+				name: currentWorkflow.name,
+				nodeCount: currentWorkflow.nodes?.length || 0,
+				edgeCount: currentWorkflow.edges?.length || 0,
+				updatedAt: currentWorkflow.metadata?.updatedAt,
+				versionId: currentWorkflow.metadata?.versionId,
+				updateNumber: currentWorkflow.metadata?.updateNumber,
+				// Log node positions for drag testing
+				nodePositions: currentWorkflow.nodes?.map(node => ({
+					id: node.id,
+					position: node.position
+				})) || []
+			});
+		}
+	});
 </script>
 
 <svelte:head>
@@ -415,9 +466,9 @@
 				<WorkflowEditor 
 					bind:this={workflowEditorRef}
 					{nodes} 
-					{workflow} 
 					{height} 
 					{width}
+					{endpointConfig}
 					{isConfigSidebarOpen}
 					{selectedNodeForConfig}
 					{openConfigSidebar}

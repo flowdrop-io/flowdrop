@@ -116,6 +116,14 @@
 	}
 
 	/**
+	 * Handle node click
+	 */
+	function handleNodeClick(nodeType: NodeMetadata): void {
+		// Handle node click - could be used for preview or configuration
+		console.log('Node clicked:', nodeType.name);
+	}
+
+	/**
 	 * Get category display name
 	 */
 	function getCategoryDisplayName(category: NodeCategory): string {
@@ -486,15 +494,6 @@
 		gap: 0.375rem;
 	}
 
-	.flowdrop-icon {
-		width: 1rem;
-		height: 1rem;
-	}
-
-	.flowdrop-icon :global(svg) {
-		width: 1rem;
-		height: 1rem;
-	}
 
 	.flowdrop-items--center {
 		align-items: center;
