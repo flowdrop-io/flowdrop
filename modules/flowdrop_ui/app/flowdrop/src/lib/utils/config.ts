@@ -11,6 +11,7 @@ import type {
 	StorageConfig
 } from '../types/config.js';
 import { createEndpointConfig } from '../config/endpoints.js';
+import type { EndpointConfig } from '../config/endpoints.js';
 
 /**
  * Create default editor features configuration
@@ -114,14 +115,14 @@ export function createDefaultStorageConfig(): StorageConfig {
 /**
  * Create default workflow editor configuration
  */
-export function createDefaultConfig(apiBaseUrl: string): WorkflowEditorConfig {
+export function createDefaultConfig(endpointConfig?: EndpointConfig): WorkflowEditorConfig {
 	return {
 		theme: 'auto',
 		features: createDefaultFeatures(),
 		ui: createDefaultUIConfig(),
 		api: {
 			...createDefaultAPIConfig(),
-			endpoints: createEndpointConfig(apiBaseUrl)
+			endpoints: endpointConfig || createEndpointConfig('/api/flowdrop')
 		},
 		ports: {
 			dataTypes: [],
@@ -263,8 +264,9 @@ export function validateConfig(config: WorkflowEditorConfig): string[] {
  */
 export function createConfigFromEnv(): WorkflowEditorConfig {
 	const apiBaseUrl = import.meta.env.VITE_FLOWDROP_API_URL || '/api/flowdrop';
+	const endpointConfig = createEndpointConfig(apiBaseUrl);
 
-	const config = createDefaultConfig(apiBaseUrl);
+	const config = createDefaultConfig(endpointConfig);
 
 	// Override with environment variables
 	if (import.meta.env.VITE_FLOWDROP_THEME) {

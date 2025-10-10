@@ -29,7 +29,7 @@ export interface ApiConfig {
  * Can be overridden by environment variables or runtime config
  */
 export const defaultApiConfig: ApiConfig = {
-  baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://flowdrop.ddev.site/api/flowdrop',
+  baseUrl: import.meta.env.VITE_API_BASE_URL || '/api/flowdrop',
   endpoints: {
     workflows: {
       list: '/workflows',

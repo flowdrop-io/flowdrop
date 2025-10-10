@@ -40,7 +40,6 @@ export async function mountFlowDropApp(
 	options: {
 		workflow?: Workflow;
 		nodes?: NodeMetadata[];
-		apiBaseUrl?: string;
 		endpointConfig?: EndpointConfig;
 		portConfig?: PortConfig;
 		height?: string | number;
@@ -48,7 +47,7 @@ export async function mountFlowDropApp(
 		showNavbar?: boolean;
 	} = {}
 ): Promise<MountedSvelteApp> {
-	const { workflow, nodes = [], apiBaseUrl, endpointConfig, portConfig, height = '100vh', width = '100%', showNavbar = false } = options;
+	const { workflow, nodes = [], endpointConfig, portConfig, height = '100vh', width = '100%', showNavbar = false } = options;
 
 	// Create endpoint configuration
 	let config: EndpointConfig | undefined;
@@ -64,8 +63,10 @@ export async function mountFlowDropApp(
 				...endpointConfig.endpoints
 			}
 		};
-	} else if (apiBaseUrl) {
-		config = createEndpointConfig(apiBaseUrl);
+	} else {
+		// Use default configuration if none provided
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
+		config = defaultEndpointConfig;
 	}
 
 	// Initialize port configuration
@@ -124,12 +125,11 @@ export async function mountWorkflowEditor(
 	options: {
 		workflow?: Workflow;
 		nodes?: NodeMetadata[];
-		apiBaseUrl?: string;
 		endpointConfig?: EndpointConfig;
 		portConfig?: PortConfig;
 	} = {}
 ): Promise<MountedSvelteApp> {
-	const { workflow, nodes = [], apiBaseUrl, endpointConfig, portConfig } = options;
+	const { workflow, nodes = [], endpointConfig, portConfig } = options;
 
 	// Create endpoint configuration
 	let config: EndpointConfig | undefined;
@@ -145,8 +145,10 @@ export async function mountWorkflowEditor(
 				...endpointConfig.endpoints
 			}
 		};
-	} else if (apiBaseUrl) {
-		config = createEndpointConfig(apiBaseUrl);
+	} else {
+		// Use default configuration if none provided
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
+		config = defaultEndpointConfig;
 	}
 
 	// Initialize port configuration

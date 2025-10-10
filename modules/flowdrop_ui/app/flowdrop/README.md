@@ -204,6 +204,93 @@ npm run test         # Run tests
 
 ## 📚 API Documentation
 
+### IIFE Integration API
+
+The FlowDrop library can be integrated into Drupal using the IIFE (Immediately Invoked Function Expression) build. The library provides two main mounting functions:
+
+#### Mounting Functions
+
+```javascript
+// Mount the full FlowDrop App
+window.FlowDrop.mountFlowDropApp(container, options);
+
+// Mount just the WorkflowEditor component
+window.FlowDrop.mountWorkflowEditor(container, options);
+```
+
+#### Configuration Options
+
+```javascript
+// Basic usage with default configuration
+window.FlowDrop.mountWorkflowEditor(container, {
+  workflow: myWorkflow,
+  nodes: availableNodes
+});
+
+// Advanced usage with custom endpoint configuration
+window.FlowDrop.mountWorkflowEditor(container, {
+  workflow: myWorkflow,
+  nodes: availableNodes,
+  endpointConfig: {
+    baseUrl: "/api/flowdrop",
+    endpoints: {
+      nodes: {
+        list: "/nodes",
+        get: "/nodes/{id}",
+        byCategory: "/nodes?category={category}",
+        metadata: "/nodes/{id}/metadata"
+      },
+      workflows: {
+        list: "/workflows",
+        get: "/workflows/{id}",
+        create: "/workflows",
+        update: "/workflows/{id}",
+        delete: "/workflows/{id}",
+        validate: "/workflows/validate",
+        export: "/workflows/{id}/export",
+        import: "/workflows/import"
+      },
+      executions: {
+        execute: "/workflows/{id}/execute",
+        status: "/executions/{id}",
+        cancel: "/executions/{id}/cancel",
+        logs: "/executions/{id}/logs",
+        history: "/executions"
+      }
+    },
+    timeout: 30000,
+    retry: {
+      enabled: true,
+      maxAttempts: 3,
+      delay: 1000,
+      backoff: "exponential"
+    },
+    auth: {
+      type: "bearer",
+      token: "your-auth-token"
+    }
+  }
+});
+```
+
+#### Drupal Integration Example
+
+```javascript
+// Drupal behavior for FlowDrop integration
+Drupal.behaviors.flowdropWorkflowEditor = {
+  attach: function (context, settings) {
+    const container = context.querySelector('.flowdrop-workflow-editor');
+    if (container && window.FlowDrop) {
+      window.FlowDrop.mountWorkflowEditor(container, {
+        endpointConfig: settings.flowdrop.endpointConfig,
+        workflow: settings.flowdrop.workflow,
+        nodes: settings.flowdrop.nodes
+      });
+    }
+  }
+};
+```
+
 ### REST API Endpoints
 
 #### Workflows

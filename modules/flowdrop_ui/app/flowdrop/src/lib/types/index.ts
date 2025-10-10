@@ -4,6 +4,7 @@
 
 import type { Node, Edge, XYPosition } from '@xyflow/svelte';
 import { ConnectionLineType } from '@xyflow/svelte';
+import type { EndpointConfig } from '../config/endpoints.js';
 
 /**
  * Node category types for organizing nodes in the sidebar
@@ -378,7 +379,7 @@ export interface ExecutionResult {
  * Library configuration
  */
 export interface FlowDropConfig {
-	apiBaseUrl: string;
+	endpointConfig?: EndpointConfig;
 	theme?: 'light' | 'dark' | 'auto';
 	enableDebug?: boolean;
 	autoSave?: boolean;

@@ -39,7 +39,6 @@
 	interface Props {
 		nodes?: NodeMetadata[];
 		// workflow?: Workflow; // Removed - use global store directly
-		apiBaseUrl?: string;
 		endpointConfig?: EndpointConfig;
 		height?: string | number;
 		width?: string | number;
@@ -283,10 +282,6 @@
 		if (props.endpointConfig) {
 			setEndpointConfig(props.endpointConfig);
 			// Load nodes after setting endpoint config
-			loadNodesFromApi();
-		} else if (props.apiBaseUrl) {
-			setApiBaseUrl(props.apiBaseUrl);
-			// Load nodes after setting API base URL
 			loadNodesFromApi();
 		} else if (props.nodes) {
 			// If we have nodes prop, use them directly
