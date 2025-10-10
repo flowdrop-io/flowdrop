@@ -10,6 +10,7 @@ import { workflowApi, setEndpointConfig } from './api.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { Workflow } from '$lib/types/index.js';
+import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
 
 /**
  * Ensure API configuration is initialized
@@ -71,6 +72,9 @@ async function ensureApiConfiguration(): Promise<void> {
  */
 export async function globalSaveWorkflow(): Promise<void> {
 	try {
+		// Show loading toast
+		const loadingToast = apiToasts.loading('Saving workflow');
+
 		// Ensure API configuration is initialized
 		await ensureApiConfiguration();
 		
@@ -78,6 +82,8 @@ export async function globalSaveWorkflow(): Promise<void> {
 		const currentWorkflow = get(workflowStore);
 		
 		if (!currentWorkflow) {
+			dismissToast(loadingToast);
+			apiToasts.error('Save workflow', 'No workflow to save');
 			return;
 		}
 
@@ -103,7 +109,14 @@ export async function globalSaveWorkflow(): Promise<void> {
 		};
 
 		const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+
+		// Dismiss loading toast and show success toast
+		dismissToast(loadingToast);
+		workflowToasts.saved(finalWorkflow.name);
 	} catch (error) {
+		// Dismiss loading toast and show error toast
+		dismissToast(loadingToast);
+		apiToasts.error('Save workflow', error instanceof Error ? error.message : 'Unknown error');
 		throw error;
 	}
 }
@@ -118,6 +131,7 @@ export async function globalExportWorkflow(): Promise<void> {
 		const currentWorkflow = get(workflowStore);
 		
 		if (!currentWorkflow) {
+			apiToasts.error('Export workflow', 'No workflow to export');
 			return;
 		}
 
@@ -143,8 +157,12 @@ export async function globalExportWorkflow(): Promise<void> {
 		link.download = `${finalWorkflow.name}.json`;
 		link.click();
 		URL.revokeObjectURL(url);
+
+		// Show success toast
+		workflowToasts.exported(finalWorkflow.name);
 	} catch (error) {
 		// Export failed
+		apiToasts.error('Export workflow', error instanceof Error ? error.message : 'Unknown error');
 	}
 }
 

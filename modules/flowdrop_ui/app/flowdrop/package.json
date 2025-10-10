@@ -118,6 +118,7 @@
 		"@types/uuid": "^10.0.0",
 		"@xyflow/svelte": "~1.2",
 		"marked": "^16.1.1",
+		"svelte-french-toast": "^1.2.0",
 		"uuid": "^11.1.0"
 	}
 }

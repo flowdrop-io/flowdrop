@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { defaultApiConfig, getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
+	import { apiToasts, workflowToasts, dismissToast } from '$lib/services/toastService.js';
 
 	/**
 	 * Workflow edit type (minimal structure for editing)
@@ -67,6 +68,9 @@
 			loading = true;
 			error = null;
 
+			// Show loading toast
+			const loadingToast = apiToasts.loading('Loading workflow');
+
 			// Use configured endpoint
 			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.get, { id: workflowId });
 			const response = await fetch(url);
@@ -76,7 +80,6 @@
 			}
 
 			const data = await response.json();
-			console.log('Workflow API Response:', data);
 
 			// Extract the workflow data from the nested structure
 			const workflowData = data.data;
@@ -131,10 +134,14 @@
 				changed: workflowData.changed
 			};
 
-			console.log('Processed workflow:', workflow);
+			// Dismiss loading toast and show success toast
+			dismissToast(loadingToast);
+			apiToasts.success('Workflow loaded', workflowData.name);
 		} catch (err) {
+			// Dismiss loading toast and show error toast
+			dismissToast(loadingToast);
 			error = err instanceof Error ? err.message : 'Failed to fetch workflow';
-			console.error('Error fetching workflow:', err);
+			apiToasts.error('Load workflow', err instanceof Error ? err.message : 'Unknown error');
 		} finally {
 			loading = false;
 		}

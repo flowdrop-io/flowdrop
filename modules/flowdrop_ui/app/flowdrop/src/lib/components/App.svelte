@@ -18,6 +18,7 @@
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import { workflowStore, workflowActions, workflowName } from '../stores/workflowStore.js';
 	import { resolveComponentName } from '$lib/utils/nodeTypes.js';
+	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 
 	// Configuration props for runtime customization
 	interface Props {
@@ -127,13 +128,23 @@
 			loading = true;
 			error = null;
 
+			// Show loading toast
+			const loadingToast = apiToasts.loading('Loading node types');
+
 			const fetchedNodes = await api.nodes.getNodes();
 
 			nodes = fetchedNodes;
 			error = null;
+
+			// Dismiss loading toast and show success toast
+			dismissToast(loadingToast);
+			apiToasts.success('Node types loaded', `${fetchedNodes.length} node types available`);
 		} catch (err) {
+			// Dismiss loading toast and show error toast
+			dismissToast(loadingToast);
 			// Show error but don't block the UI
 			error = `API Error: ${err instanceof Error ? err.message : 'Unknown error'}. Using sample data.`;
+			apiToasts.error('Load node types', err instanceof Error ? err.message : 'Unknown error');
 
 			// Fallback to sample data
 			nodes = sampleNodes;
@@ -160,12 +171,12 @@
 			const data = await response.json();
 
 			if (response.ok && data.success) {
-				// API connection successful
+				apiToasts.success('API connection test', 'Connection successful');
 			} else {
-				// API connection failed
+				apiToasts.error('API connection test', 'Connection failed');
 			}
 		} catch (err) {
-			// API connection test failed
+			apiToasts.error('API connection test', err instanceof Error ? err.message : 'Unknown error');
 		}
 	}
 
@@ -461,16 +472,7 @@
 	<!-- Main Content -->
 	<main class="flowdrop-main">
 		<!-- Status Display -->
-		{#if loading}
-			<div class="flowdrop-status flowdrop-status--loading">
-				<div class="flowdrop-status__content">
-					<div class="flowdrop-flex flowdrop-gap--3">
-						<div class="flowdrop-spinner"></div>
-						<span class="flowdrop-text--sm flowdrop-font--medium">Loading node types...</span>
-					</div>
-				</div>
-			</div>
-		{:else if error}
+		{#if error}
 			<div class="flowdrop-status flowdrop-status--error">
 				<div class="flowdrop-status__content">
 					<div class="flowdrop-flex flowdrop-gap--3">

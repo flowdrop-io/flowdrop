@@ -10,6 +10,7 @@
 	import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
 	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
+	import { apiToasts, pipelineToasts, dismissToast } from '$lib/services/toastService.js';
 
 	/**
 	 * Pipeline display type
@@ -66,9 +67,13 @@
 
 			const data = await response.json();
 			pipelines = data.pipelines || [];
-            console.log('Pipelines:', pipelines.length);
+			
+			// Show success toast
+			if (pipelines.length > 0) {
+				apiToasts.success('Pipelines loaded', `${pipelines.length} pipelines found`);
+			}
 		} catch (err) {
-			console.error('Failed to fetch pipelines:', err);
+			apiToasts.error('Load pipelines', err instanceof Error ? err.message : 'Unknown error');
 			error = err instanceof Error ? err.message : 'Failed to fetch pipelines';
 			pipelines = [];
 		} finally {
@@ -116,7 +121,7 @@
 				}));
 			}
 		} catch (err) {
-			console.error('Failed to fetch workflow name:', err);
+			// Silently fail for workflow name - don't show toast for this background operation
 		}
 	}
 
@@ -132,7 +137,7 @@
 
 	function handleCreatePipeline() {
 		// TODO: Implement pipeline creation
-		console.log('Create new pipeline');
+		pipelineToasts.created('New Pipeline');
 	}
 
 	function getStatusColor(status: string): string {

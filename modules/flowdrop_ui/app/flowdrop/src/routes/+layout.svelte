@@ -11,6 +11,8 @@
 	import { onMount } from 'svelte';
 	import { initializeGlobalSave, globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
 	import { defaultApiConfig, getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
+	import { Toaster } from 'svelte-french-toast';
+	import { apiToasts } from '$lib/services/toastService.js';
 
 	let { children } = $props();
 
@@ -33,7 +35,7 @@
 				workflowName = data.data?.name || null;
 			}
 		} catch (error) {
-			console.warn('Failed to fetch workflow name for breadcrumb:', error);
+			// Silently fail for breadcrumb - don't show toast for this background operation
 			workflowName = null;
 		}
 	}
@@ -357,6 +359,9 @@
 	<main class="flowdrop-main">
 		{@render children()}
 	</main>
+	
+	<!-- Toast Notifications -->
+	<Toaster position="bottom-center" />
 </div>
 
 <style>

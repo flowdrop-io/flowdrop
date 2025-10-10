@@ -12,6 +12,7 @@
 	import { onMount } from 'svelte';
 	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
 	import Icon from '@iconify/svelte';
+	import { apiToasts, workflowToasts, showConfirmation, dismissToast } from '$lib/services/toastService.js';
 
 	/**
 	 * Workflow display type
@@ -56,7 +57,6 @@
 			}
 
 			const data = await response.json();
-			console.log('API Response:', data);
 
 			// Extract workflows from the API response structure
 			const apiWorkflows = data?.data || [];
@@ -82,10 +82,13 @@
 				})
 			);
 
-			console.log('Processed workflows:', workflows);
+			// Show success toast if workflows were loaded
+			if (workflows.length > 0) {
+				apiToasts.success('Workflows loaded', `${workflows.length} workflows found`);
+			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to fetch workflows';
-			console.error('Error fetching workflows:', err);
+			apiToasts.error('Load workflows', err instanceof Error ? err.message : 'Unknown error');
 
 			// Fallback to sample data
 			workflows = [
@@ -128,10 +131,27 @@
 				goto(`/workflow/${workflowId}/edit`);
 				break;
 			case 'delete':
-				if (confirm('Are you sure you want to delete this workflow?')) {
-					// Handle delete logic
-					console.log('Delete workflow:', workflowId);
-				}
+				// Find the workflow to get its name
+				const workflow = workflows.find(w => w.id === workflowId);
+				const workflowName = workflow?.title || 'Unknown';
+				
+				// Show confirmation toast
+				showConfirmation(
+					`Are you sure you want to delete "${workflowName}"?`,
+					{
+						confirmLabel: 'Delete',
+						cancelLabel: 'Cancel',
+						onConfirm: () => {
+							// Handle delete logic here
+							workflowToasts.deleted(workflowName);
+							// Remove from local state
+							workflows = workflows.filter(w => w.id !== workflowId);
+						},
+						onCancel: () => {
+							// User cancelled
+						}
+					}
+				);
 				break;
 			case 'view-execution':
 				goto(`/workflow/${workflowId}/pipelines`);
