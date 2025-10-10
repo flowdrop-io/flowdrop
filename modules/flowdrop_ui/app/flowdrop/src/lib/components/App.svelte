@@ -127,21 +127,20 @@
 	 * Fetch node types from the server
 	 */
 	async function fetchNodeTypes(): Promise<void> {
+		// Show loading toast
+		const loadingToast = apiToasts.loading('Loading node types');
 		try {
 			loading = true;
 			error = null;
 
-			// Show loading toast
-			const loadingToast = apiToasts.loading('Loading node types');
 
 			const fetchedNodes = await api.nodes.getNodes();
 
 			nodes = fetchedNodes;
 			error = null;
 
-			// Dismiss loading toast and show success toast
+			// Dismiss loading toast
 			dismissToast(loadingToast);
-			apiToasts.success('Node types loaded', `${fetchedNodes.length} node types available`);
 		} catch (err) {
 			// Dismiss loading toast and show error toast
 			dismissToast(loadingToast);

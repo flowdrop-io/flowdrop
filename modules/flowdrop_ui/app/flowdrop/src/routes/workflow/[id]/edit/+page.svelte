@@ -63,13 +63,13 @@
 	// Fetch workflow data from API
 	async function fetchWorkflow() {
 		if (!workflowId) return;
+		// Show loading toast
+		const loadingToast = apiToasts.loading('Loading workflow');
 
 		try {
 			loading = true;
 			error = null;
 
-			// Show loading toast
-			const loadingToast = apiToasts.loading('Loading workflow');
 
 			// Use configured endpoint
 			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.get, { id: workflowId });
@@ -136,7 +136,6 @@
 
 			// Dismiss loading toast and show success toast
 			dismissToast(loadingToast);
-			apiToasts.success('Workflow loaded', workflowData.name);
 		} catch (err) {
 			// Dismiss loading toast and show error toast
 			dismissToast(loadingToast);

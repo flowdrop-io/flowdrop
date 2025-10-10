@@ -71,11 +71,6 @@
 
 			const data = await response.json();
 			pipelines = data.pipelines || [];
-			
-			// Show success toast
-			if (pipelines.length > 0) {
-				apiToasts.success('Pipelines loaded', `${pipelines.length} pipelines found`);
-			}
 		} catch (err) {
 			apiToasts.error('Load pipelines', err instanceof Error ? err.message : 'Unknown error');
 			error = err instanceof Error ? err.message : 'Failed to fetch pipelines';
