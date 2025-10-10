@@ -63,17 +63,11 @@
 			loading = true;
 			error = null;
 
-			console.log('Fetching node types from server...');
 			const fetchedNodes = await api.nodes.getNodes();
 
-			console.log('✅ Fetched', fetchedNodes.length, 'node types from server');
-			console.log('🔍 First node:', fetchedNodes[0]);
 			nodes = fetchedNodes;
 			error = null;
 		} catch (err) {
-			console.error('❌ Failed to fetch node types:', err);
-			console.log('🔄 Falling back to sample data...');
-
 			// Show error but don't block the UI
 			error = `API Error: ${err instanceof Error ? err.message : 'Unknown error'}. Using sample data.`;
 
@@ -98,21 +92,16 @@
 		try {
 			const testUrl = '/api/flowdrop/nodes';
 
-			console.log('🧪 Testing API connection to:', testUrl);
-
 			const response = await fetch(testUrl);
 			const data = await response.json();
 
 			if (response.ok && data.success) {
-				console.log('✅ API connection successful:', data.data.length, 'nodes found');
-				alert(`API connection successful! Found ${data.data.length} nodes.`);
+				// API connection successful
 			} else {
-				console.log('❌ API connection failed:', data);
-				alert(`API connection failed: ${data.error || 'Unknown error'}`);
+				// API connection failed
 			}
 		} catch (err) {
-			console.error('❌ API connection test failed:', err);
-			alert(`API connection test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+			// API connection test failed
 		}
 	}
 
@@ -125,9 +114,6 @@
 		const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
 		                   import.meta.env.VITE_DRUPAL_API_URL || 
 		                   '/api/flowdrop';
-
-		console.log('🔧 Initializing API endpoints with URL:', apiBaseUrl);
-		console.log('🔧 Current location:', window.location.href);
 
 		const config = createEndpointConfig(apiBaseUrl, {
 			auth: {
@@ -145,14 +131,12 @@
 		setEndpointConfig(config);
 		// Store the configuration for passing to WorkflowEditor
 		endpointConfig = config;
-		console.log('✅ API endpoints configured');
 	}
 
 	/**
 	 * ConfigSidebar functions
 	 */
 	function openConfigSidebar(node: WorkflowNode): void {
-		console.log('🔧 App: openConfigSidebar called with node:', node);
 		// Close if already open for the same node
 		if (isConfigSidebarOpen && selectedNodeId === node.id) {
 			closeConfigSidebar();
@@ -160,7 +144,6 @@
 		}
 		selectedNodeId = node.id;
 		isConfigSidebarOpen = true;
-		console.log('🔧 App: ConfigSidebar state updated:', { isConfigSidebarOpen, selectedNodeId });
 	}
 
 	function closeConfigSidebar(): void {
@@ -176,8 +159,6 @@
 	 */
 	async function saveWorkflow(): Promise<void> {
 		try {
-			console.log('💾 Starting workflow save from App component...');
-			
 			// Wait for any pending DOM updates before saving
 			await tick();
 			
@@ -189,7 +170,6 @@
 			const workflowToSave = $workflowStore;
 			
 			if (!workflowToSave) {
-				console.warn('⚠️ No workflow data available to save');
 				return;
 			}
 
@@ -213,26 +193,12 @@
 					updatedAt: new Date().toISOString()
 				}
 			};
-
-			console.log('💾 Saving workflow to Drupal:');
-			console.log('   - ID:', finalWorkflow.id);
-			console.log('   - Name:', finalWorkflow.name);
-			console.log('   - Nodes count:', finalWorkflow.nodes.length);
-			console.log('   - Edges count:', finalWorkflow.edges.length);
-			console.log('   - Full workflow object:', JSON.stringify(finalWorkflow, null, 2));
 			
 			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
-
-			console.log('✅ Received workflow from Drupal:');
-			console.log('   - ID:', savedWorkflow.id);
-			console.log('   - Name:', savedWorkflow.name);
-			console.log('   - Nodes count:', savedWorkflow.nodes?.length || 0);
-			console.log('   - Edges count:', savedWorkflow.edges?.length || 0);
 
 			// Update the workflow ID if it changed (new workflow)
 			// Keep our current workflow state, only update ID and metadata from Drupal
 			if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
-				console.log('🆕 New workflow created with ID:', savedWorkflow.id);
 				workflowActions.batchUpdate({
 					nodes: finalWorkflow.nodes,
 					edges: finalWorkflow.edges,
@@ -242,15 +208,8 @@
 						...savedWorkflow.metadata
 					}
 				});
-			} else {
-				console.log('🔄 Existing workflow saved - keeping current state');
 			}
-
-			console.log('🔍 Workflow store after save:', $workflowStore);
-			
-			console.log('✅ Workflow saved successfully from App component');
 		} catch (error) {
-			console.error('❌ Failed to save workflow from App component:', error);
 			throw error; // Re-throw so caller can handle
 		}
 	}
@@ -260,8 +219,6 @@
 	 */
 	async function exportWorkflow(): Promise<void> {
 		try {
-			console.log('📤 Starting workflow export from App component...');
-			
 			// Wait for any pending DOM updates before exporting
 			await tick();
 			
@@ -269,7 +226,6 @@
 			const workflowToExport = $workflowStore;
 			
 			if (!workflowToExport) {
-				console.warn('⚠️ No workflow data available to export');
 				return;
 			}
 
@@ -295,10 +251,8 @@
 			link.download = `${finalWorkflow.name}.json`;
 			link.click();
 			URL.revokeObjectURL(url);
-			
-			console.log('✅ Workflow exported successfully from App component');
 		} catch (error) {
-			console.error('❌ Failed to export workflow from App component:', error);
+			// Export failed
 		}
 	}
 
@@ -317,7 +271,6 @@
 		if (rightSidebar && !rightSidebar.contains(event.target as Node)) {
 			// Close sidebar when clicking outside of it
 			if (isConfigSidebarOpen) {
-				console.log('🔧 App: Closing sidebar due to canvas click');
 				closeConfigSidebar();
 			}
 		}
@@ -339,20 +292,7 @@
 	$effect(() => {
 		const currentWorkflow = $workflowStore;
 		if (currentWorkflow) {
-			console.log('🔍 App: Workflow store updated:', {
-				id: currentWorkflow.id,
-				name: currentWorkflow.name,
-				nodeCount: currentWorkflow.nodes?.length || 0,
-				edgeCount: currentWorkflow.edges?.length || 0,
-				updatedAt: currentWorkflow.metadata?.updatedAt,
-				versionId: currentWorkflow.metadata?.versionId,
-				updateNumber: currentWorkflow.metadata?.updateNumber,
-				// Log node positions for drag testing
-				nodePositions: currentWorkflow.nodes?.map(node => ({
-					id: node.id,
-					position: node.position
-				})) || []
-			});
+			// Workflow store updated
 		}
 	});
 </script>
@@ -636,8 +576,6 @@
 							<button 
 								class="flowdrop-config-sidebar__button flowdrop-config-sidebar__button--primary"
 								onclick={() => {
-									console.log('Config saved for node:', selectedNodeId);
-									
 									// Get the current config values from the form
 									const currentNode = selectedNodeForConfig();
 									if (selectedNodeId && currentNode) {
@@ -667,8 +605,6 @@
 												config: updatedConfig
 											}
 										});
-										
-										console.log('✅ Node configuration saved to workflow store:', updatedConfig);
 									}
 									
 									closeConfigSidebar();

@@ -33,9 +33,9 @@ export function setApiBaseUrl(url: string): void {
 			.then(({ createEndpointConfig }) => {
 				endpointConfig = createEndpointConfig(url);
 			})
-			.catch((error) => {
-				console.error('Failed to load endpoint config:', error);
-			});
+		.catch((error) => {
+			// Failed to load endpoint config
+		});
 	} else {
 		endpointConfig.baseUrl = url.replace(/\/$/, '');
 	}
@@ -59,14 +59,6 @@ async function apiRequest<T>(
 		const method = getEndpointMethod(endpointConfig, endpointKey);
 		const headers = getEndpointHeaders(endpointConfig, endpointKey);
 
-		console.log('🔍 API request:', {
-			endpointKey,
-			endpointPath,
-			url,
-			method,
-			headers
-		});
-
 		const response = await fetch(url, {
 			method,
 			headers,
@@ -74,7 +66,6 @@ async function apiRequest<T>(
 		});
 
 		const data = await response.json();
-		console.log('🔍 Raw API response:', data);
 
 		if (!response.ok) {
 			throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
@@ -82,7 +73,6 @@ async function apiRequest<T>(
 
 		return data;
 	} catch (error) {
-		console.error(`API request failed for ${endpointKey}:`, error);
 		throw error;
 	}
 }
@@ -115,8 +105,6 @@ export const nodeApi = {
 			'nodes.list',
 			endpointConfig.endpoints.nodes.list + '?' + params.toString()
 		);
-		console.log('🔍 API response:', response);
-		console.log('🔍 API response.data:', response.data);
 		return response.data || [];
 	},
 
@@ -220,9 +208,6 @@ export const workflowApi = {
 			throw new Error('Endpoint configuration not set');
 		}
 
-		console.log('🔍 Debug: endpointConfig:', endpointConfig);
-		console.log('🔍 Debug: workflows endpoints:', endpointConfig.endpoints?.workflows);
-		console.log('🔍 Debug: update endpoint:', endpointConfig.endpoints?.workflows?.update);
 
 		const response = await apiRequest<Workflow>(
 			'workflows.update',
@@ -269,11 +254,9 @@ export const workflowApi = {
 
 		if (isExistingWorkflow) {
 			// Update existing workflow
-			console.log('🔄 Updating existing workflow with ID:', workflow.id);
 			return this.updateWorkflow(workflow.id, workflow);
 		} else {
 			// Create new workflow
-			console.log('🆕 Creating new workflow');
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { id, ...workflowData } = workflow;
 			return this.createWorkflow(workflowData);
