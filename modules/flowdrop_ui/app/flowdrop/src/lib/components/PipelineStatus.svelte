@@ -326,20 +326,4 @@
 		background: #f3f4f6;
 	}
 
-	/* Force light grey background on SvelteFlow canvas */
-	:global(.svelte-flow) {
-		background: #f3f4f6 !important;
-	}
-
-	:global(.svelte-flow__viewport) {
-		background: #f3f4f6 !important;
-	}
-
-	:global(.svelte-flow > div) {
-		background: #f3f4f6 !important;
-	}
-
-	:global(.svelte-flow__renderer) {
-		background: #f3f4f6 !important;
-	}
 </style>

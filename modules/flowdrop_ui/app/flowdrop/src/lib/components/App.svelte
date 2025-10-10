@@ -544,7 +544,15 @@
 			{/if}
 
 			<!-- Main Editor Area -->
-			<div class="flowdrop-editor-main" onclick={handleCanvasClick} onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()} role="button" tabindex="0" aria-label="Workflow canvas - click to close sidebar">
+			<div 
+				class="flowdrop-editor-main"
+				class:pipeline-view={!!pipelineId}
+				onclick={handleCanvasClick} 
+				onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()} 
+				role="button" 
+				tabindex="0" 
+				aria-label="Workflow canvas - click to close sidebar"
+			>
 				<WorkflowEditor 
 					bind:this={workflowEditorRef}
 					{nodes} 

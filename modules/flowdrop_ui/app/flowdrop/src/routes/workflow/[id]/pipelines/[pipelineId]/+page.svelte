@@ -213,22 +213,7 @@
 		background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 50%, #d1d5db 100%);
 	}
 
-	/* Force light grey background on all SvelteFlow components */
-	:global(.svelte-flow) {
-		background: #f3f4f6 !important;
-	}
-
-	:global(.svelte-flow__viewport) {
-		background: #f3f4f6 !important;
-	}
-
-	:global(.svelte-flow > div) {
-		background: #f3f4f6 !important;
-	}
-
-	:global(.svelte-flow__renderer) {
-		background: #f3f4f6 !important;
-	}
+	/* Background is now handled by SvelteFlow Background component */
 
 
 

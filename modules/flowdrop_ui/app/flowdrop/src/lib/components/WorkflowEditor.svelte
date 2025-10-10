@@ -11,6 +11,7 @@
 		MarkerType,
 		Controls,
 		Background,
+		BackgroundVariant,
 		MiniMap,
 		SvelteFlowProvider
 	} from '@xyflow/svelte';
@@ -741,7 +742,10 @@
 					fitView
 				/>
 				<Controls />
-				<Background gap={10} />
+				<Background 
+					gap={20} 
+					variant={BackgroundVariant.Dots}
+				/>
 				<MiniMap />
 
 				<!-- Drop Zone Indicator -->
@@ -783,7 +787,6 @@
 		display: flex;
 		flex-direction: row; /* Side by side layout */
 		height: 100%;
-		background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
 		position: relative;
 	}
 
@@ -804,7 +807,9 @@
 		flex: 1;
 		min-height: 0;
 		position: relative;
+		background: transparent;
 	}
+
 
 	.flowdrop-status-bar {
 		background-color: rgba(255, 255, 255, 0.8);
@@ -825,34 +830,6 @@
 		justify-content: space-between;
 	}
 
-	:global(.flowdrop-workflow-editor .svelte-flow) {
-		background: #f3f4f6 !important;
-		background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px) !important;
-		background-size: 20px 20px !important;
-		background-position:
-			0 0,
-			10px 10px !important;
-	}
-
-	/* Ensure light grey background for pipeline view */
-	:global(.svelte-flow) {
-		background: #f3f4f6 !important;
-		background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px) !important;
-		background-size: 20px 20px !important;
-		background-position:
-			0 0,
-			10px 10px !important;
-	}
-
-	/* Target the actual SvelteFlow viewport */
-	:global(.svelte-flow__viewport) {
-		background: #f3f4f6 !important;
-	}
-
-	/* Target any divs inside SvelteFlow */
-	:global(.svelte-flow > div) {
-		background: #f3f4f6 !important;
-	}
 
 	:global(.flowdrop-workflow-editor .svelte-flow__node:hover) {
 		transform: translateY(-2px);

@@ -36,11 +36,13 @@
 
 	let searchQuery = $state('');
 	let filteredPipelines = $derived(
-		(Array.isArray(pipelines) ? pipelines : []).filter(
-			(pipeline) =>
-				pipeline.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				pipeline.description?.toLowerCase().includes(searchQuery.toLowerCase())
-		)
+		(Array.isArray(pipelines) ? pipelines : [])
+			.filter(
+				(pipeline) =>
+					pipeline.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					pipeline.description?.toLowerCase().includes(searchQuery.toLowerCase())
+			)
+			.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 	);
 
 	// Fetch pipelines from API
@@ -233,10 +235,10 @@
 				{/if}
 			</div>
 		{:else}
-			<div class="pipelines-grid">
+			<div class="pipelines-list">
 				{#each filteredPipelines as pipeline (pipeline.id)}
 					<div 
-						class="pipelines-card"
+						class="pipelines-list-item"
 						onclick={() => handlePipelineSelect(pipeline.id)}
 						role="button"
 						tabindex="0"
@@ -247,9 +249,9 @@
 							}
 						}}
 					>
-						<div class="pipelines-card__header">
-							<h3 class="pipelines-card__title">{pipeline.name}</h3>
-							<div class="pipelines-card__status">
+						<!-- Status Column -->
+						<div class="pipelines-list-item__status-column">
+							<div class="pipelines-list-item__status-badge">
 								<StatusIcon 
 									status={pipeline.status}
 									size="sm"
@@ -259,41 +261,85 @@
 									label={pipeline.status}
 								/>
 							</div>
-						</div>
-						
-						<div class="pipelines-card__content">
-							<p class="pipelines-card__description">{pipeline.description}</p>
-							
-							<div class="pipelines-card__meta">
-								<div class="pipelines-card__meta-item">
-									<Icon icon="mdi:calendar" />
-									<span>Created: {new Date(pipeline.createdAt).toLocaleDateString()}</span>
+							<div class="pipelines-list-item__status-meta">
+								<div class="pipelines-list-item__duration">
+									<Icon icon="mdi:clock-outline" />
+									<span>00:04:39</span>
 								</div>
-								
-								{#if pipeline.lastExecuted}
-									<div class="pipelines-card__meta-item">
-										<Icon icon="mdi:clock" />
-										<span>Last run: {new Date(pipeline.lastExecuted).toLocaleDateString()}</span>
-									</div>
-								{/if}
-								
-								<div class="pipelines-card__meta-item">
-									<Icon icon="mdi:counter" />
-									<span>Executions: {pipeline.executionCount}</span>
+								<div class="pipelines-list-item__timestamp">
+									<Icon icon="mdi:calendar-outline" />
+									<span>{new Date(pipeline.createdAt).toLocaleDateString()}</span>
 								</div>
 							</div>
 						</div>
-						
-						<div class="pipelines-card__actions">
+
+						<!-- Pipeline Column -->
+						<div class="pipelines-list-item__pipeline-column">
+							<div class="pipelines-list-item__pipeline-title">
+								Pipeline {pipeline.id}
+							</div>
+							<div class="pipelines-list-item__pipeline-meta">
+								<span class="pipelines-list-item__commit">#{pipeline.id}</span>
+								<span class="pipelines-list-item__branch">main</span>
+								<span class="pipelines-list-item__tag">latest</span>
+							</div>
+							<div class="pipelines-list-item__description">
+								{pipeline.description}
+							</div>
+						</div>
+
+						<!-- Created by Column -->
+						<div class="pipelines-list-item__created-by-column">
+							<div class="pipelines-list-item__avatar">
+								<Icon icon="mdi:account-circle" />
+							</div>
+							<span class="pipelines-list-item__creator">System</span>
+						</div>
+
+						<!-- Stages Column -->
+						<div class="pipelines-list-item__stages-column">
+							<div class="pipelines-list-item__stage">
+								<Icon icon="mdi:check-circle" />
+							</div>
+							<div class="pipelines-list-item__stage-arrow">
+								<Icon icon="mdi:arrow-right" />
+							</div>
+							<div class="pipelines-list-item__stage">
+								<Icon icon="mdi:check-circle" />
+							</div>
+						</div>
+
+						<!-- Actions Column -->
+						<div class="pipelines-list-item__actions-column">
 							<button 
-								class="pipelines-card__action"
+								class="pipelines-list-item__action-btn"
 								onclick={(e) => {
 									e.stopPropagation();
 									handlePipelineSelect(pipeline.id);
 								}}
+								title="Monitor Pipeline"
 							>
-								<Icon icon="mdi:eye" />
-								Monitor
+								<Icon icon="mdi:play" />
+							</button>
+							<button 
+								class="pipelines-list-item__action-btn"
+								onclick={(e) => {
+									e.stopPropagation();
+									// TODO: Implement stop action
+								}}
+								title="Stop Pipeline"
+							>
+								<Icon icon="mdi:stop" />
+							</button>
+							<button 
+								class="pipelines-list-item__action-btn"
+								onclick={(e) => {
+									e.stopPropagation();
+									// TODO: Implement download action
+								}}
+								title="Download Logs"
+							>
+								<Icon icon="mdi:download" />
 							</button>
 						</div>
 					</div>
@@ -434,99 +480,217 @@
 		max-width: 400px;
 	}
 
-	.pipelines-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-		gap: 1.5rem;
+	.pipelines-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
-	.pipelines-card {
+	.pipelines-list-item {
 		background-color: #ffffff;
-		border: 1px solid #e5e7eb;
+		border: 2px solid #e5e7eb;
 		border-radius: 0.75rem;
-		padding: 1.5rem;
+		padding: 1rem 1.5rem;
 		cursor: pointer;
 		transition: all 0.2s ease-in-out;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		display: grid;
+		grid-template-columns: 200px 1fr 120px 100px 120px;
+		align-items: center;
+		gap: 1.5rem;
+		min-height: 4rem;
+		overflow: visible;
+		z-index: 10;
 	}
 
-	.pipelines-card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	.pipelines-list-item:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 		border-color: #3b82f6;
 	}
 
-	.pipelines-card__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1rem;
+	.pipelines-list-item--selected {
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+		border: 2px solid #3b82f6;
 	}
 
-	.pipelines-card__title {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: #111827;
-		margin: 0;
-	}
-
-	.pipelines-card__status {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.pipelines-card__content {
-		margin-bottom: 1.5rem;
-	}
-
-	.pipelines-card__description {
-		font-size: 0.875rem;
-		color: #6b7280;
-		line-height: 1.5;
-		margin: 0 0 1rem 0;
-	}
-
-	.pipelines-card__meta {
+	/* Status Column */
+	.pipelines-list-item__status-column {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
-	.pipelines-card__meta-item {
+	.pipelines-list-item__status-badge {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.375rem;
+		background-color: #f3f4f6;
+		color: #374151;
+	}
+
+	.pipelines-list-item__status-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		font-size: 0.75rem;
 		color: #6b7280;
 	}
 
-	.pipelines-card__actions {
+	.pipelines-list-item__duration,
+	.pipelines-list-item__timestamp {
 		display: flex;
-		gap: 0.75rem;
+		align-items: center;
+		gap: 0.25rem;
 	}
 
-	.pipelines-card__action {
+	/* Pipeline Column */
+	.pipelines-list-item__pipeline-column {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+
+	.pipelines-list-item__pipeline-title {
+		font-size: 1rem;
+		font-weight: 600;
+		color: #1f2937;
+		text-decoration: none;
+		cursor: pointer;
+		line-height: 1.4;
+	}
+
+	.pipelines-list-item__pipeline-title:hover {
+		color: #3b82f6;
+		text-decoration: underline;
+	}
+
+	.pipelines-list-item__pipeline-meta {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.pipelines-list-item__commit,
+	.pipelines-list-item__branch,
+	.pipelines-list-item__tag {
+		font-size: 0.625rem;
+		font-weight: 500;
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		background-color: #f3f4f6;
+		color: #6b7280;
+		font-family: monospace;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.pipelines-list-item__tag {
+		background-color: #dbeafe;
+		color: #1d4ed8;
+	}
+
+	.pipelines-list-item__description {
+		font-size: 0.875rem;
+		color: #6b7280;
+		line-height: 1.4;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Created by Column */
+	.pipelines-list-item__created-by-column {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.pipelines-list-item__avatar {
+		font-size: 1.5rem;
+		color: #6b7280;
+	}
+
+	.pipelines-list-item__creator {
+		font-size: 0.75rem;
+		color: #6b7280;
+		text-align: center;
+	}
+
+	/* Stages Column */
+	.pipelines-list-item__stages-column {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		background-color: #3b82f6;
-		color: #ffffff;
-		border: none;
-		border-radius: 0.375rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background-color 0.2s ease-in-out;
 	}
 
-	.pipelines-card__action:hover {
-		background-color: #2563eb;
+	.pipelines-list-item__stage {
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: 50%;
+		background-color: #10b981;
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.75rem;
+		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+	}
+
+	.pipelines-list-item__stage-arrow {
+		color: #6b7280;
+		font-size: 0.75rem;
+	}
+
+	/* Actions Column */
+	.pipelines-list-item__actions-column {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	.pipelines-list-item__action-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		background-color: #f9fafb;
+		color: #6b7280;
+		border: 2px solid #e5e7eb;
+		border-radius: 0.5rem;
+		cursor: pointer;
+		transition: all 0.2s ease-in-out;
+		font-size: 0.875rem;
+		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	}
+
+	.pipelines-list-item__action-btn:hover {
+		background-color: #f3f4f6;
+		color: #374151;
+		border-color: #d1d5db;
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	}
+
+	.pipelines-list-item__action-btn:last-child {
+		background-color: #fef2f2;
+		color: #dc2626;
+		border-color: #fecaca;
+	}
+
+	.pipelines-list-item__action-btn:last-child:hover {
+		background-color: #fee2e2;
+		color: #b91c1c;
+		border-color: #fca5a5;
 	}
 
 	.pipelines-btn {
@@ -582,8 +746,34 @@
 			gap: 1rem;
 		}
 
-		.pipelines-grid {
+		.pipelines-list-item {
 			grid-template-columns: 1fr;
+			gap: 1rem;
+		}
+
+		.pipelines-list-item__status-column,
+		.pipelines-list-item__pipeline-column,
+		.pipelines-list-item__created-by-column,
+		.pipelines-list-item__stages-column,
+		.pipelines-list-item__actions-column {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0.5rem 0;
+			border-bottom: 1px solid #f3f4f6;
+		}
+
+		.pipelines-list-item__pipeline-column {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.5rem;
+		}
+
+		.pipelines-list-item__description {
+			white-space: normal;
+			overflow: visible;
+			text-overflow: initial;
 		}
 	}
 </style>
