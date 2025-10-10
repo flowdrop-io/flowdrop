@@ -546,7 +546,7 @@
 </script>
 
 <SvelteFlowProvider>
-	<div class="flowdrop-workflow-editor" style="height: {typeof props.height === 'number' ? `${props.height}px` : props.height || '100%'}; width: {typeof props.width === 'number' ? `${props.width}px` : props.width || '100%'};">
+	<div class="flowdrop-workflow-editor" style="height: {typeof props.height === 'number' ? `${props.height - 60}px` : `calc(${props.height || '100%'} - 60px)`}; width: {typeof props.width === 'number' ? `${props.width}px` : props.width || '100%'};">
 		<!-- Main Editor Area -->
 		<div class="flowdrop-workflow-editor__main">
 			<!-- Flow Canvas -->
@@ -751,8 +751,11 @@
 		border-top: 1px solid #e5e7eb;
 		padding: 0.75rem;
 		height: 40px;
+		min-height: 40px;
+		max-height: 40px;
 		display: flex;
 		align-items: center;
+		flex-shrink: 0;
 	}
 
 	.flowdrop-status-bar__content {

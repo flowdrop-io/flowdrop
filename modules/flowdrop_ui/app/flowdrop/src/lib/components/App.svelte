@@ -11,7 +11,7 @@
 	import ConfigSidebar from '$lib/components/ConfigSidebar.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
-	import type { NodeMetadata, Workflow, WorkflowNode } from '$lib/types/index.js';
+	import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
 	import { sampleNodes } from '$lib/data/samples.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
@@ -51,6 +51,35 @@
 	// ConfigSidebar state
 	let isConfigSidebarOpen = $state(false);
 	let selectedNodeId = $state<string | null>(null);
+	
+	// Workflow settings sidebar state
+	let isWorkflowSettingsOpen = $state(false);
+
+	// Workflow configuration schema
+	const workflowConfigSchema: ConfigSchema = {
+		type: 'object',
+		properties: {
+			name: {
+				type: 'string',
+				title: 'Workflow Name',
+				description: 'The name of the workflow',
+				default: ''
+			},
+			description: {
+				type: 'string',
+				title: 'Description',
+				description: 'A description of the workflow',
+				default: ''
+			}
+		},
+		required: ['name']
+	};
+
+	// Workflow configuration values
+	let workflowConfigValues = $derived({
+		name: $workflowName || '',
+		description: $workflowStore?.description || ''
+	});
 	
 	// Get the current node from the workflow store
 	let selectedNodeForConfig = $derived(() => {
@@ -160,6 +189,43 @@
 		selectedNodeId = null;
 	}
 
+	/**
+	 * Toggle workflow settings sidebar
+	 */
+	function toggleWorkflowSettings(): void {
+		isWorkflowSettingsOpen = !isWorkflowSettingsOpen;
+		// Close config sidebar if opening workflow settings
+		if (isWorkflowSettingsOpen) {
+			closeConfigSidebar();
+		}
+	}
+
+	/**
+	 * Handle workflow configuration save
+	 */
+	async function handleWorkflowSave(config: any): Promise<void> {
+		console.log('Workflow configuration saved:', config);
+		
+		// Update the workflow store
+		if ($workflowStore) {
+			$workflowStore.name = config.name;
+			$workflowStore.description = config.description;
+		}
+		
+		// Close the sidebar
+		isWorkflowSettingsOpen = false;
+		
+		// Also save the workflow to the backend
+		try {
+			await saveWorkflow();
+			console.log('Workflow saved to backend successfully');
+		} catch (error) {
+			console.error('Failed to save workflow to backend:', error);
+			// Note: We don't throw the error here to avoid breaking the UI flow
+			// The user can still manually save via the main Save button if needed
+		}
+	}
+
 	// Removed handleWorkflowChange function - no longer needed
 	// The global store serves as the single source of truth and is already reactive
 
@@ -194,6 +260,7 @@
 			const finalWorkflow = {
 				id: workflowId,
 				name: workflowToSave.name || 'Untitled Workflow',
+				description: workflowToSave.description || '',
 				nodes: workflowToSave.nodes || [],
 				edges: workflowToSave.edges || [],
 				metadata: {
@@ -336,6 +403,16 @@
 						e.preventDefault();
 						exportWorkflow();
 					}
+				},
+				{
+					label: 'Workflow Settings',
+					href: '#settings',
+					icon: 'heroicons:cog-6-tooth',
+					variant: 'outline',
+					onclick: (e) => {
+						e.preventDefault();
+						toggleWorkflowSettings();
+					}
 				}
 			]}
 			showStatus={true}
@@ -435,8 +512,17 @@
 				/>
 			</div>
 
-			<!-- Right Sidebar - Configuration -->
-			{#if selectedNodeForConfig()}
+			<!-- Right Sidebar - Configuration or Workflow Settings -->
+			{#if isWorkflowSettingsOpen}
+				<ConfigSidebar
+					isOpen={isWorkflowSettingsOpen}
+					title="Workflow Settings"
+					configSchema={workflowConfigSchema}
+					configValues={workflowConfigValues}
+					onSave={handleWorkflowSave}
+					onClose={() => isWorkflowSettingsOpen = false}
+				/>
+			{:else if selectedNodeForConfig()}
 				<div class="flowdrop-sidebar flowdrop-sidebar--right">
 					<div class="flowdrop-config-sidebar">
 						<!-- Header -->
@@ -829,8 +915,6 @@
 	}
 
 	.flowdrop-sidebar--right {
-		width: 320px;
-		min-width: 320px;
 		border-left: 1px solid #e5e7eb;
 		box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
 	}

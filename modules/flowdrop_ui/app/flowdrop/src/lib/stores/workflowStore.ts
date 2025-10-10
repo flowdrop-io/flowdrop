@@ -245,6 +245,7 @@ export const workflowActions = {
 		nodes?: WorkflowNode[];
 		edges?: WorkflowEdge[];
 		name?: string;
+		description?: string;
 		metadata?: Partial<Workflow['metadata']>;
 	}) => {
 		workflowStore.update(($workflow) => {
@@ -254,6 +255,7 @@ export const workflowActions = {
 				...(updates.nodes && { nodes: updates.nodes }),
 				...(updates.edges && { edges: updates.edges }),
 				...(updates.name && { name: updates.name }),
+				...(updates.description !== undefined && { description: updates.description }),
 				metadata: {
 					...$workflow.metadata,
 					...(updates.metadata && { ...updates.metadata }),

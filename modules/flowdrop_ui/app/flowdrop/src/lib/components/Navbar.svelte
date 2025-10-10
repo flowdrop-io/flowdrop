@@ -70,18 +70,26 @@
 	</div>
 
 	<div class="flowdrop-navbar__center">
-		<!-- Workflow Title with Status (Langflow-style) -->
-		{#if title}
-			<div class="flowdrop-navbar__title">
-				<h2 class="flowdrop-navbar__title-text">{title}</h2>
-				{#if showStatus}
+		<div class="flowdrop-navbar__center-content">
+			<!-- Status Indicator on top -->
+			{#if showStatus}
+				<div class="flowdrop-navbar__status-container">
 					<div class="flowdrop-navbar__status">
 						<div class="flowdrop-navbar__status-indicator"></div>
 						<span class="flowdrop-navbar__status-text">Connected</span>
 					</div>
-				{/if}
-			</div>
-		{/if}
+				</div>
+			{/if}
+			
+			<!-- Title on bottom -->
+			{#if title}
+				<div class="flowdrop-navbar__title-container">
+					<div class="flowdrop-navbar__title">
+						<h2 class="flowdrop-navbar__title-text">{title}</h2>
+					</div>
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<div class="flowdrop-navbar__actions">
@@ -160,6 +168,9 @@
 	.flowdrop-navbar__start {
 		display: flex;
 		align-items: center;
+		width: 320px;
+		min-width: 320px;
+		flex-shrink: 0;
 	}
 
 	.flowdrop-logo--container {
@@ -177,28 +188,49 @@
 	.flowdrop-navbar__center {
 		flex: 1;
 		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+		padding-left: 1rem;
+	}
+
+	.flowdrop-navbar__center-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
 		justify-content: center;
+		gap: 0.25rem;
+	}
+
+	.flowdrop-navbar__title-container {
+		display: flex;
+		justify-content: flex-start;
 		align-items: center;
 	}
 
 	.flowdrop-navbar__title {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: center;
-		gap: 0.25rem;
 	}
 
 	.flowdrop-navbar__title-text {
 		margin: 0;
-		font-size: 1.125rem;
+		font-size: 1rem;
 		font-weight: 600;
 		color: #111827;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		max-width: 500px;
-		text-align: center;
+		text-align: left;
+		line-height: 1.2;
+	}
+
+	.flowdrop-navbar__status-container {
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
 	}
 
 	.flowdrop-navbar__status {
@@ -473,6 +505,11 @@
 			padding: 0 0.5rem;
 		}
 
+		.flowdrop-navbar__start {
+			width: 280px;
+			min-width: 280px;
+		}
+
 		.flowdrop-navbar__actions {
 			display: none;
 		}
@@ -483,6 +520,28 @@
 
 		.flowdrop-text--tagline {
 			display: none;
+		}
+
+		.flowdrop-navbar__title-text {
+			font-size: 0.875rem;
+			max-width: 300px;
+		}
+
+		.flowdrop-navbar__status {
+			font-size: 0.625rem;
+			padding: 0.125rem 0.375rem;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.flowdrop-navbar__start {
+			width: 240px;
+			min-width: 240px;
+		}
+
+		.flowdrop-navbar__title-text {
+			font-size: 0.75rem;
+			max-width: 200px;
 		}
 	}
 </style>
