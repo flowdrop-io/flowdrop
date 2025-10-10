@@ -133,17 +133,7 @@
 					console.log('Delete workflow:', workflowId);
 				}
 				break;
-			case 'execute':
-				console.log('Execute workflow:', workflowId);
-				// Handle execute logic
-				break;
 			case 'view-execution':
-				goto(`/workflow/${workflowId}/execute`);
-				break;
-			case 'view-history':
-				goto(`/workflow/${workflowId}/logs`);
-				break;
-			case 'monitor-pipelines':
 				goto(`/workflow/${workflowId}/pipelines`);
 				break;
 		}
@@ -290,20 +280,6 @@
 										</button>
 										<button
 											class="workflow-dropdown__item"
-											onclick={() => handleOperation(workflow.id, 'execute')}
-										>
-											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.599 2.599c1.407-1.407 1.407-3.69 0-5.097m-5.097 0c-1.407 1.407-1.407 3.69 0 5.097m0 0L12 12l-2.5-2.5m0 0L7 7l2.5 2.5"
-												></path>
-											</svg>
-											Execute
-										</button>
-										<button
-											class="workflow-dropdown__item"
 											onclick={() => handleOperation(workflow.id, 'view-execution')}
 										>
 											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -321,34 +297,6 @@
 												></path>
 											</svg>
 											View Execution
-										</button>
-										<button
-											class="workflow-dropdown__item"
-											onclick={() => handleOperation(workflow.id, 'view-history')}
-										>
-											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-												></path>
-											</svg>
-											View Execution History
-										</button>
-										<button
-											class="workflow-dropdown__item"
-											onclick={() => handleOperation(workflow.id, 'monitor-pipelines')}
-										>
-											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-												></path>
-											</svg>
-											Monitor Pipelines
 										</button>
 										<div class="workflow-dropdown__divider"></div>
 										<button

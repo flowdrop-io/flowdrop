@@ -10,8 +10,33 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { initializeGlobalSave, globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
+	import { defaultApiConfig, getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
 
 	let { children } = $props();
+
+	// API configuration
+	let apiConfig = $state<ApiConfig>(defaultApiConfig);
+	
+	// Workflow name for breadcrumbs
+	let workflowName = $state<string | null>(null);
+
+	/**
+	 * Fetch workflow name for breadcrumbs
+	 */
+	async function fetchWorkflowName(workflowId: string) {
+		try {
+			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.get, { id: workflowId });
+			const response = await fetch(url);
+			
+			if (response.ok) {
+				const data = await response.json();
+				workflowName = data.data?.name || null;
+			}
+		} catch (error) {
+			console.warn('Failed to fetch workflow name for breadcrumb:', error);
+			workflowName = null;
+		}
+	}
 
 	// Initialize global save functions on mount
 	onMount(() => {
@@ -48,6 +73,20 @@
 		if (!pathname.includes('/pipelines/') || pathname.split('/').length <= 4) {
 			// Clear custom breadcrumbs for non-pipeline detail pages
 			pageBreadcrumbs = [];
+		}
+	});
+
+	// Fetch workflow name for edit pages
+	$effect(() => {
+		const pathname = $page.url.pathname;
+		if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
+			const workflowId = pathname.split('/')[2];
+			if (workflowId) {
+				fetchWorkflowName(workflowId);
+			}
+		} else {
+			// Clear workflow name when not on edit page
+			workflowName = null;
 		}
 	});
 	
@@ -115,6 +154,12 @@
 						e.preventDefault();
 						globalExportWorkflow();
 					}
+				},
+				{
+					label: 'Pipelines',
+					href: `/workflow/${pathname.split('/')[2]}/pipelines`,
+					icon: 'mdi:source-branch',
+					variant: 'outline' as const
 				},
 				{
 					label: 'Workflow Settings',
@@ -220,6 +265,7 @@
 		];
 	}
 
+
 	// Generate breadcrumbs based on current page
 	function generateBreadcrumbsForPage(pathname: string) {
 		// If we have custom breadcrumbs from components, use those
@@ -256,7 +302,7 @@
 					icon: 'mdi:view-list'
 				},
 				{
-					label: 'Edit Workflow',
+					label: workflowName ? `Edit ${workflowName}` : 'Edit Workflow',
 					icon: 'mdi:pencil'
 				}
 			];

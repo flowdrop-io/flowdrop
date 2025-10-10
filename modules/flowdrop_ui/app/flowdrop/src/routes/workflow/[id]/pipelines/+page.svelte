@@ -29,6 +29,7 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let workflowId = $derived($page.params.id);
+	let workflowName = $state<string>('Workflow');
 
 	let searchQuery = $state('');
 	let filteredPipelines = $derived(
@@ -75,9 +76,54 @@
 		}
 	}
 
+	// Fetch workflow name
+	async function fetchWorkflowName() {
+		if (!workflowId) return;
+		
+		try {
+			const apiUrl = getEndpointUrl(defaultApiConfig, '/workflows/{id}', { id: workflowId });
+			const response = await fetch(apiUrl, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				workflowName = data.data?.name || data.data?.title || 'Workflow';
+				
+				// Dispatch custom event to update breadcrumbs
+				window.dispatchEvent(new CustomEvent('page-breadcrumbs-update', {
+					detail: {
+						breadcrumbs: [
+							{
+								label: 'Workflows',
+								href: '/',
+								icon: 'mdi:view-list'
+							},
+							{
+								label: workflowName,
+								href: `/workflow/${workflowId}/edit`,
+								icon: 'mdi:workflow'
+							},
+							{
+								label: 'Pipelines',
+								icon: 'mdi:source-branch'
+							}
+						]
+					}
+				}));
+			}
+		} catch (err) {
+			console.error('Failed to fetch workflow name:', err);
+		}
+	}
+
 	// Load pipelines on mount
 	onMount(() => {
 		fetchPipelines();
+		fetchWorkflowName();
 	});
 
 	function handlePipelineSelect(pipelineId: string) {
