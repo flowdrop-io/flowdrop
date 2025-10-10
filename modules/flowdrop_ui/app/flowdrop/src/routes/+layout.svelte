@@ -102,16 +102,10 @@
 			// Main workflows page
 			return [
 				{
-					label: 'Workflows',
-					href: '/',
-					icon: 'mdi:view-list',
-					variant: 'primary' as const
-				},
-				{
 					label: 'Create Workflow',
 					href: '/workflow/create',
 					icon: 'mdi:plus',
-					variant: 'outline' as const
+					variant: 'primary' as const
 				}
 			];
 		} else if (pathname.startsWith('/workflow/create')) {

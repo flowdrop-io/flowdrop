@@ -168,11 +168,6 @@
 	<!-- Header Section -->
 	<div class="workflows-header">
 		<div class="workflows-header__content">
-			<div class="workflows-header__tabs">
-				<button class="workflows-tab workflows-tab--active">Workflows</button>
-				<button class="workflows-tab">Templates</button>
-			</div>
-
 			<div class="workflows-header__controls">
 				<div class="workflows-search">
 					<div class="flowdrop-search">
@@ -389,7 +384,7 @@
 		margin: 0 auto;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 	}
 
 	.workflows-header__title p {
