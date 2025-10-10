@@ -15,7 +15,7 @@
 	import { sampleNodes } from '$lib/data/samples.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
-	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
+	import { workflowStore, workflowActions, workflowName } from '../stores/workflowStore.js';
 	import { resolveComponentName } from '$lib/utils/nodeTypes.js';
 
 	// Configuration props for runtime customization
@@ -32,6 +32,14 @@
 		width = '100%',
 		showNavbar = false
 	}: Props = $props();
+
+	// Create breadcrumb-style title - at top level to avoid store subscription issues
+	let breadcrumbTitle = $derived(() => {
+		if (!$workflowName || $workflowName === 'Untitled Workflow') {
+			return 'Workflow / New Workflow';
+		}
+		return `Workflow / ${$workflowName}`;
+	});
 
 	let nodes = $state<NodeMetadata[]>([]);
 	// Remove workflow prop - use global store directly
@@ -307,6 +315,7 @@
 	<!-- Navbar (conditionally rendered) -->
 	{#if showNavbar}
 		<Navbar 
+			title={breadcrumbTitle()}
 			primaryActions={[
 				{
 					label: 'Save',

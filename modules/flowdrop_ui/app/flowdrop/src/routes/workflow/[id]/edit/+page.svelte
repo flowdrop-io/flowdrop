@@ -27,20 +27,17 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
-	// Canvas dimensions
-	let canvasHeight = $state<string>('calc(100vh - 60px)'); // Default: full height minus navbar
-	let canvasWidth = $state<string>('100%'); // Default: full width
+	// Canvas dimensions - now using full viewport since no top navbar
+	let canvasHeight = $state<string>('100vh'); // Full viewport height
+	let canvasWidth = $state<string>('100%'); // Full width
 
 	/**
 	 * Calculate optimal canvas dimensions
-	 * Takes into account navbar height and other page elements
+	 * Now uses full viewport since we removed the top navbar
 	 */
 	function calculateCanvasDimensions() {
-		// Get the navbar height from CSS variable or default to 60px
-		const navbarHeight = 60; // This should match --flowdrop-navbar-height from layout
-		
-		// Calculate available height (viewport height minus navbar)
-		const availableHeight = window.innerHeight - navbarHeight;
+		// Use full viewport height since no top navbar
+		const availableHeight = window.innerHeight;
 		
 		// Set minimum and maximum constraints for optimal experience
 		const minHeight = 400; // Minimum usable height
@@ -55,7 +52,6 @@
 		
 		console.log('Canvas dimensions calculated:', {
 			viewportHeight: window.innerHeight,
-			navbarHeight,
 			availableHeight,
 			optimalHeight,
 			canvasHeight,
@@ -184,7 +180,7 @@
 			<button onclick={fetchWorkflow} class="retry-button">Retry</button>
 		</div>
 	{:else if workflow}
-		<App workflow={workflow as any} height={canvasHeight} width={canvasWidth} />
+		<App workflow={workflow as any} height={canvasHeight} width={canvasWidth} showNavbar={true} />
 	{:else}
 		<div class="no-workflow">
 			<h3>Workflow Not Found</h3>

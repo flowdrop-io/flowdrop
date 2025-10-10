@@ -9,19 +9,9 @@
 <script lang="ts">
 	import App from '$lib/components/App.svelte';
 
-	// Configuration for the workflow editor
-	const config = {
-		api: {
-			baseUrl: '/api/flowdrop',
-			endpoints: {},
-			timeout: 30000,
-			retry: {
-				enabled: true,
-				maxAttempts: 3,
-				delay: 1000
-			}
-		}
-	};
+	// Canvas dimensions - now using full viewport since no top navbar
+	let canvasHeight = $state<string>('100vh'); // Full viewport height
+	let canvasWidth = $state<string>('100%'); // Full width
 </script>
 
 <svelte:head>
@@ -29,7 +19,7 @@
 </svelte:head>
 
 <div class="workflow-create-page">
-	<App {config} />
+	<App height={canvasHeight} width={canvasWidth} showNavbar={true} />
 </div>
 
 <style>

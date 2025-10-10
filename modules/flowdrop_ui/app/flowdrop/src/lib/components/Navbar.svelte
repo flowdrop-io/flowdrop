@@ -21,18 +21,35 @@
 	interface Props {
 		primaryActions?: NavbarAction[];
 		showStatus?: boolean;
+		title?: string;
 	}
 
-	let { primaryActions = [], showStatus = true }: Props = $props();
+	let { primaryActions = [], showStatus = true, title }: Props = $props();
 
 	// Simple current path tracking without SvelteKit dependency
 	let currentPath = $state(typeof window !== 'undefined' ? window.location.pathname : '/');
+	
+	// Dropdown state
+	let isDropdownOpen = $state(false);
 
 	function isActive(href: string): boolean {
 		if (href === '/') {
 			return currentPath === '/';
 		}
 		return currentPath.startsWith(href);
+	}
+
+	// Close dropdown when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		if (!target.closest('.flowdrop-navbar__dropdown')) {
+			isDropdownOpen = false;
+		}
+	}
+
+	// Add event listener for click outside
+	if (typeof window !== 'undefined') {
+		document.addEventListener('click', handleClickOutside);
 	}
 </script>
 
@@ -53,36 +70,77 @@
 	</div>
 
 	<div class="flowdrop-navbar__center">
-		<!-- Primary Actions -->
-		{#if primaryActions.length > 0}
-			<div class="flowdrop-navbar__actions">
-				{#each primaryActions as action (action.label)}
-					<a
-						href={action.href}
-						class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant ||
-							'primary'} {isActive(action.href) ? 'flowdrop-navbar__action--active' : ''}"
-						onclick={action.onclick}
-					>
-						{#if action.icon}
-							<span class="flowdrop-navbar__action-icon">
-								<Icon icon={action.icon} class="w-4 h-4" />
-							</span>
-						{/if}
-						<span class="flowdrop-navbar__action-label">{action.label}</span>
-					</a>
-				{/each}
+		<!-- Workflow Title with Status (Langflow-style) -->
+		{#if title}
+			<div class="flowdrop-navbar__title">
+				<h2 class="flowdrop-navbar__title-text">{title}</h2>
+				{#if showStatus}
+					<div class="flowdrop-navbar__status">
+						<div class="flowdrop-navbar__status-indicator"></div>
+						<span class="flowdrop-navbar__status-text">Connected</span>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>
 
-	<div class="flowdrop-navbar__end">
-		<!-- API Status Indicator -->
-		{#if showStatus}
-			<div class="flowdrop-api-status">
-				<div class="flowdrop-api-status__indicator flowdrop-api-status__indicator--connected"></div>
-				<span class="flowdrop-text--xs flowdrop-text--gray"> API Connected </span>
-			</div>
+	<div class="flowdrop-navbar__actions">
+		{#if primaryActions.length > 0}
+			<!-- Primary Action Button -->
+			{#if primaryActions[0]}
+				{@const primaryAction = primaryActions[0]}
+				<a
+					href={primaryAction.href}
+					class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant || 'primary'}"
+					onclick={primaryAction.onclick}
+				>
+					{#if primaryAction.icon}
+						<span class="flowdrop-navbar__action-icon">
+							<Icon icon={primaryAction.icon} class="w-4 h-4" />
+						</span>
+					{/if}
+					<span class="flowdrop-navbar__action-label">{primaryAction.label}</span>
+				</a>
+			{/if}
+
+			<!-- Dropdown for Additional Actions -->
+			{#if primaryActions.length > 1}
+				<div class="flowdrop-navbar__dropdown">
+					<button 
+						class="flowdrop-navbar__dropdown-trigger"
+						onclick={() => isDropdownOpen = !isDropdownOpen}
+						aria-expanded={isDropdownOpen}
+						aria-haspopup="true"
+					>
+						<Icon icon="heroicons:chevron-down" class="w-4 h-4" />
+					</button>
+					
+					{#if isDropdownOpen}
+						<div class="flowdrop-navbar__dropdown-menu">
+							{#each primaryActions.slice(1) as action (action.label)}
+								<a
+									href={action.href}
+									class="flowdrop-navbar__dropdown-item"
+									onclick={(e) => {
+										action.onclick?.(e);
+										isDropdownOpen = false;
+									}}
+								>
+									{#if action.icon}
+										<Icon icon={action.icon} class="w-4 h-4" />
+									{/if}
+									<span>{action.label}</span>
+								</a>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
 		{/if}
+	</div>
+
+	<div class="flowdrop-navbar__end">
+		<!-- Additional actions or content can go here -->
 	</div>
 </div>
 
@@ -120,11 +178,168 @@
 		flex: 1;
 		display: flex;
 		justify-content: center;
+		align-items: center;
+	}
+
+	.flowdrop-navbar__title {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+	}
+
+	.flowdrop-navbar__title-text {
+		margin: 0;
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #111827;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 500px;
+		text-align: center;
+	}
+
+	.flowdrop-navbar__status {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.125rem 0.5rem;
+		background-color: #f0fdf4;
+		border: 1px solid #bbf7d0;
+		border-radius: 0.375rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+	}
+
+	.flowdrop-navbar__status-indicator {
+		width: 0.375rem;
+		height: 0.375rem;
+		background-color: #22c55e;
+		border-radius: 50%;
+		animation: pulse 2s infinite;
+	}
+
+	.flowdrop-navbar__status-text {
+		color: #166534;
+		font-size: 0.75rem;
+		font-weight: 500;
+	}
+
+	@keyframes pulse {
+		0%, 100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.5;
+		}
 	}
 
 	.flowdrop-navbar__actions {
 		display: flex;
+		align-items: center;
+		gap: 0;
+		margin-left: auto;
+		position: relative;
+	}
+
+	.flowdrop-navbar__primary-action {
+		display: flex;
+		align-items: center;
 		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		text-decoration: none;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem 0 0 0.375rem;
+		transition: all 0.2s ease-in-out;
+		font-weight: 500;
+		font-size: 0.875rem;
+		height: 2.5rem;
+		box-sizing: border-box;
+		background-color: #ffffff;
+		color: #374151;
+		border-right: none;
+	}
+
+	.flowdrop-navbar__primary-action:hover {
+		background-color: #f9fafb;
+		color: #111827;
+	}
+
+	.flowdrop-navbar__dropdown {
+		position: relative;
+		display: flex;
+		align-items: center;
+		height: 2.5rem;
+	}
+
+	.flowdrop-navbar__dropdown-trigger {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2.5rem;
+		border: 1px solid #d1d5db;
+		border-left: none;
+		border-radius: 0 0.375rem 0.375rem 0;
+		background-color: #ffffff;
+		color: #374151;
+		cursor: pointer;
+		transition: all 0.2s ease-in-out;
+		box-sizing: border-box;
+	}
+
+	.flowdrop-navbar__dropdown-trigger:hover {
+		background-color: #f9fafb;
+		color: #111827;
+	}
+
+	.flowdrop-navbar__dropdown-trigger[aria-expanded="true"] {
+		background-color: #f3f4f6;
+		color: #111827;
+	}
+
+	.flowdrop-navbar__dropdown-menu {
+		position: absolute;
+		top: 100%;
+		right: 0;
+		z-index: 50;
+		margin-top: 0.25rem;
+		min-width: 12rem;
+		background-color: #ffffff;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.5rem;
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		overflow: hidden;
+	}
+
+	.flowdrop-navbar__dropdown-item {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		text-decoration: none;
+		color: #374151;
+		font-size: 0.875rem;
+		font-weight: 500;
+		transition: background-color 0.2s ease-in-out;
+		border: none;
+		width: 100%;
+		text-align: left;
+	}
+
+	.flowdrop-navbar__dropdown-item:hover {
+		background-color: #f9fafb;
+		color: #111827;
+	}
+
+	.flowdrop-navbar__dropdown-item:first-child {
+		border-top: none;
+	}
+
+	.flowdrop-navbar__dropdown-item:last-child {
+		border-bottom: none;
 	}
 
 	.flowdrop-navbar__action {

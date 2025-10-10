@@ -20,6 +20,9 @@
 
 	// Define primary actions based on current page
 	let primaryActions = $derived(getPrimaryActionsForPage($page.url.pathname));
+	
+	// Determine if we should show the navbar (hide for workflow pages)
+	let showNavbar = $derived(!$page.url.pathname.startsWith('/workflow/'));
 
 	function getPrimaryActionsForPage(pathname: string) {
 		if (pathname === '/') {
@@ -131,8 +134,10 @@
 </script>
 
 <div class="flowdrop-app" style="--flowdrop-navbar-height: 60px;">
-	<!-- Navigation Bar -->
-	<Navbar {primaryActions} />
+	<!-- Navigation Bar - only show for non-workflow pages -->
+	{#if showNavbar}
+		<Navbar {primaryActions} />
+	{/if}
 
 	<!-- Main Content Area -->
 	<main class="flowdrop-main">
