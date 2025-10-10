@@ -63,7 +63,7 @@
 <div class="flowdrop-navbar">
 	<div class="flowdrop-navbar__start">
 		<!-- Logo and Title -->
-		<a href="/" class="flowdrop-logo--container">
+		<div class="flowdrop-logo--container">
 			<div class="flowdrop-flex flowdrop-gap--3">
 				<div class="flowdrop-logo--header">
 					<Logo />
@@ -73,7 +73,7 @@
 					<p class="flowdrop-text--tagline flowdrop-text--gray">Visual Workflow Manager</p>
 				</div>
 			</div>
-		</a>
+		</div>
 	</div>
 
 	<div class="flowdrop-navbar__center">
@@ -212,7 +212,6 @@
 	}
 
 	.flowdrop-logo--container {
-		text-decoration: none;
 		color: #000;
 	}
 
