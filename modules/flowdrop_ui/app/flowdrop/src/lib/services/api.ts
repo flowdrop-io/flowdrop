@@ -17,6 +17,13 @@ export function setEndpointConfig(config: EndpointConfig): void {
 }
 
 /**
+ * Get the current endpoint configuration
+ */
+export function getEndpointConfig(): EndpointConfig | null {
+	return endpointConfig;
+}
+
+/**
  * Set the API base URL (backward compatibility)
  */
 export function setApiBaseUrl(url: string): void {

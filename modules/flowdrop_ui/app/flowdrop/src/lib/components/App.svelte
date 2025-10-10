@@ -120,8 +120,11 @@
 	 * Initialize API endpoints
 	 */
 	async function initializeApiEndpoints(): Promise<void> {
-		// Use relative paths for local development
-		const apiBaseUrl = import.meta.env.VITE_DRUPAL_API_URL || '/api/flowdrop';
+		// Use the same environment variable priority as the global save function
+		// Prioritize VITE_API_BASE_URL since it's configured correctly
+		const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
+		                   import.meta.env.VITE_DRUPAL_API_URL || 
+		                   '/api/flowdrop';
 
 		console.log('🔧 Initializing API endpoints with URL:', apiBaseUrl);
 		console.log('🔧 Current location:', window.location.href);

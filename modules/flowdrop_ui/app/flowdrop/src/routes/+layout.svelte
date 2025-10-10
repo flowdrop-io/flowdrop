@@ -8,8 +8,15 @@
 	import '../app.css';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	import { initializeGlobalSave, globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
 
 	let { children } = $props();
+
+	// Initialize global save functions on mount
+	onMount(() => {
+		initializeGlobalSave();
+	});
 
 	// Define primary actions based on current page
 	let primaryActions = $derived(getPrimaryActionsForPage($page.url.pathname));
@@ -44,7 +51,11 @@
 					label: 'Save Workflow',
 					href: '#',
 					icon: 'mdi:content-save',
-					variant: 'primary' as const
+					variant: 'primary' as const,
+					onclick: (e: Event) => {
+						e.preventDefault();
+						globalSaveWorkflow();
+					}
 				}
 			];
 		} else if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
@@ -60,7 +71,11 @@
 					label: 'Save Changes',
 					href: '#',
 					icon: 'mdi:content-save',
-					variant: 'primary' as const
+					variant: 'primary' as const,
+					onclick: (e: Event) => {
+						e.preventDefault();
+						globalSaveWorkflow();
+					}
 				},
 				{
 					label: 'Execute',
