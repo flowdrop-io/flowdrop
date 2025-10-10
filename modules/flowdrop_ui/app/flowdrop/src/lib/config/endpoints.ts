@@ -41,6 +41,19 @@ export interface EndpointConfig {
 			history: string;
 		};
 
+		// Pipeline endpoints
+		pipelines: {
+			list: string;
+			get: string;
+			create: string;
+			update: string;
+			delete: string;
+			status: string;
+			logs: string;
+			execute: string;
+			stop: string;
+		};
+
 		// Template endpoints
 		templates: {
 			list: string;
@@ -123,6 +136,17 @@ export const defaultEndpointConfig: EndpointConfig = {
 			cancel: '/executions/{id}/cancel',
 			logs: '/executions/{id}/logs',
 			history: '/executions'
+		},
+		pipelines: {
+			list: '/workflow/{workflow_id}/pipelines',
+			get: '/pipeline/{id}',
+			create: '/pipeline',
+			update: '/pipeline/{id}',
+			delete: '/pipeline/{id}',
+			status: '/pipeline/{id}/status',
+			logs: '/pipeline/{id}/logs',
+			execute: '/pipeline/{id}/execute',
+			stop: '/pipeline/{id}/stop'
 		},
 		templates: {
 			list: '/templates',

@@ -18,13 +18,20 @@
 		onclick?: (event: Event) => void;
 	}
 
+	interface BreadcrumbItem {
+		label: string;
+		href?: string;
+		icon?: string;
+	}
+
 	interface Props {
 		primaryActions?: NavbarAction[];
 		showStatus?: boolean;
 		title?: string;
+		breadcrumbs?: BreadcrumbItem[];
 	}
 
-	let { primaryActions = [], showStatus = true, title }: Props = $props();
+	let { primaryActions = [], showStatus = true, title, breadcrumbs = [] }: Props = $props();
 
 	// Simple current path tracking without SvelteKit dependency
 	let currentPath = $state(typeof window !== 'undefined' ? window.location.pathname : '/');
@@ -81,8 +88,39 @@
 				</div>
 			{/if}
 			
-			<!-- Title on bottom -->
-			{#if title}
+			<!-- Title or Breadcrumbs on bottom -->
+			{#if breadcrumbs.length > 0}
+				<div class="flowdrop-navbar__breadcrumb-container">
+					<nav class="flowdrop-navbar__breadcrumb" aria-label="Breadcrumb">
+						<ol class="flowdrop-navbar__breadcrumb-list">
+							{#each breadcrumbs as breadcrumb, index}
+								<li class="flowdrop-navbar__breadcrumb-item">
+									{#if breadcrumb.href && index < breadcrumbs.length - 1}
+										<a href={breadcrumb.href} class="flowdrop-navbar__breadcrumb-link">
+											{#if breadcrumb.icon}
+												<Icon icon={breadcrumb.icon} class="flowdrop-navbar__breadcrumb-icon" />
+											{/if}
+											<span class="flowdrop-navbar__breadcrumb-text">{breadcrumb.label}</span>
+										</a>
+									{:else}
+										<span class="flowdrop-navbar__breadcrumb-current">
+											{#if breadcrumb.icon}
+												<Icon icon={breadcrumb.icon} class="flowdrop-navbar__breadcrumb-icon" />
+											{/if}
+											<span class="flowdrop-navbar__breadcrumb-text">{breadcrumb.label}</span>
+										</span>
+									{/if}
+								</li>
+								{#if index < breadcrumbs.length - 1}
+									<li class="flowdrop-navbar__breadcrumb-separator">
+										<Icon icon="mdi:chevron-right" class="flowdrop-navbar__breadcrumb-chevron" />
+									</li>
+								{/if}
+							{/each}
+						</ol>
+					</nav>
+				</div>
+			{:else if title}
 				<div class="flowdrop-navbar__title-container">
 					<div class="flowdrop-navbar__title">
 						<h2 class="flowdrop-navbar__title-text">{title}</h2>
@@ -225,6 +263,81 @@
 		max-width: 500px;
 		text-align: left;
 		line-height: 1.2;
+	}
+
+	/* Breadcrumb Styles */
+	.flowdrop-navbar__breadcrumb-container {
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+	}
+
+	.flowdrop-navbar__breadcrumb {
+		display: flex;
+		align-items: center;
+	}
+
+	.flowdrop-navbar__breadcrumb-list {
+		display: flex;
+		align-items: center;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		gap: 0.25rem;
+	}
+
+	.flowdrop-navbar__breadcrumb-item {
+		display: flex;
+		align-items: center;
+	}
+
+	.flowdrop-navbar__breadcrumb-link {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.375rem;
+		text-decoration: none;
+		color: #6b7280;
+		font-size: 0.875rem;
+		font-weight: 500;
+		transition: all 0.2s ease;
+	}
+
+	.flowdrop-navbar__breadcrumb-link:hover {
+		color: #111827;
+		background-color: #f3f4f6;
+	}
+
+	.flowdrop-navbar__breadcrumb-current {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		color: #111827;
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	.flowdrop-navbar__breadcrumb-icon {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+	}
+
+	.flowdrop-navbar__breadcrumb-text {
+		white-space: nowrap;
+	}
+
+	.flowdrop-navbar__breadcrumb-separator {
+		display: flex;
+		align-items: center;
+		color: #9ca3af;
+	}
+
+	.flowdrop-navbar__breadcrumb-chevron {
+		width: 0.875rem;
+		height: 0.875rem;
 	}
 
 	.flowdrop-navbar__status-container {

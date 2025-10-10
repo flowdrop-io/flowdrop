@@ -6,6 +6,7 @@
 
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { page } from '$app/stores';
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
 	import ConfigSidebar from '$lib/components/ConfigSidebar.svelte';
@@ -24,17 +25,42 @@
 		height?: string | number;
 		width?: string | number;
 		showNavbar?: boolean;
+		// New configuration options for pipeline status mode
+		disableSidebar?: boolean;
+		lockWorkflow?: boolean;
+		readOnly?: boolean;
+		nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
+		// Navbar customization
+		navbarTitle?: string;
+		navbarActions?: Array<{
+			label: string;
+			href: string;
+			icon?: string;
+			variant?: 'primary' | 'secondary' | 'outline';
+			onclick?: (event: Event) => void;
+		}>;
 	}
 
 	let { 
 		workflow: initialWorkflow, 
 		height = '100vh', 
 		width = '100%',
-		showNavbar = false
+		showNavbar = false,
+		disableSidebar = false,
+		lockWorkflow = false,
+		readOnly = false,
+		nodeStatuses = {},
+		navbarTitle,
+		navbarActions = []
 	}: Props = $props();
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
 	let breadcrumbTitle = $derived(() => {
+		// Use custom navbar title if provided
+		if (navbarTitle) {
+			return navbarTitle;
+		}
+		// Default workflow title logic
 		if (!$workflowName || $workflowName === 'Untitled Workflow') {
 			return 'Workflow / New Workflow';
 		}
@@ -354,14 +380,27 @@
 
 
 	// Load node types on mount
-	onMount(async () => {
-		await initializeApiEndpoints();
-		await fetchNodeTypes();
-		
-		// Initialize the workflow store if we have an initial workflow
-		if (initialWorkflow) {
-			workflowActions.initialize(initialWorkflow);
-		}
+	onMount(() => {
+		(async () => {
+			await initializeApiEndpoints();
+			await fetchNodeTypes();
+			
+			// Initialize the workflow store if we have an initial workflow
+			if (initialWorkflow) {
+				workflowActions.initialize(initialWorkflow);
+			}
+		})();
+
+		// Listen for workflow settings toggle from main navbar
+		const handleWorkflowSettingsToggle = () => {
+			toggleWorkflowSettings();
+		};
+
+		window.addEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
+
+		return () => {
+			window.removeEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
+		};
 	});
 
 	// Monitor workflow store changes for testing node drag updates
@@ -379,11 +418,11 @@
 </svelte:head>
 
 <div class="flowdrop-app" style="height: {typeof height === 'number' ? `${height}px` : height}; width: {typeof width === 'number' ? `${width}px` : width};">
-	<!-- Navbar (conditionally rendered) -->
-	{#if showNavbar}
+	<!-- Navbar (conditionally rendered) - hide on workflow edit pages -->
+	{#if showNavbar && !$page.url.pathname.includes('/edit')}
 		<Navbar 
 			title={breadcrumbTitle()}
-			primaryActions={[
+			primaryActions={navbarActions.length > 0 ? navbarActions : [
 				{
 					label: 'Save',
 					href: '#save',
@@ -492,10 +531,12 @@
 
 		<!-- Workflow Editor with Sidebars -->
 		<div class="flowdrop-editor-container">
-			<!-- Left Sidebar - Node Components -->
-			<div class="flowdrop-sidebar flowdrop-sidebar--left">
-				<NodeSidebar {nodes} />
-			</div>
+			<!-- Left Sidebar - Node Components (conditionally rendered) -->
+			{#if !disableSidebar}
+				<div class="flowdrop-sidebar flowdrop-sidebar--left">
+					<NodeSidebar {nodes} />
+				</div>
+			{/if}
 
 			<!-- Main Editor Area -->
 			<div class="flowdrop-editor-main" onclick={handleCanvasClick} onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()} role="button" tabindex="0" aria-label="Workflow canvas - click to close sidebar">
@@ -509,11 +550,14 @@
 					selectedNodeForConfig={selectedNodeForConfig()}
 					{openConfigSidebar}
 					{closeConfigSidebar}
+					{lockWorkflow}
+					{readOnly}
+					{nodeStatuses}
 				/>
 			</div>
 
-			<!-- Right Sidebar - Configuration or Workflow Settings -->
-			{#if isWorkflowSettingsOpen}
+			<!-- Right Sidebar - Configuration or Workflow Settings (conditionally rendered) -->
+			{#if !disableSidebar && isWorkflowSettingsOpen}
 				<ConfigSidebar
 					isOpen={isWorkflowSettingsOpen}
 					title="Workflow Settings"
@@ -522,7 +566,7 @@
 					onSave={handleWorkflowSave}
 					onClose={() => isWorkflowSettingsOpen = false}
 				/>
-			{:else if selectedNodeForConfig()}
+			{:else if !disableSidebar && selectedNodeForConfig()}
 				<div class="flowdrop-sidebar flowdrop-sidebar--right">
 					<div class="flowdrop-config-sidebar">
 						<!-- Header -->

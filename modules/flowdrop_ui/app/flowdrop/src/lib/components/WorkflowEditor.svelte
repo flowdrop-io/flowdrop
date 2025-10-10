@@ -46,6 +46,10 @@
 		selectedNodeForConfig?: WorkflowNodeType | null;
 		openConfigSidebar?: (node: WorkflowNodeType) => void;
 		closeConfigSidebar?: () => void;
+		// New configuration options for pipeline status mode
+		lockWorkflow?: boolean;
+		readOnly?: boolean;
+		nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
 	}
 
 	let props: Props = $props();
