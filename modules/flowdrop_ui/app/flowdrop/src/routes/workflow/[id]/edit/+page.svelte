@@ -85,13 +85,51 @@
 			// Extract the workflow data from the nested structure
 			const workflowData = data.data;
 
+			// Fetch fresh node metadata from the API
+			let refreshedNodes = workflowData.nodes || [];
+			if (refreshedNodes.length > 0) {
+				try {
+					const nodesUrl = getEndpointUrl(apiConfig, apiConfig.endpoints.nodes.list);
+					const nodesResponse = await fetch(nodesUrl);
+					if (nodesResponse.ok) {
+						const nodesData = await nodesResponse.json();
+						const availableNodes = nodesData.data || [];
+						
+						// Refresh metadata for each node
+						refreshedNodes = refreshedNodes.map((node: any) => {
+							const nodeMetadataId = node.data?.metadata?.id;
+							if (nodeMetadataId) {
+								const freshMetadata = availableNodes.find((n: any) => n.id === nodeMetadataId);
+								if (freshMetadata) {
+									console.log(`🔄 Refreshing metadata for node: ${nodeMetadataId}`, {
+										oldSupportedTypes: node.data.metadata.supportedTypes,
+										newSupportedTypes: freshMetadata.supportedTypes
+									});
+									return {
+										...node,
+										data: {
+											...node.data,
+											metadata: freshMetadata
+										}
+									};
+								}
+							}
+							return node;
+						});
+					}
+				} catch (nodesErr) {
+					console.warn('Failed to refresh node metadata:', nodesErr);
+					// Continue with original nodes if refresh fails
+				}
+			}
+
 			// Map API response to workflow data
 			workflow = {
 				id: workflowData.id,
 				name: workflowData.name,
 				description: workflowData.description,
 				status: workflowData.status || 'Active',
-				nodes: workflowData.nodes || [],
+				nodes: refreshedNodes,
 				edges: workflowData.edges || [],
 				created: workflowData.created,
 				changed: workflowData.changed

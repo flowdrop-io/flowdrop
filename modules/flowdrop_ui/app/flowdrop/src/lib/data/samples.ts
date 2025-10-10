@@ -2373,6 +2373,111 @@ export const sampleNodes: NodeMetadata[] = [
 		tags: ['demo', 'content-management', 'drupal', 'search', 'rag', 'ai']
 	},
 	{
+		id: 'ai_content_analyzer',
+		name: 'AI Content Analyzer',
+		type: 'default',
+		supportedTypes: ['default', 'tool'],
+		version: '1.0.0',
+		description: 'AI-powered content analysis for smart text processing and context understanding',
+		category: 'ai',
+		icon: 'mdi:text-search',
+		color: '#7c3aed',
+		inputs: [
+			{
+				id: 'content_to_analyze',
+				name: 'Content to Analyze',
+				type: 'input',
+				dataType: 'string',
+				required: true,
+				description: 'Text content or array of content items for AI analysis'
+			}
+		],
+		outputs: [
+			{
+				id: 'analyzed_content',
+				name: 'Analyzed Content',
+				type: 'output',
+				dataType: 'array',
+				description: 'Content items with AI analysis results'
+			},
+			{
+				id: 'total_analyzed',
+				name: 'Total Analyzed',
+				type: 'output',
+				dataType: 'number',
+				description: 'Total number of items analyzed'
+			},
+			{
+				id: 'total_replacements',
+				name: 'Total Replacements',
+				type: 'output',
+				dataType: 'number',
+				description: 'Total number of replacements made'
+			},
+			{
+				id: 'analysis_mode',
+				name: 'Analysis Mode',
+				type: 'output',
+				dataType: 'string',
+				description: 'The analysis mode used'
+			},
+			{
+				id: 'confidence_threshold',
+				name: 'Confidence Threshold',
+				type: 'output',
+				dataType: 'number',
+				description: 'Confidence threshold used for replacements'
+			},
+			{
+				id: 'analyzed_at',
+				name: 'Analyzed At',
+				type: 'output',
+				dataType: 'string',
+				description: 'Timestamp when analysis was completed'
+			}
+		],
+		configSchema: {
+			type: 'object',
+			properties: {
+				nodeType: {
+					type: 'string',
+					title: 'Node Type',
+					description: 'Choose the visual representation for this node',
+					default: 'default',
+					enum: ['tool', 'default'],
+					enumNames: ['Tool Node (with metadata port)', 'Default Node (standard ports)']
+				},
+				targetText: {
+					type: 'string',
+					title: 'Target Text',
+					description: 'Text to analyze and potentially replace',
+					default: 'XB'
+				},
+				replacementText: {
+					type: 'string',
+					title: 'Replacement Text',
+					description: 'Text to replace with when appropriate',
+					default: 'Canvas'
+				},
+				analysisMode: {
+					type: 'string',
+					title: 'Analysis Mode',
+					description: 'Type of AI analysis to perform',
+					default: 'context_aware'
+				},
+				confidenceThreshold: {
+					type: 'number',
+					title: 'Confidence Threshold',
+					description: 'Minimum confidence level for making replacements (0-1)',
+					default: 0.8,
+					minimum: 0,
+					maximum: 1
+				}
+			}
+		},
+		tags: ['ai', 'analysis', 'content', 'context', 'smart-processing']
+	},
+	{
 		id: 'demo-ai-content-analyzer',
 		name: 'AI Content Analyzer',
 		type: 'default',

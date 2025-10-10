@@ -16,6 +16,7 @@
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
+	import { resolveComponentName } from '$lib/utils/nodeTypes.js';
 
 	// Configuration props for runtime customization
 	interface Props {
@@ -598,13 +599,30 @@
 											});
 										}
 										
-										// Update the node in the workflow store with the current config
-										workflowActions.updateNode(selectedNodeId, {
-											data: {
-												...currentNode.data,
-												config: updatedConfig
-											}
-										});
+					// Handle nodeType switching if nodeType is in the config
+					let nodeUpdates: any = {
+						data: {
+							...currentNode.data,
+							config: updatedConfig
+						}
+					};
+					
+					// If nodeType is being changed, update the node's type field
+					if (updatedConfig.nodeType && currentNode.data.metadata) {
+						const newComponentName = resolveComponentName(
+							currentNode.data.metadata,
+							updatedConfig.nodeType as string
+						);
+						
+						// Update the node with the new type
+						workflowActions.updateNode(selectedNodeId, {
+							...nodeUpdates,
+							type: newComponentName
+						});
+					} else {
+						// No nodeType change, just update config
+						workflowActions.updateNode(selectedNodeId, nodeUpdates);
+					}
 									}
 									
 									closeConfigSidebar();
