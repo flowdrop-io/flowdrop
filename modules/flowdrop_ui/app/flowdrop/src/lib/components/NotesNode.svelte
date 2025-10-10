@@ -447,8 +447,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.5rem;
-		height: 1.5rem;
+		width: 2rem;
+		height: 2rem;
 		border: none;
 		background: transparent;
 		color: currentColor;
@@ -464,8 +464,8 @@
 	}
 
 	.flowdrop-notes-node__icon {
-		width: 1.25rem;
-		height: 1.25rem;
+		width: 1.75rem;
+		height: 1.75rem;
 		flex-shrink: 0;
 	}
 

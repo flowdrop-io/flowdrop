@@ -31,6 +31,8 @@
 		lockWorkflow?: boolean;
 		readOnly?: boolean;
 		nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
+		// Pipeline ID for fetching node execution info from jobs
+		pipelineId?: string;
 		// Navbar customization
 		navbarTitle?: string;
 		navbarActions?: Array<{
@@ -51,6 +53,7 @@
 		lockWorkflow = false,
 		readOnly = false,
 		nodeStatuses = {},
+		pipelineId,
 		navbarTitle,
 		navbarActions = []
 	}: Props = $props();
@@ -555,6 +558,7 @@
 					{lockWorkflow}
 					{readOnly}
 					{nodeStatuses}
+					{pipelineId}
 				/>
 			</div>
 
@@ -970,6 +974,7 @@
 		position: relative;
 		min-width: 0;
 		overflow: hidden;
+		background-color: #1f2937;
 	}
 
 	/* Configuration Sidebar Styles */

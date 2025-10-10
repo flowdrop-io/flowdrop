@@ -35,6 +35,9 @@
 	import ConnectionLine from './ConnectionLine.svelte';
 	import { resolveComponentName } from '../utils/nodeTypes.js';
 	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
+	import { nodeExecutionService } from '../services/nodeExecutionService.js';
+	import type { NodeExecutionInfo } from '../types/index.js';
+	import UniversalNode from './UniversalNode.svelte';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -50,6 +53,8 @@
 		lockWorkflow?: boolean;
 		readOnly?: boolean;
 		nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
+		// Pipeline ID for fetching node execution info from jobs
+		pipelineId?: string;
 	}
 
 	let props: Props = $props();
@@ -82,6 +87,8 @@
 	let flowEdges = $state<WorkflowEdge[]>([]);
 
 	// Sync local state with currentWorkflow
+	let loadExecutionInfoTimeout: NodeJS.Timeout | null = null;
+	
 	$effect(() => {
 		if (currentWorkflow) {
 			flowNodes = currentWorkflow.nodes.map(node => ({
@@ -92,6 +99,14 @@
 				}
 			}));
 			flowEdges = currentWorkflow.edges;
+			
+			// Debounce node execution info loading to prevent rapid calls
+			if (loadExecutionInfoTimeout) {
+				clearTimeout(loadExecutionInfoTimeout);
+			}
+			loadExecutionInfoTimeout = setTimeout(() => {
+				loadNodeExecutionInfo();
+			}, 100);
 		}
 	});
 
@@ -108,6 +123,48 @@
 			});
 			
 			workflowActions.updateWorkflow(currentWorkflow);
+		}
+	}
+
+	/**
+	 * Load node execution information for all nodes in the workflow
+	 */
+	async function loadNodeExecutionInfo(): Promise<void> {
+		if (!currentWorkflow?.nodes) return;
+
+		// Only load execution info if we have a pipelineId (for pipeline status mode)
+		if (!props.pipelineId) return;
+
+		try {
+			const nodeIds = currentWorkflow.nodes.map(node => node.id);
+			const executionInfo = await nodeExecutionService.getMultipleNodeExecutionInfo(nodeIds, props.pipelineId);
+			
+			// Update nodes with execution information without triggering reactive updates
+			const updatedNodes = currentWorkflow.nodes.map(node => ({
+				...node,
+				data: {
+					...node.data,
+					executionInfo: executionInfo[node.id] || {
+						status: 'idle',
+						executionCount: 0,
+						isExecuting: false
+					}
+				}
+			}));
+
+			// Update the flow nodes to reflect the changes
+			flowNodes = updatedNodes.map(node => ({
+				...node,
+				data: {
+					...node.data,
+					onConfigOpen: props.openConfigSidebar
+				}
+			}));
+
+			// Update currentWorkflow without triggering reactive effects
+			currentWorkflow.nodes = updatedNodes;
+		} catch (error) {
+			console.error('Failed to load node execution info:', error);
 		}
 	}
 
@@ -155,13 +212,13 @@
 
 	// Sidebar is now always visible - removed toggle functionality
 
-	// Node types for Svelte Flow
+	// Node types for Svelte Flow - using UniversalNode for automatic status overlay
 	const nodeTypes = {
-		workflowNode: WorkflowNode,
-		note: NotesNode,
-		simple: SimpleNode,
-		square: SquareNode,
-		tool: ToolNode
+		workflowNode: UniversalNode,
+		note: UniversalNode,
+		simple: UniversalNode,
+		square: UniversalNode,
+		tool: UniversalNode
 	};
 
 	// Handle arrows in our custom connection handler
@@ -769,12 +826,32 @@
 	}
 
 	:global(.flowdrop-workflow-editor .svelte-flow) {
-		background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-		background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
-		background-size: 20px 20px;
+		background: #f3f4f6 !important;
+		background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px) !important;
+		background-size: 20px 20px !important;
 		background-position:
 			0 0,
-			10px 10px;
+			10px 10px !important;
+	}
+
+	/* Ensure light grey background for pipeline view */
+	:global(.svelte-flow) {
+		background: #f3f4f6 !important;
+		background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px) !important;
+		background-size: 20px 20px !important;
+		background-position:
+			0 0,
+			10px 10px !important;
+	}
+
+	/* Target the actual SvelteFlow viewport */
+	:global(.svelte-flow__viewport) {
+		background: #f3f4f6 !important;
+	}
+
+	/* Target any divs inside SvelteFlow */
+	:global(.svelte-flow > div) {
+		background: #f3f4f6 !important;
 	}
 
 	:global(.flowdrop-workflow-editor .svelte-flow__node:hover) {

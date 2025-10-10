@@ -9,6 +9,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
+	import StatusIcon from '$lib/components/StatusIcon.svelte';
+	import StatusLabel from '$lib/components/StatusLabel.svelte';
 	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
 	import { apiToasts, pipelineToasts, dismissToast } from '$lib/services/toastService.js';
 
@@ -247,12 +249,15 @@
 					>
 						<div class="pipelines-card__header">
 							<h3 class="pipelines-card__title">{pipeline.name}</h3>
-							<div 
-								class="pipelines-card__status"
-								style="color: {getStatusColor(pipeline.status)}"
-							>
-								<Icon icon={getStatusIcon(pipeline.status)} />
-								{pipeline.status}
+							<div class="pipelines-card__status">
+								<StatusIcon 
+									status={pipeline.status}
+									size="sm"
+									showBackground={true}
+								/>
+								<StatusLabel 
+									label={pipeline.status}
+								/>
 							</div>
 						</div>
 						
@@ -468,7 +473,7 @@
 	.pipelines-card__status {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: 0.5rem;
 		font-size: 0.875rem;
 		font-weight: 500;
 		text-transform: uppercase;

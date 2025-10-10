@@ -99,8 +99,8 @@
 		// TODO: Implement actual pipeline stop
 	}
 
-	// Configure endpoints
-	$effect(() => {
+	// Configure endpoints once on mount
+	onMount(() => {
 		setEndpointConfig({
 			baseUrl: defaultApiConfig.baseUrl,
 			endpoints: {
@@ -210,7 +210,24 @@
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
-		background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
+		background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 50%, #d1d5db 100%);
+	}
+
+	/* Force light grey background on all SvelteFlow components */
+	:global(.svelte-flow) {
+		background: #f3f4f6 !important;
+	}
+
+	:global(.svelte-flow__viewport) {
+		background: #f3f4f6 !important;
+	}
+
+	:global(.svelte-flow > div) {
+		background: #f3f4f6 !important;
+	}
+
+	:global(.svelte-flow__renderer) {
+		background: #f3f4f6 !important;
 	}
 
 
@@ -244,7 +261,7 @@
 
 	.pipeline-status-loading__text {
 		font-size: 1.125rem;
-		color: #6b7280;
+		color: #d1d5db;
 		margin: 0;
 	}
 
@@ -257,13 +274,13 @@
 	.pipeline-status-error__title {
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: #374151;
+		color: #f9fafb;
 		margin: 0 0 0.5rem 0;
 	}
 
 	.pipeline-status-error__text {
 		font-size: 1rem;
-		color: #6b7280;
+		color: #d1d5db;
 		margin: 0 0 1.5rem 0;
 		max-width: 400px;
 	}
@@ -289,20 +306,20 @@
 
 	:global(.pipeline-status-empty__icon) {
 		font-size: 4rem;
-		color: #9ca3af;
+		color: #6b7280;
 		margin-bottom: 1rem;
 	}
 
 	.pipeline-status-empty__title {
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: #374151;
+		color: #f9fafb;
 		margin: 0 0 0.5rem 0;
 	}
 
 	.pipeline-status-empty__text {
 		font-size: 1rem;
-		color: #6b7280;
+		color: #d1d5db;
 		margin: 0;
 		max-width: 400px;
 	}

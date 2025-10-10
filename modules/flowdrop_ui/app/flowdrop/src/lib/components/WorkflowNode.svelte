@@ -8,13 +8,19 @@
 <script lang="ts">
 	import {
 		Position,
-		// @ts-expect-error - Handle is not properly typed in @xyflow/svelte
 		Handle
 	} from '@xyflow/svelte';
-	import type { WorkflowNode } from '../types/index.js';
+	import type { WorkflowNode, NodeExecutionStatus } from '../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../utils/icons.js';
 	import { getDataTypeColorToken, getCategoryColorToken } from '../utils/colors.js';
+	import { 
+		getStatusColor, 
+		getStatusIcon, 
+		getStatusLabel, 
+		formatExecutionDuration, 
+		formatLastExecuted 
+	} from '../utils/nodeStatus.js';
 
 	interface Props {
 		data: WorkflowNode['data'] & {
@@ -100,19 +106,8 @@
 			</h3>
 
 			<!-- Status Indicators -->
-			<div class="flowdrop-flex flowdrop-gap--2">
-				{#if props.data.isProcessing}
-					<div
-						class="flowdrop-workflow-node__status flowdrop-workflow-node__status--processing"
-						title="Processing"
-					></div>
-				{/if}
-				{#if props.data.error}
-					<div
-						class="flowdrop-workflow-node__status flowdrop-workflow-node__status--error"
-						title="Error"
-					></div>
-				{/if}
+			<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+				<!-- Status indicators removed - using outer NodeStatusOverlay instead -->
 			</div>
 		</div>
 		<!-- Node Description - on new line below -->
@@ -275,21 +270,7 @@
 		line-height: 1;
 	}
 
-	.flowdrop-workflow-node__status {
-		width: 0.75rem;
-		height: 0.75rem;
-		border-radius: 50%;
-		display: inline-block;
-	}
-
-	.flowdrop-workflow-node__status--processing {
-		background-color: #f59e0b;
-		animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	.flowdrop-workflow-node__status--error {
-		background-color: #ef4444;
-	}
+	/* Status indicator styles removed - using outer NodeStatusOverlay instead */
 
 	@keyframes pulse {
 		0%,

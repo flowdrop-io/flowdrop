@@ -266,23 +266,29 @@
 	});
 
 	// Auto-refresh pipeline data every 5 seconds when pipeline is running
+	let refreshInterval: NodeJS.Timeout | null = null;
+	
 	$effect(() => {
-		let refreshInterval: NodeJS.Timeout | null = null;
+		// Clear existing interval
+		if (refreshInterval) {
+			clearInterval(refreshInterval);
+			refreshInterval = null;
+		}
 		
+		// Only start polling if pipeline is running
 		if (pipelineStatus === 'running' && pipelineId) {
 			refreshInterval = setInterval(() => {
 				fetchPipelineData();
 			}, 5000);
-		} else {
-			if (refreshInterval) {
-				clearInterval(refreshInterval);
-				refreshInterval = null;
-			}
 		}
+	});
 
+	// Cleanup on unmount
+	onMount(() => {
 		return () => {
 			if (refreshInterval) {
 				clearInterval(refreshInterval);
+				refreshInterval = null;
 			}
 		};
 	});
@@ -299,6 +305,7 @@
 		lockWorkflow={true}
 		readOnly={true}
 		{nodeStatuses}
+		{pipelineId}
 	/>
 
 	<!-- Logs Sidebar -->
@@ -316,6 +323,23 @@
 		display: flex;
 		flex-direction: column;
 		height: 100vh;
-		background: #f8fafc;
+		background: #f3f4f6;
+	}
+
+	/* Force light grey background on SvelteFlow canvas */
+	:global(.svelte-flow) {
+		background: #f3f4f6 !important;
+	}
+
+	:global(.svelte-flow__viewport) {
+		background: #f3f4f6 !important;
+	}
+
+	:global(.svelte-flow > div) {
+		background: #f3f4f6 !important;
+	}
+
+	:global(.svelte-flow__renderer) {
+		background: #f3f4f6 !important;
 	}
 </style>

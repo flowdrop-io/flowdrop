@@ -298,6 +298,8 @@ export interface WorkflowNode extends Node {
 		isProcessing?: boolean;
 		error?: string;
 		nodeId?: string;
+		/** Node execution tracking information */
+		executionInfo?: NodeExecutionInfo;
 	};
 }
 
@@ -355,6 +357,29 @@ export interface ApiResponse<T> {
 export type NodesResponse = ApiResponse<NodeMetadata[]>;
 export type WorkflowResponse = ApiResponse<Workflow>;
 export type WorkflowsResponse = ApiResponse<Workflow[]>;
+
+/**
+ * Node execution status enum
+ */
+export type NodeExecutionStatus = 'idle' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped';
+
+/**
+ * Node execution tracking information
+ */
+export interface NodeExecutionInfo {
+	/** Current execution status */
+	status: NodeExecutionStatus;
+	/** Total number of times this node has been executed */
+	executionCount: number;
+	/** Last execution timestamp */
+	lastExecuted?: string;
+	/** Last execution duration in milliseconds */
+	lastExecutionDuration?: number;
+	/** Last error message if execution failed */
+	lastError?: string;
+	/** Whether the node is currently being executed */
+	isExecuting: boolean;
+}
 
 /**
  * Workflow execution status
