@@ -313,7 +313,7 @@
 		min-width: 280px;
 		max-width: 400px;
 		background: white;
-		border: 2px solid var(--node-color, #10b981);
+		border: 2px solid #e5e7eb;
 		border-radius: 12px;
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 		transition: all 0.2s ease;
