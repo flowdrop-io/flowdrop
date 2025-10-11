@@ -36,10 +36,44 @@
 	let isHandleInteraction = $state(false);
 
 	// Gateway-specific data
-	let gatewayType = $derived((data.config?.gatewayType as string) || 'exclusive');
-	let branches = $derived((data.config?.branches as Branch[]) || []);
+	// Parse branches from CSV format: "value1:branch1,value2:branch2"
+	let branches = $derived.by(() => {
+		const branchesConfig = data.config?.branches || '';
+		if (!branchesConfig || typeof branchesConfig !== 'string') {
+			return [];
+		}
+		
+		const branchList = [];
+		const pairs = branchesConfig.split(',');
+		
+		for (const pair of pairs) {
+			const trimmed = pair.trim();
+			if (!trimmed) continue;
+			
+			const [value, branchName] = trimmed.split(':').map(s => s.trim());
+			if (value && branchName) {
+				branchList.push({ value, name: branchName });
+			}
+		}
+		
+		return branchList;
+	});
+	
 	let defaultBranch = $derived(data.config?.defaultBranch || '');
 	let activeBranches = $derived((data.executionInfo as any)?.output?.active_branches || []);
+
+	// Debug logging for branches
+	$effect(() => {
+		console.log('🔍 Gateway Node Debug:', {
+			nodeId: data.nodeId,
+			branches: branches,
+			branchesLength: branches.length,
+			branchesType: typeof branches,
+			branchesIsArray: Array.isArray(branches),
+			defaultBranch,
+			config: data.config
+		});
+	});
 
 	// Node styling
 	let nodeIcon = $derived(data.metadata?.icon || 'mdi:source-branch');
@@ -97,76 +131,10 @@
 		return 'inactive';
 	}
 
-	/**
-	 * Get gateway type icon
-	 */
-	function getGatewayTypeIcon(type: string): string {
-		switch (type) {
-			case 'exclusive':
-				return 'mdi:source-branch';
-			case 'inclusive':
-				return 'mdi:source-branch-multiple';
-			case 'parallel':
-				return 'mdi:source-branch-sync';
-			default:
-				return 'mdi:source-branch';
-		}
-	}
-
-	/**
-	 * Get gateway type label
-	 */
-	function getGatewayTypeLabel(type: string): string {
-		switch (type) {
-			case 'exclusive':
-				return 'Exclusive';
-			case 'inclusive':
-				return 'Inclusive';
-			case 'parallel':
-				return 'Parallel';
-			default:
-				return 'Gateway';
-		}
-	}
 
 	/**
 	 * Format branch condition for display
 	 */
-	function formatBranchCondition(branch: Branch): string {
-		if (!branch.condition) return 'No condition';
-
-		const { operator, value, caseSensitive } = branch.condition;
-		const caseText = caseSensitive ? ' (case-sensitive)' : '';
-
-		switch (operator) {
-			case 'equals':
-				return `= "${value}"${caseText}`;
-			case 'not_equals':
-				return `≠ "${value}"${caseText}`;
-			case 'contains':
-				return `contains "${value}"${caseText}`;
-			case 'starts_with':
-				return `starts with "${value}"${caseText}`;
-			case 'ends_with':
-				return `ends with "${value}"${caseText}`;
-			case 'greater_than':
-				return `> ${value}`;
-			case 'less_than':
-				return `< ${value}`;
-			case 'greater_than_or_equal':
-				return `≥ ${value}`;
-			case 'less_than_or_equal':
-				return `≤ ${value}`;
-			case 'is_empty':
-				return 'is empty';
-			case 'is_not_empty':
-				return 'is not empty';
-			case 'regex':
-				return `matches /${value}/`;
-			default:
-				return operator;
-		}
-	}
 </script>
 
 <div
@@ -195,11 +163,11 @@
 		<!-- Header -->
 		<div class="workflow-node__header">
 			<div class="workflow-node__icon">
-				<Icon icon={getGatewayTypeIcon(gatewayType)} />
+				<Icon icon="mdi:source-branch" />
 			</div>
 			<div class="workflow-node__title">
 				<h3 class="workflow-node__label">{nodeLabel}</h3>
-				<p class="workflow-node__type">{getGatewayTypeLabel(gatewayType)} Gateway</p>
+				<p class="workflow-node__type">Gateway</p>
 			</div>
 		</div>
 
@@ -235,11 +203,9 @@
 								{/if}
 							</div>
 
-							{#if branch.condition}
-								<div class="workflow-node__branch-condition">
-									{formatBranchCondition(branch)}
-								</div>
-							{/if}
+							<div class="workflow-node__branch-condition">
+								Value: "{branch.value}"
+							</div>
 						</div>
 					{/each}
 				</div>

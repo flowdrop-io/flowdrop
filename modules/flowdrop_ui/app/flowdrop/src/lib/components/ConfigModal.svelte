@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import type { ConfigSchema, ConfigValues } from '$lib/types';
-	import ConfigForm from './ConfigForm.svelte';
+	import NewConfigForm from './NewConfigForm.svelte';
 
 	interface Props {
 		isOpen: boolean;
@@ -76,7 +76,7 @@
 
 			<!-- Modal Content -->
 			<div class="config-modal__content">
-				<ConfigForm
+				<NewConfigForm
 					schema={props.configSchema}
 					values={localConfigValues}
 					on:change={({ detail }) => {

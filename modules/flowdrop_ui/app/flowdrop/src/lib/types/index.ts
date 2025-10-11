@@ -126,7 +126,7 @@ export interface NodeMetadata {
  * Common base interface for all schema properties
  */
 export interface BaseProperty {
-	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'float';
+	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'float' | 'json';
 	description?: string;
 	title?: string;
 	default?: unknown;
@@ -156,7 +156,7 @@ export interface BaseSchema {
  * Configuration schema property with specific attributes
  */
 export interface ConfigProperty extends BaseProperty {
-	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer';
+	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'json';
 	title?: string;
 	description?: string;
 	default?: unknown;
@@ -183,7 +183,7 @@ export interface ConfigSchema extends BaseSchema {
  * Input schema property with specific attributes
  */
 export interface InputProperty extends BaseProperty {
-	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed';
+	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'json';
 	title?: string;
 	description?: string;
 	required?: boolean;
@@ -211,7 +211,7 @@ export interface InputSchema extends BaseSchema {
  * Output schema property with specific attributes
  */
 export interface OutputProperty extends BaseProperty {
-	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'float';
+	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'float' | 'json';
 	description: string; // Required for outputs
 	title?: string;
 	default?: unknown;

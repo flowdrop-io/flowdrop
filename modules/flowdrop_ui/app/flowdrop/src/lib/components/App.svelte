@@ -10,6 +10,7 @@
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
 	import ConfigSidebar from '$lib/components/ConfigSidebar.svelte';
+	import NewConfigForm from '$lib/components/NewConfigForm.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
 	import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
@@ -649,83 +650,18 @@
 											return mergedConfig;
 										})()}
 
-										<!-- Render configuration fields based on schema -->
-										{#if configSchema.properties}
-											{#each Object.entries(configSchema.properties) as [key, field]}
-												{@const fieldConfig = field as any}
-												<div class="flowdrop-config-sidebar__field">
-													<label class="flowdrop-config-sidebar__field-label" for={key}>
-														{fieldConfig.title || fieldConfig.description || key}
-													</label>
-													{#if fieldConfig.type === 'string'}
-														<input
-															id={key}
-															type="text"
-															class="flowdrop-config-sidebar__input"
-															bind:value={configValues[key]}
-															placeholder={String(fieldConfig.placeholder || '')}
-														/>
-													{:else if fieldConfig.type === 'number'}
-														<input
-															id={key}
-															type="number"
-															class="flowdrop-config-sidebar__input"
-															bind:value={configValues[key]}
-															placeholder={String(fieldConfig.placeholder || '')}
-														/>
-													{:else if fieldConfig.type === 'boolean'}
-														<input
-															id={key}
-															type="checkbox"
-															class="flowdrop-config-sidebar__checkbox"
-															checked={Boolean(configValues[key] || fieldConfig.default || false)}
-															onchange={(e) => {
-																configValues[key] = e.currentTarget.checked;
-															}}
-														/>
-													{:else if fieldConfig.type === 'select' || fieldConfig.enum}
-														<select
-															id={key}
-															class="flowdrop-config-sidebar__select"
-															bind:value={configValues[key]}
-														>
-															{#if fieldConfig.enum}
-																{#each fieldConfig.enum as option}
-																	<option value={String(option)}>{String(option)}</option>
-																{/each}
-															{:else if fieldConfig.options}
-																{#each fieldConfig.options as option}
-																	{@const optionConfig = option as any}
-																	<option value={String(optionConfig.value)}
-																		>{String(optionConfig.label)}</option
-																	>
-																{/each}
-															{/if}
-														</select>
-													{:else}
-														<!-- Fallback for unknown field types -->
-														<input
-															id={key}
-															type="text"
-															class="flowdrop-config-sidebar__input"
-															bind:value={configValues[key]}
-															placeholder={String(fieldConfig.placeholder || '')}
-														/>
-													{/if}
-													{#if fieldConfig.description}
-														<p class="flowdrop-config-sidebar__field-description">
-															{String(fieldConfig.description)}
-														</p>
-													{/if}
-												</div>
-											{/each}
-										{:else}
-											<!-- If no properties, show the raw schema for debugging -->
-											<div class="flowdrop-config-sidebar__debug">
-												<p><strong>Debug - Config Schema:</strong></p>
-												<pre>{JSON.stringify(configSchema, null, 2)}</pre>
-											</div>
-										{/if}
+										<!-- Use NewConfigForm component for better form rendering -->
+										<NewConfigForm
+											schema={configSchema}
+											values={configValues}
+											on:change={({ detail }) => {
+												// Update configValues when form changes
+												Object.assign(configValues, detail.values);
+											}}
+											on:validate={({ detail }) => {
+												console.log('Config validation:', detail);
+											}}
+										/>
 									{:else}
 										<p class="flowdrop-config-sidebar__no-config">
 											No configuration options available for this node.
@@ -1092,48 +1028,6 @@
 		gap: 1rem;
 	}
 
-	.flowdrop-config-sidebar__field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.flowdrop-config-sidebar__field-label {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #374151;
-	}
-
-	.flowdrop-config-sidebar__input,
-	.flowdrop-config-sidebar__select {
-		padding: 0.5rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.375rem;
-		font-size: 0.875rem;
-		transition:
-			border-color 0.2s,
-			box-shadow 0.2s;
-	}
-
-	.flowdrop-config-sidebar__input:focus,
-	.flowdrop-config-sidebar__select:focus {
-		outline: none;
-		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-	}
-
-	.flowdrop-config-sidebar__checkbox {
-		width: 1rem;
-		height: 1rem;
-		accent-color: #3b82f6;
-	}
-
-	.flowdrop-config-sidebar__field-description {
-		margin: 0;
-		font-size: 0.75rem;
-		color: #6b7280;
-		line-height: 1.4;
-	}
 
 	.flowdrop-config-sidebar__no-config {
 		text-align: center;
@@ -1183,21 +1077,4 @@
 		background-color: #2563eb;
 	}
 
-	.flowdrop-config-sidebar__debug {
-		background-color: #f3f4f6;
-		border: 1px solid #d1d5db;
-		border-radius: 0.375rem;
-		padding: 1rem;
-		margin: 1rem 0;
-	}
-
-	.flowdrop-config-sidebar__debug pre {
-		background-color: #ffffff;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.25rem;
-		padding: 0.75rem;
-		font-size: 0.75rem;
-		overflow-x: auto;
-		margin: 0.5rem 0 0 0;
-	}
 </style>
