@@ -70,7 +70,11 @@ function validateWorkflowData(data: unknown): { isValid: boolean; error?: string
 		return { isValid: false, error: 'Too many tags (max 20)' };
 	}
 
-	if (obj.tags && obj.tags.some((tag: unknown) => typeof tag !== 'string' || tag.length > 50)) {
+	if (
+		obj.tags &&
+		Array.isArray(obj.tags) &&
+		obj.tags.some((tag: unknown) => typeof tag !== 'string' || tag.length > 50)
+	) {
 		return { isValid: false, error: 'Invalid tag format' };
 	}
 

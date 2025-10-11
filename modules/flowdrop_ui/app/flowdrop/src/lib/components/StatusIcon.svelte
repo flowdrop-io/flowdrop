@@ -17,7 +17,7 @@
 	}
 
 	let props: Props = $props();
-	
+
 	// Size configurations
 	const sizeConfig = {
 		sm: {
@@ -48,7 +48,7 @@
 </script>
 
 {#if props.showBackground}
-	<div 
+	<div
 		class="status-icon status-icon--with-background {props.class || ''}"
 		style="
 			--icon-size: {config.iconSize};
@@ -56,19 +56,18 @@
 			--background-radius: {config.backgroundRadius};
 			--status-color: {statusColor};
 		"
-		title="{props.status}"
+		title={props.status}
 	>
 		<Icon icon={statusIcon} class="status-icon__icon" />
 	</div>
 {:else}
-	<Icon 
-		icon={statusIcon} 
+	<Icon
+		icon={statusIcon}
 		class="status-icon status-icon--icon-only {props.class || ''}"
 		style="
 			--icon-size: {config.iconSize};
 			--status-color: {statusColor};
 		"
-		title="{props.status}"
 	/>
 {/if}
 
@@ -90,13 +89,6 @@
 		position: relative;
 	}
 
-	.status-icon--with-background .status-icon__icon {
-		width: var(--icon-size);
-		height: var(--icon-size);
-		color: #ffffff;
-		font-size: var(--icon-size);
-	}
-
 	.status-icon--icon-only {
 		width: var(--icon-size);
 		height: var(--icon-size);
@@ -104,12 +96,13 @@
 	}
 
 	/* Animation for running status */
-	.status-icon--with-background[title="running"] {
+	.status-icon--with-background[title='running'] {
 		animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
 
 	@keyframes pulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 		}
 		50% {

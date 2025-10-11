@@ -9,16 +9,20 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { initializeGlobalSave, globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
+	import {
+		initializeGlobalSave,
+		globalSaveWorkflow,
+		globalExportWorkflow
+	} from '$lib/services/globalSave.js';
 	import { defaultApiConfig, getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
-	import { Toaster } from 'svelte-french-toast';
+	import { Toaster } from 'svelte-5-french-toast';
 	import { apiToasts } from '$lib/services/toastService.js';
 
 	let { children } = $props();
 
 	// API configuration
 	let apiConfig = $state<ApiConfig>(defaultApiConfig);
-	
+
 	// Workflow name for breadcrumbs
 	let workflowName = $state<string | null>(null);
 
@@ -29,7 +33,7 @@
 		try {
 			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.get, { id: workflowId });
 			const response = await fetch(url);
-			
+
 			if (response.ok) {
 				const data = await response.json();
 				workflowName = data.data?.name || null;
@@ -43,14 +47,14 @@
 	// Initialize global save functions on mount
 	onMount(() => {
 		initializeGlobalSave();
-		
+
 		// Listen for breadcrumb updates
 		const handleBreadcrumbs = (event: CustomEvent) => {
 			pageBreadcrumbs = event.detail.breadcrumbs || [];
 		};
-		
+
 		window.addEventListener('page-breadcrumbs-update', handleBreadcrumbs);
-		
+
 		return () => {
 			window.removeEventListener('page-breadcrumbs-update', handleBreadcrumbs);
 		};
@@ -58,17 +62,19 @@
 
 	// Define primary actions based on current page
 	let primaryActions = $derived(getPrimaryActionsForPage($page.url.pathname));
-	
+
 	// Breadcrumbs for navbar
-	let pageBreadcrumbs = $state<Array<{
-		label: string;
-		href?: string;
-		icon?: string;
-	}>>([]);
-	
+	let pageBreadcrumbs = $state<
+		Array<{
+			label: string;
+			href?: string;
+			icon?: string;
+		}>
+	>([]);
+
 	// Generate breadcrumbs based on current page
 	let currentBreadcrumbs = $derived(generateBreadcrumbsForPage($page.url.pathname));
-	
+
 	// Clear custom breadcrumbs when page changes (unless it's a pipeline detail page)
 	$effect(() => {
 		const pathname = $page.url.pathname;
@@ -91,11 +97,13 @@
 			workflowName = null;
 		}
 	});
-	
+
 	// Determine if we should show the navbar (show for all pages except workflow edit pages without breadcrumbs)
-	let showNavbar = $derived(!$page.url.pathname.startsWith('/workflow/') || 
-		$page.url.pathname.includes('/pipelines') || 
-		$page.url.pathname.includes('/edit'));
+	let showNavbar = $derived(
+		!$page.url.pathname.startsWith('/workflow/') ||
+			$page.url.pathname.includes('/pipelines') ||
+			$page.url.pathname.includes('/edit')
+	);
 
 	function getPrimaryActionsForPage(pathname: string) {
 		if (pathname === '/') {
@@ -261,7 +269,6 @@
 		];
 	}
 
-
 	// Generate breadcrumbs based on current page
 	function generateBreadcrumbsForPage(pathname: string) {
 		// If we have custom breadcrumbs from components, use those
@@ -342,10 +349,14 @@
 <div class="flowdrop-app" style="--flowdrop-navbar-height: 60px;">
 	<!-- Navigation Bar - only show for non-workflow pages -->
 	{#if showNavbar}
-		<Navbar 
-			title={currentBreadcrumbs.length === 0 ? ($page.url.pathname === '/' ? 'Workflows' : 'FlowDrop') : undefined}
+		<Navbar
+			title={currentBreadcrumbs.length === 0
+				? $page.url.pathname === '/'
+					? 'Workflows'
+					: 'FlowDrop'
+				: undefined}
 			breadcrumbs={currentBreadcrumbs.length > 0 ? currentBreadcrumbs : undefined}
-			{primaryActions} 
+			{primaryActions}
 		/>
 	{/if}
 
@@ -353,7 +364,7 @@
 	<main class="flowdrop-main">
 		{@render children()}
 	</main>
-	
+
 	<!-- Toast Notifications -->
 	<Toaster position="bottom-center" />
 </div>

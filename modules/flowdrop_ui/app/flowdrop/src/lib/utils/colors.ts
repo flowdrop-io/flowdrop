@@ -24,6 +24,7 @@ export const CATEGORY_COLOR_TOKENS: Record<NodeCategory, string> = {
 	embeddings: 'var(--color-ref-indigo-500)',
 	memories: 'var(--color-ref-blue-600)',
 	agents: 'var(--color-ref-teal-500)',
+	ai: 'var(--color-ref-purple-500)',
 	bundles: 'var(--color-ref-slate-500)'
 };
 

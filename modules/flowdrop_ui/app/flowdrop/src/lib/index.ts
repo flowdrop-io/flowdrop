@@ -76,4 +76,9 @@ export * from './adapters/WorkflowAdapter.js';
 export * from './clients/ApiClient.js';
 
 // Export Svelte app wrapper for Drupal integration
-export { mountWorkflowEditor, unmountWorkflowEditor, mountFlowDropApp, unmountFlowDropApp } from './svelte-app.js';
+export {
+	mountWorkflowEditor,
+	unmountWorkflowEditor,
+	mountFlowDropApp,
+	unmountFlowDropApp
+} from './svelte-app.js';

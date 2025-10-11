@@ -8,10 +8,10 @@
 	import { api } from '$lib/services/api.js';
 	import type { NodeMetadata } from '$lib/types/index.js';
 
-	let nodes: NodeMetadata[] = [];
-	let loading = true;
-	let error = '';
-	let testResults: string[] = [];
+	let nodes = $state<NodeMetadata[]>([]);
+	let loading = $state(true);
+	let error = $state('');
+	let testResults = $state<string[]>([]);
 
 	async function testNodeApi(): Promise<void> {
 		try {

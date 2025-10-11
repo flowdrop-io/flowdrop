@@ -6,7 +6,12 @@ export default defineConfig({
 	plugins: [svelte()],
 	resolve: {
 		alias: {
-			$lib: path.resolve('./src/lib')
+			$lib: path.resolve('./src/lib'),
+			// Mock SvelteKit-specific imports for library build
+			'$app/stores': path.resolve('./src/lib/mocks/app-stores.js'),
+			'$app/forms': path.resolve('./src/lib/mocks/app-forms.js'),
+			'$app/navigation': path.resolve('./src/lib/mocks/app-navigation.js'),
+			'$app/environment': path.resolve('./src/lib/mocks/app-environment.js')
 		}
 	},
 	build: {

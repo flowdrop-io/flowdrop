@@ -47,7 +47,15 @@ export async function mountFlowDropApp(
 		showNavbar?: boolean;
 	} = {}
 ): Promise<MountedSvelteApp> {
-	const { workflow, nodes = [], endpointConfig, portConfig, height = '100vh', width = '100%', showNavbar = false } = options;
+	const {
+		workflow,
+		nodes = [],
+		endpointConfig,
+		portConfig,
+		height = '100vh',
+		width = '100%',
+		showNavbar = false
+	} = options;
 
 	// Create endpoint configuration
 	let config: EndpointConfig | undefined;
@@ -172,7 +180,6 @@ export async function mountWorkflowEditor(
 	const app = mount(WorkflowEditor, {
 		target: container,
 		props: {
-			workflow,
 			nodes,
 			endpointConfig: config
 		}

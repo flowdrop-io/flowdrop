@@ -72,7 +72,7 @@
 
 	// Initialize from props only once, not on every re-render
 	let availableNodes = $state<NodeMetadata[]>([]);
-	
+
 	// Create a local currentWorkflow variable that we can control directly
 	let currentWorkflow = $state<Workflow | null>(null);
 
@@ -89,10 +89,10 @@
 
 	// Sync local state with currentWorkflow
 	let loadExecutionInfoTimeout: NodeJS.Timeout | null = null;
-	
+
 	$effect(() => {
 		if (currentWorkflow) {
-			flowNodes = currentWorkflow.nodes.map(node => ({
+			flowNodes = currentWorkflow.nodes.map((node) => ({
 				...node,
 				data: {
 					...node.data,
@@ -100,7 +100,7 @@
 				}
 			}));
 			flowEdges = currentWorkflow.edges;
-			
+
 			// Debounce node execution info loading to prevent rapid calls
 			if (loadExecutionInfoTimeout) {
 				clearTimeout(loadExecutionInfoTimeout);
@@ -117,12 +117,15 @@
 			console.log('🔍 WorkflowEditor: Updating global store from currentWorkflow:', {
 				nodeCount: currentWorkflow.nodes.length,
 				edgeCount: currentWorkflow.edges.length,
-				nodePositions: currentWorkflow.nodes.map(node => ({ id: node.id, position: node.position })),
+				nodePositions: currentWorkflow.nodes.map((node) => ({
+					id: node.id,
+					position: node.position
+				})),
 				workflowName: currentWorkflow.name,
 				versionId: currentWorkflow.metadata?.versionId,
 				updateNumber: currentWorkflow.metadata?.updateNumber
 			});
-			
+
 			workflowActions.updateWorkflow(currentWorkflow);
 		}
 	}
@@ -137,11 +140,14 @@
 		if (!props.pipelineId) return;
 
 		try {
-			const nodeIds = currentWorkflow.nodes.map(node => node.id);
-			const executionInfo = await nodeExecutionService.getMultipleNodeExecutionInfo(nodeIds, props.pipelineId);
-			
+			const nodeIds = currentWorkflow.nodes.map((node) => node.id);
+			const executionInfo = await nodeExecutionService.getMultipleNodeExecutionInfo(
+				nodeIds,
+				props.pipelineId
+			);
+
 			// Update nodes with execution information without triggering reactive updates
-			const updatedNodes = currentWorkflow.nodes.map(node => ({
+			const updatedNodes = currentWorkflow.nodes.map((node) => ({
 				...node,
 				data: {
 					...node.data,
@@ -154,7 +160,7 @@
 			}));
 
 			// Update the flow nodes to reflect the changes
-			flowNodes = updatedNodes.map(node => ({
+			flowNodes = updatedNodes.map((node) => ({
 				...node,
 				data: {
 					...node.data,
@@ -183,7 +189,7 @@
 					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
 				}
 			};
-			
+
 			// Update the global store
 			updateGlobalStore();
 		}
@@ -198,11 +204,11 @@
 		// Check if nodes have changed from SvelteFlow
 		const nodesChanged = JSON.stringify(flowNodes) !== JSON.stringify(previousNodes);
 		const edgesChanged = JSON.stringify(flowEdges) !== JSON.stringify(previousEdges);
-		
+
 		if ((nodesChanged || edgesChanged) && currentWorkflow) {
 			console.log('🔍 WorkflowEditor: SvelteFlow changed nodes/edges, updating currentWorkflow');
 			updateCurrentWorkflowFromSvelteFlow();
-			
+
 			// Update previous values
 			previousNodes = JSON.parse(JSON.stringify(flowNodes));
 			previousEdges = JSON.parse(JSON.stringify(flowEdges));
@@ -219,7 +225,8 @@
 		note: UniversalNode,
 		simple: UniversalNode,
 		square: UniversalNode,
-		tool: UniversalNode
+		tool: UniversalNode,
+		gateway: UniversalNode
 	};
 
 	// Handle arrows in our custom connection handler
@@ -237,19 +244,18 @@
 	}): Promise<void> {
 		// SvelteFlow will automatically create the edge due to bind:edges
 		console.log('Connection created:', connection);
-		
+
 		// Wait for DOM update before applying styling
 		await tick();
-		
+
 		// Apply styling to the new edge (including arrows)
 		updateExistingEdgeStyles();
-		
+
 		// Update currentWorkflow with the new edge
 		if (currentWorkflow) {
 			updateCurrentWorkflowFromSvelteFlow();
 		}
 	}
-
 
 	/**
 	 * Apply custom styling to connection edges based on rules:
@@ -301,7 +307,7 @@
 	async function updateExistingEdgeStyles(): Promise<void> {
 		// Wait for any pending DOM updates
 		await tick();
-		
+
 		const updatedEdges = flowEdges.map((edge) => {
 			// Find source and target nodes
 			const sourceNode = flowNodes.find((node) => node.id === edge.source);
@@ -331,7 +337,7 @@
 					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
 				}
 			};
-			
+
 			// Update the global store
 			updateGlobalStore();
 		}
@@ -350,7 +356,6 @@
 			availableNodes = props.nodes;
 		}
 	});
-
 
 	/**
 	 * Load nodes from API if not provided
@@ -396,7 +401,6 @@
 		}
 	}
 
-
 	/**
 	 * Clear workflow
 	 */
@@ -413,7 +417,7 @@
 					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
 				}
 			};
-			
+
 			// Update the global store
 			updateGlobalStore();
 		}
@@ -421,16 +425,15 @@
 
 	// ConfigSidebar functions are now handled by the parent App component
 
-
 	async function handleConfigSave(newConfig: Record<string, unknown>): Promise<void> {
 		console.log('🔧 WorkflowEditor: handleConfigSave called with:', newConfig);
-		
+
 		if (props.selectedNodeForConfig) {
 			console.log('🔧 WorkflowEditor: Updating config for node:', props.selectedNodeForConfig.id);
-			
+
 			// Wait for any pending DOM updates
 			await tick();
-			
+
 			// Update the node's config
 			props.selectedNodeForConfig.data.config = { ...newConfig };
 
@@ -446,13 +449,13 @@
 			if (currentWorkflow) {
 				currentWorkflow = {
 					...currentWorkflow,
-					nodes: currentWorkflow.nodes.map(node => 
-						node.id === props.selectedNodeForConfig.id 
-							? { 
-								...node, 
-								type: newComponentName as string,
-								data: { ...node.data, config: { ...newConfig } }
-							}
+					nodes: currentWorkflow.nodes.map((node) =>
+						node.id === props.selectedNodeForConfig.id
+							? {
+									...node,
+									type: newComponentName as string,
+									data: { ...node.data, config: { ...newConfig } }
+								}
 							: node
 					),
 					metadata: {
@@ -462,7 +465,7 @@
 						updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
 					}
 				};
-				
+
 				console.log('🔧 WorkflowEditor: Updated currentWorkflow, calling updateGlobalStore');
 				// Update the global store
 				updateGlobalStore();
@@ -475,7 +478,6 @@
 		props.closeConfigSidebar?.();
 	}
 
-
 	/**
 	 * Save workflow
 	 */
@@ -483,12 +485,12 @@
 		try {
 			// Wait for any pending DOM updates before saving
 			await tick();
-			
-		// Use current workflow from local variable
-		if (!currentWorkflow) {
-			console.warn('⚠️ No workflow data available to save');
-			return;
-		}
+
+			// Use current workflow from local variable
+			if (!currentWorkflow) {
+				console.warn('⚠️ No workflow data available to save');
+				return;
+			}
 
 			// Determine the workflow ID based on whether we have an existing workflow
 			let workflowId: string;
@@ -566,7 +568,7 @@
 	async function exportWorkflow(): Promise<void> {
 		// Wait for any pending DOM updates before exporting
 		await tick();
-		
+
 		// Use current workflow from local variable
 		if (!currentWorkflow) {
 			console.warn('⚠️ No workflow data available to export');
@@ -604,11 +606,12 @@
 	function checkWorkflowCycles(): boolean {
 		return hasCycles(flowNodes, flowEdges);
 	}
-
 </script>
 
 <SvelteFlowProvider>
-	<div class="flowdrop-workflow-editor" style="height: {typeof props.height === 'number' ? `${props.height - 60}px` : `calc(${props.height || '100%'} - 60px)`}; width: {typeof props.width === 'number' ? `${props.width}px` : props.width || '100%'};">
+	<div
+		class="flowdrop-workflow-editor"
+	>
 		<!-- Main Editor Area -->
 		<div class="flowdrop-workflow-editor__main">
 			<!-- Flow Canvas -->
@@ -709,17 +712,18 @@
 										updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
 									}
 								};
-								
-								console.log('🔧 WorkflowEditor: Updated currentWorkflow with new node, calling updateGlobalStore');
+
+								console.log(
+									'🔧 WorkflowEditor: Updated currentWorkflow with new node, calling updateGlobalStore'
+								);
 								// Update the global store
 								updateGlobalStore();
 							} else {
 								console.warn('⚠️ WorkflowEditor: No currentWorkflow available for new node');
 							}
-							
+
 							// Wait for DOM update to ensure SvelteFlow updates
 							await tick();
-							
 						} catch (error) {
 							console.error('Error parsing node data:', error);
 						}
@@ -742,10 +746,7 @@
 					fitView
 				/>
 				<Controls />
-				<Background 
-					gap={20} 
-					variant={BackgroundVariant.Dots}
-				/>
+				<Background gap={20} variant={BackgroundVariant.Dots} />
 				<MiniMap />
 
 				<!-- Drop Zone Indicator -->
@@ -756,7 +757,6 @@
 						iconName="mdi:graph"
 					/>
 				{/if}
-
 			</div>
 
 			<!-- Status Bar -->
@@ -779,7 +779,6 @@
 			</div>
 		</div>
 	</div>
-
 </SvelteFlowProvider>
 
 <style>
@@ -789,7 +788,6 @@
 		height: 100%;
 		position: relative;
 	}
-
 
 	.flowdrop-workflow-editor__main {
 		flex: 1;
@@ -810,7 +808,6 @@
 		background: transparent;
 	}
 
-
 	.flowdrop-status-bar {
 		background-color: rgba(255, 255, 255, 0.8);
 		backdrop-filter: blur(8px);
@@ -829,7 +826,6 @@
 		align-items: center;
 		justify-content: space-between;
 	}
-
 
 	:global(.flowdrop-workflow-editor .svelte-flow__node:hover) {
 		transform: translateY(-2px);

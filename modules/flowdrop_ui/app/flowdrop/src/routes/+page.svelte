@@ -12,7 +12,12 @@
 	import { onMount } from 'svelte';
 	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
 	import Icon from '@iconify/svelte';
-	import { apiToasts, workflowToasts, showConfirmation, dismissToast } from '$lib/services/toastService.js';
+	import {
+		apiToasts,
+		workflowToasts,
+		showConfirmation,
+		dismissToast
+	} from '$lib/services/toastService.js';
 
 	/**
 	 * Workflow display type
@@ -132,26 +137,16 @@
 				break;
 			case 'delete':
 				// Find the workflow to get its name
-				const workflow = workflows.find(w => w.id === workflowId);
+				const workflow = workflows.find((w) => w.id === workflowId);
 				const workflowName = workflow?.title || 'Unknown';
-				
+
 				// Show confirmation toast
-				showConfirmation(
-					`Are you sure you want to delete "${workflowName}"?`,
-					{
-						confirmLabel: 'Delete',
-						cancelLabel: 'Cancel',
-						onConfirm: () => {
-							// Handle delete logic here
-							workflowToasts.deleted(workflowName);
-							// Remove from local state
-							workflows = workflows.filter(w => w.id !== workflowId);
-						},
-						onCancel: () => {
-							// User cancelled
-						}
-					}
-				);
+				showConfirmation(`Are you sure you want to delete "${workflowName}"?`);
+				// Note: Action buttons removed due to svelte-5-french-toast limitations
+				// Handle delete logic here
+				workflowToasts.deleted(workflowName);
+				// Remove from local state
+				workflows = workflows.filter((w) => w.id !== workflowId);
 				break;
 			case 'view-execution':
 				goto(`/workflow/${workflowId}/pipelines`);
@@ -235,9 +230,9 @@
 					<div
 						class="workflow-card"
 						role="button"
-					tabindex="0"
-					onclick={() => goto(`/workflow/${workflow.id}/edit`)}
-					onkeydown={(e) => e.key === 'Enter' && goto(`/workflow/${workflow.id}/edit`)}
+						tabindex="0"
+						onclick={() => goto(`/workflow/${workflow.id}/edit`)}
+						onkeydown={(e) => e.key === 'Enter' && goto(`/workflow/${workflow.id}/edit`)}
 					>
 						<div class="workflow-card__icon">
 							<Icon icon="mdi:file-document" class="w-5 h-5" />

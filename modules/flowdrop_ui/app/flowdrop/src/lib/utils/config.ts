@@ -280,9 +280,9 @@ export function createConfigFromEnv(): WorkflowEditorConfig {
 	if (import.meta.env.VITE_FLOWDROP_AUTH_TYPE) {
 		config.api.auth.type = import.meta.env.VITE_FLOWDROP_AUTH_TYPE as
 			| 'none'
-			| 'jwt'
-			| 'basic'
-			| 'bearer';
+			| 'bearer'
+			| 'api_key'
+			| 'custom';
 	}
 
 	if (import.meta.env.VITE_FLOWDROP_AUTH_TOKEN) {

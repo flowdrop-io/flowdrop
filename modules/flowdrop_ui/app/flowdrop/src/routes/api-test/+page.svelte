@@ -8,11 +8,11 @@
 	import { api } from '$lib/services/api.js';
 	import type { NodeMetadata, Workflow } from '$lib/types/index.js';
 
-	let nodes: NodeMetadata[] = [];
-	let workflows: Workflow[] = [];
-	let loading = false;
-	let error = '';
-	let testResults: string[] = [];
+	let nodes = $state<NodeMetadata[]>([]);
+	let workflows = $state<Workflow[]>([]);
+	let loading = $state(false);
+	let error = $state('');
+	let testResults = $state<string[]>([]);
 
 	/**
 	 * Test node API

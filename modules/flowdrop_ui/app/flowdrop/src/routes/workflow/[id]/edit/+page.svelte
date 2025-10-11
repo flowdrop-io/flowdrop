@@ -39,18 +39,18 @@
 	function calculateCanvasDimensions() {
 		// Use full viewport height since no top navbar
 		const availableHeight = window.innerHeight;
-		
+
 		// Set minimum and maximum constraints for optimal experience
 		const minHeight = 400; // Minimum usable height
 		const maxHeight = 1200; // Maximum height to prevent excessive scrolling
-		
+
 		// Calculate optimal height within constraints
 		const optimalHeight = Math.max(minHeight, Math.min(maxHeight, availableHeight));
-		
+
 		// Set dimensions
 		canvasHeight = `${optimalHeight}px`;
 		canvasWidth = '100%'; // Use full available width
-		
+
 		console.log('Canvas dimensions calculated:', {
 			viewportHeight: window.innerHeight,
 			availableHeight,
@@ -69,7 +69,6 @@
 		try {
 			loading = true;
 			error = null;
-
 
 			// Use configured endpoint
 			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.get, { id: workflowId });
@@ -93,7 +92,7 @@
 					if (nodesResponse.ok) {
 						const nodesData = await nodesResponse.json();
 						const availableNodes = nodesData.data || [];
-						
+
 						// Refresh metadata for each node
 						refreshedNodes = refreshedNodes.map((node: any) => {
 							const nodeMetadataId = node.data?.metadata?.id;
@@ -150,17 +149,17 @@
 	onMount(() => {
 		// Calculate optimal canvas dimensions
 		calculateCanvasDimensions();
-		
+
 		// Fetch workflow data
 		fetchWorkflow();
-		
+
 		// Recalculate dimensions on window resize
 		const handleResize = () => {
 			calculateCanvasDimensions();
 		};
-		
+
 		window.addEventListener('resize', handleResize);
-		
+
 		// Cleanup
 		return () => {
 			window.removeEventListener('resize', handleResize);
@@ -199,7 +198,7 @@
 	.workflow-edit-page {
 		display: flex;
 		flex-direction: column;
-		min-height: 100vh;
+		min-height: calc(100vh - var(--flowdrop-navbar-height, 60px));
 	}
 
 	.loading-container,

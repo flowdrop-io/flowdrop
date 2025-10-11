@@ -109,6 +109,7 @@ export const CATEGORY_ICONS: Record<NodeCategory, string> = {
 	embeddings: 'mdi:vector-point',
 	memories: 'mdi:brain',
 	agents: 'mdi:account-cog',
+	ai: 'mdi:artificial-intelligence',
 	bundles: 'mdi:package-variant'
 };
 

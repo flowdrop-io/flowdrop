@@ -28,17 +28,19 @@ export function getEndpointConfig(): EndpointConfig | null {
  * @deprecated Use setEndpointConfig() with a full EndpointConfig object instead
  */
 export function setApiBaseUrl(url: string): void {
-	console.warn('⚠️ setApiBaseUrl() is deprecated. Use setEndpointConfig() with a full EndpointConfig object instead.');
-	
+	console.warn(
+		'⚠️ setApiBaseUrl() is deprecated. Use setEndpointConfig() with a full EndpointConfig object instead.'
+	);
+
 	if (!endpointConfig) {
 		// Dynamic import for backward compatibility
 		import('../config/endpoints.js')
 			.then(({ createEndpointConfig }) => {
 				endpointConfig = createEndpointConfig(url);
 			})
-		.catch((error) => {
-			// Failed to load endpoint config
-		});
+			.catch((error) => {
+				// Failed to load endpoint config
+			});
 	} else {
 		endpointConfig.baseUrl = url.replace(/\/$/, '');
 	}
@@ -210,7 +212,6 @@ export const workflowApi = {
 		if (!endpointConfig) {
 			throw new Error('Endpoint configuration not set');
 		}
-
 
 		const response = await apiRequest<Workflow>(
 			'workflows.update',

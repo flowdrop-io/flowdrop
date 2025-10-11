@@ -5,11 +5,7 @@
 -->
 
 <script lang="ts">
-	import {
-		Position,
-		// @ts-expect-error - Handle is not properly typed in @xyflow/svelte
-		Handle
-	} from '@xyflow/svelte';
+	import { Position, Handle } from '@xyflow/svelte';
 	import type { NodeConfig, NodeMetadata } from '../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor } from '$lib/utils/colors.js';

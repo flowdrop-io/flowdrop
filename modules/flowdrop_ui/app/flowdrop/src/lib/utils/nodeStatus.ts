@@ -16,9 +16,9 @@ export function getStatusColor(status: NodeExecutionStatus): string {
 		completed: '#10b981', // emerald
 		failed: '#ef4444', // red
 		cancelled: '#6b7280', // gray
-		skipped: '#8b5cf6', // violet
+		skipped: '#8b5cf6' // violet
 	};
-	
+
 	return statusColors[status] || statusColors.idle;
 }
 
@@ -33,9 +33,9 @@ export function getStatusIcon(status: NodeExecutionStatus): string {
 		completed: 'mdi:check-circle',
 		failed: 'mdi:alert-circle',
 		cancelled: 'mdi:cancel',
-		skipped: 'mdi:skip-next',
+		skipped: 'mdi:skip-next'
 	};
-	
+
 	return statusIcons[status] || statusIcons.idle;
 }
 
@@ -50,9 +50,9 @@ export function getStatusLabel(status: NodeExecutionStatus): string {
 		completed: 'Completed',
 		failed: 'Failed',
 		cancelled: 'Cancelled',
-		skipped: 'Skipped',
+		skipped: 'Skipped'
 	};
-	
+
 	return statusLabels[status] || statusLabels.idle;
 }
 
@@ -67,9 +67,9 @@ export function getStatusBackgroundColor(status: NodeExecutionStatus): string {
 		completed: '#d1fae5', // light emerald
 		failed: '#fee2e2', // light red
 		cancelled: '#f3f4f6', // light gray
-		skipped: '#ede9fe', // light violet
+		skipped: '#ede9fe' // light violet
 	};
-	
+
 	return statusBackgroundColors[status] || statusBackgroundColors.idle;
 }
 
@@ -84,9 +84,9 @@ export function getStatusTextColor(status: NodeExecutionStatus): string {
 		completed: '#059669', // emerald
 		failed: '#dc2626', // red
 		cancelled: '#6b7280', // gray
-		skipped: '#7c3aed', // violet
+		skipped: '#7c3aed' // violet
 	};
-	
+
 	return statusTextColors[status] || statusTextColors.idle;
 }
 
@@ -97,7 +97,7 @@ export function createDefaultExecutionInfo(): NodeExecutionInfo {
 	return {
 		status: 'idle',
 		executionCount: 0,
-		isExecuting: false,
+		isExecuting: false
 	};
 }
 
@@ -108,7 +108,7 @@ export function updateExecutionStart(executionInfo: NodeExecutionInfo): NodeExec
 	return {
 		...executionInfo,
 		status: 'running',
-		isExecuting: true,
+		isExecuting: true
 	};
 }
 
@@ -126,7 +126,7 @@ export function updateExecutionComplete(
 		lastExecuted: new Date().toISOString(),
 		lastExecutionDuration: duration,
 		isExecuting: false,
-		lastError: undefined, // Clear any previous error
+		lastError: undefined // Clear any previous error
 	};
 }
 
@@ -145,7 +145,7 @@ export function updateExecutionFailed(
 		lastExecuted: new Date().toISOString(),
 		lastExecutionDuration: duration,
 		isExecuting: false,
-		lastError: error,
+		lastError: error
 	};
 }
 
@@ -157,7 +157,7 @@ export function resetExecutionInfo(executionInfo: NodeExecutionInfo): NodeExecut
 		...executionInfo,
 		status: 'idle',
 		isExecuting: false,
-		lastError: undefined,
+		lastError: undefined
 	};
 }
 
@@ -166,7 +166,7 @@ export function resetExecutionInfo(executionInfo: NodeExecutionInfo): NodeExecut
  */
 export function formatExecutionDuration(duration?: number): string {
 	if (!duration) return 'N/A';
-	
+
 	if (duration < 1000) {
 		return `${Math.round(duration)}ms`;
 	} else if (duration < 60000) {
@@ -183,21 +183,23 @@ export function formatExecutionDuration(duration?: number): string {
  */
 export function formatLastExecuted(timestamp?: string): string {
 	if (!timestamp) return 'Never';
-	
+
 	const date = new Date(timestamp);
 	const now = new Date();
 	const diffMs = now.getTime() - date.getTime();
-	
-	if (diffMs < 60000) { // Less than 1 minute
+
+	if (diffMs < 60000) {
+		// Less than 1 minute
 		return 'Just now';
-	} else if (diffMs < 3600000) { // Less than 1 hour
+	} else if (diffMs < 3600000) {
+		// Less than 1 hour
 		const minutes = Math.floor(diffMs / 60000);
 		return `${minutes}m ago`;
-	} else if (diffMs < 86400000) { // Less than 1 day
+	} else if (diffMs < 86400000) {
+		// Less than 1 day
 		const hours = Math.floor(diffMs / 3600000);
 		return `${hours}h ago`;
 	} else {
 		return date.toLocaleDateString();
 	}
 }
-

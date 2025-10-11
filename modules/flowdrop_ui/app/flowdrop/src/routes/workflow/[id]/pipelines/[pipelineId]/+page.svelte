@@ -16,7 +16,7 @@
 
 	let workflowId = $derived($page.params.id);
 	let pipelineId = $derived($page.params.pipelineId);
-	
+
 	// Data state
 	let workflow = $state<Workflow | null>(null);
 	let pipeline = $state<any>(null);
@@ -38,15 +38,15 @@
 			loading = true;
 			error = null;
 
-		// Fetch workflow
-		const workflowUrl = getEndpointUrl(defaultApiConfig, '/workflows/{id}', { id: workflowId });
-		const workflowResponse = await fetch(workflowUrl);
-		if (!workflowResponse.ok) {
-			throw new Error(`Failed to fetch workflow: ${workflowResponse.statusText}`);
-		}
-		const workflowData = await workflowResponse.json();
-		// Extract the actual workflow data from the API response structure
-		workflow = workflowData.success && workflowData.data ? workflowData.data : workflowData;
+			// Fetch workflow
+			const workflowUrl = getEndpointUrl(defaultApiConfig, '/workflows/{id}', { id: workflowId });
+			const workflowResponse = await fetch(workflowUrl);
+			if (!workflowResponse.ok) {
+				throw new Error(`Failed to fetch workflow: ${workflowResponse.statusText}`);
+			}
+			const workflowData = await workflowResponse.json();
+			// Extract the actual workflow data from the API response structure
+			workflow = workflowData.success && workflowData.data ? workflowData.data : workflowData;
 
 			// Fetch pipeline
 			const pipelineUrl = getEndpointUrl(defaultApiConfig, '/pipeline/{id}', { id: pipelineId });
@@ -64,7 +64,6 @@
 			}
 			const nodesData = await nodesResponse.json();
 			nodes = nodesData.nodes || [];
-
 		} catch (err) {
 			console.error('Failed to fetch data:', err);
 			error = err instanceof Error ? err.message : 'Failed to fetch data';
@@ -165,8 +164,6 @@
 </svelte:head>
 
 <div class="pipeline-status-page">
-
-
 	<!-- Content -->
 	<div class="pipeline-status-content">
 		{#if loading}
@@ -179,10 +176,7 @@
 				<Icon icon="mdi:alert-circle" class="pipeline-status-error__icon" />
 				<h3 class="pipeline-status-error__title">Failed to load pipeline</h3>
 				<p class="pipeline-status-error__text">{error}</p>
-				<button 
-					class="pipeline-status-error__retry"
-					onclick={fetchData}
-				>
+				<button class="pipeline-status-error__retry" onclick={fetchData}>
 					<Icon icon="mdi:refresh" />
 					Retry
 				</button>
@@ -197,10 +191,7 @@
 			</div>
 		{:else}
 			<!-- Pipeline Status Component -->
-			<PipelineStatus
-				{workflow}
-				{pipelineId}
-			/>
+			<PipelineStatus {workflow} {pipelineId} />
 		{/if}
 	</div>
 </div>
@@ -214,9 +205,6 @@
 	}
 
 	/* Background is now handled by SvelteFlow Background component */
-
-
-
 
 	.pipeline-status-content {
 		flex: 1;

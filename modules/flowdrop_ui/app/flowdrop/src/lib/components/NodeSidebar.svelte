@@ -141,6 +141,7 @@
 			embeddings: 'Embeddings',
 			memories: 'Memories',
 			agents: 'Agents',
+			ai: 'AI',
 			bundles: 'Bundles'
 		};
 		return names[category] || category;
@@ -178,7 +179,11 @@
 </script>
 
 <!-- Components Sidebar - Always Visible -->
-<div class="flowdrop-sidebar flowdrop-sidebar--container" role="complementary" aria-label="Components sidebar">
+<div
+	class="flowdrop-sidebar flowdrop-sidebar--container"
+	role="complementary"
+	aria-label="Components sidebar"
+>
 	<!-- Header -->
 	<div class="flowdrop-sidebar__header">
 		<div class="flowdrop-sidebar__title">
@@ -369,7 +374,7 @@
 	/* Components Sidebar - Always Visible */
 	.flowdrop-sidebar {
 		width: 320px;
-		height: 100vh; /* Use viewport height to ensure fixed height */
+		height: calc(100vh - var(--flowdrop-navbar-height, 60px)); /* Account for navbar height */
 		background-color: #ffffff;
 		border-right: 1px solid #e5e7eb;
 		display: flex;
@@ -494,7 +499,6 @@
 		gap: 0.375rem;
 	}
 
-
 	.flowdrop-items--center {
 		align-items: center;
 	}
@@ -531,7 +535,9 @@
 		font-size: 0.875rem;
 		color: #111827;
 		background-color: #ffffff;
-		transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+		transition:
+			border-color 0.2s ease-in-out,
+			box-shadow 0.2s ease-in-out;
 		width: 100%;
 		height: 2.5rem;
 		box-sizing: border-box;

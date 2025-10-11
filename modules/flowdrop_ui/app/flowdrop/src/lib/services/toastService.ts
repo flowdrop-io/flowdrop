@@ -4,7 +4,7 @@
  * Provides consistent toast notifications across the FlowDrop application
  */
 
-import { toast } from 'svelte-french-toast';
+import { toast } from 'svelte-5-french-toast';
 
 /**
  * Toast notification types
@@ -16,11 +16,13 @@ export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
  */
 export interface ToastOptions {
 	duration?: number;
-	position?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
-	action?: {
-		label: string;
-		onClick: () => void;
-	};
+	position?:
+		| 'top-left'
+		| 'top-center'
+		| 'top-right'
+		| 'bottom-left'
+		| 'bottom-center'
+		| 'bottom-right';
 }
 
 /**
@@ -29,8 +31,7 @@ export interface ToastOptions {
 export function showSuccess(message: string, options?: ToastOptions): string {
 	return toast.success(message, {
 		duration: options?.duration || 4000,
-		position: options?.position || 'bottom-center',
-		action: options?.action
+		position: options?.position || 'bottom-center'
 	});
 }
 
@@ -40,8 +41,7 @@ export function showSuccess(message: string, options?: ToastOptions): string {
 export function showError(message: string, options?: ToastOptions): string {
 	return toast.error(message, {
 		duration: options?.duration || 6000,
-		position: options?.position || 'bottom-center',
-		action: options?.action
+		position: options?.position || 'bottom-center'
 	});
 }
 
@@ -49,10 +49,9 @@ export function showError(message: string, options?: ToastOptions): string {
  * Show a warning toast notification
  */
 export function showWarning(message: string, options?: ToastOptions): string {
-	return toast.warning(message, {
+	return toast.error(message, {
 		duration: options?.duration || 5000,
-		position: options?.position || 'bottom-center',
-		action: options?.action
+		position: options?.position || 'bottom-center'
 	});
 }
 
@@ -60,10 +59,9 @@ export function showWarning(message: string, options?: ToastOptions): string {
  * Show an info toast notification
  */
 export function showInfo(message: string, options?: ToastOptions): string {
-	return toast.info(message, {
+	return toast.success(message, {
 		duration: options?.duration || 4000,
-		position: options?.position || 'bottom-center',
-		action: options?.action
+		position: options?.position || 'bottom-center'
 	});
 }
 
@@ -117,32 +115,12 @@ export function showPromise<T>(
 }
 
 /**
- * Show a confirmation toast with action buttons
+ * Show a confirmation toast (simplified version without action buttons)
  */
-export function showConfirmation(
-	message: string,
-	{
-		confirmLabel = 'Confirm',
-		cancelLabel = 'Cancel',
-		onConfirm,
-		onCancel,
-		options
-	}: {
-		confirmLabel?: string;
-		cancelLabel?: string;
-		onConfirm: () => void;
-		onCancel?: () => void;
-		options?: ToastOptions;
-	}
-): string {
+export function showConfirmation(message: string, options?: ToastOptions): string {
 	return toast(message, {
-		duration: Infinity,
-		position: options?.position || 'bottom-center',
-		action: {
-			label: confirmLabel,
-			onClick: onConfirm
-		},
-		...options
+		duration: options?.duration || 5000,
+		position: options?.position || 'bottom-center'
 	});
 }
 
@@ -200,7 +178,9 @@ export const workflowToasts = {
 	 * Show workflow save success
 	 */
 	saved: (workflowName?: string) => {
-		const message = workflowName ? `Workflow "${workflowName}" saved successfully` : 'Workflow saved successfully';
+		const message = workflowName
+			? `Workflow "${workflowName}" saved successfully`
+			: 'Workflow saved successfully';
 		return showSuccess(message);
 	},
 
@@ -216,7 +196,9 @@ export const workflowToasts = {
 	 * Show workflow delete success
 	 */
 	deleted: (workflowName?: string) => {
-		const message = workflowName ? `Workflow "${workflowName}" deleted successfully` : 'Workflow deleted successfully';
+		const message = workflowName
+			? `Workflow "${workflowName}" deleted successfully`
+			: 'Workflow deleted successfully';
 		return showSuccess(message);
 	},
 
@@ -232,7 +214,9 @@ export const workflowToasts = {
 	 * Show workflow execution started
 	 */
 	executionStarted: (workflowName?: string) => {
-		const message = workflowName ? `Workflow "${workflowName}" execution started` : 'Workflow execution started';
+		const message = workflowName
+			? `Workflow "${workflowName}" execution started`
+			: 'Workflow execution started';
 		return showInfo(message);
 	},
 
@@ -240,7 +224,9 @@ export const workflowToasts = {
 	 * Show workflow execution completed
 	 */
 	executionCompleted: (workflowName?: string) => {
-		const message = workflowName ? `Workflow "${workflowName}" execution completed` : 'Workflow execution completed';
+		const message = workflowName
+			? `Workflow "${workflowName}" execution completed`
+			: 'Workflow execution completed';
 		return showSuccess(message);
 	},
 
@@ -248,7 +234,9 @@ export const workflowToasts = {
 	 * Show workflow export success
 	 */
 	exported: (workflowName?: string) => {
-		const message = workflowName ? `Workflow "${workflowName}" exported successfully` : 'Workflow exported successfully';
+		const message = workflowName
+			? `Workflow "${workflowName}" exported successfully`
+			: 'Workflow exported successfully';
 		return showSuccess(message);
 	},
 
@@ -269,7 +257,9 @@ export const pipelineToasts = {
 	 * Show pipeline creation success
 	 */
 	created: (pipelineName?: string) => {
-		const message = pipelineName ? `Pipeline "${pipelineName}" created successfully` : 'Pipeline created successfully';
+		const message = pipelineName
+			? `Pipeline "${pipelineName}" created successfully`
+			: 'Pipeline created successfully';
 		return showSuccess(message);
 	},
 

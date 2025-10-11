@@ -12,9 +12,7 @@
 	let props: Props = $props();
 </script>
 
-<span 
-	class="status-label {props.class || ''}"
->
+<span class="status-label {props.class || ''}">
 	{props.label}
 </span>
 

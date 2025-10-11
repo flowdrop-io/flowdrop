@@ -35,7 +35,7 @@
 
 	// Simple current path tracking without SvelteKit dependency
 	let currentPath = $state(typeof window !== 'undefined' ? window.location.pathname : '/');
-	
+
 	// Dropdown state
 	let isDropdownOpen = $state(false);
 
@@ -87,7 +87,7 @@
 					</div>
 				</div>
 			{/if}
-			
+
 			<!-- Title or Breadcrumbs on bottom -->
 			{#if breadcrumbs.length > 0}
 				<div class="flowdrop-navbar__breadcrumb-container">
@@ -137,7 +137,8 @@
 				{@const primaryAction = primaryActions[0]}
 				<a
 					href={primaryAction.href}
-					class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant || 'primary'}"
+					class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant ||
+						'primary'}"
 					onclick={primaryAction.onclick}
 				>
 					{#if primaryAction.icon}
@@ -152,15 +153,15 @@
 			<!-- Dropdown for Additional Actions -->
 			{#if primaryActions.length > 1}
 				<div class="flowdrop-navbar__dropdown">
-					<button 
+					<button
 						class="flowdrop-navbar__dropdown-trigger"
-						onclick={() => isDropdownOpen = !isDropdownOpen}
+						onclick={() => (isDropdownOpen = !isDropdownOpen)}
 						aria-expanded={isDropdownOpen}
 						aria-haspopup="true"
 					>
 						<Icon icon="heroicons:chevron-down" class="w-4 h-4" />
 					</button>
-					
+
 					{#if isDropdownOpen}
 						<div class="flowdrop-navbar__dropdown-menu">
 							{#each primaryActions.slice(1) as action (action.label)}
@@ -372,7 +373,8 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 		}
 		50% {
@@ -439,7 +441,7 @@
 		color: #111827;
 	}
 
-	.flowdrop-navbar__dropdown-trigger[aria-expanded="true"] {
+	.flowdrop-navbar__dropdown-trigger[aria-expanded='true'] {
 		background-color: #f3f4f6;
 		color: #111827;
 	}
@@ -454,7 +456,9 @@
 		background-color: #ffffff;
 		border: 1px solid #e5e7eb;
 		border-radius: 0.5rem;
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.1),
+			0 4px 6px -2px rgba(0, 0, 0, 0.05);
 		overflow: hidden;
 	}
 

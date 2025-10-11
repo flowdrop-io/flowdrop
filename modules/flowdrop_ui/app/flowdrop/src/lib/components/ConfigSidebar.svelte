@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-	import type { ConfigSchema, ConfigValues } from '../types/index.js';
+	import type { ConfigSchema, ConfigValues, ConfigProperty } from '../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { createEventDispatcher } from 'svelte';
 
@@ -22,8 +22,8 @@
 			description: string;
 			version?: string;
 			tags?: string[];
-			inputs?: Array<{ id: string; name: string; type: string }>;
-			outputs?: Array<{ id: string; name: string; type: string }>;
+			inputs?: Array<{ id: string; name: string; type: string; dataType?: string }>;
+			outputs?: Array<{ id: string; name: string; type: string; dataType?: string }>;
 		};
 		onSave?: (config: ConfigValues) => void;
 		onCancel?: () => void;
@@ -248,7 +248,7 @@
 								<div class="config-sidebar__port config-sidebar__port--input">
 									<Icon icon="mdi:arrow-right" class="config-sidebar__port-icon" />
 									<span class="config-sidebar__port-name">{input.name}</span>
-									<span class="config-sidebar__port-type">{input.dataType}</span>
+									<span class="config-sidebar__port-type">{input.dataType || input.type}</span>
 								</div>
 							{/each}
 						</div>
@@ -263,7 +263,7 @@
 								<div class="config-sidebar__port config-sidebar__port--output">
 									<Icon icon="mdi:arrow-left" class="config-sidebar__port-icon" />
 									<span class="config-sidebar__port-name">{output.name}</span>
-									<span class="config-sidebar__port-type">{output.dataType}</span>
+									<span class="config-sidebar__port-type">{output.dataType || output.type}</span>
 								</div>
 							{/each}
 						</div>
@@ -416,10 +416,10 @@
 
 	.config-sidebar {
 		position: fixed;
-		top: 0;
+		top: var(--flowdrop-navbar-height, 60px); /* Start below navbar */
 		right: 0;
 		width: 400px;
-		height: 100vh;
+		height: calc(100vh - var(--flowdrop-navbar-height, 60px)); /* Account for navbar height */
 		background-color: #ffffff;
 		border-left: 1px solid #e5e7eb;
 		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
@@ -510,6 +510,10 @@
 		flex: 1;
 		overflow-y: auto;
 		padding: 1.5rem;
+		min-height: 0; /* Allow flex item to shrink below content size */
+		max-height: calc(
+			100vh - var(--flowdrop-navbar-height, 60px) - 200px
+		); /* Reserve much more space for header and footer */
 	}
 
 	/* Node Details Styles */
@@ -761,6 +765,15 @@
 		border-top: 1px solid #e5e7eb;
 		background-color: #f9fafb;
 		flex-shrink: 0;
+		position: sticky;
+		bottom: 0;
+		z-index: 10; /* Ensure footer stays on top */
+		height: 80px; /* Increased height for footer */
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.75rem;
+		min-height: 80px; /* Ensure minimum height */
 	}
 
 	.config-sidebar__actions {

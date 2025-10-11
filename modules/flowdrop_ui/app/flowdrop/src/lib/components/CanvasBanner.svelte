@@ -1,8 +1,14 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	export let title: string;
-	export let description: string;
-	export let iconName: string | undefined;
+	let {
+		title,
+		description,
+		iconName
+	}: {
+		title: string;
+		description: string;
+		iconName?: string;
+	} = $props();
 </script>
 
 <div class="flowdrop-canvas-banner">

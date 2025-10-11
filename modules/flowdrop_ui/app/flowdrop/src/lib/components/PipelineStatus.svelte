@@ -13,13 +13,15 @@
 	interface Props {
 		pipelineId: string;
 		workflow: Workflow;
-		onActionsReady?: (actions: Array<{
-			label: string;
-			href: string;
-			icon?: string;
-			variant?: 'primary' | 'secondary' | 'outline';
-			onclick?: (event: Event) => void;
-		}>) => void;
+		onActionsReady?: (
+			actions: Array<{
+				label: string;
+				href: string;
+				icon?: string;
+				variant?: 'primary' | 'secondary' | 'outline';
+				onclick?: (event: Event) => void;
+			}>
+		) => void;
 	}
 
 	let { pipelineId, workflow, onActionsReady }: Props = $props();
@@ -69,8 +71,10 @@
 
 		try {
 			isLoadingJobStatus = true;
-			const response = await fetch(`https://flowdrop.ddev.site/api/flowdrop/pipeline/${pipelineId}`);
-			
+			const response = await fetch(
+				`https://flowdrop.ddev.site/api/flowdrop/pipeline/${pipelineId}`
+			);
+
 			if (!response.ok) {
 				throw new Error(`Failed to fetch pipeline data: ${response.statusText}`);
 			}
@@ -96,7 +100,7 @@
 
 				// Initialize all nodes as pending
 				if (workflow && workflow.nodes) {
-					workflow.nodes.forEach(node => {
+					workflow.nodes.forEach((node) => {
 						newNodeStatuses[node.id] = 'pending';
 					});
 				}
@@ -112,10 +116,12 @@
 			}
 
 			addLog('info', `Job status updated: ${jobStatusData.status_summary.total} total jobs`);
-
 		} catch (error) {
 			console.error('Failed to fetch pipeline data:', error);
-			addLog('error', `Failed to fetch pipeline data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			addLog(
+				'error',
+				`Failed to fetch pipeline data: ${error instanceof Error ? error.message : 'Unknown error'}`
+			);
 		} finally {
 			isLoadingJobStatus = false;
 		}
@@ -184,9 +190,9 @@
 	function getPipelineActions() {
 		return [
 			{
-				label: isLoadingJobStatus ? "Refreshing..." : "Refresh Status",
+				label: isLoadingJobStatus ? 'Refreshing...' : 'Refresh Status',
 				href: '#refresh',
-				icon: isLoadingJobStatus ? "mdi:loading" : "mdi:refresh",
+				icon: isLoadingJobStatus ? 'mdi:loading' : 'mdi:refresh',
 				variant: 'outline' as const,
 				onclick: (e: Event) => {
 					e.preventDefault();
@@ -194,9 +200,9 @@
 				}
 			},
 			{
-				label: "View Logs",
+				label: 'View Logs',
 				href: '#logs',
-				icon: "mdi:file-document-outline",
+				icon: 'mdi:file-document-outline',
 				variant: 'outline' as const,
 				onclick: (e: Event) => {
 					e.preventDefault();
@@ -251,10 +257,12 @@
 					icon: 'mdi:play-circle'
 				}
 			];
-			
-			window.dispatchEvent(new CustomEvent('page-breadcrumbs-update', {
-				detail: { breadcrumbs }
-			}));
+
+			window.dispatchEvent(
+				new CustomEvent('page-breadcrumbs-update', {
+					detail: { breadcrumbs }
+				})
+			);
 		}
 	});
 
@@ -267,14 +275,14 @@
 
 	// Auto-refresh pipeline data every 5 seconds when pipeline is running
 	let refreshInterval: NodeJS.Timeout | null = null;
-	
+
 	$effect(() => {
 		// Clear existing interval
 		if (refreshInterval) {
 			clearInterval(refreshInterval);
 			refreshInterval = null;
 		}
-		
+
 		// Only start polling if pipeline is running
 		if (pipelineStatus === 'running' && pipelineId) {
 			refreshInterval = setInterval(() => {
@@ -296,7 +304,7 @@
 
 <div class="pipeline-status-container">
 	<!-- Workflow Visualization using App component -->
-	<App 
+	<App
 		{workflow}
 		height="100vh"
 		width="100%"
@@ -310,11 +318,7 @@
 
 	<!-- Logs Sidebar -->
 	{#if isLogsSidebarOpen}
-		<LogsSidebar 
-			{logs}
-			isOpen={isLogsSidebarOpen}
-			onClose={() => isLogsSidebarOpen = false}
-		/>
+		<LogsSidebar {logs} isOpen={isLogsSidebarOpen} onClose={() => (isLogsSidebarOpen = false)} />
 	{/if}
 </div>
 
@@ -325,5 +329,4 @@
 		height: 100vh;
 		background: #f3f4f6;
 	}
-
 </style>

@@ -11,8 +11,13 @@
 	import SimpleNode from './SimpleNode.svelte';
 	import SquareNode from './SquareNode.svelte';
 	import ToolNode from './ToolNode.svelte';
+	import GatewayNode from './GatewayNode.svelte';
 	import NodeStatusOverlay from './NodeStatusOverlay.svelte';
-	import { shouldShowNodeStatus, getOptimalStatusPosition, getOptimalStatusSize } from '../utils/nodeWrapper.js';
+	import {
+		shouldShowNodeStatus,
+		getOptimalStatusPosition,
+		getOptimalStatusSize
+	} from '../utils/nodeWrapper.js';
 
 	interface Props {
 		data: WorkflowNode['data'] & {
@@ -22,14 +27,23 @@
 		selected?: boolean;
 	}
 
-	let props: Props = $props();
+	let {
+		data,
+		selected = false
+	}: {
+		data: WorkflowNode['data'] & {
+			nodeId?: string;
+			onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
+		};
+		selected?: boolean;
+	} = $props();
 
 	// Determine which node component to render based on node type
-	let nodeComponent = $derived(getNodeComponent(props.data.metadata?.type || 'workflowNode'));
-	
+	let nodeComponent = $derived(getNodeComponent(data.metadata?.type || 'workflowNode'));
+
 	// Get execution info
-	let executionInfo = $derived(props.data.executionInfo);
-	let nodeType = $derived(props.data.metadata?.type || 'workflowNode');
+	let executionInfo = $derived(data.executionInfo);
+	let nodeType = $derived(data.metadata?.type || 'workflowNode');
 	let shouldShowStatus = $derived(shouldShowNodeStatus(executionInfo) && nodeType !== 'note');
 
 	/**
@@ -45,6 +59,8 @@
 				return SquareNode;
 			case 'tool':
 				return ToolNode;
+			case 'gateway':
+				return GatewayNode;
 			case 'workflowNode':
 			default:
 				return WorkflowNodeComponent;
@@ -55,51 +71,38 @@
 	 * Get optimal status position for this node type
 	 */
 	function getStatusPosition(): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' {
-		return getOptimalStatusPosition(props.data.metadata?.type || 'workflowNode');
+		return getOptimalStatusPosition(data.metadata?.type || 'workflowNode');
 	}
 
 	/**
 	 * Get optimal status size for this node type
 	 */
 	function getStatusSize(): 'sm' | 'md' | 'lg' {
-		return getOptimalStatusSize(props.data.metadata?.type || 'workflowNode');
+		return getOptimalStatusSize(data.metadata?.type || 'workflowNode');
 	}
 </script>
 
 <div class="universal-node">
 	<!-- Render the appropriate node component -->
 	{#if nodeComponent === WorkflowNodeComponent}
-		<WorkflowNodeComponent 
-			data={props.data}
-			selected={props.selected}
-		/>
+		<WorkflowNodeComponent {data} {selected} />
 	{:else if nodeComponent === NotesNode}
-		<NotesNode 
-			data={props.data}
-			selected={props.selected}
-		/>
+		<NotesNode {data} {selected} />
 	{:else if nodeComponent === SimpleNode}
-		<SimpleNode 
-			data={props.data}
-			selected={props.selected}
-		/>
+		<SimpleNode {data} {selected} />
 	{:else if nodeComponent === SquareNode}
-		<SquareNode 
-			data={props.data}
-			selected={props.selected}
-		/>
+		<SquareNode {data} {selected} />
 	{:else if nodeComponent === ToolNode}
-		<ToolNode 
-			data={props.data}
-			selected={props.selected}
-		/>
+		<ToolNode {data} {selected} />
+	{:else if nodeComponent === GatewayNode}
+		<GatewayNode {data} {selected} />
 	{/if}
-	
+
 	<!-- Status overlay - only show if there's meaningful status information -->
 	{#if shouldShowStatus}
 		<NodeStatusOverlay
-			nodeId={props.data.nodeId || 'unknown'}
-			executionInfo={executionInfo}
+			nodeId={data.nodeId || 'unknown'}
+			{executionInfo}
 			position={getStatusPosition()}
 			size={getStatusSize()}
 			showDetails={true}

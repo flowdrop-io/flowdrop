@@ -51,11 +51,9 @@ export function createNodeWrapperConfig(
  */
 export function shouldShowNodeStatus(executionInfo?: NodeExecutionInfo): boolean {
 	if (!executionInfo) return false;
-	
+
 	return (
-		executionInfo.status !== 'idle' ||
-		executionInfo.executionCount > 0 ||
-		executionInfo.isExecuting
+		executionInfo.status !== 'idle' || executionInfo.executionCount > 0 || executionInfo.isExecuting
 	);
 }
 
@@ -90,4 +88,3 @@ export function getOptimalStatusSize(nodeType: string): NodeStatusConfig['size']
 			return 'md';
 	}
 }
-

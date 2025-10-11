@@ -44,9 +44,9 @@
 		}>;
 	}
 
-	let { 
-		workflow: initialWorkflow, 
-		height = '100vh', 
+	let {
+		workflow: initialWorkflow,
+		height = '100vh',
 		width = '100%',
 		showNavbar = false,
 		disableSidebar = false,
@@ -81,7 +81,7 @@
 	// ConfigSidebar state
 	let isConfigSidebarOpen = $state(false);
 	let selectedNodeId = $state<string | null>(null);
-	
+
 	// Workflow settings sidebar state
 	let isWorkflowSettingsOpen = $state(false);
 
@@ -110,16 +110,16 @@
 		name: $workflowName || '',
 		description: $workflowStore?.description || ''
 	});
-	
+
 	// Get the current node from the workflow store
 	let selectedNodeForConfig = $derived(() => {
 		if (!selectedNodeId || !$workflowStore) return null;
-		return $workflowStore.nodes.find(node => node.id === selectedNodeId) || null;
+		return $workflowStore.nodes.find((node) => node.id === selectedNodeId) || null;
 	});
 
 	// WorkflowEditor reference for save functionality
 	let workflowEditorRef: WorkflowEditor | null = null;
-	
+
 	// Removed currentWorkflowState - no longer needed
 	// The global store ($workflowStore) serves as the single source of truth
 
@@ -132,7 +132,6 @@
 		try {
 			loading = true;
 			error = null;
-
 
 			const fetchedNodes = await api.nodes.getNodes();
 
@@ -188,9 +187,8 @@
 	async function initializeApiEndpoints(): Promise<void> {
 		// Use the same environment variable priority as the global save function
 		// Prioritize VITE_API_BASE_URL since it's configured correctly
-		const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
-		                   import.meta.env.VITE_DRUPAL_API_URL || 
-		                   '/api/flowdrop';
+		const apiBaseUrl =
+			import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_DRUPAL_API_URL || '/api/flowdrop';
 
 		const config = createEndpointConfig(apiBaseUrl, {
 			auth: {
@@ -244,16 +242,16 @@
 	 */
 	async function handleWorkflowSave(config: any): Promise<void> {
 		console.log('Workflow configuration saved:', config);
-		
+
 		// Update the workflow store
 		if ($workflowStore) {
 			$workflowStore.name = config.name;
 			$workflowStore.description = config.description;
 		}
-		
+
 		// Close the sidebar
 		isWorkflowSettingsOpen = false;
-		
+
 		// Also save the workflow to the backend
 		try {
 			await saveWorkflow();
@@ -275,14 +273,14 @@
 		try {
 			// Wait for any pending DOM updates before saving
 			await tick();
-			
+
 			// Import necessary modules
 			const { workflowApi } = await import('$lib/services/api.js');
 			const { v4: uuidv4 } = await import('uuid');
-			
+
 			// Use current workflow from global store
 			const workflowToSave = $workflowStore;
-			
+
 			if (!workflowToSave) {
 				return;
 			}
@@ -308,7 +306,7 @@
 					updatedAt: new Date().toISOString()
 				}
 			};
-			
+
 			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
 
 			// Update the workflow ID if it changed (new workflow)
@@ -336,10 +334,10 @@
 		try {
 			// Wait for any pending DOM updates before exporting
 			await tick();
-			
+
 			// Use current workflow from global store
 			const workflowToExport = $workflowStore;
-			
+
 			if (!workflowToExport) {
 				return;
 			}
@@ -391,13 +389,12 @@
 		}
 	}
 
-
 	// Load node types on mount
 	onMount(() => {
 		(async () => {
 			await initializeApiEndpoints();
 			await fetchNodeTypes();
-			
+
 			// Initialize the workflow store if we have an initial workflow
 			if (initialWorkflow) {
 				workflowActions.initialize(initialWorkflow);
@@ -430,43 +427,51 @@
 	<meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
 
-<div class="flowdrop-app" style="height: {typeof height === 'number' ? `${height}px` : height}; width: {typeof width === 'number' ? `${width}px` : width};">
+<div
+	class="flowdrop-app"
+	style="height: {typeof height === 'number' ? `${height}px` : height}; width: {typeof width ===
+	'number'
+		? `${width}px`
+		: width};"
+>
 	<!-- Navbar (conditionally rendered) - hide on workflow edit pages -->
 	{#if showNavbar && !$page.url.pathname.includes('/edit')}
-		<Navbar 
+		<Navbar
 			title={breadcrumbTitle()}
-			primaryActions={navbarActions.length > 0 ? navbarActions : [
-				{
-					label: 'Save',
-					href: '#save',
-					icon: 'heroicons:document-arrow-down',
-					variant: 'primary',
-					onclick: (e) => {
-						e.preventDefault();
-						saveWorkflow();
-					}
-				},
-				{
-					label: 'Export',
-					href: '#export', 
-					icon: 'heroicons:arrow-down-tray',
-					variant: 'outline',
-					onclick: (e) => {
-						e.preventDefault();
-						exportWorkflow();
-					}
-				},
-				{
-					label: 'Workflow Settings',
-					href: '#settings',
-					icon: 'heroicons:cog-6-tooth',
-					variant: 'outline',
-					onclick: (e) => {
-						e.preventDefault();
-						toggleWorkflowSettings();
-					}
-				}
-			]}
+			primaryActions={navbarActions.length > 0
+				? navbarActions
+				: [
+						{
+							label: 'Save',
+							href: '#save',
+							icon: 'heroicons:document-arrow-down',
+							variant: 'primary',
+							onclick: (e) => {
+								e.preventDefault();
+								saveWorkflow();
+							}
+						},
+						{
+							label: 'Export',
+							href: '#export',
+							icon: 'heroicons:arrow-down-tray',
+							variant: 'outline',
+							onclick: (e) => {
+								e.preventDefault();
+								exportWorkflow();
+							}
+						},
+						{
+							label: 'Workflow Settings',
+							href: '#settings',
+							icon: 'heroicons:cog-6-tooth',
+							variant: 'outline',
+							onclick: (e) => {
+								e.preventDefault();
+								toggleWorkflowSettings();
+							}
+						}
+					]}
 			showStatus={true}
 		/>
 	{/if}
@@ -543,19 +548,19 @@
 			{/if}
 
 			<!-- Main Editor Area -->
-			<div 
+			<div
 				class="flowdrop-editor-main"
 				class:pipeline-view={!!pipelineId}
-				onclick={handleCanvasClick} 
-				onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()} 
-				role="button" 
-				tabindex="0" 
+				onclick={handleCanvasClick}
+				onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()}
+				role="button"
+				tabindex="0"
 				aria-label="Workflow canvas - click to close sidebar"
 			>
-				<WorkflowEditor 
+				<WorkflowEditor
 					bind:this={workflowEditorRef}
-					{nodes} 
-					{height} 
+					{nodes}
+					{height}
 					{width}
 					{endpointConfig}
 					{isConfigSidebarOpen}
@@ -577,7 +582,7 @@
 					configSchema={workflowConfigSchema}
 					configValues={workflowConfigValues}
 					onSave={handleWorkflowSave}
-					onClose={() => isWorkflowSettingsOpen = false}
+					onClose={() => (isWorkflowSettingsOpen = false)}
 				/>
 			{:else if !disableSidebar && selectedNodeForConfig()}
 				<div class="flowdrop-sidebar flowdrop-sidebar--right">
@@ -585,7 +590,7 @@
 						<!-- Header -->
 						<div class="flowdrop-config-sidebar__header">
 							<h2 class="flowdrop-config-sidebar__title">{selectedNodeForConfig().data.label}</h2>
-							<button 
+							<button
 								class="flowdrop-config-sidebar__close"
 								onclick={closeConfigSidebar}
 								aria-label="Close configuration sidebar"
@@ -602,15 +607,22 @@
 								<div class="flowdrop-config-sidebar__details">
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Type:</span>
-										<span class="flowdrop-config-sidebar__detail-value">{selectedNodeForConfig().data.metadata?.type || selectedNodeForConfig().type}</span>
+										<span class="flowdrop-config-sidebar__detail-value"
+											>{selectedNodeForConfig().data.metadata?.type ||
+												selectedNodeForConfig().type}</span
+										>
 									</div>
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Category:</span>
-										<span class="flowdrop-config-sidebar__detail-value">{selectedNodeForConfig().data.metadata?.category || 'general'}</span>
+										<span class="flowdrop-config-sidebar__detail-value"
+											>{selectedNodeForConfig().data.metadata?.category || 'general'}</span
+										>
 									</div>
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Description:</span>
-										<p class="flowdrop-config-sidebar__detail-description">{selectedNodeForConfig().data.metadata?.description || 'Node configuration'}</p>
+										<p class="flowdrop-config-sidebar__detail-description">
+											{selectedNodeForConfig().data.metadata?.description || 'Node configuration'}
+										</p>
 									</div>
 								</div>
 							</div>
@@ -630,14 +642,13 @@
 												Object.entries(configSchema.properties).forEach(([key, field]) => {
 													const fieldConfig = field as any;
 													// Use existing value if available, otherwise use default
-													mergedConfig[key] = nodeConfig[key] !== undefined 
-														? nodeConfig[key] 
-														: fieldConfig.default;
+													mergedConfig[key] =
+														nodeConfig[key] !== undefined ? nodeConfig[key] : fieldConfig.default;
 												});
 											}
 											return mergedConfig;
 										})()}
-										
+
 										<!-- Render configuration fields based on schema -->
 										{#if configSchema.properties}
 											{#each Object.entries(configSchema.properties) as [key, field]}
@@ -685,7 +696,9 @@
 															{:else if fieldConfig.options}
 																{#each fieldConfig.options as option}
 																	{@const optionConfig = option as any}
-																	<option value={String(optionConfig.value)}>{String(optionConfig.label)}</option>
+																	<option value={String(optionConfig.value)}
+																		>{String(optionConfig.label)}</option
+																	>
 																{/each}
 															{/if}
 														</select>
@@ -700,7 +713,9 @@
 														/>
 													{/if}
 													{#if fieldConfig.description}
-														<p class="flowdrop-config-sidebar__field-description">{String(fieldConfig.description)}</p>
+														<p class="flowdrop-config-sidebar__field-description">
+															{String(fieldConfig.description)}
+														</p>
 													{/if}
 												</div>
 											{/each}
@@ -712,7 +727,9 @@
 											</div>
 										{/if}
 									{:else}
-										<p class="flowdrop-config-sidebar__no-config">No configuration options available for this node.</p>
+										<p class="flowdrop-config-sidebar__no-config">
+											No configuration options available for this node.
+										</p>
 									{/if}
 								</div>
 							</div>
@@ -720,13 +737,13 @@
 
 						<!-- Footer -->
 						<div class="flowdrop-config-sidebar__footer">
-							<button 
+							<button
 								class="flowdrop-config-sidebar__button flowdrop-config-sidebar__button--secondary"
 								onclick={closeConfigSidebar}
 							>
 								Cancel
 							</button>
-							<button 
+							<button
 								class="flowdrop-config-sidebar__button flowdrop-config-sidebar__button--primary"
 								onclick={() => {
 									// Get the current config values from the form
@@ -735,7 +752,7 @@
 										// Collect the current form values
 										const form = document.querySelector('.flowdrop-config-sidebar__form');
 										const updatedConfig: Record<string, unknown> = {};
-										
+
 										if (form) {
 											const inputs = form.querySelectorAll('input, select, textarea');
 											inputs.forEach((input: any) => {
@@ -743,40 +760,42 @@
 													if (input.type === 'checkbox') {
 														updatedConfig[input.id] = input.checked;
 													} else if (input.type === 'number') {
-														updatedConfig[input.id] = input.value ? Number(input.value) : input.value;
+														updatedConfig[input.id] = input.value
+															? Number(input.value)
+															: input.value;
 													} else {
 														updatedConfig[input.id] = input.value;
 													}
 												}
 											});
 										}
-										
-					// Handle nodeType switching if nodeType is in the config
-					let nodeUpdates: any = {
-						data: {
-							...currentNode.data,
-							config: updatedConfig
-						}
-					};
-					
-					// If nodeType is being changed, update the node's type field
-					if (updatedConfig.nodeType && currentNode.data.metadata) {
-						const newComponentName = resolveComponentName(
-							currentNode.data.metadata,
-							updatedConfig.nodeType as string
-						);
-						
-						// Update the node with the new type
-						workflowActions.updateNode(selectedNodeId, {
-							...nodeUpdates,
-							type: newComponentName
-						});
-					} else {
-						// No nodeType change, just update config
-						workflowActions.updateNode(selectedNodeId, nodeUpdates);
-					}
+
+										// Handle nodeType switching if nodeType is in the config
+										let nodeUpdates: any = {
+											data: {
+												...currentNode.data,
+												config: updatedConfig
+											}
+										};
+
+										// If nodeType is being changed, update the node's type field
+										if (updatedConfig.nodeType && currentNode.data.metadata) {
+											const newComponentName = resolveComponentName(
+												currentNode.data.metadata,
+												updatedConfig.nodeType as string
+											);
+
+											// Update the node with the new type
+											workflowActions.updateNode(selectedNodeId, {
+												...nodeUpdates,
+												type: newComponentName
+											});
+										} else {
+											// No nodeType change, just update config
+											workflowActions.updateNode(selectedNodeId, nodeUpdates);
+										}
 									}
-									
+
 									closeConfigSidebar();
 								}}
 							>
@@ -903,15 +922,6 @@
 
 	.flowdrop-font--medium {
 		font-weight: 500;
-	}
-
-	.flowdrop-spinner {
-		width: 1rem;
-		height: 1rem;
-		border: 2px solid #d1d5db;
-		border-top: 2px solid #3b82f6;
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
 	}
 
 	@keyframes spin {
@@ -1100,7 +1110,9 @@
 		border: 1px solid #d1d5db;
 		border-radius: 0.375rem;
 		font-size: 0.875rem;
-		transition: border-color 0.2s, box-shadow 0.2s;
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 	}
 
 	.flowdrop-config-sidebar__input:focus,
@@ -1170,7 +1182,6 @@
 	.flowdrop-config-sidebar__button--primary:hover {
 		background-color: #2563eb;
 	}
-
 
 	.flowdrop-config-sidebar__debug {
 		background-color: #f3f4f6;

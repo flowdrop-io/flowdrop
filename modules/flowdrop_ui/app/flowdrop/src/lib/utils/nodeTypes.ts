@@ -13,6 +13,7 @@ const NODE_TYPE_TO_COMPONENT_MAP: Record<NodeType, string> = {
 	simple: 'simple',
 	square: 'square',
 	tool: 'tool',
+	gateway: 'gateway',
 	default: 'workflowNode'
 };
 
@@ -98,7 +99,9 @@ export function getNodeTypeEnumOptions(metadata: NodeMetadata): {
 	const typeDisplayNames: Record<NodeType, string> = {
 		note: 'Note (sticky note style)',
 		simple: 'Simple (compact layout)',
+		square: 'Square (geometric layout)',
 		tool: 'Tool (specialized for agent tools)',
+		gateway: 'Gateway (branching control flow)',
 		default: 'Default (standard workflow node)'
 	};
 

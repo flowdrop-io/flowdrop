@@ -24,6 +24,7 @@ export type NodeCategory =
 	| 'embeddings'
 	| 'memories'
 	| 'agents'
+	| 'ai'
 	| 'bundles';
 
 /**
@@ -95,7 +96,7 @@ export interface NodePort {
 /**
  * Node types for explicit component rendering
  */
-export type NodeType = 'note' | 'simple' | 'square' | 'tool' | 'default';
+export type NodeType = 'note' | 'simple' | 'square' | 'tool' | 'gateway' | 'default';
 
 /**
  * Node configuration metadata
@@ -361,7 +362,14 @@ export type WorkflowsResponse = ApiResponse<Workflow[]>;
 /**
  * Node execution status enum
  */
-export type NodeExecutionStatus = 'idle' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped';
+export type NodeExecutionStatus =
+	| 'idle'
+	| 'pending'
+	| 'running'
+	| 'completed'
+	| 'failed'
+	| 'cancelled'
+	| 'skipped';
 
 /**
  * Node execution tracking information

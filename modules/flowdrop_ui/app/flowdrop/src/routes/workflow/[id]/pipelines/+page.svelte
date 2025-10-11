@@ -13,6 +13,7 @@
 	import StatusLabel from '$lib/components/StatusLabel.svelte';
 	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
 	import { apiToasts, pipelineToasts, dismissToast } from '$lib/services/toastService.js';
+	import type { NodeExecutionStatus } from '$lib/types/index.js';
 
 	/**
 	 * Pipeline display type
@@ -57,12 +58,14 @@
 			loading = true;
 			error = null;
 
-			const apiUrl = getEndpointUrl(defaultApiConfig, '/workflow/{workflow_id}/pipelines', { workflow_id: workflowId });
+			const apiUrl = getEndpointUrl(defaultApiConfig, '/workflow/{workflow_id}/pipelines', {
+				workflow_id: workflowId
+			});
 			const response = await fetch(apiUrl, {
 				method: 'GET',
 				headers: {
-					'Content-Type': 'application/json',
-				},
+					'Content-Type': 'application/json'
+				}
 			});
 
 			if (!response.ok) {
@@ -83,41 +86,43 @@
 	// Fetch workflow name
 	async function fetchWorkflowName() {
 		if (!workflowId) return;
-		
+
 		try {
 			const apiUrl = getEndpointUrl(defaultApiConfig, '/workflows/{id}', { id: workflowId });
 			const response = await fetch(apiUrl, {
 				method: 'GET',
 				headers: {
-					'Content-Type': 'application/json',
-				},
+					'Content-Type': 'application/json'
+				}
 			});
 
 			if (response.ok) {
 				const data = await response.json();
 				workflowName = data.data?.name || data.data?.title || 'Workflow';
-				
+
 				// Dispatch custom event to update breadcrumbs
-				window.dispatchEvent(new CustomEvent('page-breadcrumbs-update', {
-					detail: {
-						breadcrumbs: [
-							{
-								label: 'Workflows',
-								href: '/',
-								icon: 'mdi:view-list'
-							},
-							{
-								label: workflowName,
-								href: `/workflow/${workflowId}/edit`,
-								icon: 'mdi:workflow'
-							},
-							{
-								label: 'Pipelines',
-								icon: 'mdi:source-branch'
-							}
-						]
-					}
-				}));
+				window.dispatchEvent(
+					new CustomEvent('page-breadcrumbs-update', {
+						detail: {
+							breadcrumbs: [
+								{
+									label: 'Workflows',
+									href: '/',
+									icon: 'mdi:view-list'
+								},
+								{
+									label: workflowName,
+									href: `/workflow/${workflowId}/edit`,
+									icon: 'mdi:workflow'
+								},
+								{
+									label: 'Pipelines',
+									icon: 'mdi:source-branch'
+								}
+							]
+						}
+					})
+				);
 			}
 		} catch (err) {
 			// Silently fail for workflow name - don't show toast for this background operation
@@ -141,21 +146,31 @@
 
 	function getStatusColor(status: string): string {
 		switch (status) {
-			case 'running': return '#3b82f6';
-			case 'completed': return '#10b981';
-			case 'error': return '#ef4444';
-			case 'idle': return '#6b7280';
-			default: return '#6b7280';
+			case 'running':
+				return '#3b82f6';
+			case 'completed':
+				return '#10b981';
+			case 'error':
+				return '#ef4444';
+			case 'idle':
+				return '#6b7280';
+			default:
+				return '#6b7280';
 		}
 	}
 
 	function getStatusIcon(status: string): string {
 		switch (status) {
-			case 'running': return 'mdi:loading';
-			case 'completed': return 'mdi:check-circle';
-			case 'error': return 'mdi:alert-circle';
-			case 'idle': return 'mdi:clock-outline';
-			default: return 'mdi:help-circle';
+			case 'running':
+				return 'mdi:loading';
+			case 'completed':
+				return 'mdi:check-circle';
+			case 'error':
+				return 'mdi:alert-circle';
+			case 'idle':
+				return 'mdi:clock-outline';
+			default:
+				return 'mdi:help-circle';
 		}
 	}
 </script>
@@ -200,10 +215,7 @@
 			<div class="pipelines-error">
 				<Icon icon="mdi:alert-circle" class="pipelines-error__icon" />
 				<p class="pipelines-error__text">{error}</p>
-				<button 
-					class="pipelines-btn pipelines-btn--outline"
-					onclick={fetchPipelines}
-				>
+				<button class="pipelines-btn pipelines-btn--outline" onclick={fetchPipelines}>
 					<Icon icon="mdi:refresh" />
 					Retry
 				</button>
@@ -220,10 +232,7 @@
 					{/if}
 				</p>
 				{#if !searchQuery}
-					<button 
-						class="pipelines-btn pipelines-btn--primary"
-						onclick={handleCreatePipeline}
-					>
+					<button class="pipelines-btn pipelines-btn--primary" onclick={handleCreatePipeline}>
 						<Icon icon="mdi:plus" />
 						Create First Pipeline
 					</button>
@@ -232,7 +241,7 @@
 		{:else}
 			<div class="pipelines-list">
 				{#each filteredPipelines as pipeline (pipeline.id)}
-					<div 
+					<div
 						class="pipelines-list-item"
 						onclick={() => handlePipelineSelect(pipeline.id)}
 						role="button"
@@ -247,14 +256,12 @@
 						<!-- Status Column -->
 						<div class="pipelines-list-item__status-column">
 							<div class="pipelines-list-item__status-badge">
-								<StatusIcon 
-									status={pipeline.status}
+								<StatusIcon
+									status={pipeline.status as NodeExecutionStatus}
 									size="sm"
 									showBackground={true}
 								/>
-								<StatusLabel 
-									label={pipeline.status}
-								/>
+								<StatusLabel label={pipeline.status} />
 							</div>
 							<div class="pipelines-list-item__status-meta">
 								<div class="pipelines-list-item__duration">
@@ -306,7 +313,7 @@
 
 						<!-- Actions Column -->
 						<div class="pipelines-list-item__actions-column">
-							<button 
+							<button
 								class="pipelines-list-item__action-btn"
 								onclick={(e) => {
 									e.stopPropagation();
@@ -316,7 +323,7 @@
 							>
 								<Icon icon="mdi:play" />
 							</button>
-							<button 
+							<button
 								class="pipelines-list-item__action-btn"
 								onclick={(e) => {
 									e.stopPropagation();
@@ -326,7 +333,7 @@
 							>
 								<Icon icon="mdi:stop" />
 							</button>
-							<button 
+							<button
 								class="pipelines-list-item__action-btn"
 								onclick={(e) => {
 									e.stopPropagation();
@@ -378,7 +385,6 @@
 		margin: 0;
 	}
 
-
 	.pipelines-filters {
 		background-color: #ffffff;
 		border-bottom: 1px solid #e5e7eb;
@@ -395,7 +401,6 @@
 		position: relative;
 		max-width: 400px;
 	}
-
 
 	.pipelines-search__input {
 		width: 100%;
@@ -502,11 +507,6 @@
 		transform: translateY(-1px);
 		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 		border-color: #3b82f6;
-	}
-
-	.pipelines-list-item--selected {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-		border: 2px solid #3b82f6;
 	}
 
 	/* Status Column */

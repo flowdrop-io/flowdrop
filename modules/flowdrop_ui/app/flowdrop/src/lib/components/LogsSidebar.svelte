@@ -69,11 +69,16 @@
 	 */
 	function getLogLevelColor(level: string): string {
 		switch (level) {
-			case 'error': return '#ef4444';
-			case 'warning': return '#f59e0b';
-			case 'success': return '#10b981';
-			case 'info': return '#3b82f6';
-			default: return '#6b7280';
+			case 'error':
+				return '#ef4444';
+			case 'warning':
+				return '#f59e0b';
+			case 'success':
+				return '#10b981';
+			case 'info':
+				return '#3b82f6';
+			default:
+				return '#6b7280';
 		}
 	}
 
@@ -82,11 +87,16 @@
 	 */
 	function getLogLevelIcon(level: string): string {
 		switch (level) {
-			case 'error': return 'mdi:alert-circle';
-			case 'warning': return 'mdi:alert';
-			case 'success': return 'mdi:check-circle';
-			case 'info': return 'mdi:information';
-			default: return 'mdi:circle';
+			case 'error':
+				return 'mdi:alert-circle';
+			case 'warning':
+				return 'mdi:alert';
+			case 'success':
+				return 'mdi:check-circle';
+			case 'info':
+				return 'mdi:information';
+			default:
+				return 'mdi:circle';
 		}
 	}
 
@@ -95,7 +105,7 @@
 	 */
 	function formatTimestamp(timestamp: string): string {
 		const date = new Date(timestamp);
-		return date.toLocaleTimeString('en-US', { 
+		return date.toLocaleTimeString('en-US', {
 			hour12: false,
 			hour: '2-digit',
 			minute: '2-digit',
@@ -109,7 +119,7 @@
 	 */
 	let filteredLogs = $derived(() => {
 		if (props.selectedNode) {
-			return props.logs.filter(log => log.nodeId === props.selectedNode?.id);
+			return props.logs.filter((log) => log.nodeId === props.selectedNode?.id);
 		}
 		return props.logs;
 	});
@@ -125,10 +135,13 @@
 	 * Export logs
 	 */
 	function exportLogs(): void {
-		const logText = filteredLogs().map(log => 
-			`[${formatTimestamp(log.timestamp)}] ${log.level.toUpperCase()}: ${log.message}${log.nodeId ? ` (Node: ${log.nodeId})` : ''}`
-		).join('\n');
-		
+		const logText = filteredLogs()
+			.map(
+				(log) =>
+					`[${formatTimestamp(log.timestamp)}] ${log.level.toUpperCase()}: ${log.message}${log.nodeId ? ` (Node: ${log.nodeId})` : ''}`
+			)
+			.join('\n');
+
 		const blob = new Blob([logText], { type: 'text/plain' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -190,7 +203,7 @@
 		{#if filteredLogs().length > 0}
 			<div class="logs-sidebar__logs" bind:this={logsContainer}>
 				{#each filteredLogs() as log, index (index)}
-					<div 
+					<div
 						class="logs-sidebar__log-entry"
 						class:logs-sidebar__log-entry--error={log.level === 'error'}
 						class:logs-sidebar__log-entry--warning={log.level === 'warning'}
@@ -199,8 +212,8 @@
 					>
 						<div class="logs-sidebar__log-header">
 							<div class="logs-sidebar__log-level">
-								<Icon 
-									icon={getLogLevelIcon(log.level)} 
+								<Icon
+									icon={getLogLevelIcon(log.level)}
 									style="color: {getLogLevelColor(log.level)}"
 								/>
 								<span class="logs-sidebar__log-level-text">{log.level.toUpperCase()}</span>
@@ -269,10 +282,10 @@
 <style>
 	.logs-sidebar {
 		position: fixed;
-		top: 0;
+		top: var(--flowdrop-navbar-height, 60px); /* Start below navbar */
 		right: 0;
 		width: 400px;
-		height: 100vh;
+		height: calc(100vh - var(--flowdrop-navbar-height, 60px)); /* Account for navbar height */
 		background-color: #ffffff;
 		border-left: 1px solid #e5e7eb;
 		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
