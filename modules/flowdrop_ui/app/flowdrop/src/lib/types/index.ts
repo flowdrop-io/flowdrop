@@ -161,12 +161,13 @@ export interface ConfigProperty extends BaseProperty {
 	description?: string;
 	default?: unknown;
 	enum?: unknown[];
+	multiple?: boolean; // For enum fields, allows multiple selection via checkboxes
 	minimum?: number;
 	maximum?: number;
 	minLength?: number;
 	maxLength?: number;
 	pattern?: string;
-	format?: 'multiline' | string; // Special format for multiline text
+	format?: 'multiline' | 'hidden' | string; // Special formats: multiline for textarea, hidden to hide field
 	items?: ConfigProperty;
 	properties?: Record<string, ConfigProperty>;
 	[key: string]: unknown; // Allow additional JSON Schema properties

@@ -1,58 +1,36 @@
 <!--
   Gateway Node Component
   Visual representation of gateway/branch nodes with branching flow indicators
-  Shows active branches, conditions, and execution paths
-  Styled with BEM syntax
+  Shows active branches and execution paths
+  Styled with BEM syntax following WorkflowNode pattern
 -->
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
 	import type { WorkflowNode } from '../types/index.js';
 	import Icon from '@iconify/svelte';
-	import { getStatusColor, getStatusIcon, getStatusLabel } from '../utils/nodeStatus.js';
-	import { getDataTypeColorToken } from '../utils/colors.js';
+	import { getNodeIcon } from '../utils/icons.js';
+	import { getDataTypeColorToken, getCategoryColorToken } from '../utils/colors.js';
 
-	// Define branch interface for better typing
+	// Define simplified branch interface - conditions are handled by backend
 	interface Branch {
 		name: string;
-		condition?: {
-			operator: string;
-			value: string;
-			caseSensitive?: boolean;
-		};
+		label: string;
 	}
 
-	let {
-		data,
-		selected = false
-	}: {
+	interface Props {
 		data: WorkflowNode['data'] & {
 			nodeId?: string;
 			onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
 		};
 		selected?: boolean;
-	} = $props();
+	}
 
-	let isHandleInteraction = $state(false);
+	let props: Props = $props();
 
-	// Gateway-specific data
-	let gatewayType = $derived((data.config?.gatewayType as string) || 'exclusive');
-	let branches = $derived((data.config?.branches as Branch[]) || []);
-	let defaultBranch = $derived(data.config?.defaultBranch || '');
-	let activeBranches = $derived((data.executionInfo as any)?.output?.active_branches || []);
-
-	// Node styling
-	let nodeIcon = $derived(data.metadata?.icon || 'mdi:source-branch');
-	let nodeColor = $derived(data.metadata?.color || '#10b981');
-	let nodeLabel = $derived(data.label || 'Gateway');
-
-	// Execution status
-	let executionInfo = $derived(data.executionInfo);
-	let isExecuting = $derived(executionInfo?.status === 'running');
-	let hasError = $derived(
-		(executionInfo?.status as string) === 'error' || (executionInfo?.status as string) === 'failed'
-	);
-	let isCompleted = $derived(executionInfo?.status === 'completed');
+	// Gateway-specific data - branches are calculated at runtime from config
+	let branches = $derived((props.data.config?.branches as Branch[]) || []);
+	let activeBranches = $derived((props.data.executionInfo as any)?.output?.active_branches || []);
 
 	/**
 	 * Handle node click - only handle selection, no config opening
@@ -65,11 +43,11 @@
 	 * Handle double-click to open config
 	 */
 	function handleNodeDoubleClick(): void {
-		if (data.onConfigOpen) {
-			data.onConfigOpen({
-				id: data.nodeId || '',
+		if (props.data.onConfigOpen) {
+			props.data.onConfigOpen({
+				id: props.data.nodeId || '',
 				type: 'gateway',
-				data: data
+				data: props.data
 			});
 		}
 	}
@@ -85,415 +63,407 @@
 	}
 
 	/**
-	 * Get branch status for visual indication
+	 * Check if a branch is active
 	 */
-	function getBranchStatus(branchName: string): 'active' | 'inactive' | 'default' {
-		if (activeBranches.includes(branchName)) {
-			return 'active';
-		}
-		if (branchName === defaultBranch) {
-			return 'default';
-		}
-		return 'inactive';
-	}
-
-	/**
-	 * Get gateway type icon
-	 */
-	function getGatewayTypeIcon(type: string): string {
-		switch (type) {
-			case 'exclusive':
-				return 'mdi:source-branch';
-			case 'inclusive':
-				return 'mdi:source-branch-multiple';
-			case 'parallel':
-				return 'mdi:source-branch-sync';
-			default:
-				return 'mdi:source-branch';
-		}
-	}
-
-	/**
-	 * Get gateway type label
-	 */
-	function getGatewayTypeLabel(type: string): string {
-		switch (type) {
-			case 'exclusive':
-				return 'Exclusive';
-			case 'inclusive':
-				return 'Inclusive';
-			case 'parallel':
-				return 'Parallel';
-			default:
-				return 'Gateway';
-		}
-	}
-
-	/**
-	 * Format branch condition for display
-	 */
-	function formatBranchCondition(branch: Branch): string {
-		if (!branch.condition) return 'No condition';
-
-		const { operator, value, caseSensitive } = branch.condition;
-		const caseText = caseSensitive ? ' (case-sensitive)' : '';
-
-		switch (operator) {
-			case 'equals':
-				return `= "${value}"${caseText}`;
-			case 'not_equals':
-				return `≠ "${value}"${caseText}`;
-			case 'contains':
-				return `contains "${value}"${caseText}`;
-			case 'starts_with':
-				return `starts with "${value}"${caseText}`;
-			case 'ends_with':
-				return `ends with "${value}"${caseText}`;
-			case 'greater_than':
-				return `> ${value}`;
-			case 'less_than':
-				return `< ${value}`;
-			case 'greater_than_or_equal':
-				return `≥ ${value}`;
-			case 'less_than_or_equal':
-				return `≤ ${value}`;
-			case 'is_empty':
-				return 'is empty';
-			case 'is_not_empty':
-				return 'is not empty';
-			case 'regex':
-				return `matches /${value}/`;
-			default:
-				return operator;
-		}
+	function isBranchActive(branchName: string): boolean {
+		return activeBranches.includes(branchName);
 	}
 </script>
 
+<!-- Node Container -->
 <div
-	class="workflow-node workflow-node--gateway"
-	class:workflow-node--selected={selected}
-	class:workflow-node--executing={isExecuting}
-	class:workflow-node--error={hasError}
-	class:workflow-node--completed={isCompleted}
+	class="flowdrop-workflow-node flowdrop-workflow-node--gateway"
+	class:flowdrop-workflow-node--selected={props.selected}
 	onclick={handleNodeClick}
 	ondblclick={handleNodeDoubleClick}
 	onkeydown={handleKeydown}
 	role="button"
 	tabindex="0"
-	style="--node-color: {nodeColor};"
+	aria-label="Gateway node: {props.data.metadata.name}"
+	aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
-	<!-- Input Handle -->
-	<Handle
-		type="target"
-		position={Position.Left}
-		class="workflow-node__handle workflow-node__handle--input"
-		style="background-color: {getDataTypeColorToken('mixed')};"
-	/>
+	<!-- Node Header -->
+	<div class="flowdrop-workflow-node__header">
+		<div class="flowdrop-flex flowdrop-gap--3 flowdrop-items--center">
+			<!-- Node Icon -->
+			<div
+				class="flowdrop-workflow-node__icon"
+				style="background-color: {getCategoryColorToken(props.data.metadata.category)}"
+			>
+				<Icon icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)} />
+			</div>
 
-	<!-- Node Content -->
-	<div class="workflow-node__content">
-		<!-- Header -->
-		<div class="workflow-node__header">
-			<div class="workflow-node__icon">
-				<Icon icon={getGatewayTypeIcon(gatewayType)} />
-			</div>
-			<div class="workflow-node__title">
-				<h3 class="workflow-node__label">{nodeLabel}</h3>
-				<p class="workflow-node__type">{getGatewayTypeLabel(gatewayType)} Gateway</p>
-			</div>
+			<!-- Node Title -->
+			<h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
+				{props.data.label}
+			</h3>
 		</div>
+		<!-- Node Description -->
+		<p
+			class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1"
+			id="node-description-{props.data.nodeId || 'unknown'}"
+		>
+			{props.data.metadata.description}
+		</p>
+	</div>
 
-		<!-- Branches Section -->
-		{#if branches.length > 0}
-			<div class="workflow-node__branches">
-				<div class="workflow-node__branches-header">
-					<Icon icon="mdi:source-branch" />
-					<span>Branches ({branches.length})</span>
-				</div>
+	<!-- Input Ports Container -->
+	{#if props.data.metadata.inputs.length > 0}
+		<div class="flowdrop-workflow-node__ports">
+			<div class="flowdrop-workflow-node__ports-header">
+				<h5 class="flowdrop-workflow-node__ports-title">Inputs</h5>
+			</div>
+			<div class="flowdrop-workflow-node__ports-list">
+				{#each props.data.metadata.inputs as port (port.id)}
+					<div class="flowdrop-workflow-node__port">
+						<!-- Input Handle -->
+						<Handle
+							type="target"
+							position={Position.Left}
+							id={`${props.data.nodeId}-input-${port.id}`}
+							class="flowdrop-workflow-node__handle"
+							style="top: 50%; transform: translateY(-50%); margin-left: -32px; background-color: {getDataTypeColorToken(
+								port.dataType
+							)}; border-color: '#ffffff';"
+							role="button"
+							tabindex={0}
+							aria-label="Connect to {port.name} input port"
+						/>
 
-				<div class="workflow-node__branches-list">
-					{#each branches as branch, index}
-						{@const branchStatus = getBranchStatus(branch.name)}
-						<div
-							class="workflow-node__branch"
-							class:workflow-node__branch--active={branchStatus === 'active'}
-							class:workflow-node__branch--default={branchStatus === 'default'}
-							class:workflow-node__branch--inactive={branchStatus === 'inactive'}
-						>
-							<div class="workflow-node__branch-header">
-								<Icon
-									icon={branchStatus === 'active'
-										? 'mdi:check-circle'
-										: branchStatus === 'default'
-											? 'mdi:circle-outline'
-											: 'mdi:circle-outline'}
-									class="workflow-node__branch-icon"
-								/>
-								<span class="workflow-node__branch-name">{branch.name}</span>
-								{#if branchStatus === 'default'}
-									<span class="workflow-node__branch-default">(default)</span>
+						<!-- Port Info -->
+						<div class="flowdrop-flex--1 flowdrop-min-w--0">
+							<div class="flowdrop-flex flowdrop-gap--2">
+								<span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
+								<span
+									class="flowdrop-badge flowdrop-badge--sm"
+									style="background-color: {getDataTypeColorToken(port.dataType)}; color: #fff;"
+								>
+									{port.dataType}
+								</span>
+								{#if port.required}
+									<span class="flowdrop-badge flowdrop-badge--error flowdrop-badge--sm"
+										>Required</span
+									>
 								{/if}
 							</div>
-
-							{#if branch.condition}
-								<div class="workflow-node__branch-condition">
-									{formatBranchCondition(branch)}
-								</div>
+							{#if port.description}
+								<p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
+									{port.description}
+								</p>
 							{/if}
 						</div>
-					{/each}
-				</div>
+					</div>
+				{/each}
 			</div>
-		{:else}
+		</div>
+	{/if}
+
+	<!-- Branches Section (Output Ports) -->
+	{#if branches.length > 0}
+		<div class="flowdrop-workflow-node__ports">
+			<div class="flowdrop-workflow-node__ports-header">
+				<h5 class="flowdrop-workflow-node__ports-title">
+					<Icon icon="mdi:source-branch" />
+					<span>Branches ({branches.length})</span>
+				</h5>
+			</div>
+			<div class="flowdrop-workflow-node__ports-list">
+				{#each branches as branch (branch.name)}
+					{@const isActive = isBranchActive(branch.name)}
+					<div class="flowdrop-workflow-node__port">
+						<!-- Port Info -->
+						<div class="flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right">
+							<div class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end flowdrop-items--center">
+								{#if isActive}
+									<span style="color: {getCategoryColorToken(props.data.metadata.category)};">
+										<Icon icon="mdi:check-circle" />
+									</span>
+								{/if}
+								<span
+									class="flowdrop-text--xs flowdrop-font--medium"
+									class:flowdrop-text--active={isActive}
+								>
+									{branch.name}
+								</span>
+								<span
+									class="flowdrop-badge flowdrop-badge--sm"
+									style="background-color: {getDataTypeColorToken('mixed')}; color: #fff;"
+								>
+									branch
+								</span>
+							</div>
+						</div>
+
+						<!-- Output Handle - Generated from branch name -->
+						<Handle
+							type="source"
+							position={Position.Right}
+							id={`${props.data.nodeId}-output-${branch.name}`}
+							class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
+							style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {isActive
+								? getCategoryColorToken(props.data.metadata.category)
+								: getDataTypeColorToken('mixed')}; border-color: '#ffffff';"
+							role="button"
+							tabindex={0}
+							aria-label="Connect from {branch.name} branch"
+						/>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{:else}
+		<div class="flowdrop-workflow-node__ports">
 			<div class="workflow-node__no-branches">
 				<Icon icon="mdi:alert-circle-outline" />
 				<span>No branches configured</span>
 			</div>
-		{/if}
-
-		<!-- Execution Status -->
-		{#if executionInfo}
-			<div class="workflow-node__execution">
-				<div class="workflow-node__execution-status">
-					<Icon
-						icon={getStatusIcon(executionInfo.status)}
-						class="workflow-node__status-icon"
-						style="color: {getStatusColor(executionInfo.status)};"
-					/>
-					<span class="workflow-node__status-label">
-						{getStatusLabel(executionInfo.status)}
-					</span>
-				</div>
-			</div>
-		{/if}
-	</div>
-
-	<!-- Output Handles for each branch -->
-	{#each branches as branch, index}
-		{@const isActive = activeBranches.includes(branch.name)}
-		<Handle
-			type="source"
-			position={Position.Right}
-			id="branch-{branch.name}"
-			class="workflow-node__handle workflow-node__handle--output workflow-node__handle--branch {isActive
-				? 'workflow-node__handle--active'
-				: ''}"
-			style="
-				top: {20 + index * 40}px;
-				background-color: {isActive ? nodeColor : '#e5e7eb'};
-			"
-		>
-			<div class="workflow-node__handle-label">
-				{branch.name}
-			</div>
-		</Handle>
-	{/each}
-
-	<!-- Default branch handle if configured -->
-	{#if defaultBranch && !branches.some((b) => b.name === defaultBranch)}
-		<Handle
-			type="source"
-			position={Position.Right}
-			id="branch-{defaultBranch}"
-			class="workflow-node__handle workflow-node__handle--output workflow-node__handle--default"
-			style="
-				top: {20 + branches.length * 40}px;
-				background-color: {nodeColor};
-			"
-		>
-			<div class="workflow-node__handle-label">
-				{defaultBranch} (default)
-			</div>
-		</Handle>
+		</div>
 	{/if}
+
+	<!-- Config button -->
+	<button
+		class="flowdrop-workflow-node__config-btn"
+		onclick={handleNodeDoubleClick}
+		title="Configure node"
+	>
+		<Icon icon="mdi:cog" />
+	</button>
 </div>
 
 <style>
-	.workflow-node--gateway {
-		min-width: 280px;
-		max-width: 400px;
-		background: white;
+	.flowdrop-workflow-node {
+		position: relative;
+		background-color: #ffffff;
 		border: 2px solid #e5e7eb;
-		border-radius: 12px;
+		border-radius: 0.75rem;
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-		transition: all 0.2s ease;
+		width: 18rem;
+		z-index: 10;
+	}
+
+	.flowdrop-workflow-node--gateway {
+		min-width: 18rem;
+	}
+
+	.flowdrop-workflow-node--selected {
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+		border: 2px solid #3b82f6;
+	}
+
+	.flowdrop-workflow-node__header {
+		padding: 1rem;
+		border-bottom: 1px solid #e5e7eb;
+		background-color: #f9fafb;
+		border-top-left-radius: 0.75rem;
+		border-top-right-radius: 0.75rem;
+	}
+
+	.flowdrop-workflow-node__icon {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.5rem;
+		color: #ffffff;
+		font-size: 0.875rem;
+		font-weight: 500;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	}
+
+	.flowdrop-workflow-node__header h3 {
+		margin: 0;
+		line-height: 1;
+	}
+
+	.flowdrop-workflow-node__ports {
+		padding: 0.75rem 1rem;
+	}
+
+	.flowdrop-workflow-node__ports-header {
+		margin-bottom: 0.5rem;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.flowdrop-workflow-node__ports-title {
+		margin: 0;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #374151;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.flowdrop-workflow-node__ports-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.flowdrop-workflow-node__port {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.25rem 0;
 		position: relative;
 	}
 
-	.workflow-node--gateway:hover {
-		box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
-		transform: translateY(-1px);
-	}
-
-	.workflow-node--gateway.workflow-node--selected {
-		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-	}
-
-	.workflow-node--gateway.workflow-node--executing {
-		border-color: #f59e0b;
-		animation: pulse 2s infinite;
-	}
-
-	.workflow-node--gateway.workflow-node--error {
-		border-color: #ef4444;
-	}
-
-	.workflow-node--gateway.workflow-node--completed {
-		border-color: #10b981;
-	}
-
-	.workflow-node__content {
-		padding: 16px;
-	}
-
-	.workflow-node__header {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		margin-bottom: 16px;
-	}
-
-	.workflow-node__icon {
-		font-size: 1.5rem;
-		color: var(--node-color, #10b981);
-	}
-
-	.workflow-node__title {
-		flex: 1;
-	}
-
-	.workflow-node__label {
-		font-size: 1rem;
-		font-weight: 600;
-		margin: 0;
-		color: #1f2937;
-	}
-
-	.workflow-node__type {
-		font-size: 0.875rem;
-		color: #6b7280;
-		margin: 0;
-	}
-
-	.workflow-node__branches {
-		margin-bottom: 16px;
-	}
-
-	.workflow-node__branches-header {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-size: 0.875rem;
+	.flowdrop-badge {
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		font-size: 0.625rem;
 		font-weight: 500;
-		color: #374151;
-		margin-bottom: 12px;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
-	.workflow-node__branches-list {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
+	.flowdrop-badge--error {
+		background-color: #ef4444;
+		color: #ffffff;
 	}
 
-	.workflow-node__branch {
-		padding: 8px 12px;
-		border-radius: 6px;
-		border: 1px solid #e5e7eb;
-		background: #f9fafb;
-		transition: all 0.2s ease;
-	}
-
-	.workflow-node__branch--active {
-		border-color: var(--node-color, #10b981);
-		background: rgba(16, 185, 129, 0.1);
-	}
-
-	.workflow-node__branch--default {
-		border-color: #6b7280;
-		background: #f3f4f6;
-	}
-
-	.workflow-node__branch-header {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		margin-bottom: 4px;
-	}
-
-	.workflow-node__branch-name {
-		font-weight: 500;
-		font-size: 0.875rem;
-		color: #374151;
-	}
-
-	.workflow-node__branch-default {
-		font-size: 0.75rem;
-		color: #6b7280;
-		font-style: italic;
-	}
-
-	.workflow-node__branch-condition {
-		font-size: 0.75rem;
-		color: #6b7280;
-		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-		background: rgba(0, 0, 0, 0.05);
-		padding: 2px 6px;
-		border-radius: 3px;
-		margin-top: 4px;
+	.flowdrop-badge--sm {
+		font-size: 0.625rem;
+		padding: 0.125rem 0.25rem;
 	}
 
 	.workflow-node__no-branches {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 12px;
+		gap: 0.5rem;
+		padding: 0.75rem;
 		background: #fef3c7;
 		border: 1px solid #f59e0b;
-		border-radius: 6px;
+		border-radius: 0.5rem;
 		color: #92400e;
 		font-size: 0.875rem;
 	}
 
-	.workflow-node__execution {
-		border-top: 1px solid #e5e7eb;
-		padding-top: 12px;
+	/* Handle styles */
+	:global(.flowdrop-workflow-node__handle) {
+		width: 0.75rem;
+		height: 0.75rem;
+		background-color: #6b7280;
+		border: 2px solid #ffffff;
+		border-radius: 50%;
+		transition: all 0.2s ease-in-out;
+		cursor: pointer;
 	}
 
-	.workflow-node__execution-status {
+	:global(.flowdrop-workflow-node__handle:hover) {
+		background-color: #3b82f6;
+		transform: scale(1.2);
+	}
+
+	:global(.flowdrop-workflow-node__handle:focus) {
+		outline: 2px solid #3b82f6;
+		outline-offset: 2px;
+	}
+
+	:global(.flowdrop-workflow-node__handle--active) {
+		transform: scale(1.15);
+		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+	}
+
+	/* Utility classes */
+	.flowdrop-flex {
+		display: flex;
+	}
+
+	.flowdrop-flex--1 {
+		flex: 1;
+	}
+
+	.flowdrop-gap--2 {
+		gap: 0.5rem;
+	}
+
+	.flowdrop-gap--3 {
+		gap: 0.75rem;
+	}
+
+	.flowdrop-items--center {
+		align-items: center;
+	}
+
+	.flowdrop-justify--end {
+		justify-content: flex-end;
+	}
+
+	.flowdrop-min-w--0 {
+		min-width: 0;
+	}
+
+	.flowdrop-text--xs {
+		font-size: 0.75rem;
+		line-height: 1rem;
+	}
+
+	.flowdrop-text--sm {
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+	}
+
+	.flowdrop-text--gray {
+		color: #6b7280;
+	}
+
+	.flowdrop-text--active {
+		color: #10b981;
+		font-weight: 600;
+	}
+
+	.flowdrop-font--medium {
+		font-weight: 500;
+	}
+
+	.flowdrop-truncate {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.flowdrop-mt--1 {
+		margin-top: 0.25rem;
+	}
+
+	.flowdrop-text--right {
+		text-align: right;
+	}
+
+	.flowdrop-workflow-node__config-btn {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		width: 1.5rem;
+		height: 1.5rem;
+		background-color: rgba(255, 255, 255, 0.9);
+		border: 1px solid #e5e7eb;
+		border-radius: 0.25rem;
+		color: #6b7280;
+		cursor: pointer;
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		margin-bottom: 8px;
-	}
-
-	.workflow-node__status-label {
+		justify-content: center;
+		opacity: 0;
+		transition: all 0.2s ease-in-out;
+		backdrop-filter: blur(4px);
+		z-index: 15;
 		font-size: 0.875rem;
-		font-weight: 500;
 	}
 
-	.workflow-node__handle-label {
-		position: absolute;
-		right: -8px;
-		top: 50%;
-		transform: translateY(-50%);
-		background: white;
-		padding: 2px 6px;
-		border-radius: 4px;
-		font-size: 0.75rem;
-		font-weight: 500;
+	.flowdrop-workflow-node:hover .flowdrop-workflow-node__config-btn {
+		opacity: 1;
+	}
+
+	.flowdrop-workflow-node__config-btn:hover {
+		background-color: #f9fafb;
+		border-color: #d1d5db;
 		color: #374151;
-		white-space: nowrap;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	}
-
-	@keyframes pulse {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.7;
-		}
 	}
 </style>

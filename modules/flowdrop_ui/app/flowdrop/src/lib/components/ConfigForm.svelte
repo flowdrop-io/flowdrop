@@ -163,6 +163,10 @@
 
 		switch (property.type) {
 			case 'string':
+				// If enum with multiple selection, default to empty array
+				if (property.enum && property.multiple) {
+					return [];
+				}
 				return '';
 			case 'number':
 				return 0;
@@ -196,33 +200,61 @@
 	{#if props.schema && props.schema.properties && typeof props.schema.properties === 'object'}
 		<form class="flowdrop-form" onsubmit={(e) => e.preventDefault()}>
 			{#each Object.entries(props.schema.properties) as [fieldName, property] (fieldName)}
-				<div class="flowdrop-form-field">
-					<label class="flowdrop-form-label" for={fieldName}>
-						{property.title || fieldName}
-						{#if props.schema.required?.includes(fieldName)}
-							<span class="flowdrop-form-required">*</span>
-						{/if}
-					</label>
+				{#if property.format !== 'hidden'}
+					<div class="flowdrop-form-field">
+						<label class="flowdrop-form-label" for={fieldName}>
+							{property.title || fieldName}
+							{#if props.schema.required?.includes(fieldName)}
+								<span class="flowdrop-form-required">*</span>
+							{/if}
+						</label>
 
-					{#if property.type === 'string'}
-						{#if property.enum}
-							<!-- Select field for enum -->
-							<select
-								id={fieldName}
-								class="flowdrop-form-select {validationErrors[fieldName]
-									? 'flowdrop-form-select--error'
-									: ''}"
-								disabled={props.disabled || false}
-								onchange={(e) =>
-									handleFieldChange(fieldName, (e.target as HTMLSelectElement).value)}
-							>
-								{#each property.enum as option (option)}
-									<option value={option} selected={localValues[fieldName] === option}>
-										{option}
-									</option>
-								{/each}
-							</select>
-						{:else if property.format === 'multiline' || (property.maxLength && property.maxLength > 100)}
+				{#if property.type === 'string'}
+					{#if property.enum && property.multiple}
+						<!-- Checkboxes for enum with multiple selection -->
+						<div class="flowdrop-form-checkbox-group">
+							{#each property.enum as option (option)}
+								<label class="flowdrop-form-checkbox">
+									<input
+										type="checkbox"
+										class="flowdrop-form-checkbox__input"
+										value={option}
+										checked={Array.isArray(localValues[fieldName]) && localValues[fieldName].includes(option)}
+										disabled={props.disabled || false}
+										onchange={(e) => {
+											const checked = (e.target as HTMLInputElement).checked;
+											const currentValues = Array.isArray(localValues[fieldName]) ? [...localValues[fieldName]] : [];
+											if (checked) {
+												if (!currentValues.includes(option)) {
+													handleFieldChange(fieldName, [...currentValues, option]);
+												}
+											} else {
+												handleFieldChange(fieldName, currentValues.filter(v => v !== option));
+											}
+										}}
+									/>
+									<span class="flowdrop-form-checkbox__label">{option}</span>
+								</label>
+							{/each}
+						</div>
+					{:else if property.enum}
+						<!-- Select field for enum with single selection -->
+						<select
+							id={fieldName}
+							class="flowdrop-form-select {validationErrors[fieldName]
+								? 'flowdrop-form-select--error'
+								: ''}"
+							disabled={props.disabled || false}
+							onchange={(e) =>
+								handleFieldChange(fieldName, (e.target as HTMLSelectElement).value)}
+						>
+							{#each property.enum as option (option)}
+								<option value={option} selected={localValues[fieldName] === option}>
+									{option}
+								</option>
+							{/each}
+						</select>
+					{:else if property.format === 'multiline' || (property.maxLength && property.maxLength > 100)}
 							<!-- Textarea for multiline or long text -->
 							<textarea
 								id={fieldName}
@@ -358,6 +390,7 @@
 						<div class="flowdrop-form-help">{property.description}</div>
 					{/if}
 				</div>
+			{/if}
 			{/each}
 		</form>
 	{:else}
@@ -435,6 +468,12 @@
 	.flowdrop-form-textarea {
 		resize: vertical;
 		min-height: 4rem;
+	}
+
+	.flowdrop-form-checkbox-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	.flowdrop-form-checkbox {

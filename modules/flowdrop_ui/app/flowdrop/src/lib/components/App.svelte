@@ -653,11 +653,65 @@
 										{#if configSchema.properties}
 											{#each Object.entries(configSchema.properties) as [key, field]}
 												{@const fieldConfig = field as any}
-												<div class="flowdrop-config-sidebar__field">
-													<label class="flowdrop-config-sidebar__field-label" for={key}>
-														{fieldConfig.title || fieldConfig.description || key}
-													</label>
-													{#if fieldConfig.type === 'string'}
+												{#if fieldConfig.format !== 'hidden'}
+													<div class="flowdrop-config-sidebar__field">
+														<label class="flowdrop-config-sidebar__field-label" for={key}>
+															{fieldConfig.title || fieldConfig.description || key}
+														</label>
+													{#if fieldConfig.enum && fieldConfig.multiple}
+														<!-- Checkboxes for enum with multiple selection -->
+														<div class="flowdrop-config-sidebar__checkbox-group">
+															{#each fieldConfig.enum as option}
+																<label class="flowdrop-config-sidebar__checkbox-item">
+																	<input
+																		type="checkbox"
+																		class="flowdrop-config-sidebar__checkbox"
+																		value={String(option)}
+																		checked={Array.isArray(configValues[key]) &&
+																			configValues[key].includes(String(option))}
+																		onchange={(e) => {
+																			const checked = e.currentTarget.checked;
+																			const currentValues = Array.isArray(configValues[key])
+																				? [...configValues[key]]
+																				: [];
+																			if (checked) {
+																				if (!currentValues.includes(String(option))) {
+																					configValues[key] = [...currentValues, String(option)];
+																				}
+																			} else {
+																				configValues[key] = currentValues.filter(
+																					(v) => v !== String(option)
+																				);
+																			}
+																		}}
+																	/>
+																	<span class="flowdrop-config-sidebar__checkbox-label">
+																		{String(option)}
+																	</span>
+																</label>
+															{/each}
+														</div>
+													{:else if fieldConfig.enum}
+														<!-- Select for enum with single selection -->
+														<select
+															id={key}
+															class="flowdrop-config-sidebar__select"
+															bind:value={configValues[key]}
+														>
+															{#each fieldConfig.enum as option}
+																<option value={String(option)}>{String(option)}</option>
+															{/each}
+														</select>
+													{:else if fieldConfig.type === 'string' && fieldConfig.format === 'multiline'}
+														<!-- Textarea for multiline strings -->
+														<textarea
+															id={key}
+															class="flowdrop-config-sidebar__textarea"
+															bind:value={configValues[key]}
+															placeholder={String(fieldConfig.placeholder || '')}
+															rows="4"
+														></textarea>
+													{:else if fieldConfig.type === 'string'}
 														<input
 															id={key}
 															type="text"
@@ -683,17 +737,13 @@
 																configValues[key] = e.currentTarget.checked;
 															}}
 														/>
-													{:else if fieldConfig.type === 'select' || fieldConfig.enum}
+													{:else if fieldConfig.type === 'select' || fieldConfig.options}
 														<select
 															id={key}
 															class="flowdrop-config-sidebar__select"
 															bind:value={configValues[key]}
 														>
-															{#if fieldConfig.enum}
-																{#each fieldConfig.enum as option}
-																	<option value={String(option)}>{String(option)}</option>
-																{/each}
-															{:else if fieldConfig.options}
+															{#if fieldConfig.options}
 																{#each fieldConfig.options as option}
 																	{@const optionConfig = option as any}
 																	<option value={String(optionConfig.value)}
@@ -718,6 +768,7 @@
 														</p>
 													{/if}
 												</div>
+											{/if}
 											{/each}
 										{:else}
 											<!-- If no properties, show the raw schema for debugging -->
@@ -1122,10 +1173,48 @@
 		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 	}
 
+	.flowdrop-config-sidebar__checkbox-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.flowdrop-config-sidebar__checkbox-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		cursor: pointer;
+	}
+
 	.flowdrop-config-sidebar__checkbox {
 		width: 1rem;
 		height: 1rem;
 		accent-color: #3b82f6;
+		cursor: pointer;
+	}
+
+	.flowdrop-config-sidebar__checkbox-label {
+		font-size: 0.875rem;
+		color: #374151;
+		cursor: pointer;
+	}
+
+	.flowdrop-config-sidebar__textarea {
+		width: 100%;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font-size: 0.875rem;
+		background-color: #ffffff;
+		transition: all 0.2s ease-in-out;
+		resize: vertical;
+		min-height: 4rem;
+	}
+
+	.flowdrop-config-sidebar__textarea:focus {
+		outline: none;
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 	}
 
 	.flowdrop-config-sidebar__field-description {

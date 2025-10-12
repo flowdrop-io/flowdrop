@@ -18,6 +18,7 @@
 		getOptimalStatusPosition,
 		getOptimalStatusSize
 	} from '../utils/nodeWrapper.js';
+	import { resolveComponentName } from '../utils/nodeTypes.js';
 
 	interface Props {
 		data: WorkflowNode['data'] & {
@@ -39,12 +40,19 @@
 	} = $props();
 
 	// Determine which node component to render based on node type
-	let nodeComponent = $derived(getNodeComponent(data.metadata?.type || 'workflowNode'));
+	// Priority: config.nodeType > metadata.type
+	let resolvedComponentName = $derived(
+		data.metadata
+			? resolveComponentName(data.metadata, data.config?.nodeType as string | undefined)
+			: 'workflowNode'
+	);
+	let nodeComponent = $derived(getNodeComponent(resolvedComponentName));
 
 	// Get execution info
 	let executionInfo = $derived(data.executionInfo);
-	let nodeType = $derived(data.metadata?.type || 'workflowNode');
-	let shouldShowStatus = $derived(shouldShowNodeStatus(executionInfo) && nodeType !== 'note');
+	let shouldShowStatus = $derived(
+		shouldShowNodeStatus(executionInfo) && resolvedComponentName !== 'note'
+	);
 
 	/**
 	 * Get the appropriate node component based on type
@@ -71,14 +79,14 @@
 	 * Get optimal status position for this node type
 	 */
 	function getStatusPosition(): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' {
-		return getOptimalStatusPosition(data.metadata?.type || 'workflowNode');
+		return getOptimalStatusPosition(resolvedComponentName);
 	}
 
 	/**
 	 * Get optimal status size for this node type
 	 */
 	function getStatusSize(): 'sm' | 'md' | 'lg' {
-		return getOptimalStatusSize(data.metadata?.type || 'workflowNode');
+		return getOptimalStatusSize(resolvedComponentName);
 	}
 </script>
 

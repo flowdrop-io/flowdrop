@@ -300,32 +300,68 @@
 					}}
 				>
 					{#each Object.entries(props.configSchema.properties) as [key, property] (key)}
-						<div class="config-sidebar__field">
-							<label class="config-sidebar__label" for="config-{key}">
-								{property.title || key}
-								{#if props.configSchema?.required?.includes(key)}
-									<span class="config-sidebar__required">*</span>
-								{/if}
-							</label>
+						{#if property.format !== 'hidden'}
+							<div class="config-sidebar__field">
+								<label class="config-sidebar__label" for="config-{key}">
+									{property.title || key}
+									{#if props.configSchema?.required?.includes(key)}
+										<span class="config-sidebar__required">*</span>
+									{/if}
+								</label>
 
 							{#if property.description}
 								<p class="config-sidebar__description">{property.description}</p>
 							{/if}
 
-							{#if property.enum}
-								<!-- Dropdown for enum values -->
-								<select
-									id="config-{key}"
-									class="config-sidebar__select"
-									value={localConfigValues[key] ?? property.default ?? ''}
-									onchange={(e) =>
-										handleInputChange(key, (e.target as HTMLSelectElement).value, property.type)}
-								>
-									{#each property.enum as option (option)}
-										<option value={option}>{option}</option>
-									{/each}
-								</select>
-							{:else if property.type === 'boolean'}
+						{#if property.enum && property.multiple}
+							<!-- Checkboxes for enum with multiple selection -->
+							<div class="config-sidebar__checkbox-group">
+								{#each property.enum as option (option)}
+									<div class="config-sidebar__checkbox-wrapper">
+										<input
+											type="checkbox"
+											id="config-{key}-{option}"
+											class="config-sidebar__checkbox"
+											value={option}
+											checked={Array.isArray(localConfigValues[key]) && localConfigValues[key].includes(option)}
+											onchange={(e) => {
+												const checked = (e.target as HTMLInputElement).checked;
+												const currentValues = Array.isArray(localConfigValues[key])
+													? [...localConfigValues[key]]
+													: [];
+												if (checked) {
+													if (!currentValues.includes(option)) {
+														handleInputChange(key, [...currentValues, option], property.type);
+													}
+												} else {
+													handleInputChange(
+														key,
+														currentValues.filter((v) => v !== option),
+														property.type
+													);
+												}
+											}}
+										/>
+										<label for="config-{key}-{option}" class="config-sidebar__checkbox-label">
+											{option}
+										</label>
+									</div>
+								{/each}
+							</div>
+						{:else if property.enum}
+							<!-- Dropdown for enum with single selection -->
+							<select
+								id="config-{key}"
+								class="config-sidebar__select"
+								value={localConfigValues[key] ?? property.default ?? ''}
+								onchange={(e) =>
+									handleInputChange(key, (e.target as HTMLSelectElement).value, property.type)}
+							>
+								{#each property.enum as option (option)}
+									<option value={option}>{option}</option>
+								{/each}
+							</select>
+						{:else if property.type === 'boolean'}
 								<!-- Checkbox for boolean -->
 								<div class="config-sidebar__checkbox-wrapper">
 									<input
@@ -370,6 +406,7 @@
 								/>
 							{/if}
 						</div>
+					{/if}
 					{/each}
 				</form>
 			</div>
@@ -721,6 +758,12 @@
 		line-height: 1.4;
 	}
 
+	.config-sidebar__checkbox-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
 	.config-sidebar__checkbox-wrapper {
 		display: flex;
 		align-items: center;
@@ -731,6 +774,7 @@
 		width: 1rem;
 		height: 1rem;
 		accent-color: #3b82f6;
+		cursor: pointer;
 	}
 
 	.config-sidebar__checkbox-label {
