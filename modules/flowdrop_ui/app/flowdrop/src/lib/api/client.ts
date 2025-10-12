@@ -310,4 +310,37 @@ export class FlowDropApiClient {
 
 		return response.data;
 	}
+
+	/**
+	 * Fetch pipeline data including job information and status
+	 */
+	async getPipelineData(pipelineId: string): Promise<{
+		status: string;
+		jobs: Array<Record<string, unknown>>;
+		node_statuses: Record<string, { status: string; [key: string]: unknown }>;
+		job_status_summary: {
+			total: number;
+			pending: number;
+			running: number;
+			completed: number;
+			failed: number;
+			cancelled: number;
+		};
+	}> {
+		const response = await this.request<{
+			status: string;
+			jobs: Array<Record<string, unknown>>;
+			node_statuses: Record<string, { status: string; [key: string]: unknown }>;
+			job_status_summary: {
+				total: number;
+				pending: number;
+				running: number;
+				completed: number;
+				failed: number;
+				cancelled: number;
+			};
+		}>(`/api/flowdrop/pipeline/${encodeURIComponent(pipelineId)}`);
+
+		return response;
+	}
 }

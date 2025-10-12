@@ -8,11 +8,14 @@
 	import { onMount } from 'svelte';
 	import App from './App.svelte';
 	import LogsSidebar from './LogsSidebar.svelte';
+	import { FlowDropApiClient } from '$lib/api/client.js';
 	import type { Workflow } from '$lib/types/index.js';
 
 	interface Props {
 		pipelineId: string;
 		workflow: Workflow;
+		apiClient?: FlowDropApiClient;
+		baseUrl?: string;
 		onActionsReady?: (
 			actions: Array<{
 				label: string;
@@ -24,7 +27,10 @@
 		) => void;
 	}
 
-	let { pipelineId, workflow, onActionsReady }: Props = $props();
+	let { pipelineId, workflow, apiClient, baseUrl, onActionsReady }: Props = $props();
+
+	// Initialize API client if not provided
+	const client = apiClient || new FlowDropApiClient(baseUrl || window.location.origin);
 
 	// Pipeline status and job data
 	let pipelineStatus = $state<string>('unknown');
@@ -71,15 +77,8 @@
 
 		try {
 			isLoadingJobStatus = true;
-			const response = await fetch(
-				`https://flowdrop.ddev.site/api/flowdrop/pipeline/${pipelineId}`
-			);
+			const pipelineData = await client.getPipelineData(pipelineId);
 
-			if (!response.ok) {
-				throw new Error(`Failed to fetch pipeline data: ${response.statusText}`);
-			}
-
-			const pipelineData = await response.json();
 			pipelineStatus = pipelineData.status;
 			jobStatusData = {
 				jobs: pipelineData.jobs || [],
