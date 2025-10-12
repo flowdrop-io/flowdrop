@@ -175,7 +175,7 @@
 						<div class="flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right">
 							<div class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end flowdrop-items--center">
 								{#if isActive}
-									<span style="color: {getCategoryColorToken(props.data.metadata.category)};">
+									<span style="color: {getDataTypeColorToken('trigger')};">
 										<Icon icon="mdi:check-circle" />
 									</span>
 								{/if}
@@ -187,9 +187,9 @@
 								</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
-									style="background-color: {getDataTypeColorToken('mixed')}; color: #fff;"
+									style="background-color: {getDataTypeColorToken('trigger')}; color: #fff;"
 								>
-									branch
+									trigger
 								</span>
 							</div>
 						</div>
@@ -201,8 +201,8 @@
 							id={`${props.data.nodeId}-output-${branch.name}`}
 							class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
 							style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {isActive
-								? getCategoryColorToken(props.data.metadata.category)
-								: getDataTypeColorToken('mixed')}; border-color: '#ffffff';"
+								? getDataTypeColorToken('trigger')
+								: getDataTypeColorToken('trigger')}; border-color: '#ffffff';"
 							role="button"
 							tabindex={0}
 							aria-label="Connect from {branch.name} branch"

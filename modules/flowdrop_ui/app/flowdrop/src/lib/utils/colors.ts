@@ -43,6 +43,7 @@ export const DATA_TYPE_COLOR_TOKENS: Record<string, string> = {
 	list: 'var(--color-ref-amber-500)',
 	object: 'var(--color-ref-orange-500)',
 	json: 'var(--color-ref-orange-500)',
+	mixed: 'var(--color-ref-orange-500)',
 	file: 'var(--color-ref-red-500)',
 	document: 'var(--color-ref-red-500)',
 	image: 'var(--color-ref-pink-500)',
@@ -56,7 +57,9 @@ export const DATA_TYPE_COLOR_TOKENS: Record<string, string> = {
 	date: 'var(--color-ref-lime-500)',
 	datetime: 'var(--color-ref-lime-500)',
 	time: 'var(--color-ref-lime-500)',
-	tool: 'var(--color-ref-amber-500)'
+	tool: 'var(--color-ref-amber-500)',
+	trigger: 'var(--color-ref-gray-950)',
+	branch: 'var(--color-ref-purple-500)',
 };
 
 /**

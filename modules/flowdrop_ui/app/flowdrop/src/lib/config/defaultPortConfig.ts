@@ -10,6 +10,16 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 	defaultDataType: 'string',
 
 	dataTypes: [
+
+		// Text and basic types
+		{
+			id: 'trigger',
+			name: 'Trigger',
+			description: 'Control flow of the workflow',
+			color: 'var(--color-ref-purple-500)',
+			category: 'basic',
+			enabled: true
+		},
 		// Text and basic types
 		{
 			id: 'string',
