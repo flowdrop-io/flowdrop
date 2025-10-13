@@ -51,9 +51,16 @@ export default defineConfig({
 		target: 'es2015'
 	},
 	define: {
-		'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-		'process.env': '{}'
+		'process.env.NODE_ENV': JSON.stringify('production'),
+		'process.env': '{}',
+		// Prevent Vite from exposing environment variables
+		'import.meta.env.MODE': JSON.stringify('production'),
+		'import.meta.env.DEV': 'false',
+		'import.meta.env.PROD': 'true',
+		'import.meta.env.SSR': 'false'
 	},
+	// Disable environment variable exposure
+	envPrefix: '__FLOWDROP_DISABLED__',
 	// Optimize dependencies
 	optimizeDeps: {
 		include: ['svelte', '@xyflow/svelte', '@iconify/svelte', 'uuid']
