@@ -173,7 +173,9 @@
 					<div class="flowdrop-workflow-node__port">
 						<!-- Port Info -->
 						<div class="flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right">
-							<div class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end flowdrop-items--center">
+							<div
+								class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end flowdrop-items--center"
+							>
 								{#if isActive}
 									<span style="color: {getDataTypeColorToken('trigger')};">
 										<Icon icon="mdi:check-circle" />

@@ -21,7 +21,7 @@
 	}>();
 
 	// Local copy of values for editing
-	let localValues = $derived.by(() => ({ ...props.values }));
+	let localValues = $state<ConfigValues>({ ...props.values });
 
 	// Validation errors
 	let validationErrors = $state<Record<string, string>>({});
@@ -130,6 +130,7 @@
 
 	/**
 	 * Handle field value change
+	 * Preserves hidden field values from the original configuration
 	 */
 	function handleFieldChange(fieldName: string, value: unknown): void {
 		localValues[fieldName] = value;
@@ -146,8 +147,18 @@
 			}
 		}
 
-		// Emit change event
-		dispatch('change', { values: { ...localValues } });
+		// Merge hidden field values from original props to ensure they're preserved
+		const hiddenFieldValues: ConfigValues = {};
+		if (props.schema?.properties) {
+			Object.entries(props.schema.properties).forEach(([key, property]) => {
+				if (property.format === 'hidden' && key in props.values) {
+					hiddenFieldValues[key] = props.values[key];
+				}
+			});
+		}
+
+		// Emit change event with hidden fields preserved
+		dispatch('change', { values: { ...localValues, ...hiddenFieldValues } });
 
 		// Validate entire form
 		validateForm();
@@ -181,8 +192,11 @@
 		}
 	}
 
-	// Initialize form with default values
+	// Sync local values with props and initialize with defaults
 	$effect(() => {
+		// Update local values when props change
+		localValues = { ...props.values };
+
 		if (props.schema) {
 			Object.entries(props.schema.properties).forEach(([fieldName, property]) => {
 				if (localValues[fieldName] === undefined) {
@@ -200,7 +214,16 @@
 	{#if props.schema && props.schema.properties && typeof props.schema.properties === 'object'}
 		<form class="flowdrop-form" onsubmit={(e) => e.preventDefault()}>
 			{#each Object.entries(props.schema.properties) as [fieldName, property] (fieldName)}
-				{#if property.format !== 'hidden'}
+				{#if property.format === 'hidden'}
+					<!-- Hidden field to preserve value -->
+					<input
+						type="hidden"
+						id={fieldName}
+						value={typeof (localValues[fieldName] ?? property.default) === 'object'
+							? JSON.stringify(localValues[fieldName] ?? property.default ?? {})
+							: (localValues[fieldName] ?? property.default ?? '')}
+					/>
+				{:else}
 					<div class="flowdrop-form-field">
 						<label class="flowdrop-form-label" for={fieldName}>
 							{property.title || fieldName}
@@ -209,67 +232,176 @@
 							{/if}
 						</label>
 
-				{#if property.type === 'string'}
-					{#if property.enum && property.multiple}
-						<!-- Checkboxes for enum with multiple selection -->
-						<div class="flowdrop-form-checkbox-group">
-							{#each property.enum as option (option)}
-								<label class="flowdrop-form-checkbox">
-									<input
-										type="checkbox"
-										class="flowdrop-form-checkbox__input"
-										value={option}
-										checked={Array.isArray(localValues[fieldName]) && localValues[fieldName].includes(option)}
-										disabled={props.disabled || false}
-										onchange={(e) => {
-											const checked = (e.target as HTMLInputElement).checked;
-											const currentValues = Array.isArray(localValues[fieldName]) ? [...localValues[fieldName]] : [];
-											if (checked) {
-												if (!currentValues.includes(option)) {
-													handleFieldChange(fieldName, [...currentValues, option]);
-												}
-											} else {
-												handleFieldChange(fieldName, currentValues.filter(v => v !== option));
-											}
-										}}
-									/>
-									<span class="flowdrop-form-checkbox__label">{option}</span>
-								</label>
-							{/each}
-						</div>
-					{:else if property.enum}
-						<!-- Select field for enum with single selection -->
-						<select
-							id={fieldName}
-							class="flowdrop-form-select {validationErrors[fieldName]
-								? 'flowdrop-form-select--error'
-								: ''}"
-							disabled={props.disabled || false}
-							onchange={(e) =>
-								handleFieldChange(fieldName, (e.target as HTMLSelectElement).value)}
-						>
-							{#each property.enum as option (option)}
-								<option value={option} selected={localValues[fieldName] === option}>
-									{option}
-								</option>
-							{/each}
-						</select>
-					{:else if property.format === 'multiline' || (property.maxLength && property.maxLength > 100)}
-							<!-- Textarea for multiline or long text -->
+						{#if property.type === 'string'}
+							{#if property.enum && property.multiple}
+								<!-- Checkboxes for enum with multiple selection -->
+								<div class="flowdrop-form-checkbox-group">
+									{#each property.enum as option (option)}
+										<label class="flowdrop-form-checkbox">
+											<input
+												type="checkbox"
+												class="flowdrop-form-checkbox__input"
+												value={option}
+												checked={Array.isArray(localValues[fieldName]) &&
+													localValues[fieldName].includes(option)}
+												disabled={props.disabled || false}
+												onchange={(e) => {
+													const checked = (e.target as HTMLInputElement).checked;
+													const currentValues = Array.isArray(localValues[fieldName])
+														? [...localValues[fieldName]]
+														: [];
+													if (checked) {
+														if (!currentValues.includes(option)) {
+															handleFieldChange(fieldName, [...currentValues, option]);
+														}
+													} else {
+														handleFieldChange(
+															fieldName,
+															currentValues.filter((v) => v !== option)
+														);
+													}
+												}}
+											/>
+											<span class="flowdrop-form-checkbox__label">{option}</span>
+										</label>
+									{/each}
+								</div>
+							{:else if property.enum}
+								<!-- Select field for enum with single selection -->
+								<select
+									id={fieldName}
+									class="flowdrop-form-select {validationErrors[fieldName]
+										? 'flowdrop-form-select--error'
+										: ''}"
+									disabled={props.disabled || false}
+									onchange={(e) =>
+										handleFieldChange(fieldName, (e.target as HTMLSelectElement).value)}
+								>
+									{#each property.enum as option (option)}
+										<option value={option} selected={localValues[fieldName] === option}>
+											{option}
+										</option>
+									{/each}
+								</select>
+							{:else if property.format === 'multiline' || (property.maxLength && property.maxLength > 100)}
+								<!-- Textarea for multiline or long text -->
+								<textarea
+									id={fieldName}
+									class="flowdrop-form-textarea {validationErrors[fieldName]
+										? 'flowdrop-form-textarea--error'
+										: ''}"
+									placeholder={property.description || ''}
+									rows="4"
+									disabled={props.disabled || false}
+									onchange={(e) =>
+										handleFieldChange(fieldName, (e.target as HTMLTextAreaElement).value)}
+									>{localValues[fieldName] || ''}</textarea
+								>
+							{:else}
+								<!-- Regular text input -->
+								<input
+									id={fieldName}
+									type="text"
+									class="flowdrop-form-input {validationErrors[fieldName]
+										? 'flowdrop-form-input--error'
+										: ''}"
+									value={localValues[fieldName] || ''}
+									placeholder={property.description || ''}
+									disabled={props.disabled || false}
+									onchange={(e) =>
+										handleFieldChange(fieldName, (e.target as HTMLInputElement).value)}
+								/>
+							{/if}
+						{:else if property.type === 'number'}
+							<!-- Number input as text field -->
+							<input
+								id={fieldName}
+								type="text"
+								class="flowdrop-form-input {validationErrors[fieldName]
+									? 'flowdrop-form-input--error'
+									: ''}"
+								value={localValues[fieldName] || ''}
+								placeholder="Enter a number"
+								disabled={props.disabled || false}
+								oninput={(e) => {
+									const value = (e.target as HTMLInputElement).value;
+									const numValue = value === '' ? 0 : parseFloat(value);
+									if (!isNaN(numValue)) {
+										handleFieldChange(fieldName, numValue);
+									}
+								}}
+								onblur={(e) => {
+									const value = (e.target as HTMLInputElement).value;
+									const numValue = value === '' ? 0 : parseFloat(value);
+									if (!isNaN(numValue)) {
+										handleFieldChange(fieldName, numValue);
+									}
+								}}
+							/>
+						{:else if property.type === 'boolean'}
+							<!-- Checkbox -->
+							<label class="flowdrop-form-checkbox">
+								<input
+									id={fieldName}
+									type="checkbox"
+									class="flowdrop-form-checkbox__input"
+									checked={Boolean(localValues[fieldName])}
+									disabled={props.disabled || false}
+									onchange={(e) =>
+										handleFieldChange(fieldName, (e.target as HTMLInputElement).checked)}
+								/>
+								<span class="flowdrop-form-checkbox__label">
+									{property.description || ''}
+								</span>
+							</label>
+						{:else if property.type === 'array'}
+							<!-- Array input (comma-separated) -->
 							<textarea
 								id={fieldName}
 								class="flowdrop-form-textarea {validationErrors[fieldName]
 									? 'flowdrop-form-textarea--error'
 									: ''}"
-								placeholder={property.description || ''}
-								rows="4"
+								placeholder="Enter values separated by commas"
+								rows="3"
 								disabled={props.disabled || false}
 								onchange={(e) =>
-									handleFieldChange(fieldName, (e.target as HTMLTextAreaElement).value)}
-								>{localValues[fieldName] || ''}</textarea
+									handleFieldChange(
+										fieldName,
+										(e.target as HTMLTextAreaElement).value
+											.split(',')
+											.map((v) => v.trim())
+											.filter((v) => v)
+									)}
+								>{Array.isArray(localValues[fieldName])
+									? localValues[fieldName].join(', ')
+									: ''}</textarea
+							>
+						{:else if property.type === 'object'}
+							<!-- JSON object input -->
+							<textarea
+								id={fieldName}
+								class="flowdrop-form-textarea {validationErrors[fieldName]
+									? 'flowdrop-form-textarea--error'
+									: ''}"
+								placeholder="Enter JSON object"
+								rows="4"
+								disabled={props.disabled || false}
+								onchange={(e) => {
+									try {
+										handleFieldChange(
+											fieldName,
+											JSON.parse((e.target as HTMLTextAreaElement).value)
+										);
+									} catch {
+										// Handle JSON parse error
+									}
+								}}
+								>{typeof localValues[fieldName] === 'object'
+									? JSON.stringify(localValues[fieldName], null, 2)
+									: ''}</textarea
 							>
 						{:else}
-							<!-- Regular text input -->
+							<!-- Default text input -->
 							<input
 								id={fieldName}
 								type="text"
@@ -282,115 +414,16 @@
 								onchange={(e) => handleFieldChange(fieldName, (e.target as HTMLInputElement).value)}
 							/>
 						{/if}
-					{:else if property.type === 'number'}
-						<!-- Number input as text field -->
-						<input
-							id={fieldName}
-							type="text"
-							class="flowdrop-form-input {validationErrors[fieldName]
-								? 'flowdrop-form-input--error'
-								: ''}"
-							value={localValues[fieldName] || ''}
-							placeholder="Enter a number"
-							disabled={props.disabled || false}
-							oninput={(e) => {
-								const value = (e.target as HTMLInputElement).value;
-								const numValue = value === '' ? 0 : parseFloat(value);
-								if (!isNaN(numValue)) {
-									handleFieldChange(fieldName, numValue);
-								}
-							}}
-							onblur={(e) => {
-								const value = (e.target as HTMLInputElement).value;
-								const numValue = value === '' ? 0 : parseFloat(value);
-								if (!isNaN(numValue)) {
-									handleFieldChange(fieldName, numValue);
-								}
-							}}
-						/>
-					{:else if property.type === 'boolean'}
-						<!-- Checkbox -->
-						<label class="flowdrop-form-checkbox">
-							<input
-								id={fieldName}
-								type="checkbox"
-								class="flowdrop-form-checkbox__input"
-								checked={Boolean(localValues[fieldName])}
-								disabled={props.disabled || false}
-								onchange={(e) =>
-									handleFieldChange(fieldName, (e.target as HTMLInputElement).checked)}
-							/>
-							<span class="flowdrop-form-checkbox__label">
-								{property.description || ''}
-							</span>
-						</label>
-					{:else if property.type === 'array'}
-						<!-- Array input (comma-separated) -->
-						<textarea
-							id={fieldName}
-							class="flowdrop-form-textarea {validationErrors[fieldName]
-								? 'flowdrop-form-textarea--error'
-								: ''}"
-							placeholder="Enter values separated by commas"
-							rows="3"
-							disabled={props.disabled || false}
-							onchange={(e) =>
-								handleFieldChange(
-									fieldName,
-									(e.target as HTMLTextAreaElement).value
-										.split(',')
-										.map((v) => v.trim())
-										.filter((v) => v)
-								)}
-							>{Array.isArray(localValues[fieldName])
-								? localValues[fieldName].join(', ')
-								: ''}</textarea
-						>
-					{:else if property.type === 'object'}
-						<!-- JSON object input -->
-						<textarea
-							id={fieldName}
-							class="flowdrop-form-textarea {validationErrors[fieldName]
-								? 'flowdrop-form-textarea--error'
-								: ''}"
-							placeholder="Enter JSON object"
-							rows="4"
-							disabled={props.disabled || false}
-							onchange={(e) => {
-								try {
-									handleFieldChange(fieldName, JSON.parse((e.target as HTMLTextAreaElement).value));
-								} catch {
-									// Handle JSON parse error
-								}
-							}}
-							>{typeof localValues[fieldName] === 'object'
-								? JSON.stringify(localValues[fieldName], null, 2)
-								: ''}</textarea
-						>
-					{:else}
-						<!-- Default text input -->
-						<input
-							id={fieldName}
-							type="text"
-							class="flowdrop-form-input {validationErrors[fieldName]
-								? 'flowdrop-form-input--error'
-								: ''}"
-							value={localValues[fieldName] || ''}
-							placeholder={property.description || ''}
-							disabled={props.disabled || false}
-							onchange={(e) => handleFieldChange(fieldName, (e.target as HTMLInputElement).value)}
-						/>
-					{/if}
 
-					{#if validationErrors[fieldName]}
-						<div class="flowdrop-form-error">{validationErrors[fieldName]}</div>
-					{/if}
+						{#if validationErrors[fieldName]}
+							<div class="flowdrop-form-error">{validationErrors[fieldName]}</div>
+						{/if}
 
-					{#if property.description}
-						<div class="flowdrop-form-help">{property.description}</div>
-					{/if}
-				</div>
-			{/if}
+						{#if property.description}
+							<div class="flowdrop-form-help">{property.description}</div>
+						{/if}
+					</div>
+				{/if}
 			{/each}
 		</form>
 	{:else}

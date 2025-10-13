@@ -96,10 +96,22 @@
 
 	/**
 	 * Handle save action
+	 * Preserves hidden field values from the original configuration
 	 */
 	function handleSave(): void {
-		props.onSave?.(localConfigValues);
-		dispatch('save', { config: localConfigValues });
+		// Merge hidden field values from original props to ensure they're preserved
+		const hiddenFieldValues: ConfigValues = {};
+		if (props.configSchema?.properties) {
+			Object.entries(props.configSchema.properties).forEach(([key, property]) => {
+				if (property.format === 'hidden' && key in props.configValues) {
+					hiddenFieldValues[key] = props.configValues[key];
+				}
+			});
+		}
+
+		const mergedConfig = { ...localConfigValues, ...hiddenFieldValues };
+		props.onSave?.(mergedConfig);
+		dispatch('save', { config: mergedConfig });
 	}
 
 	/**
@@ -300,7 +312,16 @@
 					}}
 				>
 					{#each Object.entries(props.configSchema.properties) as [key, property] (key)}
-						{#if property.format !== 'hidden'}
+						{#if property.format === 'hidden'}
+							<!-- Hidden field to preserve value -->
+							<input
+								type="hidden"
+								id="config-{key}"
+								value={typeof (localConfigValues[key] ?? property.default) === 'object'
+									? JSON.stringify(localConfigValues[key] ?? property.default ?? {})
+									: (localConfigValues[key] ?? property.default ?? '')}
+							/>
+						{:else}
 							<div class="config-sidebar__field">
 								<label class="config-sidebar__label" for="config-{key}">
 									{property.title || key}
@@ -309,104 +330,113 @@
 									{/if}
 								</label>
 
-							{#if property.description}
-								<p class="config-sidebar__description">{property.description}</p>
-							{/if}
+								{#if property.description}
+									<p class="config-sidebar__description">{property.description}</p>
+								{/if}
 
-						{#if property.enum && property.multiple}
-							<!-- Checkboxes for enum with multiple selection -->
-							<div class="config-sidebar__checkbox-group">
-								{#each property.enum as option (option)}
+								{#if property.enum && property.multiple}
+									<!-- Checkboxes for enum with multiple selection -->
+									<div class="config-sidebar__checkbox-group">
+										{#each property.enum as option (option)}
+											<div class="config-sidebar__checkbox-wrapper">
+												<input
+													type="checkbox"
+													id="config-{key}-{option}"
+													class="config-sidebar__checkbox"
+													value={option}
+													checked={Array.isArray(localConfigValues[key]) &&
+														localConfigValues[key].includes(option)}
+													onchange={(e) => {
+														const checked = (e.target as HTMLInputElement).checked;
+														const currentValues = Array.isArray(localConfigValues[key])
+															? [...localConfigValues[key]]
+															: [];
+														if (checked) {
+															if (!currentValues.includes(option)) {
+																handleInputChange(key, [...currentValues, option], property.type);
+															}
+														} else {
+															handleInputChange(
+																key,
+																currentValues.filter((v) => v !== option),
+																property.type
+															);
+														}
+													}}
+												/>
+												<label for="config-{key}-{option}" class="config-sidebar__checkbox-label">
+													{option}
+												</label>
+											</div>
+										{/each}
+									</div>
+								{:else if property.enum}
+									<!-- Dropdown for enum with single selection -->
+									<select
+										id="config-{key}"
+										class="config-sidebar__select"
+										value={localConfigValues[key] ?? property.default ?? ''}
+										onchange={(e) =>
+											handleInputChange(key, (e.target as HTMLSelectElement).value, property.type)}
+									>
+										{#each property.enum as option (option)}
+											<option value={option}>{option}</option>
+										{/each}
+									</select>
+								{:else if property.type === 'boolean'}
+									<!-- Checkbox for boolean -->
 									<div class="config-sidebar__checkbox-wrapper">
 										<input
+											id="config-{key}"
 											type="checkbox"
-											id="config-{key}-{option}"
 											class="config-sidebar__checkbox"
-											value={option}
-											checked={Array.isArray(localConfigValues[key]) && localConfigValues[key].includes(option)}
-											onchange={(e) => {
-												const checked = (e.target as HTMLInputElement).checked;
-												const currentValues = Array.isArray(localConfigValues[key])
-													? [...localConfigValues[key]]
-													: [];
-												if (checked) {
-													if (!currentValues.includes(option)) {
-														handleInputChange(key, [...currentValues, option], property.type);
-													}
-												} else {
-													handleInputChange(
-														key,
-														currentValues.filter((v) => v !== option),
-														property.type
-													);
-												}
-											}}
+											checked={Boolean(localConfigValues[key] ?? property.default ?? false)}
+											onchange={(e) =>
+												handleInputChange(
+													key,
+													(e.target as HTMLInputElement).checked,
+													property.type
+												)}
 										/>
-										<label for="config-{key}-{option}" class="config-sidebar__checkbox-label">
-											{option}
+										<label for="config-{key}" class="config-sidebar__checkbox-label">
+											{property.title || key}
 										</label>
 									</div>
-								{/each}
-							</div>
-						{:else if property.enum}
-							<!-- Dropdown for enum with single selection -->
-							<select
-								id="config-{key}"
-								class="config-sidebar__select"
-								value={localConfigValues[key] ?? property.default ?? ''}
-								onchange={(e) =>
-									handleInputChange(key, (e.target as HTMLSelectElement).value, property.type)}
-							>
-								{#each property.enum as option (option)}
-									<option value={option}>{option}</option>
-								{/each}
-							</select>
-						{:else if property.type === 'boolean'}
-								<!-- Checkbox for boolean -->
-								<div class="config-sidebar__checkbox-wrapper">
+								{:else if isTextarea(property)}
+									<!-- Textarea for multiline, objects, arrays -->
+									<textarea
+										id="config-{key}"
+										class="config-sidebar__textarea"
+										placeholder={property.default ? String(property.default) : ''}
+										value={getDisplayValue(
+											localConfigValues[key] ?? property.default ?? '',
+											property.type
+										)}
+										oninput={(e) =>
+											handleInputChange(
+												key,
+												(e.target as HTMLTextAreaElement).value,
+												property.type
+											)}
+										rows="4"
+									></textarea>
+								{:else}
+									<!-- Regular input -->
 									<input
 										id="config-{key}"
-										type="checkbox"
-										class="config-sidebar__checkbox"
-										checked={Boolean(localConfigValues[key] ?? property.default ?? false)}
-										onchange={(e) =>
-											handleInputChange(key, (e.target as HTMLInputElement).checked, property.type)}
+										type={getInputType(property.type)}
+										class="config-sidebar__input"
+										placeholder={property.default ? String(property.default) : ''}
+										value={localConfigValues[key] ?? property.default ?? ''}
+										min={property.minimum}
+										max={property.maximum}
+										step={property.type === 'number' ? 'any' : undefined}
+										oninput={(e) =>
+											handleInputChange(key, (e.target as HTMLInputElement).value, property.type)}
 									/>
-									<label for="config-{key}" class="config-sidebar__checkbox-label">
-										{property.title || key}
-									</label>
-								</div>
-							{:else if isTextarea(property)}
-								<!-- Textarea for multiline, objects, arrays -->
-								<textarea
-									id="config-{key}"
-									class="config-sidebar__textarea"
-									placeholder={property.default ? String(property.default) : ''}
-									value={getDisplayValue(
-										localConfigValues[key] ?? property.default ?? '',
-										property.type
-									)}
-									oninput={(e) =>
-										handleInputChange(key, (e.target as HTMLTextAreaElement).value, property.type)}
-									rows="4"
-								></textarea>
-							{:else}
-								<!-- Regular input -->
-								<input
-									id="config-{key}"
-									type={getInputType(property.type)}
-									class="config-sidebar__input"
-									placeholder={property.default ? String(property.default) : ''}
-									value={localConfigValues[key] ?? property.default ?? ''}
-									min={property.minimum}
-									max={property.maximum}
-									step={property.type === 'number' ? 'any' : undefined}
-									oninput={(e) =>
-										handleInputChange(key, (e.target as HTMLInputElement).value, property.type)}
-								/>
-							{/if}
-						</div>
-					{/if}
+								{/if}
+							</div>
+						{/if}
 					{/each}
 				</form>
 			</div>

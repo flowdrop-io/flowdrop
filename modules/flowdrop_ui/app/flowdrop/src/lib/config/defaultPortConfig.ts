@@ -10,7 +10,6 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 	defaultDataType: 'string',
 
 	dataTypes: [
-
 		// Text and basic types
 		{
 			id: 'trigger',

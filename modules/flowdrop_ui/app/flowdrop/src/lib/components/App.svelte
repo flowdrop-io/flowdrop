@@ -658,117 +658,117 @@
 														<label class="flowdrop-config-sidebar__field-label" for={key}>
 															{fieldConfig.title || fieldConfig.description || key}
 														</label>
-													{#if fieldConfig.enum && fieldConfig.multiple}
-														<!-- Checkboxes for enum with multiple selection -->
-														<div class="flowdrop-config-sidebar__checkbox-group">
-															{#each fieldConfig.enum as option}
-																<label class="flowdrop-config-sidebar__checkbox-item">
-																	<input
-																		type="checkbox"
-																		class="flowdrop-config-sidebar__checkbox"
-																		value={String(option)}
-																		checked={Array.isArray(configValues[key]) &&
-																			configValues[key].includes(String(option))}
-																		onchange={(e) => {
-																			const checked = e.currentTarget.checked;
-																			const currentValues = Array.isArray(configValues[key])
-																				? [...configValues[key]]
-																				: [];
-																			if (checked) {
-																				if (!currentValues.includes(String(option))) {
-																					configValues[key] = [...currentValues, String(option)];
+														{#if fieldConfig.enum && fieldConfig.multiple}
+															<!-- Checkboxes for enum with multiple selection -->
+															<div class="flowdrop-config-sidebar__checkbox-group">
+																{#each fieldConfig.enum as option}
+																	<label class="flowdrop-config-sidebar__checkbox-item">
+																		<input
+																			type="checkbox"
+																			class="flowdrop-config-sidebar__checkbox"
+																			value={String(option)}
+																			checked={Array.isArray(configValues[key]) &&
+																				configValues[key].includes(String(option))}
+																			onchange={(e) => {
+																				const checked = e.currentTarget.checked;
+																				const currentValues = Array.isArray(configValues[key])
+																					? [...configValues[key]]
+																					: [];
+																				if (checked) {
+																					if (!currentValues.includes(String(option))) {
+																						configValues[key] = [...currentValues, String(option)];
+																					}
+																				} else {
+																					configValues[key] = currentValues.filter(
+																						(v) => v !== String(option)
+																					);
 																				}
-																			} else {
-																				configValues[key] = currentValues.filter(
-																					(v) => v !== String(option)
-																				);
-																			}
-																		}}
-																	/>
-																	<span class="flowdrop-config-sidebar__checkbox-label">
-																		{String(option)}
-																	</span>
-																</label>
-															{/each}
-														</div>
-													{:else if fieldConfig.enum}
-														<!-- Select for enum with single selection -->
-														<select
-															id={key}
-															class="flowdrop-config-sidebar__select"
-															bind:value={configValues[key]}
-														>
-															{#each fieldConfig.enum as option}
-																<option value={String(option)}>{String(option)}</option>
-															{/each}
-														</select>
-													{:else if fieldConfig.type === 'string' && fieldConfig.format === 'multiline'}
-														<!-- Textarea for multiline strings -->
-														<textarea
-															id={key}
-															class="flowdrop-config-sidebar__textarea"
-															bind:value={configValues[key]}
-															placeholder={String(fieldConfig.placeholder || '')}
-															rows="4"
-														></textarea>
-													{:else if fieldConfig.type === 'string'}
-														<input
-															id={key}
-															type="text"
-															class="flowdrop-config-sidebar__input"
-															bind:value={configValues[key]}
-															placeholder={String(fieldConfig.placeholder || '')}
-														/>
-													{:else if fieldConfig.type === 'number'}
-														<input
-															id={key}
-															type="number"
-															class="flowdrop-config-sidebar__input"
-															bind:value={configValues[key]}
-															placeholder={String(fieldConfig.placeholder || '')}
-														/>
-													{:else if fieldConfig.type === 'boolean'}
-														<input
-															id={key}
-															type="checkbox"
-															class="flowdrop-config-sidebar__checkbox"
-															checked={Boolean(configValues[key] || fieldConfig.default || false)}
-															onchange={(e) => {
-																configValues[key] = e.currentTarget.checked;
-															}}
-														/>
-													{:else if fieldConfig.type === 'select' || fieldConfig.options}
-														<select
-															id={key}
-															class="flowdrop-config-sidebar__select"
-															bind:value={configValues[key]}
-														>
-															{#if fieldConfig.options}
-																{#each fieldConfig.options as option}
-																	{@const optionConfig = option as any}
-																	<option value={String(optionConfig.value)}
-																		>{String(optionConfig.label)}</option
-																	>
+																			}}
+																		/>
+																		<span class="flowdrop-config-sidebar__checkbox-label">
+																			{String(option)}
+																		</span>
+																	</label>
 																{/each}
-															{/if}
-														</select>
-													{:else}
-														<!-- Fallback for unknown field types -->
-														<input
-															id={key}
-															type="text"
-															class="flowdrop-config-sidebar__input"
-															bind:value={configValues[key]}
-															placeholder={String(fieldConfig.placeholder || '')}
-														/>
-													{/if}
-													{#if fieldConfig.description}
-														<p class="flowdrop-config-sidebar__field-description">
-															{String(fieldConfig.description)}
-														</p>
-													{/if}
-												</div>
-											{/if}
+															</div>
+														{:else if fieldConfig.enum}
+															<!-- Select for enum with single selection -->
+															<select
+																id={key}
+																class="flowdrop-config-sidebar__select"
+																bind:value={configValues[key]}
+															>
+																{#each fieldConfig.enum as option}
+																	<option value={String(option)}>{String(option)}</option>
+																{/each}
+															</select>
+														{:else if fieldConfig.type === 'string' && fieldConfig.format === 'multiline'}
+															<!-- Textarea for multiline strings -->
+															<textarea
+																id={key}
+																class="flowdrop-config-sidebar__textarea"
+																bind:value={configValues[key]}
+																placeholder={String(fieldConfig.placeholder || '')}
+																rows="4"
+															></textarea>
+														{:else if fieldConfig.type === 'string'}
+															<input
+																id={key}
+																type="text"
+																class="flowdrop-config-sidebar__input"
+																bind:value={configValues[key]}
+																placeholder={String(fieldConfig.placeholder || '')}
+															/>
+														{:else if fieldConfig.type === 'number'}
+															<input
+																id={key}
+																type="number"
+																class="flowdrop-config-sidebar__input"
+																bind:value={configValues[key]}
+																placeholder={String(fieldConfig.placeholder || '')}
+															/>
+														{:else if fieldConfig.type === 'boolean'}
+															<input
+																id={key}
+																type="checkbox"
+																class="flowdrop-config-sidebar__checkbox"
+																checked={Boolean(configValues[key] || fieldConfig.default || false)}
+																onchange={(e) => {
+																	configValues[key] = e.currentTarget.checked;
+																}}
+															/>
+														{:else if fieldConfig.type === 'select' || fieldConfig.options}
+															<select
+																id={key}
+																class="flowdrop-config-sidebar__select"
+																bind:value={configValues[key]}
+															>
+																{#if fieldConfig.options}
+																	{#each fieldConfig.options as option}
+																		{@const optionConfig = option as any}
+																		<option value={String(optionConfig.value)}
+																			>{String(optionConfig.label)}</option
+																		>
+																	{/each}
+																{/if}
+															</select>
+														{:else}
+															<!-- Fallback for unknown field types -->
+															<input
+																id={key}
+																type="text"
+																class="flowdrop-config-sidebar__input"
+																bind:value={configValues[key]}
+																placeholder={String(fieldConfig.placeholder || '')}
+															/>
+														{/if}
+														{#if fieldConfig.description}
+															<p class="flowdrop-config-sidebar__field-description">
+																{String(fieldConfig.description)}
+															</p>
+														{/if}
+													</div>
+												{/if}
 											{/each}
 										{:else}
 											<!-- If no properties, show the raw schema for debugging -->
@@ -814,11 +814,38 @@
 														updatedConfig[input.id] = input.value
 															? Number(input.value)
 															: input.value;
+													} else if (input.type === 'hidden') {
+														// Parse hidden field values that might be JSON
+														try {
+															const parsed = JSON.parse(input.value);
+															updatedConfig[input.id] = parsed;
+														} catch {
+															// If not JSON, use raw value
+															updatedConfig[input.id] = input.value;
+														}
 													} else {
 														updatedConfig[input.id] = input.value;
 													}
 												}
 											});
+										}
+
+										// Preserve hidden field values from original config if not collected from form
+										if (
+											currentNode.data.config &&
+											currentNode.data.metadata?.configSchema?.properties
+										) {
+											Object.entries(currentNode.data.metadata.configSchema.properties).forEach(
+												([key, property]: [string, any]) => {
+													if (
+														property.format === 'hidden' &&
+														!(key in updatedConfig) &&
+														key in currentNode.data.config
+													) {
+														updatedConfig[key] = currentNode.data.config[key];
+													}
+												}
+											);
 										}
 
 										// Handle nodeType switching if nodeType is in the config

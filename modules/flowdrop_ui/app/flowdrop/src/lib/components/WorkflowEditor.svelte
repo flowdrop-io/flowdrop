@@ -609,9 +609,7 @@
 </script>
 
 <SvelteFlowProvider>
-	<div
-		class="flowdrop-workflow-editor"
-	>
+	<div class="flowdrop-workflow-editor">
 		<!-- Main Editor Area -->
 		<div class="flowdrop-workflow-editor__main">
 			<!-- Flow Canvas -->

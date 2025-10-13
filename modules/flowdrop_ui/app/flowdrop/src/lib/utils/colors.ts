@@ -59,7 +59,7 @@ export const DATA_TYPE_COLOR_TOKENS: Record<string, string> = {
 	time: 'var(--color-ref-lime-500)',
 	tool: 'var(--color-ref-amber-500)',
 	trigger: 'var(--color-ref-gray-950)',
-	branch: 'var(--color-ref-purple-500)',
+	branch: 'var(--color-ref-purple-500)'
 };
 
 /**
