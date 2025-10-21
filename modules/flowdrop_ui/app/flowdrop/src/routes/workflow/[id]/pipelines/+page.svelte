@@ -353,11 +353,15 @@
 
 <style>
 	.pipelines-page {
-		min-height: 100vh;
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
 		background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
+		overflow: hidden;
 	}
 
 	.pipelines-header {
+		flex-shrink: 0;
 		background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 		border-bottom: 1px solid #e5e7eb;
 		padding: 2rem 0;
@@ -386,6 +390,7 @@
 	}
 
 	.pipelines-filters {
+		flex-shrink: 0;
 		background-color: #ffffff;
 		border-bottom: 1px solid #e5e7eb;
 		padding: 1rem 0;
@@ -419,9 +424,12 @@
 	}
 
 	.pipelines-content {
+		flex: 1;
+		overflow-y: auto;
 		max-width: 1200px;
 		margin: 0 auto;
 		padding: 2rem;
+		width: 100%;
 	}
 
 	.pipelines-loading,
