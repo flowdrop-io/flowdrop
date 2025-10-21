@@ -19,7 +19,7 @@ A powerful visual workflow editor for Drupal that enables drag-and-drop creation
 flowdrop/
 ├── src/                          # Core PHP classes
 │   ├── Service/NodeRuntime/      # Node execution engine
-│   ├── Plugins/FlowDropNodeProcessor/  # 25+ node processors
+│   ├── Plugin/FlowDropNodeProcessor/  # 25+ node processors
 │   ├── Attribute/                # Plugin discovery attributes
 │   └── Exception/                # Custom exception classes
 ├── modules/                      # Drupal sub-modules
@@ -158,7 +158,7 @@ flowdrop/
    ```php
    <?php
 
-   namespace Drupal\flowdrop\Plugins\FlowDropNodeProcessor;
+   namespace Drupal\flowdrop\Plugin\FlowDropNodeProcessor;
 
    use Drupal\flowdrop\Attribute\FlowDropNodeProcessor;
 
