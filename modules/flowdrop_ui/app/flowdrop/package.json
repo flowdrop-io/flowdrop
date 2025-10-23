@@ -5,8 +5,10 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
-		"build:iife": "vite build --config vite.config.iife.ts",
-		"watch:build:iife": "npm-watch build:iife",
+		"build:drupal": "vite build --config vite.config.drupal.ts",
+		"build:production": "vite build --config vite.config.production.ts",
+		"watch:build:drupal": "npm-watch build:drupal",
+		"watch:build:production": "npm-watch build:production",
 		"watch:build": "npm-watch build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -33,7 +35,18 @@
 			"delay": 2500,
 			"runOnChangeOnly": false
 		},
-		"build:iife": {
+		"build:drupal": {
+			"ignore": "build",
+			"patterns": [
+				"src"
+			],
+			"extensions": "js,ts,svelte,html,css,svg",
+			"quiet": true,
+			"legacyWatch": true,
+			"delay": 2500,
+			"runOnChangeOnly": false
+		},
+		"build:production": {
 			"ignore": "build",
 			"patterns": [
 				"src"
