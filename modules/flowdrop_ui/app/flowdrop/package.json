@@ -47,11 +47,8 @@
 	},
 	"files": [
 		"dist",
-		"dist-iife",
 		"!dist/**/*.test.*",
-		"!dist/**/*.spec.*",
-		"!dist-iife/**/*.test.*",
-		"!dist-iife/**/*.spec.*"
+		"!dist/**/*.spec.*"
 	],
 	"sideEffects": [
 		"**/*.css"
@@ -63,10 +60,6 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.js"
-		},
-		"./iife": {
-			"import": "./build/flowdrop/flowdrop.es.js",
-			"require": "./build/flowdrop/flowdrop.iife.js"
 		}
 	},
 	"peerDependencies": {
