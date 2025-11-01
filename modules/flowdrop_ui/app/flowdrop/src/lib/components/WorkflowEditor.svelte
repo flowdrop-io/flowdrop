@@ -219,8 +219,12 @@
 
 	// Sidebar is now always visible - removed toggle functionality
 
-	// Node types for Svelte Flow - using UniversalNode for automatic status overlay
+	// Node types for Svelte Flow - using UniversalNode for all node types
+	// All nodes use 'universalNode' type, and UniversalNode handles internal switching
+	// Include legacy types for backward compatibility with existing workflows
 	const nodeTypes = {
+		universalNode: UniversalNode,
+		// Legacy types for backward compatibility
 		workflowNode: UniversalNode,
 		note: UniversalNode,
 		simple: UniversalNode,
@@ -437,15 +441,9 @@
 			// Update the node's config
 			props.selectedNodeForConfig.data.config = { ...newConfig };
 
-			// Determine node type based on configuration and supported types
-			const newComponentName = resolveComponentName(
-				props.selectedNodeForConfig.data.metadata,
-				newConfig.nodeType as string
-			);
-
-			console.log('🔧 WorkflowEditor: New component name:', newComponentName);
-
 			// Update the node in currentWorkflow
+			// NOTE: We do NOT change the node's type field anymore
+			// All nodes use 'universalNode' and UniversalNode handles internal switching
 			if (currentWorkflow) {
 				currentWorkflow = {
 					...currentWorkflow,
@@ -453,7 +451,6 @@
 						node.id === props.selectedNodeForConfig.id
 							? {
 									...node,
-									type: newComponentName as string,
 									data: { ...node.data, config: { ...newConfig } }
 								}
 							: node
@@ -678,24 +675,20 @@
 								};
 							}
 
-							const newNodeId = uuidv4();
+						const newNodeId = uuidv4();
 
-							// Determine node type based on configuration and supported types
-							const svelteFlowNodeType = resolveComponentName(
-								nodeData.metadata,
-								(nodeData.config?.nodeType as string) || 'default'
-							);
-
-							const newNode: WorkflowNodeType = {
-								id: newNodeId,
-								type: svelteFlowNodeType as string,
-								position, // Use the position calculated from the drop event
-								deletable: true,
-								data: {
-									...nodeData,
-									nodeId: newNodeId // Use the same ID
-								}
-							};
+						// All nodes use 'universalNode' type
+						// UniversalNode component handles internal switching based on metadata and config
+						const newNode: WorkflowNodeType = {
+							id: newNodeId,
+							type: 'universalNode',
+							position, // Use the position calculated from the drop event
+							deletable: true,
+							data: {
+								...nodeData,
+								nodeId: newNodeId // Use the same ID
+							}
+						};
 
 							// Add node to currentWorkflow
 							if (currentWorkflow) {

@@ -41,9 +41,11 @@
 
 	// Determine which node component to render based on node type
 	// Priority: config.nodeType > metadata.type
+	// Explicitly track config.nodeType to ensure reactivity
+	let configNodeType = $derived(data.config?.nodeType as string | undefined);
 	let resolvedComponentName = $derived(
 		data.metadata
-			? resolveComponentName(data.metadata, data.config?.nodeType as string | undefined)
+			? resolveComponentName(data.metadata, configNodeType)
 			: 'workflowNode'
 	);
 	let nodeComponent = $derived(getNodeComponent(resolvedComponentName));

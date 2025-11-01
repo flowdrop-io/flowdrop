@@ -848,30 +848,17 @@
 											);
 										}
 
-										// Handle nodeType switching if nodeType is in the config
-										let nodeUpdates: any = {
-											data: {
-												...currentNode.data,
-												config: updatedConfig
-											}
-										};
-
-										// If nodeType is being changed, update the node's type field
-										if (updatedConfig.nodeType && currentNode.data.metadata) {
-											const newComponentName = resolveComponentName(
-												currentNode.data.metadata,
-												updatedConfig.nodeType as string
-											);
-
-											// Update the node with the new type
-											workflowActions.updateNode(selectedNodeId, {
-												...nodeUpdates,
-												type: newComponentName
-											});
-										} else {
-											// No nodeType change, just update config
-											workflowActions.updateNode(selectedNodeId, nodeUpdates);
+									// Handle nodeType switching if nodeType is in the config
+									let nodeUpdates: Record<string, unknown> = {
+										data: {
+											...currentNode.data,
+											config: updatedConfig
 										}
+									};
+
+									// NOTE: We do NOT change the node's type field anymore
+									// All nodes use 'universalNode' and UniversalNode handles internal switching
+									workflowActions.updateNode(selectedNodeId, nodeUpdates);
 									}
 
 									closeConfigSidebar();

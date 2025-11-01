@@ -16,7 +16,7 @@ export const sampleNodes: NodeMetadata[] = [
 		id: 'sample-text-input',
 		name: 'Text Input',
 		type: 'simple',
-		supportedTypes: ['simple', 'default'],
+		supportedTypes: ['simple', 'square', 'default'],
 		version: '1.0.0',
 		description: 'User text input field',
 		category: 'inputs',
