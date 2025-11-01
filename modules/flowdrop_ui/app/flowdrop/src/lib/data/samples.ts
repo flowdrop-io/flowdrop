@@ -1852,6 +1852,75 @@ export const sampleNodes: NodeMetadata[] = [
 		},
 		tags: ['tools', 'simple', 'custom', 'visual', 'node']
 	},
+	{
+		id: 'sample-trigger-action',
+		name: 'Trigger Action',
+		type: 'simple',
+		supportedTypes: ['simple', 'square', 'default'],
+		version: '1.0.0',
+		description: 'An action that can be triggered and also processes data',
+		category: 'tools',
+		icon: 'mdi:lightning-bolt',
+		color: '#f59e0b',
+		inputs: [
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Control flow trigger to execute this action'
+			},
+			{
+				id: 'data',
+				name: 'Data',
+				type: 'input',
+				dataType: 'string',
+				required: false,
+				description: 'Optional data input to process'
+			}
+		],
+		outputs: [
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'output',
+				dataType: 'trigger',
+				description: 'Control flow trigger after execution'
+			},
+			{
+				id: 'result',
+				name: 'Result',
+				type: 'output',
+				dataType: 'string',
+				description: 'Processed data output'
+			}
+		],
+		configSchema: {
+			type: 'object',
+			properties: {
+				nodeType: {
+					type: 'string',
+					title: 'Node Type',
+					description: 'Choose the visual representation for this node',
+					default: 'simple',
+					enum: ['simple', 'square', 'default'],
+					enumNames: [
+						'Simple (compact layout)',
+						'Square (square layout)',
+						'Default (standard workflow node)'
+					]
+				},
+				action: {
+					type: 'string',
+					title: 'Action',
+					description: 'The action to perform when triggered',
+					default: 'Process data'
+				}
+			}
+		},
+		tags: ['trigger', 'action', 'control-flow']
+	},
 
 	// ===== EMBEDDINGS CATEGORY =====
 	{

@@ -91,19 +91,51 @@
 	}
 
 	// Get first input/output ports for simple node representation
-	let firstInputPort = $derived(props.data.metadata?.inputs?.[0]);
-	let firstOutputPort = $derived(props.data.metadata?.outputs?.[0]);
+	// Special handling for trigger ports - they should always be shown if present
+	let triggerInputPort = $derived(
+		props.data.metadata?.inputs?.find((port) => port.dataType === 'trigger')
+	);
+	let triggerOutputPort = $derived(
+		props.data.metadata?.outputs?.find((port) => port.dataType === 'trigger')
+	);
+	
+	// Get first non-trigger ports for data connections
+	let firstDataInputPort = $derived(
+		props.data.metadata?.inputs?.find((port) => port.dataType !== 'trigger')
+	);
+	let firstDataOutputPort = $derived(
+		props.data.metadata?.outputs?.find((port) => port.dataType !== 'trigger')
+	);
+	
+	// Use trigger port if present, otherwise use first data port
+	let firstInputPort = $derived(triggerInputPort || firstDataInputPort);
+	let firstOutputPort = $derived(triggerOutputPort || firstDataOutputPort);
+	
 	let hasInput = $derived(!!firstInputPort);
 	let hasOutput = $derived(!!firstOutputPort);
+	
+	// Check if we need to show both trigger and data ports
+	let hasBothInputTypes = $derived(!!triggerInputPort && !!firstDataInputPort);
+	let hasBothOutputTypes = $derived(!!triggerOutputPort && !!firstDataOutputPort);
 </script>
 
-<!-- Input Handle (optional) -->
-{#if hasInput && firstInputPort}
+<!-- Input Handles -->
+{#if firstDataInputPort}
+	<!-- Data Input - positioned at top-left if both types exist, otherwise center -->
 	<Handle
 		type="target"
 		position={Position.Left}
-		style="background-color: {getDataTypeColor(firstInputPort.dataType)}; border-color: '#ffffff';"
-		id={`${props.data.nodeId}-input-${firstInputPort.id}`}
+		style="background-color: {getDataTypeColor(firstDataInputPort.dataType)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '25%' : '50%'}; z-index: 30;"
+		id={`${props.data.nodeId}-input-${firstDataInputPort.id}`}
+	/>
+{/if}
+{#if triggerInputPort}
+	<!-- Trigger Input - positioned at bottom-left -->
+	<Handle
+		type="target"
+		position={Position.Left}
+		style="background-color: {getDataTypeColor(triggerInputPort.dataType)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '75%' : '50%'}; z-index: 30;"
+		id={`${props.data.nodeId}-input-${triggerInputPort.id}`}
 	/>
 {/if}
 
@@ -176,13 +208,23 @@
 	</button>
 </div>
 
-<!-- Output Handle (optional) -->
-{#if hasOutput && firstOutputPort}
+<!-- Output Handles -->
+{#if firstDataOutputPort}
+	<!-- Data Output - positioned at top-right if both types exist, otherwise center -->
 	<Handle
 		type="source"
 		position={Position.Right}
-		id={`${props.data.nodeId}-output-${firstOutputPort.id}`}
-		style="background-color: {getDataTypeColor(firstOutputPort.dataType)}; border-color: '#ffffff';"
+		id={`${props.data.nodeId}-output-${firstDataOutputPort.id}`}
+		style="background-color: {getDataTypeColor(firstDataOutputPort.dataType)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '25%' : '50%'}; z-index: 30;"
+	/>
+{/if}
+{#if triggerOutputPort}
+	<!-- Trigger Output - positioned at bottom-right -->
+	<Handle
+		type="source"
+		position={Position.Right}
+		id={`${props.data.nodeId}-output-${triggerOutputPort.id}`}
+		style="background-color: {getDataTypeColor(triggerOutputPort.dataType)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '75%' : '50%'}; z-index: 30;"
 	/>
 {/if}
 
