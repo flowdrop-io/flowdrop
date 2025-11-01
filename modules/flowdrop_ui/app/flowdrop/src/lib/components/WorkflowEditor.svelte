@@ -742,11 +742,11 @@
 					connectionLineComponent={ConnectionLine}
 					snapGrid={[10, 10]}
 					fitView
-				/>
-				<Controls />
-				<Background gap={20} variant={BackgroundVariant.Dots} />
-				<MiniMap />
-
+				>
+					<Controls />
+					<Background gap={10} bgColor="var(--flowdrop-background-color)" variant={BackgroundVariant.Dots} />
+					<MiniMap />
+				</SvelteFlow>
 				<!-- Drop Zone Indicator -->
 				{#if flowNodes.length === 0}
 					<CanvasBanner
