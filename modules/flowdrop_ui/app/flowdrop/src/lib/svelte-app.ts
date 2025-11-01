@@ -45,6 +45,21 @@ export async function mountFlowDropApp(
 		height?: string | number;
 		width?: string | number;
 		showNavbar?: boolean;
+		// Pipeline status mode configuration
+		disableSidebar?: boolean;
+		lockWorkflow?: boolean;
+		readOnly?: boolean;
+		nodeStatuses?: Record<string, "pending" | "running" | "completed" | "error">;
+		pipelineId?: string;
+		// Navbar customization
+		navbarTitle?: string;
+		navbarActions?: Array<{
+			label: string;
+			href: string;
+			icon?: string;
+			variant?: "primary" | "secondary" | "outline";
+			onclick?: (event: Event) => void;
+		}>;
 	} = {}
 ): Promise<MountedSvelteApp> {
 	const {
@@ -52,9 +67,16 @@ export async function mountFlowDropApp(
 		nodes = [],
 		endpointConfig,
 		portConfig,
-		height = '100vh',
-		width = '100%',
-		showNavbar = false
+		height = "100vh",
+		width = "100%",
+		showNavbar = false,
+		disableSidebar,
+		lockWorkflow,
+		readOnly,
+		nodeStatuses,
+		pipelineId,
+		navbarTitle,
+		navbarActions
 	} = options;
 
 	// Create endpoint configuration
@@ -101,7 +123,14 @@ export async function mountFlowDropApp(
 			workflow,
 			height,
 			width,
-			showNavbar
+			showNavbar,
+			disableSidebar,
+			lockWorkflow,
+			readOnly,
+			nodeStatuses,
+			pipelineId,
+			navbarTitle,
+			navbarActions
 		}
 	}) as MountedSvelteApp;
 
