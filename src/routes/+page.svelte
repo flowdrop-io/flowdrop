@@ -57,8 +57,8 @@
 			loading = true;
 			error = null;
 
-		// Use configured endpoint
-		const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.list);
+			// Use configured endpoint
+			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.list);
 			const response = await fetch(url);
 
 			if (!response.ok) {

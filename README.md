@@ -42,34 +42,34 @@ npm install @d34dman/flowdrop
 ### Basic Import
 
 ```javascript
-import { WorkflowEditor } from "@d34dman/flowdrop";
-import "@d34dman/flowdrop/styles/base.css";
+import { WorkflowEditor } from '@d34dman/flowdrop';
+import '@d34dman/flowdrop/styles/base.css';
 ```
 
 ### Using the WorkflowEditor Component
 
 ```svelte
 <script lang="ts">
-  import { WorkflowEditor } from "@d34dman/flowdrop";
-  import type { NodeMetadata, Workflow } from "@d34dman/flowdrop";
+	import { WorkflowEditor } from '@d34dman/flowdrop';
+	import type { NodeMetadata, Workflow } from '@d34dman/flowdrop';
 
-  let nodes: NodeMetadata[] = [
-    {
-      id: "text_input",
-      name: "Text Input",
-      category: "input_output",
-      description: "User input field",
-      inputs: [],
-      outputs: [{ id: "value", name: "Value", type: "output", dataType: "string" }]
-    }
-  ];
+	let nodes: NodeMetadata[] = [
+		{
+			id: 'text_input',
+			name: 'Text Input',
+			category: 'input_output',
+			description: 'User input field',
+			inputs: [],
+			outputs: [{ id: 'value', name: 'Value', type: 'output', dataType: 'string' }]
+		}
+	];
 
-  let workflow: Workflow = {
-    id: "workflow_1",
-    name: "My Workflow",
-    nodes: [],
-    edges: []
-  };
+	let workflow: Workflow = {
+		id: 'workflow_1',
+		name: 'My Workflow',
+		nodes: [],
+		edges: []
+	};
 </script>
 
 <WorkflowEditor {nodes} />
@@ -81,34 +81,34 @@ import "@d34dman/flowdrop/styles/base.css";
 
 ```svelte
 <script>
-  import { WorkflowEditor, NodeSidebar } from "@d34dman/flowdrop";
+	import { WorkflowEditor, NodeSidebar } from '@d34dman/flowdrop';
 </script>
 
 <div class="editor-container">
-  <NodeSidebar {nodes} />
-  <WorkflowEditor {nodes} />
+	<NodeSidebar {nodes} />
+	<WorkflowEditor {nodes} />
 </div>
 ```
 
 #### 2. Using Mount Functions (Vanilla JS/Other Frameworks)
 
 ```javascript
-import { mountWorkflowEditor } from "@d34dman/flowdrop";
+import { mountWorkflowEditor } from '@d34dman/flowdrop';
 
-const container = document.getElementById("workflow-container");
+const container = document.getElementById('workflow-container');
 const editor = mountWorkflowEditor(container, {
-  nodes: availableNodes,
-  endpointConfig: {
-    baseUrl: "/api/flowdrop",
-    endpoints: {
-      workflows: {
-        list: "/workflows",
-        get: "/workflows/{id}",
-        create: "/workflows",
-        update: "/workflows/{id}"
-      }
-    }
-  }
+	nodes: availableNodes,
+	endpointConfig: {
+		baseUrl: '/api/flowdrop',
+		endpoints: {
+			workflows: {
+				list: '/workflows',
+				get: '/workflows/{id}',
+				create: '/workflows',
+				update: '/workflows/{id}'
+			}
+		}
+	}
 });
 
 // Cleanup
@@ -121,15 +121,15 @@ editor.destroy();
 
 ```javascript
 Drupal.behaviors.flowdropEditor = {
-  attach: function (context, settings) {
-    const container = context.querySelector(".flowdrop-container");
-    if (container && window.FlowDrop) {
-      window.FlowDrop.mountWorkflowEditor(container, {
-        endpointConfig: settings.flowdrop.endpointConfig,
-        nodes: settings.flowdrop.nodes
-      });
-    }
-  }
+	attach: function (context, settings) {
+		const container = context.querySelector('.flowdrop-container');
+		if (container && window.FlowDrop) {
+			window.FlowDrop.mountWorkflowEditor(container, {
+				endpointConfig: settings.flowdrop.endpointConfig,
+				nodes: settings.flowdrop.nodes
+			});
+		}
+	}
 };
 ```
 
@@ -140,6 +140,7 @@ Drupal.behaviors.flowdropEditor = {
 Main editor component for creating and editing workflows.
 
 **Props:**
+
 - `nodes`: Array of available node types
 - `endpointConfig`: API endpoint configuration
 - `height`: Editor height (default: "100vh")
@@ -152,6 +153,7 @@ Main editor component for creating and editing workflows.
 Sidebar displaying available node types.
 
 **Props:**
+
 - `nodes`: Array of node types to display
 
 ### ConfigSidebar
@@ -159,6 +161,7 @@ Sidebar displaying available node types.
 Configuration panel for selected nodes.
 
 **Props:**
+
 - `isOpen`: Sidebar visibility
 - `configSchema`: JSON schema for configuration
 - `configValues`: Current configuration values
@@ -170,29 +173,29 @@ Configuration panel for selected nodes.
 Configure the API client to connect to your backend:
 
 ```typescript
-import { createEndpointConfig } from "@d34dman/flowdrop";
+import { createEndpointConfig } from '@d34dman/flowdrop';
 
 const config = createEndpointConfig({
-  baseUrl: "https://api.example.com",
-  endpoints: {
-    nodes: {
-      list: "/nodes",
-      get: "/nodes/{id}"
-    },
-    workflows: {
-      list: "/workflows",
-      get: "/workflows/{id}",
-      create: "/workflows",
-      update: "/workflows/{id}",
-      delete: "/workflows/{id}",
-      execute: "/workflows/{id}/execute"
-    }
-  },
-  timeout: 30000,
-  auth: {
-    type: "bearer",
-    token: "your-token"
-  }
+	baseUrl: 'https://api.example.com',
+	endpoints: {
+		nodes: {
+			list: '/nodes',
+			get: '/nodes/{id}'
+		},
+		workflows: {
+			list: '/workflows',
+			get: '/workflows/{id}',
+			create: '/workflows',
+			update: '/workflows/{id}',
+			delete: '/workflows/{id}',
+			execute: '/workflows/{id}/execute'
+		}
+	},
+	timeout: 30000,
+	auth: {
+		type: 'bearer',
+		token: 'your-token'
+	}
 });
 ```
 
@@ -204,10 +207,10 @@ Override CSS custom properties:
 
 ```css
 :root {
-  --flowdrop-background-color: #f9fafb;
-  --flowdrop-primary-color: #3b82f6;
-  --flowdrop-border-color: #e5e7eb;
-  --flowdrop-text-color: #1f2937;
+	--flowdrop-background-color: #f9fafb;
+	--flowdrop-primary-color: #3b82f6;
+	--flowdrop-border-color: #e5e7eb;
+	--flowdrop-text-color: #1f2937;
 }
 ```
 
@@ -217,37 +220,37 @@ Define custom node types:
 
 ```typescript
 const customNode: NodeMetadata = {
-  id: "custom_processor",
-  name: "Custom Processor",
-  category: "data_processing",
-  description: "Process data with custom logic",
-  icon: "mdi:cog",
-  color: "#3b82f6",
-  inputs: [
-    {
-      id: "input",
-      name: "Input",
-      type: "input",
-      dataType: "mixed"
-    }
-  ],
-  outputs: [
-    {
-      id: "output",
-      name: "Output",
-      type: "output",
-      dataType: "mixed"
-    }
-  ],
-  configSchema: {
-    type: "object",
-    properties: {
-      operation: {
-        type: "string",
-        title: "Operation"
-      }
-    }
-  }
+	id: 'custom_processor',
+	name: 'Custom Processor',
+	category: 'data_processing',
+	description: 'Process data with custom logic',
+	icon: 'mdi:cog',
+	color: '#3b82f6',
+	inputs: [
+		{
+			id: 'input',
+			name: 'Input',
+			type: 'input',
+			dataType: 'mixed'
+		}
+	],
+	outputs: [
+		{
+			id: 'output',
+			name: 'Output',
+			type: 'output',
+			dataType: 'mixed'
+		}
+	],
+	configSchema: {
+		type: 'object',
+		properties: {
+			operation: {
+				type: 'string',
+				title: 'Operation'
+			}
+		}
+	}
 };
 ```
 

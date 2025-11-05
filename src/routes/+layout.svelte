@@ -15,7 +15,9 @@
 		globalExportWorkflow
 	} from '$lib/services/globalSave.js';
 	import { getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
-	import { getDevApiConfig } from './devConfig';
+	import { getDevApiConfig, getDevConfig } from './devConfig';
+	import { setEndpointConfig } from '$lib/services/api.js';
+	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import { Toaster } from 'svelte-5-french-toast';
 	import { apiToasts } from '$lib/services/toastService.js';
 
@@ -47,6 +49,19 @@
 
 	// Initialize global save functions on mount
 	onMount(() => {
+		// Initialize API service with development config BEFORE global save
+		// This ensures the save action respects .env variables
+		const devConfig = getDevConfig();
+		const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
+			auth: {
+				type: devConfig.authType,
+				token: devConfig.authToken
+			},
+			timeout: devConfig.timeout
+		});
+		setEndpointConfig(endpointConfig);
+
+		// Now initialize global save (will use the config we just set)
 		initializeGlobalSave();
 
 		// Listen for breadcrumb updates

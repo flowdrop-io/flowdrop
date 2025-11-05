@@ -42,6 +42,8 @@
 			variant?: 'primary' | 'secondary' | 'outline';
 			onclick?: (event: Event) => void;
 		}>;
+		// API configuration - optional, defaults to '/api/flowdrop'
+		apiBaseUrl?: string;
 	}
 
 	let {
@@ -55,7 +57,8 @@
 		nodeStatuses = {},
 		pipelineId,
 		navbarTitle,
-		navbarActions = []
+		navbarActions = [],
+		apiBaseUrl
 	}: Props = $props();
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
@@ -183,12 +186,23 @@
 
 	/**
 	 * Initialize API endpoints
+	 * Only initializes if not already configured (respects configuration from parent)
 	 */
 	async function initializeApiEndpoints(): Promise<void> {
-		// Use default API base URL - can be overridden via runtime configuration
-		const apiBaseUrl = '/api/flowdrop';
+		// Check if endpoint config is already set (e.g., by parent layout)
+		const { getEndpointConfig } = await import('$lib/services/api.js');
+		const existingConfig = getEndpointConfig();
+		
+		// If config already exists and no override provided, use existing
+		if (existingConfig && !apiBaseUrl) {
+			endpointConfig = existingConfig;
+			return;
+		}
 
-		const config = createEndpointConfig(apiBaseUrl, {
+		// Use provided apiBaseUrl or default
+		const baseUrl = apiBaseUrl || '/api/flowdrop';
+
+		const config = createEndpointConfig(baseUrl, {
 			auth: {
 				type: 'none' // No authentication for now
 			},
