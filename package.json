@@ -2,7 +2,7 @@
 	"name": "@d34dman/flowdrop",
 	"license": "MIT",
 	"private": false,
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -65,7 +65,8 @@
 		"!dist/**/*.spec.*"
 	],
 	"sideEffects": [
-		"**/*.css"
+		"**/*.css",
+		"./dist/styles/base.css"
 	],
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -73,8 +74,10 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"svelte": "./dist/index.js"
-		}
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./styles/base.css": "./dist/styles/base.css"
 	},
 	"peerDependencies": {
 		"svelte": "^5.0.0"
