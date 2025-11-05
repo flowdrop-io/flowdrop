@@ -9,7 +9,6 @@ import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
 import type { Workflow, NodeMetadata, PortConfig } from './types/index.js';
 import type { EndpointConfig } from './config/endpoints.js';
-import { createEndpointConfig } from './config/endpoints.js';
 import { initializePortCompatibility } from './utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
@@ -67,7 +66,6 @@ export async function mountFlowDropApp(
 ): Promise<MountedSvelteApp> {
 	const {
 		workflow,
-		nodes = [],
 		endpointConfig,
 		portConfig,
 		height = '100vh',
@@ -170,7 +168,7 @@ export async function mountWorkflowEditor(
 		portConfig?: PortConfig;
 	} = {}
 ): Promise<MountedSvelteApp> {
-	const { workflow, nodes = [], endpointConfig, portConfig } = options;
+	const { nodes = [], endpointConfig, portConfig } = options;
 
 	// Create endpoint configuration
 	let config: EndpointConfig | undefined;

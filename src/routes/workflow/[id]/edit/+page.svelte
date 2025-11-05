@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
 	import { getDevApiConfig } from '../../../devConfig';
-	import { apiToasts, workflowToasts, dismissToast } from '$lib/services/toastService.js';
+	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 
 	/**
 	 * Workflow edit type (minimal structure for editing)

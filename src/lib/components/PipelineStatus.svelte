@@ -63,7 +63,6 @@
 
 	// Loading and error states
 	let isLoadingJobStatus = $state(false);
-	let error = $state<string | null>(null);
 
 	// Logs sidebar state
 	let isLogsSidebarOpen = $state(false);
@@ -145,42 +144,6 @@
 	 */
 	function toggleLogsSidebar(): void {
 		isLogsSidebarOpen = !isLogsSidebarOpen;
-	}
-
-	/**
-	 * Get status color for visual indicators
-	 */
-	function getStatusColor(status: string): string {
-		switch (status) {
-			case 'completed':
-				return '#10b981'; // green
-			case 'running':
-				return '#3b82f6'; // blue
-			case 'error':
-			case 'failed':
-				return '#ef4444'; // red
-			case 'pending':
-			default:
-				return '#6b7280'; // gray
-		}
-	}
-
-	/**
-	 * Get status icon for visual indicators
-	 */
-	function getStatusIcon(status: string): string {
-		switch (status) {
-			case 'completed':
-				return 'mdi:check-circle';
-			case 'running':
-				return 'mdi:loading';
-			case 'error':
-			case 'failed':
-				return 'mdi:alert-circle';
-			case 'pending':
-			default:
-				return 'mdi:clock-outline';
-		}
 	}
 
 	/**

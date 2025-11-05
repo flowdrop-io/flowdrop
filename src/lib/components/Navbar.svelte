@@ -33,18 +33,8 @@
 
 	let { primaryActions = [], showStatus = true, title, breadcrumbs = [] }: Props = $props();
 
-	// Simple current path tracking without SvelteKit dependency
-	let currentPath = $state(typeof window !== 'undefined' ? window.location.pathname : '/');
-
 	// Dropdown state
 	let isDropdownOpen = $state(false);
-
-	function isActive(href: string): boolean {
-		if (href === '/') {
-			return currentPath === '/';
-		}
-		return currentPath.startsWith(href);
-	}
 
 	// Close dropdown when clicking outside
 	function handleClickOutside(event: MouseEvent) {
@@ -93,7 +83,7 @@
 				<div class="flowdrop-navbar__breadcrumb-container">
 					<nav class="flowdrop-navbar__breadcrumb" aria-label="Breadcrumb">
 						<ol class="flowdrop-navbar__breadcrumb-list">
-							{#each breadcrumbs as breadcrumb, index}
+							{#each breadcrumbs as breadcrumb, index (index)}
 								<li class="flowdrop-navbar__breadcrumb-item">
 									{#if breadcrumb.href && index < breadcrumbs.length - 1}
 										<a href={breadcrumb.href} class="flowdrop-navbar__breadcrumb-link">

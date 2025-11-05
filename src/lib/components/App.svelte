@@ -17,7 +17,6 @@
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import { workflowStore, workflowActions, workflowName } from '../stores/workflowStore.js';
-	import { resolveComponentName } from '$lib/utils/nodeTypes.js';
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 
 	// Configuration props for runtime customization
@@ -78,7 +77,6 @@
 	// Remove workflow prop - use global store directly
 	// let workflow = $derived($workflowStore || initialWorkflow);
 	let error = $state<string | null>(null);
-	let loading = $state(true);
 	let endpointConfig = $state<EndpointConfig | null>(null);
 
 	// ConfigSidebar state
@@ -133,7 +131,6 @@
 		// Show loading toast
 		const loadingToast = apiToasts.loading('Loading node types');
 		try {
-			loading = true;
 			error = null;
 
 			const fetchedNodes = await api.nodes.getNodes();
@@ -152,8 +149,6 @@
 
 			// Fallback to sample data
 			nodes = sampleNodes;
-		} finally {
-			loading = false;
 		}
 	}
 
@@ -282,60 +277,56 @@
 	 * Save workflow - exposed API function
 	 */
 	async function saveWorkflow(): Promise<void> {
-		try {
-			// Wait for any pending DOM updates before saving
-			await tick();
+		// Wait for any pending DOM updates before saving
+		await tick();
 
-			// Import necessary modules
-			const { workflowApi } = await import('$lib/services/api.js');
-			const { v4: uuidv4 } = await import('uuid');
+		// Import necessary modules
+		const { workflowApi } = await import('$lib/services/api.js');
+		const { v4: uuidv4 } = await import('uuid');
 
-			// Use current workflow from global store
-			const workflowToSave = $workflowStore;
+		// Use current workflow from global store
+		const workflowToSave = $workflowStore;
 
-			if (!workflowToSave) {
-				return;
+		if (!workflowToSave) {
+			return;
+		}
+
+		// Determine the workflow ID
+		let workflowId: string;
+		if (workflowToSave.id) {
+			workflowId = workflowToSave.id;
+		} else {
+			workflowId = uuidv4();
+		}
+
+		// Create workflow object for saving
+		const finalWorkflow = {
+			id: workflowId,
+			name: workflowToSave.name || 'Untitled Workflow',
+			description: workflowToSave.description || '',
+			nodes: workflowToSave.nodes || [],
+			edges: workflowToSave.edges || [],
+			metadata: {
+				version: '1.0.0',
+				createdAt: workflowToSave.metadata?.createdAt || new Date().toISOString(),
+				updatedAt: new Date().toISOString()
 			}
+		};
 
-			// Determine the workflow ID
-			let workflowId: string;
-			if (workflowToSave.id) {
-				workflowId = workflowToSave.id;
-			} else {
-				workflowId = uuidv4();
-			}
+		const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
 
-			// Create workflow object for saving
-			const finalWorkflow = {
-				id: workflowId,
-				name: workflowToSave.name || 'Untitled Workflow',
-				description: workflowToSave.description || '',
-				nodes: workflowToSave.nodes || [],
-				edges: workflowToSave.edges || [],
+		// Update the workflow ID if it changed (new workflow)
+		// Keep our current workflow state, only update ID and metadata from backend
+		if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
+			workflowActions.batchUpdate({
+				nodes: finalWorkflow.nodes,
+				edges: finalWorkflow.edges,
+				name: finalWorkflow.name,
 				metadata: {
-					version: '1.0.0',
-					createdAt: workflowToSave.metadata?.createdAt || new Date().toISOString(),
-					updatedAt: new Date().toISOString()
+					...finalWorkflow.metadata,
+					...savedWorkflow.metadata
 				}
-			};
-
-			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
-
-			// Update the workflow ID if it changed (new workflow)
-			// Keep our current workflow state, only update ID and metadata from backend
-			if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
-				workflowActions.batchUpdate({
-					nodes: finalWorkflow.nodes,
-					edges: finalWorkflow.edges,
-					name: finalWorkflow.name,
-					metadata: {
-						...finalWorkflow.metadata,
-						...savedWorkflow.metadata
-					}
-				});
-			}
-		} catch (error) {
-			throw error; // Re-throw so caller can handle
+			});
 		}
 	}
 
@@ -376,16 +367,16 @@
 			link.download = `${finalWorkflow.name}.json`;
 			link.click();
 			URL.revokeObjectURL(url);
-		} catch (error) {
+		} catch {
 			// Export failed
 		}
 	}
 
 	// Expose save and export functions globally for external access
 	if (typeof window !== 'undefined') {
-		// @ts-ignore - Adding to window for external access
+		// @ts-expect-error - Adding to window for external access
 		window.flowdropSave = saveWorkflow;
-		// @ts-ignore - Adding to window for external access
+		// @ts-expect-error - Adding to window for external access
 		window.flowdropExport = exportWorkflow;
 	}
 
@@ -663,7 +654,7 @@
 
 										<!-- Render configuration fields based on schema -->
 										{#if configSchema.properties}
-											{#each Object.entries(configSchema.properties) as [key, field]}
+											{#each Object.entries(configSchema.properties) as [key, field] (key)}
 												{@const fieldConfig = field as any}
 												{#if fieldConfig.format !== 'hidden'}
 													<div class="flowdrop-config-sidebar__field">
@@ -673,7 +664,7 @@
 														{#if fieldConfig.enum && fieldConfig.multiple}
 															<!-- Checkboxes for enum with multiple selection -->
 															<div class="flowdrop-config-sidebar__checkbox-group">
-																{#each fieldConfig.enum as option}
+																{#each fieldConfig.enum as option (String(option))}
 																	<label class="flowdrop-config-sidebar__checkbox-item">
 																		<input
 																			type="checkbox"
@@ -710,7 +701,7 @@
 																class="flowdrop-config-sidebar__select"
 																bind:value={configValues[key]}
 															>
-																{#each fieldConfig.enum as option}
+																{#each fieldConfig.enum as option (String(option))}
 																	<option value={String(option)}>{String(option)}</option>
 																{/each}
 															</select>
@@ -756,7 +747,7 @@
 																bind:value={configValues[key]}
 															>
 																{#if fieldConfig.options}
-																	{#each fieldConfig.options as option}
+																	{#each fieldConfig.options as option (String(option.value))}
 																		{@const optionConfig = option as any}
 																		<option value={String(optionConfig.value)}
 																			>{String(optionConfig.label)}</option

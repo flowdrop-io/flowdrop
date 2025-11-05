@@ -7,17 +7,10 @@
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { WorkflowNode, NodeExecutionStatus } from '../types/index.js';
+	import type { WorkflowNode } from '../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../utils/icons.js';
 	import { getDataTypeColorToken, getCategoryColorToken } from '../utils/colors.js';
-	import {
-		getStatusColor,
-		getStatusIcon,
-		getStatusLabel,
-		formatExecutionDuration,
-		formatLastExecuted
-	} from '../utils/nodeStatus.js';
 
 	interface Props {
 		data: WorkflowNode['data'] & {

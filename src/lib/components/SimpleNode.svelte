@@ -107,13 +107,6 @@
 		props.data.metadata?.outputs?.find((port) => port.dataType !== 'trigger')
 	);
 
-	// Use trigger port if present, otherwise use first data port
-	let firstInputPort = $derived(triggerInputPort || firstDataInputPort);
-	let firstOutputPort = $derived(triggerOutputPort || firstDataOutputPort);
-
-	let hasInput = $derived(!!firstInputPort);
-	let hasOutput = $derived(!!firstOutputPort);
-
 	// Check if we need to show both trigger and data ports
 	let hasBothInputTypes = $derived(!!triggerInputPort && !!firstDataInputPort);
 	let hasBothOutputTypes = $derived(!!triggerOutputPort && !!firstDataOutputPort);

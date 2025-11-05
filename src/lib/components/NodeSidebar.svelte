@@ -10,6 +10,7 @@
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
 	import { getCategoryColorToken } from '../utils/colors.js';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
 		nodes: NodeMetadata[];
@@ -29,7 +30,7 @@
 	function getCategories(): NodeCategory[] {
 		const nodes = props.nodes || [];
 		if (nodes.length === 0) return [];
-		const categories = new Set<NodeCategory>();
+		const categories = new SvelteSet<NodeCategory>();
 		nodes.forEach((node) => categories.add(node.category));
 		return Array.from(categories).sort();
 	}

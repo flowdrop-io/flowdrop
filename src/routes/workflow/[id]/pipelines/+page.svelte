@@ -13,7 +13,7 @@
 	import StatusLabel from '$lib/components/StatusLabel.svelte';
 	import { getEndpointUrl } from '$lib/config/apiConfig';
 	import { getDevApiConfig } from '../../../devConfig';
-	import { apiToasts, pipelineToasts, dismissToast } from '$lib/services/toastService.js';
+	import { apiToasts, pipelineToasts } from '$lib/services/toastService.js';
 	import type { NodeExecutionStatus } from '$lib/types/index.js';
 
 	// Get API configuration from development config (uses .env if available)
@@ -128,7 +128,7 @@
 					})
 				);
 			}
-		} catch (err) {
+		} catch {
 			// Silently fail for workflow name - don't show toast for this background operation
 		}
 	}
@@ -146,36 +146,6 @@
 	function handleCreatePipeline() {
 		// TODO: Implement pipeline creation
 		pipelineToasts.created('New Pipeline');
-	}
-
-	function getStatusColor(status: string): string {
-		switch (status) {
-			case 'running':
-				return '#3b82f6';
-			case 'completed':
-				return '#10b981';
-			case 'error':
-				return '#ef4444';
-			case 'idle':
-				return '#6b7280';
-			default:
-				return '#6b7280';
-		}
-	}
-
-	function getStatusIcon(status: string): string {
-		switch (status) {
-			case 'running':
-				return 'mdi:loading';
-			case 'completed':
-				return 'mdi:check-circle';
-			case 'error':
-				return 'mdi:alert-circle';
-			case 'idle':
-				return 'mdi:clock-outline';
-			default:
-				return 'mdi:help-circle';
-		}
 	}
 </script>
 
