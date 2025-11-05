@@ -260,34 +260,17 @@ export function validateConfig(config: WorkflowEditorConfig): string[] {
 }
 
 /**
- * Create configuration from environment variables
+ * Create default configuration
+ * For library usage, all configuration should be provided at runtime
+ * This function is kept for backward compatibility but returns defaults
+ * 
+ * @deprecated Use createDefaultConfig() instead and pass runtime configuration
  */
 export function createConfigFromEnv(): WorkflowEditorConfig {
-	const apiBaseUrl = import.meta.env.VITE_FLOWDROP_API_URL || '/api/flowdrop';
+	// Return default configuration without environment variables
+	// Configuration should be provided at runtime via props/parameters
+	const apiBaseUrl = '/api/flowdrop';
 	const endpointConfig = createEndpointConfig(apiBaseUrl);
-
-	const config = createDefaultConfig(endpointConfig);
-
-	// Override with environment variables
-	if (import.meta.env.VITE_FLOWDROP_THEME) {
-		config.theme = import.meta.env.VITE_FLOWDROP_THEME as 'light' | 'dark' | 'auto';
-	}
-
-	if (import.meta.env.VITE_FLOWDROP_TIMEOUT) {
-		config.api.timeout = parseInt(import.meta.env.VITE_FLOWDROP_TIMEOUT);
-	}
-
-	if (import.meta.env.VITE_FLOWDROP_AUTH_TYPE) {
-		config.api.auth.type = import.meta.env.VITE_FLOWDROP_AUTH_TYPE as
-			| 'none'
-			| 'bearer'
-			| 'api_key'
-			| 'custom';
-	}
-
-	if (import.meta.env.VITE_FLOWDROP_AUTH_TOKEN) {
-		config.api.auth.token = import.meta.env.VITE_FLOWDROP_AUTH_TOKEN;
-	}
-
-	return config;
+	
+	return createDefaultConfig(endpointConfig);
 }

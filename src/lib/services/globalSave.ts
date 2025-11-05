@@ -34,21 +34,19 @@ async function ensureApiConfiguration(): Promise<void> {
 	}
 
 	// API configuration is not initialized, so let's initialize it
-
-	// Use the same environment variable priority as the App component
-	// Prioritize VITE_API_BASE_URL since it's configured correctly
-	const apiBaseUrl =
-		import.meta.env.VITE_API_BASE_URL ||
-		import.meta.env.VITE_DRUPAL_API_URL ||
-		import.meta.env.VITE_FLOWDROP_API_URL ||
-		(() => {
-			// If we're in development (localhost:5173), use relative path
+	// Use runtime detection to determine appropriate API base URL
+	const apiBaseUrl = (() => {
+		// If we're in development (localhost:5173), use relative path
+		if (typeof window !== 'undefined') {
 			if (window.location.hostname === 'localhost' && window.location.port === '5173') {
 				return '/api/flowdrop';
 			}
 			// Otherwise, use the current domain
 			return `${window.location.protocol}//${window.location.host}/api/flowdrop`;
-		})();
+		}
+		// Fallback to relative path
+		return '/api/flowdrop';
+	})();
 
 	const config = createEndpointConfig(apiBaseUrl, {
 		auth: {

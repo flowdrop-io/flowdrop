@@ -20,7 +20,7 @@ const config = {
 
 		// Ensure API routes are server-side only
 		csrf: {
-			checkOrigin: true
+			trustedOrigins: []
 		}
 	}
 };
