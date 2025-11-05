@@ -511,7 +511,7 @@
 				}
 			};
 
-			console.log('💾 WorkflowEditor: Saving workflow to Drupal:');
+			console.log('💾 WorkflowEditor: Saving workflow to backend:');
 			console.log('   - ID:', workflow.id);
 			console.log('   - Name:', workflow.name);
 			console.log('   - Nodes count:', workflow.nodes.length);
@@ -520,14 +520,14 @@
 
 			const savedWorkflow = await workflowApi.saveWorkflow(workflow);
 
-			console.log('✅ WorkflowEditor: Received workflow from Drupal:');
+			console.log('✅ WorkflowEditor: Received workflow from backend:');
 			console.log('   - ID:', savedWorkflow.id);
 			console.log('   - Name:', savedWorkflow.name);
 			console.log('   - Nodes count:', savedWorkflow.nodes?.length || 0);
 			console.log('   - Edges count:', savedWorkflow.edges?.length || 0);
 
 			// Update the workflow ID if it changed (new workflow)
-			// Keep our current workflow state, only update ID and metadata from Drupal
+			// Keep our current workflow state, only update ID and metadata from backend
 			if (savedWorkflow.id && savedWorkflow.id !== workflow.id) {
 				console.log('🔄 Updating workflow ID from', workflow.id, 'to', savedWorkflow.id);
 				workflowActions.batchUpdate({

@@ -1,6 +1,6 @@
 <!--
-  FlowDrop Demo Page
-  Demonstrates the FlowDrop library with sample data
+  FlowDrop App Component
+  Main application wrapper with navbar, sidebars, and workflow editor
   Styled with BEM syntax
 -->
 
@@ -310,7 +310,7 @@
 			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
 
 			// Update the workflow ID if it changed (new workflow)
-			// Keep our current workflow state, only update ID and metadata from Drupal
+			// Keep our current workflow state, only update ID and metadata from backend
 			if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
 				workflowActions.batchUpdate({
 					nodes: finalWorkflow.nodes,
@@ -508,7 +508,7 @@
 							class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
 							onclick={() => {
 								const defaultUrl = '/api/flowdrop';
-								const newUrl = prompt('Enter Drupal API URL:', defaultUrl);
+								const newUrl = prompt('Enter Backend API URL:', defaultUrl);
 								if (newUrl) {
 									const endpointConfig = createEndpointConfig(newUrl);
 									setEndpointConfig(endpointConfig);

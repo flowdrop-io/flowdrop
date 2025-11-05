@@ -88,16 +88,16 @@ export const demoWorkflowConfig = {
  * Demo instructions for non-technical users
  */
 export const demoInstructions = {
-	title: 'Multi-Agent Content Management Demo',
+	title: 'Multi-Agent Workflow Demo',
 	description:
-		'This demo shows how FlowDrop uses multiple AI agents working together to manage and improve your Drupal content.',
+		'This demo shows how FlowDrop uses multiple AI agents working together to process and manage data workflows.',
 
 	steps: [
 		{
 			step: 1,
 			title: 'User Input',
-			description: 'Start by telling the main agent what content management task you need.',
-			example: "Find all blog posts about 'XB' and check if it's being used correctly as an acronym"
+			description: 'Start by providing input data or instructions to the main agent.',
+			example: 'Analyze and process the provided dataset'
 		},
 		{
 			step: 2,
@@ -108,23 +108,23 @@ export const demoInstructions = {
 		},
 		{
 			step: 3,
-			title: 'Content Analysis Agent',
+			title: 'Data Analysis Agent',
 			description:
-				'Specialized agent analyzes content using RAG search tools to find and examine relevant content.',
-			note: 'Uses Drupal Search API RAG tool for intelligent content discovery'
+				'Specialized agent analyzes data using search and processing tools to find and examine relevant information.',
+			note: 'Uses connected data sources and search tools for intelligent data discovery'
 		},
 		{
 			step: 4,
-			title: 'Content Editor Agent',
+			title: 'Data Processing Agent',
 			description:
-				'Specialized agent makes improvements using available tools like date formatters and draft creators.',
-			note: 'Has access to multiple tools and makes conservative, tracked changes'
+				'Specialized agent processes and transforms data using available tools and formatters.',
+			note: 'Has access to multiple tools and makes tracked transformations'
 		},
 		{
 			step: 5,
 			title: 'Tool Integration',
 			description:
-				'Sub-agents use specialized tools: RAG search, draft creation, date formatting, etc.',
+				'Sub-agents use specialized tools for data processing, formatting, and transformation.',
 			note: "Tools are connected via special 'tool' interface ports"
 		},
 		{
@@ -139,25 +139,25 @@ export const demoInstructions = {
 			title: 'Orchestrated Response',
 			description:
 				'Main agent compiles results from all sub-agents and provides a comprehensive response.',
-			note: 'Includes summaries, draft links, and next steps for human review'
+			note: 'Includes summaries, results, and next steps for review'
 		}
 	],
 
 	benefits: [
 		'Multi-agent collaboration for complex tasks',
-		'Specialized agents for specific content management functions',
+		'Specialized agents for specific data processing functions',
 		'Intelligent task orchestration and coordination',
 		'Tool-based architecture for extensibility',
-		'Human oversight through draft approval process',
+		'Human oversight through review process',
 		'Scalable agent-to-agent communication patterns'
 	],
 
 	useCases: [
-		'Multi-agent content analysis and improvement',
-		'Coordinated acronym standardization workflows',
-		'Agent-orchestrated style guide enforcement',
-		'Collaborative content quality assessment',
-		'Tool-assisted bulk content transformations',
-		'Intelligent editorial workflow automation'
+		'Multi-agent data analysis and processing',
+		'Coordinated data transformation workflows',
+		'Agent-orchestrated data quality checks',
+		'Collaborative data processing pipelines',
+		'Tool-assisted bulk data operations',
+		'Intelligent workflow automation'
 	]
 };

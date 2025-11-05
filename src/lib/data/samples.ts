@@ -1,6 +1,6 @@
 /**
  * Sample data for FlowDrop development and testing
- * Full set matching Langflow's default categories and node types
+ * Includes sample nodes and workflows for demonstration and testing purposes
  */
 
 import type { NodeMetadata, Workflow, WorkflowNode, WorkflowEdge } from '../types/index.js';

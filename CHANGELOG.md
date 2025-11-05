@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4]
+
+### Changed
+- Updated documentation to accurately reflect FlowDrop as a framework-agnostic Svelte 5 component library
+- Synchronized README.md, API.md, and code comments for consistency
+
 ## [0.0.3] - 2025-11-05
 
 ### Fixed
@@ -53,6 +59,7 @@ import "@d34dman/flowdrop/styles/base.css";
 
 ---
 
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.3...HEAD
 [0.0.3]: https://github.com/d34dman/flowdrop/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/d34dman/flowdrop/releases/tag/v0.0.2
 
