@@ -5,8 +5,18 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/services/api.js';
+	import { api, setEndpointConfig } from '$lib/services/api.js';
+	import { createEndpointConfig } from '$lib/config/endpoints.js';
+	import { getDevConfig } from '../devConfig';
 	import type { NodeMetadata } from '$lib/types/index.js';
+
+	// Initialize API service with development config
+	const devConfig = getDevConfig();
+	const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
+		auth: { type: devConfig.authType, token: devConfig.authToken },
+		timeout: devConfig.timeout
+	});
+	setEndpointConfig(endpointConfig);
 
 	let nodes = $state<NodeMetadata[]>([]);
 	let loading = $state(true);

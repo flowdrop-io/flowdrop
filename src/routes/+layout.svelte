@@ -14,14 +14,15 @@
 		globalSaveWorkflow,
 		globalExportWorkflow
 	} from '$lib/services/globalSave.js';
-	import { defaultApiConfig, getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
+	import { getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
+	import { getDevApiConfig } from './devConfig';
 	import { Toaster } from 'svelte-5-french-toast';
 	import { apiToasts } from '$lib/services/toastService.js';
 
 	let { children } = $props();
 
-	// API configuration
-	let apiConfig = $state<ApiConfig>(defaultApiConfig);
+	// API configuration from development config (uses .env if available)
+	let apiConfig = $state<ApiConfig>(getDevApiConfig());
 
 	// Workflow name for breadcrumbs
 	let workflowName = $state<string | null>(null);

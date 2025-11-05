@@ -9,10 +9,23 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import PipelineStatus from '$lib/components/PipelineStatus.svelte';
-	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
-	import { setEndpointConfig } from '$lib/services/api.js';
+	import { getEndpointUrl } from '$lib/config/apiConfig';
+	import { getDevApiConfig } from '../../../../devConfig';
+	import { setEndpointConfig, api } from '$lib/services/api.js';
+	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { Workflow, NodeMetadata } from '$lib/types/index.js';
 	import Icon from '@iconify/svelte';
+
+	// Get API configuration from development config (uses .env if available)
+	const devConfig = getDevApiConfig();
+	const apiConfig = devConfig;
+
+	// Initialize API service with development config
+	const endpointConfig = createEndpointConfig(devConfig.baseUrl, {
+		auth: { type: 'none' },
+		timeout: 30000
+	});
+	setEndpointConfig(endpointConfig);
 
 	let workflowId = $derived($page.params.id);
 	let pipelineId = $derived($page.params.pipelineId);
@@ -39,7 +52,7 @@
 			error = null;
 
 			// Fetch workflow
-			const workflowUrl = getEndpointUrl(defaultApiConfig, '/workflows/{id}', { id: workflowId });
+			const workflowUrl = getEndpointUrl(apiConfig, '/workflows/{id}', { id: workflowId });
 			const workflowResponse = await fetch(workflowUrl);
 			if (!workflowResponse.ok) {
 				throw new Error(`Failed to fetch workflow: ${workflowResponse.statusText}`);
@@ -49,7 +62,7 @@
 			workflow = workflowData.success && workflowData.data ? workflowData.data : workflowData;
 
 			// Fetch pipeline
-			const pipelineUrl = getEndpointUrl(defaultApiConfig, '/pipeline/{id}', { id: pipelineId });
+			const pipelineUrl = getEndpointUrl(apiConfig, '/pipeline/{id}', { id: pipelineId });
 			const pipelineResponse = await fetch(pipelineUrl);
 			if (!pipelineResponse.ok) {
 				throw new Error(`Failed to fetch pipeline: ${pipelineResponse.statusText}`);
@@ -57,7 +70,7 @@
 			pipeline = await pipelineResponse.json();
 
 			// Fetch nodes
-			const nodesUrl = getEndpointUrl(defaultApiConfig, '/nodes');
+			const nodesUrl = getEndpointUrl(apiConfig, '/nodes');
 			const nodesResponse = await fetch(nodesUrl);
 			if (!nodesResponse.ok) {
 				throw new Error(`Failed to fetch nodes: ${nodesResponse.statusText}`);
@@ -101,7 +114,7 @@
 	// Configure endpoints once on mount
 	onMount(() => {
 		setEndpointConfig({
-			baseUrl: defaultApiConfig.baseUrl,
+			baseUrl: apiConfig.baseUrl,
 			endpoints: {
 				nodes: {
 					list: '/api/flowdrop/nodes',
