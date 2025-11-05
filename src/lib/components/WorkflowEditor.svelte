@@ -675,20 +675,20 @@
 								};
 							}
 
-						const newNodeId = uuidv4();
+							const newNodeId = uuidv4();
 
-						// All nodes use 'universalNode' type
-						// UniversalNode component handles internal switching based on metadata and config
-						const newNode: WorkflowNodeType = {
-							id: newNodeId,
-							type: 'universalNode',
-							position, // Use the position calculated from the drop event
-							deletable: true,
-							data: {
-								...nodeData,
-								nodeId: newNodeId // Use the same ID
-							}
-						};
+							// All nodes use 'universalNode' type
+							// UniversalNode component handles internal switching based on metadata and config
+							const newNode: WorkflowNodeType = {
+								id: newNodeId,
+								type: 'universalNode',
+								position, // Use the position calculated from the drop event
+								deletable: true,
+								data: {
+									...nodeData,
+									nodeId: newNodeId // Use the same ID
+								}
+							};
 
 							// Add node to currentWorkflow
 							if (currentWorkflow) {
@@ -737,7 +737,11 @@
 					fitView
 				>
 					<Controls />
-					<Background gap={10} bgColor="var(--flowdrop-background-color)" variant={BackgroundVariant.Dots} />
+					<Background
+						gap={10}
+						bgColor="var(--flowdrop-background-color)"
+						variant={BackgroundVariant.Dots}
+					/>
 					<MiniMap />
 				</SvelteFlow>
 				<!-- Drop Zone Indicator -->
