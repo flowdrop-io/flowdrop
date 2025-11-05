@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.5] - 2025-11-05
+
+### Changed
+- **Breaking**: Removed environment variable support - library now uses runtime configuration only
+- All configuration must be provided at runtime via props/parameters instead of build-time environment variables
+- Updated `svelte.config.js` to use `csrf.trustedOrigins` instead of deprecated `checkOrigin`
+- Marked `createConfigFromEnv()` as deprecated in favor of `createDefaultConfig()` with runtime parameters
+
+### Added
+- Added `@sveltejs/kit` to `peerDependencies` to resolve packaging warnings
+
+### Removed
+- Removed all `import.meta.env` usage for better cross-bundler compatibility
+- Removed `esm-env` dependency (no longer needed)
+- Removed `getEnvVar()` helper functions from all library files
+
+### Fixed
+- Fixed SvelteKit CSRF configuration deprecation warning
+- Fixed `@sveltejs/package` warnings about environment variable usage
+- Library now passes `publint` validation with zero warnings
+
+### Technical Details
+- Library is now truly framework-agnostic and works with all bundlers
+- Configuration should be provided programmatically at runtime
+- Example: `createEndpointConfig("/custom/api/url", { auth: { type: "bearer" } })`
+
 ## [0.0.4]
 
 ### Changed
@@ -59,7 +85,9 @@ import "@d34dman/flowdrop/styles/base.css";
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/d34dman/flowdrop/compare/v0.0.4...v0.0.5
+[0.0.4]: https://github.com/d34dman/flowdrop/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/d34dman/flowdrop/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/d34dman/flowdrop/releases/tag/v0.0.2
 

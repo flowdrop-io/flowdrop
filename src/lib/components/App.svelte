@@ -185,10 +185,8 @@
 	 * Initialize API endpoints
 	 */
 	async function initializeApiEndpoints(): Promise<void> {
-		// Use the same environment variable priority as the global save function
-		// Prioritize VITE_API_BASE_URL since it's configured correctly
-		const apiBaseUrl =
-			import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_DRUPAL_API_URL || '/api/flowdrop';
+		// Use default API base URL - can be overridden via runtime configuration
+		const apiBaseUrl = '/api/flowdrop';
 
 		const config = createEndpointConfig(apiBaseUrl, {
 			auth: {

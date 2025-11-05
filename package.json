@@ -2,7 +2,7 @@
 	"name": "@d34dman/flowdrop",
 	"license": "MIT",
 	"private": false,
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -80,6 +80,7 @@
 		"./styles/base.css": "./dist/styles/base.css"
 	},
 	"peerDependencies": {
+		"@sveltejs/kit": "^2.0.0",
 		"svelte": "^5.0.0"
 	},
 	"devDependencies": {

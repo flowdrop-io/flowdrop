@@ -26,10 +26,11 @@ export interface ApiConfig {
 
 /**
  * Default API configuration
- * Can be overridden by environment variables or runtime config
+ * For library usage, configuration should be provided at runtime
+ * This provides sensible defaults that can be overridden
  */
 export const defaultApiConfig: ApiConfig = {
-	baseUrl: import.meta.env.VITE_API_BASE_URL || '/api/flowdrop',
+	baseUrl: '/api/flowdrop',
 	endpoints: {
 		workflows: {
 			list: '/workflows',
