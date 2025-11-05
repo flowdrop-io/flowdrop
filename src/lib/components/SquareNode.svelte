@@ -84,7 +84,7 @@
 	let triggerOutputPort = $derived(
 		props.data.metadata?.outputs?.find((port) => port.dataType === 'trigger')
 	);
-	
+
 	// Get first non-trigger ports for data connections
 	let firstDataInputPort = $derived(
 		props.data.metadata?.inputs?.find((port) => port.dataType !== 'trigger')
@@ -92,14 +92,14 @@
 	let firstDataOutputPort = $derived(
 		props.data.metadata?.outputs?.find((port) => port.dataType !== 'trigger')
 	);
-	
+
 	// Use trigger port if present, otherwise use first data port
 	let firstInputPort = $derived(triggerInputPort || firstDataInputPort);
 	let firstOutputPort = $derived(triggerOutputPort || firstDataOutputPort);
-	
+
 	let hasInput = $derived(!!firstInputPort);
 	let hasOutput = $derived(!!firstOutputPort);
-	
+
 	// Check if we need to show both trigger and data ports
 	let hasBothInputTypes = $derived(!!triggerInputPort && !!firstDataInputPort);
 	let hasBothOutputTypes = $derived(!!triggerOutputPort && !!firstDataOutputPort);
@@ -111,7 +111,9 @@
 	<Handle
 		type="target"
 		position={Position.Left}
-		style="background-color: {getDataTypeColor(firstDataInputPort.dataType)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '25%' : '50%'}; z-index: 30;"
+		style="background-color: {getDataTypeColor(
+			firstDataInputPort.dataType
+		)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '25%' : '50%'}; z-index: 30;"
 		id={`${props.data.nodeId}-input-${firstDataInputPort.id}`}
 	/>
 {/if}
@@ -120,7 +122,9 @@
 	<Handle
 		type="target"
 		position={Position.Left}
-		style="background-color: {getDataTypeColor(triggerInputPort.dataType)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '75%' : '50%'}; z-index: 30;"
+		style="background-color: {getDataTypeColor(
+			triggerInputPort.dataType
+		)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '75%' : '50%'}; z-index: 30;"
 		id={`${props.data.nodeId}-input-${triggerInputPort.id}`}
 	/>
 {/if}
@@ -177,7 +181,9 @@
 		type="source"
 		position={Position.Right}
 		id={`${props.data.nodeId}-output-${firstDataOutputPort.id}`}
-		style="background-color: {getDataTypeColor(firstDataOutputPort.dataType)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '25%' : '50%'}; z-index: 30;"
+		style="background-color: {getDataTypeColor(
+			firstDataOutputPort.dataType
+		)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '25%' : '50%'}; z-index: 30;"
 	/>
 {/if}
 {#if triggerOutputPort}
@@ -186,7 +192,9 @@
 		type="source"
 		position={Position.Right}
 		id={`${props.data.nodeId}-output-${triggerOutputPort.id}`}
-		style="background-color: {getDataTypeColor(triggerOutputPort.dataType)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '75%' : '50%'}; z-index: 30;"
+		style="background-color: {getDataTypeColor(
+			triggerOutputPort.dataType
+		)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '75%' : '50%'}; z-index: 30;"
 	/>
 {/if}
 

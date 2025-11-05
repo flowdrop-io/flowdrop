@@ -49,7 +49,7 @@ export async function mountFlowDropApp(
 		disableSidebar?: boolean;
 		lockWorkflow?: boolean;
 		readOnly?: boolean;
-		nodeStatuses?: Record<string, "pending" | "running" | "completed" | "error">;
+		nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
 		pipelineId?: string;
 		// Navbar customization
 		navbarTitle?: string;
@@ -57,7 +57,7 @@ export async function mountFlowDropApp(
 			label: string;
 			href: string;
 			icon?: string;
-			variant?: "primary" | "secondary" | "outline";
+			variant?: 'primary' | 'secondary' | 'outline';
 			onclick?: (event: Event) => void;
 		}>;
 	} = {}
@@ -67,8 +67,8 @@ export async function mountFlowDropApp(
 		nodes = [],
 		endpointConfig,
 		portConfig,
-		height = "100vh",
-		width = "100%",
+		height = '100vh',
+		width = '100%',
 		showNavbar = false,
 		disableSidebar,
 		lockWorkflow,

@@ -848,17 +848,17 @@
 											);
 										}
 
-									// Handle nodeType switching if nodeType is in the config
-									let nodeUpdates: Record<string, unknown> = {
-										data: {
-											...currentNode.data,
-											config: updatedConfig
-										}
-									};
+										// Handle nodeType switching if nodeType is in the config
+										let nodeUpdates: Record<string, unknown> = {
+											data: {
+												...currentNode.data,
+												config: updatedConfig
+											}
+										};
 
-									// NOTE: We do NOT change the node's type field anymore
-									// All nodes use 'universalNode' and UniversalNode handles internal switching
-									workflowActions.updateNode(selectedNodeId, nodeUpdates);
+										// NOTE: We do NOT change the node's type field anymore
+										// All nodes use 'universalNode' and UniversalNode handles internal switching
+										workflowActions.updateNode(selectedNodeId, nodeUpdates);
 									}
 
 									closeConfigSidebar();

@@ -44,9 +44,7 @@
 	// Explicitly track config.nodeType to ensure reactivity
 	let configNodeType = $derived(data.config?.nodeType as string | undefined);
 	let resolvedComponentName = $derived(
-		data.metadata
-			? resolveComponentName(data.metadata, configNodeType)
-			: 'workflowNode'
+		data.metadata ? resolveComponentName(data.metadata, configNodeType) : 'workflowNode'
 	);
 	let nodeComponent = $derived(getNodeComponent(resolvedComponentName));
 

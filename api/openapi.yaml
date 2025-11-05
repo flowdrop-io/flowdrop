@@ -56,7 +56,7 @@ paths:
         - System
       security: []
       responses:
-        "200":
+        '200':
           description: API is healthy
           content:
             application/json:
@@ -135,7 +135,7 @@ paths:
             minimum: 0
             default: 0
       responses:
-        "200":
+        '200':
           description: List of node types retrieved successfully
           headers:
             X-Total-Count:
@@ -153,7 +153,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NodesResponse"
+                $ref: '#/components/schemas/NodesResponse'
               examples:
                 success:
                   value:
@@ -165,7 +165,7 @@ paths:
                         category: ai
                         version: 1.0.0
                         icon: mdi:chat
-                        color: "#10a37f"
+                        color: '#10a37f'
                         type: default
                         supportedTypes:
                           - default
@@ -216,10 +216,10 @@ paths:
                           - chat
                           - ai
                     message: Found 1 node types
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /nodes/{id}:
     get:
@@ -236,16 +236,16 @@ paths:
             type: string
             example: calculator
       responses:
-        "200":
+        '200':
           description: Node type details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NodeTypeResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/NodeTypeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ===== PORT CONFIGURATION =====
   /port-config:
@@ -258,12 +258,12 @@ paths:
       tags:
         - Configuration
       responses:
-        "200":
+        '200':
           description: Port configuration retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PortConfigResponse"
+                $ref: '#/components/schemas/PortConfigResponse'
               example:
                 success: true
                 data:
@@ -273,7 +273,7 @@ paths:
                     - id: string
                       name: String
                       description: Text data type
-                      color: "#3b82f6"
+                      color: '#3b82f6'
                       category: primitive
                       aliases:
                         - text
@@ -282,13 +282,13 @@ paths:
                     - id: number
                       name: Number
                       description: Numeric data type
-                      color: "#10b981"
+                      color: '#10b981'
                       category: primitive
                       enabled: true
                     - id: mixed
                       name: Mixed
                       description: Any data type
-                      color: "#6b7280"
+                      color: '#6b7280'
                       category: special
                       enabled: true
                   compatibilityRules:
@@ -302,8 +302,8 @@ paths:
                       to: string
                       description: Mixed can connect to string with conversion
                 message: Port configuration loaded successfully
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ===== WORKFLOWS =====
   /workflows:
@@ -367,7 +367,7 @@ paths:
               - desc
             default: desc
       responses:
-        "200":
+        '200':
           description: List of workflows retrieved successfully
           headers:
             X-Total-Count:
@@ -385,9 +385,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowsResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowsResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     post:
       summary: Create a new workflow
@@ -401,7 +401,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateWorkflowRequest"
+              $ref: '#/components/schemas/CreateWorkflowRequest'
             examples:
               basic:
                 summary: Basic workflow creation
@@ -441,18 +441,18 @@ paths:
                     - ai
                     - chat
       responses:
-        "201":
+        '201':
           description: Workflow created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /workflows/{id}:
     get:
@@ -468,20 +468,20 @@ paths:
           schema:
             type: string
             format: uuid
-            example: "123e4567-e89b-12d3-a456-426614174000"
+            example: '123e4567-e89b-12d3-a456-426614174000'
       responses:
-        "200":
+        '200':
           description: Workflow details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     put:
       summary: Update workflow
@@ -503,22 +503,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateWorkflowRequest"
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
       responses:
-        "200":
+        '200':
           description: Workflow updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       summary: Delete workflow
@@ -534,7 +534,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Workflow deleted successfully
           content:
             application/json:
@@ -547,12 +547,12 @@ paths:
                   message:
                     type: string
                     example: Workflow deleted successfully
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ===== WORKFLOW VALIDATION =====
   /workflows/validate:
@@ -572,18 +572,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: '#/components/schemas/Workflow'
       responses:
-        "200":
+        '200':
           description: Validation results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidationResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ValidationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ===== WORKFLOW IMPORT/EXPORT =====
   /workflows/{id}/export:
@@ -611,19 +611,19 @@ paths:
               - yaml
             default: json
       responses:
-        "200":
+        '200':
           description: Workflow exported successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Workflow"
+                $ref: '#/components/schemas/Workflow'
             application/x-yaml:
               schema:
                 type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /workflows/import:
     post:
@@ -636,20 +636,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: '#/components/schemas/Workflow'
       responses:
-        "201":
+        '201':
           description: Workflow imported successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ===== PIPELINE EXECUTION =====
   /workflow/{workflow_id}/pipelines:
@@ -678,16 +678,16 @@ paths:
               - failed
               - cancelled
       responses:
-        "200":
+        '200':
           description: List of pipeline executions
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineListResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PipelineListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /pipeline/{id}:
     get:
@@ -709,12 +709,12 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Pipeline details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineDetailResponse"
+                $ref: '#/components/schemas/PipelineDetailResponse'
               example:
                 status: running
                 jobs:
@@ -722,22 +722,22 @@ paths:
                     node_id: node-1
                     status: completed
                     execution_count: 5
-                    started: "2024-01-20T10:00:00Z"
-                    completed: "2024-01-20T10:00:05Z"
+                    started: '2024-01-20T10:00:00Z'
+                    completed: '2024-01-20T10:00:05Z'
                     execution_time: 5000
                   - id: job-2
                     node_id: node-2
                     status: running
                     execution_count: 3
-                    started: "2024-01-20T10:00:05Z"
+                    started: '2024-01-20T10:00:05Z'
                 node_statuses:
                   node-1:
                     status: completed
-                    last_executed: "2024-01-20T10:00:05Z"
+                    last_executed: '2024-01-20T10:00:05Z'
                     execution_time: 5000
                   node-2:
                     status: running
-                    last_executed: "2024-01-20T10:00:05Z"
+                    last_executed: '2024-01-20T10:00:05Z'
                 job_status_summary:
                   total: 5
                   pending: 0
@@ -745,10 +745,10 @@ paths:
                   completed: 3
                   failed: 1
                   cancelled: 0
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /pipeline/{id}/execute:
     post:
@@ -785,16 +785,16 @@ paths:
                       type: integer
                       description: Maximum number of execution steps
       responses:
-        "202":
+        '202':
           description: Pipeline execution started
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineExecutionResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PipelineExecutionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /pipeline/{id}/stop:
     post:
@@ -811,7 +811,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Pipeline stopped successfully
           content:
             application/json:
@@ -822,16 +822,16 @@ paths:
                     type: boolean
                   message:
                     type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: Pipeline cannot be stopped
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /pipeline/{id}/logs:
     get:
@@ -859,7 +859,7 @@ paths:
               - warning
               - error
       responses:
-        "200":
+        '200':
           description: Pipeline logs retrieved successfully
           content:
             application/json:
@@ -871,11 +871,11 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/LogEntry"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                      $ref: '#/components/schemas/LogEntry'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
   securitySchemes:
@@ -966,7 +966,7 @@ components:
         color:
           type: string
           description: Color for the data type (CSS color value)
-          example: "#3b82f6"
+          example: '#3b82f6'
         category:
           type: string
           description: Category grouping for the data type
@@ -1021,12 +1021,12 @@ components:
         dataTypes:
           type: array
           items:
-            $ref: "#/components/schemas/PortDataTypeConfig"
+            $ref: '#/components/schemas/PortDataTypeConfig'
           description: Available data types
         compatibilityRules:
           type: array
           items:
-            $ref: "#/components/schemas/PortCompatibilityRule"
+            $ref: '#/components/schemas/PortCompatibilityRule'
           description: Compatibility rules between data types
       required:
         - dataTypes
@@ -1052,7 +1052,7 @@ components:
             - metadata
           description: Port type
         dataType:
-          $ref: "#/components/schemas/NodeDataType"
+          $ref: '#/components/schemas/NodeDataType'
         required:
           type: boolean
           default: false
@@ -1122,11 +1122,11 @@ components:
             - date
             - date-time
         items:
-          $ref: "#/components/schemas/ConfigProperty"
+          $ref: '#/components/schemas/ConfigProperty'
         properties:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/ConfigProperty"
+            $ref: '#/components/schemas/ConfigProperty'
       required:
         - type
 
@@ -1140,7 +1140,7 @@ components:
         properties:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/ConfigProperty"
+            $ref: '#/components/schemas/ConfigProperty'
           description: Configuration properties
         required:
           type: array
@@ -1166,18 +1166,18 @@ components:
           description: Node type display name
           example: Calculator
         type:
-          $ref: "#/components/schemas/NodeType"
+          $ref: '#/components/schemas/NodeType'
         supportedTypes:
           type: array
           items:
-            $ref: "#/components/schemas/NodeType"
+            $ref: '#/components/schemas/NodeType'
           description: Array of supported rendering types
         description:
           type: string
           description: Node type description
           example: Perform mathematical operations on input data
         category:
-          $ref: "#/components/schemas/NodeCategory"
+          $ref: '#/components/schemas/NodeCategory'
         version:
           type: string
           description: Node type version
@@ -1189,19 +1189,19 @@ components:
         color:
           type: string
           description: Node color (CSS color value)
-          example: "#3b82f6"
+          example: '#3b82f6'
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/NodePort"
+            $ref: '#/components/schemas/NodePort'
           description: Input ports
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/NodePort"
+            $ref: '#/components/schemas/NodePort'
           description: Output ports
         configSchema:
-          $ref: "#/components/schemas/ConfigSchema"
+          $ref: '#/components/schemas/ConfigSchema'
         tags:
           type: array
           items:
@@ -1240,7 +1240,7 @@ components:
       type: object
       properties:
         status:
-          $ref: "#/components/schemas/NodeExecutionStatus"
+          $ref: '#/components/schemas/NodeExecutionStatus'
         executionCount:
           type: integer
           description: Total number of times this node has been executed
@@ -1276,7 +1276,7 @@ components:
           description: Node type ID (references NodeMetadata.id)
           example: calculator
         position:
-          $ref: "#/components/schemas/Position"
+          $ref: '#/components/schemas/Position'
         deletable:
           type: boolean
           default: true
@@ -1295,7 +1295,7 @@ components:
                 operation: add
                 precision: 2
             metadata:
-              $ref: "#/components/schemas/NodeMetadata"
+              $ref: '#/components/schemas/NodeMetadata'
             isProcessing:
               type: boolean
               description: Whether the node is currently processing
@@ -1306,7 +1306,7 @@ components:
               type: string
               description: Alternative node ID
             executionInfo:
-              $ref: "#/components/schemas/NodeExecutionInfo"
+              $ref: '#/components/schemas/NodeExecutionInfo'
           required:
             - label
             - config
@@ -1432,15 +1432,15 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowNode"
+            $ref: '#/components/schemas/WorkflowNode'
           description: Workflow nodes
         edges:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowEdge"
+            $ref: '#/components/schemas/WorkflowEdge'
           description: Workflow edges
         metadata:
-          $ref: "#/components/schemas/WorkflowMetadata"
+          $ref: '#/components/schemas/WorkflowMetadata'
       required:
         - id
         - name
@@ -1465,11 +1465,11 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowNode"
+            $ref: '#/components/schemas/WorkflowNode'
         edges:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowEdge"
+            $ref: '#/components/schemas/WorkflowEdge'
         tags:
           type: array
           items:
@@ -1494,11 +1494,11 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowNode"
+            $ref: '#/components/schemas/WorkflowNode'
         edges:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowEdge"
+            $ref: '#/components/schemas/WorkflowEdge'
         metadata:
           type: object
           properties:
@@ -1530,51 +1530,51 @@ components:
 
     NodesResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/NodeMetadata"
+                $ref: '#/components/schemas/NodeMetadata'
 
     NodeTypeResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/NodeMetadata"
+              $ref: '#/components/schemas/NodeMetadata'
 
     PortConfigResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/PortConfig"
+              $ref: '#/components/schemas/PortConfig'
 
     WorkflowsResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/Workflow"
+                $ref: '#/components/schemas/Workflow'
 
     WorkflowResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/Workflow"
+              $ref: '#/components/schemas/Workflow'
 
     ValidationResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
@@ -1610,7 +1610,7 @@ components:
           type: string
           description: Node instance UUID
         status:
-          $ref: "#/components/schemas/NodeExecutionStatus"
+          $ref: '#/components/schemas/NodeExecutionStatus'
         execution_count:
           type: integer
           description: Number of times executed
@@ -1633,7 +1633,7 @@ components:
       type: object
       properties:
         status:
-          $ref: "#/components/schemas/NodeExecutionStatus"
+          $ref: '#/components/schemas/NodeExecutionStatus'
         last_executed:
           type: string
           format: date-time
@@ -1688,15 +1688,15 @@ components:
         jobs:
           type: array
           items:
-            $ref: "#/components/schemas/JobStatus"
+            $ref: '#/components/schemas/JobStatus'
           description: Individual job statuses
         node_statuses:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/NodeStatus"
+            $ref: '#/components/schemas/NodeStatus'
           description: Node execution statuses keyed by node ID
         job_status_summary:
-          $ref: "#/components/schemas/JobStatusSummary"
+          $ref: '#/components/schemas/JobStatusSummary'
       required:
         - status
         - jobs
@@ -1705,7 +1705,7 @@ components:
 
     PipelineListResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
@@ -1729,7 +1729,7 @@ components:
 
     PipelineExecutionResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
@@ -1774,7 +1774,7 @@ components:
 
     ErrorResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             success:
@@ -1796,7 +1796,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Invalid request parameters
@@ -1810,7 +1810,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Authentication required
@@ -1821,7 +1821,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Resource not found
@@ -1832,7 +1832,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Validation failed
@@ -1847,7 +1847,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Internal server error
