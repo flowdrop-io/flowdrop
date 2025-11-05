@@ -1,6 +1,7 @@
 /**
  * Example: Using FlowDrop API Client
- * This demonstrates how to integrate with FlowDrop API from backend applications
+ * Demonstrates how to integrate with FlowDrop API from applications
+ * This client can be used with any backend that implements the FlowDrop API specification
  */
 
 import { ApiClient } from '../clients/ApiClient.js';

@@ -1,14 +1,14 @@
 # FlowDrop API Documentation
 
-This document describes the REST API endpoints for FlowDrop, a Drupal-based workflow editor for LLM applications.
+This document describes the REST API specification for backend integration with FlowDrop, a visual workflow editor library.
 
 ## Base URL
 
-All API endpoints are prefixed with `/api/flowdrop`.
+All API endpoints are typically prefixed with `/api/flowdrop` (configurable via `endpointConfig`).
 
 ## Authentication
 
-The API uses Drupal's permission system. All endpoints require appropriate Drupal permissions such as `access content` or `administer flowdrop_workflow`.
+Authentication is configurable and backend-dependent. The FlowDrop client supports various authentication methods including bearer tokens, API keys, and custom headers.
 
 ## Response Format
 
@@ -644,13 +644,13 @@ Retrieve detailed logs for a workflow execution.
 
 ## Rate Limiting
 
-The API implements rate limiting to prevent abuse:
+Rate limiting is backend-dependent. Recommended limits:
 
 - **Node Discovery**: 100 requests per minute
 - **Workflow Operations**: 50 requests per minute
 - **Workflow Execution**: 10 requests per minute
 
-Rate limit headers are included in responses:
+Recommended rate limit headers:
 
 - `X-RateLimit-Limit`: Request limit per window
 - `X-RateLimit-Remaining`: Remaining requests in current window
@@ -658,11 +658,11 @@ Rate limit headers are included in responses:
 
 ## Security Considerations
 
-1. **Authentication**: All endpoints require appropriate Drupal permissions
-2. **Input Validation**: All inputs are validated against schemas
-3. **Output Sanitization**: All outputs are sanitized to prevent XSS
-4. **Logging**: All operations are logged for audit purposes
-5. **Error Handling**: Sensitive information is not exposed in error messages
+1. **Authentication**: Implement appropriate authentication for your backend
+2. **Input Validation**: Validate all inputs against schemas
+3. **Output Sanitization**: Sanitize outputs to prevent XSS
+4. **Logging**: Log all operations for audit purposes
+5. **Error Handling**: Avoid exposing sensitive information in error messages
 
 ## Best Practices
 

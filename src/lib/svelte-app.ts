@@ -1,6 +1,7 @@
 /**
- * Svelte App Wrapper for Drupal Integration
- * This provides a way to mount Svelte components in Drupal
+ * Svelte App Wrapper for Framework Integration
+ * Provides mount/unmount functions for integrating FlowDrop into any web application
+ * Particularly useful for integration with vanilla JS, Drupal, WordPress, or other frameworks
  */
 
 import { mount } from 'svelte';
@@ -32,8 +33,10 @@ interface MountedSvelteApp {
 }
 
 /**
- * Mount the full FlowDrop App with configurable navbar height and other settings
- * This is the recommended way to mount the app for IIFE usage
+ * Mount the full FlowDrop App with navbar, sidebars, and workflow editor
+ * Use this for a complete workflow editing experience with all UI components
+ * @param container - DOM element to mount the app into
+ * @param options - Configuration options for the app
  */
 export async function mountFlowDropApp(
 	container: HTMLElement,
@@ -155,7 +158,8 @@ export async function mountFlowDropApp(
 }
 
 /**
- * Mount the WorkflowEditor component in a Drupal container
+ * Mount the WorkflowEditor component in a container
+ * Simpler alternative to mountFlowDropApp - only mounts the editor without navbar
  */
 export async function mountWorkflowEditor(
 	container: HTMLElement,

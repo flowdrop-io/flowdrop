@@ -1,6 +1,6 @@
 /**
- * FlowDrop - Workflow Library
- * A Svelte Flow-based library for building workflows
+ * FlowDrop - Visual Workflow Editor Library
+ * A Svelte 5 component library built on @xyflow/svelte for creating node-based workflow editors
  */
 
 // Import CSS to ensure styles are included in the library build
@@ -75,7 +75,7 @@ export * from './adapters/WorkflowAdapter.js';
 // Export API client
 export * from './clients/ApiClient.js';
 
-// Export Svelte app wrapper for Drupal integration
+// Export Svelte app wrapper for framework integration
 export {
 	mountWorkflowEditor,
 	unmountWorkflowEditor,
