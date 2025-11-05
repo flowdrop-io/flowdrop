@@ -27,18 +27,19 @@
 		Workflow,
 		WorkflowEdge
 	} from '../types/index.js';
-	import { hasCycles } from '../utils/connections.js';
 	import CanvasBanner from './CanvasBanner.svelte';
-	import { workflowApi, nodeApi, setApiBaseUrl, setEndpointConfig } from '../services/api.js';
-	import { v4 as uuidv4 } from 'uuid';
 	import { tick } from 'svelte';
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
-	import { resolveComponentName } from '../utils/nodeTypes.js';
 	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
-	import { nodeExecutionService } from '../services/nodeExecutionService.js';
-	import type { NodeExecutionInfo } from '../types/index.js';
 	import UniversalNode from './UniversalNode.svelte';
+	import {
+		EdgeStylingHelper,
+		NodeOperationsHelper,
+		WorkflowOperationsHelper,
+		ConfigurationHelper
+	} from '../helpers/workflowEditorHelper.js';
+	import type { NodeExecutionInfo } from '../types/index.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -136,59 +137,47 @@
 	async function loadNodeExecutionInfo(): Promise<void> {
 		if (!currentWorkflow?.nodes) return;
 
-		// Only load execution info if we have a pipelineId (for pipeline status mode)
-		if (!props.pipelineId) return;
+		const executionInfo = await NodeOperationsHelper.loadNodeExecutionInfo(
+			currentWorkflow,
+			props.pipelineId
+		);
 
-		try {
-			const nodeIds = currentWorkflow.nodes.map((node) => node.id);
-			const executionInfo = await nodeExecutionService.getMultipleNodeExecutionInfo(
-				nodeIds,
-				props.pipelineId
-			);
-
-			// Update nodes with execution information without triggering reactive updates
-			const updatedNodes = currentWorkflow.nodes.map((node) => ({
-				...node,
-				data: {
-					...node.data,
-					executionInfo: executionInfo[node.id] || {
-						status: 'idle',
+		// Update nodes with execution information without triggering reactive updates
+		const updatedNodes = currentWorkflow.nodes.map((node) => ({
+			...node,
+			data: {
+				...node.data,
+				executionInfo:
+					executionInfo[node.id] ||
+					({
+						status: 'idle' as const,
 						executionCount: 0,
 						isExecuting: false
-					}
-				}
-			}));
+					} as NodeExecutionInfo)
+			}
+		}));
 
-			// Update the flow nodes to reflect the changes
-			flowNodes = updatedNodes.map((node) => ({
-				...node,
-				data: {
-					...node.data,
-					onConfigOpen: props.openConfigSidebar
-				}
-			}));
+		// Update the flow nodes to reflect the changes
+		flowNodes = updatedNodes.map((node) => ({
+			...node,
+			data: {
+				...node.data,
+				onConfigOpen: props.openConfigSidebar
+			}
+		}));
 
-			// Update currentWorkflow without triggering reactive effects
-			currentWorkflow.nodes = updatedNodes;
-		} catch (error) {
-			console.error('Failed to load node execution info:', error);
-		}
+		// Update currentWorkflow without triggering reactive effects
+		currentWorkflow.nodes = updatedNodes;
 	}
 
 	// Function to update currentWorkflow when SvelteFlow changes nodes/edges
 	function updateCurrentWorkflowFromSvelteFlow(): void {
 		if (currentWorkflow) {
-			currentWorkflow = {
-				...currentWorkflow,
-				nodes: flowNodes,
-				edges: flowEdges,
-				metadata: {
-					...currentWorkflow.metadata,
-					updatedAt: new Date().toISOString(),
-					versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
-				}
-			};
+			currentWorkflow = WorkflowOperationsHelper.updateWorkflow(
+				currentWorkflow,
+				flowNodes,
+				flowEdges
+			);
 
 			// Update the global store
 			updateGlobalStore();
@@ -262,49 +251,6 @@
 	}
 
 	/**
-	 * Apply custom styling to connection edges based on rules:
-	 * - Dashed lines for connections to tool nodes
-	 * - Arrow markers pointing towards input ports
-	 */
-	function applyConnectionStyling(
-		edge: WorkflowEdge,
-		sourceNode: WorkflowNodeType,
-		targetNode: WorkflowNodeType
-	): void {
-		// Rule 1: Dashed lines for tool nodes
-		// A node is a tool node when it uses the ToolNode component,
-		// which happens when sourceNode.type === 'tool'
-		const isToolNode = sourceNode.type === 'tool';
-
-		// Use inline styles for dashed lines (more reliable than CSS classes)
-		if (isToolNode) {
-			edge.style = 'stroke-dasharray: 0 4 0; stroke: amber !important;';
-			edge.class = 'flowdrop--edge--tool';
-		} else {
-			edge.style = 'stroke: grey;';
-		}
-
-		// Store metadata in edge data for debugging
-		edge.data = {
-			...edge.data,
-			isToolConnection: isToolNode,
-			targetNodeType: targetNode.type,
-			targetCategory: targetNode.data.metadata.category
-		};
-
-		// Rule 2: Always add arrow pointing towards input port
-		// This replaces the default arrows we removed
-		if (!isToolNode) {
-			edge.markerEnd = {
-				type: MarkerType.ArrowClosed,
-				width: 16,
-				height: 16,
-				color: 'grey'
-			};
-		}
-	}
-
-	/**
 	 * Update existing edges with our custom styling rules
 	 * This ensures all edges (including existing ones) follow our rules
 	 */
@@ -312,35 +258,15 @@
 		// Wait for any pending DOM updates
 		await tick();
 
-		const updatedEdges = flowEdges.map((edge) => {
-			// Find source and target nodes
-			const sourceNode = flowNodes.find((node) => node.id === edge.source);
-			const targetNode = flowNodes.find((node) => node.id === edge.target);
-
-			if (!sourceNode || !targetNode) {
-				console.warn('Could not find nodes for edge:', edge.id);
-				return edge;
-			}
-
-			// Create a copy of the edge and apply styling
-			const updatedEdge = { ...edge };
-			applyConnectionStyling(updatedEdge, sourceNode, targetNode);
-
-			return updatedEdge;
-		});
+		const updatedEdges = EdgeStylingHelper.updateEdgeStyles(flowEdges, flowNodes);
 
 		// Update currentWorkflow with the styled edges
 		if (currentWorkflow) {
-			currentWorkflow = {
-				...currentWorkflow,
-				edges: updatedEdges,
-				metadata: {
-					...currentWorkflow.metadata,
-					updatedAt: new Date().toISOString(),
-					versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
-				}
-			};
+			currentWorkflow = WorkflowOperationsHelper.updateWorkflow(
+				currentWorkflow,
+				flowNodes,
+				updatedEdges
+			);
 
 			// Update the global store
 			updateGlobalStore();
@@ -352,7 +278,7 @@
 	// Configure endpoints and load nodes when props change
 	$effect(() => {
 		if (props.endpointConfig) {
-			setEndpointConfig(props.endpointConfig);
+			ConfigurationHelper.configureEndpoints(props.endpointConfig);
 			// Load nodes after setting endpoint config
 			loadNodesFromApi();
 		} else if (props.nodes) {
@@ -365,44 +291,7 @@
 	 * Load nodes from API if not provided
 	 */
 	async function loadNodesFromApi(): Promise<void> {
-		// If nodes are provided via props, use them
-		if (props.nodes && props.nodes.length > 0) {
-			availableNodes = props.nodes;
-			return;
-		}
-
-		// Otherwise, load from API
-		try {
-			const fetchedNodes = await nodeApi.getNodes();
-
-			availableNodes = fetchedNodes;
-		} catch (error) {
-			console.error('❌ Failed to load nodes from API:', error);
-
-			// Use fallback sample nodes
-			availableNodes = [
-				{
-					id: 'text-input',
-					name: 'Text Input',
-					category: 'inputs',
-					description: 'Simple text input field',
-					version: '1.0.0',
-					icon: 'mdi:text-box',
-					inputs: [],
-					outputs: [{ id: 'text', name: 'text', type: 'output', dataType: 'string' }]
-				},
-				{
-					id: 'text-output',
-					name: 'Text Output',
-					category: 'outputs',
-					description: 'Display text output',
-					version: '1.0.0',
-					icon: 'mdi:text-box-outline',
-					inputs: [{ id: 'text', name: 'text', type: 'input', dataType: 'string' }],
-					outputs: []
-				}
-			];
-		}
+		availableNodes = await NodeOperationsHelper.loadNodesFromApi(props.nodes);
 	}
 
 	/**
@@ -410,17 +299,7 @@
 	 */
 	function clearWorkflow(): void {
 		if (currentWorkflow) {
-			currentWorkflow = {
-				...currentWorkflow,
-				nodes: [],
-				edges: [],
-				metadata: {
-					...currentWorkflow.metadata,
-					updatedAt: new Date().toISOString(),
-					versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-					updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
-				}
-			};
+			currentWorkflow = WorkflowOperationsHelper.clearWorkflow(currentWorkflow);
 
 			// Update the global store
 			updateGlobalStore();
@@ -442,26 +321,12 @@
 			props.selectedNodeForConfig.data.config = { ...newConfig };
 
 			// Update the node in currentWorkflow
-			// NOTE: We do NOT change the node's type field anymore
-			// All nodes use 'universalNode' and UniversalNode handles internal switching
 			if (currentWorkflow) {
-				currentWorkflow = {
-					...currentWorkflow,
-					nodes: currentWorkflow.nodes.map((node) =>
-						node.id === props.selectedNodeForConfig.id
-							? {
-									...node,
-									data: { ...node.data, config: { ...newConfig } }
-								}
-							: node
-					),
-					metadata: {
-						...currentWorkflow.metadata,
-						updatedAt: new Date().toISOString(),
-						versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-						updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
-					}
-				};
+				currentWorkflow = WorkflowOperationsHelper.updateNodeConfig(
+					currentWorkflow,
+					props.selectedNodeForConfig.id,
+					newConfig
+				);
 
 				console.log('🔧 WorkflowEditor: Updated currentWorkflow, calling updateGlobalStore');
 				// Update the global store
@@ -483,75 +348,17 @@
 			// Wait for any pending DOM updates before saving
 			await tick();
 
-			// Use current workflow from local variable
-			if (!currentWorkflow) {
-				console.warn('⚠️ No workflow data available to save');
-				return;
-			}
+			const savedWorkflow = await WorkflowOperationsHelper.saveWorkflow(currentWorkflow);
 
-			// Determine the workflow ID based on whether we have an existing workflow
-			let workflowId: string;
-			if (currentWorkflow.id) {
-				// Use the existing workflow ID
-				workflowId = currentWorkflow.id;
-			} else {
-				// Generate a new UUID for a new workflow
-				workflowId = uuidv4();
-			}
+			if (savedWorkflow) {
+				console.log('🔍 WorkflowEditor: Workflow store after save:', $workflowStore);
 
-			const workflow: Workflow = {
-				id: workflowId,
-				name: currentWorkflow.name || 'Untitled Workflow',
-				nodes: currentWorkflow.nodes || [],
-				edges: currentWorkflow.edges || [],
-				metadata: {
-					version: '1.0.0',
-					createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
-					updatedAt: new Date().toISOString()
+				// Update the workflow ID if it was a new workflow
+				if (!currentWorkflow?.id) {
+					console.log('🆕 New workflow created with ID:', savedWorkflow.id);
+				} else {
+					console.log('🔄 Existing workflow updated with ID:', savedWorkflow.id);
 				}
-			};
-
-			console.log('💾 WorkflowEditor: Saving workflow to backend:');
-			console.log('   - ID:', workflow.id);
-			console.log('   - Name:', workflow.name);
-			console.log('   - Nodes count:', workflow.nodes.length);
-			console.log('   - Edges count:', workflow.edges.length);
-			console.log('   - Full workflow object:', JSON.stringify(workflow, null, 2));
-
-			const savedWorkflow = await workflowApi.saveWorkflow(workflow);
-
-			console.log('✅ WorkflowEditor: Received workflow from backend:');
-			console.log('   - ID:', savedWorkflow.id);
-			console.log('   - Name:', savedWorkflow.name);
-			console.log('   - Nodes count:', savedWorkflow.nodes?.length || 0);
-			console.log('   - Edges count:', savedWorkflow.edges?.length || 0);
-
-			// Update the workflow ID if it changed (new workflow)
-			// Keep our current workflow state, only update ID and metadata from backend
-			if (savedWorkflow.id && savedWorkflow.id !== workflow.id) {
-				console.log('🔄 Updating workflow ID from', workflow.id, 'to', savedWorkflow.id);
-				workflowActions.batchUpdate({
-					nodes: workflow.nodes,
-					edges: workflow.edges,
-					name: workflow.name,
-					metadata: {
-						...workflow.metadata,
-						...savedWorkflow.metadata
-					}
-				});
-			}
-
-			console.log('🔍 WorkflowEditor: Workflow store after save:', $workflowStore);
-
-			// Note: Notes node configurations (content, noteType) are automatically
-			// saved as part of the node.data.config object and will be restored
-			// when the workflow is loaded.
-
-			// Update the workflow ID if it was a new workflow
-			if (!currentWorkflow.id) {
-				console.log('🆕 New workflow created with ID:', savedWorkflow.id);
-			} else {
-				console.log('🔄 Existing workflow updated with ID:', savedWorkflow.id);
 			}
 		} catch (error) {
 			console.error('❌ Failed to save workflow:', error);
@@ -566,42 +373,14 @@
 		// Wait for any pending DOM updates before exporting
 		await tick();
 
-		// Use current workflow from local variable
-		if (!currentWorkflow) {
-			console.warn('⚠️ No workflow data available to export');
-			return;
-		}
-
-		// Use the same ID logic as saveWorkflow
-		const workflowId = currentWorkflow.id || uuidv4();
-
-		const workflow: Workflow = {
-			id: workflowId,
-			name: currentWorkflow.name || 'Untitled Workflow',
-			nodes: currentWorkflow.nodes || [],
-			edges: currentWorkflow.edges || [],
-			metadata: {
-				version: '1.0.0',
-				createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
-				updatedAt: new Date().toISOString()
-			}
-		};
-
-		const dataStr = JSON.stringify(workflow, null, 2);
-		const dataBlob = new Blob([dataStr], { type: 'application/json' });
-		const url = URL.createObjectURL(dataBlob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = `${workflow.name}.json`;
-		link.click();
-		URL.revokeObjectURL(url);
+		WorkflowOperationsHelper.exportWorkflow(currentWorkflow);
 	}
 
 	/**
 	 * Check if workflow has cycles
 	 */
 	function checkWorkflowCycles(): boolean {
-		return hasCycles(flowNodes, flowEdges);
+		return WorkflowOperationsHelper.checkWorkflowCycles(flowNodes, flowEdges);
 	}
 </script>
 
@@ -631,92 +410,23 @@
 							y: e.clientY - rect.top
 						};
 
-						// Create the node manually since SvelteFlow isn't receiving the event
-						try {
-							const parsedData = JSON.parse(nodeTypeData);
+						// Create the node using the helper
+						const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position);
 
-							// Handle both old format (with type: "node") and new format (direct NodeMetadata)
-							let nodeType: NodeMetadata;
-							let nodeData: {
-								label: string;
-								config: Record<string, unknown>;
-								metadata: NodeMetadata;
-							};
+						if (newNode && currentWorkflow) {
+							console.log('🔧 WorkflowEditor: Adding new node to currentWorkflow:', newNode.id);
+							currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
 
-							if (parsedData.type === 'node') {
-								// Old format from sidebar
-								nodeType = parsedData.nodeData.metadata;
-								nodeData = parsedData.nodeData;
-							} else {
-								// New format (direct NodeMetadata)
-								nodeType = parsedData;
-
-								// Extract initial config from configSchema
-								let initialConfig = {};
-								if (nodeType.configSchema && typeof nodeType.configSchema === 'object') {
-									// If configSchema is a JSON Schema, extract default values
-									if (nodeType.configSchema.properties) {
-										// JSON Schema format - extract defaults
-										Object.entries(nodeType.configSchema.properties).forEach(([key, prop]) => {
-											if (prop && typeof prop === 'object' && 'default' in prop) {
-												initialConfig[key] = prop.default;
-											}
-										});
-									} else {
-										// Simple object format - use as is
-										initialConfig = { ...nodeType.configSchema };
-									}
-								}
-
-								nodeData = {
-									label: nodeType.name,
-									config: initialConfig,
-									metadata: nodeType
-								};
-							}
-
-							const newNodeId = uuidv4();
-
-							// All nodes use 'universalNode' type
-							// UniversalNode component handles internal switching based on metadata and config
-							const newNode: WorkflowNodeType = {
-								id: newNodeId,
-								type: 'universalNode',
-								position, // Use the position calculated from the drop event
-								deletable: true,
-								data: {
-									...nodeData,
-									nodeId: newNodeId // Use the same ID
-								}
-							};
-
-							// Add node to currentWorkflow
-							if (currentWorkflow) {
-								console.log('🔧 WorkflowEditor: Adding new node to currentWorkflow:', newNode.id);
-								currentWorkflow = {
-									...currentWorkflow,
-									nodes: [...currentWorkflow.nodes, newNode],
-									metadata: {
-										...currentWorkflow.metadata,
-										updatedAt: new Date().toISOString(),
-										versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-										updateNumber: (currentWorkflow.metadata?.updateNumber || 0) + 1
-									}
-								};
-
-								console.log(
-									'🔧 WorkflowEditor: Updated currentWorkflow with new node, calling updateGlobalStore'
-								);
-								// Update the global store
-								updateGlobalStore();
-							} else {
-								console.warn('⚠️ WorkflowEditor: No currentWorkflow available for new node');
-							}
+							console.log(
+								'🔧 WorkflowEditor: Updated currentWorkflow with new node, calling updateGlobalStore'
+							);
+							// Update the global store
+							updateGlobalStore();
 
 							// Wait for DOM update to ensure SvelteFlow updates
 							await tick();
-						} catch (error) {
-							console.error('Error parsing node data:', error);
+						} else if (!currentWorkflow) {
+							console.warn('⚠️ WorkflowEditor: No currentWorkflow available for new node');
 						}
 					}
 				}}

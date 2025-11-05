@@ -263,7 +263,7 @@ export function validateConfig(config: WorkflowEditorConfig): string[] {
  * Create default configuration
  * For library usage, all configuration should be provided at runtime
  * This function is kept for backward compatibility but returns defaults
- * 
+ *
  * @deprecated Use createDefaultConfig() instead and pass runtime configuration
  */
 export function createConfigFromEnv(): WorkflowEditorConfig {
@@ -271,6 +271,6 @@ export function createConfigFromEnv(): WorkflowEditorConfig {
 	// Configuration should be provided at runtime via props/parameters
 	const apiBaseUrl = '/api/flowdrop';
 	const endpointConfig = createEndpointConfig(apiBaseUrl);
-	
+
 	return createDefaultConfig(endpointConfig);
 }
