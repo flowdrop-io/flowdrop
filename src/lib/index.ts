@@ -4,7 +4,7 @@
  */
 
 // Import CSS to ensure styles are included in the library build
-import '../app.css';
+import "./styles/base.css";
 
 // Export types
 export type {
