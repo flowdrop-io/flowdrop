@@ -16,8 +16,7 @@
 	import {
 		apiToasts,
 		workflowToasts,
-		showConfirmation,
-		dismissToast
+		showConfirmation
 	} from '$lib/services/toastService.js';
 
 	// Get API configuration from development config (uses .env if available)
@@ -139,7 +138,7 @@
 			case 'edit':
 				goto(`/workflow/${workflowId}/edit`);
 				break;
-			case 'delete':
+			case 'delete': {
 				// Find the workflow to get its name
 				const workflow = workflows.find((w) => w.id === workflowId);
 				const workflowName = workflow?.title || 'Unknown';
@@ -152,6 +151,7 @@
 				// Remove from local state
 				workflows = workflows.filter((w) => w.id !== workflowId);
 				break;
+			}
 			case 'view-execution':
 				goto(`/workflow/${workflowId}/pipelines`);
 				break;

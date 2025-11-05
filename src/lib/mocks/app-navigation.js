@@ -4,13 +4,13 @@
  */
 
 // Mock goto function
-export const goto = async (url, options = {}) => {
+export const goto = async () => {
 	// No-op for library context
 	console.warn('Navigation not available in library context');
 };
 
 // Mock invalidate function
-export const invalidate = async (url) => {
+export const invalidate = async () => {
 	// No-op for library context
 	return Promise.resolve();
 };
@@ -22,13 +22,13 @@ export const invalidateAll = async () => {
 };
 
 // Mock preloadData function
-export const preloadData = async (url) => {
+export const preloadData = async () => {
 	// No-op for library context
 	return Promise.resolve({});
 };
 
 // Mock preloadCode function
-export const preloadCode = async (url) => {
+export const preloadCode = async () => {
 	// No-op for library context
 	return Promise.resolve();
 };

@@ -19,7 +19,6 @@
 	import { setEndpointConfig } from '$lib/services/api.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import { Toaster } from 'svelte-5-french-toast';
-	import { apiToasts } from '$lib/services/toastService.js';
 
 	let { children } = $props();
 
@@ -41,7 +40,7 @@
 				const data = await response.json();
 				workflowName = data.data?.name || null;
 			}
-		} catch (error) {
+		} catch {
 			// Silently fail for breadcrumb - don't show toast for this background operation
 			workflowName = null;
 		}
@@ -229,8 +228,6 @@
 			// Pipeline monitoring pages
 			if (pathname.includes('/pipelines/') && pathname.split('/').length > 4) {
 				// Individual pipeline status page
-				const workflowId = pathname.split('/')[2];
-				const pipelineId = pathname.split('/')[4];
 				return [
 					{
 						label: 'Refresh Status',
@@ -313,7 +310,6 @@
 				}
 			];
 		} else if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
-			const workflowId = pathname.split('/')[2];
 			return [
 				{
 					label: 'Workflows',

@@ -7,13 +7,12 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import PipelineStatus from '$lib/components/PipelineStatus.svelte';
 	import { getEndpointUrl } from '$lib/config/apiConfig';
 	import { getDevApiConfig } from '../../../../devConfig';
-	import { setEndpointConfig, api } from '$lib/services/api.js';
+	import { setEndpointConfig } from '$lib/services/api.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
-	import type { Workflow, NodeMetadata } from '$lib/types/index.js';
+	import type { Workflow } from '$lib/types/index.js';
 	import Icon from '@iconify/svelte';
 
 	// Get API configuration from development config (uses .env if available)
@@ -32,12 +31,9 @@
 
 	// Data state
 	let workflow = $state<Workflow | null>(null);
-	let pipeline = $state<any>(null);
-	let nodes = $state<NodeMetadata[]>([]);
+	let pipeline = $state<unknown>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-	let executionStatus = $state<string>('idle');
-	let executionLogs = $state<any[]>([]);
 
 	// Fetch workflow and pipeline data
 	async function fetchData() {
@@ -68,15 +64,6 @@
 				throw new Error(`Failed to fetch pipeline: ${pipelineResponse.statusText}`);
 			}
 			pipeline = await pipelineResponse.json();
-
-			// Fetch nodes
-			const nodesUrl = getEndpointUrl(apiConfig, '/nodes');
-			const nodesResponse = await fetch(nodesUrl);
-			if (!nodesResponse.ok) {
-				throw new Error(`Failed to fetch nodes: ${nodesResponse.statusText}`);
-			}
-			const nodesData = await nodesResponse.json();
-			nodes = nodesData.nodes || [];
 		} catch (err) {
 			console.error('Failed to fetch data:', err);
 			error = err instanceof Error ? err.message : 'Failed to fetch data';
@@ -89,27 +76,6 @@
 	onMount(() => {
 		fetchData();
 	});
-
-	function handleBackToPipelines() {
-		goto(`/workflow/${workflowId}/pipelines`);
-	}
-
-	function handleBackToWorkflow() {
-		goto(`/workflow/${workflowId}/edit`);
-	}
-
-	// Pipeline execution handlers
-	function handleExecutePipeline() {
-		console.log('Execute pipeline:', pipelineId);
-		executionStatus = 'running';
-		// TODO: Implement actual pipeline execution
-	}
-
-	function handleStopPipeline() {
-		console.log('Stop pipeline:', pipelineId);
-		executionStatus = 'idle';
-		// TODO: Implement actual pipeline stop
-	}
 
 	// Configure endpoints once on mount
 	onMount(() => {

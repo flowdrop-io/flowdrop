@@ -38,7 +38,7 @@ export function setApiBaseUrl(url: string): void {
 			.then(({ createEndpointConfig }) => {
 				endpointConfig = createEndpointConfig(url);
 			})
-			.catch((error) => {
+			.catch(() => {
 				// Failed to load endpoint config
 			});
 	} else {
@@ -59,27 +59,23 @@ async function apiRequest<T>(
 		throw new Error('Endpoint configuration not set. Call setEndpointConfig() first.');
 	}
 
-	try {
-		const url = buildEndpointUrl(endpointConfig, endpointPath, params);
-		const method = getEndpointMethod(endpointConfig, endpointKey);
-		const headers = getEndpointHeaders(endpointConfig, endpointKey);
+	const url = buildEndpointUrl(endpointConfig, endpointPath, params);
+	const method = getEndpointMethod(endpointConfig, endpointKey);
+	const headers = getEndpointHeaders(endpointConfig, endpointKey);
 
-		const response = await fetch(url, {
-			method,
-			headers,
-			...options
-		});
+	const response = await fetch(url, {
+		method,
+		headers,
+		...options
+	});
 
-		const data = await response.json();
+	const data = await response.json();
 
-		if (!response.ok) {
-			throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
-		}
-
-		return data;
-	} catch (error) {
-		throw error;
+	if (!response.ok) {
+		throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
 	}
+
+	return data;
 }
 
 /**

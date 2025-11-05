@@ -20,14 +20,6 @@
 	} from '../utils/nodeWrapper.js';
 	import { resolveComponentName } from '../utils/nodeTypes.js';
 
-	interface Props {
-		data: WorkflowNode['data'] & {
-			nodeId?: string;
-			onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
-		};
-		selected?: boolean;
-	}
-
 	let {
 		data,
 		selected = false

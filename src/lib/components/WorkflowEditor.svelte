@@ -8,7 +8,6 @@
 	import {
 		SvelteFlow,
 		ConnectionLineType,
-		MarkerType,
 		Controls,
 		Background,
 		BackgroundVariant,
@@ -16,11 +15,6 @@
 		SvelteFlowProvider
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import WorkflowNode from './WorkflowNode.svelte';
-	import NotesNode from './NotesNode.svelte';
-	import SimpleNode from './SimpleNode.svelte';
-	import SquareNode from './SquareNode.svelte';
-	import ToolNode from './ToolNode.svelte';
 	import type {
 		WorkflowNode as WorkflowNodeType,
 		NodeMetadata,
@@ -70,9 +64,6 @@
 			isConfigSidebarOpen: props.isConfigSidebarOpen
 		});
 	});
-
-	// Initialize from props only once, not on every re-render
-	let availableNodes = $state<NodeMetadata[]>([]);
 
 	// Create a local currentWorkflow variable that we can control directly
 	let currentWorkflow = $state<Workflow | null>(null);
@@ -275,106 +266,12 @@
 
 	// Edge styling will be handled when edges are first created or manually updated
 
-	// Configure endpoints and load nodes when props change
+	// Configure endpoints when props change
 	$effect(() => {
 		if (props.endpointConfig) {
 			ConfigurationHelper.configureEndpoints(props.endpointConfig);
-			// Load nodes after setting endpoint config
-			loadNodesFromApi();
-		} else if (props.nodes) {
-			// If we have nodes prop, use them directly
-			availableNodes = props.nodes;
 		}
 	});
-
-	/**
-	 * Load nodes from API if not provided
-	 */
-	async function loadNodesFromApi(): Promise<void> {
-		availableNodes = await NodeOperationsHelper.loadNodesFromApi(props.nodes);
-	}
-
-	/**
-	 * Clear workflow
-	 */
-	function clearWorkflow(): void {
-		if (currentWorkflow) {
-			currentWorkflow = WorkflowOperationsHelper.clearWorkflow(currentWorkflow);
-
-			// Update the global store
-			updateGlobalStore();
-		}
-	}
-
-	// ConfigSidebar functions are now handled by the parent App component
-
-	async function handleConfigSave(newConfig: Record<string, unknown>): Promise<void> {
-		console.log('🔧 WorkflowEditor: handleConfigSave called with:', newConfig);
-
-		if (props.selectedNodeForConfig) {
-			console.log('🔧 WorkflowEditor: Updating config for node:', props.selectedNodeForConfig.id);
-
-			// Wait for any pending DOM updates
-			await tick();
-
-			// Update the node's config
-			props.selectedNodeForConfig.data.config = { ...newConfig };
-
-			// Update the node in currentWorkflow
-			if (currentWorkflow) {
-				currentWorkflow = WorkflowOperationsHelper.updateNodeConfig(
-					currentWorkflow,
-					props.selectedNodeForConfig.id,
-					newConfig
-				);
-
-				console.log('🔧 WorkflowEditor: Updated currentWorkflow, calling updateGlobalStore');
-				// Update the global store
-				updateGlobalStore();
-			} else {
-				console.warn('⚠️ WorkflowEditor: No currentWorkflow available for config update');
-			}
-		} else {
-			console.warn('⚠️ WorkflowEditor: No selectedNodeForConfig available for config update');
-		}
-		props.closeConfigSidebar?.();
-	}
-
-	/**
-	 * Save workflow
-	 */
-	async function saveWorkflow(): Promise<void> {
-		try {
-			// Wait for any pending DOM updates before saving
-			await tick();
-
-			const savedWorkflow = await WorkflowOperationsHelper.saveWorkflow(currentWorkflow);
-
-			if (savedWorkflow) {
-				console.log('🔍 WorkflowEditor: Workflow store after save:', $workflowStore);
-
-				// Update the workflow ID if it was a new workflow
-				if (!currentWorkflow?.id) {
-					console.log('🆕 New workflow created with ID:', savedWorkflow.id);
-				} else {
-					console.log('🔄 Existing workflow updated with ID:', savedWorkflow.id);
-				}
-			}
-		} catch (error) {
-			console.error('❌ Failed to save workflow:', error);
-			// Here you would typically show a user-friendly error message
-		}
-	}
-
-	/**
-	 * Export workflow
-	 */
-	async function exportWorkflow(): Promise<void> {
-		// Wait for any pending DOM updates before exporting
-		await tick();
-
-		WorkflowOperationsHelper.exportWorkflow(currentWorkflow);
-	}
 
 	/**
 	 * Check if workflow has cycles

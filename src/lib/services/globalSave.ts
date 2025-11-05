@@ -29,7 +29,7 @@ async function ensureApiConfiguration(): Promise<void> {
 		if (currentConfig && currentConfig.baseUrl) {
 			return;
 		}
-	} catch (error) {
+	} catch {
 		// Could not check existing API configuration, initializing
 	}
 
@@ -108,7 +108,7 @@ export async function globalSaveWorkflow(): Promise<void> {
 			}
 		};
 
-		const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+		await workflowApi.saveWorkflow(finalWorkflow);
 
 		// Dismiss loading toast and show success toast
 		if (loadingToast) dismissToast(loadingToast);
@@ -172,9 +172,9 @@ export async function globalExportWorkflow(): Promise<void> {
  */
 export function initializeGlobalSave(): void {
 	if (typeof window !== 'undefined') {
-		// @ts-ignore - Adding to window for external access
+		// @ts-expect-error - Adding to window for external access
 		window.flowdropGlobalSave = globalSaveWorkflow;
-		// @ts-ignore - Adding to window for external access
+		// @ts-expect-error - Adding to window for external access
 		window.flowdropGlobalExport = globalExportWorkflow;
 	}
 }
