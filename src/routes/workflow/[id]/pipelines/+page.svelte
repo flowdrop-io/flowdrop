@@ -11,9 +11,13 @@
 	import Icon from '@iconify/svelte';
 	import StatusIcon from '$lib/components/StatusIcon.svelte';
 	import StatusLabel from '$lib/components/StatusLabel.svelte';
-	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
+	import { getEndpointUrl } from '$lib/config/apiConfig';
+	import { getDevApiConfig } from '../../../devConfig';
 	import { apiToasts, pipelineToasts, dismissToast } from '$lib/services/toastService.js';
 	import type { NodeExecutionStatus } from '$lib/types/index.js';
+
+	// Get API configuration from development config (uses .env if available)
+	const apiConfig = getDevApiConfig();
 
 	/**
 	 * Pipeline display type
@@ -58,7 +62,7 @@
 			loading = true;
 			error = null;
 
-			const apiUrl = getEndpointUrl(defaultApiConfig, '/workflow/{workflow_id}/pipelines', {
+			const apiUrl = getEndpointUrl(apiConfig, '/workflow/{workflow_id}/pipelines', {
 				workflow_id: workflowId
 			});
 			const response = await fetch(apiUrl, {
@@ -88,7 +92,7 @@
 		if (!workflowId) return;
 
 		try {
-			const apiUrl = getEndpointUrl(defaultApiConfig, '/workflows/{id}', { id: workflowId });
+			const apiUrl = getEndpointUrl(apiConfig, '/workflows/{id}', { id: workflowId });
 			const response = await fetch(apiUrl, {
 				method: 'GET',
 				headers: {

@@ -10,7 +10,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { defaultApiConfig, getEndpointUrl } from '$lib/config/apiConfig';
+	import { getEndpointUrl } from '$lib/config/apiConfig';
+	import { getDevApiConfig } from './devConfig';
 	import Icon from '@iconify/svelte';
 	import {
 		apiToasts,
@@ -18,6 +19,9 @@
 		showConfirmation,
 		dismissToast
 	} from '$lib/services/toastService.js';
+
+	// Get API configuration from development config (uses .env if available)
+	const apiConfig = getDevApiConfig();
 
 	/**
 	 * Workflow display type
@@ -53,8 +57,8 @@
 			loading = true;
 			error = null;
 
-			// Use configured endpoint
-			const url = getEndpointUrl(defaultApiConfig, defaultApiConfig.endpoints.workflows.list);
+		// Use configured endpoint
+		const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.list);
 			const response = await fetch(url);
 
 			if (!response.ok) {

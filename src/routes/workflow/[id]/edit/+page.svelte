@@ -2,7 +2,8 @@
 	import App from '$lib/components/App.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { defaultApiConfig, getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
+	import { getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
+	import { getDevApiConfig } from '../../../devConfig';
 	import { apiToasts, workflowToasts, dismissToast } from '$lib/services/toastService.js';
 
 	/**
@@ -20,8 +21,8 @@
 	// Get workflow ID from URL
 	let workflowId = $derived($page.params.id);
 
-	// API configuration - can be customized via props or environment
-	let apiConfig = $state<ApiConfig>(defaultApiConfig);
+	// API configuration from development config (uses .env if available)
+	let apiConfig = $state<ApiConfig>(getDevApiConfig());
 
 	// Workflow data state
 	let workflow = $state<WorkflowEdit | null>(null);
