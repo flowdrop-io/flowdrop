@@ -83,55 +83,55 @@
 			baseUrl: apiConfig.baseUrl,
 			endpoints: {
 				nodes: {
-					list: '/api/flowdrop/nodes',
-					get: '/api/flowdrop/nodes/{id}',
-					byCategory: '/api/flowdrop/nodes/category/{category}',
-					metadata: '/api/flowdrop/nodes/{id}/metadata'
+					list: "/nodes",
+					get: "/nodes/{id}",
+					byCategory: "/nodes/category/{category}",
+					metadata: "/nodes/{id}/metadata"
 				},
-				portConfig: '/api/flowdrop/port-config',
+				portConfig: "/port-config",
 				workflows: {
-					list: '/api/flowdrop/workflows',
-					get: '/api/flowdrop/workflows/{id}',
-					create: '/api/flowdrop/workflows',
-					update: '/api/flowdrop/workflows/{id}',
-					delete: '/api/flowdrop/workflows/{id}',
-					validate: '/api/flowdrop/workflows/{id}/validate',
-					export: '/api/flowdrop/workflows/{id}/export',
-					import: '/api/flowdrop/workflows/import'
+					list: "/workflows",
+					get: "/workflows/{id}",
+					create: "/workflows",
+					update: "/workflows/{id}",
+					delete: "/workflows/{id}",
+					validate: "/workflows/{id}/validate",
+					export: "/workflows/{id}/export",
+					import: "/workflows/import"
 				},
 				executions: {
-					execute: '/api/flowdrop/executions/execute',
-					status: '/api/flowdrop/executions/{id}/status',
-					cancel: '/api/flowdrop/executions/{id}/cancel',
-					logs: '/api/flowdrop/executions/{id}/logs',
-					history: '/api/flowdrop/executions/history'
+					execute: "/executions/execute",
+					status: "/executions/{id}/status",
+					cancel: "/executions/{id}/cancel",
+					logs: "/executions/{id}/logs",
+					history: "/executions/history"
 				},
 				templates: {
-					list: '/api/flowdrop/templates',
-					get: '/api/flowdrop/templates/{id}',
-					create: '/api/flowdrop/templates',
-					update: '/api/flowdrop/templates/{id}',
-					delete: '/api/flowdrop/templates/{id}'
+					list: "/templates",
+					get: "/templates/{id}",
+					create: "/templates",
+					update: "/templates/{id}",
+					delete: "/templates/{id}"
 				},
 				users: {
-					profile: '/api/flowdrop/users/profile',
-					preferences: '/api/flowdrop/users/preferences'
+					profile: "/users/profile",
+					preferences: "/users/preferences"
 				},
 				system: {
-					health: '/api/flowdrop/system/health',
-					config: '/api/flowdrop/system/config',
-					version: '/api/flowdrop/system/version'
+					health: "/system/health",
+					config: "/system/config",
+					version: "/system/version"
 				},
 				pipelines: {
-					list: '/api/flowdrop/workflow/{workflow_id}/pipelines',
-					get: '/api/flowdrop/pipeline/{id}',
-					create: '/api/flowdrop/pipeline',
-					update: '/api/flowdrop/pipeline/{id}',
-					delete: '/api/flowdrop/pipeline/{id}',
-					status: '/api/flowdrop/pipeline/{id}/status',
-					logs: '/api/flowdrop/pipeline/{id}/logs',
-					execute: '/api/flowdrop/pipeline/{id}/execute',
-					stop: '/api/flowdrop/pipeline/{id}/stop'
+					list: "/workflow/{workflow_id}/pipelines",
+					get: "/pipeline/{id}",
+					create: "/pipeline",
+					update: "/pipeline/{id}",
+					delete: "/pipeline/{id}",
+					status: "/pipeline/{id}/status",
+					logs: "/pipeline/{id}/logs",
+					execute: "/pipeline/{id}/execute",
+					stop: "/pipeline/{id}/stop"
 				}
 			}
 		});

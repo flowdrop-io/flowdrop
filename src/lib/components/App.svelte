@@ -164,18 +164,19 @@
 	 */
 	async function testApiConnection(): Promise<void> {
 		try {
-			const testUrl = '/api/flowdrop/nodes';
+			const baseUrl = endpointConfig?.baseUrl || apiBaseUrl || "/api/flowdrop";
+			const testUrl = `${baseUrl}/nodes`;
 
 			const response = await fetch(testUrl);
 			const data = await response.json();
 
 			if (response.ok && data.success) {
-				apiToasts.success('API connection test', 'Connection successful');
+				apiToasts.success("API connection test", "Connection successful");
 			} else {
-				apiToasts.error('API connection test', 'Connection failed');
+				apiToasts.error("API connection test", "Connection failed");
 			}
 		} catch (err) {
-			apiToasts.error('API connection test', err instanceof Error ? err.message : 'Unknown error');
+			apiToasts.error("API connection test", err instanceof Error ? err.message : "Unknown error");
 		}
 	}
 
