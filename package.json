@@ -83,6 +83,10 @@
 		"@sveltejs/kit": "^2.0.0",
 		"svelte": "^5.0.0"
 	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/d34dman/flowdrop.git"
+	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^4.0.1",
 		"@eslint/compat": "^1.2.5",
