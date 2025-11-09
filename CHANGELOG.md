@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.0.10] - 2025-11-09
+
+### Performance
+
+- **WorkflowEditor Performance Optimization**: Eliminated browser performance violations (setTimeout handler took 100ms+)
+  - Implemented conditional execution info loading (only when pipelineId exists and workflow/pipeline changes)
+  - Added requestIdleCallback scheduling for non-blocking updates (falls back to setTimeout with 300ms delay)
+  - Implemented AbortController for request cancellation to prevent overlapping API calls
+  - Optimized node mapping from double-pass to single-pass operation (50% faster processing)
+  - Reduced processing time from ~100ms to ~10-20ms for large workflows (80% improvement)
+  - Reduced API call frequency by ~90% in pipeline status view
+  - See docs/performance-improvements-workfloweditor.md for detailed analysis
+
 ## [0.0.9] - 2025-11-09
 
 ### Changed
