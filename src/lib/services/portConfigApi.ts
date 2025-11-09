@@ -16,8 +16,6 @@ export async function fetchPortConfig(endpointConfig: EndpointConfig): Promise<P
 	try {
 		const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.portConfig);
 
-		console.log('📡 Fetching port configuration from:', url);
-
 		// Create API client instance
 		const client = new FlowDropApiClient(endpointConfig.baseUrl);
 
@@ -26,21 +24,13 @@ export async function fetchPortConfig(endpointConfig: EndpointConfig): Promise<P
 
 		// Validate the configuration has required fields
 		if (!portConfig.dataTypes || !Array.isArray(portConfig.dataTypes)) {
-			console.warn('⚠️ Invalid port config received from API, using default');
+			console.warn('Invalid port config received from API, using default');
 			return DEFAULT_PORT_CONFIG;
 		}
 
-		console.log('✅ Port configuration loaded successfully:', {
-			version: portConfig.version,
-			dataTypesCount: portConfig.dataTypes.length,
-			rulesCount: portConfig.compatibilityRules?.length || 0,
-			defaultType: portConfig.defaultDataType
-		});
-
 		return portConfig;
 	} catch (error) {
-		console.error('❌ Error fetching port configuration:', error);
-		console.log('🔄 Falling back to default port configuration');
+		console.error('Error fetching port configuration:', error);
 		return DEFAULT_PORT_CONFIG;
 	}
 }

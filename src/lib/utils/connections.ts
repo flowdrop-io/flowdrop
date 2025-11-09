@@ -227,13 +227,6 @@ export function validateConnection(
 	const targetMetadata = nodeTypes.find((nt) => nt.id === targetNode.data.metadata.id);
 
 	if (!sourceMetadata || !targetMetadata) {
-		console.log('Metadata lookup failed:', {
-			sourceNodeId,
-			targetNodeId,
-			sourceMetadataId: sourceNode.data.metadata.id,
-			targetMetadataId: targetNode.data.metadata.id,
-			availableNodeTypes: nodeTypes.map((nt) => nt.id)
-		});
 		return { valid: false, error: 'Node metadata not found' };
 	}
 

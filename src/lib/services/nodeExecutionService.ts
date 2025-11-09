@@ -35,7 +35,6 @@ export class NodeExecutionService {
 		pipelineId?: string
 	): Promise<NodeExecutionInfo | null> {
 		if (!pipelineId) {
-			console.warn('Pipeline ID is required to fetch node execution info');
 			return null;
 		}
 
@@ -91,13 +90,11 @@ export class NodeExecutionService {
 		pipelineId?: string
 	): Promise<Record<string, NodeExecutionInfo>> {
 		if (!pipelineId) {
-			console.warn('Pipeline ID is required to fetch node execution info');
 			return {};
 		}
 
 		// Check if API is temporarily unavailable
 		if (this.apiUnavailable && Date.now() < this.apiUnavailableUntil) {
-			console.log('API temporarily unavailable, returning cached/default values');
 			const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
 			nodeIds.forEach((nodeId) => {
 				defaultExecutionInfo[nodeId] = {

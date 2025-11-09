@@ -121,7 +121,6 @@
 	 */
 	function handleNodeClick(nodeType: NodeMetadata): void {
 		// Handle node click - could be used for preview or configuration
-		console.log('Node clicked:', nodeType.name);
 	}
 
 	/**

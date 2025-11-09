@@ -82,9 +82,6 @@
 					on:change={({ detail }) => {
 						localConfigValues = detail.values;
 					}}
-					on:validate={({ detail }) => {
-						console.log('Config validation:', detail);
-					}}
 				/>
 			</div>
 

@@ -75,7 +75,6 @@ export class EdgeStylingHelper {
 			const targetNode = nodes.find((node) => node.id === edge.target);
 
 			if (!sourceNode || !targetNode) {
-				console.warn('Could not find nodes for edge:', edge.id);
 				return edge;
 			}
 
@@ -315,7 +314,7 @@ export class WorkflowOperationsHelper {
 	 */
 	static async saveWorkflow(workflow: Workflow | null): Promise<Workflow | null> {
 		if (!workflow) {
-			console.warn('⚠️ No workflow data available to save');
+			console.warn('No workflow data available to save');
 			return null;
 		}
 
@@ -340,26 +339,12 @@ export class WorkflowOperationsHelper {
 					createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
 					updatedAt: new Date().toISOString()
 				}
-			};
+		};
 
-			console.log('💾 WorkflowEditor: Saving workflow to backend:');
-			console.log('   - ID:', workflowToSave.id);
-			console.log('   - Name:', workflowToSave.name);
-			console.log('   - Nodes count:', workflowToSave.nodes.length);
-			console.log('   - Edges count:', workflowToSave.edges.length);
-			console.log('   - Full workflow object:', JSON.stringify(workflowToSave, null, 2));
+		const savedWorkflow = await workflowApi.saveWorkflow(workflowToSave);
 
-			const savedWorkflow = await workflowApi.saveWorkflow(workflowToSave);
-
-			console.log('✅ WorkflowEditor: Received workflow from backend:');
-			console.log('   - ID:', savedWorkflow.id);
-			console.log('   - Name:', savedWorkflow.name);
-			console.log('   - Nodes count:', savedWorkflow.nodes?.length || 0);
-			console.log('   - Edges count:', savedWorkflow.edges?.length || 0);
-
-			// Update the workflow ID if it changed (new workflow)
-			if (savedWorkflow.id && savedWorkflow.id !== workflowToSave.id) {
-				console.log('🔄 Updating workflow ID from', workflowToSave.id, 'to', savedWorkflow.id);
+		// Update the workflow ID if it changed (new workflow)
+		if (savedWorkflow.id && savedWorkflow.id !== workflowToSave.id) {
 				workflowActions.batchUpdate({
 					nodes: workflowToSave.nodes,
 					edges: workflowToSave.edges,
@@ -383,7 +368,7 @@ export class WorkflowOperationsHelper {
 	 */
 	static exportWorkflow(workflow: Workflow | null): void {
 		if (!workflow) {
-			console.warn('⚠️ No workflow data available to export');
+			console.warn('No workflow data available to export');
 			return;
 		}
 

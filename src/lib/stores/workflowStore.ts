@@ -68,16 +68,12 @@ function hasWorkflowDataChanged(
 export const workflowActions = {
 	// Initialize workflow
 	initialize: (workflow: Workflow) => {
-		console.log('🔍 Debug: initialize called with:', workflow);
 		workflowStore.set(workflow);
-		console.log('🔍 Debug: workflow store initialized');
 	},
 
 	// Update the entire workflow
 	updateWorkflow: (workflow: Workflow) => {
-		console.log('🔍 Debug: updateWorkflow called with:', workflow);
 		workflowStore.set(workflow);
-		console.log('🔍 Debug: workflow store updated');
 	},
 
 	// Update nodes
@@ -87,21 +83,11 @@ export const workflowActions = {
 
 			// Check if nodes have actually changed to prevent infinite loops
 			if (!hasWorkflowDataChanged($workflow, nodes, $workflow.edges)) {
-				console.log('🔍 Debug: Nodes unchanged, skipping update to prevent infinite loop');
 				return $workflow;
 			}
 
 			// Generate unique version identifier
 			const versionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-			console.log('🔍 Debug: Updating nodes with versionId:', versionId);
-			console.log(
-				'🔍 Debug: Node position changes detected:',
-				nodes.map((node) => ({
-					id: node.id,
-					position: node.position
-				}))
-			);
 
 			return {
 				...$workflow,
@@ -123,14 +109,11 @@ export const workflowActions = {
 
 			// Check if edges have actually changed to prevent infinite loops
 			if (!hasWorkflowDataChanged($workflow, $workflow.nodes, edges)) {
-				console.log('🔍 Debug: Edges unchanged, skipping update to prevent infinite loop');
 				return $workflow;
 			}
 
 			// Generate unique version identifier
 			const versionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-			console.log('🔍 Debug: Updating edges with versionId:', versionId);
 
 			return {
 				...$workflow,
