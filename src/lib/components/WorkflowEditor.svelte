@@ -55,16 +55,6 @@
 
 	let props: Props = $props();
 
-	// Debug logging for props
-	$effect(() => {
-		console.log('🔧 WorkflowEditor: Props received:', {
-			hasOpenConfigSidebar: !!props.openConfigSidebar,
-			hasCloseConfigSidebar: !!props.closeConfigSidebar,
-			selectedNodeForConfig: props.selectedNodeForConfig?.id,
-			isConfigSidebarOpen: props.isConfigSidebarOpen
-		});
-	});
-
 	// Create a local currentWorkflow variable that we can control directly
 	let currentWorkflow = $state<Workflow | null>(null);
 
@@ -106,18 +96,6 @@
 	// Function to update the global store when currentWorkflow changes
 	function updateGlobalStore(): void {
 		if (currentWorkflow) {
-			console.log('🔍 WorkflowEditor: Updating global store from currentWorkflow:', {
-				nodeCount: currentWorkflow.nodes.length,
-				edgeCount: currentWorkflow.edges.length,
-				nodePositions: currentWorkflow.nodes.map((node) => ({
-					id: node.id,
-					position: node.position
-				})),
-				workflowName: currentWorkflow.name,
-				versionId: currentWorkflow.metadata?.versionId,
-				updateNumber: currentWorkflow.metadata?.updateNumber
-			});
-
 			workflowActions.updateWorkflow(currentWorkflow);
 		}
 	}
@@ -186,7 +164,6 @@
 		const edgesChanged = JSON.stringify(flowEdges) !== JSON.stringify(previousEdges);
 
 		if ((nodesChanged || edgesChanged) && currentWorkflow) {
-			console.log('🔍 WorkflowEditor: SvelteFlow changed nodes/edges, updating currentWorkflow');
 			updateCurrentWorkflowFromSvelteFlow();
 
 			// Update previous values
@@ -227,8 +204,6 @@
 		targetHandle?: string;
 	}): Promise<void> {
 		// SvelteFlow will automatically create the edge due to bind:edges
-		console.log('Connection created:', connection);
-
 		// Wait for DOM update before applying styling
 		await tick();
 
@@ -311,19 +286,15 @@
 						const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position);
 
 						if (newNode && currentWorkflow) {
-							console.log('🔧 WorkflowEditor: Adding new node to currentWorkflow:', newNode.id);
 							currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
 
-							console.log(
-								'🔧 WorkflowEditor: Updated currentWorkflow with new node, calling updateGlobalStore'
-							);
 							// Update the global store
 							updateGlobalStore();
 
 							// Wait for DOM update to ensure SvelteFlow updates
 							await tick();
 						} else if (!currentWorkflow) {
-							console.warn('⚠️ WorkflowEditor: No currentWorkflow available for new node');
+							console.warn('No currentWorkflow available for new node');
 						}
 					}
 				}}

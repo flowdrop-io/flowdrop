@@ -24,11 +24,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 		// Add API-specific security headers
 		response.headers.set('X-API-Version', '1.0.0');
-
-		// Log API requests for monitoring (in production, use proper logging)
-		console.log(
-			`API Request: ${event.request.method} ${url.pathname} - ${new Date().toISOString()}`
-		);
 	}
 
 	return response;

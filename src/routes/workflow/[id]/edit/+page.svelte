@@ -51,14 +51,6 @@
 		// Set dimensions
 		canvasHeight = `${optimalHeight}px`;
 		canvasWidth = '100%'; // Use full available width
-
-		console.log('Canvas dimensions calculated:', {
-			viewportHeight: window.innerHeight,
-			availableHeight,
-			optimalHeight,
-			canvasHeight,
-			canvasWidth
-		});
 	}
 
 	// Fetch workflow data from API
@@ -100,10 +92,6 @@
 							if (nodeMetadataId) {
 								const freshMetadata = availableNodes.find((n: any) => n.id === nodeMetadataId);
 								if (freshMetadata) {
-									console.log(`🔄 Refreshing metadata for node: ${nodeMetadataId}`, {
-										oldSupportedTypes: node.data.metadata.supportedTypes,
-										newSupportedTypes: freshMetadata.supportedTypes
-									});
 									return {
 										...node,
 										data: {

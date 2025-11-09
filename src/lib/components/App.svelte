@@ -258,8 +258,6 @@
 	 * Handle workflow configuration save
 	 */
 	async function handleWorkflowSave(config: any): Promise<void> {
-		console.log('Workflow configuration saved:', config);
-
 		// Update the workflow store
 		if ($workflowStore) {
 			$workflowStore.name = config.name;
@@ -272,7 +270,6 @@
 		// Also save the workflow to the backend
 		try {
 			await saveWorkflow();
-			console.log('Workflow saved to backend successfully');
 		} catch (error) {
 			console.error('Failed to save workflow to backend:', error);
 			// Note: We don't throw the error here to avoid breaking the UI flow
