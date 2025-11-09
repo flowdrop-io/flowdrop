@@ -10,12 +10,14 @@
 	import LogsSidebar from './LogsSidebar.svelte';
 	import { FlowDropApiClient } from '$lib/api/client.js';
 	import type { Workflow } from '$lib/types/index.js';
+	import type { EndpointConfig } from '$lib/config/endpoints.js';
 
 	interface Props {
 		pipelineId: string;
 		workflow: Workflow;
 		apiClient?: FlowDropApiClient;
 		baseUrl?: string;
+		endpointConfig?: EndpointConfig;
 		onActionsReady?: (
 			actions: Array<{
 				label: string;
@@ -27,10 +29,10 @@
 		) => void;
 	}
 
-	let { pipelineId, workflow, apiClient, baseUrl, onActionsReady }: Props = $props();
+	let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady }: Props = $props();
 
 	// Initialize API client if not provided
-	const client = apiClient || new FlowDropApiClient(baseUrl || "/api/flowdrop");
+	const client = apiClient || new FlowDropApiClient(endpointConfig?.baseUrl || baseUrl || "/api/flowdrop");
 
 	// Pipeline status and job data
 	let pipelineStatus = $state<string>('unknown');
@@ -276,6 +278,7 @@
 		readOnly={true}
 		{nodeStatuses}
 		{pipelineId}
+		{endpointConfig}
 	/>
 
 	<!-- Logs Sidebar -->

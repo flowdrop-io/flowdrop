@@ -170,7 +170,7 @@
 			</div>
 		{:else}
 			<!-- Pipeline Status Component -->
-			<PipelineStatus {workflow} {pipelineId} />
+			<PipelineStatus {workflow} {pipelineId} {endpointConfig} />
 		{/if}
 	</div>
 </div>

@@ -43,6 +43,7 @@
 		}>;
 		// API configuration - optional, defaults to '/api/flowdrop'
 		apiBaseUrl?: string;
+		endpointConfig?: EndpointConfig;
 	}
 
 	let {
@@ -57,7 +58,8 @@
 		pipelineId,
 		navbarTitle,
 		navbarActions = [],
-		apiBaseUrl
+		apiBaseUrl,
+		endpointConfig: propEndpointConfig
 	}: Props = $props();
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
@@ -182,10 +184,17 @@
 
 	/**
 	 * Initialize API endpoints
-	 * Only initializes if not already configured (respects configuration from parent)
+	 * Priority: propEndpointConfig > existingConfig > apiBaseUrl > default
 	 */
 	async function initializeApiEndpoints(): Promise<void> {
-		// Check if endpoint config is already set (e.g., by parent layout)
+		// First priority: Use endpointConfig prop if provided (from mountFlowDropApp)
+		if (propEndpointConfig) {
+			setEndpointConfig(propEndpointConfig);
+			endpointConfig = propEndpointConfig;
+			return;
+		}
+
+		// Second priority: Check if endpoint config is already set (e.g., by parent layout)
 		const { getEndpointConfig } = await import('$lib/services/api.js');
 		const existingConfig = getEndpointConfig();
 
@@ -195,7 +204,7 @@
 			return;
 		}
 
-		// Use provided apiBaseUrl or default
+		// Third priority: Use provided apiBaseUrl or default
 		const baseUrl = apiBaseUrl || '/api/flowdrop';
 
 		const config = createEndpointConfig(baseUrl, {
