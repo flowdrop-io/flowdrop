@@ -187,7 +187,7 @@
 		// Check if endpoint config is already set (e.g., by parent layout)
 		const { getEndpointConfig } = await import('$lib/services/api.js');
 		const existingConfig = getEndpointConfig();
-		
+
 		// If config already exists and no override provided, use existing
 		if (existingConfig && !apiBaseUrl) {
 			endpointConfig = existingConfig;

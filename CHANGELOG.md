@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - 2025-11-09
+
+### Added
+
+#### Stores and State Management
+- **Workflow Store**: Exposed `workflowStore` and `workflowActions` for direct workflow state manipulation
+- **Derived Stores**: Added exports for `workflowId`, `workflowName`, `workflowNodes`, `workflowEdges`, `workflowMetadata`
+- **Change Tracking**: Exposed `workflowChanged`, `workflowValidation`, `workflowMetadataChanged` for reactive updates
+
+#### Toast Notification Service
+- **Core Functions**: `showSuccess`, `showError`, `showWarning`, `showInfo`, `showLoading`
+- **Management**: `dismissToast`, `dismissAllToasts`, `showPromise`, `showConfirmation`
+- **Domain Helpers**: `apiToasts`, `workflowToasts`, `pipelineToasts` with pre-configured messages
+- **Types**: `ToastType` and `ToastOptions` for type-safe usage
+
+#### Services
+- **Node Execution Service**: Exposed `NodeExecutionService` class and `nodeExecutionService` singleton for tracking node execution states
+- **Workflow Storage**: Added `saveWorkflow`, `updateWorkflow`, `getWorkflow`, `getWorkflows`, `deleteWorkflow`, `getWorkflowCount`, `initializeSampleWorkflows`
+- **Global Actions**: Exposed `globalSaveWorkflow`, `globalExportWorkflow`, `initializeGlobalSave` for app-wide workflow operations
+- **Port Configuration**: Added `fetchPortConfig` and `validatePortConfig` for dynamic port configuration
+
+#### Utilities
+- **Node Status**: Exported status display utilities including `getStatusColor`, `getStatusIcon`, `getStatusLabel`, `getStatusBackgroundColor`, `getStatusTextColor`
+- **Execution Tracking**: Added `createDefaultExecutionInfo`, `updateExecutionStart`, `updateExecutionComplete`, `updateExecutionFailed`, `resetExecutionInfo`
+- **Formatting**: Exposed `formatExecutionDuration` and `formatLastExecuted` for user-friendly time displays
+- **Node Wrapper**: Added `createNodeWrapperConfig`, `shouldShowNodeStatus`, `getOptimalStatusPosition`, `getOptimalStatusSize`, `DEFAULT_NODE_STATUS_CONFIG`
+- **Types**: Exported `NodeStatusConfig` type
+
+#### Workflow Editor Helpers
+- **EdgeStylingHelper**: For applying custom edge styling and connection rules
+- **NodeOperationsHelper**: For node loading, creation, and execution info management
+- **WorkflowOperationsHelper**: For workflow CRUD operations and metadata management
+- **ConfigurationHelper**: For API endpoint configuration
+
+#### Components (16 new exports)
+- **Node Types**: `UniversalNode`, `GatewayNode`, `SquareNode`
+- **UI Elements**: `LoadingSpinner`, `StatusIcon`, `StatusLabel`, `NodeStatusOverlay`
+- **Display**: `MarkdownDisplay`
+- **Configuration**: `ConfigForm`, `ConfigModal`, `ConfigSidebar`
+- **Layout**: `ConnectionLine`, `LogsSidebar`, `PipelineStatus`, `Navbar`, `Logo`
+
+#### Configuration
+- **API Config**: Exposed `defaultApiConfig`, `getEndpointUrl`, and `ApiConfig` type
+- **Port Config**: Added `DEFAULT_PORT_CONFIG` for default port configuration
+
+### Benefits
+
+- **Enhanced Developer Experience**: Direct access to internal state management and utilities
+- **Better Extensibility**: Easier to build custom UIs and integrations on top of FlowDrop
+- **Improved Reusability**: All utility functions and UI components are now reusable
+- **Complete State Control**: Full programmatic access to workflow state and actions
+- **Consistent Notifications**: Unified toast notification system across all implementations
+- **Node Execution Tracking**: Complete node status tracking and display capabilities
+
+### Technical Details
+
+- All new exports maintain full TypeScript type safety
+- No breaking changes to existing API
+- Zero linter errors introduced
+- All utilities follow consistent naming conventions
+- Services use singleton patterns where appropriate for optimal performance
+
 ## [0.0.5] - 2025-11-05
 
 ### Changed
@@ -98,7 +160,8 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/d34dman/flowdrop/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/d34dman/flowdrop/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/d34dman/flowdrop/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/d34dman/flowdrop/compare/v0.0.2...v0.0.3
