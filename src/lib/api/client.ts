@@ -62,7 +62,7 @@ export class FlowDropApiClient {
 	 * Fetch available node types and their metadata
 	 */
 	async getAvailableNodes(): Promise<NodeMetadata[]> {
-		const response = await this.request<NodesResponse>('/api/flowdrop/nodes');
+		const response = await this.request<NodesResponse>('/nodes');
 
 		if (!response.success || !response.data) {
 			throw new Error(response.error || 'Failed to fetch available nodes');
@@ -76,7 +76,7 @@ export class FlowDropApiClient {
 	 */
 	async getNodesByCategory(category: string): Promise<NodeMetadata[]> {
 		const response = await this.request<NodesResponse>(
-			`/api/nodes?category=${encodeURIComponent(category)}`
+			`/nodes?category=${encodeURIComponent(category)}`
 		);
 
 		if (!response.success || !response.data) {
@@ -91,7 +91,7 @@ export class FlowDropApiClient {
 	 */
 	async getNodeMetadata(nodeId: string): Promise<NodeMetadata> {
 		const response = await this.request<ApiResponse<NodeMetadata>>(
-			`/api/nodes/${encodeURIComponent(nodeId)}`
+			`/nodes/${encodeURIComponent(nodeId)}`
 		);
 
 		if (!response.success || !response.data) {
@@ -105,7 +105,7 @@ export class FlowDropApiClient {
 	 * Save a workflow
 	 */
 	async saveWorkflow(workflow: Workflow): Promise<Workflow> {
-		const response = await this.request<WorkflowResponse>('/api/flowdrop/workflows', {
+		const response = await this.request<WorkflowResponse>('/workflows', {
 			method: 'POST',
 			body: JSON.stringify(workflow)
 		});
@@ -122,7 +122,7 @@ export class FlowDropApiClient {
 	 */
 	async updateWorkflow(workflowId: string, workflow: Partial<Workflow>): Promise<Workflow> {
 		const response = await this.request<WorkflowResponse>(
-			`/api/workflows/${encodeURIComponent(workflowId)}`,
+			`/workflows/${encodeURIComponent(workflowId)}`,
 			{
 				method: 'PUT',
 				body: JSON.stringify(workflow)
@@ -141,7 +141,7 @@ export class FlowDropApiClient {
 	 */
 	async loadWorkflow(workflowId: string): Promise<Workflow> {
 		const response = await this.request<WorkflowResponse>(
-			`/api/workflows/${encodeURIComponent(workflowId)}`
+			`/workflows/${encodeURIComponent(workflowId)}`
 		);
 
 		if (!response.success || !response.data) {
@@ -155,7 +155,7 @@ export class FlowDropApiClient {
 	 * List all workflows
 	 */
 	async listWorkflows(): Promise<Workflow[]> {
-		const response = await this.request<WorkflowsResponse>('/api/flowdrop/workflows');
+		const response = await this.request<WorkflowsResponse>('/workflows');
 
 		if (!response.success || !response.data) {
 			throw new Error(response.error || 'Failed to list workflows');
@@ -169,7 +169,7 @@ export class FlowDropApiClient {
 	 */
 	async deleteWorkflow(workflowId: string): Promise<void> {
 		const response = await this.request<ApiResponse<void>>(
-			`/api/workflows/${encodeURIComponent(workflowId)}`,
+			`/workflows/${encodeURIComponent(workflowId)}`,
 			{
 				method: 'DELETE'
 			}
@@ -188,7 +188,7 @@ export class FlowDropApiClient {
 		inputs?: Record<string, unknown>
 	): Promise<ExecutionResult> {
 		const response = await this.request<ApiResponse<ExecutionResult>>(
-			`/api/workflows/${encodeURIComponent(workflowId)}/execute`,
+			`/workflows/${encodeURIComponent(workflowId)}/execute`,
 			{
 				method: 'POST',
 				body: JSON.stringify({ inputs })
@@ -207,7 +207,7 @@ export class FlowDropApiClient {
 	 */
 	async getExecutionStatus(executionId: string): Promise<ExecutionResult> {
 		const response = await this.request<ApiResponse<ExecutionResult>>(
-			`/api/executions/${encodeURIComponent(executionId)}`
+			`/executions/${encodeURIComponent(executionId)}`
 		);
 
 		if (!response.success || !response.data) {
@@ -222,7 +222,7 @@ export class FlowDropApiClient {
 	 */
 	async cancelExecution(executionId: string): Promise<void> {
 		const response = await this.request<ApiResponse<void>>(
-			`/api/executions/${encodeURIComponent(executionId)}/cancel`,
+			`/executions/${encodeURIComponent(executionId)}/cancel`,
 			{
 				method: 'POST'
 			}
@@ -238,7 +238,7 @@ export class FlowDropApiClient {
 	 */
 	async getExecutionLogs(executionId: string): Promise<string[]> {
 		const response = await this.request<ApiResponse<string[]>>(
-			`/api/executions/${encodeURIComponent(executionId)}/logs`
+			`/executions/${encodeURIComponent(executionId)}/logs`
 		);
 
 		if (!response.success || !response.data) {
@@ -253,7 +253,7 @@ export class FlowDropApiClient {
 	 */
 	async validateWorkflow(workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
 		const response = await this.request<ApiResponse<{ valid: boolean; errors: string[] }>>(
-			'/api/flowdrop/workflows/validate',
+			'/workflows/validate',
 			{
 				method: 'POST',
 				body: JSON.stringify(workflow)
@@ -272,7 +272,7 @@ export class FlowDropApiClient {
 	 */
 	async exportWorkflow(workflowId: string): Promise<string> {
 		const response = await this.request<ApiResponse<string>>(
-			`/api/workflows/${encodeURIComponent(workflowId)}/export`
+			`/workflows/${encodeURIComponent(workflowId)}/export`
 		);
 
 		if (!response.success || !response.data) {
@@ -286,7 +286,7 @@ export class FlowDropApiClient {
 	 * Import workflow from JSON
 	 */
 	async importWorkflow(workflowJson: string): Promise<Workflow> {
-		const response = await this.request<WorkflowResponse>('/api/flowdrop/workflows/import', {
+		const response = await this.request<WorkflowResponse>('/workflows/import', {
 			method: 'POST',
 			body: JSON.stringify({ workflow: workflowJson })
 		});
@@ -302,7 +302,7 @@ export class FlowDropApiClient {
 	 * Fetch port configuration
 	 */
 	async getPortConfig(): Promise<PortConfig> {
-		const response = await this.request<ApiResponse<PortConfig>>('/api/flowdrop/port-config');
+		const response = await this.request<ApiResponse<PortConfig>>('/port-config');
 
 		if (!response.success || !response.data) {
 			throw new Error(response.error || 'Failed to fetch port configuration');
@@ -339,7 +339,7 @@ export class FlowDropApiClient {
 				failed: number;
 				cancelled: number;
 			};
-		}>(`/api/flowdrop/pipeline/${encodeURIComponent(pipelineId)}`);
+		}>(`/pipeline/${encodeURIComponent(pipelineId)}`);
 
 		return response;
 	}
