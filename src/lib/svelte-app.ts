@@ -131,7 +131,8 @@ export async function mountFlowDropApp(
 			nodeStatuses,
 			pipelineId,
 			navbarTitle,
-			navbarActions
+			navbarActions,
+			endpointConfig: config
 		}
 	}) as MountedSvelteApp;
 

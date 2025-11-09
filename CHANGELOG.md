@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.8] - 2025-11-09
+
+### Fixed
+
+- **mountFlowDropApp Endpoint Configuration**: Fixed critical bug where `mountFlowDropApp` was not passing full `endpointConfig` to the App component
+  - Previously only passed `apiBaseUrl`, which meant custom endpoint paths, authentication, retry logic, and timeout settings were ignored
+  - Now passes the complete `endpointConfig` object including:
+    - Custom endpoint paths (for tenant-specific or environment-specific URLs)
+    - Authentication configuration (Bearer tokens, API keys, custom headers)
+    - Retry logic (max attempts, delays, backoff strategies)
+    - Timeout settings
+  - Updated `App.svelte` to accept and prioritize `endpointConfig` prop over `apiBaseUrl`
+  - Enables full runtime configuration for multi-tenant applications and different API environments
+  - Impact: All endpoint customizations now work correctly at runtime
+- **PipelineStatus Runtime Configuration**: Fixed pipeline components not receiving full endpoint configuration
+  - Updated `PipelineStatus` component to accept and pass `endpointConfig` to child components
+  - Updated pipeline page to pass complete `endpointConfig` instead of just `baseUrl`
+  - Ensures pipeline monitoring uses all custom endpoint settings including auth and retry logic
+
+### Added
+
+- **Tests**: Added comprehensive unit tests for `mountFlowDropApp` and `mountWorkflowEditor` functions (`svelte-app.test.ts`)
+  - Verifies that custom `endpointConfig` is properly passed to components
+  - Tests default configuration behavior
+  - Tests configuration merging logic
+- **Examples**: Added practical examples for custom endpoint configuration (`custom-endpoint-usage.ts`)
+  - Multi-tenant application integration
+  - Environment-based endpoint switching
+  - Custom authentication patterns
+  - Integration with React/Vue applications
+
 ## [0.0.7] - 2025-11-09
 
 ### Fixed
