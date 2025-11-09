@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.7] - 2025-11-09
+
+### Fixed
+
+- **API Client Consistency**: Fixed inconsistent endpoint paths in `FlowDropApiClient` where some methods incorrectly used `/api/` prefix
+  - Updated 10 methods to use relative paths without prefix (`/nodes`, `/workflows`, `/executions` instead of `/api/nodes`, etc.)
+  - Fixed `PipelineStatus` component to use correct default baseUrl
+  - Fixed hardcoded API endpoints in pipeline pages and App component
+  - All endpoints now consistently match the endpoint configuration schema
+- **Architecture**: baseUrl always includes `/api/flowdrop`, endpoint paths are relative, resulting in correct URLs like `/api/flowdrop/nodes`
+
+### Technical Details
+
+- Zero linter errors introduced
+- No breaking changes to public API
+- Internal consistency improvements for better maintainability
+
 ## [0.0.6] - 2025-11-09
 
 ### Added
@@ -160,7 +177,8 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/d34dman/flowdrop/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/d34dman/flowdrop/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/d34dman/flowdrop/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/d34dman/flowdrop/compare/v0.0.3...v0.0.4
