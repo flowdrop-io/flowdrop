@@ -202,6 +202,11 @@
 		if (pipelineStatus && pipelineId && workflow) {
 			const breadcrumbs = [
 				{
+					label: 'Home',
+					href: '/',
+					icon: 'mdi:home'
+				},
+				{
 					label: 'Workflows',
 					href: '/',
 					icon: 'mdi:view-list'
