@@ -1,555 +1,406 @@
 <!--
   ConfigForm Component
-  Generates configuration forms from JSON Schema and manages user values
-  Separates schema (form structure) from values (user input)
+  Handles dynamic form rendering for node configuration
+  Uses reactive $state for proper Svelte 5 reactivity
 -->
 
 <script lang="ts">
-	import type { ConfigSchema, ConfigProperty, ConfigValues } from '../types/index.js';
-	import { createEventDispatcher } from 'svelte';
+	import type { ConfigSchema, WorkflowNode } from "$lib/types/index.js"
 
 	interface Props {
-		schema: ConfigSchema;
-		values: ConfigValues;
-		disabled?: boolean;
+		node: WorkflowNode
+		onSave: (config: Record<string, unknown>) => void
+		onCancel: () => void
 	}
 
-	let props: Props = $props();
-	let dispatch = createEventDispatcher<{
-		change: { values: ConfigValues };
-		validate: { isValid: boolean; errors: string[] };
-	}>();
-
-	// Local copy of values for editing
-	let localValues = $state<ConfigValues>({ ...props.values });
-
-	// Validation errors
-	let validationErrors = $state<Record<string, string>>({});
+	let { node, onSave, onCancel }: Props = $props()
 
 	/**
-	 * Validate a single field against its schema
+	 * Get the configuration schema from node metadata
 	 */
-	function validateField(
-		fieldName: string,
-		value: unknown,
-		property: ConfigProperty
-	): string | null {
-		// Check if schema exists
-		if (!props.schema) {
-			return null;
-		}
-
-		// Required field validation
-		if (
-			props.schema.required?.includes(fieldName) &&
-			(value === null || value === undefined || value === '')
-		) {
-			return `${property.title || fieldName} is required`;
-		}
-
-		// Type validation
-		if (value !== null && value !== undefined) {
-			switch (property.type) {
-				case 'string':
-					if (typeof value !== 'string') {
-						return `${property.title || fieldName} must be a string`;
-					}
-					if (property.minLength && value.length < property.minLength) {
-						return `${property.title || fieldName} must be at least ${property.minLength} characters`;
-					}
-					if (property.maxLength && value.length > property.maxLength) {
-						return `${property.title || fieldName} must be at most ${property.maxLength} characters`;
-					}
-					if (property.pattern && !new RegExp(property.pattern).test(value)) {
-						return `${property.title || fieldName} format is invalid`;
-					}
-					break;
-
-				case 'number':
-					if (typeof value !== 'number') {
-						return `${property.title || fieldName} must be a number`;
-					}
-					if (property.minimum !== undefined && value < property.minimum) {
-						return `${property.title || fieldName} must be at least ${property.minimum}`;
-					}
-					if (property.maximum !== undefined && value > property.maximum) {
-						return `${property.title || fieldName} must be at most ${property.maximum}`;
-					}
-					break;
-
-				case 'boolean':
-					if (typeof value !== 'boolean') {
-						return `${property.title || fieldName} must be a boolean`;
-					}
-					break;
-
-				case 'array':
-					if (!Array.isArray(value)) {
-						return `${property.title || fieldName} must be an array`;
-					}
-					break;
-			}
-		}
-
-		return null;
-	}
+	const configSchema = $derived(
+		node.data.metadata?.configSchema as ConfigSchema | undefined
+	)
 
 	/**
-	 * Validate all fields
+	 * Get the current node configuration
 	 */
-	function validateForm(): { isValid: boolean; errors: string[] } {
-		const errors: string[] = [];
-		const newValidationErrors: Record<string, string> = {};
-
-		// Check if schema and properties exist
-		if (!props.schema || !props.schema.properties || typeof props.schema.properties !== 'object') {
-			console.warn('ConfigForm: Invalid schema or properties:', {
-				schema: props.schema,
-				properties: props.schema?.properties
-			});
-			return { isValid: true, errors: [] };
-		}
-
-		Object.entries(props.schema.properties).forEach(([fieldName, property]) => {
-			const value = localValues[fieldName];
-			const error = validateField(fieldName, value, property);
-
-			if (error) {
-				errors.push(error);
-				newValidationErrors[fieldName] = error;
-			}
-		});
-
-		validationErrors = newValidationErrors;
-
-		const isValid = errors.length === 0;
-		dispatch('validate', { isValid, errors });
-
-		return { isValid, errors };
-	}
+	const nodeConfig = $derived(node.data.config || {})
 
 	/**
-	 * Handle field value change
-	 * Preserves hidden field values from the original configuration
+	 * Create reactive configuration values using $state
+	 * This fixes the Svelte 5 reactivity warnings
 	 */
-	function handleFieldChange(fieldName: string, value: unknown): void {
-		localValues[fieldName] = value;
-
-		// Validate the changed field
-		if (props.schema && props.schema.properties && props.schema.properties[fieldName]) {
-			const property = props.schema.properties[fieldName];
-			const error = validateField(fieldName, value, property);
-
-			if (error) {
-				validationErrors[fieldName] = error;
-			} else {
-				delete validationErrors[fieldName];
-			}
-		}
-
-		// Merge hidden field values from original props to ensure they're preserved
-		const hiddenFieldValues: ConfigValues = {};
-		if (props.schema?.properties) {
-			Object.entries(props.schema.properties).forEach(([key, property]) => {
-				if (property.format === 'hidden' && key in props.values) {
-					hiddenFieldValues[key] = props.values[key];
-				}
-			});
-		}
-
-		// Emit change event with hidden fields preserved
-		dispatch('change', { values: { ...localValues, ...hiddenFieldValues } });
-
-		// Validate entire form
-		validateForm();
-	}
+	let configValues = $state<Record<string, unknown>>({})
 
 	/**
-	 * Get default value for a field
+	 * Initialize config values when node or schema changes
 	 */
-	function getDefaultValue(property: ConfigProperty): unknown {
-		if (property.default !== undefined) {
-			return property.default;
-		}
-
-		switch (property.type) {
-			case 'string':
-				// If enum with multiple selection, default to empty array
-				if (property.enum && property.multiple) {
-					return [];
-				}
-				return '';
-			case 'number':
-				return 0;
-			case 'boolean':
-				return false;
-			case 'array':
-				return [];
-			case 'object':
-				return {};
-			default:
-				return null;
-		}
-	}
-
-	// Sync local values with props and initialize with defaults
 	$effect(() => {
-		// Update local values when props change
-		localValues = { ...props.values };
-
-		if (props.schema) {
-			Object.entries(props.schema.properties).forEach(([fieldName, property]) => {
-				if (localValues[fieldName] === undefined) {
-					localValues[fieldName] = getDefaultValue(property);
-				}
-			});
-
-			// Validate on initialization
-			validateForm();
+		if (configSchema?.properties) {
+			const mergedConfig: Record<string, unknown> = {}
+			Object.entries(configSchema.properties).forEach(([key, field]) => {
+				const fieldConfig = field as any
+				// Use existing value if available, otherwise use default
+				mergedConfig[key] =
+					nodeConfig[key] !== undefined ? nodeConfig[key] : fieldConfig.default
+			})
+			configValues = mergedConfig
 		}
-	});
+	})
+
+	/**
+	 * Handle form submission
+	 */
+	function handleSave(): void {
+		// Collect all form values including hidden fields
+		const form = document.querySelector(".flowdrop-config-sidebar__form")
+		const updatedConfig: Record<string, unknown> = { ...configValues }
+
+		if (form) {
+			const inputs = form.querySelectorAll("input, select, textarea")
+			inputs.forEach((input: any) => {
+				if (input.id) {
+					if (input.type === "checkbox") {
+						updatedConfig[input.id] = input.checked
+					} else if (input.type === "number") {
+						updatedConfig[input.id] = input.value ? Number(input.value) : input.value
+					} else if (input.type === "hidden") {
+						// Parse hidden field values that might be JSON
+						try {
+							const parsed = JSON.parse(input.value)
+							updatedConfig[input.id] = parsed
+						} catch {
+							// If not JSON, use raw value
+							updatedConfig[input.id] = input.value
+						}
+					} else {
+						updatedConfig[input.id] = input.value
+					}
+				}
+			})
+		}
+
+		// Preserve hidden field values from original config if not collected from form
+		if (node.data.config && configSchema?.properties) {
+			Object.entries(configSchema.properties).forEach(([key, property]: [string, any]) => {
+				if (
+					property.format === "hidden" &&
+					!(key in updatedConfig) &&
+					key in node.data.config
+				) {
+					updatedConfig[key] = node.data.config[key]
+				}
+			})
+		}
+
+		onSave(updatedConfig)
+	}
 </script>
 
-<div class="flowdrop-config-form">
-	{#if props.schema && props.schema.properties && typeof props.schema.properties === 'object'}
-		<form class="flowdrop-form" onsubmit={(e) => e.preventDefault()}>
-			{#each Object.entries(props.schema.properties) as [fieldName, property] (fieldName)}
-				{#if property.format === 'hidden'}
-					<!-- Hidden field to preserve value -->
-					<input
-						type="hidden"
-						id={fieldName}
-						value={typeof (localValues[fieldName] ?? property.default) === 'object'
-							? JSON.stringify(localValues[fieldName] ?? property.default ?? {})
-							: (localValues[fieldName] ?? property.default ?? '')}
-					/>
-				{:else}
-					<div class="flowdrop-form-field">
-						<label class="flowdrop-form-label" for={fieldName}>
-							{property.title || fieldName}
-							{#if props.schema.required?.includes(fieldName)}
-								<span class="flowdrop-form-required">*</span>
-							{/if}
+{#if configSchema}
+	<div class="flowdrop-config-sidebar__form">
+		{#if configSchema.properties}
+			{#each Object.entries(configSchema.properties) as [key, field] (key)}
+				{@const fieldConfig = field as any}
+				{#if fieldConfig.format !== "hidden"}
+					<div class="flowdrop-config-sidebar__field">
+						<label class="flowdrop-config-sidebar__field-label" for={key}>
+							{fieldConfig.title || fieldConfig.description || key}
 						</label>
-
-						{#if property.type === 'string'}
-							{#if property.enum && property.multiple}
-								<!-- Checkboxes for enum with multiple selection -->
-								<div class="flowdrop-form-checkbox-group">
-									{#each property.enum as option (option)}
-										<label class="flowdrop-form-checkbox">
-											<input
-												type="checkbox"
-												class="flowdrop-form-checkbox__input"
-												value={option}
-												checked={Array.isArray(localValues[fieldName]) &&
-													localValues[fieldName].includes(option)}
-												disabled={props.disabled || false}
-												onchange={(e) => {
-													const checked = (e.target as HTMLInputElement).checked;
-													const currentValues = Array.isArray(localValues[fieldName])
-														? [...localValues[fieldName]]
-														: [];
-													if (checked) {
-														if (!currentValues.includes(option)) {
-															handleFieldChange(fieldName, [...currentValues, option]);
-														}
-													} else {
-														handleFieldChange(
-															fieldName,
-															currentValues.filter((v) => v !== option)
-														);
+						{#if fieldConfig.enum && fieldConfig.multiple}
+							<!-- Checkboxes for enum with multiple selection -->
+							<div class="flowdrop-config-sidebar__checkbox-group">
+								{#each fieldConfig.enum as option (String(option))}
+									<label class="flowdrop-config-sidebar__checkbox-item">
+										<input
+											type="checkbox"
+											class="flowdrop-config-sidebar__checkbox"
+											value={String(option)}
+											checked={Array.isArray(configValues[key]) &&
+												configValues[key].includes(String(option))}
+											onchange={(e) => {
+												const checked = e.currentTarget.checked
+												const currentValues = Array.isArray(configValues[key])
+													? [...(configValues[key] as unknown[])]
+													: []
+												if (checked) {
+													if (!currentValues.includes(String(option))) {
+														configValues[key] = [...currentValues, String(option)]
 													}
-												}}
-											/>
-											<span class="flowdrop-form-checkbox__label">{option}</span>
-										</label>
-									{/each}
-								</div>
-							{:else if property.enum}
-								<!-- Select field for enum with single selection -->
-								<select
-									id={fieldName}
-									class="flowdrop-form-select {validationErrors[fieldName]
-										? 'flowdrop-form-select--error'
-										: ''}"
-									disabled={props.disabled || false}
-									onchange={(e) =>
-										handleFieldChange(fieldName, (e.target as HTMLSelectElement).value)}
-								>
-									{#each property.enum as option (option)}
-										<option value={option} selected={localValues[fieldName] === option}>
-											{option}
-										</option>
-									{/each}
-								</select>
-							{:else if property.format === 'multiline' || (property.maxLength && property.maxLength > 100)}
-								<!-- Textarea for multiline or long text -->
-								<textarea
-									id={fieldName}
-									class="flowdrop-form-textarea {validationErrors[fieldName]
-										? 'flowdrop-form-textarea--error'
-										: ''}"
-									placeholder={property.description || ''}
-									rows="4"
-									disabled={props.disabled || false}
-									onchange={(e) =>
-										handleFieldChange(fieldName, (e.target as HTMLTextAreaElement).value)}
-									>{localValues[fieldName] || ''}</textarea
-								>
-							{:else}
-								<!-- Regular text input -->
-								<input
-									id={fieldName}
-									type="text"
-									class="flowdrop-form-input {validationErrors[fieldName]
-										? 'flowdrop-form-input--error'
-										: ''}"
-									value={localValues[fieldName] || ''}
-									placeholder={property.description || ''}
-									disabled={props.disabled || false}
-									onchange={(e) =>
-										handleFieldChange(fieldName, (e.target as HTMLInputElement).value)}
-								/>
-							{/if}
-						{:else if property.type === 'number'}
-							<!-- Number input as text field -->
-							<input
-								id={fieldName}
-								type="text"
-								class="flowdrop-form-input {validationErrors[fieldName]
-									? 'flowdrop-form-input--error'
-									: ''}"
-								value={localValues[fieldName] || ''}
-								placeholder="Enter a number"
-								disabled={props.disabled || false}
-								oninput={(e) => {
-									const value = (e.target as HTMLInputElement).value;
-									const numValue = value === '' ? 0 : parseFloat(value);
-									if (!isNaN(numValue)) {
-										handleFieldChange(fieldName, numValue);
-									}
-								}}
-								onblur={(e) => {
-									const value = (e.target as HTMLInputElement).value;
-									const numValue = value === '' ? 0 : parseFloat(value);
-									if (!isNaN(numValue)) {
-										handleFieldChange(fieldName, numValue);
-									}
-								}}
-							/>
-						{:else if property.type === 'boolean'}
-							<!-- Checkbox -->
-							<label class="flowdrop-form-checkbox">
-								<input
-									id={fieldName}
-									type="checkbox"
-									class="flowdrop-form-checkbox__input"
-									checked={Boolean(localValues[fieldName])}
-									disabled={props.disabled || false}
-									onchange={(e) =>
-										handleFieldChange(fieldName, (e.target as HTMLInputElement).checked)}
-								/>
-								<span class="flowdrop-form-checkbox__label">
-									{property.description || ''}
-								</span>
-							</label>
-						{:else if property.type === 'array'}
-							<!-- Array input (comma-separated) -->
-							<textarea
-								id={fieldName}
-								class="flowdrop-form-textarea {validationErrors[fieldName]
-									? 'flowdrop-form-textarea--error'
-									: ''}"
-								placeholder="Enter values separated by commas"
-								rows="3"
-								disabled={props.disabled || false}
-								onchange={(e) =>
-									handleFieldChange(
-										fieldName,
-										(e.target as HTMLTextAreaElement).value
-											.split(',')
-											.map((v) => v.trim())
-											.filter((v) => v)
-									)}
-								>{Array.isArray(localValues[fieldName])
-									? localValues[fieldName].join(', ')
-									: ''}</textarea
+												} else {
+													configValues[key] = currentValues.filter(
+														(v) => v !== String(option)
+													)
+												}
+											}}
+										/>
+										<span class="flowdrop-config-sidebar__checkbox-label">
+											{String(option)}
+										</span>
+									</label>
+								{/each}
+							</div>
+						{:else if fieldConfig.enum}
+							<!-- Select for enum with single selection -->
+							<select
+								id={key}
+								class="flowdrop-config-sidebar__select"
+								bind:value={configValues[key]}
 							>
-						{:else if property.type === 'object'}
-							<!-- JSON object input -->
+								{#each fieldConfig.enum as option (String(option))}
+									<option value={String(option)}>{String(option)}</option>
+								{/each}
+							</select>
+						{:else if fieldConfig.type === "string" && fieldConfig.format === "multiline"}
+							<!-- Textarea for multiline strings -->
 							<textarea
-								id={fieldName}
-								class="flowdrop-form-textarea {validationErrors[fieldName]
-									? 'flowdrop-form-textarea--error'
-									: ''}"
-								placeholder="Enter JSON object"
+								id={key}
+								class="flowdrop-config-sidebar__textarea"
+								bind:value={configValues[key]}
+								placeholder={String(fieldConfig.placeholder || "")}
 								rows="4"
-								disabled={props.disabled || false}
-								onchange={(e) => {
-									try {
-										handleFieldChange(
-											fieldName,
-											JSON.parse((e.target as HTMLTextAreaElement).value)
-										);
-									} catch {
-										// Handle JSON parse error
-									}
-								}}
-								>{typeof localValues[fieldName] === 'object'
-									? JSON.stringify(localValues[fieldName], null, 2)
-									: ''}</textarea
-							>
-						{:else}
-							<!-- Default text input -->
+							></textarea>
+						{:else if fieldConfig.type === "string"}
 							<input
-								id={fieldName}
+								id={key}
 								type="text"
-								class="flowdrop-form-input {validationErrors[fieldName]
-									? 'flowdrop-form-input--error'
-									: ''}"
-								value={localValues[fieldName] || ''}
-								placeholder={property.description || ''}
-								disabled={props.disabled || false}
-								onchange={(e) => handleFieldChange(fieldName, (e.target as HTMLInputElement).value)}
+								class="flowdrop-config-sidebar__input"
+								bind:value={configValues[key]}
+								placeholder={String(fieldConfig.placeholder || "")}
+							/>
+						{:else if fieldConfig.type === "number"}
+							<input
+								id={key}
+								type="number"
+								class="flowdrop-config-sidebar__input"
+								bind:value={configValues[key]}
+								placeholder={String(fieldConfig.placeholder || "")}
+							/>
+						{:else if fieldConfig.type === "boolean"}
+							<input
+								id={key}
+								type="checkbox"
+								class="flowdrop-config-sidebar__checkbox"
+								checked={Boolean(configValues[key] || fieldConfig.default || false)}
+								onchange={(e) => {
+									configValues[key] = e.currentTarget.checked
+								}}
+							/>
+						{:else if fieldConfig.type === "select" || fieldConfig.options}
+							<select
+								id={key}
+								class="flowdrop-config-sidebar__select"
+								bind:value={configValues[key]}
+							>
+								{#if fieldConfig.options}
+									{#each fieldConfig.options as option (String(option.value))}
+										{@const optionConfig = option as any}
+										<option value={String(optionConfig.value)}
+											>{String(optionConfig.label)}</option
+										>
+									{/each}
+								{/if}
+							</select>
+						{:else}
+							<!-- Fallback for unknown field types -->
+							<input
+								id={key}
+								type="text"
+								class="flowdrop-config-sidebar__input"
+								bind:value={configValues[key]}
+								placeholder={String(fieldConfig.placeholder || "")}
 							/>
 						{/if}
-
-						{#if validationErrors[fieldName]}
-							<div class="flowdrop-form-error">{validationErrors[fieldName]}</div>
-						{/if}
-
-						{#if property.description}
-							<div class="flowdrop-form-help">{property.description}</div>
+						{#if fieldConfig.description}
+							<p class="flowdrop-config-sidebar__field-description">
+								{String(fieldConfig.description)}
+							</p>
 						{/if}
 					</div>
 				{/if}
 			{/each}
-		</form>
-	{:else}
-		<div class="flowdrop-form-empty">
-			<p class="flowdrop-text--sm flowdrop-text--gray">
-				No configuration schema available for this node.
-			</p>
-		</div>
-	{/if}
-</div>
+		{:else}
+			<!-- If no properties, show the raw schema for debugging -->
+			<div class="flowdrop-config-sidebar__debug">
+				<p><strong>Debug - Config Schema:</strong></p>
+				<pre>{JSON.stringify(configSchema, null, 2)}</pre>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Footer -->
+	<div class="flowdrop-config-sidebar__footer">
+		<button
+			class="flowdrop-config-sidebar__button flowdrop-config-sidebar__button--secondary"
+			onclick={onCancel}
+		>
+			Cancel
+		</button>
+		<button
+			class="flowdrop-config-sidebar__button flowdrop-config-sidebar__button--primary"
+			onclick={handleSave}
+		>
+			Save Changes
+		</button>
+	</div>
+{:else}
+	<p class="flowdrop-config-sidebar__no-config">
+		No configuration options available for this node.
+	</p>
+{/if}
 
 <style>
-	.flowdrop-config-form {
-		padding: 1rem;
-	}
-
-	.flowdrop-form {
+	.flowdrop-config-sidebar__form {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
 
-	.flowdrop-form-field {
+	.flowdrop-config-sidebar__field {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
-	.flowdrop-form-label {
+	.flowdrop-config-sidebar__field-label {
 		font-size: 0.875rem;
 		font-weight: 500;
 		color: #374151;
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
 	}
 
-	.flowdrop-form-required {
-		color: #dc2626;
-		font-weight: 700;
-	}
-
-	.flowdrop-form-input,
-	.flowdrop-form-textarea,
-	.flowdrop-form-select {
-		padding: 0.5rem 0.75rem;
+	.flowdrop-config-sidebar__input,
+	.flowdrop-config-sidebar__select {
+		padding: 0.5rem;
 		border: 1px solid #d1d5db;
 		border-radius: 0.375rem;
 		font-size: 0.875rem;
-		background-color: #ffffff;
-		transition: all 0.2s ease-in-out;
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 	}
 
-	.flowdrop-form-input:focus,
-	.flowdrop-form-textarea:focus,
-	.flowdrop-form-select:focus {
+	.flowdrop-config-sidebar__input:focus,
+	.flowdrop-config-sidebar__select:focus {
 		outline: none;
 		border-color: #3b82f6;
 		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 	}
 
-	.flowdrop-form-input--error,
-	.flowdrop-form-textarea--error,
-	.flowdrop-form-select--error {
-		border-color: #dc2626;
-	}
-
-	.flowdrop-form-input--error:focus,
-	.flowdrop-form-textarea--error:focus,
-	.flowdrop-form-select--error:focus {
-		border-color: #dc2626;
-		box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-	}
-
-	.flowdrop-form-textarea {
-		resize: vertical;
-		min-height: 4rem;
-	}
-
-	.flowdrop-form-checkbox-group {
+	.flowdrop-config-sidebar__checkbox-group {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
-	.flowdrop-form-checkbox {
+	.flowdrop-config-sidebar__checkbox-item {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		cursor: pointer;
 	}
 
-	.flowdrop-form-checkbox__input {
+	.flowdrop-config-sidebar__checkbox {
 		width: 1rem;
 		height: 1rem;
 		accent-color: #3b82f6;
+		cursor: pointer;
 	}
 
-	.flowdrop-form-checkbox__label {
+	.flowdrop-config-sidebar__checkbox-label {
 		font-size: 0.875rem;
+		color: #374151;
+		cursor: pointer;
+	}
+
+	.flowdrop-config-sidebar__textarea {
+		width: 100%;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font-size: 0.875rem;
+		background-color: #ffffff;
+		transition: all 0.2s ease-in-out;
+		resize: vertical;
+		min-height: 4rem;
+	}
+
+	.flowdrop-config-sidebar__textarea:focus {
+		outline: none;
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+
+	.flowdrop-config-sidebar__field-description {
+		margin: 0;
+		font-size: 0.75rem;
+		color: #6b7280;
+		line-height: 1.4;
+	}
+
+	.flowdrop-config-sidebar__no-config {
+		text-align: center;
+		color: #6b7280;
+		font-style: italic;
+		padding: 2rem 1rem;
+	}
+
+	.flowdrop-config-sidebar__footer {
+		padding: 1rem;
+		border-top: 1px solid #e5e7eb;
+		background-color: #f9fafb;
+		display: flex;
+		gap: 0.75rem;
+		justify-content: flex-end;
+		height: 40px;
+		align-items: center;
+	}
+
+	.flowdrop-config-sidebar__button {
+		padding: 0.5rem 1rem;
+		border-radius: 0.375rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+		border: 1px solid transparent;
+	}
+
+	.flowdrop-config-sidebar__button--secondary {
+		background-color: #ffffff;
+		border-color: #d1d5db;
 		color: #374151;
 	}
 
-	.flowdrop-form-error {
-		font-size: 0.75rem;
-		color: #dc2626;
-		margin-top: 0.25rem;
-	}
-
-	.flowdrop-form-help {
-		font-size: 0.75rem;
-		color: #6b7280;
-		margin-top: 0.25rem;
-	}
-
-	.flowdrop-form-empty {
-		text-align: center;
-		padding: 2rem;
-		color: #6b7280;
-	}
-
-	.flowdrop-form-input:disabled,
-	.flowdrop-form-textarea:disabled,
-	.flowdrop-form-select:disabled {
+	.flowdrop-config-sidebar__button--secondary:hover {
 		background-color: #f9fafb;
-		color: #9ca3af;
-		cursor: not-allowed;
+		border-color: #9ca3af;
+	}
+
+	.flowdrop-config-sidebar__button--primary {
+		background-color: #3b82f6;
+		color: #ffffff;
+	}
+
+	.flowdrop-config-sidebar__button--primary:hover {
+		background-color: #2563eb;
+	}
+
+	.flowdrop-config-sidebar__debug {
+		background-color: #f3f4f6;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		padding: 1rem;
+		margin: 1rem 0;
+	}
+
+	.flowdrop-config-sidebar__debug pre {
+		background-color: #ffffff;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.25rem;
+		padding: 0.75rem;
+		font-size: 0.75rem;
+		overflow-x: auto;
+		margin: 0.5rem 0 0 0;
 	}
 </style>
