@@ -291,14 +291,20 @@
 
 		// Generate default breadcrumbs based on path
 		if (pathname === '/') {
+			// On homepage, just show "Home"
 			return [
 				{
-					label: 'Workflows',
-					icon: 'mdi:view-list'
+					label: 'Home',
+					icon: 'mdi:home'
 				}
 			];
 		} else if (pathname.startsWith('/workflow/create')) {
 			return [
+				{
+					label: 'Home',
+					href: '/',
+					icon: 'mdi:home'
+				},
 				{
 					label: 'Workflows',
 					href: '/',
@@ -312,12 +318,17 @@
 		} else if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
 			return [
 				{
+					label: 'Home',
+					href: '/',
+					icon: 'mdi:home'
+				},
+				{
 					label: 'Workflows',
 					href: '/',
 					icon: 'mdi:view-list'
 				},
 				{
-					label: workflowName ? `Edit ${workflowName}` : 'Edit Workflow',
+					label: workflowName || 'Workflow',
 					icon: 'mdi:pencil'
 				}
 			];
@@ -329,6 +340,11 @@
 			} else {
 				// Pipeline list page
 				return [
+					{
+						label: 'Home',
+						href: '/',
+						icon: 'mdi:home'
+					},
 					{
 						label: 'Workflows',
 						href: '/',
@@ -350,9 +366,9 @@
 		// Default breadcrumb for other pages
 		return [
 			{
-				label: 'Workflows',
+				label: 'Home',
 				href: '/',
-				icon: 'mdi:view-list'
+				icon: 'mdi:home'
 			}
 		];
 	}
