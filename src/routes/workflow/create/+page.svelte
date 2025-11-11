@@ -7,11 +7,33 @@
 -->
 
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import App from '$lib/components/App.svelte';
+	import { workflowActions } from '$lib/stores/workflowStore';
 
 	// Canvas dimensions - now using full viewport since no top navbar
 	let canvasHeight = $state<string>('100vh'); // Full viewport height
 	let canvasWidth = $state<string>('100%'); // Full width
+
+	/**
+	 * Initialize empty workflow on mount
+	 * This ensures we start with a clean slate when creating a new workflow
+	 */
+	onMount(() => {
+		// Initialize with an empty workflow structure
+		workflowActions.initialize({
+			id: '',
+			name: 'Untitled Workflow',
+			description: '',
+			nodes: [],
+			edges: [],
+			metadata: {
+				version: '1.0.0',
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString()
+			}
+		});
+	});
 </script>
 
 <svelte:head>
