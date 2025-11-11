@@ -69,12 +69,38 @@ async function apiRequest<T>(
 		...options
 	});
 
-	const data = await response.json();
+	// Check if response is JSON
+	const contentType = response.headers.get('content-type');
+	const isJson = contentType?.includes('application/json');
 
 	if (!response.ok) {
-		throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+		// Try to get error details
+		let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+		
+		if (isJson) {
+			try {
+				const data = await response.json();
+				errorMessage = data.error || data.message || errorMessage;
+			} catch {
+				// Failed to parse JSON, use default error message
+			}
+		} else {
+			// Response is not JSON (probably HTML error page)
+			try {
+				const text = await response.text();
+				// Extract first 200 characters for debugging
+				const preview = text.substring(0, 200).trim();
+				errorMessage = `${errorMessage}. Server returned: ${preview}...`;
+			} catch {
+				// Failed to read response text
+			}
+		}
+
+		throw new Error(errorMessage);
 	}
 
+	// Parse successful response
+	const data = await response.json();
 	return data;
 }
 
@@ -185,13 +211,21 @@ export const workflowApi = {
 			throw new Error('Endpoint configuration not set');
 		}
 
+		// Transform workflow data for Drupal backend compatibility
+		// Drupal expects "label" instead of "name"
+		const drupalWorkflow = {
+			...workflow,
+			label: workflow.name, // Map name to label for Drupal
+			name: workflow.name // Keep name as well for compatibility
+		};
+
 		const response = await apiRequest<Workflow>(
 			'workflows.create',
 			endpointConfig.endpoints.workflows.create,
 			undefined,
 			{
 				method: 'POST',
-				body: JSON.stringify(workflow)
+				body: JSON.stringify(drupalWorkflow)
 			}
 		);
 
@@ -209,13 +243,23 @@ export const workflowApi = {
 			throw new Error('Endpoint configuration not set');
 		}
 
+		// Transform workflow data for Drupal backend compatibility
+		// Drupal expects "label" instead of "name"
+		const drupalWorkflow = workflow.name
+			? {
+					...workflow,
+					label: workflow.name, // Map name to label for Drupal
+					name: workflow.name // Keep name as well for compatibility
+				}
+			: workflow;
+
 		const response = await apiRequest<Workflow>(
 			'workflows.update',
 			endpointConfig.endpoints.workflows.update,
 			{ id },
 			{
 				method: 'PUT',
-				body: JSON.stringify(workflow)
+				body: JSON.stringify(drupalWorkflow)
 			}
 		);
 
