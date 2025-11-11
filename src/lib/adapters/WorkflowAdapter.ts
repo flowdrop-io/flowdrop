@@ -18,6 +18,31 @@ import type { Workflow, NodeMetadata } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Generate a unique node ID based on node type and existing nodes
+ * Format: <node_type>.<number>
+ * Example: boolean_gateway.1, calculator.2
+ */
+function generateStandardNodeId(nodeTypeId: string, existingNodes: StandardNode[]): string {
+	// Count how many nodes of this type already exist
+	const existingNodeIds = existingNodes
+		.filter((node) => node.data?.metadata?.id === nodeTypeId)
+		.map((node) => node.id);
+
+	// Extract the numbers from existing IDs with the same prefix
+	const existingNumbers = existingNodeIds
+		.map((id) => {
+			const match = id.match(new RegExp(`^${nodeTypeId}\\.(\\d+)$`));
+			return match ? parseInt(match[1], 10) : 0;
+		})
+		.filter((num) => num > 0);
+
+	// Find the next available number (highest + 1)
+	const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+
+	return `${nodeTypeId}.${nextNumber}`;
+}
+
+/**
  * Standard workflow node interface (SvelteFlow-agnostic)
  */
 export interface StandardNode {
@@ -123,8 +148,11 @@ export class WorkflowAdapter {
 			throw new Error(`Node type '${nodeType}' not found`);
 		}
 
+		// Generate node ID based on node type and existing nodes
+		const nodeId = generateStandardNodeId(nodeType, workflow.nodes);
+
 		const node: StandardNode = {
-			id: uuidv4(),
+			id: nodeId,
 			type: nodeType,
 			position,
 			data: {
@@ -439,9 +467,20 @@ export class WorkflowAdapter {
 		// Generate new IDs for all nodes and edges
 		const idMapping = new Map<string, string>();
 
+		// Count nodes by type to generate proper sequential IDs
+		const nodeTypeCounts = new Map<string, number>();
+
 		cloned.nodes.forEach((node) => {
 			const oldId = node.id;
-			node.id = uuidv4();
+			const nodeTypeId = node.data.metadata.id;
+
+			// Get the current count for this node type
+			const currentCount = nodeTypeCounts.get(nodeTypeId) || 0;
+			const newCount = currentCount + 1;
+			nodeTypeCounts.set(nodeTypeId, newCount);
+
+			// Generate new ID with the sequential number
+			node.id = `${nodeTypeId}.${newCount}`;
 			idMapping.set(oldId, node.id);
 		});
 

@@ -340,8 +340,12 @@
 							y: e.clientY - rect.top
 						};
 
-						// Create the node using the helper
-						const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position);
+						// Create the node using the helper, passing existing nodes for ID generation
+						const newNode = NodeOperationsHelper.createNodeFromDrop(
+							nodeTypeData,
+							position,
+							flowNodes
+						);
 
 						if (newNode && currentWorkflow) {
 							currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
