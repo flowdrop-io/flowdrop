@@ -1,6 +1,6 @@
 test-results
 node_modules
-
+.playwright-mcp
 # Output
 .output
 .vercel
