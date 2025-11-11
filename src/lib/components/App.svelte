@@ -288,53 +288,69 @@
 		// Wait for any pending DOM updates before saving
 		await tick();
 
-		// Import necessary modules
-		const { workflowApi } = await import('$lib/services/api.js');
-		const { v4: uuidv4 } = await import('uuid');
+		// Show loading toast
+		const loadingToast = apiToasts.loading('Saving workflow');
 
-		// Use current workflow from global store
-		const workflowToSave = $workflowStore;
+		try {
+			// Import necessary modules
+			const { workflowApi } = await import('$lib/services/api.js');
+			const { v4: uuidv4 } = await import('uuid');
 
-		if (!workflowToSave) {
-			return;
-		}
+			// Use current workflow from global store
+			const workflowToSave = $workflowStore;
 
-		// Determine the workflow ID
-		let workflowId: string;
-		if (workflowToSave.id) {
-			workflowId = workflowToSave.id;
-		} else {
-			workflowId = uuidv4();
-		}
-
-		// Create workflow object for saving
-		const finalWorkflow = {
-			id: workflowId,
-			name: workflowToSave.name || 'Untitled Workflow',
-			description: workflowToSave.description || '',
-			nodes: workflowToSave.nodes || [],
-			edges: workflowToSave.edges || [],
-			metadata: {
-				version: '1.0.0',
-				createdAt: workflowToSave.metadata?.createdAt || new Date().toISOString(),
-				updatedAt: new Date().toISOString()
+			if (!workflowToSave) {
+				dismissToast(loadingToast);
+				return;
 			}
-		};
 
-		const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+			// Determine the workflow ID
+			let workflowId: string;
+			if (workflowToSave.id) {
+				workflowId = workflowToSave.id;
+			} else {
+				workflowId = uuidv4();
+			}
 
-		// Update the workflow ID if it changed (new workflow)
-		// Keep our current workflow state, only update ID and metadata from backend
-		if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
-			workflowActions.batchUpdate({
-				nodes: finalWorkflow.nodes,
-				edges: finalWorkflow.edges,
-				name: finalWorkflow.name,
+			// Create workflow object for saving
+			const finalWorkflow = {
+				id: workflowId,
+				name: workflowToSave.name || 'Untitled Workflow',
+				description: workflowToSave.description || '',
+				nodes: workflowToSave.nodes || [],
+				edges: workflowToSave.edges || [],
 				metadata: {
-					...finalWorkflow.metadata,
-					...savedWorkflow.metadata
+					version: '1.0.0',
+					createdAt: workflowToSave.metadata?.createdAt || new Date().toISOString(),
+					updatedAt: new Date().toISOString()
 				}
-			});
+			};
+
+			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+
+			// Update the workflow ID if it changed (new workflow)
+			// Keep our current workflow state, only update ID and metadata from backend
+			if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
+				workflowActions.batchUpdate({
+					nodes: finalWorkflow.nodes,
+					edges: finalWorkflow.edges,
+					name: finalWorkflow.name,
+					metadata: {
+						...finalWorkflow.metadata,
+						...savedWorkflow.metadata
+					}
+				});
+			}
+
+			// Dismiss loading toast and show success
+			dismissToast(loadingToast);
+			apiToasts.success('Save workflow', 'Workflow saved successfully');
+		} catch (error) {
+			// Dismiss loading toast and show error
+			dismissToast(loadingToast);
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+			apiToasts.error('Save workflow', errorMessage);
+			throw error; // Re-throw to allow calling code to handle if needed
 		}
 	}
 
@@ -616,6 +632,24 @@
 							<div class="flowdrop-config-sidebar__section">
 								<h3 class="flowdrop-config-sidebar__section-title">Node Details</h3>
 								<div class="flowdrop-config-sidebar__details">
+									<div class="flowdrop-config-sidebar__detail">
+										<span class="flowdrop-config-sidebar__detail-label">Node ID:</span>
+										<div class="flowdrop-config-sidebar__detail-value-with-copy">
+											<span class="flowdrop-config-sidebar__detail-value" style="font-family: monospace;">
+												{selectedNodeForConfig().id}
+											</span>
+											<button
+												class="flowdrop-config-sidebar__copy-btn"
+												onclick={() => {
+													navigator.clipboard.writeText(selectedNodeForConfig().id);
+												}}
+												title="Copy Node ID"
+												aria-label="Copy node ID to clipboard"
+											>
+												📋
+											</button>
+										</div>
+									</div>
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Type:</span>
 										<span class="flowdrop-config-sidebar__detail-value"
@@ -940,6 +974,43 @@
 		font-size: 0.875rem;
 		color: #111827;
 		font-weight: 500;
+	}
+
+	.flowdrop-config-sidebar__detail-value-with-copy {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background-color: #f3f4f6;
+		padding: 0.5rem;
+		border-radius: 0.375rem;
+		border: 1px solid #e5e7eb;
+	}
+
+	.flowdrop-config-sidebar__detail-value-with-copy .flowdrop-config-sidebar__detail-value {
+		flex: 1;
+		font-size: 0.8125rem;
+		word-break: break-all;
+	}
+
+	.flowdrop-config-sidebar__copy-btn {
+		background: white;
+		border: 1px solid #d1d5db;
+		border-radius: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		cursor: pointer;
+		font-size: 1rem;
+		transition: all 0.2s;
+		flex-shrink: 0;
+	}
+
+	.flowdrop-config-sidebar__copy-btn:hover {
+		background-color: #f9fafb;
+		border-color: #9ca3af;
+		transform: scale(1.05);
+	}
+
+	.flowdrop-config-sidebar__copy-btn:active {
+		transform: scale(0.95);
 	}
 
 	.flowdrop-config-sidebar__detail-description {
