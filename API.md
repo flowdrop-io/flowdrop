@@ -88,7 +88,7 @@ GET /api/flowdrop/nodes?category=ai&search=openai&limit=10
 				"properties": {
 					"model": {
 						"type": "string",
-						"default": "gpt-3.5-turbo",
+						"default": "gpt-4o-mini",
 						"title": "Model"
 					},
 					"temperature": {
