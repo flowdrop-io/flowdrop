@@ -34,11 +34,7 @@
 		ConfigurationHelper
 	} from '../helpers/workflowEditorHelper.js';
 	import type { NodeExecutionInfo } from '../types/index.js';
-	import {
-		areNodeArraysEqual,
-		areEdgeArraysEqual,
-		throttle
-	} from '../utils/performanceUtils.js';
+	import { areNodeArraysEqual, areEdgeArraysEqual, throttle } from '../utils/performanceUtils.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -115,7 +111,7 @@
 				previousPipelineId = props.pipelineId;
 
 				// Use requestIdleCallback for non-critical updates (falls back to setTimeout)
-				if (typeof requestIdleCallback !== "undefined") {
+				if (typeof requestIdleCallback !== 'undefined') {
 					loadExecutionInfoTimeout = requestIdleCallback(
 						() => {
 							loadNodeExecutionInfo();
@@ -167,7 +163,7 @@
 
 			// Default execution info for nodes without data
 			const defaultExecutionInfo: NodeExecutionInfo = {
-				status: "idle" as const,
+				status: 'idle' as const,
 				executionCount: 0,
 				isExecuting: false
 			};
@@ -191,8 +187,8 @@
 			executionInfoAbortController = null;
 		} catch (error) {
 			// Only log if it's not an abort error
-			if (error instanceof Error && error.name !== "AbortError") {
-				console.error("Failed to load node execution info:", error);
+			if (error instanceof Error && error.name !== 'AbortError') {
+				console.error('Failed to load node execution info:', error);
 			}
 		}
 	}

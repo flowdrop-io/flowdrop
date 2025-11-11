@@ -228,6 +228,8 @@
 			// Pipeline monitoring pages
 			if (pathname.includes('/pipelines/') && pathname.split('/').length > 4) {
 				// Individual pipeline status page
+				// Extract workflowId from pathname
+				const workflowId = pathname.split('/')[2];
 				return [
 					{
 						label: 'Refresh Status',

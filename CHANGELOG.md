@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - **Fix Global CSS**: Avoid output base styles for html and body tag.
-  
+
 ## [0.0.11] - 2025-11-09
 
 ### Changed
@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Performance
 
 - **WorkflowEditor Performance Optimization**: Performance optimizations implemented to fix sluggish behavior during node drag.
-
 
 ## [0.0.10] - 2025-11-09
 
@@ -94,23 +93,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Stores and State Management
+
 - **Workflow Store**: Exposed `workflowStore` and `workflowActions` for direct workflow state manipulation
 - **Derived Stores**: Added exports for `workflowId`, `workflowName`, `workflowNodes`, `workflowEdges`, `workflowMetadata`
 - **Change Tracking**: Exposed `workflowChanged`, `workflowValidation`, `workflowMetadataChanged` for reactive updates
 
 #### Toast Notification Service
+
 - **Core Functions**: `showSuccess`, `showError`, `showWarning`, `showInfo`, `showLoading`
 - **Management**: `dismissToast`, `dismissAllToasts`, `showPromise`, `showConfirmation`
 - **Domain Helpers**: `apiToasts`, `workflowToasts`, `pipelineToasts` with pre-configured messages
 - **Types**: `ToastType` and `ToastOptions` for type-safe usage
 
 #### Services
+
 - **Node Execution Service**: Exposed `NodeExecutionService` class and `nodeExecutionService` singleton for tracking node execution states
 - **Workflow Storage**: Added `saveWorkflow`, `updateWorkflow`, `getWorkflow`, `getWorkflows`, `deleteWorkflow`, `getWorkflowCount`, `initializeSampleWorkflows`
 - **Global Actions**: Exposed `globalSaveWorkflow`, `globalExportWorkflow`, `initializeGlobalSave` for app-wide workflow operations
 - **Port Configuration**: Added `fetchPortConfig` and `validatePortConfig` for dynamic port configuration
 
 #### Utilities
+
 - **Node Status**: Exported status display utilities including `getStatusColor`, `getStatusIcon`, `getStatusLabel`, `getStatusBackgroundColor`, `getStatusTextColor`
 - **Execution Tracking**: Added `createDefaultExecutionInfo`, `updateExecutionStart`, `updateExecutionComplete`, `updateExecutionFailed`, `resetExecutionInfo`
 - **Formatting**: Exposed `formatExecutionDuration` and `formatLastExecuted` for user-friendly time displays
@@ -118,12 +121,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Types**: Exported `NodeStatusConfig` type
 
 #### Workflow Editor Helpers
+
 - **EdgeStylingHelper**: For applying custom edge styling and connection rules
 - **NodeOperationsHelper**: For node loading, creation, and execution info management
 - **WorkflowOperationsHelper**: For workflow CRUD operations and metadata management
 - **ConfigurationHelper**: For API endpoint configuration
 
 #### Components (16 new exports)
+
 - **Node Types**: `UniversalNode`, `GatewayNode`, `SquareNode`
 - **UI Elements**: `LoadingSpinner`, `StatusIcon`, `StatusLabel`, `NodeStatusOverlay`
 - **Display**: `MarkdownDisplay`
@@ -131,6 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Layout**: `ConnectionLine`, `LogsSidebar`, `PipelineStatus`, `Navbar`, `Logo`
 
 #### Configuration
+
 - **API Config**: Exposed `defaultApiConfig`, `getEndpointUrl`, and `ApiConfig` type
 - **Port Config**: Added `DEFAULT_PORT_CONFIG` for default port configuration
 

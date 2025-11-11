@@ -29,10 +29,12 @@
 		) => void;
 	}
 
-	let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady }: Props = $props();
+	let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady }: Props =
+		$props();
 
 	// Initialize API client if not provided
-	const client = apiClient || new FlowDropApiClient(endpointConfig?.baseUrl || baseUrl || "/api/flowdrop");
+	const client =
+		apiClient || new FlowDropApiClient(endpointConfig?.baseUrl || baseUrl || '/api/flowdrop');
 
 	// Pipeline status and job data
 	let pipelineStatus = $state<string>('unknown');
