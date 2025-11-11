@@ -275,6 +275,23 @@
 	}
 
 	/**
+	 * Handle node deletion - automatically remove connected edges
+	 */
+	function handleNodesDelete(event: { detail: { nodes: WorkflowNodeType[] } }): void {
+		const deletedNodeIds = new Set(event.detail.nodes.map((node) => node.id));
+
+		// Filter out edges connected to deleted nodes
+		flowEdges = flowEdges.filter(
+			(edge) => !deletedNodeIds.has(edge.source) && !deletedNodeIds.has(edge.target)
+		);
+
+		// Update currentWorkflow
+		if (currentWorkflow) {
+			updateCurrentWorkflowFromSvelteFlow();
+		}
+	}
+
+	/**
 	 * Update existing edges with our custom styling rules
 	 * This ensures all edges (including existing ones) follow our rules
 	 */
@@ -367,6 +384,7 @@
 					{nodeTypes}
 					{defaultEdgeOptions}
 					onconnect={handleConnect}
+					onnodesdelete={handleNodesDelete}
 					minZoom={0.2}
 					maxZoom={3}
 					clickConnect={true}
