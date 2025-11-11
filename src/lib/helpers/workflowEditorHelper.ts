@@ -339,12 +339,12 @@ export class WorkflowOperationsHelper {
 					createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
 					updatedAt: new Date().toISOString()
 				}
-		};
+			};
 
-		const savedWorkflow = await workflowApi.saveWorkflow(workflowToSave);
+			const savedWorkflow = await workflowApi.saveWorkflow(workflowToSave);
 
-		// Update the workflow ID if it changed (new workflow)
-		if (savedWorkflow.id && savedWorkflow.id !== workflowToSave.id) {
+			// Update the workflow ID if it changed (new workflow)
+			if (savedWorkflow.id && savedWorkflow.id !== workflowToSave.id) {
 				workflowActions.batchUpdate({
 					nodes: workflowToSave.nodes,
 					edges: workflowToSave.edges,

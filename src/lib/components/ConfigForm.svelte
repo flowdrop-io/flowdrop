@@ -5,96 +5,89 @@
 -->
 
 <script lang="ts">
-	import type { ConfigSchema, WorkflowNode } from "$lib/types/index.js"
+	import type { ConfigSchema, WorkflowNode } from '$lib/types/index.js';
 
 	interface Props {
-		node: WorkflowNode
-		onSave: (config: Record<string, unknown>) => void
-		onCancel: () => void
+		node: WorkflowNode;
+		onSave: (config: Record<string, unknown>) => void;
+		onCancel: () => void;
 	}
 
-	let { node, onSave, onCancel }: Props = $props()
+	let { node, onSave, onCancel }: Props = $props();
 
 	/**
 	 * Get the configuration schema from node metadata
 	 */
-	const configSchema = $derived(
-		node.data.metadata?.configSchema as ConfigSchema | undefined
-	)
+	const configSchema = $derived(node.data.metadata?.configSchema as ConfigSchema | undefined);
 
 	/**
 	 * Get the current node configuration
 	 */
-	const nodeConfig = $derived(node.data.config || {})
+	const nodeConfig = $derived(node.data.config || {});
 
 	/**
 	 * Create reactive configuration values using $state
 	 * This fixes the Svelte 5 reactivity warnings
 	 */
-	let configValues = $state<Record<string, unknown>>({})
+	let configValues = $state<Record<string, unknown>>({});
 
 	/**
 	 * Initialize config values when node or schema changes
 	 */
 	$effect(() => {
 		if (configSchema?.properties) {
-			const mergedConfig: Record<string, unknown> = {}
+			const mergedConfig: Record<string, unknown> = {};
 			Object.entries(configSchema.properties).forEach(([key, field]) => {
-				const fieldConfig = field as any
+				const fieldConfig = field as any;
 				// Use existing value if available, otherwise use default
-				mergedConfig[key] =
-					nodeConfig[key] !== undefined ? nodeConfig[key] : fieldConfig.default
-			})
-			configValues = mergedConfig
+				mergedConfig[key] = nodeConfig[key] !== undefined ? nodeConfig[key] : fieldConfig.default;
+			});
+			configValues = mergedConfig;
 		}
-	})
+	});
 
 	/**
 	 * Handle form submission
 	 */
 	function handleSave(): void {
 		// Collect all form values including hidden fields
-		const form = document.querySelector(".flowdrop-config-sidebar__form")
-		const updatedConfig: Record<string, unknown> = { ...configValues }
+		const form = document.querySelector('.flowdrop-config-sidebar__form');
+		const updatedConfig: Record<string, unknown> = { ...configValues };
 
 		if (form) {
-			const inputs = form.querySelectorAll("input, select, textarea")
+			const inputs = form.querySelectorAll('input, select, textarea');
 			inputs.forEach((input: any) => {
 				if (input.id) {
-					if (input.type === "checkbox") {
-						updatedConfig[input.id] = input.checked
-					} else if (input.type === "number") {
-						updatedConfig[input.id] = input.value ? Number(input.value) : input.value
-					} else if (input.type === "hidden") {
+					if (input.type === 'checkbox') {
+						updatedConfig[input.id] = input.checked;
+					} else if (input.type === 'number') {
+						updatedConfig[input.id] = input.value ? Number(input.value) : input.value;
+					} else if (input.type === 'hidden') {
 						// Parse hidden field values that might be JSON
 						try {
-							const parsed = JSON.parse(input.value)
-							updatedConfig[input.id] = parsed
+							const parsed = JSON.parse(input.value);
+							updatedConfig[input.id] = parsed;
 						} catch {
 							// If not JSON, use raw value
-							updatedConfig[input.id] = input.value
+							updatedConfig[input.id] = input.value;
 						}
 					} else {
-						updatedConfig[input.id] = input.value
+						updatedConfig[input.id] = input.value;
 					}
 				}
-			})
+			});
 		}
 
 		// Preserve hidden field values from original config if not collected from form
 		if (node.data.config && configSchema?.properties) {
 			Object.entries(configSchema.properties).forEach(([key, property]: [string, any]) => {
-				if (
-					property.format === "hidden" &&
-					!(key in updatedConfig) &&
-					key in node.data.config
-				) {
-					updatedConfig[key] = node.data.config[key]
+				if (property.format === 'hidden' && !(key in updatedConfig) && key in node.data.config) {
+					updatedConfig[key] = node.data.config[key];
 				}
-			})
+			});
 		}
 
-		onSave(updatedConfig)
+		onSave(updatedConfig);
 	}
 </script>
 
@@ -103,7 +96,7 @@
 		{#if configSchema.properties}
 			{#each Object.entries(configSchema.properties) as [key, field] (key)}
 				{@const fieldConfig = field as any}
-				{#if fieldConfig.format !== "hidden"}
+				{#if fieldConfig.format !== 'hidden'}
 					<div class="flowdrop-config-sidebar__field">
 						<label class="flowdrop-config-sidebar__field-label" for={key}>
 							{fieldConfig.title || fieldConfig.description || key}
@@ -120,18 +113,16 @@
 											checked={Array.isArray(configValues[key]) &&
 												configValues[key].includes(String(option))}
 											onchange={(e) => {
-												const checked = e.currentTarget.checked
+												const checked = e.currentTarget.checked;
 												const currentValues = Array.isArray(configValues[key])
 													? [...(configValues[key] as unknown[])]
-													: []
+													: [];
 												if (checked) {
 													if (!currentValues.includes(String(option))) {
-														configValues[key] = [...currentValues, String(option)]
+														configValues[key] = [...currentValues, String(option)];
 													}
 												} else {
-													configValues[key] = currentValues.filter(
-														(v) => v !== String(option)
-													)
+													configValues[key] = currentValues.filter((v) => v !== String(option));
 												}
 											}}
 										/>
@@ -152,42 +143,42 @@
 									<option value={String(option)}>{String(option)}</option>
 								{/each}
 							</select>
-						{:else if fieldConfig.type === "string" && fieldConfig.format === "multiline"}
+						{:else if fieldConfig.type === 'string' && fieldConfig.format === 'multiline'}
 							<!-- Textarea for multiline strings -->
 							<textarea
 								id={key}
 								class="flowdrop-config-sidebar__textarea"
 								bind:value={configValues[key]}
-								placeholder={String(fieldConfig.placeholder || "")}
+								placeholder={String(fieldConfig.placeholder || '')}
 								rows="4"
 							></textarea>
-						{:else if fieldConfig.type === "string"}
+						{:else if fieldConfig.type === 'string'}
 							<input
 								id={key}
 								type="text"
 								class="flowdrop-config-sidebar__input"
 								bind:value={configValues[key]}
-								placeholder={String(fieldConfig.placeholder || "")}
+								placeholder={String(fieldConfig.placeholder || '')}
 							/>
-						{:else if fieldConfig.type === "number"}
+						{:else if fieldConfig.type === 'number'}
 							<input
 								id={key}
 								type="number"
 								class="flowdrop-config-sidebar__input"
 								bind:value={configValues[key]}
-								placeholder={String(fieldConfig.placeholder || "")}
+								placeholder={String(fieldConfig.placeholder || '')}
 							/>
-						{:else if fieldConfig.type === "boolean"}
+						{:else if fieldConfig.type === 'boolean'}
 							<input
 								id={key}
 								type="checkbox"
 								class="flowdrop-config-sidebar__checkbox"
 								checked={Boolean(configValues[key] || fieldConfig.default || false)}
 								onchange={(e) => {
-									configValues[key] = e.currentTarget.checked
+									configValues[key] = e.currentTarget.checked;
 								}}
 							/>
-						{:else if fieldConfig.type === "select" || fieldConfig.options}
+						{:else if fieldConfig.type === 'select' || fieldConfig.options}
 							<select
 								id={key}
 								class="flowdrop-config-sidebar__select"
@@ -196,9 +187,7 @@
 								{#if fieldConfig.options}
 									{#each fieldConfig.options as option (String(option.value))}
 										{@const optionConfig = option as any}
-										<option value={String(optionConfig.value)}
-											>{String(optionConfig.label)}</option
-										>
+										<option value={String(optionConfig.value)}>{String(optionConfig.label)}</option>
 									{/each}
 								{/if}
 							</select>
@@ -209,7 +198,7 @@
 								type="text"
 								class="flowdrop-config-sidebar__input"
 								bind:value={configValues[key]}
-								placeholder={String(fieldConfig.placeholder || "")}
+								placeholder={String(fieldConfig.placeholder || '')}
 							/>
 						{/if}
 						{#if fieldConfig.description}

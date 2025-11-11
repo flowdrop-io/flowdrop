@@ -83,55 +83,55 @@
 			baseUrl: apiConfig.baseUrl,
 			endpoints: {
 				nodes: {
-					list: "/nodes",
-					get: "/nodes/{id}",
-					byCategory: "/nodes/category/{category}",
-					metadata: "/nodes/{id}/metadata"
+					list: '/nodes',
+					get: '/nodes/{id}',
+					byCategory: '/nodes/category/{category}',
+					metadata: '/nodes/{id}/metadata'
 				},
-				portConfig: "/port-config",
+				portConfig: '/port-config',
 				workflows: {
-					list: "/workflows",
-					get: "/workflows/{id}",
-					create: "/workflows",
-					update: "/workflows/{id}",
-					delete: "/workflows/{id}",
-					validate: "/workflows/{id}/validate",
-					export: "/workflows/{id}/export",
-					import: "/workflows/import"
+					list: '/workflows',
+					get: '/workflows/{id}',
+					create: '/workflows',
+					update: '/workflows/{id}',
+					delete: '/workflows/{id}',
+					validate: '/workflows/{id}/validate',
+					export: '/workflows/{id}/export',
+					import: '/workflows/import'
 				},
 				executions: {
-					execute: "/executions/execute",
-					status: "/executions/{id}/status",
-					cancel: "/executions/{id}/cancel",
-					logs: "/executions/{id}/logs",
-					history: "/executions/history"
+					execute: '/executions/execute',
+					status: '/executions/{id}/status',
+					cancel: '/executions/{id}/cancel',
+					logs: '/executions/{id}/logs',
+					history: '/executions/history'
 				},
 				templates: {
-					list: "/templates",
-					get: "/templates/{id}",
-					create: "/templates",
-					update: "/templates/{id}",
-					delete: "/templates/{id}"
+					list: '/templates',
+					get: '/templates/{id}',
+					create: '/templates',
+					update: '/templates/{id}',
+					delete: '/templates/{id}'
 				},
 				users: {
-					profile: "/users/profile",
-					preferences: "/users/preferences"
+					profile: '/users/profile',
+					preferences: '/users/preferences'
 				},
 				system: {
-					health: "/system/health",
-					config: "/system/config",
-					version: "/system/version"
+					health: '/system/health',
+					config: '/system/config',
+					version: '/system/version'
 				},
 				pipelines: {
-					list: "/workflow/{workflow_id}/pipelines",
-					get: "/pipeline/{id}",
-					create: "/pipeline",
-					update: "/pipeline/{id}",
-					delete: "/pipeline/{id}",
-					status: "/pipeline/{id}/status",
-					logs: "/pipeline/{id}/logs",
-					execute: "/pipeline/{id}/execute",
-					stop: "/pipeline/{id}/stop"
+					list: '/workflow/{workflow_id}/pipelines',
+					get: '/pipeline/{id}',
+					create: '/pipeline',
+					update: '/pipeline/{id}',
+					delete: '/pipeline/{id}',
+					status: '/pipeline/{id}/status',
+					logs: '/pipeline/{id}/logs',
+					execute: '/pipeline/{id}/execute',
+					stop: '/pipeline/{id}/stop'
 				}
 			}
 		});
