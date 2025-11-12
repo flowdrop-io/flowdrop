@@ -22,6 +22,7 @@
 		WorkflowEdge
 	} from '../types/index.js';
 	import CanvasBanner from './CanvasBanner.svelte';
+	import FlowDropZone from './FlowDropZone.svelte';
 	import { tick } from 'svelte';
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
@@ -329,6 +330,30 @@
 	function checkWorkflowCycles(): boolean {
 		return WorkflowOperationsHelper.checkWorkflowCycles(flowNodes, flowEdges);
 	}
+
+	/**
+	 * Handle drop event and add new node to canvas
+	 * This will be called from the inner DropZone component
+	 */
+	async function handleNodeDrop(
+		nodeTypeData: string,
+		position: { x: number; y: number }
+	): Promise<void> {
+		// Create the node using the helper, passing existing nodes for ID generation
+		const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
+
+		if (newNode && currentWorkflow) {
+			currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
+
+			// Update the global store
+			updateGlobalStore();
+
+			// Wait for DOM update to ensure SvelteFlow updates
+			await tick();
+		} else if (!currentWorkflow) {
+			console.warn('No currentWorkflow available for new node');
+		}
+	}
 </script>
 
 <SvelteFlowProvider>
@@ -336,80 +361,41 @@
 		<!-- Main Editor Area -->
 		<div class="flowdrop-workflow-editor__main">
 			<!-- Flow Canvas -->
-			<div
-				class="flowdrop-canvas"
-				role="application"
-				aria-label="Workflow canvas"
-				ondragover={(e: DragEvent) => {
-					e.preventDefault();
-					e.dataTransfer!.dropEffect = 'copy';
-				}}
-				ondrop={async (e: DragEvent) => {
-					e.preventDefault();
-
-					// Get the data from the drag event
-					const nodeTypeData = e.dataTransfer?.getData('application/json');
-					if (nodeTypeData) {
-						// Get the position relative to the canvas
-						const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-						const position = {
-							x: e.clientX - rect.left,
-							y: e.clientY - rect.top
-						};
-
-						// Create the node using the helper, passing existing nodes for ID generation
-						const newNode = NodeOperationsHelper.createNodeFromDrop(
-							nodeTypeData,
-							position,
-							flowNodes
-						);
-
-						if (newNode && currentWorkflow) {
-							currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
-
-							// Update the global store
-							updateGlobalStore();
-
-							// Wait for DOM update to ensure SvelteFlow updates
-							await tick();
-						} else if (!currentWorkflow) {
-							console.warn('No currentWorkflow available for new node');
-						}
-					}
-				}}
-			>
-				<SvelteFlow
-					bind:nodes={flowNodes}
-					bind:edges={flowEdges}
-					{nodeTypes}
-					{defaultEdgeOptions}
-					onconnect={handleConnect}
-					ondelete={handleNodesDelete}
-					minZoom={0.2}
-					maxZoom={3}
-					clickConnect={true}
-					elevateEdgesOnSelect={true}
-					connectionLineType={ConnectionLineType.Bezier}
-					connectionLineComponent={ConnectionLine}
-					snapGrid={[10, 10]}
-					fitView
-				>
-					<Controls />
-					<Background
-						gap={10}
-						bgColor="var(--flowdrop-background-color)"
-						variant={BackgroundVariant.Dots}
-					/>
-					<MiniMap />
-				</SvelteFlow>
-				<!-- Drop Zone Indicator -->
-				{#if flowNodes.length === 0}
-					<CanvasBanner
-						title="Drag components here to start building"
-						description="Use the sidebar to add components to your workflow"
-						iconName="mdi:graph"
-					/>
-				{/if}
+			<div class="flowdrop-canvas">
+				<FlowDropZone ondrop={handleNodeDrop}>
+					<SvelteFlow
+						bind:nodes={flowNodes}
+						bind:edges={flowEdges}
+						{nodeTypes}
+						{defaultEdgeOptions}
+						onconnect={handleConnect}
+						ondelete={handleNodesDelete}
+						minZoom={0.2}
+						maxZoom={3}
+						clickConnect={true}
+						elevateEdgesOnSelect={true}
+						connectionLineType={ConnectionLineType.Bezier}
+						connectionLineComponent={ConnectionLine}
+						snapGrid={[10, 10]}
+						fitView
+					>
+						<Controls />
+						<Background
+							gap={10}
+							bgColor="var(--flowdrop-background-color)"
+							variant={BackgroundVariant.Dots}
+						/>
+						<MiniMap />
+					</SvelteFlow>
+					<!-- Drop Zone Indicator -->
+					{#if flowNodes.length === 0}
+						<CanvasBanner
+							title="Drag components here to start building"
+							description="Use the sidebar to add components to your workflow"
+							iconName="mdi:graph"
+						/>
+					{/if}
+				</FlowDropZone>
 			</div>
 
 			<!-- Status Bar -->
