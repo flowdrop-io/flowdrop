@@ -277,8 +277,8 @@
 	/**
 	 * Handle node deletion - automatically remove connected edges
 	 */
-	function handleNodesDelete(event: { detail: { nodes: WorkflowNodeType[] } }): void {
-		const deletedNodeIds = new Set(event.detail.nodes.map((node) => node.id));
+	function handleNodesDelete(params: { nodes: WorkflowNodeType[]; edges: WorkflowEdge[] }): void {
+		const deletedNodeIds = new Set(params.nodes.map((node) => node.id));
 
 		// Filter out edges connected to deleted nodes
 		flowEdges = flowEdges.filter(
@@ -384,7 +384,7 @@
 					{nodeTypes}
 					{defaultEdgeOptions}
 					onconnect={handleConnect}
-					onnodesdelete={handleNodesDelete}
+					ondelete={handleNodesDelete}
 					minZoom={0.2}
 					maxZoom={3}
 					clickConnect={true}
