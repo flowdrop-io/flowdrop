@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.14] - 2025-11-12
+
+### Fixed
+
+- **SvelteFlow Event Handler**: Updated node deletion handler from deprecated `onnodesdelete` to `ondelete` for proper SvelteFlow compatibility
+- **Drag and Drop Positioning**: Fixed node drop positioning to correctly account for zoom and pan transformations using `screenToFlowPosition` API
+
+### Added
+
+- **FlowDropZone Component**: New component to handle drag and drop events with proper coordinate transformation within SvelteFlow context
+
 ## [0.0.13] - 2025-11-11
 
 ### Changed
