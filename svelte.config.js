@@ -13,14 +13,17 @@ const config = {
 	},
 
 	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
+		// adapter-auto detects the environment and uses the appropriate adapter
+		// For Node.js environments (Docker, PM2), it will use adapter-node
 		adapter: adapter(),
 
 		// Ensure API routes are server-side only
 		csrf: {
-			trustedOrigins: []
+			// Configure trusted origins based on your deployment
+			// In production, set this via environment variable
+			trustedOrigins: process.env.TRUSTED_ORIGINS
+				? process.env.TRUSTED_ORIGINS.split(',')
+				: []
 		}
 	}
 };

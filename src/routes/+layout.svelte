@@ -14,16 +14,21 @@
 		globalSaveWorkflow,
 		globalExportWorkflow
 	} from '$lib/services/globalSave.js';
-	import { getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
-	import { getDevApiConfig, getDevConfig } from './devConfig';
+	import { getEndpointUrl, type ApiConfig, defaultApiConfig } from '$lib/config/apiConfig';
+	import { getDevApiConfig, getDevConfig, getDevConfigSync } from './devConfig';
 	import { setEndpointConfig } from '$lib/services/api.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import { Toaster } from 'svelte-5-french-toast';
+	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
 
-	let { children } = $props();
+	let { data, children } = $props();
 
-	// API configuration from development config (uses .env if available)
-	let apiConfig = $state<ApiConfig>(getDevApiConfig());
+	// API configuration from server-side loaded runtime config
+	// This is loaded on the server before any components render
+	let apiConfig = $state<ApiConfig>({
+		...defaultApiConfig,
+		baseUrl: data.runtimeConfig.apiBaseUrl
+	});
 
 	// Workflow name for breadcrumbs
 	let workflowName = $state<string | null>(null);
@@ -48,15 +53,16 @@
 
 	// Initialize global save functions on mount
 	onMount(() => {
-		// Initialize API service with development config BEFORE global save
-		// This ensures the save action respects .env variables
-		const devConfig = getDevConfig();
-		const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
+		// Initialize API service with runtime config from server
+		// Config is already loaded via +layout.server.ts
+		const runtimeConfig = data.runtimeConfig;
+		
+		const endpointConfig = createEndpointConfig(runtimeConfig.apiBaseUrl, {
 			auth: {
-				type: devConfig.authType,
-				token: devConfig.authToken
+				type: runtimeConfig.authType,
+				token: runtimeConfig.authToken
 			},
-			timeout: devConfig.timeout
+			timeout: runtimeConfig.timeout
 		});
 		setEndpointConfig(endpointConfig);
 

@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.15] - 2025-11-19
+
+### Added
+
+- **Runtime Configuration**: Application now supports runtime environment variables, enabling "build once, deploy anywhere"
+  - Set `FLOWDROP_API_BASE_URL` (and other `FLOWDROP_*` variables) at runtime instead of build time
+  - New `/api/config` endpoint serves configuration from server
+  - New exports: `fetchRuntimeConfig()`, `getRuntimeConfig()`, `initRuntimeConfig()`, `RuntimeConfig` type
+- **Docker Support**: Production-ready Dockerfile and docker-compose.yml included
+  - Multi-stage build with optimized image size
+  - Health checks and non-root user security
+  - See `DOCKER.md` for quick start
+- **Documentation**: Added deployment guides (`DEPLOYMENT.md`, `DOCKER.md`, `QUICK_START.md`, `MIGRATION_GUIDE.md`)
+
+### Changed
+
+- **Environment Variables**: Production now uses `FLOWDROP_*` prefix instead of `VITE_*`
+  - `FLOWDROP_API_BASE_URL`: Your backend API URL
+  - `FLOWDROP_THEME`: UI theme (light/dark/auto)
+  - `FLOWDROP_TIMEOUT`: Request timeout in milliseconds
+  - `FLOWDROP_AUTH_TYPE`: Authentication type
+  - `FLOWDROP_AUTH_TOKEN`: Authentication token
+  - Development mode still supports `VITE_*` variables for backward compatibility
+
+### Fixed
+
+- **Critical**: Fixed race condition where API requests used wrong URL (localhost instead of configured URL)
+  - Configuration now loads on server before page render
+  - All API requests now use correct configured URL from first request
+
+### Breaking Changes
+
+- If using `getDevConfig()` or `getDevApiConfig()` directly, these are now async functions
+- Update environment variables from `VITE_*` to `FLOWDROP_*` for production deployments
+- See `MIGRATION_GUIDE.md` for detailed migration steps
+
+### Usage
+
+**Docker (Recommended):**
+```bash
+docker run -p 3000:3000 \
+  -e FLOWDROP_API_BASE_URL=https://your-api.com/api/flowdrop \
+  flowdrop-ui:latest
+```
+
+**Environment Variables:**
+```bash
+export FLOWDROP_API_BASE_URL=https://your-api.com/api/flowdrop
+npm run build
+node build
+```
+
 ## [0.0.14] - 2025-11-12
 
 ### Fixed
@@ -275,7 +327,15 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.15...HEAD
+[0.0.15]: https://github.com/d34dman/flowdrop/compare/v0.0.14...v0.0.15
+[0.0.14]: https://github.com/d34dman/flowdrop/compare/v0.0.13...v0.0.14
+[0.0.13]: https://github.com/d34dman/flowdrop/compare/v0.0.12...v0.0.13
+[0.0.12]: https://github.com/d34dman/flowdrop/compare/v0.0.11...v0.0.12
+[0.0.11]: https://github.com/d34dman/flowdrop/compare/v0.0.10...v0.0.11
+[0.0.10]: https://github.com/d34dman/flowdrop/compare/v0.0.9...v0.0.10
+[0.0.9]: https://github.com/d34dman/flowdrop/compare/v0.0.8...v0.0.9
+[0.0.8]: https://github.com/d34dman/flowdrop/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/d34dman/flowdrop/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/d34dman/flowdrop/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/d34dman/flowdrop/compare/v0.0.4...v0.0.5

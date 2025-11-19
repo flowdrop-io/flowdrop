@@ -7,15 +7,16 @@
 	import { onMount } from 'svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
-	import { getDevConfig } from '../devConfig';
+	import { getDevConfig, getDevConfigSync } from '../devConfig';
 	import type { NodeMetadata, Workflow } from '$lib/types/index.js';
 
 	// Initialize API service with development config
-	const devConfig = getDevConfig();
-	const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
+	// Initialize with sync config, will be updated on mount
+	const devConfig = getDevConfigSync();
+	let endpointConfig = $state(createEndpointConfig(devConfig.apiBaseUrl, {
 		auth: { type: devConfig.authType, token: devConfig.authToken },
 		timeout: devConfig.timeout
-	});
+	}));
 	setEndpointConfig(endpointConfig);
 
 	let nodes = $state<NodeMetadata[]>([]);

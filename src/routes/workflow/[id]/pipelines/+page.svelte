@@ -11,13 +11,17 @@
 	import Icon from '@iconify/svelte';
 	import StatusIcon from '$lib/components/StatusIcon.svelte';
 	import StatusLabel from '$lib/components/StatusLabel.svelte';
-	import { getEndpointUrl } from '$lib/config/apiConfig';
-	import { getDevApiConfig } from '../../../devConfig';
+	import { getEndpointUrl, defaultApiConfig, type ApiConfig } from '$lib/config/apiConfig';
 	import { apiToasts, pipelineToasts } from '$lib/services/toastService.js';
 	import type { NodeExecutionStatus } from '$lib/types/index.js';
 
-	// Get API configuration from development config (uses .env if available)
-	const apiConfig = getDevApiConfig();
+	let { data } = $props();
+
+	// Get API configuration from server-loaded runtime config
+	let apiConfig = $state<ApiConfig>({
+		...defaultApiConfig,
+		baseUrl: data.runtimeConfig.apiBaseUrl
+	});
 
 	/**
 	 * Pipeline display type
