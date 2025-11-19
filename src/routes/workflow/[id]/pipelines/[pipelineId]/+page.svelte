@@ -8,21 +8,24 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import PipelineStatus from '$lib/components/PipelineStatus.svelte';
-	import { getEndpointUrl } from '$lib/config/apiConfig';
-	import { getDevApiConfig } from '../../../../devConfig';
+	import { getEndpointUrl, defaultApiConfig, type ApiConfig } from '$lib/config/apiConfig';
 	import { setEndpointConfig } from '$lib/services/api.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { Workflow } from '$lib/types/index.js';
 	import Icon from '@iconify/svelte';
 
-	// Get API configuration from development config (uses .env if available)
-	const devConfig = getDevApiConfig();
-	const apiConfig = devConfig;
+	let { data } = $props();
 
-	// Initialize API service with development config
-	const endpointConfig = createEndpointConfig(devConfig.baseUrl, {
-		auth: { type: 'none' },
-		timeout: 30000
+	// Get API configuration from server-loaded runtime config
+	let apiConfig = $state<ApiConfig>({
+		...defaultApiConfig,
+		baseUrl: data.runtimeConfig.apiBaseUrl
+	});
+
+	// Initialize API service with runtime config
+	const endpointConfig = createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
+		auth: { type: data.runtimeConfig.authType, token: data.runtimeConfig.authToken },
+		timeout: data.runtimeConfig.timeout
 	});
 	setEndpointConfig(endpointConfig);
 
@@ -31,7 +34,7 @@
 
 	// Data state
 	let workflow = $state<Workflow | null>(null);
-	let pipeline = $state<unknown>(null);
+	let pipeline = $state<{ id: string; name: string; [key: string]: unknown } | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 

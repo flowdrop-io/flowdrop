@@ -7,10 +7,12 @@ A visual workflow editor component library built with Svelte 5 and @xyflow/svelt
 - **Visual Workflow Editor**: Drag-and-drop interface for building node-based workflows
 - **Svelte 5 Components**: Modern, reactive components with runes
 - **Configurable API Client**: Flexible endpoint configuration for backend integration
+- **Runtime Configuration**: Build once, deploy anywhere with environment variables
 - **Node System**: Extensible node types with customizable configuration
 - **Real-time Updates**: Live workflow state management with stores
 - **Framework Agnostic**: Can be integrated into any web application
 - **TypeScript Support**: Full type definitions included
+- **Docker Ready**: Production-ready Dockerfile and Docker Compose configuration
 
 ## 📦 Installation
 
@@ -324,6 +326,53 @@ MIT
 - Check the API documentation in `API.md`
 - Create an issue in the project repository
 - Review the examples in `src/lib/examples/`
+
+## 🚢 Deployment
+
+FlowDrop uses **runtime configuration** instead of build-time environment variables, allowing you to build once and deploy to multiple environments.
+
+### Quick Start with Docker
+
+```bash
+# Copy environment file
+cp env.example .env
+
+# Edit .env with your configuration
+# Set FLOWDROP_API_BASE_URL to your backend API URL
+
+# Start with Docker Compose
+docker-compose up -d
+```
+
+### Environment Variables
+
+**Production (Runtime):**
+- `FLOWDROP_API_BASE_URL` - Backend API URL
+- `FLOWDROP_THEME` - UI theme (light/dark/auto)
+- `FLOWDROP_TIMEOUT` - Request timeout in milliseconds
+- `FLOWDROP_AUTH_TYPE` - Authentication type (none/bearer/api_key/custom)
+- `FLOWDROP_AUTH_TOKEN` - Authentication token
+
+**Development (Build-time):**
+- `VITE_API_BASE_URL` - Dev API URL (used only during `npm run dev`)
+
+### Build for Production
+
+```bash
+# Install dependencies
+npm ci
+
+# Build the application
+npm run build
+
+# Set environment variables and start
+export FLOWDROP_API_BASE_URL=http://your-backend:8080/api/flowdrop
+node build
+```
+
+For detailed deployment instructions, see:
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
+- [DOCKER.md](./DOCKER.md) - Docker quick start
 
 ---
 

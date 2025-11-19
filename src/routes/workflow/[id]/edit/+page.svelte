@@ -2,8 +2,7 @@
 	import App from '$lib/components/App.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { getEndpointUrl, type ApiConfig } from '$lib/config/apiConfig';
-	import { getDevApiConfig } from '../../../devConfig';
+	import { getEndpointUrl, type ApiConfig, defaultApiConfig } from '$lib/config/apiConfig';
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 
 	/**
@@ -18,11 +17,16 @@
 		[key: string]: unknown;
 	}
 
+	let { data } = $props();
+
 	// Get workflow ID from URL
 	let workflowId = $derived($page.params.id);
 
-	// API configuration from development config (uses .env if available)
-	let apiConfig = $state<ApiConfig>(getDevApiConfig());
+	// API configuration from server-loaded runtime config
+	let apiConfig = $state<ApiConfig>({
+		...defaultApiConfig,
+		baseUrl: data.runtimeConfig.apiBaseUrl
+	});
 
 	// Workflow data state
 	let workflow = $state<WorkflowEdit | null>(null);

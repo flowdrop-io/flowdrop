@@ -162,6 +162,7 @@ export * from './config/endpoints.js';
 export { defaultApiConfig, getEndpointUrl } from './config/apiConfig.js';
 export type { ApiConfig } from './config/apiConfig.js';
 export { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
+export * from './config/runtimeConfig.js';
 
 // Export adapters
 export * from './adapters/WorkflowAdapter.js';

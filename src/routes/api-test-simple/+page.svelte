@@ -7,11 +7,11 @@
 	import { onMount } from 'svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
-	import { getDevConfig } from '../devConfig';
+	import { getDevConfig, getDevConfigSync } from '../devConfig';
 	import type { NodeMetadata } from '$lib/types/index.js';
 
 	// Initialize API service with development config
-	const devConfig = getDevConfig();
+	const devConfig = getDevConfigSync();
 	const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
 		auth: { type: devConfig.authType, token: devConfig.authToken },
 		timeout: devConfig.timeout
