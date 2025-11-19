@@ -1,5 +1,12 @@
-import adapter from '@sveltejs/adapter-auto';
+// Use adapter-node for production builds (Docker, Node.js)
+// Use adapter-auto for development (will auto-detect)
+import adapterNode from '@sveltejs/adapter-node';
+import adapterAuto from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+
+// Use adapter-node in production/Docker builds, auto for development
+const isProduction = process.env.NODE_ENV === 'production' || process.env.DOCKER_BUILD === 'true';
+const adapter = isProduction ? adapterNode : adapterAuto;
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -13,8 +20,7 @@ const config = {
 	},
 
 	kit: {
-		// adapter-auto detects the environment and uses the appropriate adapter
-		// For Node.js environments (Docker, PM2), it will use adapter-node
+		// Use adapter-node for production/Docker, adapter-auto for development
 		adapter: adapter(),
 
 		// Ensure API routes are server-side only

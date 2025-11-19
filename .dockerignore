@@ -55,9 +55,12 @@ test-results/
 .prettierrc
 .eslintrc
 eslint.config.js
-tsconfig.json
-tsconfig.node.json
-vite.config.*.ts
 vitest-setup-client.ts
 playwright.config.ts
+
+# Note: DO NOT ignore these - they're needed for the build:
+# - tsconfig.json
+# - tsconfig.node.json
+# - vite.config.ts
+# - svelte.config.js
 

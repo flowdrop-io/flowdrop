@@ -13,10 +13,17 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy configuration files
+COPY tsconfig.json tsconfig.node.json svelte.config.js vite.config.ts ./
 
-# Build the application
+# Copy source code
+COPY src ./src
+COPY static ./static
+COPY index.html ./
+
+# Build the application (use NODE_ENV=production to ensure adapter-node is used)
+ENV NODE_ENV=production
+ENV DOCKER_BUILD=true
 RUN npm run build
 
 # Stage 2: Production image
