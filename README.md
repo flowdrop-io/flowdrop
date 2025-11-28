@@ -371,7 +371,6 @@ node build
 ```
 
 For detailed deployment instructions, see:
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
 - [DOCKER.md](./DOCKER.md) - Docker quick start
 
 ---
