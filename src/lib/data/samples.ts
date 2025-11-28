@@ -450,8 +450,8 @@ export const sampleNodes: NodeMetadata[] = [
 					type: 'string',
 					title: 'Model',
 					description: 'OpenAI model to use',
-					default: 'gpt-3.5-turbo',
-					enum: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo']
+					default: 'gpt-4o-mini',
+					enum: ['gpt-4o-mini', 'gpt-5-chat-latest', 'gpt-4.1']
 				},
 				temperature: {
 					type: 'number',
@@ -2128,8 +2128,8 @@ export const sampleNodes: NodeMetadata[] = [
 					type: 'string',
 					title: 'Model',
 					description: 'Chat model to use',
-					default: 'gpt-3.5-turbo',
-					enum: ['gpt-3.5-turbo', 'gpt-4', 'claude-3-sonnet']
+					default: 'gpt-4o-mini',
+					enum: ['gpt-4o-mini', 'gpt-5-chat-latest', 'claude-3-sonnet']
 				},
 				temperature: {
 					type: 'number',
@@ -2629,8 +2629,8 @@ export const sampleNodes: NodeMetadata[] = [
 					type: 'string',
 					title: 'AI Model',
 					description: 'AI model to use for content analysis',
-					default: 'gpt-4',
-					enum: ['gpt-3.5-turbo', 'gpt-4', 'claude-3-sonnet', 'claude-3-haiku']
+					default: 'gpt-5-chat-latest',
+					enum: ['gpt-4o-mini', 'gpt-5-chat-latest', 'claude-3-sonnet', 'claude-3-haiku']
 				},
 				analysisType: {
 					type: 'string',
@@ -2753,8 +2753,8 @@ export const sampleNodes: NodeMetadata[] = [
 					type: 'string',
 					title: 'AI Model',
 					description: 'AI model to use for content editing',
-					default: 'gpt-4',
-					enum: ['gpt-3.5-turbo', 'gpt-4', 'claude-3-sonnet', 'claude-3-haiku']
+					default: 'gpt-5-chat-latest',
+					enum: ['gpt-4o-mini', 'gpt-5-chat-latest', 'claude-3-sonnet', 'claude-3-haiku']
 				},
 				editingStyle: {
 					type: 'string',
@@ -3242,7 +3242,7 @@ export const sampleWorkflow: Workflow = {
 			data: {
 				label: 'OpenAI',
 				config: {
-					model: 'gpt-3.5-turbo',
+					model: 'gpt-4o-mini',
 					temperature: 0.7,
 					maxTokens: 1000
 				},

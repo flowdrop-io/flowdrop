@@ -28,7 +28,7 @@ function createSimpleWorkflow(): StandardWorkflow {
 		'openai',
 		{ x: 300, y: 100 },
 		{
-			model: 'gpt-4',
+			model: 'gpt-4o-mini',
 			temperature: 0.7
 		}
 	);
