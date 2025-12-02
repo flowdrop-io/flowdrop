@@ -5,6 +5,135 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.16] - 2025-12-02
+
+### Added
+
+#### Authentication System
+- **AuthProvider Interface**: Pluggable authentication system for enterprise integration
+  - `AuthProvider` interface for custom authentication implementations
+  - `StaticAuthProvider` for backward-compatible static token authentication
+  - `CallbackAuthProvider` for dynamic token management (enterprise use cases)
+  - `NoAuthProvider` for unauthenticated scenarios
+  - `createAuthProviderFromLegacyConfig()` for seamless migration from `config.auth`
+
+#### Event Handlers
+- **FlowDropEventHandlers**: Comprehensive workflow lifecycle event system
+  - `onWorkflowChange(workflow, changeType)` - Notified on any workflow modification
+  - `onDirtyStateChange(isDirty)` - Track unsaved changes state
+  - `onBeforeSave(workflow)` - Hook before save, return `false` to cancel
+  - `onAfterSave(workflow)` - Hook after successful save
+  - `onSaveError(error, workflow)` - Handle save failures
+  - `onWorkflowLoad(workflow)` - Called when workflow initializes
+  - `onBeforeUnmount(workflow, isDirty)` - Called before FlowDrop destroys
+  - `onApiError(error, operation)` - Global API error handler, return `true` to suppress toast
+
+#### Dirty State Tracking
+- **Workflow Store Enhancements**:
+  - `isDirtyStore` - Svelte store for reactive dirty state
+  - `isDirty()` - Check if there are unsaved changes
+  - `markAsSaved()` - Clear dirty state after custom save operations
+  - `getWorkflowFromStore()` - Get current workflow data
+  - `setOnDirtyStateChange()` / `setOnWorkflowChange()` - Register callbacks
+
+#### Draft Auto-Save
+- **DraftAutoSaveManager**: Automatic draft saving to localStorage
+  - Configurable interval-based saving (default: 30 seconds)
+  - Can be disabled for security-conscious deployments
+  - Change detection to avoid unnecessary saves
+  - `saveDraft()`, `loadDraft()`, `deleteDraft()`, `hasDraft()` utilities
+  - `getDraftStorageKey()` with sensible defaults
+
+#### Features Configuration
+- **FlowDropFeatures**: Configurable feature flags
+  - `autoSaveDraft` (default: `true`) - Enable/disable draft auto-save
+  - `autoSaveDraftInterval` (default: `30000`) - Auto-save interval in ms
+  - `showToasts` (default: `true`) - Enable/disable toast notifications
+
+#### Mount Options
+- **Enhanced mountFlowDropApp**:
+  - `authProvider` - Pass custom authentication provider
+  - `eventHandlers` - Pass workflow lifecycle event handlers
+  - `features` - Configure feature flags
+  - `draftStorageKey` - Custom localStorage key for drafts
+  - `nodes` - Pre-loaded node types (skips API fetch)
+
+#### MountedFlowDropApp Interface
+- Enhanced return type with new methods:
+  - `isDirty()` - Check for unsaved changes
+  - `markAsSaved()` - Clear dirty state
+  - `getWorkflow()` - Get current workflow data
+  - `save()` - Trigger save operation
+  - `export()` - Trigger export operation
+  - `destroy()` - Clean up with `onBeforeUnmount` event
+
+#### API Improvements
+- **EnhancedFlowDropApiClient**:
+  - AuthProvider integration for dynamic authentication
+  - 401 Unauthorized handling with automatic token refresh retry
+  - 403 Forbidden handling with callback support
+  - `ApiError` class with `status`, `operation`, and `errorData` context
+
+### Changed
+
+- **OpenAI Models**: Updated to newer and more cost-effective models (via PR #1)
+
+### Fixed
+
+- **Nodes Prop Bug**: Fixed bug where `nodes` prop passed to `mountFlowDropApp()` was ignored
+  - Now correctly skips API fetch when nodes are provided
+
+### Usage Examples
+
+**Enterprise Integration:**
+```typescript
+import { 
+  mountFlowDropApp, 
+  CallbackAuthProvider 
+} from "@d34dman/flowdrop";
+
+const app = await mountFlowDropApp(container, {
+  workflow: myWorkflow,
+  endpointConfig: createEndpointConfig("/api/projects/123/flowdrop"),
+  
+  authProvider: new CallbackAuthProvider({
+    getToken: () => authService.getAccessToken(),
+    onUnauthorized: () => authService.refreshToken()
+  }),
+  
+  eventHandlers: {
+    onDirtyStateChange: (isDirty) => updateSaveButton(isDirty),
+    onAfterSave: () => showSuccess("Saved!"),
+    onBeforeUnmount: (workflow, isDirty) => {
+      if (isDirty) saveDraft(workflow);
+    }
+  },
+  
+  features: {
+    autoSaveDraft: true,
+    autoSaveDraftInterval: 30000,
+    showToasts: true
+  }
+});
+
+// Check dirty state
+if (app.isDirty()) {
+  await app.save();
+}
+
+// Cleanup
+app.destroy();
+```
+
+**Disable Draft Storage (Security):**
+```typescript
+const app = await mountFlowDropApp(container, {
+  features: {
+    autoSaveDraft: false  // No localStorage drafts
+  }
+});
+```
+
 ## [0.0.15] - 2025-11-19
 
 ### Added
@@ -327,7 +456,8 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.15...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.16...HEAD
+[0.0.16]: https://github.com/d34dman/flowdrop/compare/v0.0.15...v0.0.16
 [0.0.15]: https://github.com/d34dman/flowdrop/compare/v0.0.14...v0.0.15
 [0.0.14]: https://github.com/d34dman/flowdrop/compare/v0.0.13...v0.0.14
 [0.0.13]: https://github.com/d34dman/flowdrop/compare/v0.0.12...v0.0.13

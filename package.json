@@ -2,7 +2,7 @@
 	"name": "@d34dman/flowdrop",
 	"license": "MIT",
 	"private": false,
-	"version": "0.0.15",
+	"version": "0.0.16",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -93,7 +93,6 @@
 		"@eslint/js": "^9.18.0",
 		"@iconify/svelte": "^5.0.0",
 		"@playwright/test": "^1.49.1",
-		"@storybook/addon-a11y": "^9.0.15",
 		"@storybook/addon-docs": "^9.0.15",
 		"@storybook/addon-svelte-csf": "^5.0.4",
 		"@storybook/addon-vitest": "^9.0.15",
