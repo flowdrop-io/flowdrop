@@ -4,7 +4,7 @@
  */
 
 // Import CSS to ensure styles are included in the library build
-import './styles/base.css';
+import "./styles/base.css";
 
 // Export types
 export type {
@@ -24,7 +24,7 @@ export type {
 	ExecutionResult,
 	FlowDropConfig,
 	WorkflowEvents
-} from './types/index.js';
+} from "./types/index.js";
 
 // Export configuration types
 export type {
@@ -38,7 +38,20 @@ export type {
 	WorkflowData,
 	ExecutionResult as EditorExecutionResult,
 	EditorState
-} from './types/config.js';
+} from "./types/config.js";
+
+// Export authentication types and providers
+export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from "./types/auth.js";
+export {
+	StaticAuthProvider,
+	CallbackAuthProvider,
+	NoAuthProvider,
+	createAuthProviderFromLegacyConfig
+} from "./types/auth.js";
+
+// Export event types
+export type { WorkflowChangeType, FlowDropEventHandlers, FlowDropFeatures } from "./types/events.js";
+export { DEFAULT_FEATURES, mergeFeatures } from "./types/events.js";
 
 // Export API clients
 export { FlowDropApiClient } from './api/client.js';
@@ -133,7 +146,18 @@ export {
 	globalExportWorkflow,
 	initializeGlobalSave
 } from './services/globalSave.js';
-export { fetchPortConfig, validatePortConfig } from './services/portConfigApi.js';
+export { fetchPortConfig, validatePortConfig } from "./services/portConfigApi.js";
+
+// Export draft storage service
+export {
+	getDraftStorageKey,
+	saveDraft,
+	loadDraft,
+	deleteDraft,
+	hasDraft,
+	getDraftMetadata,
+	DraftAutoSaveManager
+} from "./services/draftStorage.js";
 
 // Export helpers
 export {
@@ -154,8 +178,15 @@ export {
 	workflowMetadata,
 	workflowChanged,
 	workflowValidation,
-	workflowMetadataChanged
-} from './stores/workflowStore.js';
+	workflowMetadataChanged,
+	// Dirty state tracking
+	isDirtyStore,
+	isDirty,
+	markAsSaved,
+	getWorkflow as getWorkflowFromStore,
+	setOnDirtyStateChange,
+	setOnWorkflowChange
+} from "./stores/workflowStore.js";
 
 // Export endpoint configuration
 export * from './config/endpoints.js';
@@ -176,4 +207,8 @@ export {
 	unmountWorkflowEditor,
 	mountFlowDropApp,
 	unmountFlowDropApp
-} from './svelte-app.js';
+} from "./svelte-app.js";
+export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from "./svelte-app.js";
+
+// Export API error class
+export { ApiError } from "./api/enhanced-client.js";
