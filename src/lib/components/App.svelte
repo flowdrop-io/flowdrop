@@ -17,24 +17,44 @@
 	import { sampleNodes } from '$lib/data/samples.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
-	import { workflowStore, workflowActions, workflowName } from '../stores/workflowStore.js';
+	import type { AuthProvider } from '$lib/types/auth.js';
+	import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
+	import { mergeFeatures } from '$lib/types/events.js';
+	import {
+		workflowStore,
+		workflowActions,
+		workflowName,
+		markAsSaved
+	} from '../stores/workflowStore.js';
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 
-	// Configuration props for runtime customization
+	/**
+	 * Configuration props for runtime customization
+	 */
 	interface Props {
+		/** Initial workflow to load */
 		workflow?: Workflow;
+		/** Pre-loaded node types (if provided, skips API fetch) */
+		nodes?: NodeMetadata[];
+		/** Editor height */
 		height?: string | number;
+		/** Editor width */
 		width?: string | number;
+		/** Show the navbar */
 		showNavbar?: boolean;
-		// New configuration options for pipeline status mode
+		/** Disable the node sidebar */
 		disableSidebar?: boolean;
+		/** Lock the workflow (prevent changes) */
 		lockWorkflow?: boolean;
+		/** Read-only mode */
 		readOnly?: boolean;
+		/** Node execution statuses */
 		nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
-		// Pipeline ID for fetching node execution info from jobs
+		/** Pipeline ID for fetching node execution info */
 		pipelineId?: string;
-		// Navbar customization
+		/** Custom navbar title */
 		navbarTitle?: string;
+		/** Custom navbar actions */
 		navbarActions?: Array<{
 			label: string;
 			href: string;
@@ -42,13 +62,21 @@
 			variant?: 'primary' | 'secondary' | 'outline';
 			onclick?: (event: Event) => void;
 		}>;
-		// API configuration - optional, defaults to '/api/flowdrop'
+		/** API base URL */
 		apiBaseUrl?: string;
+		/** Endpoint configuration */
 		endpointConfig?: EndpointConfig;
+		/** Authentication provider */
+		authProvider?: AuthProvider;
+		/** Event handlers */
+		eventHandlers?: FlowDropEventHandlers;
+		/** Feature configuration */
+		features?: FlowDropFeatures;
 	}
 
 	let {
 		workflow: initialWorkflow,
+		nodes: propNodes,
 		height = '100vh',
 		width = '100%',
 		showNavbar = false,
@@ -60,8 +88,14 @@
 		navbarTitle,
 		navbarActions = [],
 		apiBaseUrl,
-		endpointConfig: propEndpointConfig
+		endpointConfig: propEndpointConfig,
+		authProvider,
+		eventHandlers,
+		features: propFeatures
 	}: Props = $props();
+
+	// Merge features with defaults
+	const features = mergeFeatures(propFeatures);
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
 	let breadcrumbTitle = $derived(() => {
@@ -129,10 +163,19 @@
 
 	/**
 	 * Fetch node types from the server
+	 *
+	 * If propNodes is provided, uses those instead of fetching from API.
+	 * This fixes the bug where propNodes was ignored.
 	 */
 	async function fetchNodeTypes(): Promise<void> {
-		// Show loading toast
-		const loadingToast = apiToasts.loading('Loading node types');
+		// If nodes were provided as props, use them directly (skip API fetch)
+		if (propNodes && propNodes.length > 0) {
+			nodes = propNodes;
+			return;
+		}
+
+		// Show loading toast (if toasts are enabled)
+		const loadingToast = features.showToasts ? apiToasts.loading('Loading node types') : null;
 		try {
 			error = null;
 
@@ -142,13 +185,35 @@
 			error = null;
 
 			// Dismiss loading toast
-			dismissToast(loadingToast);
+			if (loadingToast) {
+				dismissToast(loadingToast);
+			}
 		} catch (err) {
 			// Dismiss loading toast and show error toast
-			dismissToast(loadingToast);
+			if (loadingToast) {
+				dismissToast(loadingToast);
+			}
+
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+			// Notify parent via event handler
+			if (eventHandlers?.onApiError) {
+				const suppressToast = eventHandlers.onApiError(
+					err instanceof Error ? err : new Error(errorMessage),
+					'fetchNodes'
+				);
+				if (suppressToast) {
+					// Parent handled the error, don't show default toast
+					nodes = sampleNodes;
+					return;
+				}
+			}
+
 			// Show error but don't block the UI
-			error = `API Error: ${err instanceof Error ? err.message : 'Unknown error'}. Using sample data.`;
-			apiToasts.error('Load node types', err instanceof Error ? err.message : 'Unknown error');
+			error = `API Error: ${errorMessage}. Using sample data.`;
+			if (features.showToasts) {
+				apiToasts.error('Load node types', errorMessage);
+			}
 
 			// Fallback to sample data
 			nodes = sampleNodes;
@@ -283,26 +348,36 @@
 
 	/**
 	 * Save workflow - exposed API function
+	 *
+	 * Integrates with event handlers for enterprise customization.
 	 */
 	async function saveWorkflow(): Promise<void> {
 		// Wait for any pending DOM updates before saving
 		await tick();
 
-		// Show loading toast
-		const loadingToast = apiToasts.loading('Saving workflow');
+		// Use current workflow from global store
+		const workflowToSave = $workflowStore;
+
+		if (!workflowToSave) {
+			return;
+		}
+
+		// Call onBeforeSave if provided - allows cancellation
+		if (eventHandlers?.onBeforeSave) {
+			const shouldContinue = await eventHandlers.onBeforeSave(workflowToSave);
+			if (shouldContinue === false) {
+				// Save cancelled by event handler
+				return;
+			}
+		}
+
+		// Show loading toast (if enabled)
+		const loadingToast = features.showToasts ? apiToasts.loading('Saving workflow') : null;
 
 		try {
 			// Import necessary modules
 			const { workflowApi } = await import('$lib/services/api.js');
 			const { v4: uuidv4 } = await import('uuid');
-
-			// Use current workflow from global store
-			const workflowToSave = $workflowStore;
-
-			if (!workflowToSave) {
-				dismissToast(loadingToast);
-				return;
-			}
 
 			// Determine the workflow ID
 			let workflowId: string;
@@ -313,7 +388,7 @@
 			}
 
 			// Create workflow object for saving
-			const finalWorkflow = {
+			const finalWorkflow: Workflow = {
 				id: workflowId,
 				name: workflowToSave.name || 'Untitled Workflow',
 				description: workflowToSave.description || '',
@@ -342,14 +417,45 @@
 				});
 			}
 
+			// Mark as saved (clears dirty state)
+			markAsSaved();
+
 			// Dismiss loading toast and show success
-			dismissToast(loadingToast);
-			apiToasts.success('Save workflow', 'Workflow saved successfully');
+			if (loadingToast) {
+				dismissToast(loadingToast);
+			}
+			if (features.showToasts) {
+				apiToasts.success('Save workflow', 'Workflow saved successfully');
+			}
+
+			// Call onAfterSave if provided
+			if (eventHandlers?.onAfterSave) {
+				await eventHandlers.onAfterSave(savedWorkflow);
+			}
 		} catch (error) {
-			// Dismiss loading toast and show error
-			dismissToast(loadingToast);
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-			apiToasts.error('Save workflow', errorMessage);
+			// Dismiss loading toast
+			if (loadingToast) {
+				dismissToast(loadingToast);
+			}
+
+			const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
+
+			// Call onSaveError if provided
+			if (eventHandlers?.onSaveError && workflowToSave) {
+				await eventHandlers.onSaveError(errorObj, workflowToSave);
+			}
+
+			// Check if parent wants to handle API errors
+			let suppressToast = false;
+			if (eventHandlers?.onApiError) {
+				suppressToast = eventHandlers.onApiError(errorObj, 'save') === true;
+			}
+
+			// Show error toast if not suppressed
+			if (features.showToasts && !suppressToast) {
+				apiToasts.error('Save workflow', errorObj.message);
+			}
+
 			throw error; // Re-throw to allow calling code to handle if needed
 		}
 	}
@@ -398,9 +504,7 @@
 
 	// Expose save and export functions globally for external access
 	if (typeof window !== 'undefined') {
-		// @ts-expect-error - Adding to window for external access
 		window.flowdropSave = saveWorkflow;
-		// @ts-expect-error - Adding to window for external access
 		window.flowdropExport = exportWorkflow;
 	}
 
@@ -425,6 +529,11 @@
 			// Initialize the workflow store if we have an initial workflow
 			if (initialWorkflow) {
 				workflowActions.initialize(initialWorkflow);
+
+				// Emit onWorkflowLoad event
+				if (eventHandlers?.onWorkflowLoad) {
+					eventHandlers.onWorkflowLoad(initialWorkflow);
+				}
 			}
 		})();
 
@@ -635,7 +744,10 @@
 									<div class="flowdrop-config-sidebar__detail">
 										<span class="flowdrop-config-sidebar__detail-label">Node ID:</span>
 										<div class="flowdrop-config-sidebar__detail-value-with-copy">
-											<span class="flowdrop-config-sidebar__detail-value" style="font-family: monospace;">
+											<span
+												class="flowdrop-config-sidebar__detail-value"
+												style="font-family: monospace;"
+											>
 												{selectedNodeForConfig().id}
 											</span>
 											<button
