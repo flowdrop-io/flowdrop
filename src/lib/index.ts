@@ -4,7 +4,11 @@
  */
 
 // Import CSS to ensure styles are included in the library build
-import "./styles/base.css";
+import './styles/base.css';
+
+// Initialize built-in node components in the registry
+// This import has a side effect of registering all built-in nodes
+import './registry/builtinNodes.js';
 
 // Export types
 export type {
@@ -23,8 +27,9 @@ export type {
 	ExecutionStatus,
 	ExecutionResult,
 	FlowDropConfig,
-	WorkflowEvents
-} from "./types/index.js";
+	WorkflowEvents,
+	BuiltinNodeType
+} from './types/index.js';
 
 // Export configuration types
 export type {
@@ -38,20 +43,24 @@ export type {
 	WorkflowData,
 	ExecutionResult as EditorExecutionResult,
 	EditorState
-} from "./types/config.js";
+} from './types/config.js';
 
 // Export authentication types and providers
-export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from "./types/auth.js";
+export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from './types/auth.js';
 export {
 	StaticAuthProvider,
 	CallbackAuthProvider,
 	NoAuthProvider,
 	createAuthProviderFromLegacyConfig
-} from "./types/auth.js";
+} from './types/auth.js';
 
 // Export event types
-export type { WorkflowChangeType, FlowDropEventHandlers, FlowDropFeatures } from "./types/events.js";
-export { DEFAULT_FEATURES, mergeFeatures } from "./types/events.js";
+export type {
+	WorkflowChangeType,
+	FlowDropEventHandlers,
+	FlowDropFeatures
+} from './types/events.js';
+export { DEFAULT_FEATURES, mergeFeatures } from './types/events.js';
 
 // Export API clients
 export { FlowDropApiClient } from './api/client.js';
@@ -114,6 +123,44 @@ export {
 } from './utils/nodeWrapper.js';
 export type { NodeStatusConfig } from './utils/nodeWrapper.js';
 
+// Export node component registry
+export {
+	// Core registry
+	nodeComponentRegistry,
+	createNamespacedType,
+	parseNamespacedType,
+	// Built-in nodes
+	BUILTIN_NODE_COMPONENTS,
+	BUILTIN_NODE_TYPES,
+	FLOWDROP_SOURCE,
+	registerBuiltinNodes,
+	areBuiltinsRegistered,
+	isBuiltinType,
+	getBuiltinTypes,
+	resolveBuiltinAlias,
+	// Plugin system
+	registerFlowDropPlugin,
+	unregisterFlowDropPlugin,
+	registerCustomNode,
+	createPlugin,
+	isValidNamespace,
+	getRegisteredPlugins,
+	getPluginNodeCount
+} from './registry/index.js';
+export type {
+	// Core registry types
+	NodeComponentProps,
+	NodeComponentRegistration,
+	NodeComponentCategory,
+	StatusPosition,
+	StatusSize,
+	NodeRegistrationFilter,
+	// Plugin types
+	FlowDropPluginConfig,
+	PluginNodeDefinition,
+	PluginRegistrationResult
+} from './registry/index.js';
+
 // Export services
 export * from './services/api.js';
 export {
@@ -146,7 +193,7 @@ export {
 	globalExportWorkflow,
 	initializeGlobalSave
 } from './services/globalSave.js';
-export { fetchPortConfig, validatePortConfig } from "./services/portConfigApi.js";
+export { fetchPortConfig, validatePortConfig } from './services/portConfigApi.js';
 
 // Export draft storage service
 export {
@@ -157,7 +204,7 @@ export {
 	hasDraft,
 	getDraftMetadata,
 	DraftAutoSaveManager
-} from "./services/draftStorage.js";
+} from './services/draftStorage.js';
 
 // Export helpers
 export {
@@ -186,7 +233,7 @@ export {
 	getWorkflow as getWorkflowFromStore,
 	setOnDirtyStateChange,
 	setOnWorkflowChange
-} from "./stores/workflowStore.js";
+} from './stores/workflowStore.js';
 
 // Export endpoint configuration
 export * from './config/endpoints.js';
@@ -207,8 +254,8 @@ export {
 	unmountWorkflowEditor,
 	mountFlowDropApp,
 	unmountFlowDropApp
-} from "./svelte-app.js";
-export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from "./svelte-app.js";
+} from './svelte-app.js';
+export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from './svelte-app.js';
 
 // Export API error class
-export { ApiError } from "./api/enhanced-client.js";
+export { ApiError } from './api/enhanced-client.js';
