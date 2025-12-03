@@ -68,7 +68,7 @@ export interface AuthProvider {
  */
 export interface StaticAuthConfig {
 	/** Authentication type */
-	type: "none" | "bearer" | "api_key" | "custom";
+	type: 'none' | 'bearer' | 'api_key' | 'custom';
 	/** Bearer token (used when type is "bearer") */
 	token?: string;
 	/** API key (used when type is "api_key") */
@@ -121,22 +121,22 @@ export class StaticAuthProvider implements AuthProvider {
 		this.headers = {};
 
 		switch (config.type) {
-			case "bearer":
+			case 'bearer':
 				if (config.token) {
-					this.headers["Authorization"] = `Bearer ${config.token}`;
+					this.headers['Authorization'] = `Bearer ${config.token}`;
 				}
 				break;
-			case "api_key":
+			case 'api_key':
 				if (config.apiKey) {
-					this.headers["X-API-Key"] = config.apiKey;
+					this.headers['X-API-Key'] = config.apiKey;
 				}
 				break;
-			case "custom":
+			case 'custom':
 				if (config.headers) {
 					this.headers = { ...config.headers };
 				}
 				break;
-			case "none":
+			case 'none':
 			default:
 				// No headers needed
 				break;
@@ -355,18 +355,15 @@ export class NoAuthProvider implements AuthProvider {
  * @param authConfig - Legacy auth configuration from EndpointConfig
  * @returns AuthProvider instance
  */
-export function createAuthProviderFromLegacyConfig(
-	authConfig?: {
-		type: "none" | "bearer" | "api_key" | "custom";
-		token?: string;
-		apiKey?: string;
-		headers?: Record<string, string>;
-	}
-): AuthProvider {
-	if (!authConfig || authConfig.type === "none") {
+export function createAuthProviderFromLegacyConfig(authConfig?: {
+	type: 'none' | 'bearer' | 'api_key' | 'custom';
+	token?: string;
+	apiKey?: string;
+	headers?: Record<string, string>;
+}): AuthProvider {
+	if (!authConfig || authConfig.type === 'none') {
 		return new NoAuthProvider();
 	}
 
 	return new StaticAuthProvider(authConfig);
 }
-

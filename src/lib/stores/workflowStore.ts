@@ -6,9 +6,9 @@
  * @module stores/workflowStore
  */
 
-import { writable, derived, get } from "svelte/store";
-import type { Workflow, WorkflowNode, WorkflowEdge } from "$lib/types";
-import type { WorkflowChangeType } from "$lib/types/events.js";
+import { writable, derived, get } from 'svelte/store';
+import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
+import type { WorkflowChangeType } from '$lib/types/events.js';
 
 // =========================================================================
 // Core Workflow Store
@@ -179,7 +179,7 @@ export const workflowId = derived(workflowStore, ($workflow) => $workflow?.id ??
 /** Derived store for workflow name */
 export const workflowName = derived(
 	workflowStore,
-	($workflow) => $workflow?.name ?? "Untitled Workflow"
+	($workflow) => $workflow?.name ?? 'Untitled Workflow'
 );
 
 /** Derived store for workflow nodes */
@@ -193,7 +193,7 @@ export const workflowMetadata = derived(
 	workflowStore,
 	($workflow) =>
 		$workflow?.metadata ?? {
-			version: "1.0.0",
+			version: '1.0.0',
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -243,8 +243,7 @@ function hasWorkflowDataChanged(
 
 		if (!currentEdge || !newEdge) return true;
 		if (currentEdge.id !== newEdge.id) return true;
-		if (currentEdge.source !== newEdge.source || currentEdge.target !== newEdge.target)
-			return true;
+		if (currentEdge.source !== newEdge.source || currentEdge.target !== newEdge.target) return true;
 	}
 
 	return false;
@@ -281,7 +280,7 @@ export const workflowActions = {
 	 */
 	updateWorkflow: (workflow: Workflow) => {
 		workflowStore.set(workflow);
-		notifyWorkflowChange("metadata");
+		notifyWorkflowChange('metadata');
 	},
 
 	/**
@@ -310,7 +309,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("node_move");
+		notifyWorkflowChange('node_move');
 	},
 
 	/**
@@ -339,7 +338,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("edge_add");
+		notifyWorkflowChange('edge_add');
 	},
 
 	/**
@@ -357,7 +356,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("name");
+		notifyWorkflowChange('name');
 	},
 
 	/**
@@ -375,7 +374,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("node_add");
+		notifyWorkflowChange('node_add');
 	},
 
 	/**
@@ -387,16 +386,14 @@ export const workflowActions = {
 			return {
 				...$workflow,
 				nodes: $workflow.nodes.filter((node) => node.id !== nodeId),
-				edges: $workflow.edges.filter(
-					(edge) => edge.source !== nodeId && edge.target !== nodeId
-				),
+				edges: $workflow.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
 				metadata: {
 					...$workflow.metadata,
 					updatedAt: new Date().toISOString()
 				}
 			};
 		});
-		notifyWorkflowChange("node_remove");
+		notifyWorkflowChange('node_remove');
 	},
 
 	/**
@@ -414,7 +411,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("edge_add");
+		notifyWorkflowChange('edge_add');
 	},
 
 	/**
@@ -432,7 +429,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("edge_remove");
+		notifyWorkflowChange('edge_remove');
 	},
 
 	/**
@@ -443,16 +440,14 @@ export const workflowActions = {
 			if (!$workflow) return null;
 			return {
 				...$workflow,
-				nodes: $workflow.nodes.map((node) =>
-					node.id === nodeId ? { ...node, ...updates } : node
-				),
+				nodes: $workflow.nodes.map((node) => (node.id === nodeId ? { ...node, ...updates } : node)),
 				metadata: {
 					...$workflow.metadata,
 					updatedAt: new Date().toISOString()
 				}
 			};
 		});
-		notifyWorkflowChange("node_config");
+		notifyWorkflowChange('node_config');
 	},
 
 	/**
@@ -470,7 +465,7 @@ export const workflowActions = {
 	/**
 	 * Update workflow metadata
 	 */
-	updateMetadata: (metadata: Partial<Workflow["metadata"]>) => {
+	updateMetadata: (metadata: Partial<Workflow['metadata']>) => {
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -482,7 +477,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("metadata");
+		notifyWorkflowChange('metadata');
 	},
 
 	/**
@@ -495,7 +490,7 @@ export const workflowActions = {
 		edges?: WorkflowEdge[];
 		name?: string;
 		description?: string;
-		metadata?: Partial<Workflow["metadata"]>;
+		metadata?: Partial<Workflow['metadata']>;
 	}) => {
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
@@ -512,7 +507,7 @@ export const workflowActions = {
 				}
 			};
 		});
-		notifyWorkflowChange("metadata");
+		notifyWorkflowChange('metadata');
 	}
 };
 
@@ -539,5 +534,5 @@ export const workflowValidation = derived([workflowNodes, workflowEdges], ([node
 export const workflowMetadataChanged = derived(workflowMetadata, (metadata) => ({
 	createdAt: metadata.createdAt,
 	updatedAt: metadata.updatedAt,
-	version: metadata.version ?? "1.0.0"
+	version: metadata.version ?? '1.0.0'
 }));

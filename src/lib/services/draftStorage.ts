@@ -7,12 +7,12 @@
  * @module services/draftStorage
  */
 
-import type { Workflow } from "../types/index.js";
+import type { Workflow } from '../types/index.js';
 
 /**
  * Default storage key prefix
  */
-const STORAGE_KEY_PREFIX = "flowdrop:draft";
+const STORAGE_KEY_PREFIX = 'flowdrop:draft';
 
 /**
  * Draft metadata stored alongside the workflow
@@ -80,7 +80,7 @@ export function saveDraft(workflow: Workflow, storageKey: string): boolean {
 		return true;
 	} catch (error) {
 		// localStorage might be full or disabled
-		console.warn("Failed to save draft to localStorage:", error);
+		console.warn('Failed to save draft to localStorage:', error);
 		return false;
 	}
 }
@@ -102,13 +102,13 @@ export function loadDraft(storageKey: string): StoredDraft | null {
 
 		// Validate the draft structure
 		if (!draft.workflow || !draft.metadata) {
-			console.warn("Invalid draft structure in localStorage");
+			console.warn('Invalid draft structure in localStorage');
 			return null;
 		}
 
 		return draft;
 	} catch (error) {
-		console.warn("Failed to load draft from localStorage:", error);
+		console.warn('Failed to load draft from localStorage:', error);
 		return null;
 	}
 }
@@ -122,7 +122,7 @@ export function deleteDraft(storageKey: string): void {
 	try {
 		localStorage.removeItem(storageKey);
 	} catch (error) {
-		console.warn("Failed to delete draft from localStorage:", error);
+		console.warn('Failed to delete draft from localStorage:', error);
 	}
 }
 
@@ -363,4 +363,3 @@ export class DraftAutoSaveManager {
 		return this.storageKey;
 	}
 }
-

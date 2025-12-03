@@ -56,7 +56,7 @@
 		// Initialize API service with runtime config from server
 		// Config is already loaded via +layout.server.ts
 		const runtimeConfig = data.runtimeConfig;
-		
+
 		const endpointConfig = createEndpointConfig(runtimeConfig.apiBaseUrl, {
 			auth: {
 				type: runtimeConfig.authType,

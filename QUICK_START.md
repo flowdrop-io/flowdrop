@@ -68,9 +68,11 @@ npm run dev
 ## Environment Variables
 
 **Required:**
+
 - `FLOWDROP_API_BASE_URL` - Your FlowDrop backend API URL
 
 **Optional:**
+
 - `FLOWDROP_THEME` - UI theme (light/dark/auto) - Default: auto
 - `PORT` - Server port - Default: 3000
 
@@ -83,14 +85,15 @@ curl http://localhost:3000/api/config
 ```
 
 You should see:
+
 ```json
 {
-  "apiBaseUrl": "http://your-backend:8080/api/flowdrop",
-  "theme": "auto",
-  "timeout": 30000,
-  "authType": "none",
-  "version": "1.0.0",
-  "environment": "production"
+	"apiBaseUrl": "http://your-backend:8080/api/flowdrop",
+	"theme": "auto",
+	"timeout": 30000,
+	"authType": "none",
+	"version": "1.0.0",
+	"environment": "production"
 }
 ```
 
@@ -99,6 +102,7 @@ You should see:
 ### Can't connect to backend
 
 Make sure the backend URL is accessible:
+
 ```bash
 curl http://your-backend:8080/api/flowdrop/nodes
 ```
@@ -106,6 +110,7 @@ curl http://your-backend:8080/api/flowdrop/nodes
 ### Port already in use
 
 Change the port:
+
 ```bash
 export PORT=3001
 # or in docker-compose.yml:
@@ -116,6 +121,7 @@ ports:
 ### Docker issues
 
 Check logs:
+
 ```bash
 docker logs flowdrop-ui
 ```
@@ -130,4 +136,3 @@ docker logs flowdrop-ui
 
 - GitHub: https://github.com/d34dman/flowdrop
 - Issues: https://github.com/d34dman/flowdrop/issues
-

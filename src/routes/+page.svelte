@@ -58,7 +58,7 @@
 
 			// Use configured endpoint (config is loaded from server)
 			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.list);
-			console.log("Fetching workflows from:", url); // Debug log
+			console.log('Fetching workflows from:', url); // Debug log
 			const response = await fetch(url);
 
 			if (!response.ok) {

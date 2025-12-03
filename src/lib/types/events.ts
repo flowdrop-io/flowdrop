@@ -7,7 +7,7 @@
  * @module types/events
  */
 
-import type { Workflow } from "./index.js";
+import type { Workflow } from './index.js';
 
 /**
  * Types of workflow changes
@@ -15,15 +15,15 @@ import type { Workflow } from "./index.js";
  * Used to identify what kind of change triggered the onWorkflowChange event.
  */
 export type WorkflowChangeType =
-	| "node_add"
-	| "node_remove"
-	| "node_move"
-	| "node_config"
-	| "edge_add"
-	| "edge_remove"
-	| "metadata"
-	| "name"
-	| "description";
+	| 'node_add'
+	| 'node_remove'
+	| 'node_move'
+	| 'node_config'
+	| 'edge_add'
+	| 'edge_remove'
+	| 'metadata'
+	| 'name'
+	| 'description';
 
 /**
  * High-level event handlers for enterprise integration
@@ -194,4 +194,3 @@ export function mergeFeatures(features?: FlowDropFeatures): Required<FlowDropFea
 		...features
 	};
 }
-

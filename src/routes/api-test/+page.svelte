@@ -13,10 +13,12 @@
 	// Initialize API service with development config
 	// Initialize with sync config, will be updated on mount
 	const devConfig = getDevConfigSync();
-	let endpointConfig = $state(createEndpointConfig(devConfig.apiBaseUrl, {
-		auth: { type: devConfig.authType, token: devConfig.authToken },
-		timeout: devConfig.timeout
-	}));
+	let endpointConfig = $state(
+		createEndpointConfig(devConfig.apiBaseUrl, {
+			auth: { type: devConfig.authType, token: devConfig.authToken },
+			timeout: devConfig.timeout
+		})
+	);
 	setEndpointConfig(endpointConfig);
 
 	let nodes = $state<NodeMetadata[]>([]);
