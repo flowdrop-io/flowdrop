@@ -94,9 +94,28 @@ export interface NodePort {
 }
 
 /**
- * Node types for explicit component rendering
+ * Built-in node types for explicit component rendering.
+ * These are the node types that ship with FlowDrop.
  */
-export type NodeType = 'note' | 'simple' | 'square' | 'tool' | 'gateway' | 'default';
+export type BuiltinNodeType = 'note' | 'simple' | 'square' | 'tool' | 'gateway' | 'default';
+
+/**
+ * Node type for component rendering.
+ * Includes built-in types and allows custom registered types.
+ *
+ * Built-in types: note, simple, square, tool, gateway, default
+ * Custom types: Any string registered via nodeComponentRegistry
+ *
+ * @example
+ * ```typescript
+ * // Built-in type
+ * const type: NodeType = "simple";
+ *
+ * // Custom registered type
+ * const customType: NodeType = "mylib:fancy";
+ * ```
+ */
+export type NodeType = BuiltinNodeType | (string & Record<never, never>);
 
 /**
  * Node configuration metadata
@@ -109,6 +128,7 @@ export interface NodeMetadata {
 	 * Array of supported node types that this node can be rendered as.
 	 * If not specified, defaults to the single 'type' field or 'default'.
 	 * This allows nodes to support multiple rendering modes (e.g., both 'simple' and 'default').
+	 * Can include both built-in types and custom registered types.
 	 */
 	supportedTypes?: NodeType[];
 	description: string;
