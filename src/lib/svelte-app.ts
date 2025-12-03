@@ -7,25 +7,25 @@
  * @module svelte-app
  */
 
-import { mount, unmount } from "svelte";
-import WorkflowEditor from "./components/WorkflowEditor.svelte";
-import App from "./components/App.svelte";
-import type { Workflow, NodeMetadata, PortConfig } from "./types/index.js";
-import type { EndpointConfig } from "./config/endpoints.js";
-import type { AuthProvider } from "./types/auth.js";
-import type { FlowDropEventHandlers, FlowDropFeatures } from "./types/events.js";
-import { initializePortCompatibility } from "./utils/connections.js";
-import { DEFAULT_PORT_CONFIG } from "./config/defaultPortConfig.js";
-import { fetchPortConfig } from "./services/portConfigApi.js";
+import { mount, unmount } from 'svelte';
+import WorkflowEditor from './components/WorkflowEditor.svelte';
+import App from './components/App.svelte';
+import type { Workflow, NodeMetadata, PortConfig } from './types/index.js';
+import type { EndpointConfig } from './config/endpoints.js';
+import type { AuthProvider } from './types/auth.js';
+import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
+import { initializePortCompatibility } from './utils/connections.js';
+import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
+import { fetchPortConfig } from './services/portConfigApi.js';
 import {
 	isDirty,
 	markAsSaved,
 	getWorkflow as getWorkflowFromStore,
 	setOnDirtyStateChange,
 	setOnWorkflowChange
-} from "./stores/workflowStore.js";
-import { DraftAutoSaveManager, getDraftStorageKey } from "./services/draftStorage.js";
-import { mergeFeatures } from "./types/events.js";
+} from './stores/workflowStore.js';
+import { DraftAutoSaveManager, getDraftStorageKey } from './services/draftStorage.js';
+import { mergeFeatures } from './types/events.js';
 
 // Extend Window interface for global save/export functions
 declare global {
@@ -42,7 +42,7 @@ export interface NavbarAction {
 	label: string;
 	href: string;
 	icon?: string;
-	variant?: "primary" | "secondary" | "outline";
+	variant?: 'primary' | 'secondary' | 'outline';
 	onclick?: (event: Event) => void;
 }
 
@@ -78,7 +78,7 @@ export interface FlowDropMountOptions {
 	/** Pipeline ID for status display */
 	pipelineId?: string;
 	/** Node execution statuses */
-	nodeStatuses?: Record<string, "pending" | "running" | "completed" | "error">;
+	nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
 
 	// Navbar customization
 	/** Custom navbar title */
@@ -180,8 +180,8 @@ export async function mountFlowDropApp(
 		nodes,
 		endpointConfig,
 		portConfig,
-		height = "100vh",
-		width = "100%",
+		height = '100vh',
+		width = '100%',
 		showNavbar = false,
 		disableSidebar,
 		lockWorkflow,
@@ -204,7 +204,7 @@ export async function mountFlowDropApp(
 
 	if (endpointConfig) {
 		// Merge with default configuration to ensure all required endpoints are present
-		const { defaultEndpointConfig } = await import("./config/endpoints.js");
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
 		config = {
 			...defaultEndpointConfig,
 			...endpointConfig,
@@ -215,7 +215,7 @@ export async function mountFlowDropApp(
 		};
 	} else {
 		// Use default configuration if none provided
-		const { defaultEndpointConfig } = await import("./config/endpoints.js");
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
 		config = defaultEndpointConfig;
 	}
 
@@ -227,7 +227,7 @@ export async function mountFlowDropApp(
 		try {
 			finalPortConfig = await fetchPortConfig(config);
 		} catch (error) {
-			console.warn("Failed to fetch port config from API, using default:", error);
+			console.warn('Failed to fetch port config from API, using default:', error);
 			finalPortConfig = DEFAULT_PORT_CONFIG;
 		}
 	} else if (!finalPortConfig) {
@@ -333,18 +333,18 @@ export async function mountFlowDropApp(
 		getWorkflow: () => getWorkflowFromStore(),
 
 		save: async () => {
-			if (typeof window !== "undefined" && window.flowdropSave) {
+			if (typeof window !== 'undefined' && window.flowdropSave) {
 				await window.flowdropSave();
 			} else {
-				console.warn("⚠️ Save functionality not available");
+				console.warn('⚠️ Save functionality not available');
 			}
 		},
 
 		export: () => {
-			if (typeof window !== "undefined" && window.flowdropExport) {
+			if (typeof window !== 'undefined' && window.flowdropExport) {
 				window.flowdropExport();
 			} else {
-				console.warn("⚠️ Export functionality not available");
+				console.warn('⚠️ Export functionality not available');
 			}
 		}
 	};
@@ -377,7 +377,7 @@ export async function mountWorkflowEditor(
 
 	if (endpointConfig) {
 		// Merge with default configuration to ensure all required endpoints are present
-		const { defaultEndpointConfig } = await import("./config/endpoints.js");
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
 		config = {
 			...defaultEndpointConfig,
 			...endpointConfig,
@@ -388,7 +388,7 @@ export async function mountWorkflowEditor(
 		};
 	} else {
 		// Use default configuration if none provided
-		const { defaultEndpointConfig } = await import("./config/endpoints.js");
+		const { defaultEndpointConfig } = await import('./config/endpoints.js');
 		config = defaultEndpointConfig;
 	}
 
@@ -400,7 +400,7 @@ export async function mountWorkflowEditor(
 		try {
 			finalPortConfig = await fetchPortConfig(config);
 		} catch (error) {
-			console.warn("Failed to fetch port config from API, using default:", error);
+			console.warn('Failed to fetch port config from API, using default:', error);
 			finalPortConfig = DEFAULT_PORT_CONFIG;
 		}
 	} else if (!finalPortConfig) {
@@ -431,18 +431,18 @@ export async function mountWorkflowEditor(
 		getWorkflow: () => getWorkflowFromStore(),
 
 		save: async () => {
-			if (typeof window !== "undefined" && window.flowdropSave) {
+			if (typeof window !== 'undefined' && window.flowdropSave) {
 				await window.flowdropSave();
 			} else {
-				console.warn("⚠️ Save functionality not available");
+				console.warn('⚠️ Save functionality not available');
 			}
 		},
 
 		export: () => {
-			if (typeof window !== "undefined" && window.flowdropExport) {
+			if (typeof window !== 'undefined' && window.flowdropExport) {
 				window.flowdropExport();
 			} else {
-				console.warn("⚠️ Export functionality not available");
+				console.warn('⚠️ Export functionality not available');
 			}
 		}
 	};
@@ -456,7 +456,7 @@ export async function mountWorkflowEditor(
  * @param app - The mounted app to unmount
  */
 export function unmountFlowDropApp(app: MountedFlowDropApp): void {
-	if (app && typeof app.destroy === "function") {
+	if (app && typeof app.destroy === 'function') {
 		app.destroy();
 	}
 }

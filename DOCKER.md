@@ -77,11 +77,11 @@ docker-compose restart
 
 Key environment variables you can configure:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FLOWDROP_API_BASE_URL` | Backend API URL | `/api/flowdrop` |
-| `FLOWDROP_THEME` | UI theme (light/dark/auto) | `auto` |
-| `PORT` | Server port | `3000` |
+| Variable                | Description                | Default         |
+| ----------------------- | -------------------------- | --------------- |
+| `FLOWDROP_API_BASE_URL` | Backend API URL            | `/api/flowdrop` |
+| `FLOWDROP_THEME`        | UI theme (light/dark/auto) | `auto`          |
+| `PORT`                  | Server port                | `3000`          |
 
 See `env.example` for all available options.
 
@@ -90,6 +90,7 @@ See `env.example` for all available options.
 ### Container won't start
 
 Check logs:
+
 ```bash
 docker logs flowdrop-ui
 ```
@@ -97,6 +98,7 @@ docker logs flowdrop-ui
 ### Can't connect to backend
 
 Verify the API URL is accessible from within the container:
+
 ```bash
 docker exec flowdrop-ui wget -qO- http://your-backend:8080/api/flowdrop/nodes
 ```
@@ -104,9 +106,10 @@ docker exec flowdrop-ui wget -qO- http://your-backend:8080/api/flowdrop/nodes
 ### Port already in use
 
 Change the external port in docker-compose.yml:
+
 ```yaml
 ports:
-  - "3001:3000"  # Change 3001 to any available port
+  - '3001:3000' # Change 3001 to any available port
 ```
 
 ## Health Check
@@ -118,18 +121,18 @@ curl http://localhost:3000/api/config
 ```
 
 Expected response:
+
 ```json
 {
-  "apiBaseUrl": "http://your-backend:8080/api/flowdrop",
-  "theme": "auto",
-  "timeout": 30000,
-  "authType": "none",
-  "version": "1.0.0",
-  "environment": "production"
+	"apiBaseUrl": "http://your-backend:8080/api/flowdrop",
+	"theme": "auto",
+	"timeout": 30000,
+	"authType": "none",
+	"version": "1.0.0",
+	"environment": "production"
 }
 ```
 
 ## Production Deployment
 
 For production deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
-

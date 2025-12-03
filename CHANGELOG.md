@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Authentication System
+
 - **AuthProvider Interface**: Pluggable authentication system for enterprise integration
   - `AuthProvider` interface for custom authentication implementations
   - `StaticAuthProvider` for backward-compatible static token authentication
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `createAuthProviderFromLegacyConfig()` for seamless migration from `config.auth`
 
 #### Event Handlers
+
 - **FlowDropEventHandlers**: Comprehensive workflow lifecycle event system
   - `onWorkflowChange(workflow, changeType)` - Notified on any workflow modification
   - `onDirtyStateChange(isDirty)` - Track unsaved changes state
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `onApiError(error, operation)` - Global API error handler, return `true` to suppress toast
 
 #### Dirty State Tracking
+
 - **Workflow Store Enhancements**:
   - `isDirtyStore` - Svelte store for reactive dirty state
   - `isDirty()` - Check if there are unsaved changes
@@ -37,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `setOnDirtyStateChange()` / `setOnWorkflowChange()` - Register callbacks
 
 #### Draft Auto-Save
+
 - **DraftAutoSaveManager**: Automatic draft saving to localStorage
   - Configurable interval-based saving (default: 30 seconds)
   - Can be disabled for security-conscious deployments
@@ -45,12 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `getDraftStorageKey()` with sensible defaults
 
 #### Features Configuration
+
 - **FlowDropFeatures**: Configurable feature flags
   - `autoSaveDraft` (default: `true`) - Enable/disable draft auto-save
   - `autoSaveDraftInterval` (default: `30000`) - Auto-save interval in ms
   - `showToasts` (default: `true`) - Enable/disable toast notifications
 
 #### Mount Options
+
 - **Enhanced mountFlowDropApp**:
   - `authProvider` - Pass custom authentication provider
   - `eventHandlers` - Pass workflow lifecycle event handlers
@@ -59,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `nodes` - Pre-loaded node types (skips API fetch)
 
 #### MountedFlowDropApp Interface
+
 - Enhanced return type with new methods:
   - `isDirty()` - Check for unsaved changes
   - `markAsSaved()` - Clear dirty state
@@ -68,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `destroy()` - Clean up with `onBeforeUnmount` event
 
 #### API Improvements
+
 - **EnhancedFlowDropApiClient**:
   - AuthProvider integration for dynamic authentication
   - 401 Unauthorized handling with automatic token refresh retry
@@ -86,39 +94,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Usage Examples
 
 **Enterprise Integration:**
+
 ```typescript
-import { 
-  mountFlowDropApp, 
-  CallbackAuthProvider 
-} from "@d34dman/flowdrop";
+import { mountFlowDropApp, CallbackAuthProvider } from '@d34dman/flowdrop';
 
 const app = await mountFlowDropApp(container, {
-  workflow: myWorkflow,
-  endpointConfig: createEndpointConfig("/api/projects/123/flowdrop"),
-  
-  authProvider: new CallbackAuthProvider({
-    getToken: () => authService.getAccessToken(),
-    onUnauthorized: () => authService.refreshToken()
-  }),
-  
-  eventHandlers: {
-    onDirtyStateChange: (isDirty) => updateSaveButton(isDirty),
-    onAfterSave: () => showSuccess("Saved!"),
-    onBeforeUnmount: (workflow, isDirty) => {
-      if (isDirty) saveDraft(workflow);
-    }
-  },
-  
-  features: {
-    autoSaveDraft: true,
-    autoSaveDraftInterval: 30000,
-    showToasts: true
-  }
+	workflow: myWorkflow,
+	endpointConfig: createEndpointConfig('/api/projects/123/flowdrop'),
+
+	authProvider: new CallbackAuthProvider({
+		getToken: () => authService.getAccessToken(),
+		onUnauthorized: () => authService.refreshToken()
+	}),
+
+	eventHandlers: {
+		onDirtyStateChange: (isDirty) => updateSaveButton(isDirty),
+		onAfterSave: () => showSuccess('Saved!'),
+		onBeforeUnmount: (workflow, isDirty) => {
+			if (isDirty) saveDraft(workflow);
+		}
+	},
+
+	features: {
+		autoSaveDraft: true,
+		autoSaveDraftInterval: 30000,
+		showToasts: true
+	}
 });
 
 // Check dirty state
 if (app.isDirty()) {
-  await app.save();
+	await app.save();
 }
 
 // Cleanup
@@ -126,11 +132,12 @@ app.destroy();
 ```
 
 **Disable Draft Storage (Security):**
+
 ```typescript
 const app = await mountFlowDropApp(container, {
-  features: {
-    autoSaveDraft: false  // No localStorage drafts
-  }
+	features: {
+		autoSaveDraft: false // No localStorage drafts
+	}
 });
 ```
 
@@ -173,6 +180,7 @@ const app = await mountFlowDropApp(container, {
 ### Usage
 
 **Docker (Recommended):**
+
 ```bash
 docker run -p 3000:3000 \
   -e FLOWDROP_API_BASE_URL=https://your-api.com/api/flowdrop \
@@ -180,6 +188,7 @@ docker run -p 3000:3000 \
 ```
 
 **Environment Variables:**
+
 ```bash
 export FLOWDROP_API_BASE_URL=https://your-api.com/api/flowdrop
 npm run build

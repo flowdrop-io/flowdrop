@@ -14,6 +14,14 @@ A visual workflow editor component library built with Svelte 5 and @xyflow/svelt
 - **TypeScript Support**: Full type definitions included
 - **Docker Ready**: Production-ready Dockerfile and Docker Compose configuration
 
+### Enterprise Features (v0.0.16+)
+
+- **Pluggable Authentication**: AuthProvider interface for OAuth, JWT, SSO integration
+- **Workflow Lifecycle Events**: Hooks for save, load, change, and unmount events
+- **Dirty State Tracking**: Monitor unsaved changes with reactive stores
+- **Draft Auto-Save**: Automatic localStorage drafts with configurable intervals
+- **Feature Flags**: Customize behavior for security and UX requirements
+
 ## 📦 Installation
 
 ```bash
@@ -116,6 +124,52 @@ const editor = mountWorkflowEditor(container, {
 // Cleanup
 editor.destroy();
 ```
+
+#### 3. Enterprise Integration (v0.0.16+)
+
+```javascript
+import { mountFlowDropApp, createEndpointConfig, CallbackAuthProvider } from '@d34dman/flowdrop';
+
+const app = await mountFlowDropApp(container, {
+	workflow: myWorkflow,
+	endpointConfig: createEndpointConfig('/api/flowdrop'),
+
+	// Dynamic authentication with token refresh
+	authProvider: new CallbackAuthProvider({
+		getToken: () => authService.getAccessToken(),
+		onUnauthorized: () => authService.refreshToken()
+	}),
+
+	// Workflow lifecycle hooks
+	eventHandlers: {
+		onDirtyStateChange: (isDirty) => updateSaveButton(isDirty),
+		onAfterSave: (workflow) => showSuccess('Saved!'),
+		onBeforeUnmount: (workflow, isDirty) => {
+			if (isDirty) saveDraft(workflow);
+		}
+	},
+
+	// Feature configuration
+	features: {
+		autoSaveDraft: true,
+		autoSaveDraftInterval: 30000,
+		showToasts: true
+	}
+});
+
+// Access instance methods
+if (app.isDirty()) {
+	await app.save();
+}
+
+// Get current workflow data
+const workflow = app.getWorkflow();
+
+// Cleanup
+app.destroy();
+```
+
+See the [Enterprise Integration Guide](./docs/enterprise-integration.md) for React, Vue, Angular, and Drupal examples.
 
 #### 3. Integration with Backend Frameworks
 
@@ -313,6 +367,13 @@ npm run format
 - **CHANGELOG.md** - Version history
 - **Storybook** - Component documentation (run `npm run storybook`)
 
+### Enterprise Features (v0.0.16+)
+
+- **[Enterprise Integration Guide](./docs/enterprise-integration.md)** - Complete integration patterns for React, Vue, Angular, Drupal
+- **[Authentication Guide](./docs/authentication-guide.md)** - OAuth, JWT, SSO, and custom auth providers
+- **[Event Handlers](./docs/event-handlers.md)** - Workflow lifecycle events and hooks
+- **[Features Configuration](./docs/features-configuration.md)** - Feature flags, draft auto-save, and customization
+
 ## 🤝 Contributing
 
 Not accepting contributions until the library stabilizes. Stay tuned.
@@ -347,6 +408,7 @@ docker-compose up -d
 ### Environment Variables
 
 **Production (Runtime):**
+
 - `FLOWDROP_API_BASE_URL` - Backend API URL
 - `FLOWDROP_THEME` - UI theme (light/dark/auto)
 - `FLOWDROP_TIMEOUT` - Request timeout in milliseconds
@@ -354,6 +416,7 @@ docker-compose up -d
 - `FLOWDROP_AUTH_TOKEN` - Authentication token
 
 **Development (Build-time):**
+
 - `VITE_API_BASE_URL` - Dev API URL (used only during `npm run dev`)
 
 ### Build for Production
@@ -371,6 +434,7 @@ node build
 ```
 
 For detailed deployment instructions, see:
+
 - [DOCKER.md](./DOCKER.md) - Docker quick start
 
 ---

@@ -5,8 +5,8 @@
 -->
 
 <script lang="ts">
-	import { useSvelteFlow } from "@xyflow/svelte";
-	import type { Snippet } from "svelte";
+	import { useSvelteFlow } from '@xyflow/svelte';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		ondrop: (nodeTypeData: string, position: { x: number; y: number }) => void;
@@ -24,7 +24,7 @@
 	function handleDragOver(e: DragEvent): void {
 		e.preventDefault();
 		if (e.dataTransfer) {
-			e.dataTransfer.dropEffect = "copy";
+			e.dataTransfer.dropEffect = 'copy';
 		}
 	}
 
@@ -35,7 +35,7 @@
 		e.preventDefault();
 
 		// Get the data from the drag event
-		const nodeTypeData = e.dataTransfer?.getData("application/json");
+		const nodeTypeData = e.dataTransfer?.getData('application/json');
 		if (nodeTypeData) {
 			// Convert screen coordinates to flow coordinates (accounts for zoom and pan)
 			const position = screenToFlowPosition({
@@ -65,4 +65,3 @@
 		height: 100%;
 	}
 </style>
-

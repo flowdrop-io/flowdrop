@@ -64,4 +64,3 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
-
