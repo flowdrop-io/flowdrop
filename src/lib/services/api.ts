@@ -76,7 +76,7 @@ async function apiRequest<T>(
 	if (!response.ok) {
 		// Try to get error details
 		let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-		
+
 		if (isJson) {
 			try {
 				const data = await response.json();

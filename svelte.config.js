@@ -27,9 +27,7 @@ const config = {
 		csrf: {
 			// Configure trusted origins based on your deployment
 			// In production, set this via environment variable
-			trustedOrigins: process.env.TRUSTED_ORIGINS
-				? process.env.TRUSTED_ORIGINS.split(',')
-				: []
+			trustedOrigins: process.env.TRUSTED_ORIGINS ? process.env.TRUSTED_ORIGINS.split(',') : []
 		}
 	}
 };
