@@ -182,42 +182,50 @@ export class EdgeStylingHelper {
 		// Determine edge category based on source port data type
 		const edgeCategory = this.getEdgeCategory(sourcePortDataType);
 
+		// Edge color constants (matching CSS tokens in base.css)
+		const EDGE_COLORS = {
+			trigger: "#111827",  // --color-ref-gray-900
+			tool: "#f59e0b",     // --color-ref-amber-500
+			data: "#9ca3af"      // --color-ref-gray-400
+		};
+
 		// Apply styling based on edge category
+		// CSS classes handle styling via tokens; inline styles are fallback
 		switch (edgeCategory) {
 			case "trigger":
-				// Trigger edges: solid black line for control flow
-				edge.style = "stroke: #000000; stroke-width: 2;";
+				// Trigger edges: solid dark line for control flow
+				edge.style = "stroke: var(--flowdrop-edge-trigger-color); stroke-width: var(--flowdrop-edge-trigger-width);";
 				edge.class = "flowdrop--edge--trigger";
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
 					width: 16,
 					height: 16,
-					color: "#000000"
+					color: EDGE_COLORS.trigger
 				};
 				break;
 
 			case "tool":
 				// Tool edges: dashed amber line
-				edge.style = "stroke: #f59e0b; stroke-dasharray: 5 3;";
+				edge.style = "stroke: var(--flowdrop-edge-tool-color); stroke-dasharray: 5 3;";
 				edge.class = "flowdrop--edge--tool";
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
 					width: 16,
 					height: 16,
-					color: "#f59e0b"
+					color: EDGE_COLORS.tool
 				};
 				break;
 
 			case "data":
 			default:
 				// Data edges: normal gray line
-				edge.style = "stroke: #9ca3af;";
+				edge.style = "stroke: var(--flowdrop-edge-data-color);";
 				edge.class = "flowdrop--edge--data";
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
 					width: 16,
 					height: 16,
-					color: "#9ca3af"
+					color: EDGE_COLORS.data
 				};
 				break;
 		}

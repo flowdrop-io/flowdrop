@@ -1141,6 +1141,21 @@
 	--cmp-node-color-slate: var(--color-ref-slate-500);
 	--cmp-node-color-purple: var(--color-ref-purple-600);
 
+	/* Edge styling tokens */
+	--flowdrop-edge-trigger-color: var(--color-ref-gray-900);
+	--flowdrop-edge-trigger-color-hover: var(--color-ref-gray-900);
+	--flowdrop-edge-trigger-color-selected: var(--color-ref-violet-600);
+	--flowdrop-edge-trigger-width: 2px;
+	--flowdrop-edge-trigger-width-hover: 3px;
+
+	--flowdrop-edge-tool-color: var(--color-ref-amber-500);
+	--flowdrop-edge-tool-color-hover: var(--color-ref-amber-600);
+	--flowdrop-edge-tool-color-selected: var(--color-ref-violet-600);
+
+	--flowdrop-edge-data-color: var(--color-ref-gray-400);
+	--flowdrop-edge-data-color-hover: var(--color-ref-gray-500);
+	--flowdrop-edge-data-color-selected: var(--color-ref-violet-600);
+
 	/* NotesNode component variables */
 	--notes-node-width: 500px;
 	--notes-node-min-width: 250px;
