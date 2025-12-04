@@ -80,14 +80,21 @@
 
 	$effect(() => {
 		if (currentWorkflow) {
-			flowNodes = currentWorkflow.nodes.map((node) => ({
+			const nodesWithCallbacks = currentWorkflow.nodes.map((node) => ({
 				...node,
 				data: {
 					...node.data,
 					onConfigOpen: props.openConfigSidebar
 				}
 			}));
-			flowEdges = currentWorkflow.edges;
+			flowNodes = nodesWithCallbacks;
+
+			// Apply edge styling based on source port data type when loading workflow
+			const styledEdges = EdgeStylingHelper.updateEdgeStyles(
+				currentWorkflow.edges,
+				nodesWithCallbacks
+			);
+			flowEdges = styledEdges;
 
 			// Only load execution info if we have a pipelineId (pipeline status mode)
 			// and if the workflow or pipeline has changed
@@ -523,7 +530,42 @@
 		pointer-events: all;
 		cursor: crosshair;
 	}
+
+	/**
+	 * Edge Styling Based on Source Port Data Type
+	 * - Tool edges: dashed amber line (tool connections)
+	 * - Data edges: normal gray line (data flow)
+	 */
+
+	/* Tool Edge: Dashed amber line for tool connections */
 	:global(.flowdrop--edge--tool path.svelte-flow__edge-path) {
-		stroke-dasharray: 5 5;
+		stroke: #f59e0b;
+		stroke-dasharray: 5 3;
+	}
+
+	:global(.flowdrop--edge--tool:hover path.svelte-flow__edge-path) {
+		stroke: #d97706;
+		stroke-width: 2;
+	}
+
+	:global(.flowdrop--edge--tool.selected path.svelte-flow__edge-path) {
+		stroke: #7c3aed;
+		stroke-dasharray: 5 3;
+		stroke-width: 2;
+	}
+
+	/* Data Edge: Normal gray line for data flow (default) */
+	:global(.flowdrop--edge--data path.svelte-flow__edge-path) {
+		stroke: #9ca3af;
+	}
+
+	:global(.flowdrop--edge--data:hover path.svelte-flow__edge-path) {
+		stroke: #6b7280;
+		stroke-width: 2;
+	}
+
+	:global(.flowdrop--edge--data.selected path.svelte-flow__edge-path) {
+		stroke: #7c3aed;
+		stroke-width: 2;
 	}
 </style>

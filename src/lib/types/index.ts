@@ -326,6 +326,14 @@ export interface WorkflowNode extends Node {
 }
 
 /**
+ * Edge category types based on source port data type
+ * Used for visual styling of edges on the canvas
+ * - tool: Dashed amber line for tool connections
+ * - data: Normal gray line for all other data connections
+ */
+export type EdgeCategory = "tool" | "data";
+
+/**
  * Extended edge type for workflows
  */
 export interface WorkflowEdge extends Edge {
@@ -340,6 +348,11 @@ export interface WorkflowEdge extends Edge {
 	data?: {
 		label?: string;
 		condition?: string;
+		/** Data type of the source output port (e.g., "trigger", "tool", "string") */
+		sourcePortDataType?: string;
+		/** Derived edge category for styling ("trigger", "tool", or "data") */
+		edgeCategory?: EdgeCategory;
+		/** @deprecated Use sourcePortDataType instead - kept for backward compatibility */
 		isToolConnection?: boolean;
 		targetNodeType?: string;
 		targetCategory?: string;
