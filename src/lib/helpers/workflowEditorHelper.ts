@@ -49,7 +49,7 @@ export function generateNodeId(nodeTypeId: string, existingNodes: WorkflowNodeTy
  * - tool: Dashed amber line for tool connections (dataType: "tool")
  * - data: Normal gray line for all other data connections
  */
-export type EdgeCategory = "trigger" | "tool" | "data";
+export type EdgeCategory = 'trigger' | 'tool' | 'data';
 
 /**
  * Edge styling configuration based on source port data type
@@ -70,15 +70,15 @@ export class EdgeStylingHelper {
 
 		// Try new format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
 		// We need to find the last occurrence of "-output-" or "-input-" and get what follows
-		const outputMatch = handleId.lastIndexOf("-output-");
-		const inputMatch = handleId.lastIndexOf("-input-");
+		const outputMatch = handleId.lastIndexOf('-output-');
+		const inputMatch = handleId.lastIndexOf('-input-');
 
 		if (outputMatch !== -1) {
-			return handleId.substring(outputMatch + "-output-".length);
+			return handleId.substring(outputMatch + '-output-'.length);
 		}
 
 		if (inputMatch !== -1) {
-			return handleId.substring(inputMatch + "-input-".length);
+			return handleId.substring(inputMatch + '-input-'.length);
 		}
 
 		// Legacy format: the handleId IS the port ID
@@ -95,7 +95,7 @@ export class EdgeStylingHelper {
 	static isGatewayBranch(node: WorkflowNodeType, portId: string): boolean {
 		// Check if this is a gateway node with dynamic branches
 		const nodeType = node.data?.metadata?.type || node.type;
-		if (nodeType !== "gateway") {
+		if (nodeType !== 'gateway') {
 			return false;
 		}
 
@@ -119,12 +119,11 @@ export class EdgeStylingHelper {
 	static getPortDataType(
 		node: WorkflowNodeType,
 		portId: string,
-		portType: "input" | "output"
+		portType: 'input' | 'output'
 	): string | null {
 		// First, check static ports in metadata
-		const ports = portType === "output"
-			? node.data?.metadata?.outputs
-			: node.data?.metadata?.inputs;
+		const ports =
+			portType === 'output' ? node.data?.metadata?.outputs : node.data?.metadata?.inputs;
 
 		if (ports && Array.isArray(ports)) {
 			const port = ports.find((p) => p.id === portId);
@@ -135,8 +134,8 @@ export class EdgeStylingHelper {
 
 		// For output ports, also check dynamic Gateway branches
 		// Gateway branches are always trigger type (control flow)
-		if (portType === "output" && this.isGatewayBranch(node, portId)) {
-			return "trigger";
+		if (portType === 'output' && this.isGatewayBranch(node, portId)) {
+			return 'trigger';
 		}
 
 		return null;
@@ -148,16 +147,16 @@ export class EdgeStylingHelper {
 	 * @returns The edge category for styling
 	 */
 	static getEdgeCategory(sourcePortDataType: string | null): EdgeCategory {
-		if (sourcePortDataType === "trigger") {
-			return "trigger";
+		if (sourcePortDataType === 'trigger') {
+			return 'trigger';
 		}
 
-		if (sourcePortDataType === "tool") {
-			return "tool";
+		if (sourcePortDataType === 'tool') {
+			return 'tool';
 		}
 
 		// All other data types (string, number, boolean, array, etc.) are "data" edges
-		return "data";
+		return 'data';
 	}
 
 	/**
@@ -176,7 +175,7 @@ export class EdgeStylingHelper {
 
 		// Get the source port's data type
 		const sourcePortDataType = sourcePortId
-			? this.getPortDataType(sourceNode, sourcePortId, "output")
+			? this.getPortDataType(sourceNode, sourcePortId, 'output')
 			: null;
 
 		// Determine edge category based on source port data type
@@ -184,18 +183,19 @@ export class EdgeStylingHelper {
 
 		// Edge color constants (matching CSS tokens in base.css)
 		const EDGE_COLORS = {
-			trigger: "#111827",  // --color-ref-gray-900
-			tool: "#f59e0b",     // --color-ref-amber-500
-			data: "#9ca3af"      // --color-ref-gray-400
+			trigger: '#111827', // --color-ref-gray-900
+			tool: '#f59e0b', // --color-ref-amber-500
+			data: '#9ca3af' // --color-ref-gray-400
 		};
 
 		// Apply styling based on edge category
 		// CSS classes handle styling via tokens; inline styles are fallback
 		switch (edgeCategory) {
-			case "trigger":
+			case 'trigger':
 				// Trigger edges: solid dark line for control flow
-				edge.style = "stroke: var(--flowdrop-edge-trigger-color); stroke-width: var(--flowdrop-edge-trigger-width);";
-				edge.class = "flowdrop--edge--trigger";
+				edge.style =
+					'stroke: var(--flowdrop-edge-trigger-color); stroke-width: var(--flowdrop-edge-trigger-width);';
+				edge.class = 'flowdrop--edge--trigger';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
 					width: 16,
@@ -204,10 +204,10 @@ export class EdgeStylingHelper {
 				};
 				break;
 
-			case "tool":
+			case 'tool':
 				// Tool edges: dashed amber line
-				edge.style = "stroke: var(--flowdrop-edge-tool-color); stroke-dasharray: 5 3;";
-				edge.class = "flowdrop--edge--tool";
+				edge.style = 'stroke: var(--flowdrop-edge-tool-color); stroke-dasharray: 5 3;';
+				edge.class = 'flowdrop--edge--tool';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
 					width: 16,
@@ -216,11 +216,11 @@ export class EdgeStylingHelper {
 				};
 				break;
 
-			case "data":
+			case 'data':
 			default:
 				// Data edges: normal gray line
-				edge.style = "stroke: var(--flowdrop-edge-data-color);";
-				edge.class = "flowdrop--edge--data";
+				edge.style = 'stroke: var(--flowdrop-edge-data-color);';
+				edge.class = 'flowdrop--edge--data';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
 					width: 16,
@@ -234,12 +234,12 @@ export class EdgeStylingHelper {
 		edge.data = {
 			...edge.data,
 			metadata: {
-				...(edge.data?.metadata as Record<string, unknown> || {}),
+				...((edge.data?.metadata as Record<string, unknown>) || {}),
 				edgeType: edgeCategory,
 				sourcePortDataType: sourcePortDataType || undefined
 			},
 			// Keep legacy fields for backward compatibility
-			isToolConnection: edgeCategory === "tool",
+			isToolConnection: edgeCategory === 'tool',
 			targetNodeType: targetNode.type,
 			targetCategory: targetNode.data.metadata.category
 		};
@@ -262,8 +262,8 @@ export class EdgeStylingHelper {
 				updatedEdge.data = {
 					...updatedEdge.data,
 					metadata: {
-						...(updatedEdge.data?.metadata as Record<string, unknown> || {}),
-						edgeType: "data" as EdgeCategory
+						...((updatedEdge.data?.metadata as Record<string, unknown>) || {}),
+						edgeType: 'data' as EdgeCategory
 					}
 				};
 				return updatedEdge;

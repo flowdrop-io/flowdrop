@@ -5,6 +5,83 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.17] - 2025-12-04
+
+### Added
+
+#### Edge Styling Based on Port Data Type
+
+- **Port-Based Edge Styling**: Edges are now styled based on the source output port's `dataType`
+  - `trigger` ports → Solid dark line (control flow)
+  - `tool` ports → Dashed amber line (tool connections)
+  - All other ports → Normal gray line (data flow)
+- **Dynamic Gateway Branch Detection**: Gateway node branches are automatically detected as trigger ports
+  - Branches defined in `config.branches` are treated as control flow outputs
+  - Edge styling correctly applies to dynamic gateway outputs (e.g., True/False)
+
+- **Edge Metadata**: Edges now include metadata for API and persistence
+
+  ```json
+  {
+    "data": {
+      "metadata": {
+        "edgeType": "trigger" | "tool" | "data",
+        "sourcePortDataType": "trigger" | "tool" | "string" | ...
+      }
+    }
+  }
+  ```
+
+- **CSS Tokens for Edge Styling**: Customizable edge colors via CSS variables
+  - `--flowdrop-edge-trigger-color` (default: gray-900)
+  - `--flowdrop-edge-tool-color` (default: amber-500)
+  - `--flowdrop-edge-data-color` (default: gray-400)
+  - Plus hover and selected state variants
+
+- **EdgeStylingHelper Utilities**:
+  - `extractPortIdFromHandle()` - Parse handle ID to get port ID
+  - `getPortDataType()` - Get port's dataType from node metadata
+  - `isGatewayBranch()` - Check if port is a dynamic gateway branch
+  - `getEdgeCategory()` - Determine edge category from port type
+
+#### Node Component Registry
+
+- **Extensible Node Registry**: Register custom node components at runtime
+  - `registerNodeComponent(typeId, component)` - Register a custom node type
+  - `getNodeComponent(typeId)` - Retrieve a registered component
+  - `hasNodeComponent(typeId)` - Check if a component is registered
+  - `getRegisteredNodeTypes()` - List all registered type IDs
+
+- **Custom Node Type Support**: `NodeType` now accepts custom strings beyond built-in types
+  - Built-in types: `note`, `simple`, `square`, `tool`, `gateway`, `default`
+  - Custom types: Any string registered via `registerNodeComponent()`
+
+### Changed
+
+**Customize Edge Colors (Theming):**
+
+```css
+:root {
+	/* Override edge colors for dark theme */
+	--flowdrop-edge-trigger-color: #ffffff;
+	--flowdrop-edge-trigger-color-hover: #e5e5e5;
+	--flowdrop-edge-tool-color: #fbbf24;
+	--flowdrop-edge-data-color: #6b7280;
+}
+```
+
+**Register Custom Node Component:**
+
+```typescript
+import { registerNodeComponent } from '@d34dman/flowdrop';
+import MyCustomNode from './MyCustomNode.svelte';
+
+// Register before mounting
+registerNodeComponent('mylib:custom', MyCustomNode);
+
+// Now nodes with type: "mylib:custom" will use MyCustomNode
+```
+
 ## [0.0.16] - 2025-12-02
 
 ### Added

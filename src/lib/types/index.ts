@@ -332,7 +332,7 @@ export interface WorkflowNode extends Node {
  * - tool: Dashed amber line for tool connections (dataType: "tool")
  * - data: Normal gray line for all other data connections
  */
-export type EdgeCategory = "trigger" | "tool" | "data";
+export type EdgeCategory = 'trigger' | 'tool' | 'data';
 
 /**
  * Extended edge type for workflows
