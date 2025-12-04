@@ -196,12 +196,22 @@ export class EdgeStylingHelper {
 			const sourceNode = nodes.find((node) => node.id === edge.source);
 			const targetNode = nodes.find((node) => node.id === edge.target);
 
+			// Create a copy of the edge
+			const updatedEdge = { ...edge };
+
 			if (!sourceNode || !targetNode) {
-				return edge;
+				// Set default edgeType even when nodes are not found
+				updatedEdge.data = {
+					...updatedEdge.data,
+					metadata: {
+						...(updatedEdge.data?.metadata as Record<string, unknown> || {}),
+						edgeType: "data" as EdgeCategory
+					}
+				};
+				return updatedEdge;
 			}
 
-			// Create a copy of the edge and apply styling
-			const updatedEdge = { ...edge };
+			// Apply full styling when nodes are available
 			this.applyConnectionStyling(updatedEdge, sourceNode, targetNode);
 
 			return updatedEdge;
