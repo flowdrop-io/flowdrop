@@ -1361,18 +1361,22 @@ components:
             condition:
               type: string
               description: Conditional expression for conditional edges
-            sourcePortDataType:
-              type: string
-              description: Data type of the source output port (e.g., trigger, tool, string, number)
-            edgeCategory:
-              type: string
-              enum:
-                - tool
-                - data
-              description: Derived edge category for visual styling
+            metadata:
+              type: object
+              description: Edge metadata for API and persistence
+              properties:
+                edgeType:
+                  type: string
+                  enum:
+                    - tool
+                    - data
+                  description: Edge type for visual styling
+                sourcePortDataType:
+                  type: string
+                  description: Data type of the source output port (e.g., tool, string, number)
             isToolConnection:
               type: boolean
-              description: Whether this is a tool connection (deprecated, use edgeCategory instead)
+              description: Whether this is a tool connection (deprecated, use metadata.edgeType instead)
             targetNodeType:
               type: string
               description: Target node type

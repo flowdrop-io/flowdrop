@@ -172,12 +172,15 @@ export class EdgeStylingHelper {
 				break;
 		}
 
-		// Store metadata in edge data for debugging and API
+		// Store metadata in edge data for API and persistence
 		edge.data = {
 			...edge.data,
-			sourcePortDataType: sourcePortDataType || undefined,
-			edgeCategory: edgeCategory,
-			// Keep isToolConnection for backward compatibility
+			metadata: {
+				...(edge.data?.metadata as Record<string, unknown> || {}),
+				edgeType: edgeCategory,
+				sourcePortDataType: sourcePortDataType || undefined
+			},
+			// Keep legacy fields for backward compatibility
 			isToolConnection: edgeCategory === "tool",
 			targetNodeType: targetNode.type,
 			targetCategory: targetNode.data.metadata.category

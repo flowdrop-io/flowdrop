@@ -348,11 +348,14 @@ export interface WorkflowEdge extends Edge {
 	data?: {
 		label?: string;
 		condition?: string;
-		/** Data type of the source output port (e.g., "trigger", "tool", "string") */
-		sourcePortDataType?: string;
-		/** Derived edge category for styling ("trigger", "tool", or "data") */
-		edgeCategory?: EdgeCategory;
-		/** @deprecated Use sourcePortDataType instead - kept for backward compatibility */
+		/** Edge metadata for API and persistence */
+		metadata?: {
+			/** Edge type for styling ("tool" or "data") */
+			edgeType?: EdgeCategory;
+			/** Data type of the source output port (e.g., "tool", "string", "number") */
+			sourcePortDataType?: string;
+		};
+		/** @deprecated Use metadata.edgeType instead - kept for backward compatibility */
 		isToolConnection?: boolean;
 		targetNodeType?: string;
 		targetCategory?: string;
