@@ -272,6 +272,48 @@ Override CSS custom properties:
 
 ### Node Types
 
+FlowDrop includes 7 built-in visual node types that control how nodes are rendered:
+
+| Type       | Description                                             | Use Case                 |
+| ---------- | ------------------------------------------------------- | ------------------------ |
+| `default`  | Full-featured workflow node with inputs/outputs display | Standard nodes           |
+| `simple`   | Compact layout with header, icon, and description       | Space-efficient nodes    |
+| `square`   | Minimal square node showing only an icon                | Icon-only representation |
+| `tool`     | Specialized node for agent tools with tool metadata     | AI agent tools           |
+| `gateway`  | Branching control flow with multiple output branches    | Conditional logic        |
+| `terminal` | Circular node for workflow start/end/exit points        | Workflow boundaries      |
+| `note`     | Documentation note with markdown support                | Comments/documentation   |
+
+#### Terminal Nodes
+
+Terminal nodes are special circular nodes for workflow boundaries:
+
+```typescript
+// Start node - output only
+const startNode: NodeMetadata = {
+	id: 'workflow-start',
+	name: 'Start',
+	type: 'terminal',
+	tags: ['start'],
+	inputs: [],
+	outputs: [{ id: 'trigger', name: 'Go', type: 'output', dataType: 'trigger' }]
+};
+
+// End node - input only
+const endNode: NodeMetadata = {
+	id: 'workflow-end',
+	name: 'End',
+	type: 'terminal',
+	tags: ['end'],
+	inputs: [{ id: 'done', name: 'Done', type: 'input', dataType: 'trigger' }],
+	outputs: []
+};
+```
+
+Terminal variants are auto-detected from `id`, `name`, or `tags` containing: `start`, `end`, `exit`, `abort`, `entry`, `finish`, `complete`.
+
+#### Custom Node Types
+
 Define custom node types:
 
 ```typescript

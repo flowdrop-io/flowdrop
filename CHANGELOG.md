@@ -5,6 +5,99 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.18] - 2025-12-04
+
+### Added
+
+#### Terminal Node Type
+
+- **New Built-in Node Type**: `terminal` - A circular node for workflow terminal points (start, end, exit/abort)
+  - Configurable variants: `start`, `end`, `exit`
+  - Automatic variant detection from metadata (id, name, tags)
+  - Manual variant override via `config.variant`
+
+- **Variant Configurations**:
+  | Variant | Icon | Color | Default Ports |
+  |---------|------|-------|---------------|
+  | `start` | Play circle | Green (#10b981) | Output only (trigger) |
+  | `end` | Stop circle | Gray (#6b7280) | Input only (trigger) |
+  | `exit` | X circle | Red (#ef4444) | Input only (trigger) |
+
+- **API-Controlled Ports**: Terminal nodes now fully respect the `inputs` and `outputs` arrays from metadata
+  - `undefined` → Uses variant default ports
+  - `[]` (empty array) → Explicitly no ports
+  - `[{...}]` → Uses provided custom ports
+  - Allows API to create passthrough terminals (both input and output) or decorative terminals (no ports)
+
+- **Visual Enhancements**:
+  - Circular design with variant-colored border
+  - Config button positioned above the node
+  - Ports vertically centered on the circle
+  - Variant-specific glow effects on hover
+
+### Changed
+
+- **Built-in Node Types**: FlowDrop now ships with 7 built-in node types:
+  - `workflowNode` (alias: `default`) - Standard workflow node
+  - `simple` - Compact layout
+  - `square` - Minimal icon node
+  - `tool` - Agent tool node
+  - `gateway` - Branching control flow
+  - `note` - Sticky note with markdown
+  - `terminal` - Start/end/exit points (NEW)
+
+### Usage Examples
+
+**Start Node (API Payload):**
+
+```json
+{
+  "id": "workflow-start",
+  "name": "Start",
+  "type": "terminal",
+  "tags": ["start"],
+  "inputs": [],
+  "outputs": [{ "id": "trigger", "name": "Go", "dataType": "trigger" }]
+}
+```
+
+**End Node (API Payload):**
+
+```json
+{
+  "id": "workflow-end",
+  "name": "End",
+  "type": "terminal",
+  "tags": ["end"],
+  "inputs": [{ "id": "done", "name": "Done", "dataType": "trigger" }],
+  "outputs": []
+}
+```
+
+**Passthrough Terminal (both ports):**
+
+```json
+{
+  "id": "checkpoint",
+  "name": "Checkpoint",
+  "type": "terminal",
+  "inputs": [{ "id": "in", "name": "In", "dataType": "trigger" }],
+  "outputs": [{ "id": "out", "name": "Out", "dataType": "trigger" }]
+}
+```
+
+**Decorative Terminal (no ports):**
+
+```json
+{
+  "id": "milestone",
+  "name": "Milestone",
+  "type": "terminal",
+  "inputs": [],
+  "outputs": []
+}
+```
+
 ## [0.0.17] - 2025-12-04
 
 ### Added
@@ -542,7 +635,9 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.16...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.18...HEAD
+[0.0.18]: https://github.com/d34dman/flowdrop/compare/v0.0.17...v0.0.18
+[0.0.17]: https://github.com/d34dman/flowdrop/compare/v0.0.16...v0.0.17
 [0.0.16]: https://github.com/d34dman/flowdrop/compare/v0.0.15...v0.0.16
 [0.0.15]: https://github.com/d34dman/flowdrop/compare/v0.0.14...v0.0.15
 [0.0.14]: https://github.com/d34dman/flowdrop/compare/v0.0.13...v0.0.14
