@@ -184,6 +184,18 @@ export class EdgeStylingHelper {
 
 		// Apply styling based on edge category
 		switch (edgeCategory) {
+			case "trigger":
+				// Trigger edges: solid black line for control flow
+				edge.style = "stroke: #000000; stroke-width: 2;";
+				edge.class = "flowdrop--edge--trigger";
+				edge.markerEnd = {
+					type: MarkerType.ArrowClosed,
+					width: 16,
+					height: 16,
+					color: "#000000"
+				};
+				break;
+
 			case "tool":
 				// Tool edges: dashed amber line
 				edge.style = "stroke: #f59e0b; stroke-dasharray: 5 3;";
@@ -198,7 +210,7 @@ export class EdgeStylingHelper {
 
 			case "data":
 			default:
-				// Data edges: normal gray line (includes trigger, string, number, etc.)
+				// Data edges: normal gray line
 				edge.style = "stroke: #9ca3af;";
 				edge.class = "flowdrop--edge--data";
 				edge.markerEnd = {
