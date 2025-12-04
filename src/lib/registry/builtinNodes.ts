@@ -13,6 +13,7 @@ import SquareNode from '../components/SquareNode.svelte';
 import ToolNode from '../components/ToolNode.svelte';
 import GatewayNode from '../components/GatewayNode.svelte';
 import NotesNode from '../components/NotesNode.svelte';
+import TerminalNode from '../components/TerminalNode.svelte';
 
 /**
  * Source identifier for built-in FlowDrop components
@@ -88,6 +89,17 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
 		category: 'layout',
 		source: FLOWDROP_SOURCE,
 		statusPosition: 'bottom-right',
+		statusSize: 'sm'
+	},
+	{
+		type: 'terminal',
+		displayName: 'Terminal (Start/End/Exit)',
+		description: 'Circular terminal node for workflow start, end, or exit points',
+		component: TerminalNode,
+		icon: 'mdi:circle-double',
+		category: 'functional',
+		source: FLOWDROP_SOURCE,
+		statusPosition: 'top-right',
 		statusSize: 'sm'
 	}
 ];
@@ -185,7 +197,7 @@ export function getBuiltinTypes(): string[] {
  * Type for built-in node types.
  * Use this when you specifically need a built-in type.
  */
-export type BuiltinNodeType = 'workflowNode' | 'simple' | 'square' | 'tool' | 'gateway' | 'note';
+export type BuiltinNodeType = 'workflowNode' | 'simple' | 'square' | 'tool' | 'gateway' | 'note' | 'terminal';
 
 /**
  * Array of built-in type strings for runtime validation.
@@ -196,7 +208,8 @@ export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
 	'square',
 	'tool',
 	'gateway',
-	'note'
+	'note',
+	'terminal'
 ];
 
 // Auto-register built-ins when this module is imported

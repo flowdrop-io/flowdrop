@@ -24,6 +24,7 @@ const NODE_TYPE_TO_COMPONENT_MAP: Record<NodeType, string> = {
 	square: 'square',
 	tool: 'tool',
 	gateway: 'gateway',
+	terminal: 'terminal',
 	default: 'workflowNode'
 };
 
@@ -36,6 +37,7 @@ const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
 	square: 'Square (geometric layout)',
 	tool: 'Tool (specialized for agent tools)',
 	gateway: 'Gateway (branching control flow)',
+	terminal: 'Terminal (start/end/exit)',
 	default: 'Default (standard workflow node)'
 };
 
