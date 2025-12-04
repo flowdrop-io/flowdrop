@@ -86,7 +86,31 @@ export class EdgeStylingHelper {
 	}
 
 	/**
+	 * Check if a port ID matches a dynamic branch in a Gateway node
+	 * Gateway nodes store branches in config.branches array
+	 * @param node - The workflow node to check
+	 * @param portId - The port ID to look up
+	 * @returns true if the portId matches a gateway branch
+	 */
+	static isGatewayBranch(node: WorkflowNodeType, portId: string): boolean {
+		// Check if this is a gateway node with dynamic branches
+		const nodeType = node.data?.metadata?.type || node.type;
+		if (nodeType !== "gateway") {
+			return false;
+		}
+
+		// Check if the portId matches a branch name in config.branches
+		const branches = node.data?.config?.branches as Array<{ name: string }> | undefined;
+		if (!branches || !Array.isArray(branches)) {
+			return false;
+		}
+
+		return branches.some((branch) => branch.name === portId);
+	}
+
+	/**
 	 * Get the data type of a port from a node's metadata
+	 * Also handles dynamic ports like Gateway branches
 	 * @param node - The workflow node containing the port
 	 * @param portId - The port ID to look up
 	 * @param portType - Whether to look in "inputs" or "outputs"
@@ -97,16 +121,25 @@ export class EdgeStylingHelper {
 		portId: string,
 		portType: "input" | "output"
 	): string | null {
+		// First, check static ports in metadata
 		const ports = portType === "output"
 			? node.data?.metadata?.outputs
 			: node.data?.metadata?.inputs;
 
-		if (!ports || !Array.isArray(ports)) {
-			return null;
+		if (ports && Array.isArray(ports)) {
+			const port = ports.find((p) => p.id === portId);
+			if (port?.dataType) {
+				return port.dataType;
+			}
 		}
 
-		const port = ports.find((p) => p.id === portId);
-		return port?.dataType || null;
+		// For output ports, also check dynamic Gateway branches
+		// Gateway branches are always trigger type (control flow)
+		if (portType === "output" && this.isGatewayBranch(node, portId)) {
+			return "trigger";
+		}
+
+		return null;
 	}
 
 	/**
