@@ -97,13 +97,13 @@ export interface NodePort {
  * Built-in node types for explicit component rendering.
  * These are the node types that ship with FlowDrop.
  */
-export type BuiltinNodeType = 'note' | 'simple' | 'square' | 'tool' | 'gateway' | 'default';
+export type BuiltinNodeType = 'note' | 'simple' | 'square' | 'tool' | 'gateway' | 'terminal' | 'default';
 
 /**
  * Node type for component rendering.
  * Includes built-in types and allows custom registered types.
  *
- * Built-in types: note, simple, square, tool, gateway, default
+ * Built-in types: note, simple, square, tool, gateway, terminal, default
  * Custom types: Any string registered via nodeComponentRegistry
  *
  * @example
