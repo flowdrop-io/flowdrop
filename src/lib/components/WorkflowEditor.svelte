@@ -533,56 +533,57 @@
 
 	/**
 	 * Edge Styling Based on Source Port Data Type
-	 * - Trigger edges: solid black line (control flow)
+	 * Uses CSS tokens from base.css for consistent theming
+	 * - Trigger edges: solid dark line (control flow)
 	 * - Tool edges: dashed amber line (tool connections)
 	 * - Data edges: normal gray line (data flow)
 	 */
 
-	/* Trigger Edge: Solid black line for control flow */
+	/* Trigger Edge: Solid dark line for control flow */
 	:global(.flowdrop--edge--trigger path.svelte-flow__edge-path) {
-		stroke: #000000;
-		stroke-width: 2;
+		stroke: var(--flowdrop-edge-trigger-color);
+		stroke-width: var(--flowdrop-edge-trigger-width);
 	}
 
 	:global(.flowdrop--edge--trigger:hover path.svelte-flow__edge-path) {
-		stroke: #000000;
-		stroke-width: 3;
+		stroke: var(--flowdrop-edge-trigger-color-hover);
+		stroke-width: var(--flowdrop-edge-trigger-width-hover);
 	}
 
 	:global(.flowdrop--edge--trigger.selected path.svelte-flow__edge-path) {
-		stroke: #7c3aed;
-		stroke-width: 3;
+		stroke: var(--flowdrop-edge-trigger-color-selected);
+		stroke-width: var(--flowdrop-edge-trigger-width-hover);
 	}
 
 	/* Tool Edge: Dashed amber line for tool connections */
 	:global(.flowdrop--edge--tool path.svelte-flow__edge-path) {
-		stroke: #f59e0b;
+		stroke: var(--flowdrop-edge-tool-color);
 		stroke-dasharray: 5 3;
 	}
 
 	:global(.flowdrop--edge--tool:hover path.svelte-flow__edge-path) {
-		stroke: #d97706;
+		stroke: var(--flowdrop-edge-tool-color-hover);
 		stroke-width: 2;
 	}
 
 	:global(.flowdrop--edge--tool.selected path.svelte-flow__edge-path) {
-		stroke: #7c3aed;
+		stroke: var(--flowdrop-edge-tool-color-selected);
 		stroke-dasharray: 5 3;
 		stroke-width: 2;
 	}
 
 	/* Data Edge: Normal gray line for data flow (default) */
 	:global(.flowdrop--edge--data path.svelte-flow__edge-path) {
-		stroke: #9ca3af;
+		stroke: var(--flowdrop-edge-data-color);
 	}
 
 	:global(.flowdrop--edge--data:hover path.svelte-flow__edge-path) {
-		stroke: #6b7280;
+		stroke: var(--flowdrop-edge-data-color-hover);
 		stroke-width: 2;
 	}
 
 	:global(.flowdrop--edge--data.selected path.svelte-flow__edge-path) {
-		stroke: #7c3aed;
+		stroke: var(--flowdrop-edge-data-color-selected);
 		stroke-width: 2;
 	}
 </style>
