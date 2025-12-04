@@ -1368,10 +1368,10 @@ components:
                 edgeType:
                   type: string
                   enum:
-                    - control
+                    - trigger
                     - tool
                     - data
-                  description: Edge type for visual styling (control for trigger ports)
+                  description: Edge type for visual styling
                 sourcePortDataType:
                   type: string
                   description: Data type of the source output port (e.g., tool, string, number)
