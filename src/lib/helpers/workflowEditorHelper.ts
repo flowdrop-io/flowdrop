@@ -44,50 +44,144 @@ export function generateNodeId(nodeTypeId: string, existingNodes: WorkflowNodeTy
 }
 
 /**
- * Edge styling configuration
+ * Edge category type for styling purposes
+ * - tool: Dashed amber line for tool connections
+ * - data: Normal gray line for all other data connections
+ */
+export type EdgeCategory = "tool" | "data";
+
+/**
+ * Edge styling configuration based on source port data type
  */
 export class EdgeStylingHelper {
 	/**
-	 * Apply custom styling to connection edges based on rules:
-	 * - Dashed lines for connections to tool nodes
-	 * - Arrow markers pointing towards input ports
+	 * Extract the port ID from a handle ID
+	 * Supports two formats:
+	 * 1. New format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
+	 * 2. Legacy format: just the portId (e.g., "text", "trigger")
+	 * @param handleId - The handle ID string (e.g., "sample-node.1-output-trigger" or "trigger")
+	 * @returns The port ID (e.g., "trigger") or the handleId itself for legacy format
+	 */
+	static extractPortIdFromHandle(handleId: string | undefined): string | null {
+		if (!handleId) {
+			return null;
+		}
+
+		// Try new format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
+		// We need to find the last occurrence of "-output-" or "-input-" and get what follows
+		const outputMatch = handleId.lastIndexOf("-output-");
+		const inputMatch = handleId.lastIndexOf("-input-");
+
+		if (outputMatch !== -1) {
+			return handleId.substring(outputMatch + "-output-".length);
+		}
+
+		if (inputMatch !== -1) {
+			return handleId.substring(inputMatch + "-input-".length);
+		}
+
+		// Legacy format: the handleId IS the port ID
+		return handleId;
+	}
+
+	/**
+	 * Get the data type of a port from a node's metadata
+	 * @param node - The workflow node containing the port
+	 * @param portId - The port ID to look up
+	 * @param portType - Whether to look in "inputs" or "outputs"
+	 * @returns The port's dataType or null if not found
+	 */
+	static getPortDataType(
+		node: WorkflowNodeType,
+		portId: string,
+		portType: "input" | "output"
+	): string | null {
+		const ports = portType === "output"
+			? node.data?.metadata?.outputs
+			: node.data?.metadata?.inputs;
+
+		if (!ports || !Array.isArray(ports)) {
+			return null;
+		}
+
+		const port = ports.find((p) => p.id === portId);
+		return port?.dataType || null;
+	}
+
+	/**
+	 * Determine the edge category based on source port data type
+	 * @param sourcePortDataType - The data type of the source output port
+	 * @returns The edge category for styling
+	 */
+	static getEdgeCategory(sourcePortDataType: string | null): EdgeCategory {
+		if (sourcePortDataType === "tool") {
+			return "tool";
+		}
+
+		// All other data types (string, number, boolean, trigger, array, etc.) are "data" edges
+		return "data";
+	}
+
+	/**
+	 * Apply custom styling to connection edges based on source port data type:
+	 * - Trigger ports: Solid black line with arrow
+	 * - Tool ports: Dashed amber line with arrow
+	 * - Data ports: Normal gray line with arrow
 	 */
 	static applyConnectionStyling(
 		edge: WorkflowEdge,
 		sourceNode: WorkflowNodeType,
 		targetNode: WorkflowNodeType
 	): void {
-		// Rule 1: Dashed lines for tool nodes
-		// A node is a tool node when it uses the ToolNode component,
-		// which happens when sourceNode.type === "tool"
-		const isToolNode = sourceNode.type === 'tool';
+		// Extract port ID from sourceHandle
+		const sourcePortId = this.extractPortIdFromHandle(edge.sourceHandle);
 
-		// Use inline styles for dashed lines (more reliable than CSS classes)
-		if (isToolNode) {
-			edge.style = 'stroke-dasharray: 0 4 0; stroke: amber !important;';
-			edge.class = 'flowdrop--edge--tool';
-		} else {
-			edge.style = 'stroke: grey;';
+		// Get the source port's data type
+		const sourcePortDataType = sourcePortId
+			? this.getPortDataType(sourceNode, sourcePortId, "output")
+			: null;
+
+		// Determine edge category based on source port data type
+		const edgeCategory = this.getEdgeCategory(sourcePortDataType);
+
+		// Apply styling based on edge category
+		switch (edgeCategory) {
+			case "tool":
+				// Tool edges: dashed amber line
+				edge.style = "stroke: #f59e0b; stroke-dasharray: 5 3;";
+				edge.class = "flowdrop--edge--tool";
+				edge.markerEnd = {
+					type: MarkerType.ArrowClosed,
+					width: 16,
+					height: 16,
+					color: "#f59e0b"
+				};
+				break;
+
+			case "data":
+			default:
+				// Data edges: normal gray line (includes trigger, string, number, etc.)
+				edge.style = "stroke: #9ca3af;";
+				edge.class = "flowdrop--edge--data";
+				edge.markerEnd = {
+					type: MarkerType.ArrowClosed,
+					width: 16,
+					height: 16,
+					color: "#9ca3af"
+				};
+				break;
 		}
 
-		// Store metadata in edge data for debugging
+		// Store metadata in edge data for debugging and API
 		edge.data = {
 			...edge.data,
-			isToolConnection: isToolNode,
+			sourcePortDataType: sourcePortDataType || undefined,
+			edgeCategory: edgeCategory,
+			// Keep isToolConnection for backward compatibility
+			isToolConnection: edgeCategory === "tool",
 			targetNodeType: targetNode.type,
 			targetCategory: targetNode.data.metadata.category
 		};
-
-		// Rule 2: Always add arrow pointing towards input port
-		// This replaces the default arrows we removed
-		if (!isToolNode) {
-			edge.markerEnd = {
-				type: MarkerType.ArrowClosed,
-				width: 16,
-				height: 16,
-				color: 'grey'
-			};
-		}
 	}
 
 	/**
