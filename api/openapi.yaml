@@ -1368,6 +1368,7 @@ components:
                 edgeType:
                   type: string
                   enum:
+                    - trigger
                     - tool
                     - data
                   description: Edge type for visual styling
