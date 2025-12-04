@@ -932,8 +932,19 @@ components:
         - square
         - tool
         - gateway
+        - terminal
         - default
-      description: Visual rendering type for the node
+      description: |
+        Visual rendering type for the node.
+        
+        Built-in types:
+        - `note` - Sticky note with markdown support
+        - `simple` - Compact layout with header and description
+        - `square` - Minimal square node with centered icon
+        - `tool` - Specialized node for agent tools
+        - `gateway` - Branching control flow with multiple outputs
+        - `terminal` - Circular node for workflow start/end/exit points
+        - `default` - Full-featured standard workflow node (alias: workflowNode)
 
     NodeExecutionStatus:
       type: string
