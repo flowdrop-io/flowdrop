@@ -45,11 +45,11 @@ export function generateNodeId(nodeTypeId: string, existingNodes: WorkflowNodeTy
 
 /**
  * Edge category type for styling purposes
- * - control: For control flow connections (dataType: "trigger")
+ * - trigger: For control flow connections (dataType: "trigger")
  * - tool: Dashed amber line for tool connections (dataType: "tool")
  * - data: Normal gray line for all other data connections
  */
-export type EdgeCategory = "control" | "tool" | "data";
+export type EdgeCategory = "trigger" | "tool" | "data";
 
 /**
  * Edge styling configuration based on source port data type
@@ -116,7 +116,7 @@ export class EdgeStylingHelper {
 	 */
 	static getEdgeCategory(sourcePortDataType: string | null): EdgeCategory {
 		if (sourcePortDataType === "trigger") {
-			return "control";
+			return "trigger";
 		}
 
 		if (sourcePortDataType === "tool") {
