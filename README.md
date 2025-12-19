@@ -169,8 +169,6 @@ const workflow = app.getWorkflow();
 app.destroy();
 ```
 
-See the [Enterprise Integration Guide](./docs/enterprise-integration.md) for React, Vue, Angular, and Drupal examples.
-
 #### 3. Integration with Backend Frameworks
 
 ##### Drupal Example
@@ -310,47 +308,6 @@ const endNode: NodeMetadata = {
 };
 ```
 
-Terminal variants are auto-detected from `id`, `name`, or `tags` containing: `start`, `end`, `exit`, `abort`, `entry`, `finish`, `complete`.
-
-#### Custom Node Types
-
-Define custom node types:
-
-```typescript
-const customNode: NodeMetadata = {
-	id: 'custom_processor',
-	name: 'Custom Processor',
-	category: 'data_processing',
-	description: 'Process data with custom logic',
-	icon: 'mdi:cog',
-	color: '#3b82f6',
-	inputs: [
-		{
-			id: 'input',
-			name: 'Input',
-			type: 'input',
-			dataType: 'mixed'
-		}
-	],
-	outputs: [
-		{
-			id: 'output',
-			name: 'Output',
-			type: 'output',
-			dataType: 'mixed'
-		}
-	],
-	configSchema: {
-		type: 'object',
-		properties: {
-			operation: {
-				type: 'string',
-				title: 'Operation'
-			}
-		}
-	}
-};
-```
 
 ## 🔌 Backend Integration
 
@@ -407,14 +364,6 @@ npm run format
 
 - **API.md** - REST API specification
 - **CHANGELOG.md** - Version history
-- **Storybook** - Component documentation (run `npm run storybook`)
-
-### Enterprise Features (v0.0.16+)
-
-- **[Enterprise Integration Guide](./docs/enterprise-integration.md)** - Complete integration patterns for React, Vue, Angular, Drupal
-- **[Authentication Guide](./docs/authentication-guide.md)** - OAuth, JWT, SSO, and custom auth providers
-- **[Event Handlers](./docs/event-handlers.md)** - Workflow lifecycle events and hooks
-- **[Features Configuration](./docs/features-configuration.md)** - Feature flags, draft auto-save, and customization
 
 ## 🤝 Contributing
 
@@ -456,10 +405,6 @@ docker-compose up -d
 - `FLOWDROP_TIMEOUT` - Request timeout in milliseconds
 - `FLOWDROP_AUTH_TYPE` - Authentication type (none/bearer/api_key/custom)
 - `FLOWDROP_AUTH_TOKEN` - Authentication token
-
-**Development (Build-time):**
-
-- `VITE_API_BASE_URL` - Dev API URL (used only during `npm run dev`)
 
 ### Build for Production
 
