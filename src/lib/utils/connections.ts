@@ -120,18 +120,6 @@ export function getPortCompatibilityChecker(): PortCompatibilityChecker {
 }
 
 /**
- * Check if two data types are compatible for connection (legacy function)
- * @deprecated Use PortCompatibilityChecker.areDataTypesCompatible() instead
- */
-export function areDataTypesCompatible(outputType: NodeDataType, inputType: NodeDataType): boolean {
-	if (!globalCompatibilityChecker) {
-		// Fallback to basic compatibility for backward compatibility
-		return outputType === inputType;
-	}
-	return globalCompatibilityChecker.areDataTypesCompatible(outputType, inputType);
-}
-
-/**
  * Get all possible connections from a source node to target nodes
  */
 export function getPossibleConnections(
@@ -163,6 +151,9 @@ export function getPossibleConnections(
 	// Get all output ports from source node
 	const sourceOutputs = sourceMetadata.outputs;
 
+	// Get the compatibility checker instance
+	const checker = getPortCompatibilityChecker();
+
 	// Check each target node
 	for (const targetNode of targetNodes) {
 		if (targetNode.id === sourceNode.id) continue; // Skip self-connection
@@ -176,7 +167,10 @@ export function getPossibleConnections(
 		// Check each output-input combination
 		for (const sourcePort of sourceOutputs) {
 			for (const targetPort of targetInputs) {
-				const compatible = areDataTypesCompatible(sourcePort.dataType, targetPort.dataType);
+				const compatible = checker.areDataTypesCompatible(
+					sourcePort.dataType,
+					targetPort.dataType
+				);
 
 				possibleConnections.push({
 					sourceNodeId: sourceNode.id,
@@ -242,8 +236,9 @@ export function validateConnection(
 		return { valid: false, error: 'Target port not found' };
 	}
 
-	// Check data type compatibility
-	if (!areDataTypesCompatible(sourcePort.dataType, targetPort.dataType)) {
+	// Check data type compatibility using the global checker
+	const checker = getPortCompatibilityChecker();
+	if (!checker.areDataTypesCompatible(sourcePort.dataType, targetPort.dataType)) {
 		return {
 			valid: false,
 			error: `Incompatible data types: ${sourcePort.dataType} cannot connect to ${targetPort.dataType}`
@@ -288,6 +283,9 @@ export function getConnectionSuggestions(
 	// Get all other nodes
 	const otherNodes = nodes.filter((n) => n.id !== nodeId);
 
+	// Get the compatibility checker instance
+	const checker = getPortCompatibilityChecker();
+
 	for (const otherNode of otherNodes) {
 		const otherMetadata = nodeTypes.find((nt) => nt.id === otherNode.data.metadata.id);
 		if (!otherMetadata) continue;
@@ -295,7 +293,7 @@ export function getConnectionSuggestions(
 		// Check outputs from other nodes to inputs of current node
 		for (const output of otherMetadata.outputs) {
 			for (const input of metadata.inputs) {
-				const compatible = areDataTypesCompatible(output.dataType, input.dataType);
+				const compatible = checker.areDataTypesCompatible(output.dataType, input.dataType);
 				suggestions.push({
 					nodeId: otherNode.id,
 					nodeName: otherNode.data.label,
@@ -311,7 +309,7 @@ export function getConnectionSuggestions(
 		// Check outputs from current node to inputs of other nodes
 		for (const output of metadata.outputs) {
 			for (const input of otherMetadata.inputs) {
-				const compatible = areDataTypesCompatible(output.dataType, input.dataType);
+				const compatible = checker.areDataTypesCompatible(output.dataType, input.dataType);
 				suggestions.push({
 					nodeId: otherNode.id,
 					nodeName: otherNode.data.label,
