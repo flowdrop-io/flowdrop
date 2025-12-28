@@ -105,8 +105,8 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
 ];
 
 /**
- * Alias mapping for backwards compatibility.
- * Maps old type names to their canonical registration.
+ * Alias mapping for type resolution.
+ * Maps alternative type names to their canonical registration.
  */
 export const BUILTIN_TYPE_ALIASES: Record<string, string> = {
 	default: 'workflowNode'
