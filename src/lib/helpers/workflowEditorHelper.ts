@@ -58,17 +58,17 @@ export class EdgeStylingHelper {
 	/**
 	 * Extract the port ID from a handle ID
 	 * Supports two formats:
-	 * 1. New format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
-	 * 2. Legacy format: just the portId (e.g., "text", "trigger")
+	 * 1. Standard format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
+	 * 2. Short format: just the portId (e.g., "text", "trigger")
 	 * @param handleId - The handle ID string (e.g., "sample-node.1-output-trigger" or "trigger")
-	 * @returns The port ID (e.g., "trigger") or the handleId itself for legacy format
+	 * @returns The port ID (e.g., "trigger") or the handleId itself for short format
 	 */
 	static extractPortIdFromHandle(handleId: string | undefined): string | null {
 		if (!handleId) {
 			return null;
 		}
 
-		// Try new format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
+		// Try standard format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
 		// We need to find the last occurrence of "-output-" or "-input-" and get what follows
 		const outputMatch = handleId.lastIndexOf('-output-');
 		const inputMatch = handleId.lastIndexOf('-input-');
@@ -81,7 +81,7 @@ export class EdgeStylingHelper {
 			return handleId.substring(inputMatch + '-input-'.length);
 		}
 
-		// Legacy format: the handleId IS the port ID
+		// Short format: the handleId IS the port ID
 		return handleId;
 	}
 
