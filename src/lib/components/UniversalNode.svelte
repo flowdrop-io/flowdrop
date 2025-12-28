@@ -15,15 +15,6 @@
 	import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
 	import { resolveComponentName } from '../utils/nodeTypes.js';
 
-	// Fallback components for when registry is not available
-	// These are only used as last-resort fallbacks
-	import WorkflowNodeComponent from './WorkflowNode.svelte';
-	import NotesNode from './NotesNode.svelte';
-	import SimpleNode from './SimpleNode.svelte';
-	import SquareNode from './SquareNode.svelte';
-	import ToolNode from './ToolNode.svelte';
-	import GatewayNode from './GatewayNode.svelte';
-
 	let {
 		data,
 		selected = false
@@ -52,7 +43,6 @@
 
 	/**
 	 * Get the node component from the registry.
-	 * Falls back to built-in components if registry lookup fails.
 	 */
 	let nodeComponent = $derived(getNodeComponent(resolvedComponentName));
 
@@ -70,8 +60,7 @@
 	);
 
 	/**
-	 * Get the node component for the given type.
-	 * First tries the registry, then falls back to hardcoded components.
+	 * Get the node component for the given type from the registry.
 	 *
 	 * @param nodeType - The node type identifier
 	 * @returns The Svelte component to render
@@ -80,29 +69,14 @@
 		// Resolve any aliases (e.g., "default" -> "workflowNode")
 		const resolvedType = resolveBuiltinAlias(nodeType);
 
-		// Try registry first
-		const registeredComponent = nodeComponentRegistry.getComponent(resolvedType);
-		if (registeredComponent) {
-			return registeredComponent;
+		// Get component from registry (defaults to workflowNode if not found)
+		const component = nodeComponentRegistry.getComponent(resolvedType);
+		if (component) {
+			return component;
 		}
 
-		// Fallback to hardcoded switch for backwards compatibility
-		// This ensures the component works even if registry fails to initialize
-		switch (resolvedType) {
-			case 'note':
-				return NotesNode;
-			case 'simple':
-				return SimpleNode;
-			case 'square':
-				return SquareNode;
-			case 'tool':
-				return ToolNode;
-			case 'gateway':
-				return GatewayNode;
-			case 'workflowNode':
-			default:
-				return WorkflowNodeComponent;
-		}
+		// Return the default component from registry
+		return nodeComponentRegistry.getComponent('workflowNode');
 	}
 
 	/**
