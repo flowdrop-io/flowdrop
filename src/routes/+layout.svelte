@@ -14,10 +14,14 @@
 		globalSaveWorkflow,
 		globalExportWorkflow
 	} from '$lib/services/globalSave.js';
-	import { getEndpointUrl, type ApiConfig, defaultApiConfig } from '$lib/config/apiConfig';
-	import { getDevApiConfig, getDevConfig, getDevConfigSync } from './devConfig';
+	import {
+		buildEndpointUrl,
+		type EndpointConfig,
+		defaultEndpointConfig,
+		createEndpointConfig
+	} from '$lib/config/endpoints.js';
+	import { getDevConfig, getDevConfigSync } from './devConfig';
 	import { setEndpointConfig } from '$lib/services/api.js';
-	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import { Toaster } from 'svelte-5-french-toast';
 	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
 
@@ -25,8 +29,8 @@
 
 	// API configuration from server-side loaded runtime config
 	// This is loaded on the server before any components render
-	let apiConfig = $state<ApiConfig>({
-		...defaultApiConfig,
+	let endpointConfig = $state<EndpointConfig>({
+		...defaultEndpointConfig,
 		baseUrl: data.runtimeConfig.apiBaseUrl
 	});
 
@@ -38,7 +42,11 @@
 	 */
 	async function fetchWorkflowName(workflowId: string) {
 		try {
-			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.get, { id: workflowId });
+			const url = buildEndpointUrl(
+				endpointConfig,
+				endpointConfig.endpoints.workflows.get,
+				{ id: workflowId }
+			);
 			const response = await fetch(url);
 
 			if (response.ok) {

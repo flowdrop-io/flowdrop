@@ -11,15 +11,19 @@
 	import Icon from '@iconify/svelte';
 	import StatusIcon from '$lib/components/StatusIcon.svelte';
 	import StatusLabel from '$lib/components/StatusLabel.svelte';
-	import { getEndpointUrl, defaultApiConfig, type ApiConfig } from '$lib/config/apiConfig';
+	import {
+		buildEndpointUrl,
+		defaultEndpointConfig,
+		type EndpointConfig
+	} from '$lib/config/endpoints.js';
 	import { apiToasts, pipelineToasts } from '$lib/services/toastService.js';
 	import type { NodeExecutionStatus } from '$lib/types/index.js';
 
 	let { data } = $props();
 
 	// Get API configuration from server-loaded runtime config
-	let apiConfig = $state<ApiConfig>({
-		...defaultApiConfig,
+	let endpointConfig = $state<EndpointConfig>({
+		...defaultEndpointConfig,
 		baseUrl: data.runtimeConfig.apiBaseUrl
 	});
 
@@ -66,7 +70,7 @@
 			loading = true;
 			error = null;
 
-			const apiUrl = getEndpointUrl(apiConfig, '/workflow/{workflow_id}/pipelines', {
+			const apiUrl = buildEndpointUrl(endpointConfig, '/workflow/{workflow_id}/pipelines', {
 				workflow_id: workflowId
 			});
 			const response = await fetch(apiUrl, {
@@ -96,7 +100,7 @@
 		if (!workflowId) return;
 
 		try {
-			const apiUrl = getEndpointUrl(apiConfig, '/workflows/{id}', { id: workflowId });
+			const apiUrl = buildEndpointUrl(endpointConfig, '/workflows/{id}', { id: workflowId });
 			const response = await fetch(apiUrl, {
 				method: 'GET',
 				headers: {
