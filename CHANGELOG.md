@@ -5,6 +5,105 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.19] - 2025-12-28
+
+### Removed
+
+This release removes all deprecated code and backward compatibility support to clean up the codebase for maintainability.
+
+#### Deprecated API Removal
+
+| Removed | Replacement |
+|---------|-------------|
+| `ApiConfig` interface | `EndpointConfig` |
+| `getEndpointUrl()` | `buildEndpointUrl()` |
+| `defaultApiConfig` | `defaultEndpointConfig` |
+| `setApiBaseUrl()` | Configure via `EndpointConfig.baseUrl` |
+| `areDataTypesCompatible()` function | `PortCompatibilityChecker.areDataTypesCompatible()` |
+| `DATA_TYPE_COLOR_TOKENS` constant | `getDataTypeColorToken()` function |
+| `NodeType` type alias | `NodeMetadata` |
+| Edge `isToolConnection` property | `metadata.edgeType` |
+
+#### Backward Compatibility Removal
+
+| Removed | Replacement |
+|---------|-------------|
+| `unmountWorkflowEditor()` | `unmountFlowDropApp()` |
+| `NodeConfig` type alias | `ConfigValues` |
+| `createAuthProviderFromLegacyConfig()` | Use `AuthProvider` implementations directly |
+| Legacy node type mappings in `WorkflowEditor` | All nodes use `universalNode` type |
+| `NODE_TYPE_TO_COMPONENT_MAP` static mapping | Node component registry |
+| Fallback component switch in `UniversalNode` | Node component registry |
+
+### Changed
+
+- **EnhancedFlowDropApiClient**: Now defaults to `NoAuthProvider` when no `AuthProvider` is specified (previously created provider from legacy `config.auth`)
+- **UniversalNode**: Now relies entirely on the node component registry for component resolution
+- **getComponentNameForNodeType()**: Uses only the registry (no static fallback map)
+- **Edge data format**: All edges now use `metadata.edgeType` instead of `isToolConnection`
+
+### Breaking Changes
+
+**1. API Configuration Migration**
+
+```typescript
+// Before (0.0.18)
+import { getEndpointUrl, type ApiConfig, defaultApiConfig } from "@d34dman/flowdrop";
+const config: ApiConfig = { ...defaultApiConfig, baseUrl: "/api" };
+const url = getEndpointUrl(config, config.endpoints.workflows.get, { id: "123" });
+
+// After (0.0.19)
+import { buildEndpointUrl, type EndpointConfig, defaultEndpointConfig } from "@d34dman/flowdrop";
+const config: EndpointConfig = { ...defaultEndpointConfig, baseUrl: "/api" };
+const url = buildEndpointUrl(config, config.endpoints.workflows.get, { id: "123" });
+```
+
+**2. App Unmount Migration**
+
+```typescript
+// Before (0.0.18)
+import { unmountWorkflowEditor } from "@d34dman/flowdrop";
+unmountWorkflowEditor(app);
+
+// After (0.0.19)
+import { unmountFlowDropApp } from "@d34dman/flowdrop";
+unmountFlowDropApp(app);
+```
+
+**3. Type Alias Migration**
+
+```typescript
+// Before (0.0.18)
+import type { NodeConfig } from "@d34dman/flowdrop";
+
+// After (0.0.19)
+import type { ConfigValues } from "@d34dman/flowdrop";
+```
+
+**4. Auth Provider Migration**
+
+```typescript
+// Before (0.0.18) - legacy config.auth was auto-converted
+const client = new EnhancedFlowDropApiClient(config);
+
+// After (0.0.19) - provide AuthProvider explicitly
+import { StaticAuthProvider } from "@d34dman/flowdrop";
+const client = new EnhancedFlowDropApiClient(config, new StaticAuthProvider({ type: "bearer", token: "xyz" }));
+```
+
+**5. Data Type Compatibility Check Migration**
+
+```typescript
+// Before (0.0.18)
+import { areDataTypesCompatible } from "@d34dman/flowdrop";
+const compatible = areDataTypesCompatible("string", "text");
+
+// After (0.0.19)
+import { getPortCompatibilityChecker } from "@d34dman/flowdrop";
+const checker = getPortCompatibilityChecker();
+const compatible = checker.areDataTypesCompatible("string", "text");
+```
+
 ## [0.0.18] - 2025-12-04
 
 ### Added
@@ -635,7 +734,8 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.18...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.19...HEAD
+[0.0.19]: https://github.com/d34dman/flowdrop/compare/v0.0.18...v0.0.19
 [0.0.18]: https://github.com/d34dman/flowdrop/compare/v0.0.17...v0.0.18
 [0.0.17]: https://github.com/d34dman/flowdrop/compare/v0.0.16...v0.0.17
 [0.0.16]: https://github.com/d34dman/flowdrop/compare/v0.0.15...v0.0.16
