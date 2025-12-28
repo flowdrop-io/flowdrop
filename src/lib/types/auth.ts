@@ -352,6 +352,7 @@ export class NoAuthProvider implements AuthProvider {
  * Used internally for backward compatibility with existing code that uses
  * the old auth configuration format in EndpointConfig.
  *
+ * @internal This function is for internal library use only and is not part of the public API
  * @param authConfig - Legacy auth configuration from EndpointConfig
  * @returns AuthProvider instance
  */
