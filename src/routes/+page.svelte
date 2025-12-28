@@ -10,15 +10,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { getEndpointUrl, defaultApiConfig, type ApiConfig } from '$lib/config/apiConfig';
+	import {
+		buildEndpointUrl,
+		defaultEndpointConfig,
+		type EndpointConfig
+	} from '$lib/config/endpoints.js';
 	import Icon from '@iconify/svelte';
 	import { apiToasts, workflowToasts, showConfirmation } from '$lib/services/toastService.js';
 
 	let { data } = $props();
 
 	// Get API configuration from server-loaded runtime config
-	let apiConfig = $state<ApiConfig>({
-		...defaultApiConfig,
+	let endpointConfig = $state<EndpointConfig>({
+		...defaultEndpointConfig,
 		baseUrl: data.runtimeConfig.apiBaseUrl
 	});
 
@@ -57,7 +61,7 @@
 			error = null;
 
 			// Use configured endpoint (config is loaded from server)
-			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.list);
+			const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.workflows.list);
 			console.log('Fetching workflows from:', url); // Debug log
 			const response = await fetch(url);
 

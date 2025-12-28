@@ -8,25 +8,27 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import PipelineStatus from '$lib/components/PipelineStatus.svelte';
-	import { getEndpointUrl, defaultApiConfig, type ApiConfig } from '$lib/config/apiConfig';
+	import {
+		buildEndpointUrl,
+		defaultEndpointConfig,
+		createEndpointConfig,
+		type EndpointConfig
+	} from '$lib/config/endpoints.js';
 	import { setEndpointConfig } from '$lib/services/api.js';
-	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { Workflow } from '$lib/types/index.js';
 	import Icon from '@iconify/svelte';
 
 	let { data } = $props();
 
 	// Get API configuration from server-loaded runtime config
-	let apiConfig = $state<ApiConfig>({
-		...defaultApiConfig,
-		baseUrl: data.runtimeConfig.apiBaseUrl
-	});
+	let endpointConfig = $state<EndpointConfig>(
+		createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
+			auth: { type: data.runtimeConfig.authType, token: data.runtimeConfig.authToken },
+			timeout: data.runtimeConfig.timeout
+		})
+	);
 
 	// Initialize API service with runtime config
-	const endpointConfig = createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
-		auth: { type: data.runtimeConfig.authType, token: data.runtimeConfig.authToken },
-		timeout: data.runtimeConfig.timeout
-	});
 	setEndpointConfig(endpointConfig);
 
 	let workflowId = $derived($page.params.id);
@@ -51,7 +53,7 @@
 			error = null;
 
 			// Fetch workflow
-			const workflowUrl = getEndpointUrl(apiConfig, '/workflows/{id}', { id: workflowId });
+			const workflowUrl = buildEndpointUrl(endpointConfig, '/workflows/{id}', { id: workflowId });
 			const workflowResponse = await fetch(workflowUrl);
 			if (!workflowResponse.ok) {
 				throw new Error(`Failed to fetch workflow: ${workflowResponse.statusText}`);
@@ -61,7 +63,7 @@
 			workflow = workflowData.success && workflowData.data ? workflowData.data : workflowData;
 
 			// Fetch pipeline
-			const pipelineUrl = getEndpointUrl(apiConfig, '/pipeline/{id}', { id: pipelineId });
+			const pipelineUrl = buildEndpointUrl(endpointConfig, '/pipeline/{id}', { id: pipelineId });
 			const pipelineResponse = await fetch(pipelineUrl);
 			if (!pipelineResponse.ok) {
 				throw new Error(`Failed to fetch pipeline: ${pipelineResponse.statusText}`);
@@ -80,65 +82,7 @@
 		fetchData();
 	});
 
-	// Configure endpoints once on mount
-	onMount(() => {
-		setEndpointConfig({
-			baseUrl: apiConfig.baseUrl,
-			endpoints: {
-				nodes: {
-					list: '/nodes',
-					get: '/nodes/{id}',
-					byCategory: '/nodes/category/{category}',
-					metadata: '/nodes/{id}/metadata'
-				},
-				portConfig: '/port-config',
-				workflows: {
-					list: '/workflows',
-					get: '/workflows/{id}',
-					create: '/workflows',
-					update: '/workflows/{id}',
-					delete: '/workflows/{id}',
-					validate: '/workflows/{id}/validate',
-					export: '/workflows/{id}/export',
-					import: '/workflows/import'
-				},
-				executions: {
-					execute: '/executions/execute',
-					status: '/executions/{id}/status',
-					cancel: '/executions/{id}/cancel',
-					logs: '/executions/{id}/logs',
-					history: '/executions/history'
-				},
-				templates: {
-					list: '/templates',
-					get: '/templates/{id}',
-					create: '/templates',
-					update: '/templates/{id}',
-					delete: '/templates/{id}'
-				},
-				users: {
-					profile: '/users/profile',
-					preferences: '/users/preferences'
-				},
-				system: {
-					health: '/system/health',
-					config: '/system/config',
-					version: '/system/version'
-				},
-				pipelines: {
-					list: '/workflow/{workflow_id}/pipelines',
-					get: '/pipeline/{id}',
-					create: '/pipeline',
-					update: '/pipeline/{id}',
-					delete: '/pipeline/{id}',
-					status: '/pipeline/{id}/status',
-					logs: '/pipeline/{id}/logs',
-					execute: '/pipeline/{id}/execute',
-					stop: '/pipeline/{id}/stop'
-				}
-			}
-		});
-	});
+	// Configure endpoints once on mount (endpointConfig is already set at module level)
 </script>
 
 <svelte:head>

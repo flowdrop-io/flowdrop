@@ -2,7 +2,11 @@
 	import App from '$lib/components/App.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { getEndpointUrl, type ApiConfig, defaultApiConfig } from '$lib/config/apiConfig';
+	import {
+		buildEndpointUrl,
+		type EndpointConfig,
+		defaultEndpointConfig
+	} from '$lib/config/endpoints.js';
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 
 	/**
@@ -23,8 +27,8 @@
 	let workflowId = $derived($page.params.id);
 
 	// API configuration from server-loaded runtime config
-	let apiConfig = $state<ApiConfig>({
-		...defaultApiConfig,
+	let endpointConfig = $state<EndpointConfig>({
+		...defaultEndpointConfig,
 		baseUrl: data.runtimeConfig.apiBaseUrl
 	});
 
@@ -68,7 +72,9 @@
 			error = null;
 
 			// Use configured endpoint
-			const url = getEndpointUrl(apiConfig, apiConfig.endpoints.workflows.get, { id: workflowId });
+			const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.workflows.get, {
+				id: workflowId
+			});
 			const response = await fetch(url);
 
 			if (!response.ok) {
@@ -84,7 +90,7 @@
 			let refreshedNodes = workflowData.nodes || [];
 			if (refreshedNodes.length > 0) {
 				try {
-					const nodesUrl = getEndpointUrl(apiConfig, apiConfig.endpoints.nodes.list);
+					const nodesUrl = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.nodes.list);
 					const nodesResponse = await fetch(nodesUrl);
 					if (nodesResponse.ok) {
 						const nodesData = await nodesResponse.json();
