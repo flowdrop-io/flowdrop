@@ -99,7 +99,7 @@
     "@storybook/sveltekit": "^9.0.15",
     "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/adapter-node": "^5.4.0",
-    "@sveltejs/kit": "^2.16.0",
+    "@sveltejs/kit": "^2.49.2",
     "@sveltejs/package": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@types/marked": "^6.0.0",
@@ -126,6 +126,11 @@
     "vite-plugin-devtools-json": "^0.2.1",
     "vitest": "^3.2.3",
     "vitest-browser-svelte": "^0.1.0"
+  },
+  "overrides": {
+    "@sveltejs/kit": {
+      "cookie": "0.7.2"
+    }
   },
   "keywords": [
     "svelte"
