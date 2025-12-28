@@ -7,24 +7,23 @@
  * The library code (src/lib/) should never import from this file.
  */
 
-import { defaultApiConfig } from '$lib/config/apiConfig';
-import type { ApiConfig } from '$lib/config/apiConfig';
+import { defaultEndpointConfig, type EndpointConfig } from '$lib/config/endpoints.js';
 import { fetchRuntimeConfig, type RuntimeConfig } from '$lib/config/runtimeConfig';
 
 /**
  * Get development API configuration from runtime config
  * This is only used in the demo application, not in the library
  */
-export async function getDevApiConfig(): Promise<ApiConfig> {
+export async function getDevEndpointConfig(): Promise<EndpointConfig> {
 	try {
 		const runtimeConfig = await fetchRuntimeConfig();
 		return {
-			...defaultApiConfig,
+			...defaultEndpointConfig,
 			baseUrl: runtimeConfig.apiBaseUrl
 		};
 	} catch (error) {
 		console.error('Failed to fetch runtime config, using defaults:', error);
-		return defaultApiConfig;
+		return defaultEndpointConfig;
 	}
 }
 
