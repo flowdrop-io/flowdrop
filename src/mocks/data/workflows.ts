@@ -636,7 +636,7 @@ export const demoAIContentWorkflow: Workflow = {
 			source: "ai_content_analyzer.1",
 			target: "simple_agent.1",
 			data: {
-				isToolConnection: false,
+				metadata: { edgeType: "data" },
 				targetNodeType: "universalNode",
 				targetCategory: "agents"
 			},
@@ -655,7 +655,7 @@ export const demoAIContentWorkflow: Workflow = {
 			source: "content_loader.1",
 			target: "ai_content_analyzer.1",
 			data: {
-				isToolConnection: false,
+				metadata: { edgeType: "data" },
 				targetNodeType: "universalNode",
 				targetCategory: "ai"
 			},
@@ -674,7 +674,7 @@ export const demoAIContentWorkflow: Workflow = {
 			source: "text_input.1",
 			target: "simple_agent.1",
 			data: {
-				isToolConnection: false,
+				metadata: { edgeType: "data" },
 				targetNodeType: "universalNode",
 				targetCategory: "agents"
 			},
@@ -693,7 +693,7 @@ export const demoAIContentWorkflow: Workflow = {
 			source: "simple_agent.1",
 			target: "text_output.1",
 			data: {
-				isToolConnection: false,
+				metadata: { edgeType: "data" },
 				targetNodeType: "universalNode",
 				targetCategory: "outputs"
 			},
