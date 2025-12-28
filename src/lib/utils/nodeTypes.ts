@@ -15,20 +15,6 @@ import { nodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
 import { resolveBuiltinAlias, isBuiltinType } from '../registry/builtinNodes.js';
 
 /**
- * Maps built-in NodeType to SvelteFlow component names.
- * This is kept for backwards compatibility.
- */
-const NODE_TYPE_TO_COMPONENT_MAP: Record<NodeType, string> = {
-	note: 'note',
-	simple: 'simple',
-	square: 'square',
-	tool: 'tool',
-	gateway: 'gateway',
-	terminal: 'terminal',
-	default: 'workflowNode'
-};
-
-/**
  * Display names for built-in node types.
  */
 const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
@@ -43,7 +29,7 @@ const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
 
 /**
  * Gets the SvelteFlow component name for a given NodeType.
- * Supports both built-in types and registered custom types.
+ * Uses the node component registry to resolve types.
  *
  * @param nodeType - The node type identifier
  * @returns The component name to use
@@ -57,13 +43,8 @@ export function getComponentNameForNodeType(nodeType: NodeType | string): string
 		return resolvedType;
 	}
 
-	// Fall back to built-in mapping
-	if (nodeType in NODE_TYPE_TO_COMPONENT_MAP) {
-		return NODE_TYPE_TO_COMPONENT_MAP[nodeType as NodeType];
-	}
-
-	// Unknown type - return as-is (might be a custom type)
-	return resolvedType;
+	// Unknown type - return workflowNode as default
+	return 'workflowNode';
 }
 
 /**
