@@ -244,16 +244,8 @@
 
 	// Node types for Svelte Flow - using UniversalNode for all node types
 	// All nodes use 'universalNode' type, and UniversalNode handles internal switching
-	// Include legacy types for backward compatibility with existing workflows
 	const nodeTypes = {
-		universalNode: UniversalNode,
-		// Legacy types for backward compatibility
-		workflowNode: UniversalNode,
-		note: UniversalNode,
-		simple: UniversalNode,
-		square: UniversalNode,
-		tool: UniversalNode,
-		gateway: UniversalNode
+		universalNode: UniversalNode
 	};
 
 	// Handle arrows in our custom connection handler
