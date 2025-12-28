@@ -29,10 +29,9 @@ export const CATEGORY_COLOR_TOKENS: Record<NodeCategory, string> = {
 };
 
 /**
- * Data type color mapping to reference tokens (CSS variables)
- * @deprecated Use getDataTypeColorToken() with port configuration instead
+ * Default data type colors for fallback when port configuration is not available
  */
-export const DATA_TYPE_COLOR_TOKENS: Record<string, string> = {
+const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
 	string: 'var(--color-ref-emerald-500)',
 	text: 'var(--color-ref-emerald-500)',
 	number: 'var(--color-ref-blue-600)',
@@ -84,7 +83,7 @@ export function getDataTypeColorToken(dataType: string): string {
 		// console.warn("Port compatibility checker not initialized, using fallback colors");
 	}
 
-	return DATA_TYPE_COLOR_TOKENS[dataType.toLowerCase()] || 'var(--color-ref-slate-500)';
+	return DEFAULT_DATA_TYPE_COLORS[dataType.toLowerCase()] || 'var(--color-ref-slate-500)';
 }
 
 /**
