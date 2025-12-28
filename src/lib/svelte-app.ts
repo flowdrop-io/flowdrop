@@ -461,11 +461,3 @@ export function unmountFlowDropApp(app: MountedFlowDropApp): void {
 	}
 }
 
-/**
- * Unmount a FlowDrop app (alias for backward compatibility)
- *
- * @param app - The mounted app to unmount
- */
-export function unmountWorkflowEditor(app: MountedFlowDropApp): void {
-	unmountFlowDropApp(app);
-}

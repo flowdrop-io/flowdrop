@@ -16,7 +16,7 @@ export type {
 	NodeDataType,
 	NodePort,
 	NodeMetadata,
-	NodeConfig,
+	ConfigValues,
 	WorkflowNode,
 	WorkflowEdge,
 	Workflow,
@@ -237,7 +237,6 @@ export * from './adapters/WorkflowAdapter.js';
 // Export Svelte app wrapper for framework integration
 export {
 	mountWorkflowEditor,
-	unmountWorkflowEditor,
 	mountFlowDropApp,
 	unmountFlowDropApp
 } from './svelte-app.js';
