@@ -55,6 +55,7 @@
 	onMount(() => {
 		// Initialize API service with runtime config from server
 		// Config is already loaded via +layout.server.ts
+		// Note: MSW is initialized in hooks.client.ts before any components mount
 		const runtimeConfig = data.runtimeConfig;
 
 		const endpointConfig = createEndpointConfig(runtimeConfig.apiBaseUrl, {
