@@ -300,10 +300,6 @@ export interface ConfigValues {
 	[key: string]: unknown;
 }
 
-/**
- * Node configuration type (alias for backward compatibility)
- */
-export type NodeConfig = ConfigValues;
 
 /**
  * Extended node type for workflows
