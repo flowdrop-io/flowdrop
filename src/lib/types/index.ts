@@ -356,8 +356,6 @@ export interface WorkflowEdge extends Edge {
 			/** Data type of the source output port (e.g., "tool", "string", "number") */
 			sourcePortDataType?: string;
 		};
-		/** @deprecated Use metadata.edgeType instead - kept for backward compatibility */
-		isToolConnection?: boolean;
 		targetNodeType?: string;
 		targetCategory?: string;
 	};

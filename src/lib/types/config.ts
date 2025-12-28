@@ -205,8 +205,3 @@ export interface StorageConfig {
 	};
 }
 
-/**
- * @deprecated Use NodeMetadata from './index.js' instead.
- * This type alias is kept for backward compatibility.
- */
-export type NodeType = NodeMetadata;
