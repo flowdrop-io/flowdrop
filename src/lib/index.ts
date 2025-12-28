@@ -38,19 +38,12 @@ export type {
 	UIConfig,
 	APIConfig,
 	ExecutionConfig,
-	StorageConfig,
-	/** @deprecated Use NodeMetadata instead */
-	NodeType
+	StorageConfig
 } from './types/config.js';
 
 // Export authentication types and providers
 export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from './types/auth.js';
-export {
-	StaticAuthProvider,
-	CallbackAuthProvider,
-	NoAuthProvider,
-	createAuthProviderFromLegacyConfig
-} from './types/auth.js';
+export { StaticAuthProvider, CallbackAuthProvider, NoAuthProvider } from './types/auth.js';
 
 // Export event types
 export type {
@@ -235,8 +228,6 @@ export {
 
 // Export endpoint configuration
 export * from './config/endpoints.js';
-export { defaultApiConfig, getEndpointUrl } from './config/apiConfig.js';
-export type { ApiConfig } from './config/apiConfig.js';
 export { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 export * from './config/runtimeConfig.js';
 
