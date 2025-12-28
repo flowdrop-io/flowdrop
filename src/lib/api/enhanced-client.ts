@@ -18,7 +18,7 @@ import type {
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointMethod, getEndpointHeaders } from '../config/endpoints.js';
 import type { AuthProvider } from '../types/auth.js';
-import { createAuthProviderFromLegacyConfig } from '../types/auth.js';
+import { NoAuthProvider } from '../types/auth.js';
 
 /**
  * API error with additional context
@@ -55,7 +55,7 @@ export class ApiError extends Error {
  * // With AuthProvider
  * const client = new EnhancedFlowDropApiClient(config, authProvider);
  *
- * // Backward compatible (uses config.auth)
+ * // Without authentication
  * const client = new EnhancedFlowDropApiClient(config);
  * ```
  */
@@ -67,13 +67,13 @@ export class EnhancedFlowDropApiClient {
 	 * Create a new EnhancedFlowDropApiClient
 	 *
 	 * @param config - Endpoint configuration
-	 * @param authProvider - Optional authentication provider (if not provided, uses config.auth)
+	 * @param authProvider - Optional authentication provider (defaults to NoAuthProvider)
 	 */
 	constructor(config: EndpointConfig, authProvider?: AuthProvider) {
 		this.config = config;
 
-		// Use provided AuthProvider or create one from legacy config
-		this.authProvider = authProvider ?? createAuthProviderFromLegacyConfig(config.auth);
+		// Use provided AuthProvider or default to no authentication
+		this.authProvider = authProvider ?? new NoAuthProvider();
 	}
 
 	/**
