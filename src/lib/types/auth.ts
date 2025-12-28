@@ -346,25 +346,3 @@ export class NoAuthProvider implements AuthProvider {
 	}
 }
 
-/**
- * Create an AuthProvider from legacy endpointConfig.auth configuration
- *
- * Used internally for backward compatibility with existing code that uses
- * the old auth configuration format in EndpointConfig.
- *
- * @internal This function is for internal library use only and is not part of the public API
- * @param authConfig - Legacy auth configuration from EndpointConfig
- * @returns AuthProvider instance
- */
-export function createAuthProviderFromLegacyConfig(authConfig?: {
-	type: 'none' | 'bearer' | 'api_key' | 'custom';
-	token?: string;
-	apiKey?: string;
-	headers?: Record<string, string>;
-}): AuthProvider {
-	if (!authConfig || authConfig.type === 'none') {
-		return new NoAuthProvider();
-	}
-
-	return new StaticAuthProvider(authConfig);
-}
