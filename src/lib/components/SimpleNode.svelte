@@ -6,20 +6,20 @@
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { NodeConfig, NodeMetadata } from '../types/index.js';
+	import type { ConfigValues, NodeMetadata } from '../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor } from '$lib/utils/colors.js';
 
 	const props = $props<{
 		data: {
 			label: string;
-			config: NodeConfig;
+			config: ConfigValues;
 			metadata: NodeMetadata;
 			nodeId?: string;
 			onConfigOpen?: (node: {
 				id: string;
 				type: string;
-				data: { label: string; config: NodeConfig; metadata: NodeMetadata };
+				data: { label: string; config: ConfigValues; metadata: NodeMetadata };
 			}) => void;
 		};
 		selected?: boolean;
