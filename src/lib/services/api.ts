@@ -24,29 +24,6 @@ export function getEndpointConfig(): EndpointConfig | null {
 }
 
 /**
- * Set the API base URL (deprecated - use setEndpointConfig instead)
- * @deprecated Use setEndpointConfig() with a full EndpointConfig object instead
- */
-export function setApiBaseUrl(url: string): void {
-	console.warn(
-		'⚠️ setApiBaseUrl() is deprecated. Use setEndpointConfig() with a full EndpointConfig object instead.'
-	);
-
-	if (!endpointConfig) {
-		// Dynamic import for backward compatibility
-		import('../config/endpoints.js')
-			.then(({ createEndpointConfig }) => {
-				endpointConfig = createEndpointConfig(url);
-			})
-			.catch(() => {
-				// Failed to load endpoint config
-			});
-	} else {
-		endpointConfig.baseUrl = url.replace(/\/$/, '');
-	}
-}
-
-/**
  * Generic API request helper with endpoint configuration
  */
 async function apiRequest<T>(
