@@ -238,8 +238,6 @@ export class EdgeStylingHelper {
 				edgeType: edgeCategory,
 				sourcePortDataType: sourcePortDataType || undefined
 			},
-			// Keep legacy fields for backward compatibility
-			isToolConnection: edgeCategory === 'tool',
 			targetNodeType: targetNode.type,
 			targetCategory: targetNode.data.metadata.category
 		};
