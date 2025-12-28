@@ -1,8 +1,20 @@
 /**
  * API Configuration
  * Centralized configuration for all API endpoints
+ *
+ * @deprecated This module is deprecated. For new implementations, prefer using
+ * `EndpointConfig` from './endpoints.js' which provides a more comprehensive
+ * configuration system with auth, retry, timeout, and per-endpoint customization.
+ *
+ * Migration:
+ * - `ApiConfig` -> `EndpointConfig`
+ * - `defaultApiConfig` -> `defaultEndpointConfig`
+ * - `getEndpointUrl()` -> `buildEndpointUrl()`
  */
 
+/**
+ * @deprecated Use `EndpointConfig` from './endpoints.js' instead
+ */
 export interface ApiConfig {
 	baseUrl: string;
 	endpoints: {
@@ -28,6 +40,8 @@ export interface ApiConfig {
  * Default API configuration
  * For library usage, configuration should be provided at runtime
  * This provides sensible defaults that can be overridden
+ *
+ * @deprecated Use `defaultEndpointConfig` from './endpoints.js' instead
  */
 export const defaultApiConfig: ApiConfig = {
 	baseUrl: '/api/flowdrop',
@@ -52,6 +66,8 @@ export const defaultApiConfig: ApiConfig = {
 
 /**
  * Get full URL for an endpoint
+ *
+ * @deprecated Use `buildEndpointUrl()` from './endpoints.js' instead
  */
 export function getEndpointUrl(
 	config: ApiConfig,
