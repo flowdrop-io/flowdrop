@@ -39,10 +39,8 @@ export type {
 	APIConfig,
 	ExecutionConfig,
 	StorageConfig,
-	NodeType,
-	WorkflowData,
-	ExecutionResult as EditorExecutionResult,
-	EditorState
+	/** @deprecated Use NodeMetadata instead */
+	NodeType
 } from './types/config.js';
 
 // Export authentication types and providers
@@ -244,9 +242,6 @@ export * from './config/runtimeConfig.js';
 
 // Export adapters
 export * from './adapters/WorkflowAdapter.js';
-
-// Export API client
-export * from './clients/ApiClient.js';
 
 // Export Svelte app wrapper for framework integration
 export {
