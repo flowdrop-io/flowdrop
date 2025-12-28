@@ -9,15 +9,15 @@
 -->
 
 <script lang="ts">
-	import { Position, Handle } from "@xyflow/svelte";
-	import type { ConfigValues, NodeMetadata } from "../types/index.js";
-	import Icon from "@iconify/svelte";
-	import { getDataTypeColor } from "$lib/utils/colors.js";
+	import { Position, Handle } from '@xyflow/svelte';
+	import type { ConfigValues, NodeMetadata } from '../types/index.js';
+	import Icon from '@iconify/svelte';
+	import { getDataTypeColor } from '$lib/utils/colors.js';
 
 	/**
 	 * Terminal node variant types
 	 */
-	type TerminalVariant = "start" | "end" | "exit";
+	type TerminalVariant = 'start' | 'end' | 'exit';
 
 	/**
 	 * Configuration for each terminal variant
@@ -40,23 +40,23 @@
 	 */
 	const VARIANT_CONFIGS: Record<TerminalVariant, VariantConfig> = {
 		start: {
-			icon: "mdi:play-circle",
-			color: "#10b981",
-			label: "Start",
+			icon: 'mdi:play-circle',
+			color: '#10b981',
+			label: 'Start',
 			hasInputs: false,
 			hasOutputs: true
 		},
 		end: {
-			icon: "mdi:stop-circle",
-			color: "#6b7280",
-			label: "End",
+			icon: 'mdi:stop-circle',
+			color: '#6b7280',
+			label: 'End',
 			hasInputs: true,
 			hasOutputs: false
 		},
 		exit: {
-			icon: "mdi:close-circle",
-			color: "#ef4444",
-			label: "Exit",
+			icon: 'mdi:close-circle',
+			color: '#ef4444',
+			label: 'Exit',
 			hasInputs: true,
 			hasOutputs: false
 		}
@@ -92,31 +92,36 @@
 
 		// Check metadata tags for variant hints
 		const tags = props.data.metadata?.tags || [];
-		if (tags.includes("start") || tags.includes("entry")) {
-			return "start";
+		if (tags.includes('start') || tags.includes('entry')) {
+			return 'start';
 		}
-		if (tags.includes("exit") || tags.includes("abort") || tags.includes("error")) {
-			return "exit";
+		if (tags.includes('exit') || tags.includes('abort') || tags.includes('error')) {
+			return 'exit';
 		}
-		if (tags.includes("end") || tags.includes("finish") || tags.includes("complete")) {
-			return "end";
+		if (tags.includes('end') || tags.includes('finish') || tags.includes('complete')) {
+			return 'end';
 		}
 
 		// Check metadata id/name for hints
-		const idLower = (props.data.metadata?.id || "").toLowerCase();
-		const nameLower = (props.data.metadata?.name || "").toLowerCase();
-		if (idLower.includes("start") || nameLower.includes("start")) {
-			return "start";
+		const idLower = (props.data.metadata?.id || '').toLowerCase();
+		const nameLower = (props.data.metadata?.name || '').toLowerCase();
+		if (idLower.includes('start') || nameLower.includes('start')) {
+			return 'start';
 		}
-		if (idLower.includes("exit") || idLower.includes("abort") || nameLower.includes("exit") || nameLower.includes("abort")) {
-			return "exit";
+		if (
+			idLower.includes('exit') ||
+			idLower.includes('abort') ||
+			nameLower.includes('exit') ||
+			nameLower.includes('abort')
+		) {
+			return 'exit';
 		}
-		if (idLower.includes("end") || nameLower.includes("end")) {
-			return "end";
+		if (idLower.includes('end') || nameLower.includes('end')) {
+			return 'end';
 		}
 
 		// Default to start
-		return "start";
+		return 'start';
 	}
 
 	let variant = $derived(getVariant());
@@ -131,8 +136,8 @@
 	 */
 	let terminalIcon = $derived(
 		(props.data.metadata?.icon as string) ||
-		(props.data.config?.icon as string) ||
-		variantConfig.icon
+			(props.data.config?.icon as string) ||
+			variantConfig.icon
 	);
 
 	/**
@@ -140,18 +145,14 @@
 	 */
 	let terminalColor = $derived(
 		(props.data.metadata?.color as string) ||
-		(props.data.config?.color as string) ||
-		variantConfig.color
+			(props.data.config?.color as string) ||
+			variantConfig.color
 	);
 
 	/**
 	 * Get display label
 	 */
-	let displayLabel = $derived(
-		props.data.label || 
-		props.data.metadata?.name || 
-		variantConfig.label
-	);
+	let displayLabel = $derived(props.data.label || props.data.metadata?.name || variantConfig.label);
 
 	/**
 	 * Check if metadata explicitly defines inputs (including empty array)
@@ -171,22 +172,22 @@
 	 * Default trigger input port for end/exit nodes
 	 */
 	const DEFAULT_INPUT_PORT = {
-		id: "trigger",
-		name: "Trigger",
-		type: "input" as const,
-		dataType: "trigger",
-		description: "Workflow trigger input"
+		id: 'trigger',
+		name: 'Trigger',
+		type: 'input' as const,
+		dataType: 'trigger',
+		description: 'Workflow trigger input'
 	};
 
 	/**
 	 * Default trigger output port for start nodes
 	 */
 	const DEFAULT_OUTPUT_PORT = {
-		id: "trigger",
-		name: "Trigger",
-		type: "output" as const,
-		dataType: "trigger",
-		description: "Workflow trigger output"
+		id: 'trigger',
+		name: 'Trigger',
+		type: 'output' as const,
+		dataType: 'trigger',
+		description: 'Workflow trigger output'
 	};
 
 	/**
@@ -233,8 +234,8 @@
 	function openConfigSidebar(): void {
 		if (props.data.onConfigOpen) {
 			const nodeForConfig = {
-				id: props.data.nodeId || "unknown",
-				type: "terminal",
+				id: props.data.nodeId || 'unknown',
+				type: 'terminal',
 				data: props.data
 			};
 			props.data.onConfigOpen(nodeForConfig);
@@ -259,7 +260,7 @@
 	 * Handle keyboard events for accessibility
 	 */
 	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === "Enter" || event.key === " ") {
+		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			handleDoubleClick();
 		}
@@ -272,9 +273,9 @@
 	class:flowdrop-terminal-node--selected={props.selected}
 	class:flowdrop-terminal-node--processing={props.isProcessing}
 	class:flowdrop-terminal-node--error={props.isError}
-	class:flowdrop-terminal-node--start={variant === "start"}
-	class:flowdrop-terminal-node--end={variant === "end"}
-	class:flowdrop-terminal-node--exit={variant === "exit"}
+	class:flowdrop-terminal-node--start={variant === 'start'}
+	class:flowdrop-terminal-node--end={variant === 'end'}
+	class:flowdrop-terminal-node--exit={variant === 'exit'}
 	style="--terminal-color: {terminalColor};"
 	onclick={handleClick}
 	ondblclick={handleDoubleClick}
@@ -300,7 +301,9 @@
 				<Handle
 					type="target"
 					position={Position.Left}
-					style="background-color: {getDataTypeColor(port.dataType)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+					style="background-color: {getDataTypeColor(
+						port.dataType
+					)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
 					id={`${props.data.nodeId}-input-${port.id}`}
 				/>
 			{/each}
@@ -322,7 +325,9 @@
 					type="source"
 					position={Position.Right}
 					id={`${props.data.nodeId}-output-${port.id}`}
-					style="background-color: {getDataTypeColor(port.dataType)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+					style="background-color: {getDataTypeColor(
+						port.dataType
+					)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
 				/>
 			{/each}
 		{/if}
@@ -377,17 +382,23 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+		box-shadow:
+			0 4px 6px -1px rgba(0, 0, 0, 0.1),
+			0 2px 4px -1px rgba(0, 0, 0, 0.06);
 		transition: all 0.2s ease-in-out;
 	}
 
 	.flowdrop-terminal-node:hover .flowdrop-terminal-node__content {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.1),
+			0 4px 6px -2px rgba(0, 0, 0, 0.05);
 		transform: scale(1.05);
 	}
 
 	.flowdrop-terminal-node--selected .flowdrop-terminal-node__content {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(59, 130, 246, 0.5);
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.1),
+			0 0 0 3px rgba(59, 130, 246, 0.5);
 		border-color: #3b82f6;
 	}
 
@@ -402,19 +413,27 @@
 
 	/* Variant-specific glow effects */
 	.flowdrop-terminal-node--start .flowdrop-terminal-node__content {
-		box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
+		box-shadow:
+			0 4px 6px -1px rgba(16, 185, 129, 0.2),
+			0 2px 4px -1px rgba(16, 185, 129, 0.1);
 	}
 
 	.flowdrop-terminal-node--start:hover .flowdrop-terminal-node__content {
-		box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15);
+		box-shadow:
+			0 10px 15px -3px rgba(16, 185, 129, 0.3),
+			0 4px 6px -2px rgba(16, 185, 129, 0.15);
 	}
 
 	.flowdrop-terminal-node--exit .flowdrop-terminal-node__content {
-		box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
+		box-shadow:
+			0 4px 6px -1px rgba(239, 68, 68, 0.2),
+			0 2px 4px -1px rgba(239, 68, 68, 0.1);
 	}
 
 	.flowdrop-terminal-node--exit:hover .flowdrop-terminal-node__content {
-		box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+		box-shadow:
+			0 10px 15px -3px rgba(239, 68, 68, 0.3),
+			0 4px 6px -2px rgba(239, 68, 68, 0.15);
 	}
 
 	:global(.flowdrop-terminal-node__icon) {
@@ -562,4 +581,3 @@
 		outline-offset: 2px !important;
 	}
 </style>
-
