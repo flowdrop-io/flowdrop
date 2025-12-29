@@ -77,11 +77,10 @@ docker-compose restart
 
 Key environment variables you can configure:
 
-| Variable                | Description                | Default         |
-| ----------------------- | -------------------------- | --------------- |
-| `FLOWDROP_API_BASE_URL` | Backend API URL            | `/api/flowdrop` |
-| `FLOWDROP_THEME`        | UI theme (light/dark/auto) | `auto`          |
-| `PORT`                  | Server port                | `3000`          |
+| Variable                | Description     | Default         |
+| ----------------------- | --------------- | --------------- |
+| `FLOWDROP_API_BASE_URL` | Backend API URL | `/api/flowdrop` |
+| `PORT`                  | Server port     | `3000`          |
 
 See `env.example` for all available options.
 
@@ -132,7 +131,3 @@ Expected response:
 	"environment": "production"
 }
 ```
-
-## Production Deployment
-
-For production deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
