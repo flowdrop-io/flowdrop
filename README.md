@@ -20,7 +20,9 @@
   <a href="#documentation">Docs</a>
 </p>
 
----
+<p align="center">
+  <img src="static/FlowDrop-Screenshot.jpg" alt="FlowDrop Screenshot" width="800" />
+</p>
 
 ## Why FlowDrop?
 
@@ -38,7 +40,6 @@ npm install @d34dman/flowdrop
 
 You get a production-ready workflow UI. You keep full control of everything else.
 
----
 
 ## Quickstart
 
@@ -53,7 +54,6 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 **5 lines. One fully-functional workflow editor.**
 
----
 
 ## Features
 
@@ -66,7 +66,6 @@ You get a production-ready workflow UI. You keep full control of everything else
 | 🎭 **Framework Flexible**    | Use as Svelte component or mount into React, Vue, Angular, or vanilla JS  |
 | 🐳 **Deploy Anywhere**       | Runtime config means build once, deploy everywhere                        |
 
----
 
 ## Node Types
 
@@ -82,7 +81,6 @@ FlowDrop ships with 7 beautifully designed node types:
 | `terminal` | Start/end workflow points               |
 | `note`     | Markdown documentation blocks           |
 
----
 
 ## Integration
 
@@ -146,7 +144,6 @@ const app = await mountFlowDropApp(container, {
 });
 ```
 
----
 
 ## API Configuration
 
@@ -171,7 +168,6 @@ const config = createEndpointConfig({
 });
 ```
 
----
 
 ## Customization
 
@@ -186,7 +182,6 @@ Make it yours with CSS custom properties:
 }
 ```
 
----
 
 ## Deploy
 
@@ -206,7 +201,7 @@ FLOWDROP_API_BASE_URL=http://your-backend/api node build
 
 Runtime configuration means you build once and deploy to staging, production, or anywhere else with just environment variables.
 
----
+
 
 ## Documentation
 
@@ -217,8 +212,6 @@ Runtime configuration means you build once and deploy to staging, production, or
 | [QUICK_START.md](./QUICK_START.md) | Get running in 5 minutes |
 | [CHANGELOG.md](./CHANGELOG.md)     | Version history          |
 
----
-
 ## Development
 
 ```bash
@@ -228,18 +221,16 @@ npm run build        # Build library
 npm test             # Run all tests
 ```
 
----
 
 ## Contributing
 
 FlowDrop is stabilizing. Contributions will open soon. Star the repo to stay updated.
 
----
 
 <p align="center">
   <strong>FlowDrop</strong> - The visual workflow editor you own completely
 </p>
 
 <p align="center">
-  Built with Svelte 5 and @xyflow/svelte
+  Built with ❤️ Svelte 5 and @xyflow/svelte
 </p>
