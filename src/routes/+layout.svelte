@@ -42,11 +42,9 @@
 	 */
 	async function fetchWorkflowName(workflowId: string) {
 		try {
-			const url = buildEndpointUrl(
-				endpointConfig,
-				endpointConfig.endpoints.workflows.get,
-				{ id: workflowId }
-			);
+			const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.workflows.get, {
+				id: workflowId
+			});
 			const response = await fetch(url);
 
 			if (response.ok) {
@@ -144,6 +142,12 @@
 					href: '/workflow/create',
 					icon: 'mdi:plus',
 					variant: 'primary' as const
+				},
+				{
+					label: 'API Docs',
+					href: '/api-docs',
+					icon: 'mdi:api',
+					variant: 'outline' as const
 				}
 			];
 		} else if (pathname.startsWith('/workflow/create')) {
@@ -291,9 +295,9 @@
 		// Default actions for unknown pages
 		return [
 			{
-				label: 'Workflows',
+				label: 'Home',
 				href: '/',
-				icon: 'mdi:view-list',
+				icon: 'mdi:home',
 				variant: 'primary' as const
 			}
 		];
@@ -305,7 +309,6 @@
 		if (pageBreadcrumbs.length > 0) {
 			return pageBreadcrumbs;
 		}
-
 		// Generate default breadcrumbs based on path
 		if (pathname === '/') {
 			// On homepage, just show "Home"
@@ -386,6 +389,12 @@
 				label: 'Home',
 				href: '/',
 				icon: 'mdi:home'
+			},
+			{
+				label: 'API Docs',
+				href: '/api-docs',
+				icon: 'mdi:api',
+				variant: 'outline' as const
 			}
 		];
 	}
