@@ -23,6 +23,9 @@
 <p align="center">
   <img src="static/FlowDrop-Screenshot.jpg" alt="FlowDrop Screenshot" width="800" />
 </p>
+<p align="center">
+  <em>Build AI-powered workflows with drag-and-drop simplicity. Connect nodes, configure inputs/outputs, and visualize your entire pipeline.</em>
+</p>
 
 ## Why FlowDrop?
 
@@ -81,6 +84,12 @@ FlowDrop ships with 7 beautifully designed node types:
 | `terminal` | Start/end workflow points               |
 | `note`     | Markdown documentation blocks           |
 
+<p align="center">
+  <img src="static/Node-Types.jpg" alt="FlowDrop Node Types" width="800" />
+</p>
+<p align="center">
+  <em>From simple triggers to complex branching logic, each node type is designed for specific workflow patterns.</em>
+</p>
 
 ## Integration
 
