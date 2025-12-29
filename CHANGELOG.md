@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.20] - 2025-12-29
+
+### Changed
+
+#### Documentation Overhaul
+
+- **Clarified Product Positioning**: FlowDrop is a visual editor only. You own the backend, data, and orchestration
+- **Emphasized Data Ownership**: Highlighted the benefits of self-hosted workflows vs SaaS lock-in:
+  - No vendor lock-in
+  - No data leaving your infrastructure
+  - No per-workflow or per-user pricing
+
 ## [0.0.19] - 2025-12-28
 
 ### Removed
@@ -13,27 +25,27 @@ This release removes all deprecated code and backward compatibility support to c
 
 #### Deprecated API Removal
 
-| Removed | Replacement |
-|---------|-------------|
-| `ApiConfig` interface | `EndpointConfig` |
-| `getEndpointUrl()` | `buildEndpointUrl()` |
-| `defaultApiConfig` | `defaultEndpointConfig` |
-| `setApiBaseUrl()` | Configure via `EndpointConfig.baseUrl` |
+| Removed                             | Replacement                                         |
+| ----------------------------------- | --------------------------------------------------- |
+| `ApiConfig` interface               | `EndpointConfig`                                    |
+| `getEndpointUrl()`                  | `buildEndpointUrl()`                                |
+| `defaultApiConfig`                  | `defaultEndpointConfig`                             |
+| `setApiBaseUrl()`                   | Configure via `EndpointConfig.baseUrl`              |
 | `areDataTypesCompatible()` function | `PortCompatibilityChecker.areDataTypesCompatible()` |
-| `DATA_TYPE_COLOR_TOKENS` constant | `getDataTypeColorToken()` function |
-| `NodeType` type alias | `NodeMetadata` |
-| Edge `isToolConnection` property | `metadata.edgeType` |
+| `DATA_TYPE_COLOR_TOKENS` constant   | `getDataTypeColorToken()` function                  |
+| `NodeType` type alias               | `NodeMetadata`                                      |
+| Edge `isToolConnection` property    | `metadata.edgeType`                                 |
 
 #### Backward Compatibility Removal
 
-| Removed | Replacement |
-|---------|-------------|
-| `unmountWorkflowEditor()` | `unmountFlowDropApp()` |
-| `NodeConfig` type alias | `ConfigValues` |
-| `createAuthProviderFromLegacyConfig()` | Use `AuthProvider` implementations directly |
-| Legacy node type mappings in `WorkflowEditor` | All nodes use `universalNode` type |
-| `NODE_TYPE_TO_COMPONENT_MAP` static mapping | Node component registry |
-| Fallback component switch in `UniversalNode` | Node component registry |
+| Removed                                       | Replacement                                 |
+| --------------------------------------------- | ------------------------------------------- |
+| `unmountWorkflowEditor()`                     | `unmountFlowDropApp()`                      |
+| `NodeConfig` type alias                       | `ConfigValues`                              |
+| `createAuthProviderFromLegacyConfig()`        | Use `AuthProvider` implementations directly |
+| Legacy node type mappings in `WorkflowEditor` | All nodes use `universalNode` type          |
+| `NODE_TYPE_TO_COMPONENT_MAP` static mapping   | Node component registry                     |
+| Fallback component switch in `UniversalNode`  | Node component registry                     |
 
 ### Changed
 
@@ -116,11 +128,11 @@ const compatible = checker.areDataTypesCompatible("string", "text");
   - Manual variant override via `config.variant`
 
 - **Variant Configurations**:
-  | Variant | Icon | Color | Default Ports |
-  |---------|------|-------|---------------|
+  | Variant | Icon        | Color           | Default Ports         |
+  | ------- | ----------- | --------------- | --------------------- |
   | `start` | Play circle | Green (#10b981) | Output only (trigger) |
-  | `end` | Stop circle | Gray (#6b7280) | Input only (trigger) |
-  | `exit` | X circle | Red (#ef4444) | Input only (trigger) |
+  | `end`   | Stop circle | Gray (#6b7280)  | Input only (trigger)  |
+  | `exit`  | X circle    | Red (#ef4444)   | Input only (trigger)  |
 
 - **API-Controlled Ports**: Terminal nodes now fully respect the `inputs` and `outputs` arrays from metadata
   - `undefined` → Uses variant default ports
