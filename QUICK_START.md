@@ -73,7 +73,6 @@ npm run dev
 
 **Optional:**
 
-- `FLOWDROP_THEME` - UI theme (light/dark/auto) - Default: auto
 - `PORT` - Server port - Default: 3000
 
 ## Verify Installation
@@ -130,7 +129,6 @@ docker logs flowdrop-ui
 
 - Read [DEPLOYMENT.md](./DEPLOYMENT.md) for production best practices
 - Read [DOCKER.md](./DOCKER.md) for Docker details
-- Read [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) if upgrading from older versions
 
 ## Support
 
