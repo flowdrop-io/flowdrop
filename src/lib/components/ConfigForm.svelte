@@ -335,9 +335,6 @@
 	}
 
 	.flowdrop-config-sidebar__footer {
-		padding: 1rem;
-		border-top: 1px solid #e5e7eb;
-		background-color: #f9fafb;
 		display: flex;
 		gap: 0.75rem;
 		justify-content: flex-end;
