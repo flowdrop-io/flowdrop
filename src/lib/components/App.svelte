@@ -138,6 +138,7 @@
 				type: 'string',
 				title: 'Description',
 				description: 'A description of the workflow',
+				format: 'multiline',
 				default: ''
 			}
 		},
