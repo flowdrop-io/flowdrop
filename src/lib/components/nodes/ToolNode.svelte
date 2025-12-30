@@ -8,7 +8,7 @@
 	import { Position, Handle } from '@xyflow/svelte';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor } from '$lib/utils/colors';
-	import type { NodeMetadata } from '../types/index.js';
+	import type { NodeMetadata } from '../../types/index.js';
 
 	interface ToolNodeParameter {
 		name: string;

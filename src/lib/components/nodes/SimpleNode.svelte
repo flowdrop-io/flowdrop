@@ -6,7 +6,7 @@
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { ConfigValues, NodeMetadata } from '../types/index.js';
+	import type { ConfigValues, NodeMetadata } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor } from '$lib/utils/colors.js';
 
