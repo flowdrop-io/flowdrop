@@ -19,6 +19,7 @@
 	} from '../utils/nodeStatus.js';
 
 	interface Props {
+		nodeId?: string;
 		executionInfo?: NodeExecutionInfo;
 		position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 		size?: 'sm' | 'md' | 'lg';
