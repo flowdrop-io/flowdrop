@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.21] - 2025-12-30
+
+### Fixed
+
+- **Workflow FitView**: Fixed issue where `fitView` did not recalculate correctly when switching between workflows
+  - Added `{#key}` block with workflow ID to force SvelteFlow remount
+  - Ensures viewport properly adjusts to new workflow bounds
+
+
 ## [0.0.20] - 2025-12-29
 
 ### Changed
@@ -746,7 +755,9 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.19...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.21...HEAD
+[0.0.21]: https://github.com/d34dman/flowdrop/compare/v0.0.20...v0.0.21
+[0.0.20]: https://github.com/d34dman/flowdrop/compare/v0.0.19...v0.0.20
 [0.0.19]: https://github.com/d34dman/flowdrop/compare/v0.0.18...v0.0.19
 [0.0.18]: https://github.com/d34dman/flowdrop/compare/v0.0.17...v0.0.18
 [0.0.17]: https://github.com/d34dman/flowdrop/compare/v0.0.16...v0.0.17
