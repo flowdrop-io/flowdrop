@@ -450,6 +450,9 @@
 
 	<!-- Footer -->
 	<div class="config-sidebar__footer">
+		{#if hasChanges}
+			<p class="config-sidebar__changes-text">You have unsaved changes</p>
+		{/if}
 		<div class="config-sidebar__actions">
 			<button
 				type="button"
@@ -471,10 +474,6 @@
 				Save Changes
 			</button>
 		</div>
-
-		{#if hasChanges}
-			<p class="config-sidebar__changes-text">You have unsaved changes</p>
-		{/if}
 	</div>
 </div>
 
@@ -482,16 +481,6 @@
 	/* Overlay styles removed to avoid darkening the canvas */
 
 	.config-sidebar {
-		position: fixed;
-		top: var(--flowdrop-navbar-height, 60px); /* Start below navbar */
-		right: 0;
-		width: 400px;
-		height: calc(100vh - var(--flowdrop-navbar-height, 60px)); /* Account for navbar height */
-		background-color: #ffffff;
-		border-left: 1px solid #e5e7eb;
-		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-		transform: translateX(100%);
-		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		z-index: -1;
 		display: flex;
 		flex-direction: column;
@@ -835,19 +824,13 @@
 	}
 
 	.config-sidebar__footer {
-		padding: 1rem 1.5rem;
-		border-top: 1px solid #e5e7eb;
-		background-color: #f9fafb;
 		flex-shrink: 0;
-		position: sticky;
-		bottom: 0;
-		z-index: 10; /* Ensure footer stays on top */
-		height: 80px; /* Increased height for footer */
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.75rem;
-		min-height: 80px; /* Ensure minimum height */
+		height: 40px;
+		align-items: center;
 	}
 
 	.config-sidebar__actions {
@@ -860,7 +843,6 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.5rem 1rem;
 		border: 1px solid;
 		border-radius: 0.375rem;
 		font-size: 0.875rem;
