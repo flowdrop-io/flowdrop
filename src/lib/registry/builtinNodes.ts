@@ -7,13 +7,13 @@
  */
 
 import { nodeComponentRegistry, type NodeComponentRegistration } from './nodeComponentRegistry.js';
-import WorkflowNode from '../components/WorkflowNode.svelte';
-import SimpleNode from '../components/SimpleNode.svelte';
-import SquareNode from '../components/SquareNode.svelte';
-import ToolNode from '../components/ToolNode.svelte';
-import GatewayNode from '../components/GatewayNode.svelte';
-import NotesNode from '../components/NotesNode.svelte';
-import TerminalNode from '../components/TerminalNode.svelte';
+import WorkflowNode from '../components/nodes/WorkflowNode.svelte';
+import SimpleNode from '../components/nodes/SimpleNode.svelte';
+import SquareNode from '../components/nodes/SquareNode.svelte';
+import ToolNode from '../components/nodes/ToolNode.svelte';
+import GatewayNode from '../components/nodes/GatewayNode.svelte';
+import NotesNode from '../components/nodes/NotesNode.svelte';
+import TerminalNode from '../components/nodes/TerminalNode.svelte';
 
 /**
  * Source identifier for built-in FlowDrop components
