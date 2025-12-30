@@ -10,8 +10,8 @@
 	import MainLayout from '$lib/components/layouts/MainLayout.svelte';
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
-	import ConfigSidebar from '$lib/components/ConfigSidebar.svelte';
 	import ConfigForm from '$lib/components/ConfigForm.svelte';
+	import ConfigPanel from '$lib/components/ConfigPanel.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
 	import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
@@ -631,121 +631,57 @@
 	<!-- Right Sidebar: Configuration or Workflow Settings -->
 	{#snippet rightSidebar()}
 		{#if isWorkflowSettingsOpen}
-			<ConfigSidebar
-				isOpen={isWorkflowSettingsOpen}
+			<ConfigPanel
 				title="Workflow Settings"
-				configSchema={workflowConfigSchema}
-				configValues={workflowConfigValues}
-				onSave={handleWorkflowSave}
+				id={$workflowStore?.id}
+				details={[
+					{ label: 'Nodes', value: String($workflowStore?.nodes?.length ?? 0) },
+					{ label: 'Connections', value: String($workflowStore?.edges?.length ?? 0) }
+				]}
+				configTitle="Settings"
 				onClose={() => (isWorkflowSettingsOpen = false)}
-			/>
+			>
+				<ConfigForm
+					schema={workflowConfigSchema}
+					values={workflowConfigValues}
+					onSave={handleWorkflowSave}
+					onCancel={() => (isWorkflowSettingsOpen = false)}
+				/>
+			</ConfigPanel>
 		{:else if selectedNodeForConfig()}
-			<div class="flowdrop-config-sidebar">
-				<!-- Header -->
-				<div class="flowdrop-config-sidebar__header">
-					<h2 class="flowdrop-config-sidebar__title">{selectedNodeForConfig().data.label}</h2>
-					<button
-						class="flowdrop-config-sidebar__close"
-						onclick={closeConfigSidebar}
-						aria-label="Close configuration sidebar"
-					>
-						×
-					</button>
-				</div>
-
-				<!-- Content -->
-				<div class="flowdrop-config-sidebar__content">
-					<!-- Node Details -->
-					<div class="flowdrop-config-sidebar__section">
-						<h3 class="flowdrop-config-sidebar__section-title">Node Details</h3>
-						<div class="flowdrop-config-sidebar__details">
-							<div class="flowdrop-config-sidebar__detail">
-								<span class="flowdrop-config-sidebar__detail-label">Node ID:</span>
-								<div class="flowdrop-config-sidebar__detail-value-with-copy">
-									<span
-										class="flowdrop-config-sidebar__detail-value"
-										style="font-family: monospace;"
-									>
-										{selectedNodeForConfig().id}
-									</span>
-									<button
-										class="flowdrop-config-sidebar__copy-btn"
-										onclick={() => {
-											navigator.clipboard.writeText(selectedNodeForConfig().id);
-										}}
-										title="Copy Node ID"
-										aria-label="Copy node ID to clipboard"
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											fill="none"
-											role="img"
-											width="1em"
-											height="1em"
-											viewBox="0 0 24 24"
-											stroke-width="1.5"
-											stroke="currentColor"
-											class="size-6"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
-											/>
-										</svg>
-									</button>
-								</div>
-							</div>
-							<div class="flowdrop-config-sidebar__detail">
-								<span class="flowdrop-config-sidebar__detail-label">Type:</span>
-								<span class="flowdrop-config-sidebar__detail-value"
-									>{selectedNodeForConfig().data.metadata?.type ||
-										selectedNodeForConfig().type}</span
-								>
-							</div>
-							<div class="flowdrop-config-sidebar__detail">
-								<span class="flowdrop-config-sidebar__detail-label">Category:</span>
-								<span class="flowdrop-config-sidebar__detail-value"
-									>{selectedNodeForConfig().data.metadata?.category || 'general'}</span
-								>
-							</div>
-							<div class="flowdrop-config-sidebar__detail">
-								<span class="flowdrop-config-sidebar__detail-label">Description:</span>
-								<p class="flowdrop-config-sidebar__detail-description">
-									{selectedNodeForConfig().data.metadata?.description || 'Node configuration'}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<!-- Configuration Form -->
-					<div class="flowdrop-config-sidebar__section">
-						<h3 class="flowdrop-config-sidebar__section-title">Configuration</h3>
-						<ConfigForm
-							node={selectedNodeForConfig()}
-							onSave={(updatedConfig) => {
-								const currentNode = selectedNodeForConfig();
-								if (selectedNodeId && currentNode) {
-									// Handle nodeType switching if nodeType is in the config
-									let nodeUpdates: Record<string, unknown> = {
-										data: {
-											...currentNode.data,
-											config: updatedConfig
-										}
-									};
-
-									// NOTE: We do NOT change the node's type field anymore
-									// All nodes use 'universalNode' and UniversalNode handles internal switching
-									workflowActions.updateNode(selectedNodeId, nodeUpdates);
+			{@const currentNode = selectedNodeForConfig()}
+			<ConfigPanel
+				title={currentNode.data.label}
+				id={currentNode.id}
+				description={currentNode.data.metadata?.description || 'Node configuration'}
+				details={[
+					{ label: 'Type', value: currentNode.data.metadata?.type || currentNode.type },
+					{ label: 'Category', value: currentNode.data.metadata?.category || 'general' }
+				]}
+				onClose={closeConfigSidebar}
+			>
+				<ConfigForm
+					node={currentNode}
+					onSave={(updatedConfig) => {
+						if (selectedNodeId && currentNode) {
+							// Handle nodeType switching if nodeType is in the config
+							let nodeUpdates: Record<string, unknown> = {
+								data: {
+									...currentNode.data,
+									config: updatedConfig
 								}
+							};
 
-								closeConfigSidebar();
-							}}
-							onCancel={closeConfigSidebar}
-						/>
-					</div>
-				</div>
-			</div>
+							// NOTE: We do NOT change the node's type field anymore
+							// All nodes use 'universalNode' and UniversalNode handles internal switching
+							workflowActions.updateNode(selectedNodeId, nodeUpdates);
+						}
+
+						closeConfigSidebar();
+					}}
+					onCancel={closeConfigSidebar}
+				/>
+			</ConfigPanel>
 		{/if}
 	{/snippet}
 
@@ -948,134 +884,5 @@
 		height: 100%;
 		overflow: hidden;
 		background-color: #1f2937;
-	}
-
-	/* Configuration Sidebar Styles */
-	.flowdrop-config-sidebar {
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		background-color: #ffffff;
-	}
-
-	.flowdrop-config-sidebar__header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem;
-		border-bottom: 1px solid #e5e7eb;
-		background-color: #f9fafb;
-	}
-
-	.flowdrop-config-sidebar__title {
-		margin: 0;
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #111827;
-	}
-
-	.flowdrop-config-sidebar__close {
-		background: none;
-		border: none;
-		font-size: 1.5rem;
-		cursor: pointer;
-		color: #6b7280;
-		padding: 0.25rem;
-		border-radius: 0.25rem;
-		transition: color 0.2s;
-	}
-
-	.flowdrop-config-sidebar__close:hover {
-		color: #374151;
-		background-color: #f3f4f6;
-	}
-
-	.flowdrop-config-sidebar__content {
-		flex: 1;
-		overflow-y: auto;
-		padding: 1rem;
-	}
-
-	.flowdrop-config-sidebar__section {
-		margin-bottom: 1.5rem;
-	}
-
-	.flowdrop-config-sidebar__section-title {
-		margin: 0 0 0.75rem 0;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #374151;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.flowdrop-config-sidebar__details {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.flowdrop-config-sidebar__detail {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.flowdrop-config-sidebar__detail-label {
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: #6b7280;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.flowdrop-config-sidebar__detail-value {
-		font-size: 0.875rem;
-		color: #111827;
-		font-weight: 500;
-	}
-
-	.flowdrop-config-sidebar__detail-value-with-copy {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		background-color: #f3f4f6;
-		padding: 0.5rem;
-		border-radius: 0.375rem;
-		border: 1px solid #e5e7eb;
-	}
-
-	.flowdrop-config-sidebar__detail-value-with-copy .flowdrop-config-sidebar__detail-value {
-		flex: 1;
-		font-size: 0.8125rem;
-		word-break: break-all;
-	}
-
-	.flowdrop-config-sidebar__copy-btn {
-		background: white;
-		border: 1px solid #d1d5db;
-		border-radius: 0.25rem;
-		padding: 0.25rem 0.5rem;
-		cursor: pointer;
-		font-size: 1rem;
-		transition: all 0.2s;
-		flex-shrink: 0;
-	}
-
-	.flowdrop-config-sidebar__copy-btn:hover {
-		background-color: #f9fafb;
-		border-color: #9ca3af;
-		transform: scale(1.05);
-	}
-
-	.flowdrop-config-sidebar__copy-btn:active {
-		transform: scale(0.95);
-	}
-
-	.flowdrop-config-sidebar__detail-description {
-		margin: 0;
-		font-size: 0.875rem;
-		color: #6b7280;
-		line-height: 1.4;
 	}
 </style>
