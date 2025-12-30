@@ -1,11 +1,12 @@
 <!--
   Main Layout Component
   Provides navigation and layout structure for all pages
-  Uses dedicated Navbar component with customizable actions
+  Uses MainLayout component with dedicated Navbar component
 -->
 
 <script lang="ts">
 	import '../app.css';
+	import MainLayout from '$lib/components/layouts/MainLayout.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -400,9 +401,17 @@
 	}
 </script>
 
-<div class="flowdrop-app" style="--flowdrop-navbar-height: 60px;">
-	<!-- Navigation Bar - only show for non-workflow pages -->
-	{#if showNavbar}
+<!-- Main Application Layout -->
+<MainLayout
+	showHeader={showNavbar}
+	showLeftSidebar={false}
+	showRightSidebar={false}
+	showFooter={false}
+	headerHeight={60}
+	enableLeftSplitPane={false}
+	enableRightSplitPane={false}
+>
+	{#snippet header()}
 		<Navbar
 			title={currentBreadcrumbs.length === 0
 				? $page.url.pathname === '/'
@@ -412,31 +421,11 @@
 			breadcrumbs={currentBreadcrumbs.length > 0 ? currentBreadcrumbs : undefined}
 			{primaryActions}
 		/>
-	{/if}
+	{/snippet}
 
 	<!-- Main Content Area -->
-	<main class="flowdrop-main">
-		{@render children()}
-	</main>
+	{@render children()}
+</MainLayout>
 
-	<!-- Toast Notifications -->
-	<Toaster position="bottom-center" />
-</div>
-
-<style>
-	.flowdrop-app {
-		height: 100vh;
-		background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
-		display: flex;
-		flex-direction: column;
-	}
-
-	.flowdrop-main {
-		flex: 1;
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		min-height: 0;
-		overflow: hidden;
-	}
-</style>
+<!-- Toast Notifications (outside MainLayout for proper z-index stacking) -->
+<Toaster position="bottom-center" />

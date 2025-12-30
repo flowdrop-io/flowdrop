@@ -7,6 +7,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/stores';
+	import MainLayout from '$lib/components/layouts/MainLayout.svelte';
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
 	import ConfigSidebar from '$lib/components/ConfigSidebar.svelte';
@@ -563,15 +564,25 @@
 	<meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
 
-<div
-	class="flowdrop-app"
-	style="height: {typeof height === 'number' ? `${height}px` : height}; width: {typeof width ===
-	'number'
-		? `${width}px`
-		: width};"
+<!-- MainLayout wrapper for workflow editor -->
+<MainLayout
+	showHeader={showNavbar && !$page.url.pathname.includes('/edit')}
+	showLeftSidebar={!disableSidebar}
+	showRightSidebar={!disableSidebar && (isWorkflowSettingsOpen || !!selectedNodeForConfig())}
+	showFooter={false}
+	headerHeight={60}
+	leftSidebarWidth={320}
+	rightSidebarWidth={400}
+	leftSidebarMinWidth={280}
+	leftSidebarMaxWidth={450}
+	rightSidebarMinWidth={320}
+	rightSidebarMaxWidth={550}
+	enableLeftSplitPane={false}
+	enableRightSplitPane={true}
+	class="flowdrop-app-layout"
 >
-	<!-- Navbar (conditionally rendered) - hide on workflow edit pages -->
-	{#if showNavbar && !$page.url.pathname.includes('/edit')}
+	<!-- Header: Navbar -->
+	{#snippet header()}
 		<Navbar
 			title={breadcrumbTitle()}
 			primaryActions={navbarActions.length > 0
@@ -610,231 +621,209 @@
 					]}
 			showStatus={true}
 		/>
-	{/if}
+	{/snippet}
 
-	<!-- Main Content -->
-	<main class="flowdrop-main">
-		<!-- Status Display -->
-		{#if error}
-			<div class="flowdrop-status flowdrop-status--error">
-				<div class="flowdrop-status__content">
-					<div class="flowdrop-flex flowdrop-gap--3">
-						<div class="flowdrop-status__indicator flowdrop-status__indicator--error"></div>
-						<span class="flowdrop-text--sm flowdrop-font--medium">Error: {error}</span>
+	<!-- Left Sidebar: Node Components -->
+	{#snippet leftSidebar()}
+		<NodeSidebar {nodes} />
+	{/snippet}
+
+	<!-- Right Sidebar: Configuration or Workflow Settings -->
+	{#snippet rightSidebar()}
+		{#if isWorkflowSettingsOpen}
+			<ConfigSidebar
+				isOpen={isWorkflowSettingsOpen}
+				title="Workflow Settings"
+				configSchema={workflowConfigSchema}
+				configValues={workflowConfigValues}
+				onSave={handleWorkflowSave}
+				onClose={() => (isWorkflowSettingsOpen = false)}
+			/>
+		{:else if selectedNodeForConfig()}
+			<div class="flowdrop-config-sidebar">
+				<!-- Header -->
+				<div class="flowdrop-config-sidebar__header">
+					<h2 class="flowdrop-config-sidebar__title">{selectedNodeForConfig().data.label}</h2>
+					<button
+						class="flowdrop-config-sidebar__close"
+						onclick={closeConfigSidebar}
+						aria-label="Close configuration sidebar"
+					>
+						×
+					</button>
+				</div>
+
+				<!-- Content -->
+				<div class="flowdrop-config-sidebar__content">
+					<!-- Node Details -->
+					<div class="flowdrop-config-sidebar__section">
+						<h3 class="flowdrop-config-sidebar__section-title">Node Details</h3>
+						<div class="flowdrop-config-sidebar__details">
+							<div class="flowdrop-config-sidebar__detail">
+								<span class="flowdrop-config-sidebar__detail-label">Node ID:</span>
+								<div class="flowdrop-config-sidebar__detail-value-with-copy">
+									<span
+										class="flowdrop-config-sidebar__detail-value"
+										style="font-family: monospace;"
+									>
+										{selectedNodeForConfig().id}
+									</span>
+									<button
+										class="flowdrop-config-sidebar__copy-btn"
+										onclick={() => {
+											navigator.clipboard.writeText(selectedNodeForConfig().id);
+										}}
+										title="Copy Node ID"
+										aria-label="Copy node ID to clipboard"
+									>
+										📋
+									</button>
+								</div>
+							</div>
+							<div class="flowdrop-config-sidebar__detail">
+								<span class="flowdrop-config-sidebar__detail-label">Type:</span>
+								<span class="flowdrop-config-sidebar__detail-value"
+									>{selectedNodeForConfig().data.metadata?.type ||
+										selectedNodeForConfig().type}</span
+								>
+							</div>
+							<div class="flowdrop-config-sidebar__detail">
+								<span class="flowdrop-config-sidebar__detail-label">Category:</span>
+								<span class="flowdrop-config-sidebar__detail-value"
+									>{selectedNodeForConfig().data.metadata?.category || 'general'}</span
+								>
+							</div>
+							<div class="flowdrop-config-sidebar__detail">
+								<span class="flowdrop-config-sidebar__detail-label">Description:</span>
+								<p class="flowdrop-config-sidebar__detail-description">
+									{selectedNodeForConfig().data.metadata?.description || 'Node configuration'}
+								</p>
+							</div>
+						</div>
 					</div>
-					<div class="flowdrop-flex flowdrop-gap--2">
-						<button
-							class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
-							onclick={retryLoad}
-							type="button"
-						>
-							Retry
-						</button>
-						<button
-							class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--primary"
-							onclick={() => {
-								nodes = sampleNodes;
-								error = null;
-							}}
-							type="button"
-						>
-							Use Sample Data
-						</button>
-						<button
-							class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
-							onclick={() => {
-								const defaultUrl = '/api/flowdrop';
-								const newUrl = prompt('Enter Backend API URL:', defaultUrl);
-								if (newUrl) {
-									const endpointConfig = createEndpointConfig(newUrl);
-									setEndpointConfig(endpointConfig);
-									fetchNodeTypes();
+
+					<!-- Configuration Form -->
+					<div class="flowdrop-config-sidebar__section">
+						<h3 class="flowdrop-config-sidebar__section-title">Configuration</h3>
+						<ConfigForm
+							node={selectedNodeForConfig()}
+							onSave={(updatedConfig) => {
+								const currentNode = selectedNodeForConfig();
+								if (selectedNodeId && currentNode) {
+									// Handle nodeType switching if nodeType is in the config
+									let nodeUpdates: Record<string, unknown> = {
+										data: {
+											...currentNode.data,
+											config: updatedConfig
+										}
+									};
+
+									// NOTE: We do NOT change the node's type field anymore
+									// All nodes use 'universalNode' and UniversalNode handles internal switching
+									workflowActions.updateNode(selectedNodeId, nodeUpdates);
 								}
+
+								closeConfigSidebar();
 							}}
-							type="button"
-						>
-							Set API URL
-						</button>
-						<button
-							class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
-							onclick={testApiConnection}
-							type="button"
-						>
-							Test API
-						</button>
-						<button
-							class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm"
-							onclick={() => (error = null)}
-							type="button"
-						>
-							✕
-						</button>
+							onCancel={closeConfigSidebar}
+						/>
 					</div>
 				</div>
 			</div>
 		{/if}
+	{/snippet}
 
-		<!-- Workflow Editor with Sidebars -->
-		<div class="flowdrop-editor-container">
-			<!-- Left Sidebar - Node Components (conditionally rendered) -->
-			{#if !disableSidebar}
-				<div class="flowdrop-sidebar flowdrop-sidebar--left">
-					<NodeSidebar {nodes} />
+	<!-- Main Content: Workflow Editor with Error Status -->
+	<!-- Status Display -->
+	{#if error}
+		<div class="flowdrop-status flowdrop-status--error">
+			<div class="flowdrop-status__content">
+				<div class="flowdrop-flex flowdrop-gap--3">
+					<div class="flowdrop-status__indicator flowdrop-status__indicator--error"></div>
+					<span class="flowdrop-text--sm flowdrop-font--medium">Error: {error}</span>
 				</div>
-			{/if}
-
-			<!-- Main Editor Area -->
-			<div
-				class="flowdrop-editor-main"
-				class:pipeline-view={!!pipelineId}
-				onclick={handleCanvasClick}
-				onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()}
-				role="button"
-				tabindex="0"
-				aria-label="Workflow canvas - click to close sidebar"
-			>
-				<WorkflowEditor
-					bind:this={workflowEditorRef}
-					{nodes}
-					{height}
-					{width}
-					{endpointConfig}
-					{isConfigSidebarOpen}
-					selectedNodeForConfig={selectedNodeForConfig()}
-					{openConfigSidebar}
-					{closeConfigSidebar}
-					{lockWorkflow}
-					{readOnly}
-					{nodeStatuses}
-					{pipelineId}
-				/>
+				<div class="flowdrop-flex flowdrop-gap--2">
+					<button
+						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
+						onclick={retryLoad}
+						type="button"
+					>
+						Retry
+					</button>
+					<button
+						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--primary"
+						onclick={() => {
+							nodes = sampleNodes;
+							error = null;
+						}}
+						type="button"
+					>
+						Use Sample Data
+					</button>
+					<button
+						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
+						onclick={() => {
+							const defaultUrl = '/api/flowdrop';
+							const newUrl = prompt('Enter Backend API URL:', defaultUrl);
+							if (newUrl) {
+								const endpointConfig = createEndpointConfig(newUrl);
+								setEndpointConfig(endpointConfig);
+								fetchNodeTypes();
+							}
+						}}
+						type="button"
+					>
+						Set API URL
+					</button>
+					<button
+						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
+						onclick={testApiConnection}
+						type="button"
+					>
+						Test API
+					</button>
+					<button
+						class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm"
+						onclick={() => (error = null)}
+						type="button"
+					>
+						✕
+					</button>
+				</div>
 			</div>
-
-			<!-- Right Sidebar - Configuration or Workflow Settings (conditionally rendered) -->
-			{#if !disableSidebar && isWorkflowSettingsOpen}
-				<ConfigSidebar
-					isOpen={isWorkflowSettingsOpen}
-					title="Workflow Settings"
-					configSchema={workflowConfigSchema}
-					configValues={workflowConfigValues}
-					onSave={handleWorkflowSave}
-					onClose={() => (isWorkflowSettingsOpen = false)}
-				/>
-			{:else if !disableSidebar && selectedNodeForConfig()}
-				<div class="flowdrop-sidebar flowdrop-sidebar--right">
-					<div class="flowdrop-config-sidebar">
-						<!-- Header -->
-						<div class="flowdrop-config-sidebar__header">
-							<h2 class="flowdrop-config-sidebar__title">{selectedNodeForConfig().data.label}</h2>
-							<button
-								class="flowdrop-config-sidebar__close"
-								onclick={closeConfigSidebar}
-								aria-label="Close configuration sidebar"
-							>
-								×
-							</button>
-						</div>
-
-						<!-- Content -->
-						<div class="flowdrop-config-sidebar__content">
-							<!-- Node Details -->
-							<div class="flowdrop-config-sidebar__section">
-								<h3 class="flowdrop-config-sidebar__section-title">Node Details</h3>
-								<div class="flowdrop-config-sidebar__details">
-									<div class="flowdrop-config-sidebar__detail">
-										<span class="flowdrop-config-sidebar__detail-label">Node ID:</span>
-										<div class="flowdrop-config-sidebar__detail-value-with-copy">
-											<span
-												class="flowdrop-config-sidebar__detail-value"
-												style="font-family: monospace;"
-											>
-												{selectedNodeForConfig().id}
-											</span>
-											<button
-												class="flowdrop-config-sidebar__copy-btn"
-												onclick={() => {
-													navigator.clipboard.writeText(selectedNodeForConfig().id);
-												}}
-												title="Copy Node ID"
-												aria-label="Copy node ID to clipboard"
-											>
-												📋
-											</button>
-										</div>
-									</div>
-									<div class="flowdrop-config-sidebar__detail">
-										<span class="flowdrop-config-sidebar__detail-label">Type:</span>
-										<span class="flowdrop-config-sidebar__detail-value"
-											>{selectedNodeForConfig().data.metadata?.type ||
-												selectedNodeForConfig().type}</span
-										>
-									</div>
-									<div class="flowdrop-config-sidebar__detail">
-										<span class="flowdrop-config-sidebar__detail-label">Category:</span>
-										<span class="flowdrop-config-sidebar__detail-value"
-											>{selectedNodeForConfig().data.metadata?.category || 'general'}</span
-										>
-									</div>
-									<div class="flowdrop-config-sidebar__detail">
-										<span class="flowdrop-config-sidebar__detail-label">Description:</span>
-										<p class="flowdrop-config-sidebar__detail-description">
-											{selectedNodeForConfig().data.metadata?.description || 'Node configuration'}
-										</p>
-									</div>
-								</div>
-							</div>
-
-							<!-- Configuration Form -->
-							<div class="flowdrop-config-sidebar__section">
-								<h3 class="flowdrop-config-sidebar__section-title">Configuration</h3>
-								<ConfigForm
-									node={selectedNodeForConfig()}
-									onSave={(updatedConfig) => {
-										const currentNode = selectedNodeForConfig();
-										if (selectedNodeId && currentNode) {
-											// Handle nodeType switching if nodeType is in the config
-											let nodeUpdates: Record<string, unknown> = {
-												data: {
-													...currentNode.data,
-													config: updatedConfig
-												}
-											};
-
-											// NOTE: We do NOT change the node's type field anymore
-											// All nodes use 'universalNode' and UniversalNode handles internal switching
-											workflowActions.updateNode(selectedNodeId, nodeUpdates);
-										}
-
-										closeConfigSidebar();
-									}}
-									onCancel={closeConfigSidebar}
-								/>
-							</div>
-						</div>
-					</div>
-				</div>
-			{/if}
 		</div>
-	</main>
-</div>
+	{/if}
+
+	<!-- Main Editor Area -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<div
+		class="flowdrop-editor-main"
+		class:pipeline-view={!!pipelineId}
+		onclick={handleCanvasClick}
+		onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()}
+		role="region"
+		aria-label="Workflow canvas"
+	>
+		<WorkflowEditor
+			bind:this={workflowEditorRef}
+			{nodes}
+			{height}
+			{width}
+			{endpointConfig}
+			{isConfigSidebarOpen}
+			selectedNodeForConfig={selectedNodeForConfig()}
+			{openConfigSidebar}
+			{closeConfigSidebar}
+			{lockWorkflow}
+			{readOnly}
+			{nodeStatuses}
+			{pipelineId}
+		/>
+	</div>
+</MainLayout>
 
 <style>
-	.flowdrop-app {
-		background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.flowdrop-main {
-		flex: 1;
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		min-height: 0;
-		overflow: hidden;
-	}
-
+	/* Status bar styles */
 	.flowdrop-status {
 		background-color: #eff6ff;
 		border-bottom: 1px solid #bfdbfe;
@@ -864,6 +853,7 @@
 		background-color: #ef4444;
 	}
 
+	/* Button styles */
 	.flowdrop-btn {
 		padding: 0.375rem 0.75rem;
 		border-radius: 0.375rem;
@@ -912,6 +902,7 @@
 		color: #374151;
 	}
 
+	/* Utility classes */
 	.flowdrop-flex {
 		display: flex;
 	}
@@ -933,72 +924,12 @@
 		font-weight: 500;
 	}
 
-	@keyframes spin {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
-	}
-
-	.flowdrop-editor-container {
-		flex: 1;
-		position: relative;
-		min-height: 0;
-		overflow: hidden;
-		display: flex;
-	}
-
-	.flowdrop-sidebar {
-		background-color: #ffffff;
-		border: 1px solid #e5e7eb;
-		overflow-y: auto;
-		overflow-x: hidden;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		/* Custom scrollbar styling */
-		scrollbar-width: thin;
-		scrollbar-color: #cbd5e1 #f1f5f9;
-	}
-
-	.flowdrop-sidebar::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.flowdrop-sidebar::-webkit-scrollbar-track {
-		background: #f1f5f9;
-		border-radius: 4px;
-	}
-
-	.flowdrop-sidebar::-webkit-scrollbar-thumb {
-		background: #cbd5e1;
-		border-radius: 4px;
-	}
-
-	.flowdrop-sidebar::-webkit-scrollbar-thumb:hover {
-		background: #94a3b8;
-	}
-
-	.flowdrop-sidebar--left {
-		width: 320px;
-		min-width: 320px;
-		border-right: 1px solid #e5e7eb;
-		box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-		display: flex;
-		flex-direction: column;
-	}
-
-	.flowdrop-sidebar--right {
-		border-left: 1px solid #e5e7eb;
-		box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
-	}
-
+	/* Main editor area */
 	.flowdrop-editor-main {
 		flex: 1;
 		position: relative;
 		min-width: 0;
+		height: 100%;
 		overflow: hidden;
 		background-color: #1f2937;
 	}

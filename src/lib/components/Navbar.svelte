@@ -184,13 +184,14 @@
 <style>
 	.flowdrop-navbar {
 		height: var(--flowdrop-navbar-height, 60px);
+		width: 100%;
+		max-width: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: 0 1rem;
 		background-color: #ffffff;
 		border-bottom: 1px solid #e5e7eb;
-		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 		z-index: 10;
 	}
 
