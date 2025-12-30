@@ -75,7 +75,8 @@ export { default as NodeStatusOverlay } from './components/NodeStatusOverlay.sve
 export { default as MarkdownDisplay } from './components/MarkdownDisplay.svelte';
 export { default as ConfigForm } from './components/ConfigForm.svelte';
 export { default as ConfigModal } from './components/ConfigModal.svelte';
-export { default as ConfigSidebar } from './components/ConfigSidebar.svelte';
+export { default as ConfigPanel } from './components/ConfigPanel.svelte';
+export { default as ReadOnlyDetails } from './components/ReadOnlyDetails.svelte';
 export { default as ConnectionLine } from './components/ConnectionLine.svelte';
 export { default as LogsSidebar } from './components/LogsSidebar.svelte';
 export { default as PipelineStatus } from './components/PipelineStatus.svelte';
