@@ -1,22 +1,16 @@
 <!--
-  Gateway Node Component
-  Visual representation of gateway/branch nodes with branching flow indicators
-  Shows active branches and execution paths
-  Styled with BEM syntax following WorkflowNode pattern
+  Workflow Node Component
+  Renders individual nodes in the workflow editor with full functionality
+  Uses SvelteFlow's Handle for connection ports
+  Styled with BEM syntax
 -->
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { WorkflowNode } from '../types/index.js';
+	import type { WorkflowNode } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
-	import { getNodeIcon } from '../utils/icons.js';
-	import { getDataTypeColorToken, getCategoryColorToken } from '../utils/colors.js';
-
-	// Define simplified branch interface - conditions are handled by backend
-	interface Branch {
-		name: string;
-		label: string;
-	}
+	import { getNodeIcon } from '../../utils/icons.js';
+	import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
 
 	interface Props {
 		data: WorkflowNode['data'] & {
@@ -27,10 +21,12 @@
 	}
 
 	let props: Props = $props();
+	let isHandleInteraction = $state(false);
 
-	// Gateway-specific data - branches are calculated at runtime from config
-	let branches = $derived((props.data.config?.branches as Branch[]) || []);
-	let activeBranches = $derived((props.data.executionInfo as any)?.output?.active_branches || []);
+	/**
+	 * Handle configuration value changes - now handled by global ConfigSidebar
+	 */
+	// Removed local config handling - now using global ConfigSidebar
 
 	/**
 	 * Handle node click - only handle selection, no config opening
@@ -42,47 +38,48 @@
 	/**
 	 * Handle double-click to open config
 	 */
-	function handleNodeDoubleClick(): void {
+	function handleDoubleClick(): void {
+		openConfigSidebar();
+	}
+
+	/**
+	 * Handle configuration sidebar - now using global ConfigSidebar
+	 */
+	function openConfigSidebar(): void {
 		if (props.data.onConfigOpen) {
-			props.data.onConfigOpen({
-				id: props.data.nodeId || '',
-				type: 'gateway',
+			// Create a WorkflowNodeType-like object for the global ConfigSidebar
+			const nodeForConfig = {
+				id: props.data.nodeId || 'unknown',
+				type: 'workflowNode',
 				data: props.data
-			});
+			};
+			props.data.onConfigOpen(nodeForConfig);
 		}
-	}
-
-	/**
-	 * Handle keyboard events for accessibility
-	 */
-	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			handleNodeClick();
-		}
-	}
-
-	/**
-	 * Check if a branch is active
-	 */
-	function isBranchActive(branchName: string): boolean {
-		return activeBranches.includes(branchName);
 	}
 </script>
 
 <!-- Node Container -->
 <div
-	class="flowdrop-workflow-node flowdrop-workflow-node--gateway"
+	class="flowdrop-workflow-node"
 	class:flowdrop-workflow-node--selected={props.selected}
 	onclick={handleNodeClick}
-	ondblclick={handleNodeDoubleClick}
-	onkeydown={handleKeydown}
+	ondblclick={handleDoubleClick}
+	onmouseup={() => {
+		isHandleInteraction = false;
+	}}
+	data-handle-interaction={isHandleInteraction}
 	role="button"
 	tabindex="0"
-	aria-label="Gateway node: {props.data.metadata.name}"
+	onkeydown={(e) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			handleDoubleClick();
+		}
+	}}
+	aria-label="Workflow node: {props.data.metadata.name}"
 	aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
-	<!-- Node Header -->
+	<!-- Default Node Header -->
 	<div class="flowdrop-workflow-node__header">
 		<div class="flowdrop-flex flowdrop-gap--3 flowdrop-items--center">
 			<!-- Node Icon -->
@@ -93,12 +90,17 @@
 				<Icon icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)} />
 			</div>
 
-			<!-- Node Title -->
+			<!-- Node Title - Icon and Title on same line -->
 			<h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
 				{props.data.label}
 			</h3>
+
+			<!-- Status Indicators -->
+			<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+				<!-- Status indicators removed - using outer NodeStatusOverlay instead -->
+			</div>
 		</div>
-		<!-- Node Description -->
+		<!-- Node Description - on new line below -->
 		<p
 			class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1"
 			id="node-description-{props.data.nodeId || 'unknown'}"
@@ -158,66 +160,48 @@
 		</div>
 	{/if}
 
-	<!-- Branches Section (Output Ports) -->
-	{#if branches.length > 0}
+	<!-- Output Ports Container -->
+	{#if props.data.metadata.outputs.length > 0}
 		<div class="flowdrop-workflow-node__ports">
 			<div class="flowdrop-workflow-node__ports-header">
-				<h5 class="flowdrop-workflow-node__ports-title">
-					<Icon icon="mdi:source-branch" />
-					<span>Branches ({branches.length})</span>
-				</h5>
+				<h5 class="flowdrop-workflow-node__ports-title">Outputs</h5>
 			</div>
 			<div class="flowdrop-workflow-node__ports-list">
-				{#each branches as branch (branch.name)}
-					{@const isActive = isBranchActive(branch.name)}
+				{#each props.data.metadata.outputs as port (port.id)}
 					<div class="flowdrop-workflow-node__port">
 						<!-- Port Info -->
 						<div class="flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right">
-							<div
-								class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end flowdrop-items--center"
-							>
-								{#if isActive}
-									<span style="color: {getDataTypeColorToken('trigger')};">
-										<Icon icon="mdi:check-circle" />
-									</span>
-								{/if}
-								<span
-									class="flowdrop-text--xs flowdrop-font--medium"
-									class:flowdrop-text--active={isActive}
-								>
-									{branch.name}
-								</span>
+							<div class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end">
+								<span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
-									style="background-color: {getDataTypeColorToken('trigger')}; color: #fff;"
+									style="background-color: {getDataTypeColorToken(port.dataType)}; color: #fff;"
 								>
-									trigger
+									{port.dataType}
 								</span>
 							</div>
+							{#if port.description}
+								<p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
+									{port.description}
+								</p>
+							{/if}
 						</div>
 
-						<!-- Output Handle - Generated from branch name -->
+						<!-- Output Handle -->
 						<Handle
 							type="source"
 							position={Position.Right}
-							id={`${props.data.nodeId}-output-${branch.name}`}
-							class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
-							style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {isActive
-								? getDataTypeColorToken('trigger')
-								: getDataTypeColorToken('trigger')}; border-color: '#ffffff';"
+							id={`${props.data.nodeId}-output-${port.id}`}
+							class="flowdrop-workflow-node__handle"
+							style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {getDataTypeColorToken(
+								port.dataType
+							)}; border-color: '#ffffff';"
 							role="button"
 							tabindex={0}
-							aria-label="Connect from {branch.name} branch"
+							aria-label="Connect from {port.name} output port"
 						/>
 					</div>
 				{/each}
-			</div>
-		</div>
-	{:else}
-		<div class="flowdrop-workflow-node__ports">
-			<div class="workflow-node__no-branches">
-				<Icon icon="mdi:alert-circle-outline" />
-				<span>No branches configured</span>
 			</div>
 		</div>
 	{/if}
@@ -225,12 +209,14 @@
 	<!-- Config button -->
 	<button
 		class="flowdrop-workflow-node__config-btn"
-		onclick={handleNodeDoubleClick}
+		onclick={openConfigSidebar}
 		title="Configure node"
 	>
 		<Icon icon="mdi:cog" />
 	</button>
 </div>
+
+<!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
 
 <style>
 	.flowdrop-workflow-node {
@@ -241,10 +227,6 @@
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 		width: 18rem;
 		z-index: 10;
-	}
-
-	.flowdrop-workflow-node--gateway {
-		min-width: 18rem;
 	}
 
 	.flowdrop-workflow-node--selected {
@@ -278,15 +260,24 @@
 		line-height: 1;
 	}
 
+	/* Status indicator styles removed - using outer NodeStatusOverlay instead */
+
+	@keyframes pulse {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.5;
+		}
+	}
+
 	.flowdrop-workflow-node__ports {
 		padding: 0.75rem 1rem;
 	}
 
 	.flowdrop-workflow-node__ports-header {
 		margin-bottom: 0.5rem;
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
 	}
 
 	.flowdrop-workflow-node__ports-title {
@@ -296,9 +287,6 @@
 		color: #374151;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
 	}
 
 	.flowdrop-workflow-node__ports-list {
@@ -334,18 +322,6 @@
 		padding: 0.125rem 0.25rem;
 	}
 
-	.workflow-node__no-branches {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem;
-		background: #fef3c7;
-		border: 1px solid #f59e0b;
-		border-radius: 0.5rem;
-		color: #92400e;
-		font-size: 0.875rem;
-	}
-
 	/* Handle styles */
 	:global(.flowdrop-workflow-node__handle) {
 		width: 0.75rem;
@@ -365,11 +341,6 @@
 	:global(.flowdrop-workflow-node__handle:focus) {
 		outline: 2px solid #3b82f6;
 		outline-offset: 2px;
-	}
-
-	:global(.flowdrop-workflow-node__handle--active) {
-		transform: scale(1.15);
-		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 	}
 
 	/* Utility classes */
@@ -413,11 +384,6 @@
 
 	.flowdrop-text--gray {
 		color: #6b7280;
-	}
-
-	.flowdrop-text--active {
-		color: #10b981;
-		font-weight: 600;
 	}
 
 	.flowdrop-font--medium {
