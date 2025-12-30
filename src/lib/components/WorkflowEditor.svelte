@@ -78,6 +78,12 @@
 	let previousWorkflowId: string | null = null;
 	let previousPipelineId: string | undefined = undefined;
 
+	/**
+	 * Key for SvelteFlow component - changes when workflow ID changes
+	 * This forces SvelteFlow to remount with fresh state, allowing fitView to work correctly
+	 */
+	let svelteFlowKey = $derived(currentWorkflow?.id ?? 'default');
+
 	$effect(() => {
 		if (currentWorkflow) {
 			const nodesWithCallbacks = currentWorkflow.nodes.map((node) => ({
@@ -362,30 +368,32 @@
 			<!-- Flow Canvas -->
 			<div class="flowdrop-canvas">
 				<FlowDropZone ondrop={handleNodeDrop}>
-					<SvelteFlow
-						bind:nodes={flowNodes}
-						bind:edges={flowEdges}
-						{nodeTypes}
-						{defaultEdgeOptions}
-						onconnect={handleConnect}
-						ondelete={handleNodesDelete}
-						minZoom={0.2}
-						maxZoom={3}
-						clickConnect={true}
-						elevateEdgesOnSelect={true}
-						connectionLineType={ConnectionLineType.Bezier}
-						connectionLineComponent={ConnectionLine}
-						snapGrid={[10, 10]}
-						fitView
-					>
-						<Controls />
-						<Background
-							gap={10}
-							bgColor="var(--flowdrop-background-color)"
-							variant={BackgroundVariant.Dots}
-						/>
-						<MiniMap />
-					</SvelteFlow>
+					{#key svelteFlowKey}
+						<SvelteFlow
+							bind:nodes={flowNodes}
+							bind:edges={flowEdges}
+							{nodeTypes}
+							{defaultEdgeOptions}
+							onconnect={handleConnect}
+							ondelete={handleNodesDelete}
+							minZoom={0.2}
+							maxZoom={3}
+							clickConnect={true}
+							elevateEdgesOnSelect={true}
+							connectionLineType={ConnectionLineType.Bezier}
+							connectionLineComponent={ConnectionLine}
+							snapGrid={[10, 10]}
+							fitView
+						>
+							<Controls />
+							<Background
+								gap={10}
+								bgColor="var(--flowdrop-background-color)"
+								variant={BackgroundVariant.Dots}
+							/>
+							<MiniMap />
+						</SvelteFlow>
+					{/key}
 					<!-- Drop Zone Indicator -->
 					{#if flowNodes.length === 0}
 						<CanvasBanner
