@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.22] - 2025-12-30
+
+### Removed
+
+- **ConfigSidebar Component**: Removed deprecated ConfigSidebar in favor of ConfigPanel
+- **Notes Node Inline Editing**: Removed redundant inline editing feature from Notes node
+  - Editing now handled through standard configuration panel
+- **Misleading .env.example**: Removed file that could cause confusion with runtime configuration
+
+### Fixed
+
+- **Node Handle z-index**: Fixed issue where workflow node handles were clipped/cut off
+  - Increased z-index from 10 to 20 to ensure handles display above other elements
+
 ## [0.0.21] - 2025-12-30
 
 ### Fixed
@@ -755,7 +769,8 @@ import '@d34dman/flowdrop/styles/base.css';
 
 ---
 
-[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.21...HEAD
+[Unreleased]: https://github.com/d34dman/flowdrop/compare/v0.0.22...HEAD
+[0.0.22]: https://github.com/d34dman/flowdrop/compare/v0.0.21...v0.0.22
 [0.0.21]: https://github.com/d34dman/flowdrop/compare/v0.0.20...v0.0.21
 [0.0.20]: https://github.com/d34dman/flowdrop/compare/v0.0.19...v0.0.20
 [0.0.19]: https://github.com/d34dman/flowdrop/compare/v0.0.18...v0.0.19
