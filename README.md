@@ -5,6 +5,14 @@
 <h1 align="center">FlowDrop</h1>
 
 <p align="center">
+  <img src="https://img.shields.io/github/actions/workflow/status/d34dman/flowdrop/docker-publish.yml?style=flat-square&label=Build" alt="GitHub pages build status" />
+  <a href="https://www.npmjs.com/package/@d34dman/flowdrop"><img src="https://img.shields.io/npm/v/@d34dman/flowdrop?style=flat-square" alt="npm" /></a>
+  <img src="https://img.shields.io/npm/unpacked-size/%40d34dman%2Fflowdrop?style=flat-square" alt="NPM Unpacked Size" />
+  <img src="https://img.shields.io/npm/types/@d34dman/flowdrop?style=flat-square" alt="npm type definitions" />
+  <a href="http://npmjs.com/package/@d34dman/flowdrop"><img src="https://img.shields.io/npm/dt/@d34dman/flowdrop.svg?maxAge=2592000&style=flat-square" alt="npm downloads" /></a>
+</p>
+
+<p align="center">
   <strong>Build beautiful workflow editors in minutes, not months.</strong>
 </p>
 
