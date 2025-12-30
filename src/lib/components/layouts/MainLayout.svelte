@@ -412,8 +412,6 @@
 	.flowdrop-main-layout__sidebar--right {
 		width: var(--layout-right-sidebar-width);
 		min-width: var(--layout-right-sidebar-width);
-		border-left: 1px solid #e5e7eb;
-		box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
 	}
 
 	/* Main Content Area */
@@ -435,11 +433,13 @@
 		align-items: center;
 		justify-content: center;
 		cursor: col-resize;
-		background-color: transparent;
+		background-color: white;
 		position: relative;
 		z-index: 20;
 		flex-shrink: 0;
 		transition: background-color 0.2s ease;
+		border-right: 1px solid #e5e7eb;
+		border-left: 1px solid #e5e7eb;
 	}
 
 	.flowdrop-main-layout__divider:hover,
@@ -460,7 +460,7 @@
 	.flowdrop-main-layout__divider-handle {
 		width: 4px;
 		height: 48px;
-		background-color: #d1d5db;
+		background-color: #e5e7eb;
 		border-radius: 4px;
 		transition:
 			background-color 0.2s ease,
