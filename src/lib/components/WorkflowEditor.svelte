@@ -436,7 +436,7 @@
 	}
 
 	.flowdrop-text--error {
-		color: #dc2626;
+		color: var(--flowdrop-text-color-error);
 	}
 
 	.flowdrop-canvas {
