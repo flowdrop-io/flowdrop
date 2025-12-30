@@ -1,6 +1,7 @@
 <!--
   ConfigForm Component
-  Handles dynamic form rendering for node configuration
+  Handles dynamic form rendering for node or entity configuration
+  Supports both node-based config and direct schema/values
   Uses reactive $state for proper Svelte 5 reactivity
 -->
 
@@ -8,22 +9,31 @@
 	import type { ConfigSchema, WorkflowNode } from '$lib/types/index.js';
 
 	interface Props {
-		node: WorkflowNode;
+		/** Optional workflow node (if provided, schema and values are derived from it) */
+		node?: WorkflowNode;
+		/** Direct config schema (used when node is not provided) */
+		schema?: ConfigSchema;
+		/** Direct config values (used when node is not provided) */
+		values?: Record<string, unknown>;
+		/** Callback when form is saved */
 		onSave: (config: Record<string, unknown>) => void;
+		/** Callback when form is cancelled */
 		onCancel: () => void;
 	}
 
-	let { node, onSave, onCancel }: Props = $props();
+	let { node, schema, values, onSave, onCancel }: Props = $props();
 
 	/**
-	 * Get the configuration schema from node metadata
+	 * Get the configuration schema from node metadata or direct prop
 	 */
-	const configSchema = $derived(node.data.metadata?.configSchema as ConfigSchema | undefined);
+	const configSchema = $derived(
+		schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined)
+	);
 
 	/**
-	 * Get the current node configuration
+	 * Get the current configuration from node or direct prop
 	 */
-	const nodeConfig = $derived(node.data.config || {});
+	const initialConfig = $derived(values ?? node?.data.config ?? {});
 
 	/**
 	 * Create reactive configuration values using $state
@@ -32,15 +42,16 @@
 	let configValues = $state<Record<string, unknown>>({});
 
 	/**
-	 * Initialize config values when node or schema changes
+	 * Initialize config values when node/schema changes
 	 */
 	$effect(() => {
 		if (configSchema?.properties) {
 			const mergedConfig: Record<string, unknown> = {};
 			Object.entries(configSchema.properties).forEach(([key, field]) => {
-				const fieldConfig = field as any;
+				const fieldConfig = field as Record<string, unknown>;
 				// Use existing value if available, otherwise use default
-				mergedConfig[key] = nodeConfig[key] !== undefined ? nodeConfig[key] : fieldConfig.default;
+				mergedConfig[key] =
+					initialConfig[key] !== undefined ? initialConfig[key] : fieldConfig.default;
 			});
 			configValues = mergedConfig;
 		}
@@ -56,35 +67,38 @@
 
 		if (form) {
 			const inputs = form.querySelectorAll('input, select, textarea');
-			inputs.forEach((input: any) => {
-				if (input.id) {
-					if (input.type === 'checkbox') {
-						updatedConfig[input.id] = input.checked;
-					} else if (input.type === 'number') {
-						updatedConfig[input.id] = input.value ? Number(input.value) : input.value;
-					} else if (input.type === 'hidden') {
+			inputs.forEach((input: Element) => {
+				const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+				if (inputEl.id) {
+					if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
+						updatedConfig[inputEl.id] = inputEl.checked;
+					} else if (inputEl instanceof HTMLInputElement && inputEl.type === 'number') {
+						updatedConfig[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
+					} else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
 						// Parse hidden field values that might be JSON
 						try {
-							const parsed = JSON.parse(input.value);
-							updatedConfig[input.id] = parsed;
+							const parsed = JSON.parse(inputEl.value);
+							updatedConfig[inputEl.id] = parsed;
 						} catch {
 							// If not JSON, use raw value
-							updatedConfig[input.id] = input.value;
+							updatedConfig[inputEl.id] = inputEl.value;
 						}
 					} else {
-						updatedConfig[input.id] = input.value;
+						updatedConfig[inputEl.id] = inputEl.value;
 					}
 				}
 			});
 		}
 
 		// Preserve hidden field values from original config if not collected from form
-		if (node.data.config && configSchema?.properties) {
-			Object.entries(configSchema.properties).forEach(([key, property]: [string, any]) => {
-				if (property.format === 'hidden' && !(key in updatedConfig) && key in node.data.config) {
-					updatedConfig[key] = node.data.config[key];
+		if (initialConfig && configSchema?.properties) {
+			Object.entries(configSchema.properties).forEach(
+				([key, property]: [string, Record<string, unknown>]) => {
+					if (property.format === 'hidden' && !(key in updatedConfig) && key in initialConfig) {
+						updatedConfig[key] = initialConfig[key];
+					}
 				}
-			});
+			);
 		}
 
 		onSave(updatedConfig);
