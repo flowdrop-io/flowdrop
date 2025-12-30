@@ -375,6 +375,7 @@
 	0% {
 		transform: rotate(0deg);
 	}
+
 	100% {
 		transform: rotate(360deg);
 	}
@@ -1156,6 +1157,15 @@
 	--flowdrop-edge-data-color-hover: var(--color-ref-gray-500);
 	--flowdrop-edge-data-color-selected: var(--color-ref-violet-600);
 
+	/* Semantic text color tokens */
+	--flowdrop-text-color-error: var(--color-ref-red-600);
+	--flowdrop-text-color-success: var(--color-ref-green-600);
+	--flowdrop-text-color-warning: var(--color-ref-amber-600);
+	--flowdrop-text-color-info: var(--color-ref-blue-600);
+	--flowdrop-text-color-muted: var(--color-ref-gray-500);
+	--flowdrop-text-color-primary: var(--color-ref-gray-900);
+	--flowdrop-text-color-secondary: var(--color-ref-gray-600);
+
 	/* NotesNode component variables */
 	--notes-node-width: 500px;
 	--notes-node-min-width: 250px;
@@ -1362,9 +1372,11 @@
 .markdown-display--compact h1 {
 	font-size: 1.25rem;
 }
+
 .markdown-display--compact h2 {
 	font-size: 1.125rem;
 }
+
 .markdown-display--compact h3 {
 	font-size: 1rem;
 }
@@ -1377,9 +1389,11 @@
 .markdown-display--large h1 {
 	font-size: 1.75rem;
 }
+
 .markdown-display--large h2 {
 	font-size: 1.5rem;
 }
+
 .markdown-display--large h3 {
 	font-size: 1.25rem;
 }
