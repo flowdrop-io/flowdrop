@@ -536,3 +536,34 @@ export const workflowMetadataChanged = derived(workflowMetadata, (metadata) => (
 	updatedAt: metadata.updatedAt,
 	version: metadata.version ?? '1.0.0'
 }));
+
+/**
+ * Derived store for connected handles
+ *
+ * Provides a Set of all handle IDs that are currently connected to edges.
+ * Used by node components to implement hideUnconnectedHandles functionality.
+ *
+ * @example
+ * ```typescript
+ * import { connectedHandles } from '$lib/stores/workflowStore.js';
+ *
+ * // Check if a specific handle is connected
+ * const isConnected = $connectedHandles.has('node-1-input-data');
+ * ```
+ */
+export const connectedHandles = derived(workflowEdges, (edges) => {
+	const handles = new Set<string>();
+
+	edges.forEach((edge) => {
+		// Add source handle (output port)
+		if (edge.sourceHandle) {
+			handles.add(edge.sourceHandle);
+		}
+		// Add target handle (input port)
+		if (edge.targetHandle) {
+			handles.add(edge.targetHandle);
+		}
+	});
+
+	return handles;
+});
