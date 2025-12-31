@@ -121,6 +121,22 @@ export interface CheckboxGroupFieldProps extends BaseFieldProps {
 }
 
 /**
+ * Properties for array fields (dynamic lists)
+ */
+export interface ArrayFieldProps extends BaseFieldProps {
+    value: unknown[];
+    /** Schema for array items */
+    itemSchema: FieldSchema;
+    /** Minimum number of items required */
+    minItems?: number;
+    /** Maximum number of items allowed */
+    maxItems?: number;
+    /** Label for the add button */
+    addLabel?: string;
+    onChange: (value: unknown[]) => void;
+}
+
+/**
  * Field schema definition derived from JSON Schema property
  * Used to determine which field component to render
  */
@@ -153,8 +169,12 @@ export interface FieldSchema {
     maxLength?: number;
     /** Validation pattern for strings */
     pattern?: string;
-    /** Item schema for array fields (future use) */
+    /** Item schema for array fields */
     items?: FieldSchema;
+    /** Minimum number of items for array fields */
+    minItems?: number;
+    /** Maximum number of items for array fields */
+    maxItems?: number;
     /** Property schemas for object fields (future use) */
     properties?: Record<string, FieldSchema>;
     /** Required properties for object fields (future use) */

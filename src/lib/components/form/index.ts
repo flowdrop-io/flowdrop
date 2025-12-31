@@ -46,4 +46,5 @@ export { default as FormNumberField } from "./FormNumberField.svelte";
 export { default as FormToggle } from "./FormToggle.svelte";
 export { default as FormSelect } from "./FormSelect.svelte";
 export { default as FormCheckboxGroup } from "./FormCheckboxGroup.svelte";
+export { default as FormArray } from "./FormArray.svelte";
 
