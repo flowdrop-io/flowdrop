@@ -10,7 +10,8 @@
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { WorkflowNode, NodePort } from '../../types/index.js';
+	import type { WorkflowNode, NodePort, DynamicPort } from '../../types/index.js';
+	import { dynamicPortToNodePort } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../../utils/icons.js';
 	import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
@@ -38,6 +39,36 @@
 	});
 
 	/**
+	 * Dynamic inputs from config - user-defined input ports
+	 * Similar to how branches work in GatewayNode
+	 */
+	const dynamicInputs = $derived(
+		((props.data.config?.dynamicInputs as DynamicPort[]) || []).map((port) =>
+			dynamicPortToNodePort(port, 'input')
+		)
+	);
+
+	/**
+	 * Dynamic outputs from config - user-defined output ports
+	 * Similar to how branches work in GatewayNode
+	 */
+	const dynamicOutputs = $derived(
+		((props.data.config?.dynamicOutputs as DynamicPort[]) || []).map((port) =>
+			dynamicPortToNodePort(port, 'output')
+		)
+	);
+
+	/**
+	 * Combined input ports: static metadata inputs + dynamic config inputs
+	 */
+	const allInputPorts = $derived([...props.data.metadata.inputs, ...dynamicInputs]);
+
+	/**
+	 * Combined output ports: static metadata outputs + dynamic config outputs
+	 */
+	const allOutputPorts = $derived([...props.data.metadata.outputs, ...dynamicOutputs]);
+
+	/**
 	 * Check if a port should be visible based on connection state and settings
 	 * @param port - The port to check
 	 * @param type - Whether this is an 'input' or 'output' port
@@ -61,16 +92,18 @@
 
 	/**
 	 * Derived list of visible input ports based on hideUnconnectedHandles setting
+	 * Now includes both static and dynamic inputs
 	 */
 	const visibleInputPorts = $derived(
-		props.data.metadata.inputs.filter((port) => isPortVisible(port, 'input'))
+		allInputPorts.filter((port) => isPortVisible(port, 'input'))
 	);
 
 	/**
 	 * Derived list of visible output ports based on hideUnconnectedHandles setting
+	 * Now includes both static and dynamic outputs
 	 */
 	const visibleOutputPorts = $derived(
-		props.data.metadata.outputs.filter((port) => isPortVisible(port, 'output'))
+		allOutputPorts.filter((port) => isPortVisible(port, 'output'))
 	);
 
 	/**

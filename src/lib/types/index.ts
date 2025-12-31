@@ -94,6 +94,41 @@ export interface NodePort {
 }
 
 /**
+ * Dynamic port configuration for user-defined inputs/outputs
+ * These are defined in the node's config and allow users to create
+ * custom input/output handles at runtime similar to gateway branches
+ */
+export interface DynamicPort {
+	/** Unique identifier for the port (used for handle IDs and connections) */
+	name: string;
+	/** Display label shown in the UI */
+	label: string;
+	/** Description of what this port accepts/provides */
+	description?: string;
+	/** Data type for the port (affects color and connection validation) */
+	dataType: NodeDataType;
+	/** Whether this port is required for execution */
+	required?: boolean;
+}
+
+/**
+ * Convert a DynamicPort to a NodePort
+ * @param port - The dynamic port configuration
+ * @param portType - Whether this is an input or output port
+ * @returns A NodePort compatible with the rendering system
+ */
+export function dynamicPortToNodePort(port: DynamicPort, portType: 'input' | 'output'): NodePort {
+	return {
+		id: port.name,
+		name: port.label,
+		type: portType,
+		dataType: port.dataType,
+		required: port.required ?? false,
+		description: port.description
+	};
+}
+
+/**
  * Built-in node types for explicit component rendering.
  * These are the node types that ship with FlowDrop.
  */

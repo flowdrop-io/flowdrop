@@ -957,6 +957,271 @@ export const mockNodes: NodeMetadata[] = [
         ],
         config: { endpoint: "", method: "POST" },
         configSchema: { type: "object", properties: { url: { type: "string", title: "URL", description: "The webhook URL", default: "" }, method: { type: "string", title: "Method", description: "HTTP method to use", default: "POST", enum: ["GET", "POST", "PUT", "PATCH", "DELETE"] }, headers: { type: "object", title: "Headers", description: "HTTP headers to send", default: [] }, timeout: { type: "integer", title: "Timeout", description: "Request timeout in seconds", default: 30 } } }
+    },
+    {
+        id: "custom_function",
+        name: "Custom Function",
+        type: "default",
+        supportedTypes: ["default"],
+        description: "A node with user-defined dynamic inputs and outputs for custom data processing",
+        category: "processing",
+        icon: "mdi:function-variant",
+        color: "#8b5cf6",
+        version: "1.0.0",
+        tags: ["processing", "function", "custom", "dynamic", "ports"],
+        inputs: [
+            { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "Workflow trigger input" }
+        ],
+        outputs: [
+            { id: "success", name: "Success", type: "output", dataType: "boolean", required: false, description: "Whether the function executed successfully" }
+        ],
+        config: {
+            functionName: "myCustomFunction",
+            dynamicInputs: [
+                { name: "input_1", label: "First Input", description: "The first input parameter", dataType: "string", required: true },
+                { name: "input_2", label: "Second Input", description: "The second input parameter", dataType: "number", required: false }
+            ],
+            dynamicOutputs: [
+                { name: "output_1", label: "Primary Output", description: "The main output value", dataType: "string", required: false },
+                { name: "output_2", label: "Metadata", description: "Additional metadata from processing", dataType: "json", required: false }
+            ]
+        },
+        configSchema: {
+            type: "object",
+            properties: {
+                functionName: {
+                    type: "string",
+                    title: "Function Name",
+                    description: "Name identifier for this custom function",
+                    default: "myCustomFunction"
+                },
+                dynamicInputs: {
+                    type: "array",
+                    title: "Dynamic Inputs",
+                    description: "Configure custom input ports for this node",
+                    items: {
+                        type: "object",
+                        title: "Input Port",
+                        properties: {
+                            name: {
+                                type: "string",
+                                title: "Port ID",
+                                description: "Unique identifier for this input port (used for connections)",
+                                placeholder: "e.g., my_input"
+                            },
+                            label: {
+                                type: "string",
+                                title: "Label",
+                                description: "Display label for this input port",
+                                placeholder: "e.g., My Input"
+                            },
+                            description: {
+                                type: "string",
+                                title: "Description",
+                                description: "Description of what this input accepts",
+                                placeholder: "e.g., The data to process"
+                            },
+                            dataType: {
+                                type: "string",
+                                title: "Data Type",
+                                description: "The type of data this input accepts",
+                                default: "string",
+                                enum: ["string", "number", "boolean", "array", "json", "mixed", "trigger", "tool"]
+                            },
+                            required: {
+                                type: "boolean",
+                                title: "Required",
+                                description: "Whether this input is required for execution",
+                                default: false
+                            }
+                        },
+                        required: ["name", "label", "dataType"]
+                    },
+                    default: [
+                        { name: "input_1", label: "First Input", description: "The first input parameter", dataType: "string", required: true }
+                    ],
+                    minItems: 0
+                },
+                dynamicOutputs: {
+                    type: "array",
+                    title: "Dynamic Outputs",
+                    description: "Configure custom output ports for this node",
+                    items: {
+                        type: "object",
+                        title: "Output Port",
+                        properties: {
+                            name: {
+                                type: "string",
+                                title: "Port ID",
+                                description: "Unique identifier for this output port (used for connections)",
+                                placeholder: "e.g., my_output"
+                            },
+                            label: {
+                                type: "string",
+                                title: "Label",
+                                description: "Display label for this output port",
+                                placeholder: "e.g., My Output"
+                            },
+                            description: {
+                                type: "string",
+                                title: "Description",
+                                description: "Description of what this output provides",
+                                placeholder: "e.g., The processed result"
+                            },
+                            dataType: {
+                                type: "string",
+                                title: "Data Type",
+                                description: "The type of data this output provides",
+                                default: "string",
+                                enum: ["string", "number", "boolean", "array", "json", "mixed", "trigger", "tool"]
+                            },
+                            required: {
+                                type: "boolean",
+                                title: "Required",
+                                description: "Whether this output is always provided",
+                                default: false
+                            }
+                        },
+                        required: ["name", "label", "dataType"]
+                    },
+                    default: [
+                        { name: "output_1", label: "Primary Output", description: "The main output value", dataType: "string", required: false }
+                    ],
+                    minItems: 0
+                }
+            }
+        }
+    },
+    {
+        id: "data_mapper",
+        name: "Data Mapper",
+        type: "default",
+        supportedTypes: ["default"],
+        description: "Map and transform data with configurable input/output ports",
+        category: "processing",
+        icon: "mdi:map-marker-path",
+        color: "#10b981",
+        version: "1.0.0",
+        tags: ["processing", "mapping", "transform", "dynamic", "ports"],
+        inputs: [
+            { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "Workflow trigger input" }
+        ],
+        outputs: [
+            { id: "mapped_data", name: "Mapped Data", type: "output", dataType: "json", required: false, description: "The transformed data output" }
+        ],
+        config: {
+            mappingMode: "simple",
+            dynamicInputs: [
+                { name: "source_data", label: "Source Data", description: "The source data to map from", dataType: "json", required: true }
+            ],
+            dynamicOutputs: [
+                { name: "result", label: "Mapped Result", description: "The mapped result data", dataType: "json", required: false }
+            ]
+        },
+        configSchema: {
+            type: "object",
+            properties: {
+                mappingMode: {
+                    type: "string",
+                    title: "Mapping Mode",
+                    description: "The type of mapping to perform",
+                    default: "simple",
+                    enum: ["simple", "advanced", "expression"]
+                },
+                dynamicInputs: {
+                    type: "array",
+                    title: "Input Ports",
+                    description: "Define the input ports for receiving data",
+                    items: {
+                        type: "object",
+                        title: "Input Port",
+                        properties: {
+                            name: {
+                                type: "string",
+                                title: "Port ID",
+                                description: "Unique identifier for this input port",
+                                placeholder: "e.g., source_field"
+                            },
+                            label: {
+                                type: "string",
+                                title: "Label",
+                                description: "Display label for this input",
+                                placeholder: "e.g., Source Field"
+                            },
+                            description: {
+                                type: "string",
+                                title: "Description",
+                                description: "Description of the input",
+                                placeholder: "e.g., Field to map from"
+                            },
+                            dataType: {
+                                type: "string",
+                                title: "Data Type",
+                                description: "Expected data type",
+                                default: "mixed",
+                                enum: ["string", "number", "boolean", "array", "json", "mixed"]
+                            },
+                            required: {
+                                type: "boolean",
+                                title: "Required",
+                                description: "Is this input required?",
+                                default: false
+                            }
+                        },
+                        required: ["name", "label", "dataType"]
+                    },
+                    default: [
+                        { name: "source_data", label: "Source Data", description: "The source data to map from", dataType: "json", required: true }
+                    ]
+                },
+                dynamicOutputs: {
+                    type: "array",
+                    title: "Output Ports",
+                    description: "Define the output ports for transformed data",
+                    items: {
+                        type: "object",
+                        title: "Output Port",
+                        properties: {
+                            name: {
+                                type: "string",
+                                title: "Port ID",
+                                description: "Unique identifier for this output port",
+                                placeholder: "e.g., target_field"
+                            },
+                            label: {
+                                type: "string",
+                                title: "Label",
+                                description: "Display label for this output",
+                                placeholder: "e.g., Target Field"
+                            },
+                            description: {
+                                type: "string",
+                                title: "Description",
+                                description: "Description of the output",
+                                placeholder: "e.g., Mapped field value"
+                            },
+                            dataType: {
+                                type: "string",
+                                title: "Data Type",
+                                description: "Output data type",
+                                default: "mixed",
+                                enum: ["string", "number", "boolean", "array", "json", "mixed"]
+                            },
+                            required: {
+                                type: "boolean",
+                                title: "Required",
+                                description: "Is this output always provided?",
+                                default: false
+                            }
+                        },
+                        required: ["name", "label", "dataType"]
+                    },
+                    default: [
+                        { name: "result", label: "Mapped Result", description: "The mapped result data", dataType: "json", required: false }
+                    ]
+                }
+            }
+        }
     }
 ];
 
