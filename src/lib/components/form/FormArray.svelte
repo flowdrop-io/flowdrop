@@ -18,8 +18,8 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import type { FieldSchema } from "./types.js";
+	import Icon from '@iconify/svelte';
+	import type { FieldSchema } from './types.js';
 
 	interface Props {
 		/** Field identifier */
@@ -46,7 +46,7 @@
 		itemSchema,
 		minItems = 0,
 		maxItems,
-		addLabel = "Add Item",
+		addLabel = 'Add Item',
 		disabled = false,
 		onChange
 	}: Props = $props();
@@ -70,10 +70,10 @@
 	 * Determine if items are simple (primitive) or complex (objects)
 	 */
 	const isSimpleType = $derived(
-		itemSchema.type === "string" ||
-		itemSchema.type === "number" ||
-		itemSchema.type === "integer" ||
-		itemSchema.type === "boolean"
+		itemSchema.type === 'string' ||
+			itemSchema.type === 'number' ||
+			itemSchema.type === 'integer' ||
+			itemSchema.type === 'boolean'
 	);
 
 	/**
@@ -85,14 +85,14 @@
 		}
 
 		switch (itemSchema.type) {
-			case "string":
-				return "";
-			case "number":
-			case "integer":
+			case 'string':
+				return '';
+			case 'number':
+			case 'integer':
 				return 0;
-			case "boolean":
+			case 'boolean':
 				return false;
-			case "object":
+			case 'object':
 				// Create default object from properties
 				if (itemSchema.properties) {
 					const defaultObj: Record<string, unknown> = {};
@@ -106,10 +106,10 @@
 					return defaultObj;
 				}
 				return {};
-			case "array":
+			case 'array':
 				return [];
 			default:
-				return "";
+				return '';
 		}
 	}
 
@@ -118,19 +118,19 @@
 	 */
 	function getDefaultForType(type: string | undefined): unknown {
 		switch (type) {
-			case "string":
-				return "";
-			case "number":
-			case "integer":
+			case 'string':
+				return '';
+			case 'number':
+			case 'integer':
 				return 0;
-			case "boolean":
+			case 'boolean':
 				return false;
-			case "object":
+			case 'object':
 				return {};
-			case "array":
+			case 'array':
 				return [];
 			default:
-				return "";
+				return '';
 		}
 	}
 
@@ -195,14 +195,16 @@
 	function getItemLabel(index: number, item: unknown): string {
 		if (isSimpleType) {
 			const itemStr = String(item);
-			return itemStr.length > 30 ? `${itemStr.substring(0, 30)}...` : itemStr || `Item ${index + 1}`;
+			return itemStr.length > 30
+				? `${itemStr.substring(0, 30)}...`
+				: itemStr || `Item ${index + 1}`;
 		}
 
 		// For objects, try to find a name/label/title property
-		if (typeof item === "object" && item !== null) {
+		if (typeof item === 'object' && item !== null) {
 			const obj = item as Record<string, unknown>;
 			const labelKey = Object.keys(obj).find((k) =>
-				["name", "label", "title", "id"].includes(k.toLowerCase())
+				['name', 'label', 'title', 'id'].includes(k.toLowerCase())
 			);
 			if (labelKey && obj[labelKey]) {
 				return String(obj[labelKey]);
@@ -238,7 +240,6 @@
 	}
 </script>
 
-
 <div class="form-array" class:form-array--disabled={disabled}>
 	<!-- Array Items -->
 	{#if items.length > 0}
@@ -252,30 +253,6 @@
 				>
 					<!-- Item Header -->
 					<div class="form-array__item-header">
-						<!-- Reorder buttons -->
-						<div class="form-array__reorder">
-							<button
-								type="button"
-								class="form-array__reorder-btn"
-								onclick={() => moveItemUp(index)}
-								disabled={index === 0 || disabled}
-								aria-label="Move item up"
-								title="Move up"
-							>
-								<Icon icon="heroicons:chevron-up" />
-							</button>
-							<button
-								type="button"
-								class="form-array__reorder-btn"
-								onclick={() => moveItemDown(index)}
-								disabled={index === items.length - 1 || disabled}
-								aria-label="Move item down"
-								title="Move down"
-							>
-								<Icon icon="heroicons:chevron-down" />
-							</button>
-						</div>
-
 						<!-- Item index/label -->
 						{#if !isSimpleType}
 							<button
@@ -283,10 +260,10 @@
 								class="form-array__item-toggle"
 								onclick={() => toggleCollapse(index)}
 								aria-expanded={!isCollapsed(index)}
-								aria-label={isCollapsed(index) ? "Expand item" : "Collapse item"}
+								aria-label={isCollapsed(index) ? 'Expand item' : 'Collapse item'}
 							>
 								<Icon
-									icon={isCollapsed(index) ? "heroicons:chevron-right" : "heroicons:chevron-down"}
+									icon={isCollapsed(index) ? 'heroicons:chevron-right' : 'heroicons:chevron-down'}
 									class="form-array__toggle-icon"
 								/>
 								<span class="form-array__item-label">{getItemLabel(index, item)}</span>
@@ -295,17 +272,44 @@
 							<span class="form-array__item-number">#{index + 1}</span>
 						{/if}
 
-						<!-- Remove button -->
-						<button
-							type="button"
-							class="form-array__remove-btn"
-							onclick={() => removeItem(index)}
-							disabled={!canRemoveItem || disabled}
-							aria-label="Remove item {index + 1}"
-							title="Remove item"
-						>
-							<Icon icon="heroicons:trash" />
-						</button>
+						<!-- Action buttons group -->
+						<div class="form-array__actions">
+							<!-- Move Up button -->
+							<button
+								type="button"
+								class="form-array__action-btn form-array__action-btn--move"
+								onclick={() => moveItemUp(index)}
+								disabled={index === 0 || disabled}
+								aria-label="Move item {index + 1} up"
+								title="Move up"
+							>
+								<Icon icon="heroicons:arrow-up" />
+							</button>
+
+							<!-- Move Down button -->
+							<button
+								type="button"
+								class="form-array__action-btn form-array__action-btn--move"
+								onclick={() => moveItemDown(index)}
+								disabled={index === items.length - 1 || disabled}
+								aria-label="Move item {index + 1} down"
+								title="Move down"
+							>
+								<Icon icon="heroicons:arrow-down" />
+							</button>
+
+							<!-- Delete button -->
+							<button
+								type="button"
+								class="form-array__action-btn form-array__action-btn--delete"
+								onclick={() => removeItem(index)}
+								disabled={!canRemoveItem || disabled}
+								aria-label="Delete item {index + 1}"
+								title="Delete item"
+							>
+								<Icon icon="heroicons:trash" />
+							</button>
+						</div>
 					</div>
 
 					<!-- Item Content -->
@@ -315,12 +319,12 @@
 					>
 						{#if isSimpleType}
 							<!-- Simple type: render inline input -->
-							{#if itemSchema.type === "string"}
-								{#if itemSchema.format === "multiline"}
+							{#if itemSchema.type === 'string'}
+								{#if itemSchema.format === 'multiline'}
 									<textarea
 										class="form-array__input form-array__textarea"
-										value={String(item ?? "")}
-										placeholder={itemSchema.placeholder ?? ""}
+										value={String(item ?? '')}
+										placeholder={itemSchema.placeholder ?? ''}
 										rows={3}
 										oninput={(e) => updateItem(index, e.currentTarget.value)}
 										{disabled}
@@ -329,27 +333,27 @@
 									<input
 										type="text"
 										class="form-array__input"
-										value={String(item ?? "")}
-										placeholder={itemSchema.placeholder ?? ""}
+										value={String(item ?? '')}
+										placeholder={itemSchema.placeholder ?? ''}
 										oninput={(e) => updateItem(index, e.currentTarget.value)}
 										{disabled}
 									/>
 								{/if}
-							{:else if itemSchema.type === "number" || itemSchema.type === "integer"}
+							{:else if itemSchema.type === 'number' || itemSchema.type === 'integer'}
 								<input
 									type="number"
 									class="form-array__input form-array__input--number"
 									value={item as number}
-									placeholder={itemSchema.placeholder ?? ""}
+									placeholder={itemSchema.placeholder ?? ''}
 									min={itemSchema.minimum}
 									max={itemSchema.maximum}
 									oninput={(e) => {
 										const val = e.currentTarget.value;
-										updateItem(index, val === "" ? "" : Number(val));
+										updateItem(index, val === '' ? '' : Number(val));
 									}}
 									{disabled}
 								/>
-							{:else if itemSchema.type === "boolean"}
+							{:else if itemSchema.type === 'boolean'}
 								<label class="form-array__toggle-wrapper">
 									<input
 										type="checkbox"
@@ -362,14 +366,14 @@
 										<span class="form-array__toggle-thumb"></span>
 									</span>
 									<span class="form-array__toggle-label">
-										{item ? "Yes" : "No"}
+										{item ? 'Yes' : 'No'}
 									</span>
 								</label>
 							{:else if itemSchema.enum}
 								<!-- Enum: render select -->
 								<select
 									class="form-array__select"
-									value={String(item ?? "")}
+									value={String(item ?? '')}
 									onchange={(e) => updateItem(index, e.currentTarget.value)}
 									{disabled}
 								>
@@ -382,13 +386,13 @@
 								<input
 									type="text"
 									class="form-array__input"
-									value={String(item ?? "")}
-									placeholder={itemSchema.placeholder ?? ""}
+									value={String(item ?? '')}
+									placeholder={itemSchema.placeholder ?? ''}
 									oninput={(e) => updateItem(index, e.currentTarget.value)}
 									{disabled}
 								/>
 							{/if}
-						{:else if itemSchema.type === "object" && itemSchema.properties}
+						{:else if itemSchema.type === 'object' && itemSchema.properties}
 							<!-- Complex type: render sub-form for object properties -->
 							{#if !isCollapsed(index)}
 								<div class="form-array__subform">
@@ -397,7 +401,10 @@
 										{@const isRequired = itemSchema.required?.includes(propKey) ?? false}
 										{@const propFieldSchema = propSchema as FieldSchema}
 
-										<div class="form-array__subform-field" style="animation-delay: {propIndex * 20}ms">
+										<div
+											class="form-array__subform-field"
+											style="animation-delay: {propIndex * 20}ms"
+										>
 											<label class="form-array__subform-label" for="{id}-{index}-{propKey}">
 												<span class="form-array__subform-label-text">
 													{propFieldSchema.title ?? propKey}
@@ -412,64 +419,68 @@
 													<select
 														id="{id}-{index}-{propKey}"
 														class="form-array__select"
-														value={String(propValue ?? "")}
-														onchange={(e) => updateObjectProperty(index, propKey, e.currentTarget.value)}
+														value={String(propValue ?? '')}
+														onchange={(e) =>
+															updateObjectProperty(index, propKey, e.currentTarget.value)}
 														{disabled}
 													>
 														{#each propFieldSchema.enum as option}
 															<option value={String(option)}>{String(option)}</option>
 														{/each}
 													</select>
-												{:else if propFieldSchema.type === "string" && propFieldSchema.format === "multiline"}
+												{:else if propFieldSchema.type === 'string' && propFieldSchema.format === 'multiline'}
 													<textarea
 														id="{id}-{index}-{propKey}"
 														class="form-array__input form-array__textarea"
-														value={String(propValue ?? "")}
-														placeholder={propFieldSchema.placeholder ?? ""}
+														value={String(propValue ?? '')}
+														placeholder={propFieldSchema.placeholder ?? ''}
 														rows={3}
-														oninput={(e) => updateObjectProperty(index, propKey, e.currentTarget.value)}
+														oninput={(e) =>
+															updateObjectProperty(index, propKey, e.currentTarget.value)}
 														{disabled}
 													></textarea>
-												{:else if propFieldSchema.type === "string"}
+												{:else if propFieldSchema.type === 'string'}
 													<input
 														id="{id}-{index}-{propKey}"
 														type="text"
 														class="form-array__input"
-														value={String(propValue ?? "")}
-														placeholder={propFieldSchema.placeholder ?? ""}
-														oninput={(e) => updateObjectProperty(index, propKey, e.currentTarget.value)}
+														value={String(propValue ?? '')}
+														placeholder={propFieldSchema.placeholder ?? ''}
+														oninput={(e) =>
+															updateObjectProperty(index, propKey, e.currentTarget.value)}
 														{disabled}
 													/>
-												{:else if propFieldSchema.type === "number" || propFieldSchema.type === "integer"}
+												{:else if propFieldSchema.type === 'number' || propFieldSchema.type === 'integer'}
 													<input
 														id="{id}-{index}-{propKey}"
 														type="number"
 														class="form-array__input form-array__input--number"
 														value={propValue as number}
-														placeholder={propFieldSchema.placeholder ?? ""}
+														placeholder={propFieldSchema.placeholder ?? ''}
 														min={propFieldSchema.minimum}
 														max={propFieldSchema.maximum}
 														oninput={(e) => {
 															const val = e.currentTarget.value;
-															updateObjectProperty(index, propKey, val === "" ? "" : Number(val));
+															updateObjectProperty(index, propKey, val === '' ? '' : Number(val));
 														}}
 														{disabled}
 													/>
-												{:else if propFieldSchema.type === "boolean"}
+												{:else if propFieldSchema.type === 'boolean'}
 													<label class="form-array__toggle-wrapper">
 														<input
 															id="{id}-{index}-{propKey}"
 															type="checkbox"
 															class="form-array__checkbox-input"
 															checked={Boolean(propValue)}
-															onchange={(e) => updateObjectProperty(index, propKey, e.currentTarget.checked)}
+															onchange={(e) =>
+																updateObjectProperty(index, propKey, e.currentTarget.checked)}
 															{disabled}
 														/>
 														<span class="form-array__toggle-track">
 															<span class="form-array__toggle-thumb"></span>
 														</span>
 														<span class="form-array__toggle-label">
-															{propValue ? "Yes" : "No"}
+															{propValue ? 'Yes' : 'No'}
 														</span>
 													</label>
 												{:else}
@@ -477,9 +488,10 @@
 														id="{id}-{index}-{propKey}"
 														type="text"
 														class="form-array__input"
-														value={String(propValue ?? "")}
-														placeholder={propFieldSchema.placeholder ?? ""}
-														oninput={(e) => updateObjectProperty(index, propKey, e.currentTarget.value)}
+														value={String(propValue ?? '')}
+														placeholder={propFieldSchema.placeholder ?? ''}
+														oninput={(e) =>
+															updateObjectProperty(index, propKey, e.currentTarget.value)}
 														{disabled}
 													/>
 												{/if}
@@ -525,7 +537,7 @@
 	<!-- Item count and limits -->
 	{#if minItems > 0 || maxItems !== undefined}
 		<div class="form-array__info">
-			<span class="form-array__count">{items.length} item{items.length !== 1 ? "s" : ""}</span>
+			<span class="form-array__count">{items.length} item{items.length !== 1 ? 's' : ''}</span>
 			{#if minItems > 0}
 				<span class="form-array__limit">Min: {minItems}</span>
 			{/if}
@@ -600,52 +612,14 @@
 	.form-array__item-header {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 0.75rem;
+		gap: 0.625rem;
+		padding: 0.625rem 0.75rem;
 		background-color: var(--color-ref-gray-100, #f3f4f6);
 		border-bottom: 1px solid var(--color-ref-gray-200, #e5e7eb);
 	}
 
 	.form-array__item--simple .form-array__item-header {
-		padding: 0.375rem 0.5rem;
-	}
-
-	/* ============================================
-	   REORDER BUTTONS
-	   ============================================ */
-
-	.form-array__reorder {
-		display: flex;
-		flex-direction: column;
-		gap: 0;
-	}
-
-	.form-array__reorder-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.25rem;
-		height: 0.875rem;
-		padding: 0;
-		border: none;
-		background: transparent;
-		color: var(--color-ref-gray-400, #9ca3af);
-		cursor: pointer;
-		transition: color 0.15s;
-	}
-
-	.form-array__reorder-btn:hover:not(:disabled) {
-		color: var(--color-ref-gray-600, #4b5563);
-	}
-
-	.form-array__reorder-btn:disabled {
-		opacity: 0.3;
-		cursor: not-allowed;
-	}
-
-	.form-array__reorder-btn :global(svg) {
-		width: 0.75rem;
-		height: 0.75rem;
+		padding: 0.5rem 0.625rem;
 	}
 
 	/* ============================================
@@ -653,77 +627,125 @@
 	   ============================================ */
 
 	.form-array__item-number {
-		font-size: 0.6875rem;
+		font-size: 0.75rem;
 		font-weight: 600;
-		color: var(--color-ref-gray-400, #9ca3af);
-		min-width: 1.5rem;
+		color: var(--color-ref-gray-600, #4b5563);
+		min-width: 1.75rem;
+		padding: 0.125rem 0.375rem;
+		background-color: var(--color-ref-gray-200, #e5e7eb);
+		border-radius: 0.25rem;
+		text-align: center;
 	}
 
 	.form-array__item-toggle {
 		display: flex;
 		align-items: center;
-		gap: 0.375rem;
+		gap: 0.5rem;
 		flex: 1;
-		padding: 0.25rem;
+		padding: 0.375rem 0.5rem;
 		margin: -0.25rem;
-		border: none;
+		border: 1px solid transparent;
 		background: transparent;
 		cursor: pointer;
 		text-align: left;
-		border-radius: 0.25rem;
-		transition: background-color 0.15s;
+		border-radius: 0.375rem;
+		transition: all 0.15s;
 	}
 
 	.form-array__item-toggle:hover {
 		background-color: var(--color-ref-gray-200, #e5e7eb);
 	}
 
+	.form-array__item-toggle:focus-visible {
+		outline: none;
+		border-color: var(--color-ref-blue-500, #3b82f6);
+		box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+	}
+
 	.form-array__item-toggle :global(svg) {
-		width: 1rem;
-		height: 1rem;
+		width: 1.125rem;
+		height: 1.125rem;
 		color: var(--color-ref-gray-500, #6b7280);
 		transition: transform 0.2s;
 	}
 
 	.form-array__item-label {
 		font-size: 0.8125rem;
-		font-weight: 500;
+		font-weight: 600;
 		color: var(--color-ref-gray-700, #374151);
 	}
 
 	/* ============================================
-	   REMOVE BUTTON
+	   ACTION BUTTONS GROUP
 	   ============================================ */
 
-	.form-array__remove-btn {
+	.form-array__actions {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		width: 1.75rem;
-		height: 1.75rem;
-		padding: 0;
-		border: none;
-		background: transparent;
-		color: var(--color-ref-gray-400, #9ca3af);
-		border-radius: 0.375rem;
-		cursor: pointer;
-		transition: all 0.15s;
+		gap: 0.375rem;
 		margin-left: auto;
 	}
 
-	.form-array__remove-btn:hover:not(:disabled) {
-		background-color: var(--color-ref-red-50, #fef2f2);
-		color: var(--color-ref-red-500, #ef4444);
+	.form-array__action-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		padding: 0;
+		border: 1px solid transparent;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		transition: all 0.15s;
 	}
 
-	.form-array__remove-btn:disabled {
-		opacity: 0.3;
+	.form-array__action-btn :global(svg) {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	.form-array__action-btn:focus-visible {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+	}
+
+	.form-array__action-btn:disabled {
+		opacity: 0.35;
 		cursor: not-allowed;
 	}
 
-	.form-array__remove-btn :global(svg) {
-		width: 1rem;
-		height: 1rem;
+	/* Move Up/Down buttons - Blue semantic color */
+	.form-array__action-btn--move {
+		background-color: var(--color-ref-blue-50, #eff6ff);
+		border-color: var(--color-ref-blue-200, #bfdbfe);
+		color: var(--color-ref-blue-600, #2563eb);
+	}
+
+	.form-array__action-btn--move:hover:not(:disabled) {
+		background-color: var(--color-ref-blue-100, #dbeafe);
+		border-color: var(--color-ref-blue-300, #93c5fd);
+		color: var(--color-ref-blue-700, #1d4ed8);
+	}
+
+	.form-array__action-btn--move:active:not(:disabled) {
+		background-color: var(--color-ref-blue-200, #bfdbfe);
+	}
+
+	/* Delete button - Red/Warning semantic color */
+	.form-array__action-btn--delete {
+		background-color: var(--color-ref-red-50, #fef2f2);
+		border-color: var(--color-ref-red-200, #fecaca);
+		color: var(--color-ref-red-600, #dc2626);
+	}
+
+	.form-array__action-btn--delete:hover:not(:disabled) {
+		background-color: var(--color-ref-red-100, #fee2e2);
+		border-color: var(--color-ref-red-300, #fca5a5);
+		color: var(--color-ref-red-700, #b91c1c);
+	}
+
+	.form-array__action-btn--delete:active:not(:disabled) {
+		background-color: var(--color-ref-red-200, #fecaca);
 	}
 
 	/* ============================================
@@ -904,7 +926,6 @@
 		font-weight: 500;
 	}
 
-
 	.form-array__subform-description {
 		margin: 0;
 		font-size: 0.6875rem;
@@ -921,22 +942,23 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 1.5rem 1rem;
+		padding: 2rem 1rem;
 		background-color: var(--color-ref-gray-50, #f9fafb);
-		border: 1px dashed var(--color-ref-gray-300, #d1d5db);
-		border-radius: 0.5rem;
+		border: 2px dashed var(--color-ref-gray-300, #d1d5db);
+		border-radius: 0.625rem;
 	}
 
 	.form-array__empty :global(svg) {
-		width: 2rem;
-		height: 2rem;
-		color: var(--color-ref-gray-300, #d1d5db);
-		margin-bottom: 0.5rem;
+		width: 2.5rem;
+		height: 2.5rem;
+		color: var(--color-ref-gray-400, #9ca3af);
+		margin-bottom: 0.625rem;
 	}
 
 	.form-array__empty-text {
 		margin: 0;
-		font-size: 0.8125rem;
+		font-size: 0.875rem;
+		font-weight: 500;
 		color: var(--color-ref-gray-500, #6b7280);
 	}
 
@@ -948,22 +970,32 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.875rem;
-		border: 1px dashed var(--color-ref-blue-300, #93c5fd);
+		gap: 0.5rem;
+		padding: 0.625rem 1rem;
+		border: 1px solid var(--color-ref-green-300, #86efac);
 		border-radius: 0.5rem;
-		background-color: var(--color-ref-blue-50, #eff6ff);
-		color: var(--color-ref-blue-600, #2563eb);
+		background-color: var(--color-ref-green-50, #f0fdf4);
+		color: var(--color-ref-green-700, #15803d);
 		font-size: 0.8125rem;
-		font-weight: 500;
+		font-weight: 600;
 		font-family: inherit;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.15s;
 	}
 
 	.form-array__add-btn:hover:not(:disabled) {
-		background-color: var(--color-ref-blue-100, #dbeafe);
-		border-color: var(--color-ref-blue-400, #60a5fa);
+		background-color: var(--color-ref-green-100, #dcfce7);
+		border-color: var(--color-ref-green-400, #4ade80);
+		color: var(--color-ref-green-800, #166534);
+	}
+
+	.form-array__add-btn:focus-visible {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+	}
+
+	.form-array__add-btn:active:not(:disabled) {
+		background-color: var(--color-ref-green-200, #bbf7d0);
 	}
 
 	.form-array__add-btn:disabled {
@@ -972,8 +1004,8 @@
 	}
 
 	.form-array__add-btn :global(svg) {
-		width: 1rem;
-		height: 1rem;
+		width: 1.125rem;
+		height: 1.125rem;
 	}
 
 	/* ============================================
@@ -1015,4 +1047,3 @@
 		margin: 0;
 	}
 </style>
-
