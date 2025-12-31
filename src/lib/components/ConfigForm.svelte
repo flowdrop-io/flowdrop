@@ -4,6 +4,10 @@
   Supports both node-based config and direct schema/values
   Uses reactive $state for proper Svelte 5 reactivity
   
+  Features:
+  - Dynamic form generation from JSON Schema
+  - UI Extensions support for display settings (e.g., hide unconnected handles)
+  
   Accessibility features:
   - Proper label associations with for/id attributes
   - ARIA describedby for field descriptions
@@ -13,7 +17,7 @@
 
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import type { ConfigSchema, WorkflowNode } from '$lib/types/index.js';
+	import type { ConfigSchema, WorkflowNode, NodeUIExtensions } from '$lib/types/index.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -22,13 +26,15 @@
 		schema?: ConfigSchema;
 		/** Direct config values (used when node is not provided) */
 		values?: Record<string, unknown>;
-		/** Callback when form is saved */
-		onSave: (config: Record<string, unknown>) => void;
+		/** Whether to show UI extension settings section */
+		showUIExtensions?: boolean;
+		/** Callback when form is saved (includes both config and extensions if enabled) */
+		onSave: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is cancelled */
 		onCancel: () => void;
 	}
 
-	let { node, schema, values, onSave, onCancel }: Props = $props();
+	let { node, schema, values, showUIExtensions = true, onSave, onCancel }: Props = $props();
 
 	/**
 	 * Get the configuration schema from node metadata or direct prop
@@ -49,6 +55,23 @@
 	let configValues = $state<Record<string, unknown>>({});
 
 	/**
+	 * UI Extension values for display settings
+	 * Merges node type defaults with instance overrides
+	 */
+	let uiExtensionValues = $state<NodeUIExtensions>({});
+
+	/**
+	 * Get initial UI extensions from node (instance level overrides type level)
+	 */
+	const initialUIExtensions = $derived<NodeUIExtensions>(() => {
+		if (!node) return {};
+		// Merge type-level defaults with instance-level overrides
+		const typeDefaults = node.data.metadata?.extensions?.ui ?? {};
+		const instanceOverrides = node.data.extensions?.ui ?? {};
+		return { ...typeDefaults, ...instanceOverrides };
+	});
+
+	/**
 	 * Initialize config values when node/schema changes
 	 */
 	$effect(() => {
@@ -65,6 +88,16 @@
 	});
 
 	/**
+	 * Initialize UI extension values when node changes
+	 */
+	$effect(() => {
+		const extensions = initialUIExtensions();
+		uiExtensionValues = {
+			hideUnconnectedHandles: extensions.hideUnconnectedHandles ?? false
+		};
+	});
+
+	/**
 	 * Check if a field is required based on schema
 	 */
 	function isFieldRequired(key: string): boolean {
@@ -74,6 +107,7 @@
 
 	/**
 	 * Handle form submission
+	 * Collects both config values and UI extension values
 	 */
 	function handleSave(): void {
 		// Collect all form values including hidden fields
@@ -84,7 +118,8 @@
 			const inputs = form.querySelectorAll('input, select, textarea');
 			inputs.forEach((input: Element) => {
 				const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-				if (inputEl.id) {
+				// Skip UI extension fields (prefixed with ext-)
+				if (inputEl.id && !inputEl.id.startsWith('ext-')) {
 					if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
 						updatedConfig[inputEl.id] = inputEl.checked;
 					} else if (inputEl instanceof HTMLInputElement && inputEl.type === 'number') {
@@ -116,7 +151,12 @@
 			);
 		}
 
-		onSave(updatedConfig);
+		// Pass UI extensions only if enabled
+		if (showUIExtensions && node) {
+			onSave(updatedConfig, uiExtensionValues);
+		} else {
+			onSave(updatedConfig);
+		}
 	}
 </script>
 
@@ -314,6 +354,47 @@
 					<span>Debug - Config Schema</span>
 				</div>
 				<pre class="config-form__debug-content">{JSON.stringify(configSchema, null, 2)}</pre>
+			</div>
+		{/if}
+
+		<!-- UI Extensions Section -->
+		{#if showUIExtensions && node}
+			<div class="config-form__extensions">
+				<div class="config-form__extensions-header">
+					<Icon icon="heroicons:adjustments-horizontal" class="config-form__extensions-icon" />
+					<span>Display Settings</span>
+				</div>
+				<div class="config-form__extensions-content">
+					<!-- Hide Unconnected Handles Toggle -->
+					<div class="config-form__field">
+						<label class="config-form__label" for="ext-hideUnconnectedHandles">
+							<span class="config-form__label-text">Hide Unconnected Ports</span>
+						</label>
+						<div class="config-form__input-wrapper">
+							<label class="config-form__toggle">
+								<input
+									id="ext-hideUnconnectedHandles"
+									type="checkbox"
+									class="config-form__toggle-input"
+									checked={Boolean(uiExtensionValues.hideUnconnectedHandles)}
+									onchange={(e) => {
+										uiExtensionValues.hideUnconnectedHandles = e.currentTarget.checked;
+									}}
+									aria-describedby="ext-hideUnconnectedHandles-description"
+								/>
+								<span class="config-form__toggle-track">
+									<span class="config-form__toggle-thumb"></span>
+								</span>
+								<span class="config-form__toggle-label">
+									{uiExtensionValues.hideUnconnectedHandles ? 'Hidden' : 'Visible'}
+								</span>
+							</label>
+						</div>
+						<p id="ext-hideUnconnectedHandles-description" class="config-form__description">
+							Hide input and output ports that are not connected to reduce visual clutter
+						</p>
+					</div>
+				</div>
 			</div>
 		{/if}
 
@@ -785,6 +866,43 @@
 		box-shadow:
 			0 0 0 3px rgba(59, 130, 246, 0.4),
 			0 4px 12px rgba(59, 130, 246, 0.35);
+	}
+
+	/* ============================================
+	   UI EXTENSIONS SECTION
+	   ============================================ */
+
+	.config-form__extensions {
+		background-color: var(--color-ref-slate-50, #f8fafc);
+		border: 1px solid var(--color-ref-slate-200, #e2e8f0);
+		border-radius: 0.5rem;
+		overflow: hidden;
+		margin-top: 0.5rem;
+	}
+
+	.config-form__extensions-header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background-color: var(--color-ref-slate-100, #f1f5f9);
+		border-bottom: 1px solid var(--color-ref-slate-200, #e2e8f0);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--color-ref-slate-700, #334155);
+	}
+
+	.config-form__extensions-header :global(svg) {
+		width: 1rem;
+		height: 1rem;
+		color: var(--color-ref-slate-500, #64748b);
+	}
+
+	.config-form__extensions-content {
+		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 	}
 
 	/* ============================================
