@@ -94,9 +94,7 @@
 	/**
 	 * Derived list of visible branches based on hideUnconnectedHandles setting
 	 */
-	const visibleBranches = $derived(
-		branches.filter((branch) => isBranchVisible(branch.name))
-	);
+	const visibleBranches = $derived(branches.filter((branch) => isBranchVisible(branch.name)));
 
 	/**
 	 * Handle node click - only handle selection, no config opening
