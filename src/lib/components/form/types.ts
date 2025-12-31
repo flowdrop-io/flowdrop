@@ -23,8 +23,9 @@ export type FieldType =
  * Field format for specialized rendering
  * - multiline: Renders as textarea
  * - hidden: Field is hidden from UI but included in form submission
+ * - range: Renders as range slider for numeric values
  */
-export type FieldFormat = "multiline" | "hidden" | string;
+export type FieldFormat = "multiline" | "hidden" | "range" | string;
 
 /**
  * Option type for select and checkbox group fields
@@ -101,6 +102,20 @@ export interface ToggleFieldProps extends BaseFieldProps {
 }
 
 /**
+ * Properties for range slider fields
+ */
+export interface RangeFieldProps extends BaseFieldProps {
+    value: number | string;
+    /** Minimum allowed value */
+    min?: number;
+    /** Maximum allowed value */
+    max?: number;
+    /** Step increment for the slider */
+    step?: number;
+    onChange: (value: number) => void;
+}
+
+/**
  * Properties for select dropdown fields
  */
 export interface SelectFieldProps extends BaseFieldProps {
@@ -163,6 +178,8 @@ export interface FieldSchema {
     minimum?: number;
     /** Maximum value for numbers */
     maximum?: number;
+    /** Step increment for number/range inputs */
+    step?: number;
     /** Minimum length for strings */
     minLength?: number;
     /** Maximum length for strings */

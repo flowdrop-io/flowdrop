@@ -250,6 +250,8 @@ export interface NodeMetadata {
 	inputs: NodePort[];
 	outputs: NodePort[];
 	configSchema?: ConfigSchema;
+	/** Default configuration values for this node type */
+	config?: Record<string, unknown>;
 	tags?: string[];
 	/**
 	 * Custom extension properties for 3rd party integrations
