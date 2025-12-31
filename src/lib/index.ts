@@ -15,6 +15,8 @@ export type {
 	NodeCategory,
 	NodeDataType,
 	NodePort,
+	DynamicPort,
+	Branch,
 	NodeMetadata,
 	NodeExtensions,
 	NodeUIExtensions,

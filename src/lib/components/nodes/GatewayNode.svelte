@@ -10,23 +10,11 @@
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { WorkflowNode, NodePort } from '../../types/index.js';
+	import type { WorkflowNode, NodePort, Branch } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../../utils/icons.js';
 	import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
 	import { connectedHandles } from '../../stores/workflowStore.js';
-
-	/**
-	 * Branch interface for gateway nodes
-	 * - name: Internal identifier used for handle IDs and connections
-	 * - label: Display label shown in the UI (optional, defaults to name)
-	 * - value: Optional value associated with the branch (e.g., for Switch matching)
-	 */
-	interface Branch {
-		name: string;
-		label?: string;
-		value?: string;
-	}
 
 	interface Props {
 		data: WorkflowNode['data'] & {
