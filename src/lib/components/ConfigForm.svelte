@@ -5,8 +5,9 @@
   Uses reactive $state for proper Svelte 5 reactivity
   
   Features:
-  - Dynamic form generation from JSON Schema
+  - Dynamic form generation from JSON Schema using modular form components
   - UI Extensions support for display settings (e.g., hide unconnected handles)
+  - Extensible architecture for complex schema types (array, object)
   
   Accessibility features:
   - Proper label associations with for/id attributes
@@ -18,6 +19,8 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import type { ConfigSchema, WorkflowNode, NodeUIExtensions } from '$lib/types/index.js';
+	import { FormField, FormFieldWrapper, FormToggle } from '$lib/components/form/index.js';
+	import type { FieldSchema } from '$lib/components/form/index.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -105,6 +108,13 @@
 	}
 
 	/**
+	 * Handle field value changes from FormField components
+	 */
+	function handleFieldChange(key: string, value: unknown): void {
+		configValues[key] = value;
+	}
+
+	/**
 	 * Handle form submission
 	 * Collects both config values and UI extension values
 	 */
@@ -157,6 +167,13 @@
 			onSave(updatedConfig);
 		}
 	}
+
+	/**
+	 * Convert ConfigProperty to FieldSchema for FormField component
+	 */
+	function toFieldSchema(property: Record<string, unknown>): FieldSchema {
+		return property as FieldSchema;
+	}
 </script>
 
 {#if configSchema}
@@ -170,179 +187,17 @@
 		{#if configSchema.properties}
 			<div class="config-form__fields">
 				{#each Object.entries(configSchema.properties) as [key, field], index (key)}
-					{@const fieldConfig = field as Record<string, unknown>}
+					{@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
 					{@const required = isFieldRequired(key)}
-					{@const hasDescription = Boolean(fieldConfig.description)}
-					{@const descriptionId = hasDescription ? `${key}-description` : undefined}
 
-					{#if fieldConfig.format !== 'hidden'}
-						<div class="config-form__field" style="animation-delay: {index * 30}ms">
-							<!-- Field Label -->
-							<label class="config-form__label" for={key}>
-								<span class="config-form__label-text">
-									{String(fieldConfig.title || fieldConfig.description || key)}
-								</span>
-								{#if required}
-									<span class="config-form__required" aria-label="required">*</span>
-								{/if}
-							</label>
-
-							<!-- Field Input Container -->
-							<div class="config-form__input-wrapper">
-								{#if fieldConfig.enum && fieldConfig.multiple}
-									<!-- Checkboxes for enum with multiple selection -->
-									{@const enumOptions = fieldConfig.enum as string[]}
-									<div
-										class="config-form__checkbox-group"
-										role="group"
-										aria-labelledby="{key}-label"
-										aria-describedby={descriptionId}
-									>
-										{#each enumOptions as option (String(option))}
-											{@const currentValue = configValues[key]}
-											{@const valueArray = Array.isArray(currentValue) ? currentValue : []}
-											<label class="config-form__checkbox-item">
-												<input
-													type="checkbox"
-													class="config-form__checkbox-input"
-													value={String(option)}
-													checked={valueArray.includes(String(option))}
-													onchange={(e) => {
-														const checked = e.currentTarget.checked;
-														const existingValue = configValues[key];
-														const currentValues: unknown[] = Array.isArray(existingValue)
-															? [...existingValue]
-															: [];
-														if (checked) {
-															if (!currentValues.includes(String(option))) {
-																configValues[key] = [...currentValues, String(option)];
-															}
-														} else {
-															configValues[key] = currentValues.filter((v) => v !== String(option));
-														}
-													}}
-												/>
-												<span class="config-form__checkbox-custom" aria-hidden="true">
-													<Icon icon="heroicons:check" />
-												</span>
-												<span class="config-form__checkbox-label">
-													{String(option)}
-												</span>
-											</label>
-										{/each}
-									</div>
-								{:else if fieldConfig.enum}
-									<!-- Select for enum with single selection -->
-									{@const enumOptions = fieldConfig.enum as string[]}
-									<div class="config-form__select-wrapper">
-										<select
-											id={key}
-											class="config-form__select"
-											bind:value={configValues[key]}
-											aria-describedby={descriptionId}
-											aria-required={required}
-										>
-											{#each enumOptions as option (String(option))}
-												<option value={String(option)}>{String(option)}</option>
-											{/each}
-										</select>
-										<span class="config-form__select-icon" aria-hidden="true">
-											<Icon icon="heroicons:chevron-down" />
-										</span>
-									</div>
-								{:else if fieldConfig.type === 'string' && fieldConfig.format === 'multiline'}
-									<!-- Textarea for multiline strings -->
-									<textarea
-										id={key}
-										class="config-form__textarea"
-										bind:value={configValues[key]}
-										placeholder={String(fieldConfig.placeholder || '')}
-										rows="4"
-										aria-describedby={descriptionId}
-										aria-required={required}
-									></textarea>
-								{:else if fieldConfig.type === 'string'}
-									<input
-										id={key}
-										type="text"
-										class="config-form__input"
-										bind:value={configValues[key]}
-										placeholder={String(fieldConfig.placeholder || '')}
-										aria-describedby={descriptionId}
-										aria-required={required}
-									/>
-								{:else if fieldConfig.type === 'number'}
-									<input
-										id={key}
-										type="number"
-										class="config-form__input config-form__input--number"
-										bind:value={configValues[key]}
-										placeholder={String(fieldConfig.placeholder || '')}
-										aria-describedby={descriptionId}
-										aria-required={required}
-									/>
-								{:else if fieldConfig.type === 'boolean'}
-									<!-- Toggle Switch for boolean -->
-									<label class="config-form__toggle">
-										<input
-											id={key}
-											type="checkbox"
-											class="config-form__toggle-input"
-											checked={Boolean(configValues[key] || fieldConfig.default || false)}
-											onchange={(e) => {
-												configValues[key] = e.currentTarget.checked;
-											}}
-											aria-describedby={descriptionId}
-										/>
-										<span class="config-form__toggle-track">
-											<span class="config-form__toggle-thumb"></span>
-										</span>
-										<span class="config-form__toggle-label">
-											{configValues[key] ? 'Enabled' : 'Disabled'}
-										</span>
-									</label>
-								{:else if fieldConfig.type === 'select' || fieldConfig.options}
-									{@const selectOptions = (fieldConfig.options ?? []) as Array<{
-										value: unknown;
-										label: unknown;
-									}>}
-									<div class="config-form__select-wrapper">
-										<select
-											id={key}
-											class="config-form__select"
-											bind:value={configValues[key]}
-											aria-describedby={descriptionId}
-											aria-required={required}
-										>
-											{#each selectOptions as option (String(option.value))}
-												<option value={String(option.value)}>{String(option.label)}</option>
-											{/each}
-										</select>
-										<span class="config-form__select-icon" aria-hidden="true">
-											<Icon icon="heroicons:chevron-down" />
-										</span>
-									</div>
-								{:else}
-									<!-- Fallback for unknown field types -->
-									<input
-										id={key}
-										type="text"
-										class="config-form__input"
-										bind:value={configValues[key]}
-										placeholder={String(fieldConfig.placeholder || '')}
-										aria-describedby={descriptionId}
-									/>
-								{/if}
-							</div>
-
-							<!-- Field Description -->
-							{#if hasDescription && fieldConfig.title}
-								<p id={descriptionId} class="config-form__description">
-									{String(fieldConfig.description)}
-								</p>
-							{/if}
-						</div>
-					{/if}
+					<FormField
+						fieldKey={key}
+						schema={fieldSchema}
+						value={configValues[key]}
+						{required}
+						animationIndex={index}
+						onChange={(val) => handleFieldChange(key, val)}
+					/>
 				{/each}
 			</div>
 		{:else}
@@ -365,34 +220,22 @@
 				</div>
 				<div class="config-form__extensions-content">
 					<!-- Hide Unconnected Handles Toggle -->
-					<div class="config-form__field">
-						<label class="config-form__label" for="ext-hideUnconnectedHandles">
-							<span class="config-form__label-text">Hide Unconnected Ports</span>
-						</label>
-						<div class="config-form__input-wrapper">
-							<label class="config-form__toggle">
-								<input
-									id="ext-hideUnconnectedHandles"
-									type="checkbox"
-									class="config-form__toggle-input"
-									checked={Boolean(uiExtensionValues.hideUnconnectedHandles)}
-									onchange={(e) => {
-										uiExtensionValues.hideUnconnectedHandles = e.currentTarget.checked;
-									}}
-									aria-describedby="ext-hideUnconnectedHandles-description"
-								/>
-								<span class="config-form__toggle-track">
-									<span class="config-form__toggle-thumb"></span>
-								</span>
-								<span class="config-form__toggle-label">
-									{uiExtensionValues.hideUnconnectedHandles ? 'Hidden' : 'Visible'}
-								</span>
-							</label>
-						</div>
-						<p id="ext-hideUnconnectedHandles-description" class="config-form__description">
-							Hide input and output ports that are not connected to reduce visual clutter
-						</p>
-					</div>
+					<FormFieldWrapper
+						id="ext-hideUnconnectedHandles"
+						label="Hide Unconnected Ports"
+						description="Hide input and output ports that are not connected to reduce visual clutter"
+					>
+						<FormToggle
+							id="ext-hideUnconnectedHandles"
+							value={Boolean(uiExtensionValues.hideUnconnectedHandles)}
+							onLabel="Hidden"
+							offLabel="Visible"
+							ariaDescribedBy="ext-hideUnconnectedHandles-description"
+							onChange={(val) => {
+								uiExtensionValues.hideUnconnectedHandles = val;
+							}}
+						/>
+					</FormFieldWrapper>
 				</div>
 			</div>
 		{/if}
@@ -424,7 +267,8 @@
 
 <style>
 	/* ============================================
-	   CONFIG FORM - Modern, Accessible Design
+	   CONFIG FORM - Container Styles
+	   Individual field styles are in form/ components
 	   ============================================ */
 
 	.config-form {
@@ -437,346 +281,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
-	}
-
-	/* ============================================
-	   FIELD CONTAINER
-	   ============================================ */
-
-	.config-form__field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		animation: fieldFadeIn 0.3s ease-out forwards;
-		opacity: 0;
-		transform: translateY(4px);
-	}
-
-	@keyframes fieldFadeIn {
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* ============================================
-	   LABELS
-	   ============================================ */
-
-	.config-form__label {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--color-ref-gray-700, #374151);
-		letter-spacing: -0.01em;
-	}
-
-	.config-form__label-text {
-		line-height: 1.4;
-	}
-
-	.config-form__required {
-		color: var(--color-ref-red-500, #ef4444);
-		font-weight: 500;
-	}
-
-	/* ============================================
-	   INPUT WRAPPER
-	   ============================================ */
-
-	.config-form__input-wrapper {
-		position: relative;
-	}
-
-	/* ============================================
-	   TEXT INPUTS
-	   ============================================ */
-
-	.config-form__input {
-		width: 100%;
-		padding: 0.625rem 0.875rem;
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		font-family: inherit;
-		color: var(--color-ref-gray-900, #111827);
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-	}
-
-	.config-form__input::placeholder {
-		color: var(--color-ref-gray-400, #9ca3af);
-	}
-
-	.config-form__input:hover {
-		border-color: var(--color-ref-gray-300, #d1d5db);
-		background-color: #ffffff;
-	}
-
-	.config-form__input:focus {
-		outline: none;
-		border-color: var(--color-ref-blue-500, #3b82f6);
-		background-color: #ffffff;
-		box-shadow:
-			0 0 0 3px rgba(59, 130, 246, 0.12),
-			0 1px 2px rgba(0, 0, 0, 0.04);
-	}
-
-	.config-form__input--number {
-		font-variant-numeric: tabular-nums;
-	}
-
-	/* ============================================
-	   TEXTAREA
-	   ============================================ */
-
-	.config-form__textarea {
-		width: 100%;
-		padding: 0.625rem 0.875rem;
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		font-family: inherit;
-		color: var(--color-ref-gray-900, #111827);
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-		resize: vertical;
-		min-height: 5rem;
-		line-height: 1.5;
-	}
-
-	.config-form__textarea::placeholder {
-		color: var(--color-ref-gray-400, #9ca3af);
-	}
-
-	.config-form__textarea:hover {
-		border-color: var(--color-ref-gray-300, #d1d5db);
-		background-color: #ffffff;
-	}
-
-	.config-form__textarea:focus {
-		outline: none;
-		border-color: var(--color-ref-blue-500, #3b82f6);
-		background-color: #ffffff;
-		box-shadow:
-			0 0 0 3px rgba(59, 130, 246, 0.12),
-			0 1px 2px rgba(0, 0, 0, 0.04);
-	}
-
-	/* ============================================
-	   SELECT DROPDOWN
-	   ============================================ */
-
-	.config-form__select-wrapper {
-		position: relative;
-	}
-
-	.config-form__select {
-		width: 100%;
-		padding: 0.625rem 2.5rem 0.625rem 0.875rem;
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		font-family: inherit;
-		color: var(--color-ref-gray-900, #111827);
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-		cursor: pointer;
-		appearance: none;
-	}
-
-	.config-form__select:hover {
-		border-color: var(--color-ref-gray-300, #d1d5db);
-		background-color: #ffffff;
-	}
-
-	.config-form__select:focus {
-		outline: none;
-		border-color: var(--color-ref-blue-500, #3b82f6);
-		background-color: #ffffff;
-		box-shadow:
-			0 0 0 3px rgba(59, 130, 246, 0.12),
-			0 1px 2px rgba(0, 0, 0, 0.04);
-	}
-
-	.config-form__select-icon {
-		position: absolute;
-		right: 0.75rem;
-		top: 50%;
-		transform: translateY(-50%);
-		pointer-events: none;
-		color: var(--color-ref-gray-400, #9ca3af);
-		display: flex;
-		align-items: center;
-		transition: color 0.2s;
-	}
-
-	.config-form__select-icon :global(svg) {
-		width: 1rem;
-		height: 1rem;
-	}
-
-	.config-form__select:focus + .config-form__select-icon {
-		color: var(--color-ref-blue-500, #3b82f6);
-	}
-
-	/* ============================================
-	   CHECKBOX GROUP
-	   ============================================ */
-
-	.config-form__checkbox-group {
-		display: flex;
-		flex-direction: column;
-		gap: 0.625rem;
-		padding: 0.75rem;
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
-	}
-
-	.config-form__checkbox-item {
-		display: flex;
-		align-items: center;
-		gap: 0.625rem;
-		cursor: pointer;
-		padding: 0.375rem;
-		margin: -0.375rem;
-		border-radius: 0.375rem;
-		transition: background-color 0.15s;
-	}
-
-	.config-form__checkbox-item:hover {
-		background-color: var(--color-ref-gray-100, #f3f4f6);
-	}
-
-	.config-form__checkbox-input {
-		position: absolute;
-		opacity: 0;
-		width: 0;
-		height: 0;
-	}
-
-	.config-form__checkbox-custom {
-		width: 1.125rem;
-		height: 1.125rem;
-		border: 1.5px solid var(--color-ref-gray-300, #d1d5db);
-		border-radius: 0.25rem;
-		background-color: #ffffff;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.15s;
-		flex-shrink: 0;
-	}
-
-	.config-form__checkbox-custom :global(svg) {
-		width: 0.75rem;
-		height: 0.75rem;
-		color: #ffffff;
-		opacity: 0;
-		transform: scale(0.5);
-		transition: all 0.15s;
-	}
-
-	.config-form__checkbox-input:checked + .config-form__checkbox-custom {
-		background-color: var(--color-ref-blue-500, #3b82f6);
-		border-color: var(--color-ref-blue-500, #3b82f6);
-	}
-
-	.config-form__checkbox-input:checked + .config-form__checkbox-custom :global(svg) {
-		opacity: 1;
-		transform: scale(1);
-	}
-
-	.config-form__checkbox-input:focus-visible + .config-form__checkbox-custom {
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-	}
-
-	.config-form__checkbox-label {
-		font-size: 0.875rem;
-		color: var(--color-ref-gray-700, #374151);
-		line-height: 1.4;
-	}
-
-	/* ============================================
-	   TOGGLE SWITCH (Boolean)
-	   ============================================ */
-
-	.config-form__toggle {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		cursor: pointer;
-		padding: 0.5rem 0;
-	}
-
-	.config-form__toggle-input {
-		position: absolute;
-		opacity: 0;
-		width: 0;
-		height: 0;
-	}
-
-	.config-form__toggle-track {
-		position: relative;
-		width: 2.75rem;
-		height: 1.5rem;
-		background-color: var(--color-ref-gray-300, #d1d5db);
-		border-radius: 0.75rem;
-		transition: background-color 0.2s;
-		flex-shrink: 0;
-	}
-
-	.config-form__toggle-thumb {
-		position: absolute;
-		top: 0.125rem;
-		left: 0.125rem;
-		width: 1.25rem;
-		height: 1.25rem;
-		background-color: #ffffff;
-		border-radius: 50%;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-		transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	}
-
-	.config-form__toggle-input:checked + .config-form__toggle-track {
-		background-color: var(--color-ref-blue-500, #3b82f6);
-	}
-
-	.config-form__toggle-input:checked + .config-form__toggle-track .config-form__toggle-thumb {
-		transform: translateX(1.25rem);
-	}
-
-	.config-form__toggle-input:focus-visible + .config-form__toggle-track {
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-	}
-
-	.config-form__toggle-label {
-		font-size: 0.875rem;
-		color: var(--color-ref-gray-600, #4b5563);
-		font-weight: 500;
-		min-width: 4.5rem;
-	}
-
-	.config-form__toggle-input:checked ~ .config-form__toggle-label {
-		color: var(--color-ref-blue-600, #2563eb);
-	}
-
-	/* ============================================
-	   FIELD DESCRIPTION
-	   ============================================ */
-
-	.config-form__description {
-		margin: 0;
-		font-size: 0.75rem;
-		color: var(--color-ref-gray-500, #6b7280);
-		line-height: 1.5;
-		padding-left: 0.125rem;
 	}
 
 	/* ============================================
