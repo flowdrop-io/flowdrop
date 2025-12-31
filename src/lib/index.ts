@@ -16,6 +16,8 @@ export type {
 	NodeDataType,
 	NodePort,
 	NodeMetadata,
+	NodeExtensions,
+	NodeUIExtensions,
 	ConfigValues,
 	WorkflowNode,
 	WorkflowEdge,
@@ -215,6 +217,7 @@ export {
 	workflowChanged,
 	workflowValidation,
 	workflowMetadataChanged,
+	connectedHandles,
 	// Dirty state tracking
 	isDirtyStore,
 	isDirty,
