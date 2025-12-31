@@ -28,6 +28,7 @@
 	import FormToggle from "./FormToggle.svelte";
 	import FormSelect from "./FormSelect.svelte";
 	import FormCheckboxGroup from "./FormCheckboxGroup.svelte";
+	import FormArray from "./FormArray.svelte";
 	import type { FieldSchema, FieldOption } from "./types.js";
 
 	interface Props {
@@ -155,6 +156,12 @@
 		}
 		return [];
 	});
+	const arrayItems = $derived.by((): unknown[] => {
+		if (Array.isArray(value)) {
+			return value;
+		}
+		return [];
+	});
 </script>
 
 {#if fieldType !== "hidden"}
@@ -227,11 +234,16 @@
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "array"}
-			<!-- Future: Array field component -->
-			<div class="form-field__unsupported">
-				<p>Array fields are not yet supported. Coming soon!</p>
-			</div>
+		{:else if fieldType === "array" && schema.items}
+			<FormArray
+				id={fieldKey}
+				value={arrayItems}
+				itemSchema={schema.items}
+				minItems={schema.minItems}
+				maxItems={schema.maxItems}
+				addLabel={`Add ${schema.items.title ?? "Item"}`}
+				onChange={(val) => onChange(val)}
+			/>
 		{:else if fieldType === "object"}
 			<!-- Future: Object field component -->
 			<div class="form-field__unsupported">
