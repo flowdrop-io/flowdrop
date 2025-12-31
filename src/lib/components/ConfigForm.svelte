@@ -63,7 +63,7 @@
 	/**
 	 * Get initial UI extensions from node (instance level overrides type level)
 	 */
-	const initialUIExtensions = $derived<NodeUIExtensions>(() => {
+	const initialUIExtensions = $derived.by<NodeUIExtensions>(() => {
 		if (!node) return {};
 		// Merge type-level defaults with instance-level overrides
 		const typeDefaults = node.data.metadata?.extensions?.ui ?? {};
@@ -91,9 +91,8 @@
 	 * Initialize UI extension values when node changes
 	 */
 	$effect(() => {
-		const extensions = initialUIExtensions();
 		uiExtensionValues = {
-			hideUnconnectedHandles: extensions.hideUnconnectedHandles ?? false
+			hideUnconnectedHandles: initialUIExtensions.hideUnconnectedHandles ?? false
 		};
 	});
 
