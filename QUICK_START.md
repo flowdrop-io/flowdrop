@@ -127,7 +127,6 @@ docker logs flowdrop-ui
 
 ## Next Steps
 
-- Read [DEPLOYMENT.md](./DEPLOYMENT.md) for production best practices
 - Read [DOCKER.md](./DOCKER.md) for Docker details
 
 ## Support
