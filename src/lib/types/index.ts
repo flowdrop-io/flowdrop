@@ -112,6 +112,38 @@ export interface DynamicPort {
 }
 
 /**
+ * Branch configuration for gateway nodes
+ *
+ * Branches define conditional output paths in gateway/switch nodes.
+ * Each branch creates an output handle that can be connected to downstream nodes.
+ * Branches are stored in `config.branches` array and support dynamic addition/removal
+ * through the node configuration panel.
+ *
+ * @example
+ * ```typescript
+ * const branches: Branch[] = [
+ *   { name: "high", label: "High Priority", condition: "priority > 8" },
+ *   { name: "medium", label: "Medium Priority", condition: "priority >= 4" },
+ *   { name: "default", label: "Default", isDefault: true }
+ * ];
+ * ```
+ */
+export interface Branch {
+	/** Unique identifier for the branch (used as handle ID and for connections) */
+	name: string;
+	/** Display label shown in the UI (optional, defaults to name) */
+	label?: string;
+	/** Description of when this branch is activated */
+	description?: string;
+	/** Optional value associated with the branch (e.g., for Switch matching) */
+	value?: string;
+	/** Optional condition expression for this branch */
+	condition?: string;
+	/** Whether this is the default/fallback branch */
+	isDefault?: boolean;
+}
+
+/**
  * Convert a DynamicPort to a NodePort
  * @param port - The dynamic port configuration
  * @param portType - Whether this is an input or output port
@@ -378,15 +410,61 @@ export type SchemaTypeMap<T extends SchemaType> = T extends 'config'
 
 /**
  * Node configuration values
- * Key-value pairs of user-entered configuration values
+ *
+ * Key-value pairs of user-entered configuration values based on the node's configSchema.
+ * This is where all node-specific settings are stored, including:
+ *
+ * **Standard Properties:**
+ * - Any property defined in the node's `configSchema` (e.g., model, temperature, apiKey)
+ *
+ * **Special Properties (Dynamic Ports):**
+ * - `dynamicInputs`: Array of DynamicPort for user-defined input handles
+ * - `dynamicOutputs`: Array of DynamicPort for user-defined output handles
+ * - `branches`: Array of Branch for gateway node conditional output paths
+ *
+ * The backend uses this object to:
+ * - Store and retrieve node configuration
+ * - Pass configuration values to node processors during execution
+ * - Persist node state across sessions
+ *
+ * @example
+ * ```typescript
+ * const config: ConfigValues = {
+ *   // Standard configuration from configSchema
+ *   model: "gpt-4o-mini",
+ *   temperature: 0.7,
+ *   maxTokens: 1000,
+ *
+ *   // Dynamic input ports
+ *   dynamicInputs: [
+ *     { name: "extra_data", label: "Extra Data", dataType: "json" }
+ *   ],
+ *
+ *   // Gateway branches
+ *   branches: [
+ *     { name: "success", label: "Success", condition: "status === 200" },
+ *     { name: "error", label: "Error", isDefault: true }
+ *   ]
+ * };
+ * ```
  */
 export interface ConfigValues {
+	/** Dynamic input ports for user-defined input handles */
+	dynamicInputs?: DynamicPort[];
+	/** Dynamic output ports for user-defined output handles */
+	dynamicOutputs?: DynamicPort[];
+	/** Branches for gateway node conditional output paths */
+	branches?: Branch[];
+	/** Any other configuration properties defined in configSchema */
 	[key: string]: unknown;
 }
 
 
 /**
  * Extended node type for workflows
+ *
+ * Represents a node instance in a workflow, containing position, display data,
+ * configuration values, and metadata from the node type definition.
  */
 export interface WorkflowNode extends Node {
 	id: string;
@@ -394,11 +472,30 @@ export interface WorkflowNode extends Node {
 	position: XYPosition;
 	deletable?: boolean;
 	data: {
+		/** Display label for the node instance */
 		label: string;
+		/**
+		 * Node configuration values
+		 *
+		 * Contains all user-configured settings for this node instance based on the
+		 * node type's configSchema. This includes standard properties defined in the
+		 * schema as well as special dynamic port configurations.
+		 *
+		 * The backend uses this object to:
+		 * - Store and retrieve node configuration
+		 * - Pass configuration values to node processors during execution
+		 * - Persist node state across sessions
+		 *
+		 * @see ConfigValues for detailed documentation of available properties
+		 */
 		config: ConfigValues;
+		/** Node type metadata (inputs, outputs, configSchema, etc.) */
 		metadata: NodeMetadata;
+		/** Whether the node is currently processing/executing */
 		isProcessing?: boolean;
+		/** Error message if the node execution failed */
 		error?: string;
+		/** Alternative node identifier */
 		nodeId?: string;
 		/** Node execution tracking information */
 		executionInfo?: NodeExecutionInfo;
