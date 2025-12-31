@@ -1165,6 +1165,44 @@ components:
         - type
         - properties
 
+    NodeUIExtensions:
+      type: object
+      description: UI-related extension settings for nodes
+      properties:
+        hideUnconnectedHandles:
+          type: boolean
+          description: Show/hide unconnected handles (ports) to reduce visual noise
+          example: true
+        style:
+          type: object
+          additionalProperties: true
+          description: Custom styles or theme overrides
+          example:
+            opacity: 0.8
+            borderRadius: 8
+      additionalProperties: true
+
+    NodeExtensions:
+      type: object
+      description: |
+        Custom extension properties for 3rd party integrations.
+        Allows storing additional configuration and UI state data.
+        
+        Use namespaced keys (e.g., "myapp:analytics", "acme:settings") to avoid conflicts
+        between different integrations.
+      properties:
+        ui:
+          $ref: '#/components/schemas/NodeUIExtensions'
+      additionalProperties: true
+      example:
+        ui:
+          hideUnconnectedHandles: true
+          style:
+            opacity: 0.8
+        "myapp:analytics":
+          trackUsage: true
+          customField: value
+
     NodeMetadata:
       type: object
       properties:
@@ -1222,6 +1260,8 @@ components:
             - math
             - calculation
             - processing
+        extensions:
+          $ref: '#/components/schemas/NodeExtensions'
       required:
         - id
         - name
@@ -1318,6 +1358,12 @@ components:
               description: Alternative node ID
             executionInfo:
               $ref: '#/components/schemas/NodeExecutionInfo'
+            extensions:
+              $ref: '#/components/schemas/NodeExtensions'
+              description: |
+                Per-instance extension properties for 3rd party integrations.
+                Overrides or extends the node type extensions defined in metadata.extensions.
+                Use for instance-specific UI states or custom data.
           required:
             - label
             - config
