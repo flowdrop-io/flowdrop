@@ -87,16 +87,16 @@
 		return $connectedHandles.has(handleId);
 	}
 
+	// Gateway-specific data - branches are calculated at runtime from config
+	let branches = $derived((props.data.config?.branches as Branch[]) || []);
+	let activeBranches = $derived((props.data.executionInfo as any)?.output?.active_branches || []);
+
 	/**
 	 * Derived list of visible branches based on hideUnconnectedHandles setting
 	 */
 	const visibleBranches = $derived(
 		branches.filter((branch) => isBranchVisible(branch.name))
 	);
-
-	// Gateway-specific data - branches are calculated at runtime from config
-	let branches = $derived((props.data.config?.branches as Branch[]) || []);
-	let activeBranches = $derived((props.data.executionInfo as any)?.output?.active_branches || []);
 
 	/**
 	 * Handle node click - only handle selection, no config opening
