@@ -304,15 +304,17 @@ Retrieve metadata for a specific node type.
 
 FlowDrop includes built-in node rendering types:
 
-| Type                       | Display Name                     | Description                                                    |
-| -------------------------- | -------------------------------- | -------------------------------------------------------------- |
-| `workflowNode` / `default` | Default (Standard Workflow Node) | Full-featured workflow node with inputs/outputs display        |
-| `simple`                   | Simple (Compact Layout)          | Compact node with header, icon, and description                |
-| `square`                   | Square (Minimal Icon)            | Minimal square node showing only an icon                       |
-| `tool`                     | Tool (Agent Tool)                | Specialized node for agent tools with tool metadata            |
-| `gateway`                  | Gateway (Branching)              | Branching control flow node with multiple output branches      |
-| `note`                     | Note (Sticky Note)               | Documentation note with markdown support                       |
-| `terminal`                 | Terminal (Start/End/Exit)        | Circular terminal node for workflow start, end, or exit points |
+| Type                       | Display Name                     | Description                                                    | Dynamic Support                           |
+| -------------------------- | -------------------------------- | -------------------------------------------------------------- | ----------------------------------------- |
+| `workflowNode` / `default` | Default (Standard Workflow Node) | Full-featured workflow node with inputs/outputs display        | `dynamicInputs`, `dynamicOutputs`         |
+| `simple`                   | Simple (Compact Layout)          | Compact node with header, icon, and description                | -                                         |
+| `square`                   | Square (Minimal Icon)            | Minimal square node showing only an icon                       | -                                         |
+| `tool`                     | Tool (Agent Tool)                | Specialized node for agent tools with tool metadata            | -                                         |
+| `gateway`                  | Gateway (Branching)              | Branching control flow node with multiple output branches      | `branches` (dynamic output paths)         |
+| `note`                     | Note (Sticky Note)               | Documentation note with markdown support                       | -                                         |
+| `terminal`                 | Terminal (Start/End/Exit)        | Circular terminal node for workflow start, end, or exit points | -                                         |
+
+All node types support the `extensions.ui.hideUnconnectedHandles` setting to control visibility of unconnected ports.
 
 ---
 
@@ -813,6 +815,8 @@ interface WorkflowNode {
         isProcessing?: boolean;
         error?: string;
         executionInfo?: NodeExecutionInfo;
+        /** Per-instance extension properties (overrides metadata.extensions) */
+        extensions?: NodeExtensions;
     };
 }
 ```
@@ -857,6 +861,8 @@ interface NodeMetadata {
     outputs: NodePort[];
     configSchema?: ConfigSchema;
     tags?: string[];
+    /** Default extension properties for all instances of this node type */
+    extensions?: NodeExtensions;
 }
 ```
 
@@ -871,6 +877,65 @@ interface NodePort {
     required?: boolean;
     description?: string;
     defaultValue?: unknown;
+}
+```
+
+### DynamicPort
+
+Dynamic ports are user-defined input/output handles that can be added at runtime through node configuration. They work similarly to static ports but are stored in the node's config.
+
+```typescript
+interface DynamicPort {
+    /** Unique identifier for the port (used for handle IDs and connections) */
+    name: string;
+    /** Display label shown in the UI */
+    label: string;
+    /** Description of what this port accepts/provides */
+    description?: string;
+    /** Data type for the port (affects color and connection validation) */
+    dataType: string;
+    /** Whether this port is required for execution */
+    required?: boolean;
+}
+```
+
+### Branch (Gateway Nodes)
+
+Branches define conditional output paths for gateway/switch nodes. Each branch creates an output handle.
+
+```typescript
+interface Branch {
+    /** Unique identifier for the branch (used as handle ID) */
+    name: string;
+    /** Display label shown in the UI */
+    label: string;
+    /** Description of when this branch is activated */
+    description?: string;
+    /** Optional condition expression for this branch */
+    condition?: string;
+    /** Whether this is the default/fallback branch */
+    isDefault?: boolean;
+}
+```
+
+### NodeExtensions
+
+Extensions allow storing UI settings and third-party integration data on nodes.
+
+```typescript
+interface NodeExtensions {
+    /** UI-related settings for the node */
+    ui?: NodeUIExtensions;
+    /** Namespaced extension data from third-party integrations */
+    [namespace: string]: unknown;
+}
+
+interface NodeUIExtensions {
+    /** Show/hide unconnected handles to reduce visual noise */
+    hideUnconnectedHandles?: boolean;
+    /** Custom styles or theme overrides */
+    style?: Record<string, unknown>;
+    [key: string]: unknown;
 }
 ```
 
@@ -900,6 +965,274 @@ interface ConfigProperty {
     items?: ConfigProperty;
     properties?: Record<string, ConfigProperty>;
 }
+```
+
+---
+
+## Dynamic Ports, Branches, and Extensions
+
+FlowDrop supports dynamic configuration of node ports, gateway branches, and UI extensions. These features allow users to customize node behavior at runtime through the configuration panel.
+
+### Dynamic Input/Output Ports
+
+Nodes can support user-defined dynamic ports through their `configSchema`. Dynamic ports appear alongside static ports defined in the node metadata.
+
+#### Enabling Dynamic Ports in ConfigSchema
+
+```json
+{
+    "configSchema": {
+        "type": "object",
+        "properties": {
+            "dynamicInputs": {
+                "type": "array",
+                "title": "Dynamic Inputs",
+                "description": "User-defined input ports",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "title": "Port ID",
+                            "description": "Unique identifier for connections"
+                        },
+                        "label": {
+                            "type": "string",
+                            "title": "Label",
+                            "description": "Display name in the UI"
+                        },
+                        "description": {
+                            "type": "string",
+                            "title": "Description"
+                        },
+                        "dataType": {
+                            "type": "string",
+                            "title": "Data Type",
+                            "enum": ["string", "number", "boolean", "json", "array", "mixed"],
+                            "default": "string"
+                        },
+                        "required": {
+                            "type": "boolean",
+                            "title": "Required",
+                            "default": false
+                        }
+                    },
+                    "required": ["name", "label", "dataType"]
+                }
+            },
+            "dynamicOutputs": {
+                "type": "array",
+                "title": "Dynamic Outputs",
+                "description": "User-defined output ports",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "title": "Port ID" },
+                        "label": { "type": "string", "title": "Label" },
+                        "description": { "type": "string", "title": "Description" },
+                        "dataType": {
+                            "type": "string",
+                            "title": "Data Type",
+                            "enum": ["string", "number", "boolean", "json", "array", "mixed"],
+                            "default": "string"
+                        },
+                        "required": { "type": "boolean", "default": false }
+                    },
+                    "required": ["name", "label", "dataType"]
+                }
+            }
+        }
+    }
+}
+```
+
+#### Node Config with Dynamic Ports
+
+```json
+{
+    "id": "node-123",
+    "type": "custom_function",
+    "data": {
+        "label": "Custom Function",
+        "config": {
+            "dynamicInputs": [
+                {
+                    "name": "input_a",
+                    "label": "Input A",
+                    "dataType": "string",
+                    "required": true
+                },
+                {
+                    "name": "input_b",
+                    "label": "Input B",
+                    "dataType": "json",
+                    "required": false
+                }
+            ],
+            "dynamicOutputs": [
+                {
+                    "name": "result",
+                    "label": "Result",
+                    "dataType": "string"
+                }
+            ]
+        },
+        "metadata": { ... }
+    }
+}
+```
+
+### Dynamic Branches (Gateway Nodes)
+
+Gateway nodes support dynamic branching through the `config.branches` array. Each branch creates an output handle for conditional routing.
+
+#### Branch ConfigSchema
+
+```json
+{
+    "configSchema": {
+        "type": "object",
+        "properties": {
+            "branches": {
+                "type": "array",
+                "title": "Branches",
+                "description": "Conditional output paths",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "title": "Branch ID",
+                            "description": "Unique identifier for the branch"
+                        },
+                        "label": {
+                            "type": "string",
+                            "title": "Label",
+                            "description": "Display name for the branch"
+                        },
+                        "description": {
+                            "type": "string",
+                            "title": "Description"
+                        },
+                        "condition": {
+                            "type": "string",
+                            "title": "Condition",
+                            "description": "Expression that activates this branch"
+                        },
+                        "isDefault": {
+                            "type": "boolean",
+                            "title": "Default Branch",
+                            "default": false
+                        }
+                    },
+                    "required": ["name", "label"]
+                }
+            }
+        }
+    }
+}
+```
+
+#### Gateway Node with Branches
+
+```json
+{
+    "id": "gateway-1",
+    "type": "switch",
+    "data": {
+        "label": "Route Decision",
+        "config": {
+            "branches": [
+                {
+                    "name": "high",
+                    "label": "High Priority",
+                    "condition": "priority > 8"
+                },
+                {
+                    "name": "medium",
+                    "label": "Medium Priority",
+                    "condition": "priority >= 4"
+                },
+                {
+                    "name": "default",
+                    "label": "Default",
+                    "isDefault": true
+                }
+            ]
+        },
+        "metadata": {
+            "type": "gateway",
+            ...
+        }
+    }
+}
+```
+
+### Node Extensions
+
+Extensions provide a way to store UI settings and third-party integration data on nodes at two levels:
+
+1. **Node Type Level** (`metadata.extensions`): Default settings for all instances
+2. **Instance Level** (`data.extensions`): Override for specific node instances
+
+Instance-level settings take precedence over type-level defaults.
+
+#### hideUnconnectedHandles
+
+The most common extension setting is `hideUnconnectedHandles`, which reduces visual clutter by hiding ports that don't have connections.
+
+```json
+{
+    "metadata": {
+        "id": "complex_node",
+        "extensions": {
+            "ui": {
+                "hideUnconnectedHandles": true
+            }
+        }
+    }
+}
+```
+
+#### Per-Instance Extensions
+
+```json
+{
+    "id": "node-456",
+    "type": "data_processor",
+    "data": {
+        "label": "Data Processor",
+        "config": { ... },
+        "metadata": { ... },
+        "extensions": {
+            "ui": {
+                "hideUnconnectedHandles": false,
+                "style": {
+                    "opacity": 0.9
+                }
+            },
+            "myapp:analytics": {
+                "trackUsage": true,
+                "customMetric": "value"
+            }
+        }
+    }
+}
+```
+
+### Extension Precedence
+
+When resolving extension values, the system merges settings with this priority:
+
+1. Instance-level (`data.extensions.ui.hideUnconnectedHandles`) - highest priority
+2. Type-level (`metadata.extensions.ui.hideUnconnectedHandles`) - fallback
+
+```typescript
+// Example resolution logic
+const hideUnconnectedHandles = 
+    node.data.extensions?.ui?.hideUnconnectedHandles ??
+    node.data.metadata.extensions?.ui?.hideUnconnectedHandles ??
+    false;
 ```
 
 ---
