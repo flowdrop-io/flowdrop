@@ -447,7 +447,7 @@ export const mockNodes: NodeMetadata[] = [
             { id: "total_errors", name: "total_errors", type: "output", dataType: "number", required: false, description: "Total number of errors" }
         ],
         config: { allowedTypes: ["txt", "pdf", "docx", "csv", "json"], maxSize: 10485760 },
-        configSchema: { type: "object", properties: { directory: { type: "string", title: "Directory", description: "Directory to upload files to", default: "public://flowdrop/uploads/" }, allowedExtensions: { type: "array", title: "Allowed Extensions", description: "Allowed file extensions", default: ["txt", "pdf", "doc", "docx"] }, maxFileSize: { type: "integer", title: "Max File Size", description: "Maximum file size in bytes", default: 10485760 }, overwrite: { type: "boolean", title: "Overwrite", description: "Whether to overwrite existing files", default: false } } }
+        configSchema: { type: "object", properties: { directory: { type: "string", title: "Directory", description: "Directory to upload files to", default: "public://flowdrop/uploads/" }, allowedExtensions: { type: "array", title: "Allowed Extensions", description: "Allowed file extensions", items: { type: "string", title: "Extension", placeholder: "e.g., pdf" }, default: ["txt", "pdf", "doc", "docx"] }, maxFileSize: { type: "integer", title: "Max File Size", description: "Maximum file size in bytes", default: 10485760 }, overwrite: { type: "boolean", title: "Overwrite", description: "Whether to overwrite existing files", default: false } } }
     },
     {
         id: "form_data_receiver",
