@@ -389,7 +389,11 @@ Create a new workflow.
             "position": { "x": 100, "y": 100 },
             "data": {
                 "label": "User Input",
-                "config": { "placeholder": "Enter text" },
+                "config": {
+                    "placeholder": "Enter text",
+                    "defaultValue": "",
+                    "required": true
+                },
                 "metadata": {
                     "id": "text_input",
                     "name": "Text Input",
@@ -401,12 +405,48 @@ Create a new workflow.
                     ]
                 }
             }
+        },
+        {
+            "id": "node-2",
+            "type": "openai_chat",
+            "position": { "x": 400, "y": 100 },
+            "data": {
+                "label": "AI Chat",
+                "config": {
+                    "model": "gpt-4o-mini",
+                    "temperature": 0.7,
+                    "maxTokens": 1000,
+                    "systemPrompt": "You are a helpful assistant."
+                },
+                "metadata": {
+                    "id": "openai_chat",
+                    "name": "OpenAI Chat",
+                    "category": "ai",
+                    "version": "1.0.0",
+                    "inputs": [
+                        { "id": "data", "name": "Input", "type": "input", "dataType": "string" }
+                    ],
+                    "outputs": [
+                        { "id": "response", "name": "Response", "type": "output", "dataType": "string" }
+                    ]
+                }
+            }
         }
     ],
-    "edges": [],
-    "tags": ["example"]
+    "edges": [
+        {
+            "id": "edge-1",
+            "source": "node-1",
+            "target": "node-2",
+            "sourceHandle": "value",
+            "targetHandle": "data"
+        }
+    ],
+    "tags": ["example", "ai"]
 }
 ```
+
+> **Note:** The `config` object in each node contains the user-configured values based on the node type's `configSchema`. These values are passed to the backend during workflow execution and are persisted with the workflow.
 
 #### Response (201 Created)
 
@@ -810,7 +850,8 @@ interface WorkflowNode {
     deletable?: boolean;
     data: {
         label: string;
-        config: Record<string, unknown>;
+        /** Node configuration values - see NodeConfig for details */
+        config: NodeConfig;
         metadata: NodeMetadata;
         isProcessing?: boolean;
         error?: string;
@@ -818,6 +859,83 @@ interface WorkflowNode {
         /** Per-instance extension properties (overrides metadata.extensions) */
         extensions?: NodeExtensions;
     };
+}
+```
+
+### NodeConfig
+
+Node configuration values containing all user-configured settings for a node instance.
+
+This object is used by the backend to:
+
+-   **Store and retrieve** node configuration persistently
+-   **Pass values** to node processors during workflow execution
+-   **Persist state** across sessions
+
+```typescript
+interface NodeConfig {
+    /** Dynamic input ports for user-defined input handles */
+    dynamicInputs?: DynamicPort[];
+    /** Dynamic output ports for user-defined output handles */
+    dynamicOutputs?: DynamicPort[];
+    /** Branches for gateway node conditional output paths */
+    branches?: Branch[];
+    /** Any other configuration properties defined in configSchema */
+    [key: string]: unknown;
+}
+```
+
+#### Standard Properties
+
+Any property defined in the node's `configSchema` (e.g., model, temperature, apiKey).
+The schema defines the type, validation rules, and default values for each property.
+
+#### Special Properties (Dynamic Ports)
+
+In addition to standard configuration, the config object may contain special arrays
+that define dynamic ports for the node:
+
+| Property         | Type           | Description                                            |
+| ---------------- | -------------- | ------------------------------------------------------ |
+| `dynamicInputs`  | DynamicPort[]  | User-defined input handles that appear on the node     |
+| `dynamicOutputs` | DynamicPort[]  | User-defined output handles that appear on the node    |
+| `branches`       | Branch[]       | Gateway node branches for conditional routing          |
+
+#### Example
+
+```json
+{
+    "model": "gpt-4o-mini",
+    "temperature": 0.7,
+    "maxTokens": 1000,
+    "apiKey": "sk-...",
+    "dynamicInputs": [
+        {
+            "name": "extra_data",
+            "label": "Extra Data",
+            "dataType": "json",
+            "required": false
+        }
+    ],
+    "dynamicOutputs": [
+        {
+            "name": "result",
+            "label": "Result",
+            "dataType": "string"
+        }
+    ],
+    "branches": [
+        {
+            "name": "success",
+            "label": "Success",
+            "condition": "status === 200"
+        },
+        {
+            "name": "error",
+            "label": "Error",
+            "isDefault": true
+        }
+    ]
 }
 ```
 

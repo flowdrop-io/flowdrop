@@ -1416,6 +1416,73 @@ components:
         - x
         - y
 
+    # ===== NODE CONFIGURATION =====
+    NodeConfig:
+      type: object
+      description: |
+        Node configuration values containing all user-configured settings for a node instance.
+        
+        This object stores configuration based on the node type's `configSchema` and is used by
+        the backend to:
+        - **Store and retrieve** node configuration persistently
+        - **Pass values** to node processors during workflow execution
+        - **Persist state** across sessions
+        
+        ## Standard Properties
+        
+        Any property defined in the node's `configSchema` (e.g., model, temperature, apiKey).
+        The schema defines the type, validation rules, and default values for each property.
+        
+        ## Special Properties (Dynamic Ports)
+        
+        In addition to standard configuration, the config object may contain special arrays
+        that define dynamic ports for the node:
+        
+        - **`dynamicInputs`**: Array of DynamicPort for user-defined input handles
+        - **`dynamicOutputs`**: Array of DynamicPort for user-defined output handles
+        - **`branches`**: Array of Branch for gateway node conditional output paths
+        
+        These dynamic configuration values generate additional handles on the node
+        that can be connected to other nodes in the workflow.
+      properties:
+        dynamicInputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/DynamicPort'
+          description: User-defined dynamic input ports that appear as additional input handles
+        dynamicOutputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/DynamicPort'
+          description: User-defined dynamic output ports that appear as additional output handles
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Branch'
+          description: Gateway node branches that define conditional output paths
+      additionalProperties: true
+      example:
+        model: gpt-4o-mini
+        temperature: 0.7
+        maxTokens: 1000
+        apiKey: sk-...
+        dynamicInputs:
+          - name: extra_data
+            label: Extra Data
+            dataType: json
+            required: false
+        dynamicOutputs:
+          - name: result
+            label: Result
+            dataType: string
+        branches:
+          - name: success
+            label: Success
+            condition: "status === 200"
+          - name: error
+            label: Error
+            isDefault: true
+
     NodeExecutionInfo:
       type: object
       properties:
@@ -1446,6 +1513,15 @@ components:
 
     WorkflowNode:
       type: object
+      description: |
+        Represents a node instance in a workflow.
+        
+        Each node instance contains:
+        - Position on the canvas
+        - Display data (label)
+        - Configuration values (config) - user-defined settings
+        - Metadata from the node type definition
+        - Optional execution state and extensions
       properties:
         id:
           type: string
@@ -1468,29 +1544,7 @@ components:
               description: Node instance label
               example: Math Calculator
             config:
-              type: object
-              additionalProperties: true
-              description: |
-                Node configuration values. May include special properties:
-                
-                - **dynamicInputs**: Array of DynamicPort for user-defined input handles
-                - **dynamicOutputs**: Array of DynamicPort for user-defined output handles
-                - **branches**: Array of Branch for gateway node output paths
-                
-                These dynamic configuration values generate additional handles on the node
-                that can be connected to other nodes in the workflow.
-              example:
-                operation: add
-                precision: 2
-                dynamicInputs:
-                  - name: extra_data
-                    label: Extra Data
-                    dataType: json
-                    required: false
-                dynamicOutputs:
-                  - name: result
-                    label: Result
-                    dataType: string
+              $ref: '#/components/schemas/NodeConfig'
             metadata:
               $ref: '#/components/schemas/NodeMetadata'
             isProcessing:
