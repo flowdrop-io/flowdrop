@@ -83,9 +83,6 @@ export { default as PipelineStatus } from './components/PipelineStatus.svelte';
 export { default as Navbar } from './components/Navbar.svelte';
 export { default as Logo } from './components/Logo.svelte';
 
-// Export sample data for development
-export { sampleNodes, sampleWorkflow } from './data/samples.js';
-
 // Export utilities
 export * from './utils/icons.js';
 export * from './utils/colors.js';

@@ -15,7 +15,6 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
 	import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
-	import { sampleNodes } from '$lib/data/samples.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import type { AuthProvider } from '$lib/types/auth.js';
@@ -205,20 +204,20 @@
 					'fetchNodes'
 				);
 				if (suppressToast) {
-					// Parent handled the error, don't show default toast
-					nodes = sampleNodes;
+					// Parent handled the error, keep nodes empty
+					nodes = [];
 					return;
 				}
 			}
 
-			// Show error but don't block the UI
-			error = `API Error: ${errorMessage}. Using sample data.`;
+			// Show error and set empty nodes array (no fallback to sample data)
+			error = `API Error: ${errorMessage}. No node types available.`;
 			if (features.showToasts) {
 				apiToasts.error('Load node types', errorMessage);
 			}
 
-			// Fallback to sample data
-			nodes = sampleNodes;
+			// Set empty nodes array instead of fallback data
+			nodes = [];
 		}
 	}
 
@@ -697,21 +696,11 @@
 				</div>
 				<div class="flowdrop-flex flowdrop-gap--2">
 					<button
-						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
+						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--primary"
 						onclick={retryLoad}
 						type="button"
 					>
 						Retry
-					</button>
-					<button
-						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--primary"
-						onclick={() => {
-							nodes = sampleNodes;
-							error = null;
-						}}
-						type="button"
-					>
-						Use Sample Data
 					</button>
 					<button
 						class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
