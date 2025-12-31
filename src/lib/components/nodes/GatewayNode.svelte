@@ -16,10 +16,16 @@
 	import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
 	import { connectedHandles } from '../../stores/workflowStore.js';
 
-	// Define simplified branch interface - conditions are handled by backend
+	/**
+	 * Branch interface for gateway nodes
+	 * - name: Internal identifier used for handle IDs and connections
+	 * - label: Display label shown in the UI (optional, defaults to name)
+	 * - value: Optional value associated with the branch (e.g., for Switch matching)
+	 */
 	interface Branch {
 		name: string;
-		label: string;
+		label?: string;
+		value?: string;
 	}
 
 	interface Props {
@@ -249,7 +255,7 @@
 									class="flowdrop-text--xs flowdrop-font--medium"
 									class:flowdrop-text--active={isActive}
 								>
-									{branch.name}
+									{branch.label ?? branch.name}
 								</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
