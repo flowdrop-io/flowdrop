@@ -3,14 +3,18 @@
   Renders individual nodes in the workflow editor with full functionality
   Uses SvelteFlow's Handle for connection ports
   Styled with BEM syntax
+  
+  UI Extensions Support:
+  - hideUnconnectedHandles: Hides ports that are not connected to reduce visual clutter
 -->
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { WorkflowNode } from '../../types/index.js';
+	import type { WorkflowNode, NodePort } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../../utils/icons.js';
 	import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
+	import { connectedHandles } from '../../stores/workflowStore.js';
 
 	interface Props {
 		data: WorkflowNode['data'] & {
@@ -22,6 +26,52 @@
 
 	let props: Props = $props();
 	let isHandleInteraction = $state(false);
+
+	/**
+	 * Get the hideUnconnectedHandles setting from extensions
+	 * Merges node type defaults with instance overrides
+	 */
+	const hideUnconnectedHandles = $derived(() => {
+		const typeDefault = props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ?? false;
+		const instanceOverride = props.data.extensions?.ui?.hideUnconnectedHandles;
+		return instanceOverride ?? typeDefault;
+	});
+
+	/**
+	 * Check if a port should be visible based on connection state and settings
+	 * @param port - The port to check
+	 * @param type - Whether this is an 'input' or 'output' port
+	 * @returns true if the port should be visible
+	 */
+	function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
+		// Always show if hideUnconnectedHandles is disabled
+		if (!hideUnconnectedHandles()) {
+			return true;
+		}
+
+		// Always show required ports
+		if (port.required) {
+			return true;
+		}
+
+		// Check if port is connected
+		const handleId = `${props.data.nodeId}-${type}-${port.id}`;
+		return $connectedHandles.has(handleId);
+	}
+
+	/**
+	 * Derived list of visible input ports based on hideUnconnectedHandles setting
+	 */
+	const visibleInputPorts = $derived(
+		props.data.metadata.inputs.filter((port) => isPortVisible(port, 'input'))
+	);
+
+	/**
+	 * Derived list of visible output ports based on hideUnconnectedHandles setting
+	 */
+	const visibleOutputPorts = $derived(
+		props.data.metadata.outputs.filter((port) => isPortVisible(port, 'output'))
+	);
 
 	/**
 	 * Handle configuration value changes - now handled by global ConfigSidebar
@@ -110,13 +160,13 @@
 	</div>
 
 	<!-- Input Ports Container -->
-	{#if props.data.metadata.inputs.length > 0}
+	{#if visibleInputPorts.length > 0}
 		<div class="flowdrop-workflow-node__ports">
 			<div class="flowdrop-workflow-node__ports-header">
 				<h5 class="flowdrop-workflow-node__ports-title">Inputs</h5>
 			</div>
 			<div class="flowdrop-workflow-node__ports-list">
-				{#each props.data.metadata.inputs as port (port.id)}
+				{#each visibleInputPorts as port (port.id)}
 					<div class="flowdrop-workflow-node__port">
 						<!-- Input Handle -->
 						<Handle
@@ -161,13 +211,13 @@
 	{/if}
 
 	<!-- Output Ports Container -->
-	{#if props.data.metadata.outputs.length > 0}
+	{#if visibleOutputPorts.length > 0}
 		<div class="flowdrop-workflow-node__ports">
 			<div class="flowdrop-workflow-node__ports-header">
 				<h5 class="flowdrop-workflow-node__ports-title">Outputs</h5>
 			</div>
 			<div class="flowdrop-workflow-node__ports-list">
-				{#each props.data.metadata.outputs as port (port.id)}
+				{#each visibleOutputPorts as port (port.id)}
 					<div class="flowdrop-workflow-node__port">
 						<!-- Port Info -->
 						<div class="flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right">
