@@ -71,6 +71,29 @@
 		props.data.metadata.inputs.filter((port) => isPortVisible(port, 'input'))
 	);
 
+	/**
+	 * Check if a branch output should be visible based on connection state
+	 * @param branchName - The branch name to check
+	 * @returns true if the branch should be visible
+	 */
+	function isBranchVisible(branchName: string): boolean {
+		// Always show if hideUnconnectedHandles is disabled
+		if (!hideUnconnectedHandles()) {
+			return true;
+		}
+
+		// Check if branch output is connected
+		const handleId = `${props.data.nodeId}-output-${branchName}`;
+		return $connectedHandles.has(handleId);
+	}
+
+	/**
+	 * Derived list of visible branches based on hideUnconnectedHandles setting
+	 */
+	const visibleBranches = $derived(
+		branches.filter((branch) => isBranchVisible(branch.name))
+	);
+
 	// Gateway-specific data - branches are calculated at runtime from config
 	let branches = $derived((props.data.config?.branches as Branch[]) || []);
 	let activeBranches = $derived((props.data.executionInfo as any)?.output?.active_branches || []);
@@ -201,17 +224,17 @@
 		</div>
 	{/if}
 
-	<!-- Branches Section (Output Ports) -->
-	{#if branches.length > 0}
+	<!-- Branches Section (Output Ports) - filtered based on hideUnconnectedHandles -->
+	{#if visibleBranches.length > 0}
 		<div class="flowdrop-workflow-node__ports">
 			<div class="flowdrop-workflow-node__ports-header">
 				<h5 class="flowdrop-workflow-node__ports-title">
 					<Icon icon="mdi:source-branch" />
-					<span>Branches ({branches.length})</span>
+					<span>Branches ({visibleBranches.length})</span>
 				</h5>
 			</div>
 			<div class="flowdrop-workflow-node__ports-list">
-				{#each branches as branch (branch.name)}
+				{#each visibleBranches as branch (branch.name)}
 					{@const isActive = isBranchActive(branch.name)}
 					<div class="flowdrop-workflow-node__port">
 						<!-- Port Info -->
@@ -256,7 +279,8 @@
 				{/each}
 			</div>
 		</div>
-	{:else}
+	{:else if branches.length === 0}
+		<!-- No branches configured at all -->
 		<div class="flowdrop-workflow-node__ports">
 			<div class="workflow-node__no-branches">
 				<Icon icon="mdi:alert-circle-outline" />
@@ -264,6 +288,7 @@
 			</div>
 		</div>
 	{/if}
+	<!-- Note: When all branches are hidden due to hideUnconnectedHandles, we don't show anything -->
 
 	<!-- Config button -->
 	<button
