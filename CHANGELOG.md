@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.23] - 2025-12-31
+
+### Added
+
+- **Dynamic Ports**: WorkflowNode supports runtime-defined ports via `config.dynamicInputs` and `config.dynamicOutputs`
+- **Node Extensions**: New `NodeExtensions` interface for 3rd party settings at type and instance level
+- **Hide Unconnected Handles**: Display setting to hide unconnected ports, reducing visual clutter
+- **connectedHandles Store**: Derived store tracking connected handle IDs for reactive visibility
+- **FormArray Component**: Array field handling with add/remove/reorder for configuration forms
+- **Gateway Switch Pattern**: Gateway node supports configurable branches via `config.branches`
+
+### Changed
+
+- Extracted form fields into modular components (FormField, FormFieldWrapper, FormToggle)
+- Moved `@types/uuid` to devDependencies
+- Removed sample data fallback, relies solely on API data
+
+### Fixed
+
+- GatewayNode branch label fallback now handles empty strings correctly
+- GatewayNode respects hideUnconnectedHandles for branch outputs
+
 ## [0.0.22] - 2025-12-30
 
 ### Removed
