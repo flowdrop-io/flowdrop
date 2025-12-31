@@ -14,7 +14,7 @@
 	import ConfigPanel from '$lib/components/ConfigPanel.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
-	import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
+	import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema, NodeUIExtensions } from '$lib/types/index.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import type { AuthProvider } from '$lib/types/auth.js';
@@ -644,6 +644,7 @@
 				<ConfigForm
 					schema={workflowConfigSchema}
 					values={workflowConfigValues}
+					showUIExtensions={false}
 					onSave={handleWorkflowSave}
 					onCancel={() => (isWorkflowSettingsOpen = false)}
 				/>
@@ -662,14 +663,25 @@
 			>
 				<ConfigForm
 					node={currentNode}
-					onSave={(updatedConfig) => {
+					onSave={(updatedConfig, uiExtensions?: NodeUIExtensions) => {
 						if (selectedNodeId && currentNode) {
+							// Build the updated node data
+							const updatedData = {
+								...currentNode.data,
+								config: updatedConfig
+							};
+
+							// Include UI extensions if provided
+							if (uiExtensions) {
+								updatedData.extensions = {
+									...currentNode.data.extensions,
+									ui: uiExtensions
+								};
+							}
+
 							// Handle nodeType switching if nodeType is in the config
-							let nodeUpdates: Record<string, unknown> = {
-								data: {
-									...currentNode.data,
-									config: updatedConfig
-								}
+							const nodeUpdates: Record<string, unknown> = {
+								data: updatedData
 							};
 
 							// NOTE: We do NOT change the node's type field anymore
