@@ -2,13 +2,17 @@
   Simple Node Component
   A simple node with optional input and output ports
   Styled with BEM syntax
+  
+  UI Extensions Support:
+  - hideUnconnectedHandles: Hides trigger ports that are not connected to reduce visual clutter
 -->
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { ConfigValues, NodeMetadata } from '../../types/index.js';
+	import type { ConfigValues, NodeMetadata, NodeExtensions } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor } from '$lib/utils/colors.js';
+	import { connectedHandles } from '../../stores/workflowStore.js';
 
 	const props = $props<{
 		data: {
@@ -16,6 +20,7 @@
 			config: ConfigValues;
 			metadata: NodeMetadata;
 			nodeId?: string;
+			extensions?: NodeExtensions;
 			onConfigOpen?: (node: {
 				id: string;
 				type: string;
@@ -26,6 +31,37 @@
 		isProcessing?: boolean;
 		isError?: boolean;
 	}>();
+
+	/**
+	 * Get the hideUnconnectedHandles setting from extensions
+	 * Merges node type defaults with instance overrides
+	 */
+	const hideUnconnectedHandles = $derived(() => {
+		const typeDefault = props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ?? false;
+		const instanceOverride = props.data.extensions?.ui?.hideUnconnectedHandles;
+		return instanceOverride ?? typeDefault;
+	});
+
+	/**
+	 * Check if a trigger port is connected
+	 * @param portId - The port ID to check
+	 * @param type - Whether this is an 'input' or 'output' port
+	 */
+	function isTriggerPortConnected(portId: string, type: 'input' | 'output'): boolean {
+		const handleId = `${props.data.nodeId}-${type}-${portId}`;
+		return $connectedHandles.has(handleId);
+	}
+
+	/**
+	 * Check if a trigger port should be visible
+	 * Always shows if hideUnconnectedHandles is disabled or if port is connected
+	 */
+	function shouldShowTriggerPort(portId: string, type: 'input' | 'output'): boolean {
+		if (!hideUnconnectedHandles()) {
+			return true;
+		}
+		return isTriggerPortConnected(portId, type);
+	}
 
 	// Removed local config state - now using global ConfigSidebar
 
@@ -124,8 +160,8 @@
 		id={`${props.data.nodeId}-input-${firstDataInputPort.id}`}
 	/>
 {/if}
-{#if triggerInputPort}
-	<!-- Trigger Input - positioned at bottom-left -->
+{#if triggerInputPort && shouldShowTriggerPort(triggerInputPort.id, 'input')}
+	<!-- Trigger Input - positioned at bottom-left (hidden if hideUnconnectedHandles enabled and not connected) -->
 	<Handle
 		type="target"
 		position={Position.Left}
@@ -217,8 +253,8 @@
 		)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '25%' : '50%'}; z-index: 30;"
 	/>
 {/if}
-{#if triggerOutputPort}
-	<!-- Trigger Output - positioned at bottom-right -->
+{#if triggerOutputPort && shouldShowTriggerPort(triggerOutputPort.id, 'output')}
+	<!-- Trigger Output - positioned at bottom-right (hidden if hideUnconnectedHandles enabled and not connected) -->
 	<Handle
 		type="source"
 		position={Position.Right}
