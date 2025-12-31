@@ -118,6 +118,50 @@ export type BuiltinNodeType = 'note' | 'simple' | 'square' | 'tool' | 'gateway' 
 export type NodeType = BuiltinNodeType | (string & Record<never, never>);
 
 /**
+ * UI-related extension settings for nodes
+ * Used to control visual behavior in the workflow editor
+ */
+export interface NodeUIExtensions {
+	/** Show/hide unconnected handles (ports) to reduce visual noise */
+	hideUnconnectedHandles?: boolean;
+	/** Custom styles or theme overrides */
+	style?: Record<string, unknown>;
+	/** Any other UI-specific settings */
+	[key: string]: unknown;
+}
+
+/**
+ * Custom extension properties for 3rd party integrations
+ * Allows storing additional configuration and UI state data
+ *
+ * @example
+ * ```typescript
+ * const extensions: NodeExtensions = {
+ *   ui: {
+ *     hideUnconnectedHandles: true,
+ *     style: { opacity: 0.8 }
+ *   },
+ *   "myapp:analytics": {
+ *     trackUsage: true,
+ *     customField: "value"
+ *   }
+ * };
+ * ```
+ */
+export interface NodeExtensions {
+	/**
+	 * UI-related settings for the node
+	 * Used to control visual behavior in the workflow editor
+	 */
+	ui?: NodeUIExtensions;
+	/**
+	 * Namespaced extension data from 3rd party integrations
+	 * Use your package/organization name as the key (e.g., "myapp", "acme:analyzer")
+	 */
+	[namespace: string]: unknown;
+}
+
+/**
  * Node configuration metadata
  */
 export interface NodeMetadata {
@@ -140,6 +184,11 @@ export interface NodeMetadata {
 	outputs: NodePort[];
 	configSchema?: ConfigSchema;
 	tags?: string[];
+	/**
+	 * Custom extension properties for 3rd party integrations
+	 * Allows storing additional configuration and UI state data at the node type level
+	 */
+	extensions?: NodeExtensions;
 }
 
 /**
@@ -318,6 +367,12 @@ export interface WorkflowNode extends Node {
 		nodeId?: string;
 		/** Node execution tracking information */
 		executionInfo?: NodeExecutionInfo;
+		/**
+		 * Per-instance extension properties for 3rd party integrations
+		 * Overrides or extends the node type extensions defined in metadata.extensions
+		 * Use for instance-specific UI states or custom data
+		 */
+		extensions?: NodeExtensions;
 	};
 }
 
