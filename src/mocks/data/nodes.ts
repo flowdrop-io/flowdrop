@@ -38,11 +38,11 @@ export const mockNodes: NodeMetadata[] = [
         configSchema: {
             type: "object",
             properties: {
-                nodeType: { type: "select", title: "Node Type", description: "Choose the visual representation for this node", default: "tool", enum: ["tool", "default"], enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"] },
+                nodeType: { type: "string", title: "Node Type", description: "Choose the visual representation for this node", default: "tool", enum: ["tool", "default"], enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"] },
                 targetText: { type: "string", title: "Target Text", description: "Text to analyze and potentially replace", default: "XB" },
                 replacementText: { type: "string", title: "Replacement Text", description: "Text to replace with when appropriate", default: "Canvas" },
                 analysisMode: { type: "string", title: "Analysis Mode", description: "Type of AI analysis to perform", enum: ["acronym_detection", "sentence_flow", "context_aware"], default: "context_aware" },
-                confidenceThreshold: { type: "number", title: "Confidence Threshold", description: "Minimum confidence level for making replacements (0-1)", minimum: 0, maximum: 1, default: 0.8 }
+                confidenceThreshold: { type: "number", format: "range", title: "Confidence Threshold", description: "Minimum confidence level for making replacements (0-1)", minimum: 0, maximum: 1, step: 0.01, default: 0.8 }
             }
         }
     },
@@ -101,7 +101,7 @@ export const mockNodes: NodeMetadata[] = [
             type: "object",
             properties: {
                 model: { type: "string", title: "Model", description: "The chat model to use", default: "gpt-3.5-turbo" },
-                temperature: { type: "number", title: "Temperature", description: "Model temperature (0.0 to 2.0)", default: 0.7 },
+                temperature: { type: "number", format: "range", title: "Temperature", description: "Model temperature (0.0 to 2.0)", minimum: 0, maximum: 2, step: 0.1, default: 0.7 },
                 maxTokens: { type: "integer", title: "Max Tokens", description: "Maximum tokens in response", default: 1000 },
                 systemPrompt: { type: "string", title: "System Prompt", description: "System prompt for the model", format: "multiline", default: "" }
             }
@@ -171,9 +171,9 @@ export const mockNodes: NodeMetadata[] = [
         configSchema: {
             type: "object",
             properties: {
-                nodeType: { type: "select", title: "Node Type", description: "Choose the visual representation for this node", default: "tool", enum: ["tool", "default"], enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"] },
+                nodeType: { type: "string", title: "Node Type", description: "Choose the visual representation for this node", default: "tool", enum: ["tool", "default"], enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"] },
                 classificationMode: { type: "string", title: "Classification Mode", description: "Type of analysis to perform", enum: ["keyword_only", "sentiment_analysis", "full_analysis"], default: "full_analysis" },
-                confidenceThreshold: { type: "number", title: "Confidence Threshold", description: "Minimum confidence for classification (0-1)", minimum: 0, maximum: 1, default: 0.7 },
+                confidenceThreshold: { type: "number", title: "Confidence Threshold", description: "Minimum confidence for classification (0-1)", format: "range", minimum: 0, maximum: 1, default: 0.7 },
                 categories: { type: "array", title: "Available Categories", description: "Categories to classify content into", items: { type: "string" }, default: ["support", "features", "sales", "general"] }
             }
         }
@@ -297,7 +297,7 @@ export const mockNodes: NodeMetadata[] = [
             { id: "path", name: "path", type: "output", dataType: "string", required: false, description: "The property path used for extraction" },
             { id: "success", name: "success", type: "output", dataType: "boolean", required: false, description: "Whether the extraction was successful" }
         ],
-        config: [],
+        config: {},
         configSchema: { type: "object", properties: { path: { type: "string", title: "Property Path", description: "Property path to extract data (e.g., \"[users][0][name]\" or \"data.user.email\"). Leave empty to return entire JSON.", default: "" } } }
     },
     {
@@ -369,8 +369,8 @@ export const mockNodes: NodeMetadata[] = [
             { id: "json", name: "json", type: "output", dataType: "string", required: false, description: "The JSON string representation" },
             { id: "success", name: "success", type: "output", dataType: "boolean", required: false, description: "Whether the conversion was successful" }
         ],
-        config: [],
-        configSchema: { type: "object", properties: [] }
+        config: {},
+        configSchema: { type: "object", properties: {} }
     },
     {
         id: "dataframe_operations",
@@ -478,7 +478,7 @@ export const mockNodes: NodeMetadata[] = [
             { id: "processing_metadata", name: "processing_metadata", type: "output", dataType: "json", required: false, description: "Additional metadata about the submission" }
         ],
         config: { formId: "contact_form", requiredFields: ["name", "email", "message"], validateEmail: true },
-        configSchema: { type: "object", properties: { nodeType: { type: "select", title: "Node Type", description: "Choose the visual representation for this node", default: "tool", enum: ["tool", "default"], enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"] }, formId: { type: "string", title: "Form ID", description: "Identifier for the form type", default: "contact_form" }, requiredFields: { type: "array", title: "Required Fields", description: "List of required form fields", items: { type: "string" }, default: ["name", "email", "message"] }, validateEmail: { type: "boolean", title: "Validate Email", description: "Whether to validate email field format", default: true } } }
+        configSchema: { type: "object", properties: { nodeType: { type: "string", title: "Node Type", description: "Choose the visual representation for this node", default: "tool", enum: ["tool", "default"], enumNames: ["Tool Node (with metadata port)", "Default Node (standard ports)"] }, formId: { type: "string", title: "Form ID", description: "Identifier for the form type", default: "contact_form" }, requiredFields: { type: "array", title: "Required Fields", description: "List of required form fields", items: { type: "string" }, default: ["name", "email", "message"] }, validateEmail: { type: "boolean", title: "Validate Email", description: "Whether to validate email field format", default: true } } }
     },
     {
         id: "http_request",
@@ -593,8 +593,8 @@ export const mockNodes: NodeMetadata[] = [
             { id: "data", name: "data", type: "output", dataType: "mixed", required: false, description: "The decoded structured data (array/object)" },
             { id: "success", name: "success", type: "output", dataType: "boolean", required: false, description: "Whether the conversion was successful" }
         ],
-        config: [],
-        configSchema: { type: "object", properties: [] }
+        config: {},
+        configSchema: { type: "object", properties: {} }
     },
     {
         id: "message_to_data",
@@ -617,7 +617,7 @@ export const mockNodes: NodeMetadata[] = [
             { id: "extracted_fields", name: "extracted_fields", type: "output", dataType: "array", required: false, description: "The fields that were extracted" },
             { id: "original_message", name: "original_message", type: "output", dataType: "string", required: false, description: "The original message" }
         ],
-        config: [],
+        config: {},
         configSchema: { type: "object", properties: { format: { type: "string", title: "Format", description: "Data format to parse", default: "json", enum: ["json", "csv", "xml", "yaml", "key_value"] }, extractFields: { type: "array", title: "Extract Fields", description: "Specific fields to extract from the data", default: [] } } }
     },
     {
@@ -654,7 +654,7 @@ export const mockNodes: NodeMetadata[] = [
         inputs: [],
         outputs: [],
         config: { model: "gpt-3.5-turbo", temperature: 0.7, maxTokens: 1000, apiKey: "" },
-        configSchema: []
+        configSchema: { type: "object", properties: {} }
     },
     {
         id: "openai_embeddings",
@@ -780,7 +780,7 @@ export const mockNodes: NodeMetadata[] = [
             { id: "message", name: "message", type: "output", dataType: "string", required: false, description: "The input message" }
         ],
         config: { model: "gpt-3.5-turbo", temperature: 0.7, maxIterations: 5 },
-        configSchema: { type: "object", properties: { systemPrompt: { type: "string", title: "System Prompt", description: "System prompt for the agent", format: "multiline", default: "You are a helpful assistant." }, temperature: { type: "number", title: "Temperature", description: "Temperature for response generation (0.0 to 1.0)", default: 0.7 }, maxTokens: { type: "integer", title: "Max Tokens", description: "Maximum tokens for response", default: 1000 } } }
+        configSchema: { type: "object", properties: { systemPrompt: { type: "string", title: "System Prompt", description: "System prompt for the agent", format: "multiline", default: "You are a helpful assistant." }, temperature: { type: "number", format: "range", title: "Temperature", description: "Temperature for response generation (0.0 to 1.0)", minimum: 0, maximum: 1, step: 0.1, default: 0.7 }, maxTokens: { type: "integer", title: "Max Tokens", description: "Maximum tokens for response", default: 1000 } } }
     },
     {
         id: "split_text",

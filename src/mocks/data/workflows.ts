@@ -268,6 +268,7 @@ export const demoAIContentWorkflow: Workflow = {
 							name: "confidence_threshold",
 							type: "output",
 							dataType: "number",
+							format: "range",
 							required: false,
 							description: "Confidence threshold used for replacements"
 						},
@@ -320,8 +321,10 @@ export const demoAIContentWorkflow: Workflow = {
 								type: "number",
 								title: "Confidence Threshold",
 								description: "Minimum confidence level for making replacements (0-1)",
+								format: "range",
 								minimum: 0,
 								maximum: 1,
+								step: 0.01,
 								default: 0.8
 							}
 						}
@@ -452,8 +455,12 @@ export const demoAIContentWorkflow: Workflow = {
 							},
 							temperature: {
 								type: "number",
+								format: "range",
 								title: "Temperature",
 								description: "Temperature for response generation (0.0 to 1.0)",
+								minimum: 0,
+								maximum: 1,
+								step: 0.1,
 								default: 0.7
 							},
 							maxTokens: {
@@ -835,6 +842,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 							"dataType": "number",
 							"required": false,
 							"description": "Confidence threshold used for replacements"
+
 						},
 						{
 							"id": "analyzed_at",
@@ -895,8 +903,10 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 								"type": "number",
 								"title": "Confidence Threshold",
 								"description": "Minimum confidence level for making replacements (0-1)",
+								"format": "range",
 								"minimum": 0,
 								"maximum": 1,
+								"step": 0.01,
 								"default": 0.8
 							}
 						}
