@@ -556,6 +556,25 @@ export const mockNodes: NodeMetadata[] = [
         configSchema: { type: "object", properties: { matchText: { type: "string", title: "Match Text", description: "The text to match against", default: "" }, operator: { type: "string", title: "Operator", description: "The comparison operator to use", default: "equals", enum: ["equals", "not_equals", "contains", "starts_with", "ends_with", "regex"] }, caseSensitive: { type: "boolean", title: "Case Sensitive", description: "Whether string comparisons are case sensitive", default: false }, branches: { type: "array", description: "The active branches", default: [{ name: "True", value: true }, { name: "False", value: false }], format: "hidden", items: { type: "object", properties: { name: { type: "string", description: "The name of the branch" }, value: { type: "boolean", description: "The value of the branch" } }, description: "The active branch" } } } }
     },
     {
+        id: "switch",
+        name: "Switch",
+        type: "gateway",
+        supportedTypes: ["gateway"],
+        description: "Multi-branch routing based on configurable case values",
+        category: "logic",
+        icon: "mdi:source-branch-sync",
+        color: "#8b5cf6",
+        version: "1.0.0",
+        tags: ["logic", "switch", "case", "routing", "conditional", "branch"],
+        inputs: [
+            { id: "value", name: "Value", type: "input", dataType: "string", required: true, description: "The value to match against branch cases" },
+            { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" }
+        ],
+        outputs: [],
+        config: { defaultBranch: "default", caseSensitive: false, branches: [{ name: "case_1", label: "Case 1", value: "option1" }, { name: "case_2", label: "Case 2", value: "option2" }, { name: "default", label: "Default", value: "" }] },
+        configSchema: { type: "object", properties: { defaultBranch: { type: "string", title: "Default Branch", description: "The branch to use when no case matches", default: "default" }, caseSensitive: { type: "boolean", title: "Case Sensitive", description: "Whether case matching is case sensitive", default: false }, branches: { type: "array", title: "Branches", description: "Configure the switch cases and their output branches", items: { type: "object", title: "Branch", properties: { name: { type: "string", title: "Branch ID", description: "Unique identifier for this branch (used for connections)", placeholder: "e.g., case_success" }, label: { type: "string", title: "Label", description: "Display label for this branch", placeholder: "e.g., Success Case" }, value: { type: "string", title: "Match Value", description: "Value to match for this branch (leave empty for default)", placeholder: "e.g., success" } }, required: ["name"] }, default: [{ name: "case_1", label: "Case 1", value: "option1" }, { name: "case_2", label: "Case 2", value: "option2" }, { name: "default", label: "Default", value: "" }], minItems: 1 } } }
+    },
+    {
         id: "json_to_data",
         name: "JSON to Data",
         type: "default",
