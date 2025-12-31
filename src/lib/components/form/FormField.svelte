@@ -5,7 +5,7 @@
   Features:
   - Automatically selects the correct field component based on schema
   - Wraps fields with FormFieldWrapper for consistent layout
-  - Supports all current field types (string, number, boolean, select, checkbox group)
+  - Supports all current field types (string, number, boolean, select, checkbox group, range)
   - Extensible architecture for future complex types (array, object)
   
   Type Resolution Order:
@@ -13,11 +13,12 @@
   2. enum with multiple: true -> FormCheckboxGroup
   3. enum -> FormSelect
   4. format: 'multiline' -> FormTextarea
-  5. type: 'string' -> FormTextField
-  6. type: 'number' or 'integer' -> FormNumberField
-  7. type: 'boolean' -> FormToggle
-  8. type: 'select' or has options -> FormSelect
-  9. fallback -> FormTextField
+  5. format: 'range' (number/integer) -> FormRangeField
+  6. type: 'string' -> FormTextField
+  7. type: 'number' or 'integer' -> FormNumberField
+  8. type: 'boolean' -> FormToggle
+  9. type: 'select' or has options -> FormSelect
+  10. fallback -> FormTextField
 -->
 
 <script lang="ts">
@@ -25,6 +26,7 @@
 	import FormTextField from "./FormTextField.svelte";
 	import FormTextarea from "./FormTextarea.svelte";
 	import FormNumberField from "./FormNumberField.svelte";
+	import FormRangeField from "./FormRangeField.svelte";
 	import FormToggle from "./FormToggle.svelte";
 	import FormSelect from "./FormSelect.svelte";
 	import FormCheckboxGroup from "./FormCheckboxGroup.svelte";
@@ -92,6 +94,11 @@
 		// Multiline string -> textarea
 		if (schema.type === "string" && schema.format === "multiline") {
 			return "textarea";
+		}
+
+		// Range slider for number/integer with format: "range"
+		if ((schema.type === "number" || schema.type === "integer") && schema.format === "range") {
+			return "range";
 		}
 
 		// String -> text field
@@ -214,6 +221,17 @@
 				placeholder={schema.placeholder ?? ""}
 				min={schema.minimum}
 				max={schema.maximum}
+				{required}
+				ariaDescribedBy={descriptionId}
+				onChange={(val) => onChange(val)}
+			/>
+		{:else if fieldType === "range"}
+			<FormRangeField
+				id={fieldKey}
+				value={numberValue}
+				min={schema.minimum}
+				max={schema.maximum}
+				step={schema.step}
 				{required}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}

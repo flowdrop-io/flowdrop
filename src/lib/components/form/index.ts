@@ -43,6 +43,7 @@ export { default as FormFieldWrapper } from "./FormFieldWrapper.svelte";
 export { default as FormTextField } from "./FormTextField.svelte";
 export { default as FormTextarea } from "./FormTextarea.svelte";
 export { default as FormNumberField } from "./FormNumberField.svelte";
+export { default as FormRangeField } from "./FormRangeField.svelte";
 export { default as FormToggle } from "./FormToggle.svelte";
 export { default as FormSelect } from "./FormSelect.svelte";
 export { default as FormCheckboxGroup } from "./FormCheckboxGroup.svelte";
