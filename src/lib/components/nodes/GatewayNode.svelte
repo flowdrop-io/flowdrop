@@ -255,7 +255,7 @@
 									class="flowdrop-text--xs flowdrop-font--medium"
 									class:flowdrop-text--active={isActive}
 								>
-									{branch.label ?? branch.name}
+									{branch.label || branch.name}
 								</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
