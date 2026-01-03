@@ -24,8 +24,11 @@ export type FieldType =
  * - multiline: Renders as textarea
  * - hidden: Field is hidden from UI but included in form submission
  * - range: Renders as range slider for numeric values
+ * - json: Renders as CodeMirror JSON editor
+ * - code: Alias for json, renders as CodeMirror editor
+ * - markdown: Renders as SimpleMDE Markdown editor
  */
-export type FieldFormat = "multiline" | "hidden" | "range" | string;
+export type FieldFormat = "multiline" | "hidden" | "range" | "json" | "code" | "markdown" | string;
 
 /**
  * Option type for select and checkbox group fields
@@ -149,6 +152,40 @@ export interface ArrayFieldProps extends BaseFieldProps {
     /** Label for the add button */
     addLabel?: string;
     onChange: (value: unknown[]) => void;
+}
+
+/**
+ * Properties for code editor fields (CodeMirror-based)
+ */
+export interface CodeEditorFieldProps extends BaseFieldProps {
+    /** Current value - can be string (raw JSON) or object */
+    value: unknown;
+    /** Whether to use dark theme */
+    darkTheme?: boolean;
+    /** Editor height in pixels or CSS value */
+    height?: string;
+    /** Whether to auto-format JSON on blur */
+    autoFormat?: boolean;
+    /** Callback when value changes */
+    onChange: (value: unknown) => void;
+}
+
+/**
+ * Properties for markdown editor fields (SimpleMDE-based)
+ */
+export interface MarkdownEditorFieldProps extends BaseFieldProps {
+    /** Current value (markdown string) */
+    value: string;
+    /** Editor height in pixels or CSS value */
+    height?: string;
+    /** Whether to show the toolbar */
+    showToolbar?: boolean;
+    /** Whether to show the status bar */
+    showStatusBar?: boolean;
+    /** Whether to enable spell checking */
+    spellChecker?: boolean;
+    /** Callback when value changes */
+    onChange: (value: string) => void;
 }
 
 /**
