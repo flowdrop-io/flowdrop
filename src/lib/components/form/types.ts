@@ -27,8 +27,9 @@ export type FieldType =
  * - json: Renders as CodeMirror JSON editor
  * - code: Alias for json, renders as CodeMirror editor
  * - markdown: Renders as SimpleMDE Markdown editor
+ * - template: Renders as CodeMirror editor with Twig/Liquid syntax highlighting
  */
-export type FieldFormat = "multiline" | "hidden" | "range" | "json" | "code" | "markdown" | string;
+export type FieldFormat = "multiline" | "hidden" | "range" | "json" | "code" | "markdown" | "template" | string;
 
 /**
  * Option type for select and checkbox group fields
@@ -184,6 +185,24 @@ export interface MarkdownEditorFieldProps extends BaseFieldProps {
     showStatusBar?: boolean;
     /** Whether to enable spell checking */
     spellChecker?: boolean;
+    /** Callback when value changes */
+    onChange: (value: string) => void;
+}
+
+/**
+ * Properties for template editor fields (CodeMirror with Twig/Liquid syntax)
+ */
+export interface TemplateEditorFieldProps extends BaseFieldProps {
+    /** Current template value */
+    value: string;
+    /** Whether to use dark theme */
+    darkTheme?: boolean;
+    /** Editor height in pixels or CSS value */
+    height?: string;
+    /** Available variable names for hints (optional) */
+    variableHints?: string[];
+    /** Placeholder variable example for the hint */
+    placeholderExample?: string;
     /** Callback when value changes */
     onChange: (value: string) => void;
 }
