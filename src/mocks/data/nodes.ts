@@ -1222,6 +1222,64 @@ export const mockNodes: NodeMetadata[] = [
                 }
             }
         }
+    },
+    {
+        id: "json_validator",
+        name: "JSON Validator",
+        type: "default",
+        supportedTypes: ["default"],
+        description: "Validates JSON data against a JSON Schema and outputs validation result with original data",
+        category: "processing",
+        icon: "mdi:check-decagram",
+        color: "#10b981",
+        version: "1.0.0",
+        tags: ["validation", "json", "schema", "data-quality"],
+        inputs: [
+            { id: "data", name: "Data", type: "input", dataType: "mixed", required: false, description: "JSON data to validate" },
+            { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" }
+        ],
+        outputs: [
+            { id: "valid", name: "valid", type: "output", dataType: "boolean", required: false, description: "Whether the data is valid (true/false)" },
+            { id: "data", name: "data", type: "output", dataType: "mixed", required: false, description: "Original data passed through" },
+            { id: "errors", name: "errors", type: "output", dataType: "array", required: false, description: "Array of validation errors (if any)" },
+            { id: "schema", name: "schema", type: "output", dataType: "json", required: false, description: "The schema used for validation" }
+        ],
+        config: {
+            jsonSchema: {
+                type: "object",
+                properties: {
+                    name: { type: "string" },
+                    age: { type: "number" }
+                },
+                required: ["name"]
+            },
+            strictMode: true
+        },
+        configSchema: {
+            type: "object",
+            properties: {
+                jsonSchema: {
+                    type: "object",
+                    title: "JSON Schema",
+                    description: "The JSON Schema to validate against (JSON Schema Draft 7)",
+                    format: "json",
+                    default: {
+                        type: "object",
+                        properties: {
+                            name: { type: "string" },
+                            age: { type: "number" }
+                        },
+                        required: ["name"]
+                    }
+                },
+                strictMode: {
+                    type: "boolean",
+                    title: "Strict Mode",
+                    description: "Fail validation if additional properties are present",
+                    default: true
+                }
+            }
+        }
     }
 ];
 
