@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.25] - 2026-01-03
+
+### Added
+
+#### Rich Form Editors
+
+- **FormCodeEditor**: CodeMirror-based JSON editor component for structured data
+  - JSON syntax highlighting with CodeMirror 6
+  - Real-time JSON validation with inline error display
+  - Auto-formatting on blur (optional)
+  - Dark/light theme support
+  - Use with schema `format: "json"` or `format: "code"`
+
+- **FormMarkdownEditor**: EasyMDE-based Markdown editor for rich text content
+  - Full Markdown editing with live preview
+  - Toolbar with common formatting options (bold, italic, headers, lists, etc.)
+  - Autosave support (optional)
+  - Spell checking enabled
+  - SSR-safe: Only loads editor on the client side
+  - Use with schema `format: "markdown"`
+
+- **FormTemplateEditor**: CodeMirror-based template editor for Twig/Liquid-style templates
+  - Custom syntax highlighting for `{{ variable }}` placeholders
+  - Variable hints display showing available placeholders
+  - Line wrapping for better template readability
+  - Dark/light theme support
+  - Use with schema `format: "template"`
+
+#### Demo Node Types
+
+- **JSON Validator Node**: New demo node for validating JSON data against JSON Schema
+  - Validates input data against configurable JSON Schema (Draft 7)
+  - Outputs validation result (boolean), original data, errors array, and schema used
+  - Strict mode option to fail on additional properties
+  - Demonstrates usage of `FormCodeEditor` with `format: "json"`
+
+- **Prompt Template Node**: New demo node for rendering dynamic templates
+  - Twig-style `{{ variable }}` placeholder substitution
+  - Outputs rendered text, original template, variables used, and missing variables list
+  - Strict mode option to error on missing variables
+  - Demonstrates usage of `FormTemplateEditor` with `format: "template"`
+
+### Changed
+
+- **FieldFormat Type**: Extended to include new format types: `"json"`, `"code"`, `"markdown"`, `"template"`
+
+### Technical Details
+
+- All new editors maintain consistent styling with existing form components
+- Proper ARIA attributes for accessibility
+- Full TypeScript type safety with JSDoc documentation
+- Zero linter errors introduced
+
 ## [0.0.24] - 2025-12-31
 
 ### Added
