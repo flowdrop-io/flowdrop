@@ -5,20 +5,23 @@
   Features:
   - Automatically selects the correct field component based on schema
   - Wraps fields with FormFieldWrapper for consistent layout
-  - Supports all current field types (string, number, boolean, select, checkbox group, range)
+  - Supports all current field types (string, number, boolean, select, checkbox group, range, json, markdown)
   - Extensible architecture for future complex types (array, object)
   
   Type Resolution Order:
   1. format: 'hidden' -> skip rendering (return nothing)
-  2. enum with multiple: true -> FormCheckboxGroup
-  3. enum -> FormSelect
-  4. format: 'multiline' -> FormTextarea
-  5. format: 'range' (number/integer) -> FormRangeField
-  6. type: 'string' -> FormTextField
-  7. type: 'number' or 'integer' -> FormNumberField
-  8. type: 'boolean' -> FormToggle
-  9. type: 'select' or has options -> FormSelect
-  10. fallback -> FormTextField
+  2. format: 'json' or 'code' -> FormCodeEditor (CodeMirror JSON editor)
+  3. format: 'markdown' -> FormMarkdownEditor (SimpleMDE Markdown editor)
+  4. enum with multiple: true -> FormCheckboxGroup
+  5. enum -> FormSelect
+  6. format: 'multiline' -> FormTextarea
+  7. format: 'range' (number/integer) -> FormRangeField
+  8. type: 'string' -> FormTextField
+  9. type: 'number' or 'integer' -> FormNumberField
+  10. type: 'boolean' -> FormToggle
+  11. type: 'select' or has options -> FormSelect
+  12. type: 'object' (without format) -> FormCodeEditor (for JSON objects)
+  13. fallback -> FormTextField
 -->
 
 <script lang="ts">
@@ -31,6 +34,8 @@
 	import FormSelect from "./FormSelect.svelte";
 	import FormCheckboxGroup from "./FormCheckboxGroup.svelte";
 	import FormArray from "./FormArray.svelte";
+	import FormCodeEditor from "./FormCodeEditor.svelte";
+	import FormMarkdownEditor from "./FormMarkdownEditor.svelte";
 	import type { FieldSchema, FieldOption } from "./types.js";
 
 	interface Props {
@@ -81,6 +86,16 @@
 			return "hidden";
 		}
 
+		// JSON/code editor for format: "json" or "code"
+		if (schema.format === "json" || schema.format === "code") {
+			return "code-editor";
+		}
+
+		// Markdown editor for format: "markdown"
+		if (schema.format === "markdown") {
+			return "markdown-editor";
+		}
+
 		// Enum with multiple selection -> checkbox group
 		if (schema.enum && schema.multiple) {
 			return "checkbox-group";
@@ -126,9 +141,9 @@
 			return "array";
 		}
 
-		// Future: Object type support
+		// Object type without specific format -> CodeMirror JSON editor
 		if (schema.type === "object") {
-			return "object";
+			return "code-editor";
 		}
 
 		// Fallback to text
@@ -262,11 +277,31 @@
 				addLabel={`Add ${schema.items.title ?? "Item"}`}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "object"}
-			<!-- Future: Object field component -->
-			<div class="form-field__unsupported">
-				<p>Object fields are not yet supported. Coming soon!</p>
-			</div>
+		{:else if fieldType === "code-editor"}
+			<FormCodeEditor
+				id={fieldKey}
+				{value}
+				placeholder={schema.placeholder ?? "{}"}
+				{required}
+				height={schema.height as string | undefined ?? "200px"}
+				darkTheme={schema.darkTheme as boolean | undefined ?? false}
+				autoFormat={schema.autoFormat as boolean | undefined ?? true}
+				ariaDescribedBy={descriptionId}
+				onChange={(val) => onChange(val)}
+			/>
+		{:else if fieldType === "markdown-editor"}
+			<FormMarkdownEditor
+				id={fieldKey}
+				value={stringValue}
+				placeholder={schema.placeholder ?? "Write your markdown here..."}
+				{required}
+				height={schema.height as string | undefined ?? "300px"}
+				showToolbar={schema.showToolbar as boolean | undefined ?? true}
+				showStatusBar={schema.showStatusBar as boolean | undefined ?? true}
+				spellChecker={schema.spellChecker as boolean | undefined ?? false}
+				ariaDescribedBy={descriptionId}
+				onChange={(val) => onChange(val)}
+			/>
 		{:else}
 			<!-- Fallback to text input -->
 			<FormTextField

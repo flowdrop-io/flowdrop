@@ -638,7 +638,7 @@ export const mockNodes: NodeMetadata[] = [
             { id: "message", name: "Message", type: "output", dataType: "string", required: false, description: "Status message about the note" }
         ],
         config: { content: "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!", noteType: "info" },
-        configSchema: { type: "object", properties: { content: { type: "string", title: "Note Content", description: "Documentation or comment text (supports Markdown)", format: "multiline", default: "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!" }, noteType: { type: "string", title: "Note Type", description: "Visual style and color of the note", default: "info", enum: ["info", "warning", "success", "error", "note"] } } }
+        configSchema: { type: "object", properties: { content: { type: "string", title: "Note Content", description: "Documentation or comment text (supports Markdown)", format: "markdown", default: "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!" }, noteType: { type: "string", title: "Note Type", description: "Visual style and color of the note", default: "info", enum: ["info", "warning", "success", "error", "note"] } } }
     },
     {
         id: "openai_chat",
