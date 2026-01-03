@@ -682,29 +682,6 @@ export const mockNodes: NodeMetadata[] = [
         configSchema: { type: "object", properties: { model: { type: "string", title: "Model", description: "OpenAI embedding model to use", default: "text-embedding-ada-002" }, apiKey: { type: "string", title: "API Key", description: "OpenAI API key", default: "" }, maxTokens: { type: "integer", title: "Max Tokens", description: "Maximum tokens per request", default: 8191 } } }
     },
     {
-        id: "prompt_template",
-        name: "Prompt Template",
-        type: "default",
-        supportedTypes: ["default"],
-        description: "Create reusable prompt templates with variables",
-        category: "prompts",
-        icon: "mdi:message-text",
-        color: "#f59e0b",
-        version: "1.0.0",
-        tags: ["prompt", "template", "variable"],
-        inputs: [
-            { id: "variables", name: "Input Variables", type: "input", dataType: "json", required: false, description: "Variables to substitute in the template" },
-            { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" }
-        ],
-        outputs: [
-            { id: "prompt", name: "prompt", type: "output", dataType: "string", required: false, description: "The generated prompt" },
-            { id: "template", name: "template", type: "output", dataType: "string", required: false, description: "The original template" },
-            { id: "variables", name: "variables", type: "output", dataType: "json", required: false, description: "The variables used" }
-        ],
-        config: { template: "You are a helpful assistant. {context}", variables: ["context"] },
-        configSchema: { type: "object", properties: { template: { type: "string", title: "Template", description: "The prompt template with variables in {{variable}} format", default: "" }, variables: { type: "object", title: "Variables", description: "Default variables for the template", default: [] } } }
-    },
-    {
         id: "regex_extractor",
         name: "Regex Extractor",
         type: "default",
@@ -1277,6 +1254,66 @@ export const mockNodes: NodeMetadata[] = [
                     title: "Strict Mode",
                     description: "Fail validation if additional properties are present",
                     default: true
+                }
+            }
+        }
+    },
+    {
+        id: "prompt_template",
+        name: "Prompt Template",
+        type: "default",
+        supportedTypes: ["default"],
+        description: "Render dynamic templates using Twig-style {{ variable }} placeholders with data from inputs",
+        category: "processing",
+        icon: "mdi:text-box-edit-outline",
+        color: "#a855f7",
+        version: "1.0.0",
+        tags: ["template", "prompt", "text", "variable", "twig", "render", "interpolation"],
+        inputs: [
+            { id: "data", name: "Data", type: "input", dataType: "json", required: false, description: "Object containing variables to substitute in the template (e.g., { name: 'John', order_id: 123 })" },
+            { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" }
+        ],
+        outputs: [
+            { id: "output", name: "output", type: "output", dataType: "string", required: false, description: "The rendered template with all variables substituted" },
+            { id: "template", name: "template", type: "output", dataType: "string", required: false, description: "The original template string used" },
+            { id: "variables", name: "variables", type: "output", dataType: "json", required: false, description: "Object containing the variables that were substituted" },
+            { id: "missing_variables", name: "missing_variables", type: "output", dataType: "array", required: false, description: "List of variable names found in template but missing from data" },
+            { id: "success", name: "success", type: "output", dataType: "boolean", required: false, description: "Whether template rendering completed without errors" }
+        ],
+        config: {
+            template: "Hello {{ name }},\n\nYour order #{{ order_id }} has been {{ status }}.\n\nThank you for choosing us!",
+            strictMode: false,
+            preserveWhitespace: true
+        },
+        configSchema: {
+            type: "object",
+            properties: {
+                template: {
+                    type: "string",
+                    title: "Template",
+                    description: "Template text with {{ variable }} placeholders that will be replaced with values from the data input",
+                    format: "template",
+                    default: "Hello {{ name }},\n\nYour order #{{ order_id }} has been {{ status }}.\n\nThank you for choosing us!",
+                    height: "300px",
+                    placeholderExample: "Dear {{ customer_name }}, your {{ product_name }} is ready for pickup."
+                },
+                strictMode: {
+                    type: "boolean",
+                    title: "Strict Mode",
+                    description: "When enabled, throw an error if a variable in the template is missing from the data. When disabled, missing variables are left as-is.",
+                    default: false
+                },
+                preserveWhitespace: {
+                    type: "boolean",
+                    title: "Preserve Whitespace",
+                    description: "Preserve whitespace and newlines in the rendered output",
+                    default: true
+                },
+                fallbackValue: {
+                    type: "string",
+                    title: "Fallback Value",
+                    description: "Value to use for missing variables when strict mode is off (leave empty to keep the placeholder)",
+                    default: ""
                 }
             }
         }
