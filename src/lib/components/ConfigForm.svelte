@@ -16,9 +16,10 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import type { ConfigSchema, WorkflowNode, NodeUIExtensions } from "$lib/types/index.js";
-	import SchemaFormAdapter from "$lib/components/SchemaFormAdapter.svelte";
+	import Icon from '@iconify/svelte';
+	import type { ConfigSchema, WorkflowNode, NodeUIExtensions } from '$lib/types/index.js';
+	import SchemaFormAdapter from '$lib/components/SchemaFormAdapter.svelte';
+	import { formConfig } from '$lib/stores/formConfig.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -29,23 +30,22 @@
 		values?: Record<string, unknown>;
 		/** Whether to show UI extension settings section */
 		showUIExtensions?: boolean;
-		/** Form adapter mode: "json-editor" or "native" */
-		mode?: "json-editor" | "native";
+		/** Form adapter mode: "json-editor" or "native" (defaults to global config) */
+		mode?: 'json-editor' | 'native';
 		/** Callback when form is saved (includes both config and extensions if enabled) */
 		onSave: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is cancelled */
 		onCancel: () => void;
 	}
 
-	let { 
-		node, 
-		schema, 
-		values, 
-		showUIExtensions = true, 
-		mode = "json-editor",
-		onSave, 
-		onCancel 
-	}: Props = $props();
+	let { node, schema, values, showUIExtensions = true, mode, onSave, onCancel }: Props = $props();
+
+	/**
+	 * Determine the actual mode to use:
+	 * 1. Use explicit prop if provided
+	 * 2. Fall back to global configuration
+	 */
+	const actualMode = $derived(mode ?? $formConfig.mode);
 
 	/**
 	 * Reference to the SchemaFormAdapter instance
@@ -58,7 +58,7 @@
 	 */
 	const configSchema = $derived.by<ConfigSchema | undefined>(() => {
 		const baseSchema = schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
-		
+
 		if (!baseSchema) return undefined;
 
 		// If UI extensions are enabled, merge them into the schema
@@ -68,10 +68,11 @@
 				properties: {
 					...baseSchema.properties,
 					// Add UI extension properties
-					"__ui_hideUnconnectedHandles": {
-						type: "boolean",
-						title: "Hide Unconnected Ports",
-						description: "Hide input and output ports that are not connected to reduce visual clutter",
+					__ui_hideUnconnectedHandles: {
+						type: 'boolean',
+						title: 'Hide Unconnected Ports',
+						description:
+							'Hide input and output ports that are not connected to reduce visual clutter',
 						default: false
 					}
 				}
@@ -88,7 +89,7 @@
 	 */
 	const initialValues = $derived.by<Record<string, unknown>>(() => {
 		const baseValues = values ?? node?.data.config ?? {};
-		
+
 		// If UI extensions are enabled, merge extension values
 		if (showUIExtensions && node) {
 			const typeDefaults = node.data.metadata?.extensions?.ui ?? {};
@@ -97,7 +98,7 @@
 
 			return {
 				...baseValues,
-				"__ui_hideUnconnectedHandles": uiExtensions.hideUnconnectedHandles ?? false
+				__ui_hideUnconnectedHandles: uiExtensions.hideUnconnectedHandles ?? false
 			};
 		}
 
@@ -112,16 +113,16 @@
 		if (!formAdapter) return;
 
 		const allValues = formAdapter.getValue();
-		
+
 		// Separate UI extension fields (prefixed with __ui_)
 		const configValues: Record<string, unknown> = {};
 		const uiExtensions: NodeUIExtensions = {};
 
 		Object.entries(allValues).forEach(([key, value]) => {
-			if (key.startsWith("__ui_")) {
+			if (key.startsWith('__ui_')) {
 				// Extract UI extension field
-				const extensionKey = key.replace("__ui_", "");
-				if (extensionKey === "hideUnconnectedHandles") {
+				const extensionKey = key.replace('__ui_', '');
+				if (extensionKey === 'hideUnconnectedHandles') {
 					uiExtensions.hideUnconnectedHandles = Boolean(value);
 				}
 			} else {
@@ -153,7 +154,7 @@
 				bind:this={formAdapter}
 				schema={configSchema}
 				values={initialValues}
-				{mode}
+				mode={actualMode}
 				required={configSchema.required}
 				nodeId={node?.id}
 			/>

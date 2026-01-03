@@ -230,6 +230,10 @@ export {
 	setOnWorkflowChange
 } from './stores/workflowStore.js';
 
+// Export form configuration
+export { formConfig, setFormMode, getFormConfig } from './stores/formConfig.js';
+export type { FormMode, FormConfig } from './stores/formConfig.js';
+
 // Export endpoint configuration
 export * from './config/endpoints.js';
 export { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';

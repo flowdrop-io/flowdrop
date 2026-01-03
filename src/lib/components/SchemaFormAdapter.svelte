@@ -1,36 +1,9 @@
-<!--
-  SchemaFormAdapter Component
-  
-  Adapter component that provides a unified interface for schema-based form rendering.
-  Supports two modes:
-  - "json-editor": Uses @json-editor/json-editor library for robust JSON Schema support
-  - "native": Uses custom FormField components (original implementation)
-  
-  Features:
-  - Emits change events on form value changes
-  - Handles validation using the underlying implementation
-  - Provides getValue() method for parent components
-  - Design tokens system for consistent theming across forms
-  
-  Usage:
-    <SchemaFormAdapter 
-      schema={mySchema} 
-      values={initialValues} 
-      mode="json-editor"
-      onchange={(values) => console.log(values)}
-    />
--->
-
-<svelte:head>
-	<link rel="stylesheet" href="/src/lib/styles/form-tokens.css" />
-</svelte:head>
-
 <script lang="ts">
-	import { onMount, onDestroy, tick } from "svelte";
-	import type { ConfigSchema } from "$lib/types/index.js";
-	import type { JSONEditor as JSONEditorType, ValidationError } from "$lib/types/json-editor.js";
-	import { FormField } from "$lib/components/form/index.js";
-	import type { FieldSchema } from "$lib/components/form/index.js";
+	import { onMount, onDestroy, tick } from 'svelte';
+	import type { ConfigSchema } from '$lib/types/index.js';
+	import type { JSONEditor as JSONEditorType, ValidationError } from '$lib/types/json-editor.js';
+	import { FormField } from '$lib/components/form/index.js';
+	import type { FieldSchema } from '$lib/components/form/index.js';
 
 	interface Props {
 		/** JSON Schema for form generation */
@@ -38,7 +11,7 @@
 		/** Initial form values */
 		values?: Record<string, unknown>;
 		/** Mode: "json-editor" or "native" */
-		mode?: "json-editor" | "native";
+		mode?: 'json-editor' | 'native';
 		/** Required fields list (for native mode) */
 		required?: string[];
 		/** Callback when form values change */
@@ -49,10 +22,10 @@
 		nodeId?: string;
 	}
 
-	let { 
-		schema, 
-		values = {}, 
-		mode = "json-editor", 
+	let {
+		schema,
+		values = {},
+		mode = 'json-editor',
 		required = [],
 		onchange,
 		onvalidate,
@@ -61,7 +34,7 @@
 
 	/** Container element for json-editor */
 	let editorContainer: HTMLDivElement;
-	
+
 	/** JSON Editor instance */
 	let editor: JSONEditorType | null = null;
 
@@ -75,7 +48,7 @@
 	 * Create a stable key for the form that changes only when the node changes
 	 * Falls back to schema title if nodeId is not provided
 	 */
-	const formKey = $derived(nodeId ?? schema?.title ?? "default");
+	const formKey = $derived(nodeId ?? schema?.title ?? 'default');
 
 	/**
 	 * Track the previous key to detect changes
@@ -89,30 +62,30 @@
 	$effect(() => {
 		// Watch for formKey changes
 		const currentKey = formKey;
-		
+
 		// Skip initial mount (let onMount handle it)
 		if (previousKey === undefined) {
 			previousKey = currentKey;
 			return;
 		}
-		
+
 		// Only reinitialize if the key actually changed
 		if (currentKey !== previousKey) {
 			previousKey = currentKey;
-			
+
 			// Clean up existing editor
 			if (mutationObserver) {
 				mutationObserver.disconnect();
 				mutationObserver = null;
 			}
-			
+
 			if (editor) {
 				editor.destroy();
 				editor = null;
 			}
-			
+
 			// Reinitialize with new schema and values
-			if (mode === "json-editor") {
+			if (mode === 'json-editor') {
 				// Use setTimeout to ensure DOM is ready
 				setTimeout(() => {
 					initJSONEditor();
@@ -131,13 +104,14 @@
 
 		try {
 			// Dynamically import json-editor
-			const jsonEditorModule = await import("@json-editor/json-editor");
-			
+			const jsonEditorModule = await import('@json-editor/json-editor');
+
 			// Access the constructor - it might be default export or named export or the module itself
-			const JSONEditor = jsonEditorModule.default || jsonEditorModule.JSONEditor || jsonEditorModule;
-			
-			if (typeof JSONEditor !== "function") {
-				console.error("JSONEditor constructor not found. Module:", Object.keys(jsonEditorModule));
+			const JSONEditor =
+				jsonEditorModule.default || jsonEditorModule.JSONEditor || jsonEditorModule;
+
+			if (typeof JSONEditor !== 'function') {
+				console.error('JSONEditor constructor not found. Module:', Object.keys(jsonEditorModule));
 				return;
 			}
 
@@ -145,8 +119,8 @@
 			editor = new JSONEditor(editorContainer, {
 				schema: schema as Record<string, unknown>,
 				startval: values,
-				theme: "barebones", // Use minimal theme for custom styling
-				show_errors: "interaction",
+				theme: 'barebones', // Use minimal theme for custom styling
+				show_errors: 'interaction',
 				disable_edit_json: true,
 				disable_properties: true,
 				disable_collapse: false,
@@ -156,7 +130,7 @@
 
 			// Watch for changes and emit them
 			if (onchange) {
-				editor.watch("root", () => {
+				editor.watch('root', () => {
 					if (editor) {
 						const currentValues = editor.getValue();
 						onchange(currentValues);
@@ -166,7 +140,7 @@
 
 			// Validate on change if callback provided
 			if (onvalidate) {
-				editor.watch("root", () => {
+				editor.watch('root', () => {
 					if (editor) {
 						const errors = editor.validate();
 						onvalidate(errors);
@@ -179,9 +153,8 @@
 
 			// Set up MutationObserver to watch for DOM changes (e.g., when Add item is clicked)
 			setupMutationObserver();
-
 		} catch (error) {
-			console.error("Failed to initialize JSON Editor:", error);
+			console.error('Failed to initialize JSON Editor:', error);
 		}
 	}
 
@@ -206,7 +179,7 @@
 					// Check if any added nodes contain buttons
 					mutation.addedNodes.forEach((node) => {
 						if (node instanceof HTMLElement) {
-							const hasButtons = node.querySelector("button") || node.tagName === "BUTTON";
+							const hasButtons = node.querySelector('button') || node.tagName === 'BUTTON';
 							if (hasButtons) {
 								hasNewButtons = true;
 							}
@@ -238,7 +211,7 @@
 		// Wait for DOM to be ready
 		setTimeout(() => {
 			// Define button enhancements with Heroicons and colors
-			const 			buttonEnhancements: Array<{
+			const buttonEnhancements: Array<{
 				selector: string;
 				iconSvg: string;
 				color: string;
@@ -249,56 +222,43 @@
 				{
 					selector: '.json-editor-btn-add',
 					// Heroicons: plus-circle (outline)
-					iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
-					color: "#047857",
-					bgColor: "#ecfdf5",
-					hoverBg: "#d1fae5",
-					borderColor: "#a7f3d0"
+					iconSvg:
+						'<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
+					color: '#047857',
+					bgColor: '#ecfdf5',
+					hoverBg: '#d1fae5',
+					borderColor: '#a7f3d0'
 				},
 				{
-					selector: '.json-editor-btn-delete, .json-editor-btn-deleteall, .json-editor-btn-subtract',
+					selector:
+						'.json-editor-btn-delete, .json-editor-btn-deleteall, .json-editor-btn-subtract',
 					// Heroicons: trash (outline)
-					iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>',
-					color: "#b91c1c",
-					bgColor: "#fef2f2",
-					hoverBg: "#fee2e2",
-					borderColor: "#fecaca"
+					iconSvg:
+						'<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>',
+					color: '#b91c1c',
+					bgColor: '#fef2f2',
+					hoverBg: '#fee2e2',
+					borderColor: '#fecaca'
 				},
 				{
 					selector: '.json-editor-btn-moveup',
 					// Heroicons: arrow-up (outline)
-					iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" /></svg>',
-					color: "#1d4ed8",
-					bgColor: "#eff6ff",
-					hoverBg: "#dbeafe",
-					borderColor: "#bfdbfe"
+					iconSvg:
+						'<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" /></svg>',
+					color: '#1d4ed8',
+					bgColor: '#eff6ff',
+					hoverBg: '#dbeafe',
+					borderColor: '#bfdbfe'
 				},
 				{
 					selector: '.json-editor-btn-movedown',
 					// Heroicons: arrow-down (outline)
-					iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>',
-					color: "#1d4ed8",
-					bgColor: "#eff6ff",
-					hoverBg: "#dbeafe",
-					borderColor: "#bfdbfe"
-				},
-				{
-					selector: '.json-editor-btn-collapse',
-					// Heroicons: chevron-up (outline)
-					iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>',
-					color: "#374151",
-					bgColor: "#ffffff",
-					hoverBg: "#f9fafb",
-					borderColor: "#d1d5db"
-				},
-				{
-					selector: '.json-editor-btn-expand',
-					// Heroicons: chevron-down (outline)
-					iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>',
-					color: "#374151",
-					bgColor: "#ffffff",
-					hoverBg: "#f9fafb",
-					borderColor: "#d1d5db"
+					iconSvg:
+						'<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>',
+					color: '#1d4ed8',
+					bgColor: '#eff6ff',
+					hoverBg: '#dbeafe',
+					borderColor: '#bfdbfe'
 				}
 			];
 
@@ -306,56 +266,56 @@
 				const buttons = editorContainer?.querySelectorAll(selector);
 				buttons?.forEach((button) => {
 					const htmlButton = button as HTMLButtonElement;
-					
+
 					// Check if already enhanced
-					if (htmlButton.getAttribute("data-enhanced") === "true") {
+					if (htmlButton.getAttribute('data-enhanced') === 'true') {
 						return;
 					}
-					
+
 					// Store original text
-					const originalText = htmlButton.textContent?.trim() || "";
-					
+					const originalText = htmlButton.textContent?.trim() || '';
+
 					// Create icon wrapper
-					const iconWrapper = document.createElement("span");
-					iconWrapper.className = "button-icon";
+					const iconWrapper = document.createElement('span');
+					iconWrapper.className = 'button-icon';
 					iconWrapper.innerHTML = iconSvg;
-					iconWrapper.style.display = "inline-flex";
-					iconWrapper.style.alignItems = "center";
-					iconWrapper.style.width = "1rem";
-					iconWrapper.style.height = "1rem";
-					iconWrapper.style.marginRight = "0.375rem";
-					iconWrapper.style.flexShrink = "0";
-					
+					iconWrapper.style.display = 'inline-flex';
+					iconWrapper.style.alignItems = 'center';
+					iconWrapper.style.width = '1rem';
+					iconWrapper.style.height = '1rem';
+					iconWrapper.style.marginRight = '0.375rem';
+					iconWrapper.style.flexShrink = '0';
+
 					// Clear button and rebuild with icon + text
-					htmlButton.innerHTML = "";
+					htmlButton.innerHTML = '';
 					htmlButton.appendChild(iconWrapper);
-					
+
 					// Add text back
-					const textSpan = document.createElement("span");
+					const textSpan = document.createElement('span');
 					textSpan.textContent = originalText;
 					htmlButton.appendChild(textSpan);
-					
+
 					// Apply color styling
 					htmlButton.style.color = color;
 					htmlButton.style.backgroundColor = bgColor;
 					htmlButton.style.borderColor = borderColor;
-					htmlButton.style.borderWidth = "1px";
-					htmlButton.style.borderStyle = "solid";
-					
+					htmlButton.style.borderWidth = '1px';
+					htmlButton.style.borderStyle = 'solid';
+
 					// Add hover effect
-					htmlButton.addEventListener("mouseenter", () => {
+					htmlButton.addEventListener('mouseenter', () => {
 						htmlButton.style.backgroundColor = hoverBg;
-						htmlButton.style.transform = "translateY(-1px)";
-						htmlButton.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.08)";
+						htmlButton.style.transform = 'translateY(-1px)';
+						htmlButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.08)';
 					});
-					htmlButton.addEventListener("mouseleave", () => {
+					htmlButton.addEventListener('mouseleave', () => {
 						htmlButton.style.backgroundColor = bgColor;
-						htmlButton.style.transform = "translateY(0)";
-						htmlButton.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.05)";
+						htmlButton.style.transform = 'translateY(0)';
+						htmlButton.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
 					});
-					
+
 					// Mark as enhanced
-					htmlButton.setAttribute("data-enhanced", "true");
+					htmlButton.setAttribute('data-enhanced', 'true');
 				});
 			});
 		}, 100);
@@ -406,7 +366,7 @@
 	 * Can be called by parent component using bind:this
 	 */
 	export function getValue(): Record<string, unknown> {
-		if (mode === "json-editor" && editor) {
+		if (mode === 'json-editor' && editor) {
 			return editor.getValue();
 		}
 		return { ...formValues };
@@ -416,7 +376,7 @@
 	 * Public method to validate form
 	 */
 	export function validate(): ValidationError[] {
-		if (mode === "json-editor" && editor) {
+		if (mode === 'json-editor' && editor) {
 			return editor.validate();
 		}
 		// Native mode validation would go here
@@ -427,7 +387,7 @@
 	 * Public method to set form values
 	 */
 	export function setValue(newValues: Record<string, unknown>): void {
-		if (mode === "json-editor" && editor) {
+		if (mode === 'json-editor' && editor) {
 			editor.setValue(newValues);
 		} else {
 			formValues = { ...newValues };
@@ -440,8 +400,8 @@
 	onMount(async () => {
 		// Ensure DOM is fully ready
 		await tick();
-		
-		if (mode === "json-editor") {
+
+		if (mode === 'json-editor') {
 			initJSONEditor();
 		} else {
 			initNativeForm();
@@ -466,12 +426,39 @@
 	});
 </script>
 
-{#if mode === "json-editor"}
+<!--
+  SchemaFormAdapter Component
+  
+  Adapter component that provides a unified interface for schema-based form rendering.
+  Supports two modes:
+  - "json-editor": Uses @json-editor/json-editor library for robust JSON Schema support
+  - "native": Uses custom FormField components (original implementation)
+  
+  Features:
+  - Emits change events on form value changes
+  - Handles validation using the underlying implementation
+  - Provides getValue() method for parent components
+  - Design tokens system for consistent theming across forms
+  
+  Usage:
+    <SchemaFormAdapter 
+      schema={mySchema} 
+      values={initialValues} 
+      mode="json-editor"
+      onchange={(values) => console.log(values)}
+    />
+-->
+
+<svelte:head>
+	<link rel="stylesheet" href="/src/lib/styles/form-tokens.css" />
+</svelte:head>
+
+{#if mode === 'json-editor'}
 	<!-- JSON Editor Container -->
 	<div class="schema-form-adapter">
 		<div class="schema-form-adapter__json-editor" bind:this={editorContainer}></div>
 	</div>
-{:else if mode === "native"}
+{:else if mode === 'native'}
 	<!-- Native Form Fields -->
 	<div class="schema-form-adapter">
 		<div class="schema-form-adapter__native">
@@ -508,55 +495,55 @@
 		--form-color-text-label: var(--color-ref-gray-700, #374151);
 		--form-color-text-required: var(--color-ref-red-500, #ef4444);
 		--form-color-text-error: var(--color-ref-red-600, #dc2626);
-		
+
 		--form-color-bg-input: #ffffff;
 		--form-color-bg-hover: var(--color-ref-gray-50, #f9fafb);
 		--form-color-bg-disabled: var(--color-ref-gray-100, #f3f4f6);
 		--form-color-bg-error: var(--color-ref-red-50, #fef2f2);
-		
+
 		--form-color-border-default: var(--color-ref-gray-300, #d1d5db);
 		--form-color-border-hover: var(--color-ref-gray-400, #9ca3af);
 		--form-color-border-focus: var(--color-ref-blue-500, #3b82f6);
 		--form-color-border-error: var(--color-ref-red-300, #fca5a5);
-		
+
 		--form-color-focus-ring: rgba(59, 130, 246, 0.1);
 		--form-color-shadow-sm: rgba(0, 0, 0, 0.04);
 		--form-color-shadow-md: rgba(0, 0, 0, 0.1);
-		
+
 		/* Spacing tokens */
 		--form-spacing-xs: 0.25rem;
 		--form-spacing-sm: 0.5rem;
 		--form-spacing-md: 0.75rem;
 		--form-spacing-lg: 1rem;
 		--form-spacing-xl: 1.25rem;
-		
+
 		/* Typography tokens */
 		--form-font-size-xs: 0.75rem;
 		--form-font-size-sm: 0.8125rem;
 		--form-font-size-base: 0.875rem;
 		--form-font-size-lg: 1rem;
-		
+
 		--form-font-weight-normal: 400;
 		--form-font-weight-medium: 500;
 		--form-font-weight-semibold: 600;
 		--form-font-weight-bold: 700;
-		
+
 		--form-line-height-tight: 1.25;
 		--form-line-height-normal: 1.5;
 		--form-line-height-relaxed: 1.75;
-		
+
 		/* Border tokens */
 		--form-border-width: 1px;
 		--form-border-radius-sm: 0.25rem;
 		--form-border-radius-md: 0.375rem;
 		--form-border-radius-lg: 0.5rem;
-		
+
 		/* Transition tokens */
 		--form-transition-fast: 0.15s;
 		--form-transition-base: 0.2s;
 		--form-transition-slow: 0.3s;
 		--form-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
-		
+
 		width: 100%;
 	}
 
@@ -633,10 +620,10 @@
 
 	/* Input fields - shared styles */
 	.schema-form-adapter__json-editor :global(.je-form-input-input),
-	.schema-form-adapter__json-editor :global(input[type="text"]),
-	.schema-form-adapter__json-editor :global(input[type="number"]),
-	.schema-form-adapter__json-editor :global(input[type="email"]),
-	.schema-form-adapter__json-editor :global(input[type="url"]) {
+	.schema-form-adapter__json-editor :global(input[type='text']),
+	.schema-form-adapter__json-editor :global(input[type='number']),
+	.schema-form-adapter__json-editor :global(input[type='email']),
+	.schema-form-adapter__json-editor :global(input[type='url']) {
 		width: 100%;
 		padding: var(--form-spacing-md) var(--form-spacing-md);
 		border: 1px solid #d1d5db;
@@ -651,17 +638,21 @@
 	}
 
 	.schema-form-adapter__json-editor :global(.je-form-input-input:hover),
-	.schema-form-adapter__json-editor :global(input:not([type="checkbox"]):not([type="radio"]):hover) {
+	.schema-form-adapter__json-editor
+		:global(input:not([type='checkbox']):not([type='radio']):hover) {
 		border-color: #9ca3af;
 		background-color: #ffffff;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
 	.schema-form-adapter__json-editor :global(.je-form-input-input:focus),
-	.schema-form-adapter__json-editor :global(input:not([type="checkbox"]):not([type="radio"]):focus) {
+	.schema-form-adapter__json-editor
+		:global(input:not([type='checkbox']):not([type='radio']):focus) {
 		outline: none;
 		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04);
+		box-shadow:
+			0 0 0 3px rgba(59, 130, 246, 0.1),
+			0 1px 2px rgba(0, 0, 0, 0.04);
 	}
 
 	.schema-form-adapter__json-editor :global(.je-form-input-input:disabled),
@@ -706,12 +697,14 @@
 	.schema-form-adapter__json-editor :global(select:focus) {
 		outline: none;
 		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04);
+		box-shadow:
+			0 0 0 3px rgba(59, 130, 246, 0.1),
+			0 1px 2px rgba(0, 0, 0, 0.04);
 	}
 
 	/* Checkboxes */
 	.schema-form-adapter__json-editor :global(.je-form-input-checkbox),
-	.schema-form-adapter__json-editor :global(input[type="checkbox"]) {
+	.schema-form-adapter__json-editor :global(input[type='checkbox']) {
 		width: 1.125rem;
 		height: 1.125rem;
 		margin-right: var(--form-spacing-sm);
@@ -721,18 +714,18 @@
 		transition: all var(--form-transition-fast) var(--form-transition-timing);
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="checkbox"]:checked) {
+	.schema-form-adapter__json-editor :global(input[type='checkbox']:checked) {
 		background-color: var(--form-color-border-focus);
 		border-color: var(--form-color-border-focus);
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="checkbox"]:focus) {
+	.schema-form-adapter__json-editor :global(input[type='checkbox']:focus) {
 		outline: none;
 		box-shadow: 0 0 0 3px var(--form-color-focus-ring);
 	}
 
 	/* Radio buttons */
-	.schema-form-adapter__json-editor :global(input[type="radio"]) {
+	.schema-form-adapter__json-editor :global(input[type='radio']) {
 		width: 1.125rem;
 		height: 1.125rem;
 		margin-right: var(--form-spacing-sm);
@@ -741,11 +734,11 @@
 		transition: all var(--form-transition-fast) var(--form-transition-timing);
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="radio"]:checked) {
+	.schema-form-adapter__json-editor :global(input[type='radio']:checked) {
 		border-color: var(--form-color-border-focus);
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="radio"]:focus) {
+	.schema-form-adapter__json-editor :global(input[type='radio']:focus) {
 		outline: none;
 		box-shadow: 0 0 0 3px var(--form-color-focus-ring);
 	}
@@ -779,7 +772,7 @@
 	}
 
 	/* Range sliders */
-	.schema-form-adapter__json-editor :global(input[type="range"]) {
+	.schema-form-adapter__json-editor :global(input[type='range']) {
 		width: 100%;
 		height: 0.375rem;
 		border-radius: var(--form-border-radius-lg);
@@ -788,7 +781,7 @@
 		cursor: pointer;
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="range"]::-webkit-slider-thumb) {
+	.schema-form-adapter__json-editor :global(input[type='range']::-webkit-slider-thumb) {
 		appearance: none;
 		width: 1.25rem;
 		height: 1.25rem;
@@ -799,12 +792,12 @@
 		box-shadow: 0 2px 4px var(--form-color-shadow-sm);
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="range"]::-webkit-slider-thumb:hover) {
+	.schema-form-adapter__json-editor :global(input[type='range']::-webkit-slider-thumb:hover) {
 		transform: scale(1.1);
 		box-shadow: 0 4px 8px var(--form-color-shadow-md);
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="range"]::-moz-range-thumb) {
+	.schema-form-adapter__json-editor :global(input[type='range']::-moz-range-thumb) {
 		width: 1.25rem;
 		height: 1.25rem;
 		border: none;
@@ -815,7 +808,7 @@
 		box-shadow: 0 2px 4px var(--form-color-shadow-sm);
 	}
 
-	.schema-form-adapter__json-editor :global(input[type="range"]::-moz-range-thumb:hover) {
+	.schema-form-adapter__json-editor :global(input[type='range']::-moz-range-thumb:hover) {
 		transform: scale(1.1);
 		box-shadow: 0 4px 8px var(--form-color-shadow-md);
 	}
@@ -833,7 +826,7 @@
 	}
 
 	.schema-form-adapter__json-editor :global(.je-form-error::before) {
-		content: "⚠";
+		content: '⚠';
 		font-size: var(--form-font-size-base);
 	}
 
@@ -879,18 +872,18 @@
 	}
 
 	/* Enhanced buttons with icons and colors */
-	.schema-form-adapter__json-editor :global(button[data-enhanced="true"]) {
+	.schema-form-adapter__json-editor :global(button[data-enhanced='true']) {
 		font-weight: var(--form-font-weight-semibold);
 		border-width: 1.5px;
 		gap: 0.375rem;
 	}
 
-	.schema-form-adapter__json-editor :global(button[data-enhanced="true"]:hover) {
+	.schema-form-adapter__json-editor :global(button[data-enhanced='true']:hover) {
 		transform: translateY(-2px);
 		box-shadow: 0 4px 8px var(--form-color-shadow-md);
 	}
 
-	.schema-form-adapter__json-editor :global(button[data-enhanced="true"]:active) {
+	.schema-form-adapter__json-editor :global(button[data-enhanced='true']:active) {
 		transform: translateY(0);
 		box-shadow: 0 2px 4px var(--form-color-shadow-sm);
 	}
@@ -918,8 +911,17 @@
 		align-items: center;
 	}
 
+	/* Hide delete all and delete last buttons */
+	.schema-form-adapter__json-editor :global(.json-editor-btntype-deleteall),
+	.schema-form-adapter__json-editor :global(.json-editor-btntype-deletelast) {
+		display: none !important;
+	}
+
 	/* Individual array item controls (delete, move buttons per item) */
-	.schema-form-adapter__json-editor :global([data-schemapath]) > :global(div[data-schematype]) > :global(.je-array-control) {
+	.schema-form-adapter__json-editor
+		:global([data-schemapath])
+		> :global(div[data-schematype])
+		> :global(.je-array-control) {
 		margin-top: var(--form-spacing-md);
 		display: flex;
 		gap: var(--form-spacing-lg);
@@ -946,6 +948,11 @@
 		margin-bottom: 1em;
 	}
 
+	/* Object container button styling */
+	.schema-form-adapter__json-editor :global(.je-object__container button) {
+		margin: 0 0.5em 0.5em 0;
+	}
+
 	/* Hide object controls */
 	.schema-form-adapter__json-editor :global(.je-object__controls) {
 		display: none;
@@ -962,7 +969,9 @@
 		transition: all var(--form-transition-base) var(--form-transition-timing);
 	}
 
-	.schema-form-adapter__json-editor :global([data-schemapath]) > :global(div[data-schematype]):hover {
+	.schema-form-adapter__json-editor
+		:global([data-schemapath])
+		> :global(div[data-schematype]):hover {
 		border-color: #d1d5db;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 	}
@@ -1083,8 +1092,7 @@
 		animation-delay: 200ms;
 	}
 
-	.schema-form-adapter__json-editor :global(.je-form-control:nth-child(n+6)) {
+	.schema-form-adapter__json-editor :global(.je-form-control:nth-child(n + 6)) {
 		animation-delay: 250ms;
 	}
 </style>
-
