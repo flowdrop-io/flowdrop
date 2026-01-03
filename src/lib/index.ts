@@ -78,6 +78,7 @@ export { default as StatusLabel } from './components/StatusLabel.svelte';
 export { default as NodeStatusOverlay } from './components/NodeStatusOverlay.svelte';
 export { default as MarkdownDisplay } from './components/MarkdownDisplay.svelte';
 export { default as ConfigForm } from './components/ConfigForm.svelte';
+export { default as SchemaFormAdapter } from './components/SchemaFormAdapter.svelte';
 export { default as ConfigModal } from './components/ConfigModal.svelte';
 export { default as ConfigPanel } from './components/ConfigPanel.svelte';
 export { default as ReadOnlyDetails } from './components/ReadOnlyDetails.svelte';

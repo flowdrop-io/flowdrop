@@ -1,0 +1,155 @@
+/**
+ * Form Design Tokens
+ * 
+ * Semantic CSS custom properties for consistent form styling across FlowDrop.
+ * These tokens can be imported into any component that needs form styling.
+ * 
+ * Usage:
+ *   @import '$lib/styles/form-tokens.css';
+ * 
+ * Features:
+ * - Consistent color palette derived from FlowDrop design system
+ * - Semantic naming for easy maintenance and theming
+ * - Complete coverage of form states (default, hover, focus, error, disabled)
+ * - Responsive spacing and typography scales
+ */
+
+:root {
+	/* ============================================
+	   COLOR TOKENS
+	   ============================================ */
+
+	/* Text colors */
+	--form-color-text-primary: var(--color-ref-gray-900, #111827);
+	--form-color-text-secondary: var(--color-ref-gray-600, #4b5563);
+	--form-color-text-muted: var(--color-ref-gray-500, #6b7280);
+	--form-color-text-label: var(--color-ref-gray-700, #374151);
+	--form-color-text-required: var(--color-ref-red-500, #ef4444);
+	--form-color-text-error: var(--color-ref-red-600, #dc2626);
+	--form-color-text-success: var(--color-ref-green-600, #16a34a);
+	--form-color-text-warning: var(--color-ref-yellow-600, #ca8a04);
+	--form-color-text-info: var(--color-ref-blue-600, #2563eb);
+
+	/* Background colors */
+	--form-color-bg-input: #ffffff;
+	--form-color-bg-hover: var(--color-ref-gray-50, #f9fafb);
+	--form-color-bg-disabled: var(--color-ref-gray-100, #f3f4f6);
+	--form-color-bg-error: var(--color-ref-red-50, #fef2f2);
+	--form-color-bg-success: var(--color-ref-green-50, #f0fdf4);
+	--form-color-bg-warning: var(--color-ref-yellow-50, #fefce8);
+	--form-color-bg-info: var(--color-ref-blue-50, #eff6ff);
+
+	/* Border colors */
+	--form-color-border-default: var(--color-ref-gray-300, #d1d5db);
+	--form-color-border-hover: var(--color-ref-gray-400, #9ca3af);
+	--form-color-border-focus: var(--color-ref-blue-500, #3b82f6);
+	--form-color-border-error: var(--color-ref-red-300, #fca5a5);
+	--form-color-border-success: var(--color-ref-green-300, #86efac);
+	--form-color-border-warning: var(--color-ref-yellow-300, #fde047);
+	--form-color-border-disabled: var(--color-ref-gray-200, #e5e7eb);
+
+	/* Shadow colors */
+	--form-color-focus-ring: rgba(59, 130, 246, 0.1);
+	--form-color-focus-ring-error: rgba(220, 38, 38, 0.1);
+	--form-color-shadow-sm: rgba(0, 0, 0, 0.04);
+	--form-color-shadow-md: rgba(0, 0, 0, 0.1);
+	--form-color-shadow-lg: rgba(0, 0, 0, 0.15);
+
+	/* ============================================
+	   SPACING TOKENS
+	   ============================================ */
+
+	--form-spacing-xs: 0.25rem; /* 4px */
+	--form-spacing-sm: 0.5rem; /* 8px */
+	--form-spacing-md: 0.75rem; /* 12px */
+	--form-spacing-lg: 1rem; /* 16px */
+	--form-spacing-xl: 1.25rem; /* 20px */
+	--form-spacing-2xl: 1.5rem; /* 24px */
+
+	/* ============================================
+	   TYPOGRAPHY TOKENS
+	   ============================================ */
+
+	/* Font sizes */
+	--form-font-size-xs: 0.75rem; /* 12px */
+	--form-font-size-sm: 0.8125rem; /* 13px */
+	--form-font-size-base: 0.875rem; /* 14px */
+	--form-font-size-lg: 1rem; /* 16px */
+	--form-font-size-xl: 1.125rem; /* 18px */
+
+	/* Font weights */
+	--form-font-weight-normal: 400;
+	--form-font-weight-medium: 500;
+	--form-font-weight-semibold: 600;
+	--form-font-weight-bold: 700;
+
+	/* Line heights */
+	--form-line-height-tight: 1.25;
+	--form-line-height-normal: 1.5;
+	--form-line-height-relaxed: 1.75;
+
+	/* ============================================
+	   BORDER TOKENS
+	   ============================================ */
+
+	--form-border-width: 1px;
+	--form-border-width-thick: 2px;
+	--form-border-radius-sm: 0.25rem; /* 4px */
+	--form-border-radius-md: 0.375rem; /* 6px */
+	--form-border-radius-lg: 0.5rem; /* 8px */
+	--form-border-radius-xl: 0.75rem; /* 12px */
+	--form-border-radius-full: 9999px;
+
+	/* ============================================
+	   TRANSITION TOKENS
+	   ============================================ */
+
+	--form-transition-fast: 0.15s;
+	--form-transition-base: 0.2s;
+	--form-transition-slow: 0.3s;
+	--form-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+	/* ============================================
+	   SIZE TOKENS
+	   ============================================ */
+
+	--form-input-height-sm: 2rem; /* 32px */
+	--form-input-height-base: 2.5rem; /* 40px */
+	--form-input-height-lg: 3rem; /* 48px */
+
+	--form-checkbox-size: 1.125rem; /* 18px */
+	--form-radio-size: 1.125rem; /* 18px */
+	--form-slider-thumb-size: 1.25rem; /* 20px */
+	--form-slider-track-height: 0.375rem; /* 6px */
+
+	/* ============================================
+	   Z-INDEX TOKENS
+	   ============================================ */
+
+	--form-z-index-dropdown: 1000;
+	--form-z-index-tooltip: 1100;
+	--form-z-index-modal: 1200;
+}
+
+/**
+ * Dark theme overrides
+ * Uncomment and adjust when implementing dark mode
+ */
+/*
+@media (prefers-color-scheme: dark) {
+	:root {
+		--form-color-text-primary: #f9fafb;
+		--form-color-text-secondary: #d1d5db;
+		--form-color-text-muted: #9ca3af;
+		--form-color-text-label: #e5e7eb;
+		
+		--form-color-bg-input: #1f2937;
+		--form-color-bg-hover: #374151;
+		--form-color-bg-disabled: #111827;
+		
+		--form-color-border-default: #4b5563;
+		--form-color-border-hover: #6b7280;
+	}
+}
+*/
+

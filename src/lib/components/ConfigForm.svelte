@@ -2,25 +2,23 @@
   ConfigForm Component
   Handles dynamic form rendering for node or entity configuration
   Supports both node-based config and direct schema/values
-  Uses reactive $state for proper Svelte 5 reactivity
+  Uses SchemaFormAdapter to delegate form rendering to either json-editor or native implementation
   
   Features:
-  - Dynamic form generation from JSON Schema using modular form components
-  - UI Extensions support for display settings (e.g., hide unconnected handles)
-  - Extensible architecture for complex schema types (array, object)
+  - Dynamic form generation from JSON Schema via SchemaFormAdapter
+  - UI Extensions integrated into schema as additional properties
+  - Support for both json-editor and native modes
   
   Accessibility features:
-  - Proper label associations with for/id attributes
-  - ARIA describedby for field descriptions
+  - Delegated to SchemaFormAdapter and underlying implementations
   - Focus-visible states for keyboard navigation
   - Required field indicators
 -->
 
 <script lang="ts">
-	import Icon from '@iconify/svelte';
-	import type { ConfigSchema, WorkflowNode, NodeUIExtensions } from '$lib/types/index.js';
-	import { FormField, FormFieldWrapper, FormToggle } from '$lib/components/form/index.js';
-	import type { FieldSchema } from '$lib/components/form/index.js';
+	import Icon from "@iconify/svelte";
+	import type { ConfigSchema, WorkflowNode, NodeUIExtensions } from "$lib/types/index.js";
+	import SchemaFormAdapter from "$lib/components/SchemaFormAdapter.svelte";
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -31,148 +29,113 @@
 		values?: Record<string, unknown>;
 		/** Whether to show UI extension settings section */
 		showUIExtensions?: boolean;
+		/** Form adapter mode: "json-editor" or "native" */
+		mode?: "json-editor" | "native";
 		/** Callback when form is saved (includes both config and extensions if enabled) */
 		onSave: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is cancelled */
 		onCancel: () => void;
 	}
 
-	let { node, schema, values, showUIExtensions = true, onSave, onCancel }: Props = $props();
+	let { 
+		node, 
+		schema, 
+		values, 
+		showUIExtensions = true, 
+		mode = "json-editor",
+		onSave, 
+		onCancel 
+	}: Props = $props();
+
+	/**
+	 * Reference to the SchemaFormAdapter instance
+	 */
+	let formAdapter: { getValue: () => Record<string, unknown> } | undefined = $state();
 
 	/**
 	 * Get the configuration schema from node metadata or direct prop
+	 * If showUIExtensions is enabled, merge UI extension properties into schema
 	 */
-	const configSchema = $derived(
-		schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined)
-	);
+	const configSchema = $derived.by<ConfigSchema | undefined>(() => {
+		const baseSchema = schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
+		
+		if (!baseSchema) return undefined;
+
+		// If UI extensions are enabled, merge them into the schema
+		if (showUIExtensions && node) {
+			const extendedSchema: ConfigSchema = {
+				...baseSchema,
+				properties: {
+					...baseSchema.properties,
+					// Add UI extension properties
+					"__ui_hideUnconnectedHandles": {
+						type: "boolean",
+						title: "Hide Unconnected Ports",
+						description: "Hide input and output ports that are not connected to reduce visual clutter",
+						default: false
+					}
+				}
+			};
+			return extendedSchema;
+		}
+
+		return baseSchema;
+	});
 
 	/**
 	 * Get the current configuration from node or direct prop
+	 * If showUIExtensions is enabled, merge UI extension values
 	 */
-	const initialConfig = $derived(values ?? node?.data.config ?? {});
+	const initialValues = $derived.by<Record<string, unknown>>(() => {
+		const baseValues = values ?? node?.data.config ?? {};
+		
+		// If UI extensions are enabled, merge extension values
+		if (showUIExtensions && node) {
+			const typeDefaults = node.data.metadata?.extensions?.ui ?? {};
+			const instanceOverrides = node.data.extensions?.ui ?? {};
+			const uiExtensions = { ...typeDefaults, ...instanceOverrides };
 
-	/**
-	 * Create reactive configuration values using $state
-	 * This fixes the Svelte 5 reactivity warnings
-	 */
-	let configValues = $state<Record<string, unknown>>({});
-
-	/**
-	 * UI Extension values for display settings
-	 * Merges node type defaults with instance overrides
-	 */
-	let uiExtensionValues = $state<NodeUIExtensions>({});
-
-	/**
-	 * Get initial UI extensions from node (instance level overrides type level)
-	 */
-	const initialUIExtensions = $derived.by<NodeUIExtensions>(() => {
-		if (!node) return {};
-		// Merge type-level defaults with instance-level overrides
-		const typeDefaults = node.data.metadata?.extensions?.ui ?? {};
-		const instanceOverrides = node.data.extensions?.ui ?? {};
-		return { ...typeDefaults, ...instanceOverrides };
-	});
-
-	/**
-	 * Initialize config values when node/schema changes
-	 */
-	$effect(() => {
-		if (configSchema?.properties) {
-			const mergedConfig: Record<string, unknown> = {};
-			Object.entries(configSchema.properties).forEach(([key, field]) => {
-				const fieldConfig = field as Record<string, unknown>;
-				// Use existing value if available, otherwise use default
-				mergedConfig[key] =
-					initialConfig[key] !== undefined ? initialConfig[key] : fieldConfig.default;
-			});
-			configValues = mergedConfig;
+			return {
+				...baseValues,
+				"__ui_hideUnconnectedHandles": uiExtensions.hideUnconnectedHandles ?? false
+			};
 		}
+
+		return baseValues;
 	});
-
-	/**
-	 * Initialize UI extension values when node changes
-	 */
-	$effect(() => {
-		uiExtensionValues = {
-			hideUnconnectedHandles: initialUIExtensions.hideUnconnectedHandles ?? false
-		};
-	});
-
-	/**
-	 * Check if a field is required based on schema
-	 */
-	function isFieldRequired(key: string): boolean {
-		if (!configSchema?.required) return false;
-		return configSchema.required.includes(key);
-	}
-
-	/**
-	 * Handle field value changes from FormField components
-	 */
-	function handleFieldChange(key: string, value: unknown): void {
-		configValues[key] = value;
-	}
 
 	/**
 	 * Handle form submission
-	 * Collects both config values and UI extension values
+	 * Separates config values from UI extension values
 	 */
 	function handleSave(): void {
-		// Collect all form values including hidden fields
-		const form = document.querySelector('.config-form');
-		const updatedConfig: Record<string, unknown> = { ...configValues };
+		if (!formAdapter) return;
 
-		if (form) {
-			const inputs = form.querySelectorAll('input, select, textarea');
-			inputs.forEach((input: Element) => {
-				const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-				// Skip UI extension fields (prefixed with ext-)
-				if (inputEl.id && !inputEl.id.startsWith('ext-')) {
-					if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
-						updatedConfig[inputEl.id] = inputEl.checked;
-					} else if (inputEl instanceof HTMLInputElement && (inputEl.type === 'number' || inputEl.type === 'range')) {
-						updatedConfig[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
-					} else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
-						// Parse hidden field values that might be JSON
-						try {
-							const parsed = JSON.parse(inputEl.value);
-							updatedConfig[inputEl.id] = parsed;
-						} catch {
-							// If not JSON, use raw value
-							updatedConfig[inputEl.id] = inputEl.value;
-						}
-					} else {
-						updatedConfig[inputEl.id] = inputEl.value;
-					}
-				}
-			});
-		}
+		const allValues = formAdapter.getValue();
+		
+		// Separate UI extension fields (prefixed with __ui_)
+		const configValues: Record<string, unknown> = {};
+		const uiExtensions: NodeUIExtensions = {};
 
-		// Preserve hidden field values from original config if not collected from form
-		if (initialConfig && configSchema?.properties) {
-			Object.entries(configSchema.properties).forEach(
-				([key, property]: [string, Record<string, unknown>]) => {
-					if (property.format === 'hidden' && !(key in updatedConfig) && key in initialConfig) {
-						updatedConfig[key] = initialConfig[key];
-					}
+		Object.entries(allValues).forEach(([key, value]) => {
+			if (key.startsWith("__ui_")) {
+				// Extract UI extension field
+				const extensionKey = key.replace("__ui_", "");
+				if (extensionKey === "hideUnconnectedHandles") {
+					uiExtensions.hideUnconnectedHandles = Boolean(value);
 				}
-			);
-		}
+			} else {
+				// Regular config field
+				configValues[key] = value;
+			}
+		});
 
 		// Pass UI extensions only if enabled
 		if (showUIExtensions && node) {
-			onSave(updatedConfig, uiExtensionValues);
+			onSave(configValues, uiExtensions);
 		} else {
-			onSave(updatedConfig);
+			onSave(configValues);
 		}
-	}
-
-	/**
-	 * Convert ConfigProperty to FieldSchema for FormField component
-	 */
-	function toFieldSchema(property: Record<string, unknown>): FieldSchema {
-		return property as FieldSchema;
 	}
 </script>
 
@@ -184,61 +147,17 @@
 			handleSave();
 		}}
 	>
-		{#if configSchema.properties}
-			<div class="config-form__fields">
-				{#each Object.entries(configSchema.properties) as [key, field], index (key)}
-					{@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
-					{@const required = isFieldRequired(key)}
-
-					<FormField
-						fieldKey={key}
-						schema={fieldSchema}
-						value={configValues[key]}
-						{required}
-						animationIndex={index}
-						onChange={(val) => handleFieldChange(key, val)}
-					/>
-				{/each}
-			</div>
-		{:else}
-			<!-- If no properties, show the raw schema for debugging -->
-			<div class="config-form__debug">
-				<div class="config-form__debug-header">
-					<Icon icon="heroicons:bug-ant" class="config-form__debug-icon" />
-					<span>Debug - Config Schema</span>
-				</div>
-				<pre class="config-form__debug-content">{JSON.stringify(configSchema, null, 2)}</pre>
-			</div>
-		{/if}
-
-		<!-- UI Extensions Section -->
-		{#if showUIExtensions && node}
-			<div class="config-form__extensions">
-				<div class="config-form__extensions-header">
-					<Icon icon="heroicons:adjustments-horizontal" class="config-form__extensions-icon" />
-					<span>Display Settings</span>
-				</div>
-				<div class="config-form__extensions-content">
-					<!-- Hide Unconnected Handles Toggle -->
-					<FormFieldWrapper
-						id="ext-hideUnconnectedHandles"
-						label="Hide Unconnected Ports"
-						description="Hide input and output ports that are not connected to reduce visual clutter"
-					>
-						<FormToggle
-							id="ext-hideUnconnectedHandles"
-							value={Boolean(uiExtensionValues.hideUnconnectedHandles)}
-							onLabel="Hidden"
-							offLabel="Visible"
-							ariaDescribedBy="ext-hideUnconnectedHandles-description"
-							onChange={(val) => {
-								uiExtensionValues.hideUnconnectedHandles = val;
-							}}
-						/>
-					</FormFieldWrapper>
-				</div>
-			</div>
-		{/if}
+		<!-- Schema Form Adapter -->
+		<div class="config-form__fields">
+			<SchemaFormAdapter
+				bind:this={formAdapter}
+				schema={configSchema}
+				values={initialValues}
+				{mode}
+				required={configSchema.required}
+				nodeId={node?.id}
+			/>
+		</div>
 
 		<!-- Footer Actions -->
 		<div class="config-form__footer">
@@ -268,7 +187,7 @@
 <style>
 	/* ============================================
 	   CONFIG FORM - Container Styles
-	   Individual field styles are in form/ components
+	   Form rendering delegated to SchemaFormAdapter
 	   ============================================ */
 
 	.config-form {
@@ -369,82 +288,6 @@
 		box-shadow:
 			0 0 0 3px rgba(59, 130, 246, 0.4),
 			0 4px 12px rgba(59, 130, 246, 0.35);
-	}
-
-	/* ============================================
-	   UI EXTENSIONS SECTION
-	   ============================================ */
-
-	.config-form__extensions {
-		background-color: var(--color-ref-slate-50, #f8fafc);
-		border: 1px solid var(--color-ref-slate-200, #e2e8f0);
-		border-radius: 0.5rem;
-		overflow: hidden;
-		margin-top: 0.5rem;
-	}
-
-	.config-form__extensions-header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		background-color: var(--color-ref-slate-100, #f1f5f9);
-		border-bottom: 1px solid var(--color-ref-slate-200, #e2e8f0);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--color-ref-slate-700, #334155);
-	}
-
-	.config-form__extensions-header :global(svg) {
-		width: 1rem;
-		height: 1rem;
-		color: var(--color-ref-slate-500, #64748b);
-	}
-
-	.config-form__extensions-content {
-		padding: 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	/* ============================================
-	   DEBUG SECTION
-	   ============================================ */
-
-	.config-form__debug {
-		background-color: var(--color-ref-amber-50, #fffbeb);
-		border: 1px solid var(--color-ref-amber-200, #fde68a);
-		border-radius: 0.5rem;
-		overflow: hidden;
-	}
-
-	.config-form__debug-header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		background-color: var(--color-ref-amber-100, #fef3c7);
-		border-bottom: 1px solid var(--color-ref-amber-200, #fde68a);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--color-ref-amber-800, #92400e);
-	}
-
-	.config-form__debug-header :global(svg) {
-		width: 1rem;
-		height: 1rem;
-	}
-
-	.config-form__debug-content {
-		margin: 0;
-		padding: 1rem;
-		font-size: 0.75rem;
-		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-		color: var(--color-ref-gray-700, #374151);
-		overflow-x: auto;
-		background-color: #ffffff;
-		line-height: 1.5;
 	}
 
 	/* ============================================
