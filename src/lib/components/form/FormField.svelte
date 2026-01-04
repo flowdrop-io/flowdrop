@@ -333,16 +333,5 @@
 {/if}
 
 <style>
-	.form-field__unsupported {
-		padding: 0.75rem;
-		background-color: var(--color-ref-amber-50, #fffbeb);
-		border: 1px solid var(--color-ref-amber-200, #fde68a);
-		border-radius: 0.5rem;
-		color: var(--color-ref-amber-800, #92400e);
-		font-size: 0.8125rem;
-	}
-
-	.form-field__unsupported p {
-		margin: 0;
-	}
+	/* Styles moved to individual form components */
 </style>
