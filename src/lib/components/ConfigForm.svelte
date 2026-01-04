@@ -131,7 +131,10 @@
 				if (inputEl.id && !inputEl.id.startsWith('ext-')) {
 					if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
 						updatedConfig[inputEl.id] = inputEl.checked;
-					} else if (inputEl instanceof HTMLInputElement && (inputEl.type === 'number' || inputEl.type === 'range')) {
+					} else if (
+						inputEl instanceof HTMLInputElement &&
+						(inputEl.type === 'number' || inputEl.type === 'range')
+					) {
 						updatedConfig[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
 					} else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
 						// Parse hidden field values that might be JSON

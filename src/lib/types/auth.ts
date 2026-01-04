@@ -345,4 +345,3 @@ export class NoAuthProvider implements AuthProvider {
 		return false;
 	}
 }
-

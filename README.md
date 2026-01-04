@@ -51,13 +51,12 @@ npm install @d34dman/flowdrop
 
 You get a production-ready workflow UI. You keep full control of everything else.
 
-
 ## Quickstart
 
 ```svelte
 <script lang="ts">
-  import { WorkflowEditor } from "@d34dman/flowdrop";
-  import "@d34dman/flowdrop/styles/base.css";
+	import { WorkflowEditor } from '@d34dman/flowdrop';
+	import '@d34dman/flowdrop/styles/base.css';
 </script>
 
 <WorkflowEditor />
@@ -65,18 +64,16 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 **5 lines. One fully-functional workflow editor.**
 
-
 ## Features
 
-|                             |                                                                           |
-| --------------------------- | ------------------------------------------------------------------------- |
+|                              |                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------- |
 | 🎨 **Visual Editor Only**    | Pure UI component. No hidden backend, no external dependencies            |
 | 🔐 **You Own Everything**    | Your data, your servers, your orchestration logic, your security policies |
 | 🔌 **Backend Agnostic**      | Connect to any API: Drupal, Laravel, Express, FastAPI, or your own        |
 | 🧩 **7 Built-in Node Types** | From simple icons to complex gateway logic                                |
 | 🎭 **Framework Flexible**    | Use as Svelte component or mount into React, Vue, Angular, or vanilla JS  |
 | 🐳 **Deploy Anywhere**       | Runtime config means build once, deploy everywhere                        |
-
 
 ## Node Types
 
@@ -105,27 +102,27 @@ FlowDrop ships with 7 beautifully designed node types:
 
 ```svelte
 <script>
-  import { WorkflowEditor, NodeSidebar } from "@d34dman/flowdrop";
+	import { WorkflowEditor, NodeSidebar } from '@d34dman/flowdrop';
 </script>
 
 <div class="flex h-screen">
-  <NodeSidebar {nodes} />
-  <WorkflowEditor {nodes} />
+	<NodeSidebar {nodes} />
+	<WorkflowEditor {nodes} />
 </div>
 ```
 
 ### Vanilla JS / React / Vue / Angular
 
 ```javascript
-import { mountFlowDropApp, createEndpointConfig } from "@d34dman/flowdrop";
+import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop';
 
-const app = await mountFlowDropApp(document.getElementById("editor"), {
-  workflow: myWorkflow,
-  endpointConfig: createEndpointConfig("/api/flowdrop"),
-  eventHandlers: {
-    onDirtyStateChange: (isDirty) => console.log("Unsaved changes:", isDirty),
-    onAfterSave: (workflow) => console.log("Saved!", workflow)
-  }
+const app = await mountFlowDropApp(document.getElementById('editor'), {
+	workflow: myWorkflow,
+	endpointConfig: createEndpointConfig('/api/flowdrop'),
+	eventHandlers: {
+		onDirtyStateChange: (isDirty) => console.log('Unsaved changes:', isDirty),
+		onAfterSave: (workflow) => console.log('Saved!', workflow)
+	}
 });
 
 // Full control over the editor
@@ -137,54 +134,52 @@ app.destroy();
 ### Enterprise Integration
 
 ```javascript
-import { mountFlowDropApp, CallbackAuthProvider } from "@d34dman/flowdrop";
+import { mountFlowDropApp, CallbackAuthProvider } from '@d34dman/flowdrop';
 
 const app = await mountFlowDropApp(container, {
-  // Dynamic token refresh
-  authProvider: new CallbackAuthProvider({
-    getToken: () => authService.getAccessToken(),
-    onUnauthorized: () => authService.refreshToken()
-  }),
+	// Dynamic token refresh
+	authProvider: new CallbackAuthProvider({
+		getToken: () => authService.getAccessToken(),
+		onUnauthorized: () => authService.refreshToken()
+	}),
 
-  // Lifecycle hooks
-  eventHandlers: {
-    onBeforeUnmount: (workflow, isDirty) => {
-      if (isDirty) saveDraft(workflow);
-    }
-  },
+	// Lifecycle hooks
+	eventHandlers: {
+		onBeforeUnmount: (workflow, isDirty) => {
+			if (isDirty) saveDraft(workflow);
+		}
+	},
 
-  // Auto-save, toasts, and more
-  features: {
-    autoSaveDraft: true,
-    autoSaveDraftInterval: 30000
-  }
+	// Auto-save, toasts, and more
+	features: {
+		autoSaveDraft: true,
+		autoSaveDraftInterval: 30000
+	}
 });
 ```
-
 
 ## API Configuration
 
 Connect to any backend in seconds:
 
 ```typescript
-import { createEndpointConfig } from "@d34dman/flowdrop";
+import { createEndpointConfig } from '@d34dman/flowdrop';
 
 const config = createEndpointConfig({
-  baseUrl: "https://api.example.com",
-  endpoints: {
-    nodes: { list: "/nodes", get: "/nodes/{id}" },
-    workflows: {
-      list: "/workflows",
-      get: "/workflows/{id}",
-      create: "/workflows",
-      update: "/workflows/{id}",
-      execute: "/workflows/{id}/execute"
-    }
-  },
-  auth: { type: "bearer", token: "your-token" }
+	baseUrl: 'https://api.example.com',
+	endpoints: {
+		nodes: { list: '/nodes', get: '/nodes/{id}' },
+		workflows: {
+			list: '/workflows',
+			get: '/workflows/{id}',
+			create: '/workflows',
+			update: '/workflows/{id}',
+			execute: '/workflows/{id}/execute'
+		}
+	},
+	auth: { type: 'bearer', token: 'your-token' }
 });
 ```
-
 
 ## Customization
 
@@ -192,13 +187,12 @@ Make it yours with CSS custom properties:
 
 ```css
 :root {
-  --flowdrop-background-color: #0a0a0a;
-  --flowdrop-primary-color: #6366f1;
-  --flowdrop-border-color: #27272a;
-  --flowdrop-text-color: #fafafa;
+	--flowdrop-background-color: #0a0a0a;
+	--flowdrop-primary-color: #6366f1;
+	--flowdrop-border-color: #27272a;
+	--flowdrop-text-color: #fafafa;
 }
 ```
-
 
 ## Deploy
 
@@ -218,8 +212,6 @@ FLOWDROP_API_BASE_URL=http://your-backend/api node build
 
 Runtime configuration means you build once and deploy to staging, production, or anywhere else with just environment variables.
 
-
-
 ## Documentation
 
 | Resource                           | Description              |
@@ -238,11 +230,9 @@ npm run build        # Build library
 npm test             # Run all tests
 ```
 
-
 ## Contributing
 
 FlowDrop is stabilizing. Contributions will open soon. Star the repo to stay updated.
-
 
 <p align="center">
   <strong>FlowDrop</strong> - The visual workflow editor you own completely
