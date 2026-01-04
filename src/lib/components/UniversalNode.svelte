@@ -128,9 +128,12 @@
 </script>
 
 <div class="universal-node">
-	<!-- Render the node component dynamically -->
-	<!-- svelte-ignore binding_property_non_reactive -->
-	<svelte:component this={nodeComponent} {data} {selected} />
+	<!-- Render the node component dynamically (Svelte 5 dynamic component syntax) -->
+	{#if nodeComponent}
+		<!-- svelte-ignore binding_property_non_reactive -->
+		{@const NodeComponent = nodeComponent}
+		<NodeComponent {data} {selected} />
+	{/if}
 
 	<!-- Status overlay - only show if there's meaningful status information -->
 	{#if shouldShowStatus}
