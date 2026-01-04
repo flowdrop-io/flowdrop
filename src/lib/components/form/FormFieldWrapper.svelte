@@ -10,7 +10,7 @@
 -->
 
 <script lang="ts">
-	import type { Snippet } from "svelte";
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		/** Field identifier for label association */
@@ -27,14 +27,7 @@
 		children: Snippet;
 	}
 
-	let {
-		id,
-		label,
-		required = false,
-		description,
-		animationDelay = 0,
-		children
-	}: Props = $props();
+	let { id, label, required = false, description, animationDelay = 0, children }: Props = $props();
 
 	/**
 	 * Computed description ID for ARIA association
@@ -130,4 +123,3 @@
 		padding-left: 0.125rem;
 	}
 </style>
-

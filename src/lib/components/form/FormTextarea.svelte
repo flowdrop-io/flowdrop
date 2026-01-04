@@ -28,8 +28,8 @@
 
 	let {
 		id,
-		value = "",
-		placeholder = "",
+		value = '',
+		placeholder = '',
 		rows = 4,
 		required = false,
 		ariaDescribedBy,
@@ -48,7 +48,7 @@
 <textarea
 	{id}
 	class="form-textarea"
-	value={value ?? ""}
+	value={value ?? ''}
 	{placeholder}
 	{rows}
 	aria-describedby={ariaDescribedBy}
@@ -91,4 +91,3 @@
 			0 1px 2px rgba(0, 0, 0, 0.04);
 	}
 </style>
-

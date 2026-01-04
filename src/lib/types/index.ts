@@ -164,7 +164,14 @@ export function dynamicPortToNodePort(port: DynamicPort, portType: 'input' | 'ou
  * Built-in node types for explicit component rendering.
  * These are the node types that ship with FlowDrop.
  */
-export type BuiltinNodeType = 'note' | 'simple' | 'square' | 'tool' | 'gateway' | 'terminal' | 'default';
+export type BuiltinNodeType =
+	| 'note'
+	| 'simple'
+	| 'square'
+	| 'tool'
+	| 'gateway'
+	| 'terminal'
+	| 'default';
 
 /**
  * Node type for component rendering.
@@ -460,7 +467,6 @@ export interface ConfigValues {
 	/** Any other configuration properties defined in configSchema */
 	[key: string]: unknown;
 }
-
 
 /**
  * Extended node type for workflows

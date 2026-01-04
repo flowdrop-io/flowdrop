@@ -9,7 +9,7 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
+	import Icon from '@iconify/svelte';
 
 	interface Props {
 		/** Field identifier (used for ARIA) */
@@ -24,13 +24,7 @@
 		onChange: (value: string[]) => void;
 	}
 
-	let {
-		id,
-		value = [],
-		options = [],
-		ariaDescribedBy,
-		onChange
-	}: Props = $props();
+	let { id, value = [], options = [], ariaDescribedBy, onChange }: Props = $props();
 
 	/**
 	 * Handle checkbox toggle
@@ -149,4 +143,3 @@
 		line-height: 1.4;
 	}
 </style>
-

@@ -26,8 +26,8 @@
 
 	let {
 		id,
-		value = "",
-		placeholder = "",
+		value = '',
+		placeholder = '',
 		required = false,
 		ariaDescribedBy,
 		onChange
@@ -46,7 +46,7 @@
 	{id}
 	type="text"
 	class="form-text-field"
-	value={value ?? ""}
+	value={value ?? ''}
 	{placeholder}
 	aria-describedby={ariaDescribedBy}
 	aria-required={required}
@@ -85,4 +85,3 @@
 			0 1px 2px rgba(0, 0, 0, 0.04);
 	}
 </style>
-

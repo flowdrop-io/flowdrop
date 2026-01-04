@@ -113,7 +113,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `{#key}` block with workflow ID to force SvelteFlow remount
   - Ensures viewport properly adjusts to new workflow bounds
 
-
 ## [0.0.20] - 2025-12-29
 
 ### Changed
@@ -169,25 +168,25 @@ This release removes all deprecated code and backward compatibility support to c
 
 ```typescript
 // Before (0.0.18)
-import { getEndpointUrl, type ApiConfig, defaultApiConfig } from "@d34dman/flowdrop";
-const config: ApiConfig = { ...defaultApiConfig, baseUrl: "/api" };
-const url = getEndpointUrl(config, config.endpoints.workflows.get, { id: "123" });
+import { getEndpointUrl, type ApiConfig, defaultApiConfig } from '@d34dman/flowdrop';
+const config: ApiConfig = { ...defaultApiConfig, baseUrl: '/api' };
+const url = getEndpointUrl(config, config.endpoints.workflows.get, { id: '123' });
 
 // After (0.0.19)
-import { buildEndpointUrl, type EndpointConfig, defaultEndpointConfig } from "@d34dman/flowdrop";
-const config: EndpointConfig = { ...defaultEndpointConfig, baseUrl: "/api" };
-const url = buildEndpointUrl(config, config.endpoints.workflows.get, { id: "123" });
+import { buildEndpointUrl, type EndpointConfig, defaultEndpointConfig } from '@d34dman/flowdrop';
+const config: EndpointConfig = { ...defaultEndpointConfig, baseUrl: '/api' };
+const url = buildEndpointUrl(config, config.endpoints.workflows.get, { id: '123' });
 ```
 
 **2. App Unmount Migration**
 
 ```typescript
 // Before (0.0.18)
-import { unmountWorkflowEditor } from "@d34dman/flowdrop";
+import { unmountWorkflowEditor } from '@d34dman/flowdrop';
 unmountWorkflowEditor(app);
 
 // After (0.0.19)
-import { unmountFlowDropApp } from "@d34dman/flowdrop";
+import { unmountFlowDropApp } from '@d34dman/flowdrop';
 unmountFlowDropApp(app);
 ```
 
@@ -195,10 +194,10 @@ unmountFlowDropApp(app);
 
 ```typescript
 // Before (0.0.18)
-import type { NodeConfig } from "@d34dman/flowdrop";
+import type { NodeConfig } from '@d34dman/flowdrop';
 
 // After (0.0.19)
-import type { ConfigValues } from "@d34dman/flowdrop";
+import type { ConfigValues } from '@d34dman/flowdrop';
 ```
 
 **4. Auth Provider Migration**
@@ -208,21 +207,24 @@ import type { ConfigValues } from "@d34dman/flowdrop";
 const client = new EnhancedFlowDropApiClient(config);
 
 // After (0.0.19) - provide AuthProvider explicitly
-import { StaticAuthProvider } from "@d34dman/flowdrop";
-const client = new EnhancedFlowDropApiClient(config, new StaticAuthProvider({ type: "bearer", token: "xyz" }));
+import { StaticAuthProvider } from '@d34dman/flowdrop';
+const client = new EnhancedFlowDropApiClient(
+	config,
+	new StaticAuthProvider({ type: 'bearer', token: 'xyz' })
+);
 ```
 
 **5. Data Type Compatibility Check Migration**
 
 ```typescript
 // Before (0.0.18)
-import { areDataTypesCompatible } from "@d34dman/flowdrop";
-const compatible = areDataTypesCompatible("string", "text");
+import { areDataTypesCompatible } from '@d34dman/flowdrop';
+const compatible = areDataTypesCompatible('string', 'text');
 
 // After (0.0.19)
-import { getPortCompatibilityChecker } from "@d34dman/flowdrop";
+import { getPortCompatibilityChecker } from '@d34dman/flowdrop';
 const checker = getPortCompatibilityChecker();
-const compatible = checker.areDataTypesCompatible("string", "text");
+const compatible = checker.areDataTypesCompatible('string', 'text');
 ```
 
 ## [0.0.18] - 2025-12-04
@@ -237,11 +239,11 @@ const compatible = checker.areDataTypesCompatible("string", "text");
   - Manual variant override via `config.variant`
 
 - **Variant Configurations**:
-  | Variant | Icon        | Color           | Default Ports         |
+  | Variant | Icon | Color | Default Ports |
   | ------- | ----------- | --------------- | --------------------- |
   | `start` | Play circle | Green (#10b981) | Output only (trigger) |
-  | `end`   | Stop circle | Gray (#6b7280)  | Input only (trigger)  |
-  | `exit`  | X circle    | Red (#ef4444)   | Input only (trigger)  |
+  | `end` | Stop circle | Gray (#6b7280) | Input only (trigger) |
+  | `exit` | X circle | Red (#ef4444) | Input only (trigger) |
 
 - **API-Controlled Ports**: Terminal nodes now fully respect the `inputs` and `outputs` arrays from metadata
   - `undefined` → Uses variant default ports
@@ -272,12 +274,12 @@ const compatible = checker.areDataTypesCompatible("string", "text");
 
 ```json
 {
-  "id": "workflow-start",
-  "name": "Start",
-  "type": "terminal",
-  "tags": ["start"],
-  "inputs": [],
-  "outputs": [{ "id": "trigger", "name": "Go", "dataType": "trigger" }]
+	"id": "workflow-start",
+	"name": "Start",
+	"type": "terminal",
+	"tags": ["start"],
+	"inputs": [],
+	"outputs": [{ "id": "trigger", "name": "Go", "dataType": "trigger" }]
 }
 ```
 
@@ -285,12 +287,12 @@ const compatible = checker.areDataTypesCompatible("string", "text");
 
 ```json
 {
-  "id": "workflow-end",
-  "name": "End",
-  "type": "terminal",
-  "tags": ["end"],
-  "inputs": [{ "id": "done", "name": "Done", "dataType": "trigger" }],
-  "outputs": []
+	"id": "workflow-end",
+	"name": "End",
+	"type": "terminal",
+	"tags": ["end"],
+	"inputs": [{ "id": "done", "name": "Done", "dataType": "trigger" }],
+	"outputs": []
 }
 ```
 
@@ -298,11 +300,11 @@ const compatible = checker.areDataTypesCompatible("string", "text");
 
 ```json
 {
-  "id": "checkpoint",
-  "name": "Checkpoint",
-  "type": "terminal",
-  "inputs": [{ "id": "in", "name": "In", "dataType": "trigger" }],
-  "outputs": [{ "id": "out", "name": "Out", "dataType": "trigger" }]
+	"id": "checkpoint",
+	"name": "Checkpoint",
+	"type": "terminal",
+	"inputs": [{ "id": "in", "name": "In", "dataType": "trigger" }],
+	"outputs": [{ "id": "out", "name": "Out", "dataType": "trigger" }]
 }
 ```
 
@@ -310,11 +312,11 @@ const compatible = checker.areDataTypesCompatible("string", "text");
 
 ```json
 {
-  "id": "milestone",
-  "name": "Milestone",
-  "type": "terminal",
-  "inputs": [],
-  "outputs": []
+	"id": "milestone",
+	"name": "Milestone",
+	"type": "terminal",
+	"inputs": [],
+	"outputs": []
 }
 ```
 

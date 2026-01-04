@@ -14,7 +14,13 @@
 	import ConfigPanel from '$lib/components/ConfigPanel.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { api, setEndpointConfig } from '$lib/services/api.js';
-	import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema, NodeUIExtensions } from '$lib/types/index.js';
+	import type {
+		NodeMetadata,
+		Workflow,
+		WorkflowNode,
+		ConfigSchema,
+		NodeUIExtensions
+	} from '$lib/types/index.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import type { AuthProvider } from '$lib/types/auth.js';
