@@ -60,13 +60,7 @@
 	<!-- Header -->
 	<div class="config-panel__header">
 		<h2 class="config-panel__title">{title}</h2>
-		<button
-			class="config-panel__close"
-			onclick={onClose}
-			aria-label="Close panel"
-		>
-			×
-		</button>
+		<button class="config-panel__close" onclick={onClose} aria-label="Close panel"> × </button>
 	</div>
 
 	<!-- Details Section (between header and content) -->
@@ -121,7 +115,9 @@
 		color: #6b7280;
 		padding: 0.25rem;
 		border-radius: 0.25rem;
-		transition: color 0.15s, background-color 0.15s;
+		transition:
+			color 0.15s,
+			background-color 0.15s;
 	}
 
 	.config-panel__close:hover {
@@ -157,4 +153,3 @@
 		letter-spacing: 0.05em;
 	}
 </style>
-

@@ -9,8 +9,8 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import { normalizeOptions, type FieldOption } from "./types.js";
+	import Icon from '@iconify/svelte';
+	import { normalizeOptions, type FieldOption } from './types.js';
 
 	interface Props {
 		/** Field identifier */
@@ -29,7 +29,7 @@
 
 	let {
 		id,
-		value = "",
+		value = '',
 		options = [],
 		required = false,
 		ariaDescribedBy,
@@ -54,7 +54,7 @@
 	<select
 		{id}
 		class="form-select"
-		value={value ?? ""}
+		value={value ?? ''}
 		aria-describedby={ariaDescribedBy}
 		aria-required={required}
 		onchange={handleChange}
@@ -123,4 +123,3 @@
 		color: var(--color-ref-blue-500, #3b82f6);
 	}
 </style>
-

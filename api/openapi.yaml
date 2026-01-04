@@ -936,7 +936,7 @@ components:
         - default
       description: |
         Visual rendering type for the node.
-        
+
         Built-in types:
         - `note` - Sticky note with markdown support
         - `simple` - Compact layout with header and description
@@ -945,17 +945,17 @@ components:
         - `gateway` - Branching control flow with dynamic branches (uses config.branches)
         - `terminal` - Circular node for workflow start/end/exit points
         - `default` - Full-featured workflow node with dynamic port support
-        
+
         ## Dynamic Port Support
-        
+
         The `default` and `gateway` node types support dynamic ports:
-        
+
         - **default**: Supports `config.dynamicInputs` and `config.dynamicOutputs`
           for user-defined input/output handles
         - **gateway**: Supports `config.branches` for conditional branching paths
-        
+
         ## UI Extensions
-        
+
         All node types support `extensions.ui.hideUnconnectedHandles` to control
         visibility of unconnected ports.
 
@@ -1185,7 +1185,7 @@ components:
         Dynamic port configuration for user-defined inputs/outputs.
         These are defined in the node's config and allow users to create
         custom input/output handles at runtime, similar to gateway branches.
-        
+
         Dynamic ports are stored in `config.dynamicInputs` and `config.dynamicOutputs`
         arrays and are rendered alongside static ports defined in the node metadata.
       properties:
@@ -1226,7 +1226,7 @@ components:
         Branch configuration for gateway nodes.
         Branches define conditional output paths in gateway/switch nodes.
         Each branch creates an output handle that can be connected to downstream nodes.
-        
+
         Branches are stored in `config.branches` array and support dynamic addition/removal
         through the node configuration panel.
       properties:
@@ -1245,7 +1245,7 @@ components:
         condition:
           type: string
           description: Optional condition expression for this branch
-          example: "value > 10"
+          example: 'value > 10'
         isDefault:
           type: boolean
           default: false
@@ -1265,11 +1265,11 @@ components:
       description: |
         UI-related extension settings for nodes.
         Used to control visual behavior in the workflow editor.
-        
+
         These settings can be defined at two levels:
         1. **Node Type Level** (`metadata.extensions.ui`): Default settings for all instances
         2. **Instance Level** (`data.extensions.ui`): Override for specific node instances
-        
+
         Instance-level settings take precedence over type-level defaults.
       properties:
         hideUnconnectedHandles:
@@ -1293,7 +1293,7 @@ components:
       description: |
         Custom extension properties for 3rd party integrations.
         Allows storing additional configuration and UI state data.
-        
+
         Use namespaced keys (e.g., "myapp:analytics", "acme:settings") to avoid conflicts
         between different integrations.
       properties:
@@ -1305,7 +1305,7 @@ components:
           hideUnconnectedHandles: true
           style:
             opacity: 0.8
-        "myapp:analytics":
+        'myapp:analytics':
           trackUsage: true
           customField: value
 
@@ -1313,16 +1313,16 @@ components:
       type: object
       description: |
         Complete metadata for a node type including ports, configuration schema, and extensions.
-        
+
         ## Dynamic Port Support
-        
+
         Nodes can support user-defined dynamic ports through their configSchema:
         - Add `dynamicInputs` array property to allow custom input handles
         - Add `dynamicOutputs` array property to allow custom output handles
         - Add `branches` array property for gateway nodes with conditional paths
-        
+
         ## Extensions Support
-        
+
         The `extensions` property allows storing UI settings and 3rd party data:
         - Use `extensions.ui.hideUnconnectedHandles` to hide unconnected ports by default
         - Use namespaced keys for custom integrations (e.g., "myapp:settings")
@@ -1421,27 +1421,27 @@ components:
       type: object
       description: |
         Node configuration values containing all user-configured settings for a node instance.
-        
+
         This object stores configuration based on the node type's `configSchema` and is used by
         the backend to:
         - **Store and retrieve** node configuration persistently
         - **Pass values** to node processors during workflow execution
         - **Persist state** across sessions
-        
+
         ## Standard Properties
-        
+
         Any property defined in the node's `configSchema` (e.g., model, temperature, apiKey).
         The schema defines the type, validation rules, and default values for each property.
-        
+
         ## Special Properties (Dynamic Ports)
-        
+
         In addition to standard configuration, the config object may contain special arrays
         that define dynamic ports for the node:
-        
+
         - **`dynamicInputs`**: Array of DynamicPort for user-defined input handles
         - **`dynamicOutputs`**: Array of DynamicPort for user-defined output handles
         - **`branches`**: Array of Branch for gateway node conditional output paths
-        
+
         These dynamic configuration values generate additional handles on the node
         that can be connected to other nodes in the workflow.
       properties:
@@ -1478,7 +1478,7 @@ components:
         branches:
           - name: success
             label: Success
-            condition: "status === 200"
+            condition: 'status === 200'
           - name: error
             label: Error
             isDefault: true
@@ -1515,7 +1515,7 @@ components:
       type: object
       description: |
         Represents a node instance in a workflow.
-        
+
         Each node instance contains:
         - Position on the canvas
         - Display data (label)
@@ -1564,7 +1564,7 @@ components:
                 Per-instance extension properties for 3rd party integrations.
                 Overrides or extends the node type extensions defined in metadata.extensions.
                 Use for instance-specific UI states or custom data.
-                
+
                 Common use cases:
                 - `extensions.ui.hideUnconnectedHandles`: Hide ports without connections
                 - `extensions.ui.style`: Custom styling for this node instance

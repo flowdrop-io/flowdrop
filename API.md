@@ -5,6 +5,7 @@ This document describes the REST API specification for backend integration with 
 ## Overview
 
 FlowDrop provides a complete API for:
+
 - **Node Type Discovery**: Browse and search available node processors with metadata
 - **Workflow Management**: Complete CRUD operations for workflows with nodes and edges
 - **Pipeline Execution**: Execute workflows with real-time status tracking and job management
@@ -19,8 +20,8 @@ All API endpoints are prefixed with `/api/flowdrop` (configurable via `EndpointC
 ```typescript
 // Default endpoint configuration
 const endpointConfig: EndpointConfig = {
-    baseUrl: "/api/flowdrop",
-    // ... other options
+	baseUrl: '/api/flowdrop'
+	// ... other options
 };
 ```
 
@@ -41,10 +42,10 @@ FlowDrop supports multiple authentication methods via the `AuthProvider` interfa
 
 ```typescript
 interface AuthProvider {
-    getAuthHeaders(): Promise<Record<string, string>>;
-    isAuthenticated(): boolean;
-    onUnauthorized?(): Promise<boolean>;
-    onForbidden?(): Promise<void>;
+	getAuthHeaders(): Promise<Record<string, string>>;
+	isAuthenticated(): boolean;
+	onUnauthorized?(): Promise<boolean>;
+	onForbidden?(): Promise<void>;
 }
 ```
 
@@ -60,10 +61,10 @@ All API responses follow a consistent format:
 
 ```typescript
 interface ApiResponse<T> {
-    success: boolean;
-    data?: T;
-    error?: string;
-    message?: string;
+	success: boolean;
+	data?: T;
+	error?: string;
+	message?: string;
 }
 ```
 
@@ -71,12 +72,12 @@ interface ApiResponse<T> {
 
 ```json
 {
-    "success": false,
-    "error": "Error message",
-    "code": "ERROR_CODE",
-    "details": {
-        "field": "Additional error details"
-    }
+	"success": false,
+	"error": "Error message",
+	"code": "ERROR_CODE",
+	"details": {
+		"field": "Additional error details"
+	}
 }
 ```
 
@@ -106,11 +107,11 @@ Check if the FlowDrop API is running and responsive.
 
 ```json
 {
-    "status": "healthy",
-    "timestamp": "2024-01-15T10:00:00Z",
-    "version": "1.0.0",
-    "service": "FlowDrop API",
-    "uptime": 3600
+	"status": "healthy",
+	"timestamp": "2024-01-15T10:00:00Z",
+	"version": "1.0.0",
+	"service": "FlowDrop API",
+	"uptime": 3600
 }
 ```
 
@@ -128,31 +129,31 @@ Retrieve the complete port configuration system including available data types a
 
 ```json
 {
-    "success": true,
-    "data": {
-        "version": "1.0.0",
-        "defaultDataType": "string",
-        "dataTypes": [
-            {
-                "id": "trigger",
-                "name": "Trigger",
-                "description": "Control flow of the workflow",
-                "color": "var(--color-ref-purple-500)",
-                "category": "basic",
-                "enabled": true
-            },
-            {
-                "id": "string",
-                "name": "String",
-                "description": "Text data",
-                "color": "var(--color-ref-emerald-500)",
-                "category": "basic",
-                "enabled": true
-            }
-        ],
-        "compatibilityRules": []
-    },
-    "message": "Port configuration loaded successfully"
+	"success": true,
+	"data": {
+		"version": "1.0.0",
+		"defaultDataType": "string",
+		"dataTypes": [
+			{
+				"id": "trigger",
+				"name": "Trigger",
+				"description": "Control flow of the workflow",
+				"color": "var(--color-ref-purple-500)",
+				"category": "basic",
+				"enabled": true
+			},
+			{
+				"id": "string",
+				"name": "String",
+				"description": "Text data",
+				"color": "var(--color-ref-emerald-500)",
+				"category": "basic",
+				"enabled": true
+			}
+		],
+		"compatibilityRules": []
+	},
+	"message": "Port configuration loaded successfully"
 }
 ```
 
@@ -217,59 +218,59 @@ Retrieve all available node types with optional filtering and pagination.
 
 ```json
 {
-    "success": true,
-    "data": [
-        {
-            "id": "openai_chat_executor",
-            "name": "OpenAI Chat",
-            "description": "Chat completion using OpenAI's GPT models",
-            "category": "ai",
-            "version": "1.0.0",
-            "type": "default",
-            "supportedTypes": ["default", "simple"],
-            "icon": "mdi:chat",
-            "color": "#10a37f",
-            "inputs": [
-                {
-                    "id": "data",
-                    "name": "Input Data",
-                    "type": "input",
-                    "dataType": "mixed",
-                    "required": false,
-                    "description": "Input data for the node"
-                }
-            ],
-            "outputs": [
-                {
-                    "id": "response",
-                    "name": "Response",
-                    "type": "output",
-                    "dataType": "string",
-                    "description": "The OpenAI response"
-                }
-            ],
-            "configSchema": {
-                "type": "object",
-                "properties": {
-                    "model": {
-                        "type": "string",
-                        "title": "Model",
-                        "default": "gpt-4o-mini",
-                        "enum": ["gpt-4o-mini", "gpt-4", "gpt-3.5-turbo"]
-                    },
-                    "temperature": {
-                        "type": "number",
-                        "title": "Temperature",
-                        "default": 0.7,
-                        "minimum": 0,
-                        "maximum": 2
-                    }
-                }
-            },
-            "tags": ["openai", "gpt", "chat", "ai"]
-        }
-    ],
-    "message": "Found 1 node types"
+	"success": true,
+	"data": [
+		{
+			"id": "openai_chat_executor",
+			"name": "OpenAI Chat",
+			"description": "Chat completion using OpenAI's GPT models",
+			"category": "ai",
+			"version": "1.0.0",
+			"type": "default",
+			"supportedTypes": ["default", "simple"],
+			"icon": "mdi:chat",
+			"color": "#10a37f",
+			"inputs": [
+				{
+					"id": "data",
+					"name": "Input Data",
+					"type": "input",
+					"dataType": "mixed",
+					"required": false,
+					"description": "Input data for the node"
+				}
+			],
+			"outputs": [
+				{
+					"id": "response",
+					"name": "Response",
+					"type": "output",
+					"dataType": "string",
+					"description": "The OpenAI response"
+				}
+			],
+			"configSchema": {
+				"type": "object",
+				"properties": {
+					"model": {
+						"type": "string",
+						"title": "Model",
+						"default": "gpt-4o-mini",
+						"enum": ["gpt-4o-mini", "gpt-4", "gpt-3.5-turbo"]
+					},
+					"temperature": {
+						"type": "number",
+						"title": "Temperature",
+						"default": 0.7,
+						"minimum": 0,
+						"maximum": 2
+					}
+				}
+			},
+			"tags": ["openai", "gpt", "chat", "ai"]
+		}
+	],
+	"message": "Found 1 node types"
 }
 ```
 
@@ -304,15 +305,15 @@ Retrieve metadata for a specific node type.
 
 FlowDrop includes built-in node rendering types:
 
-| Type                       | Display Name                     | Description                                                    | Dynamic Support                           |
-| -------------------------- | -------------------------------- | -------------------------------------------------------------- | ----------------------------------------- |
-| `workflowNode` / `default` | Default (Standard Workflow Node) | Full-featured workflow node with inputs/outputs display        | `dynamicInputs`, `dynamicOutputs`         |
-| `simple`                   | Simple (Compact Layout)          | Compact node with header, icon, and description                | -                                         |
-| `square`                   | Square (Minimal Icon)            | Minimal square node showing only an icon                       | -                                         |
-| `tool`                     | Tool (Agent Tool)                | Specialized node for agent tools with tool metadata            | -                                         |
-| `gateway`                  | Gateway (Branching)              | Branching control flow node with multiple output branches      | `branches` (dynamic output paths)         |
-| `note`                     | Note (Sticky Note)               | Documentation note with markdown support                       | -                                         |
-| `terminal`                 | Terminal (Start/End/Exit)        | Circular terminal node for workflow start, end, or exit points | -                                         |
+| Type                       | Display Name                     | Description                                                    | Dynamic Support                   |
+| -------------------------- | -------------------------------- | -------------------------------------------------------------- | --------------------------------- |
+| `workflowNode` / `default` | Default (Standard Workflow Node) | Full-featured workflow node with inputs/outputs display        | `dynamicInputs`, `dynamicOutputs` |
+| `simple`                   | Simple (Compact Layout)          | Compact node with header, icon, and description                | -                                 |
+| `square`                   | Square (Minimal Icon)            | Minimal square node showing only an icon                       | -                                 |
+| `tool`                     | Tool (Agent Tool)                | Specialized node for agent tools with tool metadata            | -                                 |
+| `gateway`                  | Gateway (Branching)              | Branching control flow node with multiple output branches      | `branches` (dynamic output paths) |
+| `note`                     | Note (Sticky Note)               | Documentation note with markdown support                       | -                                 |
+| `terminal`                 | Terminal (Start/End/Exit)        | Circular terminal node for workflow start, end, or exit points | -                                 |
 
 All node types support the `extensions.ui.hideUnconnectedHandles` setting to control visibility of unconnected ports.
 
@@ -380,69 +381,65 @@ Create a new workflow.
 
 ```json
 {
-    "name": "My Workflow",
-    "description": "A workflow for processing data",
-    "nodes": [
-        {
-            "id": "node-1",
-            "type": "text_input",
-            "position": { "x": 100, "y": 100 },
-            "data": {
-                "label": "User Input",
-                "config": {
-                    "placeholder": "Enter text",
-                    "defaultValue": "",
-                    "required": true
-                },
-                "metadata": {
-                    "id": "text_input",
-                    "name": "Text Input",
-                    "category": "inputs",
-                    "version": "1.0.0",
-                    "inputs": [],
-                    "outputs": [
-                        { "id": "value", "name": "Value", "type": "output", "dataType": "string" }
-                    ]
-                }
-            }
-        },
-        {
-            "id": "node-2",
-            "type": "openai_chat",
-            "position": { "x": 400, "y": 100 },
-            "data": {
-                "label": "AI Chat",
-                "config": {
-                    "model": "gpt-4o-mini",
-                    "temperature": 0.7,
-                    "maxTokens": 1000,
-                    "systemPrompt": "You are a helpful assistant."
-                },
-                "metadata": {
-                    "id": "openai_chat",
-                    "name": "OpenAI Chat",
-                    "category": "ai",
-                    "version": "1.0.0",
-                    "inputs": [
-                        { "id": "data", "name": "Input", "type": "input", "dataType": "string" }
-                    ],
-                    "outputs": [
-                        { "id": "response", "name": "Response", "type": "output", "dataType": "string" }
-                    ]
-                }
-            }
-        }
-    ],
-    "edges": [
-        {
-            "id": "edge-1",
-            "source": "node-1",
-            "target": "node-2",
-            "sourceHandle": "value",
-            "targetHandle": "data"
-        }
-    ],
-    "tags": ["example", "ai"]
+	"name": "My Workflow",
+	"description": "A workflow for processing data",
+	"nodes": [
+		{
+			"id": "node-1",
+			"type": "text_input",
+			"position": { "x": 100, "y": 100 },
+			"data": {
+				"label": "User Input",
+				"config": {
+					"placeholder": "Enter text",
+					"defaultValue": "",
+					"required": true
+				},
+				"metadata": {
+					"id": "text_input",
+					"name": "Text Input",
+					"category": "inputs",
+					"version": "1.0.0",
+					"inputs": [],
+					"outputs": [{ "id": "value", "name": "Value", "type": "output", "dataType": "string" }]
+				}
+			}
+		},
+		{
+			"id": "node-2",
+			"type": "openai_chat",
+			"position": { "x": 400, "y": 100 },
+			"data": {
+				"label": "AI Chat",
+				"config": {
+					"model": "gpt-4o-mini",
+					"temperature": 0.7,
+					"maxTokens": 1000,
+					"systemPrompt": "You are a helpful assistant."
+				},
+				"metadata": {
+					"id": "openai_chat",
+					"name": "OpenAI Chat",
+					"category": "ai",
+					"version": "1.0.0",
+					"inputs": [{ "id": "data", "name": "Input", "type": "input", "dataType": "string" }],
+					"outputs": [
+						{ "id": "response", "name": "Response", "type": "output", "dataType": "string" }
+					]
+				}
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "edge-1",
+			"source": "node-1",
+			"target": "node-2",
+			"sourceHandle": "value",
+			"targetHandle": "data"
+		}
+	],
+	"tags": ["example", "ai"]
 }
 ```
 
@@ -506,8 +503,8 @@ Delete a workflow permanently.
 
 ```json
 {
-    "success": true,
-    "message": "Workflow deleted successfully"
+	"success": true,
+	"message": "Workflow deleted successfully"
 }
 ```
 
@@ -529,13 +526,13 @@ Full workflow object to validate.
 
 ```json
 {
-    "success": true,
-    "data": {
-        "valid": true,
-        "errors": [],
-        "warnings": ["Node 'Calculator' has no connections"],
-        "suggestions": ["Connect your nodes with edges to create a workflow"]
-    }
+	"success": true,
+	"data": {
+		"valid": true,
+		"errors": [],
+		"warnings": ["Node 'Calculator' has no connections"],
+		"suggestions": ["Connect your nodes with edges to create a workflow"]
+	}
 }
 ```
 
@@ -619,17 +616,17 @@ Get all pipeline executions for a specific workflow.
 
 ```json
 {
-    "success": true,
-    "data": [
-        {
-            "id": "pipeline-001",
-            "workflow_id": "550e8400-e29b-41d4-a716-446655440001",
-            "status": "completed",
-            "created": "2024-01-15T10:00:00Z",
-            "updated": "2024-01-15T10:05:30Z"
-        }
-    ],
-    "message": "Found 1 pipeline executions"
+	"success": true,
+	"data": [
+		{
+			"id": "pipeline-001",
+			"workflow_id": "550e8400-e29b-41d4-a716-446655440001",
+			"status": "completed",
+			"created": "2024-01-15T10:00:00Z",
+			"updated": "2024-01-15T10:05:30Z"
+		}
+	],
+	"message": "Found 1 pipeline executions"
 }
 ```
 
@@ -643,44 +640,44 @@ Retrieve detailed information about a pipeline execution.
 
 ```json
 {
-    "status": "running",
-    "jobs": [
-        {
-            "id": "job-001-1",
-            "node_id": "node-input-1",
-            "status": "completed",
-            "execution_count": 1,
-            "started": "2024-01-15T10:00:00Z",
-            "completed": "2024-01-15T10:00:01Z",
-            "execution_time": 1000
-        },
-        {
-            "id": "job-001-2",
-            "node_id": "node-openai-1",
-            "status": "running",
-            "execution_count": 1,
-            "started": "2024-01-15T10:00:01Z"
-        }
-    ],
-    "node_statuses": {
-        "node-input-1": {
-            "status": "completed",
-            "last_executed": "2024-01-15T10:00:01Z",
-            "execution_time": 1000
-        },
-        "node-openai-1": {
-            "status": "running",
-            "last_executed": "2024-01-15T10:00:01Z"
-        }
-    },
-    "job_status_summary": {
-        "total": 3,
-        "pending": 1,
-        "running": 1,
-        "completed": 1,
-        "failed": 0,
-        "cancelled": 0
-    }
+	"status": "running",
+	"jobs": [
+		{
+			"id": "job-001-1",
+			"node_id": "node-input-1",
+			"status": "completed",
+			"execution_count": 1,
+			"started": "2024-01-15T10:00:00Z",
+			"completed": "2024-01-15T10:00:01Z",
+			"execution_time": 1000
+		},
+		{
+			"id": "job-001-2",
+			"node_id": "node-openai-1",
+			"status": "running",
+			"execution_count": 1,
+			"started": "2024-01-15T10:00:01Z"
+		}
+	],
+	"node_statuses": {
+		"node-input-1": {
+			"status": "completed",
+			"last_executed": "2024-01-15T10:00:01Z",
+			"execution_time": 1000
+		},
+		"node-openai-1": {
+			"status": "running",
+			"last_executed": "2024-01-15T10:00:01Z"
+		}
+	},
+	"job_status_summary": {
+		"total": 3,
+		"pending": 1,
+		"running": 1,
+		"completed": 1,
+		"failed": 0,
+		"cancelled": 0
+	}
 }
 ```
 
@@ -694,13 +691,13 @@ Start execution of a pipeline.
 
 ```json
 {
-    "inputs": {
-        "node_id": "input value"
-    },
-    "options": {
-        "timeout": 30000,
-        "maxSteps": 100
-    }
+	"inputs": {
+		"node_id": "input value"
+	},
+	"options": {
+		"timeout": 30000,
+		"maxSteps": 100
+	}
 }
 ```
 
@@ -708,13 +705,13 @@ Start execution of a pipeline.
 
 ```json
 {
-    "success": true,
-    "data": {
-        "pipeline_id": "pipeline-001",
-        "status": "running",
-        "message": "Pipeline execution started"
-    },
-    "message": "Pipeline execution started"
+	"success": true,
+	"data": {
+		"pipeline_id": "pipeline-001",
+		"status": "running",
+		"message": "Pipeline execution started"
+	},
+	"message": "Pipeline execution started"
 }
 ```
 
@@ -728,9 +725,9 @@ Create a new pipeline and start execution in one call.
 
 ```json
 {
-    "inputs": {
-        "node_id": "input value"
-    }
+	"inputs": {
+		"node_id": "input value"
+	}
 }
 ```
 
@@ -738,14 +735,14 @@ Create a new pipeline and start execution in one call.
 
 ```json
 {
-    "success": true,
-    "data": {
-        "execution_id": "pipeline-12345",
-        "status": "running",
-        "started_at": "2024-01-15T15:00:00Z",
-        "estimated_completion": "2024-01-15T15:00:30Z"
-    },
-    "message": "Workflow execution started"
+	"success": true,
+	"data": {
+		"execution_id": "pipeline-12345",
+		"status": "running",
+		"started_at": "2024-01-15T15:00:00Z",
+		"estimated_completion": "2024-01-15T15:00:30Z"
+	},
+	"message": "Workflow execution started"
 }
 ```
 
@@ -759,8 +756,8 @@ Cancel a running pipeline execution.
 
 ```json
 {
-    "success": true,
-    "message": "Pipeline stopped successfully"
+	"success": true,
+	"message": "Pipeline stopped successfully"
 }
 ```
 
@@ -768,9 +765,9 @@ Cancel a running pipeline execution.
 
 ```json
 {
-    "success": false,
-    "error": "Pipeline cannot be stopped: current status is \"completed\"",
-    "code": "CONFLICT"
+	"success": false,
+	"error": "Pipeline cannot be stopped: current status is \"completed\"",
+	"code": "CONFLICT"
 }
 ```
 
@@ -790,23 +787,23 @@ Retrieve detailed execution logs for a pipeline.
 
 ```json
 {
-    "success": true,
-    "data": [
-        {
-            "timestamp": "2024-01-15T10:00:00Z",
-            "level": "info",
-            "message": "Pipeline execution started",
-            "context": { "workflow_id": "550e8400-e29b-41d4-a716-446655440001" }
-        },
-        {
-            "timestamp": "2024-01-15T10:00:01Z",
-            "level": "info",
-            "message": "Node execution completed successfully",
-            "node_id": "node-input-1",
-            "context": { "execution_time": 1000 }
-        }
-    ],
-    "message": "Retrieved 2 log entries"
+	"success": true,
+	"data": [
+		{
+			"timestamp": "2024-01-15T10:00:00Z",
+			"level": "info",
+			"message": "Pipeline execution started",
+			"context": { "workflow_id": "550e8400-e29b-41d4-a716-446655440001" }
+		},
+		{
+			"timestamp": "2024-01-15T10:00:01Z",
+			"level": "info",
+			"message": "Node execution completed successfully",
+			"node_id": "node-input-1",
+			"context": { "execution_time": 1000 }
+		}
+	],
+	"message": "Retrieved 2 log entries"
 }
 ```
 
@@ -844,21 +841,21 @@ Retrieve detailed execution logs for a pipeline.
 
 ```typescript
 interface WorkflowNode {
-    id: string;
-    type: string;
-    position: { x: number; y: number };
-    deletable?: boolean;
-    data: {
-        label: string;
-        /** Node configuration values - see NodeConfig for details */
-        config: NodeConfig;
-        metadata: NodeMetadata;
-        isProcessing?: boolean;
-        error?: string;
-        executionInfo?: NodeExecutionInfo;
-        /** Per-instance extension properties (overrides metadata.extensions) */
-        extensions?: NodeExtensions;
-    };
+	id: string;
+	type: string;
+	position: { x: number; y: number };
+	deletable?: boolean;
+	data: {
+		label: string;
+		/** Node configuration values - see NodeConfig for details */
+		config: NodeConfig;
+		metadata: NodeMetadata;
+		isProcessing?: boolean;
+		error?: string;
+		executionInfo?: NodeExecutionInfo;
+		/** Per-instance extension properties (overrides metadata.extensions) */
+		extensions?: NodeExtensions;
+	};
 }
 ```
 
@@ -868,20 +865,20 @@ Node configuration values containing all user-configured settings for a node ins
 
 This object is used by the backend to:
 
--   **Store and retrieve** node configuration persistently
--   **Pass values** to node processors during workflow execution
--   **Persist state** across sessions
+- **Store and retrieve** node configuration persistently
+- **Pass values** to node processors during workflow execution
+- **Persist state** across sessions
 
 ```typescript
 interface NodeConfig {
-    /** Dynamic input ports for user-defined input handles */
-    dynamicInputs?: DynamicPort[];
-    /** Dynamic output ports for user-defined output handles */
-    dynamicOutputs?: DynamicPort[];
-    /** Branches for gateway node conditional output paths */
-    branches?: Branch[];
-    /** Any other configuration properties defined in configSchema */
-    [key: string]: unknown;
+	/** Dynamic input ports for user-defined input handles */
+	dynamicInputs?: DynamicPort[];
+	/** Dynamic output ports for user-defined output handles */
+	dynamicOutputs?: DynamicPort[];
+	/** Branches for gateway node conditional output paths */
+	branches?: Branch[];
+	/** Any other configuration properties defined in configSchema */
+	[key: string]: unknown;
 }
 ```
 
@@ -895,47 +892,47 @@ The schema defines the type, validation rules, and default values for each prope
 In addition to standard configuration, the config object may contain special arrays
 that define dynamic ports for the node:
 
-| Property         | Type           | Description                                            |
-| ---------------- | -------------- | ------------------------------------------------------ |
-| `dynamicInputs`  | DynamicPort[]  | User-defined input handles that appear on the node     |
-| `dynamicOutputs` | DynamicPort[]  | User-defined output handles that appear on the node    |
-| `branches`       | Branch[]       | Gateway node branches for conditional routing          |
+| Property         | Type          | Description                                         |
+| ---------------- | ------------- | --------------------------------------------------- |
+| `dynamicInputs`  | DynamicPort[] | User-defined input handles that appear on the node  |
+| `dynamicOutputs` | DynamicPort[] | User-defined output handles that appear on the node |
+| `branches`       | Branch[]      | Gateway node branches for conditional routing       |
 
 #### Example
 
 ```json
 {
-    "model": "gpt-4o-mini",
-    "temperature": 0.7,
-    "maxTokens": 1000,
-    "apiKey": "sk-...",
-    "dynamicInputs": [
-        {
-            "name": "extra_data",
-            "label": "Extra Data",
-            "dataType": "json",
-            "required": false
-        }
-    ],
-    "dynamicOutputs": [
-        {
-            "name": "result",
-            "label": "Result",
-            "dataType": "string"
-        }
-    ],
-    "branches": [
-        {
-            "name": "success",
-            "label": "Success",
-            "condition": "status === 200"
-        },
-        {
-            "name": "error",
-            "label": "Error",
-            "isDefault": true
-        }
-    ]
+	"model": "gpt-4o-mini",
+	"temperature": 0.7,
+	"maxTokens": 1000,
+	"apiKey": "sk-...",
+	"dynamicInputs": [
+		{
+			"name": "extra_data",
+			"label": "Extra Data",
+			"dataType": "json",
+			"required": false
+		}
+	],
+	"dynamicOutputs": [
+		{
+			"name": "result",
+			"label": "Result",
+			"dataType": "string"
+		}
+	],
+	"branches": [
+		{
+			"name": "success",
+			"label": "Success",
+			"condition": "status === 200"
+		},
+		{
+			"name": "error",
+			"label": "Error",
+			"isDefault": true
+		}
+	]
 }
 ```
 
@@ -943,22 +940,22 @@ that define dynamic ports for the node:
 
 ```typescript
 interface WorkflowEdge {
-    id: string;
-    source: string;
-    target: string;
-    sourceHandle?: string;
-    targetHandle?: string;
-    type?: "default" | "straight" | "step" | "smoothstep";
-    selectable?: boolean;
-    deletable?: boolean;
-    data?: {
-        label?: string;
-        condition?: string;
-        metadata?: {
-            edgeType?: "trigger" | "tool" | "data";
-            sourcePortDataType?: string;
-        };
-    };
+	id: string;
+	source: string;
+	target: string;
+	sourceHandle?: string;
+	targetHandle?: string;
+	type?: 'default' | 'straight' | 'step' | 'smoothstep';
+	selectable?: boolean;
+	deletable?: boolean;
+	data?: {
+		label?: string;
+		condition?: string;
+		metadata?: {
+			edgeType?: 'trigger' | 'tool' | 'data';
+			sourcePortDataType?: string;
+		};
+	};
 }
 ```
 
@@ -966,21 +963,21 @@ interface WorkflowEdge {
 
 ```typescript
 interface NodeMetadata {
-    id: string;
-    name: string;
-    type?: NodeType;
-    supportedTypes?: NodeType[];
-    description: string;
-    category: NodeCategory;
-    version: string;
-    icon?: string;
-    color?: string;
-    inputs: NodePort[];
-    outputs: NodePort[];
-    configSchema?: ConfigSchema;
-    tags?: string[];
-    /** Default extension properties for all instances of this node type */
-    extensions?: NodeExtensions;
+	id: string;
+	name: string;
+	type?: NodeType;
+	supportedTypes?: NodeType[];
+	description: string;
+	category: NodeCategory;
+	version: string;
+	icon?: string;
+	color?: string;
+	inputs: NodePort[];
+	outputs: NodePort[];
+	configSchema?: ConfigSchema;
+	tags?: string[];
+	/** Default extension properties for all instances of this node type */
+	extensions?: NodeExtensions;
 }
 ```
 
@@ -988,13 +985,13 @@ interface NodeMetadata {
 
 ```typescript
 interface NodePort {
-    id: string;
-    name: string;
-    type: "input" | "output" | "metadata";
-    dataType: string;
-    required?: boolean;
-    description?: string;
-    defaultValue?: unknown;
+	id: string;
+	name: string;
+	type: 'input' | 'output' | 'metadata';
+	dataType: string;
+	required?: boolean;
+	description?: string;
+	defaultValue?: unknown;
 }
 ```
 
@@ -1004,16 +1001,16 @@ Dynamic ports are user-defined input/output handles that can be added at runtime
 
 ```typescript
 interface DynamicPort {
-    /** Unique identifier for the port (used for handle IDs and connections) */
-    name: string;
-    /** Display label shown in the UI */
-    label: string;
-    /** Description of what this port accepts/provides */
-    description?: string;
-    /** Data type for the port (affects color and connection validation) */
-    dataType: string;
-    /** Whether this port is required for execution */
-    required?: boolean;
+	/** Unique identifier for the port (used for handle IDs and connections) */
+	name: string;
+	/** Display label shown in the UI */
+	label: string;
+	/** Description of what this port accepts/provides */
+	description?: string;
+	/** Data type for the port (affects color and connection validation) */
+	dataType: string;
+	/** Whether this port is required for execution */
+	required?: boolean;
 }
 ```
 
@@ -1023,16 +1020,16 @@ Branches define conditional output paths for gateway/switch nodes. Each branch c
 
 ```typescript
 interface Branch {
-    /** Unique identifier for the branch (used as handle ID) */
-    name: string;
-    /** Display label shown in the UI */
-    label: string;
-    /** Description of when this branch is activated */
-    description?: string;
-    /** Optional condition expression for this branch */
-    condition?: string;
-    /** Whether this is the default/fallback branch */
-    isDefault?: boolean;
+	/** Unique identifier for the branch (used as handle ID) */
+	name: string;
+	/** Display label shown in the UI */
+	label: string;
+	/** Description of when this branch is activated */
+	description?: string;
+	/** Optional condition expression for this branch */
+	condition?: string;
+	/** Whether this is the default/fallback branch */
+	isDefault?: boolean;
 }
 ```
 
@@ -1042,18 +1039,18 @@ Extensions allow storing UI settings and third-party integration data on nodes.
 
 ```typescript
 interface NodeExtensions {
-    /** UI-related settings for the node */
-    ui?: NodeUIExtensions;
-    /** Namespaced extension data from third-party integrations */
-    [namespace: string]: unknown;
+	/** UI-related settings for the node */
+	ui?: NodeUIExtensions;
+	/** Namespaced extension data from third-party integrations */
+	[namespace: string]: unknown;
 }
 
 interface NodeUIExtensions {
-    /** Show/hide unconnected handles to reduce visual noise */
-    hideUnconnectedHandles?: boolean;
-    /** Custom styles or theme overrides */
-    style?: Record<string, unknown>;
-    [key: string]: unknown;
+	/** Show/hide unconnected handles to reduce visual noise */
+	hideUnconnectedHandles?: boolean;
+	/** Custom styles or theme overrides */
+	style?: Record<string, unknown>;
+	[key: string]: unknown;
 }
 ```
 
@@ -1061,27 +1058,27 @@ interface NodeUIExtensions {
 
 ```typescript
 interface ConfigSchema {
-    type: "object";
-    properties: Record<string, ConfigProperty>;
-    required?: string[];
-    additionalProperties?: boolean;
+	type: 'object';
+	properties: Record<string, ConfigProperty>;
+	required?: string[];
+	additionalProperties?: boolean;
 }
 
 interface ConfigProperty {
-    type: "string" | "number" | "boolean" | "array" | "object" | "integer";
-    title?: string;
-    description?: string;
-    default?: unknown;
-    enum?: unknown[];
-    multiple?: boolean;
-    minimum?: number;
-    maximum?: number;
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-    format?: "multiline" | "hidden" | string;
-    items?: ConfigProperty;
-    properties?: Record<string, ConfigProperty>;
+	type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer';
+	title?: string;
+	description?: string;
+	default?: unknown;
+	enum?: unknown[];
+	multiple?: boolean;
+	minimum?: number;
+	maximum?: number;
+	minLength?: number;
+	maxLength?: number;
+	pattern?: string;
+	format?: 'multiline' | 'hidden' | string;
+	items?: ConfigProperty;
+	properties?: Record<string, ConfigProperty>;
 }
 ```
 
@@ -1099,68 +1096,68 @@ Nodes can support user-defined dynamic ports through their `configSchema`. Dynam
 
 ```json
 {
-    "configSchema": {
-        "type": "object",
-        "properties": {
-            "dynamicInputs": {
-                "type": "array",
-                "title": "Dynamic Inputs",
-                "description": "User-defined input ports",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "type": "string",
-                            "title": "Port ID",
-                            "description": "Unique identifier for connections"
-                        },
-                        "label": {
-                            "type": "string",
-                            "title": "Label",
-                            "description": "Display name in the UI"
-                        },
-                        "description": {
-                            "type": "string",
-                            "title": "Description"
-                        },
-                        "dataType": {
-                            "type": "string",
-                            "title": "Data Type",
-                            "enum": ["string", "number", "boolean", "json", "array", "mixed"],
-                            "default": "string"
-                        },
-                        "required": {
-                            "type": "boolean",
-                            "title": "Required",
-                            "default": false
-                        }
-                    },
-                    "required": ["name", "label", "dataType"]
-                }
-            },
-            "dynamicOutputs": {
-                "type": "array",
-                "title": "Dynamic Outputs",
-                "description": "User-defined output ports",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "name": { "type": "string", "title": "Port ID" },
-                        "label": { "type": "string", "title": "Label" },
-                        "description": { "type": "string", "title": "Description" },
-                        "dataType": {
-                            "type": "string",
-                            "title": "Data Type",
-                            "enum": ["string", "number", "boolean", "json", "array", "mixed"],
-                            "default": "string"
-                        },
-                        "required": { "type": "boolean", "default": false }
-                    },
-                    "required": ["name", "label", "dataType"]
-                }
-            }
-        }
-    }
+	"configSchema": {
+		"type": "object",
+		"properties": {
+			"dynamicInputs": {
+				"type": "array",
+				"title": "Dynamic Inputs",
+				"description": "User-defined input ports",
+				"items": {
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string",
+							"title": "Port ID",
+							"description": "Unique identifier for connections"
+						},
+						"label": {
+							"type": "string",
+							"title": "Label",
+							"description": "Display name in the UI"
+						},
+						"description": {
+							"type": "string",
+							"title": "Description"
+						},
+						"dataType": {
+							"type": "string",
+							"title": "Data Type",
+							"enum": ["string", "number", "boolean", "json", "array", "mixed"],
+							"default": "string"
+						},
+						"required": {
+							"type": "boolean",
+							"title": "Required",
+							"default": false
+						}
+					},
+					"required": ["name", "label", "dataType"]
+				}
+			},
+			"dynamicOutputs": {
+				"type": "array",
+				"title": "Dynamic Outputs",
+				"description": "User-defined output ports",
+				"items": {
+					"type": "object",
+					"properties": {
+						"name": { "type": "string", "title": "Port ID" },
+						"label": { "type": "string", "title": "Label" },
+						"description": { "type": "string", "title": "Description" },
+						"dataType": {
+							"type": "string",
+							"title": "Data Type",
+							"enum": ["string", "number", "boolean", "json", "array", "mixed"],
+							"default": "string"
+						},
+						"required": { "type": "boolean", "default": false }
+					},
+					"required": ["name", "label", "dataType"]
+				}
+			}
+		}
+	}
 }
 ```
 
@@ -1208,46 +1205,46 @@ Gateway nodes support dynamic branching through the `config.branches` array. Eac
 
 ```json
 {
-    "configSchema": {
-        "type": "object",
-        "properties": {
-            "branches": {
-                "type": "array",
-                "title": "Branches",
-                "description": "Conditional output paths",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "type": "string",
-                            "title": "Branch ID",
-                            "description": "Unique identifier for the branch"
-                        },
-                        "label": {
-                            "type": "string",
-                            "title": "Label",
-                            "description": "Display name for the branch"
-                        },
-                        "description": {
-                            "type": "string",
-                            "title": "Description"
-                        },
-                        "condition": {
-                            "type": "string",
-                            "title": "Condition",
-                            "description": "Expression that activates this branch"
-                        },
-                        "isDefault": {
-                            "type": "boolean",
-                            "title": "Default Branch",
-                            "default": false
-                        }
-                    },
-                    "required": ["name", "label"]
-                }
-            }
-        }
-    }
+	"configSchema": {
+		"type": "object",
+		"properties": {
+			"branches": {
+				"type": "array",
+				"title": "Branches",
+				"description": "Conditional output paths",
+				"items": {
+					"type": "object",
+					"properties": {
+						"name": {
+							"type": "string",
+							"title": "Branch ID",
+							"description": "Unique identifier for the branch"
+						},
+						"label": {
+							"type": "string",
+							"title": "Label",
+							"description": "Display name for the branch"
+						},
+						"description": {
+							"type": "string",
+							"title": "Description"
+						},
+						"condition": {
+							"type": "string",
+							"title": "Condition",
+							"description": "Expression that activates this branch"
+						},
+						"isDefault": {
+							"type": "boolean",
+							"title": "Default Branch",
+							"default": false
+						}
+					},
+					"required": ["name", "label"]
+				}
+			}
+		}
+	}
 }
 ```
 
@@ -1301,14 +1298,14 @@ The most common extension setting is `hideUnconnectedHandles`, which reduces vis
 
 ```json
 {
-    "metadata": {
-        "id": "complex_node",
-        "extensions": {
-            "ui": {
-                "hideUnconnectedHandles": true
-            }
-        }
-    }
+	"metadata": {
+		"id": "complex_node",
+		"extensions": {
+			"ui": {
+				"hideUnconnectedHandles": true
+			}
+		}
+	}
 }
 ```
 
@@ -1347,10 +1344,10 @@ When resolving extension values, the system merges settings with this priority:
 
 ```typescript
 // Example resolution logic
-const hideUnconnectedHandles = 
-    node.data.extensions?.ui?.hideUnconnectedHandles ??
-    node.data.metadata.extensions?.ui?.hideUnconnectedHandles ??
-    false;
+const hideUnconnectedHandles =
+	node.data.extensions?.ui?.hideUnconnectedHandles ??
+	node.data.metadata.extensions?.ui?.hideUnconnectedHandles ??
+	false;
 ```
 
 ---
@@ -1381,32 +1378,32 @@ Rate limiting is backend-dependent. Recommended limits:
 
 ```typescript
 interface EndpointConfig {
-    baseUrl: string;
-    endpoints: {
-        nodes: { list, get, byCategory, metadata };
-        portConfig: string;
-        workflows: { list, get, create, update, delete, validate, export, import };
-        executions: { execute, status, cancel, logs, history };
-        pipelines: { list, get, create, update, delete, status, logs, execute, stop };
-        templates: { list, get, create, update, delete };
-        users: { profile, preferences };
-        system: { health, config, version };
-    };
-    methods?: Record<string, "GET" | "POST" | "PUT" | "DELETE" | "PATCH">;
-    headers?: Record<string, Record<string, string>>;
-    auth?: {
-        type: "none" | "bearer" | "api_key" | "custom";
-        token?: string;
-        apiKey?: string;
-        headers?: Record<string, string>;
-    };
-    timeout?: number;
-    retry?: {
-        enabled: boolean;
-        maxAttempts: number;
-        delay: number;
-        backoff?: "linear" | "exponential";
-    };
+	baseUrl: string;
+	endpoints: {
+		nodes: { list; get; byCategory; metadata };
+		portConfig: string;
+		workflows: { list; get; create; update; delete; validate; export; import };
+		executions: { execute; status; cancel; logs; history };
+		pipelines: { list; get; create; update; delete; status; logs; execute; stop };
+		templates: { list; get; create; update; delete };
+		users: { profile; preferences };
+		system: { health; config; version };
+	};
+	methods?: Record<string, 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>;
+	headers?: Record<string, Record<string, string>>;
+	auth?: {
+		type: 'none' | 'bearer' | 'api_key' | 'custom';
+		token?: string;
+		apiKey?: string;
+		headers?: Record<string, string>;
+	};
+	timeout?: number;
+	retry?: {
+		enabled: boolean;
+		maxAttempts: number;
+		delay: number;
+		backoff?: 'linear' | 'exponential';
+	};
 }
 ```
 
@@ -1414,52 +1411,52 @@ interface EndpointConfig {
 
 ```typescript
 const defaultEndpointConfig: EndpointConfig = {
-    baseUrl: "/api/flowdrop",
-    endpoints: {
-        nodes: {
-            list: "/nodes",
-            get: "/nodes/{id}",
-            byCategory: "/nodes?category={category}",
-            metadata: "/nodes/{id}/metadata"
-        },
-        portConfig: "/port-config",
-        workflows: {
-            list: "/workflows",
-            get: "/workflows/{id}",
-            create: "/workflows",
-            update: "/workflows/{id}",
-            delete: "/workflows/{id}",
-            validate: "/workflows/validate",
-            export: "/workflows/{id}/export",
-            import: "/workflows/import"
-        },
-        executions: {
-            execute: "/workflows/{id}/execute",
-            status: "/executions/{id}",
-            cancel: "/executions/{id}/cancel",
-            logs: "/executions/{id}/logs",
-            history: "/executions"
-        },
-        pipelines: {
-            list: "/workflow/{workflow_id}/pipelines",
-            get: "/pipeline/{id}",
-            create: "/pipeline",
-            update: "/pipeline/{id}",
-            delete: "/pipeline/{id}",
-            status: "/pipeline/{id}/status",
-            logs: "/pipeline/{id}/logs",
-            execute: "/pipeline/{id}/execute",
-            stop: "/pipeline/{id}/stop"
-        },
-        // ... additional endpoints
-    },
-    timeout: 30000,
-    retry: {
-        enabled: true,
-        maxAttempts: 3,
-        delay: 1000,
-        backoff: "exponential"
-    }
+	baseUrl: '/api/flowdrop',
+	endpoints: {
+		nodes: {
+			list: '/nodes',
+			get: '/nodes/{id}',
+			byCategory: '/nodes?category={category}',
+			metadata: '/nodes/{id}/metadata'
+		},
+		portConfig: '/port-config',
+		workflows: {
+			list: '/workflows',
+			get: '/workflows/{id}',
+			create: '/workflows',
+			update: '/workflows/{id}',
+			delete: '/workflows/{id}',
+			validate: '/workflows/validate',
+			export: '/workflows/{id}/export',
+			import: '/workflows/import'
+		},
+		executions: {
+			execute: '/workflows/{id}/execute',
+			status: '/executions/{id}',
+			cancel: '/executions/{id}/cancel',
+			logs: '/executions/{id}/logs',
+			history: '/executions'
+		},
+		pipelines: {
+			list: '/workflow/{workflow_id}/pipelines',
+			get: '/pipeline/{id}',
+			create: '/pipeline',
+			update: '/pipeline/{id}',
+			delete: '/pipeline/{id}',
+			status: '/pipeline/{id}/status',
+			logs: '/pipeline/{id}/logs',
+			execute: '/pipeline/{id}/execute',
+			stop: '/pipeline/{id}/stop'
+		}
+		// ... additional endpoints
+	},
+	timeout: 30000,
+	retry: {
+		enabled: true,
+		maxAttempts: 3,
+		delay: 1000,
+		backoff: 'exponential'
+	}
 };
 ```
 
@@ -1470,9 +1467,9 @@ const defaultEndpointConfig: EndpointConfig = {
 ### FlowDropApiClient (Basic)
 
 ```typescript
-import { FlowDropApiClient } from "@flowdrop/ui";
+import { FlowDropApiClient } from '@flowdrop/ui';
 
-const client = new FlowDropApiClient("/api/flowdrop", "your-api-key");
+const client = new FlowDropApiClient('/api/flowdrop', 'your-api-key');
 
 // Fetch nodes
 const nodes = await client.getAvailableNodes();
@@ -1481,7 +1478,7 @@ const nodes = await client.getAvailableNodes();
 const saved = await client.saveWorkflow(workflow);
 
 // Execute workflow
-const result = await client.executeWorkflow(workflowId, { input: "value" });
+const result = await client.executeWorkflow(workflowId, { input: 'value' });
 
 // Get pipeline data
 const pipeline = await client.getPipelineData(pipelineId);
@@ -1490,14 +1487,14 @@ const pipeline = await client.getPipelineData(pipelineId);
 ### EnhancedFlowDropApiClient (With AuthProvider)
 
 ```typescript
-import { EnhancedFlowDropApiClient, CallbackAuthProvider } from "@flowdrop/ui";
+import { EnhancedFlowDropApiClient, CallbackAuthProvider } from '@flowdrop/ui';
 
 const authProvider = new CallbackAuthProvider({
-    getToken: async () => authService.getAccessToken(),
-    onUnauthorized: async () => {
-        const refreshed = await authService.refreshToken();
-        return refreshed;
-    }
+	getToken: async () => authService.getAccessToken(),
+	onUnauthorized: async () => {
+		const refreshed = await authService.refreshToken();
+		return refreshed;
+	}
 });
 
 const client = new EnhancedFlowDropApiClient(endpointConfig, authProvider);

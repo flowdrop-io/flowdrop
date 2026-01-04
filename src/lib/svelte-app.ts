@@ -460,4 +460,3 @@ export function unmountFlowDropApp(app: MountedFlowDropApp): void {
 		app.destroy();
 	}
 }
-

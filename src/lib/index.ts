@@ -238,11 +238,7 @@ export * from './config/runtimeConfig.js';
 export * from './adapters/WorkflowAdapter.js';
 
 // Export Svelte app wrapper for framework integration
-export {
-	mountWorkflowEditor,
-	mountFlowDropApp,
-	unmountFlowDropApp
-} from './svelte-app.js';
+export { mountWorkflowEditor, mountFlowDropApp, unmountFlowDropApp } from './svelte-app.js';
 export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from './svelte-app.js';
 
 // Export API error class

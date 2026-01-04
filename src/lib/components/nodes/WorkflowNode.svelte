@@ -94,9 +94,7 @@
 	 * Derived list of visible input ports based on hideUnconnectedHandles setting
 	 * Now includes both static and dynamic inputs
 	 */
-	const visibleInputPorts = $derived(
-		allInputPorts.filter((port) => isPortVisible(port, 'input'))
-	);
+	const visibleInputPorts = $derived(allInputPorts.filter((port) => isPortVisible(port, 'input')));
 
 	/**
 	 * Derived list of visible output ports based on hideUnconnectedHandles setting

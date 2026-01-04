@@ -4,40 +4,40 @@
 	 * Interactive documentation for the FlowDrop Mock API
 	 * Allows testing endpoints directly in the browser
 	 */
-	import { onMount } from "svelte";
-	import type { Workflow, NodeMetadata, PortConfig } from "$lib/types/index.js";
+	import { onMount } from 'svelte';
+	import type { Workflow, NodeMetadata, PortConfig } from '$lib/types/index.js';
 
 	/** API base URL for all endpoints */
-	const API_BASE = "/api/flowdrop";
+	const API_BASE = '/api/flowdrop';
 
 	/** Current response data */
-	let responseData = $state<string>("");
+	let responseData = $state<string>('');
 	let responseStatus = $state<number>(0);
 	let isLoading = $state<boolean>(false);
 
 	/** Selected endpoint for testing */
-	let selectedEndpoint = $state<string>("health");
+	let selectedEndpoint = $state<string>('health');
 
 	/** Form inputs for different endpoints */
-	let nodeCategory = $state<string>("");
-	let nodeSearch = $state<string>("");
-	let nodeId = $state<string>("sample-openai");
-	let workflowId = $state<string>("550e8400-e29b-41d4-a716-446655440001");
-	let pipelineId = $state<string>("pipeline-001");
+	let nodeCategory = $state<string>('');
+	let nodeSearch = $state<string>('');
+	let nodeId = $state<string>('sample-openai');
+	let workflowId = $state<string>('550e8400-e29b-41d4-a716-446655440001');
+	let pipelineId = $state<string>('pipeline-001');
 
 	/** MSW status */
 	let mswEnabled = $state<boolean>(false);
 
 	/** API Endpoint definitions */
 	const endpoints = [
-		{ id: "health", name: "Health Check", method: "GET", path: "/health" },
-		{ id: "port-config", name: "Port Configuration", method: "GET", path: "/port-config" },
-		{ id: "nodes", name: "List Node Types", method: "GET", path: "/nodes" },
-		{ id: "node-by-id", name: "Get Node by ID", method: "GET", path: "/nodes/:id" },
-		{ id: "workflows", name: "List Workflows", method: "GET", path: "/workflows" },
-		{ id: "workflow-by-id", name: "Get Workflow by ID", method: "GET", path: "/workflows/:id" },
-		{ id: "pipeline", name: "Get Pipeline Status", method: "GET", path: "/pipeline/:id" },
-		{ id: "pipeline-logs", name: "Get Pipeline Logs", method: "GET", path: "/pipeline/:id/logs" }
+		{ id: 'health', name: 'Health Check', method: 'GET', path: '/health' },
+		{ id: 'port-config', name: 'Port Configuration', method: 'GET', path: '/port-config' },
+		{ id: 'nodes', name: 'List Node Types', method: 'GET', path: '/nodes' },
+		{ id: 'node-by-id', name: 'Get Node by ID', method: 'GET', path: '/nodes/:id' },
+		{ id: 'workflows', name: 'List Workflows', method: 'GET', path: '/workflows' },
+		{ id: 'workflow-by-id', name: 'Get Workflow by ID', method: 'GET', path: '/workflows/:id' },
+		{ id: 'pipeline', name: 'Get Pipeline Status', method: 'GET', path: '/pipeline/:id' },
+		{ id: 'pipeline-logs', name: 'Get Pipeline Logs', method: 'GET', path: '/pipeline/:id/logs' }
 	];
 
 	/**
@@ -45,15 +45,15 @@
 	 */
 	async function enableMockServer() {
 		try {
-			const { startMockServer } = await import("../../mocks/index.js");
+			const { startMockServer } = await import('../../mocks/index.js');
 			await startMockServer({
-				onUnhandledRequest: "bypass",
+				onUnhandledRequest: 'bypass',
 				quiet: false
 			});
 			mswEnabled = true;
-			console.log("🔶 Mock API server started");
+			console.log('🔶 Mock API server started');
 		} catch (error) {
-			console.error("Failed to start mock server:", error);
+			console.error('Failed to start mock server:', error);
 		}
 	}
 
@@ -62,46 +62,47 @@
 	 */
 	async function makeRequest() {
 		isLoading = true;
-		responseData = "";
+		responseData = '';
 		responseStatus = 0;
 
 		let url = API_BASE;
 		const options: RequestInit = {
-			method: "GET",
+			method: 'GET',
 			headers: {
-				"Content-Type": "application/json"
+				'Content-Type': 'application/json'
 			}
 		};
 
 		switch (selectedEndpoint) {
-			case "health":
-				url += "/health";
+			case 'health':
+				url += '/health';
 				break;
-			case "port-config":
-				url += "/port-config";
+			case 'port-config':
+				url += '/port-config';
 				break;
-			case "nodes":
-				url += "/nodes";
+			case 'nodes':
+				url += '/nodes';
 				if (nodeCategory) url += `?category=${encodeURIComponent(nodeCategory)}`;
-				if (nodeSearch) url += `${nodeCategory ? "&" : "?"}search=${encodeURIComponent(nodeSearch)}`;
+				if (nodeSearch)
+					url += `${nodeCategory ? '&' : '?'}search=${encodeURIComponent(nodeSearch)}`;
 				break;
-			case "node-by-id":
+			case 'node-by-id':
 				url += `/nodes/${encodeURIComponent(nodeId)}`;
 				break;
-			case "workflows":
-				url += "/workflows";
+			case 'workflows':
+				url += '/workflows';
 				break;
-			case "workflow-by-id":
+			case 'workflow-by-id':
 				url += `/workflows/${encodeURIComponent(workflowId)}`;
 				break;
-			case "pipeline":
+			case 'pipeline':
 				url += `/pipeline/${encodeURIComponent(pipelineId)}`;
 				break;
-			case "pipeline-logs":
+			case 'pipeline-logs':
 				url += `/pipeline/${encodeURIComponent(pipelineId)}/logs`;
 				break;
 			default:
-				url += "/health";
+				url += '/health';
 		}
 
 		try {
@@ -110,7 +111,7 @@
 			const data = await response.json();
 			responseData = JSON.stringify(data, null, 2);
 		} catch (error) {
-			responseData = `Error: ${error instanceof Error ? error.message : "Unknown error"}`;
+			responseData = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
 			responseStatus = 0;
 		} finally {
 			isLoading = false;
@@ -123,24 +124,24 @@
 	function getCurrentUrl(): string {
 		let url = API_BASE;
 		switch (selectedEndpoint) {
-			case "health":
+			case 'health':
 				return `${url}/health`;
-			case "port-config":
+			case 'port-config':
 				return `${url}/port-config`;
-			case "nodes":
-				url += "/nodes";
+			case 'nodes':
+				url += '/nodes';
 				if (nodeCategory) url += `?category=${nodeCategory}`;
-				if (nodeSearch) url += `${nodeCategory ? "&" : "?"}search=${nodeSearch}`;
+				if (nodeSearch) url += `${nodeCategory ? '&' : '?'}search=${nodeSearch}`;
 				return url;
-			case "node-by-id":
+			case 'node-by-id':
 				return `${url}/nodes/${nodeId}`;
-			case "workflows":
+			case 'workflows':
 				return `${url}/workflows`;
-			case "workflow-by-id":
+			case 'workflow-by-id':
 				return `${url}/workflows/${workflowId}`;
-			case "pipeline":
+			case 'pipeline':
 				return `${url}/pipeline/${pipelineId}`;
-			case "pipeline-logs":
+			case 'pipeline-logs':
 				return `${url}/pipeline/${pipelineId}/logs`;
 			default:
 				return `${url}/health`;
@@ -193,8 +194,8 @@
 			<div class="info-section">
 				<h3>About MSW</h3>
 				<p>
-					This page uses <a href="https://mswjs.io" target="_blank" rel="noopener">MSW</a> (Mock Service Worker)
-					to provide a fully functional mock API. All responses are generated in the browser.
+					This page uses <a href="https://mswjs.io" target="_blank" rel="noopener">MSW</a> (Mock Service
+					Worker) to provide a fully functional mock API. All responses are generated in the browser.
 				</p>
 			</div>
 		</aside>
@@ -202,13 +203,13 @@
 		<section class="content">
 			<div class="request-panel">
 				<h2>Request</h2>
-				
+
 				<div class="url-display">
 					<span class="method-badge">GET</span>
 					<code>{getCurrentUrl()}</code>
 				</div>
 
-				{#if selectedEndpoint === "nodes"}
+				{#if selectedEndpoint === 'nodes'}
 					<div class="form-group">
 						<label for="category">Category Filter</label>
 						<select id="category" bind:value={nodeCategory}>
@@ -228,21 +229,21 @@
 					</div>
 				{/if}
 
-				{#if selectedEndpoint === "node-by-id"}
+				{#if selectedEndpoint === 'node-by-id'}
 					<div class="form-group">
 						<label for="nodeId">Node ID</label>
 						<input id="nodeId" type="text" bind:value={nodeId} placeholder="e.g., sample-openai" />
 					</div>
 				{/if}
 
-				{#if selectedEndpoint === "workflow-by-id"}
+				{#if selectedEndpoint === 'workflow-by-id'}
 					<div class="form-group">
 						<label for="workflowId">Workflow ID (UUID)</label>
 						<input id="workflowId" type="text" bind:value={workflowId} placeholder="UUID" />
 					</div>
 				{/if}
 
-				{#if selectedEndpoint === "pipeline" || selectedEndpoint === "pipeline-logs"}
+				{#if selectedEndpoint === 'pipeline' || selectedEndpoint === 'pipeline-logs'}
 					<div class="form-group">
 						<label for="pipelineId">Pipeline ID</label>
 						<select id="pipelineId" bind:value={pipelineId}>
@@ -268,19 +269,24 @@
 				<h2>
 					Response
 					{#if responseStatus > 0}
-						<span class="status-code" class:success={responseStatus < 400} class:error={responseStatus >= 400}>
+						<span
+							class="status-code"
+							class:success={responseStatus < 400}
+							class:error={responseStatus >= 400}
+						>
 							{responseStatus}
 						</span>
 					{/if}
 				</h2>
-				<pre class="response-body">{responseData || "Click 'Send Request' to see the response"}</pre>
+				<pre class="response-body">{responseData ||
+						"Click 'Send Request' to see the response"}</pre>
 			</div>
 		</section>
 	</main>
 
 	<footer class="footer">
 		<p>
-			FlowDrop API v1.0.0 | 
+			FlowDrop API v1.0.0 |
 			<a href="/api/openapi.yaml" target="_blank">OpenAPI Spec</a> |
 			<a href="https://github.com/d34dman/flowdrop" target="_blank" rel="noopener">GitHub</a>
 		</p>
@@ -294,7 +300,7 @@
 		flex-direction: column;
 		background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 		color: #e4e4e7;
-		font-family: "JetBrains Mono", "Fira Code", monospace;
+		font-family: 'JetBrains Mono', 'Fira Code', monospace;
 	}
 
 	.header {
@@ -347,8 +353,13 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.5; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.5;
+		}
 	}
 
 	.enable-btn {
@@ -466,14 +477,16 @@
 		overflow-y: auto;
 	}
 
-	.request-panel, .response-panel {
+	.request-panel,
+	.response-panel {
 		background: rgba(0, 0, 0, 0.3);
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 12px;
 		padding: 1.5rem;
 	}
 
-	.request-panel h2, .response-panel h2 {
+	.request-panel h2,
+	.response-panel h2 {
 		margin: 0 0 1rem 0;
 		font-size: 1rem;
 		display: flex;
@@ -518,7 +531,8 @@
 		color: #71717a;
 	}
 
-	.form-group input, .form-group select {
+	.form-group input,
+	.form-group select {
 		width: 100%;
 		padding: 0.75rem;
 		background: rgba(0, 0, 0, 0.3);
@@ -529,7 +543,8 @@
 		font-size: 0.875rem;
 	}
 
-	.form-group input:focus, .form-group select:focus {
+	.form-group input:focus,
+	.form-group select:focus {
 		outline: none;
 		border-color: #3b82f6;
 	}
@@ -570,7 +585,9 @@
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.response-panel {
@@ -650,4 +667,3 @@
 		}
 	}
 </style>
-

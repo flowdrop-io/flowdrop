@@ -204,4 +204,3 @@ export interface StorageConfig {
 		delete: (key: string) => Promise<void>;
 	};
 }
-

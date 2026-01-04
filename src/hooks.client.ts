@@ -1,6 +1,6 @@
 /**
  * Client-side hooks
- * 
+ *
  * This file runs before the app starts in the browser.
  * We use it to initialize MSW before any components try to fetch data.
  */
@@ -11,4 +11,3 @@ if (import.meta.env.VITE_MOCK_API === 'true') {
 	await startMockServer();
 	console.log('🔶 Mock API server started globally');
 }
-

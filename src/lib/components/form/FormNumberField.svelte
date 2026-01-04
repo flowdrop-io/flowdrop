@@ -32,8 +32,8 @@
 
 	let {
 		id,
-		value = "",
-		placeholder = "",
+		value = '',
+		placeholder = '',
 		min,
 		max,
 		step,
@@ -50,8 +50,8 @@
 		const target = event.currentTarget as HTMLInputElement;
 		const inputValue = target.value;
 
-		if (inputValue === "") {
-			onChange("");
+		if (inputValue === '') {
+			onChange('');
 		} else {
 			const numValue = Number(inputValue);
 			onChange(isNaN(numValue) ? inputValue : numValue);
@@ -63,7 +63,7 @@
 	{id}
 	type="number"
 	class="form-number-field"
-	value={value ?? ""}
+	value={value ?? ''}
 	{placeholder}
 	{min}
 	{max}
@@ -106,4 +106,3 @@
 			0 1px 2px rgba(0, 0, 0, 0.04);
 	}
 </style>
-

@@ -167,10 +167,7 @@ export function getPossibleConnections(
 		// Check each output-input combination
 		for (const sourcePort of sourceOutputs) {
 			for (const targetPort of targetInputs) {
-				const compatible = checker.areDataTypesCompatible(
-					sourcePort.dataType,
-					targetPort.dataType
-				);
+				const compatible = checker.areDataTypesCompatible(sourcePort.dataType, targetPort.dataType);
 
 				possibleConnections.push({
 					sourceNodeId: sourceNode.id,

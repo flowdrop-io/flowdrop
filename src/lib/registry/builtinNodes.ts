@@ -197,7 +197,14 @@ export function getBuiltinTypes(): string[] {
  * Type for built-in node types.
  * Use this when you specifically need a built-in type.
  */
-export type BuiltinNodeType = 'workflowNode' | 'simple' | 'square' | 'tool' | 'gateway' | 'note' | 'terminal';
+export type BuiltinNodeType =
+	| 'workflowNode'
+	| 'simple'
+	| 'square'
+	| 'tool'
+	| 'gateway'
+	| 'note'
+	| 'terminal';
 
 /**
  * Array of built-in type strings for runtime validation.

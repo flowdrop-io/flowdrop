@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { ConfigValues, NodeMetadata } from "../../types/index.js";
-	import Icon from "@iconify/svelte";
-	import MarkdownDisplay from "../MarkdownDisplay.svelte";
+	import type { ConfigValues, NodeMetadata } from '../../types/index.js';
+	import Icon from '@iconify/svelte';
+	import MarkdownDisplay from '../MarkdownDisplay.svelte';
 
 	/**
 	 * NotesNode component props
@@ -25,63 +25,57 @@
 	}>();
 
 	/** Note content derived from config */
-	const noteContent = $derived(
-		(props.data.config?.content as string) || "Add your notes here..."
-	);
+	const noteContent = $derived((props.data.config?.content as string) || 'Add your notes here...');
 
 	/** Note type derived from config */
-	const noteType = $derived(
-		(props.data.config?.noteType as string) || "info"
-	);
+	const noteType = $derived((props.data.config?.noteType as string) || 'info');
 
 	/** Note type configuration with styling for each type */
 	const noteTypes = {
 		info: {
-			name: "Info",
-			bgColor: "bg-blue-50",
-			borderColor: "border-blue-200",
-			textColor: "text-blue-800",
-			iconColor: "text-blue-500",
-			icon: "mdi:information"
+			name: 'Info',
+			bgColor: 'bg-blue-50',
+			borderColor: 'border-blue-200',
+			textColor: 'text-blue-800',
+			iconColor: 'text-blue-500',
+			icon: 'mdi:information'
 		},
 		warning: {
-			name: "Warning",
-			bgColor: "bg-yellow-50",
-			borderColor: "border-yellow-200",
-			textColor: "text-yellow-800",
-			iconColor: "text-yellow-500",
-			icon: "mdi:alert"
+			name: 'Warning',
+			bgColor: 'bg-yellow-50',
+			borderColor: 'border-yellow-200',
+			textColor: 'text-yellow-800',
+			iconColor: 'text-yellow-500',
+			icon: 'mdi:alert'
 		},
 		success: {
-			name: "Success",
-			bgColor: "bg-green-50",
-			borderColor: "border-green-200",
-			textColor: "text-green-800",
-			iconColor: "text-green-500",
-			icon: "mdi:check-circle"
+			name: 'Success',
+			bgColor: 'bg-green-50',
+			borderColor: 'border-green-200',
+			textColor: 'text-green-800',
+			iconColor: 'text-green-500',
+			icon: 'mdi:check-circle'
 		},
 		error: {
-			name: "Error",
-			bgColor: "bg-red-50",
-			borderColor: "border-red-200",
-			textColor: "text-red-800",
-			iconColor: "text-red-500",
-			icon: "mdi:close-circle"
+			name: 'Error',
+			bgColor: 'bg-red-50',
+			borderColor: 'border-red-200',
+			textColor: 'text-red-800',
+			iconColor: 'text-red-500',
+			icon: 'mdi:close-circle'
 		},
 		note: {
-			name: "Note",
-			bgColor: "bg-gray-50",
-			borderColor: "border-gray-200",
-			textColor: "text-gray-800",
-			iconColor: "text-gray-500",
-			icon: "mdi:note-text"
+			name: 'Note',
+			bgColor: 'bg-gray-50',
+			borderColor: 'border-gray-200',
+			textColor: 'text-gray-800',
+			iconColor: 'text-gray-500',
+			icon: 'mdi:note-text'
 		}
 	};
 
 	/** Current note type configuration based on selected type */
-	const currentType = $derived(
-		noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info
-	);
+	const currentType = $derived(noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info);
 
 	/**
 	 * Opens the configuration sidebar for editing note properties
@@ -89,8 +83,8 @@
 	function openConfigSidebar(): void {
 		if (props.data.onConfigOpen) {
 			const nodeForConfig = {
-				id: props.data.nodeId || "unknown",
-				type: "note",
+				id: props.data.nodeId || 'unknown',
+				type: 'note',
 				data: props.data
 			};
 			props.data.onConfigOpen(nodeForConfig);
@@ -109,7 +103,7 @@
 	 * @param event - The keyboard event
 	 */
 	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === "Enter" || event.key === " ") {
+		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			handleDoubleClick();
 		}

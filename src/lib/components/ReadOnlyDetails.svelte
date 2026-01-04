@@ -147,7 +147,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: color 0.15s, background-color 0.15s;
+		transition:
+			color 0.15s,
+			background-color 0.15s;
 	}
 
 	.readonly-details__copy-btn:hover {

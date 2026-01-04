@@ -27,8 +27,8 @@
 	let {
 		id,
 		value = false,
-		onLabel = "Enabled",
-		offLabel = "Disabled",
+		onLabel = 'Enabled',
+		offLabel = 'Disabled',
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
@@ -120,4 +120,3 @@
 		color: var(--color-ref-blue-600, #2563eb);
 	}
 </style>
-
