@@ -40,9 +40,7 @@ export const demoAIContentWorkflow: Workflow = {
 					icon: 'mdi:database-import',
 					color: '#FF9800',
 					version: '1.0.0',
-					enabled: true,
 					tags: ['content', 'drupal', 'batch', 'loader'],
-					executor_plugin: 'content_loader',
 					inputs: [
 						{
 							id: 'tool',
@@ -121,7 +119,7 @@ export const demoAIContentWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'tool',
@@ -194,9 +192,7 @@ export const demoAIContentWorkflow: Workflow = {
 					icon: 'mdi:brain',
 					color: '#9C27B0',
 					version: '1.0.0',
-					enabled: true,
 					tags: ['ai', 'analysis', 'content', 'context', 'smart-processing'],
-					executor_plugin: 'ai_content_analyzer',
 					inputs: [
 						{
 							id: 'content',
@@ -292,7 +288,7 @@ export const demoAIContentWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'tool',
@@ -359,9 +355,7 @@ export const demoAIContentWorkflow: Workflow = {
 					icon: 'mdi:account-cog',
 					color: '#06b6d4',
 					version: '1.0.0',
-					enabled: true,
 					tags: ['agent', 'orchestration', 'tools'],
-					executor_plugin: 'simple_agent',
 					inputs: [
 						{
 							id: 'message',
@@ -501,9 +495,7 @@ export const demoAIContentWorkflow: Workflow = {
 					icon: 'mdi:text',
 					color: '#22c55e',
 					version: '1.0.0',
-					enabled: true,
 					tags: ['input', 'text', 'user-input'],
-					executor_plugin: 'text_input',
 					inputs: [],
 					outputs: [
 						{
@@ -524,7 +516,7 @@ export const demoAIContentWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
@@ -574,9 +566,7 @@ export const demoAIContentWorkflow: Workflow = {
 					icon: 'mdi:text-box',
 					color: '#ef4444',
 					version: '1.0.0',
-					enabled: true,
 					tags: ['output', 'text', 'display'],
-					executor_plugin: 'text_output',
 					inputs: [
 						{
 							id: 'text',
@@ -605,7 +595,7 @@ export const demoAIContentWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
@@ -855,7 +845,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'tool',
@@ -1079,7 +1069,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
@@ -1127,11 +1117,11 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 					branches: [
 						{
 							name: 'True',
-							value: true
+							value: 'true'
 						},
 						{
 							name: 'False',
-							value: false
+							value: 'false'
 						}
 					]
 				},
@@ -1288,7 +1278,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
@@ -1337,7 +1327,6 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 					workflowId: '',
 					pipelineId: '',
 					description: '',
-					enabled: true,
 					variant: 'start',
 					eventType: 'entity.insert',
 					entityTypes: ['node'],
@@ -1618,7 +1607,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
@@ -2101,7 +2090,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
 						type: 'object',
 						properties: {
 							nodeType: {
-								type: 'select',
+								type: 'string',
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
@@ -2288,11 +2277,11 @@ export const demoTriggerNodeWorkflow: Workflow = {
 					branches: [
 						{
 							name: 'True',
-							value: true
+							value: 'true'
 						},
 						{
 							name: 'False',
-							value: false
+							value: 'false'
 						}
 					]
 				},
