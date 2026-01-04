@@ -23,6 +23,7 @@
 	} from '../types/index.js';
 	import CanvasBanner from './CanvasBanner.svelte';
 	import FlowDropZone from './FlowDropZone.svelte';
+	import EdgeRefresher from './EdgeRefresher.svelte';
 	import { tick } from 'svelte';
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
@@ -359,9 +360,41 @@
 			console.warn('No currentWorkflow available for new node');
 		}
 	}
+
+	/**
+	 * Node ID that needs edge refresh - used to trigger EdgeRefresher component
+	 */
+	let nodeIdToRefresh = $state<string | null>(null);
+
+	/**
+	 * Force edge position recalculation after node config changes
+	 * This should be called after saving gateway/switch node configs where branches are reordered
+	 * Svelte Flow doesn't automatically recalculate edge paths when handle positions change
+	 * @param nodeId - The ID of the node whose handles have changed position
+	 */
+	export async function refreshEdgePositions(nodeId: string): Promise<void> {
+		// Wait for DOM to update with new handle positions
+		await tick();
+
+		// Trigger the EdgeRefresher component to call updateNodeInternals
+		nodeIdToRefresh = nodeId;
+	}
+
+	/**
+	 * Callback when edge refresh is complete
+	 */
+	function handleEdgeRefreshComplete(): void {
+		nodeIdToRefresh = null;
+	}
 </script>
 
 <SvelteFlowProvider>
+	<!-- EdgeRefresher component - handles updateNodeInternals calls -->
+	<EdgeRefresher
+		{nodeIdToRefresh}
+		onRefreshComplete={handleEdgeRefreshComplete}
+	/>
+
 	<div class="flowdrop-workflow-editor">
 		<!-- Main Editor Area -->
 		<div class="flowdrop-workflow-editor__main">

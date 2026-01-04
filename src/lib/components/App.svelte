@@ -669,7 +669,7 @@
 			>
 				<ConfigForm
 					node={currentNode}
-					onSave={(updatedConfig, uiExtensions?: NodeUIExtensions) => {
+					onSave={async (updatedConfig, uiExtensions?: NodeUIExtensions) => {
 						if (selectedNodeId && currentNode) {
 							// Build the updated node data
 							const updatedData = {
@@ -693,6 +693,13 @@
 							// NOTE: We do NOT change the node's type field anymore
 							// All nodes use 'universalNode' and UniversalNode handles internal switching
 							workflowActions.updateNode(selectedNodeId, nodeUpdates);
+
+							// For gateway nodes (which have branches), refresh edge positions
+							// This fixes the bug where reordering branches doesn't update connections visually
+							const nodeType = currentNode.data?.metadata?.type;
+							if (nodeType === "gateway" && workflowEditorRef && selectedNodeId) {
+								await workflowEditorRef.refreshEdgePositions(selectedNodeId);
+							}
 						}
 
 						closeConfigSidebar();
