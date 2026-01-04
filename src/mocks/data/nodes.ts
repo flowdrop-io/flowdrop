@@ -687,7 +687,7 @@ export const mockNodes: NodeMetadata[] = [
 			type: 'object',
 			properties: {
 				nodeType: {
-					type: 'select',
+					type: 'string',
 					title: 'Node Type',
 					description: 'Choose the visual representation for this node',
 					default: 'tool',
@@ -763,7 +763,7 @@ export const mockNodes: NodeMetadata[] = [
 				id: 'buffer',
 				name: 'buffer',
 				type: 'output',
-				dataType: 'mixed',
+				dataType: 'json',
 				required: false,
 				description: 'The conversation buffer'
 			},
@@ -1191,7 +1191,7 @@ export const mockNodes: NodeMetadata[] = [
 				},
 				key: { type: 'string', title: 'Key', description: 'Key to operate on', default: '' },
 				value: {
-					type: 'mixed',
+					type: 'object',
 					title: 'Value',
 					description: 'Value for the operation',
 					default: ''
@@ -3246,7 +3246,7 @@ export const mockNodes: NodeMetadata[] = [
 			type: 'object',
 			properties: {
 				nodeType: {
-					type: 'select',
+					type: 'string',
 					title: 'Node Type',
 					description: 'Choose the visual representation for this node',
 					default: 'simple',
@@ -3303,7 +3303,7 @@ export const mockNodes: NodeMetadata[] = [
 			type: 'object',
 			properties: {
 				nodeType: {
-					type: 'select',
+					type: 'string',
 					title: 'Node Type',
 					description: 'Choose the visual representation for this node',
 					default: 'simple',
