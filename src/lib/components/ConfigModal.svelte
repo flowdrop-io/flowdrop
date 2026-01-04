@@ -19,10 +19,6 @@
 		cancel: void;
 	}>();
 
-	function handleSave() {
-		dispatch('save', { values: localConfigValues });
-	}
-
 	function handleCancel() {
 		dispatch('cancel');
 	}
@@ -79,28 +75,12 @@
 				<ConfigForm
 					schema={props.configSchema}
 					values={localConfigValues}
-					on:change={({ detail }) => {
-						localConfigValues = detail.values;
+					showUIExtensions={false}
+					onSave={(config) => {
+						dispatch('save', { values: config });
 					}}
+					onCancel={handleCancel}
 				/>
-			</div>
-
-			<!-- Modal Footer -->
-			<div class="config-modal__footer">
-				<button
-					type="button"
-					class="config-modal__btn config-modal__btn--secondary"
-					onclick={handleCancel}
-				>
-					Cancel
-				</button>
-				<button
-					type="button"
-					class="config-modal__btn config-modal__btn--primary"
-					onclick={handleSave}
-				>
-					Save Configuration
-				</button>
 			</div>
 		</div>
 	</div>
@@ -179,48 +159,6 @@
 		min-height: 0;
 	}
 
-	.config-modal__footer {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		gap: 0.75rem;
-		padding: 1rem 1.5rem 1.5rem 1.5rem;
-		border-top: 1px solid #e5e7eb;
-		background-color: #f9fafb;
-	}
-
-	.config-modal__btn {
-		padding: 0.5rem 1rem;
-		border-radius: 0.375rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s;
-		border: 1px solid transparent;
-	}
-
-	.config-modal__btn--primary {
-		background-color: #3b82f6;
-		color: white;
-		border-color: #3b82f6;
-	}
-
-	.config-modal__btn--primary:hover {
-		background-color: #2563eb;
-		border-color: #2563eb;
-	}
-
-	.config-modal__btn--secondary {
-		background-color: white;
-		color: #374151;
-		border-color: #d1d5db;
-	}
-
-	.config-modal__btn--secondary:hover {
-		background-color: #f9fafb;
-		border-color: #9ca3af;
-	}
-
 	/* Responsive adjustments */
 	@media (max-width: 1024px) {
 		.config-modal {
@@ -241,10 +179,6 @@
 
 		.config-modal__content {
 			padding: 1rem;
-		}
-
-		.config-modal__footer {
-			padding: 0.75rem 1rem 1rem 1rem;
 		}
 	}
 
