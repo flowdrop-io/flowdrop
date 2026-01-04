@@ -85,7 +85,6 @@
 			{max}
 			{step}
 			aria-describedby={ariaDescribedBy}
-			aria-required={required}
 			aria-valuemin={min}
 			aria-valuemax={max}
 			aria-valuenow={numericValue}
