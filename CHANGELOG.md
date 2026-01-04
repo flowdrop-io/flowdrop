@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.26] - 2026-01-04
+
+### Fixed
+
+- **Gateway Node Branch Reordering**: Switch/gateway node branch reordering now correctly updates edge positions
+  - Previously edges would remain connected to old positions after reordering branches
+  - Now edge connections update automatically when branches are reordered
+- **ConfigModal**: Fixed ConfigModal component after recent ConfigForm refactor
+- **FormRangeField Accessibility**: Removed redundant `aria-required` attribute from FormRangeField component
+
+### Changed
+
+- **UniversalNode Svelte 5 Migration**: Migrated UniversalNode to Svelte 5 dynamic component syntax
+  - Uses modern `{@const}` and `{#snippet}` patterns
+  - Improved reactivity and performance
+- **Test Infrastructure**: Modernized test infrastructure with improved patterns and organization
+
+### Added
+
+#### Test Coverage Expansion
+
+- **Utility Function Tests**: Added 67 comprehensive tests for utility functions
+- **Storage Service Tests**: Added 76 tests for storage service functionality
+- **API Service Tests**: Added 32 comprehensive tests for API service layer
+
 ## [0.0.25] - 2026-01-03
 
 ### Added
@@ -239,11 +264,11 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
   - Manual variant override via `config.variant`
 
 - **Variant Configurations**:
-  | Variant | Icon | Color | Default Ports |
+  | Variant | Icon        | Color           | Default Ports         |
   | ------- | ----------- | --------------- | --------------------- |
   | `start` | Play circle | Green (#10b981) | Output only (trigger) |
-  | `end` | Stop circle | Gray (#6b7280) | Input only (trigger) |
-  | `exit` | X circle | Red (#ef4444) | Input only (trigger) |
+  | `end`   | Stop circle | Gray (#6b7280)  | Input only (trigger)  |
+  | `exit`  | X circle    | Red (#ef4444)   | Input only (trigger)  |
 
 - **API-Controlled Ports**: Terminal nodes now fully respect the `inputs` and `outputs` arrays from metadata
   - `undefined` → Uses variant default ports
