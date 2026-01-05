@@ -694,12 +694,8 @@
 							// All nodes use 'universalNode' and UniversalNode handles internal switching
 							workflowActions.updateNode(selectedNodeId, nodeUpdates);
 
-							// For gateway nodes (which have branches), refresh edge positions
-							// This fixes the bug where reordering branches doesn't update connections visually
-							const nodeType = currentNode.data?.metadata?.type;
-							if (nodeType === "gateway" && workflowEditorRef && selectedNodeId) {
-								await workflowEditorRef.refreshEdgePositions(selectedNodeId);
-							}
+							// Refresh edge positions just in case. This is a safe bet.
+							await workflowEditorRef.refreshEdgePositions(selectedNodeId);
 						}
 
 						closeConfigSidebar();

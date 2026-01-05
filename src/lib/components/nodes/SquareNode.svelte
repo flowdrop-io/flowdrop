@@ -42,27 +42,6 @@
 		return instanceOverride ?? typeDefault;
 	});
 
-	/**
-	 * Check if a trigger port is connected
-	 * @param portId - The port ID to check
-	 * @param type - Whether this is an 'input' or 'output' port
-	 */
-	function isTriggerPortConnected(portId: string, type: 'input' | 'output'): boolean {
-		const handleId = `${props.data.nodeId}-${type}-${portId}`;
-		return $connectedHandles.has(handleId);
-	}
-
-	/**
-	 * Check if a trigger port should be visible
-	 * Always shows if hideUnconnectedHandles is disabled or if port is connected
-	 */
-	function shouldShowTriggerPort(portId: string, type: 'input' | 'output'): boolean {
-		if (!hideUnconnectedHandles()) {
-			return true;
-		}
-		return isTriggerPortConnected(portId, type);
-	}
-
 	// Removed local config state - now using global ConfigSidebar
 
 	// Prioritize metadata icon over config icon for square nodes (metadata is the node definition)
@@ -111,6 +90,27 @@
 			openConfigSidebar();
 		}
 	}
+	/**
+	 * Check if a port is connected
+	 * @param portId - The port ID to check
+	 * @param type - Whether this is an 'input' or 'output' port
+	 * @returns true if the port is connected
+	 */
+	function isPortConnected(portId: string, type: 'input' | 'output'): boolean {
+		const handleId = `${props.data.nodeId}-${type}-${portId}`;
+		return $connectedHandles.has(handleId);
+	}
+
+	/**
+	 * Check if a trigger port should be visible
+	 * Always shows if hideUnconnectedHandles is disabled or if port is connected
+	 */
+	function shouldShowTriggerPort(portId: string, type: 'input' | 'output'): boolean {
+		if (!hideUnconnectedHandles()) {
+			return true;
+		}
+		return isPortConnected(portId, type);
+	}
 
 	// Get first input/output ports for square node representation
 	// Special handling for trigger ports - they should always be shown if present
@@ -122,41 +122,67 @@
 	);
 
 	// Get first non-trigger ports for data connections
+	let firstConnectedDataInputPort = $derived(
+		props.data.metadata?.inputs?.find(
+			(port) => port.dataType !== 'trigger' && isPortConnected(port.id, 'input')
+		)
+	);
+
 	let firstDataInputPort = $derived(
 		props.data.metadata?.inputs?.find((port) => port.dataType !== 'trigger')
+	);
+
+	let firstConnectedDataOutputPort = $derived(
+		props.data.metadata?.outputs?.find(
+			(port) => port.dataType !== 'trigger' && isPortConnected(port.id, 'output')
+		)
 	);
 	let firstDataOutputPort = $derived(
 		props.data.metadata?.outputs?.find((port) => port.dataType !== 'trigger')
 	);
 
-	// Check if we need to show both trigger and data ports
-	let hasBothInputTypes = $derived(!!triggerInputPort && !!firstDataInputPort);
-	let hasBothOutputTypes = $derived(!!triggerOutputPort && !!firstDataOutputPort);
+	let inputPorts = $derived.by(() => {
+		return [
+			...(firstConnectedDataInputPort
+				? [firstConnectedDataInputPort]
+				: firstDataInputPort
+					? [firstDataInputPort]
+					: []),
+			...(triggerInputPort && shouldShowTriggerPort(triggerInputPort.id, 'input')
+				? [triggerInputPort]
+				: [])
+		];
+	});
+	let outputPorts = $derived.by(() => {
+		return [
+			...(firstConnectedDataOutputPort
+				? [firstConnectedDataOutputPort]
+				: firstDataOutputPort
+					? [firstDataOutputPort]
+					: []),
+			...(triggerOutputPort && shouldShowTriggerPort(triggerOutputPort.id, 'output')
+				? [triggerOutputPort]
+				: [])
+		];
+	});
 </script>
 
 <!-- Input Handles -->
-{#if firstDataInputPort}
+{#each inputPorts as port, index}
 	<!-- Data Input - positioned at top-left if both types exist, otherwise center -->
 	<Handle
 		type="target"
 		position={Position.Left}
 		style="background-color: {getDataTypeColor(
-			firstDataInputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '25%' : '50%'}; z-index: 30;"
-		id={`${props.data.nodeId}-input-${firstDataInputPort.id}`}
+			port.dataType
+		)}; border-color: '#ffffff'; top: {inputPorts.length > 1
+			? index === 0
+				? '25%'
+				: '75%'
+			: '50%'}; z-index: 30;"
+		id={`${props.data.nodeId}-input-${port.id}`}
 	/>
-{/if}
-{#if triggerInputPort && shouldShowTriggerPort(triggerInputPort.id, 'input')}
-	<!-- Trigger Input - positioned at bottom-left (hidden if hideUnconnectedHandles enabled and not connected) -->
-	<Handle
-		type="target"
-		position={Position.Left}
-		style="background-color: {getDataTypeColor(
-			triggerInputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '75%' : '50%'}; z-index: 30;"
-		id={`${props.data.nodeId}-input-${triggerInputPort.id}`}
-	/>
-{/if}
+{/each}
 
 <!-- Square Node -->
 <div
@@ -204,30 +230,21 @@
 </div>
 
 <!-- Output Handles -->
-{#if firstDataOutputPort}
+{#each outputPorts as port, index}
 	<!-- Data Output - positioned at top-right if both types exist, otherwise center -->
 	<Handle
 		type="source"
 		position={Position.Right}
-		id={`${props.data.nodeId}-output-${firstDataOutputPort.id}`}
 		style="background-color: {getDataTypeColor(
-			firstDataOutputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '25%' : '50%'}; z-index: 30;"
+			port.dataType
+		)}; border-color: '#ffffff'; top: {outputPorts.length > 1
+			? index === 0
+				? '25%'
+				: '75%'
+			: '50%'}; z-index: 30;"
+		id={`${props.data.nodeId}-output-${port.id}`}
 	/>
-{/if}
-{#if triggerOutputPort && shouldShowTriggerPort(triggerOutputPort.id, 'output')}
-	<!-- Trigger Output - positioned at bottom-right (hidden if hideUnconnectedHandles enabled and not connected) -->
-	<Handle
-		type="source"
-		position={Position.Right}
-		id={`${props.data.nodeId}-output-${triggerOutputPort.id}`}
-		style="background-color: {getDataTypeColor(
-			triggerOutputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '75%' : '50%'}; z-index: 30;"
-	/>
-{/if}
-
-<!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
+{/each}
 
 <style>
 	.flowdrop-square-node {
