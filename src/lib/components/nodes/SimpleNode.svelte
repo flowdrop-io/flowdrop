@@ -42,27 +42,6 @@
 		return instanceOverride ?? typeDefault;
 	});
 
-	/**
-	 * Check if a trigger port is connected
-	 * @param portId - The port ID to check
-	 * @param type - Whether this is an 'input' or 'output' port
-	 */
-	function isTriggerPortConnected(portId: string, type: 'input' | 'output'): boolean {
-		const handleId = `${props.data.nodeId}-${type}-${portId}`;
-		return $connectedHandles.has(handleId);
-	}
-
-	/**
-	 * Check if a trigger port should be visible
-	 * Always shows if hideUnconnectedHandles is disabled or if port is connected
-	 */
-	function shouldShowTriggerPort(portId: string, type: 'input' | 'output'): boolean {
-		if (!hideUnconnectedHandles()) {
-			return true;
-		}
-		return isTriggerPortConnected(portId, type);
-	}
-
 	// Removed local config state - now using global ConfigSidebar
 
 	// Prioritize metadata icon over config icon for simple nodes (metadata is the node definition)
@@ -72,28 +51,6 @@
 	let nodeColor = $derived(
 		(props.data.metadata?.color as string) || (props.data.config?.color as string) || '#6366f1'
 	);
-	let nodeLayout = $derived((props.data.config?.layout as string) || 'normal');
-
-	// Layout configurations
-	const layoutConfig = {
-		compact: {
-			width: '80px',
-			height: '80px',
-			iconSize: '2rem',
-			showHeader: false
-		},
-		normal: {
-			width: '18rem',
-			height: 'auto',
-			iconSize: '1rem',
-			showHeader: true
-		}
-	};
-
-	let currentLayout = $derived(
-		layoutConfig[nodeLayout as keyof typeof layoutConfig] || layoutConfig.normal
-	);
-	let isCompact = $derived(nodeLayout === 'compact');
 
 	// Handle configuration sidebar - now using global ConfigSidebar
 	function openConfigSidebar(): void {
@@ -126,6 +83,28 @@
 		}
 	}
 
+	/**
+	 * Check if a port is connected
+	 * @param portId - The port ID to check
+	 * @param type - Whether this is an 'input' or 'output' port
+	 * @returns true if the port is connected
+	 */
+	function isPortConnected(portId: string, type: 'input' | 'output'): boolean {
+		const handleId = `${props.data.nodeId}-${type}-${portId}`;
+		return $connectedHandles.has(handleId);
+	}
+
+	/**
+	 * Check if a trigger port should be visible
+	 * Always shows if hideUnconnectedHandles is disabled or if port is connected
+	 */
+	function shouldShowTriggerPort(portId: string, type: 'input' | 'output'): boolean {
+		if (!hideUnconnectedHandles()) {
+			return true;
+		}
+		return isPortConnected(portId, type);
+	}
+
 	// Get first input/output ports for simple node representation
 	// Special handling for trigger ports - they should always be shown if present
 	let triggerInputPort = $derived(
@@ -136,47 +115,71 @@
 	);
 
 	// Get first non-trigger ports for data connections
+	let firstConnectedDataInputPort = $derived(
+		props.data.metadata?.inputs?.find(
+			(port) => port.dataType !== 'trigger' && isPortConnected(port.id, 'input')
+		)
+	);
+
 	let firstDataInputPort = $derived(
 		props.data.metadata?.inputs?.find((port) => port.dataType !== 'trigger')
+	);
+
+	let firstConnectedDataOutputPort = $derived(
+		props.data.metadata?.outputs?.find(
+			(port) => port.dataType !== 'trigger' && isPortConnected(port.id, 'output')
+		)
 	);
 	let firstDataOutputPort = $derived(
 		props.data.metadata?.outputs?.find((port) => port.dataType !== 'trigger')
 	);
 
-	// Check if we need to show both trigger and data ports
-	let hasBothInputTypes = $derived(!!triggerInputPort && !!firstDataInputPort);
-	let hasBothOutputTypes = $derived(!!triggerOutputPort && !!firstDataOutputPort);
+	let inputPorts = $derived.by(() => {
+		return [
+			...(firstConnectedDataInputPort
+				? [firstConnectedDataInputPort]
+				: firstDataInputPort
+					? [firstDataInputPort]
+					: []),
+			...(triggerInputPort && shouldShowTriggerPort(triggerInputPort.id, 'input')
+				? [triggerInputPort]
+				: [])
+		];
+	});
+	let outputPorts = $derived.by(() => {
+		return [
+			...(firstConnectedDataOutputPort
+				? [firstConnectedDataOutputPort]
+				: firstDataOutputPort
+					? [firstDataOutputPort]
+					: []),
+			...(triggerOutputPort && shouldShowTriggerPort(triggerOutputPort.id, 'output')
+				? [triggerOutputPort]
+				: [])
+		];
+	});
 </script>
 
 <!-- Input Handles -->
-{#if firstDataInputPort}
+{#each inputPorts as port, index}
 	<!-- Data Input - positioned at top-left if both types exist, otherwise center -->
 	<Handle
 		type="target"
 		position={Position.Left}
 		style="background-color: {getDataTypeColor(
-			firstDataInputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '25%' : '50%'}; z-index: 30;"
-		id={`${props.data.nodeId}-input-${firstDataInputPort.id}`}
+			port.dataType
+		)}; border-color: '#ffffff'; top: {inputPorts.length > 1
+			? index === 0
+				? '25%'
+				: '75%'
+			: '50%'}; z-index: 30;"
+		id={`${props.data.nodeId}-input-${port.id}`}
 	/>
-{/if}
-{#if triggerInputPort && shouldShowTriggerPort(triggerInputPort.id, 'input')}
-	<!-- Trigger Input - positioned at bottom-left (hidden if hideUnconnectedHandles enabled and not connected) -->
-	<Handle
-		type="target"
-		position={Position.Left}
-		style="background-color: {getDataTypeColor(
-			triggerInputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothInputTypes ? '75%' : '50%'}; z-index: 30;"
-		id={`${props.data.nodeId}-input-${triggerInputPort.id}`}
-	/>
-{/if}
+{/each}
 
 <!-- Simple Node -->
 <div
-	class="flowdrop-simple-node"
-	class:flowdrop-simple-node--compact={isCompact}
-	class:flowdrop-simple-node--normal={!isCompact}
+	class="flowdrop-simple-node flowdrop-simple-node--normal"
 	class:flowdrop-simple-node--selected={props.selected}
 	class:flowdrop-simple-node--processing={props.isProcessing}
 	class:flowdrop-simple-node--error={props.isError}
@@ -186,36 +189,24 @@
 	role="button"
 	tabindex="0"
 >
-	{#if isCompact}
-		<!-- Compact Layout: Just centered icon -->
-		<div class="flowdrop-simple-node__compact-content">
-			<Icon
-				icon={nodeIcon}
-				class="flowdrop-simple-node__compact-icon"
-				style="color: {nodeColor}; font-size: {currentLayout.iconSize};"
-			/>
-		</div>
-	{:else}
-		<!-- Normal Layout: Header with title and description -->
-		<div class="flowdrop-simple-node__header">
-			<div class="flowdrop-simple-node__header-content">
-				<!-- Node Icon -->
-				<div class="flowdrop-simple-node__icon-container" style="background-color: {nodeColor}">
-					<Icon icon={nodeIcon} class="flowdrop-simple-node__icon" />
-				</div>
-
-				<!-- Node Title -->
-				<h3 class="flowdrop-simple-node__title">
-					{props.data.label}
-				</h3>
+	<div class="flowdrop-simple-node__header">
+		<div class="flowdrop-simple-node__header-content">
+			<!-- Node Icon -->
+			<div class="flowdrop-simple-node__icon-container" style="background-color: {nodeColor}">
+				<Icon icon={nodeIcon} class="flowdrop-simple-node__icon" />
 			</div>
 
-			<!-- Node Description -->
-			<p class="flowdrop-simple-node__description">
-				{props.data.metadata?.description || 'A configurable simple node'}
-			</p>
+			<!-- Node Title -->
+			<h3 class="flowdrop-simple-node__title">
+				{props.data.label}
+			</h3>
 		</div>
-	{/if}
+
+		<!-- Node Description -->
+		<p class="flowdrop-simple-node__description">
+			{props.data.metadata?.description || 'A configurable simple node'}
+		</p>
+	</div>
 
 	<!-- Processing indicator -->
 	{#if props.isProcessing}
@@ -242,28 +233,21 @@
 </div>
 
 <!-- Output Handles -->
-{#if firstDataOutputPort}
+{#each outputPorts as port, index}
 	<!-- Data Output - positioned at top-right if both types exist, otherwise center -->
 	<Handle
 		type="source"
 		position={Position.Right}
-		id={`${props.data.nodeId}-output-${firstDataOutputPort.id}`}
 		style="background-color: {getDataTypeColor(
-			firstDataOutputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '25%' : '50%'}; z-index: 30;"
+			port.dataType
+		)}; border-color: '#ffffff'; top: {outputPorts.length > 1
+			? index === 0
+				? '25%'
+				: '75%'
+			: '50%'}; z-index: 30;"
+		id={`${props.data.nodeId}-output-${port.id}`}
 	/>
-{/if}
-{#if triggerOutputPort && shouldShowTriggerPort(triggerOutputPort.id, 'output')}
-	<!-- Trigger Output - positioned at bottom-right (hidden if hideUnconnectedHandles enabled and not connected) -->
-	<Handle
-		type="source"
-		position={Position.Right}
-		id={`${props.data.nodeId}-output-${triggerOutputPort.id}`}
-		style="background-color: {getDataTypeColor(
-			triggerOutputPort.dataType
-		)}; border-color: '#ffffff'; top: {hasBothOutputTypes ? '75%' : '50%'}; z-index: 30;"
-	/>
-{/if}
+{/each}
 
 <!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
 
@@ -285,14 +269,6 @@
 	/* Normal layout (default) */
 	.flowdrop-simple-node--normal {
 		width: 18rem;
-	}
-
-	/* Compact layout */
-	.flowdrop-simple-node--compact {
-		width: 80px;
-		height: 80px;
-		justify-content: center;
-		align-items: center;
 	}
 
 	.flowdrop-simple-node:hover {
@@ -335,19 +311,6 @@
 		flex-shrink: 0;
 	}
 
-	/* Compact layout styles */
-	.flowdrop-simple-node__compact-content {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
-	}
-
-	:global(.flowdrop-simple-node__compact-icon) {
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-	}
-
 	.flowdrop-simple-node__title {
 		font-size: 0.875rem;
 		font-weight: 500;
@@ -363,19 +326,6 @@
 		color: #6b7280;
 		margin: 0.25rem 0 0 0;
 		line-height: 1.3;
-	}
-
-	/* Compact layout text constraints */
-	.flowdrop-simple-node--compact .flowdrop-simple-node__title {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.flowdrop-simple-node--compact .flowdrop-simple-node__description {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	:global(.flowdrop-simple-node__icon) {
