@@ -100,8 +100,6 @@
 		'table',
 		'|',
 		'preview',
-		'side-by-side',
-		'fullscreen',
 		'|',
 		'guide'
 	] as const;
