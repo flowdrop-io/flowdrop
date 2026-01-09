@@ -4385,8 +4385,7 @@ export const mockNodes: NodeMetadata[] = [
 		name: 'Dynamic Schema Only Demo',
 		type: 'default',
 		supportedTypes: ['default'],
-		description:
-			'Demo node with only dynamic schema - config schema is fetched from REST endpoint',
+		description: 'Demo node with only dynamic schema - config schema is fetched from REST endpoint',
 		category: 'tools',
 		icon: 'mdi:cloud-sync',
 		color: '#059669',

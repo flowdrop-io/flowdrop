@@ -174,7 +174,7 @@
 			dynamicSchemaError =
 				err instanceof Error
 					? err.message
-					: configEditOptions.errorMessage ?? 'Failed to load configuration schema';
+					: (configEditOptions.errorMessage ?? 'Failed to load configuration schema');
 		} finally {
 			dynamicSchemaLoading = false;
 		}
@@ -390,7 +390,8 @@
 						onclick={handleExternalEditClick}
 					>
 						<Icon
-							icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
+							icon={configEditOptions.externalEditLink.icon ??
+								'heroicons:arrow-top-right-on-square'}
 						/>
 						<span>{configEditOptions.externalEditLink.label ?? 'Use External Editor'}</span>
 					</button>
@@ -426,7 +427,8 @@
 						title={configEditOptions.externalEditLink.description ?? 'Open external editor'}
 					>
 						<Icon
-							icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
+							icon={configEditOptions.externalEditLink.icon ??
+								'heroicons:arrow-top-right-on-square'}
 						/>
 						<span>{configEditOptions.externalEditLink.label ?? 'External Editor'}</span>
 					</button>

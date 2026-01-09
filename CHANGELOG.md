@@ -264,11 +264,11 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
   - Manual variant override via `config.variant`
 
 - **Variant Configurations**:
-  | Variant | Icon        | Color           | Default Ports         |
+  | Variant | Icon | Color | Default Ports |
   | ------- | ----------- | --------------- | --------------------- |
   | `start` | Play circle | Green (#10b981) | Output only (trigger) |
-  | `end`   | Stop circle | Gray (#6b7280)  | Input only (trigger)  |
-  | `exit`  | X circle    | Red (#ef4444)   | Input only (trigger)  |
+  | `end` | Stop circle | Gray (#6b7280) | Input only (trigger) |
+  | `exit` | X circle | Red (#ef4444) | Input only (trigger) |
 
 - **API-Controlled Ports**: Terminal nodes now fully respect the `inputs` and `outputs` arrays from metadata
   - `undefined` → Uses variant default ports
