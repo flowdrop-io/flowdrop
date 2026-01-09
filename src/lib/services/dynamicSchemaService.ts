@@ -12,8 +12,8 @@ import type {
 	ExternalEditLink,
 	ConfigEditOptions,
 	WorkflowNode
-} from "../types/index.js";
-import { getEndpointConfig } from "./api.js";
+} from '../types/index.js';
+import { getEndpointConfig } from './api.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -24,11 +24,11 @@ interface NodeContext {
 	/** Node type from xyflow */
 	type: string;
 	/** Node metadata (id, name, type, category, etc.) */
-	metadata: WorkflowNode["data"]["metadata"];
+	metadata: WorkflowNode['data']['metadata'];
 	/** Node configuration values */
 	config: Record<string, unknown>;
 	/** Node extensions */
-	extensions?: WorkflowNode["data"]["extensions"];
+	extensions?: WorkflowNode['data']['extensions'];
 	/** Current workflow ID (if available) */
 	workflowId?: string;
 }
@@ -86,14 +86,14 @@ const DEFAULT_CACHE_TTL = 5 * 60 * 1000;
  * ```
  */
 function resolveVariablePath(context: NodeContext, path: string): string | undefined {
-	const parts = path.split(".");
+	const parts = path.split('.');
 	let current: unknown = context;
 
 	for (const part of parts) {
 		if (current === null || current === undefined) {
 			return undefined;
 		}
-		if (typeof current === "object" && part in current) {
+		if (typeof current === 'object' && part in current) {
 			current = (current as Record<string, unknown>)[part];
 		} else {
 			return undefined;
@@ -141,7 +141,7 @@ function resolveTemplate(
 		const value = resolveVariablePath(context, contextPath);
 		if (value !== undefined) {
 			// Use global regex to replace all occurrences
-			const regex = new RegExp(`\\{${variableName}\\}`, "g");
+			const regex = new RegExp(`\\{${variableName}\\}`, 'g');
 			resolved = resolved.replace(regex, encodeURIComponent(value));
 		}
 	}
@@ -240,33 +240,33 @@ export async function fetchDynamicSchema(
 	let url = resolveTemplate(endpoint.url, endpoint.parameterMapping, context);
 
 	// If URL is relative, try to prepend base URL from endpoint config
-	if (url.startsWith("/")) {
+	if (url.startsWith('/')) {
 		const currentConfig = getEndpointConfig();
 		if (currentConfig?.baseUrl) {
 			// Remove trailing slash from base URL and leading slash from relative URL
-			const baseUrl = currentConfig.baseUrl.replace(/\/$/, "");
+			const baseUrl = currentConfig.baseUrl.replace(/\/$/, '');
 			url = `${baseUrl}${url}`;
 		}
 	}
 
 	// Prepare request options
-	const method = endpoint.method ?? "GET";
+	const method = endpoint.method ?? 'GET';
 	const timeout = endpoint.timeout ?? 10000;
 
 	const headers: Record<string, string> = {
-		"Accept": "application/json",
-		"Content-Type": "application/json",
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
 		...endpoint.headers
 	};
 
 	// Add auth headers from endpoint config if available
 	const currentConfig = getEndpointConfig();
 	if (currentConfig?.auth) {
-		if (currentConfig.auth.type === "bearer" && currentConfig.auth.token) {
-			headers["Authorization"] = `Bearer ${currentConfig.auth.token}`;
-		} else if (currentConfig.auth.type === "api_key" && currentConfig.auth.apiKey) {
-			headers["X-API-Key"] = currentConfig.auth.apiKey;
-		} else if (currentConfig.auth.type === "custom" && currentConfig.auth.headers) {
+		if (currentConfig.auth.type === 'bearer' && currentConfig.auth.token) {
+			headers['Authorization'] = `Bearer ${currentConfig.auth.token}`;
+		} else if (currentConfig.auth.type === 'api_key' && currentConfig.auth.apiKey) {
+			headers['X-API-Key'] = currentConfig.auth.apiKey;
+		} else if (currentConfig.auth.type === 'custom' && currentConfig.auth.headers) {
 			Object.assign(headers, currentConfig.auth.headers);
 		}
 	}
@@ -279,11 +279,11 @@ export async function fetchDynamicSchema(
 	};
 
 	// Add body for non-GET requests
-	if (method !== "GET" && endpoint.body) {
+	if (method !== 'GET' && endpoint.body) {
 		// Resolve any template variables in the body
 		const resolvedBody: Record<string, unknown> = {};
 		for (const [key, value] of Object.entries(endpoint.body)) {
-			if (typeof value === "string") {
+			if (typeof value === 'string') {
 				resolvedBody[key] = resolveTemplate(value, endpoint.parameterMapping, context);
 			} else {
 				resolvedBody[key] = value;
@@ -311,16 +311,16 @@ export async function fetchDynamicSchema(
 		// 3. Wrapped in { success: true, data: ConfigSchema }
 		let schema: ConfigSchema | undefined;
 
-		if (data.type === "object" && data.properties) {
+		if (data.type === 'object' && data.properties) {
 			// Direct ConfigSchema
 			schema = data as ConfigSchema;
-		} else if (data.data?.type === "object" && data.data?.properties) {
+		} else if (data.data?.type === 'object' && data.data?.properties) {
 			// Wrapped in { data: ... }
 			schema = data.data as ConfigSchema;
-		} else if (data.schema?.type === "object" && data.schema?.properties) {
+		} else if (data.schema?.type === 'object' && data.schema?.properties) {
 			// Wrapped in { schema: ... }
 			schema = data.schema as ConfigSchema;
-		} else if (data.success && data.data?.type === "object") {
+		} else if (data.success && data.data?.type === 'object') {
 			// Wrapped in { success: true, data: ... }
 			schema = data.data as ConfigSchema;
 		}
@@ -328,7 +328,7 @@ export async function fetchDynamicSchema(
 		if (!schema) {
 			return {
 				success: false,
-				error: "Invalid schema format received from endpoint"
+				error: 'Invalid schema format received from endpoint'
 			};
 		}
 
@@ -349,7 +349,7 @@ export async function fetchDynamicSchema(
 	} catch (error) {
 		// Handle specific error types
 		if (error instanceof Error) {
-			if (error.name === "AbortError" || error.name === "TimeoutError") {
+			if (error.name === 'AbortError' || error.name === 'TimeoutError') {
 				return {
 					success: false,
 					error: `Request timed out after ${timeout}ms`
@@ -362,7 +362,7 @@ export async function fetchDynamicSchema(
 		}
 		return {
 			success: false,
-			error: "Unknown error occurred while fetching schema"
+			error: 'Unknown error occurred while fetching schema'
 		};
 	}
 }
@@ -408,7 +408,7 @@ export function resolveExternalEditUrl(
 
 	// Append callback URL if configured
 	if (callbackUrl && link.callbackUrlParam) {
-		const separator = url.includes("?") ? "&" : "?";
+		const separator = url.includes('?') ? '&' : '?';
 		url = `${url}${separator}${link.callbackUrlParam}=${encodeURIComponent(callbackUrl)}`;
 	}
 
@@ -444,19 +444,21 @@ export function getEffectiveConfigEditOptions(node: WorkflowNode): ConfigEditOpt
 		...typeConfig,
 		...instanceConfig,
 		// Deep merge external edit link
-		externalEditLink: instanceConfig.externalEditLink ?? typeConfig.externalEditLink
-			? {
-					...typeConfig.externalEditLink,
-					...instanceConfig.externalEditLink
-				}
-			: undefined,
+		externalEditLink:
+			(instanceConfig.externalEditLink ?? typeConfig.externalEditLink)
+				? {
+						...typeConfig.externalEditLink,
+						...instanceConfig.externalEditLink
+					}
+				: undefined,
 		// Deep merge dynamic schema
-		dynamicSchema: instanceConfig.dynamicSchema ?? typeConfig.dynamicSchema
-			? {
-					...typeConfig.dynamicSchema,
-					...instanceConfig.dynamicSchema
-				}
-			: undefined
+		dynamicSchema:
+			(instanceConfig.dynamicSchema ?? typeConfig.dynamicSchema)
+				? {
+						...typeConfig.dynamicSchema,
+						...instanceConfig.dynamicSchema
+					}
+				: undefined
 	};
 }
 
@@ -486,10 +488,7 @@ export function clearSchemaCache(pattern?: string): void {
  * @param node - The workflow node to invalidate cache for
  * @param endpoint - The dynamic schema endpoint configuration
  */
-export function invalidateSchemaCache(
-	node: WorkflowNode,
-	endpoint: DynamicSchemaEndpoint
-): void {
+export function invalidateSchemaCache(node: WorkflowNode, endpoint: DynamicSchemaEndpoint): void {
 	const context: NodeContext = {
 		id: node.id,
 		type: node.type,
@@ -550,4 +549,3 @@ export function shouldUseDynamicSchema(node: WorkflowNode): boolean {
 
 	return false;
 }
-

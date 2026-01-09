@@ -1,10 +1,10 @@
 /**
  * Unit Tests - Draft Storage Service
- * 
+ *
  * Tests for localStorage-based draft saving and auto-save functionality.
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
 	getDraftStorageKey,
 	saveDraft,
@@ -13,10 +13,10 @@ import {
 	hasDraft,
 	getDraftMetadata,
 	DraftAutoSaveManager
-} from "$lib/services/draftStorage.js";
-import { createTestWorkflow } from "../../utils/index.js";
+} from '$lib/services/draftStorage.js';
+import { createTestWorkflow } from '../../utils/index.js';
 
-describe("Draft Storage Service", () => {
+describe('Draft Storage Service', () => {
 	// Mock localStorage
 	let mockStorage: Map<string, string>;
 
@@ -48,46 +48,43 @@ describe("Draft Storage Service", () => {
 		vi.clearAllMocks();
 	});
 
-	describe("getDraftStorageKey", () => {
-		it("should return custom key when provided", () => {
-			const customKey = "my-custom-draft-key";
-			const key = getDraftStorageKey("workflow-id", customKey);
+	describe('getDraftStorageKey', () => {
+		it('should return custom key when provided', () => {
+			const customKey = 'my-custom-draft-key';
+			const key = getDraftStorageKey('workflow-id', customKey);
 			expect(key).toBe(customKey);
 		});
 
-		it("should generate key with workflow ID", () => {
-			const key = getDraftStorageKey("workflow-123");
-			expect(key).toBe("flowdrop:draft:workflow-123");
+		it('should generate key with workflow ID', () => {
+			const key = getDraftStorageKey('workflow-123');
+			expect(key).toBe('flowdrop:draft:workflow-123');
 		});
 
 		it("should use 'new' suffix when no workflow ID", () => {
 			const key = getDraftStorageKey();
-			expect(key).toBe("flowdrop:draft:new");
+			expect(key).toBe('flowdrop:draft:new');
 		});
 
-		it("should prefer custom key over workflow ID", () => {
-			const key = getDraftStorageKey("workflow-123", "custom");
-			expect(key).toBe("custom");
+		it('should prefer custom key over workflow ID', () => {
+			const key = getDraftStorageKey('workflow-123', 'custom');
+			expect(key).toBe('custom');
 		});
 	});
 
-	describe("saveDraft", () => {
-		it("should save draft to localStorage", () => {
+	describe('saveDraft', () => {
+		it('should save draft to localStorage', () => {
 			const workflow = createTestWorkflow();
-			const storageKey = "test-draft";
+			const storageKey = 'test-draft';
 
 			const result = saveDraft(workflow, storageKey);
 
 			expect(result).toBe(true);
-			expect(localStorage.setItem).toHaveBeenCalledWith(
-				storageKey,
-				expect.any(String)
-			);
+			expect(localStorage.setItem).toHaveBeenCalledWith(storageKey, expect.any(String));
 		});
 
-		it("should include metadata when saving", () => {
-			const workflow = createTestWorkflow({ name: "My Workflow" });
-			const storageKey = "test-draft";
+		it('should include metadata when saving', () => {
+			const workflow = createTestWorkflow({ name: 'My Workflow' });
+			const storageKey = 'test-draft';
 
 			saveDraft(workflow, storageKey);
 
@@ -95,19 +92,19 @@ describe("Draft Storage Service", () => {
 			expect(saved).toBeDefined();
 
 			const parsed = JSON.parse(saved!);
-			expect(parsed).toHaveProperty("workflow");
-			expect(parsed).toHaveProperty("metadata");
-			expect(parsed.metadata).toHaveProperty("savedAt");
-			expect(parsed.metadata.workflowName).toBe("My Workflow");
+			expect(parsed).toHaveProperty('workflow');
+			expect(parsed).toHaveProperty('metadata');
+			expect(parsed.metadata).toHaveProperty('savedAt');
+			expect(parsed.metadata.workflowName).toBe('My Workflow');
 		});
 
-		it("should handle localStorage errors", () => {
+		it('should handle localStorage errors', () => {
 			const workflow = createTestWorkflow();
-			const storageKey = "test-draft";
+			const storageKey = 'test-draft';
 
 			// Mock localStorage error
-			vi.spyOn(localStorage, "setItem").mockImplementation(() => {
-				throw new Error("Storage full");
+			vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+				throw new Error('Storage full');
 			});
 
 			const result = saveDraft(workflow, storageKey);
@@ -115,22 +112,22 @@ describe("Draft Storage Service", () => {
 			expect(result).toBe(false);
 		});
 
-		it("should save workflow ID in metadata", () => {
-			const workflow = createTestWorkflow({ id: "workflow-123" });
-			const storageKey = "test-draft";
+		it('should save workflow ID in metadata', () => {
+			const workflow = createTestWorkflow({ id: 'workflow-123' });
+			const storageKey = 'test-draft';
 
 			saveDraft(workflow, storageKey);
 
 			const saved = mockStorage.get(storageKey);
 			const parsed = JSON.parse(saved!);
-			expect(parsed.metadata.workflowId).toBe("workflow-123");
+			expect(parsed.metadata.workflowId).toBe('workflow-123');
 		});
 	});
 
-	describe("loadDraft", () => {
-		it("should load draft from localStorage", () => {
+	describe('loadDraft', () => {
+		it('should load draft from localStorage', () => {
 			const workflow = createTestWorkflow();
-			const storageKey = "test-draft";
+			const storageKey = 'test-draft';
 
 			saveDraft(workflow, storageKey);
 			const loaded = loadDraft(storageKey);
@@ -140,41 +137,41 @@ describe("Draft Storage Service", () => {
 			expect(loaded?.metadata).toBeDefined();
 		});
 
-		it("should return null when draft does not exist", () => {
-			const loaded = loadDraft("non-existent");
+		it('should return null when draft does not exist', () => {
+			const loaded = loadDraft('non-existent');
 			expect(loaded).toBeNull();
 		});
 
-		it("should return null for invalid draft structure", () => {
-			const storageKey = "invalid-draft";
-			mockStorage.set(storageKey, JSON.stringify({ invalid: "data" }));
+		it('should return null for invalid draft structure', () => {
+			const storageKey = 'invalid-draft';
+			mockStorage.set(storageKey, JSON.stringify({ invalid: 'data' }));
 
 			const loaded = loadDraft(storageKey);
 			expect(loaded).toBeNull();
 		});
 
-		it("should handle JSON parse errors", () => {
-			const storageKey = "broken-draft";
-			mockStorage.set(storageKey, "invalid json {");
+		it('should handle JSON parse errors', () => {
+			const storageKey = 'broken-draft';
+			mockStorage.set(storageKey, 'invalid json {');
 
 			const loaded = loadDraft(storageKey);
 			expect(loaded).toBeNull();
 		});
 
-		it("should handle localStorage errors", () => {
-			vi.spyOn(localStorage, "getItem").mockImplementation(() => {
-				throw new Error("Storage error");
+		it('should handle localStorage errors', () => {
+			vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+				throw new Error('Storage error');
 			});
 
-			const loaded = loadDraft("test-draft");
+			const loaded = loadDraft('test-draft');
 			expect(loaded).toBeNull();
 		});
 	});
 
-	describe("deleteDraft", () => {
-		it("should delete draft from localStorage", () => {
+	describe('deleteDraft', () => {
+		it('should delete draft from localStorage', () => {
 			const workflow = createTestWorkflow();
-			const storageKey = "test-draft";
+			const storageKey = 'test-draft';
 
 			saveDraft(workflow, storageKey);
 			expect(hasDraft(storageKey)).toBe(true);
@@ -183,63 +180,63 @@ describe("Draft Storage Service", () => {
 			expect(hasDraft(storageKey)).toBe(false);
 		});
 
-		it("should handle deletion of non-existent draft", () => {
-			deleteDraft("non-existent");
-			expect(localStorage.removeItem).toHaveBeenCalledWith("non-existent");
+		it('should handle deletion of non-existent draft', () => {
+			deleteDraft('non-existent');
+			expect(localStorage.removeItem).toHaveBeenCalledWith('non-existent');
 		});
 
-		it("should handle localStorage errors", () => {
-			vi.spyOn(localStorage, "removeItem").mockImplementation(() => {
-				throw new Error("Storage error");
+		it('should handle localStorage errors', () => {
+			vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+				throw new Error('Storage error');
 			});
 
 			// Should not throw
-			deleteDraft("test-draft");
+			deleteDraft('test-draft');
 		});
 	});
 
-	describe("hasDraft", () => {
-		it("should return true when draft exists", () => {
+	describe('hasDraft', () => {
+		it('should return true when draft exists', () => {
 			const workflow = createTestWorkflow();
-			const storageKey = "test-draft";
+			const storageKey = 'test-draft';
 
 			saveDraft(workflow, storageKey);
 			expect(hasDraft(storageKey)).toBe(true);
 		});
 
-		it("should return false when draft does not exist", () => {
-			expect(hasDraft("non-existent")).toBe(false);
+		it('should return false when draft does not exist', () => {
+			expect(hasDraft('non-existent')).toBe(false);
 		});
 
-		it("should handle localStorage errors", () => {
-			vi.spyOn(localStorage, "getItem").mockImplementation(() => {
-				throw new Error("Storage error");
+		it('should handle localStorage errors', () => {
+			vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+				throw new Error('Storage error');
 			});
 
-			expect(hasDraft("test-draft")).toBe(false);
+			expect(hasDraft('test-draft')).toBe(false);
 		});
 	});
 
-	describe("getDraftMetadata", () => {
-		it("should return draft metadata without full workflow", () => {
-			const workflow = createTestWorkflow({ name: "Test Workflow" });
-			const storageKey = "test-draft";
+	describe('getDraftMetadata', () => {
+		it('should return draft metadata without full workflow', () => {
+			const workflow = createTestWorkflow({ name: 'Test Workflow' });
+			const storageKey = 'test-draft';
 
 			saveDraft(workflow, storageKey);
 			const metadata = getDraftMetadata(storageKey);
 
 			expect(metadata).not.toBeNull();
-			expect(metadata?.workflowName).toBe("Test Workflow");
-			expect(metadata).toHaveProperty("savedAt");
+			expect(metadata?.workflowName).toBe('Test Workflow');
+			expect(metadata).toHaveProperty('savedAt');
 		});
 
-		it("should return null when draft does not exist", () => {
-			const metadata = getDraftMetadata("non-existent");
+		it('should return null when draft does not exist', () => {
+			const metadata = getDraftMetadata('non-existent');
 			expect(metadata).toBeNull();
 		});
 	});
 
-	describe("DraftAutoSaveManager", () => {
+	describe('DraftAutoSaveManager', () => {
 		let manager: DraftAutoSaveManager;
 		let getWorkflow: ReturnType<typeof vi.fn>;
 		let isDirty: ReturnType<typeof vi.fn>;
@@ -250,7 +247,7 @@ describe("Draft Storage Service", () => {
 			isDirty = vi.fn();
 
 			manager = new DraftAutoSaveManager({
-				storageKey: "test-autosave",
+				storageKey: 'test-autosave',
 				interval: 1000,
 				enabled: true,
 				getWorkflow,
@@ -263,27 +260,27 @@ describe("Draft Storage Service", () => {
 			vi.useRealTimers();
 		});
 
-		describe("start and stop", () => {
-			it("should start auto-save interval", () => {
+		describe('start and stop', () => {
+			it('should start auto-save interval', () => {
 				manager.start();
 				expect(manager.isRunning()).toBe(true);
 			});
 
-			it("should stop auto-save interval", () => {
+			it('should stop auto-save interval', () => {
 				manager.start();
 				manager.stop();
 				expect(manager.isRunning()).toBe(false);
 			});
 
-			it("should not start if already running", () => {
+			it('should not start if already running', () => {
 				manager.start();
 				manager.start(); // Second call
 				expect(manager.isRunning()).toBe(true);
 			});
 
-			it("should not start if disabled", () => {
+			it('should not start if disabled', () => {
 				const disabledManager = new DraftAutoSaveManager({
-					storageKey: "test",
+					storageKey: 'test',
 					interval: 1000,
 					enabled: false,
 					getWorkflow,
@@ -295,8 +292,8 @@ describe("Draft Storage Service", () => {
 			});
 		});
 
-		describe("saveIfDirty", () => {
-			it("should save when workflow is dirty", () => {
+		describe('saveIfDirty', () => {
+			it('should save when workflow is dirty', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(true);
@@ -304,10 +301,10 @@ describe("Draft Storage Service", () => {
 				const result = manager.saveIfDirty();
 
 				expect(result).toBe(true);
-				expect(hasDraft("test-autosave")).toBe(true);
+				expect(hasDraft('test-autosave')).toBe(true);
 			});
 
-			it("should not save when workflow is not dirty", () => {
+			it('should not save when workflow is not dirty', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(false);
@@ -315,10 +312,10 @@ describe("Draft Storage Service", () => {
 				const result = manager.saveIfDirty();
 
 				expect(result).toBe(false);
-				expect(hasDraft("test-autosave")).toBe(false);
+				expect(hasDraft('test-autosave')).toBe(false);
 			});
 
-			it("should not save when no workflow available", () => {
+			it('should not save when no workflow available', () => {
 				getWorkflow.mockReturnValue(null);
 				isDirty.mockReturnValue(true);
 
@@ -327,7 +324,7 @@ describe("Draft Storage Service", () => {
 				expect(result).toBe(false);
 			});
 
-			it("should not save if workflow has not changed", () => {
+			it('should not save if workflow has not changed', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(true);
@@ -341,9 +338,9 @@ describe("Draft Storage Service", () => {
 				expect(result).toBe(false);
 			});
 
-			it("should save if workflow changed", () => {
-				const workflow1 = createTestWorkflow({ name: "Version 1" });
-				const workflow2 = createTestWorkflow({ name: "Version 2" });
+			it('should save if workflow changed', () => {
+				const workflow1 = createTestWorkflow({ name: 'Version 1' });
+				const workflow2 = createTestWorkflow({ name: 'Version 2' });
 
 				getWorkflow.mockReturnValueOnce(workflow1);
 				isDirty.mockReturnValue(true);
@@ -357,8 +354,8 @@ describe("Draft Storage Service", () => {
 			});
 		});
 
-		describe("forceSave", () => {
-			it("should save regardless of dirty state", () => {
+		describe('forceSave', () => {
+			it('should save regardless of dirty state', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(false); // Not dirty
@@ -366,10 +363,10 @@ describe("Draft Storage Service", () => {
 				const result = manager.forceSave();
 
 				expect(result).toBe(true);
-				expect(hasDraft("test-autosave")).toBe(true);
+				expect(hasDraft('test-autosave')).toBe(true);
 			});
 
-			it("should not save when no workflow available", () => {
+			it('should not save when no workflow available', () => {
 				getWorkflow.mockReturnValue(null);
 
 				const result = manager.forceSave();
@@ -378,8 +375,8 @@ describe("Draft Storage Service", () => {
 			});
 		});
 
-		describe("auto-save interval", () => {
-			it("should save at intervals when dirty", () => {
+		describe('auto-save interval', () => {
+			it('should save at intervals when dirty', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(true);
@@ -389,10 +386,10 @@ describe("Draft Storage Service", () => {
 				// Advance time by interval
 				vi.advanceTimersByTime(1000);
 
-				expect(hasDraft("test-autosave")).toBe(true);
+				expect(hasDraft('test-autosave')).toBe(true);
 			});
 
-			it("should not save at intervals when not dirty", () => {
+			it('should not save at intervals when not dirty', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(false);
@@ -400,26 +397,26 @@ describe("Draft Storage Service", () => {
 				manager.start();
 				vi.advanceTimersByTime(1000);
 
-				expect(hasDraft("test-autosave")).toBe(false);
+				expect(hasDraft('test-autosave')).toBe(false);
 			});
 		});
 
-		describe("clearDraft", () => {
-			it("should clear draft from storage", () => {
+		describe('clearDraft', () => {
+			it('should clear draft from storage', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(true);
 
 				manager.forceSave();
-				expect(hasDraft("test-autosave")).toBe(true);
+				expect(hasDraft('test-autosave')).toBe(true);
 
 				manager.clearDraft();
-				expect(hasDraft("test-autosave")).toBe(false);
+				expect(hasDraft('test-autosave')).toBe(false);
 			});
 		});
 
-		describe("markAsSaved", () => {
-			it("should prevent saving unchanged workflow", () => {
+		describe('markAsSaved', () => {
+			it('should prevent saving unchanged workflow', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 				isDirty.mockReturnValue(true);
@@ -431,48 +428,48 @@ describe("Draft Storage Service", () => {
 			});
 		});
 
-		describe("updateStorageKey", () => {
-			it("should update storage key", () => {
-				manager.updateStorageKey("new-key");
-				expect(manager.getStorageKey()).toBe("new-key");
+		describe('updateStorageKey', () => {
+			it('should update storage key', () => {
+				manager.updateStorageKey('new-key');
+				expect(manager.getStorageKey()).toBe('new-key');
 			});
 
-			it("should migrate existing draft to new key", () => {
+			it('should migrate existing draft to new key', () => {
 				const workflow = createTestWorkflow();
 				getWorkflow.mockReturnValue(workflow);
 
 				manager.forceSave();
-				expect(hasDraft("test-autosave")).toBe(true);
+				expect(hasDraft('test-autosave')).toBe(true);
 
-				manager.updateStorageKey("new-key");
+				manager.updateStorageKey('new-key');
 
-				expect(hasDraft("test-autosave")).toBe(false);
-				expect(hasDraft("new-key")).toBe(true);
+				expect(hasDraft('test-autosave')).toBe(false);
+				expect(hasDraft('new-key')).toBe(true);
 			});
 
-			it("should not migrate if no existing draft", () => {
-				manager.updateStorageKey("new-key");
-				expect(hasDraft("new-key")).toBe(false);
-			});
-		});
-
-		describe("getStorageKey", () => {
-			it("should return current storage key", () => {
-				expect(manager.getStorageKey()).toBe("test-autosave");
+			it('should not migrate if no existing draft', () => {
+				manager.updateStorageKey('new-key');
+				expect(hasDraft('new-key')).toBe(false);
 			});
 		});
 
-		describe("isRunning", () => {
-			it("should return false when not started", () => {
+		describe('getStorageKey', () => {
+			it('should return current storage key', () => {
+				expect(manager.getStorageKey()).toBe('test-autosave');
+			});
+		});
+
+		describe('isRunning', () => {
+			it('should return false when not started', () => {
 				expect(manager.isRunning()).toBe(false);
 			});
 
-			it("should return true when started", () => {
+			it('should return true when started', () => {
 				manager.start();
 				expect(manager.isRunning()).toBe(true);
 			});
 
-			it("should return false after stopped", () => {
+			it('should return false after stopped', () => {
 				manager.start();
 				manager.stop();
 				expect(manager.isRunning()).toBe(false);
@@ -480,4 +477,3 @@ describe("Draft Storage Service", () => {
 		});
 	});
 });
-

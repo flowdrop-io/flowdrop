@@ -390,10 +390,7 @@
 
 <SvelteFlowProvider>
 	<!-- EdgeRefresher component - handles updateNodeInternals calls -->
-	<EdgeRefresher
-		{nodeIdToRefresh}
-		onRefreshComplete={handleEdgeRefreshComplete}
-	/>
+	<EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
 
 	<div class="flowdrop-workflow-editor">
 		<!-- Main Editor Area -->

@@ -39,4 +39,3 @@
 </script>
 
 <!-- This component renders nothing - it's just for the hook logic -->
-

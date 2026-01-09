@@ -1,10 +1,10 @@
 /**
  * Global test setup for FlowDrop
- * 
+ *
  * This file runs before all tests and sets up the testing environment.
  */
 
-import { afterEach, vi } from "vitest";
+import { afterEach, vi } from 'vitest';
 
 // Note: Install these dependencies when ready to use Testing Library
 // import { cleanup } from "@testing-library/svelte";
@@ -12,7 +12,7 @@ import { afterEach, vi } from "vitest";
 
 /**
  * Clean up after each test
- * 
+ *
  * This ensures that each test starts with a clean slate and prevents
  * test pollution where one test affects another.
  */
@@ -23,10 +23,10 @@ afterEach(() => {
 
 /**
  * Mock window.matchMedia
- * 
+ *
  * Many components use matchMedia for responsive design.
  */
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
 	writable: true,
 	value: vi.fn().mockImplementation((query: string) => ({
 		matches: false,
@@ -42,7 +42,7 @@ Object.defineProperty(window, "matchMedia", {
 
 /**
  * Mock IntersectionObserver
- * 
+ *
  * Used by various components for viewport detection.
  */
 global.IntersectionObserver = class IntersectionObserver {
@@ -57,7 +57,7 @@ global.IntersectionObserver = class IntersectionObserver {
 
 /**
  * Mock ResizeObserver
- * 
+ *
  * Used by @xyflow/svelte for canvas resizing.
  */
 global.ResizeObserver = class ResizeObserver {
@@ -69,17 +69,17 @@ global.ResizeObserver = class ResizeObserver {
 
 /**
  * Suppress console errors in tests
- * 
+ *
  * You can temporarily enable them for debugging by commenting this out.
  */
 const originalError = console.error;
 beforeAll(() => {
 	console.error = (...args: unknown[]) => {
 		// Filter out known noisy errors
-		const message = args[0]?.toString() || "";
+		const message = args[0]?.toString() || '';
 		if (
-			message.includes("Not implemented: HTMLFormElement.prototype.requestSubmit") ||
-			message.includes("Error: Could not parse CSS stylesheet")
+			message.includes('Not implemented: HTMLFormElement.prototype.requestSubmit') ||
+			message.includes('Error: Could not parse CSS stylesheet')
 		) {
 			return;
 		}
@@ -93,10 +93,9 @@ afterAll(() => {
 
 /**
  * Extend Vitest matchers
- * 
+ *
  * Add custom matchers here if needed.
  */
 // expect.extend({
 // 	// Add custom matchers here when needed
 // });
-

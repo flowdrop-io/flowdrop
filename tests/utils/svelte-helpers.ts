@@ -1,8 +1,8 @@
 /**
  * Svelte-specific test helpers
- * 
+ *
  * Utilities for testing Svelte components with Testing Library.
- * 
+ *
  * Note: Install @testing-library/svelte and @testing-library/user-event to use these utilities
  */
 
@@ -12,22 +12,21 @@
 
 /**
  * Render a Svelte component with user event setup
- * 
+ *
  * This is a convenience wrapper that sets up both the component
  * and user event utilities in one call.
- * 
+ *
  * TODO: Uncomment when dependencies are installed
  */
-export function renderWithUser<T>(
-	component: T,
-	props?: Record<string, unknown>
-): unknown {
-	throw new Error("Install @testing-library/svelte and @testing-library/user-event to use renderWithUser");
+export function renderWithUser<T>(component: T, props?: Record<string, unknown>): unknown {
+	throw new Error(
+		'Install @testing-library/svelte and @testing-library/user-event to use renderWithUser'
+	);
 }
 
 /**
  * Wait for Svelte to finish updating
- * 
+ *
  * Useful when you need to ensure all reactive updates have completed.
  */
 export async function tick(times = 1): Promise<void> {
@@ -38,7 +37,7 @@ export async function tick(times = 1): Promise<void> {
 
 /**
  * Get a component's reactive state
- * 
+ *
  * Helper to access internal state for testing purposes.
  */
 export function getComponentState<T>(result: unknown): T {
@@ -49,11 +48,7 @@ export function getComponentState<T>(result: unknown): T {
 /**
  * Trigger a custom event on an element
  */
-export function fireCustomEvent(
-	element: HTMLElement,
-	eventName: string,
-	detail?: unknown
-): void {
+export function fireCustomEvent(element: HTMLElement, eventName: string, detail?: unknown): void {
 	const event = new CustomEvent(eventName, {
 		detail,
 		bubbles: true,
@@ -65,15 +60,12 @@ export function fireCustomEvent(
 /**
  * Wait for an element to be removed
  */
-export async function waitForRemoval(
-	element: HTMLElement,
-	timeout = 1000
-): Promise<void> {
+export async function waitForRemoval(element: HTMLElement, timeout = 1000): Promise<void> {
 	const startTime = Date.now();
-	
+
 	while (document.body.contains(element)) {
 		if (Date.now() - startTime > timeout) {
-			throw new Error("Element was not removed within timeout");
+			throw new Error('Element was not removed within timeout');
 		}
 		await tick();
 	}
@@ -85,7 +77,7 @@ export async function waitForRemoval(
 export function createMockStore<T>(initialValue: T) {
 	let value = initialValue;
 	const subscribers = new Set<(value: T) => void>();
-	
+
 	return {
 		subscribe(callback: (value: T) => void) {
 			subscribers.add(callback);
@@ -112,13 +104,13 @@ export function createMockStore<T>(initialValue: T) {
 export function createTestStore<T>(initialValue: T) {
 	const store = createMockStore(initialValue);
 	const history: T[] = [initialValue];
-	
+
 	const originalSet = store.set;
 	store.set = (newValue: T) => {
 		history.push(newValue);
 		originalSet(newValue);
 	};
-	
+
 	return {
 		...store,
 		history,
@@ -129,4 +121,3 @@ export function createTestStore<T>(initialValue: T) {
 		}
 	};
 }
-
