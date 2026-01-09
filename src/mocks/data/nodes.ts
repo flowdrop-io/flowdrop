@@ -4232,8 +4232,225 @@ export const mockNodes: NodeMetadata[] = [
 				}
 			}
 		}
+	},
+	// ==========================================
+	// Demo nodes showcasing configEdit feature
+	// ==========================================
+	{
+		id: 'dynamic_config_demo',
+		name: 'Dynamic Config Demo',
+		type: 'default',
+		supportedTypes: ['default'],
+		description:
+			'Demo node showcasing configEdit feature with external edit link and dynamic schema fetching',
+		category: 'tools',
+		icon: 'mdi:cog-sync',
+		color: '#7c3aed',
+		version: '1.0.0',
+		tags: ['demo', 'dynamic', 'config', 'external', 'admin'],
+		inputs: [
+			{
+				id: 'data',
+				name: 'Data Input',
+				type: 'input',
+				dataType: 'json',
+				required: false,
+				description: 'Input data to process'
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: ''
+			}
+		],
+		outputs: [
+			{
+				id: 'result',
+				name: 'result',
+				type: 'output',
+				dataType: 'json',
+				required: false,
+				description: 'The processed result'
+			},
+			{
+				id: 'config_source',
+				name: 'config_source',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'Source of the configuration (static, dynamic, or external)'
+			}
+		],
+		config: {},
+		// No static configSchema - this will be fetched dynamically or configured externally
+		configSchema: undefined,
+		// ConfigEdit configuration for dynamic/external configuration
+		configEdit: {
+			// Option 1: External edit link - opens a 3rd party form in new tab
+			externalEditLink: {
+				url: 'https://admin.example.com/nodes/{nodeTypeId}/configure?instance={instanceId}&workflow={workflowId}',
+				label: 'Configure in Admin Portal',
+				icon: 'mdi:open-in-new',
+				description:
+					'This node requires advanced configuration. Click to open the admin portal where you can configure all options.',
+				parameterMapping: {
+					nodeTypeId: 'metadata.id',
+					instanceId: 'id',
+					workflowId: 'workflowId'
+				},
+				openInNewTab: true,
+				callbackUrlParam: 'returnUrl'
+			},
+			// Option 2: Dynamic schema endpoint - fetches config schema at runtime
+			dynamicSchema: {
+				url: '/nodes/{nodeTypeId}/schema',
+				method: 'GET',
+				parameterMapping: {
+					nodeTypeId: 'metadata.id'
+				},
+				headers: {
+					'X-FlowDrop-Instance': '{instanceId}'
+				},
+				cacheSchema: true,
+				timeout: 10000
+			},
+			// When both are configured, prefer dynamic schema (falls back to external if fetch fails)
+			preferDynamicSchema: true,
+			showRefreshButton: true,
+			loadingMessage: 'Loading dynamic configuration options...',
+			errorMessage: 'Could not load configuration. Please use the external admin portal instead.'
+		}
+	},
+	{
+		id: 'external_only_config_demo',
+		name: 'External Config Only Demo',
+		type: 'default',
+		supportedTypes: ['default'],
+		description:
+			'Demo node with only external edit link - config is managed entirely by 3rd party system',
+		category: 'tools',
+		icon: 'mdi:link-variant',
+		color: '#0891b2',
+		version: '1.0.0',
+		tags: ['demo', 'external', 'config', 'admin', 'third-party'],
+		inputs: [
+			{
+				id: 'input',
+				name: 'Input',
+				type: 'input',
+				dataType: 'mixed',
+				required: false,
+				description: 'Input to process'
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: ''
+			}
+		],
+		outputs: [
+			{
+				id: 'output',
+				name: 'output',
+				type: 'output',
+				dataType: 'mixed',
+				required: false,
+				description: 'Processed output'
+			}
+		],
+		config: {},
+		configSchema: undefined,
+		configEdit: {
+			externalEditLink: {
+				url: 'https://settings.example.com/integrations/{nodeTypeId}',
+				label: 'Open Configuration Portal',
+				icon: 'mdi:application-cog',
+				description:
+					'Configuration for this integration is managed in the external settings portal. Click to configure authentication, API keys, and advanced options.',
+				parameterMapping: {
+					nodeTypeId: 'metadata.id'
+				},
+				openInNewTab: true
+			}
+		}
+	},
+	{
+		id: 'dynamic_schema_only_demo',
+		name: 'Dynamic Schema Only Demo',
+		type: 'default',
+		supportedTypes: ['default'],
+		description:
+			'Demo node with only dynamic schema - config schema is fetched from REST endpoint',
+		category: 'tools',
+		icon: 'mdi:cloud-sync',
+		color: '#059669',
+		version: '1.0.0',
+		tags: ['demo', 'dynamic', 'schema', 'rest', 'api'],
+		inputs: [
+			{
+				id: 'data',
+				name: 'Data',
+				type: 'input',
+				dataType: 'json',
+				required: false,
+				description: 'Data to process'
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: ''
+			}
+		],
+		outputs: [
+			{
+				id: 'result',
+				name: 'result',
+				type: 'output',
+				dataType: 'json',
+				required: false,
+				description: 'Processing result'
+			},
+			{
+				id: 'schema_version',
+				name: 'schema_version',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'Version of the dynamic schema used'
+			}
+		],
+		config: {},
+		configSchema: undefined,
+		configEdit: {
+			dynamicSchema: {
+				url: '/nodes/{nodeTypeId}/schema?version=latest',
+				method: 'GET',
+				parameterMapping: {
+					nodeTypeId: 'metadata.id'
+				},
+				cacheSchema: true,
+				timeout: 15000
+			},
+			showRefreshButton: true,
+			loadingMessage: 'Fetching latest configuration schema...',
+			errorMessage: 'Failed to load configuration schema. Please check your network connection.'
+		}
 	}
 ];
+
+/**
+ * Total count of nodes
+ */
+export const mockNodesCount = mockNodes.length;
 
 /**
  * Get a node by ID
@@ -4264,8 +4481,3 @@ export function searchNodes(query: string): NodeMetadata[] {
 			node.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
 	);
 }
-
-/**
- * Total count of nodes
- */
-export const mockNodesCount = mockNodes.length;
