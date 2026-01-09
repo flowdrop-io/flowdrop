@@ -32,7 +32,12 @@ export type {
 	ExecutionResult,
 	FlowDropConfig,
 	WorkflowEvents,
-	BuiltinNodeType
+	BuiltinNodeType,
+	// Admin/Edit configuration types
+	HttpMethod,
+	DynamicSchemaEndpoint,
+	ExternalEditLink,
+	ConfigEditOptions
 } from './types/index.js';
 
 // Export configuration types
@@ -187,6 +192,19 @@ export {
 	initializeGlobalSave
 } from './services/globalSave.js';
 export { fetchPortConfig, validatePortConfig } from './services/portConfigApi.js';
+
+// Export dynamic schema service for config edit functionality
+export {
+	fetchDynamicSchema,
+	resolveExternalEditUrl,
+	getEffectiveConfigEditOptions,
+	clearSchemaCache,
+	invalidateSchemaCache,
+	hasConfigEditOptions,
+	shouldShowExternalEdit,
+	shouldUseDynamicSchema
+} from './services/dynamicSchemaService.js';
+export type { DynamicSchemaResult } from './services/dynamicSchemaService.js';
 
 // Export draft storage service
 export {
