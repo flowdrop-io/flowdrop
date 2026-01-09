@@ -669,6 +669,7 @@
 			>
 				<ConfigForm
 					node={currentNode}
+					workflowId={$workflowStore?.id}
 					onSave={async (updatedConfig, uiExtensions?: NodeUIExtensions) => {
 						if (selectedNodeId && currentNode) {
 							// Build the updated node data
