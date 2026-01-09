@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.27] - 2026-01-09
+
+### Added
+
+#### Dynamic Configuration (configEdit) Feature
+
+A new feature allowing nodes to have their configuration schemas fetched dynamically at runtime or configured via external third-party applications.
+
+- **ConfigEditOptions Types**: New type system for dynamic configuration
+  - `DynamicSchemaEndpoint`: Configure REST endpoints to fetch config schemas at runtime
+  - `ExternalEditLink`: Configure links to external configuration forms (opens in new tab)
+  - `ConfigEditOptions`: Combines both options with preference settings
+  - `HttpMethod`: Type for REST methods (GET, POST, PUT, PATCH, DELETE)
+  - Added `configEdit` property to `NodeMetadata` and `NodeExtensions`
+
+- **Dynamic Schema Service**: New service for runtime schema management
+  - `fetchDynamicSchema()`: Fetch config schemas from REST endpoints with built-in caching
+  - `resolveExternalEditUrl()`: Resolve URL template variables for external links
+  - `getEffectiveConfigEditOptions()`: Merge type-level and instance-level configs
+  - `invalidateSchemaCache()` / `clearSchemaCache()`: Cache management utilities
+  - Helper functions: `hasConfigEditOptions`, `shouldShowExternalEdit`, `shouldUseDynamicSchema`
+
+- **ConfigForm Enhancements**: UI support for configEdit feature
+  - Automatic dynamic schema loading when `dynamicSchema` is configured
+  - Loading spinner and error states for schema fetching
+  - "Refresh Schema" button to manually reload dynamic schemas
+  - "External Editor" button when `externalEditLink` is configured
+  - Support for both options simultaneously with `preferDynamicSchema` toggle
+
+- **MSW Mock Handlers**: Mock endpoints for dynamic schema testing
+  - `GET /api/flowdrop/nodes/:nodeTypeId/schema`: Returns mock config schemas
+  - `POST /api/flowdrop/nodes/:nodeTypeId/config`: Mock config save endpoint
+  - `GET /api/flowdrop/nodes/:nodeTypeId/config`: Mock config retrieval endpoint
+
+- **Demo Nodes**: Three new demo nodes showcasing the configEdit feature
+  - `dynamic_config_demo`: Demonstrates both external link and dynamic schema
+  - `external_only_config_demo`: External edit link only (3rd party managed config)
+  - `dynamic_schema_only_demo`: Dynamic schema fetching only
+
+### Fixed
+
+- **Simple/Square Node Ports**: Port behavior now correctly updates when ports are hidden or made visible dynamically
+- **Markdown Editor Toolbar**: Removed confusing toolbar items from FormMarkdownEditor
+- **Docker Builds**: Added `--ignore-scripts` to `npm ci` for QEMU cross-platform builds
+
+### Technical Details
+
+- URL template variables support: `{nodeTypeId}`, `{instanceId}`, `{workflowId}` with custom parameter mapping
+- Schema caching with configurable TTL (default 5 minutes)
+- Full TypeScript type safety with comprehensive JSDoc documentation
+- Zero linter errors introduced
+
 ## [0.0.26] - 2026-01-04
 
 ### Fixed
