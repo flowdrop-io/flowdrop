@@ -192,6 +192,211 @@ export type BuiltinNodeType =
 export type NodeType = BuiltinNodeType | (string & Record<never, never>);
 
 /**
+ * HTTP method types for dynamic schema endpoints
+ */
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH";
+
+/**
+ * Dynamic schema endpoint configuration
+ * Used when the config schema needs to be fetched at runtime from a REST endpoint
+ *
+ * @example
+ * ```typescript
+ * const schemaEndpoint: DynamicSchemaEndpoint = {
+ *   url: "/api/nodes/{nodeTypeId}/schema",
+ *   method: "GET",
+ *   headers: { "X-Custom-Header": "value" },
+ *   parameterMapping: {
+ *     nodeTypeId: "metadata.id",
+ *     instanceId: "id"
+ *   }
+ * };
+ * ```
+ */
+export interface DynamicSchemaEndpoint {
+	/**
+	 * The URL to fetch the schema from.
+	 * Supports template variables in curly braces (e.g., "/api/nodes/{nodeTypeId}/schema")
+	 * Variables are resolved from node metadata, config, or instance data.
+	 */
+	url: string;
+
+	/**
+	 * HTTP method to use for fetching the schema.
+	 * @default "GET"
+	 */
+	method?: HttpMethod;
+
+	/**
+	 * Custom headers to include in the request
+	 */
+	headers?: Record<string, string>;
+
+	/**
+	 * Maps template variables to their source paths.
+	 * Keys are variable names used in the URL, values are dot-notation paths
+	 * to resolve from the node context (e.g., "metadata.id", "config.apiKey", "id")
+	 */
+	parameterMapping?: Record<string, string>;
+
+	/**
+	 * Request body for POST/PUT/PATCH methods.
+	 * Can include template variables like the URL.
+	 */
+	body?: Record<string, unknown>;
+
+	/**
+	 * Timeout in milliseconds for the schema fetch request
+	 * @default 10000
+	 */
+	timeout?: number;
+
+	/**
+	 * Whether to cache the fetched schema per node instance
+	 * @default true
+	 */
+	cacheSchema?: boolean;
+}
+
+/**
+ * External edit link configuration
+ * Used when the node configuration should be handled by an external 3rd party form
+ *
+ * @example
+ * ```typescript
+ * const editLink: ExternalEditLink = {
+ *   url: "https://admin.example.com/nodes/{nodeTypeId}/edit/{instanceId}",
+ *   label: "Configure in Admin Panel",
+ *   parameterMapping: {
+ *     nodeTypeId: "metadata.id",
+ *     instanceId: "id"
+ *   },
+ *   openInNewTab: true
+ * };
+ * ```
+ */
+export interface ExternalEditLink {
+	/**
+	 * The URL to the external edit form.
+	 * Supports template variables in curly braces (e.g., "/admin/nodes/{nodeTypeId}/edit")
+	 * Variables are resolved from node metadata, config, or instance data.
+	 */
+	url: string;
+
+	/**
+	 * Display label for the edit link button
+	 * @default "Configure Externally"
+	 */
+	label?: string;
+
+	/**
+	 * Icon to display alongside the label (Iconify icon name)
+	 * @default "heroicons:arrow-top-right-on-square"
+	 */
+	icon?: string;
+
+	/**
+	 * Maps template variables to their source paths.
+	 * Keys are variable names used in the URL, values are dot-notation paths
+	 * to resolve from the node context (e.g., "metadata.id", "config.apiKey", "id")
+	 */
+	parameterMapping?: Record<string, string>;
+
+	/**
+	 * Whether to open the link in a new tab
+	 * @default true
+	 */
+	openInNewTab?: boolean;
+
+	/**
+	 * Optional tooltip/description for the link
+	 */
+	description?: string;
+
+	/**
+	 * Callback URL parameter name for FlowDrop to receive updates
+	 * If set, the external form should redirect back with config updates
+	 */
+	callbackUrlParam?: string;
+}
+
+/**
+ * Admin/Edit configuration for nodes with dynamic or external configuration
+ * Used when the config schema cannot be determined at workflow load time
+ * or when configuration is handled by a 3rd party system.
+ *
+ * @example
+ * ```typescript
+ * // Option 1: External edit link only (opens external form in new tab)
+ * const configEdit: ConfigEditOptions = {
+ *   externalEditLink: {
+ *     url: "https://admin.example.com/configure/{nodeId}",
+ *     label: "Open Configuration Portal"
+ *   }
+ * };
+ *
+ * // Option 2: Dynamic schema (fetches schema from REST endpoint)
+ * const configEdit: ConfigEditOptions = {
+ *   dynamicSchema: {
+ *     url: "/api/nodes/{nodeTypeId}/schema",
+ *     method: "GET"
+ *   }
+ * };
+ *
+ * // Option 3: Both (user can choose)
+ * const configEdit: ConfigEditOptions = {
+ *   externalEditLink: {
+ *     url: "https://admin.example.com/configure/{nodeId}",
+ *     label: "Advanced Configuration"
+ *   },
+ *   dynamicSchema: {
+ *     url: "/api/nodes/{nodeTypeId}/schema"
+ *   },
+ *   preferDynamicSchema: true
+ * };
+ * ```
+ */
+export interface ConfigEditOptions {
+	/**
+	 * External link configuration for 3rd party form
+	 * When configured, shows a link/button to open external configuration
+	 */
+	externalEditLink?: ExternalEditLink;
+
+	/**
+	 * Dynamic schema endpoint configuration
+	 * When configured, fetches the config schema from the specified endpoint
+	 */
+	dynamicSchema?: DynamicSchemaEndpoint;
+
+	/**
+	 * When both externalEditLink and dynamicSchema are configured,
+	 * determines which to use by default
+	 * @default false (prefer external link)
+	 */
+	preferDynamicSchema?: boolean;
+
+	/**
+	 * Show a "Refresh Schema" button when using dynamic schema
+	 * Allows users to manually refresh the schema
+	 * @default true
+	 */
+	showRefreshButton?: boolean;
+
+	/**
+	 * Message to display when schema is being loaded
+	 * @default "Loading configuration options..."
+	 */
+	loadingMessage?: string;
+
+	/**
+	 * Message to display when schema fetch fails
+	 * @default "Failed to load configuration. Use external editor instead."
+	 */
+	errorMessage?: string;
+}
+
+/**
  * UI-related extension settings for nodes
  * Used to control visual behavior in the workflow editor
  */
@@ -229,6 +434,11 @@ export interface NodeExtensions {
 	 */
 	ui?: NodeUIExtensions;
 	/**
+	 * Per-instance admin/edit configuration override
+	 * Allows overriding the node type's configEdit settings for specific instances
+	 */
+	configEdit?: ConfigEditOptions;
+	/**
 	 * Namespaced extension data from 3rd party integrations
 	 * Use your package/organization name as the key (e.g., "myapp", "acme:analyzer")
 	 */
@@ -260,6 +470,30 @@ export interface NodeMetadata {
 	/** Default configuration values for this node type */
 	config?: Record<string, unknown>;
 	tags?: string[];
+	/**
+	 * Admin/Edit configuration for nodes with dynamic or external configuration.
+	 * Used when the config schema cannot be determined at workflow load time
+	 * or when configuration is handled by a 3rd party system.
+	 *
+	 * Supports two options:
+	 * 1. External edit link - Opens a 3rd party form in a new tab
+	 * 2. Dynamic schema - Fetches the config schema from a REST endpoint
+	 *
+	 * @example
+	 * ```typescript
+	 * configEdit: {
+	 *   externalEditLink: {
+	 *     url: "https://admin.example.com/nodes/{nodeTypeId}/configure",
+	 *     label: "Configure in Admin Portal"
+	 *   },
+	 *   dynamicSchema: {
+	 *     url: "/api/nodes/{nodeTypeId}/schema",
+	 *     method: "GET"
+	 *   }
+	 * }
+	 * ```
+	 */
+	configEdit?: ConfigEditOptions;
 	/**
 	 * Custom extension properties for 3rd party integrations
 	 * Allows storing additional configuration and UI state data at the node type level
@@ -401,10 +635,10 @@ export type SchemaType = 'config' | 'input' | 'output';
 export type SchemaProperty<T extends SchemaType> = T extends 'config'
 	? ConfigProperty
 	: T extends 'input'
-		? InputProperty
-		: T extends 'output'
-			? OutputProperty
-			: never;
+	? InputProperty
+	: T extends 'output'
+	? OutputProperty
+	: never;
 
 /**
  * Utility type to get the appropriate schema type based on schema type
@@ -412,10 +646,10 @@ export type SchemaProperty<T extends SchemaType> = T extends 'config'
 export type SchemaTypeMap<T extends SchemaType> = T extends 'config'
 	? ConfigSchema
 	: T extends 'input'
-		? InputSchema
-		: T extends 'output'
-			? OutputSchema
-			: never;
+	? InputSchema
+	: T extends 'output'
+	? OutputSchema
+	: never;
 
 /**
  * Node configuration values
