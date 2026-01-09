@@ -42,8 +42,9 @@ export {
 	nodeHandlers,
 	workflowHandlers,
 	pipelineHandlers,
-	configHandlers
-} from './handlers/index.js';
+	configHandlers,
+	dynamicSchemaHandlers
+} from "./handlers/index.js";
 
 // Re-export mock data for direct access
 export {
