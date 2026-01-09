@@ -8,6 +8,7 @@
   - Dynamic form generation from JSON Schema using modular form components
   - UI Extensions support for display settings (e.g., hide unconnected handles)
   - Extensible architecture for complex schema types (array, object)
+  - Admin/Edit support for external configuration links and dynamic schema fetching
   
   Accessibility features:
   - Proper label associations with for/id attributes
@@ -18,9 +19,21 @@
 
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import type { ConfigSchema, WorkflowNode, NodeUIExtensions } from '$lib/types/index.js';
+	import type {
+		ConfigSchema,
+		WorkflowNode,
+		NodeUIExtensions,
+		ConfigEditOptions
+	} from '$lib/types/index.js';
 	import { FormField, FormFieldWrapper, FormToggle } from '$lib/components/form/index.js';
 	import type { FieldSchema } from '$lib/components/form/index.js';
+	import {
+		getEffectiveConfigEditOptions,
+		fetchDynamicSchema,
+		resolveExternalEditUrl,
+		invalidateSchemaCache,
+		type DynamicSchemaResult
+	} from '$lib/services/dynamicSchemaService.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -31,20 +44,81 @@
 		values?: Record<string, unknown>;
 		/** Whether to show UI extension settings section */
 		showUIExtensions?: boolean;
+		/** Optional workflow ID for context in external links */
+		workflowId?: string;
 		/** Callback when form is saved (includes both config and extensions if enabled) */
 		onSave: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is cancelled */
 		onCancel: () => void;
 	}
 
-	let { node, schema, values, showUIExtensions = true, onSave, onCancel }: Props = $props();
+	let {
+		node,
+		schema,
+		values,
+		showUIExtensions = true,
+		workflowId,
+		onSave,
+		onCancel
+	}: Props = $props();
 
 	/**
-	 * Get the configuration schema from node metadata or direct prop
+	 * State for dynamic schema loading
 	 */
-	const configSchema = $derived(
-		schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined)
-	);
+	let dynamicSchemaLoading = $state(false);
+	let dynamicSchemaError = $state<string | null>(null);
+	let fetchedDynamicSchema = $state<ConfigSchema | null>(null);
+
+	/**
+	 * Get the admin edit configuration for the node
+	 */
+	const configEditOptions = $derived.by<ConfigEditOptions | undefined>(() => {
+		if (!node) return undefined;
+		return getEffectiveConfigEditOptions(node);
+	});
+
+	/**
+	 * Determine if we should show the external edit link
+	 */
+	const showExternalEditLink = $derived.by(() => {
+		if (!configEditOptions?.externalEditLink) return false;
+		// Show if no dynamic schema, or if both exist but preferDynamicSchema is false
+		if (!configEditOptions.dynamicSchema) return true;
+		return !configEditOptions.preferDynamicSchema;
+	});
+
+	/**
+	 * Determine if we should use/fetch dynamic schema
+	 */
+	const useDynamicSchema = $derived.by(() => {
+		if (!configEditOptions?.dynamicSchema) return false;
+		// Use if no external link, or if both exist and preferDynamicSchema is true
+		if (!configEditOptions.externalEditLink) return true;
+		return configEditOptions.preferDynamicSchema === true;
+	});
+
+	/**
+	 * Get the configuration schema from node metadata, direct prop, or fetched dynamic schema
+	 * Priority: fetchedDynamicSchema > direct schema prop > node metadata configSchema
+	 */
+	const configSchema = $derived.by<ConfigSchema | undefined>(() => {
+		// If we have a fetched dynamic schema, use it
+		if (fetchedDynamicSchema) {
+			return fetchedDynamicSchema;
+		}
+		// Otherwise use the direct prop or node metadata
+		return schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
+	});
+
+	/**
+	 * Check if the node has no static schema and needs dynamic loading
+	 */
+	const needsDynamicSchemaLoad = $derived.by(() => {
+		if (!node) return false;
+		const staticSchema = schema ?? node.data.metadata?.configSchema;
+		// Need to load if: no static schema AND dynamic schema is configured
+		return !staticSchema && useDynamicSchema && !fetchedDynamicSchema && !dynamicSchemaLoading;
+	});
 
 	/**
 	 * Get the current configuration from node or direct prop
@@ -72,6 +146,85 @@
 		const typeDefaults = node.data.metadata?.extensions?.ui ?? {};
 		const instanceOverrides = node.data.extensions?.ui ?? {};
 		return { ...typeDefaults, ...instanceOverrides };
+	});
+
+	/**
+	 * Fetch dynamic schema when needed
+	 */
+	async function loadDynamicSchema(): Promise<void> {
+		if (!node || !configEditOptions?.dynamicSchema) return;
+
+		dynamicSchemaLoading = true;
+		dynamicSchemaError = null;
+
+		try {
+			const result: DynamicSchemaResult = await fetchDynamicSchema(
+				configEditOptions.dynamicSchema,
+				node,
+				workflowId
+			);
+
+			if (result.success && result.schema) {
+				fetchedDynamicSchema = result.schema;
+			} else {
+				dynamicSchemaError =
+					result.error ?? configEditOptions.errorMessage ?? 'Failed to load configuration schema';
+			}
+		} catch (err) {
+			dynamicSchemaError =
+				err instanceof Error
+					? err.message
+					: configEditOptions.errorMessage ?? 'Failed to load configuration schema';
+		} finally {
+			dynamicSchemaLoading = false;
+		}
+	}
+
+	/**
+	 * Refresh the dynamic schema (invalidate cache and reload)
+	 */
+	async function refreshDynamicSchema(): Promise<void> {
+		if (!node || !configEditOptions?.dynamicSchema) return;
+
+		// Invalidate the cache first
+		invalidateSchemaCache(node, configEditOptions.dynamicSchema);
+		fetchedDynamicSchema = null;
+
+		// Reload the schema
+		await loadDynamicSchema();
+	}
+
+	/**
+	 * Get the resolved external edit URL
+	 */
+	function getExternalEditUrl(): string {
+		if (!node || !configEditOptions?.externalEditLink) return '#';
+		return resolveExternalEditUrl(configEditOptions.externalEditLink, node, workflowId);
+	}
+
+	/**
+	 * Handle opening external edit link
+	 */
+	function handleExternalEditClick(): void {
+		if (!node || !configEditOptions?.externalEditLink) return;
+
+		const url = getExternalEditUrl();
+		const openInNewTab = configEditOptions.externalEditLink.openInNewTab !== false;
+
+		if (openInNewTab) {
+			window.open(url, '_blank', 'noopener,noreferrer');
+		} else {
+			window.location.href = url;
+		}
+	}
+
+	/**
+	 * Auto-load dynamic schema on mount if needed
+	 */
+	$effect(() => {
+		if (needsDynamicSchemaLoad) {
+			loadDynamicSchema();
+		}
 	});
 
 	/**
@@ -179,7 +332,73 @@
 	}
 </script>
 
-{#if configSchema}
+<!-- External Edit Link Section (shown when configured and preferred) -->
+{#if showExternalEditLink && configEditOptions?.externalEditLink}
+	<div class="config-form__admin-edit">
+		<div class="config-form__admin-edit-header">
+			<Icon icon="heroicons:arrow-top-right-on-square" />
+			<span>External Configuration</span>
+		</div>
+		<div class="config-form__admin-edit-content">
+			<p class="config-form__admin-edit-description">
+				{configEditOptions.externalEditLink.description ??
+					'This node requires external configuration. Click the button below to open the configuration panel.'}
+			</p>
+			<button
+				type="button"
+				class="config-form__button config-form__button--external"
+				onclick={handleExternalEditClick}
+			>
+				<Icon
+					icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
+				/>
+				<span>{configEditOptions.externalEditLink.label ?? 'Configure Externally'}</span>
+			</button>
+		</div>
+	</div>
+{/if}
+
+<!-- Dynamic Schema Loading State -->
+{#if dynamicSchemaLoading}
+	<div class="config-form__loading">
+		<div class="config-form__loading-spinner"></div>
+		<p class="config-form__loading-text">
+			{configEditOptions?.loadingMessage ?? 'Loading configuration options...'}
+		</p>
+	</div>
+{:else if dynamicSchemaError}
+	<div class="config-form__error">
+		<div class="config-form__error-header">
+			<Icon icon="heroicons:exclamation-triangle" />
+			<span>Configuration Error</span>
+		</div>
+		<div class="config-form__error-content">
+			<p class="config-form__error-message">{dynamicSchemaError}</p>
+			<div class="config-form__error-actions">
+				<button
+					type="button"
+					class="config-form__button config-form__button--secondary"
+					onclick={refreshDynamicSchema}
+				>
+					<Icon icon="heroicons:arrow-path" />
+					<span>Retry</span>
+				</button>
+				{#if configEditOptions?.externalEditLink}
+					<button
+						type="button"
+						class="config-form__button config-form__button--external"
+						onclick={handleExternalEditClick}
+					>
+						<Icon
+							icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
+						/>
+						<span>{configEditOptions.externalEditLink.label ?? 'Use External Editor'}</span>
+					</button>
+				{/if}
+			</div>
+		</div>
+	</div>
+{:else if configSchema}
 	<form
 		class="config-form"
 		onsubmit={(e) => {
@@ -187,6 +406,34 @@
 			handleSave();
 		}}
 	>
+		<!-- Dynamic Schema Refresh Button -->
+		{#if fetchedDynamicSchema && configEditOptions?.showRefreshButton !== false}
+			<div class="config-form__schema-actions">
+				<button
+					type="button"
+					class="config-form__schema-refresh"
+					onclick={refreshDynamicSchema}
+					title="Refresh configuration schema"
+				>
+					<Icon icon="heroicons:arrow-path" />
+					<span>Refresh Schema</span>
+				</button>
+				{#if configEditOptions?.externalEditLink}
+					<button
+						type="button"
+						class="config-form__schema-external"
+						onclick={handleExternalEditClick}
+						title={configEditOptions.externalEditLink.description ?? 'Open external editor'}
+					>
+						<Icon
+							icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
+						/>
+						<span>{configEditOptions.externalEditLink.label ?? 'External Editor'}</span>
+					</button>
+				{/if}
+			</div>
+		{/if}
+
 		{#if configSchema.properties}
 			<div class="config-form__fields">
 				{#each Object.entries(configSchema.properties) as [key, field], index (key)}
@@ -259,12 +506,24 @@
 			</button>
 		</div>
 	</form>
-{:else}
+{:else if !dynamicSchemaLoading && !showExternalEditLink}
 	<div class="config-form__empty">
 		<div class="config-form__empty-icon">
 			<Icon icon="heroicons:cog-6-tooth" />
 		</div>
 		<p class="config-form__empty-text">No configuration options available for this node.</p>
+		{#if configEditOptions?.externalEditLink}
+			<button
+				type="button"
+				class="config-form__button config-form__button--external config-form__empty-button"
+				onclick={handleExternalEditClick}
+			>
+				<Icon
+					icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
+				/>
+				<span>{configEditOptions.externalEditLink.label ?? 'Configure Externally'}</span>
+			</button>
+		{/if}
 	</div>
 {/if}
 
@@ -481,5 +740,232 @@
 		color: var(--color-ref-gray-500, #6b7280);
 		font-style: italic;
 		line-height: 1.5;
+	}
+
+	.config-form__empty-button {
+		margin-top: 1rem;
+	}
+
+	/* ============================================
+	   ADMIN/EDIT SECTION - External Configuration
+	   ============================================ */
+
+	.config-form__admin-edit {
+		background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+		border: 1px solid var(--color-ref-blue-200, #bfdbfe);
+		border-radius: 0.625rem;
+		overflow: hidden;
+		margin-bottom: 1rem;
+	}
+
+	.config-form__admin-edit-header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+		border-bottom: 1px solid var(--color-ref-blue-200, #bfdbfe);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--color-ref-blue-800, #1e40af);
+	}
+
+	.config-form__admin-edit-header :global(svg) {
+		width: 1rem;
+		height: 1rem;
+		color: var(--color-ref-blue-600, #2563eb);
+	}
+
+	.config-form__admin-edit-content {
+		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.config-form__admin-edit-description {
+		margin: 0;
+		font-size: 0.8125rem;
+		color: var(--color-ref-blue-700, #1d4ed8);
+		line-height: 1.5;
+	}
+
+	/* ============================================
+	   LOADING STATE
+	   ============================================ */
+
+	.config-form__loading {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 3rem 1.5rem;
+		gap: 1rem;
+	}
+
+	.config-form__loading-spinner {
+		width: 2.5rem;
+		height: 2.5rem;
+		border: 3px solid var(--color-ref-blue-100, #dbeafe);
+		border-top-color: var(--color-ref-blue-500, #3b82f6);
+		border-radius: 50%;
+		animation: config-form-spin 0.8s linear infinite;
+	}
+
+	@keyframes config-form-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.config-form__loading-text {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--color-ref-gray-600, #4b5563);
+	}
+
+	/* ============================================
+	   ERROR STATE
+	   ============================================ */
+
+	.config-form__error {
+		background-color: var(--color-ref-red-50, #fef2f2);
+		border: 1px solid var(--color-ref-red-200, #fecaca);
+		border-radius: 0.5rem;
+		overflow: hidden;
+	}
+
+	.config-form__error-header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background-color: var(--color-ref-red-100, #fee2e2);
+		border-bottom: 1px solid var(--color-ref-red-200, #fecaca);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--color-ref-red-800, #991b1b);
+	}
+
+	.config-form__error-header :global(svg) {
+		width: 1rem;
+		height: 1rem;
+		color: var(--color-ref-red-600, #dc2626);
+	}
+
+	.config-form__error-content {
+		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.config-form__error-message {
+		margin: 0;
+		font-size: 0.8125rem;
+		color: var(--color-ref-red-700, #b91c1c);
+		line-height: 1.5;
+	}
+
+	.config-form__error-actions {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	/* ============================================
+	   SCHEMA ACTIONS (Refresh, External Editor)
+	   ============================================ */
+
+	.config-form__schema-actions {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid var(--color-ref-gray-100, #f3f4f6);
+	}
+
+	.config-form__schema-refresh,
+	.config-form__schema-external {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.625rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		font-family: inherit;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		border: 1px solid transparent;
+	}
+
+	.config-form__schema-refresh {
+		background-color: var(--color-ref-gray-50, #f9fafb);
+		border-color: var(--color-ref-gray-200, #e5e7eb);
+		color: var(--color-ref-gray-600, #4b5563);
+	}
+
+	.config-form__schema-refresh:hover {
+		background-color: var(--color-ref-gray-100, #f3f4f6);
+		border-color: var(--color-ref-gray-300, #d1d5db);
+		color: var(--color-ref-gray-700, #374151);
+	}
+
+	.config-form__schema-refresh :global(svg),
+	.config-form__schema-external :global(svg) {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	.config-form__schema-external {
+		background-color: var(--color-ref-blue-50, #eff6ff);
+		border-color: var(--color-ref-blue-200, #bfdbfe);
+		color: var(--color-ref-blue-700, #1d4ed8);
+	}
+
+	.config-form__schema-external:hover {
+		background-color: var(--color-ref-blue-100, #dbeafe);
+		border-color: var(--color-ref-blue-300, #93c5fd);
+		color: var(--color-ref-blue-800, #1e40af);
+	}
+
+	/* ============================================
+	   EXTERNAL BUTTON STYLE
+	   ============================================ */
+
+	.config-form__button--external {
+		background: linear-gradient(
+			135deg,
+			var(--color-ref-indigo-500, #6366f1) 0%,
+			var(--color-ref-blue-600, #2563eb) 100%
+		);
+		color: #ffffff;
+		box-shadow:
+			0 1px 3px rgba(99, 102, 241, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+	}
+
+	.config-form__button--external:hover {
+		background: linear-gradient(
+			135deg,
+			var(--color-ref-indigo-600, #4f46e5) 0%,
+			var(--color-ref-blue-700, #1d4ed8) 100%
+		);
+		box-shadow:
+			0 4px 12px rgba(99, 102, 241, 0.35),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		transform: translateY(-1px);
+	}
+
+	.config-form__button--external:active {
+		transform: translateY(0);
+	}
+
+	.config-form__button--external:focus-visible {
+		outline: none;
+		box-shadow:
+			0 0 0 3px rgba(99, 102, 241, 0.4),
+			0 4px 12px rgba(99, 102, 241, 0.35);
 	}
 </style>
