@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.28] - 2026-01-12
+
+### Added
+
+#### SchemaForm Component
+
+A standalone form generator component that creates dynamic forms from JSON Schema definitions without requiring FlowDrop workflow nodes.
+
+- **SchemaForm Component**: New standalone form generator exported from the library
+  - Takes JSON Schema and config values to dynamically render form fields
+  - Works independently without coupling to workflow nodes
+  - Supports all standard JSON Schema field types (string, number, boolean, array, object)
+  - Real-time value updates via `onChange` callback
+  - Optional save/cancel action buttons with customizable labels
+  - Loading and disabled states for form control
+  - Custom CSS class support for styling flexibility
+
+- **New Types Exported**: Added form-related types for external consumers
+  - `SchemaFormProps`: Props interface for the SchemaForm component
+  - `FieldSchema`: Schema definition for individual form fields
+  - `FieldType`: Supported field types (`string`, `number`, `boolean`, `array`, `object`)
+  - `FieldFormat`: Field format hints (`multiline`, `hidden`, `json`, `markdown`, `template`, etc.)
+  - `FieldOption`: Option type for select and checkbox fields
+
+### Usage Example
+
+```svelte
+<script lang="ts">
+  import { SchemaForm } from "@d34dman/flowdrop";
+  import type { SchemaFormProps } from "@d34dman/flowdrop";
+
+  const schema = {
+    type: "object" as const,
+    properties: {
+      name: { type: "string", title: "Name", description: "Enter your name" },
+      age: { type: "number", title: "Age", minimum: 0, maximum: 120 },
+      active: { type: "boolean", title: "Active", default: true },
+      role: { type: "string", title: "Role", enum: ["admin", "user", "guest"] }
+    },
+    required: ["name"]
+  };
+
+  let values = $state({ name: "", age: 25, active: true });
+
+  function handleChange(newValues: Record<string, unknown>) {
+    values = newValues;
+  }
+</script>
+
+<!-- Inline mode (no buttons) -->
+<SchemaForm {schema} {values} onChange={handleChange} />
+
+<!-- With action buttons -->
+<SchemaForm
+  {schema}
+  {values}
+  onChange={handleChange}
+  showActions={true}
+  saveLabel="Submit"
+  onSave={(v) => console.log("Saved:", v)}
+  onCancel={() => console.log("Cancelled")}
+/>
+```
+
+
 ## [0.0.27] - 2026-01-09
 
 ### Added
