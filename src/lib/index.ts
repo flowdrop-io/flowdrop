@@ -85,6 +85,16 @@ export { default as MarkdownDisplay } from './components/MarkdownDisplay.svelte'
 export { default as ConfigForm } from './components/ConfigForm.svelte';
 export { default as ConfigModal } from './components/ConfigModal.svelte';
 export { default as ConfigPanel } from './components/ConfigPanel.svelte';
+export { default as SchemaForm } from './components/SchemaForm.svelte';
+
+// Export SchemaForm types for external consumers
+export type {
+	SchemaFormProps,
+	FieldSchema,
+	FieldType,
+	FieldFormat,
+	FieldOption
+} from './components/form/types.js';
 export { default as ReadOnlyDetails } from './components/ReadOnlyDetails.svelte';
 export { default as ConnectionLine } from './components/ConnectionLine.svelte';
 export { default as LogsSidebar } from './components/LogsSidebar.svelte';

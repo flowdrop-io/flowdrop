@@ -318,3 +318,110 @@ export function normalizeOptions(options: FieldOption[] | string[] | unknown[]):
 		label: String(opt)
 	}));
 }
+
+/**
+ * Props interface for the SchemaForm component
+ *
+ * SchemaForm is a standalone form generator that creates dynamic forms
+ * from JSON Schema definitions without requiring FlowDrop workflow nodes.
+ *
+ * @example
+ * ```typescript
+ * const props: SchemaFormProps = {
+ *   schema: {
+ *     type: "object",
+ *     properties: {
+ *       name: { type: "string", title: "Name" },
+ *       age: { type: "number", title: "Age" }
+ *     },
+ *     required: ["name"]
+ *   },
+ *   values: { name: "John", age: 30 },
+ *   onChange: (values) => console.log("Changed:", values),
+ *   showActions: true,
+ *   onSave: (values) => console.log("Saved:", values)
+ * };
+ * ```
+ */
+export interface SchemaFormProps {
+	/**
+	 * JSON Schema definition for the form.
+	 * Should follow JSON Schema draft-07 format with type: "object".
+	 * Properties define the form fields to render.
+	 */
+	schema: {
+		type: "object";
+		properties: Record<string, FieldSchema>;
+		required?: string[];
+		additionalProperties?: boolean;
+	};
+
+	/**
+	 * Current form values as key-value pairs.
+	 * Keys should correspond to properties defined in the schema.
+	 * Missing values will use schema defaults if defined.
+	 */
+	values?: Record<string, unknown>;
+
+	/**
+	 * Callback fired whenever any field value changes.
+	 * Receives the complete updated values object.
+	 * Use this for controlled form state management.
+	 * @param values - Updated form values
+	 */
+	onChange?: (values: Record<string, unknown>) => void;
+
+	/**
+	 * Whether to display Save and Cancel action buttons.
+	 * When false, the form operates in "inline" mode without buttons.
+	 * @default false
+	 */
+	showActions?: boolean;
+
+	/**
+	 * Label text for the save button.
+	 * Only used when showActions is true.
+	 * @default "Save"
+	 */
+	saveLabel?: string;
+
+	/**
+	 * Label text for the cancel button.
+	 * Only used when showActions is true.
+	 * @default "Cancel"
+	 */
+	cancelLabel?: string;
+
+	/**
+	 * Callback fired when the Save button is clicked.
+	 * Receives the final form values after collecting from DOM.
+	 * @param values - Final form values
+	 */
+	onSave?: (values: Record<string, unknown>) => void;
+
+	/**
+	 * Callback fired when the Cancel button is clicked.
+	 * Use this to reset form state or close modals.
+	 */
+	onCancel?: () => void;
+
+	/**
+	 * Whether the form is in a loading state.
+	 * Disables all inputs and shows a loading spinner on the save button.
+	 * @default false
+	 */
+	loading?: boolean;
+
+	/**
+	 * Whether the form is disabled.
+	 * Prevents all interactions including save.
+	 * @default false
+	 */
+	disabled?: boolean;
+
+	/**
+	 * Custom CSS class to apply to the form container.
+	 * Use for additional styling customization.
+	 */
+	class?: string;
+}
