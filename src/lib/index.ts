@@ -88,6 +88,10 @@ export { default as PipelineStatus } from './components/PipelineStatus.svelte';
 export { default as Navbar } from './components/Navbar.svelte';
 export { default as Logo } from './components/Logo.svelte';
 
+// Export code display/editor components
+export { default as CodeDisplay } from './components/CodeDisplay.svelte';
+export { default as CodeEditor } from './components/CodeEditor.svelte';
+
 // Export utilities
 export * from './utils/icons.js';
 export * from './utils/colors.js';
