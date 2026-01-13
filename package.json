@@ -2,7 +2,7 @@
 	"name": "@d34dman/flowdrop",
 	"license": "MIT",
 	"private": false,
-	"version": "0.0.28",
+	"version": "0.0.29",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -71,7 +71,8 @@
 	],
 	"sideEffects": [
 		"**/*.css",
-		"./dist/styles/base.css"
+		"./dist/styles/base.css",
+		"./dist/editor/index.js"
 	],
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -82,11 +83,53 @@
 			"svelte": "./dist/index.js",
 			"default": "./dist/index.js"
 		},
-		"./styles/base.css": "./dist/styles/base.css"
+		"./core": {
+			"types": "./dist/core/index.d.ts",
+			"svelte": "./dist/core/index.js",
+			"default": "./dist/core/index.js"
+		},
+		"./editor": {
+			"types": "./dist/editor/index.d.ts",
+			"svelte": "./dist/editor/index.js",
+			"default": "./dist/editor/index.js"
+		},
+		"./form": {
+			"types": "./dist/form/index.d.ts",
+			"svelte": "./dist/form/index.js",
+			"default": "./dist/form/index.js"
+		},
+		"./form/code": {
+			"types": "./dist/form/code.d.ts",
+			"svelte": "./dist/form/code.js",
+			"default": "./dist/form/code.js"
+		},
+		"./form/markdown": {
+			"types": "./dist/form/markdown.d.ts",
+			"svelte": "./dist/form/markdown.js",
+			"default": "./dist/form/markdown.js"
+		},
+		"./form/full": {
+			"types": "./dist/form/full.d.ts",
+			"svelte": "./dist/form/full.js",
+			"default": "./dist/form/full.js"
+		},
+		"./display": {
+			"types": "./dist/display/index.d.ts",
+			"svelte": "./dist/display/index.js",
+			"default": "./dist/display/index.js"
+		},
+		"./styles": "./dist/styles/base.css",
+		"./styles/*": "./dist/styles/*"
 	},
 	"peerDependencies": {
+		"@iconify/svelte": "^5.0.0",
 		"@sveltejs/kit": "^2.0.0",
 		"svelte": "^5.0.0"
+	},
+	"peerDependenciesMeta": {
+		"@iconify/svelte": {
+			"optional": false
+		}
 	},
 	"repository": {
 		"type": "git",
