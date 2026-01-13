@@ -5,6 +5,115 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.29] - 2026-01-13
+
+### Added
+
+#### Tree-Shakable Module Architecture
+
+Major refactoring to enable proper tree-shaking and reduce bundle sizes for library consumers.
+
+- **New Entry Points**: Library now provides multiple entry points for optimal bundle sizes:
+
+  | Import Path | Description | Bundle Impact |
+  |------------|-------------|---------------|
+  | `@d34dman/flowdrop/core` | Types & utilities only | ~5KB |
+  | `@d34dman/flowdrop/form` | SchemaForm + basic fields | ~20KB |
+  | `@d34dman/flowdrop/form/code` | Code editor (CodeMirror) | +300KB |
+  | `@d34dman/flowdrop/form/markdown` | Markdown editor (EasyMDE) | +200KB |
+  | `@d34dman/flowdrop/form/full` | All form fields | +500KB |
+  | `@d34dman/flowdrop/display` | MarkdownDisplay (marked) | +50KB |
+  | `@d34dman/flowdrop/editor` | WorkflowEditor (@xyflow) | +300KB |
+  | `@d34dman/flowdrop/styles` | CSS styles | - |
+
+- **Field Registry System**: Dynamic field registration for heavy editors
+  - `registerFieldComponent()` - Register custom or heavy field components
+  - `registerCodeEditorField()` - Enable code/JSON editor support
+  - `registerMarkdownEditorField()` - Enable markdown editor support
+  - `registerTemplateEditorField()` - Enable template editor support
+  - `initializeAllFieldTypes()` - Convenience function to register all editors
+
+- **New Components**:
+  - `FormFieldLight` - Light version of FormField using the registry (no heavy deps)
+  - Fallback UI with helpful messages when heavy editors aren't registered
+
+- **New Exports**:
+  - `FieldComponent` type - Generic component type for field registration
+  - `FieldMatcher` type - Function type for field schema matching
+  - `FieldComponentRegistration` interface - Registration entry type
+
+### Changed
+
+- **Module Structure**: Reorganized source into `core/`, `editor/`, `form/`, `display/` directories
+- **Main Entry Point**: Now re-exports from sub-modules for backward compatibility
+- **Side Effects**: Only `editor/index.js` and CSS files have side effects (auto-registers nodes)
+- **Peer Dependencies**: `@iconify/svelte` is now a peer dependency
+
+### Breaking Changes
+
+**1. Heavy Editors Require Registration**
+
+When importing from `@d34dman/flowdrop/form`, heavy editors (code, markdown, template) are NOT automatically available:
+
+```typescript
+// Before (0.0.28) - everything auto-included
+import { SchemaForm } from "@d34dman/flowdrop";
+
+// After (0.0.29) - register heavy editors explicitly
+import { SchemaForm } from "@d34dman/flowdrop/form";
+import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
+
+registerCodeEditorField(); // Call once at app startup
+```
+
+**2. CSS Import Path**
+
+```typescript
+// New recommended path
+import "@d34dman/flowdrop/styles";
+
+// Still works
+import "@d34dman/flowdrop/styles/base.css";
+```
+
+**3. Install Peer Dependency**
+
+```bash
+npm install @iconify/svelte
+```
+
+### Backward Compatibility
+
+The main entry point (`@d34dman/flowdrop`) still exports everything for backward compatibility. Existing code will continue to work but will bundle all dependencies.
+
+### Usage Examples
+
+**Minimal Form (small bundle):**
+```typescript
+import { SchemaForm } from "@d34dman/flowdrop/form";
+import "@d34dman/flowdrop/styles";
+```
+
+**Form with Code Editor:**
+```typescript
+import { SchemaForm } from "@d34dman/flowdrop/form";
+import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
+registerCodeEditorField();
+```
+
+**Workflow Editor Only:**
+```typescript
+import { WorkflowEditor } from "@d34dman/flowdrop/editor";
+import "@d34dman/flowdrop/styles";
+```
+
+**Types Only (zero runtime):**
+```typescript
+import type { Workflow, FieldSchema } from "@d34dman/flowdrop/core";
+```
+
+---
+
 ## [0.0.28] - 2026-01-12
 
 ### Added
