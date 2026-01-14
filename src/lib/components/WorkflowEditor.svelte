@@ -37,6 +37,7 @@
 	} from '../helpers/workflowEditorHelper.js';
 	import type { NodeExecutionInfo } from '../types/index.js';
 	import { areNodeArraysEqual, areEdgeArraysEqual, throttle } from '../utils/performanceUtils.js';
+	import { Toaster } from 'svelte-5-french-toast';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -456,6 +457,9 @@
 		</div>
 	</div>
 </SvelteFlowProvider>
+
+<!-- Toast notifications container -->
+<Toaster position="bottom-center" />
 
 <style>
 	.flowdrop-workflow-editor {
