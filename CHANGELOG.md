@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.30] - 2026-01-15
+
+### Added
+
+- **ToolNode Theme Colors**: Configurable theme colors via CSS custom properties (`--flowdrop-tool-node-color`, `--flowdrop-tool-node-background`, `--flowdrop-tool-node-border`) or per-node `metadata.color` hex value
+- **Color Utilities**: New `hexToRgb()`, `generateLightTint()`, `generateBorderTint()` functions in `colors.ts`
+- **Toast Notifications**: WorkflowEditor now includes Toaster component for automatic toast display
+
+### Changed
+
+- **NodeSidebar**: Removed client-side sorting; sidebar now respects API display order
+
+---
+
 ## [0.0.29] - 2026-01-13
 
 ### Added
