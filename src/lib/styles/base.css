@@ -1157,6 +1157,11 @@
 	--flowdrop-edge-data-color-hover: var(--color-ref-gray-500);
 	--flowdrop-edge-data-color-selected: var(--color-ref-violet-600);
 
+	/* Tool node theming tokens */
+	--flowdrop-tool-node-color: var(--color-ref-amber-500);
+	--flowdrop-tool-node-color-light: var(--color-ref-amber-50);
+	--flowdrop-tool-node-color-border: var(--color-ref-amber-300);
+
 	/* Semantic text color tokens */
 	--flowdrop-text-color-error: var(--color-ref-red-600);
 	--flowdrop-text-color-success: var(--color-ref-green-600);
