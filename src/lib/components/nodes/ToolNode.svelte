@@ -7,7 +7,7 @@
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
 	import Icon from '@iconify/svelte';
-	import { getDataTypeColor } from '$lib/utils/colors';
+	import { getDataTypeColor, getColorVariants } from '$lib/utils/colors';
 	import type { NodeMetadata } from '../../types/index.js';
 
 	interface ToolNodeParameter {
@@ -62,6 +62,19 @@
 		(props.data.metadata?.version as string) ||
 			(props.data.config?.toolVersion as string) ||
 			'1.0.0'
+	);
+
+	// Generate color variants for theming (light tint for background, border tint for borders)
+	let colorVariants = $derived(getColorVariants(toolColor));
+
+	// Build inline style string for CSS custom properties
+	// This allows per-node color overrides while defaulting to global CSS variables
+	let nodeStyle = $derived(
+		[
+			`--flowdrop-tool-node-color: ${colorVariants.base}`,
+			`--flowdrop-tool-node-color-light: ${colorVariants.light}`,
+			`--flowdrop-tool-node-color-border: ${colorVariants.border}`
+		].join('; ')
 	);
 
 	// Check for tool interface ports in metadata
@@ -128,6 +141,7 @@
 	class:flowdrop-tool-node--selected={props.selected}
 	class:flowdrop-tool-node--processing={props.isProcessing}
 	class:flowdrop-tool-node--error={props.isError}
+	style={nodeStyle}
 	onclick={handleClick}
 	ondblclick={handleDoubleClick}
 	onkeydown={handleKeydown}
@@ -138,7 +152,7 @@
 	<div class="flowdrop-tool-node__header">
 		<div class="flowdrop-tool-node__header-content">
 			<!-- Tool Icon -->
-			<div class="flowdrop-tool-node__icon-container" style="background-color: {toolColor}">
+			<div class="flowdrop-tool-node__icon-container">
 				<Icon icon={toolIcon} class="flowdrop-tool-node__icon" />
 			</div>
 
@@ -214,7 +228,7 @@
 
 	.flowdrop-tool-node--selected {
 		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-		border: 2px solid #f59e0b;
+		border: 2px solid var(--flowdrop-tool-node-color);
 	}
 
 	.flowdrop-tool-node--processing {
@@ -228,9 +242,9 @@
 
 	.flowdrop-tool-node__header {
 		padding: 1rem;
-		background-color: #fffbeb;
+		background-color: var(--flowdrop-tool-node-color-light);
 		border-radius: 0.75rem;
-		border: 1px solid #fcd34d;
+		border: 1px solid var(--flowdrop-tool-node-color-border);
 	}
 
 	.flowdrop-tool-node__header-content {
@@ -248,6 +262,7 @@
 		height: 2.5rem;
 		border-radius: 0.5rem;
 		flex-shrink: 0;
+		background-color: var(--flowdrop-tool-node-color);
 	}
 
 	.flowdrop-tool-node__info {
@@ -271,7 +286,7 @@
 	}
 
 	.flowdrop-tool-node__badge {
-		background-color: #f59e0b;
+		background-color: var(--flowdrop-tool-node-color);
 		color: white;
 		font-size: 0.625rem;
 		font-weight: 700;
@@ -375,11 +390,11 @@
 
 	/* Metadata port hover effects */
 	:global(.svelte-flow__node-tool .svelte-flow__handle:hover) {
-		box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3) !important;
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--flowdrop-tool-node-color) 30%, transparent) !important;
 	}
 
 	:global(.svelte-flow__node-tool .svelte-flow__handle:focus) {
-		outline: 2px solid #f59e0b !important;
+		outline: 2px solid var(--flowdrop-tool-node-color) !important;
 		outline-offset: 2px !important;
 	}
 </style>

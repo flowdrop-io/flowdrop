@@ -359,3 +359,89 @@ export function getArrayElementType(arrayDataType: string): string | null {
 	}
 	return null;
 }
+
+/**
+ * Parse a hex color string to RGB components
+ * @param hex - Hex color string (e.g., "#f59e0b" or "f59e0b")
+ * @returns Object with r, g, b values (0-255) or null if invalid
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+	const cleanHex = hex.replace(/^#/, "");
+	if (!/^[0-9A-Fa-f]{6}$/.test(cleanHex)) {
+		return null;
+	}
+	const r = parseInt(cleanHex.substring(0, 2), 16);
+	const g = parseInt(cleanHex.substring(2, 4), 16);
+	const b = parseInt(cleanHex.substring(4, 6), 16);
+	return { r, g, b };
+}
+
+/**
+ * Convert RGB components to hex color string
+ * @param r - Red component (0-255)
+ * @param g - Green component (0-255)
+ * @param b - Blue component (0-255)
+ * @returns Hex color string with # prefix
+ */
+export function rgbToHex(r: number, g: number, b: number): string {
+	const toHex = (value: number): string => {
+		const clamped = Math.max(0, Math.min(255, Math.round(value)));
+		return clamped.toString(16).padStart(2, "0");
+	};
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * Generate a light tint of a color (similar to Tailwind's -50 shade)
+ * Creates a very light background-friendly version of the color
+ * @param hex - Base hex color string
+ * @returns Light tint hex color string
+ */
+export function getLightTint(hex: string): string {
+	const rgb = hexToRgb(hex);
+	if (!rgb) {
+		return "#fffbeb"; // Fallback to amber-50
+	}
+	// Mix with white at 95% to create a very light tint
+	const mixRatio = 0.95;
+	const r = rgb.r + (255 - rgb.r) * mixRatio;
+	const g = rgb.g + (255 - rgb.g) * mixRatio;
+	const b = rgb.b + (255 - rgb.b) * mixRatio;
+	return rgbToHex(r, g, b);
+}
+
+/**
+ * Generate a border tint of a color (similar to Tailwind's -300 shade)
+ * Creates a medium-light version suitable for borders
+ * @param hex - Base hex color string
+ * @returns Border tint hex color string
+ */
+export function getBorderTint(hex: string): string {
+	const rgb = hexToRgb(hex);
+	if (!rgb) {
+		return "#fcd34d"; // Fallback to amber-300
+	}
+	// Mix with white at 60% to create a medium-light tint
+	const mixRatio = 0.6;
+	const r = rgb.r + (255 - rgb.r) * mixRatio;
+	const g = rgb.g + (255 - rgb.g) * mixRatio;
+	const b = rgb.b + (255 - rgb.b) * mixRatio;
+	return rgbToHex(r, g, b);
+}
+
+/**
+ * Generate color variants for theming a component
+ * @param baseColor - Base hex color string
+ * @returns Object with base, light, and border color variants
+ */
+export function getColorVariants(baseColor: string): {
+	base: string;
+	light: string;
+	border: string;
+} {
+	return {
+		base: baseColor,
+		light: getLightTint(baseColor),
+		border: getBorderTint(baseColor)
+	};
+}
