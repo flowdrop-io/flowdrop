@@ -25,25 +25,34 @@
 	let categories = $derived(getCategories());
 
 	/**
-	 * Get all unique categories from node types
+	 * Get all unique categories from node types, preserving API order
+	 * Categories appear in the order their first node appears in the API response
 	 */
 	function getCategories(): NodeCategory[] {
 		const nodes = props.nodes || [];
 		if (nodes.length === 0) return [];
-		const categories = new SvelteSet<NodeCategory>();
-		nodes.forEach((node) => categories.add(node.category));
-		return Array.from(categories).sort();
+		// Use a Set to track uniqueness while preserving insertion order
+		const seen = new SvelteSet<NodeCategory>();
+		const orderedCategories: NodeCategory[] = [];
+		for (const node of nodes) {
+			if (!seen.has(node.category)) {
+				seen.add(node.category);
+				orderedCategories.push(node.category);
+			}
+		}
+		return orderedCategories;
 	}
 
 	/**
 	 * Filter node types based on search query and selected category
+	 * Preserves the API order - no client-side sorting applied
 	 */
 	function getFilteredNodes(): NodeMetadata[] {
 		// Use actual node types from props
 		let filtered = props.nodes || [];
 
 		// Filter by category
-		if (selectedCategory !== 'all') {
+		if (selectedCategory !== "all") {
 			filtered = filtered.filter((node) => node.category === selectedCategory);
 		}
 
@@ -58,8 +67,8 @@
 			);
 		}
 
-		// Create a new array and sort it to avoid mutating the original
-		return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+		// Return filtered results preserving API order
+		return filtered;
 	}
 
 	/**
@@ -149,12 +158,11 @@
 
 	/**
 	 * Get node types for category
+	 * Preserves the API order - no client-side sorting applied
 	 */
 	function getNodesForCategory(category: NodeCategory): NodeMetadata[] {
 		const nodes = props.nodes || [];
-		return [...nodes]
-			.filter((node) => node.category === category)
-			.sort((a, b) => a.name.localeCompare(b.name));
+		return nodes.filter((node) => node.category === category);
 	}
 
 	/**
