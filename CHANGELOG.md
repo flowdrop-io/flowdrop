@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.31] - 2026-01-18
+
+### Added
+
+- **Playground Feature**: Interactive workflow testing with chat interface
+  - `Playground` component with standalone and embedded modes
+  - Session management (create, list, delete, resume)
+  - Real-time message polling with exponential backoff
+  - `ChatPanel`, `SessionManager`, `InputCollector`, `ExecutionLogs`, `MessageBubble` components
+  - `PlaygroundService` for API integration
+  - Playground store with full state management
+  - New module export: `@d34dman/flowdrop/playground`
+
+- **Playground Mount Function**: `mountPlayground()` for vanilla JS, Drupal, and IIFE integration
+  - Mount the Playground component into any DOM container
+  - Full TypeScript support with `PlaygroundMountOptions` and `MountedPlayground` types
+  - Re-exports `createEndpointConfig` from playground module for convenience
+
+- **Playground API Endpoints**: Configuration for playground backend integration
+  - `listSessions`, `createSession`, `getSession`, `deleteSession`
+  - `getMessages`, `sendMessage`, `stopExecution`
+
+### Fixed
+
+- **AuthProvider**: Fixed `authProvider` prop not being used for API calls (#3)
+
+---
+
 ## [0.0.30] - 2026-01-15
 
 ### Added
