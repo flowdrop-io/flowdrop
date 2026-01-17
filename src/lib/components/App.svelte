@@ -13,17 +13,18 @@
 	import ConfigForm from '$lib/components/ConfigForm.svelte';
 	import ConfigPanel from '$lib/components/ConfigPanel.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
-	import { api, setEndpointConfig } from '$lib/services/api.js';
-	import type {
-		NodeMetadata,
-		Workflow,
-		WorkflowNode,
-		ConfigSchema,
-		NodeUIExtensions
-	} from '$lib/types/index.js';
-	import { createEndpointConfig } from '$lib/config/endpoints.js';
-	import type { EndpointConfig } from '$lib/config/endpoints.js';
-	import type { AuthProvider } from '$lib/types/auth.js';
+import { api, setEndpointConfig } from '$lib/services/api.js';
+import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
+import type {
+	NodeMetadata,
+	Workflow,
+	WorkflowNode,
+	ConfigSchema,
+	NodeUIExtensions
+} from '$lib/types/index.js';
+import { createEndpointConfig } from '$lib/config/endpoints.js';
+import type { EndpointConfig } from '$lib/config/endpoints.js';
+import type { AuthProvider } from '$lib/types/auth.js';
 	import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 	import { mergeFeatures } from '$lib/types/events.js';
 	import {
@@ -122,6 +123,12 @@
 	let error = $state<string | null>(null);
 	let endpointConfig = $state<EndpointConfig | null>(null);
 
+	/**
+	 * Enhanced API client with authProvider support
+	 * Used when authProvider is provided; otherwise falls back to legacy api service
+	 */
+	let apiClient = $state<EnhancedFlowDropApiClient | null>(null);
+
 	// ConfigSidebar state
 	let isConfigSidebarOpen = $state(false);
 	let selectedNodeId = $state<string | null>(null);
@@ -172,7 +179,7 @@
 	 * Fetch node types from the server
 	 *
 	 * If propNodes is provided, uses those instead of fetching from API.
-	 * This fixes the bug where propNodes was ignored.
+	 * Uses enhanced API client with authProvider support when available.
 	 */
 	async function fetchNodeTypes(): Promise<void> {
 		// If nodes were provided as props, use them directly (skip API fetch)
@@ -186,7 +193,13 @@
 		try {
 			error = null;
 
-			const fetchedNodes = await api.nodes.getNodes();
+			// Use enhanced client with authProvider if available, otherwise fall back to legacy api
+			let fetchedNodes: NodeMetadata[];
+			if (apiClient) {
+				fetchedNodes = await apiClient.getAvailableNodes();
+			} else {
+				fetchedNodes = await api.nodes.getNodes();
+			}
 
 			nodes = fetchedNodes;
 			error = null;
@@ -256,7 +269,7 @@
 	}
 
 	/**
-	 * Initialize API endpoints
+	 * Initialize API endpoints and create enhanced client if authProvider is available
 	 * Priority: propEndpointConfig > existingConfig > apiBaseUrl > default
 	 */
 	async function initializeApiEndpoints(): Promise<void> {
@@ -264,6 +277,11 @@
 		if (propEndpointConfig) {
 			setEndpointConfig(propEndpointConfig);
 			endpointConfig = propEndpointConfig;
+
+			// Create enhanced API client with authProvider support if provided
+			if (authProvider) {
+				apiClient = new EnhancedFlowDropApiClient(propEndpointConfig, authProvider);
+			}
 			return;
 		}
 
@@ -274,6 +292,11 @@
 		// If config already exists and no override provided, use existing
 		if (existingConfig && !apiBaseUrl) {
 			endpointConfig = existingConfig;
+
+			// Create enhanced API client with authProvider support if provided
+			if (authProvider) {
+				apiClient = new EnhancedFlowDropApiClient(existingConfig, authProvider);
+			}
 			return;
 		}
 
@@ -296,6 +319,11 @@
 		setEndpointConfig(config);
 		// Store the configuration for passing to WorkflowEditor
 		endpointConfig = config;
+
+		// Create enhanced API client with authProvider support if provided
+		if (authProvider) {
+			apiClient = new EnhancedFlowDropApiClient(config, authProvider);
+		}
 	}
 
 	/**
@@ -357,6 +385,7 @@
 	 * Save workflow - exposed API function
 	 *
 	 * Integrates with event handlers for enterprise customization.
+	 * Uses enhanced API client with authProvider support when available.
 	 */
 	async function saveWorkflow(): Promise<void> {
 		// Wait for any pending DOM updates before saving
@@ -382,8 +411,7 @@
 		const loadingToast = features.showToasts ? apiToasts.loading('Saving workflow') : null;
 
 		try {
-			// Import necessary modules
-			const { workflowApi } = await import('$lib/services/api.js');
+			// Import uuid for new workflow ID generation
 			const { v4: uuidv4 } = await import('uuid');
 
 			// Determine the workflow ID
@@ -408,7 +436,25 @@
 				}
 			};
 
-			const savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+			// Use enhanced client with authProvider if available, otherwise fall back to legacy api
+			let savedWorkflow: Workflow;
+			if (apiClient) {
+				// Check if this is an existing workflow (non-UUID ID indicates existing)
+				const isExistingWorkflow =
+					finalWorkflow.id &&
+					finalWorkflow.id.length > 0 &&
+					!finalWorkflow.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+
+				if (isExistingWorkflow) {
+					savedWorkflow = await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow);
+				} else {
+					savedWorkflow = await apiClient.saveWorkflow(finalWorkflow);
+				}
+			} else {
+				// Fall back to legacy workflowApi
+				const { workflowApi } = await import('$lib/services/api.js');
+				savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+			}
 
 			// Update the workflow ID if it changed (new workflow)
 			// Keep our current workflow state, only update ID and metadata from backend
