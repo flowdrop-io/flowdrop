@@ -32,17 +32,17 @@
 -->
 
 <script lang="ts">
-	import FormFieldWrapper from "./FormFieldWrapper.svelte";
-	import FormTextField from "./FormTextField.svelte";
-	import FormTextarea from "./FormTextarea.svelte";
-	import FormNumberField from "./FormNumberField.svelte";
-	import FormRangeField from "./FormRangeField.svelte";
-	import FormToggle from "./FormToggle.svelte";
-	import FormSelect from "./FormSelect.svelte";
-	import FormCheckboxGroup from "./FormCheckboxGroup.svelte";
-	import FormArray from "./FormArray.svelte";
-	import { resolveFieldComponent } from "$lib/form/fieldRegistry.js";
-	import type { FieldSchema, FieldOption } from "./types.js";
+	import FormFieldWrapper from './FormFieldWrapper.svelte';
+	import FormTextField from './FormTextField.svelte';
+	import FormTextarea from './FormTextarea.svelte';
+	import FormNumberField from './FormNumberField.svelte';
+	import FormRangeField from './FormRangeField.svelte';
+	import FormToggle from './FormToggle.svelte';
+	import FormSelect from './FormSelect.svelte';
+	import FormCheckboxGroup from './FormCheckboxGroup.svelte';
+	import FormArray from './FormArray.svelte';
+	import { resolveFieldComponent } from '$lib/form/fieldRegistry.js';
+	import type { FieldSchema, FieldOption } from './types.js';
 
 	interface Props {
 		/** Unique key/id for the field */
@@ -89,79 +89,79 @@
 	const fieldType = $derived.by(() => {
 		// If a custom component is registered, use it
 		if (registeredComponent) {
-			return "registered";
+			return 'registered';
 		}
 
 		// Hidden fields should not be rendered
-		if (schema.format === "hidden") {
-			return "hidden";
+		if (schema.format === 'hidden') {
+			return 'hidden';
 		}
 
 		// Check for heavy editor formats that need registration
-		if (schema.format === "json" || schema.format === "code") {
-			return "code-editor-fallback";
+		if (schema.format === 'json' || schema.format === 'code') {
+			return 'code-editor-fallback';
 		}
 
-		if (schema.format === "markdown") {
-			return "markdown-editor-fallback";
+		if (schema.format === 'markdown') {
+			return 'markdown-editor-fallback';
 		}
 
-		if (schema.format === "template") {
-			return "template-editor-fallback";
+		if (schema.format === 'template') {
+			return 'template-editor-fallback';
 		}
 
 		// Object type without specific format would use code editor
-		if (schema.type === "object" && !schema.format) {
-			return "code-editor-fallback";
+		if (schema.type === 'object' && !schema.format) {
+			return 'code-editor-fallback';
 		}
 
 		// Enum with multiple selection -> checkbox group
 		if (schema.enum && schema.multiple) {
-			return "checkbox-group";
+			return 'checkbox-group';
 		}
 
 		// Enum with single selection -> select
 		if (schema.enum) {
-			return "select-enum";
+			return 'select-enum';
 		}
 
 		// Multiline string -> textarea
-		if (schema.type === "string" && schema.format === "multiline") {
-			return "textarea";
+		if (schema.type === 'string' && schema.format === 'multiline') {
+			return 'textarea';
 		}
 
 		// Range slider for number/integer with format: "range"
-		if ((schema.type === "number" || schema.type === "integer") && schema.format === "range") {
-			return "range";
+		if ((schema.type === 'number' || schema.type === 'integer') && schema.format === 'range') {
+			return 'range';
 		}
 
 		// String -> text field
-		if (schema.type === "string") {
-			return "text";
+		if (schema.type === 'string') {
+			return 'text';
 		}
 
 		// Number or integer -> number field
-		if (schema.type === "number" || schema.type === "integer") {
-			return "number";
+		if (schema.type === 'number' || schema.type === 'integer') {
+			return 'number';
 		}
 
 		// Boolean -> toggle
-		if (schema.type === "boolean") {
-			return "toggle";
+		if (schema.type === 'boolean') {
+			return 'toggle';
 		}
 
 		// Select type or has options -> select
-		if (schema.type === "select" || schema.options) {
-			return "select-options";
+		if (schema.type === 'select' || schema.options) {
+			return 'select-options';
 		}
 
 		// Array type
-		if (schema.type === "array") {
-			return "array";
+		if (schema.type === 'array') {
+			return 'array';
 		}
 
 		// Fallback to text
-		return "text";
+		return 'text';
 	});
 
 	/**
@@ -183,7 +183,7 @@
 	/**
 	 * Get current value as the appropriate type
 	 */
-	const stringValue = $derived(String(value ?? ""));
+	const stringValue = $derived(String(value ?? ''));
 	const numberValue = $derived(value as number | string);
 	const booleanValue = $derived(Boolean(value ?? schema.default ?? false));
 	const arrayValue = $derived.by((): string[] => {
@@ -204,19 +204,19 @@
 	 */
 	function getEditorHint(editorType: string): string {
 		switch (editorType) {
-			case "code-editor-fallback":
+			case 'code-editor-fallback':
 				return "Code editor requires: import { registerCodeEditorField } from '@d34dman/flowdrop/form/code'; registerCodeEditorField();";
-			case "markdown-editor-fallback":
+			case 'markdown-editor-fallback':
 				return "Markdown editor requires: import { registerMarkdownEditorField } from '@d34dman/flowdrop/form/markdown'; registerMarkdownEditorField();";
-			case "template-editor-fallback":
+			case 'template-editor-fallback':
 				return "Template editor requires: import { registerTemplateEditorField } from '@d34dman/flowdrop/form/code'; registerTemplateEditorField();";
 			default:
-				return "This field type requires additional registration.";
+				return 'This field type requires additional registration.';
 		}
 	}
 </script>
 
-{#if fieldType !== "hidden"}
+{#if fieldType !== 'hidden'}
 	<FormFieldWrapper
 		id={fieldKey}
 		label={fieldLabel}
@@ -224,12 +224,12 @@
 		description={schema.title ? schema.description : undefined}
 		{animationDelay}
 	>
-		{#if fieldType === "registered" && registeredComponent}
+		{#if fieldType === 'registered' && registeredComponent}
 			<!-- Render registered custom component -->
 			<registeredComponent.component
 				id={fieldKey}
 				{value}
-				placeholder={schema.placeholder ?? ""}
+				placeholder={schema.placeholder ?? ''}
 				{required}
 				ariaDescribedBy={descriptionId}
 				height={schema.height as string | undefined}
@@ -242,7 +242,7 @@
 				placeholderExample={schema.placeholderExample as string | undefined}
 				onChange={(val: unknown) => onChange(val)}
 			/>
-		{:else if fieldType === "checkbox-group"}
+		{:else if fieldType === 'checkbox-group'}
 			<FormCheckboxGroup
 				id={fieldKey}
 				value={arrayValue}
@@ -250,7 +250,7 @@
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "select-enum"}
+		{:else if fieldType === 'select-enum'}
 			<FormSelect
 				id={fieldKey}
 				value={stringValue}
@@ -259,36 +259,36 @@
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "textarea"}
+		{:else if fieldType === 'textarea'}
 			<FormTextarea
 				id={fieldKey}
 				value={stringValue}
-				placeholder={schema.placeholder ?? ""}
+				placeholder={schema.placeholder ?? ''}
 				{required}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "text"}
+		{:else if fieldType === 'text'}
 			<FormTextField
 				id={fieldKey}
 				value={stringValue}
-				placeholder={schema.placeholder ?? ""}
+				placeholder={schema.placeholder ?? ''}
 				{required}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "number"}
+		{:else if fieldType === 'number'}
 			<FormNumberField
 				id={fieldKey}
 				value={numberValue}
-				placeholder={schema.placeholder ?? ""}
+				placeholder={schema.placeholder ?? ''}
 				min={schema.minimum}
 				max={schema.maximum}
 				{required}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "range"}
+		{:else if fieldType === 'range'}
 			<FormRangeField
 				id={fieldKey}
 				value={numberValue}
@@ -299,14 +299,14 @@
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "toggle"}
+		{:else if fieldType === 'toggle'}
 			<FormToggle
 				id={fieldKey}
 				value={booleanValue}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "select-options"}
+		{:else if fieldType === 'select-options'}
 			<FormSelect
 				id={fieldKey}
 				value={stringValue}
@@ -315,17 +315,17 @@
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType === "array" && schema.items}
+		{:else if fieldType === 'array' && schema.items}
 			<FormArray
 				id={fieldKey}
 				value={arrayItems}
 				itemSchema={schema.items}
 				minItems={schema.minItems}
 				maxItems={schema.maxItems}
-				addLabel={`Add ${schema.items.title ?? "Item"}`}
+				addLabel={`Add ${schema.items.title ?? 'Item'}`}
 				onChange={(val) => onChange(val)}
 			/>
-		{:else if fieldType.endsWith("-fallback")}
+		{:else if fieldType.endsWith('-fallback')}
 			<!-- Fallback for unregistered heavy editors -->
 			<div class="form-field-fallback">
 				<div class="form-field-fallback__message">
@@ -349,13 +349,13 @@
 				<!-- Provide a basic textarea fallback for editing -->
 				<FormTextarea
 					id={fieldKey}
-					value={typeof value === "string" ? value : JSON.stringify(value, null, 2)}
-					placeholder={schema.placeholder ?? "Enter value..."}
+					value={typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
+					placeholder={schema.placeholder ?? 'Enter value...'}
 					{required}
 					ariaDescribedBy={descriptionId}
 					onChange={(val) => {
 						// Try to parse as JSON for object types
-						if (schema.type === "object" || schema.format === "json") {
+						if (schema.type === 'object' || schema.format === 'json') {
 							try {
 								onChange(JSON.parse(val));
 							} catch {
@@ -372,7 +372,7 @@
 			<FormTextField
 				id={fieldKey}
 				value={stringValue}
-				placeholder={schema.placeholder ?? ""}
+				placeholder={schema.placeholder ?? ''}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>
@@ -413,7 +413,7 @@
 		background-color: var(--color-ref-gray-50, #f9fafb);
 		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
 		border-radius: 0.375rem;
-		font-family: "JetBrains Mono", "Fira Code", "Monaco", "Menlo", monospace;
+		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-size: 0.6875rem;
 		line-height: 1.5;
 		color: var(--color-ref-gray-600, #4b5563);

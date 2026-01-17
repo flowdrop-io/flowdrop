@@ -5,6 +5,7 @@
 The `configEdit` property on `NodeMetadata` enables nodes to have their configuration managed dynamically - either by fetching the schema from a REST endpoint at runtime, or by linking to an external configuration form.
 
 This is useful when:
+
 - Config options depend on external data (e.g., available models, API keys, database connections)
 - Configuration is managed by a 3rd party system
 - The config schema cannot be determined when the workflow is loaded
@@ -16,7 +17,7 @@ This is useful when:
   id: "my_node",
   name: "My Node",
   // ... other node properties
-  
+
   configEdit: {
     // Option 1: Dynamic schema from REST endpoint
     dynamicSchema: {
@@ -30,7 +31,7 @@ This is useful when:
       cacheSchema: true,                   // Cache the fetched schema (default: true)
       timeout: 10000                       // Request timeout in ms
     },
-    
+
     // Option 2: External edit link (opens in new tab)
     externalEditLink: {
       url: "https://admin.example.com/nodes/{nodeTypeId}/configure?instance={instanceId}",
@@ -44,7 +45,7 @@ This is useful when:
       },
       openInNewTab: true
     },
-    
+
     // Behavior options
     preferDynamicSchema: true,   // When both options exist, prefer dynamic schema
     showRefreshButton: true,     // Show button to manually refresh schema
@@ -58,14 +59,14 @@ This is useful when:
 
 URL template variables use `{variableName}` syntax. The `parameterMapping` object maps these to paths in the node context:
 
-| Path | Description |
-|------|-------------|
-| `id` | Node instance ID (e.g., `"my_node.1"`) |
-| `metadata.id` | Node type ID (e.g., `"my_node"`) |
-| `metadata.name` | Node type display name |
-| `metadata.category` | Node category |
-| `config.{key}` | Node configuration values |
-| `workflowId` | Current workflow ID |
+| Path                | Description                            |
+| ------------------- | -------------------------------------- |
+| `id`                | Node instance ID (e.g., `"my_node.1"`) |
+| `metadata.id`       | Node type ID (e.g., `"my_node"`)       |
+| `metadata.name`     | Node type display name                 |
+| `metadata.category` | Node category                          |
+| `config.{key}`      | Node configuration values              |
+| `workflowId`        | Current workflow ID                    |
 
 ### Example URL Resolution
 
@@ -95,40 +96,40 @@ The dynamic schema endpoint should return a JSON response with a `ConfigSchema` 
 
 ```json
 {
-  "success": true,
-  "data": {
-    "type": "object",
-    "properties": {
-      "apiKey": {
-        "type": "string",
-        "title": "API Key",
-        "description": "Your API key for authentication",
-        "format": "password",
-        "required": true
-      },
-      "model": {
-        "type": "string",
-        "title": "Model",
-        "description": "Select the AI model to use",
-        "enum": ["gpt-4", "gpt-3.5-turbo", "claude-3"],
-        "default": "gpt-4"
-      },
-      "temperature": {
-        "type": "number",
-        "title": "Temperature",
-        "description": "Sampling temperature (0-2)",
-        "minimum": 0,
-        "maximum": 2,
-        "default": 0.7
-      },
-      "enableLogging": {
-        "type": "boolean",
-        "title": "Enable Logging",
-        "description": "Log all requests for debugging",
-        "default": false
-      }
-    }
-  }
+	"success": true,
+	"data": {
+		"type": "object",
+		"properties": {
+			"apiKey": {
+				"type": "string",
+				"title": "API Key",
+				"description": "Your API key for authentication",
+				"format": "password",
+				"required": true
+			},
+			"model": {
+				"type": "string",
+				"title": "Model",
+				"description": "Select the AI model to use",
+				"enum": ["gpt-4", "gpt-3.5-turbo", "claude-3"],
+				"default": "gpt-4"
+			},
+			"temperature": {
+				"type": "number",
+				"title": "Temperature",
+				"description": "Sampling temperature (0-2)",
+				"minimum": 0,
+				"maximum": 2,
+				"default": 0.7
+			},
+			"enableLogging": {
+				"type": "boolean",
+				"title": "Enable Logging",
+				"description": "Log all requests for debugging",
+				"default": false
+			}
+		}
+	}
 }
 ```
 
@@ -144,18 +145,21 @@ The service accepts multiple response formats:
 ## When to Use Each Option
 
 ### Use `dynamicSchema` when:
+
 - Config options are fetched from an external API
 - Options change based on user authentication or permissions
 - You want FlowDrop to render the configuration form
 - Schema needs to be refreshed periodically
 
 ### Use `externalEditLink` when:
+
 - Configuration is managed by a 3rd party system
 - You need a specialized UI not supported by FlowDrop forms
 - Config includes complex nested structures or file uploads
 - The external system handles validation and persistence
 
 ### Use Both when:
+
 - You want a fallback if dynamic schema fetch fails
 - Some users prefer the external editor
 - Set `preferDynamicSchema: true` to default to dynamic schema
@@ -166,15 +170,15 @@ FlowDrop exports these functions for working with configEdit:
 
 ```typescript
 import {
-  fetchDynamicSchema,
-  resolveExternalEditUrl,
-  getEffectiveConfigEditOptions,
-  clearSchemaCache,
-  invalidateSchemaCache,
-  hasConfigEditOptions,
-  shouldShowExternalEdit,
-  shouldUseDynamicSchema
-} from "@d34dman/flowdrop";
+	fetchDynamicSchema,
+	resolveExternalEditUrl,
+	getEffectiveConfigEditOptions,
+	clearSchemaCache,
+	invalidateSchemaCache,
+	hasConfigEditOptions,
+	shouldShowExternalEdit,
+	shouldUseDynamicSchema
+} from '@d34dman/flowdrop';
 ```
 
 ### `fetchDynamicSchema(endpoint, node, workflowId?)`
@@ -183,16 +187,16 @@ Fetches a config schema from a REST endpoint with caching support.
 
 ```typescript
 const result = await fetchDynamicSchema(
-  node.data.metadata.configEdit.dynamicSchema,
-  node,
-  workflowId
+	node.data.metadata.configEdit.dynamicSchema,
+	node,
+	workflowId
 );
 
 if (result.success) {
-  console.log("Schema:", result.schema);
-  console.log("From cache:", result.fromCache);
+	console.log('Schema:', result.schema);
+	console.log('From cache:', result.fromCache);
 } else {
-  console.error("Error:", result.error);
+	console.error('Error:', result.error);
 }
 ```
 
@@ -202,11 +206,11 @@ Resolves URL template variables for external edit links.
 
 ```typescript
 const url = resolveExternalEditUrl(
-  node.data.metadata.configEdit.externalEditLink,
-  node,
-  workflowId
+	node.data.metadata.configEdit.externalEditLink,
+	node,
+	workflowId
 );
-window.open(url, "_blank");
+window.open(url, '_blank');
 ```
 
 ### `clearSchemaCache(pattern?)`
@@ -218,19 +222,19 @@ Clears cached schemas. Optionally filter by pattern.
 clearSchemaCache();
 
 // Clear schemas for a specific node type
-clearSchemaCache("my_node");
+clearSchemaCache('my_node');
 ```
 
 ## TypeScript Types
 
 ```typescript
 import type {
-  ConfigEditOptions,
-  DynamicSchemaEndpoint,
-  ExternalEditLink,
-  HttpMethod,
-  DynamicSchemaResult
-} from "@d34dman/flowdrop";
+	ConfigEditOptions,
+	DynamicSchemaEndpoint,
+	ExternalEditLink,
+	HttpMethod,
+	DynamicSchemaResult
+} from '@d34dman/flowdrop';
 ```
 
 ## Demo Nodes
@@ -242,4 +246,3 @@ FlowDrop includes demo nodes showcasing the configEdit feature:
 - `dynamic_schema_only_demo` - Dynamic schema fetching only
 
 These are available in the "Tools" category when using the mock API.
-
