@@ -877,6 +877,301 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  # ===== PLAYGROUND =====
+  /workflows/{id}/playground/sessions:
+    get:
+      summary: List playground sessions for a workflow
+      description: |
+        Retrieve all playground sessions associated with a workflow.
+        Sessions are used to test and interact with workflows in an isolated environment.
+      tags:
+        - Playground
+      parameters:
+        - name: id
+          in: path
+          description: Workflow UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Maximum number of sessions to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of sessions to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of playground sessions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundSessionsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new playground session
+      description: |
+        Create a new playground session for testing a workflow.
+        The session can be named for easy identification.
+      tags:
+        - Playground
+      parameters:
+        - name: id
+          in: path
+          description: Workflow UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Optional session name
+                  maxLength: 100
+                  example: Test Session 1
+                metadata:
+                  type: object
+                  description: Optional metadata for the session
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /playground/sessions/{sessionId}:
+    get:
+      summary: Get playground session details
+      description: |
+        Retrieve detailed information about a specific playground session,
+        including its current status and configuration.
+      tags:
+        - Playground
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundSessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete a playground session
+      description: |
+        Permanently delete a playground session and all its messages.
+        This action cannot be undone.
+      tags:
+        - Playground
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Session deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /playground/sessions/{sessionId}/messages:
+    get:
+      summary: Get messages from a playground session
+      description: |
+        Retrieve messages from a playground session with optional filtering.
+        Supports polling via the `since` parameter to fetch only new messages.
+      tags:
+        - Playground
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: since
+          in: query
+          description: |
+            ISO 8601 timestamp to fetch messages after this time.
+            Used for polling to get only new messages.
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Maximum number of messages to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundMessagesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Send a message to the playground session
+      description: |
+        Send a user message or trigger workflow execution with inputs.
+        This starts or continues the conversation in the playground.
+      tags:
+        - Playground
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaygroundMessageRequest'
+            examples:
+              chatMessage:
+                summary: Simple chat message
+                value:
+                  content: Hello, can you help me analyze this data?
+              withInputs:
+                summary: Message with additional inputs
+                value:
+                  content: Process this file
+                  inputs:
+                    file_path: /data/input.csv
+                    options:
+                      format: csv
+                      headers: true
+      responses:
+        '200':
+          description: Message sent and workflow execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Session is already executing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /playground/sessions/{sessionId}/stop:
+    post:
+      summary: Stop playground execution
+      description: |
+        Stop the currently running execution in the playground session.
+        This cancels any pending workflow operations.
+      tags:
+        - Playground
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution stopped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Execution stopped
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: No execution is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -2065,6 +2360,230 @@ components:
               type: object
               description: Additional error details
 
+    # ===== PLAYGROUND TYPES =====
+    PlaygroundSessionStatus:
+      type: string
+      enum:
+        - idle
+        - running
+        - completed
+        - failed
+      description: Current status of a playground session
+
+    PlaygroundMessageRole:
+      type: string
+      enum:
+        - user
+        - assistant
+        - system
+        - log
+      description: |
+        Role of the message sender:
+        - `user`: Message from the user
+        - `assistant`: Response from the workflow/AI
+        - `system`: System notifications
+        - `log`: Execution log entries
+
+    PlaygroundMessageLevel:
+      type: string
+      enum:
+        - info
+        - warning
+        - error
+        - debug
+      description: Log level for log-type messages
+
+    PlaygroundSession:
+      type: object
+      description: |
+        A playground session represents an isolated test environment for a workflow.
+        Sessions maintain conversation history and allow interactive testing.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Session unique identifier
+        workflowId:
+          type: string
+          format: uuid
+          description: Associated workflow ID
+        name:
+          type: string
+          description: Session display name
+          example: Test Session 1
+        status:
+          $ref: '#/components/schemas/PlaygroundSessionStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: Session creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last activity timestamp
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Custom session metadata
+      required:
+        - id
+        - workflowId
+        - name
+        - status
+        - createdAt
+        - updatedAt
+
+    PlaygroundMessage:
+      type: object
+      description: |
+        A message in a playground session. Messages can be user inputs,
+        assistant responses, system notifications, or execution logs.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Message unique identifier
+        sessionId:
+          type: string
+          format: uuid
+          description: Parent session ID
+        role:
+          $ref: '#/components/schemas/PlaygroundMessageRole'
+        content:
+          type: string
+          description: Message content
+        timestamp:
+          type: string
+          format: date-time
+          description: Message timestamp
+        nodeId:
+          type: string
+          description: Associated node ID (for log messages)
+        metadata:
+          type: object
+          properties:
+            level:
+              $ref: '#/components/schemas/PlaygroundMessageLevel'
+            duration:
+              type: integer
+              description: Execution duration in milliseconds
+            nodeLabel:
+              type: string
+              description: Human-readable node label
+            outputs:
+              type: object
+              additionalProperties: true
+              description: Node output data
+          additionalProperties: true
+          description: Additional message metadata
+      required:
+        - id
+        - sessionId
+        - role
+        - content
+        - timestamp
+      example:
+        id: msg-123e4567-e89b-12d3-a456-426614174000
+        sessionId: sess-123e4567-e89b-12d3-a456-426614174000
+        role: assistant
+        content: I've analyzed your data and found 3 patterns.
+        timestamp: '2024-01-20T10:30:00Z'
+        nodeId: node-ai-analyzer
+        metadata:
+          duration: 2500
+          nodeLabel: AI Analyzer
+
+    PlaygroundInputField:
+      type: object
+      description: |
+        Input field derived from workflow input nodes.
+        Used to auto-generate input forms in the playground.
+      properties:
+        nodeId:
+          type: string
+          description: Source node ID
+        fieldId:
+          type: string
+          description: Field identifier
+        label:
+          type: string
+          description: Display label
+        type:
+          type: string
+          description: Field data type
+        defaultValue:
+          description: Default value from node config
+        required:
+          type: boolean
+          description: Whether the field is required
+        schema:
+          $ref: '#/components/schemas/ConfigProperty'
+          description: JSON Schema for the field
+      required:
+        - nodeId
+        - fieldId
+        - label
+        - type
+        - required
+
+    PlaygroundMessageRequest:
+      type: object
+      description: Request body for sending a message to the playground
+      properties:
+        content:
+          type: string
+          description: Message content (typically user input)
+          maxLength: 10000
+        inputs:
+          type: object
+          additionalProperties: true
+          description: Additional input values for workflow nodes
+      required:
+        - content
+
+    # ===== PLAYGROUND RESPONSE TYPES =====
+    PlaygroundSessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PlaygroundSession'
+
+    PlaygroundSessionsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlaygroundSession'
+
+    PlaygroundMessageResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PlaygroundMessage'
+
+    PlaygroundMessagesResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/PlaygroundMessage'
+            hasMore:
+              type: boolean
+              description: Whether there are more messages to fetch
+            sessionStatus:
+              $ref: '#/components/schemas/PlaygroundSessionStatus'
+              description: Current session status (useful for polling)
+
   responses:
     BadRequest:
       description: Bad request - invalid parameters or request body
@@ -2139,6 +2658,8 @@ tags:
     description: Workflow CRUD operations
   - name: Pipeline
     description: Pipeline execution and monitoring
+  - name: Playground
+    description: Interactive workflow testing and chat interface
   - name: Validation
     description: Workflow validation
   - name: Import/Export
