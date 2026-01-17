@@ -24,21 +24,21 @@
  * ```
  */
 
-import { registerFieldComponent } from "./fieldRegistry.js";
-import type { FieldSchema } from "../components/form/types.js";
+import { registerFieldComponent } from './fieldRegistry.js';
+import type { FieldSchema } from '../components/form/types.js';
 
 // Re-export the component for direct usage if needed
-export { default as FormMarkdownEditor } from "../components/form/FormMarkdownEditor.svelte";
+export { default as FormMarkdownEditor } from '../components/form/FormMarkdownEditor.svelte';
 
 // Re-export types for markdown editor props
-export type { MarkdownEditorFieldProps } from "../components/form/types.js";
+export type { MarkdownEditorFieldProps } from '../components/form/types.js';
 
 /**
  * Matcher for markdown editor fields
  * Matches: format "markdown"
  */
 export function markdownEditorFieldMatcher(schema: FieldSchema): boolean {
-	return schema.format === "markdown";
+	return schema.format === 'markdown';
 }
 
 /**
@@ -68,13 +68,8 @@ export function registerMarkdownEditorField(priority: number = 100): void {
 	}
 
 	// Dynamic import to ensure proper code splitting
-	import("../components/form/FormMarkdownEditor.svelte").then((module) => {
-		registerFieldComponent(
-			"markdown-editor",
-			module.default,
-			markdownEditorFieldMatcher,
-			priority
-		);
+	import('../components/form/FormMarkdownEditor.svelte').then((module) => {
+		registerFieldComponent('markdown-editor', module.default, markdownEditorFieldMatcher, priority);
 		markdownEditorRegistered = true;
 	});
 }
@@ -101,12 +96,7 @@ export function registerMarkdownEditorFieldWithComponent(
 		return;
 	}
 
-	registerFieldComponent(
-		"markdown-editor",
-		component,
-		markdownEditorFieldMatcher,
-		priority
-	);
+	registerFieldComponent('markdown-editor', component, markdownEditorFieldMatcher, priority);
 	markdownEditorRegistered = true;
 }
 
