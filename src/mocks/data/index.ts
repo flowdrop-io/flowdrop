@@ -44,3 +44,17 @@ export {
 
 // Re-export port config
 export { DEFAULT_PORT_CONFIG } from '../../lib/config/defaultPortConfig.js';
+
+// Re-export playground data
+export {
+	getSessionsForWorkflow,
+	getSessionById,
+	createSession,
+	deleteSession,
+	getSessionMessages,
+	addMessage,
+	updateSessionStatus,
+	simulateExecution,
+	resetPlaygroundData,
+	initializeSamplePlaygroundData
+} from './playground.js';
