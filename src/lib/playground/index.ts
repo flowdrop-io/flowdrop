@@ -6,10 +6,50 @@
  *
  * @module playground
  *
- * @example
+ * @example Using mountPlayground for vanilla JS / Drupal / IIFE:
  * ```typescript
- * import { Playground, playgroundService } from "@d34dman/flowdrop/playground";
- * import type { PlaygroundSession, PlaygroundMessage } from "@d34dman/flowdrop/playground";
+ * import { mountPlayground, createEndpointConfig } from "@d34dman/flowdrop/playground";
+ *
+ * const app = await mountPlayground(
+ *   document.getElementById("playground-container"),
+ *   {
+ *     workflowId: "wf-123",
+ *     endpointConfig: createEndpointConfig("/api/flowdrop"),
+ *     mode: "standalone"
+ *   }
+ * );
+ *
+ * // Later, to cleanup:
+ * app.destroy();
+ * ```
+ *
+ * @example Drupal Behaviors integration:
+ * ```javascript
+ * (function (Drupal, FlowDrop) {
+ *   Drupal.behaviors.flowdropPlayground = {
+ *     attach: function (context, settings) {
+ *       var container = document.getElementById("playground-container");
+ *       if (!container || container.dataset.initialized) return;
+ *       container.dataset.initialized = "true";
+ *
+ *       FlowDrop.mountPlayground(container, {
+ *         workflowId: settings.flowdrop.workflowId,
+ *         endpointConfig: FlowDrop.createEndpointConfig(settings.flowdrop.apiBaseUrl),
+ *         mode: "standalone"
+ *       }).then(function (app) {
+ *         container._flowdropApp = app;
+ *       });
+ *     },
+ *     detach: function (context, settings, trigger) {
+ *       if (trigger === "unload") {
+ *         var container = document.getElementById("playground-container");
+ *         if (container && container._flowdropApp) {
+ *           container._flowdropApp.destroy();
+ *         }
+ *       }
+ *     }
+ *   };
+ * })(Drupal, window.FlowDrop);
  * ```
  *
  * @example In Svelte (Standalone mode):
@@ -112,3 +152,25 @@ export type {
 } from '../types/playground.js';
 
 export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';
+
+// ============================================================================
+// Playground Mount Functions (for vanilla JS / Drupal / IIFE integration)
+// ============================================================================
+
+export {
+	mountPlayground,
+	unmountPlayground,
+	type PlaygroundMountOptions,
+	type MountedPlayground
+} from './mount.js';
+
+// ============================================================================
+// Endpoint Configuration (re-exported for convenience)
+// ============================================================================
+
+export {
+	createEndpointConfig,
+	defaultEndpointConfig,
+	buildEndpointUrl,
+	type EndpointConfig
+} from '../config/endpoints.js';
