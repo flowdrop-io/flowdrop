@@ -131,7 +131,8 @@
 	let showNavbar = $derived(
 		!$page.url.pathname.startsWith('/workflow/') ||
 			$page.url.pathname.includes('/pipelines') ||
-			$page.url.pathname.includes('/edit')
+			$page.url.pathname.includes('/edit') ||
+			$page.url.pathname.includes('/playground')
 	);
 
 	function getPrimaryActionsForPage(pathname: string) {
@@ -201,6 +202,12 @@
 					variant: 'outline' as const
 				},
 				{
+					label: 'Playground',
+					href: `/workflow/${pathname.split('/')[2]}/playground`,
+					icon: 'mdi:play-circle-outline',
+					variant: 'outline' as const
+				},
+				{
 					label: 'Workflow Settings',
 					href: '#',
 					icon: 'mdi:cog',
@@ -242,6 +249,23 @@
 					href: '#',
 					icon: 'mdi:refresh',
 					variant: 'secondary' as const
+				}
+			];
+		} else if (pathname.startsWith('/workflow/') && pathname.includes('/playground')) {
+			// Playground page
+			const workflowId = pathname.split('/')[2];
+			return [
+				{
+					label: 'Edit Workflow',
+					href: `/workflow/${workflowId}/edit`,
+					icon: 'mdi:pencil',
+					variant: 'outline' as const
+				},
+				{
+					label: 'Pipelines',
+					href: `/workflow/${workflowId}/pipelines`,
+					icon: 'mdi:source-branch',
+					variant: 'outline' as const
 				}
 			];
 		} else if (pathname.startsWith('/workflow/') && pathname.includes('/pipelines')) {
@@ -351,6 +375,30 @@
 				{
 					label: workflowName || 'Workflow',
 					icon: 'mdi:pencil'
+				}
+			];
+		} else if (pathname.startsWith('/workflow/') && pathname.includes('/playground')) {
+			// Playground page
+			const workflowId = pathname.split('/')[2];
+			return [
+				{
+					label: 'Home',
+					href: '/',
+					icon: 'mdi:home'
+				},
+				{
+					label: 'Workflows',
+					href: '/',
+					icon: 'mdi:view-list'
+				},
+				{
+					label: workflowName || 'Workflow',
+					href: `/workflow/${workflowId}/edit`,
+					icon: 'mdi:workflow'
+				},
+				{
+					label: 'Playground',
+					icon: 'mdi:play-circle-outline'
 				}
 			];
 		} else if (pathname.startsWith('/workflow/') && pathname.includes('/pipelines')) {
