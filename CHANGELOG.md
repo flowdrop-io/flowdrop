@@ -29,16 +29,16 @@ Major refactoring to enable proper tree-shaking and reduce bundle sizes for libr
 
 - **New Entry Points**: Library now provides multiple entry points for optimal bundle sizes:
 
-  | Import Path | Description | Bundle Impact |
-  |------------|-------------|---------------|
-  | `@d34dman/flowdrop/core` | Types & utilities only | ~5KB |
-  | `@d34dman/flowdrop/form` | SchemaForm + basic fields | ~20KB |
-  | `@d34dman/flowdrop/form/code` | Code editor (CodeMirror) | +300KB |
-  | `@d34dman/flowdrop/form/markdown` | Markdown editor (EasyMDE) | +200KB |
-  | `@d34dman/flowdrop/form/full` | All form fields | +500KB |
-  | `@d34dman/flowdrop/display` | MarkdownDisplay (marked) | +50KB |
-  | `@d34dman/flowdrop/editor` | WorkflowEditor (@xyflow) | +300KB |
-  | `@d34dman/flowdrop/styles` | CSS styles | - |
+  | Import Path                       | Description               | Bundle Impact |
+  | --------------------------------- | ------------------------- | ------------- |
+  | `@d34dman/flowdrop/core`          | Types & utilities only    | ~5KB          |
+  | `@d34dman/flowdrop/form`          | SchemaForm + basic fields | ~20KB         |
+  | `@d34dman/flowdrop/form/code`     | Code editor (CodeMirror)  | +300KB        |
+  | `@d34dman/flowdrop/form/markdown` | Markdown editor (EasyMDE) | +200KB        |
+  | `@d34dman/flowdrop/form/full`     | All form fields           | +500KB        |
+  | `@d34dman/flowdrop/display`       | MarkdownDisplay (marked)  | +50KB         |
+  | `@d34dman/flowdrop/editor`        | WorkflowEditor (@xyflow)  | +300KB        |
+  | `@d34dman/flowdrop/styles`        | CSS styles                | -             |
 
 - **Field Registry System**: Dynamic field registration for heavy editors
   - `registerFieldComponent()` - Register custom or heavy field components
@@ -71,11 +71,11 @@ When importing from `@d34dman/flowdrop/form`, heavy editors (code, markdown, tem
 
 ```typescript
 // Before (0.0.28) - everything auto-included
-import { SchemaForm } from "@d34dman/flowdrop";
+import { SchemaForm } from '@d34dman/flowdrop';
 
 // After (0.0.29) - register heavy editors explicitly
-import { SchemaForm } from "@d34dman/flowdrop/form";
-import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
+import { SchemaForm } from '@d34dman/flowdrop/form';
+import { registerCodeEditorField } from '@d34dman/flowdrop/form/code';
 
 registerCodeEditorField(); // Call once at app startup
 ```
@@ -84,10 +84,10 @@ registerCodeEditorField(); // Call once at app startup
 
 ```typescript
 // New recommended path
-import "@d34dman/flowdrop/styles";
+import '@d34dman/flowdrop/styles';
 
 // Still works
-import "@d34dman/flowdrop/styles/base.css";
+import '@d34dman/flowdrop/styles/base.css';
 ```
 
 **3. Install Peer Dependency**
@@ -103,27 +103,31 @@ The main entry point (`@d34dman/flowdrop`) still exports everything for backward
 ### Usage Examples
 
 **Minimal Form (small bundle):**
+
 ```typescript
-import { SchemaForm } from "@d34dman/flowdrop/form";
-import "@d34dman/flowdrop/styles";
+import { SchemaForm } from '@d34dman/flowdrop/form';
+import '@d34dman/flowdrop/styles';
 ```
 
 **Form with Code Editor:**
+
 ```typescript
-import { SchemaForm } from "@d34dman/flowdrop/form";
-import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
+import { SchemaForm } from '@d34dman/flowdrop/form';
+import { registerCodeEditorField } from '@d34dman/flowdrop/form/code';
 registerCodeEditorField();
 ```
 
 **Workflow Editor Only:**
+
 ```typescript
-import { WorkflowEditor } from "@d34dman/flowdrop/editor";
-import "@d34dman/flowdrop/styles";
+import { WorkflowEditor } from '@d34dman/flowdrop/editor';
+import '@d34dman/flowdrop/styles';
 ```
 
 **Types Only (zero runtime):**
+
 ```typescript
-import type { Workflow, FieldSchema } from "@d34dman/flowdrop/core";
+import type { Workflow, FieldSchema } from '@d34dman/flowdrop/core';
 ```
 
 ---
@@ -156,25 +160,25 @@ A standalone form generator component that creates dynamic forms from JSON Schem
 
 ```svelte
 <script lang="ts">
-  import { SchemaForm } from "@d34dman/flowdrop";
-  import type { SchemaFormProps } from "@d34dman/flowdrop";
+	import { SchemaForm } from '@d34dman/flowdrop';
+	import type { SchemaFormProps } from '@d34dman/flowdrop';
 
-  const schema = {
-    type: "object" as const,
-    properties: {
-      name: { type: "string", title: "Name", description: "Enter your name" },
-      age: { type: "number", title: "Age", minimum: 0, maximum: 120 },
-      active: { type: "boolean", title: "Active", default: true },
-      role: { type: "string", title: "Role", enum: ["admin", "user", "guest"] }
-    },
-    required: ["name"]
-  };
+	const schema = {
+		type: 'object' as const,
+		properties: {
+			name: { type: 'string', title: 'Name', description: 'Enter your name' },
+			age: { type: 'number', title: 'Age', minimum: 0, maximum: 120 },
+			active: { type: 'boolean', title: 'Active', default: true },
+			role: { type: 'string', title: 'Role', enum: ['admin', 'user', 'guest'] }
+		},
+		required: ['name']
+	};
 
-  let values = $state({ name: "", age: 25, active: true });
+	let values = $state({ name: '', age: 25, active: true });
 
-  function handleChange(newValues: Record<string, unknown>) {
-    values = newValues;
-  }
+	function handleChange(newValues: Record<string, unknown>) {
+		values = newValues;
+	}
 </script>
 
 <!-- Inline mode (no buttons) -->
@@ -182,16 +186,15 @@ A standalone form generator component that creates dynamic forms from JSON Schem
 
 <!-- With action buttons -->
 <SchemaForm
-  {schema}
-  {values}
-  onChange={handleChange}
-  showActions={true}
-  saveLabel="Submit"
-  onSave={(v) => console.log("Saved:", v)}
-  onCancel={() => console.log("Cancelled")}
+	{schema}
+	{values}
+	onChange={handleChange}
+	showActions={true}
+	saveLabel="Submit"
+	onSave={(v) => console.log('Saved:', v)}
+	onCancel={() => console.log('Cancelled')}
 />
 ```
-
 
 ## [0.0.27] - 2026-01-09
 

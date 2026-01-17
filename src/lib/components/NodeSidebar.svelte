@@ -52,7 +52,7 @@
 		let filtered = props.nodes || [];
 
 		// Filter by category
-		if (selectedCategory !== "all") {
+		if (selectedCategory !== 'all') {
 			filtered = filtered.filter((node) => node.category === selectedCategory);
 		}
 

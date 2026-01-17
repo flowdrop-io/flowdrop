@@ -53,7 +53,7 @@ export type {
 	DynamicSchemaEndpoint,
 	ExternalEditLink,
 	ConfigEditOptions
-} from "../types/index.js";
+} from '../types/index.js';
 
 // Configuration types
 export type {
@@ -63,21 +63,17 @@ export type {
 	APIConfig,
 	ExecutionConfig,
 	StorageConfig
-} from "../types/config.js";
+} from '../types/config.js';
 
 // Authentication types
-export type {
-	AuthProvider,
-	StaticAuthConfig,
-	CallbackAuthConfig
-} from "../types/auth.js";
+export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from '../types/auth.js';
 
 // Event types
 export type {
 	WorkflowChangeType,
 	FlowDropEventHandlers,
 	FlowDropFeatures
-} from "../types/events.js";
+} from '../types/events.js';
 
 // Form field types (no component dependencies)
 export type {
@@ -100,7 +96,7 @@ export type {
 	TemplateEditorFieldProps,
 	FormFieldFactoryProps,
 	FormFieldWrapperProps
-} from "../components/form/types.js";
+} from '../components/form/types.js';
 
 // Registry types
 export type {
@@ -113,37 +109,51 @@ export type {
 	FlowDropPluginConfig,
 	PluginNodeDefinition,
 	PluginRegistrationResult
-} from "../registry/index.js";
+} from '../registry/index.js';
 
 // Service types
-export type { ToastType, ToastOptions } from "../services/toastService.js";
-export type { DynamicSchemaResult } from "../services/dynamicSchemaService.js";
+export type { ToastType, ToastOptions } from '../services/toastService.js';
+export type { DynamicSchemaResult } from '../services/dynamicSchemaService.js';
+
+// Playground types
+export type {
+	PlaygroundSession,
+	PlaygroundMessage,
+	PlaygroundInputField,
+	PlaygroundMessageRequest,
+	PlaygroundMessagesResult,
+	PlaygroundConfig,
+	PlaygroundMode,
+	PlaygroundSessionStatus,
+	PlaygroundMessageRole,
+	PlaygroundMessageLevel,
+	PlaygroundMessageMetadata,
+	PlaygroundApiResponse,
+	PlaygroundSessionsResponse,
+	PlaygroundSessionResponse,
+	PlaygroundMessageResponse,
+	PlaygroundMessagesApiResponse
+} from '../types/playground.js';
+
+export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';
 
 // Endpoint config types
-export type { EndpointConfig } from "../config/endpoints.js";
+export type { EndpointConfig } from '../config/endpoints.js';
 
 // Svelte app types
-export type {
-	FlowDropMountOptions,
-	MountedFlowDropApp,
-	NavbarAction
-} from "../svelte-app.js";
+export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from '../svelte-app.js';
 
 // ============================================================================
 // Authentication Providers (no dependencies)
 // ============================================================================
 
-export {
-	StaticAuthProvider,
-	CallbackAuthProvider,
-	NoAuthProvider
-} from "../types/auth.js";
+export { StaticAuthProvider, CallbackAuthProvider, NoAuthProvider } from '../types/auth.js';
 
 // ============================================================================
 // Event Utilities
 // ============================================================================
 
-export { DEFAULT_FEATURES, mergeFeatures } from "../types/events.js";
+export { DEFAULT_FEATURES, mergeFeatures } from '../types/events.js';
 
 // ============================================================================
 // Utility Functions (no heavy dependencies)
@@ -163,7 +173,7 @@ export {
 	resetExecutionInfo,
 	formatExecutionDuration,
 	formatLastExecuted
-} from "../utils/nodeStatus.js";
+} from '../utils/nodeStatus.js';
 
 // Node wrapper utilities
 export {
@@ -172,39 +182,33 @@ export {
 	getOptimalStatusPosition,
 	getOptimalStatusSize,
 	DEFAULT_NODE_STATUS_CONFIG
-} from "../utils/nodeWrapper.js";
-export type { NodeStatusConfig } from "../utils/nodeWrapper.js";
+} from '../utils/nodeWrapper.js';
+export type { NodeStatusConfig } from '../utils/nodeWrapper.js';
 
 // Color utilities
-export * from "../utils/colors.js";
+export * from '../utils/colors.js';
 
 // Icon utilities
-export * from "../utils/icons.js";
+export * from '../utils/icons.js';
 
 // Config utilities
-export * from "../utils/config.js";
+export * from '../utils/config.js';
 
 // Node type utilities
-export * from "../utils/nodeTypes.js";
+export * from '../utils/nodeTypes.js';
 
 // Form type utilities
-export {
-	isFieldOptionArray,
-	normalizeOptions
-} from "../components/form/types.js";
+export { isFieldOptionArray, normalizeOptions } from '../components/form/types.js';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-export { DEFAULT_PORT_CONFIG } from "../config/defaultPortConfig.js";
-export {
-	defaultEndpointConfig,
-	createEndpointConfig
-} from "../config/endpoints.js";
+export { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
+export { defaultEndpointConfig, createEndpointConfig } from '../config/endpoints.js';
 
 // ============================================================================
 // Adapters
 // ============================================================================
 
-export * from "../adapters/WorkflowAdapter.js";
+export * from '../adapters/WorkflowAdapter.js';

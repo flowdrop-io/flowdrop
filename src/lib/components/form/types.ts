@@ -350,7 +350,7 @@ export interface SchemaFormProps {
 	 * Properties define the form fields to render.
 	 */
 	schema: {
-		type: "object";
+		type: 'object';
 		properties: Record<string, FieldSchema>;
 		required?: string[];
 		additionalProperties?: boolean;

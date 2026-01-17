@@ -44,26 +44,26 @@
 // Main Components
 // ============================================================================
 
-export { default as SchemaForm } from "../components/SchemaForm.svelte";
+export { default as SchemaForm } from '../components/SchemaForm.svelte';
 
 // ============================================================================
 // Form Field Components (Light - no heavy dependencies)
 // ============================================================================
 
 // Use the light version of FormField that uses the registry for heavy editors
-export { default as FormField } from "../components/form/FormFieldLight.svelte";
+export { default as FormField } from '../components/form/FormFieldLight.svelte';
 
 // Also export the original (full) version for users who want everything
-export { default as FormFieldFull } from "../components/form/FormField.svelte";
-export { default as FormFieldWrapper } from "../components/form/FormFieldWrapper.svelte";
-export { default as FormTextField } from "../components/form/FormTextField.svelte";
-export { default as FormTextarea } from "../components/form/FormTextarea.svelte";
-export { default as FormNumberField } from "../components/form/FormNumberField.svelte";
-export { default as FormRangeField } from "../components/form/FormRangeField.svelte";
-export { default as FormToggle } from "../components/form/FormToggle.svelte";
-export { default as FormSelect } from "../components/form/FormSelect.svelte";
-export { default as FormCheckboxGroup } from "../components/form/FormCheckboxGroup.svelte";
-export { default as FormArray } from "../components/form/FormArray.svelte";
+export { default as FormFieldFull } from '../components/form/FormField.svelte';
+export { default as FormFieldWrapper } from '../components/form/FormFieldWrapper.svelte';
+export { default as FormTextField } from '../components/form/FormTextField.svelte';
+export { default as FormTextarea } from '../components/form/FormTextarea.svelte';
+export { default as FormNumberField } from '../components/form/FormNumberField.svelte';
+export { default as FormRangeField } from '../components/form/FormRangeField.svelte';
+export { default as FormToggle } from '../components/form/FormToggle.svelte';
+export { default as FormSelect } from '../components/form/FormSelect.svelte';
+export { default as FormCheckboxGroup } from '../components/form/FormCheckboxGroup.svelte';
+export { default as FormArray } from '../components/form/FormArray.svelte';
 
 // ============================================================================
 // Types
@@ -86,12 +86,9 @@ export type {
 	ArrayFieldProps,
 	FormFieldFactoryProps,
 	FormFieldWrapperProps
-} from "../components/form/types.js";
+} from '../components/form/types.js';
 
-export {
-	isFieldOptionArray,
-	normalizeOptions
-} from "../components/form/types.js";
+export { isFieldOptionArray, normalizeOptions } from '../components/form/types.js';
 
 // ============================================================================
 // Field Registry (for dynamic field registration)
@@ -116,11 +113,11 @@ export {
 	toggleMatcher,
 	selectOptionsMatcher,
 	arrayMatcher
-} from "./fieldRegistry.js";
+} from './fieldRegistry.js';
 
 export type {
 	FieldComponentProps,
 	FieldMatcher,
 	FieldComponent,
 	FieldComponentRegistration
-} from "./fieldRegistry.js";
+} from './fieldRegistry.js';

@@ -3,7 +3,7 @@
   Shows a table of workflows with management operations
   - Displays workflows in a table format
   - Each row has title, description, and operations dropdown
-  - Operations include: Edit, Delete, Execute, View Execution, View Execution History
+  - Operations include: Edit, Delete, View Execution, Playground
   - Quick search functionality at the top
 -->
 
@@ -136,6 +136,11 @@
 
 	let selectedWorkflow = $state<string | null>(null);
 
+	/**
+	 * Handle workflow operations from dropdown menu
+	 * @param workflowId - The ID of the workflow to perform operation on
+	 * @param operation - The operation to perform (edit, delete, view-execution, playground)
+	 */
 	function handleOperation(workflowId: string, operation: string) {
 		selectedWorkflow = null; // Close dropdown
 
@@ -159,6 +164,9 @@
 			}
 			case 'view-execution':
 				goto(`/workflow/${workflowId}/pipelines`);
+				break;
+			case 'playground':
+				goto(`/workflow/${workflowId}/playground`);
 				break;
 		}
 	}
@@ -316,6 +324,26 @@
 												></path>
 											</svg>
 											View Execution
+										</button>
+										<button
+											class="workflow-dropdown__item"
+											onclick={() => handleOperation(workflow.id, 'playground')}
+										>
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+												></path>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+												></path>
+											</svg>
+											Playground
 										</button>
 										<div class="workflow-dropdown__divider"></div>
 										<button

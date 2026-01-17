@@ -50,10 +50,10 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import type { ConfigSchema } from "$lib/types/index.js";
-	import { FormField } from "$lib/components/form/index.js";
-	import type { FieldSchema } from "$lib/components/form/index.js";
+	import Icon from '@iconify/svelte';
+	import type { ConfigSchema } from '$lib/types/index.js';
+	import { FormField } from '$lib/components/form/index.js';
+	import type { FieldSchema } from '$lib/components/form/index.js';
 
 	/**
 	 * Props interface for SchemaForm component
@@ -132,13 +132,13 @@
 		values = {},
 		onChange,
 		showActions = false,
-		saveLabel = "Save",
-		cancelLabel = "Cancel",
+		saveLabel = 'Save',
+		cancelLabel = 'Cancel',
 		onSave,
 		onCancel,
 		loading = false,
 		disabled = false,
-		class: className = ""
+		class: className = ''
 	}: Props = $props();
 
 	/**
@@ -182,7 +182,7 @@
 	 */
 	function handleFieldChange(key: string, value: unknown): void {
 		formValues[key] = value;
-		
+
 		// Notify parent of the change
 		if (onChange) {
 			onChange({ ...formValues });
@@ -199,22 +199,22 @@
 		}
 
 		// Collect all form values including hidden fields
-		const form = document.querySelector(".schema-form");
+		const form = document.querySelector('.schema-form');
 		const updatedValues: Record<string, unknown> = { ...formValues };
 
 		if (form) {
-			const inputs = form.querySelectorAll("input, select, textarea");
+			const inputs = form.querySelectorAll('input, select, textarea');
 			inputs.forEach((input: Element) => {
 				const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 				if (inputEl.id) {
-					if (inputEl instanceof HTMLInputElement && inputEl.type === "checkbox") {
+					if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
 						updatedValues[inputEl.id] = inputEl.checked;
 					} else if (
 						inputEl instanceof HTMLInputElement &&
-						(inputEl.type === "number" || inputEl.type === "range")
+						(inputEl.type === 'number' || inputEl.type === 'range')
 					) {
 						updatedValues[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
-					} else if (inputEl instanceof HTMLInputElement && inputEl.type === "hidden") {
+					} else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
 						// Parse hidden field values that might be JSON
 						try {
 							const parsed = JSON.parse(inputEl.value);
@@ -234,7 +234,7 @@
 		if (values && schema?.properties) {
 			Object.entries(schema.properties).forEach(
 				([key, property]: [string, Record<string, unknown>]) => {
-					if (property.format === "hidden" && !(key in updatedValues) && key in values) {
+					if (property.format === 'hidden' && !(key in updatedValues) && key in values) {
 						updatedValues[key] = values[key];
 					}
 				}

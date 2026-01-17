@@ -118,6 +118,11 @@
 			"svelte": "./dist/display/index.js",
 			"default": "./dist/display/index.js"
 		},
+		"./playground": {
+			"types": "./dist/playground/index.d.ts",
+			"svelte": "./dist/playground/index.js",
+			"default": "./dist/playground/index.js"
+		},
 		"./styles": "./dist/styles/base.css",
 		"./styles/*": "./dist/styles/*"
 	},

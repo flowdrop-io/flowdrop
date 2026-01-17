@@ -366,7 +366,7 @@ export function getArrayElementType(arrayDataType: string): string | null {
  * @returns Object with r, g, b values (0-255) or null if invalid
  */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-	const cleanHex = hex.replace(/^#/, "");
+	const cleanHex = hex.replace(/^#/, '');
 	if (!/^[0-9A-Fa-f]{6}$/.test(cleanHex)) {
 		return null;
 	}
@@ -386,7 +386,7 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
 export function rgbToHex(r: number, g: number, b: number): string {
 	const toHex = (value: number): string => {
 		const clamped = Math.max(0, Math.min(255, Math.round(value)));
-		return clamped.toString(16).padStart(2, "0");
+		return clamped.toString(16).padStart(2, '0');
 	};
 	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
@@ -400,7 +400,7 @@ export function rgbToHex(r: number, g: number, b: number): string {
 export function getLightTint(hex: string): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return "#fffbeb"; // Fallback to amber-50
+		return '#fffbeb'; // Fallback to amber-50
 	}
 	// Mix with white at 95% to create a very light tint
 	const mixRatio = 0.95;
@@ -419,7 +419,7 @@ export function getLightTint(hex: string): string {
 export function getBorderTint(hex: string): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return "#fcd34d"; // Fallback to amber-300
+		return '#fcd34d'; // Fallback to amber-300
 	}
 	// Mix with white at 60% to create a medium-light tint
 	const mixRatio = 0.6;

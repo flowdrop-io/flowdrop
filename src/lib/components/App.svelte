@@ -13,18 +13,18 @@
 	import ConfigForm from '$lib/components/ConfigForm.svelte';
 	import ConfigPanel from '$lib/components/ConfigPanel.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
-import { api, setEndpointConfig } from '$lib/services/api.js';
-import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
-import type {
-	NodeMetadata,
-	Workflow,
-	WorkflowNode,
-	ConfigSchema,
-	NodeUIExtensions
-} from '$lib/types/index.js';
-import { createEndpointConfig } from '$lib/config/endpoints.js';
-import type { EndpointConfig } from '$lib/config/endpoints.js';
-import type { AuthProvider } from '$lib/types/auth.js';
+	import { api, setEndpointConfig } from '$lib/services/api.js';
+	import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
+	import type {
+		NodeMetadata,
+		Workflow,
+		WorkflowNode,
+		ConfigSchema,
+		NodeUIExtensions
+	} from '$lib/types/index.js';
+	import { createEndpointConfig } from '$lib/config/endpoints.js';
+	import type { EndpointConfig } from '$lib/config/endpoints.js';
+	import type { AuthProvider } from '$lib/types/auth.js';
 	import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 	import { mergeFeatures } from '$lib/types/events.js';
 	import {
@@ -443,7 +443,9 @@ import type { AuthProvider } from '$lib/types/auth.js';
 				const isExistingWorkflow =
 					finalWorkflow.id &&
 					finalWorkflow.id.length > 0 &&
-					!finalWorkflow.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+					!finalWorkflow.id.match(
+						/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+					);
 
 				if (isExistingWorkflow) {
 					savedWorkflow = await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow);

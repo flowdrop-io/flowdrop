@@ -22,15 +22,15 @@
  */
 
 // Re-export everything from the light form module
-export * from "./index.js";
+export * from './index.js';
 
 // Import registration functions
-import { registerCodeEditorField, registerTemplateEditorField } from "./code.js";
-import { registerMarkdownEditorField } from "./markdown.js";
+import { registerCodeEditorField, registerTemplateEditorField } from './code.js';
+import { registerMarkdownEditorField } from './markdown.js';
 
 // Re-export heavy editor components for direct access
-export { FormCodeEditor, FormTemplateEditor } from "./code.js";
-export { FormMarkdownEditor } from "./markdown.js";
+export { FormCodeEditor, FormTemplateEditor } from './code.js';
+export { FormMarkdownEditor } from './markdown.js';
 
 // Re-export registration functions
 export {
@@ -41,13 +41,13 @@ export {
 	isTemplateEditorRegistered,
 	codeEditorFieldMatcher,
 	templateEditorFieldMatcher
-} from "./code.js";
+} from './code.js';
 
 export {
 	registerMarkdownEditorField,
 	isMarkdownEditorRegistered,
 	markdownEditorFieldMatcher
-} from "./markdown.js";
+} from './markdown.js';
 
 /**
  * Track if all field types have been initialized

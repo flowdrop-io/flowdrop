@@ -30,11 +30,11 @@
 // Display Components
 // ============================================================================
 
-export { default as MarkdownDisplay } from "../components/MarkdownDisplay.svelte";
+export { default as MarkdownDisplay } from '../components/MarkdownDisplay.svelte';
 
 // ============================================================================
 // Re-export marked for advanced usage
 // ============================================================================
 
 // Users can use marked directly if they need more control
-export { marked } from "marked";
+export { marked } from 'marked';
