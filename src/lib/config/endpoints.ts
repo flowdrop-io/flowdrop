@@ -54,6 +54,24 @@ export interface EndpointConfig {
 			stop: string;
 		};
 
+		// Playground endpoints
+		playground: {
+			/** List sessions for a workflow */
+			listSessions: string;
+			/** Create a new session */
+			createSession: string;
+			/** Get session details */
+			getSession: string;
+			/** Delete a session */
+			deleteSession: string;
+			/** Get messages from a session */
+			getMessages: string;
+			/** Send a message to a session */
+			sendMessage: string;
+			/** Stop execution in a session */
+			stopExecution: string;
+		};
+
 		// Template endpoints
 		templates: {
 			list: string;
@@ -147,6 +165,15 @@ export const defaultEndpointConfig: EndpointConfig = {
 			logs: '/pipeline/{id}/logs',
 			execute: '/pipeline/{id}/execute',
 			stop: '/pipeline/{id}/stop'
+		},
+		playground: {
+			listSessions: '/workflows/{id}/playground/sessions',
+			createSession: '/workflows/{id}/playground/sessions',
+			getSession: '/playground/sessions/{sessionId}',
+			deleteSession: '/playground/sessions/{sessionId}',
+			getMessages: '/playground/sessions/{sessionId}/messages',
+			sendMessage: '/playground/sessions/{sessionId}/messages',
+			stopExecution: '/playground/sessions/{sessionId}/stop'
 		},
 		templates: {
 			list: '/templates',
