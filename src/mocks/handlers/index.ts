@@ -8,6 +8,7 @@ import { workflowHandlers } from './workflows.js';
 import { pipelineHandlers } from './pipelines.js';
 import { configHandlers } from './config.js';
 import { dynamicSchemaHandlers } from './dynamicSchema.js';
+import { playgroundHandlers } from './playground.js';
 
 /**
  * All MSW request handlers for the FlowDrop API
@@ -18,7 +19,8 @@ export const handlers = [
 	...nodeHandlers,
 	...workflowHandlers,
 	...pipelineHandlers,
-	...dynamicSchemaHandlers
+	...dynamicSchemaHandlers,
+	...playgroundHandlers
 ];
 
 // Re-export individual handler groups for selective use
@@ -27,3 +29,4 @@ export { workflowHandlers } from './workflows.js';
 export { pipelineHandlers } from './pipelines.js';
 export { configHandlers } from './config.js';
 export { dynamicSchemaHandlers } from './dynamicSchema.js';
+export { playgroundHandlers } from './playground.js';
