@@ -1081,6 +1081,15 @@ paths:
       description: |
         Send a user message or trigger workflow execution with inputs.
         This starts or continues the conversation in the playground.
+        
+        The message is created with status "pending" and processing begins immediately
+        (synchronously) or is queued (asynchronously) based on the session's execution mode.
+        The response returns immediately with the message entity, allowing clients to
+        poll the message status endpoint to track processing progress.
+        
+        Messages are processed in sequence order within a session to ensure proper
+        conversation flow. If a previous message is not yet complete, the request
+        will be rejected with a conflict error.
       tags:
         - Playground
       parameters:
@@ -1128,6 +1137,100 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /playground/sessions/{sessionId}/messages/{messageId}:
+    get:
+      summary: Get a single message
+      description: |
+        Retrieve a specific message from a playground session by its ID.
+        Returns full message details including status and metadata.
+      tags:
+        - Playground
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: messageId
+          in: path
+          description: Message UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Message retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /playground/sessions/{sessionId}/messages/{messageId}/status:
+    get:
+      summary: Get message status
+      description: |
+        Retrieve only the status of a message (lightweight endpoint for polling).
+        Useful for checking if message processing is complete without fetching full message data.
+      tags:
+        - Playground
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: messageId
+          in: path
+          description: Message UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Message status retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            description: Message unique identifier
+                          status:
+                            $ref: '#/components/schemas/PlaygroundMessageStatus'
+                          sequenceNumber:
+                            type: integer
+                            description: Message sequence number
+                          timestamp:
+                            type: string
+                            format: date-time
+                            description: Message timestamp
+                        required:
+                          - id
+                          - status
+                          - sequenceNumber
+                          - timestamp
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -2393,6 +2496,22 @@ components:
         - debug
       description: Log level for log-type messages
 
+    PlaygroundMessageStatus:
+      type: string
+      enum:
+        - pending
+        - processing
+        - completed
+        - failed
+        - cancelled
+      description: |
+        Processing status of the message:
+        - `pending`: Message created, waiting to be processed
+        - `processing`: Message is currently being processed
+        - `completed`: Message processing completed successfully
+        - `failed`: Message processing failed
+        - `cancelled`: Message processing was cancelled
+
     PlaygroundSession:
       type: object
       description: |
@@ -2456,9 +2575,25 @@ components:
           type: string
           format: date-time
           description: Message timestamp
+        status:
+          $ref: '#/components/schemas/PlaygroundMessageStatus'
+        sequenceNumber:
+          type: integer
+          description: Sequential number for ordering messages within a session
+          minimum: 1
+        parentMessageId:
+          type: string
+          format: uuid
+          description: Parent message ID (for linking user message to assistant response)
+          nullable: true
+        executionId:
+          type: string
+          description: Workflow execution ID that generated this message
+          nullable: true
         nodeId:
           type: string
           description: Associated node ID (for log messages)
+          nullable: true
         metadata:
           type: object
           properties:
@@ -2482,12 +2617,18 @@ components:
         - role
         - content
         - timestamp
+        - status
+        - sequenceNumber
       example:
         id: msg-123e4567-e89b-12d3-a456-426614174000
         sessionId: sess-123e4567-e89b-12d3-a456-426614174000
         role: assistant
         content: I've analyzed your data and found 3 patterns.
         timestamp: '2024-01-20T10:30:00Z'
+        status: completed
+        sequenceNumber: 2
+        parentMessageId: msg-123e4567-e89b-12d3-a456-426614174001
+        executionId: exec-abc123
         nodeId: node-ai-analyzer
         metadata:
           duration: 2500
