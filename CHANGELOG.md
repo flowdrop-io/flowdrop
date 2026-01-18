@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.32] - 2026-01-18
+
+### Added
+
+#### PlaygroundModal Component
+
+- **PlaygroundModal Component**: New modal wrapper for the Playground component
+  - Centered modal dialog with semi-transparent backdrop
+  - Closes via backdrop click, Escape key, or close button
+  - Responsive design with mobile-first breakpoints
+  - Full accessibility support with ARIA attributes (`role="dialog"`, `aria-modal`, `aria-labelledby`)
+  - Consistent styling with FlowDrop design system
+
+#### Modal Mode for mountPlayground
+
+- **Modal Mode Support**: `mountPlayground()` now supports `mode: "modal"` for dialog-based playground
+  - Mounts `PlaygroundModal` component with proper backdrop handling
+  - Requires `onClose` callback for modal mode (throws error if not provided)
+  - Automatic body-level mounting for proper z-index stacking
+  - Clean unmount and state reset on close
+
+#### Playground Module Exports
+
+- **New Component Exports**: Added `PlaygroundModal` to `@d34dman/flowdrop/playground` module
+- **Editor Module Export**: `Playground` component now also exported from `@d34dman/flowdrop/editor`
+
+#### API Specification Enhancements
+
+- **PlaygroundMessageStatus Enum**: New enum for tracking message processing status
+  - `pending`: Message created, waiting to be processed
+  - `processing`: Message is currently being processed
+  - `completed`: Message processing completed successfully
+  - `failed`: Message processing failed
+  - `cancelled`: Message processing was cancelled
+
+- **Enhanced PlaygroundMessage Schema**: Additional fields for conversation tracking
+  - `status`: Processing status of the message
+  - `sequenceNumber`: Sequential ordering within a session
+  - `parentMessageId`: Links user messages to assistant responses
+  - `executionId`: Workflow execution ID that generated the message
+
+- **New API Endpoints**:
+  - `GET /playground/sessions/{sessionId}/messages/{messageId}`: Retrieve a specific message with full details
+  - `GET /playground/sessions/{sessionId}/messages/{messageId}/status`: Lightweight polling endpoint for message status
+
+### Usage Examples
+
+**PlaygroundModal in Svelte:**
+
+```svelte
+<script>
+  import { PlaygroundModal } from "@d34dman/flowdrop/playground";
+  let showPlayground = false;
+</script>
+
+<button onclick={() => showPlayground = true}>Open Playground</button>
+
+<PlaygroundModal
+  isOpen={showPlayground}
+  workflowId="wf-123"
+  onClose={() => showPlayground = false}
+/>
+```
+
+**Modal Mode with mountPlayground:**
+
+```typescript
+import { mountPlayground, createEndpointConfig } from "@d34dman/flowdrop/playground";
+
+const app = await mountPlayground(
+  document.getElementById("playground-container"),
+  {
+    workflowId: "wf-123",
+    endpointConfig: createEndpointConfig("/api/flowdrop"),
+    mode: "modal",
+    onClose: () => {
+      app.destroy();
+    }
+  }
+);
+```
+
+---
+
 ## [0.0.31] - 2026-01-18
 
 ### Added
