@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.33] - 2026-01-18
+
+### Added
+
+- **Markdown Support in Playground Chat**: Messages now render markdown content
+  - Full markdown rendering using `marked` library
+  - Supports headings, paragraphs, lists, code blocks, inline code, blockquotes, tables, links, and emphasis
+  - Code blocks styled with dark theme for readability
+  - Configurable via `enableMarkdown` option in `PlaygroundConfig` (default: `true`)
+  - Log messages retain plain text formatting
+
+### Changed
+
+- **Neutral Chat Theme**: Updated playground message styling to a more professional neutral palette
+  - User messages: Light gray background (`#f1f5f9`) instead of blue gradient
+  - Assistant messages: White background with subtle border
+  - System messages: Light neutral gray
+  - Avatar icons: Neutral gray tones instead of colored backgrounds
+  - Role labels: Dark gray text for better readability
+
+### Fixed
+
+- **Playground Processing State**: Fixed issue where "Processing..." indicator remained visible after workflow execution completed
+  - Polling now correctly stops when `sessionStatus` is `'idle'` (in addition to `'completed'` and `'failed'`)
+  - Executing state is now cleared when session returns to `'idle'` status
+  - Previously, responses with `{success: true, data: [], hasMore: false, sessionStatus: "idle"}` would not clear the processing indicator
+
+---
+
 ## [0.0.32] - 2026-01-18
 
 ### Added
