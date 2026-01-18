@@ -620,4 +620,26 @@
 		stroke: var(--flowdrop-edge-data-color-selected);
 		stroke-width: 2;
 	}
+
+	/* Loopback Edge: Dashed gray line for loop iteration connections */
+	:global(.flowdrop--edge--loopback path.svelte-flow__edge-path) {
+		stroke: var(--flowdrop-edge-loopback-color);
+		stroke-width: var(--flowdrop-edge-loopback-width);
+		stroke-dasharray: var(--flowdrop-edge-loopback-dasharray);
+		opacity: var(--flowdrop-edge-loopback-opacity);
+	}
+
+	:global(.flowdrop--edge--loopback:hover path.svelte-flow__edge-path) {
+		stroke: var(--flowdrop-edge-loopback-color-hover);
+		stroke-width: var(--flowdrop-edge-loopback-width-hover);
+		opacity: 1;
+	}
+
+	:global(.flowdrop--edge--loopback.selected path.svelte-flow__edge-path) {
+		stroke: var(--flowdrop-edge-loopback-color-selected);
+		stroke-width: var(--flowdrop-edge-loopback-width-hover);
+		stroke-dasharray: var(--flowdrop-edge-loopback-dasharray);
+		filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.4));
+		opacity: 1;
+	}
 </style>

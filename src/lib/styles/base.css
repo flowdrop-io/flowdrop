@@ -1157,6 +1157,15 @@
 	--flowdrop-edge-data-color-hover: var(--color-ref-gray-500);
 	--flowdrop-edge-data-color-selected: var(--color-ref-violet-600);
 
+	/* Loopback edge styling tokens */
+	--flowdrop-edge-loopback-color: var(--color-ref-gray-500);
+	--flowdrop-edge-loopback-color-hover: var(--color-ref-gray-600);
+	--flowdrop-edge-loopback-color-selected: var(--color-ref-violet-600);
+	--flowdrop-edge-loopback-width: 1.5px;
+	--flowdrop-edge-loopback-width-hover: 2.5px;
+	--flowdrop-edge-loopback-dasharray: 5 5;
+	--flowdrop-edge-loopback-opacity: 0.85;
+
 	/* Tool node theming tokens */
 	--flowdrop-tool-node-color: var(--color-ref-amber-500);
 	--flowdrop-tool-node-color-light: var(--color-ref-amber-50);
