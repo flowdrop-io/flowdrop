@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.34] - 2026-01-19
+
+### Added
+
+#### Loopback Edge Support
+
+- **Loopback Edge Detection**: New utility functions for detecting and validating loopback edges
+  - `isLoopbackEdge(edge)` - Detects if an edge targets the `loop_back` input port
+  - `isValidLoopbackCycle(cycleEdges)` - Checks if a cycle consists entirely of loopback edges
+  - `hasInvalidCycles(nodes, edges)` - Detects invalid cycles while allowing valid loopback cycles
+  - Functions exported from `@d34dman/flowdrop/core`
+
+- **Loopback Edge Category**: New edge category for loop iteration connections
+  - `EdgeCategory` type now includes `'loopback'` alongside `'trigger'`, `'tool'`, and `'data'`
+  - Loopback edges are styled with dashed gray lines (no animation)
+  - Visual distinction from regular data edges without being distracting
+
+- **CSS Variables for Loopback Edges**: Customizable theming via CSS custom properties
+  - `--flowdrop-edge-loopback-color` (default: gray-500)
+  - `--flowdrop-edge-loopback-color-hover` (default: gray-600)
+  - `--flowdrop-edge-loopback-color-selected` (default: violet-600)
+  - `--flowdrop-edge-loopback-width` (default: 1.5px)
+  - `--flowdrop-edge-loopback-dasharray` (default: 5 5)
+  - `--flowdrop-edge-loopback-opacity` (default: 0.85)
+
+- **ForEach Loop Node**: New demo node for testing loopback functionality
+  - **Inputs**: `items` (array, required), `loop_back` (mixed), `trigger` (trigger)
+  - **Outputs**: `item` (mixed), `index` (number), `total` (number), `is_first` (boolean), `is_last` (boolean), `completed` (trigger)
+  - The `loop_back` port accepts any data type, allowing flexible loop iteration patterns
+
+- **Demo Workflow**: New "Demo: ForEach Loop" workflow showcasing loopback edges
+  - Demonstrates JSON Loader → ForEach Loop → Process Item → loopback cycle
+  - Includes explanatory notes about loopback edge usage
+
+### Changed
+
+- **Cycle Detection**: `checkWorkflowCycles()` now excludes valid loopback cycles from warnings
+  - Only invalid (non-loopback) cycles trigger cycle detection warnings
+  - New `checkAllCycles()` method available when detecting ALL cycles is needed
+
+### Technical Details
+
+- Loopback edges target ports named `loop_back` (constant: `LOOPBACK_PORT_NAME`)
+- Edge styling uses `getEdgeCategoryWithLoopback()` for full edge categorization
+- Animation reserved for future use (execution visualization)
+- Zero linter errors introduced
+
+---
+
 ## [0.0.33] - 2026-01-18
 
 ### Added
