@@ -518,6 +518,7 @@
 						showTimestamps={config.showTimestamps ?? true}
 						autoScroll={config.autoScroll ?? true}
 						showLogsInline={config.logDisplayMode === 'inline'}
+						enableMarkdown={config.enableMarkdown ?? true}
 						onSendMessage={handleSendMessage}
 						onStopExecution={handleStopExecution}
 					/>

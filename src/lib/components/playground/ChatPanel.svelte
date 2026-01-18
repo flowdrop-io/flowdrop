@@ -35,6 +35,8 @@
 		onStopExecution?: () => void;
 		/** Whether to show log messages inline (false = hide them) */
 		showLogsInline?: boolean;
+		/** Whether to enable markdown rendering in messages */
+		enableMarkdown?: boolean;
 	}
 
 	let {
@@ -43,7 +45,8 @@
 		placeholder = 'Type your message...',
 		onSendMessage,
 		onStopExecution,
-		showLogsInline = false
+		showLogsInline = false,
+		enableMarkdown = true
 	}: Props = $props();
 
 	/** Input field value */
@@ -206,6 +209,7 @@
 					{message}
 					showTimestamp={showTimestamps}
 					isLast={index === displayMessages.length - 1}
+					{enableMarkdown}
 				/>
 			{/each}
 

@@ -189,6 +189,8 @@ export interface PlaygroundConfig {
 	showTimestamps?: boolean;
 	/** Show log messages inline or in collapsible section (default: "collapsible") */
 	logDisplayMode?: 'inline' | 'collapsible';
+	/** Enable markdown rendering in messages (default: true) */
+	enableMarkdown?: boolean;
 }
 
 /**
