@@ -78,6 +78,7 @@ export { default as Logo } from '../components/Logo.svelte';
 
 // Playground Components
 export { default as Playground } from '../components/playground/Playground.svelte';
+export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
 export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
 export { default as SessionManager } from '../components/playground/SessionManager.svelte';
 export { default as InputCollector } from '../components/playground/InputCollector.svelte';

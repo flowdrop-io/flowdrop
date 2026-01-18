@@ -77,6 +77,38 @@
  *   />
  * {/if}
  * ```
+ *
+ * @example In Svelte (Modal mode):
+ * ```svelte
+ * <script>
+ *   import { PlaygroundModal } from "@d34dman/flowdrop/playground";
+ *   let showPlayground = false;
+ * </script>
+ *
+ * <PlaygroundModal
+ *   isOpen={showPlayground}
+ *   workflowId="wf-123"
+ *   workflow={myWorkflow}
+ *   onClose={() => showPlayground = false}
+ * />
+ * ```
+ *
+ * @example Using mountPlayground with modal mode:
+ * ```typescript
+ * import { mountPlayground, createEndpointConfig } from "@d34dman/flowdrop/playground";
+ *
+ * const app = await mountPlayground(
+ *   document.getElementById("playground-container"),
+ *   {
+ *     workflowId: "wf-123",
+ *     endpointConfig: createEndpointConfig("/api/flowdrop"),
+ *     mode: "modal",
+ *     onClose: () => {
+ *       app.destroy();
+ *     }
+ *   }
+ * );
+ * ```
  */
 
 // ============================================================================
@@ -84,6 +116,7 @@
 // ============================================================================
 
 export { default as Playground } from '../components/playground/Playground.svelte';
+export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
 export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
 export { default as SessionManager } from '../components/playground/SessionManager.svelte';
 export { default as InputCollector } from '../components/playground/InputCollector.svelte';
