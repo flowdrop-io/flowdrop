@@ -13,6 +13,42 @@ import type {
 } from '../types/index.js';
 
 /**
+ * Loopback port name constant
+ * This is the standard input port name used for loop iteration triggers
+ */
+const LOOPBACK_PORT_NAME = "loop_back";
+
+/**
+ * Determines if an edge is a loopback edge.
+ * Loopback edges target the special `loop_back` input port on ForEach nodes.
+ * These edges are used to trigger the next iteration in a loop construct.
+ *
+ * @param edge - The edge to check
+ * @returns True if the edge is a loopback edge
+ *
+ * @example
+ * ```typescript
+ * const edge = { targetHandle: "foreach.1-input-loop_back", ... };
+ * const isLoop = isLoopbackEdge(edge); // true
+ * ```
+ */
+export function isLoopbackEdge(edge: WorkflowEdge): boolean {
+	const targetHandle = edge.targetHandle ?? "";
+	return targetHandle.includes(`-input-${LOOPBACK_PORT_NAME}`);
+}
+
+/**
+ * Checks if a cycle consists entirely of loopback edges.
+ * A valid loopback cycle only contains edges that target loop_back ports.
+ *
+ * @param cycleEdges - Array of edges that form a cycle
+ * @returns True if all edges in the cycle are loopback edges
+ */
+export function isValidLoopbackCycle(cycleEdges: WorkflowEdge[]): boolean {
+	return cycleEdges.every((edge) => isLoopbackEdge(edge));
+}
+
+/**
  * Configurable port compatibility checker
  */
 export class PortCompatibilityChecker {
@@ -325,6 +361,12 @@ export function getConnectionSuggestions(
 
 /**
  * Check if a workflow has any cycles (prevent infinite loops)
+ * Note: This function detects ALL cycles, including valid loopback cycles.
+ * Use `hasInvalidCycles` to check only for cycles that could cause infinite execution.
+ *
+ * @param nodes - Array of workflow nodes
+ * @param edges - Array of workflow edges
+ * @returns True if any cycle exists in the workflow
  */
 export function hasCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): boolean {
 	const visited = new Set<string>();
@@ -349,6 +391,63 @@ export function hasCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): boolean
 	}
 
 	// Check each node
+	for (const node of nodes) {
+		if (!visited.has(node.id)) {
+			if (hasCycleUtil(node.id)) return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Check if a workflow has any invalid cycles (non-loopback cycles).
+ * This excludes valid loopback cycles used for ForEach iteration.
+ * Only cycles that could cause infinite execution are detected.
+ *
+ * @param nodes - Array of workflow nodes
+ * @param edges - Array of workflow edges
+ * @returns True if any invalid (non-loopback) cycle exists
+ *
+ * @example
+ * ```typescript
+ * // A cycle through a loopback edge is valid (returns false)
+ * // A cycle through regular data edges is invalid (returns true)
+ * const hasInvalid = hasInvalidCycles(nodes, edges);
+ * ```
+ */
+export function hasInvalidCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): boolean {
+	// Filter out loopback edges - these create valid cycles for loop iteration
+	const nonLoopbackEdges = edges.filter((edge) => !isLoopbackEdge(edge));
+
+	// Check for cycles using only non-loopback edges
+	const visited = new Set<string>();
+	const recursionStack = new Set<string>();
+
+	/**
+	 * DFS utility to detect cycles in the graph
+	 * @param nodeId - Current node being visited
+	 * @returns True if a cycle is found from this node
+	 */
+	function hasCycleUtil(nodeId: string): boolean {
+		if (recursionStack.has(nodeId)) return true;
+		if (visited.has(nodeId)) return false;
+
+		visited.add(nodeId);
+		recursionStack.add(nodeId);
+
+		// Get all outgoing non-loopback edges from this node
+		const outgoingEdges = nonLoopbackEdges.filter((e) => e.source === nodeId);
+
+		for (const edge of outgoingEdges) {
+			if (hasCycleUtil(edge.target)) return true;
+		}
+
+		recursionStack.delete(nodeId);
+		return false;
+	}
+
+	// Check each node for cycles
 	for (const node of nodes) {
 		if (!visited.has(node.id)) {
 			if (hasCycleUtil(node.id)) return true;

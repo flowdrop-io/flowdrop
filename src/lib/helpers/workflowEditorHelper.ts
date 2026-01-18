@@ -11,7 +11,7 @@ import type {
 	WorkflowEdge,
 	NodeExecutionInfo
 } from '../types/index.js';
-import { hasCycles } from '../utils/connections.js';
+import { hasCycles, hasInvalidCycles, isLoopbackEdge } from '../utils/connections.js';
 import { workflowApi, nodeApi, setEndpointConfig } from '../services/api.js';
 import { v4 as uuidv4 } from 'uuid';
 import { workflowActions } from '../stores/workflowStore.js';
@@ -47,9 +47,10 @@ export function generateNodeId(nodeTypeId: string, existingNodes: WorkflowNodeTy
  * Edge category type for styling purposes
  * - trigger: For control flow connections (dataType: "trigger")
  * - tool: Dashed amber line for tool connections (dataType: "tool")
+ * - loopback: Dashed gray line for loop iteration connections (targets loop_back port)
  * - data: Normal gray line for all other data connections
  */
-export type EdgeCategory = 'trigger' | 'tool' | 'data';
+export type EdgeCategory = 'trigger' | 'tool' | 'loopback' | 'data';
 
 /**
  * Edge styling configuration based on source port data type
@@ -143,6 +144,9 @@ export class EdgeStylingHelper {
 
 	/**
 	 * Determine the edge category based on source port data type
+	 * Note: This method does not check for loopback edges.
+	 * Use getEdgeCategoryWithLoopback() for full edge categorization.
+	 *
 	 * @param sourcePortDataType - The data type of the source output port
 	 * @returns The edge category for styling
 	 */
@@ -160,7 +164,30 @@ export class EdgeStylingHelper {
 	}
 
 	/**
-	 * Apply custom styling to connection edges based on source port data type:
+	 * Determine the full edge category including loopback detection
+	 * Loopback edges take precedence over source port data type
+	 *
+	 * @param edge - The edge to categorize
+	 * @param sourcePortDataType - The data type of the source output port
+	 * @returns The edge category for styling
+	 */
+	static getEdgeCategoryWithLoopback(
+		edge: WorkflowEdge,
+		sourcePortDataType: string | null
+	): EdgeCategory {
+		// Loopback edges are identified by their target handle
+		// Check this first as it takes precedence
+		if (isLoopbackEdge(edge)) {
+			return 'loopback';
+		}
+
+		// Fall back to source port data type categorization
+		return this.getEdgeCategory(sourcePortDataType);
+	}
+
+	/**
+	 * Apply custom styling to connection edges based on edge type:
+	 * - Loopback: Dashed gray line for loop iteration (targets loop_back port)
 	 * - Trigger ports: Solid black line with arrow
 	 * - Tool ports: Dashed amber line with arrow
 	 * - Data ports: Normal gray line with arrow
@@ -178,19 +205,33 @@ export class EdgeStylingHelper {
 			? this.getPortDataType(sourceNode, sourcePortId, 'output')
 			: null;
 
-		// Determine edge category based on source port data type
-		const edgeCategory = this.getEdgeCategory(sourcePortDataType);
+		// Determine edge category (loopback takes precedence)
+		const edgeCategory = this.getEdgeCategoryWithLoopback(edge, sourcePortDataType);
 
 		// Edge color constants (matching CSS tokens in base.css)
 		const EDGE_COLORS = {
 			trigger: '#111827', // --color-ref-gray-900
 			tool: '#f59e0b', // --color-ref-amber-500
+			loopback: '#6b7280', // --color-ref-gray-500
 			data: '#9ca3af' // --color-ref-gray-400
 		};
 
 		// Apply styling based on edge category
 		// CSS classes handle styling via tokens; inline styles are fallback
 		switch (edgeCategory) {
+			case 'loopback':
+				// Loopback edges: dashed gray line for loop iteration
+				edge.style =
+					'stroke: var(--flowdrop-edge-loopback-color); stroke-dasharray: 5 5; stroke-width: var(--flowdrop-edge-loopback-width);';
+				edge.class = 'flowdrop--edge--loopback';
+				edge.markerEnd = {
+					type: MarkerType.ArrowClosed,
+					width: 14,
+					height: 14,
+					color: EDGE_COLORS.loopback
+				};
+				break;
+
 			case 'trigger':
 				// Trigger edges: solid dark line for control flow
 				edge.style =
@@ -236,7 +277,7 @@ export class EdgeStylingHelper {
 			metadata: {
 				...((edge.data?.metadata as Record<string, unknown>) || {}),
 				edgeType: edgeCategory,
-				sourcePortDataType: sourcePortDataType || undefined
+				sourcePortDataType: sourcePortDataType ?? undefined
 			},
 			targetNodeType: targetNode.type,
 			targetCategory: targetNode.data.metadata.category
@@ -588,9 +629,27 @@ export class WorkflowOperationsHelper {
 	}
 
 	/**
-	 * Check if workflow has cycles
+	 * Check if workflow has invalid cycles (excludes valid loopback cycles)
+	 * Valid loopback cycles are used for ForEach node iteration and should not
+	 * trigger a warning.
+	 *
+	 * @param nodes - Array of workflow nodes
+	 * @param edges - Array of workflow edges
+	 * @returns True if there are invalid (non-loopback) cycles
 	 */
 	static checkWorkflowCycles(nodes: WorkflowNodeType[], edges: WorkflowEdge[]): boolean {
+		return hasInvalidCycles(nodes, edges);
+	}
+
+	/**
+	 * Check if workflow has any cycles (including valid loopback cycles)
+	 * Use this when you need to detect ALL cycles regardless of type.
+	 *
+	 * @param nodes - Array of workflow nodes
+	 * @param edges - Array of workflow edges
+	 * @returns True if any cycle exists
+	 */
+	static checkWorkflowHasAnyCycles(nodes: WorkflowNodeType[], edges: WorkflowEdge[]): boolean {
 		return hasCycles(nodes, edges);
 	}
 }
