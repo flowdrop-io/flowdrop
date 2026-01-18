@@ -331,14 +331,19 @@ export class PlaygroundService {
 				// Reset backoff on successful request
 				this.currentBackoff = interval;
 
-				// Call the callback with new messages
-				callback(response);
+			// Call the callback with new messages
+			callback(response);
 
-				// Stop polling if session is completed or failed
-				if (response.sessionStatus === 'completed' || response.sessionStatus === 'failed') {
-					this.stopPolling();
-					return;
-				}
+			// Stop polling if session is idle, completed, or failed
+			// "idle" means no processing is happening (execution finished)
+			if (
+				response.sessionStatus === 'idle' ||
+				response.sessionStatus === 'completed' ||
+				response.sessionStatus === 'failed'
+			) {
+				this.stopPolling();
+				return;
+			}
 			} catch (error) {
 				console.error('Polling error:', error);
 

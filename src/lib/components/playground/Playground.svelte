@@ -335,15 +335,20 @@
 					playgroundActions.addMessages(response.data);
 				}
 
-				// Update session status
-				if (response.sessionStatus) {
-					playgroundActions.updateSessionStatus(response.sessionStatus);
+			// Update session status
+			if (response.sessionStatus) {
+				playgroundActions.updateSessionStatus(response.sessionStatus);
 
-					// Stop executing if completed or failed
-					if (response.sessionStatus === 'completed' || response.sessionStatus === 'failed') {
-						playgroundActions.setExecuting(false);
-					}
+				// Stop executing if idle, completed, or failed
+				// "idle" means no processing is happening (execution finished)
+				if (
+					response.sessionStatus === 'idle' ||
+					response.sessionStatus === 'completed' ||
+					response.sessionStatus === 'failed'
+				) {
+					playgroundActions.setExecuting(false);
 				}
+			}
 			},
 			pollingInterval
 		);
