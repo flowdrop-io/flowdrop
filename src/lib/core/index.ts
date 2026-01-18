@@ -52,7 +52,9 @@ export type {
 	HttpMethod,
 	DynamicSchemaEndpoint,
 	ExternalEditLink,
-	ConfigEditOptions
+	ConfigEditOptions,
+	// Edge types
+	EdgeCategory
 } from '../types/index.js';
 
 // Configuration types
@@ -196,6 +198,14 @@ export * from '../utils/config.js';
 
 // Node type utilities
 export * from '../utils/nodeTypes.js';
+
+// Connection utilities (including loopback edge detection)
+export {
+	isLoopbackEdge,
+	isValidLoopbackCycle,
+	hasCycles,
+	hasInvalidCycles
+} from '../utils/connections.js';
 
 // Form type utilities
 export { isFieldOptionArray, normalizeOptions } from '../components/form/types.js';

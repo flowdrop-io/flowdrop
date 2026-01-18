@@ -2282,6 +2282,125 @@ export const mockNodes: NodeMetadata[] = [
 		}
 	},
 	{
+		id: 'foreach',
+		name: 'ForEach Loop',
+		type: 'default',
+		supportedTypes: ['default', 'simple'],
+		description: 'Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.',
+		category: 'logic',
+		icon: 'mdi:repeat',
+		color: '#8b5cf6',
+		version: '1.0.0',
+		tags: ['logic', 'loop', 'foreach', 'iterate', 'array', 'iteration', 'loopback'],
+		inputs: [
+			{
+				id: 'items',
+				name: 'Items',
+				type: 'input',
+				dataType: 'array',
+				required: true,
+				description: 'The array of items to iterate over'
+			},
+			{
+				id: 'loop_back',
+				name: 'Loop Back',
+				type: 'input',
+				dataType: 'mixed',
+				required: false,
+				description: 'Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle.'
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Start the loop iteration'
+			}
+		],
+		outputs: [
+			{
+				id: 'item',
+				name: 'Item',
+				type: 'output',
+				dataType: 'mixed',
+				required: false,
+				description: 'The current item being processed in each iteration'
+			},
+			{
+				id: 'index',
+				name: 'Index',
+				type: 'output',
+				dataType: 'number',
+				required: false,
+				description: 'Zero-based index of the current item'
+			},
+			{
+				id: 'total',
+				name: 'Total',
+				type: 'output',
+				dataType: 'number',
+				required: false,
+				description: 'Total number of items in the array'
+			},
+			{
+				id: 'is_first',
+				name: 'Is First',
+				type: 'output',
+				dataType: 'boolean',
+				required: false,
+				description: 'True if this is the first item in the array'
+			},
+			{
+				id: 'is_last',
+				name: 'Is Last',
+				type: 'output',
+				dataType: 'boolean',
+				required: false,
+				description: 'True if this is the last item in the array'
+			},
+			{
+				id: 'completed',
+				name: 'Completed',
+				type: 'output',
+				dataType: 'trigger',
+				required: false,
+				description: 'Triggered when all items have been processed'
+			}
+		],
+		config: {
+			maxIterations: 1000,
+			continueOnError: false
+		},
+		configSchema: {
+			type: 'object',
+			properties: {
+				nodeType: {
+					type: 'string',
+					title: 'Node Type',
+					description: 'Choose the visual representation for this node',
+					default: 'default',
+					enum: ['default', 'simple'],
+					enumNames: ['Default (Standard node)', 'Simple (Compact)']
+				},
+				maxIterations: {
+					type: 'integer',
+					title: 'Max Iterations',
+					description: 'Maximum number of iterations (safety limit to prevent infinite loops)',
+					default: 1000,
+					minimum: 1,
+					maximum: 100000
+				},
+				continueOnError: {
+					type: 'boolean',
+					title: 'Continue on Error',
+					description: 'If true, continue iterating even if an item fails processing',
+					default: false
+				}
+			}
+		}
+	},
+	{
 		id: 'json_to_data',
 		name: 'JSON to Data',
 		type: 'default',

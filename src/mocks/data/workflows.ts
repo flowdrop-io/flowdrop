@@ -2562,12 +2562,452 @@ export const demoTriggerNodeWorkflow: Workflow = {
 };
 
 /**
+ * Demo workflow: ForEach Loop with Loopback
+ * Demonstrates the ForEach loop node with loopback edge functionality
+ */
+export const demoForEachLoopWorkflow: Workflow = {
+	id: 'demo-foreach-loop',
+	name: 'Demo: ForEach Loop',
+	description: 'Demonstrates the ForEach loop node with loopback edge functionality for iterating over arrays',
+	nodes: [
+		{
+			id: 'json_loader.1',
+			type: 'universalNode',
+			position: { x: -200, y: 0 },
+			deletable: true,
+			data: {
+				label: 'JSON Loader',
+				config: {
+					jsonData: '["Apple", "Banana", "Cherry", "Date", "Elderberry"]'
+				},
+				metadata: {
+					id: 'json_loader',
+					name: 'JSON Loader',
+					type: 'default',
+					supportedTypes: ['default'],
+					description: 'Load and parse JSON data',
+					category: 'data',
+					icon: 'mdi:code-json',
+					color: '#f59e0b',
+					version: '1.0.0',
+					tags: ['data', 'json', 'loader'],
+					inputs: [
+						{
+							id: 'trigger',
+							name: 'Trigger',
+							type: 'input',
+							dataType: 'trigger',
+							required: false,
+							description: 'Start loading'
+						}
+					],
+					outputs: [
+						{
+							id: 'data',
+							name: 'Data',
+							type: 'output',
+							dataType: 'array',
+							required: false,
+							description: 'The parsed JSON data'
+						}
+					],
+					config: {
+						jsonData: '[]'
+					},
+					configSchema: {
+						type: 'object',
+						properties: {
+							jsonData: {
+								type: 'string',
+								title: 'JSON Data',
+								description: 'JSON data to load',
+								format: 'multiline',
+								default: '[]'
+							}
+						}
+					}
+				},
+				nodeId: 'json_loader.1'
+			},
+			measured: { width: 288, height: 200 },
+			selected: false,
+			dragging: false
+		},
+		{
+			id: 'foreach.1',
+			type: 'universalNode',
+			position: { x: 200, y: -50 },
+			deletable: true,
+			data: {
+				label: 'ForEach Loop',
+				config: {
+					nodeType: 'default',
+					maxIterations: 1000,
+					continueOnError: false
+				},
+				metadata: {
+					id: 'foreach',
+					name: 'ForEach Loop',
+					type: 'default',
+					supportedTypes: ['default', 'simple'],
+					description: 'Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.',
+					category: 'logic',
+					icon: 'mdi:repeat',
+					color: '#8b5cf6',
+					version: '1.0.0',
+					tags: ['logic', 'loop', 'foreach', 'iterate', 'array', 'iteration', 'loopback'],
+					inputs: [
+						{
+							id: 'items',
+							name: 'Items',
+							type: 'input',
+							dataType: 'array',
+							required: true,
+							description: 'The array of items to iterate over'
+						},
+						{
+							id: 'loop_back',
+							name: 'Loop Back',
+							type: 'input',
+							dataType: 'mixed',
+							required: false,
+							description: 'Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle.'
+						},
+						{
+							id: 'trigger',
+							name: 'Trigger',
+							type: 'input',
+							dataType: 'trigger',
+							required: false,
+							description: 'Start the loop iteration'
+						}
+					],
+					outputs: [
+						{
+							id: 'item',
+							name: 'Item',
+							type: 'output',
+							dataType: 'mixed',
+							required: false,
+							description: 'The current item being processed in each iteration'
+						},
+						{
+							id: 'index',
+							name: 'Index',
+							type: 'output',
+							dataType: 'number',
+							required: false,
+							description: 'Zero-based index of the current item'
+						},
+						{
+							id: 'total',
+							name: 'Total',
+							type: 'output',
+							dataType: 'number',
+							required: false,
+							description: 'Total number of items in the array'
+						},
+						{
+							id: 'is_first',
+							name: 'Is First',
+							type: 'output',
+							dataType: 'boolean',
+							required: false,
+							description: 'True if this is the first item in the array'
+						},
+						{
+							id: 'is_last',
+							name: 'Is Last',
+							type: 'output',
+							dataType: 'boolean',
+							required: false,
+							description: 'True if this is the last item in the array'
+						},
+						{
+							id: 'completed',
+							name: 'Completed',
+							type: 'output',
+							dataType: 'trigger',
+							required: false,
+							description: 'Triggered when all items have been processed'
+						}
+					],
+					config: {
+						maxIterations: 1000,
+						continueOnError: false
+					},
+					configSchema: {
+						type: 'object',
+						properties: {
+							nodeType: {
+								type: 'string',
+								title: 'Node Type',
+								description: 'Choose the visual representation for this node',
+								default: 'default',
+								enum: ['default', 'simple'],
+								enumNames: ['Default (Standard node)', 'Simple (Compact)']
+							},
+							maxIterations: {
+								type: 'integer',
+								title: 'Max Iterations',
+								description: 'Maximum number of iterations (safety limit to prevent infinite loops)',
+								default: 1000,
+								minimum: 1,
+								maximum: 100000
+							},
+							continueOnError: {
+								type: 'boolean',
+								title: 'Continue on Error',
+								description: 'If true, continue iterating even if an item fails processing',
+								default: false
+							}
+						}
+					}
+				},
+				nodeId: 'foreach.1'
+			},
+			measured: { width: 288, height: 600 },
+			selected: false,
+			dragging: false
+		},
+		{
+			id: 'process_item.1',
+			type: 'universalNode',
+			position: { x: 600, y: 50 },
+			deletable: true,
+			data: {
+				label: 'Process Item',
+				config: {
+					operation: 'uppercase'
+				},
+				metadata: {
+					id: 'process_item',
+					name: 'Process Item',
+					type: 'default',
+					supportedTypes: ['default'],
+					description: 'Process each item in the loop - displays and passes through data',
+					category: 'processing',
+					icon: 'mdi:cog',
+					color: '#06b6d4',
+					version: '1.0.0',
+					tags: ['processing', 'transform', 'item'],
+					inputs: [
+						{
+							id: 'input',
+							name: 'Input',
+							type: 'input',
+							dataType: 'mixed',
+							required: false,
+							description: 'The item to process'
+						},
+						{
+							id: 'trigger',
+							name: 'Trigger',
+							type: 'input',
+							dataType: 'trigger',
+							required: false,
+							description: ''
+						}
+					],
+					outputs: [
+						{
+							id: 'output',
+							name: 'Output',
+							type: 'output',
+							dataType: 'mixed',
+							required: false,
+							description: 'The processed item - connect back to ForEach Loop for iteration'
+						},
+						{
+							id: 'completed',
+							name: 'Completed',
+							type: 'output',
+							dataType: 'trigger',
+							required: false,
+							description: 'Triggered when processing is complete'
+						}
+					],
+					config: {
+						operation: 'uppercase'
+					},
+					configSchema: {
+						type: 'object',
+						properties: {
+							operation: {
+								type: 'string',
+								title: 'Operation',
+								description: 'Operation to perform on the item',
+								default: 'uppercase',
+								enum: ['uppercase', 'lowercase', 'passthrough']
+							}
+						}
+					}
+				},
+				nodeId: 'process_item.1'
+			},
+			measured: { width: 288, height: 300 },
+			selected: false,
+			dragging: false
+		},
+		{
+			id: 'notes.1',
+			type: 'universalNode',
+			position: { x: 100, y: -350 },
+			deletable: true,
+			data: {
+				label: 'Notes',
+				config: {
+					content: '# ForEach Loop Demo\n\nThis workflow demonstrates the **ForEach Loop** node:\n\n1. **JSON Loader** provides an array of items\n2. **ForEach Loop** iterates over each item\n3. **Process Item** processes the current item\n4. The loopback edge (dashed gray) connects back to trigger the next iteration\n\n> The loopback edge uses a special `loop_back` port that accepts any data type.',
+					noteType: 'info'
+				},
+				metadata: {
+					id: 'notes',
+					name: 'Notes',
+					type: 'note',
+					supportedTypes: ['note'],
+					description: 'Add documentation and comments to your workflow with Markdown support',
+					category: 'tools',
+					icon: 'mdi:note-text',
+					color: '#fbbf24',
+					version: '1.0.0',
+					tags: ['tools', 'notes', 'documentation', 'comments', 'markdown'],
+					inputs: [
+						{
+							id: 'trigger',
+							name: 'Trigger',
+							type: 'input',
+							dataType: 'trigger',
+							required: false,
+							description: ''
+						}
+					],
+					outputs: [
+						{
+							id: 'content',
+							name: 'Note Content',
+							type: 'output',
+							dataType: 'string',
+							required: false,
+							description: 'The markdown content of the note'
+						}
+					],
+					config: {
+						content: '',
+						noteType: 'info'
+					},
+					configSchema: {
+						type: 'object',
+						properties: {
+							content: {
+								type: 'string',
+								title: 'Note Content',
+								description: 'Documentation or comment text (supports Markdown)',
+								format: 'multiline',
+								default: ''
+							},
+							noteType: {
+								type: 'string',
+								title: 'Note Type',
+								description: 'Visual style and color of the note',
+								default: 'info',
+								enum: ['info', 'warning', 'success', 'error', 'note']
+							}
+						}
+					}
+				},
+				nodeId: 'notes.1'
+			},
+			measured: { width: 500, height: 300 },
+			selected: false,
+			dragging: false
+		}
+	] as WorkflowNode[],
+	edges: [
+		{
+			id: 'xy-edge__json_loader.1json_loader.1-output-data-foreach.1foreach.1-input-items',
+			source: 'json_loader.1',
+			target: 'foreach.1',
+			sourceHandle: 'json_loader.1-output-data',
+			targetHandle: 'foreach.1-input-items',
+			style: 'stroke: var(--flowdrop-edge-data-color);',
+			class: 'flowdrop--edge--data',
+			markerEnd: {
+				type: 'arrowclosed',
+				width: 16,
+				height: 16,
+				color: '#9ca3af'
+			},
+			data: {
+				metadata: {
+					edgeType: 'data',
+					sourcePortDataType: 'array'
+				},
+				targetNodeType: 'universalNode',
+				targetCategory: 'logic'
+			}
+		},
+		{
+			id: 'xy-edge__foreach.1foreach.1-output-item-process_item.1process_item.1-input-input',
+			source: 'foreach.1',
+			target: 'process_item.1',
+			sourceHandle: 'foreach.1-output-item',
+			targetHandle: 'process_item.1-input-input',
+			style: 'stroke: var(--flowdrop-edge-data-color);',
+			class: 'flowdrop--edge--data',
+			markerEnd: {
+				type: 'arrowclosed',
+				width: 16,
+				height: 16,
+				color: '#9ca3af'
+			},
+			data: {
+				metadata: {
+					edgeType: 'data',
+					sourcePortDataType: 'mixed'
+				},
+				targetNodeType: 'universalNode',
+				targetCategory: 'processing'
+			}
+		},
+		{
+			id: 'xy-edge__process_item.1process_item.1-output-output-foreach.1foreach.1-input-loop_back',
+			source: 'process_item.1',
+			target: 'foreach.1',
+			sourceHandle: 'process_item.1-output-output',
+			targetHandle: 'foreach.1-input-loop_back',
+			style: 'stroke: var(--flowdrop-edge-loopback-color); stroke-dasharray: 5, 5;',
+			class: 'flowdrop--edge--loopback',
+			markerEnd: {
+				type: 'arrowclosed',
+				width: 16,
+				height: 16,
+				color: '#6b7280'
+			},
+			data: {
+				metadata: {
+					edgeType: 'loopback',
+					sourcePortDataType: 'mixed'
+				},
+				targetNodeType: 'universalNode',
+				targetCategory: 'logic'
+			}
+		}
+	] as WorkflowEdge[],
+	metadata: {
+		version: '1.0.0',
+		createdAt: '2026-01-19T10:00:00.000Z',
+		updatedAt: '2026-01-19T10:00:00.000Z'
+	}
+};
+
+/**
  * All mock workflows as a Map for easy lookup
  */
 export const mockWorkflows: Map<string, Workflow> = new Map([
 	[demoAIContentWorkflow.id, demoAIContentWorkflow],
 	[demoNodeTypesShowcaseWorkflow.id, demoNodeTypesShowcaseWorkflow],
-	[demoTriggerNodeWorkflow.id, demoTriggerNodeWorkflow]
+	[demoTriggerNodeWorkflow.id, demoTriggerNodeWorkflow],
+	[demoForEachLoopWorkflow.id, demoForEachLoopWorkflow]
 ]);
 
 /**

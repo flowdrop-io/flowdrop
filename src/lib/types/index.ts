@@ -751,13 +751,14 @@ export interface WorkflowNode extends Node {
 }
 
 /**
- * Edge category types based on source port data type
+ * Edge category types based on source port data type or target handle
  * Used for visual styling of edges on the canvas
  * - trigger: For control flow connections (dataType: "trigger")
  * - tool: Dashed amber line for tool connections (dataType: "tool")
+ * - loopback: Dashed gray line for loop iteration (targets loop_back port)
  * - data: Normal gray line for all other data connections
  */
-export type EdgeCategory = 'trigger' | 'tool' | 'data';
+export type EdgeCategory = 'trigger' | 'tool' | 'loopback' | 'data';
 
 /**
  * Extended edge type for workflows
