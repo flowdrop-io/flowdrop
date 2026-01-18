@@ -383,6 +383,7 @@
 	class="playground"
 	class:playground--embedded={mode === 'embedded'}
 	class:playground--standalone={mode === 'standalone'}
+	class:playground--modal={mode === 'modal'}
 >
 	<div class="playground__container">
 		<!-- Sidebar -->
@@ -393,14 +394,18 @@
 					<Icon icon="mdi:play-circle-outline" />
 					<span>Playground</span>
 				</div>
-				{#if mode === 'embedded' && onClose}
+				{#if (mode === 'embedded' || mode === 'modal') && onClose}
 					<button
 						type="button"
 						class="playground__sidebar-close"
 						onclick={onClose}
 						title="Close playground"
 					>
-						<Icon icon="mdi:dock-right" />
+						{#if mode === 'modal'}
+							<Icon icon="mdi:close" />
+						{:else}
+							<Icon icon="mdi:dock-right" />
+						{/if}
 					</button>
 				{/if}
 			</div>
@@ -534,6 +539,11 @@
 
 	.playground--standalone {
 		height: 100vh;
+	}
+
+	.playground--modal {
+		height: 100%;
+		width: 100%;
 	}
 
 	/* Container */

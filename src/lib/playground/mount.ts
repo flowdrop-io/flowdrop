@@ -46,6 +46,7 @@
 
 import { mount, unmount } from "svelte";
 import Playground from "../components/playground/Playground.svelte";
+import PlaygroundModal from "../components/playground/PlaygroundModal.svelte";
 import type { Workflow } from "../types/index.js";
 import type { EndpointConfig } from "../config/endpoints.js";
 import type { PlaygroundMode, PlaygroundConfig, PlaygroundSession } from "../types/playground.js";
@@ -79,6 +80,7 @@ export interface PlaygroundMountOptions {
 	 * Display mode
 	 * - "standalone": Full-page playground experience
 	 * - "embedded": Panel mode for embedding alongside other content
+	 * - "modal": Modal dialog mode with backdrop
 	 * @default "standalone"
 	 */
 	mode?: PlaygroundMode;
@@ -113,7 +115,7 @@ export interface PlaygroundMountOptions {
 	width?: string;
 
 	/**
-	 * Callback when playground is closed (for embedded mode)
+	 * Callback when playground is closed (required for embedded and modal modes)
 	 */
 	onClose?: () => void;
 }
@@ -172,6 +174,8 @@ interface MountedPlaygroundState {
 	svelteApp: ReturnType<typeof mount>;
 	/** Container element */
 	container: HTMLElement;
+	/** Original container (for cleanup) */
+	originalContainer?: HTMLElement;
 	/** Workflow ID */
 	workflowId: string;
 }
@@ -230,6 +234,11 @@ export async function mountPlayground(
 		throw new Error("container element is required for mountPlayground()");
 	}
 
+	// Validate onClose for modal mode
+	if (mode === "modal" && !onClose) {
+		throw new Error("onClose callback is required for modal mode");
+	}
+
 	// Set endpoint configuration if provided
 	let finalEndpointConfig: EndpointConfig | undefined;
 
@@ -247,28 +256,57 @@ export async function mountPlayground(
 		setEndpointConfig(finalEndpointConfig);
 	}
 
-	// Apply container styling
-	container.style.height = height;
-	container.style.width = width;
+	// Handle modal mode differently
+	// For modal mode, PlaygroundModal creates its own backdrop, so we mount directly to body
+	// For other modes, use the provided container
+	let targetContainer = container;
 
-	// Mount the Svelte Playground component
-	const svelteApp = mount(Playground, {
-		target: container,
-		props: {
-			workflowId,
-			workflow,
-			mode,
-			initialSessionId,
-			endpointConfig: finalEndpointConfig,
-			config,
-			onClose
+	if (mode === "modal") {
+		// For modal mode, create a container in the body
+		// PlaygroundModal will handle the backdrop itself
+		targetContainer = document.body;
+	} else {
+		// Apply container styling for non-modal modes
+		container.style.height = height;
+		container.style.width = width;
+	}
+
+	// Mount the appropriate component
+	const svelteApp = mount(
+		mode === "modal" ? PlaygroundModal : Playground,
+		{
+			target: targetContainer,
+			props: mode === "modal"
+				? {
+						isOpen: true,
+						workflowId,
+						workflow,
+						initialSessionId,
+						endpointConfig: finalEndpointConfig,
+						config,
+						onClose: () => {
+							if (onClose) {
+								onClose();
+							}
+						}
+					}
+				: {
+						workflowId,
+						workflow,
+						mode,
+						initialSessionId,
+						endpointConfig: finalEndpointConfig,
+						config,
+						onClose
+					}
 		}
-	});
+	);
 
 	// Store state for cleanup
 	const state: MountedPlaygroundState = {
 		svelteApp,
-		container,
+		container: targetContainer,
+		originalContainer: mode === "modal" ? container : undefined,
 		workflowId
 	};
 

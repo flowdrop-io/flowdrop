@@ -194,7 +194,7 @@ export interface PlaygroundConfig {
 /**
  * Display mode for the Playground component
  */
-export type PlaygroundMode = 'embedded' | 'standalone';
+export type PlaygroundMode = 'embedded' | 'standalone' | 'modal';
 
 /**
  * Chat input detection patterns for identifying chat nodes in workflows
