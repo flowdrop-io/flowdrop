@@ -34,7 +34,7 @@ let sessionIdCounter = 1;
 let messageIdCounter = 1;
 
 /**
- * Sequence counter per session for user messages
+ * Sequence counter per session for all messages (incrementing)
  */
 const sessionSequenceCounters: Map<string, number> = new Map();
 
@@ -205,15 +205,10 @@ export function addMessage(
 
 	const messages = mockMessages.get(sessionId) || [];
 
-	// Determine sequence number
-	// User messages get incrementing sequence numbers (1, 2, 3, ...)
-	// Assistant/system/log messages get 0 and use parentMessageId for ordering
-	let sequenceNumber = 0;
-	if (role === 'user') {
-		const currentSeq = sessionSequenceCounters.get(sessionId) || 0;
-		sequenceNumber = currentSeq + 1;
-		sessionSequenceCounters.set(sessionId, sequenceNumber);
-	}
+	// All messages get incrementing sequence numbers (1, 2, 3, ...)
+	const currentSeq = sessionSequenceCounters.get(sessionId) || 0;
+	const sequenceNumber = currentSeq + 1;
+	sessionSequenceCounters.set(sessionId, sequenceNumber);
 
 	const message: PlaygroundMessage = {
 		id: generateMessageId(),

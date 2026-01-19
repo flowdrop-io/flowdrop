@@ -2578,10 +2578,10 @@ components:
         sequenceNumber:
           type: integer
           description: |
-            Sequence number for ordering messages within a session.
-            - User messages: Incrementing numbers (1, 2, 3, ...)
-            - Assistant/log responses: 0 (grouped with parent via parentMessageId)
-          minimum: 0
+            Incrementing sequence number for chronological ordering within a session.
+            All messages (user, assistant, log) receive incrementing numbers (1, 2, 3, ...).
+            Use this as the primary sort key for displaying messages in order.
+          minimum: 1
         parentMessageId:
           type: string
           format: uuid
@@ -2633,7 +2633,7 @@ components:
         metadata: {}
       examples:
         userMessage:
-          summary: User message
+          summary: User message (first in conversation)
           value:
             id: be4d854d-d6b3-4242-b2ea-0008b2e059bd
             sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
@@ -2646,15 +2646,15 @@ components:
             nodeId: null
             metadata: {}
         assistantResponse:
-          summary: Assistant response (linked to user message)
+          summary: Assistant response (second in conversation)
           value:
             id: 2caeb386-011d-4901-b642-cb45f7764709
             sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
             role: assistant
-            content: Hello
-            timestamp: '2026-01-19T10:03:32+01:00'
+            content: Hello! I'm doing well, thank you.
+            timestamp: '2026-01-19T10:03:33+01:00'
             status: completed
-            sequenceNumber: 0
+            sequenceNumber: 2
             parentMessageId: be4d854d-d6b3-4242-b2ea-0008b2e059bd
             nodeId: chat_output.1
             metadata: {}
