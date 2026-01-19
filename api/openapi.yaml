@@ -2503,14 +2503,12 @@ components:
         - processing
         - completed
         - failed
-        - cancelled
       description: |
         Processing status of the message:
         - `pending`: Message created, waiting to be processed
         - `processing`: Message is currently being processed
         - `completed`: Message processing completed successfully
         - `failed`: Message processing failed
-        - `cancelled`: Message processing was cancelled
 
     PlaygroundSession:
       type: object
@@ -2579,8 +2577,11 @@ components:
           $ref: '#/components/schemas/PlaygroundMessageStatus'
         sequenceNumber:
           type: integer
-          description: Sequential number for ordering messages within a session
-          minimum: 1
+          description: |
+            Sequence number for ordering messages within a session.
+            - User messages: Incrementing numbers (1, 2, 3, ...)
+            - Assistant/log responses: 0 (grouped with parent via parentMessageId)
+          minimum: 0
         parentMessageId:
           type: string
           format: uuid
@@ -2620,19 +2621,43 @@ components:
         - status
         - sequenceNumber
       example:
-        id: msg-123e4567-e89b-12d3-a456-426614174000
-        sessionId: sess-123e4567-e89b-12d3-a456-426614174000
-        role: assistant
-        content: I've analyzed your data and found 3 patterns.
-        timestamp: '2024-01-20T10:30:00Z'
+        id: be4d854d-d6b3-4242-b2ea-0008b2e059bd
+        sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
+        role: user
+        content: Hello. How are you?
+        timestamp: '2026-01-19T10:03:32+01:00'
         status: completed
-        sequenceNumber: 2
-        parentMessageId: msg-123e4567-e89b-12d3-a456-426614174001
-        executionId: exec-abc123
-        nodeId: node-ai-analyzer
-        metadata:
-          duration: 2500
-          nodeLabel: AI Analyzer
+        sequenceNumber: 1
+        parentMessageId: null
+        nodeId: null
+        metadata: {}
+      examples:
+        userMessage:
+          summary: User message
+          value:
+            id: be4d854d-d6b3-4242-b2ea-0008b2e059bd
+            sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
+            role: user
+            content: Hello. How are you?
+            timestamp: '2026-01-19T10:03:32+01:00'
+            status: completed
+            sequenceNumber: 1
+            parentMessageId: null
+            nodeId: null
+            metadata: {}
+        assistantResponse:
+          summary: Assistant response (linked to user message)
+          value:
+            id: 2caeb386-011d-4901-b642-cb45f7764709
+            sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
+            role: assistant
+            content: Hello
+            timestamp: '2026-01-19T10:03:32+01:00'
+            status: completed
+            sequenceNumber: 0
+            parentMessageId: be4d854d-d6b3-4242-b2ea-0008b2e059bd
+            nodeId: chat_output.1
+            metadata: {}
 
     PlaygroundInputField:
       type: object
