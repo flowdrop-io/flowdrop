@@ -9,7 +9,8 @@ import type {
 	PlaygroundMessage,
 	PlaygroundSessionStatus,
 	PlaygroundMessageRole,
-	PlaygroundMessageLevel
+	PlaygroundMessageLevel,
+	PlaygroundMessageStatus
 } from '../../lib/types/playground.js';
 
 /**
@@ -31,6 +32,11 @@ let sessionIdCounter = 1;
  * Message ID counter for generating unique IDs
  */
 let messageIdCounter = 1;
+
+/**
+ * Sequence counter per session for user messages
+ */
+const sessionSequenceCounters: Map<string, number> = new Map();
 
 /**
  * Generate a unique session ID
@@ -102,6 +108,7 @@ export function createSession(
 
 	mockSessions.set(session.id, session);
 	mockMessages.set(session.id, []);
+	sessionSequenceCounters.set(session.id, 0);
 
 	return session;
 }
@@ -188,6 +195,8 @@ export function addMessage(
 		level?: PlaygroundMessageLevel;
 		duration?: number;
 		nodeLabel?: string;
+		parentMessageId?: string;
+		status?: PlaygroundMessageStatus;
 	}
 ): PlaygroundMessage | undefined {
 	if (!mockSessions.has(sessionId)) {
@@ -196,12 +205,25 @@ export function addMessage(
 
 	const messages = mockMessages.get(sessionId) || [];
 
+	// Determine sequence number
+	// User messages get incrementing sequence numbers (1, 2, 3, ...)
+	// Assistant/system/log messages get 0 and use parentMessageId for ordering
+	let sequenceNumber = 0;
+	if (role === 'user') {
+		const currentSeq = sessionSequenceCounters.get(sessionId) || 0;
+		sequenceNumber = currentSeq + 1;
+		sessionSequenceCounters.set(sessionId, sequenceNumber);
+	}
+
 	const message: PlaygroundMessage = {
 		id: generateMessageId(),
 		sessionId,
 		role,
 		content,
 		timestamp: new Date().toISOString(),
+		status: options?.status || 'completed',
+		sequenceNumber,
+		parentMessageId: options?.parentMessageId,
 		nodeId: options?.nodeId,
 		metadata: {
 			level: options?.level,
@@ -229,8 +251,13 @@ export function addMessage(
  *
  * @param sessionId - The session ID
  * @param userMessage - The user's message
+ * @param parentMessageId - The ID of the user message that triggered this execution
  */
-export function simulateExecution(sessionId: string, userMessage: string): void {
+export function simulateExecution(
+	sessionId: string,
+	userMessage: string,
+	parentMessageId?: string
+): void {
 	const session = mockSessions.get(sessionId);
 	if (!session) {
 		return;
@@ -289,7 +316,8 @@ export function simulateExecution(sessionId: string, userMessage: string): void 
 				nodeId: step.nodeId,
 				level: step.level,
 				duration: step.duration,
-				nodeLabel: step.nodeLabel
+				nodeLabel: step.nodeLabel,
+				parentMessageId
 			});
 
 			// Complete the session after the last step
@@ -306,6 +334,7 @@ export function simulateExecution(sessionId: string, userMessage: string): void 
 export function resetPlaygroundData(): void {
 	mockSessions.clear();
 	mockMessages.clear();
+	sessionSequenceCounters.clear();
 	sessionIdCounter = 1;
 	messageIdCounter = 1;
 }
@@ -317,11 +346,15 @@ export function initializeSamplePlaygroundData(workflowId: string): void {
 	// Create a sample session with some messages
 	const session = createSession(workflowId, 'Sample Session');
 
-	addMessage(session.id, 'user', 'Hello, can you help me test this workflow?');
+	// Add user message (will get sequenceNumber 1)
+	const userMessage = addMessage(session.id, 'user', 'Hello, can you help me test this workflow?');
+
+	// Add responses with parentMessageId linking to user message
 	addMessage(session.id, 'log', 'Starting workflow execution...', {
 		level: 'info',
 		nodeId: 'node-start',
-		nodeLabel: 'Start'
+		nodeLabel: 'Start',
+		parentMessageId: userMessage?.id
 	});
 	addMessage(
 		session.id,
@@ -330,7 +363,8 @@ export function initializeSamplePlaygroundData(workflowId: string): void {
 		{
 			nodeId: 'node-output',
 			nodeLabel: 'Output',
-			duration: 1500
+			duration: 1500,
+			parentMessageId: userMessage?.id
 		}
 	);
 

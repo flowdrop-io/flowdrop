@@ -273,7 +273,8 @@ export const sendMessageHandler = http.post(
 		}
 
 		// Simulate execution (adds assistant responses asynchronously)
-		simulateExecution(id, content);
+		// Pass the user message ID as parentMessageId for proper message ordering
+		simulateExecution(id, content, message.id);
 
 		return HttpResponse.json({
 			success: true,
