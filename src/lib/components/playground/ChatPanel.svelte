@@ -240,11 +240,6 @@
 					onkeydown={handleKeydown}
 					oninput={handleInput}
 				></textarea>
-
-				<!-- Attachment button placeholder -->
-				<button type="button" class="chat-panel__attachment-btn" title="Attach file" disabled>
-					<Icon icon="mdi:image-outline" />
-				</button>
 			</div>
 
 			{#if $sessionStatus === 'running' || $isExecuting}
@@ -436,31 +431,6 @@
 	.chat-panel__input:disabled {
 		cursor: not-allowed;
 		opacity: 0.6;
-	}
-
-	.chat-panel__attachment-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border: none;
-		border-radius: 0.375rem;
-		background: transparent;
-		color: #9ca3af;
-		cursor: pointer;
-		transition: all 0.15s ease;
-		flex-shrink: 0;
-	}
-
-	.chat-panel__attachment-btn:hover:not(:disabled) {
-		color: #6b7280;
-		background-color: #f3f4f6;
-	}
-
-	.chat-panel__attachment-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
 	}
 
 	.chat-panel__send-btn {
