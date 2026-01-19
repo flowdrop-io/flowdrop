@@ -184,6 +184,32 @@ export const hasChatInput = derived(inputFields, ($fields) =>
 export const sessionCount = derived(sessions, ($sessions) => $sessions.length);
 
 // =========================================================================
+// Helper Functions
+// =========================================================================
+
+/**
+ * Sort messages chronologically by timestamp and ID
+ *
+ * Messages are sorted by:
+ * 1. Primary: timestamp (ISO 8601 string comparison)
+ * 2. Secondary: id (handles same-timestamp messages)
+ *
+ * @param messageList - Array of messages to sort
+ * @returns Sorted array of messages
+ */
+function sortMessagesChronologically(messageList: PlaygroundMessage[]): PlaygroundMessage[] {
+	return [...messageList].sort((a, b) => {
+		// Primary sort by timestamp
+		const timestampCompare = a.timestamp.localeCompare(b.timestamp);
+		if (timestampCompare !== 0) {
+			return timestampCompare;
+		}
+		// Secondary sort by ID for messages with same timestamp
+		return a.id.localeCompare(b.id);
+	});
+}
+
+// =========================================================================
 // Actions
 // =========================================================================
 
@@ -269,24 +295,27 @@ export const playgroundActions = {
 
 	/**
 	 * Set messages for the current session
+	 * Messages are automatically sorted chronologically
 	 *
 	 * @param messageList - Array of messages
 	 */
 	setMessages: (messageList: PlaygroundMessage[]): void => {
-		messages.set(messageList);
+		messages.set(sortMessagesChronologically(messageList));
 	},
 
 	/**
 	 * Add a message to the current session
+	 * Messages are automatically sorted chronologically after adding
 	 *
 	 * @param message - The message to add
 	 */
 	addMessage: (message: PlaygroundMessage): void => {
-		messages.update(($messages) => [...$messages, message]);
+		messages.update(($messages) => sortMessagesChronologically([...$messages, message]));
 	},
 
 	/**
 	 * Add multiple messages to the current session
+	 * Messages are deduplicated and automatically sorted chronologically
 	 *
 	 * @param newMessages - Array of messages to add
 	 */
@@ -297,7 +326,8 @@ export const playgroundActions = {
 			// Deduplicate by message ID
 			const existingIds = new Set($messages.map((m) => m.id));
 			const uniqueNewMessages = newMessages.filter((m) => !existingIds.has(m.id));
-			return [...$messages, ...uniqueNewMessages];
+			// Sort the combined messages chronologically
+			return sortMessagesChronologically([...$messages, ...uniqueNewMessages]);
 		});
 	},
 
