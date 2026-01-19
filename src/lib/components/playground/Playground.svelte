@@ -533,6 +533,7 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+		overflow: hidden; /* Prevent playground-level scrolling */
 		background-color: #f8fafc;
 		font-family:
 			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -744,6 +745,8 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
+		min-height: 0; /* Allow proper flex shrinking */
+		overflow: hidden; /* Prevent scrolling - ChatPanel handles it */
 		background-color: #ffffff;
 	}
 
