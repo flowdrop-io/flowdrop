@@ -188,71 +188,35 @@ export const sessionCount = derived(sessions, ($sessions) => $sessions.length);
 // =========================================================================
 
 /**
- * Sort messages chronologically using sequenceNumber and parentMessageId
+ * Sort messages chronologically by sequenceNumber
  *
- * Sorting strategy:
- * 1. User messages have sequenceNumber > 0 (1, 2, 3, ...)
- * 2. Assistant/system responses have sequenceNumber = 0 and reference parentMessageId
- * 3. Responses should appear after their parent message
+ * All messages (user, assistant, log) have incrementing sequenceNumbers (1, 2, 3, ...).
+ * This provides a simple, reliable sort order for displaying messages.
  *
  * Sort order:
- * 1. Primary: Parent group (user messages and their responses together)
- * 2. Secondary: User message first (sequenceNumber > 0), then responses (sequenceNumber = 0)
- * 3. Tertiary: timestamp for responses within the same parent group
- * 4. Quaternary: id as final tiebreaker
+ * 1. Primary: sequenceNumber (incrementing for all messages)
+ * 2. Secondary: timestamp (fallback for messages without sequenceNumber)
+ * 3. Tertiary: id as final tiebreaker
  *
  * @param messageList - Array of messages to sort
  * @returns Sorted array of messages
  */
 function sortMessagesChronologically(messageList: PlaygroundMessage[]): PlaygroundMessage[] {
-	// Build a map of message ID to sequenceNumber for parent lookups
-	const messageMap = new Map<string, PlaygroundMessage>();
-	messageList.forEach((msg) => messageMap.set(msg.id, msg));
-
-	/**
-	 * Get the effective sequence number for sorting
-	 * - For user messages (sequenceNumber > 0): use their sequenceNumber
-	 * - For responses (sequenceNumber = 0 or undefined): use parent's sequenceNumber
-	 */
-	function getEffectiveSequence(msg: PlaygroundMessage): number {
-		// If message has its own sequenceNumber > 0, use it
-		if (msg.sequenceNumber !== undefined && msg.sequenceNumber > 0) {
-			return msg.sequenceNumber;
-		}
-		// For responses, look up parent's sequenceNumber
-		if (msg.parentMessageId) {
-			const parent = messageMap.get(msg.parentMessageId);
-			if (parent?.sequenceNumber !== undefined && parent.sequenceNumber > 0) {
-				return parent.sequenceNumber;
-			}
-		}
-		// Fallback: use 0 (will be sorted by timestamp)
-		return 0;
-	}
-
 	return [...messageList].sort((a, b) => {
-		const seqA = getEffectiveSequence(a);
-		const seqB = getEffectiveSequence(b);
-
-		// Primary: Sort by effective sequence number (conversation turn)
+		// Primary: Sort by sequenceNumber
+		const seqA = a.sequenceNumber ?? 0;
+		const seqB = b.sequenceNumber ?? 0;
 		if (seqA !== seqB) {
 			return seqA - seqB;
 		}
 
-		// Secondary: Within same conversation turn, user message (seq > 0) comes first
-		const isUserA = (a.sequenceNumber ?? 0) > 0;
-		const isUserB = (b.sequenceNumber ?? 0) > 0;
-		if (isUserA !== isUserB) {
-			return isUserA ? -1 : 1;
-		}
-
-		// Tertiary: Sort by timestamp
+		// Secondary: Sort by timestamp for messages without sequenceNumber
 		const timestampCompare = a.timestamp.localeCompare(b.timestamp);
 		if (timestampCompare !== 0) {
 			return timestampCompare;
 		}
 
-		// Quaternary: Sort by ID as final tiebreaker
+		// Tertiary: Sort by ID as final tiebreaker
 		return a.id.localeCompare(b.id);
 	});
 }
