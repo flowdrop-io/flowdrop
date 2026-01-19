@@ -169,13 +169,15 @@
 		flex-direction: column;
 		height: 100%;
 		min-height: 0;
+		overflow: hidden; /* Prevent page-level scrolling - let chat panel handle it */
 		background-color: #f8fafc;
 	}
 
-	/* Content - fills the available space */
+	/* Content - fills the available space without scrolling */
 	.playground-page__content {
 		flex: 1;
 		min-height: 0;
+		overflow: hidden; /* Prevent content area scrolling - ChatPanel handles its own scroll */
 		display: flex;
 		flex-direction: column;
 	}
