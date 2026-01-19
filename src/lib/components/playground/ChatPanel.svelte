@@ -277,12 +277,14 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+		min-height: 0; /* Critical: allows flexbox to shrink properly */
 		background-color: #ffffff;
 	}
 
-	/* Messages Container */
+	/* Messages Container - Scrollable area that takes remaining space */
 	.chat-panel__messages {
 		flex: 1;
+		min-height: 0; /* Critical: allows overflow to work in flex container */
 		overflow-y: auto;
 		padding: 1.5rem;
 		scroll-behavior: smooth;
@@ -380,10 +382,12 @@
 		color: #6b7280;
 	}
 
-	/* Input Area */
+	/* Input Area - Always stays at bottom, never shrinks */
 	.chat-panel__input-area {
+		flex-shrink: 0;
 		padding: 1rem 1.5rem 1.5rem;
 		background-color: #ffffff;
+		border-top: 1px solid #f3f4f6;
 	}
 
 	.chat-panel__input-container {
