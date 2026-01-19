@@ -30,6 +30,11 @@ export type PlaygroundMessageRole = 'user' | 'assistant' | 'system' | 'log';
 export type PlaygroundMessageLevel = 'info' | 'warning' | 'error' | 'debug';
 
 /**
+ * Status of a playground message
+ */
+export type PlaygroundMessageStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+/**
  * Playground session representing a test conversation
  *
  * Sessions maintain conversation history and allow interactive testing
@@ -111,8 +116,18 @@ export interface PlaygroundMessage {
 	content: string;
 	/** Message timestamp (ISO 8601) */
 	timestamp: string;
-	/** Associated node ID (for log messages) */
-	nodeId?: string;
+	/** Message status */
+	status?: PlaygroundMessageStatus;
+	/**
+	 * Sequence number for ordering messages
+	 * - User messages: incrementing numbers (1, 2, 3, ...)
+	 * - Assistant/system responses: 0 (sorted after parent via parentMessageId)
+	 */
+	sequenceNumber?: number;
+	/** Parent message ID (for assistant responses linked to user messages) */
+	parentMessageId?: string;
+	/** Associated node ID (for log/assistant messages) */
+	nodeId?: string | null;
 	/** Additional message metadata */
 	metadata?: PlaygroundMessageMetadata;
 }
