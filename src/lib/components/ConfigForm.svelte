@@ -34,6 +34,7 @@
 		invalidateSchemaCache,
 		type DynamicSchemaResult
 	} from '$lib/services/dynamicSchemaService.js';
+	import { globalSaveWorkflow } from '$lib/services/globalSave.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -46,6 +47,8 @@
 		showUIExtensions?: boolean;
 		/** Optional workflow ID for context in external links */
 		workflowId?: string;
+		/** Whether to also save the workflow when saving config */
+		saveWorkflowWhenSavingConfig?: boolean;
 		/** Callback when form is saved (includes both config and extensions if enabled) */
 		onSave: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is cancelled */
@@ -58,6 +61,7 @@
 		values,
 		showUIExtensions = true,
 		workflowId,
+		saveWorkflowWhenSavingConfig = false,
 		onSave,
 		onCancel
 	}: Props = $props();
@@ -136,6 +140,11 @@
 	 * Merges node type defaults with instance overrides
 	 */
 	let uiExtensionValues = $state<NodeUIExtensions>({});
+
+	/**
+	 * Flag to track if workflow save is in progress
+	 */
+	let isSavingWorkflow = $state(false);
 
 	/**
 	 * Get initial UI extensions from node (instance level overrides type level)
@@ -270,8 +279,9 @@
 	/**
 	 * Handle form submission
 	 * Collects both config values and UI extension values
+	 * Optionally saves the workflow if the option is enabled
 	 */
-	function handleSave(): void {
+	async function handleSave(): Promise<void> {
 		// Collect all form values including hidden fields
 		const form = document.querySelector('.config-form');
 		const updatedConfig: Record<string, unknown> = { ...configValues };
@@ -321,6 +331,18 @@
 			onSave(updatedConfig, uiExtensionValues);
 		} else {
 			onSave(updatedConfig);
+		}
+
+		// Save workflow if the option is enabled
+		if (saveWorkflowWhenSavingConfig) {
+			isSavingWorkflow = true;
+			try {
+				await globalSaveWorkflow();
+			} catch (error) {
+				console.error('Failed to save workflow after config save:', error);
+			} finally {
+				isSavingWorkflow = false;
+			}
 		}
 	}
 
@@ -498,13 +520,23 @@
 				type="button"
 				class="config-form__button config-form__button--secondary"
 				onclick={onCancel}
+				disabled={isSavingWorkflow}
 			>
 				<Icon icon="heroicons:x-mark" class="config-form__button-icon" />
 				<span>Cancel</span>
 			</button>
-			<button type="submit" class="config-form__button config-form__button--primary">
-				<Icon icon="heroicons:check" class="config-form__button-icon" />
-				<span>Save Changes</span>
+			<button
+				type="submit"
+				class="config-form__button config-form__button--primary"
+				disabled={isSavingWorkflow}
+			>
+				{#if isSavingWorkflow}
+					<span class="config-form__button-spinner"></span>
+					<span>Saving...</span>
+				{:else}
+					<Icon icon="heroicons:check" class="config-form__button-icon" />
+					<span>Save Changes</span>
+				{/if}
 			</button>
 		</div>
 	</form>
@@ -558,6 +590,16 @@
 		padding-top: 1rem;
 		border-top: 1px solid var(--color-ref-gray-100, #f3f4f6);
 		margin-top: 0.5rem;
+	}
+
+	/* Button Spinner */
+	.config-form__button-spinner {
+		width: 1rem;
+		height: 1rem;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-top-color: #ffffff;
+		border-radius: 50%;
+		animation: config-form-spin 0.6s linear infinite;
 	}
 
 	.config-form__button {
