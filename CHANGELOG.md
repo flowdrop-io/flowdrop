@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.36] - 2026-01-21
+
+### Added
+
+- **Editable Node Title & Description**: Nodes can now have per-instance custom titles and descriptions
+  - `instanceTitle` config property overrides the default node label
+  - `instanceDescription` config property overrides the node type description
+  - Supported in `workflowNode` (Default) and `simple` (Simple) node types
+  - Falls back to original values when not set
+
+- **Idea Node**: New BPMN-like conceptual flow diagram node
+  - Rounded diamond shape for decision/idea visualization
+  - Customizable title and description via config
+  - Supports trigger input/output ports
+
+- **Auto-Save on Config Save**: New `saveWorkflowWhenSavingConfig` option in ConfigForm
+  - When enabled, automatically saves the workflow when saving node configuration
+  - Configurable per-form instance
+
+- **Config Schema Documentation**: New `config-schema-special-properties.md` documenting all magic config properties
+  - Reserved property names (`instanceTitle`, `instanceDescription`, `nodeType`, `dynamicInputs`, `dynamicOutputs`, `branches`)
+  - Schema format types (`hidden`, `multiline`, `range`, `json`, `code`, `markdown`, `template`)
+  - Dynamic port properties and gateway branches
+
+### Changed
+
+- **CodeMirror Performance**: Optimized editors using minimal setup for faster load times
+
+---
+
 ## [0.0.35] - 2026-01-19
 
 ### Added
