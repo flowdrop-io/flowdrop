@@ -5,6 +5,7 @@ This document describes the special "magical" properties that FlowDrop recognize
 ## Table of Contents
 
 - [Reserved Config Property Names](#reserved-config-property-names)
+- [Instance Display Overrides](#instance-display-overrides)
 - [Schema Format Types](#schema-format-types)
 - [Dynamic Port Properties](#dynamic-port-properties)
 - [Node Type Selection](#node-type-selection)
@@ -18,10 +19,119 @@ These property names in `config` have special meaning and trigger automatic beha
 
 | Property | Type | Description |
 |----------|------|-------------|
+| `instanceTitle` | `string` | Per-instance title override (replaces `label` display) |
+| `instanceDescription` | `string` | Per-instance description override (replaces `metadata.description` display) |
 | `nodeType` | `string` | Changes the visual rendering type of the node |
 | `dynamicInputs` | `DynamicPort[]` | Creates user-defined input handles |
 | `dynamicOutputs` | `DynamicPort[]` | Creates user-defined output handles |
 | `branches` | `Branch[]` | Creates conditional output branches (Gateway nodes) |
+
+---
+
+## Instance Display Overrides
+
+### `instanceTitle` - Custom Node Title
+
+Allows each node instance to have a unique title that overrides the default `label` derived from the node type name. This is useful when you have multiple instances of the same node type and want to give each a meaningful name.
+
+**Fallback Behavior:**
+- If `instanceTitle` is set in config → displays `instanceTitle`
+- If not set → displays `label` (from node data)
+
+**Supported Node Types:**
+- `workflowNode` (Default)
+- `simple` (Simple)
+
+**Example Config Schema:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "instanceTitle": {
+      "type": "string",
+      "title": "Custom Title",
+      "description": "Override the default node title for this instance",
+      "x-display-order": -2
+    }
+  }
+}
+```
+
+### `instanceDescription` - Custom Node Description
+
+Allows each node instance to have a unique description that overrides the default `metadata.description` from the node type definition. This is useful for documenting what a specific node instance does within your workflow.
+
+**Fallback Behavior:**
+- If `instanceDescription` is set in config → displays `instanceDescription`
+- If not set → displays `metadata.description` (from node type definition)
+
+**Supported Node Types:**
+- `workflowNode` (Default)
+- `simple` (Simple)
+
+**Example Config Schema:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "instanceDescription": {
+      "type": "string",
+      "title": "Custom Description",
+      "description": "Override the default description for this instance",
+      "format": "multiline",
+      "x-display-order": -1
+    }
+  }
+}
+```
+
+### Combined Example
+
+Here's how to add both properties to a node's config schema to make title and description fully editable:
+
+```json
+{
+  "id": "llm-processor",
+  "name": "LLM Processor",
+  "description": "Process text using an LLM",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "instanceTitle": {
+        "type": "string",
+        "title": "Custom Title",
+        "description": "Give this node a custom name (e.g., 'Summarizer', 'Translator')",
+        "x-display-order": -2
+      },
+      "instanceDescription": {
+        "type": "string",
+        "title": "Custom Description",
+        "description": "Describe what this specific node does",
+        "format": "multiline",
+        "x-display-order": -1
+      },
+      "model": {
+        "type": "string",
+        "title": "Model",
+        "enum": ["gpt-4o", "gpt-4o-mini", "claude-3"],
+        "default": "gpt-4o-mini"
+      },
+      "prompt": {
+        "type": "string",
+        "title": "Prompt",
+        "format": "multiline"
+      }
+    }
+  }
+}
+```
+
+**Result:**
+- User can set a custom title like "Email Summarizer" instead of "LLM Processor"
+- User can set a custom description like "Summarizes incoming emails into 3 bullet points"
+- These values are stored in the node's `config` and persist with the workflow
 
 ---
 
@@ -415,6 +525,9 @@ const nodeMetadata: NodeMetadata = {
 | `format` | Schema property | Controls form field rendering (hidden, multiline, json, markdown, template, range) |
 | `multiple` | Schema property | With `enum`, renders checkboxes instead of dropdown |
 | `enumNames` | Schema property | Human-readable labels for enum values |
+| `x-display-order` | Schema property | Controls field ordering (negative values appear first) |
+| `instanceTitle` | Config value | Per-instance title override for node display |
+| `instanceDescription` | Config value | Per-instance description override for node display |
 | `nodeType` | Config value | Switches visual node type |
 | `dynamicInputs` | Config value | User-defined input ports |
 | `dynamicOutputs` | Config value | User-defined output ports |

@@ -29,6 +29,24 @@
 	let isHandleInteraction = $state(false);
 
 	/**
+	 * Instance-specific title override from config.
+	 * Falls back to the original label if not set.
+	 * This allows users to customize the node title per-instance via config.
+	 */
+	const displayTitle = $derived(
+		(props.data.config?.instanceTitle as string) || props.data.label
+	);
+
+	/**
+	 * Instance-specific description override from config.
+	 * Falls back to the metadata description if not set.
+	 * This allows users to customize the node description per-instance via config.
+	 */
+	const displayDescription = $derived(
+		(props.data.config?.instanceDescription as string) || props.data.metadata.description
+	);
+
+	/**
 	 * Get the hideUnconnectedHandles setting from extensions
 	 * Merges node type defaults with instance overrides
 	 */
@@ -173,7 +191,7 @@
 
 			<!-- Node Title - Icon and Title on same line -->
 			<h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
-				{props.data.label}
+				{displayTitle}
 			</h3>
 
 			<!-- Status Indicators -->
@@ -186,7 +204,7 @@
 			class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1"
 			id="node-description-{props.data.nodeId || 'unknown'}"
 		>
-			{props.data.metadata.description}
+			{displayDescription}
 		</p>
 	</div>
 

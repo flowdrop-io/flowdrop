@@ -52,6 +52,26 @@
 		(props.data.metadata?.color as string) || (props.data.config?.color as string) || '#6366f1'
 	);
 
+	/**
+	 * Instance-specific title override from config.
+	 * Falls back to the original label if not set.
+	 * This allows users to customize the node title per-instance via config.
+	 */
+	const displayTitle = $derived(
+		(props.data.config?.instanceTitle as string) || props.data.label
+	);
+
+	/**
+	 * Instance-specific description override from config.
+	 * Falls back to the metadata description if not set.
+	 * This allows users to customize the node description per-instance via config.
+	 */
+	const displayDescription = $derived(
+		(props.data.config?.instanceDescription as string) ||
+			props.data.metadata?.description ||
+			'A configurable simple node'
+	);
+
 	// Handle configuration sidebar - now using global ConfigSidebar
 	function openConfigSidebar(): void {
 		if (props.data.onConfigOpen) {
@@ -198,13 +218,13 @@
 
 			<!-- Node Title -->
 			<h3 class="flowdrop-simple-node__title">
-				{props.data.label}
+				{displayTitle}
 			</h3>
 		</div>
 
 		<!-- Node Description -->
 		<p class="flowdrop-simple-node__description">
-			{props.data.metadata?.description || 'A configurable simple node'}
+			{displayDescription}
 		</p>
 	</div>
 
