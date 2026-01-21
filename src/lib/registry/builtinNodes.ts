@@ -14,6 +14,7 @@ import ToolNode from '../components/nodes/ToolNode.svelte';
 import GatewayNode from '../components/nodes/GatewayNode.svelte';
 import NotesNode from '../components/nodes/NotesNode.svelte';
 import TerminalNode from '../components/nodes/TerminalNode.svelte';
+import IdeaNode from '../components/nodes/IdeaNode.svelte';
 
 /**
  * Source identifier for built-in FlowDrop components
@@ -98,6 +99,17 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
 		component: TerminalNode,
 		icon: 'mdi:circle-double',
 		category: 'functional',
+		source: FLOWDROP_SOURCE,
+		statusPosition: 'top-right',
+		statusSize: 'sm'
+	},
+	{
+		type: 'idea',
+		displayName: 'Idea (Conceptual Flow)',
+		description: 'Conceptual idea node for BPMN-like flow diagrams',
+		component: IdeaNode,
+		icon: 'mdi:lightbulb-outline',
+		category: 'layout',
 		source: FLOWDROP_SOURCE,
 		statusPosition: 'top-right',
 		statusSize: 'sm'
@@ -204,7 +216,8 @@ export type BuiltinNodeType =
 	| 'tool'
 	| 'gateway'
 	| 'note'
-	| 'terminal';
+	| 'terminal'
+	| 'idea';
 
 /**
  * Array of built-in type strings for runtime validation.
@@ -216,7 +229,8 @@ export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
 	'tool',
 	'gateway',
 	'note',
-	'terminal'
+	'terminal',
+	'idea'
 ];
 
 // Auto-register built-ins when this module is imported

@@ -4562,6 +4562,84 @@ export const mockNodes: NodeMetadata[] = [
 			loadingMessage: 'Fetching latest configuration schema...',
 			errorMessage: 'Failed to load configuration schema. Please check your network connection.'
 		}
+	},
+	{
+		id: 'idea',
+		name: 'Idea',
+		type: 'idea',
+		supportedTypes: ['idea'],
+		description: 'Conceptual idea node for BPMN-like flow diagrams. Chain ideas together without committing to specific implementations.',
+		category: 'helpers',
+		icon: 'mdi:lightbulb-outline',
+		color: '#6366f1',
+		version: '1.0.0',
+		tags: ['idea', 'concept', 'bpmn', 'flow', 'planning', 'brainstorm'],
+		inputs: [],
+		outputs: [],
+		config: {
+			title: 'New Idea',
+			description: 'Describe your idea here...',
+			icon: 'mdi:lightbulb-outline',
+			color: '#6366f1',
+			enableLeftPort: true,
+			enableRightPort: true,
+			enableTopPort: false,
+			enableBottomPort: false
+		},
+		configSchema: {
+			type: 'object',
+			properties: {
+				title: {
+					type: 'string',
+					title: 'Title',
+					description: 'The main title or name of your idea',
+					default: 'New Idea'
+				},
+				description: {
+					type: 'string',
+					title: 'Description',
+					description: 'Detailed description of the idea or concept',
+					format: 'multiline',
+					default: 'Describe your idea here...'
+				},
+				icon: {
+					type: 'string',
+					title: 'Icon',
+					description: 'Custom icon for the idea (Iconify format, e.g., mdi:brain)',
+					default: 'mdi:lightbulb-outline'
+				},
+				color: {
+					type: 'string',
+					title: 'Accent Color',
+					description: 'Accent color for visual grouping (hex format)',
+					default: '#6366f1'
+				},
+				enableLeftPort: {
+					type: 'boolean',
+					title: 'Enable Left Port',
+					description: 'Show connection port on the left side (input)',
+					default: true
+				},
+				enableRightPort: {
+					type: 'boolean',
+					title: 'Enable Right Port',
+					description: 'Show connection port on the right side (output)',
+					default: true
+				},
+				enableTopPort: {
+					type: 'boolean',
+					title: 'Enable Top Port',
+					description: 'Show connection port on the top (input)',
+					default: false
+				},
+				enableBottomPort: {
+					type: 'boolean',
+					title: 'Enable Bottom Port',
+					description: 'Show connection port on the bottom (output)',
+					default: false
+				}
+			}
+		}
 	}
 ];
 
