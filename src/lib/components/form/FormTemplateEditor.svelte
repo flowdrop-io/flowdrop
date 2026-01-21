@@ -16,15 +16,23 @@
 
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { EditorView, basicSetup } from 'codemirror';
-	import { EditorState } from '@codemirror/state';
 	import {
+		EditorView,
+		lineNumbers,
+		highlightActiveLineGutter,
+		drawSelection,
+		highlightSpecialChars,
+		highlightActiveLine,
+		keymap,
 		Decoration,
 		type DecorationSet,
 		ViewPlugin,
 		type ViewUpdate,
 		MatchDecorator
 	} from '@codemirror/view';
+	import { EditorState } from '@codemirror/state';
+	import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
+	import { syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
 	import { oneDark } from '@codemirror/theme-one-dark';
 
 	interface Props {
@@ -114,12 +122,34 @@
 
 	/**
 	 * Create editor extensions array for template editing
+	 * Uses minimal setup for better performance (no auto-closing brackets, no autocompletion)
 	 */
 	function createExtensions() {
 		const extensions = [
-			basicSetup,
+			// Essential visual features
+			lineNumbers(),
+			highlightActiveLineGutter(),
+			highlightSpecialChars(),
+			highlightActiveLine(),
+			drawSelection(),
+
+			// Editing features
+			history(),
+			indentOnInput(),
+
+			// Syntax highlighting
+			syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+
+			// Keymaps for basic editing
+			keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+
+			// Template-specific variable highlighter
 			variableHighlighter,
+
+			// Update listener
 			EditorView.updateListener.of(handleUpdate),
+
+			// Custom theme
 			EditorView.theme({
 				'&': {
 					height: height,
