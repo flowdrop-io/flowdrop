@@ -16,8 +16,13 @@
 
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { EditorView, basicSetup } from 'codemirror';
+	import { EditorView, lineNumbers, highlightActiveLineGutter, drawSelection } from '@codemirror/view';
 	import { EditorState } from '@codemirror/state';
+	import { history, historyKeymap } from '@codemirror/commands';
+	import { highlightSpecialChars, highlightActiveLine } from '@codemirror/view';
+	import { syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
+	import { keymap } from '@codemirror/view';
+	import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 	import { json, jsonParseLinter } from '@codemirror/lang-json';
 	import { oneDark } from '@codemirror/theme-one-dark';
 	import { linter, lintGutter } from '@codemirror/lint';
@@ -156,14 +161,36 @@
 
 	/**
 	 * Create editor extensions array
+	 * Uses minimal setup for better performance (no auto-closing brackets, no autocompletion)
 	 */
 	function createExtensions() {
 		const extensions = [
-			basicSetup,
+			// Essential visual features
+			lineNumbers(),
+			highlightActiveLineGutter(),
+			highlightSpecialChars(),
+			highlightActiveLine(),
+			drawSelection(),
+
+			// Editing features
+			history(),
+			indentOnInput(),
+
+			// Syntax highlighting
+			syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+
+			// Keymaps for basic editing
+			keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+
+			// JSON-specific features
 			json(),
 			linter(jsonParseLinter()),
 			lintGutter(),
+
+			// Update listener
 			EditorView.updateListener.of(handleUpdate),
+
+			// Custom theme
 			EditorView.theme({
 				'&': {
 					height: height,
