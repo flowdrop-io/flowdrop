@@ -21,29 +21,40 @@
 		TextConfig,
 		FormConfig
 	} from "../../types/interrupt.js";
-	import { interruptActions, submittingInterrupts, interruptErrors } from "../../stores/interruptStore.js";
+	import { 
+		interrupts,
+		interruptActions, 
+		submittingInterrupts, 
+		interruptErrors 
+	} from "../../stores/interruptStore.js";
 	import { interruptService } from "../../services/interruptService.js";
 
 	/**
 	 * Component props
 	 */
 	interface Props {
-		/** The interrupt to display */
+		/** The interrupt to display (initial data, used for ID lookup) */
 		interrupt: Interrupt;
 		/** Whether to show the timestamp */
 		showTimestamp?: boolean;
 	}
 
-	let { interrupt, showTimestamp = true }: Props = $props();
+	let { interrupt: initialInterrupt, showTimestamp = true }: Props = $props();
+
+	/** 
+	 * Get the current interrupt state from the store.
+	 * This ensures we react to store updates (like status changes).
+	 */
+	const currentInterrupt = $derived($interrupts.get(initialInterrupt.id) ?? initialInterrupt);
 
 	/** Whether this interrupt is resolved or cancelled */
-	const isResolved = $derived(interrupt.status === "resolved" || interrupt.status === "cancelled");
+	const isResolved = $derived(currentInterrupt.status === "resolved" || currentInterrupt.status === "cancelled");
 
 	/** Whether this interrupt is currently submitting */
-	const isSubmitting = $derived($submittingInterrupts.has(interrupt.id));
+	const isSubmitting = $derived($submittingInterrupts.has(currentInterrupt.id));
 
 	/** Error message for this interrupt */
-	const error = $derived($interruptErrors.get(interrupt.id));
+	const error = $derived($interruptErrors.get(currentInterrupt.id));
 
 	/**
 	 * Get the icon for the interrupt type
@@ -81,6 +92,22 @@
 		}
 	}
 
+	/** Get resolved label for the header when resolved */
+	function getResolvedLabel(type: InterruptType): string {
+		switch (type) {
+			case "confirmation":
+				return "Confirmation Submitted";
+			case "choice":
+				return "Selection Made";
+			case "text":
+				return "Input Submitted";
+			case "form":
+				return "Form Submitted";
+			default:
+				return "Response Submitted";
+		}
+	}
+
 	/**
 	 * Format timestamp for display
 	 */
@@ -98,22 +125,22 @@
 	 * Handle resolve action
 	 */
 	async function handleResolve(value: unknown): Promise<void> {
-		interruptActions.setSubmitting(interrupt.id, true);
-		interruptActions.setError(interrupt.id, null);
+		interruptActions.setSubmitting(currentInterrupt.id, true);
+		interruptActions.setError(currentInterrupt.id, null);
 
 		try {
 			// Check if service is configured
 			if (interruptService.isConfigured()) {
-				await interruptService.resolveInterrupt(interrupt.id, value);
+				await interruptService.resolveInterrupt(currentInterrupt.id, value);
 			}
 			// Update local state
-			interruptActions.resolveInterrupt(interrupt.id, value);
+			interruptActions.resolveInterrupt(currentInterrupt.id, value);
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : "Failed to submit response";
-			interruptActions.setError(interrupt.id, errorMessage);
+			interruptActions.setError(currentInterrupt.id, errorMessage);
 			console.error("[InterruptBubble] Resolve error:", err);
 		} finally {
-			interruptActions.setSubmitting(interrupt.id, false);
+			interruptActions.setSubmitting(currentInterrupt.id, false);
 		}
 	}
 
@@ -121,40 +148,45 @@
 	 * Handle cancel action
 	 */
 	async function handleCancel(): Promise<void> {
-		interruptActions.setSubmitting(interrupt.id, true);
-		interruptActions.setError(interrupt.id, null);
+		interruptActions.setSubmitting(currentInterrupt.id, true);
+		interruptActions.setError(currentInterrupt.id, null);
 
 		try {
 			// Check if service is configured
 			if (interruptService.isConfigured()) {
-				await interruptService.cancelInterrupt(interrupt.id);
+				await interruptService.cancelInterrupt(currentInterrupt.id);
 			}
 			// Update local state
-			interruptActions.cancelInterrupt(interrupt.id);
+			interruptActions.cancelInterrupt(currentInterrupt.id);
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : "Failed to cancel";
-			interruptActions.setError(interrupt.id, errorMessage);
+			interruptActions.setError(currentInterrupt.id, errorMessage);
 			console.error("[InterruptBubble] Cancel error:", err);
 		} finally {
-			interruptActions.setSubmitting(interrupt.id, false);
+			interruptActions.setSubmitting(currentInterrupt.id, false);
 		}
 	}
 
 	// Typed config getters for each prompt type
-	const confirmationConfig = $derived(interrupt.config as ConfirmationConfig);
-	const choiceConfig = $derived(interrupt.config as ChoiceConfig);
-	const textConfig = $derived(interrupt.config as TextConfig);
-	const formConfig = $derived(interrupt.config as FormConfig);
+	const confirmationConfig = $derived(currentInterrupt.config as ConfirmationConfig);
+	const choiceConfig = $derived(currentInterrupt.config as ChoiceConfig);
+	const textConfig = $derived(currentInterrupt.config as TextConfig);
+	const formConfig = $derived(currentInterrupt.config as FormConfig);
 </script>
 
 <div
 	class="interrupt-bubble"
 	class:interrupt-bubble--resolved={isResolved}
+	class:interrupt-bubble--cancelled={currentInterrupt.status === "cancelled"}
 	class:interrupt-bubble--submitting={isSubmitting}
 >
 	<!-- Avatar / Icon -->
 	<div class="interrupt-bubble__avatar">
-		<Icon icon="mdi:bell-ring" />
+		{#if isResolved}
+			<Icon icon={currentInterrupt.status === "cancelled" ? "mdi:close-circle" : "mdi:check-circle"} />
+		{:else}
+			<Icon icon="mdi:bell-ring" />
+		{/if}
 	</div>
 
 	<!-- Content -->
@@ -162,51 +194,55 @@
 		<!-- Header -->
 		<div class="interrupt-bubble__header">
 			<span class="interrupt-bubble__type">
-				<Icon icon={getTypeIcon(interrupt.type)} />
-				{getTypeLabel(interrupt.type)}
+				<Icon icon={getTypeIcon(currentInterrupt.type)} />
+				{#if isResolved}
+					{currentInterrupt.status === "cancelled" ? "Cancelled" : getResolvedLabel(currentInterrupt.type)}
+				{:else}
+					{getTypeLabel(currentInterrupt.type)}
+				{/if}
 			</span>
 			{#if showTimestamp}
 				<span class="interrupt-bubble__timestamp">
-					{formatTimestamp(interrupt.createdAt)}
+					{formatTimestamp(currentInterrupt.resolvedAt ?? currentInterrupt.createdAt)}
 				</span>
 			{/if}
 		</div>
 
 		<!-- Prompt content based on type -->
 		<div class="interrupt-bubble__prompt">
-			{#if interrupt.type === "confirmation"}
+			{#if currentInterrupt.type === "confirmation"}
 				<ConfirmationPrompt
 					config={confirmationConfig}
 					{isResolved}
-					resolvedValue={interrupt.responseValue as boolean | undefined}
+					resolvedValue={currentInterrupt.responseValue as boolean | undefined}
 					{isSubmitting}
 					{error}
 					onConfirm={() => handleResolve(true)}
 					onDecline={() => handleResolve(false)}
 				/>
-			{:else if interrupt.type === "choice"}
+			{:else if currentInterrupt.type === "choice"}
 				<ChoicePrompt
 					config={choiceConfig}
 					{isResolved}
-					resolvedValue={interrupt.responseValue as string | string[] | undefined}
+					resolvedValue={currentInterrupt.responseValue as string | string[] | undefined}
 					{isSubmitting}
 					{error}
 					onSubmit={(value) => handleResolve(value)}
 				/>
-			{:else if interrupt.type === "text"}
+			{:else if currentInterrupt.type === "text"}
 				<TextInputPrompt
 					config={textConfig}
 					{isResolved}
-					resolvedValue={interrupt.responseValue as string | undefined}
+					resolvedValue={currentInterrupt.responseValue as string | undefined}
 					{isSubmitting}
 					{error}
 					onSubmit={(value) => handleResolve(value)}
 				/>
-			{:else if interrupt.type === "form"}
+			{:else if currentInterrupt.type === "form"}
 				<FormPrompt
 					config={formConfig}
 					{isResolved}
-					resolvedValue={interrupt.responseValue as Record<string, unknown> | undefined}
+					resolvedValue={currentInterrupt.responseValue as Record<string, unknown> | undefined}
 					{isSubmitting}
 					{error}
 					onSubmit={(value) => handleResolve(value)}
@@ -215,7 +251,7 @@
 		</div>
 
 		<!-- Cancel button (if allowed and pending) -->
-		{#if interrupt.allowCancel && !isResolved && interrupt.type !== "confirmation"}
+		{#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== "confirmation"}
 			<div class="interrupt-bubble__cancel-wrapper">
 				<button
 					type="button"
@@ -230,9 +266,9 @@
 		{/if}
 
 		<!-- Node info footer -->
-		{#if interrupt.nodeId}
+		{#if currentInterrupt.nodeId}
 			<div class="interrupt-bubble__footer">
-				<span class="interrupt-bubble__node" title="Node ID: {interrupt.nodeId}">
+				<span class="interrupt-bubble__node" title="Node ID: {currentInterrupt.nodeId}">
 					<Icon icon="mdi:graph" />
 					<span>From workflow node</span>
 				</span>
@@ -271,6 +307,12 @@
 		box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
 	}
 
+	.interrupt-bubble--cancelled {
+		background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+		border-color: #9ca3af;
+		box-shadow: 0 2px 8px rgba(107, 114, 128, 0.15);
+	}
+
 	.interrupt-bubble--submitting {
 		opacity: 0.9;
 	}
@@ -291,6 +333,10 @@
 
 	.interrupt-bubble--resolved .interrupt-bubble__avatar {
 		background-color: #10b981;
+	}
+
+	.interrupt-bubble--cancelled .interrupt-bubble__avatar {
+		background-color: #6b7280;
 	}
 
 	/* Content */
@@ -323,6 +369,10 @@
 		color: #065f46;
 	}
 
+	.interrupt-bubble--cancelled .interrupt-bubble__type {
+		color: #4b5563;
+	}
+
 	.interrupt-bubble__timestamp {
 		font-size: 0.6875rem;
 		color: #b45309;
@@ -331,6 +381,10 @@
 
 	.interrupt-bubble--resolved .interrupt-bubble__timestamp {
 		color: #047857;
+	}
+
+	.interrupt-bubble--cancelled .interrupt-bubble__timestamp {
+		color: #6b7280;
 	}
 
 	/* Prompt */
@@ -343,6 +397,11 @@
 
 	.interrupt-bubble--resolved .interrupt-bubble__prompt {
 		border-color: rgba(16, 185, 129, 0.2);
+	}
+
+	.interrupt-bubble--cancelled .interrupt-bubble__prompt {
+		border-color: rgba(107, 114, 128, 0.2);
+		opacity: 0.75;
 	}
 
 	/* Cancel button wrapper */
@@ -391,6 +450,10 @@
 		border-color: rgba(16, 185, 129, 0.2);
 	}
 
+	.interrupt-bubble--cancelled .interrupt-bubble__footer {
+		border-color: rgba(107, 114, 128, 0.2);
+	}
+
 	.interrupt-bubble__node {
 		display: flex;
 		align-items: center;
@@ -401,6 +464,10 @@
 
 	.interrupt-bubble--resolved .interrupt-bubble__node {
 		color: #065f46;
+	}
+
+	.interrupt-bubble--cancelled .interrupt-bubble__node {
+		color: #6b7280;
 	}
 
 	/* Responsive */
