@@ -37,15 +37,15 @@ Interrupts allow AI workflows to request human approval, input, or decisions at 
 
 ### Components
 
-| Component | Purpose |
-| --------- | ------- |
-| `InterruptService` | API client for interrupt operations |
-| `interruptStore` | Svelte store for active interrupts |
-| `InterruptBubble` | Container component for rendering prompts |
-| `ConfirmationPrompt` | Yes/No approval UI |
-| `ChoicePrompt` | Single/multiple selection UI |
-| `TextInputPrompt` | Text input UI |
-| `FormPrompt` | JSON Schema-based form UI |
+| Component            | Purpose                                   |
+| -------------------- | ----------------------------------------- |
+| `InterruptService`   | API client for interrupt operations       |
+| `interruptStore`     | Svelte store for active interrupts        |
+| `InterruptBubble`    | Container component for rendering prompts |
+| `ConfirmationPrompt` | Yes/No approval UI                        |
+| `ChoicePrompt`       | Single/multiple selection UI              |
+| `TextInputPrompt`    | Text input UI                             |
+| `FormPrompt`         | JSON Schema-based form UI                 |
 
 ## Interrupt Types
 
@@ -56,14 +56,15 @@ Simple yes/no prompt for binary decisions.
 ```typescript
 interface ConfirmationInterruptConfig {
 	message: string;
-	confirm_label?: string;  // Default: "Yes"
-	cancel_label?: string;   // Default: "No"
+	confirm_label?: string; // Default: "Yes"
+	cancel_label?: string; // Default: "No"
 }
 ```
 
 **Response type**: `boolean`
 
 **Use cases**:
+
 - Approving actions
 - Confirming deletions
 - Proceeding with sensitive operations
@@ -82,7 +83,7 @@ interface ChoiceOption {
 interface ChoiceInterruptConfig {
 	message: string;
 	options: ChoiceOption[];
-	multiple?: boolean;        // Default: false
+	multiple?: boolean; // Default: false
 	min_selections?: number;
 	max_selections?: number;
 }
@@ -91,6 +92,7 @@ interface ChoiceInterruptConfig {
 **Response type**: `string` (single) or `string[]` (multiple)
 
 **Use cases**:
+
 - Selecting from alternatives
 - Choosing execution paths
 - Picking from recommendations
@@ -103,7 +105,7 @@ Free-form text input.
 interface TextInterruptConfig {
 	message: string;
 	placeholder?: string;
-	multiline?: boolean;      // Default: false
+	multiline?: boolean; // Default: false
 	min_length?: number;
 	max_length?: number;
 	default_value?: string;
@@ -113,6 +115,7 @@ interface TextInterruptConfig {
 **Response type**: `string`
 
 **Use cases**:
+
 - Providing descriptions
 - Entering custom values
 - Adding context or notes
@@ -124,7 +127,7 @@ Complex data entry using JSON Schema.
 ```typescript
 interface FormInterruptConfig {
 	message: string;
-	schema: ConfigSchema;     // JSON Schema
+	schema: ConfigSchema; // JSON Schema
 	default_values?: Record<string, unknown>;
 }
 ```
@@ -132,6 +135,7 @@ interface FormInterruptConfig {
 **Response type**: `object` (matching schema structure)
 
 **Use cases**:
+
 - Complex data collection
 - Structured input with validation
 - Multi-field forms
@@ -150,7 +154,7 @@ The `ChatPanel` component automatically detects and renders interrupts embedded 
 
 {#each messages as message}
 	<MessageBubble {message} />
-	
+
 	{#if isInterruptMessageMetadata(message.metadata)}
 		{@const interrupt = metadataToInterrupt(message.metadata, message.id, message.content)}
 		<InterruptBubble
@@ -167,14 +171,10 @@ The `ChatPanel` component automatically detects and renders interrupts embedded 
 For custom implementations:
 
 ```typescript
-import { 
-	interruptService,
-	interruptActions,
-	activeInterrupts 
-} from '@d34dman/flowdrop/playground';
+import { interruptService, interruptActions, activeInterrupts } from '@d34dman/flowdrop/playground';
 
 // Subscribe to active interrupts
-activeInterrupts.subscribe(interrupts => {
+activeInterrupts.subscribe((interrupts) => {
 	console.log('Active interrupts:', interrupts);
 });
 
@@ -182,9 +182,9 @@ activeInterrupts.subscribe(interrupts => {
 async function resolveInterrupt(interruptId: string, value: unknown) {
 	try {
 		const resolved = await interruptService.resolveInterrupt(interruptId, value);
-		interruptActions.updateInterrupt(interruptId, { 
+		interruptActions.updateInterrupt(interruptId, {
 			status: 'resolved',
-			response: resolved.response 
+			response: resolved.response
 		});
 	} catch (error) {
 		console.error('Failed to resolve:', error);
@@ -209,11 +209,11 @@ You can use prompt components directly:
 ```svelte
 <script lang="ts">
 	import { ConfirmationPrompt } from '@d34dman/flowdrop/playground';
-	
+
 	let config = {
-		message: "Do you approve this action?",
-		confirm_label: "Approve",
-		cancel_label: "Reject"
+		message: 'Do you approve this action?',
+		confirm_label: 'Approve',
+		cancel_label: 'Reject'
 	};
 </script>
 
@@ -254,13 +254,13 @@ When a workflow requires user input, the backend sends a message with interrupt 
 
 ### API Endpoints
 
-| Endpoint | Method | Purpose |
-| -------- | ------ | ------- |
-| `/interrupts/{id}` | GET | Get interrupt details |
-| `/interrupts/{id}` | POST | Resolve interrupt |
-| `/interrupts/{id}/cancel` | POST | Cancel interrupt |
-| `/playground/sessions/{id}/interrupts` | GET | List session interrupts |
-| `/pipelines/{id}/interrupts` | GET | List pipeline interrupts |
+| Endpoint                               | Method | Purpose                  |
+| -------------------------------------- | ------ | ------------------------ |
+| `/interrupts/{id}`                     | GET    | Get interrupt details    |
+| `/interrupts/{id}`                     | POST   | Resolve interrupt        |
+| `/interrupts/{id}/cancel`              | POST   | Cancel interrupt         |
+| `/playground/sessions/{id}/interrupts` | GET    | List session interrupts  |
+| `/pipelines/{id}/interrupts`           | GET    | List pipeline interrupts |
 
 ### Endpoint Configuration
 
@@ -336,7 +336,7 @@ interruptService.startPolling(
 			console.log('Interrupt resolved externally');
 		}
 	},
-	1500  // Poll interval in ms
+	1500 // Poll interval in ms
 );
 
 // Stop polling
@@ -368,10 +368,10 @@ Write clear, actionable interrupt messages:
 
 ```typescript
 // ✅ Good
-"Do you approve sending this email to 150 recipients?"
+'Do you approve sending this email to 150 recipients?';
 
-// ❌ Bad  
-"Proceed?"
+// ❌ Bad
+'Proceed?';
 ```
 
 ### 2. Meaningful Labels
@@ -380,12 +380,12 @@ Use descriptive button/option labels:
 
 ```typescript
 // ✅ Good
-confirm_label: "Yes, send email"
-cancel_label: "No, cancel"
+confirm_label: 'Yes, send email';
+cancel_label: 'No, cancel';
 
 // ❌ Bad
-confirm_label: "Yes"
-cancel_label: "No"
+confirm_label: 'Yes';
+cancel_label: 'No';
 ```
 
 ### 3. Default Values
@@ -452,26 +452,23 @@ import type {
 } from '@d34dman/flowdrop/playground';
 
 // Type guards
-import { 
-	isInterruptMessageMetadata,
-	metadataToInterrupt 
-} from '@d34dman/flowdrop/playground';
+import { isInterruptMessageMetadata, metadataToInterrupt } from '@d34dman/flowdrop/playground';
 ```
 
 ## Files Reference
 
-| File | Purpose |
-| ---- | ------- |
-| `src/lib/types/interrupt.ts` | Type definitions |
-| `src/lib/services/interruptService.ts` | API client |
-| `src/lib/stores/interruptStore.ts` | State management |
-| `src/lib/components/interrupt/InterruptBubble.svelte` | Main container |
-| `src/lib/components/interrupt/ConfirmationPrompt.svelte` | Confirmation UI |
-| `src/lib/components/interrupt/ChoicePrompt.svelte` | Choice selection UI |
-| `src/lib/components/interrupt/TextInputPrompt.svelte` | Text input UI |
-| `src/lib/components/interrupt/FormPrompt.svelte` | Form UI |
-| `src/lib/components/interrupt/index.ts` | Barrel exports |
-| `src/lib/config/endpoints.ts` | API endpoint config |
+| File                                                     | Purpose             |
+| -------------------------------------------------------- | ------------------- |
+| `src/lib/types/interrupt.ts`                             | Type definitions    |
+| `src/lib/services/interruptService.ts`                   | API client          |
+| `src/lib/stores/interruptStore.ts`                       | State management    |
+| `src/lib/components/interrupt/InterruptBubble.svelte`    | Main container      |
+| `src/lib/components/interrupt/ConfirmationPrompt.svelte` | Confirmation UI     |
+| `src/lib/components/interrupt/ChoicePrompt.svelte`       | Choice selection UI |
+| `src/lib/components/interrupt/TextInputPrompt.svelte`    | Text input UI       |
+| `src/lib/components/interrupt/FormPrompt.svelte`         | Form UI             |
+| `src/lib/components/interrupt/index.ts`                  | Barrel exports      |
+| `src/lib/config/endpoints.ts`                            | API endpoint config |
 
 ## See Also
 

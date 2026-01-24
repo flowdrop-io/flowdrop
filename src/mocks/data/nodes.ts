@@ -2286,7 +2286,8 @@ export const mockNodes: NodeMetadata[] = [
 		name: 'ForEach Loop',
 		type: 'default',
 		supportedTypes: ['default', 'simple'],
-		description: 'Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.',
+		description:
+			'Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.',
 		category: 'logic',
 		icon: 'mdi:repeat',
 		color: '#8b5cf6',
@@ -2307,7 +2308,8 @@ export const mockNodes: NodeMetadata[] = [
 				type: 'input',
 				dataType: 'mixed',
 				required: false,
-				description: 'Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle.'
+				description:
+					'Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle.'
 			},
 			{
 				id: 'trigger',
@@ -4568,7 +4570,8 @@ export const mockNodes: NodeMetadata[] = [
 		name: 'Idea',
 		type: 'idea',
 		supportedTypes: ['idea'],
-		description: 'Conceptual idea node for BPMN-like flow diagrams. Chain ideas together without committing to specific implementations.',
+		description:
+			'Conceptual idea node for BPMN-like flow diagrams. Chain ideas together without committing to specific implementations.',
 		category: 'helpers',
 		icon: 'mdi:lightbulb-outline',
 		color: '#6366f1',

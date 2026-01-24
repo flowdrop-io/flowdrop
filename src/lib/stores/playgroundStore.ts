@@ -463,10 +463,10 @@ export function getLatestMessageTimestamp(): string | null {
 
 /**
  * Refresh messages for the current session
- * 
+ *
  * This function is useful after interrupt resolution when polling
  * has stopped but new messages may exist on the server.
- * 
+ *
  * @param fetchMessages - Async function to fetch messages from the API
  * @returns Promise that resolves when messages are refreshed
  */
@@ -478,16 +478,16 @@ export async function refreshSessionMessages(
 
 	try {
 		const response = await fetchMessages(session.id);
-		
+
 		// Add new messages (deduplicates automatically)
 		if (response.data && response.data.length > 0) {
 			playgroundActions.addMessages(response.data);
 		}
-		
+
 		// Update session status
 		if (response.sessionStatus) {
 			playgroundActions.updateSessionStatus(response.sessionStatus);
-			
+
 			// Update executing state based on session status
 			if (
 				response.sessionStatus === 'idle' ||
@@ -498,6 +498,6 @@ export async function refreshSessionMessages(
 			}
 		}
 	} catch (err) {
-		console.error("[playgroundStore] Failed to refresh messages:", err);
+		console.error('[playgroundStore] Failed to refresh messages:', err);
 	}
 }

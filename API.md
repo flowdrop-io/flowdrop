@@ -1360,12 +1360,12 @@ The Interrupts API enables Human-in-the-Loop (HITL) functionality, allowing work
 
 Interrupts support four types of user interaction:
 
-| Type | Description | Use Case |
-| ---- | ----------- | -------- |
-| `confirmation` | Yes/No approval | Approving actions, confirming deletions |
-| `choice` | Single/multiple selection | Selecting options, choosing paths |
-| `text` | Free-form text input | Providing descriptions, entering values |
-| `form` | JSON Schema-based form | Complex data entry with validation |
+| Type           | Description               | Use Case                                |
+| -------------- | ------------------------- | --------------------------------------- |
+| `confirmation` | Yes/No approval           | Approving actions, confirming deletions |
+| `choice`       | Single/multiple selection | Selecting options, choosing paths       |
+| `text`         | Free-form text input      | Providing descriptions, entering values |
+| `form`         | JSON Schema-based form    | Complex data entry with validation      |
 
 ### Interrupt Flow
 
@@ -1424,6 +1424,7 @@ Submit user response to resolve an interrupt.
 ```
 
 The `value` type depends on the interrupt type:
+
 - `confirmation`: `boolean` (true = confirmed, false = rejected)
 - `choice`: `string` or `string[]` (selected option values)
 - `text`: `string` (user input)
@@ -1473,11 +1474,11 @@ List all interrupts for a playground session.
 
 **Query Parameters:**
 
-| Parameter | Type | Description |
-| --------- | ---- | ----------- |
-| `status` | string | Filter by status: `pending`, `resolved`, `cancelled` |
-| `limit` | integer | Maximum results (default: 50) |
-| `offset` | integer | Pagination offset (default: 0) |
+| Parameter | Type    | Description                                          |
+| --------- | ------- | ---------------------------------------------------- |
+| `status`  | string  | Filter by status: `pending`, `resolved`, `cancelled` |
+| `limit`   | integer | Maximum results (default: 50)                        |
+| `offset`  | integer | Pagination offset (default: 0)                       |
 
 **Response:**
 
@@ -1573,8 +1574,8 @@ Complex form based on JSON Schema.
 			"properties": {
 				"name": { "type": "string", "title": "Name" },
 				"email": { "type": "string", "title": "Email", "format": "email" },
-				"priority": { 
-					"type": "string", 
+				"priority": {
+					"type": "string",
 					"title": "Priority",
 					"enum": ["low", "medium", "high"]
 				}
@@ -1615,24 +1616,24 @@ Interrupts are communicated via playground message metadata:
 
 FlowDrop provides built-in components for rendering interrupts:
 
-| Component | Purpose |
-| --------- | ------- |
-| `InterruptBubble` | Main container that renders the appropriate prompt |
-| `ConfirmationPrompt` | Yes/No buttons |
-| `ChoicePrompt` | Single/multiple selection |
-| `TextInputPrompt` | Text input field |
-| `FormPrompt` | JSON Schema-based form |
+| Component            | Purpose                                            |
+| -------------------- | -------------------------------------------------- |
+| `InterruptBubble`    | Main container that renders the appropriate prompt |
+| `ConfirmationPrompt` | Yes/No buttons                                     |
+| `ChoicePrompt`       | Single/multiple selection                          |
+| `TextInputPrompt`    | Text input field                                   |
+| `FormPrompt`         | JSON Schema-based form                             |
 
 Import from the playground module:
 
 ```typescript
-import { 
+import {
 	InterruptBubble,
 	ConfirmationPrompt,
 	ChoicePrompt,
 	TextInputPrompt,
 	FormPrompt
-} from "@d34dman/flowdrop/playground";
+} from '@d34dman/flowdrop/playground';
 ```
 
 ---
