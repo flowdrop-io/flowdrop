@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.38] - 2026-01-24
+
+### Added
+
+- **Human-in-the-Loop (HITL) Interrupts**: Workflows can pause execution and request user input
+  - Four interrupt types: `confirmation`, `choice`, `text`, `form`
+  - `InterruptService` for API operations (resolve, cancel, polling)
+  - `interruptStore` for state management
+  - UI components: `InterruptBubble`, `ConfirmationPrompt`, `ChoicePrompt`, `TextInputPrompt`, `FormPrompt`
+  - State machine for safe transitions (`idle` → `submitting` → `resolved`/`cancelled`/`error`)
+  - Integrated into Playground with inline rendering in chat flow
+  - MSW mock handlers for testing
+  - Documentation: `docs/interrupt-feature.md`
+
+- **Triggers Category**: Added `'triggers'` to `NodeCategory` type
+
+### Changed
+
+- **Interrupt UI Theme**: Neutral blue theme with design tokens for all prompt components
+
+### Fixed
+
+- **Interrupt Reactivity**: Fixed `InterruptBubble` not tracking store updates
+- **Text Input Validation**: Fixed validation not updating reactively
+- **Playground State Mutation**: Resolved `state_unsafe_mutation` error
+- **Message Refresh**: Messages now refresh after interrupt resolution
+- **Input Focus**: Chat input auto-focuses when user can type again
+
+---
+
 ## [0.0.37] - 2026-01-24
 
 ### Fixed
