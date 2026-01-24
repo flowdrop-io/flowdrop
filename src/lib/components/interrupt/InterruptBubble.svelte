@@ -37,9 +37,11 @@
 		interrupt: Interrupt;
 		/** Whether to show the timestamp */
 		showTimestamp?: boolean;
+		/** Callback to refresh messages after interrupt resolution */
+		onResolved?: () => void;
 	}
 
-	let { interrupt: initialInterrupt, showTimestamp = true }: Props = $props();
+	let { interrupt: initialInterrupt, showTimestamp = true, onResolved }: Props = $props();
 
 	/** 
 	 * Get the current interrupt state from the store.
@@ -135,6 +137,9 @@
 			}
 			// Update local state
 			interruptActions.resolveInterrupt(currentInterrupt.id, value);
+			
+			// Notify parent to refresh messages (new messages may be available)
+			onResolved?.();
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : "Failed to submit response";
 			interruptActions.setError(currentInterrupt.id, errorMessage);
@@ -158,6 +163,9 @@
 			}
 			// Update local state
 			interruptActions.cancelInterrupt(currentInterrupt.id);
+			
+			// Notify parent to refresh messages (new messages may be available)
+			onResolved?.();
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : "Failed to cancel";
 			interruptActions.setError(currentInterrupt.id, errorMessage);
