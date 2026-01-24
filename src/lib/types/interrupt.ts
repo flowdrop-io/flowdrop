@@ -9,6 +9,36 @@
 
 import type { ConfigSchema } from "./index.js";
 
+// Re-export state machine types for convenience
+export type {
+	InterruptState,
+	IdleState,
+	SubmittingState,
+	ResolvedState,
+	CancelledState,
+	ErrorState,
+	InterruptAction,
+	SubmitAction,
+	CancelAction,
+	SuccessAction,
+	FailureAction,
+	RetryAction,
+	ResetAction,
+	TransitionResult
+} from "./interruptState.js";
+
+export {
+	initialState,
+	transition,
+	isTerminalState,
+	isSubmitting,
+	hasError,
+	canSubmit,
+	getErrorMessage,
+	getResolvedValue,
+	toLegacyStatus
+} from "./interruptState.js";
+
 /**
  * Types of interrupts supported by the system
  *
@@ -117,6 +147,7 @@ export type InterruptConfig = ConfirmationConfig | ChoiceConfig | TextConfig | F
  * Core interrupt data structure
  *
  * Represents a pending or resolved interrupt request from the workflow.
+ * Includes a state machine for tracking the interaction state.
  *
  * @example
  * ```typescript
@@ -134,7 +165,8 @@ export type InterruptConfig = ConfirmationConfig | ChoiceConfig | TextConfig | F
  *     message: "Send email to John?",
  *     confirmLabel: "Send",
  *     cancelLabel: "Don't Send"
- *   }
+ *   },
+ *   state: { status: "idle" }
  * };
  * ```
  */
@@ -143,7 +175,10 @@ export interface Interrupt {
 	id: string;
 	/** Type of interrupt (confirmation, choice, text, form) */
 	type: InterruptType;
-	/** Current status of the interrupt */
+	/**
+	 * Current status of the interrupt (legacy field)
+	 * @deprecated Use `state` for more detailed status tracking
+	 */
 	status: InterruptStatus;
 	/** Primary message/prompt to display */
 	message: string;
