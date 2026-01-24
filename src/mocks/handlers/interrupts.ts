@@ -130,42 +130,37 @@ export const resolveInterruptHandler = http.post(
 
 		console.log("[MSW] Interrupt resolved:", id, "with value:", value);
 
-		// Simulate workflow continuation after interrupt resolution
+		// Add workflow continuation messages synchronously
+		// (async delays cause issues because frontend stops polling when session is idle)
 		if (interrupt.sessionId) {
-			// Add a log message showing the response was received
-			setTimeout(() => {
-				addMessage(interrupt.sessionId, "log", `User response received: ${formatValue(value)}`, {
-					level: "info",
-					nodeId: "node-hitl",
-					nodeLabel: "Human Input"
-				});
-			}, 300);
+			const sessionId = interrupt.sessionId;
+			
+			// Add messages showing the workflow continuation
+			addMessage(sessionId, "log", `User response received: ${formatValue(value)}`, {
+				level: "info",
+				nodeId: "node-hitl",
+				nodeLabel: "Human Input"
+			});
 
-			// Add completion messages
-			setTimeout(() => {
-				addMessage(interrupt.sessionId, "log", "Continuing workflow execution...", {
-					level: "info",
-					nodeId: "node-processor",
-					nodeLabel: "Processor"
-				});
-			}, 800);
+			addMessage(sessionId, "log", "Continuing workflow execution...", {
+				level: "info",
+				nodeId: "node-processor",
+				nodeLabel: "Processor"
+			});
 
-			setTimeout(() => {
-				addMessage(interrupt.sessionId, "assistant", `Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response: **${formatValue(value)}**`, {
-					nodeId: "node-output",
-					nodeLabel: "Output",
-					duration: 500
-				});
-			}, 1500);
+			addMessage(sessionId, "assistant", `Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response: **${formatValue(value)}**`, {
+				nodeId: "node-output",
+				nodeLabel: "Output",
+				duration: 500
+			});
 
-			setTimeout(() => {
-				addMessage(interrupt.sessionId, "log", "Workflow execution completed", {
-					level: "info",
-					nodeId: "node-end",
-					nodeLabel: "End"
-				});
-				updateSessionStatus(interrupt.sessionId, "completed");
-			}, 2000);
+			addMessage(sessionId, "log", "Workflow execution completed", {
+				level: "info",
+				nodeId: "node-end",
+				nodeLabel: "End"
+			});
+			
+			updateSessionStatus(sessionId, "completed");
 		}
 
 		return HttpResponse.json({
@@ -254,23 +249,22 @@ export const cancelInterruptHandler = http.post(
 
 		console.log("[MSW] Interrupt cancelled:", id);
 
-		// Simulate workflow handling of cancellation
+		// Add workflow cancellation messages synchronously
 		if (interrupt.sessionId) {
-			setTimeout(() => {
-				addMessage(interrupt.sessionId, "log", "User cancelled the input request", {
-					level: "warning",
-					nodeId: "node-hitl",
-					nodeLabel: "Human Input"
-				});
-			}, 300);
+			const sessionId = interrupt.sessionId;
+			
+			addMessage(sessionId, "log", "User cancelled the input request", {
+				level: "warning",
+				nodeId: "node-hitl",
+				nodeLabel: "Human Input"
+			});
 
-			setTimeout(() => {
-				addMessage(interrupt.sessionId, "assistant", "The workflow was cancelled at your request. You can start a new conversation to try again.", {
-					nodeId: "node-output",
-					nodeLabel: "Output"
-				});
-				updateSessionStatus(interrupt.sessionId, "completed");
-			}, 800);
+			addMessage(sessionId, "assistant", "The workflow was cancelled at your request. You can start a new conversation to try again.", {
+				nodeId: "node-output",
+				nodeLabel: "Output"
+			});
+			
+			updateSessionStatus(sessionId, "completed");
 		}
 
 		return HttpResponse.json({
