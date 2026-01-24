@@ -27,6 +27,24 @@
 	let props: Props = $props();
 
 	/**
+	 * Instance-specific title override from config.
+	 * Falls back to the original label if not set.
+	 * This allows users to customize the node title per-instance via config.
+	 */
+	const displayTitle = $derived(
+		(props.data.config?.instanceTitle as string) || props.data.label
+	);
+
+	/**
+	 * Instance-specific description override from config.
+	 * Falls back to the metadata description if not set.
+	 * This allows users to customize the node description per-instance via config.
+	 */
+	const displayDescription = $derived(
+		(props.data.config?.instanceDescription as string) || props.data.metadata.description
+	);
+
+	/**
 	 * Get the hideUnconnectedHandles setting from extensions
 	 * Merges node type defaults with instance overrides
 	 */
@@ -137,7 +155,7 @@
 	onkeydown={handleKeydown}
 	role="button"
 	tabindex="0"
-	aria-label="Gateway node: {props.data.metadata.name}"
+	aria-label="Gateway node: {displayTitle}"
 	aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
 	<!-- Node Header -->
@@ -151,17 +169,17 @@
 				<Icon icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)} />
 			</div>
 
-			<!-- Node Title -->
+			<!-- Node Title - uses instanceTitle override if set -->
 			<h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
-				{props.data.label}
+				{displayTitle}
 			</h3>
 		</div>
-		<!-- Node Description -->
+		<!-- Node Description - uses instanceDescription override if set -->
 		<p
 			class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1"
 			id="node-description-{props.data.nodeId || 'unknown'}"
 		>
-			{props.data.metadata.description}
+			{displayDescription}
 		</p>
 	</div>
 
