@@ -345,15 +345,16 @@
 </div>
 
 <style>
+	/* Uses design tokens from base.css: --flowdrop-interrupt-* */
 	.interrupt-bubble {
 		display: flex;
 		gap: 0.75rem;
 		padding: 1rem 1.25rem;
 		margin: 0.75rem 1rem;
 		border-radius: 0.75rem;
-		background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-		border: 1px solid #f59e0b;
-		box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+		background: var(--flowdrop-interrupt-pending-bg);
+		border: 1px solid var(--flowdrop-interrupt-pending-border);
+		box-shadow: 0 2px 8px var(--flowdrop-interrupt-pending-shadow);
 		animation: interruptSlideIn 0.3s ease-out;
 	}
 
@@ -368,23 +369,23 @@
 		}
 	}
 
-	/* Completed state - neutral blue/teal to indicate response received without implying good/bad */
+	/* Completed state - neutral blue to indicate response received without implying good/bad */
 	.interrupt-bubble--completed {
-		background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-		border-color: #3b82f6;
-		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+		background: var(--flowdrop-interrupt-completed-bg);
+		border-color: var(--flowdrop-interrupt-completed-border);
+		box-shadow: 0 2px 8px var(--flowdrop-interrupt-completed-shadow);
 	}
 
 	.interrupt-bubble--cancelled {
-		background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-		border-color: #9ca3af;
-		box-shadow: 0 2px 8px rgba(107, 114, 128, 0.15);
+		background: var(--flowdrop-interrupt-cancelled-bg);
+		border-color: var(--flowdrop-interrupt-cancelled-border);
+		box-shadow: 0 2px 8px var(--flowdrop-interrupt-cancelled-shadow);
 	}
 
 	.interrupt-bubble--error {
-		background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
-		border-color: #ef4444;
-		box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+		background: var(--flowdrop-interrupt-error-bg);
+		border-color: var(--flowdrop-interrupt-error-border);
+		box-shadow: 0 2px 8px var(--flowdrop-interrupt-error-shadow);
 	}
 
 	.interrupt-bubble--submitting {
@@ -400,21 +401,21 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 50%;
-		background-color: #f59e0b;
+		background-color: var(--flowdrop-interrupt-pending-avatar);
 		color: #ffffff;
 		font-size: 1.125rem;
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__avatar {
-		background-color: #3b82f6;
+		background-color: var(--flowdrop-interrupt-completed-avatar);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__avatar {
-		background-color: #6b7280;
+		background-color: var(--flowdrop-interrupt-cancelled-avatar);
 	}
 
 	.interrupt-bubble--error .interrupt-bubble__avatar {
-		background-color: #ef4444;
+		background-color: var(--flowdrop-interrupt-error-avatar);
 	}
 
 	/* Content */
@@ -440,37 +441,37 @@
 		gap: 0.375rem;
 		font-weight: 600;
 		font-size: 0.875rem;
-		color: #92400e;
+		color: var(--flowdrop-interrupt-pending-text);
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__type {
-		color: #1e40af;
+		color: var(--flowdrop-interrupt-completed-text);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__type {
-		color: #4b5563;
+		color: var(--flowdrop-interrupt-cancelled-text);
 	}
 
 	.interrupt-bubble--error .interrupt-bubble__type {
-		color: #b91c1c;
+		color: var(--flowdrop-interrupt-error-text);
 	}
 
 	.interrupt-bubble__timestamp {
 		font-size: 0.6875rem;
-		color: #b45309;
+		color: var(--flowdrop-interrupt-pending-text-light);
 		font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__timestamp {
-		color: #2563eb;
+		color: var(--flowdrop-interrupt-completed-text-light);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__timestamp {
-		color: #6b7280;
+		color: var(--flowdrop-interrupt-cancelled-text-light);
 	}
 
 	.interrupt-bubble--error .interrupt-bubble__timestamp {
-		color: #dc2626;
+		color: var(--flowdrop-interrupt-error-text-light);
 	}
 
 	/* Error message */
@@ -479,9 +480,9 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 0.75rem;
-		background-color: rgba(239, 68, 68, 0.1);
+		background-color: var(--color-ref-red-50, rgba(239, 68, 68, 0.1));
 		border-radius: 0.375rem;
-		color: #b91c1c;
+		color: var(--flowdrop-interrupt-error-text);
 		font-size: 0.8125rem;
 	}
 
@@ -495,7 +496,7 @@
 		font-weight: 500;
 		font-family: inherit;
 		color: #ffffff;
-		background-color: #ef4444;
+		background-color: var(--flowdrop-interrupt-error-avatar);
 		border: none;
 		border-radius: 0.25rem;
 		cursor: pointer;
@@ -503,28 +504,28 @@
 	}
 
 	.interrupt-bubble__retry-btn:hover {
-		background-color: #dc2626;
+		background-color: var(--color-ref-red-600, #dc2626);
 	}
 
 	/* Prompt */
 	.interrupt-bubble__prompt {
-		background-color: rgba(255, 255, 255, 0.85);
+		background-color: var(--flowdrop-interrupt-prompt-bg);
 		border-radius: 0.5rem;
 		padding: 1rem;
-		border: 1px solid rgba(245, 158, 11, 0.2);
+		border: 1px solid var(--flowdrop-interrupt-prompt-border-pending);
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__prompt {
-		border-color: rgba(59, 130, 246, 0.2);
+		border-color: var(--flowdrop-interrupt-prompt-border-completed);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__prompt {
-		border-color: rgba(107, 114, 128, 0.2);
+		border-color: var(--flowdrop-interrupt-prompt-border-cancelled);
 		opacity: 0.75;
 	}
 
 	.interrupt-bubble--error .interrupt-bubble__prompt {
-		border-color: rgba(239, 68, 68, 0.2);
+		border-color: var(--flowdrop-interrupt-prompt-border-error);
 	}
 
 	/* Cancel button wrapper */
@@ -566,19 +567,19 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding-top: 0.5rem;
-		border-top: 1px solid rgba(245, 158, 11, 0.2);
+		border-top: 1px solid var(--flowdrop-interrupt-prompt-border-pending);
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__footer {
-		border-color: rgba(59, 130, 246, 0.2);
+		border-color: var(--flowdrop-interrupt-prompt-border-completed);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__footer {
-		border-color: rgba(107, 114, 128, 0.2);
+		border-color: var(--flowdrop-interrupt-prompt-border-cancelled);
 	}
 
 	.interrupt-bubble--error .interrupt-bubble__footer {
-		border-color: rgba(239, 68, 68, 0.2);
+		border-color: var(--flowdrop-interrupt-prompt-border-error);
 	}
 
 	.interrupt-bubble__node {
@@ -586,19 +587,19 @@
 		align-items: center;
 		gap: 0.25rem;
 		font-size: 0.6875rem;
-		color: #92400e;
+		color: var(--flowdrop-interrupt-pending-text);
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__node {
-		color: #1e40af;
+		color: var(--flowdrop-interrupt-completed-text);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__node {
-		color: #6b7280;
+		color: var(--flowdrop-interrupt-cancelled-text);
 	}
 
 	.interrupt-bubble--error .interrupt-bubble__node {
-		color: #b91c1c;
+		color: var(--flowdrop-interrupt-error-text);
 	}
 
 	/* Responsive */

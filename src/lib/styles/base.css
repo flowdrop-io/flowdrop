@@ -1180,6 +1180,71 @@
 	--flowdrop-text-color-primary: var(--color-ref-gray-900);
 	--flowdrop-text-color-secondary: var(--color-ref-gray-600);
 
+	/* =========================================================================
+	   Interrupt Component Tokens
+	   ========================================================================= */
+
+	/* Interrupt state: Pending (awaiting user response) */
+	--flowdrop-interrupt-pending-bg: linear-gradient(135deg, var(--color-ref-amber-100) 0%, var(--color-ref-amber-200) 100%);
+	--flowdrop-interrupt-pending-border: var(--color-ref-amber-500);
+	--flowdrop-interrupt-pending-shadow: rgba(245, 158, 11, 0.15);
+	--flowdrop-interrupt-pending-avatar: var(--color-ref-amber-500);
+	--flowdrop-interrupt-pending-text: var(--color-ref-amber-800);
+	--flowdrop-interrupt-pending-text-light: var(--color-ref-amber-700);
+
+	/* Interrupt state: Completed (response received - neutral) */
+	--flowdrop-interrupt-completed-bg: linear-gradient(135deg, var(--color-ref-blue-50) 0%, var(--color-ref-blue-100) 100%);
+	--flowdrop-interrupt-completed-border: var(--color-ref-blue-500);
+	--flowdrop-interrupt-completed-shadow: rgba(59, 130, 246, 0.15);
+	--flowdrop-interrupt-completed-avatar: var(--color-ref-blue-500);
+	--flowdrop-interrupt-completed-text: var(--color-ref-blue-800);
+	--flowdrop-interrupt-completed-text-light: var(--color-ref-blue-600);
+
+	/* Interrupt state: Cancelled (dismissed without responding) */
+	--flowdrop-interrupt-cancelled-bg: linear-gradient(135deg, var(--color-ref-gray-100) 0%, var(--color-ref-gray-200) 100%);
+	--flowdrop-interrupt-cancelled-border: var(--color-ref-gray-400);
+	--flowdrop-interrupt-cancelled-shadow: rgba(107, 114, 128, 0.15);
+	--flowdrop-interrupt-cancelled-avatar: var(--color-ref-gray-500);
+	--flowdrop-interrupt-cancelled-text: var(--color-ref-gray-600);
+	--flowdrop-interrupt-cancelled-text-light: var(--color-ref-gray-500);
+
+	/* Interrupt state: Error */
+	--flowdrop-interrupt-error-bg: linear-gradient(135deg, var(--color-ref-red-50) 0%, var(--color-ref-red-100) 100%);
+	--flowdrop-interrupt-error-border: var(--color-ref-red-500);
+	--flowdrop-interrupt-error-shadow: rgba(239, 68, 68, 0.15);
+	--flowdrop-interrupt-error-avatar: var(--color-ref-red-500);
+	--flowdrop-interrupt-error-text: var(--color-ref-red-700);
+	--flowdrop-interrupt-error-text-light: var(--color-ref-red-600);
+
+	/* Interrupt prompt inner styling */
+	--flowdrop-interrupt-prompt-bg: rgba(255, 255, 255, 0.85);
+	--flowdrop-interrupt-prompt-border-pending: rgba(245, 158, 11, 0.2);
+	--flowdrop-interrupt-prompt-border-completed: rgba(59, 130, 246, 0.2);
+	--flowdrop-interrupt-prompt-border-cancelled: rgba(107, 114, 128, 0.2);
+	--flowdrop-interrupt-prompt-border-error: rgba(239, 68, 68, 0.2);
+
+	/* Interrupt button tokens */
+	--flowdrop-interrupt-btn-primary-bg: linear-gradient(135deg, var(--color-ref-blue-500) 0%, var(--color-ref-blue-600) 100%);
+	--flowdrop-interrupt-btn-primary-bg-hover: linear-gradient(135deg, var(--color-ref-blue-600) 0%, var(--color-ref-blue-700) 100%);
+	--flowdrop-interrupt-btn-primary-shadow: rgba(59, 130, 246, 0.3);
+	--flowdrop-interrupt-btn-secondary-bg: var(--color-ref-gray-100);
+	--flowdrop-interrupt-btn-secondary-border: var(--color-ref-gray-300);
+	--flowdrop-interrupt-btn-secondary-text: var(--color-ref-gray-700);
+
+	/* Interrupt selection tokens (for confirmation/choice) */
+	--flowdrop-interrupt-selected-confirm-bg: var(--flowdrop-interrupt-btn-primary-bg);
+	--flowdrop-interrupt-selected-confirm-border: var(--color-ref-blue-700);
+	--flowdrop-interrupt-selected-confirm-glow: rgba(59, 130, 246, 0.3);
+	--flowdrop-interrupt-selected-decline-bg: var(--color-ref-red-50);
+	--flowdrop-interrupt-selected-decline-border: var(--color-ref-red-400);
+	--flowdrop-interrupt-selected-decline-text: var(--color-ref-red-600);
+	--flowdrop-interrupt-selected-decline-glow: rgba(248, 113, 113, 0.2);
+	--flowdrop-interrupt-not-selected-opacity: 0.4;
+
+	/* Interrupt badge tokens */
+	--flowdrop-interrupt-badge-completed-bg: var(--color-ref-blue-50);
+	--flowdrop-interrupt-badge-completed-text: var(--color-ref-blue-600);
+
 	/* NotesNode component variables */
 	--notes-node-width: 500px;
 	--notes-node-min-width: 250px;
