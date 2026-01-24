@@ -19,6 +19,7 @@
 		PlaygroundMessagesApiResponse
 	} from '../../types/playground.js';
 	import { playgroundService } from '../../services/playgroundService.js';
+	import { interruptService } from '../../services/interruptService.js';
 	import { setEndpointConfig } from '../../services/api.js';
 	import {
 		currentSession,
@@ -30,6 +31,7 @@
 		playgroundActions,
 		inputFields
 	} from '../../stores/playgroundStore.js';
+	import { interruptActions } from '../../stores/interruptStore.js';
 	import { get } from 'svelte/store';
 
 	/**
@@ -109,7 +111,9 @@
 	 */
 	onDestroy(() => {
 		playgroundService.stopPolling();
+		interruptService.stopPolling();
 		playgroundActions.reset();
+		interruptActions.reset();
 	});
 
 	/**
@@ -241,8 +245,14 @@
 	 */
 	function handleCloseSession(): void {
 		playgroundService.stopPolling();
+		interruptService.stopPolling();
 		playgroundActions.setCurrentSession(null);
 		playgroundActions.clearMessages();
+		// Clear interrupts for this session
+		const sessionId = get(currentSession)?.id;
+		if (sessionId) {
+			interruptActions.clearSessionInterrupts(sessionId);
+		}
 	}
 
 	/**

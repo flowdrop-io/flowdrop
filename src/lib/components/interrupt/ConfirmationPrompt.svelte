@@ -1,0 +1,251 @@
+<!--
+  ConfirmationPrompt Component
+  
+  Renders a Yes/No confirmation prompt for confirmation-type interrupts.
+  Displays the message and two action buttons with customizable labels.
+  Shows the selected response when resolved.
+  Styled with BEM syntax.
+-->
+
+<script lang="ts">
+	import Icon from "@iconify/svelte";
+	import type { ConfirmationConfig } from "../../types/interrupt.js";
+
+	/**
+	 * Component props
+	 */
+	interface Props {
+		/** Confirmation configuration from the interrupt */
+		config: ConfirmationConfig;
+		/** Whether this interrupt has been resolved */
+		isResolved: boolean;
+		/** The resolved value (true/false) if resolved */
+		resolvedValue?: boolean;
+		/** Whether the form is currently submitting */
+		isSubmitting: boolean;
+		/** Error message if submission failed */
+		error?: string;
+		/** Callback when user confirms (Yes) */
+		onConfirm: () => void;
+		/** Callback when user declines (No) */
+		onDecline: () => void;
+	}
+
+	let {
+		config,
+		isResolved,
+		resolvedValue,
+		isSubmitting,
+		error,
+		onConfirm,
+		onDecline
+	}: Props = $props();
+
+	/** Computed label for confirm button */
+	const confirmLabel = $derived(config.confirmLabel ?? "Yes");
+
+	/** Computed label for decline/cancel button */
+	const declineLabel = $derived(config.cancelLabel ?? "No");
+</script>
+
+<div
+	class="confirmation-prompt"
+	class:confirmation-prompt--resolved={isResolved}
+	class:confirmation-prompt--submitting={isSubmitting}
+>
+	<!-- Message -->
+	<p class="confirmation-prompt__message">{config.message}</p>
+
+	<!-- Error message -->
+	{#if error}
+		<div class="confirmation-prompt__error">
+			<Icon icon="mdi:alert-circle" />
+			<span>{error}</span>
+		</div>
+	{/if}
+
+	<!-- Actions -->
+	<div class="confirmation-prompt__actions">
+		<button
+			type="button"
+			class="confirmation-prompt__button confirmation-prompt__button--decline"
+			class:confirmation-prompt__button--selected={isResolved && resolvedValue === false}
+			onclick={onDecline}
+			disabled={isResolved || isSubmitting}
+			aria-label={declineLabel}
+		>
+			{#if isSubmitting && !isResolved}
+				<span class="confirmation-prompt__spinner"></span>
+			{:else if isResolved && resolvedValue === false}
+				<Icon icon="mdi:check" />
+			{:else}
+				<Icon icon="mdi:close" />
+			{/if}
+			<span>{declineLabel}</span>
+		</button>
+
+		<button
+			type="button"
+			class="confirmation-prompt__button confirmation-prompt__button--confirm"
+			class:confirmation-prompt__button--selected={isResolved && resolvedValue === true}
+			onclick={onConfirm}
+			disabled={isResolved || isSubmitting}
+			aria-label={confirmLabel}
+		>
+			{#if isSubmitting && !isResolved}
+				<span class="confirmation-prompt__spinner"></span>
+			{:else if isResolved && resolvedValue === true}
+				<Icon icon="mdi:check-circle" />
+			{:else}
+				<Icon icon="mdi:check" />
+			{/if}
+			<span>{confirmLabel}</span>
+		</button>
+	</div>
+
+	<!-- Resolved indicator -->
+	{#if isResolved}
+		<div class="confirmation-prompt__resolved-badge">
+			<Icon icon="mdi:check-circle" />
+			<span>Response submitted</span>
+		</div>
+	{/if}
+</div>
+
+<style>
+	.confirmation-prompt {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.confirmation-prompt--resolved {
+		opacity: 0.85;
+	}
+
+	.confirmation-prompt--submitting {
+		pointer-events: none;
+	}
+
+	.confirmation-prompt__message {
+		margin: 0;
+		font-size: 0.9375rem;
+		line-height: 1.5;
+		color: #1f2937;
+	}
+
+	.confirmation-prompt__error {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.5rem 0.75rem;
+		background-color: #fef2f2;
+		border-radius: 0.375rem;
+		color: #dc2626;
+		font-size: 0.8125rem;
+	}
+
+	.confirmation-prompt__actions {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.confirmation-prompt__button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.625rem 1.25rem;
+		border-radius: 0.5rem;
+		font-size: 0.875rem;
+		font-weight: 600;
+		font-family: inherit;
+		cursor: pointer;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		border: 1px solid transparent;
+		min-height: 2.5rem;
+		min-width: 100px;
+	}
+
+	.confirmation-prompt__button:disabled {
+		cursor: not-allowed;
+	}
+
+	.confirmation-prompt__button--decline {
+		background-color: #f3f4f6;
+		border-color: #d1d5db;
+		color: #374151;
+	}
+
+	.confirmation-prompt__button--decline:hover:not(:disabled) {
+		background-color: #e5e7eb;
+		border-color: #9ca3af;
+	}
+
+	.confirmation-prompt__button--decline:disabled {
+		opacity: 0.6;
+	}
+
+	.confirmation-prompt__button--decline.confirmation-prompt__button--selected {
+		background-color: #fef2f2;
+		border-color: #fca5a5;
+		color: #dc2626;
+	}
+
+	.confirmation-prompt__button--confirm {
+		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+		color: #ffffff;
+		box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+	}
+
+	.confirmation-prompt__button--confirm:hover:not(:disabled) {
+		background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+		transform: translateY(-1px);
+	}
+
+	.confirmation-prompt__button--confirm:disabled {
+		opacity: 0.6;
+		transform: none;
+		box-shadow: none;
+	}
+
+	.confirmation-prompt__button--confirm.confirmation-prompt__button--selected {
+		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+		box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+	}
+
+	.confirmation-prompt__spinner {
+		width: 1rem;
+		height: 1rem;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-top-color: currentColor;
+		border-radius: 50%;
+		animation: confirmation-spin 0.6s linear infinite;
+	}
+
+	.confirmation-prompt__button--decline .confirmation-prompt__spinner {
+		border-color: rgba(55, 65, 81, 0.3);
+		border-top-color: #374151;
+	}
+
+	@keyframes confirmation-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.confirmation-prompt__resolved-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.75rem;
+		background-color: #ecfdf5;
+		border-radius: 9999px;
+		color: #059669;
+		font-size: 0.75rem;
+		font-weight: 500;
+		align-self: flex-start;
+	}
+</style>

@@ -72,6 +72,20 @@ export interface EndpointConfig {
 			stopExecution: string;
 		};
 
+		// Interrupt endpoints (Human-in-the-Loop)
+		interrupts: {
+			/** Get interrupt details by ID */
+			get: string;
+			/** Resolve an interrupt with user response */
+			resolve: string;
+			/** Cancel a pending interrupt */
+			cancel: string;
+			/** List interrupts for a playground session */
+			listBySession: string;
+			/** List interrupts for a pipeline */
+			listByPipeline: string;
+		};
+
 		// Template endpoints
 		templates: {
 			list: string;
@@ -174,6 +188,13 @@ export const defaultEndpointConfig: EndpointConfig = {
 			getMessages: '/playground/sessions/{sessionId}/messages',
 			sendMessage: '/playground/sessions/{sessionId}/messages',
 			stopExecution: '/playground/sessions/{sessionId}/stop'
+		},
+		interrupts: {
+			get: '/interrupts/{interruptId}',
+			resolve: '/interrupts/{interruptId}',
+			cancel: '/interrupts/{interruptId}/cancel',
+			listBySession: '/playground/sessions/{sessionId}/interrupts',
+			listByPipeline: '/pipelines/{pipelineId}/interrupts'
 		},
 		templates: {
 			list: '/templates',

@@ -10,7 +10,13 @@
 	import Icon from '@iconify/svelte';
 	import { tick } from 'svelte';
 	import MessageBubble from './MessageBubble.svelte';
+	import { InterruptBubble } from '../interrupt/index.js';
 	import type { PlaygroundMessage } from '../../types/playground.js';
+	import {
+		isInterruptMetadata,
+		extractInterruptMetadata,
+		metadataToInterrupt
+	} from '../../types/interrupt.js';
 	import {
 		messages,
 		chatMessages,
@@ -18,6 +24,11 @@
 		sessionStatus,
 		currentSession
 	} from '../../stores/playgroundStore.js';
+	import {
+		interrupts,
+		interruptActions,
+		getInterruptByMessageId
+	} from '../../stores/interruptStore.js';
 
 	/**
 	 * Component props
@@ -62,6 +73,34 @@
 	 * Filter messages based on showLogsInline setting
 	 */
 	const displayMessages = $derived(showLogsInline ? $messages : $chatMessages);
+
+	/**
+	 * Check if a message is an interrupt request
+	 */
+	function isInterruptMessage(message: PlaygroundMessage): boolean {
+		return isInterruptMetadata(message.metadata as Record<string, unknown> | undefined);
+	}
+
+	/**
+	 * Get interrupt data for a message, creating it in the store if needed
+	 */
+	function getOrCreateInterrupt(message: PlaygroundMessage) {
+		// First check if we already have this interrupt in the store
+		let interrupt = getInterruptByMessageId(message.id);
+		
+		if (!interrupt) {
+			// Safely extract and validate interrupt metadata
+			const metadata = extractInterruptMetadata(
+				message.metadata as Record<string, unknown> | undefined
+			);
+			if (metadata) {
+				interrupt = metadataToInterrupt(metadata, message.id, message.content);
+				interruptActions.addInterrupt(interrupt);
+			}
+		}
+		
+		return interrupt;
+	}
 
 	/**
 	 * Check if we should show the welcome state
@@ -205,12 +244,21 @@
 		{:else}
 			<!-- Messages -->
 			{#each displayMessages as message, index (message.id)}
-				<MessageBubble
-					{message}
-					showTimestamp={showTimestamps}
-					isLast={index === displayMessages.length - 1}
-					{enableMarkdown}
-				/>
+				{#if isInterruptMessage(message)}
+					<!-- Render interrupt inline -->
+					{@const interrupt = getOrCreateInterrupt(message)}
+					<InterruptBubble
+						{interrupt}
+						showTimestamp={showTimestamps}
+					/>
+				{:else}
+					<MessageBubble
+						{message}
+						showTimestamp={showTimestamps}
+						isLast={index === displayMessages.length - 1}
+						{enableMarkdown}
+					/>
+				{/if}
 			{/each}
 
 			{#if $isExecuting}

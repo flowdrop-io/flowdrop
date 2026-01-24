@@ -124,10 +124,28 @@ export { default as ExecutionLogs } from '../components/playground/ExecutionLogs
 export { default as MessageBubble } from '../components/playground/MessageBubble.svelte';
 
 // ============================================================================
+// Interrupt Components (Human-in-the-Loop)
+// ============================================================================
+
+export {
+	InterruptBubble,
+	ConfirmationPrompt,
+	ChoicePrompt,
+	TextInputPrompt,
+	FormPrompt
+} from '../components/interrupt/index.js';
+
+// ============================================================================
 // Playground Service
 // ============================================================================
 
 export { PlaygroundService, playgroundService } from '../services/playgroundService.js';
+
+// ============================================================================
+// Interrupt Service (Human-in-the-Loop)
+// ============================================================================
+
+export { InterruptService, interruptService } from '../services/interruptService.js';
 
 // ============================================================================
 // Playground Store
@@ -185,6 +203,60 @@ export type {
 } from '../types/playground.js';
 
 export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';
+
+// ============================================================================
+// Interrupt Types (Human-in-the-Loop)
+// ============================================================================
+
+export type {
+	InterruptType,
+	InterruptStatus,
+	Interrupt,
+	InterruptChoice,
+	InterruptConfig,
+	ConfirmationConfig,
+	ChoiceConfig,
+	TextConfig,
+	FormConfig,
+	InterruptResolution,
+	InterruptApiResponse,
+	InterruptListResponse,
+	InterruptResponse,
+	InterruptMessageMetadata,
+	InterruptPollingConfig
+} from '../types/interrupt.js';
+
+export {
+	isInterruptMetadata,
+	extractInterruptMetadata,
+	metadataToInterrupt,
+	defaultInterruptPollingConfig
+} from '../types/interrupt.js';
+
+// ============================================================================
+// Interrupt Store (Human-in-the-Loop)
+// ============================================================================
+
+export {
+	// Core stores
+	interrupts,
+	submittingInterrupts,
+	interruptErrors,
+	// Derived stores
+	pendingInterruptIds,
+	pendingInterrupts,
+	pendingInterruptCount,
+	resolvedInterrupts,
+	isAnySubmitting,
+	// Actions
+	interruptActions,
+	// Utilities
+	getInterrupt,
+	isInterruptPending,
+	isInterruptSubmitting,
+	getInterruptError,
+	getInterruptByMessageId
+} from '../stores/interruptStore.js';
 
 // ============================================================================
 // Playground Mount Functions (for vanilla JS / Drupal / IIFE integration)
