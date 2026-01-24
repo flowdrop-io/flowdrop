@@ -12,15 +12,14 @@ import type {
 	PlaygroundMessageLevel,
 	PlaygroundMessageStatus,
 	PlaygroundMessageMetadata
-} from "../../lib/types/playground.js";
-import type { InterruptMessageMetadata } from "../../lib/types/interrupt.js";
+} from '../../lib/types/playground.js';
 import {
 	createConfirmationInterrupt,
 	createChoiceInterrupt,
 	createTextInterrupt,
 	createFormInterrupt,
 	sampleInterruptConfigs
-} from "./interrupts.js";
+} from './interrupts.js';
 
 /**
  * Mock sessions storage
@@ -226,7 +225,7 @@ export function addMessage(
 		role,
 		content,
 		timestamp: new Date().toISOString(),
-		status: options?.status || "completed",
+		status: options?.status || 'completed',
 		sequenceNumber,
 		parentMessageId: options?.parentMessageId,
 		nodeId: options?.nodeId,
@@ -253,20 +252,38 @@ export function addMessage(
 /**
  * Detect which type of interrupt to trigger based on user message keywords
  */
-function detectInterruptType(userMessage: string): "confirmation" | "choice" | "text" | "form" | null {
+function detectInterruptType(
+	userMessage: string
+): 'confirmation' | 'choice' | 'text' | 'form' | null {
 	const lowerMessage = userMessage.toLowerCase();
 
-	if (lowerMessage.includes("confirm") || lowerMessage.includes("approve") || lowerMessage.includes("delete")) {
-		return "confirmation";
+	if (
+		lowerMessage.includes('confirm') ||
+		lowerMessage.includes('approve') ||
+		lowerMessage.includes('delete')
+	) {
+		return 'confirmation';
 	}
-	if (lowerMessage.includes("choose") || lowerMessage.includes("select") || lowerMessage.includes("pick")) {
-		return "choice";
+	if (
+		lowerMessage.includes('choose') ||
+		lowerMessage.includes('select') ||
+		lowerMessage.includes('pick')
+	) {
+		return 'choice';
 	}
-	if (lowerMessage.includes("input") || lowerMessage.includes("enter") || lowerMessage.includes("provide text")) {
-		return "text";
+	if (
+		lowerMessage.includes('input') ||
+		lowerMessage.includes('enter') ||
+		lowerMessage.includes('provide text')
+	) {
+		return 'text';
 	}
-	if (lowerMessage.includes("form") || lowerMessage.includes("fill") || lowerMessage.includes("details")) {
-		return "form";
+	if (
+		lowerMessage.includes('form') ||
+		lowerMessage.includes('fill') ||
+		lowerMessage.includes('details')
+	) {
+		return 'form';
 	}
 
 	return null;
@@ -297,7 +314,7 @@ export function simulateExecution(
 	}
 
 	// Update status to running
-	updateSessionStatus(sessionId, "running");
+	updateSessionStatus(sessionId, 'running');
 
 	// Check if we should trigger an interrupt
 	const interruptType = detectInterruptType(userMessage);
@@ -322,43 +339,43 @@ function simulateNormalExecution(
 	const steps = [
 		{
 			delay: 500,
-			role: "log" as const,
-			content: "Starting workflow execution...",
-			level: "info" as const,
-			nodeId: "node-start",
-			nodeLabel: "Start"
+			role: 'log' as const,
+			content: 'Starting workflow execution...',
+			level: 'info' as const,
+			nodeId: 'node-start',
+			nodeLabel: 'Start'
 		},
 		{
 			delay: 1000,
-			role: "log" as const,
+			role: 'log' as const,
 			content: `Processing input: "${userMessage.substring(0, 50)}..."`,
-			level: "info" as const,
-			nodeId: "node-processor",
-			nodeLabel: "Text Processor"
+			level: 'info' as const,
+			nodeId: 'node-processor',
+			nodeLabel: 'Text Processor'
 		},
 		{
 			delay: 1500,
-			role: "log" as const,
-			content: "Analyzing content with AI model...",
-			level: "info" as const,
-			nodeId: "node-ai",
-			nodeLabel: "AI Model"
+			role: 'log' as const,
+			content: 'Analyzing content with AI model...',
+			level: 'info' as const,
+			nodeId: 'node-ai',
+			nodeLabel: 'AI Model'
 		},
 		{
 			delay: 2500,
-			role: "assistant" as const,
+			role: 'assistant' as const,
 			content: `I received your message: "${userMessage}"\n\nThis is a mock response from the playground. In a real implementation, this would be the output from your workflow execution.\n\n**Tip:** Try messages with keywords like "confirm", "choose", "input", or "form" to test interrupt prompts!`,
-			nodeId: "node-output",
-			nodeLabel: "Output",
+			nodeId: 'node-output',
+			nodeLabel: 'Output',
 			duration: 2000
 		},
 		{
 			delay: 3000,
-			role: "log" as const,
-			content: "Workflow execution completed successfully",
-			level: "info" as const,
-			nodeId: "node-end",
-			nodeLabel: "End"
+			role: 'log' as const,
+			content: 'Workflow execution completed successfully',
+			level: 'info' as const,
+			nodeId: 'node-end',
+			nodeLabel: 'End'
 		}
 	];
 
@@ -374,7 +391,7 @@ function simulateNormalExecution(
 
 			// Complete the session after the last step
 			if (step === steps[steps.length - 1]) {
-				updateSessionStatus(sessionId, "completed");
+				updateSessionStatus(sessionId, 'completed');
 			}
 		}, step.delay);
 	});
@@ -386,27 +403,27 @@ function simulateNormalExecution(
 function simulateInterruptExecution(
 	sessionId: string,
 	userMessage: string,
-	interruptType: "confirmation" | "choice" | "text" | "form",
+	interruptType: 'confirmation' | 'choice' | 'text' | 'form',
 	parentMessageId?: string
 ): void {
 	const executionId = `exec-${Date.now().toString(36)}`;
 
 	// First step: log the start
 	setTimeout(() => {
-		addMessage(sessionId, "log", "Starting workflow execution...", {
-			level: "info",
-			nodeId: "node-start",
-			nodeLabel: "Start",
+		addMessage(sessionId, 'log', 'Starting workflow execution...', {
+			level: 'info',
+			nodeId: 'node-start',
+			nodeLabel: 'Start',
 			parentMessageId
 		});
 	}, 500);
 
 	// Second step: trigger the interrupt
 	setTimeout(() => {
-		addMessage(sessionId, "log", `Processing requires ${interruptType} input...`, {
-			level: "info",
-			nodeId: "node-hitl",
-			nodeLabel: "Human Input",
+		addMessage(sessionId, 'log', `Processing requires ${interruptType} input...`, {
+			level: 'info',
+			nodeId: 'node-hitl',
+			nodeLabel: 'Human Input',
 			parentMessageId
 		});
 
@@ -422,87 +439,90 @@ function simulateInterruptExecution(
  */
 function createInterruptMessage(
 	sessionId: string,
-	interruptType: "confirmation" | "choice" | "text" | "form",
+	interruptType: 'confirmation' | 'choice' | 'text' | 'form',
 	executionId: string,
 	parentMessageId?: string
 ): void {
-	const nodeId = "node-hitl";
+	const nodeId = 'node-hitl';
 
 	// Create the message first to get its ID
 	const messageId = generateMessageId();
 
 	let interrupt;
 	let content: string;
-	let metadata: InterruptMessageMetadata;
+	let metadata: PlaygroundMessageMetadata;
 
 	switch (interruptType) {
-		case "confirmation": {
+		case 'confirmation': {
 			const config = sampleInterruptConfigs.confirmation;
-			interrupt = createConfirmationInterrupt(sessionId, messageId, nodeId, executionId, config, true);
+			interrupt = createConfirmationInterrupt(
+				sessionId,
+				messageId,
+				nodeId,
+				executionId,
+				config,
+				true
+			);
 			content = config.message;
 			metadata = {
-				type: "interrupt_request",
+				type: 'interrupt_request',
 				interrupt_id: interrupt.id,
-				interrupt_type: "confirmation",
+				interrupt_type: 'confirmation',
 				node_id: nodeId,
 				execution_id: executionId,
-				message: config.message,
-				confirm_label: config.confirm_label,
-				cancel_label: config.cancel_label,
-				allowCancel: true
+				confirm_label: config.confirmLabel,
+				cancel_label: config.cancelLabel,
+				allow_cancel: true
 			};
 			break;
 		}
-		case "choice": {
+		case 'choice': {
 			const config = sampleInterruptConfigs.choice;
 			interrupt = createChoiceInterrupt(sessionId, messageId, nodeId, executionId, config, true);
 			content = config.message;
 			metadata = {
-				type: "interrupt_request",
+				type: 'interrupt_request',
 				interrupt_id: interrupt.id,
-				interrupt_type: "choice",
+				interrupt_type: 'choice',
 				node_id: nodeId,
 				execution_id: executionId,
-				message: config.message,
 				options: config.options,
 				multiple: config.multiple,
-				allowCancel: true
+				allow_cancel: true
 			};
 			break;
 		}
-		case "text": {
+		case 'text': {
 			const config = sampleInterruptConfigs.text;
 			interrupt = createTextInterrupt(sessionId, messageId, nodeId, executionId, config, true);
 			content = config.message;
 			metadata = {
-				type: "interrupt_request",
+				type: 'interrupt_request',
 				interrupt_id: interrupt.id,
-				interrupt_type: "text",
+				interrupt_type: 'text',
 				node_id: nodeId,
 				execution_id: executionId,
-				message: config.message,
 				placeholder: config.placeholder,
 				multiline: config.multiline,
-				min_length: config.min_length,
-				max_length: config.max_length,
-				allowCancel: true
+				min_length: config.minLength,
+				max_length: config.maxLength,
+				allow_cancel: true
 			};
 			break;
 		}
-		case "form": {
+		case 'form': {
 			const config = sampleInterruptConfigs.form;
 			interrupt = createFormInterrupt(sessionId, messageId, nodeId, executionId, config, true);
 			content = config.message;
 			metadata = {
-				type: "interrupt_request",
+				type: 'interrupt_request',
 				interrupt_id: interrupt.id,
-				interrupt_type: "form",
+				interrupt_type: 'form',
 				node_id: nodeId,
 				execution_id: executionId,
-				message: config.message,
 				schema: config.schema,
-				default_values: config.default_values,
-				allowCancel: true
+				default_value: config.defaultValues,
+				allow_cancel: true
 			};
 			break;
 		}
@@ -517,14 +537,14 @@ function createInterruptMessage(
 	const message: PlaygroundMessage = {
 		id: messageId,
 		sessionId,
-		role: "assistant",
+		role: 'assistant',
 		content,
 		timestamp: new Date().toISOString(),
-		status: "completed",
+		status: 'completed',
 		sequenceNumber,
 		parentMessageId,
 		nodeId,
-		metadata: metadata as PlaygroundMessageMetadata
+		metadata
 	};
 
 	messages.push(message);
@@ -534,7 +554,7 @@ function createInterruptMessage(
 	const session = mockSessions.get(sessionId);
 	if (session) {
 		session.updatedAt = message.timestamp;
-		session.status = "idle";
+		session.status = 'idle';
 		mockSessions.set(sessionId, session);
 	}
 }

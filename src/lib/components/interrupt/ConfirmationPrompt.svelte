@@ -8,8 +8,8 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import type { ConfirmationConfig } from "../../types/interrupt.js";
+	import Icon from '@iconify/svelte';
+	import type { ConfirmationConfig } from '../../types/interrupt.js';
 
 	/**
 	 * Component props
@@ -31,21 +31,14 @@
 		onDecline: () => void;
 	}
 
-	let {
-		config,
-		isResolved,
-		resolvedValue,
-		isSubmitting,
-		error,
-		onConfirm,
-		onDecline
-	}: Props = $props();
+	let { config, isResolved, resolvedValue, isSubmitting, error, onConfirm, onDecline }: Props =
+		$props();
 
 	/** Computed label for confirm button */
-	const confirmLabel = $derived(config.confirmLabel ?? "Yes");
+	const confirmLabel = $derived(config.confirmLabel ?? 'Yes');
 
 	/** Computed label for decline/cancel button */
-	const declineLabel = $derived(config.cancelLabel ?? "No");
+	const declineLabel = $derived(config.cancelLabel ?? 'No');
 </script>
 
 <div
@@ -246,7 +239,9 @@
 		background: var(--flowdrop-interrupt-selected-confirm-bg);
 		border-width: 2px;
 		border-color: var(--flowdrop-interrupt-selected-confirm-border);
-		box-shadow: 0 0 0 3px var(--flowdrop-interrupt-selected-confirm-glow), 0 2px 8px var(--flowdrop-interrupt-btn-primary-shadow);
+		box-shadow:
+			0 0 0 3px var(--flowdrop-interrupt-selected-confirm-glow),
+			0 2px 8px var(--flowdrop-interrupt-btn-primary-shadow);
 	}
 
 	.confirmation-prompt__spinner {

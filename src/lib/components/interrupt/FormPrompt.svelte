@@ -8,9 +8,9 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import SchemaForm from "../SchemaForm.svelte";
-	import type { FormConfig } from "../../types/interrupt.js";
+	import Icon from '@iconify/svelte';
+	import SchemaForm from '../SchemaForm.svelte';
+	import type { FormConfig } from '../../types/interrupt.js';
 
 	/**
 	 * Component props
@@ -30,14 +30,7 @@
 		onSubmit: (value: Record<string, unknown>) => void;
 	}
 
-	let {
-		config,
-		isResolved,
-		resolvedValue,
-		isSubmitting,
-		error,
-		onSubmit
-	}: Props = $props();
+	let { config, isResolved, resolvedValue, isSubmitting, error, onSubmit }: Props = $props();
 
 	/** Local state for form values */
 	let formValues = $state<Record<string, unknown>>(config.defaultValues ?? {});
@@ -65,9 +58,9 @@
 	 * Format resolved value for display
 	 */
 	function formatResolvedValue(value: unknown): string {
-		if (value === null || value === undefined) return "—";
-		if (typeof value === "boolean") return value ? "Yes" : "No";
-		if (typeof value === "object") return JSON.stringify(value, null, 2);
+		if (value === null || value === undefined) return '—';
+		if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+		if (typeof value === 'object') return JSON.stringify(value, null, 2);
 		return String(value);
 	}
 </script>
@@ -110,7 +103,7 @@
 			<div class="form-prompt__values-list">
 				{#each Object.entries(config.schema.properties ?? {}) as [key, field]}
 					{@const value = displayValues[key]}
-					{@const fieldTitle = (field as Record<string, unknown>).title as string ?? key}
+					{@const fieldTitle = ((field as Record<string, unknown>).title as string) ?? key}
 					<div class="form-prompt__value-item">
 						<span class="form-prompt__value-label">{fieldTitle}</span>
 						<span class="form-prompt__value-content">

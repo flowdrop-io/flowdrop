@@ -4,53 +4,47 @@
  * Implements mock handlers for Human-in-the-Loop interrupt management.
  */
 
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse } from 'msw';
 import {
 	getInterruptById,
 	resolveInterrupt,
 	cancelInterrupt,
 	getSessionInterrupts,
 	getPipelineInterrupts
-} from "../data/interrupts.js";
-import {
-	addMessage,
-	updateSessionStatus
-} from "../data/playground.js";
+} from '../data/interrupts.js';
+import { addMessage, updateSessionStatus } from '../data/playground.js';
 
 /** Base API path for flowdrop endpoints */
-const API_BASE = "/api/flowdrop";
+const API_BASE = '/api/flowdrop';
 
 /**
  * GET /api/flowdrop/interrupts/:interruptId
  * Get interrupt details
  */
-export const getInterruptHandler = http.get(
-	`${API_BASE}/interrupts/:interruptId`,
-	({ params }) => {
-		const { interruptId } = params;
-		const id = Array.isArray(interruptId) ? interruptId[0] : interruptId;
+export const getInterruptHandler = http.get(`${API_BASE}/interrupts/:interruptId`, ({ params }) => {
+	const { interruptId } = params;
+	const id = Array.isArray(interruptId) ? interruptId[0] : interruptId;
 
-		console.log("[MSW] getInterruptHandler called for:", id);
+	console.log('[MSW] getInterruptHandler called for:', id);
 
-		const interrupt = getInterruptById(id);
+	const interrupt = getInterruptById(id);
 
-		if (!interrupt) {
-			return HttpResponse.json(
-				{
-					success: false,
-					error: "Interrupt not found",
-					code: "NOT_FOUND"
-				},
-				{ status: 404 }
-			);
-		}
-
-		return HttpResponse.json({
-			success: true,
-			data: interrupt
-		});
+	if (!interrupt) {
+		return HttpResponse.json(
+			{
+				success: false,
+				error: 'Interrupt not found',
+				code: 'NOT_FOUND'
+			},
+			{ status: 404 }
+		);
 	}
-);
+
+	return HttpResponse.json({
+		success: true,
+		data: interrupt
+	});
+});
 
 /**
  * POST /api/flowdrop/interrupts/:interruptId
@@ -62,7 +56,7 @@ export const resolveInterruptHandler = http.post(
 		const { interruptId } = params;
 		const id = Array.isArray(interruptId) ? interruptId[0] : interruptId;
 
-		console.log("[MSW] resolveInterruptHandler called for:", id);
+		console.log('[MSW] resolveInterruptHandler called for:', id);
 
 		const interrupt = getInterruptById(id);
 
@@ -70,19 +64,19 @@ export const resolveInterruptHandler = http.post(
 			return HttpResponse.json(
 				{
 					success: false,
-					error: "Interrupt not found",
-					code: "NOT_FOUND"
+					error: 'Interrupt not found',
+					code: 'NOT_FOUND'
 				},
 				{ status: 404 }
 			);
 		}
 
-		if (interrupt.status !== "pending") {
+		if (interrupt.status !== 'pending') {
 			return HttpResponse.json(
 				{
 					success: false,
 					error: `Interrupt is already ${interrupt.status}`,
-					code: "CONFLICT"
+					code: 'CONFLICT'
 				},
 				{ status: 409 }
 			);
@@ -97,8 +91,8 @@ export const resolveInterruptHandler = http.post(
 			return HttpResponse.json(
 				{
 					success: false,
-					error: "Invalid request body - value is required",
-					code: "BAD_REQUEST"
+					error: 'Invalid request body - value is required',
+					code: 'BAD_REQUEST'
 				},
 				{ status: 400 }
 			);
@@ -108,8 +102,8 @@ export const resolveInterruptHandler = http.post(
 			return HttpResponse.json(
 				{
 					success: false,
-					error: "Value is required",
-					code: "BAD_REQUEST"
+					error: 'Value is required',
+					code: 'BAD_REQUEST'
 				},
 				{ status: 400 }
 			);
@@ -121,52 +115,57 @@ export const resolveInterruptHandler = http.post(
 			return HttpResponse.json(
 				{
 					success: false,
-					error: "Failed to resolve interrupt",
-					code: "INTERNAL_ERROR"
+					error: 'Failed to resolve interrupt',
+					code: 'INTERNAL_ERROR'
 				},
 				{ status: 500 }
 			);
 		}
 
-		console.log("[MSW] Interrupt resolved:", id, "with value:", value);
+		console.log('[MSW] Interrupt resolved:', id, 'with value:', value);
 
 		// Add workflow continuation messages synchronously
 		// (async delays cause issues because frontend stops polling when session is idle)
 		if (interrupt.sessionId) {
 			const sessionId = interrupt.sessionId;
-			
+
 			// Add messages showing the workflow continuation
-			addMessage(sessionId, "log", `User response received: ${formatValue(value)}`, {
-				level: "info",
-				nodeId: "node-hitl",
-				nodeLabel: "Human Input"
+			addMessage(sessionId, 'log', `User response received: ${formatValue(value)}`, {
+				level: 'info',
+				nodeId: 'node-hitl',
+				nodeLabel: 'Human Input'
 			});
 
-			addMessage(sessionId, "log", "Continuing workflow execution...", {
-				level: "info",
-				nodeId: "node-processor",
-				nodeLabel: "Processor"
+			addMessage(sessionId, 'log', 'Continuing workflow execution...', {
+				level: 'info',
+				nodeId: 'node-processor',
+				nodeLabel: 'Processor'
 			});
 
-			addMessage(sessionId, "assistant", `Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response: **${formatValue(value)}**`, {
-				nodeId: "node-output",
-				nodeLabel: "Output",
-				duration: 500
+			addMessage(
+				sessionId,
+				'assistant',
+				`Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response: **${formatValue(value)}**`,
+				{
+					nodeId: 'node-output',
+					nodeLabel: 'Output',
+					duration: 500
+				}
+			);
+
+			addMessage(sessionId, 'log', 'Workflow execution completed', {
+				level: 'info',
+				nodeId: 'node-end',
+				nodeLabel: 'End'
 			});
 
-			addMessage(sessionId, "log", "Workflow execution completed", {
-				level: "info",
-				nodeId: "node-end",
-				nodeLabel: "End"
-			});
-			
-			updateSessionStatus(sessionId, "completed");
+			updateSessionStatus(sessionId, 'completed');
 		}
 
 		return HttpResponse.json({
 			success: true,
 			data: resolved,
-			message: "Interrupt resolved successfully"
+			message: 'Interrupt resolved successfully'
 		});
 	}
 );
@@ -175,13 +174,13 @@ export const resolveInterruptHandler = http.post(
  * Format a value for display in messages
  */
 function formatValue(value: unknown): string {
-	if (typeof value === "boolean") {
-		return value ? "Yes / Confirmed" : "No / Declined";
+	if (typeof value === 'boolean') {
+		return value ? 'Yes / Confirmed' : 'No / Declined';
 	}
 	if (Array.isArray(value)) {
-		return value.join(", ");
+		return value.join(', ');
 	}
-	if (typeof value === "object" && value !== null) {
+	if (typeof value === 'object' && value !== null) {
 		return JSON.stringify(value, null, 2);
 	}
 	return String(value);
@@ -197,7 +196,7 @@ export const cancelInterruptHandler = http.post(
 		const { interruptId } = params;
 		const id = Array.isArray(interruptId) ? interruptId[0] : interruptId;
 
-		console.log("[MSW] cancelInterruptHandler called for:", id);
+		console.log('[MSW] cancelInterruptHandler called for:', id);
 
 		const interrupt = getInterruptById(id);
 
@@ -205,19 +204,19 @@ export const cancelInterruptHandler = http.post(
 			return HttpResponse.json(
 				{
 					success: false,
-					error: "Interrupt not found",
-					code: "NOT_FOUND"
+					error: 'Interrupt not found',
+					code: 'NOT_FOUND'
 				},
 				{ status: 404 }
 			);
 		}
 
-		if (interrupt.status !== "pending") {
+		if (interrupt.status !== 'pending') {
 			return HttpResponse.json(
 				{
 					success: false,
 					error: `Interrupt is already ${interrupt.status}`,
-					code: "CONFLICT"
+					code: 'CONFLICT'
 				},
 				{ status: 409 }
 			);
@@ -227,8 +226,8 @@ export const cancelInterruptHandler = http.post(
 			return HttpResponse.json(
 				{
 					success: false,
-					error: "This interrupt cannot be cancelled",
-					code: "BAD_REQUEST"
+					error: 'This interrupt cannot be cancelled',
+					code: 'BAD_REQUEST'
 				},
 				{ status: 400 }
 			);
@@ -240,36 +239,41 @@ export const cancelInterruptHandler = http.post(
 			return HttpResponse.json(
 				{
 					success: false,
-					error: "Failed to cancel interrupt",
-					code: "INTERNAL_ERROR"
+					error: 'Failed to cancel interrupt',
+					code: 'INTERNAL_ERROR'
 				},
 				{ status: 500 }
 			);
 		}
 
-		console.log("[MSW] Interrupt cancelled:", id);
+		console.log('[MSW] Interrupt cancelled:', id);
 
 		// Add workflow cancellation messages synchronously
 		if (interrupt.sessionId) {
 			const sessionId = interrupt.sessionId;
-			
-			addMessage(sessionId, "log", "User cancelled the input request", {
-				level: "warning",
-				nodeId: "node-hitl",
-				nodeLabel: "Human Input"
+
+			addMessage(sessionId, 'log', 'User cancelled the input request', {
+				level: 'warning',
+				nodeId: 'node-hitl',
+				nodeLabel: 'Human Input'
 			});
 
-			addMessage(sessionId, "assistant", "The workflow was cancelled at your request. You can start a new conversation to try again.", {
-				nodeId: "node-output",
-				nodeLabel: "Output"
-			});
-			
-			updateSessionStatus(sessionId, "completed");
+			addMessage(
+				sessionId,
+				'assistant',
+				'The workflow was cancelled at your request. You can start a new conversation to try again.',
+				{
+					nodeId: 'node-output',
+					nodeLabel: 'Output'
+				}
+			);
+
+			updateSessionStatus(sessionId, 'completed');
 		}
 
 		return HttpResponse.json({
 			success: true,
-			message: "Interrupt cancelled"
+			message: 'Interrupt cancelled'
 		});
 	}
 );
@@ -284,16 +288,16 @@ export const listSessionInterruptsHandler = http.get(
 		const { sessionId } = params;
 		const id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
 
-		console.log("[MSW] listSessionInterruptsHandler called for session:", id);
+		console.log('[MSW] listSessionInterruptsHandler called for session:', id);
 
 		const url = new URL(request.url);
-		const status = url.searchParams.get("status") as "pending" | "resolved" | "cancelled" | null;
-		const limit = parseInt(url.searchParams.get("limit") || "50", 10);
-		const offset = parseInt(url.searchParams.get("offset") || "0", 10);
+		const status = url.searchParams.get('status') as 'pending' | 'resolved' | 'cancelled' | null;
+		const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+		const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
 		const interrupts = getSessionInterrupts(id, status || undefined, limit, offset);
 
-		console.log("[MSW] Found interrupts for session:", interrupts.length);
+		console.log('[MSW] Found interrupts for session:', interrupts.length);
 
 		return HttpResponse.json({
 			success: true,
@@ -313,16 +317,16 @@ export const listPipelineInterruptsHandler = http.get(
 		const { pipelineId } = params;
 		const id = Array.isArray(pipelineId) ? pipelineId[0] : pipelineId;
 
-		console.log("[MSW] listPipelineInterruptsHandler called for pipeline:", id);
+		console.log('[MSW] listPipelineInterruptsHandler called for pipeline:', id);
 
 		const url = new URL(request.url);
-		const status = url.searchParams.get("status") as "pending" | "resolved" | "cancelled" | null;
-		const limit = parseInt(url.searchParams.get("limit") || "50", 10);
-		const offset = parseInt(url.searchParams.get("offset") || "0", 10);
+		const status = url.searchParams.get('status') as 'pending' | 'resolved' | 'cancelled' | null;
+		const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+		const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
 		const interrupts = getPipelineInterrupts(id, status || undefined, limit, offset);
 
-		console.log("[MSW] Found interrupts for pipeline:", interrupts.length);
+		console.log('[MSW] Found interrupts for pipeline:', interrupts.length);
 
 		return HttpResponse.json({
 			success: true,

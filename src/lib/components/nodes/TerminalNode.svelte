@@ -167,9 +167,7 @@
 	 * This allows users to customize the node description per-instance via config.
 	 */
 	const displayDescription = $derived(
-		(props.data.config?.instanceDescription as string) ||
-			props.data.metadata?.description ||
-			""
+		(props.data.config?.instanceDescription as string) || props.data.metadata?.description || ''
 	);
 
 	/**

@@ -122,7 +122,7 @@ npm run build-storybook  # Build Storybook
 ```typescript
 // ✅ Good
 const message = `Hello, ${name}!`;
-const path = ["api", "flowdrop", endpoint].join("/");
+const path = ['api', 'flowdrop', endpoint].join('/');
 
 // ❌ Bad
 const message = 'Hello, ' + name + '!';
@@ -159,20 +159,20 @@ FlowDrop uses **Svelte 5 Runes mode**. Key patterns:
 
 ```svelte
 <script lang="ts">
-	import type { Snippet } from "svelte";
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		/** Required prop with description */
 		title: string;
 		/** Optional prop with default */
-		variant?: "primary" | "secondary";
+		variant?: 'primary' | 'secondary';
 		/** Event handler */
 		onchange?: (value: string) => void;
 		/** Slot content */
 		children?: Snippet;
 	}
 
-	let { title, variant = "primary", onchange, children }: Props = $props();
+	let { title, variant = 'primary', onchange, children }: Props = $props();
 </script>
 ```
 
@@ -211,8 +211,8 @@ interface WorkflowNode extends Node {
 	position: XYPosition;
 	data: {
 		label: string;
-		config: ConfigValues;      // User-configured values
-		metadata: NodeMetadata;    // Node type definition
+		config: ConfigValues; // User-configured values
+		metadata: NodeMetadata; // Node type definition
 		extensions?: NodeExtensions;
 	};
 }
@@ -287,15 +287,15 @@ See `docs/config-schema-special-properties.md` for full documentation.
 
 ### Services & Utilities
 
-| File                                    | Purpose                        |
-| --------------------------------------- | ------------------------------ |
-| `src/lib/services/nodeService.ts`       | Node operations                |
-| `src/lib/services/workflowService.ts`   | Workflow CRUD operations       |
-| `src/lib/services/executionService.ts`  | Pipeline execution             |
-| `src/lib/services/interruptService.ts`  | HITL interrupt API operations  |
-| `src/lib/stores/workflowStore.ts`       | Workflow state management      |
-| `src/lib/stores/interruptStore.ts`      | Active interrupts state        |
-| `src/lib/adapters/WorkflowAdapter.ts`   | API response transformation    |
+| File                                   | Purpose                       |
+| -------------------------------------- | ----------------------------- |
+| `src/lib/services/nodeService.ts`      | Node operations               |
+| `src/lib/services/workflowService.ts`  | Workflow CRUD operations      |
+| `src/lib/services/executionService.ts` | Pipeline execution            |
+| `src/lib/services/interruptService.ts` | HITL interrupt API operations |
+| `src/lib/stores/workflowStore.ts`      | Workflow state management     |
+| `src/lib/stores/interruptStore.ts`     | Active interrupts state       |
+| `src/lib/adapters/WorkflowAdapter.ts`  | API response transformation   |
 
 ### Configuration
 
@@ -312,21 +312,21 @@ See `docs/config-schema-special-properties.md` for full documentation.
 ### Test Structure
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-describe("ComponentOrFunction", () => {
+describe('ComponentOrFunction', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	describe("methodName", () => {
-		it("should do expected behavior", () => {
+	describe('methodName', () => {
+		it('should do expected behavior', () => {
 			// Arrange
 			const input = createTestInput();
-			
+
 			// Act
 			const result = functionUnderTest(input);
-			
+
 			// Assert
 			expect(result).toBe(expectedValue);
 		});
@@ -384,22 +384,22 @@ FlowDrop uses module exports for tree-shaking:
 
 ```typescript
 // Main entry - includes all components
-import { WorkflowEditor, NodeSidebar } from "@d34dman/flowdrop";
+import { WorkflowEditor, NodeSidebar } from '@d34dman/flowdrop';
 
 // Core - types and utilities only (zero heavy deps)
-import type { Workflow, WorkflowNode } from "@d34dman/flowdrop/core";
+import type { Workflow, WorkflowNode } from '@d34dman/flowdrop/core';
 
 // Editor - editor-specific exports
-import { mountFlowDropApp } from "@d34dman/flowdrop/editor";
+import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
 
 // Form - form components
-import { SchemaForm, registerField } from "@d34dman/flowdrop/form";
+import { SchemaForm, registerField } from '@d34dman/flowdrop/form';
 
 // Display - read-only display components
-import { MarkdownDisplay } from "@d34dman/flowdrop/display";
+import { MarkdownDisplay } from '@d34dman/flowdrop/display';
 
 // Styles
-import "@d34dman/flowdrop/styles/base.css";
+import '@d34dman/flowdrop/styles/base.css';
 ```
 
 ---
@@ -410,8 +410,8 @@ import "@d34dman/flowdrop/styles/base.css";
 
 ```typescript
 const config = createEndpointConfig({
-	baseUrl: "https://api.example.com/flowdrop",
-	auth: { type: "bearer", token: "your-token" }
+	baseUrl: 'https://api.example.com/flowdrop',
+	auth: { type: 'bearer', token: 'your-token' }
 });
 ```
 
@@ -420,8 +420,8 @@ const config = createEndpointConfig({
 ```typescript
 // Static authentication
 const authProvider = new StaticAuthProvider({
-	type: "bearer",
-	token: "your-token"
+	type: 'bearer',
+	token: 'your-token'
 });
 
 // Dynamic authentication with refresh

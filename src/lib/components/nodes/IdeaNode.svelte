@@ -7,10 +7,10 @@
 -->
 
 <script lang="ts">
-	import { Position, Handle } from "@xyflow/svelte";
-	import type { ConfigValues, NodeMetadata } from "../../types/index.js";
-	import Icon from "@iconify/svelte";
-	import { getDataTypeColor } from "$lib/utils/colors.js";
+	import { Position, Handle } from '@xyflow/svelte';
+	import type { ConfigValues, NodeMetadata } from '../../types/index.js';
+	import Icon from '@iconify/svelte';
+	import { getDataTypeColor } from '$lib/utils/colors.js';
 
 	/**
 	 * IdeaNode component props
@@ -44,7 +44,7 @@
 			(props.data.config?.title as string) ||
 			props.data.label ||
 			props.data.metadata?.name ||
-			"New Idea"
+			'New Idea'
 	);
 
 	/**
@@ -57,7 +57,7 @@
 		(props.data.config?.instanceDescription as string) ||
 			(props.data.config?.description as string) ||
 			props.data.metadata?.description ||
-			"Click to add description..."
+			'Click to add description...'
 	);
 
 	/**
@@ -66,39 +66,29 @@
 	const ideaIcon = $derived(
 		(props.data.config?.icon as string) ||
 			(props.data.metadata?.icon as string) ||
-			"mdi:lightbulb-outline"
+			'mdi:lightbulb-outline'
 	);
 
 	/**
 	 * Get accent color from config or metadata, with fallback
 	 */
 	const ideaColor = $derived(
-		(props.data.config?.color as string) ||
-			(props.data.metadata?.color as string) ||
-			"#6366f1"
+		(props.data.config?.color as string) || (props.data.metadata?.color as string) || '#6366f1'
 	);
 
 	/**
 	 * Port visibility configuration from config
 	 * Left and Right are enabled by default, Top and Bottom are disabled by default
 	 */
-	const enableLeftPort = $derived(
-		(props.data.config?.enableLeftPort as boolean) ?? true
-	);
-	const enableRightPort = $derived(
-		(props.data.config?.enableRightPort as boolean) ?? true
-	);
-	const enableTopPort = $derived(
-		(props.data.config?.enableTopPort as boolean) ?? false
-	);
-	const enableBottomPort = $derived(
-		(props.data.config?.enableBottomPort as boolean) ?? false
-	);
+	const enableLeftPort = $derived((props.data.config?.enableLeftPort as boolean) ?? true);
+	const enableRightPort = $derived((props.data.config?.enableRightPort as boolean) ?? true);
+	const enableTopPort = $derived((props.data.config?.enableTopPort as boolean) ?? false);
+	const enableBottomPort = $derived((props.data.config?.enableBottomPort as boolean) ?? false);
 
 	/**
 	 * Data type for idea flow connections
 	 */
-	const IDEA_DATA_TYPE = "idea";
+	const IDEA_DATA_TYPE = 'idea';
 
 	/**
 	 * Opens the configuration sidebar for editing idea properties
@@ -106,8 +96,8 @@
 	function openConfigSidebar(): void {
 		if (props.data.onConfigOpen) {
 			const nodeForConfig = {
-				id: props.data.nodeId || "unknown",
-				type: "idea",
+				id: props.data.nodeId || 'unknown',
+				type: 'idea',
 				data: props.data
 			};
 			props.data.onConfigOpen(nodeForConfig);
@@ -133,7 +123,7 @@
 	 * @param event - The keyboard event
 	 */
 	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === "Enter" || event.key === " ") {
+		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			handleDoubleClick();
 		}
@@ -159,7 +149,9 @@
 		<Handle
 			type="target"
 			position={Position.Left}
-			style="background-color: {getDataTypeColor(IDEA_DATA_TYPE)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+			style="background-color: {getDataTypeColor(
+				IDEA_DATA_TYPE
+			)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-input-left`}
 		/>
 	{/if}
@@ -169,7 +161,9 @@
 		<Handle
 			type="target"
 			position={Position.Top}
-			style="background-color: {getDataTypeColor(IDEA_DATA_TYPE)}; border-color: #ffffff; left: 50%; transform: translateX(-50%); z-index: 30;"
+			style="background-color: {getDataTypeColor(
+				IDEA_DATA_TYPE
+			)}; border-color: #ffffff; left: 50%; transform: translateX(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-input-top`}
 		/>
 	{/if}
@@ -210,11 +204,7 @@
 	</div>
 
 	<!-- Config button -->
-	<button
-		class="flowdrop-idea-node__config-btn"
-		onclick={openConfigSidebar}
-		title="Configure idea"
-	>
+	<button class="flowdrop-idea-node__config-btn" onclick={openConfigSidebar} title="Configure idea">
 		<Icon icon="mdi:cog" />
 	</button>
 
@@ -223,7 +213,9 @@
 		<Handle
 			type="source"
 			position={Position.Right}
-			style="background-color: {getDataTypeColor(IDEA_DATA_TYPE)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+			style="background-color: {getDataTypeColor(
+				IDEA_DATA_TYPE
+			)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-output-right`}
 		/>
 	{/if}
@@ -233,7 +225,9 @@
 		<Handle
 			type="source"
 			position={Position.Bottom}
-			style="background-color: {getDataTypeColor(IDEA_DATA_TYPE)}; border-color: #ffffff; left: 50%; transform: translateX(-50%); z-index: 30;"
+			style="background-color: {getDataTypeColor(
+				IDEA_DATA_TYPE
+			)}; border-color: #ffffff; left: 50%; transform: translateX(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-output-bottom`}
 		/>
 	{/if}
@@ -337,6 +331,7 @@
 		line-height: 1.5;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}

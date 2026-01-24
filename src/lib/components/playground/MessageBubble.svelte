@@ -32,9 +32,7 @@
 	 * Render content as markdown or plain text
 	 */
 	const renderedContent = $derived(
-		enableMarkdown && message.role !== 'log'
-			? marked.parse(message.content || '')
-			: message.content
+		enableMarkdown && message.role !== 'log' ? marked.parse(message.content || '') : message.content
 	);
 
 	/**

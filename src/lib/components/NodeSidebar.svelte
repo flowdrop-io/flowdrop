@@ -137,6 +137,7 @@
 	 */
 	function getCategoryDisplayName(category: NodeCategory): string {
 		const names: Record<NodeCategory, string> = {
+			triggers: 'Triggers',
 			inputs: 'Inputs',
 			outputs: 'Outputs',
 			prompts: 'Prompts',

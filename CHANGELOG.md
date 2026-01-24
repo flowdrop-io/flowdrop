@@ -196,35 +196,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ```svelte
 <script>
-  import { PlaygroundModal } from "@d34dman/flowdrop/playground";
-  let showPlayground = false;
+	import { PlaygroundModal } from '@d34dman/flowdrop/playground';
+	let showPlayground = false;
 </script>
 
-<button onclick={() => showPlayground = true}>Open Playground</button>
+<button onclick={() => (showPlayground = true)}>Open Playground</button>
 
 <PlaygroundModal
-  isOpen={showPlayground}
-  workflowId="wf-123"
-  onClose={() => showPlayground = false}
+	isOpen={showPlayground}
+	workflowId="wf-123"
+	onClose={() => (showPlayground = false)}
 />
 ```
 
 **Modal Mode with mountPlayground:**
 
 ```typescript
-import { mountPlayground, createEndpointConfig } from "@d34dman/flowdrop/playground";
+import { mountPlayground, createEndpointConfig } from '@d34dman/flowdrop/playground';
 
-const app = await mountPlayground(
-  document.getElementById("playground-container"),
-  {
-    workflowId: "wf-123",
-    endpointConfig: createEndpointConfig("/api/flowdrop"),
-    mode: "modal",
-    onClose: () => {
-      app.destroy();
-    }
-  }
-);
+const app = await mountPlayground(document.getElementById('playground-container'), {
+	workflowId: 'wf-123',
+	endpointConfig: createEndpointConfig('/api/flowdrop'),
+	mode: 'modal',
+	onClose: () => {
+		app.destroy();
+	}
+});
 ```
 
 ---

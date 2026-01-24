@@ -16,7 +16,12 @@
 
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { EditorView, lineNumbers, highlightActiveLineGutter, drawSelection } from '@codemirror/view';
+	import {
+		EditorView,
+		lineNumbers,
+		highlightActiveLineGutter,
+		drawSelection
+	} from '@codemirror/view';
 	import { EditorState } from '@codemirror/state';
 	import { history, historyKeymap } from '@codemirror/commands';
 	import { highlightSpecialChars, highlightActiveLine } from '@codemirror/view';

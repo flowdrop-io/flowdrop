@@ -1081,12 +1081,12 @@ paths:
       description: |
         Send a user message or trigger workflow execution with inputs.
         This starts or continues the conversation in the playground.
-        
+
         The message is created with status "pending" and processing begins immediately
         (synchronously) or is queued (asynchronously) based on the session's execution mode.
         The response returns immediately with the message entity, allowing clients to
         poll the message status endpoint to track processing progress.
-        
+
         Messages are processed in sequence order within a session to ensure proper
         conversation flow. If a previous message is not yet complete, the request
         will be rejected with a conflict error.
@@ -1337,22 +1337,22 @@ paths:
               choice:
                 summary: Choice selection
                 value:
-                  value: "option1"
+                  value: 'option1'
               multipleChoice:
                 summary: Multiple choice selection
                 value:
-                  value: ["option1", "option3"]
+                  value: ['option1', 'option3']
               text:
                 summary: Text input
                 value:
-                  value: "User provided text response"
+                  value: 'User provided text response'
               form:
                 summary: Form data
                 value:
                   value:
-                    name: "John Doe"
-                    email: "john@example.com"
-                    priority: "high"
+                    name: 'John Doe'
+                    email: 'john@example.com'
+                    priority: 'high'
       responses:
         '200':
           description: Interrupt resolved successfully

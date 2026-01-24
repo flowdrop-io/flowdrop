@@ -345,20 +345,20 @@
 					playgroundActions.addMessages(response.data);
 				}
 
-			// Update session status
-			if (response.sessionStatus) {
-				playgroundActions.updateSessionStatus(response.sessionStatus);
+				// Update session status
+				if (response.sessionStatus) {
+					playgroundActions.updateSessionStatus(response.sessionStatus);
 
-				// Stop executing if idle, completed, or failed
-				// "idle" means no processing is happening (execution finished)
-				if (
-					response.sessionStatus === 'idle' ||
-					response.sessionStatus === 'completed' ||
-					response.sessionStatus === 'failed'
-				) {
-					playgroundActions.setExecuting(false);
+					// Stop executing if idle, completed, or failed
+					// "idle" means no processing is happening (execution finished)
+					if (
+						response.sessionStatus === 'idle' ||
+						response.sessionStatus === 'completed' ||
+						response.sessionStatus === 'failed'
+					) {
+						playgroundActions.setExecuting(false);
+					}
 				}
-			}
 			},
 			pollingInterval
 		);
@@ -374,16 +374,16 @@
 
 		try {
 			const response = await playgroundService.getMessages(sessionId);
-			
+
 			// Add new messages (deduplicates automatically)
 			if (response.data && response.data.length > 0) {
 				playgroundActions.addMessages(response.data);
 			}
-			
+
 			// Update session status
 			if (response.sessionStatus) {
 				playgroundActions.updateSessionStatus(response.sessionStatus);
-				
+
 				// Update executing state based on session status
 				if (
 					response.sessionStatus === 'idle' ||

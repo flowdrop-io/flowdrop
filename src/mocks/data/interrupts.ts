@@ -6,12 +6,11 @@
 
 import type {
 	Interrupt,
-	InterruptType,
-	ConfirmationInterruptConfig,
-	ChoiceInterruptConfig,
-	TextInterruptConfig,
-	FormInterruptConfig
-} from "../../lib/types/interrupt.js";
+	ConfirmationConfig,
+	ChoiceConfig,
+	TextConfig,
+	FormConfig
+} from '../../lib/types/interrupt.js';
 
 /**
  * Mock interrupts storage (interruptId -> interrupt)
@@ -48,18 +47,18 @@ export function createConfirmationInterrupt(
 	messageId: string,
 	nodeId: string,
 	executionId: string,
-	config: ConfirmationInterruptConfig,
+	config: ConfirmationConfig,
 	allowCancel: boolean = true
 ): Interrupt {
 	const interrupt: Interrupt = {
 		id: generateInterruptId(),
 		messageId,
-		type: "confirmation",
+		type: 'confirmation',
 		config,
 		nodeId,
 		executionId,
 		sessionId,
-		status: "pending",
+		status: 'pending',
 		allowCancel,
 		createdAt: new Date().toISOString(),
 		message: config.message
@@ -79,18 +78,18 @@ export function createChoiceInterrupt(
 	messageId: string,
 	nodeId: string,
 	executionId: string,
-	config: ChoiceInterruptConfig,
+	config: ChoiceConfig,
 	allowCancel: boolean = true
 ): Interrupt {
 	const interrupt: Interrupt = {
 		id: generateInterruptId(),
 		messageId,
-		type: "choice",
+		type: 'choice',
 		config,
 		nodeId,
 		executionId,
 		sessionId,
-		status: "pending",
+		status: 'pending',
 		allowCancel,
 		createdAt: new Date().toISOString(),
 		message: config.message
@@ -110,18 +109,18 @@ export function createTextInterrupt(
 	messageId: string,
 	nodeId: string,
 	executionId: string,
-	config: TextInterruptConfig,
+	config: TextConfig,
 	allowCancel: boolean = true
 ): Interrupt {
 	const interrupt: Interrupt = {
 		id: generateInterruptId(),
 		messageId,
-		type: "text",
+		type: 'text',
 		config,
 		nodeId,
 		executionId,
 		sessionId,
-		status: "pending",
+		status: 'pending',
 		allowCancel,
 		createdAt: new Date().toISOString(),
 		message: config.message
@@ -141,18 +140,18 @@ export function createFormInterrupt(
 	messageId: string,
 	nodeId: string,
 	executionId: string,
-	config: FormInterruptConfig,
+	config: FormConfig,
 	allowCancel: boolean = true
 ): Interrupt {
 	const interrupt: Interrupt = {
 		id: generateInterruptId(),
 		messageId,
-		type: "form",
+		type: 'form',
 		config,
 		nodeId,
 		executionId,
 		sessionId,
-		status: "pending",
+		status: 'pending',
 		allowCancel,
 		createdAt: new Date().toISOString(),
 		message: config.message
@@ -198,14 +197,13 @@ export function resolveInterrupt(interruptId: string, value: unknown): Interrupt
 		return undefined;
 	}
 
-	if (interrupt.status !== "pending") {
+	if (interrupt.status !== 'pending') {
 		return undefined;
 	}
 
-	interrupt.status = "resolved";
-	interrupt.response = value;
-	interrupt.response_time = new Date().toISOString();
-	interrupt.user_id = "mock-user-123";
+	interrupt.status = 'resolved';
+	interrupt.responseValue = value;
+	interrupt.resolvedAt = new Date().toISOString();
 
 	mockInterrupts.set(interruptId, interrupt);
 	return interrupt;
@@ -220,7 +218,7 @@ export function cancelInterrupt(interruptId: string): boolean {
 		return false;
 	}
 
-	if (interrupt.status !== "pending") {
+	if (interrupt.status !== 'pending') {
 		return false;
 	}
 
@@ -228,8 +226,8 @@ export function cancelInterrupt(interruptId: string): boolean {
 		return false;
 	}
 
-	interrupt.status = "cancelled";
-	interrupt.response_time = new Date().toISOString();
+	interrupt.status = 'cancelled';
+	interrupt.resolvedAt = new Date().toISOString();
 
 	mockInterrupts.set(interruptId, interrupt);
 	return true;
@@ -240,7 +238,7 @@ export function cancelInterrupt(interruptId: string): boolean {
  */
 export function getSessionInterrupts(
 	sessionId: string,
-	status?: "pending" | "resolved" | "cancelled",
+	status?: 'pending' | 'resolved' | 'cancelled',
 	limit: number = 50,
 	offset: number = 0
 ): Interrupt[] {
@@ -261,7 +259,7 @@ export function getSessionInterrupts(
  */
 export function getPipelineInterrupts(
 	pipelineId: string,
-	status?: "pending" | "resolved" | "cancelled",
+	status?: 'pending' | 'resolved' | 'cancelled',
 	limit: number = 50,
 	offset: number = 0
 ): Interrupt[] {
@@ -292,73 +290,73 @@ export function resetInterruptData(): void {
  */
 export const sampleInterruptConfigs = {
 	confirmation: {
-		message: "Do you approve sending this email to 150 recipients?",
-		confirm_label: "Yes, send email",
-		cancel_label: "No, cancel"
-	} as ConfirmationInterruptConfig,
+		message: 'Do you approve sending this email to 150 recipients?',
+		confirmLabel: 'Yes, send email',
+		cancelLabel: 'No, cancel'
+	} as ConfirmationConfig,
 
 	choice: {
-		message: "Select the output format for the generated report:",
+		message: 'Select the output format for the generated report:',
 		options: [
-			{ value: "pdf", label: "PDF Document", description: "Best for printing and sharing" },
-			{ value: "xlsx", label: "Excel Spreadsheet", description: "Best for data analysis" },
-			{ value: "csv", label: "CSV File", description: "Best for importing into other tools" },
-			{ value: "json", label: "JSON", description: "Best for programmatic access" }
+			{ value: 'pdf', label: 'PDF Document', description: 'Best for printing and sharing' },
+			{ value: 'xlsx', label: 'Excel Spreadsheet', description: 'Best for data analysis' },
+			{ value: 'csv', label: 'CSV File', description: 'Best for importing into other tools' },
+			{ value: 'json', label: 'JSON', description: 'Best for programmatic access' }
 		],
 		multiple: false
-	} as ChoiceInterruptConfig,
+	} as ChoiceConfig,
 
 	multipleChoice: {
-		message: "Select which notifications to enable:",
+		message: 'Select which notifications to enable:',
 		options: [
-			{ value: "email", label: "Email", description: "Receive email notifications" },
-			{ value: "sms", label: "SMS", description: "Receive text messages" },
-			{ value: "push", label: "Push Notifications", description: "Receive browser notifications" },
-			{ value: "slack", label: "Slack", description: "Receive Slack messages" }
+			{ value: 'email', label: 'Email', description: 'Receive email notifications' },
+			{ value: 'sms', label: 'SMS', description: 'Receive text messages' },
+			{ value: 'push', label: 'Push Notifications', description: 'Receive browser notifications' },
+			{ value: 'slack', label: 'Slack', description: 'Receive Slack messages' }
 		],
 		multiple: true,
-		min_selections: 1,
-		max_selections: 3
-	} as ChoiceInterruptConfig,
+		minSelections: 1,
+		maxSelections: 3
+	} as ChoiceConfig,
 
 	text: {
-		message: "Please provide additional context for the AI to consider:",
-		placeholder: "Enter any relevant details...",
+		message: 'Please provide additional context for the AI to consider:',
+		placeholder: 'Enter any relevant details...',
 		multiline: true,
-		min_length: 10,
-		max_length: 500
-	} as TextInterruptConfig,
+		minLength: 10,
+		maxLength: 500
+	} as TextConfig,
 
 	form: {
-		message: "Please provide the required information to proceed:",
+		message: 'Please provide the required information to proceed:',
 		schema: {
-			type: "object" as const,
+			type: 'object' as const,
 			properties: {
 				name: {
-					type: "string" as const,
-					title: "Full Name",
-					description: "Enter your full name"
+					type: 'string' as const,
+					title: 'Full Name',
+					description: 'Enter your full name'
 				},
 				email: {
-					type: "string" as const,
-					title: "Email Address",
-					format: "email" as const
+					type: 'string' as const,
+					title: 'Email Address',
+					format: 'email' as const
 				},
 				priority: {
-					type: "string" as const,
-					title: "Priority Level",
-					enum: ["low", "medium", "high", "critical"]
+					type: 'string' as const,
+					title: 'Priority Level',
+					enum: ['low', 'medium', 'high', 'critical']
 				},
 				notes: {
-					type: "string" as const,
-					title: "Additional Notes",
-					format: "multiline" as const
+					type: 'string' as const,
+					title: 'Additional Notes',
+					format: 'multiline' as const
 				}
 			},
-			required: ["name", "email", "priority"]
+			required: ['name', 'email', 'priority']
 		},
-		default_values: {
-			priority: "medium"
+		defaultValues: {
+			priority: 'medium'
 		}
-	} as FormInterruptConfig
+	} as FormConfig
 };
