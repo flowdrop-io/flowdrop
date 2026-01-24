@@ -7,8 +7,8 @@
  * @module stores/interruptStore
  */
 
-import { writable, derived, get } from "svelte/store";
-import type { Interrupt, InterruptStatus } from "../types/interrupt.js";
+import { writable, derived, get } from 'svelte/store';
+import type { Interrupt, InterruptStatus } from '../types/interrupt.js';
 import {
 	type InterruptState,
 	type InterruptAction,
@@ -21,7 +21,7 @@ import {
 	getErrorMessage,
 	getResolvedValue,
 	toLegacyStatus
-} from "../types/interruptState.js";
+} from '../types/interruptState.js';
 
 // =========================================================================
 // Types
@@ -89,7 +89,7 @@ export const pendingInterruptCount = derived(
 export const resolvedInterrupts = derived(interrupts, ($interrupts): InterruptWithState[] => {
 	const resolved: InterruptWithState[] = [];
 	$interrupts.forEach((interrupt) => {
-		if (interrupt.machineState.status === "resolved") {
+		if (interrupt.machineState.status === 'resolved') {
 			resolved.push(interrupt);
 		}
 	});
@@ -173,11 +173,12 @@ function applyAction(interruptId: string, action: InterruptAction): TransitionRe
 					machineState: result.state,
 					status: toLegacyStatus(result.state),
 					responseValue: getResolvedValue(result.state) ?? current.responseValue,
-					resolvedAt: result.state.status === "resolved"
-						? (result.state as { resolvedAt: string }).resolvedAt
-						: result.state.status === "cancelled"
-							? (result.state as { cancelledAt: string }).cancelledAt
-							: current.resolvedAt
+					resolvedAt:
+						result.state.status === 'resolved'
+							? (result.state as { resolvedAt: string }).resolvedAt
+							: result.state.status === 'cancelled'
+								? (result.state as { cancelledAt: string }).cancelledAt
+								: current.resolvedAt
 				};
 				updated.set(interruptId, newInterrupt);
 			}
@@ -254,7 +255,7 @@ export const interruptActions = {
 	 * @returns Transition result
 	 */
 	startSubmit: (interruptId: string, value: unknown): TransitionResult => {
-		return applyAction(interruptId, { type: "SUBMIT", value });
+		return applyAction(interruptId, { type: 'SUBMIT', value });
 	},
 
 	/**
@@ -264,7 +265,7 @@ export const interruptActions = {
 	 * @returns Transition result
 	 */
 	startCancel: (interruptId: string): TransitionResult => {
-		return applyAction(interruptId, { type: "CANCEL" });
+		return applyAction(interruptId, { type: 'CANCEL' });
 	},
 
 	/**
@@ -274,7 +275,7 @@ export const interruptActions = {
 	 * @returns Transition result
 	 */
 	submitSuccess: (interruptId: string): TransitionResult => {
-		return applyAction(interruptId, { type: "SUCCESS" });
+		return applyAction(interruptId, { type: 'SUCCESS' });
 	},
 
 	/**
@@ -285,7 +286,7 @@ export const interruptActions = {
 	 * @returns Transition result
 	 */
 	submitFailure: (interruptId: string, error: string): TransitionResult => {
-		return applyAction(interruptId, { type: "FAILURE", error });
+		return applyAction(interruptId, { type: 'FAILURE', error });
 	},
 
 	/**
@@ -295,7 +296,7 @@ export const interruptActions = {
 	 * @returns Transition result
 	 */
 	retry: (interruptId: string): TransitionResult => {
-		return applyAction(interruptId, { type: "RETRY" });
+		return applyAction(interruptId, { type: 'RETRY' });
 	},
 
 	/**
@@ -305,7 +306,7 @@ export const interruptActions = {
 	 * @returns Transition result
 	 */
 	resetInterrupt: (interruptId: string): TransitionResult => {
-		return applyAction(interruptId, { type: "RESET" });
+		return applyAction(interruptId, { type: 'RESET' });
 	},
 
 	// =========================================================================
@@ -316,21 +317,17 @@ export const interruptActions = {
 	 * Update an interrupt's status (legacy)
 	 * @deprecated Use startSubmit/submitSuccess/submitFailure instead
 	 */
-	updateStatus: (
-		interruptId: string,
-		status: InterruptStatus,
-		responseValue?: unknown
-	): void => {
+	updateStatus: (interruptId: string, status: InterruptStatus, responseValue?: unknown): void => {
 		// Map legacy status to state machine actions
-		if (status === "resolved" && responseValue !== undefined) {
-			const submitResult = applyAction(interruptId, { type: "SUBMIT", value: responseValue });
+		if (status === 'resolved' && responseValue !== undefined) {
+			const submitResult = applyAction(interruptId, { type: 'SUBMIT', value: responseValue });
 			if (submitResult.valid) {
-				applyAction(interruptId, { type: "SUCCESS" });
+				applyAction(interruptId, { type: 'SUCCESS' });
 			}
-		} else if (status === "cancelled") {
-			const cancelResult = applyAction(interruptId, { type: "CANCEL" });
+		} else if (status === 'cancelled') {
+			const cancelResult = applyAction(interruptId, { type: 'CANCEL' });
 			if (cancelResult.valid) {
-				applyAction(interruptId, { type: "SUCCESS" });
+				applyAction(interruptId, { type: 'SUCCESS' });
 			}
 		}
 	},
@@ -342,9 +339,9 @@ export const interruptActions = {
 	resolveInterrupt: (interruptId: string, value: unknown): void => {
 		// For backward compatibility, immediately resolve
 		// (assumes sync operation or already completed API call)
-		const submitResult = applyAction(interruptId, { type: "SUBMIT", value });
+		const submitResult = applyAction(interruptId, { type: 'SUBMIT', value });
 		if (submitResult.valid) {
-			applyAction(interruptId, { type: "SUCCESS" });
+			applyAction(interruptId, { type: 'SUCCESS' });
 		}
 	},
 
@@ -353,9 +350,9 @@ export const interruptActions = {
 	 * @deprecated Use startCancel + submitSuccess instead
 	 */
 	cancelInterrupt: (interruptId: string): void => {
-		const cancelResult = applyAction(interruptId, { type: "CANCEL" });
+		const cancelResult = applyAction(interruptId, { type: 'CANCEL' });
 		if (cancelResult.valid) {
-			applyAction(interruptId, { type: "SUCCESS" });
+			applyAction(interruptId, { type: 'SUCCESS' });
 		}
 	},
 
@@ -367,7 +364,9 @@ export const interruptActions = {
 		// This is now a no-op - state is managed by the state machine
 		// Kept for backward compatibility
 		if (isSubmitting) {
-			console.warn("[InterruptStore] setSubmitting(true) is deprecated. Use startSubmit() instead.");
+			console.warn(
+				'[InterruptStore] setSubmitting(true) is deprecated. Use startSubmit() instead.'
+			);
 		}
 	},
 
@@ -377,7 +376,7 @@ export const interruptActions = {
 	 */
 	setError: (interruptId: string, error: string | null): void => {
 		if (error) {
-			applyAction(interruptId, { type: "FAILURE", error });
+			applyAction(interruptId, { type: 'FAILURE', error });
 		}
 		// Clearing error is not directly supported - use retry or reset
 	},

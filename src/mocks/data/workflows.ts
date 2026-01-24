@@ -2568,7 +2568,8 @@ export const demoTriggerNodeWorkflow: Workflow = {
 export const demoForEachLoopWorkflow: Workflow = {
 	id: 'demo-foreach-loop',
 	name: 'Demo: ForEach Loop',
-	description: 'Demonstrates the ForEach loop node with loopback edge functionality for iterating over arrays',
+	description:
+		'Demonstrates the ForEach loop node with loopback edge functionality for iterating over arrays',
 	nodes: [
 		{
 			id: 'json_loader.1',
@@ -2650,7 +2651,8 @@ export const demoForEachLoopWorkflow: Workflow = {
 					name: 'ForEach Loop',
 					type: 'default',
 					supportedTypes: ['default', 'simple'],
-					description: 'Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.',
+					description:
+						'Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.',
 					category: 'logic',
 					icon: 'mdi:repeat',
 					color: '#8b5cf6',
@@ -2671,7 +2673,8 @@ export const demoForEachLoopWorkflow: Workflow = {
 							type: 'input',
 							dataType: 'mixed',
 							required: false,
-							description: 'Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle.'
+							description:
+								'Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle.'
 						},
 						{
 							id: 'trigger',
@@ -2750,7 +2753,8 @@ export const demoForEachLoopWorkflow: Workflow = {
 							maxIterations: {
 								type: 'integer',
 								title: 'Max Iterations',
-								description: 'Maximum number of iterations (safety limit to prevent infinite loops)',
+								description:
+									'Maximum number of iterations (safety limit to prevent infinite loops)',
 								default: 1000,
 								minimum: 1,
 								maximum: 100000
@@ -2857,7 +2861,8 @@ export const demoForEachLoopWorkflow: Workflow = {
 			data: {
 				label: 'Notes',
 				config: {
-					content: '# ForEach Loop Demo\n\nThis workflow demonstrates the **ForEach Loop** node:\n\n1. **JSON Loader** provides an array of items\n2. **ForEach Loop** iterates over each item\n3. **Process Item** processes the current item\n4. The loopback edge (dashed gray) connects back to trigger the next iteration\n\n> The loopback edge uses a special `loop_back` port that accepts any data type.',
+					content:
+						'# ForEach Loop Demo\n\nThis workflow demonstrates the **ForEach Loop** node:\n\n1. **JSON Loader** provides an array of items\n2. **ForEach Loop** iterates over each item\n3. **Process Item** processes the current item\n4. The loopback edge (dashed gray) connects back to trigger the next iteration\n\n> The loopback edge uses a special `loop_back` port that accepts any data type.',
 					noteType: 'info'
 				},
 				metadata: {

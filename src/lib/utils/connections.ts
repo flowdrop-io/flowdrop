@@ -16,7 +16,7 @@ import type {
  * Loopback port name constant
  * This is the standard input port name used for loop iteration triggers
  */
-const LOOPBACK_PORT_NAME = "loop_back";
+const LOOPBACK_PORT_NAME = 'loop_back';
 
 /**
  * Determines if an edge is a loopback edge.
@@ -33,7 +33,7 @@ const LOOPBACK_PORT_NAME = "loop_back";
  * ```
  */
 export function isLoopbackEdge(edge: WorkflowEdge): boolean {
-	const targetHandle = edge.targetHandle ?? "";
+	const targetHandle = edge.targetHandle ?? '';
 	return targetHandle.includes(`-input-${LOOPBACK_PORT_NAME}`);
 }
 

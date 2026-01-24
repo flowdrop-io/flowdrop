@@ -7,7 +7,7 @@
  * @module types/interrupt
  */
 
-import type { ConfigSchema } from "./index.js";
+import type { ConfigSchema } from './index.js';
 
 // Re-export state machine types for convenience
 export type {
@@ -25,7 +25,7 @@ export type {
 	RetryAction,
 	ResetAction,
 	TransitionResult
-} from "./interruptState.js";
+} from './interruptState.js';
 
 export {
 	initialState,
@@ -37,7 +37,7 @@ export {
 	getErrorMessage,
 	getResolvedValue,
 	toLegacyStatus
-} from "./interruptState.js";
+} from './interruptState.js';
 
 /**
  * Types of interrupts supported by the system
@@ -47,7 +47,7 @@ export {
  * - `text`: Free-form text input
  * - `form`: JSON Schema-based form
  */
-export type InterruptType = "confirmation" | "choice" | "text" | "form";
+export type InterruptType = 'confirmation' | 'choice' | 'text' | 'form';
 
 /**
  * Status of an interrupt request
@@ -57,7 +57,7 @@ export type InterruptType = "confirmation" | "choice" | "text" | "form";
  * - `cancelled`: User or system cancelled the interrupt
  * - `expired`: Interrupt timed out without response
  */
-export type InterruptStatus = "pending" | "resolved" | "cancelled" | "expired";
+export type InterruptStatus = 'pending' | 'resolved' | 'cancelled' | 'expired';
 
 /**
  * Choice option for choice-type interrupts
@@ -276,7 +276,7 @@ export type InterruptResponse = InterruptApiResponse<Interrupt>;
  */
 export interface InterruptMessageMetadata {
 	/** Indicates this is an interrupt request */
-	type: "interrupt_request";
+	type: 'interrupt_request';
 	/** The interrupt ID */
 	interrupt_id: string;
 	/** Type of interrupt */
@@ -313,13 +313,11 @@ export interface InterruptMessageMetadata {
  * @param metadata - Message metadata to check
  * @returns True if the metadata indicates an interrupt request
  */
-export function isInterruptMetadata(
-	metadata: Record<string, unknown> | undefined
-): boolean {
+export function isInterruptMetadata(metadata: Record<string, unknown> | undefined): boolean {
 	return (
 		metadata !== undefined &&
-		metadata.type === "interrupt_request" &&
-		typeof metadata.interrupt_id === "string"
+		metadata.type === 'interrupt_request' &&
+		typeof metadata.interrupt_id === 'string'
 	);
 }
 
@@ -338,7 +336,7 @@ export function extractInterruptMetadata(
 
 	// Manually construct the typed object from the validated metadata
 	return {
-		type: "interrupt_request",
+		type: 'interrupt_request',
 		interrupt_id: metadata.interrupt_id as string,
 		interrupt_type: metadata.interrupt_type as InterruptType,
 		schema: metadata.schema as ConfigSchema | undefined,
@@ -375,7 +373,7 @@ export function metadataToInterrupt(
 	const baseInterrupt: Interrupt = {
 		id: metadata.interrupt_id,
 		type: metadata.interrupt_type,
-		status: "pending",
+		status: 'pending',
 		message: content,
 		nodeId: metadata.node_id,
 		executionId: metadata.execution_id,
@@ -400,14 +398,14 @@ function buildInterruptConfig(
 	message: string
 ): InterruptConfig {
 	switch (metadata.interrupt_type) {
-		case "confirmation":
+		case 'confirmation':
 			return {
 				message,
-				confirmLabel: metadata.confirm_label ?? "Yes",
-				cancelLabel: metadata.cancel_label ?? "No"
+				confirmLabel: metadata.confirm_label ?? 'Yes',
+				cancelLabel: metadata.cancel_label ?? 'No'
 			} as ConfirmationConfig;
 
-		case "choice":
+		case 'choice':
 			return {
 				message,
 				options: metadata.options ?? [],
@@ -416,7 +414,7 @@ function buildInterruptConfig(
 				maxSelections: metadata.max_selections
 			} as ChoiceConfig;
 
-		case "text":
+		case 'text':
 			return {
 				message,
 				placeholder: metadata.placeholder,
@@ -426,10 +424,10 @@ function buildInterruptConfig(
 				defaultValue: metadata.default_value as string | undefined
 			} as TextConfig;
 
-		case "form":
+		case 'form':
 			return {
 				message,
-				schema: metadata.schema ?? { type: "object", properties: {} },
+				schema: metadata.schema ?? { type: 'object', properties: {} },
 				defaultValues: metadata.default_value as Record<string, unknown> | undefined
 			} as FormConfig;
 

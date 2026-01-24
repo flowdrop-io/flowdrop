@@ -33,9 +33,7 @@
 	 * Falls back to the original label if not set.
 	 * This allows users to customize the node title per-instance via config.
 	 */
-	const displayTitle = $derived(
-		(props.data.config?.instanceTitle as string) || props.data.label
-	);
+	const displayTitle = $derived((props.data.config?.instanceTitle as string) || props.data.label);
 
 	/**
 	 * Instance-specific description override from config.

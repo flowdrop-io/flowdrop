@@ -8,8 +8,8 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import type { ChoiceConfig, InterruptChoice } from "../../types/interrupt.js";
+	import Icon from '@iconify/svelte';
+	import type { ChoiceConfig, InterruptChoice } from '../../types/interrupt.js';
 
 	/**
 	 * Component props
@@ -29,14 +29,7 @@
 		onSubmit: (value: string | string[]) => void;
 	}
 
-	let {
-		config,
-		isResolved,
-		resolvedValue,
-		isSubmitting,
-		error,
-		onSubmit
-	}: Props = $props();
+	let { config, isResolved, resolvedValue, isSubmitting, error, onSubmit }: Props = $props();
 
 	/** Local state for selected values */
 	let selectedValues = $state<Set<string>>(new Set());
@@ -71,7 +64,7 @@
 		if (isResolved || isSubmitting) return;
 
 		const newSelected = new Set(selectedValues);
-		
+
 		if (isMultiple) {
 			if (checked) {
 				// Check max selections
@@ -88,7 +81,7 @@
 				newSelected.add(option.value);
 			}
 		}
-		
+
 		selectedValues = newSelected;
 	}
 
@@ -102,7 +95,7 @@
 		if (isMultiple) {
 			onSubmit(values);
 		} else {
-			onSubmit(values[0] ?? "");
+			onSubmit(values[0] ?? '');
 		}
 	}
 </script>
@@ -124,7 +117,7 @@
 	{/if}
 
 	<!-- Options -->
-	<div class="choice-prompt__options" role={isMultiple ? "group" : "radiogroup"}>
+	<div class="choice-prompt__options" role={isMultiple ? 'group' : 'radiogroup'}>
 		{#each config.options as option (option.value)}
 			{@const isChecked = isResolved ? isOptionResolved(option) : selectedValues.has(option.value)}
 			<label
@@ -133,7 +126,7 @@
 				class:choice-prompt__option--resolved={isResolved && isChecked}
 			>
 				<input
-					type={isMultiple ? "checkbox" : "radio"}
+					type={isMultiple ? 'checkbox' : 'radio'}
 					name="choice-option"
 					value={option.value}
 					checked={isChecked}
@@ -143,9 +136,9 @@
 				/>
 				<span class="choice-prompt__checkmark">
 					{#if isChecked}
-						<Icon icon={isMultiple ? "mdi:checkbox-marked" : "mdi:radiobox-marked"} />
+						<Icon icon={isMultiple ? 'mdi:checkbox-marked' : 'mdi:radiobox-marked'} />
 					{:else}
-						<Icon icon={isMultiple ? "mdi:checkbox-blank-outline" : "mdi:radiobox-blank"} />
+						<Icon icon={isMultiple ? 'mdi:checkbox-blank-outline' : 'mdi:radiobox-blank'} />
 					{/if}
 				</span>
 				<span class="choice-prompt__option-content">

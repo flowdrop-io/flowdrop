@@ -1185,7 +1185,11 @@
 	   ========================================================================= */
 
 	/* Interrupt state: Pending (awaiting user response) */
-	--flowdrop-interrupt-pending-bg: linear-gradient(135deg, var(--color-ref-amber-100) 0%, var(--color-ref-amber-200) 100%);
+	--flowdrop-interrupt-pending-bg: linear-gradient(
+		135deg,
+		var(--color-ref-amber-100) 0%,
+		var(--color-ref-amber-200) 100%
+	);
 	--flowdrop-interrupt-pending-border: var(--color-ref-amber-500);
 	--flowdrop-interrupt-pending-shadow: rgba(245, 158, 11, 0.15);
 	--flowdrop-interrupt-pending-avatar: var(--color-ref-amber-500);
@@ -1193,7 +1197,11 @@
 	--flowdrop-interrupt-pending-text-light: var(--color-ref-amber-700);
 
 	/* Interrupt state: Completed (response received - neutral) */
-	--flowdrop-interrupt-completed-bg: linear-gradient(135deg, var(--color-ref-blue-50) 0%, var(--color-ref-blue-100) 100%);
+	--flowdrop-interrupt-completed-bg: linear-gradient(
+		135deg,
+		var(--color-ref-blue-50) 0%,
+		var(--color-ref-blue-100) 100%
+	);
 	--flowdrop-interrupt-completed-border: var(--color-ref-blue-500);
 	--flowdrop-interrupt-completed-shadow: rgba(59, 130, 246, 0.15);
 	--flowdrop-interrupt-completed-avatar: var(--color-ref-blue-500);
@@ -1201,7 +1209,11 @@
 	--flowdrop-interrupt-completed-text-light: var(--color-ref-blue-600);
 
 	/* Interrupt state: Cancelled (dismissed without responding) */
-	--flowdrop-interrupt-cancelled-bg: linear-gradient(135deg, var(--color-ref-gray-100) 0%, var(--color-ref-gray-200) 100%);
+	--flowdrop-interrupt-cancelled-bg: linear-gradient(
+		135deg,
+		var(--color-ref-gray-100) 0%,
+		var(--color-ref-gray-200) 100%
+	);
 	--flowdrop-interrupt-cancelled-border: var(--color-ref-gray-400);
 	--flowdrop-interrupt-cancelled-shadow: rgba(107, 114, 128, 0.15);
 	--flowdrop-interrupt-cancelled-avatar: var(--color-ref-gray-500);
@@ -1209,7 +1221,11 @@
 	--flowdrop-interrupt-cancelled-text-light: var(--color-ref-gray-500);
 
 	/* Interrupt state: Error */
-	--flowdrop-interrupt-error-bg: linear-gradient(135deg, var(--color-ref-red-50) 0%, var(--color-ref-red-100) 100%);
+	--flowdrop-interrupt-error-bg: linear-gradient(
+		135deg,
+		var(--color-ref-red-50) 0%,
+		var(--color-ref-red-100) 100%
+	);
 	--flowdrop-interrupt-error-border: var(--color-ref-red-500);
 	--flowdrop-interrupt-error-shadow: rgba(239, 68, 68, 0.15);
 	--flowdrop-interrupt-error-avatar: var(--color-ref-red-500);
@@ -1224,8 +1240,16 @@
 	--flowdrop-interrupt-prompt-border-error: rgba(239, 68, 68, 0.2);
 
 	/* Interrupt button tokens */
-	--flowdrop-interrupt-btn-primary-bg: linear-gradient(135deg, var(--color-ref-blue-500) 0%, var(--color-ref-blue-600) 100%);
-	--flowdrop-interrupt-btn-primary-bg-hover: linear-gradient(135deg, var(--color-ref-blue-600) 0%, var(--color-ref-blue-700) 100%);
+	--flowdrop-interrupt-btn-primary-bg: linear-gradient(
+		135deg,
+		var(--color-ref-blue-500) 0%,
+		var(--color-ref-blue-600) 100%
+	);
+	--flowdrop-interrupt-btn-primary-bg-hover: linear-gradient(
+		135deg,
+		var(--color-ref-blue-600) 0%,
+		var(--color-ref-blue-700) 100%
+	);
 	--flowdrop-interrupt-btn-primary-shadow: rgba(59, 130, 246, 0.3);
 	--flowdrop-interrupt-btn-secondary-bg: var(--color-ref-gray-100);
 	--flowdrop-interrupt-btn-secondary-border: var(--color-ref-gray-300);

@@ -93,7 +93,7 @@
 	$effect(() => {
 		// Get all messages that are interrupt requests
 		const interruptMessages = displayMessages.filter(isInterruptMessage);
-		
+
 		for (const message of interruptMessages) {
 			// Check if we already have this interrupt in the store
 			const existing = getInterruptByMessageId(message.id);
@@ -117,8 +117,8 @@
 	const interruptsByMessageId = $derived(
 		new Map(
 			Array.from($interrupts.values())
-				.filter(i => i.messageId)
-				.map(i => [i.messageId, i])
+				.filter((i) => i.messageId)
+				.map((i) => [i.messageId, i])
 		)
 	);
 
@@ -202,14 +202,14 @@
 	 */
 	$effect(() => {
 		const currentlyExecuting = $isExecuting;
-		
+
 		// Focus input when execution completes (was executing, now not)
 		if (wasExecuting && !currentlyExecuting && inputField) {
 			tick().then(() => {
 				inputField?.focus();
 			});
 		}
-		
+
 		// Update tracking state
 		wasExecuting = currentlyExecuting;
 	});
@@ -219,7 +219,7 @@
 	 */
 	$effect(() => {
 		const status = $sessionStatus;
-		if ((status === "idle" || status === "completed") && inputField && !$isExecuting) {
+		if ((status === 'idle' || status === 'completed') && inputField && !$isExecuting) {
 			tick().then(() => {
 				inputField?.focus();
 			});

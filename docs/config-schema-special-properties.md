@@ -35,10 +35,12 @@ These property names in `config` have special meaning and trigger automatic beha
 Allows each node instance to have a unique title that overrides the default `label` derived from the node type name. This is useful when you have multiple instances of the same node type and want to give each a meaningful name.
 
 **Fallback Behavior:**
+
 - If `instanceTitle` is set in config → displays `instanceTitle`
 - If not set → displays `label` (from node data)
 
 **Supported Node Types:**
+
 - `workflowNode` (Default)
 - `simple` (Simple)
 - `terminal` (Terminal - Start/End/Exit)
@@ -50,15 +52,15 @@ Allows each node instance to have a unique title that overrides the default `lab
 
 ```json
 {
-  "type": "object",
-  "properties": {
-    "instanceTitle": {
-      "type": "string",
-      "title": "Custom Title",
-      "description": "Override the default node title for this instance",
-      "x-display-order": -2
-    }
-  }
+	"type": "object",
+	"properties": {
+		"instanceTitle": {
+			"type": "string",
+			"title": "Custom Title",
+			"description": "Override the default node title for this instance",
+			"x-display-order": -2
+		}
+	}
 }
 ```
 
@@ -67,10 +69,12 @@ Allows each node instance to have a unique title that overrides the default `lab
 Allows each node instance to have a unique description that overrides the default `metadata.description` from the node type definition. This is useful for documenting what a specific node instance does within your workflow.
 
 **Fallback Behavior:**
+
 - If `instanceDescription` is set in config → displays `instanceDescription`
 - If not set → displays `metadata.description` (from node type definition)
 
 **Supported Node Types:**
+
 - `workflowNode` (Default)
 - `simple` (Simple)
 - `terminal` (Terminal - Start/End/Exit)
@@ -82,16 +86,16 @@ Allows each node instance to have a unique description that overrides the defaul
 
 ```json
 {
-  "type": "object",
-  "properties": {
-    "instanceDescription": {
-      "type": "string",
-      "title": "Custom Description",
-      "description": "Override the default description for this instance",
-      "format": "multiline",
-      "x-display-order": -1
-    }
-  }
+	"type": "object",
+	"properties": {
+		"instanceDescription": {
+			"type": "string",
+			"title": "Custom Description",
+			"description": "Override the default description for this instance",
+			"format": "multiline",
+			"x-display-order": -1
+		}
+	}
 }
 ```
 
@@ -101,42 +105,43 @@ Here's how to add both properties to a node's config schema to make title and de
 
 ```json
 {
-  "id": "llm-processor",
-  "name": "LLM Processor",
-  "description": "Process text using an LLM",
-  "configSchema": {
-    "type": "object",
-    "properties": {
-      "instanceTitle": {
-        "type": "string",
-        "title": "Custom Title",
-        "description": "Give this node a custom name (e.g., 'Summarizer', 'Translator')",
-        "x-display-order": -2
-      },
-      "instanceDescription": {
-        "type": "string",
-        "title": "Custom Description",
-        "description": "Describe what this specific node does",
-        "format": "multiline",
-        "x-display-order": -1
-      },
-      "model": {
-        "type": "string",
-        "title": "Model",
-        "enum": ["gpt-4o", "gpt-4o-mini", "claude-3"],
-        "default": "gpt-4o-mini"
-      },
-      "prompt": {
-        "type": "string",
-        "title": "Prompt",
-        "format": "multiline"
-      }
-    }
-  }
+	"id": "llm-processor",
+	"name": "LLM Processor",
+	"description": "Process text using an LLM",
+	"configSchema": {
+		"type": "object",
+		"properties": {
+			"instanceTitle": {
+				"type": "string",
+				"title": "Custom Title",
+				"description": "Give this node a custom name (e.g., 'Summarizer', 'Translator')",
+				"x-display-order": -2
+			},
+			"instanceDescription": {
+				"type": "string",
+				"title": "Custom Description",
+				"description": "Describe what this specific node does",
+				"format": "multiline",
+				"x-display-order": -1
+			},
+			"model": {
+				"type": "string",
+				"title": "Model",
+				"enum": ["gpt-4o", "gpt-4o-mini", "claude-3"],
+				"default": "gpt-4o-mini"
+			},
+			"prompt": {
+				"type": "string",
+				"title": "Prompt",
+				"format": "multiline"
+			}
+		}
+	}
 }
 ```
 
 **Result:**
+
 - User can set a custom title like "Email Summarizer" instead of "LLM Processor"
 - User can set a custom description like "Summarizes incoming emails into 3 bullet points"
 - These values are stored in the node's `config` and persist with the workflow
@@ -161,39 +166,39 @@ The `format` property in a config schema field controls how it's rendered in the
 
 ```json
 {
-  "type": "object",
-  "properties": {
-    "prompt": {
-      "type": "string",
-      "title": "Prompt",
-      "format": "multiline",
-      "description": "Enter your prompt text"
-    },
-    "temperature": {
-      "type": "number",
-      "title": "Temperature",
-      "format": "range",
-      "minimum": 0,
-      "maximum": 2,
-      "default": 0.7
-    },
-    "systemMessage": {
-      "type": "string",
-      "title": "System Message",
-      "format": "template",
-      "description": "Use {{ variable }} for dynamic values"
-    },
-    "metadata": {
-      "type": "object",
-      "title": "Metadata",
-      "format": "json",
-      "description": "Additional JSON metadata"
-    },
-    "internalId": {
-      "type": "string",
-      "format": "hidden"
-    }
-  }
+	"type": "object",
+	"properties": {
+		"prompt": {
+			"type": "string",
+			"title": "Prompt",
+			"format": "multiline",
+			"description": "Enter your prompt text"
+		},
+		"temperature": {
+			"type": "number",
+			"title": "Temperature",
+			"format": "range",
+			"minimum": 0,
+			"maximum": 2,
+			"default": 0.7
+		},
+		"systemMessage": {
+			"type": "string",
+			"title": "System Message",
+			"format": "template",
+			"description": "Use {{ variable }} for dynamic values"
+		},
+		"metadata": {
+			"type": "object",
+			"title": "Metadata",
+			"format": "json",
+			"description": "Additional JSON metadata"
+		},
+		"internalId": {
+			"type": "string",
+			"format": "hidden"
+		}
+	}
 }
 ```
 
@@ -209,16 +214,16 @@ Allows users to define additional input ports at runtime. These ports are combin
 
 ```typescript
 interface DynamicPort {
-  /** Unique identifier for the port (used as handle ID) */
-  name: string;
-  /** Display label shown in the UI */
-  label?: string;
-  /** Description of the port's purpose */
-  description?: string;
-  /** Data type for validation and styling */
-  dataType?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | 'json';
-  /** Whether this port is required for execution */
-  required?: boolean;
+	/** Unique identifier for the port (used as handle ID) */
+	name: string;
+	/** Display label shown in the UI */
+	label?: string;
+	/** Description of the port's purpose */
+	description?: string;
+	/** Data type for validation and styling */
+	dataType?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | 'json';
+	/** Whether this port is required for execution */
+	required?: boolean;
 }
 ```
 
@@ -226,20 +231,20 @@ interface DynamicPort {
 
 ```json
 {
-  "dynamicInputs": [
-    {
-      "name": "extra_context",
-      "label": "Extra Context",
-      "dataType": "string",
-      "description": "Additional context data"
-    },
-    {
-      "name": "user_data",
-      "label": "User Data",
-      "dataType": "json",
-      "required": true
-    }
-  ]
+	"dynamicInputs": [
+		{
+			"name": "extra_context",
+			"label": "Extra Context",
+			"dataType": "string",
+			"description": "Additional context data"
+		},
+		{
+			"name": "user_data",
+			"label": "User Data",
+			"dataType": "json",
+			"required": true
+		}
+	]
 }
 ```
 
@@ -251,18 +256,18 @@ Same as `dynamicInputs` but for output ports.
 
 ```json
 {
-  "dynamicOutputs": [
-    {
-      "name": "processed_data",
-      "label": "Processed Data",
-      "dataType": "json"
-    },
-    {
-      "name": "summary",
-      "label": "Summary",
-      "dataType": "string"
-    }
-  ]
+	"dynamicOutputs": [
+		{
+			"name": "processed_data",
+			"label": "Processed Data",
+			"dataType": "json"
+		},
+		{
+			"name": "summary",
+			"label": "Summary",
+			"dataType": "string"
+		}
+	]
 }
 ```
 
@@ -297,22 +302,22 @@ The `nodeType` config property changes how a node is visually rendered. This all
 
 ```json
 {
-  "id": "my-node",
-  "name": "My Node",
-  "type": "default",
-  "supportedTypes": ["default", "simple", "square"],
-  "configSchema": {
-    "type": "object",
-    "properties": {
-      "nodeType": {
-        "type": "string",
-        "title": "Node Style",
-        "enum": ["default", "simple", "square"],
-        "enumNames": ["Default (detailed)", "Simple (compact)", "Square"],
-        "default": "default"
-      }
-    }
-  }
+	"id": "my-node",
+	"name": "My Node",
+	"type": "default",
+	"supportedTypes": ["default", "simple", "square"],
+	"configSchema": {
+		"type": "object",
+		"properties": {
+			"nodeType": {
+				"type": "string",
+				"title": "Node Style",
+				"enum": ["default", "simple", "square"],
+				"enumNames": ["Default (detailed)", "Simple (compact)", "Square"],
+				"default": "default"
+			}
+		}
+	}
 }
 ```
 
@@ -339,18 +344,18 @@ Gateway nodes use `config.branches` to define conditional output paths. Each bra
 
 ```typescript
 interface Branch {
-  /** Unique identifier for the branch (used as handle ID and for connections) */
-  name: string;
-  /** Display label shown in the UI (optional, defaults to name) */
-  label?: string;
-  /** Description of when this branch is activated */
-  description?: string;
-  /** Optional value associated with the branch (e.g., for Switch matching) */
-  value?: string;
-  /** Optional condition expression for this branch */
-  condition?: string;
-  /** Whether this is the default/fallback branch */
-  isDefault?: boolean;
+	/** Unique identifier for the branch (used as handle ID and for connections) */
+	name: string;
+	/** Display label shown in the UI (optional, defaults to name) */
+	label?: string;
+	/** Description of when this branch is activated */
+	description?: string;
+	/** Optional value associated with the branch (e.g., for Switch matching) */
+	value?: string;
+	/** Optional condition expression for this branch */
+	condition?: string;
+	/** Whether this is the default/fallback branch */
+	isDefault?: boolean;
 }
 ```
 
@@ -358,25 +363,25 @@ interface Branch {
 
 ```json
 {
-  "branches": [
-    {
-      "name": "high_priority",
-      "label": "High Priority",
-      "condition": "priority > 8",
-      "description": "Items with priority greater than 8"
-    },
-    {
-      "name": "medium_priority",
-      "label": "Medium Priority",
-      "condition": "priority >= 4 && priority <= 8"
-    },
-    {
-      "name": "low_priority",
-      "label": "Low Priority",
-      "isDefault": true,
-      "description": "All other items (fallback)"
-    }
-  ]
+	"branches": [
+		{
+			"name": "high_priority",
+			"label": "High Priority",
+			"condition": "priority > 8",
+			"description": "Items with priority greater than 8"
+		},
+		{
+			"name": "medium_priority",
+			"label": "Medium Priority",
+			"condition": "priority >= 4 && priority <= 8"
+		},
+		{
+			"name": "low_priority",
+			"label": "Low Priority",
+			"isDefault": true,
+			"description": "All other items (fallback)"
+		}
+	]
 }
 ```
 
@@ -396,13 +401,13 @@ Use `multiple: true` with an `enum` to render as checkboxes instead of a dropdow
 
 ```json
 {
-  "tags": {
-    "type": "string",
-    "title": "Tags",
-    "enum": ["urgent", "review", "archive", "featured"],
-    "multiple": true,
-    "default": []
-  }
+	"tags": {
+		"type": "string",
+		"title": "Tags",
+		"enum": ["urgent", "review", "archive", "featured"],
+		"multiple": true,
+		"default": []
+	}
 }
 ```
 
@@ -412,13 +417,13 @@ Use `enumNames` to provide human-readable labels for enum values:
 
 ```json
 {
-  "status": {
-    "type": "string",
-    "title": "Status",
-    "enum": ["pending", "in_progress", "completed", "cancelled"],
-    "enumNames": ["Pending", "In Progress", "Completed", "Cancelled"],
-    "default": "pending"
-  }
+	"status": {
+		"type": "string",
+		"title": "Status",
+		"enum": ["pending", "in_progress", "completed", "cancelled"],
+		"enumNames": ["Pending", "In Progress", "Completed", "Cancelled"],
+		"default": "pending"
+	}
 }
 ```
 
@@ -426,20 +431,20 @@ Use `enumNames` to provide human-readable labels for enum values:
 
 ```json
 {
-  "temperature": {
-    "type": "number",
-    "title": "Temperature",
-    "minimum": 0,
-    "maximum": 2,
-    "default": 0.7
-  },
-  "maxTokens": {
-    "type": "integer",
-    "title": "Max Tokens",
-    "minimum": 1,
-    "maximum": 4096,
-    "default": 1000
-  }
+	"temperature": {
+		"type": "number",
+		"title": "Temperature",
+		"minimum": 0,
+		"maximum": 2,
+		"default": 0.7
+	},
+	"maxTokens": {
+		"type": "integer",
+		"title": "Max Tokens",
+		"minimum": 1,
+		"maximum": 4096,
+		"default": 1000
+	}
 }
 ```
 
@@ -447,13 +452,13 @@ Use `enumNames` to provide human-readable labels for enum values:
 
 ```json
 {
-  "apiKey": {
-    "type": "string",
-    "title": "API Key",
-    "minLength": 10,
-    "maxLength": 100,
-    "pattern": "^sk-[a-zA-Z0-9]+$"
-  }
+	"apiKey": {
+		"type": "string",
+		"title": "API Key",
+		"minLength": 10,
+		"maxLength": 100,
+		"pattern": "^sk-[a-zA-Z0-9]+$"
+	}
 }
 ```
 
@@ -465,62 +470,54 @@ Here's a complete node configuration demonstrating multiple special properties:
 
 ```typescript
 const nodeMetadata: NodeMetadata = {
-  id: "advanced-processor",
-  name: "Advanced Processor",
-  type: "default",
-  supportedTypes: ["default", "simple"],
-  description: "A processor with dynamic ports and type switching",
-  category: "processing",
-  version: "1.0.0",
-  inputs: [
-    { name: "data", label: "Data", dataType: "json" }
-  ],
-  outputs: [
-    { name: "result", label: "Result", dataType: "json" }
-  ],
-  configSchema: {
-    type: "object",
-    properties: {
-      // Node type selection
-      nodeType: {
-        type: "string",
-        title: "Node Style",
-        enum: ["default", "simple"],
-        enumNames: ["Default", "Compact"],
-        default: "default"
-      },
-      // Regular config
-      model: {
-        type: "string",
-        title: "Model",
-        enum: ["gpt-4o", "gpt-4o-mini", "claude-3"],
-        default: "gpt-4o-mini"
-      },
-      // Template field
-      prompt: {
-        type: "string",
-        title: "Prompt Template",
-        format: "template",
-        default: "Process: {{ data }}"
-      },
-      // Hidden internal ID
-      internalId: {
-        type: "string",
-        format: "hidden"
-      }
-    }
-  },
-  // Default config values including dynamic ports
-  config: {
-    nodeType: "default",
-    model: "gpt-4o-mini",
-    dynamicInputs: [
-      { name: "context", label: "Context", dataType: "string" }
-    ],
-    dynamicOutputs: [
-      { name: "logs", label: "Logs", dataType: "string" }
-    ]
-  }
+	id: 'advanced-processor',
+	name: 'Advanced Processor',
+	type: 'default',
+	supportedTypes: ['default', 'simple'],
+	description: 'A processor with dynamic ports and type switching',
+	category: 'processing',
+	version: '1.0.0',
+	inputs: [{ name: 'data', label: 'Data', dataType: 'json' }],
+	outputs: [{ name: 'result', label: 'Result', dataType: 'json' }],
+	configSchema: {
+		type: 'object',
+		properties: {
+			// Node type selection
+			nodeType: {
+				type: 'string',
+				title: 'Node Style',
+				enum: ['default', 'simple'],
+				enumNames: ['Default', 'Compact'],
+				default: 'default'
+			},
+			// Regular config
+			model: {
+				type: 'string',
+				title: 'Model',
+				enum: ['gpt-4o', 'gpt-4o-mini', 'claude-3'],
+				default: 'gpt-4o-mini'
+			},
+			// Template field
+			prompt: {
+				type: 'string',
+				title: 'Prompt Template',
+				format: 'template',
+				default: 'Process: {{ data }}'
+			},
+			// Hidden internal ID
+			internalId: {
+				type: 'string',
+				format: 'hidden'
+			}
+		}
+	},
+	// Default config values including dynamic ports
+	config: {
+		nodeType: 'default',
+		model: 'gpt-4o-mini',
+		dynamicInputs: [{ name: 'context', label: 'Context', dataType: 'string' }],
+		dynamicOutputs: [{ name: 'logs', label: 'Logs', dataType: 'string' }]
+	}
 };
 ```
 

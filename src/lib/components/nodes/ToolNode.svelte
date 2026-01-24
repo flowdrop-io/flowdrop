@@ -58,7 +58,7 @@
 			(props.data.metadata?.name as string) ||
 			(props.data.config?.toolName as string) ||
 			props.data.label ||
-			"Tool"
+			'Tool'
 	);
 
 	/**
@@ -70,7 +70,7 @@
 		(props.data.config?.instanceDescription as string) ||
 			(props.data.metadata?.description as string) ||
 			(props.data.config?.toolDescription as string) ||
-			"A configurable tool for agents"
+			'A configurable tool for agents'
 	);
 
 	let toolVersion = $derived(

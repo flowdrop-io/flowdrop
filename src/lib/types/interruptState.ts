@@ -41,14 +41,14 @@
  * Idle state - waiting for user action
  */
 export interface IdleState {
-	readonly status: "idle";
+	readonly status: 'idle';
 }
 
 /**
  * Submitting state - API call in progress
  */
 export interface SubmittingState {
-	readonly status: "submitting";
+	readonly status: 'submitting';
 	/** The value being submitted */
 	readonly pendingValue: unknown;
 	/** Whether this is a cancel operation */
@@ -59,7 +59,7 @@ export interface SubmittingState {
  * Resolved state - successfully completed
  */
 export interface ResolvedState {
-	readonly status: "resolved";
+	readonly status: 'resolved';
 	/** The submitted value */
 	readonly value: unknown;
 	/** Timestamp when resolved */
@@ -70,7 +70,7 @@ export interface ResolvedState {
  * Cancelled state - user cancelled
  */
 export interface CancelledState {
-	readonly status: "cancelled";
+	readonly status: 'cancelled';
 	/** Timestamp when cancelled */
 	readonly cancelledAt: string;
 }
@@ -79,7 +79,7 @@ export interface CancelledState {
  * Error state - submission failed, can retry
  */
 export interface ErrorState {
-	readonly status: "error";
+	readonly status: 'error';
 	/** The error message */
 	readonly error: string;
 	/** The value that failed to submit (for retry) */
@@ -106,7 +106,7 @@ export type InterruptState =
  * Submit action - user submits a value
  */
 export interface SubmitAction {
-	readonly type: "SUBMIT";
+	readonly type: 'SUBMIT';
 	readonly value: unknown;
 }
 
@@ -114,21 +114,21 @@ export interface SubmitAction {
  * Cancel action - user cancels the interrupt
  */
 export interface CancelAction {
-	readonly type: "CANCEL";
+	readonly type: 'CANCEL';
 }
 
 /**
  * Success action - API call succeeded
  */
 export interface SuccessAction {
-	readonly type: "SUCCESS";
+	readonly type: 'SUCCESS';
 }
 
 /**
  * Failure action - API call failed
  */
 export interface FailureAction {
-	readonly type: "FAILURE";
+	readonly type: 'FAILURE';
 	readonly error: string;
 }
 
@@ -136,14 +136,14 @@ export interface FailureAction {
  * Retry action - retry after error
  */
 export interface RetryAction {
-	readonly type: "RETRY";
+	readonly type: 'RETRY';
 }
 
 /**
  * Reset action - reset to idle state
  */
 export interface ResetAction {
-	readonly type: "RESET";
+	readonly type: 'RESET';
 }
 
 /**
@@ -176,7 +176,7 @@ export interface TransitionResult {
 /**
  * Initial idle state
  */
-export const initialState: IdleState = { status: "idle" };
+export const initialState: IdleState = { status: 'idle' };
 
 /**
  * Transition function for the interrupt state machine
@@ -198,24 +198,21 @@ export const initialState: IdleState = { status: "idle" };
  * if (result2.valid) state = result2.state;
  * ```
  */
-export function transition(
-	state: InterruptState,
-	action: InterruptAction
-): TransitionResult {
+export function transition(state: InterruptState, action: InterruptAction): TransitionResult {
 	switch (state.status) {
-		case "idle":
+		case 'idle':
 			return transitionFromIdle(state, action);
 
-		case "submitting":
+		case 'submitting':
 			return transitionFromSubmitting(state, action);
 
-		case "error":
+		case 'error':
 			return transitionFromError(state, action);
 
-		case "resolved":
+		case 'resolved':
 			return transitionFromResolved(state, action);
 
-		case "cancelled":
+		case 'cancelled':
 			return transitionFromCancelled(state, action);
 
 		default:
@@ -230,32 +227,29 @@ export function transition(
 /**
  * Transitions from idle state
  */
-function transitionFromIdle(
-	_state: IdleState,
-	action: InterruptAction
-): TransitionResult {
+function transitionFromIdle(_state: IdleState, action: InterruptAction): TransitionResult {
 	switch (action.type) {
-		case "SUBMIT":
+		case 'SUBMIT':
 			return {
 				state: {
-					status: "submitting",
+					status: 'submitting',
 					pendingValue: action.value,
 					isCancelAction: false
 				},
 				valid: true
 			};
 
-		case "CANCEL":
+		case 'CANCEL':
 			return {
 				state: {
-					status: "submitting",
+					status: 'submitting',
 					pendingValue: undefined,
 					isCancelAction: true
 				},
 				valid: true
 			};
 
-		case "RESET":
+		case 'RESET':
 			return { state: initialState, valid: true };
 
 		default:
@@ -275,11 +269,11 @@ function transitionFromSubmitting(
 	action: InterruptAction
 ): TransitionResult {
 	switch (action.type) {
-		case "SUCCESS":
+		case 'SUCCESS':
 			if (state.isCancelAction) {
 				return {
 					state: {
-						status: "cancelled",
+						status: 'cancelled',
 						cancelledAt: new Date().toISOString()
 					},
 					valid: true
@@ -287,17 +281,17 @@ function transitionFromSubmitting(
 			}
 			return {
 				state: {
-					status: "resolved",
+					status: 'resolved',
 					value: state.pendingValue,
 					resolvedAt: new Date().toISOString()
 				},
 				valid: true
 			};
 
-		case "FAILURE":
+		case 'FAILURE':
 			return {
 				state: {
-					status: "error",
+					status: 'error',
 					error: action.error,
 					failedValue: state.pendingValue,
 					wasCancelAction: state.isCancelAction
@@ -305,16 +299,16 @@ function transitionFromSubmitting(
 				valid: true
 			};
 
-		case "RESET":
+		case 'RESET':
 			return { state: initialState, valid: true };
 
 		// Prevent double-submit
-		case "SUBMIT":
-		case "CANCEL":
+		case 'SUBMIT':
+		case 'CANCEL':
 			return {
 				state,
 				valid: false,
-				error: "Cannot submit/cancel while already submitting"
+				error: 'Cannot submit/cancel while already submitting'
 			};
 
 		default:
@@ -329,43 +323,40 @@ function transitionFromSubmitting(
 /**
  * Transitions from error state
  */
-function transitionFromError(
-	state: ErrorState,
-	action: InterruptAction
-): TransitionResult {
+function transitionFromError(state: ErrorState, action: InterruptAction): TransitionResult {
 	switch (action.type) {
-		case "RETRY":
+		case 'RETRY':
 			return {
 				state: {
-					status: "submitting",
+					status: 'submitting',
 					pendingValue: state.failedValue,
 					isCancelAction: state.wasCancelAction
 				},
 				valid: true
 			};
 
-		case "SUBMIT":
+		case 'SUBMIT':
 			// Allow resubmitting with new value
 			return {
 				state: {
-					status: "submitting",
+					status: 'submitting',
 					pendingValue: action.value,
 					isCancelAction: false
 				},
 				valid: true
 			};
 
-		case "CANCEL":
+		case 'CANCEL':
 			return {
 				state: {
-					status: "submitting",
+					status: 'submitting',
 					pendingValue: undefined,
 					isCancelAction: true
 				},
 				valid: true
 			};
 
-		case "RESET":
+		case 'RESET':
 			return { state: initialState, valid: true };
 
 		default:
@@ -380,11 +371,8 @@ function transitionFromError(
 /**
  * Transitions from resolved state (terminal - only reset allowed)
  */
-function transitionFromResolved(
-	state: ResolvedState,
-	action: InterruptAction
-): TransitionResult {
-	if (action.type === "RESET") {
+function transitionFromResolved(state: ResolvedState, action: InterruptAction): TransitionResult {
+	if (action.type === 'RESET') {
 		return { state: initialState, valid: true };
 	}
 
@@ -398,11 +386,8 @@ function transitionFromResolved(
 /**
  * Transitions from cancelled state (terminal - only reset allowed)
  */
-function transitionFromCancelled(
-	state: CancelledState,
-	action: InterruptAction
-): TransitionResult {
-	if (action.type === "RESET") {
+function transitionFromCancelled(state: CancelledState, action: InterruptAction): TransitionResult {
+	if (action.type === 'RESET') {
 		return { state: initialState, valid: true };
 	}
 
@@ -424,7 +409,7 @@ function transitionFromCancelled(
  * @returns True if the interrupt is finished
  */
 export function isTerminalState(state: InterruptState): boolean {
-	return state.status === "resolved" || state.status === "cancelled";
+	return state.status === 'resolved' || state.status === 'cancelled';
 }
 
 /**
@@ -434,7 +419,7 @@ export function isTerminalState(state: InterruptState): boolean {
  * @returns True if submitting
  */
 export function isSubmitting(state: InterruptState): boolean {
-	return state.status === "submitting";
+	return state.status === 'submitting';
 }
 
 /**
@@ -444,7 +429,7 @@ export function isSubmitting(state: InterruptState): boolean {
  * @returns True if in error state
  */
 export function hasError(state: InterruptState): boolean {
-	return state.status === "error";
+	return state.status === 'error';
 }
 
 /**
@@ -454,7 +439,7 @@ export function hasError(state: InterruptState): boolean {
  * @returns True if idle or error (can submit)
  */
 export function canSubmit(state: InterruptState): boolean {
-	return state.status === "idle" || state.status === "error";
+	return state.status === 'idle' || state.status === 'error';
 }
 
 /**
@@ -464,7 +449,7 @@ export function canSubmit(state: InterruptState): boolean {
  * @returns Error message or undefined
  */
 export function getErrorMessage(state: InterruptState): string | undefined {
-	return state.status === "error" ? state.error : undefined;
+	return state.status === 'error' ? state.error : undefined;
 }
 
 /**
@@ -474,7 +459,7 @@ export function getErrorMessage(state: InterruptState): string | undefined {
  * @returns Resolved value or undefined
  */
 export function getResolvedValue(state: InterruptState): unknown {
-	return state.status === "resolved" ? state.value : undefined;
+	return state.status === 'resolved' ? state.value : undefined;
 }
 
 /**
@@ -485,17 +470,17 @@ export function getResolvedValue(state: InterruptState): unknown {
  */
 export function toLegacyStatus(
 	state: InterruptState
-): "pending" | "resolved" | "cancelled" | "expired" {
+): 'pending' | 'resolved' | 'cancelled' | 'expired' {
 	switch (state.status) {
-		case "idle":
-		case "submitting":
-		case "error":
-			return "pending";
-		case "resolved":
-			return "resolved";
-		case "cancelled":
-			return "cancelled";
+		case 'idle':
+		case 'submitting':
+		case 'error':
+			return 'pending';
+		case 'resolved':
+			return 'resolved';
+		case 'cancelled':
+			return 'cancelled';
 		default:
-			return "pending";
+			return 'pending';
 	}
 }
