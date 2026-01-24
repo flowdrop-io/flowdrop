@@ -132,6 +132,7 @@
 </div>
 
 <style>
+	/* Uses design tokens from base.css: --flowdrop-interrupt-*, --color-ref-* */
 	.form-prompt {
 		display: flex;
 		flex-direction: column;
@@ -150,7 +151,7 @@
 		margin: 0;
 		font-size: 0.9375rem;
 		line-height: 1.5;
-		color: #1f2937;
+		color: var(--color-ref-gray-800, #1f2937);
 	}
 
 	.form-prompt__error {
@@ -158,23 +159,23 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 0.75rem;
-		background-color: #fef2f2;
+		background-color: var(--color-ref-red-50, #fef2f2);
 		border-radius: 0.375rem;
-		color: #dc2626;
+		color: var(--color-ref-red-600, #dc2626);
 		font-size: 0.8125rem;
 	}
 
 	.form-prompt__form-wrapper {
-		background-color: #f9fafb;
-		border: 1px solid #e5e7eb;
+		background-color: var(--color-ref-gray-50, #f9fafb);
+		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
 		border-radius: 0.5rem;
 		padding: 1rem;
 	}
 
 	/* Resolved values - neutral blue theme */
 	.form-prompt__resolved-values {
-		background-color: #eff6ff;
-		border: 1px solid #3b82f6;
+		background-color: var(--color-ref-blue-50, #eff6ff);
+		border: 1px solid var(--flowdrop-interrupt-completed-border);
 		border-radius: 0.5rem;
 		padding: 1rem;
 	}
@@ -183,7 +184,7 @@
 		margin: 0 0 0.75rem 0;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: #2563eb;
+		color: var(--flowdrop-interrupt-badge-completed-text);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
@@ -203,12 +204,12 @@
 	.form-prompt__value-label {
 		font-size: 0.75rem;
 		font-weight: 500;
-		color: #6b7280;
+		color: var(--color-ref-gray-500, #6b7280);
 	}
 
 	.form-prompt__value-content {
 		font-size: 0.875rem;
-		color: #1f2937;
+		color: var(--color-ref-gray-800, #1f2937);
 		word-break: break-word;
 		white-space: pre-wrap;
 	}
@@ -219,9 +220,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: #eff6ff;
+		background-color: var(--flowdrop-interrupt-badge-completed-bg);
 		border-radius: 9999px;
-		color: #2563eb;
+		color: var(--flowdrop-interrupt-badge-completed-text);
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;
