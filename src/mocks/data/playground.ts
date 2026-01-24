@@ -530,10 +530,11 @@ function createInterruptMessage(
 	messages.push(message);
 	mockMessages.set(sessionId, messages);
 
-	// Update session timestamp
+	// Update session timestamp and set status to idle (waiting for user input)
 	const session = mockSessions.get(sessionId);
 	if (session) {
 		session.updatedAt = message.timestamp;
+		session.status = "idle";
 		mockSessions.set(sessionId, session);
 	}
 }

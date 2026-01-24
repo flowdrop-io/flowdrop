@@ -12,6 +12,10 @@ import {
 	getSessionInterrupts,
 	getPipelineInterrupts
 } from "../data/interrupts.js";
+import {
+	addMessage,
+	updateSessionStatus
+} from "../data/playground.js";
 
 /** Base API path for flowdrop endpoints */
 const API_BASE = "/api/flowdrop";
@@ -126,6 +130,44 @@ export const resolveInterruptHandler = http.post(
 
 		console.log("[MSW] Interrupt resolved:", id, "with value:", value);
 
+		// Simulate workflow continuation after interrupt resolution
+		if (interrupt.sessionId) {
+			// Add a log message showing the response was received
+			setTimeout(() => {
+				addMessage(interrupt.sessionId, "log", `User response received: ${formatValue(value)}`, {
+					level: "info",
+					nodeId: "node-hitl",
+					nodeLabel: "Human Input"
+				});
+			}, 300);
+
+			// Add completion messages
+			setTimeout(() => {
+				addMessage(interrupt.sessionId, "log", "Continuing workflow execution...", {
+					level: "info",
+					nodeId: "node-processor",
+					nodeLabel: "Processor"
+				});
+			}, 800);
+
+			setTimeout(() => {
+				addMessage(interrupt.sessionId, "assistant", `Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response: **${formatValue(value)}**`, {
+					nodeId: "node-output",
+					nodeLabel: "Output",
+					duration: 500
+				});
+			}, 1500);
+
+			setTimeout(() => {
+				addMessage(interrupt.sessionId, "log", "Workflow execution completed", {
+					level: "info",
+					nodeId: "node-end",
+					nodeLabel: "End"
+				});
+				updateSessionStatus(interrupt.sessionId, "completed");
+			}, 2000);
+		}
+
 		return HttpResponse.json({
 			success: true,
 			data: resolved,
@@ -133,6 +175,22 @@ export const resolveInterruptHandler = http.post(
 		});
 	}
 );
+
+/**
+ * Format a value for display in messages
+ */
+function formatValue(value: unknown): string {
+	if (typeof value === "boolean") {
+		return value ? "Yes / Confirmed" : "No / Declined";
+	}
+	if (Array.isArray(value)) {
+		return value.join(", ");
+	}
+	if (typeof value === "object" && value !== null) {
+		return JSON.stringify(value, null, 2);
+	}
+	return String(value);
+}
 
 /**
  * POST /api/flowdrop/interrupts/:interruptId/cancel
@@ -195,6 +253,25 @@ export const cancelInterruptHandler = http.post(
 		}
 
 		console.log("[MSW] Interrupt cancelled:", id);
+
+		// Simulate workflow handling of cancellation
+		if (interrupt.sessionId) {
+			setTimeout(() => {
+				addMessage(interrupt.sessionId, "log", "User cancelled the input request", {
+					level: "warning",
+					nodeId: "node-hitl",
+					nodeLabel: "Human Input"
+				});
+			}, 300);
+
+			setTimeout(() => {
+				addMessage(interrupt.sessionId, "assistant", "The workflow was cancelled at your request. You can start a new conversation to try again.", {
+					nodeId: "node-output",
+					nodeLabel: "Output"
+				});
+				updateSessionStatus(interrupt.sessionId, "completed");
+			}, 800);
+		}
 
 		return HttpResponse.json({
 			success: true,
