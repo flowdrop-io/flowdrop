@@ -370,10 +370,12 @@
 	 */
 	async function handleInterruptResolved(): Promise<void> {
 		const sessionId = get(currentSession)?.id;
+		console.log('[Playground] handleInterruptResolved called, sessionId:', sessionId);
 		if (!sessionId) return;
 
 		try {
 			const response = await playgroundService.getMessages(sessionId);
+			console.log('[Playground] refreshed messages:', response.data?.length, 'status:', response.sessionStatus);
 			
 			// Add new messages (deduplicates automatically)
 			if (response.data && response.data.length > 0) {
@@ -383,6 +385,7 @@
 			// Update session status
 			if (response.sessionStatus) {
 				playgroundActions.updateSessionStatus(response.sessionStatus);
+				console.log('[Playground] updated session status to:', response.sessionStatus);
 				
 				// Update executing state based on session status
 				if (
@@ -391,6 +394,7 @@
 					response.sessionStatus === 'failed'
 				) {
 					playgroundActions.setExecuting(false);
+					console.log('[Playground] set isExecuting to false');
 				}
 			}
 		} catch (err) {
