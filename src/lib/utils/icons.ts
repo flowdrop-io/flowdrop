@@ -96,6 +96,7 @@ export const DEFAULT_ICONS = {
  * Category-specific icons matching Langflow's visual style
  */
 export const CATEGORY_ICONS: Record<NodeCategory, string> = {
+	triggers: 'mdi:lightning-bolt',
 	inputs: 'mdi:arrow-down-circle',
 	outputs: 'mdi:arrow-up-circle',
 	prompts: 'mdi:message-text',
