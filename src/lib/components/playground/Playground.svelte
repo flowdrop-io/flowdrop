@@ -365,6 +365,40 @@
 	}
 
 	/**
+	 * Refresh messages for the current session
+	 * Called after interrupt resolution when polling has stopped
+	 */
+	async function handleInterruptResolved(): Promise<void> {
+		const sessionId = get(currentSession)?.id;
+		if (!sessionId) return;
+
+		try {
+			const response = await playgroundService.getMessages(sessionId);
+			
+			// Add new messages (deduplicates automatically)
+			if (response.data && response.data.length > 0) {
+				playgroundActions.addMessages(response.data);
+			}
+			
+			// Update session status
+			if (response.sessionStatus) {
+				playgroundActions.updateSessionStatus(response.sessionStatus);
+				
+				// Update executing state based on session status
+				if (
+					response.sessionStatus === 'idle' ||
+					response.sessionStatus === 'completed' ||
+					response.sessionStatus === 'failed'
+				) {
+					playgroundActions.setExecuting(false);
+				}
+			}
+		} catch (err) {
+			console.error('[Playground] Failed to refresh messages after interrupt:', err);
+		}
+	}
+
+	/**
 	 * Format date for display
 	 */
 	function formatDate(dateString: string): string {
@@ -531,6 +565,7 @@
 						enableMarkdown={config.enableMarkdown ?? true}
 						onSendMessage={handleSendMessage}
 						onStopExecution={handleStopExecution}
+						onInterruptResolved={handleInterruptResolved}
 					/>
 				{/if}
 			</div>
