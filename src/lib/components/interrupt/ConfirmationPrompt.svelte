@@ -70,6 +70,7 @@
 			type="button"
 			class="confirmation-prompt__button confirmation-prompt__button--decline"
 			class:confirmation-prompt__button--selected={isResolved && resolvedValue === false}
+			class:confirmation-prompt__button--not-selected={isResolved && resolvedValue !== false}
 			onclick={onDecline}
 			disabled={isResolved || isSubmitting}
 			aria-label={declineLabel}
@@ -77,7 +78,10 @@
 			{#if isSubmitting && !isResolved}
 				<span class="confirmation-prompt__spinner"></span>
 			{:else if isResolved && resolvedValue === false}
-				<Icon icon="mdi:check" />
+				<Icon icon="mdi:check-circle" />
+			{:else if isResolved}
+				<!-- Not selected - show dimmed X icon -->
+				<Icon icon="mdi:close" />
 			{:else}
 				<Icon icon="mdi:close" />
 			{/if}
@@ -88,6 +92,7 @@
 			type="button"
 			class="confirmation-prompt__button confirmation-prompt__button--confirm"
 			class:confirmation-prompt__button--selected={isResolved && resolvedValue === true}
+			class:confirmation-prompt__button--not-selected={isResolved && resolvedValue !== true}
 			onclick={onConfirm}
 			disabled={isResolved || isSubmitting}
 			aria-label={confirmLabel}
@@ -96,6 +101,9 @@
 				<span class="confirmation-prompt__spinner"></span>
 			{:else if isResolved && resolvedValue === true}
 				<Icon icon="mdi:check-circle" />
+			{:else if isResolved}
+				<!-- Not selected - show dimmed check icon -->
+				<Icon icon="mdi:check" />
 			{:else}
 				<Icon icon="mdi:check" />
 			{/if}
@@ -187,10 +195,22 @@
 		opacity: 0.6;
 	}
 
+	/* Non-selected decline button when resolved - very dimmed */
+	.confirmation-prompt__button--decline.confirmation-prompt__button--not-selected {
+		opacity: 0.4;
+		background-color: #f9fafb;
+		border-color: #e5e7eb;
+		color: #9ca3af;
+	}
+
+	/* Selected decline button - highlighted with border and background */
 	.confirmation-prompt__button--decline.confirmation-prompt__button--selected {
+		opacity: 1;
 		background-color: #fef2f2;
-		border-color: #fca5a5;
+		border-color: #f87171;
+		border-width: 2px;
 		color: #dc2626;
+		box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2);
 	}
 
 	.confirmation-prompt__button--confirm {
@@ -211,9 +231,21 @@
 		box-shadow: none;
 	}
 
+	/* Non-selected confirm button when resolved - very dimmed */
+	.confirmation-prompt__button--confirm.confirmation-prompt__button--not-selected {
+		opacity: 0.4;
+		background: #e5e7eb;
+		color: #9ca3af;
+		box-shadow: none;
+	}
+
+	/* Selected confirm button - highlighted with glow */
 	.confirmation-prompt__button--confirm.confirmation-prompt__button--selected {
-		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-		box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+		opacity: 1;
+		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+		border-width: 2px;
+		border-color: #1d4ed8;
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(59, 130, 246, 0.25);
 	}
 
 	.confirmation-prompt__spinner {
