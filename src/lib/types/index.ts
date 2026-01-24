@@ -11,6 +11,7 @@ import type { EndpointConfig } from '../config/endpoints.js';
  * Based on actual API response categories
  */
 export type NodeCategory =
+	| 'triggers'
 	| 'inputs'
 	| 'outputs'
 	| 'prompts'

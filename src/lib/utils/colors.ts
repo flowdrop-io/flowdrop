@@ -11,6 +11,7 @@ import { getPortCompatibilityChecker } from './connections.js';
  * Category color mapping to reference tokens (CSS variables)
  */
 export const CATEGORY_COLOR_TOKENS: Record<NodeCategory, string> = {
+	triggers: 'var(--color-ref-cyan-500)',
 	inputs: 'var(--color-ref-emerald-500)',
 	outputs: 'var(--color-ref-blue-600)',
 	prompts: 'var(--color-ref-amber-500)',
