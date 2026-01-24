@@ -47,17 +47,32 @@
 	let toolColor = $derived(
 		(props.data.metadata?.color as string) || (props.data.config?.color as string) || '#f59e0b'
 	);
-	let toolName = $derived(
-		(props.data.metadata?.name as string) ||
+
+	/**
+	 * Instance-specific title override from config.
+	 * Falls back to metadata name, toolName config, or label if not set.
+	 * This allows users to customize the tool title per-instance via config.
+	 */
+	const displayTitle = $derived(
+		(props.data.config?.instanceTitle as string) ||
+			(props.data.metadata?.name as string) ||
 			(props.data.config?.toolName as string) ||
 			props.data.label ||
-			'Tool'
+			"Tool"
 	);
-	let toolDescription = $derived(
-		(props.data.metadata?.description as string) ||
+
+	/**
+	 * Instance-specific description override from config.
+	 * Falls back to metadata description or toolDescription config if not set.
+	 * This allows users to customize the tool description per-instance via config.
+	 */
+	const displayDescription = $derived(
+		(props.data.config?.instanceDescription as string) ||
+			(props.data.metadata?.description as string) ||
 			(props.data.config?.toolDescription as string) ||
-			'A configurable tool for agents'
+			"A configurable tool for agents"
 	);
+
 	let toolVersion = $derived(
 		(props.data.metadata?.version as string) ||
 			(props.data.config?.toolVersion as string) ||
@@ -159,7 +174,7 @@
 			<!-- Tool Info -->
 			<div class="flowdrop-tool-node__info">
 				<h3 class="flowdrop-tool-node__title">
-					{toolName}
+					{displayTitle}
 				</h3>
 				<div class="flowdrop-tool-node__version">
 					v{toolVersion}
@@ -170,9 +185,9 @@
 			<div class="flowdrop-tool-node__badge">TOOL</div>
 		</div>
 
-		<!-- Tool Description -->
+		<!-- Tool Description - uses instanceDescription override if set -->
 		<p class="flowdrop-tool-node__description">
-			{toolDescription}
+			{displayDescription}
 		</p>
 	</div>
 

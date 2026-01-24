@@ -34,20 +34,30 @@
 	}>();
 
 	/**
-	 * Get title from config or fallback to label/metadata
+	 * Instance-specific title override from config.
+	 * Falls back to the original label if not set.
+	 * This allows users to customize the node title per-instance via config.
+	 * Note: Also supports legacy 'title' property for backward compatibility.
 	 */
-	const ideaTitle = $derived(
-		(props.data.config?.title as string) ||
+	const displayTitle = $derived(
+		(props.data.config?.instanceTitle as string) ||
+			(props.data.config?.title as string) ||
 			props.data.label ||
 			props.data.metadata?.name ||
 			"New Idea"
 	);
 
 	/**
-	 * Get description content from config
+	 * Instance-specific description override from config.
+	 * Falls back to the metadata description if not set.
+	 * This allows users to customize the node description per-instance via config.
+	 * Note: Also supports legacy 'description' property for backward compatibility.
 	 */
-	const ideaDescription = $derived(
-		(props.data.config?.description as string) || "Click to add description..."
+	const displayDescription = $derived(
+		(props.data.config?.instanceDescription as string) ||
+			(props.data.config?.description as string) ||
+			props.data.metadata?.description ||
+			"Click to add description..."
 	);
 
 	/**
@@ -142,7 +152,7 @@
 	onkeydown={handleKeydown}
 	role="button"
 	tabindex="0"
-	aria-label="Idea node: {ideaTitle}"
+	aria-label="Idea node: {displayTitle}"
 >
 	<!-- Left Port (Target/Input) -->
 	{#if enableLeftPort}
@@ -174,12 +184,12 @@
 			<div class="flowdrop-idea-node__icon-wrapper">
 				<Icon icon={ideaIcon} class="flowdrop-idea-node__icon" />
 			</div>
-			<h3 class="flowdrop-idea-node__title">{ideaTitle}</h3>
+			<h3 class="flowdrop-idea-node__title">{displayTitle}</h3>
 		</div>
 
 		<!-- Description Body -->
 		<div class="flowdrop-idea-node__body">
-			<p class="flowdrop-idea-node__description">{ideaDescription}</p>
+			<p class="flowdrop-idea-node__description">{displayDescription}</p>
 		</div>
 
 		<!-- Processing indicator -->

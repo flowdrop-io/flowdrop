@@ -150,9 +150,27 @@
 	);
 
 	/**
-	 * Get display label
+	 * Instance-specific title override from config.
+	 * Falls back to the original label if not set.
+	 * This allows users to customize the node title per-instance via config.
 	 */
-	let displayLabel = $derived(props.data.label || props.data.metadata?.name || variantConfig.label);
+	const displayTitle = $derived(
+		(props.data.config?.instanceTitle as string) ||
+			props.data.label ||
+			props.data.metadata?.name ||
+			variantConfig.label
+	);
+
+	/**
+	 * Instance-specific description override from config.
+	 * Falls back to the metadata description if not set.
+	 * This allows users to customize the node description per-instance via config.
+	 */
+	const displayDescription = $derived(
+		(props.data.config?.instanceDescription as string) ||
+			props.data.metadata?.description ||
+			""
+	);
 
 	/**
 	 * Check if metadata explicitly defines inputs (including empty array)
@@ -282,7 +300,7 @@
 	onkeydown={handleKeydown}
 	role="button"
 	tabindex="0"
-	aria-label="{variant} node: {displayLabel}"
+	aria-label="{variant} node: {displayTitle}"
 >
 	<!-- Config button at top -->
 	<button
@@ -333,9 +351,16 @@
 		{/if}
 	</div>
 
-	<!-- Label below the circle -->
-	<div class="flowdrop-terminal-node__label">
-		{displayLabel}
+	<!-- Label and description below the circle -->
+	<div class="flowdrop-terminal-node__label-container">
+		<div class="flowdrop-terminal-node__label">
+			{displayTitle}
+		</div>
+		{#if displayDescription}
+			<div class="flowdrop-terminal-node__description">
+				{displayDescription}
+			</div>
+		{/if}
 	</div>
 
 	<!-- Processing indicator -->
@@ -440,19 +465,37 @@
 		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 	}
 
+	.flowdrop-terminal-node__label-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.125rem;
+		background-color: rgba(255, 255, 255, 0.9);
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.25rem;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		max-width: 140px;
+	}
+
 	.flowdrop-terminal-node__label {
 		font-size: 0.75rem;
 		font-weight: 500;
 		color: #374151;
 		text-align: center;
-		max-width: 100px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		background-color: rgba(255, 255, 255, 0.9);
-		padding: 0.125rem 0.5rem;
-		border-radius: 0.25rem;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		max-width: 100%;
+	}
+
+	.flowdrop-terminal-node__description {
+		font-size: 0.625rem;
+		color: #6b7280;
+		text-align: center;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 100%;
 	}
 
 	.flowdrop-terminal-node__processing {
