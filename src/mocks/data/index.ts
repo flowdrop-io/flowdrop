@@ -57,4 +57,19 @@ export {
 	simulateExecution,
 	resetPlaygroundData,
 	initializeSamplePlaygroundData
-} from './playground.js';
+} from "./playground.js";
+
+// Re-export interrupt data
+export {
+	createConfirmationInterrupt,
+	createChoiceInterrupt,
+	createTextInterrupt,
+	createFormInterrupt,
+	getInterruptById,
+	resolveInterrupt,
+	cancelInterrupt,
+	getSessionInterrupts,
+	getPipelineInterrupts,
+	resetInterruptData,
+	sampleInterruptConfigs
+} from "./interrupts.js";
