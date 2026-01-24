@@ -1352,6 +1352,291 @@ const hideUnconnectedHandles =
 
 ---
 
+## Interrupts API (Human-in-the-Loop)
+
+The Interrupts API enables Human-in-the-Loop (HITL) functionality, allowing workflows to pause execution and request user input before continuing. This is essential for AI workflows that need human approval, additional input, or decision-making.
+
+### Overview
+
+Interrupts support four types of user interaction:
+
+| Type | Description | Use Case |
+| ---- | ----------- | -------- |
+| `confirmation` | Yes/No approval | Approving actions, confirming deletions |
+| `choice` | Single/multiple selection | Selecting options, choosing paths |
+| `text` | Free-form text input | Providing descriptions, entering values |
+| `form` | JSON Schema-based form | Complex data entry with validation |
+
+### Interrupt Flow
+
+1. **Trigger**: Workflow execution reaches a node that requires user input
+2. **Create**: Backend creates an interrupt and returns metadata in a playground message
+3. **Display**: Frontend detects the interrupt and renders the appropriate prompt
+4. **Resolve**: User submits their response via the resolve endpoint
+5. **Continue**: Workflow execution resumes with the user's input
+
+### Endpoints
+
+#### Get Interrupt Details
+
+```
+GET /interrupts/{interruptId}
+```
+
+Retrieve details about a specific interrupt.
+
+**Response:**
+
+```json
+{
+	"success": true,
+	"data": {
+		"id": "int-123",
+		"type": "confirmation",
+		"status": "pending",
+		"nodeId": "node-456",
+		"executionId": "exec-789",
+		"config": {
+			"message": "Do you want to proceed with this action?",
+			"confirm_label": "Yes, proceed",
+			"cancel_label": "No, cancel"
+		},
+		"allowCancel": true,
+		"createdAt": "2026-01-24T10:00:00Z"
+	}
+}
+```
+
+#### Resolve Interrupt
+
+```
+POST /interrupts/{interruptId}
+```
+
+Submit user response to resolve an interrupt.
+
+**Request Body:**
+
+```json
+{
+	"value": true
+}
+```
+
+The `value` type depends on the interrupt type:
+- `confirmation`: `boolean` (true = confirmed, false = rejected)
+- `choice`: `string` or `string[]` (selected option values)
+- `text`: `string` (user input)
+- `form`: `object` (form data matching schema)
+
+**Response:**
+
+```json
+{
+	"success": true,
+	"data": {
+		"id": "int-123",
+		"status": "resolved",
+		"response": true,
+		"response_time": "2026-01-24T10:05:00Z",
+		"user_id": "user-123"
+	}
+}
+```
+
+#### Cancel Interrupt
+
+```
+POST /interrupts/{interruptId}/cancel
+```
+
+Cancel a pending interrupt without providing a response.
+
+**Response:**
+
+```json
+{
+	"success": true,
+	"message": "Interrupt cancelled"
+}
+```
+
+**Note:** Cancel may not be allowed for all interrupts. Check `allowCancel` in the interrupt data.
+
+#### List Session Interrupts
+
+```
+GET /playground/sessions/{sessionId}/interrupts
+```
+
+List all interrupts for a playground session.
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `status` | string | Filter by status: `pending`, `resolved`, `cancelled` |
+| `limit` | integer | Maximum results (default: 50) |
+| `offset` | integer | Pagination offset (default: 0) |
+
+**Response:**
+
+```json
+{
+	"success": true,
+	"data": [
+		{
+			"id": "int-123",
+			"type": "confirmation",
+			"status": "pending",
+			"nodeId": "node-456",
+			"createdAt": "2026-01-24T10:00:00Z"
+		}
+	]
+}
+```
+
+#### List Pipeline Interrupts
+
+```
+GET /pipelines/{pipelineId}/interrupts
+```
+
+List all interrupts for a pipeline execution.
+
+### Interrupt Types
+
+#### Confirmation Interrupt
+
+Simple yes/no prompt for user approval.
+
+```json
+{
+	"type": "confirmation",
+	"config": {
+		"message": "Do you approve this action?",
+		"confirm_label": "Approve",
+		"cancel_label": "Reject"
+	}
+}
+```
+
+#### Choice Interrupt
+
+Selection from predefined options.
+
+```json
+{
+	"type": "choice",
+	"config": {
+		"message": "Select your preferred option:",
+		"options": [
+			{ "value": "option1", "label": "Option 1", "description": "First option" },
+			{ "value": "option2", "label": "Option 2", "description": "Second option" }
+		],
+		"multiple": false,
+		"min_selections": 1,
+		"max_selections": 1
+	}
+}
+```
+
+#### Text Interrupt
+
+Free-form text input.
+
+```json
+{
+	"type": "text",
+	"config": {
+		"message": "Please provide additional details:",
+		"placeholder": "Enter your response...",
+		"multiline": true,
+		"min_length": 10,
+		"max_length": 500,
+		"default_value": ""
+	}
+}
+```
+
+#### Form Interrupt
+
+Complex form based on JSON Schema.
+
+```json
+{
+	"type": "form",
+	"config": {
+		"message": "Please fill in the required information:",
+		"schema": {
+			"type": "object",
+			"properties": {
+				"name": { "type": "string", "title": "Name" },
+				"email": { "type": "string", "title": "Email", "format": "email" },
+				"priority": { 
+					"type": "string", 
+					"title": "Priority",
+					"enum": ["low", "medium", "high"]
+				}
+			},
+			"required": ["name", "email"]
+		},
+		"default_values": {
+			"priority": "medium"
+		}
+	}
+}
+```
+
+### Message Metadata Format
+
+Interrupts are communicated via playground message metadata:
+
+```json
+{
+	"id": "msg-123",
+	"role": "assistant",
+	"content": "I need your approval to proceed.",
+	"metadata": {
+		"type": "interrupt_request",
+		"interrupt_id": "int-456",
+		"interrupt_type": "confirmation",
+		"node_id": "approval-node",
+		"execution_id": "exec-789",
+		"message": "Do you approve this action?",
+		"confirm_label": "Yes",
+		"cancel_label": "No",
+		"allowCancel": true
+	}
+}
+```
+
+### Frontend Components
+
+FlowDrop provides built-in components for rendering interrupts:
+
+| Component | Purpose |
+| --------- | ------- |
+| `InterruptBubble` | Main container that renders the appropriate prompt |
+| `ConfirmationPrompt` | Yes/No buttons |
+| `ChoicePrompt` | Single/multiple selection |
+| `TextInputPrompt` | Text input field |
+| `FormPrompt` | JSON Schema-based form |
+
+Import from the playground module:
+
+```typescript
+import { 
+	InterruptBubble,
+	ConfirmationPrompt,
+	ChoicePrompt,
+	TextInputPrompt,
+	FormPrompt
+} from "@d34dman/flowdrop/playground";
+```
+
+---
+
 ## Rate Limiting
 
 Rate limiting is backend-dependent. Recommended limits:

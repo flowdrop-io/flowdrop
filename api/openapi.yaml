@@ -1275,6 +1275,262 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  # ===== INTERRUPTS (Human-in-the-Loop) =====
+  /interrupts/{interruptId}:
+    get:
+      summary: Get interrupt details
+      description: |
+        Retrieve details about a specific interrupt request.
+        Interrupts are created when a workflow execution requires human input.
+      tags:
+        - Interrupts
+      parameters:
+        - name: interruptId
+          in: path
+          description: Interrupt UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Interrupt details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterruptResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Resolve interrupt
+      description: |
+        Submit user response to resolve a pending interrupt.
+        The value type depends on the interrupt type:
+        - confirmation: boolean (true = confirmed)
+        - choice: string or string[] (selected values)
+        - text: string (user input)
+        - form: object (form data matching schema)
+      tags:
+        - Interrupts
+      parameters:
+        - name: interruptId
+          in: path
+          description: Interrupt UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InterruptResolveRequest'
+            examples:
+              confirmation:
+                summary: Confirmation response
+                value:
+                  value: true
+              choice:
+                summary: Choice selection
+                value:
+                  value: "option1"
+              multipleChoice:
+                summary: Multiple choice selection
+                value:
+                  value: ["option1", "option3"]
+              text:
+                summary: Text input
+                value:
+                  value: "User provided text response"
+              form:
+                summary: Form data
+                value:
+                  value:
+                    name: "John Doe"
+                    email: "john@example.com"
+                    priority: "high"
+      responses:
+        '200':
+          description: Interrupt resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterruptResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Interrupt already resolved or cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /interrupts/{interruptId}/cancel:
+    post:
+      summary: Cancel interrupt
+      description: |
+        Cancel a pending interrupt without providing a response.
+        This may not be allowed for all interrupts - check the allowCancel
+        property in the interrupt data before attempting to cancel.
+      tags:
+        - Interrupts
+      parameters:
+        - name: interruptId
+          in: path
+          description: Interrupt UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Interrupt cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Interrupt cancelled
+        '400':
+          description: Interrupt cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Interrupt already resolved or cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /playground/sessions/{sessionId}/interrupts:
+    get:
+      summary: List session interrupts
+      description: |
+        List all interrupts associated with a playground session.
+        Useful for displaying pending interrupts or reviewing interrupt history.
+      tags:
+        - Interrupts
+      parameters:
+        - name: sessionId
+          in: path
+          description: Playground session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by interrupt status
+          required: false
+          schema:
+            type: string
+            enum:
+              - pending
+              - resolved
+              - cancelled
+        - name: limit
+          in: query
+          description: Maximum number of interrupts to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of interrupts to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of interrupts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterruptListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipelines/{pipelineId}/interrupts:
+    get:
+      summary: List pipeline interrupts
+      description: |
+        List all interrupts associated with a pipeline execution.
+        Useful for monitoring workflow progress and pending user actions.
+      tags:
+        - Interrupts
+      parameters:
+        - name: pipelineId
+          in: path
+          description: Pipeline UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by interrupt status
+          required: false
+          schema:
+            type: string
+            enum:
+              - pending
+              - resolved
+              - cancelled
+        - name: limit
+          in: query
+          description: Maximum number of interrupts to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of interrupts to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of interrupts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterruptListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -2750,6 +3006,333 @@ components:
               $ref: '#/components/schemas/PlaygroundSessionStatus'
               description: Current session status (useful for polling)
 
+    # ===== INTERRUPT TYPES =====
+    InterruptType:
+      type: string
+      enum:
+        - confirmation
+        - choice
+        - text
+        - form
+      description: |
+        Type of interrupt prompt:
+        - `confirmation`: Yes/No approval prompt
+        - `choice`: Single or multiple selection from options
+        - `text`: Free-form text input
+        - `form`: JSON Schema-based form
+
+    InterruptStatus:
+      type: string
+      enum:
+        - pending
+        - resolved
+        - cancelled
+      description: |
+        Current status of the interrupt:
+        - `pending`: Awaiting user response
+        - `resolved`: User submitted a response
+        - `cancelled`: Interrupt was cancelled
+
+    ChoiceOption:
+      type: object
+      description: Option for choice-type interrupts
+      properties:
+        value:
+          type: string
+          description: Value to submit when selected
+          example: option1
+        label:
+          type: string
+          description: Display label for the option
+          example: Option 1
+        description:
+          type: string
+          description: Optional description for the option
+          example: This is the first option
+      required:
+        - value
+        - label
+
+    ConfirmationInterruptConfig:
+      type: object
+      description: Configuration for confirmation-type interrupts
+      properties:
+        message:
+          type: string
+          description: Prompt message to display
+          example: Do you approve this action?
+        confirm_label:
+          type: string
+          description: Label for confirm button
+          default: Yes
+          example: Approve
+        cancel_label:
+          type: string
+          description: Label for cancel/reject button
+          default: No
+          example: Reject
+      required:
+        - message
+
+    ChoiceInterruptConfig:
+      type: object
+      description: Configuration for choice-type interrupts
+      properties:
+        message:
+          type: string
+          description: Prompt message to display
+          example: Select your preferred option
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceOption'
+          description: Available options to choose from
+          minItems: 1
+        multiple:
+          type: boolean
+          default: false
+          description: Whether multiple selections are allowed
+        min_selections:
+          type: integer
+          minimum: 0
+          description: Minimum number of selections required
+        max_selections:
+          type: integer
+          minimum: 1
+          description: Maximum number of selections allowed
+      required:
+        - message
+        - options
+
+    TextInterruptConfig:
+      type: object
+      description: Configuration for text-type interrupts
+      properties:
+        message:
+          type: string
+          description: Prompt message to display
+          example: Please provide additional details
+        placeholder:
+          type: string
+          description: Placeholder text for input field
+          example: Enter your response...
+        multiline:
+          type: boolean
+          default: false
+          description: Whether to use a textarea for multiline input
+        min_length:
+          type: integer
+          minimum: 0
+          description: Minimum text length required
+        max_length:
+          type: integer
+          minimum: 1
+          description: Maximum text length allowed
+        default_value:
+          type: string
+          description: Default value to pre-fill
+      required:
+        - message
+
+    FormInterruptConfig:
+      type: object
+      description: Configuration for form-type interrupts
+      properties:
+        message:
+          type: string
+          description: Prompt message to display above the form
+          example: Please fill in the required information
+        schema:
+          $ref: '#/components/schemas/ConfigSchema'
+          description: JSON Schema defining the form structure
+        default_values:
+          type: object
+          additionalProperties: true
+          description: Default values for form fields
+      required:
+        - message
+        - schema
+
+    Interrupt:
+      type: object
+      description: |
+        Represents a Human-in-the-Loop interrupt request.
+        Interrupts are created when workflow execution requires user input.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Interrupt unique identifier
+        messageId:
+          type: string
+          format: uuid
+          description: Associated playground message ID
+        type:
+          $ref: '#/components/schemas/InterruptType'
+        status:
+          $ref: '#/components/schemas/InterruptStatus'
+        nodeId:
+          type: string
+          description: ID of the node that created the interrupt
+        executionId:
+          type: string
+          description: Workflow execution ID
+        config:
+          oneOf:
+            - $ref: '#/components/schemas/ConfirmationInterruptConfig'
+            - $ref: '#/components/schemas/ChoiceInterruptConfig'
+            - $ref: '#/components/schemas/TextInterruptConfig'
+            - $ref: '#/components/schemas/FormInterruptConfig'
+          description: Type-specific configuration
+        allowCancel:
+          type: boolean
+          default: true
+          description: Whether the interrupt can be cancelled
+        response:
+          description: User's response (set after resolution)
+        response_time:
+          type: string
+          format: date-time
+          description: When the interrupt was resolved
+        user_id:
+          type: string
+          description: ID of the user who resolved the interrupt
+        createdAt:
+          type: string
+          format: date-time
+          description: When the interrupt was created
+      required:
+        - id
+        - type
+        - status
+        - nodeId
+        - executionId
+        - config
+        - allowCancel
+
+    InterruptMessageMetadata:
+      type: object
+      description: |
+        Metadata structure for interrupt requests embedded in playground messages.
+        When a message contains this metadata, the frontend should render an interrupt prompt.
+      properties:
+        type:
+          type: string
+          enum:
+            - interrupt_request
+          description: Must be "interrupt_request" to identify as interrupt
+        interrupt_id:
+          type: string
+          format: uuid
+          description: Interrupt unique identifier
+        interrupt_type:
+          $ref: '#/components/schemas/InterruptType'
+        node_id:
+          type: string
+          description: ID of the node that created the interrupt
+        execution_id:
+          type: string
+          description: Workflow execution ID
+        message:
+          type: string
+          description: Prompt message to display
+        allowCancel:
+          type: boolean
+          default: true
+          description: Whether the interrupt can be cancelled
+        # Confirmation-specific
+        confirm_label:
+          type: string
+          description: Label for confirm button (confirmation type)
+        cancel_label:
+          type: string
+          description: Label for cancel button (confirmation type)
+        # Choice-specific
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceOption'
+          description: Available options (choice type)
+        multiple:
+          type: boolean
+          description: Allow multiple selections (choice type)
+        min_selections:
+          type: integer
+          description: Minimum selections (choice type)
+        max_selections:
+          type: integer
+          description: Maximum selections (choice type)
+        # Text-specific
+        placeholder:
+          type: string
+          description: Input placeholder (text type)
+        multiline:
+          type: boolean
+          description: Use multiline input (text type)
+        min_length:
+          type: integer
+          description: Minimum text length (text type)
+        max_length:
+          type: integer
+          description: Maximum text length (text type)
+        default_value:
+          description: Default value (text type)
+        # Form-specific
+        schema:
+          $ref: '#/components/schemas/ConfigSchema'
+          description: Form schema (form type)
+        default_values:
+          type: object
+          description: Form default values (form type)
+      required:
+        - type
+        - interrupt_id
+        - interrupt_type
+        - node_id
+        - execution_id
+      example:
+        type: interrupt_request
+        interrupt_id: int-123
+        interrupt_type: confirmation
+        node_id: approval-node
+        execution_id: exec-456
+        message: Do you approve this action?
+        confirm_label: Approve
+        cancel_label: Reject
+        allowCancel: true
+
+    InterruptResolveRequest:
+      type: object
+      description: Request body for resolving an interrupt
+      properties:
+        value:
+          description: |
+            User's response. Type depends on interrupt type:
+            - confirmation: boolean
+            - choice: string or string[]
+            - text: string
+            - form: object
+      required:
+        - value
+
+    InterruptResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Interrupt'
+
+    InterruptListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interrupt'
+
   responses:
     BadRequest:
       description: Bad request - invalid parameters or request body
@@ -2826,6 +3409,10 @@ tags:
     description: Pipeline execution and monitoring
   - name: Playground
     description: Interactive workflow testing and chat interface
+  - name: Interrupts
+    description: |
+      Human-in-the-Loop (HITL) interrupt endpoints for workflow interactions.
+      Interrupts allow workflows to pause execution and request user input.
   - name: Validation
     description: Workflow validation
   - name: Import/Export

@@ -44,6 +44,7 @@ src/
 │   ├── api/                # API client implementations
 │   ├── components/         # Svelte components
 │   │   ├── form/           # Form field components (16 files)
+│   │   ├── interrupt/      # HITL interrupt prompt components
 │   │   ├── nodes/          # Node type components (8 files)
 │   │   ├── layouts/        # Layout components
 │   │   └── playground/     # Interactive playground components
@@ -286,13 +287,15 @@ See `docs/config-schema-special-properties.md` for full documentation.
 
 ### Services & Utilities
 
-| File                                   | Purpose                     |
-| -------------------------------------- | --------------------------- |
-| `src/lib/services/nodeService.ts`      | Node operations             |
-| `src/lib/services/workflowService.ts`  | Workflow CRUD operations    |
-| `src/lib/services/executionService.ts` | Pipeline execution          |
-| `src/lib/stores/workflowStore.ts`      | Workflow state management   |
-| `src/lib/adapters/WorkflowAdapter.ts`  | API response transformation |
+| File                                    | Purpose                        |
+| --------------------------------------- | ------------------------------ |
+| `src/lib/services/nodeService.ts`       | Node operations                |
+| `src/lib/services/workflowService.ts`   | Workflow CRUD operations       |
+| `src/lib/services/executionService.ts`  | Pipeline execution             |
+| `src/lib/services/interruptService.ts`  | HITL interrupt API operations  |
+| `src/lib/stores/workflowStore.ts`       | Workflow state management      |
+| `src/lib/stores/interruptStore.ts`      | Active interrupts state        |
+| `src/lib/adapters/WorkflowAdapter.ts`   | API response transformation    |
 
 ### Configuration
 
@@ -467,12 +470,14 @@ FlowDrop theming uses CSS custom properties:
 - Event types in `src/lib/types/events.ts`
 - Config types in `src/lib/types/config.ts`
 - Playground types in `src/lib/types/playground.ts`
+- Interrupt types in `src/lib/types/interrupt.ts`
 - Form types in `src/lib/components/form/types.ts`
 
 ### When Working with Stores
 
 - Workflow store: `src/lib/stores/workflowStore.ts`
 - Playground store: `src/lib/stores/playgroundStore.ts`
+- Interrupt store: `src/lib/stores/interruptStore.ts`
 - Use Svelte 5's `$state` rune pattern for reactivity
 
 ---
@@ -489,3 +494,4 @@ FlowDrop theming uses CSS custom properties:
 | `docs/config-schema-special-properties.md` | Config schema magic properties  |
 | `docs/component-hierarchy.md`              | Component structure             |
 | `docs/configEdit-feature.md`               | Dynamic config editing          |
+| `docs/interrupt-feature.md`                | Human-in-the-Loop interrupts    |
