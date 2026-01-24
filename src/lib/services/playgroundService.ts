@@ -307,7 +307,6 @@ export class PlaygroundService {
 		callback: (response: PlaygroundMessagesApiResponse) => void,
 		interval: number = DEFAULT_POLLING_INTERVAL
 	): void {
-		console.log('[PlaygroundService] startPolling called for session:', sessionId);
 		// Stop any existing polling
 		this.stopPolling();
 
@@ -317,12 +316,10 @@ export class PlaygroundService {
 
 		const poll = async () => {
 			if (this.pollingSessionId !== sessionId) {
-				console.log('[PlaygroundService] poll aborted - session mismatch');
 				return;
 			}
 
 			try {
-				console.log('[PlaygroundService] polling, since:', this.lastMessageTimestamp);
 				const response = await this.getMessages(sessionId, this.lastMessageTimestamp ?? undefined);
 
 				// Update last message timestamp
@@ -335,7 +332,6 @@ export class PlaygroundService {
 				this.currentBackoff = interval;
 
 			// Call the callback with new messages
-			console.log('[PlaygroundService] poll response, status:', response.sessionStatus, 'messages:', response.data?.length);
 			callback(response);
 
 			// Stop polling if session is idle, completed, or failed
@@ -345,7 +341,6 @@ export class PlaygroundService {
 				response.sessionStatus === 'completed' ||
 				response.sessionStatus === 'failed'
 			) {
-				console.log('[PlaygroundService] stopping polling due to status:', response.sessionStatus);
 				this.stopPolling();
 				return;
 			}
@@ -358,7 +353,6 @@ export class PlaygroundService {
 
 			// Schedule next poll
 			if (this.pollingSessionId === sessionId) {
-				console.log('[PlaygroundService] scheduling next poll in', this.currentBackoff, 'ms');
 				this.pollingInterval = setTimeout(poll, this.currentBackoff);
 			}
 		};
