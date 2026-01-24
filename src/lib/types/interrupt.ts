@@ -287,6 +287,8 @@ export interface InterruptMessageMetadata {
 	options?: InterruptChoice[];
 	/** Default value for pre-filling */
 	default_value?: unknown;
+	/** Response value when interrupt has been resolved */
+	response_value?: unknown;
 	/** Node ID that triggered the interrupt */
 	node_id?: string;
 	/** Execution ID */
@@ -342,6 +344,7 @@ export function extractInterruptMetadata(
 		schema: metadata.schema as ConfigSchema | undefined,
 		options: metadata.options as InterruptChoice[] | undefined,
 		default_value: metadata.default_value,
+		response_value: metadata.response_value,
 		node_id: metadata.node_id as string | undefined,
 		execution_id: metadata.execution_id as string | undefined,
 		allow_cancel: metadata.allow_cancel as boolean | undefined,

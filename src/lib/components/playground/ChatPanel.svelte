@@ -89,6 +89,10 @@
 	 * This effect runs when messages change and adds any new interrupt messages
 	 * to the interrupt store. We do this in an effect rather than during render
 	 * to avoid Svelte 5's state_unsafe_mutation error.
+	 *
+	 * If a message has status 'completed', the interrupt is marked as resolved
+	 * to show the "Confirmation Submitted" header, disabled buttons, and
+	 * "Response submitted" indicator.
 	 */
 	$effect(() => {
 		// Get all messages that are interrupt requests
@@ -105,6 +109,15 @@
 				if (metadata) {
 					const interrupt = metadataToInterrupt(metadata, message.id, message.content);
 					interruptActions.addInterrupt(interrupt);
+
+					// If the message status is 'completed', mark the interrupt as resolved
+					// This ensures completed interrupts show proper UI state:
+					// - "Confirmation Submitted" header
+					// - Disabled buttons
+					// - "Response submitted" indicator
+					if (message.status === 'completed') {
+						interruptActions.resolveInterrupt(interrupt.id, metadata.response_value);
+					}
 				}
 			}
 		}
