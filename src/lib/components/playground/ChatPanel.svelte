@@ -85,24 +85,48 @@
 	}
 
 	/**
-	 * Get interrupt data for a message, creating it in the store if needed
+	 * Sync interrupt messages to the interrupt store.
+	 * This effect runs when messages change and adds any new interrupt messages
+	 * to the interrupt store. We do this in an effect rather than during render
+	 * to avoid Svelte 5's state_unsafe_mutation error.
 	 */
-	function getOrCreateInterrupt(message: PlaygroundMessage) {
-		// First check if we already have this interrupt in the store
-		let interrupt = getInterruptByMessageId(message.id);
+	$effect(() => {
+		// Get all messages that are interrupt requests
+		const interruptMessages = displayMessages.filter(isInterruptMessage);
 		
-		if (!interrupt) {
-			// Safely extract and validate interrupt metadata
-			const metadata = extractInterruptMetadata(
-				message.metadata as Record<string, unknown> | undefined
-			);
-			if (metadata) {
-				interrupt = metadataToInterrupt(metadata, message.id, message.content);
-				interruptActions.addInterrupt(interrupt);
+		for (const message of interruptMessages) {
+			// Check if we already have this interrupt in the store
+			const existing = getInterruptByMessageId(message.id);
+			if (!existing) {
+				// Extract and validate interrupt metadata
+				const metadata = extractInterruptMetadata(
+					message.metadata as Record<string, unknown> | undefined
+				);
+				if (metadata) {
+					const interrupt = metadataToInterrupt(metadata, message.id, message.content);
+					interruptActions.addInterrupt(interrupt);
+				}
 			}
 		}
-		
-		return interrupt;
+	});
+
+	/**
+	 * Reactive map of message IDs to interrupts.
+	 * This ensures the component re-renders when interrupts are added to the store.
+	 */
+	const interruptsByMessageId = $derived(
+		new Map(
+			Array.from($interrupts.values())
+				.filter(i => i.messageId)
+				.map(i => [i.messageId, i])
+		)
+	);
+
+	/**
+	 * Get interrupt data for a message from the reactive map
+	 */
+	function getInterruptForMessage(message: PlaygroundMessage) {
+		return interruptsByMessageId.get(message.id);
 	}
 
 	/**
@@ -295,12 +319,14 @@
 			{#each displayMessages as message, index (message.id)}
 				{#if isInterruptMessage(message)}
 					<!-- Render interrupt inline -->
-					{@const interrupt = getOrCreateInterrupt(message)}
-					<InterruptBubble
-						{interrupt}
-						showTimestamp={showTimestamps}
-						onResolved={onInterruptResolved}
-					/>
+					{@const interrupt = getInterruptForMessage(message)}
+					{#if interrupt}
+						<InterruptBubble
+							{interrupt}
+							showTimestamp={showTimestamps}
+							onResolved={onInterruptResolved}
+						/>
+					{/if}
 				{:else}
 					<MessageBubble
 						{message}
