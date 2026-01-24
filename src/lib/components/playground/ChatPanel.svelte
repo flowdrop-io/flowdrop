@@ -166,6 +166,52 @@
 	});
 
 	/**
+	 * Track previous executing state to detect when execution completes
+	 */
+	let wasExecuting = $state(false);
+
+	/**
+	 * Auto-focus input when execution completes or session becomes ready
+	 */
+	$effect(() => {
+		const currentlyExecuting = $isExecuting;
+		
+		// Focus input when execution completes (was executing, now not)
+		if (wasExecuting && !currentlyExecuting && inputField) {
+			tick().then(() => {
+				inputField?.focus();
+			});
+		}
+		
+		// Update tracking state
+		wasExecuting = currentlyExecuting;
+	});
+
+	/**
+	 * Focus input when session status changes to idle or completed
+	 */
+	$effect(() => {
+		const status = $sessionStatus;
+		if ((status === "idle" || status === "completed") && inputField && !$isExecuting) {
+			tick().then(() => {
+				inputField?.focus();
+			});
+		}
+	});
+
+	/**
+	 * Focus input when a new session is created/loaded
+	 */
+	$effect(() => {
+		const session = $currentSession;
+		if (session && inputField && !$isExecuting) {
+			tick().then(() => {
+				inputField?.focus();
+			});
+		}
+	});
+
+	/**
 	 * Auto-resize textarea based on content
 	 */
 	function handleInput(): void {
