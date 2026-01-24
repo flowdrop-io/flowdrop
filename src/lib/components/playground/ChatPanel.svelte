@@ -48,6 +48,8 @@
 		showLogsInline?: boolean;
 		/** Whether to enable markdown rendering in messages */
 		enableMarkdown?: boolean;
+		/** Callback when an interrupt is resolved (to refresh messages) */
+		onInterruptResolved?: () => void;
 	}
 
 	let {
@@ -57,7 +59,8 @@
 		onSendMessage,
 		onStopExecution,
 		showLogsInline = false,
-		enableMarkdown = true
+		enableMarkdown = true,
+		onInterruptResolved
 	}: Props = $props();
 
 	/** Input field value */
@@ -296,6 +299,7 @@
 					<InterruptBubble
 						{interrupt}
 						showTimestamp={showTimestamps}
+						onResolved={onInterruptResolved}
 					/>
 				{:else}
 					<MessageBubble
