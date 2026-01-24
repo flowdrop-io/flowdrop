@@ -202,6 +202,7 @@
 </div>
 
 <style>
+	/* Uses design tokens from base.css: --flowdrop-interrupt-*, --color-ref-* */
 	.choice-prompt {
 		display: flex;
 		flex-direction: column;
@@ -220,7 +221,7 @@
 		margin: 0;
 		font-size: 0.9375rem;
 		line-height: 1.5;
-		color: #1f2937;
+		color: var(--color-ref-gray-800, #1f2937);
 	}
 
 	.choice-prompt__error {
@@ -228,9 +229,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 0.75rem;
-		background-color: #fef2f2;
+		background-color: var(--color-ref-red-50, #fef2f2);
 		border-radius: 0.375rem;
-		color: #dc2626;
+		color: var(--color-ref-red-600, #dc2626);
 		font-size: 0.8125rem;
 	}
 
@@ -245,36 +246,36 @@
 		align-items: flex-start;
 		gap: 0.75rem;
 		padding: 0.75rem 1rem;
-		background-color: #f9fafb;
-		border: 1px solid #e5e7eb;
+		background-color: var(--color-ref-gray-50, #f9fafb);
+		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
 		border-radius: 0.5rem;
 		cursor: pointer;
 		transition: all 0.15s ease;
 	}
 
 	.choice-prompt__option:hover:not(.choice-prompt--resolved .choice-prompt__option) {
-		background-color: #f3f4f6;
-		border-color: #d1d5db;
+		background-color: var(--color-ref-gray-100, #f3f4f6);
+		border-color: var(--color-ref-gray-300, #d1d5db);
 	}
 
 	.choice-prompt__option--selected {
-		background-color: #eff6ff;
-		border-color: #3b82f6;
+		background-color: var(--color-ref-blue-50, #eff6ff);
+		border-color: var(--flowdrop-interrupt-completed-border);
 	}
 
 	.choice-prompt__option--selected:hover:not(.choice-prompt--resolved .choice-prompt__option) {
-		background-color: #dbeafe;
+		background-color: var(--color-ref-blue-100, #dbeafe);
 	}
 
 	/* Resolved option - neutral blue theme */
 	.choice-prompt__option--resolved {
-		background-color: #eff6ff;
-		border-color: #3b82f6;
+		background-color: var(--color-ref-blue-50, #eff6ff);
+		border-color: var(--flowdrop-interrupt-completed-border);
 		cursor: default;
 	}
 
 	.choice-prompt--resolved .choice-prompt__option:not(.choice-prompt__option--resolved) {
-		opacity: 0.5;
+		opacity: var(--flowdrop-interrupt-not-selected-opacity);
 		cursor: default;
 	}
 
@@ -288,18 +289,18 @@
 	.choice-prompt__checkmark {
 		flex-shrink: 0;
 		font-size: 1.25rem;
-		color: #9ca3af;
+		color: var(--color-ref-gray-400, #9ca3af);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
 	.choice-prompt__option--selected .choice-prompt__checkmark {
-		color: #3b82f6;
+		color: var(--flowdrop-interrupt-completed-border);
 	}
 
 	.choice-prompt__option--resolved .choice-prompt__checkmark {
-		color: #3b82f6;
+		color: var(--flowdrop-interrupt-completed-border);
 	}
 
 	.choice-prompt__option-content {
@@ -311,18 +312,18 @@
 	.choice-prompt__option-label {
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #1f2937;
+		color: var(--color-ref-gray-800, #1f2937);
 	}
 
 	.choice-prompt__option-description {
 		font-size: 0.8125rem;
-		color: #6b7280;
+		color: var(--color-ref-gray-500, #6b7280);
 		line-height: 1.4;
 	}
 
 	.choice-prompt__info {
 		font-size: 0.75rem;
-		color: #6b7280;
+		color: var(--color-ref-gray-500, #6b7280);
 		padding-left: 0.25rem;
 	}
 
@@ -346,14 +347,14 @@
 		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		border: none;
 		min-height: 2.5rem;
-		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+		background: var(--flowdrop-interrupt-btn-primary-bg);
 		color: #ffffff;
-		box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+		box-shadow: 0 1px 3px var(--flowdrop-interrupt-btn-primary-shadow);
 	}
 
 	.choice-prompt__submit:hover:not(:disabled) {
-		background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+		background: var(--flowdrop-interrupt-btn-primary-bg-hover);
+		box-shadow: 0 4px 12px var(--flowdrop-interrupt-btn-primary-shadow);
 		transform: translateY(-1px);
 	}
 
@@ -385,9 +386,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: #eff6ff;
+		background-color: var(--flowdrop-interrupt-badge-completed-bg);
 		border-radius: 9999px;
-		color: #2563eb;
+		color: var(--flowdrop-interrupt-badge-completed-text);
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;

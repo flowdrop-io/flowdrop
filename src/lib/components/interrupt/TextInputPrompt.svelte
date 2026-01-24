@@ -176,6 +176,7 @@
 </div>
 
 <style>
+	/* Uses design tokens from base.css: --flowdrop-interrupt-*, --color-ref-* */
 	.text-prompt {
 		display: flex;
 		flex-direction: column;
@@ -194,7 +195,7 @@
 		margin: 0;
 		font-size: 0.9375rem;
 		line-height: 1.5;
-		color: #1f2937;
+		color: var(--color-ref-gray-800, #1f2937);
 	}
 
 	.text-prompt__error {
@@ -202,9 +203,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 0.75rem;
-		background-color: #fef2f2;
+		background-color: var(--color-ref-red-50, #fef2f2);
 		border-radius: 0.375rem;
-		color: #dc2626;
+		color: var(--color-ref-red-600, #dc2626);
 		font-size: 0.8125rem;
 	}
 
@@ -220,9 +221,9 @@
 		font-size: 0.9375rem;
 		font-family: inherit;
 		line-height: 1.5;
-		color: #1f2937;
+		color: var(--color-ref-gray-800, #1f2937);
 		background-color: #ffffff;
-		border: 1px solid #d1d5db;
+		border: 1px solid var(--color-ref-gray-300, #d1d5db);
 		border-radius: 0.5rem;
 		outline: none;
 		transition: all 0.15s ease;
@@ -230,26 +231,26 @@
 
 	.text-prompt__input::placeholder,
 	.text-prompt__textarea::placeholder {
-		color: #9ca3af;
+		color: var(--color-ref-gray-400, #9ca3af);
 	}
 
 	.text-prompt__input:focus,
 	.text-prompt__textarea:focus {
-		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+		border-color: var(--flowdrop-interrupt-completed-border);
+		box-shadow: 0 0 0 3px var(--flowdrop-interrupt-completed-shadow);
 	}
 
 	.text-prompt__input:disabled,
 	.text-prompt__textarea:disabled {
-		background-color: #f9fafb;
+		background-color: var(--color-ref-gray-50, #f9fafb);
 		cursor: not-allowed;
 	}
 
 	/* Resolved state - neutral blue to match other interrupt prompts */
 	.text-prompt__input--resolved,
 	.text-prompt__textarea--resolved {
-		background-color: #eff6ff;
-		border-color: #3b82f6;
+		background-color: var(--color-ref-blue-50, #eff6ff);
+		border-color: var(--flowdrop-interrupt-completed-border);
 	}
 
 	.text-prompt__textarea {
@@ -259,13 +260,13 @@
 
 	.text-prompt__char-count {
 		font-size: 0.75rem;
-		color: #6b7280;
+		color: var(--color-ref-gray-500, #6b7280);
 		text-align: right;
 		padding-right: 0.25rem;
 	}
 
 	.text-prompt__char-count--warning {
-		color: #f59e0b;
+		color: var(--color-ref-amber-500, #f59e0b);
 	}
 
 	.text-prompt__actions {
@@ -287,14 +288,14 @@
 		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		border: none;
 		min-height: 2.5rem;
-		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+		background: var(--flowdrop-interrupt-btn-primary-bg);
 		color: #ffffff;
-		box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+		box-shadow: 0 1px 3px var(--flowdrop-interrupt-btn-primary-shadow);
 	}
 
 	.text-prompt__submit:hover:not(:disabled) {
-		background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+		background: var(--flowdrop-interrupt-btn-primary-bg-hover);
+		box-shadow: 0 4px 12px var(--flowdrop-interrupt-btn-primary-shadow);
 		transform: translateY(-1px);
 	}
 
@@ -326,9 +327,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: #eff6ff;
+		background-color: var(--flowdrop-interrupt-badge-completed-bg);
 		border-radius: 9999px;
-		color: #2563eb;
+		color: var(--flowdrop-interrupt-badge-completed-text);
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;
