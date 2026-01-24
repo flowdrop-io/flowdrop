@@ -58,8 +58,11 @@ export function createConfirmationInterrupt(
 		config,
 		nodeId,
 		executionId,
+		sessionId,
 		status: "pending",
-		allowCancel
+		allowCancel,
+		createdAt: new Date().toISOString(),
+		message: config.message
 	};
 
 	mockInterrupts.set(interrupt.id, interrupt);
@@ -86,8 +89,11 @@ export function createChoiceInterrupt(
 		config,
 		nodeId,
 		executionId,
+		sessionId,
 		status: "pending",
-		allowCancel
+		allowCancel,
+		createdAt: new Date().toISOString(),
+		message: config.message
 	};
 
 	mockInterrupts.set(interrupt.id, interrupt);
@@ -114,8 +120,11 @@ export function createTextInterrupt(
 		config,
 		nodeId,
 		executionId,
+		sessionId,
 		status: "pending",
-		allowCancel
+		allowCancel,
+		createdAt: new Date().toISOString(),
+		message: config.message
 	};
 
 	mockInterrupts.set(interrupt.id, interrupt);
@@ -142,8 +151,11 @@ export function createFormInterrupt(
 		config,
 		nodeId,
 		executionId,
+		sessionId,
 		status: "pending",
-		allowCancel
+		allowCancel,
+		createdAt: new Date().toISOString(),
+		message: config.message
 	};
 
 	mockInterrupts.set(interrupt.id, interrupt);
