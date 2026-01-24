@@ -17,14 +17,14 @@ This document describes the special "magical" properties that FlowDrop recognize
 
 These property names in `config` have special meaning and trigger automatic behaviors:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `instanceTitle` | `string` | Per-instance title override (replaces `label` display) |
-| `instanceDescription` | `string` | Per-instance description override (replaces `metadata.description` display) |
-| `nodeType` | `string` | Changes the visual rendering type of the node |
-| `dynamicInputs` | `DynamicPort[]` | Creates user-defined input handles |
-| `dynamicOutputs` | `DynamicPort[]` | Creates user-defined output handles |
-| `branches` | `Branch[]` | Creates conditional output branches (Gateway nodes) |
+| Property              | Type            | Description                                                                 |
+| --------------------- | --------------- | --------------------------------------------------------------------------- |
+| `instanceTitle`       | `string`        | Per-instance title override (replaces `label` display)                      |
+| `instanceDescription` | `string`        | Per-instance description override (replaces `metadata.description` display) |
+| `nodeType`            | `string`        | Changes the visual rendering type of the node                               |
+| `dynamicInputs`       | `DynamicPort[]` | Creates user-defined input handles                                          |
+| `dynamicOutputs`      | `DynamicPort[]` | Creates user-defined output handles                                         |
+| `branches`            | `Branch[]`      | Creates conditional output branches (Gateway nodes)                         |
 
 ---
 
@@ -41,6 +41,10 @@ Allows each node instance to have a unique title that overrides the default `lab
 **Supported Node Types:**
 - `workflowNode` (Default)
 - `simple` (Simple)
+- `terminal` (Terminal - Start/End/Exit)
+- `gateway` (Gateway - Branching)
+- `tool` (Tool)
+- `idea` (Idea)
 
 **Example Config Schema:**
 
@@ -69,6 +73,10 @@ Allows each node instance to have a unique description that overrides the defaul
 **Supported Node Types:**
 - `workflowNode` (Default)
 - `simple` (Simple)
+- `terminal` (Terminal - Start/End/Exit)
+- `gateway` (Gateway - Branching)
+- `tool` (Tool)
+- `idea` (Idea)
 
 **Example Config Schema:**
 
@@ -139,15 +147,15 @@ Here's how to add both properties to a node's config schema to make title and de
 
 The `format` property in a config schema field controls how it's rendered in the form:
 
-| Format | Renders As | Description |
-|--------|------------|-------------|
-| `hidden` | Nothing | Field is hidden from UI but included in form submission |
-| `multiline` | Textarea | Multi-line text input |
-| `range` | Slider | Range slider for numeric values (requires `minimum`/`maximum`) |
-| `json` | CodeMirror | JSON editor with syntax highlighting and validation |
-| `code` | CodeMirror | Alias for `json` - CodeMirror editor |
-| `markdown` | SimpleMDE | Markdown editor with toolbar and preview |
-| `template` | CodeMirror | Template editor with `{{ variable }}` syntax highlighting |
+| Format      | Renders As | Description                                                    |
+| ----------- | ---------- | -------------------------------------------------------------- |
+| `hidden`    | Nothing    | Field is hidden from UI but included in form submission        |
+| `multiline` | Textarea   | Multi-line text input                                          |
+| `range`     | Slider     | Range slider for numeric values (requires `minimum`/`maximum`) |
+| `json`      | CodeMirror | JSON editor with syntax highlighting and validation            |
+| `code`      | CodeMirror | Alias for `json` - CodeMirror editor                           |
+| `markdown`  | SimpleMDE  | Markdown editor with toolbar and preview                       |
+| `template`  | CodeMirror | Template editor with `{{ variable }}` syntax highlighting      |
 
 ### Example: Schema with Different Formats
 
@@ -268,15 +276,15 @@ The `nodeType` config property changes how a node is visually rendered. This all
 
 **Available Built-in Types:**
 
-| Type | Description |
-|------|-------------|
-| `default` | Standard workflow node with full details |
-| `simple` | Compact layout with minimal chrome |
-| `square` | Geometric square layout |
-| `tool` | Specialized style for agent tools |
-| `gateway` | Branching control flow visualization |
-| `terminal` | Start/end/exit node styling |
-| `note` | Sticky note style for annotations |
+| Type       | Description                              |
+| ---------- | ---------------------------------------- |
+| `default`  | Standard workflow node with full details |
+| `simple`   | Compact layout with minimal chrome       |
+| `square`   | Geometric square layout                  |
+| `tool`     | Specialized style for agent tools        |
+| `gateway`  | Branching control flow visualization     |
+| `terminal` | Start/end/exit node styling              |
+| `note`     | Sticky note style for annotations        |
 
 **How It Works:**
 
@@ -520,15 +528,15 @@ const nodeMetadata: NodeMetadata = {
 
 ## Summary
 
-| Property | Location | Purpose |
-|----------|----------|---------|
-| `format` | Schema property | Controls form field rendering (hidden, multiline, json, markdown, template, range) |
-| `multiple` | Schema property | With `enum`, renders checkboxes instead of dropdown |
-| `enumNames` | Schema property | Human-readable labels for enum values |
-| `x-display-order` | Schema property | Controls field ordering (negative values appear first) |
-| `instanceTitle` | Config value | Per-instance title override for node display |
-| `instanceDescription` | Config value | Per-instance description override for node display |
-| `nodeType` | Config value | Switches visual node type |
-| `dynamicInputs` | Config value | User-defined input ports |
-| `dynamicOutputs` | Config value | User-defined output ports |
-| `branches` | Config value | Gateway conditional output paths |
+| Property              | Location        | Purpose                                                                            |
+| --------------------- | --------------- | ---------------------------------------------------------------------------------- |
+| `format`              | Schema property | Controls form field rendering (hidden, multiline, json, markdown, template, range) |
+| `multiple`            | Schema property | With `enum`, renders checkboxes instead of dropdown                                |
+| `enumNames`           | Schema property | Human-readable labels for enum values                                              |
+| `x-display-order`     | Schema property | Controls field ordering (negative values appear first)                             |
+| `instanceTitle`       | Config value    | Per-instance title override for node display                                       |
+| `instanceDescription` | Config value    | Per-instance description override for node display                                 |
+| `nodeType`            | Config value    | Switches visual node type                                                          |
+| `dynamicInputs`       | Config value    | User-defined input ports                                                           |
+| `dynamicOutputs`      | Config value    | User-defined output ports                                                          |
+| `branches`            | Config value    | Gateway conditional output paths                                                   |
