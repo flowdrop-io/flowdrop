@@ -219,19 +219,22 @@
 
 	// Determine the actual resolved value to pass to prompt components
 	const displayResolvedValue = $derived(resolvedValue ?? currentInterrupt.responseValue);
+
 </script>
 
 <div
 	class="interrupt-bubble"
-	class:interrupt-bubble--resolved={isResolved}
+	class:interrupt-bubble--completed={currentInterrupt.machineState.status === "resolved"}
 	class:interrupt-bubble--cancelled={currentInterrupt.machineState.status === "cancelled"}
 	class:interrupt-bubble--submitting={isSubmitting}
 	class:interrupt-bubble--error={currentInterrupt.machineState.status === "error"}
 >
 	<!-- Avatar / Icon -->
 	<div class="interrupt-bubble__avatar">
-		{#if isResolved}
-			<Icon icon={currentInterrupt.machineState.status === "cancelled" ? "mdi:close-circle" : "mdi:check-circle"} />
+		{#if currentInterrupt.machineState.status === "cancelled"}
+			<Icon icon="mdi:close-circle" />
+		{:else if currentInterrupt.machineState.status === "resolved"}
+			<Icon icon="mdi:check-circle" />
 		{:else if currentInterrupt.machineState.status === "error"}
 			<Icon icon="mdi:alert-circle" />
 		{:else}
@@ -365,10 +368,11 @@
 		}
 	}
 
-	.interrupt-bubble--resolved {
-		background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-		border-color: #10b981;
-		box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+	/* Completed state - neutral blue/teal to indicate response received without implying good/bad */
+	.interrupt-bubble--completed {
+		background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+		border-color: #3b82f6;
+		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 	}
 
 	.interrupt-bubble--cancelled {
@@ -401,8 +405,8 @@
 		font-size: 1.125rem;
 	}
 
-	.interrupt-bubble--resolved .interrupt-bubble__avatar {
-		background-color: #10b981;
+	.interrupt-bubble--completed .interrupt-bubble__avatar {
+		background-color: #3b82f6;
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__avatar {
@@ -439,8 +443,8 @@
 		color: #92400e;
 	}
 
-	.interrupt-bubble--resolved .interrupt-bubble__type {
-		color: #065f46;
+	.interrupt-bubble--completed .interrupt-bubble__type {
+		color: #1e40af;
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__type {
@@ -457,8 +461,8 @@
 		font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 	}
 
-	.interrupt-bubble--resolved .interrupt-bubble__timestamp {
-		color: #047857;
+	.interrupt-bubble--completed .interrupt-bubble__timestamp {
+		color: #2563eb;
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__timestamp {
@@ -510,8 +514,8 @@
 		border: 1px solid rgba(245, 158, 11, 0.2);
 	}
 
-	.interrupt-bubble--resolved .interrupt-bubble__prompt {
-		border-color: rgba(16, 185, 129, 0.2);
+	.interrupt-bubble--completed .interrupt-bubble__prompt {
+		border-color: rgba(59, 130, 246, 0.2);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__prompt {
@@ -565,8 +569,8 @@
 		border-top: 1px solid rgba(245, 158, 11, 0.2);
 	}
 
-	.interrupt-bubble--resolved .interrupt-bubble__footer {
-		border-color: rgba(16, 185, 129, 0.2);
+	.interrupt-bubble--completed .interrupt-bubble__footer {
+		border-color: rgba(59, 130, 246, 0.2);
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__footer {
@@ -585,8 +589,8 @@
 		color: #92400e;
 	}
 
-	.interrupt-bubble--resolved .interrupt-bubble__node {
-		color: #065f46;
+	.interrupt-bubble--completed .interrupt-bubble__node {
+		color: #1e40af;
 	}
 
 	.interrupt-bubble--cancelled .interrupt-bubble__node {
