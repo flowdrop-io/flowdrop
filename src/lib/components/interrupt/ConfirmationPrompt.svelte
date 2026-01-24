@@ -268,14 +268,15 @@
 		}
 	}
 
+	/* Resolved badge - neutral blue theme */
 	.confirmation-prompt__resolved-badge {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: #ecfdf5;
+		background-color: #eff6ff;
 		border-radius: 9999px;
-		color: #059669;
+		color: #2563eb;
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;

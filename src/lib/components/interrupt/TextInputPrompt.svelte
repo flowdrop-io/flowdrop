@@ -245,10 +245,11 @@
 		cursor: not-allowed;
 	}
 
+	/* Resolved state - neutral blue to match other interrupt prompts */
 	.text-prompt__input--resolved,
 	.text-prompt__textarea--resolved {
-		background-color: #ecfdf5;
-		border-color: #10b981;
+		background-color: #eff6ff;
+		border-color: #3b82f6;
 	}
 
 	.text-prompt__textarea {
@@ -319,14 +320,15 @@
 		}
 	}
 
+	/* Resolved badge - neutral blue theme */
 	.text-prompt__resolved-badge {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: #ecfdf5;
+		background-color: #eff6ff;
 		border-radius: 9999px;
-		color: #059669;
+		color: #2563eb;
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;

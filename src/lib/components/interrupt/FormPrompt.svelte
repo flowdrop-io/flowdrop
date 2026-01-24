@@ -171,9 +171,10 @@
 		padding: 1rem;
 	}
 
+	/* Resolved values - neutral blue theme */
 	.form-prompt__resolved-values {
-		background-color: #ecfdf5;
-		border: 1px solid #10b981;
+		background-color: #eff6ff;
+		border: 1px solid #3b82f6;
 		border-radius: 0.5rem;
 		padding: 1rem;
 	}
@@ -182,7 +183,7 @@
 		margin: 0 0 0.75rem 0;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: #059669;
+		color: #2563eb;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
@@ -212,14 +213,15 @@
 		white-space: pre-wrap;
 	}
 
+	/* Resolved badge - neutral blue theme */
 	.form-prompt__resolved-badge {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: #ecfdf5;
+		background-color: #eff6ff;
 		border-radius: 9999px;
-		color: #059669;
+		color: #2563eb;
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;
