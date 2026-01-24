@@ -1,14 +1,39 @@
 /**
  * Interrupt Store
  *
- * Svelte stores for managing interrupt state including pending interrupts,
- * resolved interrupts, and their status.
+ * Svelte stores for managing interrupt state using a lightweight state machine.
+ * Ensures valid state transitions and prevents deadlocks.
  *
  * @module stores/interruptStore
  */
 
 import { writable, derived, get } from "svelte/store";
 import type { Interrupt, InterruptStatus } from "../types/interrupt.js";
+import {
+	type InterruptState,
+	type InterruptAction,
+	type TransitionResult,
+	initialState,
+	transition,
+	isTerminalState,
+	isSubmitting as checkIsSubmitting,
+	hasError as checkHasError,
+	getErrorMessage,
+	getResolvedValue,
+	toLegacyStatus
+} from "../types/interruptState.js";
+
+// =========================================================================
+// Types
+// =========================================================================
+
+/**
+ * Extended interrupt with state machine
+ */
+export interface InterruptWithState extends Interrupt {
+	/** State machine state for UI interaction tracking */
+	machineState: InterruptState;
+}
 
 // =========================================================================
 // Core Stores
@@ -16,21 +41,9 @@ import type { Interrupt, InterruptStatus } from "../types/interrupt.js";
 
 /**
  * Map of all interrupts by ID
- * Key: interrupt ID, Value: Interrupt object
+ * Key: interrupt ID, Value: Interrupt object with state
  */
-export const interrupts = writable<Map<string, Interrupt>>(new Map());
-
-/**
- * Set of interrupt IDs currently being submitted
- * Used to show loading state on buttons
- */
-export const submittingInterrupts = writable<Set<string>>(new Set());
-
-/**
- * Error state for interrupt operations
- * Key: interrupt ID, Value: error message
- */
-export const interruptErrors = writable<Map<string, string>>(new Map());
+export const interrupts = writable<Map<string, InterruptWithState>>(new Map());
 
 // =========================================================================
 // Derived Stores
@@ -42,7 +55,7 @@ export const interruptErrors = writable<Map<string, string>>(new Map());
 export const pendingInterruptIds = derived(interrupts, ($interrupts): string[] => {
 	const pending: string[] = [];
 	$interrupts.forEach((interrupt, id) => {
-		if (interrupt.status === "pending") {
+		if (!isTerminalState(interrupt.machineState)) {
 			pending.push(id);
 		}
 	});
@@ -52,10 +65,10 @@ export const pendingInterruptIds = derived(interrupts, ($interrupts): string[] =
 /**
  * Derived store for pending interrupts array
  */
-export const pendingInterrupts = derived(interrupts, ($interrupts): Interrupt[] => {
-	const pending: Interrupt[] = [];
+export const pendingInterrupts = derived(interrupts, ($interrupts): InterruptWithState[] => {
+	const pending: InterruptWithState[] = [];
 	$interrupts.forEach((interrupt) => {
-		if (interrupt.status === "pending") {
+		if (!isTerminalState(interrupt.machineState)) {
 			pending.push(interrupt);
 		}
 	});
@@ -73,10 +86,10 @@ export const pendingInterruptCount = derived(
 /**
  * Derived store for resolved interrupts
  */
-export const resolvedInterrupts = derived(interrupts, ($interrupts): Interrupt[] => {
-	const resolved: Interrupt[] = [];
+export const resolvedInterrupts = derived(interrupts, ($interrupts): InterruptWithState[] => {
+	const resolved: InterruptWithState[] = [];
 	$interrupts.forEach((interrupt) => {
-		if (interrupt.status === "resolved") {
+		if (interrupt.machineState.status === "resolved") {
 			resolved.push(interrupt);
 		}
 	});
@@ -86,13 +99,99 @@ export const resolvedInterrupts = derived(interrupts, ($interrupts): Interrupt[]
 /**
  * Derived store to check if any interrupt is currently submitting
  */
-export const isAnySubmitting = derived(
-	submittingInterrupts,
-	($submitting) => $submitting.size > 0
-);
+export const isAnySubmitting = derived(interrupts, ($interrupts): boolean => {
+	for (const interrupt of $interrupts.values()) {
+		if (checkIsSubmitting(interrupt.machineState)) {
+			return true;
+		}
+	}
+	return false;
+});
+
+/**
+ * Legacy derived store for submitting interrupt IDs
+ * @deprecated Use interrupt.machineState.status === "submitting" instead
+ */
+export const submittingInterrupts = derived(interrupts, ($interrupts): Set<string> => {
+	const submitting = new Set<string>();
+	$interrupts.forEach((interrupt, id) => {
+		if (checkIsSubmitting(interrupt.machineState)) {
+			submitting.add(id);
+		}
+	});
+	return submitting;
+});
+
+/**
+ * Legacy derived store for interrupt errors
+ * @deprecated Use interrupt.machineState.error instead
+ */
+export const interruptErrors = derived(interrupts, ($interrupts): Map<string, string> => {
+	const errors = new Map<string, string>();
+	$interrupts.forEach((interrupt, id) => {
+		const errorMsg = getErrorMessage(interrupt.machineState);
+		if (errorMsg) {
+			errors.set(id, errorMsg);
+		}
+	});
+	return errors;
+});
 
 // =========================================================================
-// Actions
+// State Machine Actions
+// =========================================================================
+
+/**
+ * Apply a state machine action to an interrupt
+ *
+ * @param interruptId - The interrupt ID
+ * @param action - The action to apply
+ * @returns Transition result with validity and any errors
+ */
+function applyAction(interruptId: string, action: InterruptAction): TransitionResult {
+	const currentInterrupts = get(interrupts);
+	const interrupt = currentInterrupts.get(interruptId);
+
+	if (!interrupt) {
+		return {
+			state: initialState,
+			valid: false,
+			error: `Interrupt not found: ${interruptId}`
+		};
+	}
+
+	const result = transition(interrupt.machineState, action);
+
+	if (result.valid) {
+		interrupts.update(($interrupts) => {
+			const updated = new Map($interrupts);
+			const current = updated.get(interruptId);
+			if (current) {
+				// Update machine state and sync legacy fields
+				const newInterrupt: InterruptWithState = {
+					...current,
+					machineState: result.state,
+					status: toLegacyStatus(result.state),
+					responseValue: getResolvedValue(result.state) ?? current.responseValue,
+					resolvedAt: result.state.status === "resolved"
+						? (result.state as { resolvedAt: string }).resolvedAt
+						: result.state.status === "cancelled"
+							? (result.state as { cancelledAt: string }).cancelledAt
+							: current.resolvedAt
+				};
+				updated.set(interruptId, newInterrupt);
+			}
+			return updated;
+		});
+	} else {
+		console.warn(`[InterruptStore] Invalid transition: ${result.error}`);
+	}
+
+	return result;
+}
+
+// =========================================================================
+// Public Actions
 // =========================================================================
 
 /**
@@ -107,7 +206,17 @@ export const interruptActions = {
 	addInterrupt: (interrupt: Interrupt): void => {
 		interrupts.update(($interrupts) => {
 			const updated = new Map($interrupts);
-			updated.set(interrupt.id, interrupt);
+			const existing = updated.get(interrupt.id);
+
+			// Preserve existing machine state if interrupt already exists
+			const machineState = existing?.machineState ?? initialState;
+
+			const interruptWithState: InterruptWithState = {
+				...interrupt,
+				machineState
+			};
+
+			updated.set(interrupt.id, interruptWithState);
 			return updated;
 		});
 	},
@@ -123,70 +232,154 @@ export const interruptActions = {
 		interrupts.update(($interrupts) => {
 			const updated = new Map($interrupts);
 			interruptList.forEach((interrupt) => {
-				updated.set(interrupt.id, interrupt);
+				const existing = updated.get(interrupt.id);
+				const machineState = existing?.machineState ?? initialState;
+
+				const interruptWithState: InterruptWithState = {
+					...interrupt,
+					machineState
+				};
+
+				updated.set(interrupt.id, interruptWithState);
 			});
 			return updated;
 		});
 	},
 
 	/**
-	 * Update an interrupt's status
+	 * Start submitting an interrupt (user clicked submit)
 	 *
 	 * @param interruptId - The interrupt ID
-	 * @param status - The new status
-	 * @param responseValue - Optional response value (for resolved status)
+	 * @param value - The value being submitted
+	 * @returns Transition result
+	 */
+	startSubmit: (interruptId: string, value: unknown): TransitionResult => {
+		return applyAction(interruptId, { type: "SUBMIT", value });
+	},
+
+	/**
+	 * Start cancelling an interrupt (user clicked cancel)
+	 *
+	 * @param interruptId - The interrupt ID
+	 * @returns Transition result
+	 */
+	startCancel: (interruptId: string): TransitionResult => {
+		return applyAction(interruptId, { type: "CANCEL" });
+	},
+
+	/**
+	 * Mark submission as successful
+	 *
+	 * @param interruptId - The interrupt ID
+	 * @returns Transition result
+	 */
+	submitSuccess: (interruptId: string): TransitionResult => {
+		return applyAction(interruptId, { type: "SUCCESS" });
+	},
+
+	/**
+	 * Mark submission as failed
+	 *
+	 * @param interruptId - The interrupt ID
+	 * @param error - Error message
+	 * @returns Transition result
+	 */
+	submitFailure: (interruptId: string, error: string): TransitionResult => {
+		return applyAction(interruptId, { type: "FAILURE", error });
+	},
+
+	/**
+	 * Retry a failed submission
+	 *
+	 * @param interruptId - The interrupt ID
+	 * @returns Transition result
+	 */
+	retry: (interruptId: string): TransitionResult => {
+		return applyAction(interruptId, { type: "RETRY" });
+	},
+
+	/**
+	 * Reset an interrupt to idle state
+	 *
+	 * @param interruptId - The interrupt ID
+	 * @returns Transition result
+	 */
+	resetInterrupt: (interruptId: string): TransitionResult => {
+		return applyAction(interruptId, { type: "RESET" });
+	},
+
+	// =========================================================================
+	// Legacy Actions (for backward compatibility)
+	// =========================================================================
+
+	/**
+	 * Update an interrupt's status (legacy)
+	 * @deprecated Use startSubmit/submitSuccess/submitFailure instead
 	 */
 	updateStatus: (
 		interruptId: string,
 		status: InterruptStatus,
 		responseValue?: unknown
 	): void => {
-		interrupts.update(($interrupts) => {
-			const interrupt = $interrupts.get(interruptId);
-			if (!interrupt) return $interrupts;
-
-			const updated = new Map($interrupts);
-			updated.set(interruptId, {
-				...interrupt,
-				status,
-				responseValue: responseValue ?? interrupt.responseValue,
-				resolvedAt: status === "resolved" || status === "cancelled" 
-					? new Date().toISOString() 
-					: interrupt.resolvedAt
-			});
-			return updated;
-		});
+		// Map legacy status to state machine actions
+		if (status === "resolved" && responseValue !== undefined) {
+			const submitResult = applyAction(interruptId, { type: "SUBMIT", value: responseValue });
+			if (submitResult.valid) {
+				applyAction(interruptId, { type: "SUCCESS" });
+			}
+		} else if (status === "cancelled") {
+			const cancelResult = applyAction(interruptId, { type: "CANCEL" });
+			if (cancelResult.valid) {
+				applyAction(interruptId, { type: "SUCCESS" });
+			}
+		}
 	},
 
 	/**
-	 * Mark an interrupt as resolved with the user's response
-	 *
-	 * @param interruptId - The interrupt ID
-	 * @param value - The user's response value
+	 * Mark an interrupt as resolved with the user's response (legacy)
+	 * @deprecated Use startSubmit + submitSuccess instead
 	 */
 	resolveInterrupt: (interruptId: string, value: unknown): void => {
-		interruptActions.updateStatus(interruptId, "resolved", value);
-		// Clear any error for this interrupt
-		interruptErrors.update(($errors) => {
-			const updated = new Map($errors);
-			updated.delete(interruptId);
-			return updated;
-		});
+		// For backward compatibility, immediately resolve
+		// (assumes sync operation or already completed API call)
+		const submitResult = applyAction(interruptId, { type: "SUBMIT", value });
+		if (submitResult.valid) {
+			applyAction(interruptId, { type: "SUCCESS" });
+		}
 	},
 
 	/**
-	 * Mark an interrupt as cancelled
-	 *
-	 * @param interruptId - The interrupt ID
+	 * Mark an interrupt as cancelled (legacy)
+	 * @deprecated Use startCancel + submitSuccess instead
 	 */
 	cancelInterrupt: (interruptId: string): void => {
-		interruptActions.updateStatus(interruptId, "cancelled");
-		// Clear any error for this interrupt
-		interruptErrors.update(($errors) => {
-			const updated = new Map($errors);
-			updated.delete(interruptId);
-			return updated;
-		});
+		const cancelResult = applyAction(interruptId, { type: "CANCEL" });
+		if (cancelResult.valid) {
+			applyAction(interruptId, { type: "SUCCESS" });
+		}
+	},
+
+	/**
+	 * Set submitting state for an interrupt (legacy)
+	 * @deprecated State is automatically managed by startSubmit/submitSuccess
+	 */
+	setSubmitting: (interruptId: string, isSubmitting: boolean): void => {
+		// This is now a no-op - state is managed by the state machine
+		// Kept for backward compatibility
+		if (isSubmitting) {
+			console.warn("[InterruptStore] setSubmitting(true) is deprecated. Use startSubmit() instead.");
+		}
+	},
+
+	/**
+	 * Set error for an interrupt (legacy)
+	 * @deprecated Use submitFailure() instead
+	 */
+	setError: (interruptId: string, error: string | null): void => {
+		if (error) {
+			applyAction(interruptId, { type: "FAILURE", error });
+		}
+		// Clearing error is not directly supported - use retry or reset
 	},
 
 	/**
@@ -198,53 +391,6 @@ export const interruptActions = {
 		interrupts.update(($interrupts) => {
 			const updated = new Map($interrupts);
 			updated.delete(interruptId);
-			return updated;
-		});
-		// Also clear submitting and error state
-		submittingInterrupts.update(($submitting) => {
-			const updated = new Set($submitting);
-			updated.delete(interruptId);
-			return updated;
-		});
-		interruptErrors.update(($errors) => {
-			const updated = new Map($errors);
-			updated.delete(interruptId);
-			return updated;
-		});
-	},
-
-	/**
-	 * Set submitting state for an interrupt
-	 *
-	 * @param interruptId - The interrupt ID
-	 * @param isSubmitting - Whether the interrupt is being submitted
-	 */
-	setSubmitting: (interruptId: string, isSubmitting: boolean): void => {
-		submittingInterrupts.update(($submitting) => {
-			const updated = new Set($submitting);
-			if (isSubmitting) {
-				updated.add(interruptId);
-			} else {
-				updated.delete(interruptId);
-			}
-			return updated;
-		});
-	},
-
-	/**
-	 * Set error for an interrupt
-	 *
-	 * @param interruptId - The interrupt ID
-	 * @param error - The error message, or null to clear
-	 */
-	setError: (interruptId: string, error: string | null): void => {
-		interruptErrors.update(($errors) => {
-			const updated = new Map($errors);
-			if (error) {
-				updated.set(interruptId, error);
-			} else {
-				updated.delete(interruptId);
-			}
 			return updated;
 		});
 	},
@@ -267,12 +413,17 @@ export const interruptActions = {
 	},
 
 	/**
+	 * Alias for clearSessionInterrupts
+	 */
+	clearInterrupts: (): void => {
+		interrupts.set(new Map());
+	},
+
+	/**
 	 * Reset all interrupt state
 	 */
 	reset: (): void => {
 		interrupts.set(new Map());
-		submittingInterrupts.set(new Set());
-		interruptErrors.set(new Map());
 	}
 };
 
@@ -286,19 +437,19 @@ export const interruptActions = {
  * @param interruptId - The interrupt ID
  * @returns The interrupt or undefined
  */
-export function getInterrupt(interruptId: string): Interrupt | undefined {
+export function getInterrupt(interruptId: string): InterruptWithState | undefined {
 	return get(interrupts).get(interruptId);
 }
 
 /**
- * Check if an interrupt is pending
+ * Check if an interrupt is pending (not resolved or cancelled)
  *
  * @param interruptId - The interrupt ID
  * @returns True if the interrupt exists and is pending
  */
 export function isInterruptPending(interruptId: string): boolean {
 	const interrupt = get(interrupts).get(interruptId);
-	return interrupt?.status === "pending";
+	return interrupt ? !isTerminalState(interrupt.machineState) : false;
 }
 
 /**
@@ -308,7 +459,8 @@ export function isInterruptPending(interruptId: string): boolean {
  * @returns True if the interrupt is being submitted
  */
 export function isInterruptSubmitting(interruptId: string): boolean {
-	return get(submittingInterrupts).has(interruptId);
+	const interrupt = get(interrupts).get(interruptId);
+	return interrupt ? checkIsSubmitting(interrupt.machineState) : false;
 }
 
 /**
@@ -318,7 +470,8 @@ export function isInterruptSubmitting(interruptId: string): boolean {
  * @returns The error message or undefined
  */
 export function getInterruptError(interruptId: string): string | undefined {
-	return get(interruptErrors).get(interruptId);
+	const interrupt = get(interrupts).get(interruptId);
+	return interrupt ? getErrorMessage(interrupt.machineState) : undefined;
 }
 
 /**
@@ -327,7 +480,7 @@ export function getInterruptError(interruptId: string): string | undefined {
  * @param messageId - The message ID
  * @returns The interrupt or undefined
  */
-export function getInterruptByMessageId(messageId: string): Interrupt | undefined {
+export function getInterruptByMessageId(messageId: string): InterruptWithState | undefined {
 	const interruptMap = get(interrupts);
 	for (const interrupt of interruptMap.values()) {
 		if (interrupt.messageId === messageId) {
@@ -335,4 +488,15 @@ export function getInterruptByMessageId(messageId: string): Interrupt | undefine
 		}
 	}
 	return undefined;
+}
+
+/**
+ * Check if an interrupt has an error
+ *
+ * @param interruptId - The interrupt ID
+ * @returns True if the interrupt has an error
+ */
+export function interruptHasError(interruptId: string): boolean {
+	const interrupt = get(interrupts).get(interruptId);
+	return interrupt ? checkHasError(interrupt.machineState) : false;
 }

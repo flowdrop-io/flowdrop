@@ -3,7 +3,7 @@
   
   Container component for rendering interrupt prompts inline in the chat flow.
   Displays the appropriate prompt component based on interrupt type.
-  Handles resolve/cancel actions and state management.
+  Handles resolve/cancel actions using state machine for safe transitions.
   Styled with BEM syntax similar to MessageBubble.
 -->
 
@@ -21,11 +21,16 @@
 		TextConfig,
 		FormConfig
 	} from "../../types/interrupt.js";
+	import {
+		isTerminalState,
+		isSubmitting as checkIsSubmitting,
+		getErrorMessage,
+		getResolvedValue
+	} from "../../types/interruptState.js";
 	import { 
 		interrupts,
-		interruptActions, 
-		submittingInterrupts, 
-		interruptErrors 
+		interruptActions,
+		type InterruptWithState
 	} from "../../stores/interruptStore.js";
 	import { interruptService } from "../../services/interruptService.js";
 
@@ -34,7 +39,7 @@
 	 */
 	interface Props {
 		/** The interrupt to display (initial data, used for ID lookup) */
-		interrupt: Interrupt;
+		interrupt: Interrupt | InterruptWithState;
 		/** Whether to show the timestamp */
 		showTimestamp?: boolean;
 		/** Callback to refresh messages after interrupt resolution */
@@ -47,16 +52,32 @@
 	 * Get the current interrupt state from the store.
 	 * This ensures we react to store updates (like status changes).
 	 */
-	const currentInterrupt = $derived($interrupts.get(initialInterrupt.id) ?? initialInterrupt);
+	const currentInterrupt = $derived($interrupts.get(initialInterrupt.id) ?? addMachineState(initialInterrupt));
 
-	/** Whether this interrupt is resolved or cancelled */
-	const isResolved = $derived(currentInterrupt.status === "resolved" || currentInterrupt.status === "cancelled");
+	/**
+	 * Helper to ensure interrupt has machine state
+	 */
+	function addMachineState(interrupt: Interrupt | InterruptWithState): InterruptWithState {
+		if ("machineState" in interrupt) {
+			return interrupt;
+		}
+		return {
+			...interrupt,
+			machineState: { status: "idle" }
+		};
+	}
+
+	/** Whether this interrupt is in a terminal state (resolved or cancelled) */
+	const isResolved = $derived(isTerminalState(currentInterrupt.machineState));
 
 	/** Whether this interrupt is currently submitting */
-	const isSubmitting = $derived($submittingInterrupts.has(currentInterrupt.id));
+	const isSubmitting = $derived(checkIsSubmitting(currentInterrupt.machineState));
 
 	/** Error message for this interrupt */
-	const error = $derived($interruptErrors.get(currentInterrupt.id));
+	const error = $derived(getErrorMessage(currentInterrupt.machineState));
+
+	/** Resolved value for display */
+	const resolvedValue = $derived(getResolvedValue(currentInterrupt.machineState));
 
 	/**
 	 * Get the icon for the interrupt type
@@ -124,55 +145,70 @@
 	}
 
 	/**
-	 * Handle resolve action
+	 * Handle resolve action using state machine
 	 */
 	async function handleResolve(value: unknown): Promise<void> {
-		interruptActions.setSubmitting(currentInterrupt.id, true);
-		interruptActions.setError(currentInterrupt.id, null);
+		// Start the submission - state machine validates this transition
+		const startResult = interruptActions.startSubmit(currentInterrupt.id, value);
+		if (!startResult.valid) {
+			console.warn("[InterruptBubble] Cannot submit:", startResult.error);
+			return;
+		}
 
 		try {
-			// Check if service is configured
+			// Call API if service is configured
 			if (interruptService.isConfigured()) {
 				await interruptService.resolveInterrupt(currentInterrupt.id, value);
 			}
-			// Update local state
-			interruptActions.resolveInterrupt(currentInterrupt.id, value);
 			
-			// Notify parent to refresh messages (new messages may be available)
+			// Mark as successful - transitions to resolved state
+			interruptActions.submitSuccess(currentInterrupt.id);
+			
+			// Notify parent to refresh messages
 			onResolved?.();
 		} catch (err) {
+			// Mark as failed - transitions to error state (can retry)
 			const errorMessage = err instanceof Error ? err.message : "Failed to submit response";
-			interruptActions.setError(currentInterrupt.id, errorMessage);
+			interruptActions.submitFailure(currentInterrupt.id, errorMessage);
 			console.error("[InterruptBubble] Resolve error:", err);
-		} finally {
-			interruptActions.setSubmitting(currentInterrupt.id, false);
 		}
 	}
 
 	/**
-	 * Handle cancel action
+	 * Handle cancel action using state machine
 	 */
 	async function handleCancel(): Promise<void> {
-		interruptActions.setSubmitting(currentInterrupt.id, true);
-		interruptActions.setError(currentInterrupt.id, null);
+		// Start the cancel - state machine validates this transition
+		const startResult = interruptActions.startCancel(currentInterrupt.id);
+		if (!startResult.valid) {
+			console.warn("[InterruptBubble] Cannot cancel:", startResult.error);
+			return;
+		}
 
 		try {
-			// Check if service is configured
+			// Call API if service is configured
 			if (interruptService.isConfigured()) {
 				await interruptService.cancelInterrupt(currentInterrupt.id);
 			}
-			// Update local state
-			interruptActions.cancelInterrupt(currentInterrupt.id);
 			
-			// Notify parent to refresh messages (new messages may be available)
+			// Mark as successful - transitions to cancelled state
+			interruptActions.submitSuccess(currentInterrupt.id);
+			
+			// Notify parent to refresh messages
 			onResolved?.();
 		} catch (err) {
+			// Mark as failed - transitions to error state (can retry)
 			const errorMessage = err instanceof Error ? err.message : "Failed to cancel";
-			interruptActions.setError(currentInterrupt.id, errorMessage);
+			interruptActions.submitFailure(currentInterrupt.id, errorMessage);
 			console.error("[InterruptBubble] Cancel error:", err);
-		} finally {
-			interruptActions.setSubmitting(currentInterrupt.id, false);
 		}
+	}
+
+	/**
+	 * Handle retry after error
+	 */
+	function handleRetry(): void {
+		interruptActions.retry(currentInterrupt.id);
 	}
 
 	// Typed config getters for each prompt type
@@ -180,18 +216,24 @@
 	const choiceConfig = $derived(currentInterrupt.config as ChoiceConfig);
 	const textConfig = $derived(currentInterrupt.config as TextConfig);
 	const formConfig = $derived(currentInterrupt.config as FormConfig);
+
+	// Determine the actual resolved value to pass to prompt components
+	const displayResolvedValue = $derived(resolvedValue ?? currentInterrupt.responseValue);
 </script>
 
 <div
 	class="interrupt-bubble"
 	class:interrupt-bubble--resolved={isResolved}
-	class:interrupt-bubble--cancelled={currentInterrupt.status === "cancelled"}
+	class:interrupt-bubble--cancelled={currentInterrupt.machineState.status === "cancelled"}
 	class:interrupt-bubble--submitting={isSubmitting}
+	class:interrupt-bubble--error={currentInterrupt.machineState.status === "error"}
 >
 	<!-- Avatar / Icon -->
 	<div class="interrupt-bubble__avatar">
 		{#if isResolved}
-			<Icon icon={currentInterrupt.status === "cancelled" ? "mdi:close-circle" : "mdi:check-circle"} />
+			<Icon icon={currentInterrupt.machineState.status === "cancelled" ? "mdi:close-circle" : "mdi:check-circle"} />
+		{:else if currentInterrupt.machineState.status === "error"}
+			<Icon icon="mdi:alert-circle" />
 		{:else}
 			<Icon icon="mdi:bell-ring" />
 		{/if}
@@ -204,7 +246,9 @@
 			<span class="interrupt-bubble__type">
 				<Icon icon={getTypeIcon(currentInterrupt.type)} />
 				{#if isResolved}
-					{currentInterrupt.status === "cancelled" ? "Cancelled" : getResolvedLabel(currentInterrupt.type)}
+					{currentInterrupt.machineState.status === "cancelled" ? "Cancelled" : getResolvedLabel(currentInterrupt.type)}
+				{:else if currentInterrupt.machineState.status === "error"}
+					Error - Click to Retry
 				{:else}
 					{getTypeLabel(currentInterrupt.type)}
 				{/if}
@@ -216,13 +260,25 @@
 			{/if}
 		</div>
 
+		<!-- Error message with retry button -->
+		{#if currentInterrupt.machineState.status === "error"}
+			<div class="interrupt-bubble__error">
+				<Icon icon="mdi:alert-circle" />
+				<span>{error}</span>
+				<button type="button" class="interrupt-bubble__retry-btn" onclick={handleRetry}>
+					<Icon icon="mdi:refresh" />
+					Retry
+				</button>
+			</div>
+		{/if}
+
 		<!-- Prompt content based on type -->
 		<div class="interrupt-bubble__prompt">
 			{#if currentInterrupt.type === "confirmation"}
 				<ConfirmationPrompt
 					config={confirmationConfig}
 					{isResolved}
-					resolvedValue={currentInterrupt.responseValue as boolean | undefined}
+					resolvedValue={displayResolvedValue as boolean | undefined}
 					{isSubmitting}
 					{error}
 					onConfirm={() => handleResolve(true)}
@@ -232,7 +288,7 @@
 				<ChoicePrompt
 					config={choiceConfig}
 					{isResolved}
-					resolvedValue={currentInterrupt.responseValue as string | string[] | undefined}
+					resolvedValue={displayResolvedValue as string | string[] | undefined}
 					{isSubmitting}
 					{error}
 					onSubmit={(value) => handleResolve(value)}
@@ -241,7 +297,7 @@
 				<TextInputPrompt
 					config={textConfig}
 					{isResolved}
-					resolvedValue={currentInterrupt.responseValue as string | undefined}
+					resolvedValue={displayResolvedValue as string | undefined}
 					{isSubmitting}
 					{error}
 					onSubmit={(value) => handleResolve(value)}
@@ -250,7 +306,7 @@
 				<FormPrompt
 					config={formConfig}
 					{isResolved}
-					resolvedValue={currentInterrupt.responseValue as Record<string, unknown> | undefined}
+					resolvedValue={displayResolvedValue as Record<string, unknown> | undefined}
 					{isSubmitting}
 					{error}
 					onSubmit={(value) => handleResolve(value)}
@@ -258,7 +314,7 @@
 			{/if}
 		</div>
 
-		<!-- Cancel button (if allowed and pending) -->
+		<!-- Cancel button (if allowed and not in terminal state) -->
 		{#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== "confirmation"}
 			<div class="interrupt-bubble__cancel-wrapper">
 				<button
@@ -321,6 +377,12 @@
 		box-shadow: 0 2px 8px rgba(107, 114, 128, 0.15);
 	}
 
+	.interrupt-bubble--error {
+		background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+		border-color: #ef4444;
+		box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+	}
+
 	.interrupt-bubble--submitting {
 		opacity: 0.9;
 	}
@@ -345,6 +407,10 @@
 
 	.interrupt-bubble--cancelled .interrupt-bubble__avatar {
 		background-color: #6b7280;
+	}
+
+	.interrupt-bubble--error .interrupt-bubble__avatar {
+		background-color: #ef4444;
 	}
 
 	/* Content */
@@ -381,6 +447,10 @@
 		color: #4b5563;
 	}
 
+	.interrupt-bubble--error .interrupt-bubble__type {
+		color: #b91c1c;
+	}
+
 	.interrupt-bubble__timestamp {
 		font-size: 0.6875rem;
 		color: #b45309;
@@ -393,6 +463,43 @@
 
 	.interrupt-bubble--cancelled .interrupt-bubble__timestamp {
 		color: #6b7280;
+	}
+
+	.interrupt-bubble--error .interrupt-bubble__timestamp {
+		color: #dc2626;
+	}
+
+	/* Error message */
+	.interrupt-bubble__error {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		background-color: rgba(239, 68, 68, 0.1);
+		border-radius: 0.375rem;
+		color: #b91c1c;
+		font-size: 0.8125rem;
+	}
+
+	.interrupt-bubble__retry-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-left: auto;
+		padding: 0.25rem 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		font-family: inherit;
+		color: #ffffff;
+		background-color: #ef4444;
+		border: none;
+		border-radius: 0.25rem;
+		cursor: pointer;
+		transition: background-color 0.15s ease;
+	}
+
+	.interrupt-bubble__retry-btn:hover {
+		background-color: #dc2626;
 	}
 
 	/* Prompt */
@@ -410,6 +517,10 @@
 	.interrupt-bubble--cancelled .interrupt-bubble__prompt {
 		border-color: rgba(107, 114, 128, 0.2);
 		opacity: 0.75;
+	}
+
+	.interrupt-bubble--error .interrupt-bubble__prompt {
+		border-color: rgba(239, 68, 68, 0.2);
 	}
 
 	/* Cancel button wrapper */
@@ -462,6 +573,10 @@
 		border-color: rgba(107, 114, 128, 0.2);
 	}
 
+	.interrupt-bubble--error .interrupt-bubble__footer {
+		border-color: rgba(239, 68, 68, 0.2);
+	}
+
 	.interrupt-bubble__node {
 		display: flex;
 		align-items: center;
@@ -476,6 +591,10 @@
 
 	.interrupt-bubble--cancelled .interrupt-bubble__node {
 		color: #6b7280;
+	}
+
+	.interrupt-bubble--error .interrupt-bubble__node {
+		color: #b91c1c;
 	}
 
 	/* Responsive */
