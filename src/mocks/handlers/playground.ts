@@ -181,8 +181,6 @@ export const getMessagesHandler = http.get(
 		}
 
 		const messages = getSessionMessages(id, since, limit);
-		
-		console.log('[MSW] getMessages:', id, 'status:', session.status, 'messages:', messages.length, 'since:', since);
 
 		return HttpResponse.json({
 			success: true,

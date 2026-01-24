@@ -135,11 +135,9 @@ export function updateSessionStatus(
 ): PlaygroundSession | undefined {
 	const session = mockSessions.get(sessionId);
 	if (!session) {
-		console.log('[MockData] updateSessionStatus: session not found:', sessionId);
 		return undefined;
 	}
 
-	console.log('[MockData] updateSessionStatus:', sessionId, 'from', session.status, 'to', status);
 	session.status = status;
 	session.updatedAt = new Date().toISOString();
 	mockSessions.set(sessionId, session);

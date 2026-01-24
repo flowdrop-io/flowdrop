@@ -51,12 +51,11 @@
 	const charCount = $derived(inputValue.length);
 
 	/** Check if input is valid */
-	const isValidInput = $derived(() => {
-		const len = inputValue.length;
-		if (config.minLength !== undefined && len < config.minLength) return false;
-		if (config.maxLength !== undefined && len > config.maxLength) return false;
-		return len > 0;
-	});
+	const isValidInput = $derived(
+		inputValue.length > 0 &&
+		(config.minLength === undefined || inputValue.length >= config.minLength) &&
+		(config.maxLength === undefined || inputValue.length <= config.maxLength)
+	);
 
 	/**
 	 * Handle input change
@@ -71,7 +70,7 @@
 	 * Handle form submission
 	 */
 	function handleSubmit(): void {
-		if (!isValidInput() || isResolved || isSubmitting) return;
+		if (!isValidInput || isResolved || isSubmitting) return;
 		onSubmit(inputValue);
 	}
 
@@ -155,7 +154,7 @@
 				type="button"
 				class="text-prompt__submit"
 				onclick={handleSubmit}
-				disabled={!isValidInput() || isSubmitting}
+				disabled={!isValidInput || isSubmitting}
 			>
 				{#if isSubmitting}
 					<span class="text-prompt__spinner"></span>

@@ -358,7 +358,6 @@ export const playgroundActions = {
 	 * @param executing - Whether execution is in progress
 	 */
 	setExecuting: (executing: boolean): void => {
-		console.log('[playgroundStore] setExecuting:', executing, new Error().stack?.split('\n').slice(1, 4).join(' <- '));
 		isExecuting.set(executing);
 	},
 
