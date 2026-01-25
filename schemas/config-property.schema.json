@@ -1,0 +1,73 @@
+{
+  "$ref": "#/definitions/ConfigProperty",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConfigProperty": {
+      "additionalProperties": {
+        "anyOf": [
+          {},
+          {}
+        ]
+      },
+      "description": "Configuration schema property with specific attributes",
+      "properties": {
+        "default": {},
+        "description": {
+          "type": "string"
+        },
+        "enum": {
+          "items": {},
+          "type": "array"
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/ConfigProperty"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "number"
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "multiple": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ConfigProperty"
+          },
+          "type": "object"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "integer"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    }
+  }
+}

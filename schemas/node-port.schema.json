@@ -1,0 +1,47 @@
+{
+  "$ref": "#/definitions/NodePort",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "NodeDataType": {
+      "description": "Node data type - now dynamic based on configuration Will be string literals of available data type IDs",
+      "type": "string"
+    },
+    "NodePort": {
+      "additionalProperties": false,
+      "description": "Node port configuration",
+      "properties": {
+        "dataType": {
+          "$ref": "#/definitions/NodeDataType"
+        },
+        "defaultValue": {},
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "type": {
+          "enum": [
+            "input",
+            "output",
+            "metadata"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "dataType"
+      ],
+      "type": "object"
+    }
+  }
+}

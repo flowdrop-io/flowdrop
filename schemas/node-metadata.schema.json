@@ -1,0 +1,442 @@
+{
+  "$ref": "#/definitions/NodeMetadata",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "BuiltinNodeType": {
+      "description": "Built-in node types for explicit component rendering. These are the node types that ship with FlowDrop.",
+      "enum": [
+        "note",
+        "simple",
+        "square",
+        "tool",
+        "gateway",
+        "terminal",
+        "default"
+      ],
+      "type": "string"
+    },
+    "ConfigEditOptions": {
+      "additionalProperties": false,
+      "description": "Admin/Edit configuration for nodes with dynamic or external configuration Used when the config schema cannot be determined at workflow load time or when configuration is handled by a 3rd party system.",
+      "properties": {
+        "dynamicSchema": {
+          "$ref": "#/definitions/DynamicSchemaEndpoint",
+          "description": "Dynamic schema endpoint configuration When configured, fetches the config schema from the specified endpoint"
+        },
+        "errorMessage": {
+          "default": "Failed to load configuration. Use external editor instead.",
+          "description": "Message to display when schema fetch fails",
+          "type": "string"
+        },
+        "externalEditLink": {
+          "$ref": "#/definitions/ExternalEditLink",
+          "description": "External link configuration for 3rd party form When configured, shows a link/button to open external configuration"
+        },
+        "loadingMessage": {
+          "default": "Loading configuration options...",
+          "description": "Message to display when schema is being loaded",
+          "type": "string"
+        },
+        "preferDynamicSchema": {
+          "default": "false (prefer external link)",
+          "description": "When both externalEditLink and dynamicSchema are configured, determines which to use by default",
+          "type": "boolean"
+        },
+        "showRefreshButton": {
+          "default": true,
+          "description": "Show a \"Refresh Schema\" button when using dynamic schema Allows users to manually refresh the schema",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ConfigProperty": {
+      "additionalProperties": {
+        "anyOf": [
+          {},
+          {}
+        ]
+      },
+      "description": "Configuration schema property with specific attributes",
+      "properties": {
+        "default": {},
+        "description": {
+          "type": "string"
+        },
+        "enum": {
+          "items": {},
+          "type": "array"
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/ConfigProperty"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "number"
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "multiple": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ConfigProperty"
+          },
+          "type": "object"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "integer"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "ConfigSchema": {
+      "additionalProperties": false,
+      "description": "Configuration schema interface",
+      "properties": {
+        "additionalProperties": {
+          "type": "boolean"
+        },
+        "properties": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ConfigProperty"
+          },
+          "type": "object"
+        },
+        "required": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "object",
+          "type": "string"
+        }
+      },
+      "required": [
+        "properties",
+        "type"
+      ],
+      "type": "object"
+    },
+    "DynamicSchemaEndpoint": {
+      "additionalProperties": false,
+      "description": "Dynamic schema endpoint configuration Used when the config schema needs to be fetched at runtime from a REST endpoint",
+      "properties": {
+        "body": {
+          "additionalProperties": {},
+          "description": "Request body for POST/PUT/PATCH methods. Can include template variables like the URL.",
+          "type": "object"
+        },
+        "cacheSchema": {
+          "default": true,
+          "description": "Whether to cache the fetched schema per node instance",
+          "type": "boolean"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Custom headers to include in the request",
+          "type": "object"
+        },
+        "method": {
+          "$ref": "#/definitions/HttpMethod",
+          "default": "GET",
+          "description": "HTTP method to use for fetching the schema."
+        },
+        "parameterMapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Maps template variables to their source paths. Keys are variable names used in the URL, values are dot-notation paths to resolve from the node context (e.g., \"metadata.id\", \"config.apiKey\", \"id\")",
+          "type": "object"
+        },
+        "timeout": {
+          "default": 10000,
+          "description": "Timeout in milliseconds for the schema fetch request",
+          "type": "number"
+        },
+        "url": {
+          "description": "The URL to fetch the schema from. Supports template variables in curly braces (e.g., \"/api/nodes/{nodeTypeId}/schema\") Variables are resolved from node metadata, config, or instance data.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "type": "object"
+    },
+    "ExternalEditLink": {
+      "additionalProperties": false,
+      "description": "External edit link configuration Used when the node configuration should be handled by an external 3rd party form",
+      "properties": {
+        "callbackUrlParam": {
+          "description": "Callback URL parameter name for FlowDrop to receive updates If set, the external form should redirect back with config updates",
+          "type": "string"
+        },
+        "description": {
+          "description": "Optional tooltip/description for the link",
+          "type": "string"
+        },
+        "icon": {
+          "default": "heroicons:arrow-top-right-on-square",
+          "description": "Icon to display alongside the label (Iconify icon name)",
+          "type": "string"
+        },
+        "label": {
+          "default": "Configure Externally",
+          "description": "Display label for the edit link button",
+          "type": "string"
+        },
+        "openInNewTab": {
+          "default": true,
+          "description": "Whether to open the link in a new tab",
+          "type": "boolean"
+        },
+        "parameterMapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Maps template variables to their source paths. Keys are variable names used in the URL, values are dot-notation paths to resolve from the node context (e.g., \"metadata.id\", \"config.apiKey\", \"id\")",
+          "type": "object"
+        },
+        "url": {
+          "description": "The URL to the external edit form. Supports template variables in curly braces (e.g., \"/admin/nodes/{nodeTypeId}/edit\") Variables are resolved from node metadata, config, or instance data.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "type": "object"
+    },
+    "HttpMethod": {
+      "description": "HTTP method types for dynamic schema endpoints",
+      "enum": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH"
+      ],
+      "type": "string"
+    },
+    "NodeCategory": {
+      "description": "Node category types for organizing nodes in the sidebar Based on actual API response categories",
+      "enum": [
+        "inputs",
+        "outputs",
+        "prompts",
+        "models",
+        "processing",
+        "logic",
+        "data",
+        "tools",
+        "helpers",
+        "vector stores",
+        "embeddings",
+        "memories",
+        "agents",
+        "ai",
+        "bundles"
+      ],
+      "type": "string"
+    },
+    "NodeDataType": {
+      "description": "Node data type - now dynamic based on configuration Will be string literals of available data type IDs",
+      "type": "string"
+    },
+    "NodeExtensions": {
+      "additionalProperties": {
+        "description": "Namespaced extension data from 3rd party integrations Use your package/organization name as the key (e.g., \"myapp\", \"acme:analyzer\")"
+      },
+      "description": "Custom extension properties for 3rd party integrations Allows storing additional configuration and UI state data",
+      "properties": {
+        "configEdit": {
+          "$ref": "#/definitions/ConfigEditOptions",
+          "description": "Per-instance admin/edit configuration override Allows overriding the node type's configEdit settings for specific instances"
+        },
+        "ui": {
+          "$ref": "#/definitions/NodeUIExtensions",
+          "description": "UI-related settings for the node Used to control visual behavior in the workflow editor"
+        }
+      },
+      "type": "object"
+    },
+    "NodeMetadata": {
+      "additionalProperties": false,
+      "description": "Node configuration metadata",
+      "properties": {
+        "category": {
+          "$ref": "#/definitions/NodeCategory"
+        },
+        "color": {
+          "type": "string"
+        },
+        "config": {
+          "additionalProperties": {},
+          "description": "Default configuration values for this node type",
+          "type": "object"
+        },
+        "configEdit": {
+          "$ref": "#/definitions/ConfigEditOptions",
+          "description": "Admin/Edit configuration for nodes with dynamic or external configuration. Used when the config schema cannot be determined at workflow load time or when configuration is handled by a 3rd party system.\n\nSupports two options: 1. External edit link - Opens a 3rd party form in a new tab 2. Dynamic schema - Fetches the config schema from a REST endpoint"
+        },
+        "configSchema": {
+          "$ref": "#/definitions/ConfigSchema"
+        },
+        "description": {
+          "type": "string"
+        },
+        "extensions": {
+          "$ref": "#/definitions/NodeExtensions",
+          "description": "Custom extension properties for 3rd party integrations Allows storing additional configuration and UI state data at the node type level"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/definitions/NodePort"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "outputs": {
+          "items": {
+            "$ref": "#/definitions/NodePort"
+          },
+          "type": "array"
+        },
+        "supportedTypes": {
+          "description": "Array of supported node types that this node can be rendered as. If not specified, defaults to the single 'type' field or 'default'. This allows nodes to support multiple rendering modes (e.g., both 'simple' and 'default'). Can include both built-in types and custom registered types.",
+          "items": {
+            "$ref": "#/definitions/NodeType"
+          },
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/definitions/NodeType"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "category",
+        "version",
+        "inputs",
+        "outputs"
+      ],
+      "type": "object"
+    },
+    "NodePort": {
+      "additionalProperties": false,
+      "description": "Node port configuration",
+      "properties": {
+        "dataType": {
+          "$ref": "#/definitions/NodeDataType"
+        },
+        "defaultValue": {},
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "type": {
+          "enum": [
+            "input",
+            "output",
+            "metadata"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "dataType"
+      ],
+      "type": "object"
+    },
+    "NodeType": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/BuiltinNodeType"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "Node type for component rendering. Includes built-in types and allows custom registered types.\n\nBuilt-in types: note, simple, square, tool, gateway, terminal, default Custom types: Any string registered via nodeComponentRegistry"
+    },
+    "NodeUIExtensions": {
+      "additionalProperties": {
+        "description": "Any other UI-specific settings"
+      },
+      "description": "UI-related extension settings for nodes Used to control visual behavior in the workflow editor",
+      "properties": {
+        "hideUnconnectedHandles": {
+          "description": "Show/hide unconnected handles (ports) to reduce visual noise",
+          "type": "boolean"
+        },
+        "style": {
+          "additionalProperties": {},
+          "description": "Custom styles or theme overrides",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

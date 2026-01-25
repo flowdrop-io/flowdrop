@@ -1,0 +1,106 @@
+{
+  "$ref": "#/definitions/PortConfig",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "PortCompatibilityRule": {
+      "additionalProperties": false,
+      "description": "Port compatibility rule configuration Simple rule: sourceType can connect TO targetType",
+      "properties": {
+        "description": {
+          "description": "Optional description of why this connection is allowed",
+          "type": "string"
+        },
+        "from": {
+          "description": "Source data type ID (what you're connecting FROM)",
+          "type": "string"
+        },
+        "to": {
+          "description": "Target data type ID (what you're connecting TO)",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "PortConfig": {
+      "additionalProperties": false,
+      "description": "Complete port configuration system",
+      "properties": {
+        "compatibilityRules": {
+          "description": "Compatibility rules between data types",
+          "items": {
+            "$ref": "#/definitions/PortCompatibilityRule"
+          },
+          "type": "array"
+        },
+        "dataTypes": {
+          "description": "Available data types",
+          "items": {
+            "$ref": "#/definitions/PortDataTypeConfig"
+          },
+          "type": "array"
+        },
+        "defaultDataType": {
+          "description": "Default data type to use when none specified",
+          "type": "string"
+        },
+        "version": {
+          "description": "Version of the port configuration",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataTypes",
+        "compatibilityRules",
+        "defaultDataType"
+      ],
+      "type": "object"
+    },
+    "PortDataTypeConfig": {
+      "additionalProperties": false,
+      "description": "Port data type configuration",
+      "properties": {
+        "aliases": {
+          "description": "Alternative names/aliases for this data type",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "category": {
+          "description": "Category grouping for the data type",
+          "type": "string"
+        },
+        "color": {
+          "description": "Color for the data type (CSS color value)",
+          "type": "string"
+        },
+        "description": {
+          "description": "Description of the data type",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Whether this data type is enabled",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Unique identifier for the data type",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name for the data type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "color"
+      ],
+      "type": "object"
+    }
+  }
+}

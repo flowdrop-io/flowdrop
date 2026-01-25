@@ -1,0 +1,103 @@
+{
+  "$ref": "#/definitions/ConfigSchema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConfigProperty": {
+      "additionalProperties": {
+        "anyOf": [
+          {},
+          {}
+        ]
+      },
+      "description": "Configuration schema property with specific attributes",
+      "properties": {
+        "default": {},
+        "description": {
+          "type": "string"
+        },
+        "enum": {
+          "items": {},
+          "type": "array"
+        },
+        "format": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/definitions/ConfigProperty"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "number"
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "multiple": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ConfigProperty"
+          },
+          "type": "object"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "integer"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "ConfigSchema": {
+      "additionalProperties": false,
+      "description": "Configuration schema interface",
+      "properties": {
+        "additionalProperties": {
+          "type": "boolean"
+        },
+        "properties": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ConfigProperty"
+          },
+          "type": "object"
+        },
+        "required": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "object",
+          "type": "string"
+        }
+      },
+      "required": [
+        "properties",
+        "type"
+      ],
+      "type": "object"
+    }
+  }
+}
