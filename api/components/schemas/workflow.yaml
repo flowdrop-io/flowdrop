@@ -146,7 +146,7 @@ WorkflowMetadata:
     version:
       type: string
       description: Workflow version
-      example: 1.0.0
+      example: "1.0.0"
     createdAt:
       type: string
       format: date-time

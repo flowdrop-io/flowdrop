@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: "3.0.3"
 info:
   title: FlowDrop API
   description: |
@@ -30,7 +30,7 @@ info:
 
     ## Error Handling
     All errors return a consistent format with success flag, error message, and optional details.
-  version: 1.0.0
+  version: "1.0.0"
   contact:
     name: FlowDrop Support
     email: shibinkidd@gmail.com

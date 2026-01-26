@@ -29,7 +29,7 @@
                   format: date-time
                 version:
                   type: string
-                  example: 1.0.0
+                  example: "1.0.0"
                 service:
                   type: string
                   example: FlowDrop API
@@ -66,7 +66,7 @@
                       properties:
                         version:
                           type: string
-                          example: 1.0.0
+                          example: "1.0.0"
                         features:
                           type: object
                           additionalProperties:
@@ -102,10 +102,10 @@
               properties:
                 version:
                   type: string
-                  example: 1.0.0
+                  example: "1.0.0"
                 build:
                   type: string
-                  example: 2026.01.26
+                  example: "2026.01.26"
                 api_version:
                   type: string
                   example: v1
