@@ -1,0 +1,73 @@
+# Response Schemas
+# API response wrappers for various endpoints
+
+NodesResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './node.yaml#/NodeMetadata'
+
+NodeTypeResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: './node.yaml#/NodeMetadata'
+
+PortConfigResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: './config.yaml#/PortConfig'
+
+WorkflowsResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './workflow.yaml#/Workflow'
+
+WorkflowResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: './workflow.yaml#/Workflow'
+
+ValidationResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            valid:
+              type: boolean
+              description: Whether the workflow is valid
+            errors:
+              type: array
+              items:
+                type: string
+              description: Validation errors
+            warnings:
+              type: array
+              items:
+                type: string
+              description: Validation warnings
+            suggestions:
+              type: array
+              items:
+                type: string
+              description: Improvement suggestions

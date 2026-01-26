@@ -1,0 +1,260 @@
+# Playground Schemas
+# Playground session, message, and related types
+
+PlaygroundSessionStatus:
+  type: string
+  enum:
+    - idle
+    - running
+    - completed
+    - failed
+  description: Current status of a playground session
+
+PlaygroundMessageRole:
+  type: string
+  enum:
+    - user
+    - assistant
+    - system
+    - log
+  description: |
+    Role of the message sender:
+    - `user`: Message from the user
+    - `assistant`: Response from the workflow/AI
+    - `system`: System notifications
+    - `log`: Execution log entries
+
+PlaygroundMessageLevel:
+  type: string
+  enum:
+    - info
+    - warning
+    - error
+    - debug
+  description: Log level for log-type messages
+
+PlaygroundMessageStatus:
+  type: string
+  enum:
+    - pending
+    - processing
+    - completed
+    - failed
+  description: |
+    Processing status of the message:
+    - `pending`: Message created, waiting to be processed
+    - `processing`: Message is currently being processed
+    - `completed`: Message processing completed successfully
+    - `failed`: Message processing failed
+
+PlaygroundSession:
+  type: object
+  description: |
+    A playground session represents an isolated test environment for a workflow.
+    Sessions maintain conversation history and allow interactive testing.
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Session unique identifier
+    workflowId:
+      type: string
+      format: uuid
+      description: Associated workflow ID
+    name:
+      type: string
+      description: Session display name
+      example: Test Session 1
+    status:
+      $ref: '#/PlaygroundSessionStatus'
+    createdAt:
+      type: string
+      format: date-time
+      description: Session creation timestamp
+    updatedAt:
+      type: string
+      format: date-time
+      description: Last activity timestamp
+    metadata:
+      type: object
+      additionalProperties: true
+      description: Custom session metadata
+  required:
+    - id
+    - workflowId
+    - name
+    - status
+    - createdAt
+    - updatedAt
+
+PlaygroundMessage:
+  type: object
+  description: |
+    A message in a playground session. Messages can be user inputs,
+    assistant responses, system notifications, or execution logs.
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Message unique identifier
+    sessionId:
+      type: string
+      format: uuid
+      description: Parent session ID
+    role:
+      $ref: '#/PlaygroundMessageRole'
+    content:
+      type: string
+      description: Message content
+    timestamp:
+      type: string
+      format: date-time
+      description: Message timestamp
+    status:
+      $ref: '#/PlaygroundMessageStatus'
+    sequenceNumber:
+      type: integer
+      description: |
+        Incrementing sequence number for chronological ordering within a session.
+        All messages (user, assistant, log) receive incrementing numbers (1, 2, 3, ...).
+        Use this as the primary sort key for displaying messages in order.
+      minimum: 1
+    parentMessageId:
+      type: string
+      format: uuid
+      description: Parent message ID (for linking user message to assistant response)
+      nullable: true
+    executionId:
+      type: string
+      description: Workflow execution ID that generated this message
+      nullable: true
+    nodeId:
+      type: string
+      description: Associated node ID (for log messages)
+      nullable: true
+    metadata:
+      type: object
+      properties:
+        level:
+          $ref: '#/PlaygroundMessageLevel'
+        duration:
+          type: integer
+          description: Execution duration in milliseconds
+        nodeLabel:
+          type: string
+          description: Human-readable node label
+        outputs:
+          type: object
+          additionalProperties: true
+          description: Node output data
+      additionalProperties: true
+      description: Additional message metadata
+  required:
+    - id
+    - sessionId
+    - role
+    - content
+    - timestamp
+    - status
+    - sequenceNumber
+  example:
+    id: be4d854d-d6b3-4242-b2ea-0008b2e059bd
+    sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
+    role: user
+    content: Hello. How are you?
+    timestamp: '2026-01-19T10:03:32+01:00'
+    status: completed
+    sequenceNumber: 1
+    parentMessageId: null
+    nodeId: null
+    metadata: {}
+
+PlaygroundInputField:
+  type: object
+  description: |
+    Input field derived from workflow input nodes.
+    Used to auto-generate input forms in the playground.
+  properties:
+    nodeId:
+      type: string
+      description: Source node ID
+    fieldId:
+      type: string
+      description: Field identifier
+    label:
+      type: string
+      description: Display label
+    type:
+      type: string
+      description: Field data type
+    defaultValue:
+      description: Default value from node config
+    required:
+      type: boolean
+      description: Whether the field is required
+    schema:
+      $ref: './config.yaml#/ConfigProperty'
+      description: JSON Schema for the field
+  required:
+    - nodeId
+    - fieldId
+    - label
+    - type
+    - required
+
+PlaygroundMessageRequest:
+  type: object
+  description: Request body for sending a message to the playground
+  properties:
+    content:
+      type: string
+      description: Message content (typically user input)
+      maxLength: 10000
+    inputs:
+      type: object
+      additionalProperties: true
+      description: Additional input values for workflow nodes
+  required:
+    - content
+
+PlaygroundSessionResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/PlaygroundSession'
+
+PlaygroundSessionsResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/PlaygroundSession'
+
+PlaygroundMessageResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/PlaygroundMessage'
+
+PlaygroundMessagesResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/PlaygroundMessage'
+        hasMore:
+          type: boolean
+          description: Whether there are more messages to fetch
+        sessionStatus:
+          $ref: '#/PlaygroundSessionStatus'
+          description: Current session status (useful for polling)

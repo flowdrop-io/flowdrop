@@ -1,0 +1,14 @@
+# Security Schemes
+# Authentication methods for the FlowDrop API
+
+BearerAuth:
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+  description: JWT token for authentication
+
+SessionAuth:
+  type: apiKey
+  in: cookie
+  name: SESS
+  description: Drupal session cookie

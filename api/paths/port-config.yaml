@@ -1,0 +1,62 @@
+# Port Configuration Endpoint
+# Dynamic port compatibility system
+
+/port-config:
+  get:
+    operationId: getPortConfig
+    summary: Get port configuration
+    description: |
+      Retrieve the complete port configuration system including available data types,
+      compatibility rules, and default settings. This configuration determines how
+      nodes can be connected in workflows based on port data types.
+    tags:
+      - Configuration
+    responses:
+      '200':
+        description: Port configuration retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/PortConfigResponse'
+            example:
+              success: true
+              data:
+                version: 1.0.0
+                defaultDataType: mixed
+                dataTypes:
+                  - id: string
+                    name: String
+                    description: Text data type
+                    color: '#3b82f6'
+                    category: primitive
+                    aliases:
+                      - text
+                      - str
+                    enabled: true
+                  - id: number
+                    name: Number
+                    description: Numeric data type
+                    color: '#10b981'
+                    category: primitive
+                    enabled: true
+                  - id: mixed
+                    name: Mixed
+                    description: Any data type
+                    color: '#6b7280'
+                    category: special
+                    enabled: true
+                compatibilityRules:
+                  - from: string
+                    to: mixed
+                    description: Strings can connect to mixed ports
+                  - from: number
+                    to: mixed
+                    description: Numbers can connect to mixed ports
+                  - from: mixed
+                    to: string
+                    description: Mixed can connect to string with conversion
+              message: Port configuration loaded successfully
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

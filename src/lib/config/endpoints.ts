@@ -208,7 +208,8 @@ export const defaultEndpointConfig: EndpointConfig = {
 			preferences: '/users/preferences'
 		},
 		system: {
-			health: '/system/health',
+			/** Health check at root level (industry standard for K8s, Docker, load balancers) */
+			health: '/health',
 			config: '/system/config',
 			version: '/system/version'
 		}

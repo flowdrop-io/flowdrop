@@ -1,0 +1,352 @@
+# Node Schemas
+# Node types, ports, metadata, and configuration
+
+NodePort:
+  type: object
+  properties:
+    id:
+      type: string
+      description: Port unique identifier
+      example: data
+    name:
+      type: string
+      description: Port display name
+      example: Input Data
+    type:
+      type: string
+      enum:
+        - input
+        - output
+        - metadata
+      description: Port type
+    dataType:
+      $ref: './common.yaml#/NodeDataType'
+    required:
+      type: boolean
+      default: false
+      description: Whether the port is required
+    description:
+      type: string
+      description: Port description
+      example: Input data for the node
+    defaultValue:
+      description: Default value for the port
+  required:
+    - id
+    - name
+    - type
+    - dataType
+
+DynamicPort:
+  type: object
+  description: |
+    Dynamic port configuration for user-defined inputs/outputs.
+    These are defined in the node's config and allow users to create
+    custom input/output handles at runtime, similar to gateway branches.
+
+    Dynamic ports are stored in `config.dynamicInputs` and `config.dynamicOutputs`
+    arrays and are rendered alongside static ports defined in the node metadata.
+  properties:
+    name:
+      type: string
+      description: Unique identifier for the port (used for handle IDs and connections)
+      example: custom_input_1
+    label:
+      type: string
+      description: Display label shown in the UI
+      example: Custom Input
+    description:
+      type: string
+      description: Description of what this port accepts/provides
+      example: Additional input data for processing
+    dataType:
+      $ref: './common.yaml#/NodeDataType'
+      description: Data type for the port (affects color and connection validation)
+    required:
+      type: boolean
+      default: false
+      description: Whether this port is required for execution
+  required:
+    - name
+    - label
+    - dataType
+  example:
+    name: custom_data
+    label: Custom Data
+    description: Additional JSON data input
+    dataType: json
+    required: false
+
+Branch:
+  type: object
+  description: |
+    Branch configuration for gateway nodes.
+    Branches define conditional output paths in gateway/switch nodes.
+    Each branch creates an output handle that can be connected to downstream nodes.
+
+    Branches are stored in `config.branches` array and support dynamic addition/removal
+    through the node configuration panel.
+  properties:
+    name:
+      type: string
+      description: Unique identifier for the branch (used as handle ID)
+      example: case_1
+    label:
+      type: string
+      description: Display label shown in the UI
+      example: Case 1
+    description:
+      type: string
+      description: Description of when this branch is activated
+      example: Triggered when condition A is met
+    condition:
+      type: string
+      description: Optional condition expression for this branch
+      example: 'value > 10'
+    isDefault:
+      type: boolean
+      default: false
+      description: Whether this is the default/fallback branch
+  required:
+    - name
+    - label
+  example:
+    name: high_priority
+    label: High Priority
+    description: Route for high priority items
+    condition: "priority === 'high'"
+    isDefault: false
+
+NodeUIExtensions:
+  type: object
+  description: |
+    UI-related extension settings for nodes.
+    Used to control visual behavior in the workflow editor.
+
+    These settings can be defined at two levels:
+    1. **Node Type Level** (`metadata.extensions.ui`): Default settings for all instances
+    2. **Instance Level** (`data.extensions.ui`): Override for specific node instances
+
+    Instance-level settings take precedence over type-level defaults.
+  properties:
+    hideUnconnectedHandles:
+      type: boolean
+      description: |
+        Show/hide unconnected handles (ports) to reduce visual noise.
+        When true, only ports with active connections are displayed.
+        Useful for nodes with many optional ports.
+      example: true
+    style:
+      type: object
+      additionalProperties: true
+      description: Custom styles or theme overrides
+      example:
+        opacity: 0.8
+        borderRadius: 8
+  additionalProperties: true
+
+NodeExtensions:
+  type: object
+  description: |
+    Custom extension properties for 3rd party integrations.
+    Allows storing additional configuration and UI state data.
+
+    Use namespaced keys (e.g., "myapp:analytics", "acme:settings") to avoid conflicts
+    between different integrations.
+  properties:
+    ui:
+      $ref: '#/NodeUIExtensions'
+  additionalProperties: true
+  example:
+    ui:
+      hideUnconnectedHandles: true
+      style:
+        opacity: 0.8
+    'myapp:analytics':
+      trackUsage: true
+      customField: value
+
+NodeMetadata:
+  type: object
+  description: |
+    Complete metadata for a node type including ports, configuration schema, and extensions.
+
+    ## Dynamic Port Support
+
+    Nodes can support user-defined dynamic ports through their configSchema:
+    - Add `dynamicInputs` array property to allow custom input handles
+    - Add `dynamicOutputs` array property to allow custom output handles
+    - Add `branches` array property for gateway nodes with conditional paths
+
+    ## Extensions Support
+
+    The `extensions` property allows storing UI settings and 3rd party data:
+    - Use `extensions.ui.hideUnconnectedHandles` to hide unconnected ports by default
+    - Use namespaced keys for custom integrations (e.g., "myapp:settings")
+  properties:
+    id:
+      type: string
+      description: Node type unique identifier
+      example: calculator
+    name:
+      type: string
+      description: Node type display name
+      example: Calculator
+    type:
+      $ref: './common.yaml#/NodeType'
+    supportedTypes:
+      type: array
+      items:
+        $ref: './common.yaml#/NodeType'
+      description: Array of supported rendering types
+    description:
+      type: string
+      description: Node type description
+      example: Perform mathematical operations on input data
+    category:
+      $ref: './common.yaml#/NodeCategory'
+    version:
+      type: string
+      description: Node type version
+      example: 1.0.0
+    icon:
+      type: string
+      description: Icon identifier (Material Design Icons)
+      example: mdi:calculator
+    color:
+      type: string
+      description: Node color (CSS color value)
+      example: '#3b82f6'
+    inputs:
+      type: array
+      items:
+        $ref: '#/NodePort'
+      description: |
+        Static input ports defined by the node type.
+        Additional dynamic inputs can be added via config.dynamicInputs.
+    outputs:
+      type: array
+      items:
+        $ref: '#/NodePort'
+      description: |
+        Static output ports defined by the node type.
+        Additional dynamic outputs can be added via config.dynamicOutputs.
+        For gateway nodes, branches create additional output handles.
+    configSchema:
+      $ref: './config.yaml#/ConfigSchema'
+    tags:
+      type: array
+      items:
+        type: string
+      description: Node tags for search and filtering
+      example:
+        - math
+        - calculation
+        - processing
+    extensions:
+      $ref: '#/NodeExtensions'
+      description: |
+        Default extension properties for all instances of this node type.
+        Can be overridden at the instance level via WorkflowNode.data.extensions.
+  required:
+    - id
+    - name
+    - description
+    - category
+    - version
+    - inputs
+    - outputs
+
+NodeConfig:
+  type: object
+  description: |
+    Node configuration values containing all user-configured settings for a node instance.
+
+    This object stores configuration based on the node type's `configSchema` and is used by
+    the backend to:
+    - **Store and retrieve** node configuration persistently
+    - **Pass values** to node processors during workflow execution
+    - **Persist state** across sessions
+
+    ## Standard Properties
+
+    Any property defined in the node's `configSchema` (e.g., model, temperature, apiKey).
+    The schema defines the type, validation rules, and default values for each property.
+
+    ## Special Properties (Dynamic Ports)
+
+    In addition to standard configuration, the config object may contain special arrays
+    that define dynamic ports for the node:
+
+    - **`dynamicInputs`**: Array of DynamicPort for user-defined input handles
+    - **`dynamicOutputs`**: Array of DynamicPort for user-defined output handles
+    - **`branches`**: Array of Branch for gateway node conditional output paths
+
+    These dynamic configuration values generate additional handles on the node
+    that can be connected to other nodes in the workflow.
+  properties:
+    dynamicInputs:
+      type: array
+      items:
+        $ref: '#/DynamicPort'
+      description: User-defined dynamic input ports that appear as additional input handles
+    dynamicOutputs:
+      type: array
+      items:
+        $ref: '#/DynamicPort'
+      description: User-defined dynamic output ports that appear as additional output handles
+    branches:
+      type: array
+      items:
+        $ref: '#/Branch'
+      description: Gateway node branches that define conditional output paths
+  additionalProperties: true
+  example:
+    model: gpt-4o-mini
+    temperature: 0.7
+    maxTokens: 1000
+    apiKey: sk-...
+    dynamicInputs:
+      - name: extra_data
+        label: Extra Data
+        dataType: json
+        required: false
+    dynamicOutputs:
+      - name: result
+        label: Result
+        dataType: string
+    branches:
+      - name: success
+        label: Success
+        condition: 'status === 200'
+      - name: error
+        label: Error
+        isDefault: true
+
+NodeExecutionInfo:
+  type: object
+  properties:
+    status:
+      $ref: './common.yaml#/NodeExecutionStatus'
+    executionCount:
+      type: integer
+      description: Total number of times this node has been executed
+      example: 5
+    lastExecuted:
+      type: string
+      format: date-time
+      description: Last execution timestamp
+    lastExecutionDuration:
+      type: integer
+      description: Last execution duration in milliseconds
+      example: 1500
+    lastError:
+      type: string
+      description: Last error message if execution failed
+    isExecuting:
+      type: boolean
+      description: Whether the node is currently being executed
+  required:
+    - status
+    - executionCount
+    - isExecuting

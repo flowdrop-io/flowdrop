@@ -1,0 +1,125 @@
+# Common Schemas
+# Shared types used across multiple endpoints
+
+NodeCategory:
+  type: string
+  enum:
+    - triggers
+    - inputs
+    - outputs
+    - prompts
+    - models
+    - processing
+    - logic
+    - data
+    - tools
+    - helpers
+    - vector stores
+    - embeddings
+    - memories
+    - agents
+    - ai
+    - bundles
+  description: Node category for organizing nodes in the sidebar
+
+NodeDataType:
+  type: string
+  description: |
+    Data type for node ports. The available data types are configured
+    dynamically through the port configuration system.
+  example: mixed
+
+NodeType:
+  type: string
+  enum:
+    - note
+    - simple
+    - square
+    - tool
+    - gateway
+    - terminal
+    - default
+  description: |
+    Visual rendering type for the node.
+
+    Built-in types:
+    - `note` - Sticky note with markdown support
+    - `simple` - Compact layout with header and description
+    - `square` - Minimal square node with centered icon
+    - `tool` - Specialized node for agent tools
+    - `gateway` - Branching control flow with dynamic branches (uses config.branches)
+    - `terminal` - Circular node for workflow start/end/exit points
+    - `default` - Full-featured workflow node with dynamic port support
+
+    ## Dynamic Port Support
+
+    The `default` and `gateway` node types support dynamic ports:
+
+    - **default**: Supports `config.dynamicInputs` and `config.dynamicOutputs`
+      for user-defined input/output handles
+    - **gateway**: Supports `config.branches` for conditional branching paths
+
+    ## UI Extensions
+
+    All node types support `extensions.ui.hideUnconnectedHandles` to control
+    visibility of unconnected ports.
+
+NodeExecutionStatus:
+  type: string
+  enum:
+    - idle
+    - pending
+    - running
+    - completed
+    - failed
+    - cancelled
+    - skipped
+  description: Current execution status of a node
+
+Position:
+  type: object
+  properties:
+    x:
+      type: number
+      description: X coordinate
+      example: 100
+    y:
+      type: number
+      description: Y coordinate
+      example: 200
+  required:
+    - x
+    - y
+
+ApiResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: Whether the request was successful
+    data:
+      description: Response data (type varies by endpoint)
+    message:
+      type: string
+      description: Response message
+    error:
+      type: string
+      description: Error message (if any)
+
+ErrorResponse:
+  allOf:
+    - $ref: '#/ApiResponse'
+    - type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details

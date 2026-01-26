@@ -1,0 +1,174 @@
+# Pipeline Schemas
+# Pipeline execution, job status, and log types
+
+JobStatus:
+  type: object
+  properties:
+    id:
+      type: string
+      description: Job UUID
+    node_id:
+      type: string
+      description: Node instance UUID
+    status:
+      $ref: './common.yaml#/NodeExecutionStatus'
+    execution_count:
+      type: integer
+      description: Number of times executed
+    started:
+      type: string
+      format: date-time
+      description: Job start time
+    completed:
+      type: string
+      format: date-time
+      description: Job completion time
+    execution_time:
+      type: integer
+      description: Execution time in milliseconds
+    error_message:
+      type: string
+      description: Error message if failed
+
+NodeStatus:
+  type: object
+  properties:
+    status:
+      $ref: './common.yaml#/NodeExecutionStatus'
+    last_executed:
+      type: string
+      format: date-time
+    execution_time:
+      type: integer
+      description: Last execution time in milliseconds
+    error:
+      type: string
+      description: Last error message
+
+JobStatusSummary:
+  type: object
+  properties:
+    total:
+      type: integer
+      description: Total number of jobs
+    pending:
+      type: integer
+      description: Number of pending jobs
+    running:
+      type: integer
+      description: Number of running jobs
+    completed:
+      type: integer
+      description: Number of completed jobs
+    failed:
+      type: integer
+      description: Number of failed jobs
+    cancelled:
+      type: integer
+      description: Number of cancelled jobs
+  required:
+    - total
+    - pending
+    - running
+    - completed
+    - failed
+    - cancelled
+
+PipelineDetailResponse:
+  type: object
+  properties:
+    status:
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+        - cancelled
+      description: Overall pipeline status
+    jobs:
+      type: array
+      items:
+        $ref: '#/JobStatus'
+      description: Individual job statuses
+    node_statuses:
+      type: object
+      additionalProperties:
+        $ref: '#/NodeStatus'
+      description: Node execution statuses keyed by node ID
+    job_status_summary:
+      $ref: '#/JobStatusSummary'
+  required:
+    - status
+    - jobs
+    - node_statuses
+    - job_status_summary
+
+PipelineListResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              workflow_id:
+                type: string
+              status:
+                type: string
+              created:
+                type: string
+                format: date-time
+              updated:
+                type: string
+                format: date-time
+
+PipelineExecutionResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            pipeline_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum:
+                - pending
+                - running
+            message:
+              type: string
+
+LogEntry:
+  type: object
+  properties:
+    timestamp:
+      type: string
+      format: date-time
+      description: Log entry timestamp
+    level:
+      type: string
+      enum:
+        - debug
+        - info
+        - warning
+        - error
+      description: Log level
+    message:
+      type: string
+      description: Log message
+    node_id:
+      type: string
+      description: Associated node ID
+    context:
+      type: object
+      additionalProperties: true
+      description: Additional context data

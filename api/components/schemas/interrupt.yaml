@@ -1,0 +1,328 @@
+# Interrupt Schemas
+# Human-in-the-Loop interrupt types and configurations
+
+InterruptType:
+  type: string
+  enum:
+    - confirmation
+    - choice
+    - text
+    - form
+  description: |
+    Type of interrupt prompt:
+    - `confirmation`: Yes/No approval prompt
+    - `choice`: Single or multiple selection from options
+    - `text`: Free-form text input
+    - `form`: JSON Schema-based form
+
+InterruptStatus:
+  type: string
+  enum:
+    - pending
+    - resolved
+    - cancelled
+  description: |
+    Current status of the interrupt:
+    - `pending`: Awaiting user response
+    - `resolved`: User submitted a response
+    - `cancelled`: Interrupt was cancelled
+
+ChoiceOption:
+  type: object
+  description: Option for choice-type interrupts
+  properties:
+    value:
+      type: string
+      description: Value to submit when selected
+      example: option1
+    label:
+      type: string
+      description: Display label for the option
+      example: Option 1
+    description:
+      type: string
+      description: Optional description for the option
+      example: This is the first option
+  required:
+    - value
+    - label
+
+ConfirmationInterruptConfig:
+  type: object
+  description: Configuration for confirmation-type interrupts
+  properties:
+    message:
+      type: string
+      description: Prompt message to display
+      example: Do you approve this action?
+    confirm_label:
+      type: string
+      description: Label for confirm button
+      default: Yes
+      example: Approve
+    cancel_label:
+      type: string
+      description: Label for cancel/reject button
+      default: No
+      example: Reject
+  required:
+    - message
+
+ChoiceInterruptConfig:
+  type: object
+  description: Configuration for choice-type interrupts
+  properties:
+    message:
+      type: string
+      description: Prompt message to display
+      example: Select your preferred option
+    options:
+      type: array
+      items:
+        $ref: '#/ChoiceOption'
+      description: Available options to choose from
+      minItems: 1
+    multiple:
+      type: boolean
+      default: false
+      description: Whether multiple selections are allowed
+    min_selections:
+      type: integer
+      minimum: 0
+      description: Minimum number of selections required
+    max_selections:
+      type: integer
+      minimum: 1
+      description: Maximum number of selections allowed
+  required:
+    - message
+    - options
+
+TextInterruptConfig:
+  type: object
+  description: Configuration for text-type interrupts
+  properties:
+    message:
+      type: string
+      description: Prompt message to display
+      example: Please provide additional details
+    placeholder:
+      type: string
+      description: Placeholder text for input field
+      example: Enter your response...
+    multiline:
+      type: boolean
+      default: false
+      description: Whether to use a textarea for multiline input
+    min_length:
+      type: integer
+      minimum: 0
+      description: Minimum text length required
+    max_length:
+      type: integer
+      minimum: 1
+      description: Maximum text length allowed
+    default_value:
+      type: string
+      description: Default value to pre-fill
+  required:
+    - message
+
+FormInterruptConfig:
+  type: object
+  description: Configuration for form-type interrupts
+  properties:
+    message:
+      type: string
+      description: Prompt message to display above the form
+      example: Please fill in the required information
+    schema:
+      $ref: './config.yaml#/ConfigSchema'
+      description: JSON Schema defining the form structure
+    default_values:
+      type: object
+      additionalProperties: true
+      description: Default values for form fields
+  required:
+    - message
+    - schema
+
+Interrupt:
+  type: object
+  description: |
+    Represents a Human-in-the-Loop interrupt request.
+    Interrupts are created when workflow execution requires user input.
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Interrupt unique identifier
+    messageId:
+      type: string
+      format: uuid
+      description: Associated playground message ID
+    type:
+      $ref: '#/InterruptType'
+    status:
+      $ref: '#/InterruptStatus'
+    nodeId:
+      type: string
+      description: ID of the node that created the interrupt
+    executionId:
+      type: string
+      description: Workflow execution ID
+    config:
+      oneOf:
+        - $ref: '#/ConfirmationInterruptConfig'
+        - $ref: '#/ChoiceInterruptConfig'
+        - $ref: '#/TextInterruptConfig'
+        - $ref: '#/FormInterruptConfig'
+      description: Type-specific configuration
+    allowCancel:
+      type: boolean
+      default: true
+      description: Whether the interrupt can be cancelled
+    response:
+      description: User's response (set after resolution)
+    response_time:
+      type: string
+      format: date-time
+      description: When the interrupt was resolved
+    user_id:
+      type: string
+      description: ID of the user who resolved the interrupt
+    createdAt:
+      type: string
+      format: date-time
+      description: When the interrupt was created
+  required:
+    - id
+    - type
+    - status
+    - nodeId
+    - executionId
+    - config
+    - allowCancel
+
+InterruptMessageMetadata:
+  type: object
+  description: |
+    Metadata structure for interrupt requests embedded in playground messages.
+    When a message contains this metadata, the frontend should render an interrupt prompt.
+  properties:
+    type:
+      type: string
+      enum:
+        - interrupt_request
+      description: Must be "interrupt_request" to identify as interrupt
+    interrupt_id:
+      type: string
+      format: uuid
+      description: Interrupt unique identifier
+    interrupt_type:
+      $ref: '#/InterruptType'
+    node_id:
+      type: string
+      description: ID of the node that created the interrupt
+    execution_id:
+      type: string
+      description: Workflow execution ID
+    message:
+      type: string
+      description: Prompt message to display
+    allowCancel:
+      type: boolean
+      default: true
+      description: Whether the interrupt can be cancelled
+    # Confirmation-specific
+    confirm_label:
+      type: string
+      description: Label for confirm button (confirmation type)
+    cancel_label:
+      type: string
+      description: Label for cancel button (confirmation type)
+    # Choice-specific
+    options:
+      type: array
+      items:
+        $ref: '#/ChoiceOption'
+      description: Available options (choice type)
+    multiple:
+      type: boolean
+      description: Allow multiple selections (choice type)
+    min_selections:
+      type: integer
+      description: Minimum selections (choice type)
+    max_selections:
+      type: integer
+      description: Maximum selections (choice type)
+    # Text-specific
+    placeholder:
+      type: string
+      description: Input placeholder (text type)
+    multiline:
+      type: boolean
+      description: Use multiline input (text type)
+    min_length:
+      type: integer
+      description: Minimum text length (text type)
+    max_length:
+      type: integer
+      description: Maximum text length (text type)
+    default_value:
+      description: Default value (text type)
+    # Form-specific
+    schema:
+      $ref: './config.yaml#/ConfigSchema'
+      description: Form schema (form type)
+    default_values:
+      type: object
+      description: Form default values (form type)
+  required:
+    - type
+    - interrupt_id
+    - interrupt_type
+    - node_id
+    - execution_id
+  example:
+    type: interrupt_request
+    interrupt_id: 550e8400-e29b-41d4-a716-446655440001
+    interrupt_type: confirmation
+    node_id: approval-node
+    execution_id: 550e8400-e29b-41d4-a716-446655440002
+    message: Do you approve this action?
+    confirm_label: Approve
+    cancel_label: Reject
+    allowCancel: true
+
+InterruptResolveRequest:
+  type: object
+  description: Request body for resolving an interrupt
+  properties:
+    value:
+      description: |
+        User's response. Type depends on interrupt type:
+        - confirmation: boolean
+        - choice: string or string[]
+        - text: string
+        - form: object
+  required:
+    - value
+
+InterruptResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/Interrupt'
+
+InterruptListResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/Interrupt'
