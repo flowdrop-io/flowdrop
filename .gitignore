@@ -29,3 +29,6 @@ vite.config.ts.timestamp-*
 storybook-static
 coverage/
 playwright-report/
+
+# Generated API documentation
+api-docs/
