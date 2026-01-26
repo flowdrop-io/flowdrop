@@ -30,7 +30,8 @@
 		"build-storybook": "storybook build",
 		"api:lint": "redocly lint api/openapi.yaml --config api/redocly.yaml",
 		"api:bundle": "redocly bundle api/openapi.yaml -o api/bundled.yaml --config api/redocly.yaml",
-		"api:preview": "redocly preview-docs api/openapi.yaml --config api/redocly.yaml"
+		"api:preview": "redocly preview-docs api/openapi.yaml --config api/redocly.yaml",
+		"api:docs": "redocly build-docs api/bundled.yaml -o api-docs/index.html"
 	},
 	"watch": {
 		"build": {
