@@ -50,11 +50,11 @@ jobs:
           <!DOCTYPE html>
           <html>
           <head>
-            <meta http-equiv="refresh" content="0; url=/fdnpm/">
+            <meta http-equiv="refresh" content="0; url=/flowdrop/">
             <title>Redirecting...</title>
           </head>
           <body>
-            <p>Redirecting to <a href="/fdnpm/">API Documentation</a>...</p>
+            <p>Redirecting to <a href="/flowdrop/">API Documentation</a>...</p>
           </body>
           </html>
           EOF
