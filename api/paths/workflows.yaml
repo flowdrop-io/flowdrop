@@ -1,0 +1,430 @@
+# Workflow Endpoints
+# Workflow CRUD, validation, and import/export operations
+
+/workflows:
+  get:
+    operationId: listWorkflows
+    summary: Get all workflows
+    description: |
+      Retrieve all workflows with optional search filtering and pagination.
+      Returns workflow metadata including nodes, edges, and execution history.
+    tags:
+      - Workflows
+    parameters:
+      - name: search
+        in: query
+        description: Search workflows by name or description
+        required: false
+        schema:
+          type: string
+          maxLength: 100
+      - name: tags
+        in: query
+        description: Filter by tags (comma-separated)
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Maximum number of workflows to return
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        description: Number of workflows to skip
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: sort
+        in: query
+        description: Sort field
+        required: false
+        schema:
+          type: string
+          enum:
+            - created_at
+            - updated_at
+            - name
+          default: updated_at
+      - name: order
+        in: query
+        description: Sort direction
+        required: false
+        schema:
+          type: string
+          enum:
+            - asc
+            - desc
+          default: desc
+    responses:
+      '200':
+        description: List of workflows retrieved successfully
+        headers:
+          X-Total-Count:
+            description: Total number of workflows
+            schema:
+              type: integer
+          X-Page-Size:
+            description: Workflows per page
+            schema:
+              type: integer
+          X-Page-Offset:
+            description: Current page offset
+            schema:
+              type: integer
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/WorkflowsResponse'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  post:
+    operationId: createWorkflow
+    summary: Create a new workflow
+    description: |
+      Create a new workflow with the provided name, description, nodes, and edges.
+      The workflow will be assigned a unique UUID and metadata will be automatically generated.
+    tags:
+      - Workflows
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/workflow.yaml#/CreateWorkflowRequest'
+          examples:
+            basic:
+              summary: Basic workflow creation
+              value:
+                name: My First Workflow
+                description: A simple workflow for testing
+                nodes: []
+                edges: []
+            withNodes:
+              summary: Workflow with nodes
+              value:
+                name: AI Chat Workflow
+                description: Chat workflow using OpenAI
+                nodes:
+                  - id: 550e8400-e29b-41d4-a716-446655440001
+                    type: text_input
+                    position:
+                      x: 100
+                      y: 100
+                    data:
+                      label: User Input
+                      config:
+                        placeholder: Enter your question
+                      metadata:
+                        id: text_input
+                        name: Text Input
+                        description: Text input field for user data
+                        category: inputs
+                        version: 1.0.0
+                        inputs: []
+                        outputs:
+                          - id: value
+                            name: Value
+                            type: output
+                            dataType: string
+                edges: []
+                tags:
+                  - ai
+                  - chat
+    responses:
+      '201':
+        description: Workflow created successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/WorkflowResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '422':
+        $ref: '../components/responses.yaml#/ValidationError'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/workflows/{id}:
+  get:
+    operationId: getWorkflow
+    summary: Get workflow by ID
+    description: Retrieve a specific workflow with all its nodes, edges, and metadata
+    tags:
+      - Workflows
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+    responses:
+      '200':
+        description: Workflow details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/WorkflowResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  put:
+    operationId: updateWorkflow
+    summary: Update workflow
+    description: |
+      Update an existing workflow. All fields are optional - only provided fields will be updated.
+      The updatedAt timestamp will be automatically set to the current time.
+    tags:
+      - Workflows
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/workflow.yaml#/UpdateWorkflowRequest'
+    responses:
+      '200':
+        description: Workflow updated successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/WorkflowResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        $ref: '../components/responses.yaml#/ValidationError'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  delete:
+    operationId: deleteWorkflow
+    summary: Delete workflow
+    description: Permanently delete a workflow and all associated data including execution history
+    tags:
+      - Workflows
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Workflow deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Workflow deleted successfully
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/workflows/validate:
+  post:
+    operationId: validateWorkflow
+    summary: Validate workflow
+    description: |
+      Validate a workflow structure without saving it. Checks for:
+      - Valid node connections and port compatibility
+      - Required configuration fields
+      - Circular dependencies
+      - Orphaned nodes
+      - Missing required inputs
+    tags:
+      - Validation
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/workflow.yaml#/Workflow'
+    responses:
+      '200':
+        description: Validation results
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/ValidationResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/workflows/{id}/export:
+  get:
+    operationId: exportWorkflow
+    summary: Export workflow
+    description: Export a workflow as JSON or YAML format
+    tags:
+      - Import/Export
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: format
+        in: query
+        description: Export format
+        required: false
+        schema:
+          type: string
+          enum:
+            - json
+            - yaml
+          default: json
+    responses:
+      '200':
+        description: Workflow exported successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/workflow.yaml#/Workflow'
+          application/x-yaml:
+            schema:
+              type: string
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/workflows/import:
+  post:
+    operationId: importWorkflow
+    summary: Import workflow
+    description: Import a workflow from JSON format. A new UUID will be assigned to the imported workflow.
+    tags:
+      - Import/Export
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/workflow.yaml#/Workflow'
+    responses:
+      '201':
+        description: Workflow imported successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/WorkflowResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '422':
+        $ref: '../components/responses.yaml#/ValidationError'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/workflows/{id}/execute:
+  post:
+    operationId: executeWorkflow
+    summary: Execute workflow
+    description: |
+      Create a new pipeline and start execution in one call.
+      This is a convenience endpoint that combines pipeline creation with immediate execution.
+      Returns the pipeline ID and initial status for tracking.
+    tags:
+      - Pipeline
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              inputs:
+                type: object
+                description: Input values for specific nodes
+                additionalProperties: true
+              options:
+                type: object
+                properties:
+                  timeout:
+                    type: integer
+                    description: Execution timeout in milliseconds
+                  maxSteps:
+                    type: integer
+                    description: Maximum number of execution steps
+    responses:
+      '202':
+        description: Workflow execution started
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        execution_id:
+                          type: string
+                          format: uuid
+                          description: Pipeline/execution ID for tracking
+                        status:
+                          type: string
+                          enum:
+                            - pending
+                            - running
+                        started_at:
+                          type: string
+                          format: date-time
+                        estimated_completion:
+                          type: string
+                          format: date-time
+                          description: Estimated completion time (if available)
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

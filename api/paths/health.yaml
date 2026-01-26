@@ -1,0 +1,113 @@
+# System Endpoints
+# Health, configuration, and version information
+
+# Health check at root level (industry standard for Kubernetes, Docker, load balancers)
+/health:
+  get:
+    operationId: getHealth
+    summary: API health check
+    description: |
+      Check if the FlowDrop API is running and responsive.
+      This endpoint is at the root level following industry conventions
+      for Kubernetes liveness/readiness probes and load balancer health checks.
+    tags:
+      - System
+    security: []
+    responses:
+      '200':
+        description: API is healthy
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: healthy
+                timestamp:
+                  type: string
+                  format: date-time
+                version:
+                  type: string
+                  example: 1.0.0
+                service:
+                  type: string
+                  example: FlowDrop API
+                uptime:
+                  type: integer
+                  description: Uptime in seconds
+                  example: 3600
+      '503':
+        description: Service unavailable
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+/system/config:
+  get:
+    operationId: getSystemConfig
+    summary: Get system configuration
+    description: Retrieve public system configuration settings
+    tags:
+      - System
+    responses:
+      '200':
+        description: System configuration retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        version:
+                          type: string
+                          example: 1.0.0
+                        features:
+                          type: object
+                          additionalProperties:
+                            type: boolean
+                          description: Enabled features
+                        limits:
+                          type: object
+                          properties:
+                            maxWorkflowNodes:
+                              type: integer
+                            maxConcurrentExecutions:
+                              type: integer
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/system/version:
+  get:
+    operationId: getSystemVersion
+    summary: Get API version
+    description: Retrieve the current API version information
+    tags:
+      - System
+    security: []
+    responses:
+      '200':
+        description: Version information retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                version:
+                  type: string
+                  example: 1.0.0
+                build:
+                  type: string
+                  example: 2026.01.26
+                api_version:
+                  type: string
+                  example: v1
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'

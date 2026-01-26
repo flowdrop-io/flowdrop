@@ -1,0 +1,156 @@
+# Node Types Endpoints
+# Node type discovery and metadata
+
+/nodes:
+  get:
+    operationId: listNodeTypes
+    summary: Get all available node types
+    description: |
+      Retrieve all available node processors with optional filtering by category, search query, and pagination.
+      Supports filtering by node category (models, data_processing, input_output, etc.) and search queries.
+    tags:
+      - Node Types
+    parameters:
+      - name: category
+        in: query
+        description: Filter by node category
+        required: false
+        schema:
+          $ref: '../components/schemas/common.yaml#/NodeCategory'
+      - name: search
+        in: query
+        description: Search node types by name, description, or tags
+        required: false
+        schema:
+          type: string
+          maxLength: 100
+      - name: limit
+        in: query
+        description: Maximum number of results (1-1000)
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+      - name: offset
+        in: query
+        description: Number of results to skip for pagination
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+    responses:
+      '200':
+        description: List of node types retrieved successfully
+        headers:
+          X-Total-Count:
+            description: Total number of nodes matching the filter
+            schema:
+              type: integer
+          X-Page-Size:
+            description: Number of nodes per page
+            schema:
+              type: integer
+          X-Page-Offset:
+            description: Current page offset
+            schema:
+              type: integer
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/NodesResponse'
+            examples:
+              success:
+                value:
+                  success: true
+                  data:
+                    - id: openai_chat_executor
+                      name: OpenAI Chat
+                      description: Chat completion using OpenAI's GPT models
+                      category: ai
+                      version: 1.0.0
+                      icon: mdi:chat
+                      color: '#10a37f'
+                      type: default
+                      supportedTypes:
+                        - default
+                        - simple
+                      inputs:
+                        - id: data
+                          name: Input Data
+                          type: input
+                          dataType: mixed
+                          required: false
+                          description: Input data for the node
+                      outputs:
+                        - id: response
+                          name: Response
+                          type: output
+                          dataType: string
+                          description: The OpenAI response
+                      configSchema:
+                        type: object
+                        properties:
+                          model:
+                            type: string
+                            title: Model
+                            default: gpt-4o-mini
+                            enum:
+                              - gpt-4o-mini
+                              - gpt-5
+                              - gpt-4.1
+                          temperature:
+                            type: number
+                            title: Temperature
+                            default: 0.7
+                            minimum: 0
+                            maximum: 2
+                          maxTokens:
+                            type: integer
+                            title: Max Tokens
+                            default: 1000
+                            minimum: 1
+                            maximum: 4096
+                          apiKey:
+                            type: string
+                            title: API Key
+                            format: hidden
+                      tags:
+                        - openai
+                        - gpt
+                        - chat
+                        - ai
+                  message: Found 1 node types
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/nodes/{id}:
+  get:
+    operationId: getNodeType
+    summary: Get node type by ID
+    description: Retrieve detailed metadata for a specific node type by its unique identifier
+    tags:
+      - Node Types
+    parameters:
+      - name: id
+        in: path
+        description: Node type unique identifier
+        required: true
+        schema:
+          type: string
+          example: calculator
+    responses:
+      '200':
+        description: Node type details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/NodeTypeResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

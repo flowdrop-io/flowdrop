@@ -1,0 +1,408 @@
+# Playground Endpoints
+# Interactive workflow testing and chat interface
+
+/workflows/{id}/playground/sessions:
+  get:
+    operationId: listPlaygroundSessions
+    summary: List playground sessions for a workflow
+    description: |
+      Retrieve all playground sessions associated with a workflow.
+      Sessions are used to test and interact with workflows in an isolated environment.
+    tags:
+      - Playground
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: limit
+        in: query
+        description: Maximum number of sessions to return
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: offset
+        in: query
+        description: Number of sessions to skip
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+    responses:
+      '200':
+        description: List of playground sessions
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/playground.yaml#/PlaygroundSessionsResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  post:
+    operationId: createPlaygroundSession
+    summary: Create a new playground session
+    description: |
+      Create a new playground session for testing a workflow.
+      The session can be named for easy identification.
+    tags:
+      - Playground
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Optional session name
+                maxLength: 100
+                example: Test Session 1
+              metadata:
+                type: object
+                description: Optional metadata for the session
+                additionalProperties: true
+    responses:
+      '201':
+        description: Session created successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/playground.yaml#/PlaygroundSessionResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/playground/sessions/{sessionId}:
+  get:
+    operationId: getPlaygroundSession
+    summary: Get playground session details
+    description: |
+      Retrieve detailed information about a specific playground session,
+      including its current status and configuration.
+    tags:
+      - Playground
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Session details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/playground.yaml#/PlaygroundSessionResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  delete:
+    operationId: deletePlaygroundSession
+    summary: Delete a playground session
+    description: |
+      Permanently delete a playground session and all its messages.
+      This action cannot be undone.
+    tags:
+      - Playground
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Session deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Session deleted successfully
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/playground/sessions/{sessionId}/messages:
+  get:
+    operationId: listPlaygroundMessages
+    summary: Get messages from a playground session
+    description: |
+      Retrieve messages from a playground session with optional filtering.
+      Supports polling via the `since` parameter to fetch only new messages.
+    tags:
+      - Playground
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: since
+        in: query
+        description: |
+          ISO 8601 timestamp to fetch messages after this time.
+          Used for polling to get only new messages.
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: limit
+        in: query
+        description: Maximum number of messages to return
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 100
+    responses:
+      '200':
+        description: Messages retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/playground.yaml#/PlaygroundMessagesResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  post:
+    operationId: sendPlaygroundMessage
+    summary: Send a message to the playground session
+    description: |
+      Send a user message or trigger workflow execution with inputs.
+      This starts or continues the conversation in the playground.
+
+      The message is created with status "pending" and processing begins immediately
+      (synchronously) or is queued (asynchronously) based on the session's execution mode.
+      The response returns immediately with the message entity, allowing clients to
+      poll the message status endpoint to track processing progress.
+
+      Messages are processed in sequence order within a session to ensure proper
+      conversation flow. If a previous message is not yet complete, the request
+      will be rejected with a conflict error.
+    tags:
+      - Playground
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/playground.yaml#/PlaygroundMessageRequest'
+          examples:
+            chatMessage:
+              summary: Simple chat message
+              value:
+                content: Hello, can you help me analyze this data?
+            withInputs:
+              summary: Message with additional inputs
+              value:
+                content: Process this file
+                inputs:
+                  file_path: /data/input.csv
+                  options:
+                    format: csv
+                    headers: true
+    responses:
+      '200':
+        description: Message sent and workflow execution started
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/playground.yaml#/PlaygroundMessageResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: Session is already executing
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/playground/sessions/{sessionId}/messages/{messageId}:
+  get:
+    operationId: getPlaygroundMessage
+    summary: Get a single message
+    description: |
+      Retrieve a specific message from a playground session by its ID.
+      Returns full message details including status and metadata.
+    tags:
+      - Playground
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: messageId
+        in: path
+        description: Message UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Message retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/playground.yaml#/PlaygroundMessageResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/playground/sessions/{sessionId}/messages/{messageId}/status:
+  get:
+    operationId: getPlaygroundMessageStatus
+    summary: Get message status
+    description: |
+      Retrieve only the status of a message (lightweight endpoint for polling).
+      Useful for checking if message processing is complete without fetching full message data.
+    tags:
+      - Playground
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: messageId
+        in: path
+        description: Message UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Message status retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: Message unique identifier
+                        status:
+                          $ref: '../components/schemas/playground.yaml#/PlaygroundMessageStatus'
+                        sequenceNumber:
+                          type: integer
+                          description: Message sequence number
+                        timestamp:
+                          type: string
+                          format: date-time
+                          description: Message timestamp
+                      required:
+                        - id
+                        - status
+                        - sequenceNumber
+                        - timestamp
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/playground/sessions/{sessionId}/stop:
+  post:
+    operationId: stopPlaygroundExecution
+    summary: Stop playground execution
+    description: |
+      Stop the currently running execution in the playground session.
+      This cancels any pending workflow operations.
+    tags:
+      - Playground
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Execution stopped successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Execution stopped
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: No execution is running
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
