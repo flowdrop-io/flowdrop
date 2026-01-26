@@ -96,6 +96,17 @@ The API spec is validated in CI:
 - **[Redocly CLI](https://redocly.com/docs/cli/)**: Linting, bundling, preview
 - **[oasdiff](https://github.com/Tufin/oasdiff)**: Breaking change detection
 
+## Hosted Documentation
+
+API documentation is automatically deployed to GitHub Pages on every push to `main`:
+
+**https://d34dman.github.io/fdnpm/**
+
+The docs are built using [Redoc](https://redocly.com/redoc/) and include:
+- Interactive endpoint explorer
+- Schema documentation
+- Try-it-out functionality (when configured with a server)
+
 ## References
 
 - [OpenAPI 3.0 Specification](https://spec.openapis.org/oas/v3.0.3)
