@@ -1,0 +1,89 @@
+name: API Spec Validation
+
+on:
+  push:
+    branches:
+      - main
+      - 1.x
+    paths:
+      - "api/**"
+      - ".github/workflows/api-lint.yml"
+  pull_request:
+    branches:
+      - main
+      - 1.x
+    paths:
+      - "api/**"
+      - ".github/workflows/api-lint.yml"
+
+jobs:
+  lint:
+    name: Lint OpenAPI Spec
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint OpenAPI spec
+        run: npm run api:lint
+
+      - name: Validate bundled spec is up to date
+        run: |
+          npm run api:bundle
+          git diff --exit-code api/bundled.yaml || {
+            echo "::error::bundled.yaml is out of date. Run 'npm run api:bundle' and commit the changes."
+            exit 1
+          }
+
+  breaking-changes:
+    name: Check Breaking Changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Install oasdiff
+        run: |
+          curl -sSL https://raw.githubusercontent.com/Tufin/oasdiff/main/install.sh | sh
+          sudo mv oasdiff /usr/local/bin/
+
+      - name: Check for breaking changes
+        run: |
+          echo "## OpenAPI Breaking Changes Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Run breaking change detection
+          if oasdiff breaking base/api/bundled.yaml pr/api/bundled.yaml --fail-on ERR; then
+            echo "✅ No breaking changes detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Breaking changes detected - review required" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Run locally: \`npx oasdiff breaking api/bundled.yaml <new-spec>\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Generate changelog
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### API Changelog" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          oasdiff changelog base/api/bundled.yaml pr/api/bundled.yaml >> $GITHUB_STEP_SUMMARY || echo "No changes detected"
+          echo '```' >> $GITHUB_STEP_SUMMARY
