@@ -6,7 +6,7 @@ Get FlowDrop UI running in production in 5 minutes.
 
 ```bash
 # 1. Clone or download the repository
-git clone https://github.com/d34dman/flowdrop.git
+git clone https://github.com/flowdrop-io/flowdrop.git
 cd flowdrop
 
 # 2. Copy environment file
@@ -131,5 +131,5 @@ docker logs flowdrop-ui
 
 ## Support
 
-- GitHub: https://github.com/d34dman/flowdrop
-- Issues: https://github.com/d34dman/flowdrop/issues
+- GitHub: https://github.com/flowdrop-io/flowdrop
+- Issues: https://github.com/flowdrop-io/flowdrop/issues
