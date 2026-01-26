@@ -1,5 +1,8 @@
 # Redocly Configuration
 # OpenAPI linting, validation, and bundling settings
+#
+# Run: npm run api:lint
+# Docs: https://redocly.com/docs/cli/configuration/
 
 # Extend the recommended ruleset
 extends:
@@ -10,35 +13,22 @@ apis:
   main:
     root: ./openapi.yaml
 
-# Linting rules
+# Linting rules - stricter for production quality
 rules:
-  # Operation IDs are recommended but not required (original spec didn't have them)
-  operation-operationId: warn
+  # === ERRORS (must fix) ===
+
+  # All operations must have unique IDs (required for code generation)
+  operation-operationId: error
+  operation-operationId-unique: error
+
+  # Operations must have summaries
+  operation-summary: error
 
   # Require tags on all operations
-  operation-tag-defined: warn
-
-  # Require descriptions on tags
-  tag-description: warn
-
-  # Warn about unused components
-  no-unused-components: warn
-
-  # Require descriptions on parameters
-  parameter-description: off
-
-  # Allow localhost in servers for development
-  no-server-example.com: off
+  operation-tag-defined: error
 
   # Path parameters must be defined
   path-parameters-defined: error
-
-  # Unique operation IDs
-  operation-operationId-unique: error
-
-  # No invalid media type examples - warn only
-  no-invalid-media-type-examples: warn
-  no-invalid-schema-examples: warn
 
   # Security schemes must be defined
   security-defined: error
@@ -46,9 +36,49 @@ rules:
   # Paths should not have trailing slashes
   no-path-trailing-slash: error
 
-  # Info section requirements
+  # Request/response must have valid content types
+  request-mime-type:
+    severity: error
+    allowedValues:
+      - application/json
+      - application/x-yaml
+      - multipart/form-data
+
+  response-mime-type:
+    severity: error
+    allowedValues:
+      - application/json
+      - application/x-yaml
+
+  # === WARNINGS (should fix) ===
+
+  # Require descriptions on tags
+  tag-description: warn
+
+  # Warn about unused components (dead code)
+  no-unused-components: warn
+
+  # Operations should have descriptions
+  operation-description: warn
+
+  # 4xx responses recommended (warn for health endpoints)
+  operation-4xx-response: warn
+
+  # Example validation
+  no-invalid-media-type-examples: warn
+  no-invalid-schema-examples: warn
+
+  # Info section recommendations
   info-contact: warn
   info-license: off
 
-  # 4xx response warnings off for health endpoints
-  operation-4xx-response: warn
+  # === OFF (intentionally disabled) ===
+
+  # Parameter descriptions optional (too verbose for simple params)
+  parameter-description: off
+
+  # Allow localhost in servers for development
+  no-server-example.com: off
+
+  # Schema descriptions optional (we use inline comments)
+  # schema-description: off
