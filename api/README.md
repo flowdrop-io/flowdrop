@@ -100,7 +100,7 @@ The API spec is validated in CI:
 
 API documentation is automatically deployed to GitHub Pages on every push to `main`:
 
-**https://d34dman.github.io/fdnpm/**
+**https://flowdrop-io.github.io/flowdrop/**
 
 The docs are built using [Redoc](https://redocly.com/redoc/) and include:
 - Interactive endpoint explorer
