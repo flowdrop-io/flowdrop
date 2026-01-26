@@ -260,6 +260,69 @@ export interface DynamicSchemaEndpoint {
 }
 
 /**
+ * Options endpoint configuration for fetching select field options at runtime.
+ * Used when field options need to be populated dynamically from a REST API.
+ *
+ * @example
+ * ```typescript
+ * const optionsEndpoint: OptionsEndpoint = {
+ *   url: "/api/flowdrop/secrets",
+ *   valuePath: "name",
+ *   labelPath: "label",
+ *   cacheTtl: 300000
+ * };
+ * ```
+ */
+export interface OptionsEndpoint {
+	/**
+	 * URL to fetch options from.
+	 * Supports template variables: {nodeTypeId}, {instanceId}, {workflowId}
+	 */
+	url: string;
+
+	/**
+	 * HTTP method for the request.
+	 * @default "GET"
+	 */
+	method?: HttpMethod;
+
+	/**
+	 * Custom headers to include in the request.
+	 */
+	headers?: Record<string, string>;
+
+	/**
+	 * Maps template variables to their source paths in node context.
+	 * Keys are variable names, values are dot-notation paths.
+	 */
+	parameterMapping?: Record<string, string>;
+
+	/**
+	 * JSON path to extract the option value from each item.
+	 * @default "value"
+	 */
+	valuePath?: string;
+
+	/**
+	 * JSON path to extract the option label from each item.
+	 * @default "label"
+	 */
+	labelPath?: string;
+
+	/**
+	 * Cache TTL in milliseconds.
+	 * @default 300000 (5 minutes)
+	 */
+	cacheTtl?: number;
+
+	/**
+	 * Request timeout in milliseconds.
+	 * @default 10000
+	 */
+	timeout?: number;
+}
+
+/**
  * External edit link configuration
  * Used when the node configuration should be handled by an external 3rd party form
  *

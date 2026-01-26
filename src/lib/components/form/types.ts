@@ -6,6 +6,8 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
+import type { OptionsEndpoint } from '$lib/types/index.js';
+
 /**
  * Supported field types for form rendering
  * Can be extended to support complex types like 'array' and 'object'
@@ -253,6 +255,12 @@ export interface FieldSchema {
 	properties?: Record<string, FieldSchema>;
 	/** Required properties for object fields (future use) */
 	required?: string[];
+	/**
+	 * REST endpoint to fetch options dynamically at runtime.
+	 * When specified, options are fetched from this endpoint and used
+	 * instead of static `enum` or `options` values.
+	 */
+	optionsEndpoint?: OptionsEndpoint;
 	/** Allow additional properties not defined by the schema */
 	[key: string]: unknown;
 }

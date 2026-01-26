@@ -35,6 +35,12 @@
 		type DynamicSchemaResult
 	} from '$lib/services/dynamicSchemaService.js';
 	import { globalSaveWorkflow } from '$lib/services/globalSave.js';
+	import {
+		fetchAllFieldOptions,
+		hasFieldsWithOptionsEndpoint,
+		mergeOptionsIntoSchema
+	} from '$lib/services/optionsService.js';
+	import type { FieldOption } from '$lib/components/form/types.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -72,6 +78,14 @@
 	let dynamicSchemaLoading = $state(false);
 	let dynamicSchemaError = $state<string | null>(null);
 	let fetchedDynamicSchema = $state<ConfigSchema | null>(null);
+
+	/**
+	 * State for field options loading
+	 */
+	let optionsLoading = $state(false);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Reserved for future error display
+	let optionsErrors = $state<Map<string, string>>(new Map());
+	let fetchedOptions = $state<Map<string, FieldOption[]>>(new Map());
 
 	/**
 	 * Get the admin edit configuration for the node
@@ -204,6 +218,26 @@
 	}
 
 	/**
+	 * Load options for fields with optionsEndpoint
+	 */
+	async function loadFieldOptions(schema: ConfigSchema): Promise<void> {
+		if (!node) return;
+
+		optionsLoading = true;
+		optionsErrors = new Map();
+
+		try {
+			const result = await fetchAllFieldOptions(schema, node, workflowId);
+			fetchedOptions = result.options;
+			optionsErrors = result.errors;
+		} catch (err) {
+			console.error('Failed to load field options:', err);
+		} finally {
+			optionsLoading = false;
+		}
+	}
+
+	/**
 	 * Get the resolved external edit URL
 	 */
 	function getExternalEditUrl(): string {
@@ -234,6 +268,31 @@
 		if (needsDynamicSchemaLoad) {
 			loadDynamicSchema();
 		}
+	});
+
+	/**
+	 * Load field options when schema is available and has fields with optionsEndpoint
+	 */
+	$effect(() => {
+		const schema = configSchema;
+		if (
+			schema &&
+			node &&
+			hasFieldsWithOptionsEndpoint(schema) &&
+			!optionsLoading &&
+			fetchedOptions.size === 0
+		) {
+			loadFieldOptions(schema);
+		}
+	});
+
+	/**
+	 * Schema with fetched options merged in for form rendering
+	 */
+	const enrichedSchema = $derived.by(() => {
+		if (!configSchema) return configSchema;
+		if (fetchedOptions.size === 0) return configSchema;
+		return mergeOptionsIntoSchema(configSchema, fetchedOptions);
 	});
 
 	/**
@@ -380,12 +439,16 @@
 	</div>
 {/if}
 
-<!-- Dynamic Schema Loading State -->
-{#if dynamicSchemaLoading}
+<!-- Dynamic Schema or Options Loading State -->
+{#if dynamicSchemaLoading || optionsLoading}
 	<div class="config-form__loading">
 		<div class="config-form__loading-spinner"></div>
 		<p class="config-form__loading-text">
-			{configEditOptions?.loadingMessage ?? 'Loading configuration options...'}
+			{#if dynamicSchemaLoading}
+				{configEditOptions?.loadingMessage ?? 'Loading configuration schema...'}
+			{:else}
+				Loading field options...
+			{/if}
 		</p>
 	</div>
 {:else if dynamicSchemaError}
@@ -421,7 +484,7 @@
 			</div>
 		</div>
 	</div>
-{:else if configSchema}
+{:else if enrichedSchema}
 	<form
 		class="config-form"
 		onsubmit={(e) => {
@@ -458,9 +521,9 @@
 			</div>
 		{/if}
 
-		{#if configSchema.properties}
+		{#if enrichedSchema.properties}
 			<div class="config-form__fields">
-				{#each Object.entries(configSchema.properties) as [key, field], index (key)}
+				{#each Object.entries(enrichedSchema.properties) as [key, field], index (key)}
 					{@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
 					{@const required = isFieldRequired(key)}
 
@@ -481,7 +544,7 @@
 					<Icon icon="heroicons:bug-ant" class="config-form__debug-icon" />
 					<span>Debug - Config Schema</span>
 				</div>
-				<pre class="config-form__debug-content">{JSON.stringify(configSchema, null, 2)}</pre>
+				<pre class="config-form__debug-content">{JSON.stringify(enrichedSchema, null, 2)}</pre>
 			</div>
 		{/if}
 

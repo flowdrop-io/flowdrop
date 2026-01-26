@@ -53,6 +53,7 @@ export type {
 	DynamicSchemaEndpoint,
 	ExternalEditLink,
 	ConfigEditOptions,
+	OptionsEndpoint,
 	// Edge types
 	EdgeCategory
 } from '../types/index.js';

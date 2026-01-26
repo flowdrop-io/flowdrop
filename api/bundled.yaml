@@ -2180,6 +2180,9 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/ConfigProperty'
+        optionsEndpoint:
+          $ref: '#/components/schemas/OptionsEndpoint'
+          description: REST endpoint to fetch options dynamically at runtime
       required:
         - type
     ConfigSchema:
@@ -3602,6 +3605,52 @@ components:
                   items:
                     type: string
                   description: Improvement suggestions
+    OptionsEndpoint:
+      type: object
+      description: Configuration for fetching select field options from a REST endpoint at runtime
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: URL to fetch options from. Supports template variables {nodeTypeId}, {instanceId}, {workflowId}
+          example: /api/flowdrop/secrets
+        method:
+          type: string
+          enum:
+            - GET
+            - POST
+          default: GET
+          description: HTTP method for the request
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Custom headers to include in the request
+        parameterMapping:
+          type: object
+          additionalProperties:
+            type: string
+          description: Maps template variables to node context paths
+          example:
+            nodeTypeId: metadata.id
+            instanceId: id
+        valuePath:
+          type: string
+          default: value
+          description: JSON path to extract option value from each item
+        labelPath:
+          type: string
+          default: label
+          description: JSON path to extract option label from each item
+        cacheTtl:
+          type: integer
+          default: 300000
+          description: Cache TTL in milliseconds (default 5 minutes)
+        timeout:
+          type: integer
+          default: 10000
+          description: Request timeout in milliseconds
   responses:
     BadRequest:
       description: Bad request - invalid parameters or request body

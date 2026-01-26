@@ -14,24 +14,7 @@ import type {
 	WorkflowNode
 } from '../types/index.js';
 import { getEndpointConfig } from './api.js';
-
-/**
- * Context object containing all available data for resolving template variables
- */
-interface NodeContext {
-	/** Node instance ID */
-	id: string;
-	/** Node type from xyflow */
-	type: string;
-	/** Node metadata (id, name, type, category, etc.) */
-	metadata: WorkflowNode['data']['metadata'];
-	/** Node configuration values */
-	config: Record<string, unknown>;
-	/** Node extensions */
-	extensions?: WorkflowNode['data']['extensions'];
-	/** Current workflow ID (if available) */
-	workflowId?: string;
-}
+import { resolveTemplate, buildNodeContext, type NodeContext } from '../utils/templateResolver.js';
 
 /**
  * Result of a dynamic schema fetch operation
@@ -69,97 +52,6 @@ const schemaCache = new Map<string, SchemaCacheEntry>();
  * Default cache TTL in milliseconds (5 minutes)
  */
 const DEFAULT_CACHE_TTL = 5 * 60 * 1000;
-
-/**
- * Resolves a template variable path from the node context.
- * Supports dot-notation paths like "metadata.id", "config.apiKey", "id"
- *
- * @param context - The node context containing all available data
- * @param path - Dot-notation path to resolve (e.g., "metadata.id")
- * @returns The resolved value as a string, or undefined if not found
- *
- * @example
- * ```typescript
- * const context = { id: "node-1", metadata: { id: "llm-node" } };
- * resolveVariablePath(context, "metadata.id"); // Returns "llm-node"
- * resolveVariablePath(context, "id"); // Returns "node-1"
- * ```
- */
-function resolveVariablePath(context: NodeContext, path: string): string | undefined {
-	const parts = path.split('.');
-	let current: unknown = context;
-
-	for (const part of parts) {
-		if (current === null || current === undefined) {
-			return undefined;
-		}
-		if (typeof current === 'object' && part in current) {
-			current = (current as Record<string, unknown>)[part];
-		} else {
-			return undefined;
-		}
-	}
-
-	// Convert to string if not already
-	if (current === null || current === undefined) {
-		return undefined;
-	}
-	return String(current);
-}
-
-/**
- * Replaces template variables in a URL or string with values from the node context.
- * Template variables use curly brace syntax: {variableName}
- *
- * @param template - The template string with variables
- * @param parameterMapping - Maps variable names to context paths
- * @param context - The node context containing all available data
- * @returns The resolved string with all variables replaced
- *
- * @example
- * ```typescript
- * const url = "/api/nodes/{nodeTypeId}/schema?instance={instanceId}";
- * const mapping = { nodeTypeId: "metadata.id", instanceId: "id" };
- * const context = { id: "node-1", metadata: { id: "llm-node" } };
- * resolveTemplate(url, mapping, context);
- * // Returns "/api/nodes/llm-node/schema?instance=node-1"
- * ```
- */
-function resolveTemplate(
-	template: string,
-	parameterMapping: Record<string, string> | undefined,
-	context: NodeContext
-): string {
-	if (!parameterMapping) {
-		return template;
-	}
-
-	let resolved = template;
-
-	// Replace each mapped variable
-	for (const [variableName, contextPath] of Object.entries(parameterMapping)) {
-		const value = resolveVariablePath(context, contextPath);
-		if (value !== undefined) {
-			// Use global regex to replace all occurrences
-			const regex = new RegExp(`\\{${variableName}\\}`, 'g');
-			resolved = resolved.replace(regex, encodeURIComponent(value));
-		}
-	}
-
-	// Also try to resolve any unmapped variables directly from context
-	const remainingVariables = resolved.match(/\{([^}]+)\}/g);
-	if (remainingVariables) {
-		for (const variable of remainingVariables) {
-			const variableName = variable.slice(1, -1); // Remove { and }
-			const value = resolveVariablePath(context, variableName);
-			if (value !== undefined) {
-				resolved = resolved.replace(variable, encodeURIComponent(value));
-			}
-		}
-	}
-
-	return resolved;
-}
 
 /**
  * Generates a cache key for a schema based on the node context and endpoint configuration.
@@ -212,14 +104,7 @@ export async function fetchDynamicSchema(
 	workflowId?: string
 ): Promise<DynamicSchemaResult> {
 	// Build the context from the node
-	const context: NodeContext = {
-		id: node.id,
-		type: node.type,
-		metadata: node.data.metadata,
-		config: node.data.config,
-		extensions: node.data.extensions,
-		workflowId
-	};
+	const context = buildNodeContext(node, workflowId);
 
 	// Generate cache key
 	const cacheKey = generateCacheKey(endpoint, context);
@@ -394,14 +279,7 @@ export function resolveExternalEditUrl(
 	callbackUrl?: string
 ): string {
 	// Build the context from the node
-	const context: NodeContext = {
-		id: node.id,
-		type: node.type,
-		metadata: node.data.metadata,
-		config: node.data.config,
-		extensions: node.data.extensions,
-		workflowId
-	};
+	const context = buildNodeContext(node, workflowId);
 
 	// Resolve the URL with template variables
 	let url = resolveTemplate(link.url, link.parameterMapping, context);
@@ -489,14 +367,7 @@ export function clearSchemaCache(pattern?: string): void {
  * @param endpoint - The dynamic schema endpoint configuration
  */
 export function invalidateSchemaCache(node: WorkflowNode, endpoint: DynamicSchemaEndpoint): void {
-	const context: NodeContext = {
-		id: node.id,
-		type: node.type,
-		metadata: node.data.metadata,
-		config: node.data.config,
-		extensions: node.data.extensions
-	};
-
+	const context = buildNodeContext(node);
 	const cacheKey = generateCacheKey(endpoint, context);
 	schemaCache.delete(cacheKey);
 }
