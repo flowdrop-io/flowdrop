@@ -70,7 +70,7 @@
                       name: OpenAI Chat
                       description: Chat completion using OpenAI's GPT models
                       category: ai
-                      version: 1.0.0
+                      version: "1.0.0"
                       icon: mdi:chat
                       color: '#10a37f'
                       type: default
