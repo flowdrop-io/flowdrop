@@ -1,0 +1,262 @@
+# Interrupt Endpoints
+# Human-in-the-Loop (HITL) interrupt handling
+
+/interrupts/{interruptId}:
+  get:
+    operationId: getInterrupt
+    summary: Get interrupt details
+    description: |
+      Retrieve details about a specific interrupt request.
+      Interrupts are created when a workflow execution requires human input.
+    tags:
+      - Interrupts
+    parameters:
+      - name: interruptId
+        in: path
+        description: Interrupt UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Interrupt details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/interrupt.yaml#/InterruptResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  post:
+    operationId: resolveInterrupt
+    summary: Resolve interrupt
+    description: |
+      Submit user response to resolve a pending interrupt.
+      The value type depends on the interrupt type:
+      - confirmation: boolean (true = confirmed)
+      - choice: string or string[] (selected values)
+      - text: string (user input)
+      - form: object (form data matching schema)
+    tags:
+      - Interrupts
+    parameters:
+      - name: interruptId
+        in: path
+        description: Interrupt UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/interrupt.yaml#/InterruptResolveRequest'
+          examples:
+            confirmation:
+              summary: Confirmation response
+              value:
+                value: true
+            choice:
+              summary: Choice selection
+              value:
+                value: 'option1'
+            multipleChoice:
+              summary: Multiple choice selection
+              value:
+                value: ['option1', 'option3']
+            text:
+              summary: Text input
+              value:
+                value: 'User provided text response'
+            form:
+              summary: Form data
+              value:
+                value:
+                  name: 'John Doe'
+                  email: 'john@example.com'
+                  priority: 'high'
+    responses:
+      '200':
+        description: Interrupt resolved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/interrupt.yaml#/InterruptResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: Interrupt already resolved or cancelled
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/interrupts/{interruptId}/cancel:
+  post:
+    operationId: cancelInterrupt
+    summary: Cancel interrupt
+    description: |
+      Cancel a pending interrupt without providing a response.
+      This may not be allowed for all interrupts - check the allowCancel
+      property in the interrupt data before attempting to cancel.
+    tags:
+      - Interrupts
+    parameters:
+      - name: interruptId
+        in: path
+        description: Interrupt UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Interrupt cancelled successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Interrupt cancelled
+      '400':
+        description: Interrupt cannot be cancelled
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: Interrupt already resolved or cancelled
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/playground/sessions/{sessionId}/interrupts:
+  get:
+    operationId: listSessionInterrupts
+    summary: List session interrupts
+    description: |
+      List all interrupts associated with a playground session.
+      Useful for displaying pending interrupts or reviewing interrupt history.
+    tags:
+      - Interrupts
+    parameters:
+      - name: sessionId
+        in: path
+        description: Playground session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        description: Filter by interrupt status
+        required: false
+        schema:
+          type: string
+          enum:
+            - pending
+            - resolved
+            - cancelled
+      - name: limit
+        in: query
+        description: Maximum number of interrupts to return
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        description: Number of interrupts to skip
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+    responses:
+      '200':
+        description: List of interrupts retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/interrupt.yaml#/InterruptListResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/pipelines/{pipelineId}/interrupts:
+  get:
+    operationId: listPipelineInterrupts
+    summary: List pipeline interrupts
+    description: |
+      List all interrupts associated with a pipeline execution.
+      Useful for monitoring workflow progress and pending user actions.
+    tags:
+      - Interrupts
+    parameters:
+      - name: pipelineId
+        in: path
+        description: Pipeline UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        description: Filter by interrupt status
+        required: false
+        schema:
+          type: string
+          enum:
+            - pending
+            - resolved
+            - cancelled
+      - name: limit
+        in: query
+        description: Maximum number of interrupts to return
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        description: Number of interrupts to skip
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+    responses:
+      '200':
+        description: List of interrupts retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/interrupt.yaml#/InterruptListResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

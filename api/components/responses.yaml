@@ -1,0 +1,64 @@
+# Common API Responses
+# Reusable response definitions for error handling
+
+BadRequest:
+  description: Bad request - invalid parameters or request body
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.yaml#/ErrorResponse'
+      example:
+        success: false
+        error: Invalid request parameters
+        code: VALIDATION_ERROR
+        details:
+          field: name
+          message: Name is required
+
+Unauthorized:
+  description: Unauthorized - authentication required
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.yaml#/ErrorResponse'
+      example:
+        success: false
+        error: Authentication required
+        code: UNAUTHORIZED
+
+NotFound:
+  description: Resource not found
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.yaml#/ErrorResponse'
+      example:
+        success: false
+        error: Resource not found
+        code: NOT_FOUND
+
+ValidationError:
+  description: Validation error - request data failed validation
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.yaml#/ErrorResponse'
+      example:
+        success: false
+        error: Validation failed
+        code: VALIDATION_ERROR
+        details:
+          errors:
+            - "Node 'node-1' has invalid configuration"
+            - "Edge 'edge-1' connects to non-existent node"
+
+InternalServerError:
+  description: Internal server error
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.yaml#/ErrorResponse'
+      example:
+        success: false
+        error: Internal server error
+        code: INTERNAL_ERROR

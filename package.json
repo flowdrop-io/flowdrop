@@ -27,7 +27,10 @@
 		"test:all": "npm run test && npm run test:e2e",
 		"format": "prettier --write .",
 		"storybook": "storybook dev -p 6006",
-		"build-storybook": "storybook build"
+		"build-storybook": "storybook build",
+		"api:lint": "redocly lint api/openapi.yaml --config api/redocly.yaml",
+		"api:bundle": "redocly bundle api/openapi.yaml -o api/bundled.yaml --config api/redocly.yaml",
+		"api:preview": "redocly preview-docs api/openapi.yaml --config api/redocly.yaml"
 	},
 	"watch": {
 		"build": {
@@ -146,6 +149,7 @@
 		"@eslint/js": "^9.18.0",
 		"@iconify/svelte": "^5.0.0",
 		"@playwright/test": "^1.49.1",
+		"@redocly/cli": "^2.14.9",
 		"@storybook/addon-docs": "^9.0.15",
 		"@storybook/addon-svelte-csf": "^5.0.4",
 		"@storybook/addon-vitest": "^9.0.15",

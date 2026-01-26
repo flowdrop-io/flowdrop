@@ -1,0 +1,54 @@
+# Redocly Configuration
+# OpenAPI linting, validation, and bundling settings
+
+# Extend the recommended ruleset
+extends:
+  - recommended
+
+# API definitions
+apis:
+  main:
+    root: ./openapi.yaml
+
+# Linting rules
+rules:
+  # Operation IDs are recommended but not required (original spec didn't have them)
+  operation-operationId: warn
+
+  # Require tags on all operations
+  operation-tag-defined: warn
+
+  # Require descriptions on tags
+  tag-description: warn
+
+  # Warn about unused components
+  no-unused-components: warn
+
+  # Require descriptions on parameters
+  parameter-description: off
+
+  # Allow localhost in servers for development
+  no-server-example.com: off
+
+  # Path parameters must be defined
+  path-parameters-defined: error
+
+  # Unique operation IDs
+  operation-operationId-unique: error
+
+  # No invalid media type examples - warn only
+  no-invalid-media-type-examples: warn
+  no-invalid-schema-examples: warn
+
+  # Security schemes must be defined
+  security-defined: error
+
+  # Paths should not have trailing slashes
+  no-path-trailing-slash: error
+
+  # Info section requirements
+  info-contact: warn
+  info-license: off
+
+  # 4xx response warnings off for health endpoints
+  operation-4xx-response: warn

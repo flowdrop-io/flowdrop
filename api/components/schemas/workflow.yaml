@@ -1,0 +1,277 @@
+# Workflow Schemas
+# Workflow, nodes, edges, and related types
+
+WorkflowNode:
+  type: object
+  description: |
+    Represents a node instance in a workflow.
+
+    Each node instance contains:
+    - Position on the canvas
+    - Display data (label)
+    - Configuration values (config) - user-defined settings
+    - Metadata from the node type definition
+    - Optional execution state and extensions
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Node instance UUID
+    type:
+      type: string
+      description: Node type ID (references NodeMetadata.id)
+      example: calculator
+    position:
+      $ref: './common.yaml#/Position'
+    deletable:
+      type: boolean
+      default: true
+    data:
+      type: object
+      properties:
+        label:
+          type: string
+          description: Node instance label
+          example: Math Calculator
+        config:
+          $ref: './node.yaml#/NodeConfig'
+        metadata:
+          $ref: './node.yaml#/NodeMetadata'
+        isProcessing:
+          type: boolean
+          description: Whether the node is currently processing
+        error:
+          type: string
+          description: Error message if node execution failed
+        nodeId:
+          type: string
+          description: Alternative node ID
+        executionInfo:
+          $ref: './node.yaml#/NodeExecutionInfo'
+        extensions:
+          $ref: './node.yaml#/NodeExtensions'
+          description: |
+            Per-instance extension properties for 3rd party integrations.
+            Overrides or extends the node type extensions defined in metadata.extensions.
+            Use for instance-specific UI states or custom data.
+
+            Common use cases:
+            - `extensions.ui.hideUnconnectedHandles`: Hide ports without connections
+            - `extensions.ui.style`: Custom styling for this node instance
+      required:
+        - label
+        - config
+        - metadata
+  required:
+    - id
+    - type
+    - position
+    - data
+
+WorkflowEdge:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Edge UUID
+    source:
+      type: string
+      format: uuid
+      description: Source node UUID
+    target:
+      type: string
+      format: uuid
+      description: Target node UUID
+    sourceHandle:
+      type: string
+      description: Source port ID
+    targetHandle:
+      type: string
+      description: Target port ID
+    type:
+      type: string
+      description: Connection line type
+      enum:
+        - default
+        - straight
+        - step
+        - smoothstep
+    selectable:
+      type: boolean
+      default: true
+    deletable:
+      type: boolean
+      default: true
+    data:
+      type: object
+      properties:
+        label:
+          type: string
+          description: Edge label
+        condition:
+          type: string
+          description: Conditional expression for conditional edges
+        metadata:
+          type: object
+          description: Edge metadata for API and persistence
+          properties:
+            edgeType:
+              type: string
+              enum:
+                - trigger
+                - tool
+                - data
+              description: Edge type for visual styling
+            sourcePortDataType:
+              type: string
+              description: Data type of the source output port (e.g., tool, string, number)
+        isToolConnection:
+          type: boolean
+          description: Whether this is a tool connection (deprecated, use metadata.edgeType instead)
+        targetNodeType:
+          type: string
+          description: Target node type
+        targetCategory:
+          type: string
+          description: Target node category
+  required:
+    - id
+    - source
+    - target
+
+WorkflowMetadata:
+  type: object
+  properties:
+    version:
+      type: string
+      description: Workflow version
+      example: 1.0.0
+    createdAt:
+      type: string
+      format: date-time
+      description: Creation timestamp
+    updatedAt:
+      type: string
+      format: date-time
+      description: Last update timestamp
+    author:
+      type: string
+      description: Workflow author
+      example: admin
+    tags:
+      type: array
+      items:
+        type: string
+      description: Workflow tags
+      example:
+        - ai
+        - production
+    versionId:
+      type: string
+      description: Version control ID
+    updateNumber:
+      type: integer
+      description: Update sequence number
+  required:
+    - version
+    - createdAt
+    - updatedAt
+
+Workflow:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Workflow UUID
+    name:
+      type: string
+      description: Workflow name
+      example: My AI Workflow
+      maxLength: 200
+    description:
+      type: string
+      description: Workflow description
+      maxLength: 1000
+    nodes:
+      type: array
+      items:
+        $ref: '#/WorkflowNode'
+      description: Workflow nodes
+    edges:
+      type: array
+      items:
+        $ref: '#/WorkflowEdge'
+      description: Workflow edges
+    metadata:
+      $ref: '#/WorkflowMetadata'
+  required:
+    - id
+    - name
+    - nodes
+    - edges
+    - metadata
+
+CreateWorkflowRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      description: Workflow name
+      minLength: 1
+      maxLength: 200
+      example: My First Workflow
+    description:
+      type: string
+      description: Workflow description
+      maxLength: 1000
+    nodes:
+      type: array
+      items:
+        $ref: '#/WorkflowNode'
+    edges:
+      type: array
+      items:
+        $ref: '#/WorkflowEdge'
+    tags:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      maxItems: 20
+  required:
+    - name
+
+UpdateWorkflowRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      description: Workflow name
+      minLength: 1
+      maxLength: 200
+    description:
+      type: string
+      description: Workflow description
+      maxLength: 1000
+    nodes:
+      type: array
+      items:
+        $ref: '#/WorkflowNode'
+    edges:
+      type: array
+      items:
+        $ref: '#/WorkflowEdge'
+    metadata:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 20
+        author:
+          type: string
+          maxLength: 100

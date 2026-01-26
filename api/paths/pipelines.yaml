@@ -1,0 +1,286 @@
+# Pipeline Endpoints
+# Pipeline execution and monitoring
+
+/workflow/{workflow_id}/pipelines:
+  get:
+    operationId: listWorkflowPipelines
+    summary: List workflow pipelines
+    description: Get all pipeline executions for a specific workflow
+    tags:
+      - Pipeline
+    parameters:
+      - name: workflow_id
+        in: path
+        description: Workflow ID or machine name
+        required: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Filter by pipeline status
+        required: false
+        schema:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+            - cancelled
+    responses:
+      '200':
+        description: List of pipeline executions
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/pipeline.yaml#/PipelineListResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/pipeline/{id}:
+  get:
+    operationId: getPipeline
+    summary: Get pipeline execution details
+    description: |
+      Retrieve detailed information about a pipeline execution including:
+      - Overall pipeline status
+      - Individual job statuses for each node
+      - Node execution information (execution count, duration, errors)
+      - Job status summary
+    tags:
+      - Pipeline
+    parameters:
+      - name: id
+        in: path
+        description: Pipeline UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Pipeline details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/pipeline.yaml#/PipelineDetailResponse'
+            example:
+              status: running
+              jobs:
+                - id: job-1
+                  node_id: node-1
+                  status: completed
+                  execution_count: 5
+                  started: '2024-01-20T10:00:00Z'
+                  completed: '2024-01-20T10:00:05Z'
+                  execution_time: 5000
+                - id: job-2
+                  node_id: node-2
+                  status: running
+                  execution_count: 3
+                  started: '2024-01-20T10:00:05Z'
+              node_statuses:
+                node-1:
+                  status: completed
+                  last_executed: '2024-01-20T10:00:05Z'
+                  execution_time: 5000
+                node-2:
+                  status: running
+                  last_executed: '2024-01-20T10:00:05Z'
+              job_status_summary:
+                total: 5
+                pending: 0
+                running: 1
+                completed: 3
+                failed: 1
+                cancelled: 0
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/pipeline/{id}/status:
+  get:
+    operationId: getPipelineStatus
+    summary: Get pipeline status
+    description: |
+      Retrieve only the current status of a pipeline (lightweight endpoint).
+      Use this for polling when you only need the status, not full details.
+    tags:
+      - Pipeline
+    parameters:
+      - name: id
+        in: path
+        description: Pipeline UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Pipeline status retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        status:
+                          type: string
+                          enum:
+                            - pending
+                            - running
+                            - completed
+                            - failed
+                            - cancelled
+                        progress:
+                          type: number
+                          minimum: 0
+                          maximum: 100
+                          description: Completion percentage (0-100)
+                        updated:
+                          type: string
+                          format: date-time
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/pipeline/{id}/execute:
+  post:
+    operationId: executePipeline
+    summary: Execute pipeline
+    description: Start execution of a pipeline
+    tags:
+      - Pipeline
+    parameters:
+      - name: id
+        in: path
+        description: Pipeline UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              inputs:
+                type: object
+                description: Input values for specific nodes
+                additionalProperties: true
+              options:
+                type: object
+                properties:
+                  timeout:
+                    type: integer
+                    description: Execution timeout in seconds
+                  maxSteps:
+                    type: integer
+                    description: Maximum number of execution steps
+    responses:
+      '202':
+        description: Pipeline execution started
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/pipeline.yaml#/PipelineExecutionResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/pipeline/{id}/stop:
+  post:
+    operationId: stopPipeline
+    summary: Stop pipeline execution
+    description: Cancel a running pipeline execution
+    tags:
+      - Pipeline
+    parameters:
+      - name: id
+        in: path
+        description: Pipeline UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Pipeline stopped successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: Pipeline cannot be stopped
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/pipeline/{id}/logs:
+  get:
+    operationId: getPipelineLogs
+    summary: Get pipeline execution logs
+    description: Retrieve detailed execution logs for a pipeline
+    tags:
+      - Pipeline
+    parameters:
+      - name: id
+        in: path
+        description: Pipeline UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: level
+        in: query
+        description: Filter by log level
+        required: false
+        schema:
+          type: string
+          enum:
+            - debug
+            - info
+            - warning
+            - error
+    responses:
+      '200':
+        description: Pipeline logs retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    $ref: '../components/schemas/pipeline.yaml#/LogEntry'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

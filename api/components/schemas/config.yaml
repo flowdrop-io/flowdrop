@@ -1,0 +1,171 @@
+# Configuration Schemas
+# Port configuration and config schema types
+
+PortDataTypeConfig:
+  type: object
+  properties:
+    id:
+      type: string
+      description: Unique identifier for the data type
+      example: string
+    name:
+      type: string
+      description: Display name for the data type
+      example: String
+    description:
+      type: string
+      description: Description of the data type
+      example: Text data type
+    color:
+      type: string
+      description: Color for the data type (CSS color value)
+      example: '#3b82f6'
+    category:
+      type: string
+      description: Category grouping for the data type
+      example: primitive
+    aliases:
+      type: array
+      items:
+        type: string
+      description: Alternative names for this data type
+      example:
+        - text
+        - str
+    enabled:
+      type: boolean
+      default: true
+      description: Whether this data type is enabled
+  required:
+    - id
+    - name
+    - color
+
+PortCompatibilityRule:
+  type: object
+  properties:
+    from:
+      type: string
+      description: Source data type ID (what you're connecting FROM)
+      example: string
+    to:
+      type: string
+      description: Target data type ID (what you're connecting TO)
+      example: mixed
+    description:
+      type: string
+      description: Optional description of why this connection is allowed
+      example: Strings can connect to mixed ports
+  required:
+    - from
+    - to
+
+PortConfig:
+  type: object
+  properties:
+    version:
+      type: string
+      description: Version of the port configuration
+      example: 1.0.0
+    defaultDataType:
+      type: string
+      description: Default data type to use when none specified
+      example: mixed
+    dataTypes:
+      type: array
+      items:
+        $ref: '#/PortDataTypeConfig'
+      description: Available data types
+    compatibilityRules:
+      type: array
+      items:
+        $ref: '#/PortCompatibilityRule'
+      description: Compatibility rules between data types
+  required:
+    - dataTypes
+    - defaultDataType
+
+ConfigProperty:
+  type: object
+  properties:
+    type:
+      type: string
+      enum:
+        - string
+        - number
+        - boolean
+        - array
+        - object
+        - integer
+    title:
+      type: string
+      description: Display title for the property
+    description:
+      type: string
+      description: Property description
+    default:
+      description: Default value for the property
+    enum:
+      type: array
+      items: {}
+      description: Allowed values for enum properties
+    multiple:
+      type: boolean
+      description: For enum fields, allows multiple selection
+    minimum:
+      type: number
+      description: Minimum value for numeric properties
+    maximum:
+      type: number
+      description: Maximum value for numeric properties
+    minLength:
+      type: integer
+      description: Minimum length for string properties
+    maxLength:
+      type: integer
+      description: Maximum length for string properties
+    pattern:
+      type: string
+      description: Regex pattern for string validation
+    format:
+      type: string
+      description: Special formats (multiline for textarea, hidden to hide field)
+      enum:
+        - multiline
+        - hidden
+        - email
+        - uri
+        - date
+        - date-time
+    items:
+      $ref: '#/ConfigProperty'
+    properties:
+      type: object
+      additionalProperties:
+        $ref: '#/ConfigProperty'
+  required:
+    - type
+
+ConfigSchema:
+  type: object
+  properties:
+    type:
+      type: string
+      enum:
+        - object
+    properties:
+      type: object
+      additionalProperties:
+        $ref: '#/ConfigProperty'
+      description: Configuration properties
+    required:
+      type: array
+      items:
+        type: string
+      description: Required property names
+    additionalProperties:
+      type: boolean
+      default: false
+  required:
+    - type
+    - properties
