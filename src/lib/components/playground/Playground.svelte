@@ -79,6 +79,9 @@
 	/** Track the session ID that was loaded to detect prop changes */
 	let loadedInitialSessionId = $state<string | undefined>(undefined);
 
+	/** Track if auto-run has already been triggered to prevent duplicate executions */
+	let autoRunTriggered = $state(false);
+
 	/**
 	 * Initialize the playground on mount
 	 */
@@ -102,6 +105,14 @@
 				// Resume initial session if provided
 				if (initialSessionId) {
 					await loadInitialSession(initialSessionId);
+				}
+
+				// Handle auto-run after initialization is complete
+				if (config.autoRun && !autoRunTriggered) {
+					autoRunTriggered = true;
+					const predefinedMessage = config.predefinedMessage ?? 'Run workflow';
+					console.log('[Playground] Auto-run triggered with message:', predefinedMessage);
+					await handleSendMessage(predefinedMessage);
 				}
 			} catch (err) {
 				console.error('[Playground] Initialization error:', err);
@@ -138,6 +149,7 @@
 			void loadInitialSession(initialSessionId);
 		}
 	});
+
 
 	/**
 	 * Load the initial session with validation and error handling
@@ -624,15 +636,18 @@
 						<span>Loading...</span>
 					</div>
 				{:else}
-					<ChatPanel
-						showTimestamps={config.showTimestamps ?? true}
-						autoScroll={config.autoScroll ?? true}
-						showLogsInline={config.logDisplayMode === 'inline'}
-						enableMarkdown={config.enableMarkdown ?? true}
-						onSendMessage={handleSendMessage}
-						onStopExecution={handleStopExecution}
-						onInterruptResolved={handleInterruptResolved}
-					/>
+				<ChatPanel
+					showTimestamps={config.showTimestamps ?? true}
+					autoScroll={config.autoScroll ?? true}
+					showLogsInline={config.logDisplayMode === 'inline'}
+					enableMarkdown={config.enableMarkdown ?? true}
+					showChatInput={config.showChatInput ?? true}
+					showRunButton={config.showRunButton ?? true}
+					predefinedMessage={config.predefinedMessage ?? 'Run workflow'}
+					onSendMessage={handleSendMessage}
+					onStopExecution={handleStopExecution}
+					onInterruptResolved={handleInterruptResolved}
+				/>
 				{/if}
 			</div>
 		</main>

@@ -206,6 +206,60 @@ export interface PlaygroundConfig {
 	logDisplayMode?: 'inline' | 'collapsible';
 	/** Enable markdown rendering in messages (default: true) */
 	enableMarkdown?: boolean;
+	/**
+	 * Whether to show the chat text input (default: true)
+	 * When false, only the "Run" button is displayed for workflow execution.
+	 */
+	showChatInput?: boolean;
+	/**
+	 * Whether to show the "Run" button (default: true)
+	 * When false, the Run button is hidden. If both showChatInput and showRunButton
+	 * are false, a helpful message is displayed to the user.
+	 */
+	showRunButton?: boolean;
+	/**
+	 * Predefined message to send when "Run" button is clicked (default: "Run workflow")
+	 * Used when showChatInput is false to provide a default message for workflow execution.
+	 */
+	predefinedMessage?: string;
+	/**
+	 * Automatically run the workflow once when the playground loads (default: false)
+	 * When true, the workflow will execute immediately using the predefinedMessage.
+	 * This is useful for scenarios where the workflow should start without user interaction.
+	 * Note: Only runs once per session - subsequent runs require clicking the Run button.
+	 */
+	autoRun?: boolean;
+}
+
+/**
+ * Metadata field to control Run button state from backend.
+ * When a message contains this field set to true, the Run button becomes enabled.
+ *
+ * @example
+ * ```typescript
+ * // Backend sends a message with this metadata to re-enable Run button:
+ * const message: PlaygroundMessage = {
+ *   id: "msg-123",
+ *   sessionId: "sess-456",
+ *   role: "system",
+ *   content: "Workflow completed. Ready for next run.",
+ *   timestamp: new Date().toISOString(),
+ *   metadata: {
+ *     enableRun: true
+ *   }
+ * };
+ * ```
+ */
+export const ENABLE_RUN_METADATA_KEY = 'enableRun';
+
+/**
+ * Check if a message metadata contains the enableRun flag
+ *
+ * @param metadata - The message metadata to check
+ * @returns True if the metadata signals to enable the Run button
+ */
+export function hasEnableRunFlag(metadata: PlaygroundMessageMetadata | undefined): boolean {
+	return metadata?.[ENABLE_RUN_METADATA_KEY] === true;
 }
 
 /**

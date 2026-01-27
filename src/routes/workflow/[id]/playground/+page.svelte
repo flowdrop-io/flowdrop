@@ -14,6 +14,7 @@
 	import { createEndpointConfig, type EndpointConfig } from '$lib/config/endpoints.js';
 	import { setEndpointConfig } from '$lib/services/api.js';
 	import type { Workflow } from '$lib/types/index.js';
+	import type { PlaygroundConfig } from '$lib/types/playground.js';
 
 	let { data } = $props();
 
@@ -31,6 +32,37 @@
 
 	/** Session ID from URL query params (captured once at init) */
 	const sessionId: string | undefined = pageData.url.searchParams.get('session') ?? undefined;
+
+	/**
+	 * Parse boolean query parameter
+	 * Returns undefined if not present, allowing defaults to apply
+	 */
+	function parseBoolParam(value: string | null): boolean | undefined {
+		if (value === null) return undefined;
+		return value === 'true' || value === '1';
+	}
+
+	/**
+	 * Playground configuration from URL query params (for testing)
+	 * 
+	 * Supported params:
+	 * - showChatInput: "true" | "false" - Show/hide chat text input
+	 * - showRunButton: "true" | "false" - Show/hide Run button
+	 * - predefinedMessage: string - Message sent when Run is clicked
+	 * - autoRun: "true" | "false" - Auto-execute workflow on load
+	 * 
+	 * Example URLs:
+	 * - /workflow/demo/playground?showChatInput=false (Run button only)
+	 * - /workflow/demo/playground?showChatInput=false&showRunButton=false (View-only)
+	 * - /workflow/demo/playground?showChatInput=false&predefinedMessage=Execute%20pipeline
+	 * - /workflow/demo/playground?showChatInput=false&autoRun=true (Auto-execute on load)
+	 */
+	const playgroundConfig: PlaygroundConfig = {
+		showChatInput: parseBoolParam(pageData.url.searchParams.get('showChatInput')),
+		showRunButton: parseBoolParam(pageData.url.searchParams.get('showRunButton')),
+		predefinedMessage: pageData.url.searchParams.get('predefinedMessage') ?? undefined,
+		autoRun: parseBoolParam(pageData.url.searchParams.get('autoRun'))
+	};
 
 	/** Workflow data */
 	let workflow = $state<Workflow | null>(null);
@@ -146,6 +178,7 @@
 				{endpointConfig}
 				mode="standalone"
 				initialSessionId={sessionId}
+				config={playgroundConfig}
 			/>
 		{:else}
 			<div class="playground-page__empty">

@@ -12,6 +12,7 @@
 	import MessageBubble from './MessageBubble.svelte';
 	import { InterruptBubble } from '../interrupt/index.js';
 	import type { PlaygroundMessage } from '../../types/playground.js';
+	import { hasEnableRunFlag } from '../../types/playground.js';
 	import {
 		isInterruptMetadata,
 		extractInterruptMetadata,
@@ -50,6 +51,21 @@
 		enableMarkdown?: boolean;
 		/** Callback when an interrupt is resolved (to refresh messages) */
 		onInterruptResolved?: () => void;
+		/**
+		 * Whether to show the chat text input (default: true)
+		 * When false, only the "Run" button is displayed.
+		 */
+		showChatInput?: boolean;
+		/**
+		 * Whether to show the "Run" button (default: true)
+		 * When false, the Run button is hidden.
+		 */
+		showRunButton?: boolean;
+		/**
+		 * Predefined message to send when "Run" button is clicked
+		 * Used when showChatInput is false.
+		 */
+		predefinedMessage?: string;
 	}
 
 	let {
@@ -60,8 +76,24 @@
 		onStopExecution,
 		showLogsInline = false,
 		enableMarkdown = true,
-		onInterruptResolved
+		onInterruptResolved,
+		showChatInput = true,
+		showRunButton = true,
+		predefinedMessage = 'Run workflow'
 	}: Props = $props();
+
+	/**
+	 * Tracks whether the Run button is enabled.
+	 * Starts as true, becomes false after Run is clicked,
+	 * and is re-enabled when backend sends a message with enableRun: true metadata.
+	 */
+	let runEnabled = $state(true);
+
+	/**
+	 * Computed flag: true if both chat input and run button are hidden.
+	 * In this case, we show a helpful message to the user.
+	 */
+	const noInputsAvailable = $derived(!showChatInput && !showRunButton);
 
 	/** Input field value */
 	let inputValue = $state('');
@@ -193,6 +225,61 @@
 	}
 
 	/**
+	 * Handle "Run" button click when chat input is hidden.
+	 * Sends the predefined message to execute the workflow.
+	 * Disables the Run button after clicking until backend re-enables it.
+	 */
+	function handleRun(): void {
+		if ($isExecuting || !runEnabled) {
+			return;
+		}
+		// Disable the Run button after clicking
+		runEnabled = false;
+		onSendMessage?.(predefinedMessage);
+	}
+
+	/**
+	 * Track processed message IDs for enableRun detection
+	 * to avoid re-processing the same messages.
+	 */
+	let processedEnableRunIds = $state(new Set<string>());
+
+	/**
+	 * Watch for messages with enableRun: true metadata from the backend.
+	 * When detected, re-enable the Run button.
+	 */
+	$effect(() => {
+		// Check all messages for enableRun flag
+		for (const message of displayMessages) {
+			// Skip if already processed
+			if (processedEnableRunIds.has(message.id)) {
+				continue;
+			}
+			// Check if this message has the enableRun flag
+			if (hasEnableRunFlag(message.metadata)) {
+				// Mark as processed
+				processedEnableRunIds = new Set([...processedEnableRunIds, message.id]);
+				// Re-enable the Run button
+				runEnabled = true;
+			}
+		}
+	});
+
+	/**
+	 * Reset runEnabled state when session changes.
+	 * This ensures a fresh state for each session.
+	 */
+	$effect(() => {
+		const session = $currentSession;
+		if (session) {
+			// Reset to enabled state for new/changed sessions
+			runEnabled = true;
+			// Clear processed IDs for the new session
+			processedEnableRunIds = new Set();
+		}
+	});
+
+	/**
 	 * Auto-scroll to bottom when messages change
 	 */
 	$effect(() => {
@@ -293,8 +380,16 @@
 						<path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
 					</svg>
 				</div>
-				<h2 class="chat-panel__welcome-title">New chat</h2>
-				<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
+				{#if noInputsAvailable}
+					<h2 class="chat-panel__welcome-title">View only</h2>
+					<p class="chat-panel__welcome-text">This playground is in view-only mode. No inputs are available.</p>
+				{:else if showChatInput}
+					<h2 class="chat-panel__welcome-title">New chat</h2>
+					<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
+				{:else}
+					<h2 class="chat-panel__welcome-title">Ready to run</h2>
+					<p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
+				{/if}
 			</div>
 		{:else if showEmptyChat}
 			<!-- Empty Chat State (session exists but no messages) -->
@@ -324,8 +419,16 @@
 						<path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
 					</svg>
 				</div>
-				<h2 class="chat-panel__welcome-title">New chat</h2>
-				<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
+				{#if noInputsAvailable}
+					<h2 class="chat-panel__welcome-title">View only</h2>
+					<p class="chat-panel__welcome-text">This playground is in view-only mode. No inputs are available.</p>
+				{:else if showChatInput}
+					<h2 class="chat-panel__welcome-title">New chat</h2>
+					<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
+				{:else}
+					<h2 class="chat-panel__welcome-title">Ready to run</h2>
+					<p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
+				{/if}
 			</div>
 		{:else}
 			<!-- Messages -->
@@ -365,42 +468,63 @@
 
 	<!-- Input Area -->
 	<div class="chat-panel__input-area">
-		<div class="chat-panel__input-container">
-			<div class="chat-panel__input-wrapper">
-				<textarea
-					bind:this={inputField}
-					bind:value={inputValue}
-					class="chat-panel__input"
-					{placeholder}
-					rows="1"
-					disabled={$isExecuting}
-					onkeydown={handleKeydown}
-					oninput={handleInput}
-				></textarea>
+		{#if noInputsAvailable}
+			<!-- No inputs available - show informational message -->
+			<div class="chat-panel__no-inputs">
+				<Icon icon="mdi:information-outline" />
+				<span>View-only mode. Workflow execution is controlled externally.</span>
 			</div>
+		{:else}
+			<div class="chat-panel__input-container" class:chat-panel__input-container--run-only={!showChatInput}>
+				{#if showChatInput}
+					<div class="chat-panel__input-wrapper">
+						<textarea
+							bind:this={inputField}
+							bind:value={inputValue}
+							class="chat-panel__input"
+							{placeholder}
+							rows="1"
+							disabled={$isExecuting}
+							onkeydown={handleKeydown}
+							oninput={handleInput}
+						></textarea>
+					</div>
+				{/if}
 
-			{#if $sessionStatus === 'running' || $isExecuting}
-				<button
-					type="button"
-					class="chat-panel__stop-btn"
-					onclick={handleStop}
-					title="Stop execution"
-				>
-					<Icon icon="mdi:stop" />
-					Stop
-				</button>
-			{:else}
-				<button
-					type="button"
-					class="chat-panel__send-btn"
-					onclick={handleSend}
-					disabled={!inputValue.trim()}
-					title="Send message"
-				>
-					Send
-				</button>
-			{/if}
-		</div>
+				{#if $sessionStatus === 'running' || $isExecuting}
+					<button
+						type="button"
+						class="chat-panel__stop-btn"
+						onclick={handleStop}
+						title="Stop execution"
+					>
+						<Icon icon="mdi:stop" />
+						Stop
+					</button>
+				{:else if showChatInput}
+					<button
+						type="button"
+						class="chat-panel__send-btn"
+						onclick={handleSend}
+						disabled={!inputValue.trim()}
+						title="Send message"
+					>
+						Send
+					</button>
+				{:else if showRunButton}
+					<button
+						type="button"
+						class="chat-panel__run-btn"
+						onclick={handleRun}
+						disabled={!runEnabled}
+						title={runEnabled ? 'Run workflow' : 'Waiting for workflow to be ready...'}
+					>
+						<Icon icon="mdi:play" />
+						Run
+					</button>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -616,6 +740,53 @@
 		background-color: #dc2626;
 	}
 
+	/* Run button (when chat input is hidden) */
+	.chat-panel__run-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.625rem 1.25rem;
+		border: none;
+		border-radius: 0.5rem;
+		background-color: #10b981;
+		color: #ffffff;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		flex-shrink: 0;
+	}
+
+	.chat-panel__run-btn:hover:not(:disabled) {
+		background-color: #059669;
+	}
+
+	.chat-panel__run-btn:disabled {
+		background-color: #e5e7eb;
+		color: #9ca3af;
+		cursor: not-allowed;
+	}
+
+	/* Container modifier for run-only mode (no text input) */
+	.chat-panel__input-container--run-only {
+		justify-content: flex-end;
+	}
+
+	/* No inputs available message (view-only mode) */
+	.chat-panel__no-inputs {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background-color: #f3f4f6;
+		border-radius: 0.5rem;
+		color: #6b7280;
+		font-size: 0.875rem;
+		max-width: 800px;
+		margin: 0 auto;
+	}
+
 	/* Responsive */
 	@media (max-width: 640px) {
 		.chat-panel__messages {
@@ -631,7 +802,8 @@
 		}
 
 		.chat-panel__send-btn,
-		.chat-panel__stop-btn {
+		.chat-panel__stop-btn,
+		.chat-panel__run-btn {
 			padding: 0.5rem 1rem;
 		}
 	}
