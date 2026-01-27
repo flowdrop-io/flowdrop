@@ -221,6 +221,16 @@
 
 	// Determine the actual resolved value to pass to prompt components
 	const displayResolvedValue = $derived(resolvedValue ?? currentInterrupt.responseValue);
+
+	/**
+	 * Extract the username of who resolved the interrupt from metadata.
+	 * This is provided by the backend when the interrupt is resolved.
+	 */
+	const resolvedByUserName = $derived(
+		typeof currentInterrupt.metadata?.resolvedByUserName === 'string'
+			? currentInterrupt.metadata.resolvedByUserName
+			: undefined
+	);
 </script>
 
 <div
@@ -287,6 +297,7 @@
 					resolvedValue={displayResolvedValue as boolean | undefined}
 					{isSubmitting}
 					{error}
+					{resolvedByUserName}
 					onConfirm={() => handleResolve(true)}
 					onDecline={() => handleResolve(false)}
 				/>
@@ -297,6 +308,7 @@
 					resolvedValue={displayResolvedValue as string | string[] | undefined}
 					{isSubmitting}
 					{error}
+					{resolvedByUserName}
 					onSubmit={(value) => handleResolve(value)}
 				/>
 			{:else if currentInterrupt.type === 'text'}
@@ -306,6 +318,7 @@
 					resolvedValue={displayResolvedValue as string | undefined}
 					{isSubmitting}
 					{error}
+					{resolvedByUserName}
 					onSubmit={(value) => handleResolve(value)}
 				/>
 			{:else if currentInterrupt.type === 'form'}
@@ -315,6 +328,7 @@
 					resolvedValue={displayResolvedValue as Record<string, unknown> | undefined}
 					{isSubmitting}
 					{error}
+					{resolvedByUserName}
 					onSubmit={(value) => handleResolve(value)}
 				/>
 			{/if}

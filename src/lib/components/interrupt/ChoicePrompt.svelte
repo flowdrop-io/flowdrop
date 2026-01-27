@@ -25,11 +25,14 @@
 		isSubmitting: boolean;
 		/** Error message if submission failed */
 		error?: string;
+		/** Username of the person who resolved the interrupt */
+		resolvedByUserName?: string;
 		/** Callback when user submits selection */
 		onSubmit: (value: string | string[]) => void;
 	}
 
-	let { config, isResolved, resolvedValue, isSubmitting, error, onSubmit }: Props = $props();
+	let { config, isResolved, resolvedValue, isSubmitting, error, resolvedByUserName, onSubmit }: Props =
+		$props();
 
 	/** Local state for selected values */
 	let selectedValues = $state<Set<string>>(new Set());
@@ -189,7 +192,9 @@
 	{#if isResolved}
 		<div class="choice-prompt__resolved-badge">
 			<Icon icon="mdi:check-circle" />
-			<span>Response submitted</span>
+			<span>
+				{resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+			</span>
 		</div>
 	{/if}
 </div>

@@ -307,6 +307,8 @@ export interface InterruptMessageMetadata {
 	multiple?: boolean;
 	min_selections?: number;
 	max_selections?: number;
+	/** Username of the person who resolved the interrupt */
+	resolvedByUserName?: string;
 }
 
 /**
@@ -356,7 +358,8 @@ export function extractInterruptMetadata(
 		max_length: metadata.max_length as number | undefined,
 		multiple: metadata.multiple as boolean | undefined,
 		min_selections: metadata.min_selections as number | undefined,
-		max_selections: metadata.max_selections as number | undefined
+		max_selections: metadata.max_selections as number | undefined,
+		resolvedByUserName: metadata.resolvedByUserName as string | undefined
 	};
 }
 
