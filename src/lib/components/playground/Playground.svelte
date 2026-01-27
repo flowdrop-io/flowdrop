@@ -73,8 +73,14 @@
 	/** Track session pending delete */
 	let pendingDeleteId = $state<string | null>(null);
 
+	/** Track if initial session has been loaded to prevent duplicate loads */
+	let initialSessionLoaded = $state(false);
+
+	/** Track the session ID that was loaded to detect prop changes */
+	let loadedInitialSessionId = $state<string | undefined>(undefined);
+
 	/**
-	 * Initialize the playground
+	 * Initialize the playground on mount
 	 */
 	onMount(() => {
 		// Set endpoint config if provided
@@ -95,7 +101,7 @@
 
 				// Resume initial session if provided
 				if (initialSessionId) {
-					await loadSession(initialSessionId);
+					await loadInitialSession(initialSessionId);
 				}
 			} catch (err) {
 				console.error('[Playground] Initialization error:', err);
@@ -105,6 +111,66 @@
 		// Execute initialization
 		void initializePlayground();
 	});
+
+	/**
+	 * Handle reactive changes to initialSessionId prop
+	 * This allows the initial session to be set after mount
+	 */
+	$effect(() => {
+		// Skip if no initialSessionId provided
+		if (!initialSessionId) {
+			return;
+		}
+
+		// Skip if this session was already loaded
+		if (initialSessionLoaded && loadedInitialSessionId === initialSessionId) {
+			return;
+		}
+
+		// Skip if sessions haven't been loaded yet (will be handled by onMount)
+		const sessionList = get(sessions);
+		if (sessionList.length === 0 && get(isLoading)) {
+			return;
+		}
+
+		// Load the initial session if sessions are available
+		if (sessionList.length > 0 && !initialSessionLoaded) {
+			void loadInitialSession(initialSessionId);
+		}
+	});
+
+	/**
+	 * Load the initial session with validation and error handling
+	 *
+	 * @param sessionId - The session ID to load
+	 */
+	async function loadInitialSession(sessionId: string): Promise<void> {
+		// Validate session exists in loaded sessions
+		const sessionList = get(sessions);
+		const sessionExists = sessionList.some((s) => s.id === sessionId);
+
+		if (!sessionExists) {
+			console.warn(
+				`[Playground] Initial session "${sessionId}" not found in available sessions. ` +
+					`Available sessions: ${sessionList.map((s) => s.id).join(', ') || 'none'}`
+			);
+			// Don't set error - just log warning and let user pick a session
+			initialSessionLoaded = true;
+			loadedInitialSessionId = sessionId;
+			return;
+		}
+
+		try {
+			await loadSession(sessionId);
+			initialSessionLoaded = true;
+			loadedInitialSessionId = sessionId;
+		} catch (err) {
+			console.error('[Playground] Failed to load initial session:', err);
+			// Mark as attempted to prevent retry loops
+			initialSessionLoaded = true;
+			loadedInitialSessionId = sessionId;
+		}
+	}
 
 	/**
 	 * Cleanup on destroy
