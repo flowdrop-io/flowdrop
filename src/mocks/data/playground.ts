@@ -13,6 +13,7 @@ import type {
 	PlaygroundMessageStatus,
 	PlaygroundMessageMetadata
 } from '../../lib/types/playground.js';
+import { ENABLE_RUN_METADATA_KEY } from '../../lib/types/playground.js';
 import {
 	createConfirmationInterrupt,
 	createChoiceInterrupt,
@@ -290,6 +291,20 @@ function detectInterruptType(
 }
 
 /**
+ * Check if the message is a "run workflow" trigger (for testing Run button mode)
+ * These are typically predefined messages sent when chat input is hidden.
+ */
+function isRunWorkflowTrigger(userMessage: string): boolean {
+	const lowerMessage = userMessage.toLowerCase();
+	return (
+		lowerMessage === 'run workflow' ||
+		lowerMessage === 'execute pipeline' ||
+		lowerMessage === 'start automation' ||
+		lowerMessage.startsWith('run ')
+	);
+}
+
+/**
  * Simulate execution responses for a session
  * This adds mock assistant/log messages after user input
  *
@@ -336,11 +351,18 @@ function simulateNormalExecution(
 	userMessage: string,
 	parentMessageId?: string
 ): void {
+	const isRunTrigger = isRunWorkflowTrigger(userMessage);
+
+	// Different response for "Run workflow" triggers vs normal chat messages
+	const responseContent = isRunTrigger
+		? `Workflow executed successfully!\n\nThis is a mock execution triggered by the "Run" button. The workflow processed your predefined inputs and completed all steps.\n\n**Test tip:** The Run button should now be re-enabled. Click it again to run another execution.`
+		: `I received your message: "${userMessage}"\n\nThis is a mock response from the playground. In a real implementation, this would be the output from your workflow execution.\n\n**Tip:** Try messages with keywords like "confirm", "choose", "input", or "form" to test interrupt prompts!`;
+
 	const steps = [
 		{
 			delay: 500,
 			role: 'log' as const,
-			content: 'Starting workflow execution...',
+			content: isRunTrigger ? 'Run button triggered - starting workflow...' : 'Starting workflow execution...',
 			level: 'info' as const,
 			nodeId: 'node-start',
 			nodeLabel: 'Start'
@@ -348,7 +370,7 @@ function simulateNormalExecution(
 		{
 			delay: 1000,
 			role: 'log' as const,
-			content: `Processing input: "${userMessage.substring(0, 50)}..."`,
+			content: isRunTrigger ? 'Processing workflow inputs...' : `Processing input: "${userMessage.substring(0, 50)}..."`,
 			level: 'info' as const,
 			nodeId: 'node-processor',
 			nodeLabel: 'Text Processor'
@@ -356,7 +378,7 @@ function simulateNormalExecution(
 		{
 			delay: 1500,
 			role: 'log' as const,
-			content: 'Analyzing content with AI model...',
+			content: isRunTrigger ? 'Executing workflow nodes...' : 'Analyzing content with AI model...',
 			level: 'info' as const,
 			nodeId: 'node-ai',
 			nodeLabel: 'AI Model'
@@ -364,7 +386,7 @@ function simulateNormalExecution(
 		{
 			delay: 2500,
 			role: 'assistant' as const,
-			content: `I received your message: "${userMessage}"\n\nThis is a mock response from the playground. In a real implementation, this would be the output from your workflow execution.\n\n**Tip:** Try messages with keywords like "confirm", "choose", "input", or "form" to test interrupt prompts!`,
+			content: responseContent,
 			nodeId: 'node-output',
 			nodeLabel: 'Output',
 			duration: 2000
@@ -392,6 +414,16 @@ function simulateNormalExecution(
 			// Complete the session after the last step
 			if (step === steps[steps.length - 1]) {
 				updateSessionStatus(sessionId, 'completed');
+
+				// Add a system message with enableRun: true to re-enable the Run button
+				// This simulates the backend signaling that the workflow is ready for another run
+				setTimeout(() => {
+					addMessage(sessionId, 'system', 'Ready for next execution.', {
+						metadata: {
+							[ENABLE_RUN_METADATA_KEY]: true
+						}
+					});
+				}, 500);
 			}
 		}, step.delay);
 	});
