@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.42] - 2026-01-27
+
+### Added
+
+- **Interrupt Resolver Attribution**: Resolved interrupt badges now display who submitted the response
+  - Shows "Response submitted by {userName}" when `resolvedByUserName` is available in interrupt metadata
+  - Falls back to "Response submitted" when no username is provided (backwards compatible)
+  - Supported in all prompt types: `ConfirmationPrompt`, `ChoicePrompt`, `TextInputPrompt`, `FormPrompt`
+  - Backend provides `resolvedByUserName` in message metadata (e.g., `metadata: { resolvedByUserName: "admin" }`)
+
+---
+
 ## [0.0.41] - 2026-01-27
 
 ### Added
