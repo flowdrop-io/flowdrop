@@ -26,11 +26,14 @@
 		isSubmitting: boolean;
 		/** Error message if submission failed */
 		error?: string;
+		/** Username of the person who resolved the interrupt */
+		resolvedByUserName?: string;
 		/** Callback when user submits form */
 		onSubmit: (value: Record<string, unknown>) => void;
 	}
 
-	let { config, isResolved, resolvedValue, isSubmitting, error, onSubmit }: Props = $props();
+	let { config, isResolved, resolvedValue, isSubmitting, error, resolvedByUserName, onSubmit }: Props =
+		$props();
 
 	/** Local state for form values */
 	let formValues = $state<Record<string, unknown>>(config.defaultValues ?? {});
@@ -119,7 +122,9 @@
 	{#if isResolved}
 		<div class="form-prompt__resolved-badge">
 			<Icon icon="mdi:check-circle" />
-			<span>Response submitted</span>
+			<span>
+				{resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+			</span>
 		</div>
 	{/if}
 </div>

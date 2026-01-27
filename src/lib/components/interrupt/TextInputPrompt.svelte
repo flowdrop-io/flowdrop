@@ -25,11 +25,14 @@
 		isSubmitting: boolean;
 		/** Error message if submission failed */
 		error?: string;
+		/** Username of the person who resolved the interrupt */
+		resolvedByUserName?: string;
 		/** Callback when user submits text */
 		onSubmit: (value: string) => void;
 	}
 
-	let { config, isResolved, resolvedValue, isSubmitting, error, onSubmit }: Props = $props();
+	let { config, isResolved, resolvedValue, isSubmitting, error, resolvedByUserName, onSubmit }: Props =
+		$props();
 
 	/** Local state for input value */
 	let inputValue = $state(config.defaultValue ?? '');
@@ -166,7 +169,9 @@
 	{#if isResolved}
 		<div class="text-prompt__resolved-badge">
 			<Icon icon="mdi:check-circle" />
-			<span>Response submitted</span>
+			<span>
+				{resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+			</span>
 		</div>
 	{/if}
 </div>

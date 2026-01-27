@@ -25,14 +25,24 @@
 		isSubmitting: boolean;
 		/** Error message if submission failed */
 		error?: string;
+		/** Username of the person who resolved the interrupt */
+		resolvedByUserName?: string;
 		/** Callback when user confirms (Yes) */
 		onConfirm: () => void;
 		/** Callback when user declines (No) */
 		onDecline: () => void;
 	}
 
-	let { config, isResolved, resolvedValue, isSubmitting, error, onConfirm, onDecline }: Props =
-		$props();
+	let {
+		config,
+		isResolved,
+		resolvedValue,
+		isSubmitting,
+		error,
+		resolvedByUserName,
+		onConfirm,
+		onDecline
+	}: Props = $props();
 
 	/** Computed label for confirm button */
 	const confirmLabel = $derived(config.confirmLabel ?? 'Yes');
@@ -108,7 +118,9 @@
 	{#if isResolved}
 		<div class="confirmation-prompt__resolved-badge">
 			<Icon icon="mdi:check-circle" />
-			<span>Response submitted</span>
+			<span>
+				{resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+			</span>
 		</div>
 	{/if}
 </div>
