@@ -81,6 +81,8 @@ export interface PlaygroundMessageMetadata {
 	nodeLabel?: string;
 	/** Node output data */
 	outputs?: Record<string, unknown>;
+	/** User's display name for user-role messages (from backend) */
+	userName?: string;
 	/** Allow additional properties */
 	[key: string]: unknown;
 }
