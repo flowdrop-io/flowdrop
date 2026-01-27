@@ -4,6 +4,7 @@
   Renders individual messages in the playground chat interface.
   Supports different message roles with distinct styling.
   Supports markdown rendering for message content.
+  Supports compact mode for system messages to reduce visual noise.
   Styled with BEM syntax.
 -->
 
@@ -24,9 +25,28 @@
 		isLast?: boolean;
 		/** Whether to render markdown content */
 		enableMarkdown?: boolean;
+		/**
+		 * Use compact display mode for system messages.
+		 * When true, system messages are rendered as minimal inline text
+		 * instead of full chat bubbles to reduce visual noise.
+		 * @default true
+		 */
+		compactSystemMessages?: boolean;
 	}
 
-	let { message, showTimestamp = true, isLast = false, enableMarkdown = true }: Props = $props();
+	let {
+		message,
+		showTimestamp = true,
+		isLast = false,
+		enableMarkdown = true,
+		compactSystemMessages = true
+	}: Props = $props();
+
+	/**
+	 * Determine if this message should render in compact mode.
+	 * Only system messages use compact mode when enabled.
+	 */
+	const useCompactMode = $derived(message.role === 'system' && compactSystemMessages);
 
 	/**
 	 * Render content as markdown or plain text
@@ -121,68 +141,79 @@
 	}
 </script>
 
-<div
-	class="message-bubble"
-	class:message-bubble--user={message.role === 'user'}
-	class:message-bubble--assistant={message.role === 'assistant'}
-	class:message-bubble--system={message.role === 'system'}
-	class:message-bubble--log={message.role === 'log'}
-	class:message-bubble--log-error={message.role === 'log' && message.metadata?.level === 'error'}
-	class:message-bubble--log-warning={message.role === 'log' &&
-		message.metadata?.level === 'warning'}
-	class:message-bubble--last={isLast}
->
-	<!-- Avatar / Icon -->
-	<div class="message-bubble__avatar">
-		<Icon icon={getRoleIcon(message.role)} />
-	</div>
-
-	<!-- Content -->
-	<div class="message-bubble__content">
-		<!-- Header -->
-		<div class="message-bubble__header">
-			<span class="message-bubble__role">{getRoleLabel(message.role)}</span>
-			{#if message.role === 'log' && message.metadata?.level}
-				<span class="message-bubble__log-level message-bubble__log-level--{message.metadata.level}">
-					<Icon icon={getLogLevelIcon()} />
-					{message.metadata.level.toUpperCase()}
-				</span>
-			{/if}
-			{#if showTimestamp}
-				<span class="message-bubble__timestamp">{formatTimestamp(message.timestamp)}</span>
-			{/if}
-		</div>
-
-		<!-- Message Text -->
-		<div class="message-bubble__text">
-			{#if enableMarkdown && message.role !== 'log'}
-				<!-- Markdown content - marked.js sanitizes content by default -->
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html renderedContent}
-			{:else}
-				{message.content}
-			{/if}
-		</div>
-
-		<!-- Metadata Footer -->
-		{#if message.metadata?.duration !== undefined || message.nodeId}
-			<div class="message-bubble__footer">
-				{#if message.nodeId}
-					<span class="message-bubble__node" title="Node ID: {message.nodeId}">
-						<Icon icon="mdi:graph" />
-						{message.metadata?.nodeLabel ?? message.nodeId}
-					</span>
-				{/if}
-				{#if message.metadata?.duration !== undefined}
-					<span class="message-bubble__duration" title="Execution duration">
-						<Icon icon="mdi:timer-outline" />
-						{formatDuration(message.metadata.duration)}
-					</span>
-				{/if}
-			</div>
+{#if useCompactMode}
+	<!-- Compact system message: minimal inline text without bubble -->
+	<div class="system-notice" class:system-notice--last={isLast}>
+		<Icon icon="mdi:information-outline" class="system-notice__icon" />
+		<span class="system-notice__text">{message.content}</span>
+		{#if showTimestamp}
+			<span class="system-notice__timestamp">{formatTimestamp(message.timestamp)}</span>
 		{/if}
 	</div>
-</div>
+{:else}
+	<div
+		class="message-bubble"
+		class:message-bubble--user={message.role === 'user'}
+		class:message-bubble--assistant={message.role === 'assistant'}
+		class:message-bubble--system={message.role === 'system'}
+		class:message-bubble--log={message.role === 'log'}
+		class:message-bubble--log-error={message.role === 'log' && message.metadata?.level === 'error'}
+		class:message-bubble--log-warning={message.role === 'log' &&
+			message.metadata?.level === 'warning'}
+		class:message-bubble--last={isLast}
+	>
+		<!-- Avatar / Icon -->
+		<div class="message-bubble__avatar">
+			<Icon icon={getRoleIcon(message.role)} />
+		</div>
+
+		<!-- Content -->
+		<div class="message-bubble__content">
+			<!-- Header -->
+			<div class="message-bubble__header">
+				<span class="message-bubble__role">{getRoleLabel(message.role)}</span>
+				{#if message.role === 'log' && message.metadata?.level}
+					<span class="message-bubble__log-level message-bubble__log-level--{message.metadata.level}">
+						<Icon icon={getLogLevelIcon()} />
+						{message.metadata.level.toUpperCase()}
+					</span>
+				{/if}
+				{#if showTimestamp}
+					<span class="message-bubble__timestamp">{formatTimestamp(message.timestamp)}</span>
+				{/if}
+			</div>
+
+			<!-- Message Text -->
+			<div class="message-bubble__text">
+				{#if enableMarkdown && message.role !== 'log'}
+					<!-- Markdown content - marked.js sanitizes content by default -->
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html renderedContent}
+				{:else}
+					{message.content}
+				{/if}
+			</div>
+
+			<!-- Metadata Footer -->
+			{#if message.metadata?.duration !== undefined || message.nodeId}
+				<div class="message-bubble__footer">
+					{#if message.nodeId}
+						<span class="message-bubble__node" title="Node ID: {message.nodeId}">
+							<Icon icon="mdi:graph" />
+							{message.metadata?.nodeLabel ?? message.nodeId}
+						</span>
+					{/if}
+					{#if message.metadata?.duration !== undefined}
+						<span class="message-bubble__duration" title="Execution duration">
+							<Icon icon="mdi:timer-outline" />
+							{formatDuration(message.metadata.duration)}
+						</span>
+					{/if}
+				</div>
+			{/if}
+		</div>
+	</div>
+{/if}
 
 <style>
 	.message-bubble {
@@ -540,6 +571,53 @@
 			width: 1.75rem;
 			height: 1.75rem;
 			font-size: 1rem;
+		}
+	}
+
+	/* ========================================
+	   Compact System Notice Styles
+	   Minimal inline display for system messages
+	   ======================================== */
+
+	.system-notice {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.75rem;
+		margin: 0.25rem 0;
+		font-size: 0.75rem;
+		color: #9ca3af;
+		text-align: center;
+	}
+
+	.system-notice--last {
+		margin-bottom: 0.75rem;
+	}
+
+	/* Icon styling - using :global for Iconify component */
+	.system-notice :global(.system-notice__icon) {
+		flex-shrink: 0;
+		font-size: 0.875rem;
+		color: #d1d5db;
+	}
+
+	.system-notice__text {
+		color: #6b7280;
+		line-height: 1.4;
+	}
+
+	.system-notice__timestamp {
+		flex-shrink: 0;
+		font-size: 0.625rem;
+		color: #d1d5db;
+		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+	}
+
+	/* Responsive: hide timestamp on small screens for compactness */
+	@media (max-width: 640px) {
+		.system-notice__timestamp {
+			display: none;
 		}
 	}
 </style>
