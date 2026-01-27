@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.40] - 2026-01-27
+
+### Added
+
+- **Playground Chat Input Configuration**: New options for flexible playground initialization
+  - `showChatInput`: Hide text input to show only Run button (default: `true`)
+  - `showRunButton`: Hide Run button for view-only mode (default: `true`)
+  - `predefinedMessage`: Custom message sent when Run is clicked
+  - `autoRun`: Auto-execute workflow on load without user interaction
+
+- **Backend-Controlled Run Button**: Run button state can be managed by backend
+  - Disabled after clicking until backend sends `enableRun: true` in message metadata
+  - Resets to enabled when switching sessions
+
+### Fixed
+
+- **Playground Initial Session**: `initialSessionId` prop now works reactively
+  - Previously the prop was ignored after component mount
+  - Now validates session exists before loading with proper error handling
+
+---
+
 ## [0.0.39] - 2026-01-24
 
 ### Fixed
