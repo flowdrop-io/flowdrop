@@ -150,7 +150,6 @@
 		}
 	});
 
-
 	/**
 	 * Load the initial session with validation and error handling
 	 *
@@ -636,18 +635,18 @@
 						<span>Loading...</span>
 					</div>
 				{:else}
-				<ChatPanel
-					showTimestamps={config.showTimestamps ?? true}
-					autoScroll={config.autoScroll ?? true}
-					showLogsInline={config.logDisplayMode === 'inline'}
-					enableMarkdown={config.enableMarkdown ?? true}
-					showChatInput={config.showChatInput ?? true}
-					showRunButton={config.showRunButton ?? true}
-					predefinedMessage={config.predefinedMessage ?? 'Run workflow'}
-					onSendMessage={handleSendMessage}
-					onStopExecution={handleStopExecution}
-					onInterruptResolved={handleInterruptResolved}
-				/>
+					<ChatPanel
+						showTimestamps={config.showTimestamps ?? true}
+						autoScroll={config.autoScroll ?? true}
+						showLogsInline={config.logDisplayMode === 'inline'}
+						enableMarkdown={config.enableMarkdown ?? true}
+						showChatInput={config.showChatInput ?? true}
+						showRunButton={config.showRunButton ?? true}
+						predefinedMessage={config.predefinedMessage ?? 'Run workflow'}
+						onSendMessage={handleSendMessage}
+						onStopExecution={handleStopExecution}
+						onInterruptResolved={handleInterruptResolved}
+					/>
 				{/if}
 			</div>
 		</main>

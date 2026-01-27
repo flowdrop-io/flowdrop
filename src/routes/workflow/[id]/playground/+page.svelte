@@ -44,13 +44,13 @@
 
 	/**
 	 * Playground configuration from URL query params (for testing)
-	 * 
+	 *
 	 * Supported params:
 	 * - showChatInput: "true" | "false" - Show/hide chat text input
 	 * - showRunButton: "true" | "false" - Show/hide Run button
 	 * - predefinedMessage: string - Message sent when Run is clicked
 	 * - autoRun: "true" | "false" - Auto-execute workflow on load
-	 * 
+	 *
 	 * Example URLs:
 	 * - /workflow/demo/playground?showChatInput=false (Run button only)
 	 * - /workflow/demo/playground?showChatInput=false&showRunButton=false (View-only)

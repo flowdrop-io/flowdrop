@@ -103,6 +103,7 @@ API documentation is automatically deployed to GitHub Pages on every push to `ma
 **https://flowdrop-io.github.io/flowdrop/**
 
 The docs are built using [Redoc](https://redocly.com/redoc/) and include:
+
 - Interactive endpoint explorer
 - Schema documentation
 - Try-it-out functionality (when configured with a server)
