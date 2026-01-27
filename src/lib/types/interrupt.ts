@@ -309,6 +309,8 @@ export interface InterruptMessageMetadata {
 	max_selections?: number;
 	/** Username of the person who resolved the interrupt */
 	resolvedByUserName?: string;
+	/** User ID of the person who resolved the interrupt */
+	resolvedByUserId?: string;
 }
 
 /**
@@ -359,7 +361,8 @@ export function extractInterruptMetadata(
 		multiple: metadata.multiple as boolean | undefined,
 		min_selections: metadata.min_selections as number | undefined,
 		max_selections: metadata.max_selections as number | undefined,
-		resolvedByUserName: metadata.resolvedByUserName as string | undefined
+		resolvedByUserName: metadata.resolvedByUserName as string | undefined,
+		resolvedByUserId: metadata.resolvedByUserId as string | undefined
 	};
 }
 
@@ -386,7 +389,12 @@ export function metadataToInterrupt(
 		messageId,
 		createdAt: new Date().toISOString(),
 		allowCancel: metadata.allow_cancel ?? true,
-		config: buildInterruptConfig(metadata, content)
+		config: buildInterruptConfig(metadata, content),
+		// Include metadata for resolved-by info (passed through from message metadata)
+		metadata: {
+			resolvedByUserName: metadata.resolvedByUserName,
+			resolvedByUserId: metadata.resolvedByUserId
+		}
 	};
 
 	return baseInterrupt;
