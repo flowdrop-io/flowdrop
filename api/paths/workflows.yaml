@@ -129,7 +129,7 @@
                         name: Text Input
                         description: Text input field for user data
                         category: inputs
-                        version: "1.0.0"
+                        version: '1.0.0'
                         inputs: []
                         outputs:
                           - id: value

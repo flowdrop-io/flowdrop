@@ -66,7 +66,7 @@ PortConfig:
     version:
       type: string
       description: Version of the port configuration
-      example: "1.0.0"
+      example: '1.0.0'
     defaultDataType:
       type: string
       description: Default data type to use when none specified

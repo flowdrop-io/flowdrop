@@ -362,7 +362,9 @@ function simulateNormalExecution(
 		{
 			delay: 500,
 			role: 'log' as const,
-			content: isRunTrigger ? 'Run button triggered - starting workflow...' : 'Starting workflow execution...',
+			content: isRunTrigger
+				? 'Run button triggered - starting workflow...'
+				: 'Starting workflow execution...',
 			level: 'info' as const,
 			nodeId: 'node-start',
 			nodeLabel: 'Start'
@@ -370,7 +372,9 @@ function simulateNormalExecution(
 		{
 			delay: 1000,
 			role: 'log' as const,
-			content: isRunTrigger ? 'Processing workflow inputs...' : `Processing input: "${userMessage.substring(0, 50)}..."`,
+			content: isRunTrigger
+				? 'Processing workflow inputs...'
+				: `Processing input: "${userMessage.substring(0, 50)}..."`,
 			level: 'info' as const,
 			nodeId: 'node-processor',
 			nodeLabel: 'Text Processor'

@@ -382,7 +382,9 @@
 				</div>
 				{#if noInputsAvailable}
 					<h2 class="chat-panel__welcome-title">View only</h2>
-					<p class="chat-panel__welcome-text">This playground is in view-only mode. No inputs are available.</p>
+					<p class="chat-panel__welcome-text">
+						This playground is in view-only mode. No inputs are available.
+					</p>
 				{:else if showChatInput}
 					<h2 class="chat-panel__welcome-title">New chat</h2>
 					<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
@@ -421,7 +423,9 @@
 				</div>
 				{#if noInputsAvailable}
 					<h2 class="chat-panel__welcome-title">View only</h2>
-					<p class="chat-panel__welcome-text">This playground is in view-only mode. No inputs are available.</p>
+					<p class="chat-panel__welcome-text">
+						This playground is in view-only mode. No inputs are available.
+					</p>
 				{:else if showChatInput}
 					<h2 class="chat-panel__welcome-title">New chat</h2>
 					<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
@@ -475,7 +479,10 @@
 				<span>View-only mode. Workflow execution is controlled externally.</span>
 			</div>
 		{:else}
-			<div class="chat-panel__input-container" class:chat-panel__input-container--run-only={!showChatInput}>
+			<div
+				class="chat-panel__input-container"
+				class:chat-panel__input-container--run-only={!showChatInput}
+			>
 				{#if showChatInput}
 					<div class="chat-panel__input-wrapper">
 						<textarea

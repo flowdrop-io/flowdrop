@@ -208,7 +208,7 @@ NodeMetadata:
     version:
       type: string
       description: Node type version
-      example: "1.0.0"
+      example: '1.0.0'
     icon:
       type: string
       description: Icon identifier (Material Design Icons)
