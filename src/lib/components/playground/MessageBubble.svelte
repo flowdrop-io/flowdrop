@@ -11,7 +11,11 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { marked } from 'marked';
-	import type { PlaygroundMessage, PlaygroundMessageRole } from '../../types/playground.js';
+	import type {
+		PlaygroundMessage,
+		PlaygroundMessageMetadata,
+		PlaygroundMessageRole
+	} from '../../types/playground.js';
 
 	/**
 	 * Component props
@@ -80,18 +84,22 @@
 	 * Get the display label for the message role
 	 *
 	 * @param role - The message role
+	 * @param metadata - Optional message metadata containing userName for user messages
 	 * @returns Display label
 	 */
-	function getRoleLabel(role: PlaygroundMessageRole): string {
+	function getRoleLabel(
+		role: PlaygroundMessageRole,
+		metadata?: PlaygroundMessageMetadata
+	): string {
 		switch (role) {
 			case 'user':
-				return 'You';
+				return metadata?.userName ?? 'You';
 			case 'assistant':
 				return 'Assistant';
 			case 'system':
 				return 'System';
 			case 'log':
-				return message.metadata?.nodeLabel ?? 'Log';
+				return metadata?.nodeLabel ?? 'Log';
 			default:
 				return 'Message';
 		}
@@ -171,7 +179,7 @@
 		<div class="message-bubble__content">
 			<!-- Header -->
 			<div class="message-bubble__header">
-				<span class="message-bubble__role">{getRoleLabel(message.role)}</span>
+				<span class="message-bubble__role">{getRoleLabel(message.role, message.metadata)}</span>
 				{#if message.role === 'log' && message.metadata?.level}
 					<span class="message-bubble__log-level message-bubble__log-level--{message.metadata.level}">
 						<Icon icon={getLogLevelIcon()} />

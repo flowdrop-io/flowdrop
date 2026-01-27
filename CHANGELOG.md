@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.41] - 2026-01-27
+
+### Added
+
+- **Compact System Messages**: System messages in playground chat now display in a minimal inline format
+  - Reduces visual noise by avoiding full chat bubbles for system messages
+  - Enabled by default (`compactSystemMessages: true`)
+  - Configurable via `compactSystemMessages` prop on `ChatPanel` and `MessageBubble`
+
+- **Smart Auto-Scroll**: Improved chat panel scrolling behavior
+  - Only auto-scrolls when new messages are added (not on updates)
+  - Respects user scroll position - won't jump if user has scrolled up to read history
+  - Pauses auto-scroll when user is interacting with forms (e.g., interrupt prompts)
+
+- **User Display Name in Chat**: User messages now show the actual user's name instead of "You"
+  - Backend can include `userName` in message metadata (e.g., `metadata: { userName: "John Smith" }`)
+  - Falls back to "You" when `userName` is not provided (backwards compatible)
+  - Added `userName` property to `PlaygroundMessageMetadata` type
+
+---
+
 ## [0.0.40] - 2026-01-27
 
 ### Added
@@ -818,11 +839,11 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
   - Manual variant override via `config.variant`
 
 - **Variant Configurations**:
-  | Variant | Icon | Color | Default Ports |
+  | Variant | Icon        | Color           | Default Ports         |
   | ------- | ----------- | --------------- | --------------------- |
   | `start` | Play circle | Green (#10b981) | Output only (trigger) |
-  | `end` | Stop circle | Gray (#6b7280) | Input only (trigger) |
-  | `exit` | X circle | Red (#ef4444) | Input only (trigger) |
+  | `end`   | Stop circle | Gray (#6b7280)  | Input only (trigger)  |
+  | `exit`  | X circle    | Red (#ef4444)   | Input only (trigger)  |
 
 - **API-Controlled Ports**: Terminal nodes now fully respect the `inputs` and `outputs` arrays from metadata
   - `undefined` → Uses variant default ports
