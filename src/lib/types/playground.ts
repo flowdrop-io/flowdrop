@@ -231,6 +231,18 @@ export interface PlaygroundConfig {
 	 * Note: Only runs once per session - subsequent runs require clicking the Run button.
 	 */
 	autoRun?: boolean;
+	/**
+	 * Whether to show the sidebar with session list (default: true)
+	 * When false, the sidebar is hidden, creating a minimal chat widget experience.
+	 * Use with initialSessionId to load a pre-created session directly.
+	 */
+	showSidebar?: boolean;
+	/**
+	 * Whether to show the session header bar (default: true)
+	 * When false, the header with session name and close button is hidden.
+	 * Typically used together with showSidebar: false for minimal UI.
+	 */
+	showSessionHeader?: boolean;
 }
 
 /**

@@ -510,9 +510,11 @@
 	class:playground--embedded={mode === 'embedded'}
 	class:playground--standalone={mode === 'standalone'}
 	class:playground--modal={mode === 'modal'}
+	class:playground--no-sidebar={config.showSidebar === false}
 >
 	<div class="playground__container">
-		<!-- Sidebar -->
+		<!-- Sidebar (conditionally rendered based on config.showSidebar) -->
+		{#if config.showSidebar !== false}
 		<aside class="playground__sidebar">
 			<!-- Sidebar Header -->
 			<div class="playground__sidebar-header">
@@ -594,11 +596,12 @@
 				</div>
 			</div>
 		</aside>
+		{/if}
 
 		<!-- Main Content -->
 		<main class="playground__main">
-			<!-- Session Header -->
-			{#if $currentSession}
+			<!-- Session Header (conditionally rendered based on config.showSessionHeader) -->
+			{#if $currentSession && config.showSessionHeader !== false}
 				<header class="playground__header">
 					<h2 class="playground__header-title">{$currentSession.name}</h2>
 					<button
@@ -676,6 +679,11 @@
 	.playground--modal {
 		height: 100%;
 		width: 100%;
+	}
+
+	/* No sidebar mode - minimal chat widget experience */
+	.playground--no-sidebar .playground__main {
+		border-left: none;
 	}
 
 	/* Container */
