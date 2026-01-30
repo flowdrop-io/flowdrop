@@ -10,9 +10,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (--ignore-scripts prevents platform-specific binary issues during QEMU emulation)
-RUN npm ci --ignore-scripts && \
-  npm rebuild esbuild
+# Install dependencies
+RUN npm ci
 
 # Copy configuration files
 COPY tsconfig.json tsconfig.node.json svelte.config.js vite.config.ts ./
@@ -34,9 +33,8 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Install production dependencies only
-# Using --ignore-scripts prevents platform-specific binary installation issues during QEMU cross-platform builds
 COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy built application from builder
 COPY --from=builder /app/build ./build
