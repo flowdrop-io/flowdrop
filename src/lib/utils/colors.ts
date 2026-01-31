@@ -60,7 +60,7 @@ const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
 	datetime: 'var(--fd-node-lime)',
 	time: 'var(--fd-node-lime)',
 	tool: 'var(--fd-node-amber)',
-	trigger: 'var(--fd-foreground)',
+	trigger: '#18181b',
 	branch: 'var(--fd-node-purple)'
 };
 
@@ -396,14 +396,14 @@ export function rgbToHex(r: number, g: number, b: number): string {
 
 /**
  * Generate a light tint of a color (similar to Tailwind's -50 shade)
- * Creates a very light background-friendly version of the color
+ * Creates a very light background-friendly version of the color for light mode
  * @param hex - Base hex color string
  * @returns Light tint hex color string
  */
 export function getLightTint(hex: string): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return '#fffbeb'; // Fallback to amber-50
+		return "#fffbeb"; // Fallback to amber-50
 	}
 	// Mix with white at 95% to create a very light tint
 	const mixRatio = 0.95;
@@ -414,15 +414,35 @@ export function getLightTint(hex: string): string {
 }
 
 /**
+ * Generate a dark tint of a color for dark mode backgrounds
+ * Creates a subtle, muted version of the color that works well on dark backgrounds
+ * @param hex - Base hex color string
+ * @param opacity - Optional opacity for the color overlay (default 0.15)
+ * @returns Dark tint hex color string
+ */
+export function getDarkTint(hex: string, opacity: number = 0.15): string {
+	const rgb = hexToRgb(hex);
+	if (!rgb) {
+		return "#2a2518"; // Fallback dark amber tint
+	}
+	// Mix with dark background (#1a1a1e) to create a subtle dark tint
+	const darkBg = { r: 26, g: 26, b: 30 };
+	const r = darkBg.r + (rgb.r - darkBg.r) * opacity;
+	const g = darkBg.g + (rgb.g - darkBg.g) * opacity;
+	const b = darkBg.b + (rgb.b - darkBg.b) * opacity;
+	return rgbToHex(r, g, b);
+}
+
+/**
  * Generate a border tint of a color (similar to Tailwind's -300 shade)
- * Creates a medium-light version suitable for borders
+ * Creates a medium-light version suitable for borders in light mode
  * @param hex - Base hex color string
  * @returns Border tint hex color string
  */
 export function getBorderTint(hex: string): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return '#fcd34d'; // Fallback to amber-300
+		return "#fcd34d"; // Fallback to amber-300
 	}
 	// Mix with white at 60% to create a medium-light tint
 	const mixRatio = 0.6;
@@ -433,18 +453,76 @@ export function getBorderTint(hex: string): string {
 }
 
 /**
- * Generate color variants for theming a component
- * @param baseColor - Base hex color string
- * @returns Object with base, light, and border color variants
+ * Generate a dark border tint of a color for dark mode
+ * Creates a medium-dark version suitable for borders in dark mode
+ * @param hex - Base hex color string
+ * @returns Dark border tint hex color string
  */
-export function getColorVariants(baseColor: string): {
+export function getDarkBorderTint(hex: string): string {
+	const rgb = hexToRgb(hex);
+	if (!rgb) {
+		return "#5c4a1e"; // Fallback dark amber border
+	}
+	// Mix with dark background to create a muted but visible border
+	const darkBg = { r: 26, g: 26, b: 30 };
+	const mixRatio = 0.35;
+	const r = darkBg.r + (rgb.r - darkBg.r) * mixRatio;
+	const g = darkBg.g + (rgb.g - darkBg.g) * mixRatio;
+	const b = darkBg.b + (rgb.b - darkBg.b) * mixRatio;
+	return rgbToHex(r, g, b);
+}
+
+/**
+ * Color variants interface for theming components
+ */
+export interface ColorVariants {
+	/** Base color value */
 	base: string;
+	/** Light tint for light mode backgrounds */
 	light: string;
+	/** Border tint for light mode borders */
 	border: string;
-} {
+	/** Dark tint for dark mode backgrounds */
+	darkLight: string;
+	/** Dark border tint for dark mode borders */
+	darkBorder: string;
+}
+
+/**
+ * Generate color variants for theming a component
+ * Returns variants for both light and dark modes
+ * @param baseColor - Base hex color string
+ * @returns Object with base, light, border, darkLight, and darkBorder color variants
+ */
+export function getColorVariants(baseColor: string): ColorVariants {
 	return {
 		base: baseColor,
 		light: getLightTint(baseColor),
-		border: getBorderTint(baseColor)
+		border: getBorderTint(baseColor),
+		darkLight: getDarkTint(baseColor),
+		darkBorder: getDarkBorderTint(baseColor)
+	};
+}
+
+/**
+ * Get theme-aware color variants
+ * Returns the appropriate light or dark variants based on the theme
+ * @param baseColor - Base hex color string
+ * @param isDarkMode - Whether dark mode is active
+ * @returns Object with base, background, and border colors appropriate for the theme
+ */
+export function getThemeAwareColorVariants(
+	baseColor: string,
+	isDarkMode: boolean
+): {
+	base: string;
+	background: string;
+	border: string;
+} {
+	const variants = getColorVariants(baseColor);
+	return {
+		base: variants.base,
+		background: isDarkMode ? variants.darkLight : variants.light,
+		border: isDarkMode ? variants.darkBorder : variants.border
 	};
 }
