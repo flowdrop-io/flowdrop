@@ -591,13 +591,13 @@
 	.config-form {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: var(--fd-space-6);
 	}
 
 	.config-form__fields {
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: var(--fd-space-5);
 	}
 
 	/* ============================================
@@ -607,11 +607,11 @@
 
 	.config-form__footer {
 		display: flex;
-		gap: 0.75rem;
+		gap: var(--fd-space-3);
 		justify-content: flex-end;
-		padding-top: 1rem;
-		border-top: 1px solid var(--color-ref-gray-100, #f3f4f6);
-		margin-top: 0.5rem;
+		padding-top: var(--fd-space-4);
+		border-top: 1px solid var(--fd-border-muted);
+		margin-top: var(--fd-space-2);
 	}
 
 	/* Button Spinner */
@@ -633,14 +633,14 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5rem;
-		padding: 0.625rem 1rem;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
+		gap: var(--fd-space-2);
+		padding: 0.625rem var(--fd-space-4);
+		border-radius: var(--fd-radius-lg);
+		font-size: var(--fd-text-sm);
 		font-weight: 600;
 		font-family: inherit;
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: all var(--fd-transition-normal);
 		border: 1px solid transparent;
 		min-height: 2.5rem;
 	}
@@ -652,16 +652,16 @@
 	}
 
 	.config-form__button--secondary {
-		background-color: #ffffff;
-		border-color: var(--color-ref-gray-200, #e5e7eb);
-		color: var(--color-ref-gray-700, #374151);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+		background-color: var(--fd-background);
+		border-color: var(--fd-border);
+		color: var(--fd-foreground);
+		box-shadow: var(--fd-shadow-sm);
 	}
 
 	.config-form__button--secondary:hover {
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border-color: var(--color-ref-gray-300, #d1d5db);
-		color: var(--color-ref-gray-900, #111827);
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 	}
 
 	.config-form__button--secondary:focus-visible {
@@ -672,10 +672,10 @@
 	.config-form__button--primary {
 		background: linear-gradient(
 			135deg,
-			var(--color-ref-blue-500, #3b82f6) 0%,
-			var(--color-ref-blue-600, #2563eb) 100%
+			var(--fd-primary) 0%,
+			var(--fd-primary-hover) 100%
 		);
-		color: #ffffff;
+		color: var(--fd-primary-foreground);
 		box-shadow:
 			0 1px 3px rgba(59, 130, 246, 0.3),
 			inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -684,8 +684,8 @@
 	.config-form__button--primary:hover {
 		background: linear-gradient(
 			135deg,
-			var(--color-ref-blue-600, #2563eb) 0%,
-			var(--color-ref-blue-700, #1d4ed8) 100%
+			var(--fd-primary-hover) 0%,
+			var(--fd-primary-hover) 100%
 		);
 		box-shadow:
 			0 4px 12px rgba(59, 130, 246, 0.35),
@@ -709,36 +709,36 @@
 	   ============================================ */
 
 	.config-form__extensions {
-		background-color: var(--color-ref-slate-50, #f8fafc);
-		border: 1px solid var(--color-ref-slate-200, #e2e8f0);
-		border-radius: 0.5rem;
+		background-color: var(--fd-muted);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
 		overflow: hidden;
-		margin-top: 0.5rem;
+		margin-top: var(--fd-space-2);
 	}
 
 	.config-form__extensions-header {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		background-color: var(--color-ref-slate-100, #f1f5f9);
-		border-bottom: 1px solid var(--color-ref-slate-200, #e2e8f0);
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-3) var(--fd-space-4);
+		background-color: var(--fd-subtle);
+		border-bottom: 1px solid var(--fd-border);
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--color-ref-slate-700, #334155);
+		color: var(--fd-foreground);
 	}
 
 	.config-form__extensions-header :global(svg) {
 		width: 1rem;
 		height: 1rem;
-		color: var(--color-ref-slate-500, #64748b);
+		color: var(--fd-muted-foreground);
 	}
 
 	.config-form__extensions-content {
-		padding: 1rem;
+		padding: var(--fd-space-4);
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: var(--fd-space-4);
 	}
 
 	/* ============================================
@@ -746,22 +746,22 @@
 	   ============================================ */
 
 	.config-form__debug {
-		background-color: var(--color-ref-amber-50, #fffbeb);
-		border: 1px solid var(--color-ref-amber-200, #fde68a);
-		border-radius: 0.5rem;
+		background-color: var(--fd-warning-muted);
+		border: 1px solid var(--fd-warning);
+		border-radius: var(--fd-radius-lg);
 		overflow: hidden;
 	}
 
 	.config-form__debug-header {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		background-color: var(--color-ref-amber-100, #fef3c7);
-		border-bottom: 1px solid var(--color-ref-amber-200, #fde68a);
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-3) var(--fd-space-4);
+		background-color: var(--fd-warning-muted);
+		border-bottom: 1px solid var(--fd-warning);
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--color-ref-amber-800, #92400e);
+		color: var(--fd-warning-hover);
 	}
 
 	.config-form__debug-header :global(svg) {
@@ -771,12 +771,12 @@
 
 	.config-form__debug-content {
 		margin: 0;
-		padding: 1rem;
-		font-size: 0.75rem;
+		padding: var(--fd-space-4);
+		font-size: var(--fd-text-xs);
 		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-		color: var(--color-ref-gray-700, #374151);
+		color: var(--fd-foreground);
 		overflow-x: auto;
-		background-color: #ffffff;
+		background-color: var(--fd-background);
 		line-height: 1.5;
 	}
 
@@ -789,15 +789,15 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 3rem 1.5rem;
+		padding: var(--fd-space-12) var(--fd-space-6);
 		text-align: center;
 	}
 
 	.config-form__empty-icon {
 		width: 3rem;
 		height: 3rem;
-		margin-bottom: 1rem;
-		color: var(--color-ref-gray-300, #d1d5db);
+		margin-bottom: var(--fd-space-4);
+		color: var(--fd-border);
 	}
 
 	.config-form__empty-icon :global(svg) {
@@ -807,14 +807,14 @@
 
 	.config-form__empty-text {
 		margin: 0;
-		font-size: 0.875rem;
-		color: var(--color-ref-gray-500, #6b7280);
+		font-size: var(--fd-text-sm);
+		color: var(--fd-muted-foreground);
 		font-style: italic;
 		line-height: 1.5;
 	}
 
 	.config-form__empty-button {
-		margin-top: 1rem;
+		margin-top: var(--fd-space-4);
 	}
 
 	/* ============================================
@@ -822,42 +822,42 @@
 	   ============================================ */
 
 	.config-form__admin-edit {
-		background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-		border: 1px solid var(--color-ref-blue-200, #bfdbfe);
+		background: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
+		border: 1px solid var(--fd-primary);
 		border-radius: 0.625rem;
 		overflow: hidden;
-		margin-bottom: 1rem;
+		margin-bottom: var(--fd-space-4);
 	}
 
 	.config-form__admin-edit-header {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-		border-bottom: 1px solid var(--color-ref-blue-200, #bfdbfe);
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-3) var(--fd-space-4);
+		background: linear-gradient(135deg, var(--fd-primary-muted) 0%, var(--fd-primary-muted) 100%);
+		border-bottom: 1px solid var(--fd-primary);
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--color-ref-blue-800, #1e40af);
+		color: var(--fd-primary-hover);
 	}
 
 	.config-form__admin-edit-header :global(svg) {
 		width: 1rem;
 		height: 1rem;
-		color: var(--color-ref-blue-600, #2563eb);
+		color: var(--fd-primary);
 	}
 
 	.config-form__admin-edit-content {
-		padding: 1rem;
+		padding: var(--fd-space-4);
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: var(--fd-space-3);
 	}
 
 	.config-form__admin-edit-description {
 		margin: 0;
 		font-size: 0.8125rem;
-		color: var(--color-ref-blue-700, #1d4ed8);
+		color: var(--fd-primary-hover);
 		line-height: 1.5;
 	}
 
@@ -870,15 +870,15 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 3rem 1.5rem;
-		gap: 1rem;
+		padding: var(--fd-space-12) var(--fd-space-6);
+		gap: var(--fd-space-4);
 	}
 
 	.config-form__loading-spinner {
 		width: 2.5rem;
 		height: 2.5rem;
-		border: 3px solid var(--color-ref-blue-100, #dbeafe);
-		border-top-color: var(--color-ref-blue-500, #3b82f6);
+		border: 3px solid var(--fd-primary-muted);
+		border-top-color: var(--fd-primary);
 		border-radius: 50%;
 		animation: config-form-spin 0.8s linear infinite;
 	}
@@ -891,8 +891,8 @@
 
 	.config-form__loading-text {
 		margin: 0;
-		font-size: 0.875rem;
-		color: var(--color-ref-gray-600, #4b5563);
+		font-size: var(--fd-text-sm);
+		color: var(--fd-muted-foreground);
 	}
 
 	/* ============================================
@@ -900,47 +900,47 @@
 	   ============================================ */
 
 	.config-form__error {
-		background-color: var(--color-ref-red-50, #fef2f2);
-		border: 1px solid var(--color-ref-red-200, #fecaca);
-		border-radius: 0.5rem;
+		background-color: var(--fd-error-muted);
+		border: 1px solid var(--fd-error);
+		border-radius: var(--fd-radius-lg);
 		overflow: hidden;
 	}
 
 	.config-form__error-header {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		background-color: var(--color-ref-red-100, #fee2e2);
-		border-bottom: 1px solid var(--color-ref-red-200, #fecaca);
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-3) var(--fd-space-4);
+		background-color: var(--fd-error-muted);
+		border-bottom: 1px solid var(--fd-error);
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--color-ref-red-800, #991b1b);
+		color: var(--fd-error-hover);
 	}
 
 	.config-form__error-header :global(svg) {
 		width: 1rem;
 		height: 1rem;
-		color: var(--color-ref-red-600, #dc2626);
+		color: var(--fd-error);
 	}
 
 	.config-form__error-content {
-		padding: 1rem;
+		padding: var(--fd-space-4);
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: var(--fd-space-3);
 	}
 
 	.config-form__error-message {
 		margin: 0;
 		font-size: 0.8125rem;
-		color: var(--color-ref-red-700, #b91c1c);
+		color: var(--fd-error);
 		line-height: 1.5;
 	}
 
 	.config-form__error-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--fd-space-2);
 		flex-wrap: wrap;
 	}
 
@@ -950,37 +950,37 @@
 
 	.config-form__schema-actions {
 		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
-		padding-bottom: 0.75rem;
-		border-bottom: 1px solid var(--color-ref-gray-100, #f3f4f6);
+		gap: var(--fd-space-2);
+		margin-bottom: var(--fd-space-4);
+		padding-bottom: var(--fd-space-3);
+		border-bottom: 1px solid var(--fd-border-muted);
 	}
 
 	.config-form__schema-refresh,
 	.config-form__schema-external {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.625rem;
-		font-size: 0.75rem;
+		gap: var(--fd-space-1);
+		padding: var(--fd-space-1) var(--fd-space-2);
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		font-family: inherit;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 		border: 1px solid transparent;
 	}
 
 	.config-form__schema-refresh {
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border-color: var(--color-ref-gray-200, #e5e7eb);
-		color: var(--color-ref-gray-600, #4b5563);
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border);
+		color: var(--fd-muted-foreground);
 	}
 
 	.config-form__schema-refresh:hover {
-		background-color: var(--color-ref-gray-100, #f3f4f6);
-		border-color: var(--color-ref-gray-300, #d1d5db);
-		color: var(--color-ref-gray-700, #374151);
+		background-color: var(--fd-subtle);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 	}
 
 	.config-form__schema-refresh :global(svg),
@@ -990,15 +990,15 @@
 	}
 
 	.config-form__schema-external {
-		background-color: var(--color-ref-blue-50, #eff6ff);
-		border-color: var(--color-ref-blue-200, #bfdbfe);
-		color: var(--color-ref-blue-700, #1d4ed8);
+		background-color: var(--fd-primary-muted);
+		border-color: var(--fd-primary);
+		color: var(--fd-primary-hover);
 	}
 
 	.config-form__schema-external:hover {
-		background-color: var(--color-ref-blue-100, #dbeafe);
-		border-color: var(--color-ref-blue-300, #93c5fd);
-		color: var(--color-ref-blue-800, #1e40af);
+		background-color: var(--fd-primary-muted);
+		border-color: var(--fd-primary-hover);
+		color: var(--fd-primary-hover);
 	}
 
 	/* ============================================
@@ -1008,10 +1008,10 @@
 	.config-form__button--external {
 		background: linear-gradient(
 			135deg,
-			var(--color-ref-indigo-500, #6366f1) 0%,
-			var(--color-ref-blue-600, #2563eb) 100%
+			var(--fd-accent) 0%,
+			var(--fd-primary) 100%
 		);
-		color: #ffffff;
+		color: var(--fd-accent-foreground);
 		box-shadow:
 			0 1px 3px rgba(99, 102, 241, 0.3),
 			inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1020,8 +1020,8 @@
 	.config-form__button--external:hover {
 		background: linear-gradient(
 			135deg,
-			var(--color-ref-indigo-600, #4f46e5) 0%,
-			var(--color-ref-blue-700, #1d4ed8) 100%
+			var(--fd-accent-hover) 0%,
+			var(--fd-primary-hover) 100%
 		);
 		box-shadow:
 			0 4px 12px rgba(99, 102, 241, 0.35),

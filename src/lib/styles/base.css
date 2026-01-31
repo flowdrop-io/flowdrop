@@ -1,5 +1,8 @@
 /* Base CSS with BEM syntax */
 
+/* Import design tokens */
+@import './tokens.css';
+
 /* Reset and base styles */
 * {
 	box-sizing: border-box;
@@ -20,11 +23,11 @@
 }
 
 .flowdrop-layout__sidebar {
-	width: 320px;
+	width: var(--fd-sidebar-width);
 	height: 100%;
 	display: flex;
 	flex-direction: column;
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--fd-shadow-md);
 }
 
 /* Button styles */
@@ -32,70 +35,70 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0.5rem 1rem;
+	padding: var(--fd-space-2) var(--fd-space-4);
 	border: 1px solid transparent;
-	border-radius: 0.375rem;
-	font-size: 0.875rem;
+	border-radius: var(--fd-radius-md);
+	font-size: var(--fd-text-sm);
 	font-weight: 500;
 	text-decoration: none;
 	cursor: pointer;
-	transition: all 0.2s ease-in-out;
-	background-color: #ffffff;
-	color: #374151;
+	transition: all var(--fd-transition-normal);
+	background-color: var(--fd-background);
+	color: var(--fd-foreground);
 	min-height: 2.5rem;
 }
 
 .flowdrop-btn:hover {
-	background-color: #f9fafb;
-	border-color: #d1d5db;
+	background-color: var(--fd-muted);
+	border-color: var(--fd-border);
 }
 
 .flowdrop-btn:focus {
-	outline: 2px solid #3b82f6;
+	outline: 2px solid var(--fd-ring);
 	outline-offset: 2px;
 }
 
 .flowdrop-btn--primary {
-	background-color: #3b82f6;
-	color: #ffffff;
-	border-color: #3b82f6;
+	background-color: var(--fd-primary);
+	color: var(--fd-primary-foreground);
+	border-color: var(--fd-primary);
 }
 
 .flowdrop-btn--primary:hover {
-	background-color: #2563eb;
-	border-color: #2563eb;
+	background-color: var(--fd-primary-hover);
+	border-color: var(--fd-primary-hover);
 }
 
 .flowdrop-btn--secondary {
-	background-color: #6b7280;
-	color: #ffffff;
-	border-color: #6b7280;
+	background-color: var(--fd-secondary);
+	color: var(--fd-secondary-foreground);
+	border-color: var(--fd-secondary);
 }
 
 .flowdrop-btn--secondary:hover {
-	background-color: #4b5563;
-	border-color: #4b5563;
+	background-color: var(--fd-secondary-hover);
+	border-color: var(--fd-secondary-hover);
 }
 
 .flowdrop-btn--outline {
 	background-color: transparent;
-	color: #374151;
-	border-color: #d1d5db;
+	color: var(--fd-foreground);
+	border-color: var(--fd-border);
 }
 
 .flowdrop-btn--outline:hover {
-	background-color: #f9fafb;
-	border-color: #9ca3af;
+	background-color: var(--fd-muted);
+	border-color: var(--fd-border-strong);
 }
 
 .flowdrop-btn--ghost {
 	background-color: transparent;
-	color: #374151;
+	color: var(--fd-foreground);
 	border-color: transparent;
 }
 
 .flowdrop-btn--ghost:hover {
-	background-color: #f3f4f6;
+	background-color: var(--fd-muted);
 }
 
 .flowdrop-btn--sm {
@@ -114,21 +117,21 @@
 .flowdrop-input {
 	display: block;
 	width: 100%;
-	padding: 0.5rem 0.75rem;
-	border: 1px solid #d1d5db;
-	border-radius: 0.375rem;
-	font-size: 0.875rem;
+	padding: var(--fd-space-2) var(--fd-space-3);
+	border: 1px solid var(--fd-border);
+	border-radius: var(--fd-radius-md);
+	font-size: var(--fd-text-sm);
 	line-height: 1.25rem;
-	color: #111827;
-	background-color: #ffffff;
+	color: var(--fd-foreground);
+	background-color: var(--fd-background);
 	transition:
-		border-color 0.2s ease-in-out,
-		box-shadow 0.2s ease-in-out;
+		border-color var(--fd-transition-normal),
+		box-shadow var(--fd-transition-normal);
 }
 
 .flowdrop-input:focus {
 	outline: none;
-	border-color: #3b82f6;
+	border-color: var(--fd-primary);
 	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -144,66 +147,66 @@
 
 /* Card styles */
 .flowdrop-card {
-	background-color: #ffffff;
-	border: 1px solid #e5e7eb;
-	border-radius: 0.5rem;
-	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	background-color: var(--fd-card);
+	border: 1px solid var(--fd-border);
+	border-radius: var(--fd-radius-lg);
+	box-shadow: var(--fd-shadow-sm);
 	overflow: hidden;
 }
 
 .flowdrop-card--compact {
-	padding: 0.5rem;
+	padding: var(--fd-space-2);
 }
 
 .flowdrop-card__body {
-	padding: 1rem;
+	padding: var(--fd-space-4);
 }
 
 .flowdrop-card__header {
-	padding: 1rem 1rem 0.5rem;
-	border-bottom: 1px solid #f3f4f6;
+	padding: var(--fd-space-4) var(--fd-space-4) var(--fd-space-2);
+	border-bottom: 1px solid var(--fd-border-muted);
 }
 
 .flowdrop-card__footer {
-	padding: 0.5rem 1rem 1rem;
-	border-top: 1px solid #f3f4f6;
+	padding: var(--fd-space-2) var(--fd-space-4) var(--fd-space-4);
+	border-top: 1px solid var(--fd-border-muted);
 }
 
 /* Badge styles */
 .flowdrop-badge {
 	display: inline-flex;
 	align-items: center;
-	padding: 0.25rem 0.5rem;
-	font-size: 0.75rem;
+	padding: var(--fd-space-1) var(--fd-space-2);
+	font-size: var(--fd-text-xs);
 	font-weight: 500;
-	border-radius: 0.375rem;
-	background-color: #f3f4f6;
-	color: #374151;
+	border-radius: var(--fd-radius-md);
+	background-color: var(--fd-muted);
+	color: var(--fd-foreground);
 }
 
 .flowdrop-badge--primary {
-	background-color: #dbeafe;
-	color: #1e40af;
+	background-color: var(--fd-primary-muted);
+	color: var(--fd-primary-hover);
 }
 
 .flowdrop-badge--secondary {
-	background-color: #e5e7eb;
-	color: #374151;
+	background-color: var(--fd-secondary);
+	color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-badge--success {
-	background-color: #d1fae5;
-	color: #065f46;
+	background-color: var(--fd-success-muted);
+	color: var(--fd-success-hover);
 }
 
 .flowdrop-badge--warning {
-	background-color: #fef3c7;
-	color: #92400e;
+	background-color: var(--fd-warning-muted);
+	color: var(--fd-warning-hover);
 }
 
 .flowdrop-badge--error {
-	background-color: #fee2e2;
-	color: #991b1b;
+	background-color: var(--fd-error-muted);
+	color: var(--fd-error-hover);
 }
 
 /* Navbar styles */
@@ -211,9 +214,9 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0.75rem 1rem;
-	background-color: #ffffff;
-	border-bottom: 1px solid #e5e7eb;
+	padding: var(--fd-space-3) var(--fd-space-4);
+	background-color: var(--fd-background);
+	border-bottom: 1px solid var(--fd-border);
 }
 
 .flowdrop-navbar__start {
@@ -238,13 +241,13 @@
 /* Join button group */
 .flowdrop-join {
 	display: inline-flex;
-	border-radius: 0.375rem;
+	border-radius: var(--fd-radius-md);
 	overflow: hidden;
 }
 
 .flowdrop-join__item {
 	border-radius: 0;
-	border-right: 1px solid #d1d5db;
+	border-right: 1px solid var(--fd-border);
 }
 
 .flowdrop-join__item:first-child {
@@ -278,37 +281,37 @@
 }
 
 .flowdrop-hero__title {
-	font-size: 1.125rem;
+	font-size: var(--fd-text-lg);
 	font-weight: 700;
-	margin-bottom: 0.5rem;
-	color: #111827;
+	margin-bottom: var(--fd-space-2);
+	color: var(--fd-foreground);
 }
 
 .flowdrop-hero__description {
-	font-size: 0.875rem;
-	color: #6b7280;
-	margin-bottom: 1rem;
+	font-size: var(--fd-text-sm);
+	color: var(--fd-muted-foreground);
+	margin-bottom: var(--fd-space-4);
 }
 
 /* Divider */
 .flowdrop-divider {
 	display: flex;
 	align-items: center;
-	margin: 1rem 0;
+	margin: var(--fd-space-4) 0;
 }
 
 .flowdrop-divider::before {
 	content: '';
 	flex: 1;
 	height: 1px;
-	background-color: #e5e7eb;
+	background-color: var(--fd-border);
 }
 
 .flowdrop-divider__text {
-	padding: 0 0.75rem;
-	font-size: 0.75rem;
+	padding: 0 var(--fd-space-3);
+	font-size: var(--fd-text-xs);
 	font-weight: 600;
-	color: #6b7280;
+	color: var(--fd-muted-foreground);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
@@ -317,14 +320,14 @@
 	content: '';
 	flex: 1;
 	height: 1px;
-	background-color: #e5e7eb;
+	background-color: var(--fd-border);
 }
 
 /* Details/Summary */
 .flowdrop-details {
-	background-color: #ffffff;
-	border-radius: 0.5rem;
-	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	background-color: var(--fd-card);
+	border-radius: var(--fd-radius-lg);
+	box-shadow: var(--fd-shadow-sm);
 	overflow: hidden;
 }
 
@@ -332,19 +335,19 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0.75rem;
-	font-size: 0.875rem;
+	padding: var(--fd-space-3);
+	font-size: var(--fd-text-sm);
 	font-weight: 500;
 	cursor: pointer;
-	transition: background-color 0.2s ease-in-out;
+	transition: background-color var(--fd-transition-normal);
 }
 
 .flowdrop-details__summary:hover {
-	background-color: #f9fafb;
+	background-color: var(--fd-muted);
 }
 
 .flowdrop-details__content {
-	padding: 0.75rem;
+	padding: var(--fd-space-3);
 	padding-top: 0;
 }
 
@@ -353,8 +356,8 @@
 	display: inline-block;
 	width: 1rem;
 	height: 1rem;
-	border: 2px solid #e5e7eb;
-	border-top: 2px solid #3b82f6;
+	border: 2px solid var(--fd-border);
+	border-top: 2px solid var(--fd-primary);
 	border-radius: 50%;
 	animation: flowdrop-spin 1s linear infinite;
 }
@@ -404,35 +407,35 @@
 }
 
 .flowdrop-gap--1 {
-	gap: 0.25rem;
+	gap: var(--fd-space-1);
 }
 
 .flowdrop-gap--2 {
-	gap: 0.5rem;
+	gap: var(--fd-space-2);
 }
 
 .flowdrop-gap--3 {
-	gap: 0.75rem;
+	gap: var(--fd-space-3);
 }
 
 .flowdrop-gap--4 {
-	gap: 1rem;
+	gap: var(--fd-space-4);
 }
 
 .flowdrop-p--1 {
-	padding: 0.25rem;
+	padding: var(--fd-space-1);
 }
 
 .flowdrop-p--2 {
-	padding: 0.5rem;
+	padding: var(--fd-space-2);
 }
 
 .flowdrop-p--3 {
-	padding: 0.75rem;
+	padding: var(--fd-space-3);
 }
 
 .flowdrop-p--4 {
-	padding: 1rem;
+	padding: var(--fd-space-4);
 }
 
 .flowdrop-m--0 {
@@ -440,35 +443,35 @@
 }
 
 .flowdrop-mb--1 {
-	margin-bottom: 0.25rem;
+	margin-bottom: var(--fd-space-1);
 }
 
 .flowdrop-mb--2 {
-	margin-bottom: 0.5rem;
+	margin-bottom: var(--fd-space-2);
 }
 
 .flowdrop-mb--3 {
-	margin-bottom: 0.75rem;
+	margin-bottom: var(--fd-space-3);
 }
 
 .flowdrop-mb--4 {
-	margin-bottom: 1rem;
+	margin-bottom: var(--fd-space-4);
 }
 
 .flowdrop-text--xs {
-	font-size: 0.75rem;
+	font-size: var(--fd-text-xs);
 }
 
 .flowdrop-text--sm {
-	font-size: 0.875rem;
+	font-size: var(--fd-text-sm);
 }
 
 .flowdrop-text--lg {
-	font-size: 1.125rem;
+	font-size: var(--fd-text-lg);
 }
 
 .flowdrop-text--xl {
-	font-size: 1.25rem;
+	font-size: var(--fd-text-xl);
 }
 
 .flowdrop-font--bold {
@@ -484,55 +487,55 @@
 }
 
 .flowdrop-text--gray {
-	color: #6b7280;
+	color: var(--fd-muted-foreground);
 }
 
 .flowdrop-text--gray-dark {
-	color: #374151;
+	color: var(--fd-foreground);
 }
 
 .flowdrop-bg--white {
-	background-color: #ffffff;
+	background-color: var(--fd-background);
 }
 
 .flowdrop-bg--gray {
-	background-color: #f9fafb;
+	background-color: var(--fd-muted);
 }
 
 .flowdrop-bg--gray-light {
-	background-color: #f3f4f6;
+	background-color: var(--fd-subtle);
 }
 
 .flowdrop-border {
-	border: 1px solid #e5e7eb;
+	border: 1px solid var(--fd-border);
 }
 
 .flowdrop-border--b {
-	border-bottom: 1px solid #e5e7eb;
+	border-bottom: 1px solid var(--fd-border);
 }
 
 .flowdrop-border--t {
-	border-top: 1px solid #e5e7eb;
+	border-top: 1px solid var(--fd-border);
 }
 
 .flowdrop-border--r {
-	border-right: 1px solid #e5e7eb;
+	border-right: 1px solid var(--fd-border);
 }
 
 .flowdrop-rounded {
-	border-radius: 0.375rem;
+	border-radius: var(--fd-radius-md);
 }
 
 .flowdrop-rounded--lg {
-	border-radius: 0.5rem;
+	border-radius: var(--fd-radius-lg);
 }
 
 .flowdrop-shadow {
-	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+	box-shadow: var(--fd-shadow-sm);
 }
 
 .flowdrop-shadow--lg {
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--fd-shadow-md);
 }
 
 .flowdrop-w--full {
@@ -568,7 +571,7 @@
 }
 
 .flowdrop-transition {
-	transition: all 0.2s ease-in-out;
+	transition: all var(--fd-transition-normal);
 }
 
 .flowdrop-truncate {
@@ -618,730 +621,327 @@
 
 /* Color system - Category colors */
 .flowdrop-color--primary {
-	background-color: #3b82f6;
-	color: #ffffff;
+	background-color: var(--fd-primary);
+	color: var(--fd-primary-foreground);
 }
 
 .flowdrop-color--primary-light {
-	background-color: #dbeafe;
-	color: #1e40af;
+	background-color: var(--fd-primary-muted);
+	color: var(--fd-primary-hover);
 }
 
 .flowdrop-color--primary-text {
-	color: #1e40af;
+	color: var(--fd-primary);
 }
 
 .flowdrop-color--primary-border {
-	border-color: #93c5fd;
+	border-color: var(--fd-primary);
 }
 
 .flowdrop-color--secondary {
-	background-color: #6b7280;
-	color: #ffffff;
+	background-color: var(--fd-secondary);
+	color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-color--secondary-light {
-	background-color: #f3f4f6;
-	color: #374151;
+	background-color: var(--fd-secondary);
+	color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-color--secondary-text {
-	color: #374151;
+	color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-color--secondary-border {
-	border-color: #d1d5db;
+	border-color: var(--fd-border);
 }
 
 .flowdrop-color--success {
-	background-color: #10b981;
-	color: #ffffff;
+	background-color: var(--fd-success);
+	color: var(--fd-success-foreground);
 }
 
 .flowdrop-color--success-light {
-	background-color: #d1fae5;
-	color: #065f46;
+	background-color: var(--fd-success-muted);
+	color: var(--fd-success-hover);
 }
 
 .flowdrop-color--success-text {
-	color: #065f46;
+	color: var(--fd-success);
 }
 
 .flowdrop-color--success-border {
-	border-color: #6ee7b7;
+	border-color: var(--fd-success);
 }
 
 .flowdrop-color--warning {
-	background-color: #f59e0b;
-	color: #ffffff;
+	background-color: var(--fd-warning);
+	color: var(--fd-warning-foreground);
 }
 
 .flowdrop-color--warning-light {
-	background-color: #fef3c7;
-	color: #92400e;
+	background-color: var(--fd-warning-muted);
+	color: var(--fd-warning-hover);
 }
 
 .flowdrop-color--warning-text {
-	color: #92400e;
+	color: var(--fd-warning);
 }
 
 .flowdrop-color--warning-border {
-	border-color: #fbbf24;
+	border-color: var(--fd-warning);
 }
 
 .flowdrop-color--error {
-	background-color: #ef4444;
-	color: #ffffff;
+	background-color: var(--fd-error);
+	color: var(--fd-error-foreground);
 }
 
 .flowdrop-color--error-light {
-	background-color: #fee2e2;
-	color: #991b1b;
+	background-color: var(--fd-error-muted);
+	color: var(--fd-error-hover);
 }
 
 .flowdrop-color--error-text {
-	color: #991b1b;
+	color: var(--fd-error);
 }
 
 .flowdrop-color--error-border {
-	border-color: #f87171;
+	border-color: var(--fd-error);
 }
 
 .flowdrop-color--info {
-	background-color: #06b6d4;
-	color: #ffffff;
+	background-color: var(--fd-info);
+	color: var(--fd-info-foreground);
 }
 
 .flowdrop-color--info-light {
-	background-color: #cffafe;
-	color: #0e7490;
+	background-color: var(--fd-info-muted);
+	color: var(--fd-info);
 }
 
 .flowdrop-color--info-text {
-	color: #0e7490;
+	color: var(--fd-info);
 }
 
 .flowdrop-color--info-border {
-	border-color: #67e8f9;
+	border-color: var(--fd-info);
 }
 
 .flowdrop-color--accent {
-	background-color: #8b5cf6;
-	color: #ffffff;
+	background-color: var(--fd-accent);
+	color: var(--fd-accent-foreground);
 }
 
 .flowdrop-color--accent-light {
-	background-color: #ede9fe;
-	color: #5b21b6;
+	background-color: var(--fd-accent-muted);
+	color: var(--fd-accent-hover);
 }
 
 .flowdrop-color--accent-text {
-	color: #5b21b6;
+	color: var(--fd-accent);
 }
 
 .flowdrop-color--accent-border {
-	border-color: #a78bfa;
+	border-color: var(--fd-accent);
 }
 
 .flowdrop-color--neutral {
-	background-color: #6b7280;
-	color: #ffffff;
+	background-color: var(--fd-muted-foreground);
+	color: var(--fd-background);
 }
 
 .flowdrop-color--neutral-light {
-	background-color: #f9fafb;
-	color: #374151;
+	background-color: var(--fd-muted);
+	color: var(--fd-foreground);
 }
 
 .flowdrop-color--neutral-text {
-	color: #374151;
+	color: var(--fd-foreground);
 }
 
 .flowdrop-color--neutral-border {
-	border-color: #d1d5db;
+	border-color: var(--fd-border);
 }
 
 .flowdrop-color--base {
-	background-color: #ffffff;
-	color: #111827;
+	background-color: var(--fd-background);
+	color: var(--fd-foreground);
 }
 
 .flowdrop-color--base-light {
-	background-color: #f9fafb;
-	color: #374151;
+	background-color: var(--fd-muted);
+	color: var(--fd-foreground);
 }
 
 .flowdrop-color--base-text {
-	color: #111827;
+	color: var(--fd-foreground);
 }
 
 .flowdrop-color--base-border {
-	border-color: #e5e7eb;
+	border-color: var(--fd-border);
 }
 
 /* Data type colors for ports */
 .flowdrop-color--emerald {
-	background-color: var(--cmp-node-color-emerald);
+	background-color: var(--fd-node-emerald);
 	color: #ffffff;
 }
 
 .flowdrop-color--blue {
-	background-color: var(--cmp-node-color-blue);
+	background-color: var(--fd-node-blue);
 	color: #ffffff;
 }
 
 .flowdrop-color--purple {
-	background-color: var(--cmp-node-color-purple);
+	background-color: var(--fd-node-purple);
 	color: #ffffff;
 }
 
 .flowdrop-color--amber {
-	background-color: var(--cmp-node-color-amber);
+	background-color: var(--fd-node-amber);
 	color: #ffffff;
 }
 
 .flowdrop-color--orange {
-	background-color: var(--cmp-node-color-orange);
+	background-color: var(--fd-node-orange);
 	color: #ffffff;
 }
 
 .flowdrop-color--red {
-	background-color: var(--cmp-node-color-red);
+	background-color: var(--fd-node-red);
 	color: #ffffff;
 }
 
 .flowdrop-color--pink {
-	background-color: var(--cmp-node-color-pink);
+	background-color: var(--fd-node-pink);
 	color: #ffffff;
 }
 
 .flowdrop-color--indigo {
-	background-color: var(--cmp-node-color-indigo);
+	background-color: var(--fd-node-indigo);
 	color: #ffffff;
 }
 
 .flowdrop-color--teal {
-	background-color: var(--cmp-node-color-teal);
+	background-color: var(--fd-node-teal);
 	color: #ffffff;
 }
 
 .flowdrop-color--cyan {
-	background-color: var(--cmp-node-color-cyan);
+	background-color: var(--fd-node-cyan);
 	color: #ffffff;
 }
 
 .flowdrop-color--lime {
-	background-color: var(--cmp-node-color-lime);
+	background-color: var(--fd-node-lime);
 	color: #ffffff;
 }
 
 .flowdrop-color--slate {
-	background-color: var(--cmp-node-color-slate);
+	background-color: var(--fd-node-slate);
 	color: #ffffff;
 }
 
+/* =========================================================================
+   COMPONENT-SPECIFIC TOKENS
+   These extend the semantic tokens for specific component needs.
+   All use the --fd-* semantic tokens as their foundation.
+   ========================================================================= */
+
 :root {
-	/* Reference tokens (Tailwind palette) */
-	/* Slate */
-	--color-ref-slate-50: #f8fafc;
-	--color-ref-slate-100: #f1f5f9;
-	--color-ref-slate-200: #e2e8f0;
-	--color-ref-slate-300: #cbd5e1;
-	--color-ref-slate-400: #94a3b8;
-	--color-ref-slate-500: #64748b;
-	--color-ref-slate-600: #475569;
-	--color-ref-slate-700: #334155;
-	--color-ref-slate-800: #1e293b;
-	--color-ref-slate-900: #0f172a;
-	--color-ref-slate-950: #020617;
-
-	/* Gray */
-	--color-ref-gray-50: #f9fafb;
-	--color-ref-gray-100: #f3f4f6;
-	--color-ref-gray-200: #e5e7eb;
-	--color-ref-gray-300: #d1d5db;
-	--color-ref-gray-400: #9ca3af;
-	--color-ref-gray-500: #6b7280;
-	--color-ref-gray-600: #4b5563;
-	--color-ref-gray-700: #374151;
-	--color-ref-gray-800: #1f2937;
-	--color-ref-gray-900: #111827;
-	--color-ref-gray-950: #030712;
-
-	/* Zinc */
-	--color-ref-zinc-50: #fafafa;
-	--color-ref-zinc-100: #f4f4f5;
-	--color-ref-zinc-200: #e4e4e7;
-	--color-ref-zinc-300: #d4d4d8;
-	--color-ref-zinc-400: #a1a1aa;
-	--color-ref-zinc-500: #71717a;
-	--color-ref-zinc-600: #52525b;
-	--color-ref-zinc-700: #3f3f46;
-	--color-ref-zinc-800: #27272a;
-	--color-ref-zinc-900: #18181b;
-	--color-ref-zinc-950: #09090b;
-
-	/* Neutral */
-	--color-ref-neutral-50: #fafafa;
-	--color-ref-neutral-100: #f5f5f5;
-	--color-ref-neutral-200: #e5e5e5;
-	--color-ref-neutral-300: #d4d4d4;
-	--color-ref-neutral-400: #a3a3a3;
-	--color-ref-neutral-500: #737373;
-	--color-ref-neutral-600: #525252;
-	--color-ref-neutral-700: #404040;
-	--color-ref-neutral-800: #262626;
-	--color-ref-neutral-900: #171717;
-	--color-ref-neutral-950: #0a0a0a;
-
-	/* Stone */
-	--color-ref-stone-50: #fafaf9;
-	--color-ref-stone-100: #f5f5f4;
-	--color-ref-stone-200: #e7e5e4;
-	--color-ref-stone-300: #d6d3d1;
-	--color-ref-stone-400: #a8a29e;
-	--color-ref-stone-500: #78716c;
-	--color-ref-stone-600: #57534e;
-	--color-ref-stone-700: #44403c;
-	--color-ref-stone-800: #292524;
-	--color-ref-stone-900: #1c1917;
-	--color-ref-stone-950: #0c0a09;
-
-	/* Red */
-	--color-ref-red-50: #fef2f2;
-	--color-ref-red-100: #fee2e2;
-	--color-ref-red-200: #fecaca;
-	--color-ref-red-300: #fca5a5;
-	--color-ref-red-400: #f87171;
-	--color-ref-red-500: #ef4444;
-	--color-ref-red-600: #dc2626;
-	--color-ref-red-700: #b91c1c;
-	--color-ref-red-800: #991b1b;
-	--color-ref-red-900: #7f1d1d;
-	--color-ref-red-950: #450a0a;
-
-	/* Orange */
-	--color-ref-orange-50: #fff7ed;
-	--color-ref-orange-100: #ffedd5;
-	--color-ref-orange-200: #fed7aa;
-	--color-ref-orange-300: #fdba74;
-	--color-ref-orange-400: #fb923c;
-	--color-ref-orange-500: #f97316;
-	--color-ref-orange-600: #ea580c;
-	--color-ref-orange-700: #c2410c;
-	--color-ref-orange-800: #9a3412;
-	--color-ref-orange-900: #7c2d12;
-	--color-ref-orange-950: #431407;
-
-	/* Amber */
-	--color-ref-amber-50: #fffbeb;
-	--color-ref-amber-100: #fef3c7;
-	--color-ref-amber-200: #fde68a;
-	--color-ref-amber-300: #fcd34d;
-	--color-ref-amber-400: #fbbf24;
-	--color-ref-amber-500: #f59e0b;
-	--color-ref-amber-600: #d97706;
-	--color-ref-amber-700: #b45309;
-	--color-ref-amber-800: #92400e;
-	--color-ref-amber-900: #78350f;
-	--color-ref-amber-950: #451a03;
-
-	/* Yellow */
-	--color-ref-yellow-50: #fefce8;
-	--color-ref-yellow-100: #fef9c3;
-	--color-ref-yellow-200: #fef08a;
-	--color-ref-yellow-300: #fde047;
-	--color-ref-yellow-400: #facc15;
-	--color-ref-yellow-500: #eab308;
-	--color-ref-yellow-600: #ca8a04;
-	--color-ref-yellow-700: #a16207;
-	--color-ref-yellow-800: #854d0e;
-	--color-ref-yellow-900: #713f12;
-	--color-ref-yellow-950: #422006;
-
-	/* Lime */
-	--color-ref-lime-50: #f7fee7;
-	--color-ref-lime-100: #ecfccb;
-	--color-ref-lime-200: #d9f99d;
-	--color-ref-lime-300: #bef264;
-	--color-ref-lime-400: #a3e635;
-	--color-ref-lime-500: #84cc16;
-	--color-ref-lime-600: #65a30d;
-	--color-ref-lime-700: #4d7c0f;
-	--color-ref-lime-800: #3f6212;
-	--color-ref-lime-900: #365314;
-	--color-ref-lime-950: #1a2e05;
-
-	/* Green */
-	--color-ref-green-50: #f0fdf4;
-	--color-ref-green-100: #dcfce7;
-	--color-ref-green-200: #bbf7d0;
-	--color-ref-green-300: #86efac;
-	--color-ref-green-400: #4ade80;
-	--color-ref-green-500: #22c55e;
-	--color-ref-green-600: #16a34a;
-	--color-ref-green-700: #15803d;
-	--color-ref-green-800: #166534;
-	--color-ref-green-900: #14532d;
-	--color-ref-green-950: #052e16;
-
-	/* Emerald */
-	--color-ref-emerald-50: #ecfdf5;
-	--color-ref-emerald-100: #d1fae5;
-	--color-ref-emerald-200: #a7f3d0;
-	--color-ref-emerald-300: #6ee7b7;
-	--color-ref-emerald-400: #34d399;
-	--color-ref-emerald-500: #10b981;
-	--color-ref-emerald-600: #059669;
-	--color-ref-emerald-700: #047857;
-	--color-ref-emerald-800: #065f46;
-	--color-ref-emerald-900: #064e3b;
-	--color-ref-emerald-950: #022c22;
-
-	/* Teal */
-	--color-ref-teal-50: #f0fdfa;
-	--color-ref-teal-100: #ccfbf1;
-	--color-ref-teal-200: #99f6e4;
-	--color-ref-teal-300: #5eead4;
-	--color-ref-teal-400: #2dd4bf;
-	--color-ref-teal-500: #14b8a6;
-	--color-ref-teal-600: #0d9488;
-	--color-ref-teal-700: #0f766e;
-	--color-ref-teal-800: #115e59;
-	--color-ref-teal-900: #134e4a;
-	--color-ref-teal-950: #042f2e;
-
-	/* Cyan */
-	--color-ref-cyan-50: #ecfeff;
-	--color-ref-cyan-100: #cffafe;
-	--color-ref-cyan-200: #a5f3fc;
-	--color-ref-cyan-300: #67e8f9;
-	--color-ref-cyan-400: #22d3ee;
-	--color-ref-cyan-500: #06b6d4;
-	--color-ref-cyan-600: #0891b2;
-	--color-ref-cyan-700: #0e7490;
-	--color-ref-cyan-800: #155e75;
-	--color-ref-cyan-900: #164e63;
-	--color-ref-cyan-950: #083344;
-
-	/* Sky */
-	--color-ref-sky-50: #f0f9ff;
-	--color-ref-sky-100: #e0f2fe;
-	--color-ref-sky-200: #bae6fd;
-	--color-ref-sky-300: #7dd3fc;
-	--color-ref-sky-400: #38bdf8;
-	--color-ref-sky-500: #0ea5e9;
-	--color-ref-sky-600: #0284c7;
-	--color-ref-sky-700: #0369a1;
-	--color-ref-sky-800: #075985;
-	--color-ref-sky-900: #0c4a6e;
-	--color-ref-sky-950: #082f49;
-
-	/* Blue */
-	--color-ref-blue-50: #eff6ff;
-	--color-ref-blue-100: #dbeafe;
-	--color-ref-blue-200: #bfdbfe;
-	--color-ref-blue-300: #93c5fd;
-	--color-ref-blue-400: #60a5fa;
-	--color-ref-blue-500: #3b82f6;
-	--color-ref-blue-600: #2563eb;
-	--color-ref-blue-700: #1d4ed8;
-	--color-ref-blue-800: #1e40af;
-	--color-ref-blue-900: #1e3a8a;
-	--color-ref-blue-950: #172554;
-
-	/* Indigo */
-	--color-ref-indigo-50: #eef2ff;
-	--color-ref-indigo-100: #e0e7ff;
-	--color-ref-indigo-200: #c7d2fe;
-	--color-ref-indigo-300: #a5b4fc;
-	--color-ref-indigo-400: #818cf8;
-	--color-ref-indigo-500: #6366f1;
-	--color-ref-indigo-600: #4f46e5;
-	--color-ref-indigo-700: #4338ca;
-	--color-ref-indigo-800: #3730a3;
-	--color-ref-indigo-900: #312e81;
-	--color-ref-indigo-950: #1e1b4b;
-
-	/* Violet */
-	--color-ref-violet-50: #f5f3ff;
-	--color-ref-violet-100: #ede9fe;
-	--color-ref-violet-200: #ddd6fe;
-	--color-ref-violet-300: #c4b5fd;
-	--color-ref-violet-400: #a78bfa;
-	--color-ref-violet-500: #8b5cf6;
-	--color-ref-violet-600: #7c3aed;
-	--color-ref-violet-700: #6d28d9;
-	--color-ref-violet-800: #5b21b6;
-	--color-ref-violet-900: #4c1d95;
-	--color-ref-violet-950: #2e1065;
-
-	/* Purple */
-	--color-ref-purple-50: #faf5ff;
-	--color-ref-purple-100: #f3e8ff;
-	--color-ref-purple-200: #e9d5ff;
-	--color-ref-purple-300: #d8b4fe;
-	--color-ref-purple-400: #c084fc;
-	--color-ref-purple-500: #a855f7;
-	--color-ref-purple-600: #9333ea;
-	--color-ref-purple-700: #7c3aed;
-	--color-ref-purple-800: #6b21a8;
-	--color-ref-purple-900: #581c87;
-	--color-ref-purple-950: #3b0764;
-
-	/* Fuchsia */
-	--color-ref-fuchsia-50: #fdf4ff;
-	--color-ref-fuchsia-100: #fae8ff;
-	--color-ref-fuchsia-200: #f5d0fe;
-	--color-ref-fuchsia-300: #f0abfc;
-	--color-ref-fuchsia-400: #e879f9;
-	--color-ref-fuchsia-500: #d946ef;
-	--color-ref-fuchsia-600: #c026d3;
-	--color-ref-fuchsia-700: #a21caf;
-	--color-ref-fuchsia-800: #86198f;
-	--color-ref-fuchsia-900: #701a75;
-	--color-ref-fuchsia-950: #4a044e;
-
-	/* Pink */
-	--color-ref-pink-50: #fdf2f8;
-	--color-ref-pink-100: #fce7f3;
-	--color-ref-pink-200: #fbcfe8;
-	--color-ref-pink-300: #f9a8d4;
-	--color-ref-pink-400: #f472b6;
-	--color-ref-pink-500: #ec4899;
-	--color-ref-pink-600: #db2777;
-	--color-ref-pink-700: #be185d;
-	--color-ref-pink-800: #9d174d;
-	--color-ref-pink-900: #831843;
-	--color-ref-pink-950: #500724;
-
-	/* Rose */
-	--color-ref-rose-50: #fff1f2;
-	--color-ref-rose-100: #ffe4e6;
-	--color-ref-rose-200: #fecdd3;
-	--color-ref-rose-300: #fda4af;
-	--color-ref-rose-400: #fb7185;
-	--color-ref-rose-500: #f43f5e;
-	--color-ref-rose-600: #e11d48;
-	--color-ref-rose-700: #be123c;
-	--color-ref-rose-800: #9f1239;
-	--color-ref-rose-900: #881337;
-	--color-ref-rose-950: #4c0519;
-
-	/* Component color variables */
-	--cmp-node-color-emerald: var(--color-ref-emerald-500);
-	--cmp-node-color-blue: var(--color-ref-blue-600);
-	--cmp-node-color-amber: var(--color-ref-amber-500);
-	--cmp-node-color-orange: var(--color-ref-orange-500);
-	--cmp-node-color-red: var(--color-ref-red-500);
-	--cmp-node-color-pink: var(--color-ref-pink-500);
-	--cmp-node-color-indigo: var(--color-ref-indigo-500);
-	--cmp-node-color-teal: var(--color-ref-teal-500);
-	--cmp-node-color-cyan: var(--color-ref-cyan-500);
-	--cmp-node-color-lime: var(--color-ref-lime-500);
-	--cmp-node-color-slate: var(--color-ref-slate-500);
-	--cmp-node-color-purple: var(--color-ref-purple-600);
-
-	/* Edge styling tokens */
-	--flowdrop-edge-trigger-color: var(--color-ref-gray-900);
-	--flowdrop-edge-trigger-color-hover: var(--color-ref-gray-900);
-	--flowdrop-edge-trigger-color-selected: var(--color-ref-violet-600);
-	--flowdrop-edge-trigger-width: 2px;
-	--flowdrop-edge-trigger-width-hover: 3px;
-
-	--flowdrop-edge-tool-color: var(--color-ref-amber-500);
-	--flowdrop-edge-tool-color-hover: var(--color-ref-amber-600);
-	--flowdrop-edge-tool-color-selected: var(--color-ref-violet-600);
-
-	--flowdrop-edge-data-color: var(--color-ref-gray-400);
-	--flowdrop-edge-data-color-hover: var(--color-ref-gray-500);
-	--flowdrop-edge-data-color-selected: var(--color-ref-violet-600);
-
-	/* Loopback edge styling tokens */
-	--flowdrop-edge-loopback-color: var(--color-ref-gray-500);
-	--flowdrop-edge-loopback-color-hover: var(--color-ref-gray-600);
-	--flowdrop-edge-loopback-color-selected: var(--color-ref-violet-600);
-	--flowdrop-edge-loopback-width: 1.5px;
-	--flowdrop-edge-loopback-width-hover: 2.5px;
-	--flowdrop-edge-loopback-dasharray: 5 5;
-	--flowdrop-edge-loopback-opacity: 0.85;
-
-	/* Tool node theming tokens */
-	--flowdrop-tool-node-color: var(--color-ref-amber-500);
-	--flowdrop-tool-node-color-light: var(--color-ref-amber-50);
-	--flowdrop-tool-node-color-border: var(--color-ref-amber-300);
-
-	/* Semantic text color tokens */
-	--flowdrop-text-color-error: var(--color-ref-red-600);
-	--flowdrop-text-color-success: var(--color-ref-green-600);
-	--flowdrop-text-color-warning: var(--color-ref-amber-600);
-	--flowdrop-text-color-info: var(--color-ref-blue-600);
-	--flowdrop-text-color-muted: var(--color-ref-gray-500);
-	--flowdrop-text-color-primary: var(--color-ref-gray-900);
-	--flowdrop-text-color-secondary: var(--color-ref-gray-600);
-
 	/* =========================================================================
 	   Interrupt Component Tokens
 	   ========================================================================= */
 
 	/* Interrupt state: Pending (awaiting user response) */
-	--flowdrop-interrupt-pending-bg: linear-gradient(
-		135deg,
-		var(--color-ref-amber-100) 0%,
-		var(--color-ref-amber-200) 100%
-	);
-	--flowdrop-interrupt-pending-border: var(--color-ref-amber-500);
-	--flowdrop-interrupt-pending-shadow: rgba(245, 158, 11, 0.15);
-	--flowdrop-interrupt-pending-avatar: var(--color-ref-amber-500);
-	--flowdrop-interrupt-pending-text: var(--color-ref-amber-800);
-	--flowdrop-interrupt-pending-text-light: var(--color-ref-amber-700);
+	--fd-interrupt-pending-bg: linear-gradient(135deg, var(--fd-warning-muted) 0%, var(--fd-warning-muted) 100%);
+	--fd-interrupt-pending-border: var(--fd-warning);
+	--fd-interrupt-pending-shadow: rgba(245, 158, 11, 0.15);
+	--fd-interrupt-pending-avatar: var(--fd-warning);
+	--fd-interrupt-pending-text: var(--fd-warning-hover);
+	--fd-interrupt-pending-text-light: var(--fd-warning-hover);
 
 	/* Interrupt state: Completed (response received - neutral) */
-	--flowdrop-interrupt-completed-bg: linear-gradient(
-		135deg,
-		var(--color-ref-blue-50) 0%,
-		var(--color-ref-blue-100) 100%
-	);
-	--flowdrop-interrupt-completed-border: var(--color-ref-blue-500);
-	--flowdrop-interrupt-completed-shadow: rgba(59, 130, 246, 0.15);
-	--flowdrop-interrupt-completed-avatar: var(--color-ref-blue-500);
-	--flowdrop-interrupt-completed-text: var(--color-ref-blue-800);
-	--flowdrop-interrupt-completed-text-light: var(--color-ref-blue-600);
+	--fd-interrupt-completed-bg: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
+	--fd-interrupt-completed-border: var(--fd-primary);
+	--fd-interrupt-completed-shadow: rgba(59, 130, 246, 0.15);
+	--fd-interrupt-completed-avatar: var(--fd-primary);
+	--fd-interrupt-completed-text: var(--fd-primary-hover);
+	--fd-interrupt-completed-text-light: var(--fd-primary);
 
 	/* Interrupt state: Cancelled (dismissed without responding) */
-	--flowdrop-interrupt-cancelled-bg: linear-gradient(
-		135deg,
-		var(--color-ref-gray-100) 0%,
-		var(--color-ref-gray-200) 100%
-	);
-	--flowdrop-interrupt-cancelled-border: var(--color-ref-gray-400);
-	--flowdrop-interrupt-cancelled-shadow: rgba(107, 114, 128, 0.15);
-	--flowdrop-interrupt-cancelled-avatar: var(--color-ref-gray-500);
-	--flowdrop-interrupt-cancelled-text: var(--color-ref-gray-600);
-	--flowdrop-interrupt-cancelled-text-light: var(--color-ref-gray-500);
+	--fd-interrupt-cancelled-bg: linear-gradient(135deg, var(--fd-muted) 0%, var(--fd-subtle) 100%);
+	--fd-interrupt-cancelled-border: var(--fd-muted-foreground);
+	--fd-interrupt-cancelled-shadow: rgba(107, 114, 128, 0.15);
+	--fd-interrupt-cancelled-avatar: var(--fd-muted-foreground);
+	--fd-interrupt-cancelled-text: var(--fd-muted-foreground);
+	--fd-interrupt-cancelled-text-light: var(--fd-muted-foreground);
 
 	/* Interrupt state: Error */
-	--flowdrop-interrupt-error-bg: linear-gradient(
-		135deg,
-		var(--color-ref-red-50) 0%,
-		var(--color-ref-red-100) 100%
-	);
-	--flowdrop-interrupt-error-border: var(--color-ref-red-500);
-	--flowdrop-interrupt-error-shadow: rgba(239, 68, 68, 0.15);
-	--flowdrop-interrupt-error-avatar: var(--color-ref-red-500);
-	--flowdrop-interrupt-error-text: var(--color-ref-red-700);
-	--flowdrop-interrupt-error-text-light: var(--color-ref-red-600);
+	--fd-interrupt-error-bg: linear-gradient(135deg, var(--fd-error-muted) 0%, var(--fd-error-muted) 100%);
+	--fd-interrupt-error-border: var(--fd-error);
+	--fd-interrupt-error-shadow: rgba(239, 68, 68, 0.15);
+	--fd-interrupt-error-avatar: var(--fd-error);
+	--fd-interrupt-error-text: var(--fd-error-hover);
+	--fd-interrupt-error-text-light: var(--fd-error);
 
 	/* Interrupt prompt inner styling */
-	--flowdrop-interrupt-prompt-bg: rgba(255, 255, 255, 0.85);
-	--flowdrop-interrupt-prompt-border-pending: rgba(245, 158, 11, 0.2);
-	--flowdrop-interrupt-prompt-border-completed: rgba(59, 130, 246, 0.2);
-	--flowdrop-interrupt-prompt-border-cancelled: rgba(107, 114, 128, 0.2);
-	--flowdrop-interrupt-prompt-border-error: rgba(239, 68, 68, 0.2);
+	--fd-interrupt-prompt-bg: rgba(255, 255, 255, 0.85);
+	--fd-interrupt-prompt-border-pending: rgba(245, 158, 11, 0.2);
+	--fd-interrupt-prompt-border-completed: rgba(59, 130, 246, 0.2);
+	--fd-interrupt-prompt-border-cancelled: rgba(107, 114, 128, 0.2);
+	--fd-interrupt-prompt-border-error: rgba(239, 68, 68, 0.2);
 
 	/* Interrupt button tokens */
-	--flowdrop-interrupt-btn-primary-bg: linear-gradient(
-		135deg,
-		var(--color-ref-blue-500) 0%,
-		var(--color-ref-blue-600) 100%
-	);
-	--flowdrop-interrupt-btn-primary-bg-hover: linear-gradient(
-		135deg,
-		var(--color-ref-blue-600) 0%,
-		var(--color-ref-blue-700) 100%
-	);
-	--flowdrop-interrupt-btn-primary-shadow: rgba(59, 130, 246, 0.3);
-	--flowdrop-interrupt-btn-secondary-bg: var(--color-ref-gray-100);
-	--flowdrop-interrupt-btn-secondary-border: var(--color-ref-gray-300);
-	--flowdrop-interrupt-btn-secondary-text: var(--color-ref-gray-700);
+	--fd-interrupt-btn-primary-bg: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
+	--fd-interrupt-btn-primary-bg-hover: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
+	--fd-interrupt-btn-primary-shadow: rgba(59, 130, 246, 0.3);
+	--fd-interrupt-btn-secondary-bg: var(--fd-muted);
+	--fd-interrupt-btn-secondary-border: var(--fd-border);
+	--fd-interrupt-btn-secondary-text: var(--fd-foreground);
 
 	/* Interrupt selection tokens (for confirmation/choice) */
-	--flowdrop-interrupt-selected-confirm-bg: var(--flowdrop-interrupt-btn-primary-bg);
-	--flowdrop-interrupt-selected-confirm-border: var(--color-ref-blue-700);
-	--flowdrop-interrupt-selected-confirm-glow: rgba(59, 130, 246, 0.3);
-	--flowdrop-interrupt-selected-decline-bg: var(--color-ref-red-50);
-	--flowdrop-interrupt-selected-decline-border: var(--color-ref-red-400);
-	--flowdrop-interrupt-selected-decline-text: var(--color-ref-red-600);
-	--flowdrop-interrupt-selected-decline-glow: rgba(248, 113, 113, 0.2);
-	--flowdrop-interrupt-not-selected-opacity: 0.4;
+	--fd-interrupt-selected-confirm-bg: var(--fd-interrupt-btn-primary-bg);
+	--fd-interrupt-selected-confirm-border: var(--fd-primary-hover);
+	--fd-interrupt-selected-confirm-glow: rgba(59, 130, 246, 0.3);
+	--fd-interrupt-selected-decline-bg: var(--fd-error-muted);
+	--fd-interrupt-selected-decline-border: var(--fd-error);
+	--fd-interrupt-selected-decline-text: var(--fd-error);
+	--fd-interrupt-selected-decline-glow: rgba(248, 113, 113, 0.2);
+	--fd-interrupt-not-selected-opacity: 0.4;
 
 	/* Interrupt badge tokens */
-	--flowdrop-interrupt-badge-completed-bg: var(--color-ref-blue-50);
-	--flowdrop-interrupt-badge-completed-text: var(--color-ref-blue-600);
+	--fd-interrupt-badge-completed-bg: var(--fd-primary-muted);
+	--fd-interrupt-badge-completed-text: var(--fd-primary);
 
 	/* =========================================================================
-	   Form Component Tokens
+	   Notes Node Component Tokens
 	   ========================================================================= */
 
-	/* Form field base */
-	--flowdrop-form-field-bg: var(--color-ref-gray-50);
-	--flowdrop-form-field-bg-hover: #ffffff;
-	--flowdrop-form-field-border: var(--color-ref-gray-200);
-	--flowdrop-form-field-border-hover: var(--color-ref-gray-300);
-	--flowdrop-form-field-border-focus: var(--color-ref-blue-500);
-	--flowdrop-form-field-text: var(--color-ref-gray-900);
-	--flowdrop-form-field-placeholder: var(--color-ref-gray-400);
-	--flowdrop-form-field-focus-ring: rgba(59, 130, 246, 0.12);
-
-	/* Form field icons */
-	--flowdrop-form-icon-color: var(--color-ref-gray-400);
-	--flowdrop-form-icon-color-hover: var(--color-ref-gray-600);
-
-	/* Form tags/chips (selected items) */
-	--flowdrop-form-tag-bg: var(--color-ref-blue-50);
-	--flowdrop-form-tag-border: var(--color-ref-blue-100);
-	--flowdrop-form-tag-text: var(--color-ref-blue-700);
-	--flowdrop-form-tag-icon: var(--color-ref-blue-400);
-	--flowdrop-form-tag-icon-hover: var(--color-ref-blue-600);
-	--flowdrop-form-tag-bg-hover: var(--color-ref-blue-100);
-
-	/* Form dropdown/popover */
-	--flowdrop-form-dropdown-bg: #ffffff;
-	--flowdrop-form-dropdown-border: var(--color-ref-gray-200);
-	--flowdrop-form-dropdown-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
-	/* Form dropdown options */
-	--flowdrop-form-option-bg-hover: var(--color-ref-gray-50);
-	--flowdrop-form-option-bg-selected: var(--color-ref-blue-50);
-	--flowdrop-form-option-bg-selected-hover: var(--color-ref-blue-100);
-	--flowdrop-form-option-text: var(--color-ref-gray-900);
-	--flowdrop-form-option-check: var(--color-ref-blue-500);
-
-	/* Form status states */
-	--flowdrop-form-status-text: var(--color-ref-gray-500);
-	--flowdrop-form-status-loading: var(--color-ref-blue-500);
-	--flowdrop-form-status-error: var(--color-ref-red-500);
-	--flowdrop-form-status-empty: var(--color-ref-gray-400);
-
-	/* Form error/retry button */
-	--flowdrop-form-error-border: var(--color-ref-red-300);
-	--flowdrop-form-error-text: var(--color-ref-red-600);
-	--flowdrop-form-error-bg-hover: var(--color-ref-red-50);
-
-	/* NotesNode component variables */
-	--notes-node-width: 500px;
-	--notes-node-min-width: 250px;
-	--notes-node-max-width: 500px;
-	--notes-node-border-radius: 0.5rem;
-	--notes-node-padding: 1rem;
-	--notes-node-background: rgba(255, 255, 255, 0.9);
-	--notes-node-backdrop-filter: blur(8px);
-	--notes-node-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	--notes-node-hover-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	--notes-node-selected-box-shadow: 0 0 0 2px #3b82f6;
-	--notes-node-transition: all 0.2s ease-in-out;
+	--fd-notes-node-width: 500px;
+	--fd-notes-node-min-width: 250px;
+	--fd-notes-node-max-width: 500px;
+	--fd-notes-node-border-radius: var(--fd-radius-lg);
+	--fd-notes-node-padding: var(--fd-space-4);
+	--fd-notes-node-background: rgba(255, 255, 255, 0.9);
+	--fd-notes-node-backdrop-filter: blur(8px);
+	--fd-notes-node-box-shadow: var(--fd-shadow-md);
+	--fd-notes-node-hover-box-shadow: var(--fd-shadow-lg);
+	--fd-notes-node-selected-box-shadow: 0 0 0 2px var(--fd-primary);
+	--fd-notes-node-transition: all var(--fd-transition-normal);
 
 	/* Note type specific colors */
-	--notes-node-info-bg: var(--color-ref-blue-50);
-	--notes-node-info-border: var(--color-ref-blue-200);
-	--notes-node-warning-bg: var(--color-ref-yellow-50);
-	--notes-node-warning-border: var(--color-ref-yellow-200);
-	--notes-node-success-bg: var(--color-ref-green-50);
-	--notes-node-success-border: var(--color-ref-green-200);
-	--notes-node-error-bg: var(--color-ref-red-50);
-	--notes-node-error-border: var(--color-ref-red-200);
-	--notes-node-note-bg: var(--color-ref-gray-50);
-	--notes-node-note-border: var(--color-ref-gray-200);
+	--fd-notes-node-info-bg: var(--fd-info-muted);
+	--fd-notes-node-info-border: var(--fd-info);
+	--fd-notes-node-warning-bg: var(--fd-warning-muted);
+	--fd-notes-node-warning-border: var(--fd-warning);
+	--fd-notes-node-success-bg: var(--fd-success-muted);
+	--fd-notes-node-success-border: var(--fd-success);
+	--fd-notes-node-error-bg: var(--fd-error-muted);
+	--fd-notes-node-error-border: var(--fd-error);
+	--fd-notes-node-note-bg: var(--fd-muted);
+	--fd-notes-node-note-border: var(--fd-border);
 }
 
 /* Markdown Display Component Styles */

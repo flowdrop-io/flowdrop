@@ -79,9 +79,9 @@
 		position: relative;
 		width: 2.75rem;
 		height: 1.5rem;
-		background-color: var(--color-ref-gray-300, #d1d5db);
+		background-color: var(--fd-border-strong);
 		border-radius: 0.75rem;
-		transition: background-color 0.2s;
+		transition: background-color var(--fd-transition-normal);
 		flex-shrink: 0;
 	}
 
@@ -91,14 +91,14 @@
 		left: 0.125rem;
 		width: 1.25rem;
 		height: 1.25rem;
-		background-color: #ffffff;
+		background-color: var(--fd-background);
 		border-radius: 50%;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--fd-shadow-sm);
 		transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	.form-toggle__input:checked + .form-toggle__track {
-		background-color: var(--color-ref-blue-500, #3b82f6);
+		background-color: var(--fd-primary);
 	}
 
 	.form-toggle__input:checked + .form-toggle__track .form-toggle__thumb {
@@ -110,13 +110,13 @@
 	}
 
 	.form-toggle__label {
-		font-size: 0.875rem;
-		color: var(--color-ref-gray-600, #4b5563);
+		font-size: var(--fd-text-sm);
+		color: var(--fd-muted-foreground);
 		font-weight: 500;
 		min-width: 4.5rem;
 	}
 
 	.form-toggle__input:checked ~ .form-toggle__label {
-		color: var(--color-ref-blue-600, #2563eb);
+		color: var(--fd-primary-hover);
 	}
 </style>

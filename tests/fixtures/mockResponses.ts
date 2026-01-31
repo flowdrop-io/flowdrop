@@ -87,7 +87,7 @@ export const mockPortConfigResponse = successResponse({
 			id: 'trigger',
 			name: 'Trigger',
 			description: 'Control flow',
-			color: 'var(--color-ref-purple-500)',
+			color: 'var(--fd-node-purple)',
 			category: 'basic',
 			enabled: true
 		},
@@ -95,7 +95,7 @@ export const mockPortConfigResponse = successResponse({
 			id: 'string',
 			name: 'String',
 			description: 'Text data',
-			color: 'var(--color-ref-emerald-500)',
+			color: 'var(--fd-node-emerald)',
 			category: 'basic',
 			enabled: true
 		},
@@ -103,7 +103,7 @@ export const mockPortConfigResponse = successResponse({
 			id: 'number',
 			name: 'Number',
 			description: 'Numeric data',
-			color: 'var(--color-ref-blue-500)',
+			color: 'var(--fd-node-blue)',
 			category: 'numeric',
 			enabled: true
 		},
@@ -111,7 +111,7 @@ export const mockPortConfigResponse = successResponse({
 			id: 'boolean',
 			name: 'Boolean',
 			description: 'True/false values',
-			color: 'var(--color-ref-orange-500)',
+			color: 'var(--fd-node-orange)',
 			category: 'logical',
 			enabled: true
 		},
@@ -119,7 +119,7 @@ export const mockPortConfigResponse = successResponse({
 			id: 'json',
 			name: 'JSON',
 			description: 'Structured data',
-			color: 'var(--color-ref-yellow-500)',
+			color: 'var(--fd-node-amber)',
 			category: 'complex',
 			enabled: true
 		},
@@ -127,7 +127,7 @@ export const mockPortConfigResponse = successResponse({
 			id: 'mixed',
 			name: 'Mixed',
 			description: 'Any data type',
-			color: 'var(--color-ref-gray-500)',
+			color: 'var(--fd-node-slate)',
 			category: 'special',
 			enabled: true
 		}
