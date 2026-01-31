@@ -998,7 +998,6 @@ export type {
 	ApiSettings,
 	ThemePreference,
 	ResolvedTheme,
-	ConfigPanelPosition,
 	SettingsCategory,
 	PartialSettings,
 	SyncStatus,

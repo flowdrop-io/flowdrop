@@ -34,6 +34,8 @@
 		markAsSaved
 	} from '../stores/workflowStore.js';
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
+	import { initAutoSave } from '$lib/services/autoSaveService.js';
+	import { uiSettings } from '../stores/settingsStore.js';
 
 	/**
 	 * Configuration props for runtime customization
@@ -599,8 +601,23 @@
 
 		window.addEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
 
+		// Initialize auto-save based on user settings
+		const cleanupAutoSave = initAutoSave({
+			onSave: async () => {
+				await saveWorkflow();
+			},
+			onError: (error) => {
+				// Don't show toast for auto-save errors to avoid noise
+				console.warn('Auto-save failed:', error);
+			},
+			onSuccess: () => {
+				console.debug('Auto-saved workflow');
+			}
+		});
+
 		return () => {
 			window.removeEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
+			cleanupAutoSave();
 		};
 	});
 
@@ -611,6 +628,19 @@
 			// Workflow store updated
 		}
 	});
+
+	/**
+	 * Derived value for showing the right config panel
+	 * Config panel always appears on the right side
+	 */
+	const hasConfigPanelOpen = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig());
+	const showRightPanel = $derived(!disableSidebar && hasConfigPanelOpen);
+
+	/**
+	 * Calculate left sidebar width based on collapsed state
+	 * When collapsed, use 48px; otherwise use user-configured width
+	 */
+	const leftSidebarWidth = $derived($uiSettings.sidebarCollapsed ? 48 : $uiSettings.sidebarWidth);
 </script>
 
 <svelte:head>
@@ -622,16 +652,17 @@
 <MainLayout
 	showHeader={showNavbar && !$page.url.pathname.includes('/edit')}
 	showLeftSidebar={!disableSidebar}
-	showRightSidebar={!disableSidebar && (isWorkflowSettingsOpen || !!selectedNodeForConfig())}
+	showRightSidebar={showRightPanel}
+	showBottomPanel={false}
 	showFooter={false}
 	headerHeight={60}
-	leftSidebarWidth={320}
+	leftSidebarWidth={leftSidebarWidth}
 	rightSidebarWidth={400}
-	leftSidebarMinWidth={280}
-	leftSidebarMaxWidth={450}
+	leftSidebarMinWidth={$uiSettings.sidebarCollapsed ? 48 : 280}
+	leftSidebarMaxWidth={$uiSettings.sidebarCollapsed ? 48 : 450}
 	rightSidebarMinWidth={320}
 	rightSidebarMaxWidth={550}
-	enableLeftSplitPane={false}
+	enableLeftSplitPane={!$uiSettings.sidebarCollapsed}
 	enableRightSplitPane={true}
 	class="flowdrop-app-layout"
 >

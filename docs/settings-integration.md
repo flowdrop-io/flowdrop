@@ -115,28 +115,18 @@ The settings system provides a unified store (`settingsStore`) with five categor
 
 <div 
   class="config-panel"
-  class:config-panel--bottom={$uiSettings.configPanelPosition === "bottom"}
-  class:config-panel--right={$uiSettings.configPanelPosition === "right"}
   class:config-panel--compact={$uiSettings.compactMode}
 >
   <!-- Panel content -->
 </div>
 
 <style>
-  .config-panel--right {
+  .config-panel {
     position: absolute;
     right: 0;
     top: 0;
     height: 100%;
     width: 320px;
-  }
-  
-  .config-panel--bottom {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 300px;
   }
 </style>
 ```
