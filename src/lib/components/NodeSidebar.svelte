@@ -598,7 +598,7 @@
 		width: 2rem;
 		height: 2rem;
 		border-radius: 0.5rem;
-		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
+		background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
 		color: var(--fd-node-icon);
 		font-size: var(--fd-text-sm);
 		display: flex;
@@ -610,7 +610,11 @@
 
 	.flowdrop-node-item:hover .flowdrop-node-icon,
 	.flowdrop-details__summary:hover .flowdrop-node-icon {
-		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+		background: color-mix(
+			in srgb,
+			var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
+			transparent
+		);
 		transform: scale(1.05);
 	}
 

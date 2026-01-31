@@ -14,7 +14,11 @@
 	import { dynamicPortToNodePort } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../../utils/icons.js';
-	import { getDataTypeColorToken, getCategoryColorToken, getPortBackgroundColor } from '../../utils/colors.js';
+	import {
+		getDataTypeColorToken,
+		getCategoryColorToken,
+		getPortBackgroundColor
+	} from '../../utils/colors.js';
 	import { connectedHandles } from '../../stores/workflowStore.js';
 
 	interface Props {
@@ -176,15 +180,18 @@
 	aria-label="Workflow node: {props.data.metadata.name}"
 	aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
-	<!-- Default Node Header -->
+	<!-- Default Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
 	<div class="flowdrop-workflow-node__header">
-		<div class="flowdrop-flex flowdrop-gap--3 flowdrop-items--center">
+		<div class="flowdrop-workflow-node__header-title">
 			<!-- Node Icon with Squircle Background -->
 			<div
 				class="flowdrop-workflow-node__icon-wrapper"
 				style="--_icon-color: {getCategoryColorToken(props.data.metadata.category)}"
 			>
-				<Icon icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)} class="flowdrop-workflow-node__icon" />
+				<Icon
+					icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)}
+					class="flowdrop-workflow-node__icon"
+				/>
 			</div>
 
 			<!-- Node Title - Icon and Title on same line -->
@@ -197,9 +204,9 @@
 				<!-- Status indicators removed - using outer NodeStatusOverlay instead -->
 			</div>
 		</div>
-		<!-- Node Description - on new line below -->
+		<!-- Node Description - line-height 20px so header grows in steps of 10 -->
 		<p
-			class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1"
+			class="flowdrop-workflow-node__header-desc"
 			id="node-description-{props.data.nodeId || 'unknown'}"
 		>
 			{displayDescription}
@@ -209,31 +216,35 @@
 	<!-- Input Ports Container -->
 	{#if visibleInputPorts.length > 0}
 		<div class="flowdrop-workflow-node__ports">
-			<div class="flowdrop-workflow-node__ports-header">
-				<h5 class="flowdrop-workflow-node__ports-title">Inputs</h5>
-			</div>
 			<div class="flowdrop-workflow-node__ports-list">
-				{#each visibleInputPorts as port (port.id)}
+				{#each visibleInputPorts as port, inputIndex (port.id)}
 					<div class="flowdrop-workflow-node__port">
-						<!-- Input Handle -->
+						<!-- Input Handle: centered in row, at node edge (ports have no padding) -->
 						<Handle
 							type="target"
 							position={Position.Left}
 							id={`${props.data.nodeId}-input-${port.id}`}
 							class="flowdrop-workflow-node__handle"
-							style="top: 50%; transform: translateY(-50%); margin-left: -32px; background-color: {getDataTypeColorToken(port.dataType)}; border-color: var(--fd-handle-border);"
+							style="top: 50%; transform: translateY(-50%); left: calc(-1 * (var(--fd-handle-size) / 2)); --fd-handle-fill: {getDataTypeColorToken(
+								port.dataType
+							)}; --fd-handle-border-color: var(--fd-handle-border);"
 							role="button"
 							tabindex={0}
 							aria-label="Connect to {port.name} input port"
 						/>
 
-						<!-- Port Info -->
-						<div class="flowdrop-flex--1 flowdrop-min-w--0">
+						<!-- Port Info: padding lives here so handle position is simple -->
+						<div class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0">
 							<div class="flowdrop-flex flowdrop-gap--2">
 								<span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
-									style="background-color: {getPortBackgroundColor(port.dataType, 15)}; color: {getDataTypeColorToken(port.dataType)}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
+									style="background-color: {getPortBackgroundColor(
+										port.dataType,
+										15
+									)}; color: {getDataTypeColorToken(
+										port.dataType
+									)}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
 								>
 									{port.dataType}
 								</span>
@@ -258,19 +269,23 @@
 	<!-- Output Ports Container -->
 	{#if visibleOutputPorts.length > 0}
 		<div class="flowdrop-workflow-node__ports">
-			<div class="flowdrop-workflow-node__ports-header">
-				<h5 class="flowdrop-workflow-node__ports-title">Outputs</h5>
-			</div>
 			<div class="flowdrop-workflow-node__ports-list">
-				{#each visibleOutputPorts as port (port.id)}
+				{#each visibleOutputPorts as port, outputIndex (port.id)}
 					<div class="flowdrop-workflow-node__port">
-						<!-- Port Info -->
-						<div class="flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right">
+						<!-- Port Info: padding lives here so handle position is simple -->
+						<div
+							class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right"
+						>
 							<div class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end">
 								<span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
-									style="background-color: {getPortBackgroundColor(port.dataType, 15)}; color: {getDataTypeColorToken(port.dataType)}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
+									style="background-color: {getPortBackgroundColor(
+										port.dataType,
+										15
+									)}; color: {getDataTypeColorToken(
+										port.dataType
+									)}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
 								>
 									{port.dataType}
 								</span>
@@ -282,13 +297,15 @@
 							{/if}
 						</div>
 
-						<!-- Output Handle -->
+						<!-- Output Handle: centered in row, at node edge (ports have no padding) -->
 						<Handle
 							type="source"
 							position={Position.Right}
 							id={`${props.data.nodeId}-output-${port.id}`}
 							class="flowdrop-workflow-node__handle"
-							style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {getDataTypeColorToken(port.dataType)}; border-color: var(--fd-handle-border);"
+							style="top: 50%; transform: translateY(-50%); right: calc(-1 * (var(--fd-handle-size) / 2)); --fd-handle-fill: {getDataTypeColorToken(
+								port.dataType
+							)}; --fd-handle-border-color: var(--fd-handle-border);"
 							role="button"
 							tabindex={0}
 							aria-label="Connect from {port.name} output port"
@@ -318,7 +335,7 @@
 		border: 1.5px solid var(--fd-node-border);
 		border-radius: var(--fd-radius-xl);
 		box-shadow: var(--fd-shadow-md);
-		width: 18rem;
+		width: var(--fd-node-default-width);
 		z-index: 10;
 		color: var(--fd-foreground);
 		transition: all var(--fd-transition-fast);
@@ -330,12 +347,16 @@
 	}
 
 	.flowdrop-workflow-node--selected {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
 	.flowdrop-workflow-node--selected:hover {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
@@ -345,11 +366,41 @@
 	}
 
 	.flowdrop-workflow-node__header {
-		padding: var(--fd-space-4);
+		box-sizing: border-box;
+		padding: var(--fd-node-header-gap) var(--fd-space-4);
 		border-bottom: 1px solid var(--fd-border-muted);
 		background: var(--fd-header);
 		border-top-left-radius: var(--fd-radius-xl);
 		border-top-right-radius: var(--fd-radius-xl);
+		display: flex;
+		flex-direction: column;
+		gap: var(--fd-node-header-gap);
+		min-height: calc(
+			var(--fd-node-header-gap) * 2 + var(--fd-node-header-title-height) +
+				var(--fd-node-header-desc-line)
+		);
+	}
+
+	.flowdrop-workflow-node__header-title {
+		display: flex;
+		align-items: center;
+		gap: var(--fd-space-3);
+		min-height: var(--fd-node-header-title-height);
+		flex-shrink: 0;
+	}
+
+	.flowdrop-workflow-node__header-desc {
+		margin: 0;
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
+		line-height: var(--fd-node-header-desc-line);
+		min-height: var(--fd-node-header-desc-line);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
 	}
 
 	/* Squircle icon wrapper - Apple-style rounded square background */
@@ -360,13 +411,17 @@
 		width: 2.25rem;
 		height: 2.25rem;
 		border-radius: 0.5rem;
-		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
+		background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
 		flex-shrink: 0;
 		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-workflow-node:hover .flowdrop-workflow-node__icon-wrapper {
-		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+		background: color-mix(
+			in srgb,
+			var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
+			transparent
+		);
 		transform: scale(1.05);
 	}
 
@@ -376,7 +431,7 @@
 		color: var(--fd-node-icon);
 	}
 
-	.flowdrop-workflow-node__header h3 {
+	.flowdrop-workflow-node__header-title h3 {
 		margin: 0;
 		line-height: 1;
 	}
@@ -394,34 +449,27 @@
 	}
 
 	.flowdrop-workflow-node__ports {
-		padding: var(--fd-space-3) var(--fd-space-4);
-	}
-
-	.flowdrop-workflow-node__ports-header {
-		margin-bottom: var(--fd-space-2);
-	}
-
-	.flowdrop-workflow-node__ports-title {
-		margin: 0;
-		font-size: var(--fd-text-xs);
-		font-weight: 600;
-		color: var(--fd-foreground);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		padding: 0;
 	}
 
 	.flowdrop-workflow-node__ports-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-2);
+		gap: var(--fd-node-header-gap);
+		padding: var(--fd-node-header-gap) 0;
 	}
 
 	.flowdrop-workflow-node__port {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: 0;
+		min-height: var(--fd-node-port-row-height);
 		padding: var(--fd-space-1) 0;
 		position: relative;
+	}
+
+	.flowdrop-workflow-node__port-content {
+		padding: 0 var(--fd-space-4);
 	}
 
 	.flowdrop-badge {
@@ -443,25 +491,9 @@
 		padding: 0.125rem var(--fd-space-1);
 	}
 
-	/* Handle styles */
-	:global(.flowdrop-workflow-node__handle) {
-		width: 0.75rem;
-		height: 0.75rem;
-		background-color: var(--fd-muted-foreground);
-		border: 2px solid var(--fd-handle-border);
-		border-radius: 50%;
-		transition: all var(--fd-transition-normal);
-		cursor: pointer;
-	}
-
+	/* Handle overrides: hover scale (base 20px/12px from base.css) */
 	:global(.flowdrop-workflow-node__handle:hover) {
-		background-color: var(--fd-primary);
-		transform: scale(1.2);
-	}
-
-	:global(.flowdrop-workflow-node__handle:focus) {
-		outline: 2px solid var(--fd-ring);
-		outline-offset: 2px;
+		transform: translateY(-50%) scale(1.2);
 	}
 
 	/* Utility classes */

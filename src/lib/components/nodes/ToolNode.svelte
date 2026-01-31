@@ -141,13 +141,15 @@
 	}
 </script>
 
-<!-- Tool Input Handle (optional) -->
+<!-- Tool Input Handle (optional): center at 40px (multiple of 10), 20px connection area -->
 {#if hasToolInputPort && toolInputPort}
 	<Handle
 		type="target"
 		position={Position.Left}
 		id={`${props.data.nodeId}-input-${toolInputPort.id}`}
-		style="background-color: {getDataTypeColor('tool')}; border-color: var(--fd-handle-border);"
+		style="top: 40px; transform: translateY(-50%); margin-left: -10px; --fd-handle-fill: {getDataTypeColor(
+			'tool'
+		)}; --fd-handle-border-color: var(--fd-handle-border);"
 	/>
 {/if}
 
@@ -212,13 +214,15 @@
 	</button>
 </div>
 
-<!-- Tool Output Handle (optional) -->
+<!-- Tool Output Handle (optional): center at 40px (multiple of 10), 20px connection area -->
 {#if hasToolOutputPort && toolOutputPort}
 	<Handle
 		type="source"
 		position={Position.Right}
 		id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
-		style="background-color: {getDataTypeColor('tool')}; border-color: var(--fd-handle-border);"
+		style="top: 40px; transform: translateY(-50%); margin-right: -10px; --fd-handle-fill: {getDataTypeColor(
+			'tool'
+		)}; --fd-handle-border-color: var(--fd-handle-border);"
 	/>
 {/if}
 
@@ -228,7 +232,8 @@
 		background-color: var(--fd-card);
 		border: 1.5px solid var(--fd-node-border);
 		border-radius: var(--fd-radius-xl);
-		width: 18rem;
+		width: var(--fd-node-default-width);
+		min-height: var(--fd-node-tool-min-height);
 		display: flex;
 		flex-direction: column;
 		cursor: pointer;
@@ -245,12 +250,16 @@
 	}
 
 	.flowdrop-tool-node--selected {
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-tool-node-color);
 	}
 
 	.flowdrop-tool-node--selected:hover {
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-tool-node-color);
 	}
 
@@ -300,13 +309,21 @@
 		width: 2.5rem;
 		height: 2.5rem;
 		border-radius: 0.625rem;
-		background: color-mix(in srgb, var(--fd-tool-node-color) 18%, transparent);
+		background: color-mix(
+			in srgb,
+			var(--fd-tool-node-color) var(--fd-node-icon-bg-opacity),
+			transparent
+		);
 		flex-shrink: 0;
 		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-tool-node:hover .flowdrop-tool-node__icon-wrapper {
-		background: color-mix(in srgb, var(--fd-tool-node-color) 25%, transparent);
+		background: color-mix(
+			in srgb,
+			var(--fd-tool-node-color) var(--fd-node-icon-bg-opacity-hover),
+			transparent
+		);
 		transform: scale(1.05);
 	}
 
@@ -418,24 +435,25 @@
 		}
 	}
 
-	/* Handle styles - special metadata port styling */
+	/* Handle: 20px/12px from base.css; position offsets, tool-specific hover/focus */
 	:global(.svelte-flow__node-tool .svelte-flow__handle) {
-		width: 16px !important;
-		height: 16px !important;
-		border: 2px solid var(--fd-handle-border) !important;
-		border-radius: 50% !important;
-		transition: all 0.2s ease-in-out !important;
-		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
 	}
 
-	:global(.svelte-flow__node-tool .svelte-flow__handle-right) {
-		right: -6px !important;
+	:global(.svelte-flow__node-tool .svelte-flow__handle-left) {
+		left: -10px !important;
 	}
 
-	/* Metadata port hover effects */
+	:global(.svelte-flow__node-tool .svelte-flow__handle-right) {
+		right: -10px !important;
+	}
+
 	:global(.svelte-flow__node-tool .svelte-flow__handle:hover) {
+		transform: translateY(-50%) scale(1.2) !important;
+	}
+
+	:global(.svelte-flow__node-tool .svelte-flow__handle:hover::before) {
 		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent) !important;
 	}
 
