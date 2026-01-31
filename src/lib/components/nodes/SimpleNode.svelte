@@ -272,14 +272,14 @@
 <style>
 	.flowdrop-simple-node {
 		position: relative;
-		background-color: #ffffff;
-		border: 2px solid #e5e7eb;
-		border-radius: 0.75rem;
+		background-color: var(--fd-background);
+		border: 2px solid var(--fd-border);
+		border-radius: var(--fd-radius-xl);
 		display: flex;
 		flex-direction: column;
 		cursor: pointer;
-		transition: all 0.2s ease-in-out;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		transition: all var(--fd-transition-normal);
+		box-shadow: var(--fd-shadow-md);
 		overflow: visible; /* Changed from hidden to visible to allow handles to be properly accessible */
 		z-index: 10;
 	}
@@ -290,12 +290,12 @@
 	}
 
 	.flowdrop-simple-node:hover {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--fd-shadow-lg);
 	}
 
 	.flowdrop-simple-node--selected {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-		border: 2px solid #3b82f6;
+		box-shadow: var(--fd-shadow-lg);
+		border: 2px solid var(--fd-primary);
 	}
 
 	.flowdrop-simple-node--processing {
@@ -303,20 +303,20 @@
 	}
 
 	.flowdrop-simple-node--error {
-		border-color: #ef4444 !important;
-		background-color: #fef2f2 !important;
+		border-color: var(--fd-error) !important;
+		background-color: var(--fd-error-muted) !important;
 	}
 
 	.flowdrop-simple-node__header {
-		padding: 1rem;
-		background-color: #f9fafb;
-		border-radius: 0.75rem;
+		padding: var(--fd-space-4);
+		background-color: var(--fd-muted);
+		border-radius: var(--fd-radius-xl);
 	}
 
 	.flowdrop-simple-node__header-content {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: var(--fd-space-3);
 	}
 
 	.flowdrop-simple-node__icon-container {
@@ -325,14 +325,14 @@
 		justify-content: center;
 		width: 2rem;
 		height: 2rem;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		flex-shrink: 0;
 	}
 
 	.flowdrop-simple-node__title {
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		font-weight: 500;
-		color: #1f2937;
+		color: var(--fd-foreground);
 		margin: 0;
 		flex: 1;
 		min-width: 0;
@@ -340,15 +340,15 @@
 	}
 
 	.flowdrop-simple-node__description {
-		font-size: 0.75rem;
-		color: #6b7280;
-		margin: 0.25rem 0 0 0;
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
+		margin: var(--fd-space-1) 0 0 0;
 		line-height: 1.3;
 	}
 
 	:global(.flowdrop-simple-node__icon) {
 		color: white;
-		font-size: 1rem;
+		font-size: var(--fd-text-base);
 		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 	}
 
@@ -373,7 +373,7 @@
 		position: absolute;
 		top: 4px;
 		right: 4px;
-		color: #ef4444;
+		color: var(--fd-error);
 	}
 
 	:global(.flowdrop-simple-node__error-icon) {
@@ -383,23 +383,23 @@
 
 	.flowdrop-simple-node__config-btn {
 		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
+		top: var(--fd-space-2);
+		right: var(--fd-space-2);
 		width: 1.5rem;
 		height: 1.5rem;
 		background-color: rgba(255, 255, 255, 0.9);
-		border: 1px solid #e5e7eb;
-		border-radius: 0.25rem;
-		color: #6b7280;
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-sm);
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		backdrop-filter: blur(4px);
 		z-index: 15;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 	}
 
 	.flowdrop-simple-node:hover .flowdrop-simple-node__config-btn {
@@ -407,9 +407,9 @@
 	}
 
 	.flowdrop-simple-node__config-btn:hover {
-		background-color: #f9fafb;
-		border-color: #d1d5db;
-		color: #374151;
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 	}
 
 	@keyframes spin {
@@ -423,7 +423,7 @@
 		width: 18px !important;
 		height: 18px !important;
 		border-radius: 50% !important;
-		transition: all 0.2s ease-in-out !important;
+		transition: all var(--fd-transition-normal) !important;
 		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
@@ -438,7 +438,7 @@
 	}
 
 	:global(.svelte-flow__node-simple .svelte-flow__handle:focus) {
-		outline: 2px solid #3b82f6 !important;
+		outline: 2px solid var(--fd-ring) !important;
 		outline-offset: 2px !important;
 	}
 </style>

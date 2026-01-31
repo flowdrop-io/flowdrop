@@ -576,7 +576,10 @@ function createInterruptMessage(
 		role: 'assistant',
 		content,
 		timestamp: new Date().toISOString(),
-		status: 'completed',
+		// Use 'pending' status for interrupt messages - they should only be 'completed'
+		// after the user has responded. The ChatPanel effect checks message.status
+		// and auto-resolves interrupts with 'completed' status.
+		status: 'pending',
 		sequenceNumber,
 		parentMessageId,
 		nodeId,

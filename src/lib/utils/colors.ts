@@ -8,65 +8,67 @@ import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
 import { getPortCompatibilityChecker } from './connections.js';
 
 /**
- * Category color mapping to reference tokens (CSS variables)
+ * Category color mapping to design tokens (CSS variables)
+ * Uses --fd-node-* tokens from tokens.css
  */
 export const CATEGORY_COLOR_TOKENS: Record<NodeCategory, string> = {
-	triggers: 'var(--color-ref-cyan-500)',
-	inputs: 'var(--color-ref-emerald-500)',
-	outputs: 'var(--color-ref-blue-600)',
-	prompts: 'var(--color-ref-amber-500)',
-	models: 'var(--color-ref-indigo-500)',
-	processing: 'var(--color-ref-teal-500)',
-	logic: 'var(--color-ref-purple-600)',
-	data: 'var(--color-ref-orange-500)',
-	helpers: 'var(--color-ref-slate-500)',
-	tools: 'var(--color-ref-amber-500)',
-	'vector stores': 'var(--color-ref-emerald-500)',
-	embeddings: 'var(--color-ref-indigo-500)',
-	memories: 'var(--color-ref-blue-600)',
-	agents: 'var(--color-ref-teal-500)',
-	ai: 'var(--color-ref-purple-500)',
-	bundles: 'var(--color-ref-slate-500)'
+	triggers: 'var(--fd-node-cyan)',
+	inputs: 'var(--fd-node-emerald)',
+	outputs: 'var(--fd-node-blue)',
+	prompts: 'var(--fd-node-amber)',
+	models: 'var(--fd-node-indigo)',
+	processing: 'var(--fd-node-teal)',
+	logic: 'var(--fd-node-purple)',
+	data: 'var(--fd-node-orange)',
+	helpers: 'var(--fd-node-slate)',
+	tools: 'var(--fd-node-amber)',
+	'vector stores': 'var(--fd-node-emerald)',
+	embeddings: 'var(--fd-node-indigo)',
+	memories: 'var(--fd-node-blue)',
+	agents: 'var(--fd-node-teal)',
+	ai: 'var(--fd-node-purple)',
+	bundles: 'var(--fd-node-slate)'
 };
 
 /**
  * Default data type colors for fallback when port configuration is not available
+ * Uses --fd-node-* tokens from tokens.css
  */
 const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
-	string: 'var(--color-ref-emerald-500)',
-	text: 'var(--color-ref-emerald-500)',
-	number: 'var(--color-ref-blue-600)',
-	integer: 'var(--color-ref-blue-600)',
-	float: 'var(--color-ref-blue-600)',
-	boolean: 'var(--color-ref-purple-600)',
-	array: 'var(--color-ref-amber-500)',
-	list: 'var(--color-ref-amber-500)',
-	object: 'var(--color-ref-orange-500)',
-	json: 'var(--color-ref-orange-500)',
-	mixed: 'var(--color-ref-orange-500)',
-	file: 'var(--color-ref-red-500)',
-	document: 'var(--color-ref-red-500)',
-	image: 'var(--color-ref-pink-500)',
-	picture: 'var(--color-ref-pink-500)',
-	audio: 'var(--color-ref-indigo-500)',
-	sound: 'var(--color-ref-indigo-500)',
-	video: 'var(--color-ref-teal-500)',
-	movie: 'var(--color-ref-teal-500)',
-	url: 'var(--color-ref-cyan-500)',
-	email: 'var(--color-ref-cyan-500)',
-	date: 'var(--color-ref-lime-500)',
-	datetime: 'var(--color-ref-lime-500)',
-	time: 'var(--color-ref-lime-500)',
-	tool: 'var(--color-ref-amber-500)',
-	trigger: 'var(--color-ref-gray-950)',
-	branch: 'var(--color-ref-purple-500)'
+	string: 'var(--fd-node-emerald)',
+	text: 'var(--fd-node-emerald)',
+	number: 'var(--fd-node-blue)',
+	integer: 'var(--fd-node-blue)',
+	float: 'var(--fd-node-blue)',
+	boolean: 'var(--fd-node-purple)',
+	array: 'var(--fd-node-amber)',
+	list: 'var(--fd-node-amber)',
+	object: 'var(--fd-node-orange)',
+	json: 'var(--fd-node-orange)',
+	mixed: 'var(--fd-node-orange)',
+	file: 'var(--fd-node-red)',
+	document: 'var(--fd-node-red)',
+	image: 'var(--fd-node-pink)',
+	picture: 'var(--fd-node-pink)',
+	audio: 'var(--fd-node-indigo)',
+	sound: 'var(--fd-node-indigo)',
+	video: 'var(--fd-node-teal)',
+	movie: 'var(--fd-node-teal)',
+	url: 'var(--fd-node-cyan)',
+	email: 'var(--fd-node-cyan)',
+	date: 'var(--fd-node-lime)',
+	datetime: 'var(--fd-node-lime)',
+	time: 'var(--fd-node-lime)',
+	tool: 'var(--fd-node-amber)',
+	trigger: 'var(--fd-foreground)',
+	branch: 'var(--fd-node-purple)'
 };
 
 /**
- * Get the reference color token for a category
+ * Get the design token for a category color
  */
 export function getCategoryColorToken(category: NodeCategory): string {
-	return CATEGORY_COLOR_TOKENS[category] || 'var(--color-ref-slate-500)';
+	return CATEGORY_COLOR_TOKENS[category] || 'var(--fd-node-slate)';
 }
 
 /**
@@ -84,7 +86,7 @@ export function getDataTypeColorToken(dataType: string): string {
 		// console.warn("Port compatibility checker not initialized, using fallback colors");
 	}
 
-	return DEFAULT_DATA_TYPE_COLORS[dataType.toLowerCase()] || 'var(--color-ref-slate-500)';
+	return DEFAULT_DATA_TYPE_COLORS[dataType.toLowerCase()] || 'var(--fd-node-slate)';
 }
 
 /**
@@ -129,7 +131,7 @@ export const DEFAULT_COLORS = {
  * @returns The color configuration for the category
  */
 export function getCategoryColors(category: NodeCategory): string {
-	return CATEGORY_COLOR_TOKENS[category] || 'var(--color-ref-slate-500)';
+	return CATEGORY_COLOR_TOKENS[category] || 'var(--fd-node-slate)';
 }
 
 /**
@@ -186,35 +188,35 @@ export function getNodeColors(
 
 	if (isError) {
 		return {
-			background: 'var(--color-ref-red-50)',
-			accent: 'var(--color-ref-red-500)',
-			text: 'var(--color-ref-red-900)',
-			border: 'var(--color-ref-red-200)'
+			background: 'var(--fd-error-muted)',
+			accent: 'var(--fd-error)',
+			text: 'var(--fd-error-hover)',
+			border: 'var(--fd-error)'
 		};
 	}
 
 	if (isProcessing) {
 		return {
-			background: 'var(--color-ref-blue-50)',
-			accent: 'var(--color-ref-blue-500)',
-			text: 'var(--color-ref-blue-900)',
-			border: 'var(--color-ref-blue-200)'
+			background: 'var(--fd-info-muted)',
+			accent: 'var(--fd-info)',
+			text: 'var(--fd-primary-hover)',
+			border: 'var(--fd-primary)'
 		};
 	}
 
 	if (isSelected) {
 		return {
-			background: 'var(--color-ref-indigo-50)',
-			accent: 'var(--color-ref-indigo-500)',
-			text: 'var(--color-ref-indigo-900)',
-			border: 'var(--color-ref-indigo-200)'
+			background: 'var(--fd-accent-muted)',
+			accent: 'var(--fd-accent)',
+			text: 'var(--fd-accent-hover)',
+			border: 'var(--fd-accent)'
 		};
 	}
 
 	return {
 		background: baseColor,
 		accent: baseColor,
-		text: 'var(--color-ref-slate-900)',
+		text: 'var(--fd-foreground)',
 		border: baseColor
 	};
 }

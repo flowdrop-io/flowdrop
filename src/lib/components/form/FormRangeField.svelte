@@ -121,13 +121,13 @@
 		-webkit-appearance: none;
 		background: linear-gradient(
 			to right,
-			var(--color-ref-blue-500, #3b82f6) 0%,
-			var(--color-ref-blue-500, #3b82f6) var(--progress, 0%),
-			var(--color-ref-gray-200, #e5e7eb) var(--progress, 0%),
-			var(--color-ref-gray-200, #e5e7eb) 100%
+			var(--fd-primary) 0%,
+			var(--fd-primary) var(--progress, 0%),
+			var(--fd-border) var(--progress, 0%),
+			var(--fd-border) 100%
 		);
 		cursor: pointer;
-		transition: background 0.15s ease;
+		transition: background var(--fd-transition-fast);
 	}
 
 	/* Webkit (Chrome, Safari, Edge) - Track */
@@ -143,8 +143,8 @@
 		width: 18px;
 		height: 18px;
 		border-radius: 50%;
-		background: linear-gradient(135deg, #ffffff 0%, var(--color-ref-gray-50, #f9fafb) 100%);
-		border: 2px solid var(--color-ref-blue-500, #3b82f6);
+		background: linear-gradient(135deg, var(--fd-background) 0%, var(--fd-muted) 100%);
+		border: 2px solid var(--fd-primary);
 		box-shadow:
 			0 2px 6px rgba(59, 130, 246, 0.25),
 			0 1px 2px rgba(0, 0, 0, 0.1);
@@ -170,13 +170,13 @@
 	.form-range-field::-moz-range-track {
 		height: 6px;
 		border-radius: 3px;
-		background: var(--color-ref-gray-200, #e5e7eb);
+		background: var(--fd-border);
 	}
 
 	.form-range-field::-moz-range-progress {
 		height: 6px;
 		border-radius: 3px;
-		background: var(--color-ref-blue-500, #3b82f6);
+		background: var(--fd-primary);
 	}
 
 	/* Firefox - Thumb */
@@ -184,8 +184,8 @@
 		width: 18px;
 		height: 18px;
 		border-radius: 50%;
-		background: linear-gradient(135deg, #ffffff 0%, var(--color-ref-gray-50, #f9fafb) 100%);
-		border: 2px solid var(--color-ref-blue-500, #3b82f6);
+		background: linear-gradient(135deg, var(--fd-background) 0%, var(--fd-muted) 100%);
+		border: 2px solid var(--fd-primary);
 		box-shadow:
 			0 2px 6px rgba(59, 130, 246, 0.25),
 			0 1px 2px rgba(0, 0, 0, 0.1);
@@ -220,22 +220,22 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.form-range-min,
 	.form-range-max {
-		color: var(--color-ref-gray-400, #9ca3af);
+		color: var(--fd-muted-foreground);
 		font-weight: 400;
 	}
 
 	.form-range-current {
 		font-weight: 600;
-		color: var(--color-ref-blue-600, #2563eb);
-		background-color: var(--color-ref-blue-50, #eff6ff);
+		color: var(--fd-primary-hover);
+		background-color: var(--fd-primary-muted);
 		padding: 0.125rem 0.5rem;
-		border-radius: 0.25rem;
+		border-radius: var(--fd-radius-sm);
 		min-width: 2.5rem;
 		text-align: center;
 	}

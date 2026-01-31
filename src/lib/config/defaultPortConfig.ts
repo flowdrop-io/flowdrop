@@ -10,12 +10,12 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 	defaultDataType: 'string',
 
 	dataTypes: [
-		// Text and basic types
+		// Control flow types
 		{
 			id: 'trigger',
 			name: 'Trigger',
 			description: 'Control flow of the workflow',
-			color: 'var(--color-ref-purple-500)',
+			color: 'var(--fd-node-purple)',
 			category: 'basic',
 			enabled: true
 		},
@@ -24,7 +24,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'string',
 			name: 'String',
 			description: 'Text data',
-			color: 'var(--color-ref-emerald-500)',
+			color: 'var(--fd-node-emerald)',
 			category: 'basic',
 			enabled: true
 		},
@@ -34,7 +34,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'number',
 			name: 'Number',
 			description: 'Numeric data',
-			color: 'var(--color-ref-blue-600)',
+			color: 'var(--fd-node-blue)',
 			category: 'numeric',
 			enabled: true
 		},
@@ -44,7 +44,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'boolean',
 			name: 'Boolean',
 			description: 'True/false values',
-			color: 'var(--color-ref-purple-600)',
+			color: 'var(--fd-node-purple)',
 			category: 'logical',
 			enabled: true
 		},
@@ -54,7 +54,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'array',
 			name: 'Array',
 			description: 'Ordered list of items',
-			color: 'var(--color-ref-amber-500)',
+			color: 'var(--fd-node-amber)',
 			category: 'collection',
 			enabled: true
 		},
@@ -64,7 +64,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'string[]',
 			name: 'String Array',
 			description: 'Array of strings',
-			color: 'var(--color-ref-emerald-400)',
+			color: 'var(--fd-node-emerald)',
 			category: 'collection',
 			enabled: true
 		},
@@ -72,7 +72,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'number[]',
 			name: 'Number Array',
 			description: 'Array of numbers',
-			color: 'var(--color-ref-blue-400)',
+			color: 'var(--fd-node-blue)',
 			category: 'collection',
 			enabled: true
 		},
@@ -80,7 +80,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'boolean[]',
 			name: 'Boolean Array',
 			description: 'Array of true/false values',
-			color: 'var(--color-ref-purple-400)',
+			color: 'var(--fd-node-purple)',
 			category: 'collection',
 			enabled: true
 		},
@@ -88,7 +88,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'json[]',
 			name: 'JSON Array',
 			description: 'Array of JSON objects',
-			color: 'var(--color-ref-orange-400)',
+			color: 'var(--fd-node-orange)',
 			category: 'collection',
 			enabled: true
 		},
@@ -96,7 +96,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'file[]',
 			name: 'File Array',
 			description: 'Array of files',
-			color: 'var(--color-ref-red-400)',
+			color: 'var(--fd-node-red)',
 			category: 'collection',
 			enabled: true
 		},
@@ -104,7 +104,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'image[]',
 			name: 'Image Array',
 			description: 'Array of images',
-			color: 'var(--color-ref-pink-400)',
+			color: 'var(--fd-node-pink)',
 			category: 'collection',
 			enabled: true
 		},
@@ -114,7 +114,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'json',
 			name: 'JSON',
 			description: 'JSON structured data',
-			color: 'var(--color-ref-orange-500)',
+			color: 'var(--fd-node-orange)',
 			category: 'complex',
 			enabled: true
 		},
@@ -124,7 +124,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'file',
 			name: 'File',
 			description: 'File data',
-			color: 'var(--color-ref-red-500)',
+			color: 'var(--fd-node-red)',
 			category: 'file',
 			enabled: true
 		},
@@ -134,7 +134,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'image',
 			name: 'Image',
 			description: 'Image data',
-			color: 'var(--color-ref-pink-500)',
+			color: 'var(--fd-node-pink)',
 			category: 'media',
 			enabled: true
 		},
@@ -142,7 +142,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'audio',
 			name: 'Audio',
 			description: 'Audio data',
-			color: 'var(--color-ref-indigo-500)',
+			color: 'var(--fd-node-indigo)',
 			category: 'media',
 			enabled: true
 		},
@@ -150,7 +150,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'video',
 			name: 'Video',
 			description: 'Video data',
-			color: 'var(--color-ref-teal-500)',
+			color: 'var(--fd-node-teal)',
 			category: 'media',
 			enabled: true
 		},
@@ -160,7 +160,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'url',
 			name: 'URL',
 			description: 'Web address',
-			color: 'var(--color-ref-cyan-500)',
+			color: 'var(--fd-node-cyan)',
 			category: 'special',
 			enabled: true
 		},
@@ -168,7 +168,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'email',
 			name: 'Email',
 			description: 'Email address',
-			color: 'var(--color-ref-cyan-500)',
+			color: 'var(--fd-node-cyan)',
 			category: 'special',
 			enabled: true
 		},
@@ -176,7 +176,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'date',
 			name: 'Date',
 			description: 'Date value',
-			color: 'var(--color-ref-lime-500)',
+			color: 'var(--fd-node-lime)',
 			category: 'temporal',
 			enabled: true
 		},
@@ -184,7 +184,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'datetime',
 			name: 'DateTime',
 			description: 'Date and time value',
-			color: 'var(--color-ref-lime-500)',
+			color: 'var(--fd-node-lime)',
 			category: 'temporal',
 			enabled: true
 		},
@@ -192,7 +192,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			id: 'time',
 			name: 'Time',
 			description: 'Time value',
-			color: 'var(--color-ref-lime-500)',
+			color: 'var(--fd-node-lime)',
 			category: 'temporal',
 			enabled: true
 		}

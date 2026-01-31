@@ -208,12 +208,12 @@ export class EdgeStylingHelper {
 		// Determine edge category (loopback takes precedence)
 		const edgeCategory = this.getEdgeCategoryWithLoopback(edge, sourcePortDataType);
 
-		// Edge color constants (matching CSS tokens in base.css)
+		// Edge color constants (matching CSS tokens in tokens.css)
 		const EDGE_COLORS = {
-			trigger: '#111827', // --color-ref-gray-900
-			tool: '#f59e0b', // --color-ref-amber-500
-			loopback: '#6b7280', // --color-ref-gray-500
-			data: '#9ca3af' // --color-ref-gray-400
+			trigger: '#18181b', // --fd-edge-trigger (--_gray-9)
+			tool: '#f59e0b', // --fd-edge-tool (--_amber-2)
+			loopback: '#71717a', // --fd-edge-loopback (--_gray-6)
+			data: '#a1a1aa' // --fd-edge-data (--_gray-5)
 		};
 
 		// Apply styling based on edge category
@@ -222,7 +222,7 @@ export class EdgeStylingHelper {
 			case 'loopback':
 				// Loopback edges: dashed gray line for loop iteration
 				edge.style =
-					'stroke: var(--flowdrop-edge-loopback-color); stroke-dasharray: 5 5; stroke-width: var(--flowdrop-edge-loopback-width);';
+					'stroke: var(--fd-edge-loopback); stroke-dasharray: var(--fd-edge-loopback-dasharray); stroke-width: var(--fd-edge-loopback-width); opacity: var(--fd-edge-loopback-opacity);';
 				edge.class = 'flowdrop--edge--loopback';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
@@ -235,7 +235,7 @@ export class EdgeStylingHelper {
 			case 'trigger':
 				// Trigger edges: solid dark line for control flow
 				edge.style =
-					'stroke: var(--flowdrop-edge-trigger-color); stroke-width: var(--flowdrop-edge-trigger-width);';
+					'stroke: var(--fd-edge-trigger); stroke-width: var(--fd-edge-trigger-width);';
 				edge.class = 'flowdrop--edge--trigger';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
@@ -247,7 +247,7 @@ export class EdgeStylingHelper {
 
 			case 'tool':
 				// Tool edges: dashed amber line
-				edge.style = 'stroke: var(--flowdrop-edge-tool-color); stroke-dasharray: 5 3;';
+				edge.style = 'stroke: var(--fd-edge-tool); stroke-dasharray: 5 3;';
 				edge.class = 'flowdrop--edge--tool';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
@@ -260,7 +260,7 @@ export class EdgeStylingHelper {
 			case 'data':
 			default:
 				// Data edges: normal gray line
-				edge.style = 'stroke: var(--flowdrop-edge-data-color);';
+				edge.style = 'stroke: var(--fd-edge-data);';
 				edge.class = 'flowdrop--edge--data';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
