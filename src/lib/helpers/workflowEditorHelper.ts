@@ -208,13 +208,27 @@ export class EdgeStylingHelper {
 		// Determine edge category (loopback takes precedence)
 		const edgeCategory = this.getEdgeCategoryWithLoopback(edge, sourcePortDataType);
 
-		// Edge color constants (matching CSS tokens in tokens.css)
-		const EDGE_COLORS = {
-			trigger: '#18181b', // --fd-edge-trigger (--_gray-9)
-			tool: '#f59e0b', // --fd-edge-tool (--_amber-2)
-			loopback: '#71717a', // --fd-edge-loopback (--_gray-6)
-			data: '#a1a1aa' // --fd-edge-data (--_gray-5)
-		};
+		// Detect current theme for marker colors
+		// Marker colors are baked in at creation time, so we check the theme here
+		const isDarkMode =
+			typeof document !== 'undefined' &&
+			document.documentElement.getAttribute('data-theme') === 'dark';
+
+		// Edge color constants for marker arrows - matched to CSS token values
+		// These match the --fd-edge-* tokens in tokens.css for consistency
+		const EDGE_COLORS = isDarkMode
+			? {
+					trigger: '#eaeaef', // --_gray-3 (light for dark mode visibility)
+					tool: '#fbbf24', // Brighter amber for dark mode
+					loopback: '#a3a3ad', // --_gray-5
+					data: '#a3a3ad' // --_gray-5
+				}
+			: {
+					trigger: '#18181c', // --_gray-9 (dark for light mode)
+					tool: '#f59e0b', // --_amber-2
+					loopback: '#71717b', // --_gray-6
+					data: '#a3a3ad' // --_gray-5
+				};
 
 		// Apply styling based on edge category
 		// CSS classes handle styling via tokens; inline styles are fallback
