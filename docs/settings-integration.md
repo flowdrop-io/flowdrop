@@ -6,13 +6,13 @@ This document describes how to integrate user settings into FlowDrop components.
 
 The settings system provides a unified store (`settingsStore`) with five categories:
 
-| Category | Store | Purpose |
-|----------|-------|---------|
-| Theme | `themeSettings` | Light/dark/auto mode |
-| Editor | `editorSettings` | Canvas behavior (grid, minimap, zoom) |
-| UI | `uiSettings` | Layout preferences (sidebar, panels) |
-| Behavior | `behaviorSettings` | Auto-save, confirmations |
-| API | `apiSettings` | Request timeout, retry logic |
+| Category | Store              | Purpose                               |
+| -------- | ------------------ | ------------------------------------- |
+| Theme    | `themeSettings`    | Light/dark/auto mode                  |
+| Editor   | `editorSettings`   | Canvas behavior (grid, minimap, zoom) |
+| UI       | `uiSettings`       | Layout preferences (sidebar, panels)  |
+| Behavior | `behaviorSettings` | Auto-save, confirmations              |
+| API      | `apiSettings`      | Request timeout, retry logic          |
 
 ## Current Status
 
@@ -57,13 +57,13 @@ The settings system provides a unified store (`settingsStore`) with five categor
 
 **Settings mapping:**
 
-| Setting | SvelteFlow Prop/Component |
-|---------|--------------------------|
-| `showGrid` | Conditionally render `<Background>` |
-| `snapToGrid` + `gridSize` | `snapGrid={[size, size]}` |
-| `showMinimap` | Conditionally render `<MiniMap>` |
-| `defaultZoom` | `defaultViewport.zoom` |
-| `fitViewOnLoad` | `fitView` prop |
+| Setting                   | SvelteFlow Prop/Component           |
+| ------------------------- | ----------------------------------- |
+| `showGrid`                | Conditionally render `<Background>` |
+| `snapToGrid` + `gridSize` | `snapGrid={[size, size]}`           |
+| `showMinimap`             | Conditionally render `<MiniMap>`    |
+| `defaultZoom`             | `defaultViewport.zoom`              |
+| `fitViewOnLoad`           | `fitView` prop                      |
 
 ---
 
