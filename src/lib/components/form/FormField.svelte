@@ -62,6 +62,11 @@
 	let { fieldKey, schema, value, required = false, animationIndex = 0, onChange }: Props = $props();
 
 	/**
+	 * When schema.readOnly is true, disable all inputs (no editing).
+	 */
+	const isReadOnly = $derived(schema.readOnly === true);
+
+	/**
 	 * Computed description ID for ARIA association
 	 */
 	const descriptionId = $derived(
@@ -204,7 +209,7 @@
 			}
 			return value ? [String(value)] : [];
 		}
-		return String(value ?? "");
+		return String(value ?? '');
 	});
 </script>
 
@@ -222,6 +227,7 @@
 				value={arrayValue}
 				options={enumOptions}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'select-enum'}
@@ -231,6 +237,7 @@
 				options={enumOptions}
 				{required}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'textarea'}
@@ -240,6 +247,7 @@
 				placeholder={schema.placeholder ?? ''}
 				{required}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'text'}
@@ -249,6 +257,7 @@
 				placeholder={schema.placeholder ?? ''}
 				{required}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'number'}
@@ -261,6 +270,7 @@
 				step={schema.step}
 				{required}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'range'}
@@ -272,6 +282,7 @@
 				step={schema.step}
 				{required}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'toggle'}
@@ -279,6 +290,7 @@
 				id={fieldKey}
 				value={booleanValue}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'select-options'}
@@ -288,6 +300,7 @@
 				options={selectOptions}
 				{required}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'array' && schema.items}
@@ -298,6 +311,7 @@
 				minItems={schema.minItems}
 				maxItems={schema.maxItems}
 				addLabel={`Add ${schema.items.title ?? 'Item'}`}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'code-editor'}
@@ -310,6 +324,7 @@
 				darkTheme={(schema.darkTheme as boolean | undefined) ?? false}
 				autoFormat={(schema.autoFormat as boolean | undefined) ?? true}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'markdown-editor'}
@@ -323,6 +338,7 @@
 				showStatusBar={(schema.showStatusBar as boolean | undefined) ?? true}
 				spellChecker={(schema.spellChecker as boolean | undefined) ?? false}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'template-editor'}
@@ -338,6 +354,7 @@
 				placeholderExample={(schema.placeholderExample as string | undefined) ??
 					'Hello {{ name }}, your order #{{ order_id }} is ready!'}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'autocomplete' && schema.autocomplete}
@@ -348,6 +365,7 @@
 				placeholder={schema.placeholder ?? ''}
 				{required}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else}
@@ -357,6 +375,7 @@
 				value={stringValue}
 				placeholder={schema.placeholder ?? ''}
 				ariaDescribedBy={descriptionId}
+				disabled={isReadOnly}
 				onChange={(val) => onChange(val)}
 			/>
 		{/if}

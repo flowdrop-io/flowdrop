@@ -45,6 +45,8 @@
 		autosave?: boolean;
 		/** Autosave delay in milliseconds */
 		autosaveDelay?: number;
+		/** Whether the field is disabled (read-only) */
+		disabled?: boolean;
 		/** ARIA description ID */
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
@@ -62,6 +64,7 @@
 		spellChecker = false,
 		autosave = false,
 		autosaveDelay = 10000,
+		disabled = false,
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
@@ -137,7 +140,7 @@
 				placeholder: placeholder,
 				spellChecker: spellChecker,
 				autosave: autosaveConfig,
-				toolbar: showToolbar ? [...toolbarConfig] : false,
+				toolbar: disabled ? false : showToolbar ? [...toolbarConfig] : false,
 				status: showStatusBar,
 				forceSync: true,
 				minHeight: height,
@@ -145,25 +148,32 @@
 					singleLineBreaks: false,
 					codeSyntaxHighlighting: true
 				},
-				shortcuts: {
-					toggleBold: 'Cmd-B',
-					toggleItalic: 'Cmd-I',
-					toggleStrikethrough: 'Cmd-Alt-S',
-					toggleHeadingSmaller: 'Cmd-H',
-					toggleHeadingBigger: 'Shift-Cmd-H',
-					toggleCodeBlock: 'Cmd-Alt-C',
-					toggleBlockquote: "Cmd-'",
-					toggleOrderedList: 'Cmd-Alt-L',
-					toggleUnorderedList: 'Cmd-L',
-					cleanBlock: 'Cmd-E',
-					drawLink: 'Cmd-K',
-					drawImage: 'Cmd-Alt-I',
-					drawTable: 'Cmd-Alt-T',
-					togglePreview: 'Cmd-P',
-					toggleSideBySide: 'F9',
-					toggleFullScreen: 'F11'
-				}
+				shortcuts: disabled
+					? {}
+					: {
+							toggleBold: 'Cmd-B',
+							toggleItalic: 'Cmd-I',
+							toggleStrikethrough: 'Cmd-Alt-S',
+							toggleHeadingSmaller: 'Cmd-H',
+							toggleHeadingBigger: 'Shift-Cmd-H',
+							toggleCodeBlock: 'Cmd-Alt-C',
+							toggleBlockquote: "Cmd-'",
+							toggleOrderedList: 'Cmd-Alt-L',
+							toggleUnorderedList: 'Cmd-L',
+							cleanBlock: 'Cmd-E',
+							drawLink: 'Cmd-K',
+							drawImage: 'Cmd-Alt-I',
+							drawTable: 'Cmd-Alt-T',
+							togglePreview: 'Cmd-P',
+							toggleSideBySide: 'F9',
+							toggleFullScreen: 'F11'
+						}
 			});
+
+			// When disabled, make the underlying CodeMirror read-only
+			if (disabled && easymde.codemirror) {
+				easymde.codemirror.setOption('readOnly', true);
+			}
 
 			// Listen for changes
 			easymde.codemirror.on('change', () => {

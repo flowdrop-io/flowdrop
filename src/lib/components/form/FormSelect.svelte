@@ -21,6 +21,8 @@
 		options: FieldOption[] | string[];
 		/** Whether the field is required */
 		required?: boolean;
+		/** Whether the field is disabled (read-only) */
+		disabled?: boolean;
 		/** ARIA description ID */
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
@@ -32,6 +34,7 @@
 		value = '',
 		options = [],
 		required = false,
+		disabled = false,
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
@@ -55,6 +58,7 @@
 		{id}
 		class="form-select"
 		value={value ?? ''}
+		{disabled}
 		aria-describedby={ariaDescribedBy}
 		aria-required={required}
 		onchange={handleChange}

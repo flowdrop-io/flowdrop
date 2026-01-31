@@ -18,6 +18,8 @@
 		onLabel?: string;
 		/** Label shown when toggle is off */
 		offLabel?: string;
+		/** Whether the field is disabled (read-only) */
+		disabled?: boolean;
 		/** ARIA description ID */
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
@@ -29,6 +31,7 @@
 		value = false,
 		onLabel = 'Enabled',
 		offLabel = 'Disabled',
+		disabled = false,
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
@@ -48,6 +51,7 @@
 		type="checkbox"
 		class="form-toggle__input"
 		checked={value}
+		{disabled}
 		aria-describedby={ariaDescribedBy}
 		onchange={handleChange}
 	/>
