@@ -351,7 +351,7 @@
 	.flowdrop-tool-node__icon-wrapper :global(.flowdrop-tool-node__icon) {
 		width: 1.5rem;
 		height: 1.5rem;
-		color: var(--fd-tool-node-color);
+		color: var(--fd-node-icon);
 	}
 
 	.flowdrop-tool-node__processing {

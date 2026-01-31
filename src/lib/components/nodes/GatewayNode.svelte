@@ -374,7 +374,7 @@
 	.flowdrop-workflow-node__icon-wrapper :global(.flowdrop-workflow-node__icon) {
 		width: 1.25rem;
 		height: 1.25rem;
-		color: var(--_icon-color);
+		color: var(--fd-node-icon);
 	}
 
 	.flowdrop-workflow-node__header h3 {

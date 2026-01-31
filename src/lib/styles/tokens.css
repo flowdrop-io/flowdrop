@@ -216,6 +216,9 @@
 	--fd-node-slate: #64748b;
 	--fd-node-purple: #9333ea;
 
+	/** Icon on node squircle: dark in light theme, white in dark theme */
+	--fd-node-icon: var(--_gray-9);
+
 	/* ----- EDGE TOKENS ----- */
 	--fd-edge-trigger: var(--_gray-9);
 	--fd-edge-trigger-hover: var(--_gray-9);
@@ -292,6 +295,9 @@
 	/* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
 	--fd-node-border: #4a4a52;
 	--fd-node-border-hover: #5a5a62;
+
+	/** Icon on node squircle: white in dark theme */
+	--fd-node-icon: #ffffff;
 
 	/* ----- PRIMARY (Interactive/Brand) ----- */
 	--fd-primary: #60a5fa;

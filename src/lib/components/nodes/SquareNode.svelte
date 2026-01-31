@@ -334,7 +334,7 @@
 	.flowdrop-square-node__icon-wrapper :global(.flowdrop-square-node__icon) {
 		width: 1.75rem;
 		height: 1.75rem;
-		color: var(--_icon-color);
+		color: var(--fd-node-icon);
 	}
 
 	/* Label styling removed - now using header title */
