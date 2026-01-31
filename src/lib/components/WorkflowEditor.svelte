@@ -591,7 +591,7 @@
 	}
 
 	:global(.flowdrop-workflow-editor .svelte-flow__edge:hover) {
-		stroke: #3b82f6 !important;
+		stroke: var(--fd-primary) !important;
 		stroke-width: 3 !important;
 	}
 
@@ -600,9 +600,9 @@
 	}
 
 	:global(.flowdrop-workflow-editor .svelte-flow__edge.selected) {
-		stroke: #3b82f6 !important;
+		stroke: var(--fd-primary) !important;
 		stroke-width: 3 !important;
-		filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.5));
+		filter: drop-shadow(0 0 4px color-mix(in srgb, var(--fd-primary) 50%, transparent));
 	}
 
 	:global(.flowdrop-workflow-editor .svelte-flow__edge.selected path) {

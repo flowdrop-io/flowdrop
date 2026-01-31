@@ -656,7 +656,7 @@
 	showBottomPanel={false}
 	showFooter={false}
 	headerHeight={60}
-	leftSidebarWidth={leftSidebarWidth}
+	{leftSidebarWidth}
 	rightSidebarWidth={400}
 	leftSidebarMinWidth={$uiSettings.sidebarCollapsed ? 48 : 280}
 	leftSidebarMaxWidth={$uiSettings.sidebarCollapsed ? 48 : 450}
@@ -871,14 +871,14 @@
 <style>
 	/* Status bar styles */
 	.flowdrop-status {
-		background-color: #eff6ff;
-		border-bottom: 1px solid #bfdbfe;
+		background-color: var(--fd-info-muted);
+		border-bottom: 1px solid var(--fd-info);
 		padding: 1rem;
 	}
 
 	.flowdrop-status--error {
-		background-color: #fef2f2;
-		border-bottom: 1px solid #fecaca;
+		background-color: var(--fd-error-muted);
+		border-bottom: 1px solid var(--fd-error);
 	}
 
 	.flowdrop-status__content {
@@ -896,18 +896,18 @@
 	}
 
 	.flowdrop-status__indicator--error {
-		background-color: #ef4444;
+		background-color: var(--fd-error);
 	}
 
 	/* Button styles */
 	.flowdrop-btn {
 		padding: 0.375rem 0.75rem;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		font-size: 0.75rem;
 		font-weight: 500;
 		cursor: pointer;
 		border: 1px solid transparent;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.flowdrop-btn--sm {
@@ -917,35 +917,35 @@
 
 	.flowdrop-btn--outline {
 		background-color: transparent;
-		border-color: #d1d5db;
-		color: #374151;
+		border-color: var(--fd-border);
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-btn--outline:hover {
-		background-color: #f9fafb;
-		border-color: #9ca3af;
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
 	}
 
 	.flowdrop-btn--primary {
-		background-color: #3b82f6;
-		border-color: #3b82f6;
-		color: #ffffff;
+		background-color: var(--fd-primary);
+		border-color: var(--fd-primary);
+		color: var(--fd-primary-foreground);
 	}
 
 	.flowdrop-btn--primary:hover {
-		background-color: #2563eb;
-		border-color: #2563eb;
+		background-color: var(--fd-primary-hover);
+		border-color: var(--fd-primary-hover);
 	}
 
 	.flowdrop-btn--ghost {
 		background-color: transparent;
 		border-color: transparent;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-btn--ghost:hover {
-		background-color: #f3f4f6;
-		color: #374151;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	/* Utility classes */
@@ -977,6 +977,6 @@
 		min-width: 0;
 		height: 100%;
 		overflow: hidden;
-		background-color: #1f2937;
+		background: var(--fd-layout-background);
 	}
 </style>

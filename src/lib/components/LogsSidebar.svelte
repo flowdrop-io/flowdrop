@@ -66,19 +66,20 @@
 
 	/**
 	 * Get log level color
+	 * Returns CSS variable references for theme consistency
 	 */
 	function getLogLevelColor(level: string): string {
 		switch (level) {
 			case 'error':
-				return '#ef4444';
+				return 'var(--fd-error)';
 			case 'warning':
-				return '#f59e0b';
+				return 'var(--fd-warning)';
 			case 'success':
-				return '#10b981';
+				return 'var(--fd-success)';
 			case 'info':
-				return '#3b82f6';
+				return 'var(--fd-info)';
 			default:
-				return '#6b7280';
+				return 'var(--fd-muted-foreground)';
 		}
 	}
 
@@ -388,31 +389,31 @@
 	}
 
 	.logs-sidebar__log-entry {
-		background-color: #f9fafb;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
+		background-color: var(--fd-muted);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
 		padding: 0.75rem;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.logs-sidebar__log-entry--error {
-		border-left: 4px solid #ef4444;
-		background-color: #fef2f2;
+		border-left: 4px solid var(--fd-error);
+		background-color: var(--fd-error-muted);
 	}
 
 	.logs-sidebar__log-entry--warning {
-		border-left: 4px solid #f59e0b;
-		background-color: #fffbeb;
+		border-left: 4px solid var(--fd-warning);
+		background-color: var(--fd-warning-muted);
 	}
 
 	.logs-sidebar__log-entry--success {
-		border-left: 4px solid #10b981;
-		background-color: #f0fdf4;
+		border-left: 4px solid var(--fd-success);
+		background-color: var(--fd-success-muted);
 	}
 
 	.logs-sidebar__log-entry--info {
-		border-left: 4px solid #3b82f6;
-		background-color: #eff6ff;
+		border-left: 4px solid var(--fd-info);
+		background-color: var(--fd-info-muted);
 	}
 
 	.logs-sidebar__log-header {
