@@ -214,12 +214,12 @@ Runtime configuration means you build once and deploy to staging, production, or
 
 ## Documentation
 
-| Resource                           | Description              |
-| ---------------------------------- | ------------------------ |
-| [API.md](./API.md)                 | REST API specification   |
-| [DOCKER.md](./DOCKER.md)           | Docker deployment guide  |
-| [QUICK_START.md](./QUICK_START.md) | Get running in 5 minutes |
-| [CHANGELOG.md](./CHANGELOG.md)     | Version history          |
+| Resource                                                            | Description              |
+| ------------------------------------------------------------------- | ------------------------ |
+| [API Documentation](https://flowdrop-io.github.io/flowdrop/)        | REST API specification   |
+| [DOCKER.md](./DOCKER.md)                                            | Docker deployment guide  |
+| [QUICK_START.md](./QUICK_START.md)                                  | Get running in 5 minutes |
+| [CHANGELOG.md](./CHANGELOG.md)                                      | Version history          |
 
 ## Development
 

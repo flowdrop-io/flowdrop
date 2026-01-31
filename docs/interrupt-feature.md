@@ -472,6 +472,6 @@ import { isInterruptMessageMetadata, metadataToInterrupt } from '@d34dman/flowdr
 
 ## See Also
 
-- [API.md - Interrupts API](../API.md#interrupts-api-human-in-the-loop) - REST API documentation
+- [API Documentation](https://flowdrop-io.github.io/flowdrop/) - REST API documentation (GitHub Pages)
 - [api/openapi.yaml](../api/openapi.yaml) - OpenAPI specification
 - [configEdit-feature.md](./configEdit-feature.md) - Dynamic configuration editing

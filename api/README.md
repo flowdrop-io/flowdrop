@@ -112,4 +112,4 @@ The docs are built using [Redoc](https://redocly.com/redoc/) and include:
 
 - [OpenAPI 3.0 Specification](https://spec.openapis.org/oas/v3.0.3)
 - [Redocly Configuration](https://redocly.com/docs/cli/configuration/)
-- [FlowDrop API Documentation](../API.md)
+- [FlowDrop API Documentation](https://flowdrop-io.github.io/flowdrop/)
