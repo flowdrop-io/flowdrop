@@ -182,8 +182,12 @@ components:
       $ref: './components/schemas/config.yaml#/PortCompatibilityRule'
     PortConfig:
       $ref: './components/schemas/config.yaml#/PortConfig'
+    OneOfItem:
+      $ref: './components/schemas/config.yaml#/OneOfItem'
     ConfigProperty:
       $ref: './components/schemas/config.yaml#/ConfigProperty'
+    AutocompleteConfig:
+      $ref: './components/schemas/config.yaml#/AutocompleteConfig'
     ConfigSchema:
       $ref: './components/schemas/config.yaml#/ConfigSchema'
 

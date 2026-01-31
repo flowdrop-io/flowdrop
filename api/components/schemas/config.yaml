@@ -85,8 +85,47 @@ PortConfig:
     - dataTypes
     - defaultDataType
 
+OneOfItem:
+  type: object
+  description: |
+    JSON Schema oneOf item for labeled options.
+    This is the standard JSON Schema way to define labeled select options.
+    
+    Example:
+    ```json
+    {
+      "type": "string",
+      "oneOf": [
+        { "const": "draft", "title": "Draft" },
+        { "const": "published", "title": "Published" }
+      ]
+    }
+    ```
+  properties:
+    const:
+      oneOf:
+        - type: string
+        - type: number
+        - type: boolean
+      description: The constant value for this option (JSON Schema `const` keyword)
+    title:
+      type: string
+      description: Human-readable label for this option
+    description:
+      type: string
+      description: Optional description for this option
+  required:
+    - const
+
 ConfigProperty:
   type: object
+  description: |
+    JSON Schema property definition for node configuration.
+    Follows JSON Schema draft-07 specification with FlowDrop extensions for UI rendering.
+    
+    For select/dropdown fields, use standard JSON Schema patterns:
+    - `enum` for simple value lists (no labels)
+    - `oneOf` with `const`/`title` for labeled options
   properties:
     type:
       type: string
@@ -97,6 +136,7 @@ ConfigProperty:
         - array
         - object
         - integer
+      description: JSON Schema type
     title:
       type: string
       description: Display title for the property
@@ -108,16 +148,36 @@ ConfigProperty:
     enum:
       type: array
       items: {}
-      description: Allowed values for enum properties
+      description: |
+        Allowed values for enum properties (simple values without labels).
+        For labeled options, use `oneOf` with `const`/`title` instead.
+    oneOf:
+      type: array
+      items:
+        $ref: '#/OneOfItem'
+      description: |
+        JSON Schema oneOf for labeled options (standard approach).
+        Each item should have `const` (value) and optionally `title` (label).
+        
+        Example:
+        ```json
+        "oneOf": [
+          { "const": "draft", "title": "Draft" },
+          { "const": "published", "title": "Published" }
+        ]
+        ```
     multiple:
       type: boolean
-      description: For enum fields, allows multiple selection
+      description: For enum/oneOf fields, allows multiple selection (renders as checkbox group)
     minimum:
       type: number
       description: Minimum value for numeric properties
     maximum:
       type: number
       description: Maximum value for numeric properties
+    step:
+      type: number
+      description: Step increment for number/range inputs
     minLength:
       type: integer
       description: Minimum length for string properties
@@ -127,24 +187,107 @@ ConfigProperty:
     pattern:
       type: string
       description: Regex pattern for string validation
+    placeholder:
+      type: string
+      description: Placeholder text for input fields
     format:
       type: string
-      description: Special formats (multiline for textarea, hidden to hide field)
+      description: |
+        Special format hints for UI rendering:
+        - `multiline`: Renders as textarea
+        - `hidden`: Field is hidden from UI but included in form submission
+        - `range`: Renders as range slider for numeric values
+        - `json`: Renders as CodeMirror JSON editor
+        - `code`: Alias for json, renders as CodeMirror editor
+        - `markdown`: Renders as SimpleMDE Markdown editor
+        - `template`: Renders as CodeMirror editor with Twig/Liquid syntax highlighting
+        - `autocomplete`: Renders as text input with autocomplete suggestions from callback URL
+        - `email`, `uri`, `date`, `date-time`: Standard JSON Schema formats
       enum:
         - multiline
         - hidden
+        - range
+        - json
+        - code
+        - markdown
+        - template
+        - autocomplete
         - email
         - uri
         - date
         - date-time
     items:
       $ref: '#/ConfigProperty'
+      description: Schema for array items
+    minItems:
+      type: integer
+      description: Minimum number of items for array fields
+    maxItems:
+      type: integer
+      description: Maximum number of items for array fields
     properties:
       type: object
       additionalProperties:
         $ref: '#/ConfigProperty'
+      description: Property schemas for object fields
+    autocomplete:
+      $ref: '#/AutocompleteConfig'
+      description: Configuration for autocomplete fields (when format is "autocomplete")
   required:
     - type
+
+AutocompleteConfig:
+  type: object
+  description: |
+    Configuration for autocomplete fields that fetch suggestions from a callback URL.
+    Used when format is "autocomplete".
+  properties:
+    url:
+      type: string
+      description: |
+        The callback URL to fetch autocomplete suggestions from.
+        Can be relative (resolved against API base URL) or absolute.
+      example: /api/users/search
+    queryParam:
+      type: string
+      default: q
+      description: Query parameter name to pass the search term
+    minChars:
+      type: integer
+      default: 0
+      description: |
+        Minimum number of characters before fetching suggestions.
+        Set to 0 to fetch immediately on focus (when fetchOnFocus is true).
+    debounceMs:
+      type: integer
+      default: 300
+      description: Debounce delay in milliseconds before fetching suggestions
+    fetchOnFocus:
+      type: boolean
+      default: false
+      description: Whether to fetch all options when the field is focused
+    labelField:
+      type: string
+      default: label
+      description: The field name in the response objects to use as the display label
+    valueField:
+      type: string
+      default: value
+      description: The field name in the response objects to use as the stored value
+    allowFreeText:
+      type: boolean
+      default: false
+      description: |
+        Whether to allow values that are not in the suggestions list.
+        When true, users can enter and submit any text.
+    multiple:
+      type: boolean
+      default: false
+      description: |
+        Whether to allow multiple selections.
+        When true, users can select multiple values displayed as tags.
+  required:
+    - url
 
 ConfigSchema:
   type: object

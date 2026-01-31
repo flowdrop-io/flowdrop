@@ -23,6 +23,24 @@
  * };
  * ```
  *
+ * @example Select field with labeled options (JSON Schema standard):
+ * ```typescript
+ * const schema = {
+ *   type: "object",
+ *   properties: {
+ *     status: {
+ *       type: "string",
+ *       title: "Status",
+ *       oneOf: [
+ *         { const: "draft", title: "Draft" },
+ *         { const: "published", title: "Published" },
+ *         { const: "archived", title: "Archived" }
+ *       ]
+ *     }
+ *   }
+ * };
+ * ```
+ *
  * @example With code editor support (adds ~300KB):
  * ```typescript
  * import { SchemaForm } from "@d34dman/flowdrop/form";
@@ -74,6 +92,7 @@ export type {
 	FieldType,
 	FieldFormat,
 	FieldOption,
+	OneOfItem,
 	SchemaFormProps,
 	BaseFieldProps,
 	TextFieldProps,
@@ -88,7 +107,13 @@ export type {
 	FormFieldWrapperProps
 } from '../components/form/types.js';
 
-export { isFieldOptionArray, normalizeOptions } from '../components/form/types.js';
+export {
+	isFieldOptionArray,
+	isOneOfArray,
+	normalizeOptions,
+	oneOfToOptions,
+	getSchemaOptions
+} from '../components/form/types.js';
 
 // ============================================================================
 // Field Registry (for dynamic field registration)

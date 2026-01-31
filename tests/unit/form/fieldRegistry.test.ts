@@ -229,17 +229,36 @@ describe('Field Registry', () => {
 		});
 
 		describe('selectOptionsMatcher', () => {
-			it('should match select type', () => {
-				const schema: FieldSchema = { type: 'select' };
+			it('should match schema with oneOf (standard JSON Schema)', () => {
+				const schema: FieldSchema = {
+					type: 'string',
+					oneOf: [
+						{ const: 'a', title: 'Option A' },
+						{ const: 'b', title: 'Option B' }
+					]
+				};
 				expect(selectOptionsMatcher(schema)).toBe(true);
 			});
 
-			it('should match schema with options', () => {
+			it('should match schema with options (legacy, deprecated)', () => {
 				const schema: FieldSchema = {
 					type: 'string',
 					options: [{ label: 'A', value: 'a' }]
 				};
 				expect(selectOptionsMatcher(schema)).toBe(true);
+			});
+
+			it('should not match schema without oneOf or options', () => {
+				const schema: FieldSchema = { type: 'string' };
+				expect(selectOptionsMatcher(schema)).toBe(false);
+			});
+
+			it('should not match empty oneOf array', () => {
+				const schema: FieldSchema = {
+					type: 'string',
+					oneOf: []
+				};
+				expect(selectOptionsMatcher(schema)).toBe(false);
 			});
 		});
 
