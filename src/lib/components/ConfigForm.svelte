@@ -49,10 +49,12 @@
 		workflowId?: string;
 		/** Whether to also save the workflow when saving config */
 		saveWorkflowWhenSavingConfig?: boolean;
+		/** Callback when any field value changes (fired on blur for immediate sync) */
+		onChange?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is saved (includes both config and extensions if enabled) */
-		onSave: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
+		onSave?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is cancelled */
-		onCancel: () => void;
+		onCancel?: () => void;
 	}
 
 	let {
@@ -62,6 +64,7 @@
 		showUIExtensions = true,
 		workflowId,
 		saveWorkflowWhenSavingConfig = false,
+		onChange,
 		onSave,
 		onCancel
 	}: Props = $props();
@@ -277,6 +280,18 @@
 	}
 
 	/**
+	 * Handle form field blur - sync changes to workflow immediately
+	 * Uses focusout which bubbles from child elements
+	 * This enables auto-save behavior without requiring explicit Save button clicks
+	 */
+	function handleFormBlur(): void {
+		if (onChange) {
+			const extensions = showUIExtensions && node ? uiExtensionValues : undefined;
+			onChange({ ...configValues }, extensions);
+		}
+	}
+
+	/**
 	 * Handle form submission
 	 * Collects both config values and UI extension values
 	 * Optionally saves the workflow if the option is enabled
@@ -327,10 +342,12 @@
 		}
 
 		// Pass UI extensions only if enabled
-		if (showUIExtensions && node) {
-			onSave(updatedConfig, uiExtensionValues);
-		} else {
-			onSave(updatedConfig);
+		if (onSave) {
+			if (showUIExtensions && node) {
+				onSave(updatedConfig, uiExtensionValues);
+			} else {
+				onSave(updatedConfig);
+			}
 		}
 
 		// Save workflow if the option is enabled
@@ -424,9 +441,9 @@
 {:else if configSchema}
 	<form
 		class="config-form"
+		onfocusout={handleFormBlur}
 		onsubmit={(e) => {
 			e.preventDefault();
-			handleSave();
 		}}
 	>
 		<!-- Dynamic Schema Refresh Button -->
@@ -514,31 +531,35 @@
 			</div>
 		{/if}
 
-		<!-- Footer Actions -->
-		<div class="config-form__footer">
-			<button
-				type="button"
-				class="config-form__button config-form__button--secondary"
-				onclick={onCancel}
-				disabled={isSavingWorkflow}
-			>
-				<Icon icon="heroicons:x-mark" class="config-form__button-icon" />
-				<span>Cancel</span>
-			</button>
-			<button
-				type="submit"
-				class="config-form__button config-form__button--primary"
-				disabled={isSavingWorkflow}
-			>
-				{#if isSavingWorkflow}
-					<span class="config-form__button-spinner"></span>
-					<span>Saving...</span>
-				{:else}
-					<Icon icon="heroicons:check" class="config-form__button-icon" />
-					<span>Save Changes</span>
-				{/if}
-			</button>
-		</div>
+		<!-- Footer Actions - Only shown when onSave is provided and onChange is not -->
+		<!-- With onChange (on-blur sync), changes are saved automatically, so no Save button needed -->
+		{#if onSave && !onChange}
+			<div class="config-form__footer">
+				<button
+					type="button"
+					class="config-form__button config-form__button--secondary"
+					onclick={onCancel}
+					disabled={isSavingWorkflow}
+				>
+					<Icon icon="heroicons:x-mark" class="config-form__button-icon" />
+					<span>Cancel</span>
+				</button>
+				<button
+					type="submit"
+					class="config-form__button config-form__button--primary"
+					onclick={handleSave}
+					disabled={isSavingWorkflow}
+				>
+					{#if isSavingWorkflow}
+						<span class="config-form__button-spinner"></span>
+						<span>Saving...</span>
+					{:else}
+						<Icon icon="heroicons:check" class="config-form__button-icon" />
+						<span>Save Changes</span>
+					{/if}
+				</button>
+			</div>
+		{/if}
 	</form>
 {:else if !dynamicSchemaLoading && !showExternalEditLink}
 	<div class="config-form__empty">
@@ -581,6 +602,7 @@
 
 	/* ============================================
 	   FOOTER ACTIONS
+	   Only shown when onSave is provided (legacy mode without onChange)
 	   ============================================ */
 
 	.config-form__footer {
@@ -601,6 +623,11 @@
 		border-radius: 50%;
 		animation: config-form-spin 0.6s linear infinite;
 	}
+
+	/* ============================================
+	   SHARED BUTTON STYLES
+	   Used by error actions, external config buttons, and footer
+	   ============================================ */
 
 	.config-form__button {
 		display: inline-flex;
