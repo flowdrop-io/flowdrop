@@ -12,9 +12,11 @@
 		Background,
 		BackgroundVariant,
 		MiniMap,
-		SvelteFlowProvider
+		SvelteFlowProvider,
+		type ColorMode
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
+	import { resolvedTheme } from '../stores/settingsStore.js';
 	import type {
 		WorkflowNode as WorkflowNodeType,
 		NodeMetadata,
@@ -414,6 +416,7 @@
 							connectionLineType={ConnectionLineType.Bezier}
 							connectionLineComponent={ConnectionLine}
 							snapGrid={[10, 10]}
+							colorMode={$resolvedTheme as ColorMode}
 							fitView
 						>
 							<Controls />
@@ -489,9 +492,9 @@
 	}
 
 	.flowdrop-status-bar {
-		background-color: rgba(255, 255, 255, 0.8);
-		backdrop-filter: blur(8px);
-		border-top: 1px solid #e5e7eb;
+		background-color: var(--fd-backdrop);
+		backdrop-filter: var(--fd-backdrop-blur);
+		border-top: 1px solid var(--fd-border);
 		padding: 0.75rem;
 		height: 40px;
 		min-height: 40px;

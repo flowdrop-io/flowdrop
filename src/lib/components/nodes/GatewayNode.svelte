@@ -311,12 +311,13 @@
 <style>
 	.flowdrop-workflow-node {
 		position: relative;
-		background-color: #ffffff;
-		border: 2px solid #e5e7eb;
-		border-radius: 0.75rem;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		background-color: var(--fd-background);
+		border: 2px solid var(--fd-border);
+		border-radius: var(--fd-radius-xl);
+		box-shadow: var(--fd-shadow-md);
 		width: 18rem;
 		z-index: 10;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-workflow-node--gateway {
@@ -324,76 +325,77 @@
 	}
 
 	.flowdrop-workflow-node--selected {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-		border: 2px solid #3b82f6;
+		box-shadow: var(--fd-shadow-lg);
+		border: 2px solid var(--fd-primary);
 	}
 
 	.flowdrop-workflow-node__header {
-		padding: 1rem;
-		border-bottom: 1px solid #e5e7eb;
-		background-color: #f9fafb;
-		border-top-left-radius: 0.75rem;
-		border-top-right-radius: 0.75rem;
+		padding: var(--fd-space-4);
+		border-bottom: 1px solid var(--fd-border);
+		background-color: var(--fd-muted);
+		border-top-left-radius: var(--fd-radius-xl);
+		border-top-right-radius: var(--fd-radius-xl);
 	}
 
 	.flowdrop-workflow-node__icon {
 		width: 2rem;
 		height: 2rem;
-		border-radius: 0.5rem;
-		color: #ffffff;
-		font-size: 0.875rem;
+		border-radius: var(--fd-radius-lg);
+		color: var(--fd-primary-foreground);
+		font-size: var(--fd-text-sm);
 		font-weight: 500;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+		box-shadow: var(--fd-shadow-sm);
 	}
 
 	.flowdrop-workflow-node__header h3 {
 		margin: 0;
 		line-height: 1;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-workflow-node__ports {
-		padding: 0.75rem 1rem;
+		padding: var(--fd-space-3) var(--fd-space-4);
 	}
 
 	.flowdrop-workflow-node__ports-header {
-		margin-bottom: 0.5rem;
+		margin-bottom: var(--fd-space-2);
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--fd-space-1);
 	}
 
 	.flowdrop-workflow-node__ports-title {
 		margin: 0;
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		font-weight: 600;
-		color: #374151;
+		color: var(--fd-foreground);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--fd-space-2);
 	}
 
 	.flowdrop-workflow-node__ports-list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--fd-space-2);
 	}
 
 	.flowdrop-workflow-node__port {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.25rem 0;
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-1) 0;
 		position: relative;
 	}
 
 	.flowdrop-badge {
-		padding: 0.125rem 0.375rem;
-		border-radius: 0.25rem;
+		padding: 0.125rem var(--fd-space-1);
+		border-radius: var(--fd-radius-sm);
 		font-size: 0.625rem;
 		font-weight: 500;
 		text-transform: uppercase;
@@ -401,51 +403,51 @@
 	}
 
 	.flowdrop-badge--error {
-		background-color: #ef4444;
-		color: #ffffff;
+		background-color: var(--fd-error);
+		color: var(--fd-error-foreground);
 	}
 
 	.flowdrop-badge--sm {
 		font-size: 0.625rem;
-		padding: 0.125rem 0.25rem;
+		padding: 0.125rem var(--fd-space-1);
 	}
 
 	.workflow-node__no-branches {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem;
-		background: #fef3c7;
-		border: 1px solid #f59e0b;
-		border-radius: 0.5rem;
-		color: #92400e;
-		font-size: 0.875rem;
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-3);
+		background: var(--fd-warning-muted);
+		border: 1px solid var(--fd-warning);
+		border-radius: var(--fd-radius-lg);
+		color: var(--fd-warning-foreground);
+		font-size: var(--fd-text-sm);
 	}
 
 	/* Handle styles */
 	:global(.flowdrop-workflow-node__handle) {
 		width: 0.75rem;
 		height: 0.75rem;
-		background-color: #6b7280;
+		background-color: var(--fd-muted-foreground);
 		border: 2px solid #ffffff;
 		border-radius: 50%;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		cursor: pointer;
 	}
 
 	:global(.flowdrop-workflow-node__handle:hover) {
-		background-color: #3b82f6;
+		background-color: var(--fd-primary);
 		transform: scale(1.2);
 	}
 
 	:global(.flowdrop-workflow-node__handle:focus) {
-		outline: 2px solid #3b82f6;
+		outline: 2px solid var(--fd-ring);
 		outline-offset: 2px;
 	}
 
 	:global(.flowdrop-workflow-node__handle--active) {
 		transform: scale(1.15);
-		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-success) 20%, transparent);
 	}
 
 	/* Utility classes */
@@ -458,11 +460,11 @@
 	}
 
 	.flowdrop-gap--2 {
-		gap: 0.5rem;
+		gap: var(--fd-space-2);
 	}
 
 	.flowdrop-gap--3 {
-		gap: 0.75rem;
+		gap: var(--fd-space-3);
 	}
 
 	.flowdrop-items--center {
@@ -478,21 +480,21 @@
 	}
 
 	.flowdrop-text--xs {
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		line-height: 1rem;
 	}
 
 	.flowdrop-text--sm {
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		line-height: 1.25rem;
 	}
 
 	.flowdrop-text--gray {
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-text--active {
-		color: #10b981;
+		color: var(--fd-success);
 		font-weight: 600;
 	}
 
@@ -507,7 +509,7 @@
 	}
 
 	.flowdrop-mt--1 {
-		margin-top: 0.25rem;
+		margin-top: var(--fd-space-1);
 	}
 
 	.flowdrop-text--right {
@@ -516,23 +518,23 @@
 
 	.flowdrop-workflow-node__config-btn {
 		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
+		top: var(--fd-space-2);
+		right: var(--fd-space-2);
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.9);
-		border: 1px solid #e5e7eb;
-		border-radius: 0.25rem;
-		color: #6b7280;
+		background-color: var(--fd-backdrop);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-sm);
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		backdrop-filter: blur(4px);
 		z-index: 15;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 	}
 
 	.flowdrop-workflow-node:hover .flowdrop-workflow-node__config-btn {
@@ -540,8 +542,8 @@
 	}
 
 	.flowdrop-workflow-node__config-btn:hover {
-		background-color: #f9fafb;
-		border-color: #d1d5db;
-		color: #374151;
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 	}
 </style>

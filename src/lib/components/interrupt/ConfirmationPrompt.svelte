@@ -221,7 +221,7 @@
 
 	.confirmation-prompt__button--confirm {
 		background: var(--fd-interrupt-btn-primary-bg);
-		color: #ffffff;
+		color: var(--fd-primary-foreground);
 		box-shadow: 0 1px 3px var(--fd-interrupt-btn-primary-shadow);
 	}
 
@@ -259,15 +259,15 @@
 	.confirmation-prompt__spinner {
 		width: 1rem;
 		height: 1rem;
-		border: 2px solid rgba(255, 255, 255, 0.3);
+		border: 2px solid var(--fd-border);
 		border-top-color: currentColor;
 		border-radius: 50%;
 		animation: confirmation-spin 0.6s linear infinite;
 	}
 
 	.confirmation-prompt__button--decline .confirmation-prompt__spinner {
-		border-color: rgba(55, 65, 81, 0.3);
-		border-top-color: #374151;
+		border-color: var(--fd-border);
+		border-top-color: var(--fd-foreground);
 	}
 
 	@keyframes confirmation-spin {

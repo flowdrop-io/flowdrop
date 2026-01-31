@@ -75,7 +75,7 @@
 		rightSidebarMaxWidth = 500,
 		enableLeftSplitPane = true,
 		enableRightSplitPane = true,
-		backgroundColor = 'linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%)',
+		backgroundColor = 'var(--fd-layout-background)',
 		class: customClass = '',
 		header,
 		leftSidebar,
@@ -327,8 +327,16 @@
 		flex-direction: column;
 		height: 100vh;
 		width: 100%;
-		background: var(--layout-background);
+		background: var(
+			--fd-layout-background,
+			linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%)
+		);
 		overflow: hidden;
+	}
+
+	/* Dark mode override for layout background */
+	:global([data-theme='dark']) :global(.flowdrop-main-layout) {
+		background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
 	}
 
 	/* Disable text selection and pointer events during drag */
@@ -351,8 +359,8 @@
 		min-height: var(--layout-header-height);
 		max-height: var(--layout-header-height);
 		width: 100%;
-		background-color: #ffffff;
-		border-bottom: 1px solid #e5e7eb;
+		background-color: var(--fd-background);
+		border-bottom: 1px solid var(--fd-border);
 		display: flex;
 		align-items: center;
 		z-index: 100;
@@ -370,7 +378,7 @@
 	/* Sidebar Base Styles */
 	.flowdrop-main-layout__sidebar {
 		height: 100%;
-		background-color: #ffffff;
+		background-color: var(--fd-background);
 		overflow-y: auto;
 		overflow-x: hidden;
 		display: flex;
@@ -379,7 +387,7 @@
 
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
-		scrollbar-color: #cbd5e1 #f1f5f9;
+		scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
 	}
 
 	.flowdrop-main-layout__sidebar::-webkit-scrollbar {
@@ -387,24 +395,24 @@
 	}
 
 	.flowdrop-main-layout__sidebar::-webkit-scrollbar-track {
-		background: #f1f5f9;
+		background: var(--fd-scrollbar-track);
 		border-radius: 4px;
 	}
 
 	.flowdrop-main-layout__sidebar::-webkit-scrollbar-thumb {
-		background: #cbd5e1;
+		background: var(--fd-scrollbar-thumb);
 		border-radius: 4px;
 	}
 
 	.flowdrop-main-layout__sidebar::-webkit-scrollbar-thumb:hover {
-		background: #94a3b8;
+		background: var(--fd-scrollbar-thumb-hover);
 	}
 
 	/* Left Sidebar */
 	.flowdrop-main-layout__sidebar--left {
 		width: var(--layout-left-sidebar-width);
 		min-width: var(--layout-left-sidebar-width);
-		border-right: 1px solid #e5e7eb;
+		border-right: 1px solid var(--fd-border);
 		box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 	}
 
@@ -433,34 +441,34 @@
 		align-items: center;
 		justify-content: center;
 		cursor: col-resize;
-		background-color: white;
+		background-color: var(--fd-background);
 		position: relative;
 		z-index: 20;
 		flex-shrink: 0;
 		transition: background-color 0.2s ease;
-		border-right: 1px solid #e5e7eb;
-		border-left: 1px solid #e5e7eb;
+		border-right: 1px solid var(--fd-border);
+		border-left: 1px solid var(--fd-border);
 	}
 
 	.flowdrop-main-layout__divider:hover,
 	.flowdrop-main-layout__divider:focus {
-		background-color: rgba(59, 130, 246, 0.1);
+		background-color: var(--fd-primary-muted);
 	}
 
 	.flowdrop-main-layout__divider:focus {
 		outline: none;
-		background-color: rgba(59, 130, 246, 0.15);
+		background-color: var(--fd-primary-muted);
 	}
 
 	.flowdrop-main-layout__divider--active {
-		background-color: rgba(59, 130, 246, 0.2);
+		background-color: var(--fd-primary-muted);
 	}
 
 	/* Divider Handle (Visual Indicator) */
 	.flowdrop-main-layout__divider-handle {
 		width: 4px;
 		height: 48px;
-		background-color: #e5e7eb;
+		background-color: var(--fd-border-strong);
 		border-radius: 4px;
 		transition:
 			background-color 0.2s ease,
@@ -469,12 +477,12 @@
 
 	.flowdrop-main-layout__divider:hover .flowdrop-main-layout__divider-handle,
 	.flowdrop-main-layout__divider:focus .flowdrop-main-layout__divider-handle {
-		background-color: #3b82f6;
+		background-color: var(--fd-primary);
 		transform: scaleY(1.2);
 	}
 
 	.flowdrop-main-layout__divider--active .flowdrop-main-layout__divider-handle {
-		background-color: #2563eb;
+		background-color: var(--fd-primary-hover);
 		transform: scaleY(1.4);
 	}
 
@@ -484,8 +492,8 @@
 		min-height: var(--layout-footer-height);
 		max-height: var(--layout-footer-height);
 		width: 100%;
-		background-color: #ffffff;
-		border-top: 1px solid #e5e7eb;
+		background-color: var(--fd-background);
+		border-top: 1px solid var(--fd-border);
 		display: flex;
 		align-items: center;
 		z-index: 100;

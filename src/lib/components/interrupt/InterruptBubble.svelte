@@ -559,18 +559,18 @@
 		font-size: 0.75rem;
 		font-weight: 500;
 		font-family: inherit;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		background-color: transparent;
-		border: 1px solid #d1d5db;
-		border-radius: 0.375rem;
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-md);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.interrupt-bubble__cancel-btn:hover:not(:disabled) {
-		color: #dc2626;
-		border-color: #fca5a5;
-		background-color: #fef2f2;
+		color: var(--fd-error);
+		border-color: var(--fd-error);
+		background-color: var(--fd-error-muted);
 	}
 
 	.interrupt-bubble__cancel-btn:disabled {

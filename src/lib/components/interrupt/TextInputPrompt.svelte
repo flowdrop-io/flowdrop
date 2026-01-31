@@ -288,8 +288,8 @@
 		justify-content: center;
 		gap: 0.5rem;
 		padding: 0.625rem 1.25rem;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
+		border-radius: var(--fd-radius-lg);
+		font-size: var(--fd-text-sm);
 		font-weight: 600;
 		font-family: inherit;
 		cursor: pointer;
@@ -297,7 +297,7 @@
 		border: none;
 		min-height: 2.5rem;
 		background: var(--fd-interrupt-btn-primary-bg);
-		color: #ffffff;
+		color: var(--fd-primary-foreground);
 		box-shadow: 0 1px 3px var(--fd-interrupt-btn-primary-shadow);
 	}
 
@@ -317,8 +317,8 @@
 	.text-prompt__spinner {
 		width: 1rem;
 		height: 1rem;
-		border: 2px solid rgba(255, 255, 255, 0.3);
-		border-top-color: #ffffff;
+		border: 2px solid var(--fd-border);
+		border-top-color: currentColor;
 		border-radius: 50%;
 		animation: text-spin 0.6s linear infinite;
 	}
