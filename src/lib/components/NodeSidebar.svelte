@@ -285,13 +285,13 @@
 							>
 								<div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
 									<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-										<!-- Node Type Icon -->
-										<div
+										<!-- Node Type Icon with Squircle Background -->
+										<span
 											class="flowdrop-node-icon"
-											style="background-color: {getCategoryColorToken(nodeType.category)}"
+											style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
 										>
 											<Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
-										</div>
+										</span>
 
 										<!-- Node Type Info - Icon and Title only -->
 										<h4
@@ -320,18 +320,18 @@
 						{@const categoryNodes = getFilteredNodesForCategory(category)}
 						{#if categoryNodes.length > 0}
 							<details class="flowdrop-details">
-								<summary class="flowdrop-details__summary">
-									<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-										<span
-											class="flowdrop-node-icon"
-											style="background-color: {getCategoryColorToken(category)}"
-										>
-											<Icon icon={getCategoryIcon(category)} />
-										</span>
-										<span>{getCategoryDisplayName(category)}</span>
-									</div>
-									<div class="flowdrop-badge flowdrop-badge--secondary">{categoryNodes.length}</div>
-								</summary>
+							<summary class="flowdrop-details__summary">
+								<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+									<span
+										class="flowdrop-node-icon"
+										style="--_icon-color: {getCategoryColorToken(category)}"
+									>
+										<Icon icon={getCategoryIcon(category)} />
+									</span>
+									<span>{getCategoryDisplayName(category)}</span>
+								</div>
+								<div class="flowdrop-badge flowdrop-badge--secondary">{categoryNodes.length}</div>
+							</summary>
 								<div class="flowdrop-details__content">
 									<div class="flowdrop-node-list">
 										{#each categoryNodes as nodeType (nodeType.id)}
@@ -350,14 +350,14 @@
 												}}
 											>
 												<div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
-													<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-														<!-- Node Type Icon -->
-														<div
-															class="flowdrop-node-icon"
-															style="background-color: {getCategoryColorToken(nodeType.category)}"
-														>
-															<Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
-														</div>
+								<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+									<!-- Node Type Icon with Squircle Background -->
+									<span
+										class="flowdrop-node-icon"
+										style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
+									>
+										<Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
+									</span>
 
 														<!-- Node Type Info - Icon and Title only -->
 														<h4
@@ -492,13 +492,14 @@
 	}
 
 	.flowdrop-sidebar__header {
-		background-color: var(--fd-muted);
+		background: var(--fd-header);
 		border-bottom: 1px solid var(--fd-border);
 		padding: 0.75rem 1rem;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		flex-shrink: 0;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 	}
 
 	.flowdrop-sidebar__title {
@@ -570,30 +571,44 @@
 
 	.flowdrop-node-item {
 		cursor: grab;
-		transition: all var(--fd-transition-normal);
+		transition: all var(--fd-transition-fast);
 		border-radius: var(--fd-radius-md);
 		border: 1px solid transparent;
+		background-color: var(--fd-card);
 	}
 
 	.flowdrop-node-item:hover {
-		border-color: var(--fd-border-strong);
+		border-color: var(--fd-border);
 		background-color: var(--fd-muted);
+		box-shadow: var(--fd-shadow-sm);
+		transform: translateY(-1px);
 	}
 
 	.flowdrop-node-item:active {
 		cursor: grabbing;
+		transform: translateY(0);
+		box-shadow: none;
 	}
 
+	/* Squircle icon wrapper - Apple-style rounded square background */
 	.flowdrop-node-icon {
 		width: 2rem;
 		height: 2rem;
-		border-radius: var(--fd-radius-md);
-		color: var(--fd-primary-foreground);
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
+		color: var(--_icon-color);
 		font-size: var(--fd-text-sm);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		transition: all var(--fd-transition-normal);
+	}
+
+	.flowdrop-node-item:hover .flowdrop-node-icon,
+	.flowdrop-details__summary:hover .flowdrop-node-icon {
+		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+		transform: scale(1.05);
 	}
 
 	.flowdrop-category-list {

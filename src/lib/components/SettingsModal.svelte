@@ -24,9 +24,9 @@
 -->
 
 <script lang="ts">
-	import Icon from "@iconify/svelte";
-	import SettingsPanel from "./SettingsPanel.svelte";
-	import type { SettingsCategory } from "$lib/types/settings.js";
+	import Icon from '@iconify/svelte';
+	import SettingsPanel from './SettingsPanel.svelte';
+	import type { SettingsCategory } from '$lib/types/settings.js';
 
 	/**
 	 * Props interface for SettingsModal component
@@ -55,7 +55,7 @@
 		showResetButton = true,
 		onClose,
 		onSettingsChange,
-		class: className = ""
+		class: className = ''
 	}: Props = $props();
 
 	/**
@@ -100,7 +100,7 @@
 	 * Handle keyboard events
 	 */
 	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === "Escape") {
+		if (event.key === 'Escape') {
 			event.preventDefault();
 			closeModal();
 		}
