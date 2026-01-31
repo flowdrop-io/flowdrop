@@ -324,6 +324,7 @@
 		box-shadow: var(--fd-shadow-md);
 		width: 18rem;
 		z-index: 10;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-workflow-node--selected {
@@ -424,7 +425,7 @@
 		width: 0.75rem;
 		height: 0.75rem;
 		background-color: var(--fd-muted-foreground);
-		border: 2px solid var(--fd-background);
+		border: 2px solid #ffffff;
 		border-radius: 50%;
 		transition: all var(--fd-transition-normal);
 		cursor: pointer;
@@ -507,7 +508,7 @@
 		right: var(--fd-space-2);
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.9);
+		background-color: var(--fd-backdrop);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-sm);
 		color: var(--fd-muted-foreground);
@@ -517,7 +518,7 @@
 		justify-content: center;
 		opacity: 0;
 		transition: all var(--fd-transition-normal);
-		backdrop-filter: blur(4px);
+		backdrop-filter: var(--fd-backdrop-blur);
 		z-index: 15;
 		font-size: var(--fd-text-sm);
 	}

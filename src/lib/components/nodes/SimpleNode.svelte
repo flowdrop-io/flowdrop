@@ -282,6 +282,7 @@
 		box-shadow: var(--fd-shadow-md);
 		overflow: visible; /* Changed from hidden to visible to allow handles to be properly accessible */
 		z-index: 10;
+		color: var(--fd-foreground);
 	}
 
 	/* Normal layout (default) */
@@ -387,7 +388,7 @@
 		right: var(--fd-space-2);
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.9);
+		background-color: var(--fd-backdrop);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-sm);
 		color: var(--fd-muted-foreground);

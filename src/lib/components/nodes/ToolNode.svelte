@@ -7,7 +7,7 @@
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
 	import Icon from '@iconify/svelte';
-	import { getDataTypeColor, getColorVariants } from '$lib/utils/colors';
+	import { getDataTypeColor } from '$lib/utils/colors';
 	import type { NodeMetadata } from '../../types/index.js';
 
 	interface ToolNodeParameter {
@@ -79,18 +79,11 @@
 			'1.0.0'
 	);
 
-	// Generate color variants for theming (light tint for background, border tint for borders)
-	let colorVariants = $derived(getColorVariants(toolColor));
-
-	// Build inline style string for CSS custom properties
-	// This allows per-node color overrides while defaulting to global CSS variables
-	let nodeStyle = $derived(
-		[
-			`--fd-tool-node-color: ${colorVariants.base}`,
-			`--fd-tool-node-color-light: ${colorVariants.light}`,
-			`--fd-tool-node-color-border: ${colorVariants.border}`
-		].join('; ')
-	);
+	/**
+	 * Build inline style string for CSS custom properties
+	 * Sets the base color, CSS handles light/dark mode tints via color-mix()
+	 */
+	let nodeStyle = $derived(`--fd-tool-node-color: ${toolColor}`);
 
 	// Check for tool interface ports in metadata
 	let hasToolInputPort = $derived(
@@ -108,7 +101,9 @@
 		props.data.metadata?.outputs?.find((port) => port.dataType === 'tool')
 	);
 
-	// Handle configuration sidebar - using global ConfigSidebar
+	/**
+	 * Handle configuration sidebar - using global ConfigSidebar
+	 */
 	function openConfigSidebar(): void {
 		if (props.data.onConfigOpen) {
 			// Create a WorkflowNodeType-like object for the global ConfigSidebar
@@ -121,17 +116,23 @@
 		}
 	}
 
-	// Handle double-click to open config
+	/**
+	 * Handle double-click to open config
+	 */
 	function handleDoubleClick(): void {
 		openConfigSidebar();
 	}
 
-	// Handle click events
+	/**
+	 * Handle click events
+	 */
 	function handleClick(): void {
 		// Node selection is handled by Svelte Flow
 	}
 
-	// Handle keyboard events for accessibility
+	/**
+	 * Handle keyboard events for accessibility
+	 */
 	function handleKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
@@ -224,25 +225,26 @@
 <style>
 	.flowdrop-tool-node {
 		position: relative;
-		background-color: #ffffff;
-		border: 2px solid #e5e7eb;
-		border-radius: 0.75rem;
+		background-color: var(--fd-background);
+		border: 2px solid var(--fd-border);
+		border-radius: var(--fd-radius-xl);
 		width: 18rem;
 		display: flex;
 		flex-direction: column;
 		cursor: pointer;
-		transition: all 0.2s ease-in-out;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		transition: all var(--fd-transition-normal);
+		box-shadow: var(--fd-shadow-md);
 		overflow: visible;
 		z-index: 10;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-tool-node:hover {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--fd-shadow-lg);
 	}
 
 	.flowdrop-tool-node--selected {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--fd-shadow-lg);
 		border: 2px solid var(--fd-tool-node-color);
 	}
 
@@ -251,15 +253,25 @@
 	}
 
 	.flowdrop-tool-node--error {
-		border-color: #ef4444 !important;
-		background-color: #fef2f2 !important;
+		border-color: var(--fd-error) !important;
+		background-color: var(--fd-error-muted) !important;
 	}
 
 	.flowdrop-tool-node__header {
 		padding: 1rem;
-		background-color: var(--fd-tool-node-color-light);
-		border-radius: 0.75rem;
-		border: 1px solid var(--fd-tool-node-color-border);
+		/* Light mode: mix tool color with white (95%) for subtle tint */
+		background-color: color-mix(in srgb, var(--fd-tool-node-color) 5%, white);
+		border-radius: var(--fd-radius-xl);
+		/* Light mode: mix tool color with white (40%) for border */
+		border: 1px solid color-mix(in srgb, var(--fd-tool-node-color) 40%, white);
+	}
+
+	/* Dark mode header styles */
+	:global([data-theme='dark']) .flowdrop-tool-node__header {
+		/* Dark mode: mix tool color with dark background (15%) for subtle tint */
+		background-color: color-mix(in srgb, var(--fd-tool-node-color) 15%, #1a1a1e);
+		/* Dark mode: mix tool color with dark background (35%) for border */
+		border-color: color-mix(in srgb, var(--fd-tool-node-color) 35%, #1a1a1e);
 	}
 
 	.flowdrop-tool-node__header-content {
@@ -275,7 +287,7 @@
 		justify-content: center;
 		width: 2.5rem;
 		height: 2.5rem;
-		border-radius: 0.5rem;
+		border-radius: var(--fd-radius-lg);
 		flex-shrink: 0;
 		background-color: var(--fd-tool-node-color);
 	}
@@ -288,37 +300,38 @@
 	.flowdrop-tool-node__title {
 		font-size: 1rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--fd-foreground);
 		margin: 0;
 		line-height: 1.4;
 	}
 
 	.flowdrop-tool-node__version {
-		font-size: 0.75rem;
-		color: #6b7280;
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
 		font-weight: 500;
 		margin-top: 0.125rem;
 	}
 
 	.flowdrop-tool-node__badge {
 		background-color: var(--fd-tool-node-color);
-		color: white;
+		color: #ffffff;
 		font-size: 0.625rem;
 		font-weight: 700;
 		padding: 0.25rem 0.5rem;
-		border-radius: 0.25rem;
+		border-radius: var(--fd-radius-sm);
 		letter-spacing: 0.05em;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 	}
 
 	.flowdrop-tool-node__description {
-		font-size: 0.75rem;
-		color: #6b7280;
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
 		margin: 0;
 		line-height: 1.3;
 	}
 
 	:global(.flowdrop-tool-node__icon) {
-		color: white;
+		color: #ffffff;
 		font-size: 1.25rem;
 		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 	}
@@ -332,8 +345,8 @@
 	.flowdrop-tool-node__spinner {
 		width: 12px;
 		height: 12px;
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		border-top: 1px solid white;
+		border: 1px solid color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent);
+		border-top: 1px solid var(--fd-tool-node-color);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}
@@ -342,7 +355,7 @@
 		position: absolute;
 		top: 4px;
 		right: 4px;
-		color: #ef4444;
+		color: var(--fd-error);
 	}
 
 	:global(.flowdrop-tool-node__error-icon) {
@@ -356,19 +369,19 @@
 		right: 0.5rem;
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.9);
-		border: 1px solid #e5e7eb;
-		border-radius: 0.25rem;
-		color: #6b7280;
+		background-color: var(--fd-backdrop);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-sm);
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		backdrop-filter: blur(4px);
 		z-index: 15;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 	}
 
 	.flowdrop-tool-node:hover .flowdrop-tool-node__config-btn {
@@ -376,9 +389,9 @@
 	}
 
 	.flowdrop-tool-node__config-btn:hover {
-		background-color: #f9fafb;
-		border-color: #d1d5db;
-		color: #374151;
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 	}
 
 	@keyframes spin {

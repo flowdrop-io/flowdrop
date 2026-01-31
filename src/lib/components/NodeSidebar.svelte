@@ -384,11 +384,11 @@
 	.flowdrop-sidebar {
 		width: 320px;
 		height: calc(100vh - var(--fd-navbar-height)); /* Account for navbar height */
-		background-color: #ffffff;
-		border-right: 1px solid #e5e7eb;
+		background-color: var(--fd-background);
+		border-right: 1px solid var(--fd-border);
 		display: flex;
 		flex-direction: column;
-		box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--fd-shadow-md);
 		flex-shrink: 0;
 	}
 
@@ -399,8 +399,8 @@
 	}
 
 	.flowdrop-sidebar__header {
-		background-color: #f8fafc;
-		border-bottom: 1px solid #e5e7eb;
+		background-color: var(--fd-muted);
+		border-bottom: 1px solid var(--fd-border);
 		padding: 0.75rem 1rem;
 		display: flex;
 		align-items: center;
@@ -419,19 +419,20 @@
 		font-size: 1rem;
 		font-weight: 600;
 		margin: 0;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-sidebar__search {
 		padding: 0.75rem 1rem;
-		background-color: #ffffff;
-		border-bottom: 1px solid #e5e7eb;
+		background-color: var(--fd-background);
+		border-bottom: 1px solid var(--fd-border);
 	}
 
 	.flowdrop-sidebar__content {
 		flex: 1;
 		overflow-y: scroll; /* Changed from auto to scroll to always show scrollbar */
 		scrollbar-width: thin;
-		scrollbar-color: #d1d5db #f3f4f6;
+		scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
 		padding-bottom: 4rem; /* Add padding to ensure content is scrollable above footer */
 		min-height: 0; /* Allow flex item to shrink below content size */
 	}
@@ -442,23 +443,23 @@
 	}
 
 	.flowdrop-sidebar__content::-webkit-scrollbar-track {
-		background: #f3f4f6;
+		background: var(--fd-scrollbar-track);
 	}
 
 	.flowdrop-sidebar__content::-webkit-scrollbar-thumb {
-		background: #d1d5db;
+		background: var(--fd-scrollbar-thumb);
 		border-radius: 4px;
 		min-height: 20px; /* Ensure thumb has minimum height for visibility */
 	}
 
 	.flowdrop-sidebar__content::-webkit-scrollbar-thumb:hover {
-		background: #9ca3af;
+		background: var(--fd-scrollbar-thumb-hover);
 	}
 
 	.flowdrop-sidebar__footer {
-		background-color: rgba(255, 255, 255, 0.8);
-		backdrop-filter: blur(8px);
-		border-top: 1px solid #e5e7eb;
+		background-color: var(--fd-backdrop);
+		backdrop-filter: var(--fd-backdrop-blur);
+		border-top: 1px solid var(--fd-border);
 		padding: 0.5rem 0.75rem;
 		flex-shrink: 0; /* Prevent footer from shrinking */
 		position: relative;
@@ -476,14 +477,14 @@
 
 	.flowdrop-node-item {
 		cursor: grab;
-		transition: all 0.2s ease-in-out;
-		border-radius: 0.375rem;
+		transition: all var(--fd-transition-normal);
+		border-radius: var(--fd-radius-md);
 		border: 1px solid transparent;
 	}
 
 	.flowdrop-node-item:hover {
-		border-color: #d1d5db;
-		background-color: #f9fafb;
+		border-color: var(--fd-border-strong);
+		background-color: var(--fd-muted);
 	}
 
 	.flowdrop-node-item:active {
@@ -493,9 +494,9 @@
 	.flowdrop-node-icon {
 		width: 2rem;
 		height: 2rem;
-		border-radius: 0.375rem;
-		color: #ffffff;
-		font-size: 0.875rem;
+		border-radius: var(--fd-radius-md);
+		color: var(--fd-primary-foreground);
+		font-size: var(--fd-text-sm);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -521,6 +522,7 @@
 	.flowdrop-card__body h4 {
 		margin: 0;
 		line-height: 1;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-p--4 {
@@ -539,14 +541,14 @@
 	/* Form Elements - Matching App Design System */
 	.flowdrop-input {
 		padding: 0.625rem 0.75rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.375rem;
-		font-size: 0.875rem;
-		color: #111827;
-		background-color: #ffffff;
+		border: 1px solid var(--fd-border-strong);
+		border-radius: var(--fd-radius-md);
+		font-size: var(--fd-text-sm);
+		color: var(--fd-foreground);
+		background-color: var(--fd-background);
 		transition:
-			border-color 0.2s ease-in-out,
-			box-shadow 0.2s ease-in-out;
+			border-color var(--fd-transition-normal),
+			box-shadow var(--fd-transition-normal);
 		width: 100%;
 		height: 2.5rem;
 		box-sizing: border-box;
@@ -554,51 +556,51 @@
 
 	.flowdrop-input:focus {
 		outline: none;
-		border-color: #6b7280;
-		box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+		border-color: var(--fd-ring);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-ring) 20%, transparent);
 	}
 
 	.flowdrop-input::placeholder {
-		color: #9ca3af;
+		color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-btn {
 		padding: 0.625rem 0.75rem;
-		border-radius: 0.375rem;
-		font-size: 0.875rem;
+		border-radius: var(--fd-radius-md);
+		font-size: var(--fd-text-sm);
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s ease-in-out;
-		border: 1px solid #d1d5db;
+		transition: all var(--fd-transition-normal);
+		border: 1px solid var(--fd-border-strong);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		background-color: #f9fafb;
-		color: #374151;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 		height: 2.5rem;
 		min-width: 2.5rem;
 		box-sizing: border-box;
 	}
 
 	.flowdrop-btn:hover {
-		background-color: #f3f4f6;
-		border-color: #9ca3af;
+		background-color: var(--fd-subtle);
+		border-color: var(--fd-border-strong);
 	}
 
 	.flowdrop-btn:active {
-		background-color: #e5e7eb;
-		border-color: #6b7280;
+		background-color: var(--fd-border);
+		border-color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-btn:focus {
 		outline: none;
-		box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-ring) 20%, transparent);
 	}
 
 	.flowdrop-btn:disabled {
-		background-color: #9ca3af;
-		border-color: #9ca3af;
+		background-color: var(--fd-muted-foreground);
+		border-color: var(--fd-muted-foreground);
 		cursor: not-allowed;
 		opacity: 0.6;
 	}
@@ -607,10 +609,10 @@
 	.flowdrop-join {
 		display: flex;
 		width: 100%;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		overflow: hidden;
-		border: 1px solid #d1d5db;
-		background-color: #ffffff;
+		border: 1px solid var(--fd-border-strong);
+		background-color: var(--fd-background);
 	}
 
 	.flowdrop-join__item {
@@ -620,23 +622,23 @@
 	}
 
 	.flowdrop-join__item:first-child {
-		border-right: 1px solid #d1d5db;
+		border-right: 1px solid var(--fd-border-strong);
 		flex: 1;
 	}
 
 	.flowdrop-join__item:last-child {
 		border-left: none;
-		background-color: #f9fafb;
-		color: #374151;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-join__item:last-child:hover {
-		background-color: #f3f4f6;
+		background-color: var(--fd-subtle);
 	}
 
 	.flowdrop-join:focus-within {
-		border-color: #6b7280;
-		box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+		border-color: var(--fd-ring);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-ring) 20%, transparent);
 	}
 
 	/* Utility classes */

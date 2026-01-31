@@ -238,33 +238,30 @@
 		position: relative;
 		width: 18rem;
 		cursor: pointer;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		z-index: 10;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-idea-node__card {
-		background-color: #ffffff;
-		border-radius: 0.75rem;
-		border: 1px solid #e5e7eb;
-		box-shadow:
-			0 4px 6px -1px rgba(0, 0, 0, 0.1),
-			0 2px 4px -1px rgba(0, 0, 0, 0.06);
+		background-color: var(--fd-background);
+		border-radius: var(--fd-radius-xl);
+		border: 1px solid var(--fd-border);
+		box-shadow: var(--fd-shadow-md);
 		overflow: hidden;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-idea-node:hover .flowdrop-idea-node__card {
-		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		box-shadow: var(--fd-shadow-lg);
 		transform: translateY(-1px);
 	}
 
 	.flowdrop-idea-node--selected .flowdrop-idea-node__card {
-		border-color: #3b82f6;
+		border-color: var(--fd-primary);
 		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 0 0 3px rgba(59, 130, 246, 0.3);
+			var(--fd-shadow-lg),
+			0 0 0 3px color-mix(in srgb, var(--fd-primary) 30%, transparent);
 	}
 
 	.flowdrop-idea-node--processing .flowdrop-idea-node__card {
@@ -272,15 +269,15 @@
 	}
 
 	.flowdrop-idea-node--error .flowdrop-idea-node__card {
-		border-color: #ef4444 !important;
-		background-color: #fef2f2 !important;
+		border-color: var(--fd-error) !important;
+		background-color: var(--fd-error-muted) !important;
 	}
 
 	/* Accent bar at top of card */
 	.flowdrop-idea-node__accent-bar {
 		height: 4px;
-		background-color: var(--idea-accent-color, #6366f1);
-		transition: background-color 0.2s ease-in-out;
+		background-color: var(--idea-accent-color, var(--fd-accent));
+		transition: background-color var(--fd-transition-normal);
 	}
 
 	/* Header section */
@@ -288,7 +285,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.625rem;
-		padding: 0.75rem 1rem 0.5rem;
+		padding: var(--fd-space-3) var(--fd-space-4) var(--fd-space-2);
 	}
 
 	.flowdrop-idea-node__icon-wrapper {
@@ -297,21 +294,25 @@
 		justify-content: center;
 		width: 2rem;
 		height: 2rem;
-		background-color: color-mix(in srgb, var(--idea-accent-color, #6366f1) 15%, transparent);
-		border-radius: 0.5rem;
+		background-color: color-mix(
+			in srgb,
+			var(--idea-accent-color, var(--fd-accent)) 15%,
+			transparent
+		);
+		border-radius: var(--fd-radius-lg);
 		flex-shrink: 0;
 	}
 
 	:global(.flowdrop-idea-node__icon) {
 		width: 1.25rem;
 		height: 1.25rem;
-		color: var(--idea-accent-color, #6366f1);
+		color: var(--idea-accent-color, var(--fd-accent));
 	}
 
 	.flowdrop-idea-node__title {
 		font-size: 0.9375rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--fd-foreground);
 		margin: 0;
 		line-height: 1.3;
 		overflow: hidden;
@@ -321,12 +322,12 @@
 
 	/* Body section */
 	.flowdrop-idea-node__body {
-		padding: 0 1rem 0.875rem;
+		padding: 0 var(--fd-space-4) var(--fd-space-3);
 	}
 
 	.flowdrop-idea-node__description {
 		font-size: 0.8125rem;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		margin: 0;
 		line-height: 1.5;
 		display: -webkit-box;
@@ -340,18 +341,18 @@
 	.flowdrop-idea-node__processing {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		font-size: 0.75rem;
-		color: #6b7280;
-		border-top: 1px solid #f3f4f6;
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-2) var(--fd-space-4);
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
+		border-top: 1px solid var(--fd-border-muted);
 	}
 
 	.flowdrop-idea-node__spinner {
 		width: 0.875rem;
 		height: 0.875rem;
-		border: 2px solid #e5e7eb;
-		border-top-color: var(--idea-accent-color, #6366f1);
+		border: 2px solid var(--fd-border);
+		border-top-color: var(--idea-accent-color, var(--fd-accent));
 		border-radius: 50%;
 		animation: idea-spin 1s linear infinite;
 	}
@@ -360,12 +361,12 @@
 	.flowdrop-idea-node__error {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		font-size: 0.75rem;
-		color: #ef4444;
-		border-top: 1px solid #fecaca;
-		background-color: #fef2f2;
+		gap: var(--fd-space-2);
+		padding: var(--fd-space-2) var(--fd-space-4);
+		font-size: var(--fd-text-xs);
+		color: var(--fd-error);
+		border-top: 1px solid color-mix(in srgb, var(--fd-error) 30%, transparent);
+		background-color: var(--fd-error-muted);
 	}
 
 	:global(.flowdrop-idea-node__error-icon) {
@@ -386,19 +387,19 @@
 		right: 0.625rem;
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.95);
-		border: 1px solid #e5e7eb;
-		border-radius: 0.375rem;
-		color: #6b7280;
+		background-color: var(--fd-backdrop);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-md);
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: all 0.2s ease-in-out;
-		backdrop-filter: blur(4px);
+		transition: all var(--fd-transition-normal);
+		backdrop-filter: var(--fd-backdrop-blur);
 		z-index: 15;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 	}
 
 	.flowdrop-idea-node:hover .flowdrop-idea-node__config-btn {
@@ -406,9 +407,9 @@
 	}
 
 	.flowdrop-idea-node__config-btn:hover {
-		background-color: #f9fafb;
-		border-color: #d1d5db;
-		color: #374151;
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 		transform: scale(1.05);
 	}
 
@@ -418,7 +419,7 @@
 		height: 16px !important;
 		border-radius: 50% !important;
 		border: 2px solid #ffffff !important;
-		transition: all 0.2s ease-in-out !important;
+		transition: all var(--fd-transition-normal) !important;
 		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
@@ -456,7 +457,7 @@
 	}
 
 	:global(.flowdrop-idea-node .svelte-flow__handle:focus) {
-		outline: 2px solid #3b82f6 !important;
+		outline: 2px solid var(--fd-ring) !important;
 		outline-offset: 2px !important;
 	}
 
@@ -475,11 +476,11 @@
 		}
 
 		.flowdrop-idea-node__title {
-			font-size: 0.875rem;
+			font-size: var(--fd-text-sm);
 		}
 
 		.flowdrop-idea-node__description {
-			font-size: 0.75rem;
+			font-size: var(--fd-text-xs);
 		}
 	}
 </style>

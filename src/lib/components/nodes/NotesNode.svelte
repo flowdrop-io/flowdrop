@@ -157,6 +157,7 @@
 		background: var(--fd-notes-node-background);
 		backdrop-filter: var(--fd-notes-node-backdrop-filter);
 		box-shadow: var(--fd-notes-node-box-shadow);
+		color: var(--fd-foreground);
 		transition: var(--fd-notes-node-transition);
 		overflow: hidden;
 		z-index: 5;

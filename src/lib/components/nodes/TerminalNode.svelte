@@ -382,10 +382,11 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--fd-space-2);
 		cursor: pointer;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		z-index: 10;
+		color: var(--fd-foreground);
 	}
 
 	/* Wrapper for circle and handles - ensures handles are vertically centered to circle */
@@ -399,30 +400,26 @@
 	.flowdrop-terminal-node__content {
 		width: 72px;
 		height: 72px;
-		background-color: #ffffff;
-		border: 3px solid var(--terminal-color, #6b7280);
+		background-color: var(--fd-background);
+		border: 3px solid var(--terminal-color, var(--fd-muted-foreground));
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow:
-			0 4px 6px -1px rgba(0, 0, 0, 0.1),
-			0 2px 4px -1px rgba(0, 0, 0, 0.06);
-		transition: all 0.2s ease-in-out;
+		box-shadow: var(--fd-shadow-md);
+		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-terminal-node:hover .flowdrop-terminal-node__content {
-		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		box-shadow: var(--fd-shadow-lg);
 		transform: scale(1.05);
 	}
 
 	.flowdrop-terminal-node--selected .flowdrop-terminal-node__content {
 		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 0 0 3px rgba(59, 130, 246, 0.5);
-		border-color: #3b82f6;
+			var(--fd-shadow-lg),
+			0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+		border-color: var(--fd-primary);
 	}
 
 	.flowdrop-terminal-node--processing .flowdrop-terminal-node__content {
@@ -430,33 +427,33 @@
 	}
 
 	.flowdrop-terminal-node--error .flowdrop-terminal-node__content {
-		border-color: #ef4444 !important;
-		background-color: #fef2f2 !important;
+		border-color: var(--fd-error) !important;
+		background-color: var(--fd-error-muted) !important;
 	}
 
 	/* Variant-specific glow effects */
 	.flowdrop-terminal-node--start .flowdrop-terminal-node__content {
 		box-shadow:
-			0 4px 6px -1px rgba(16, 185, 129, 0.2),
-			0 2px 4px -1px rgba(16, 185, 129, 0.1);
+			0 4px 6px -1px color-mix(in srgb, var(--fd-success) 20%, transparent),
+			0 2px 4px -1px color-mix(in srgb, var(--fd-success) 10%, transparent);
 	}
 
 	.flowdrop-terminal-node--start:hover .flowdrop-terminal-node__content {
 		box-shadow:
-			0 10px 15px -3px rgba(16, 185, 129, 0.3),
-			0 4px 6px -2px rgba(16, 185, 129, 0.15);
+			0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
+			0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent);
 	}
 
 	.flowdrop-terminal-node--exit .flowdrop-terminal-node__content {
 		box-shadow:
-			0 4px 6px -1px rgba(239, 68, 68, 0.2),
-			0 2px 4px -1px rgba(239, 68, 68, 0.1);
+			0 4px 6px -1px color-mix(in srgb, var(--fd-error) 20%, transparent),
+			0 2px 4px -1px color-mix(in srgb, var(--fd-error) 10%, transparent);
 	}
 
 	.flowdrop-terminal-node--exit:hover .flowdrop-terminal-node__content {
 		box-shadow:
-			0 10px 15px -3px rgba(239, 68, 68, 0.3),
-			0 4px 6px -2px rgba(239, 68, 68, 0.15);
+			0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
+			0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent);
 	}
 
 	:global(.flowdrop-terminal-node__icon) {
@@ -468,17 +465,17 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.125rem;
-		background-color: rgba(255, 255, 255, 0.9);
-		padding: 0.25rem 0.5rem;
-		border-radius: 0.25rem;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		background-color: var(--fd-backdrop);
+		padding: var(--fd-space-1) var(--fd-space-2);
+		border-radius: var(--fd-radius-sm);
+		box-shadow: var(--fd-shadow-sm);
 		max-width: 140px;
 	}
 
 	.flowdrop-terminal-node__label {
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
-		color: #374151;
+		color: var(--fd-foreground);
 		text-align: center;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -488,7 +485,7 @@
 
 	.flowdrop-terminal-node__description {
 		font-size: 0.625rem;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		text-align: center;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -505,8 +502,8 @@
 	.flowdrop-terminal-node__spinner {
 		width: 14px;
 		height: 14px;
-		border: 2px solid rgba(255, 255, 255, 0.3);
-		border-top: 2px solid var(--terminal-color, #6b7280);
+		border: 2px solid color-mix(in srgb, var(--fd-foreground) 30%, transparent);
+		border-top: 2px solid var(--terminal-color, var(--fd-muted-foreground));
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}
@@ -515,7 +512,7 @@
 		position: absolute;
 		top: 1.5rem;
 		right: 0;
-		color: #ef4444;
+		color: var(--fd-error);
 	}
 
 	:global(.flowdrop-terminal-node__error-icon) {
@@ -531,20 +528,20 @@
 		transform: translateX(-50%);
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.95);
-		border: 1px solid #e5e7eb;
+		background-color: var(--fd-backdrop);
+		border: 1px solid var(--fd-border);
 		border-radius: 50%;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: all 0.2s ease-in-out;
-		backdrop-filter: blur(4px);
+		transition: all var(--fd-transition-normal);
+		backdrop-filter: var(--fd-backdrop-blur);
 		z-index: 15;
-		font-size: 0.75rem;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		font-size: var(--fd-text-xs);
+		box-shadow: var(--fd-shadow-sm);
 	}
 
 	.flowdrop-terminal-node:hover .flowdrop-terminal-node__config-btn {
@@ -552,9 +549,9 @@
 	}
 
 	.flowdrop-terminal-node__config-btn:hover {
-		background-color: #f9fafb;
-		border-color: #d1d5db;
-		color: #374151;
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 		transform: translateX(-50%) scale(1.1);
 	}
 
@@ -570,7 +567,7 @@
 		height: 16px !important;
 		border-radius: 50% !important;
 		border: 2px solid #ffffff !important;
-		transition: all 0.2s ease-in-out !important;
+		transition: all var(--fd-transition-normal) !important;
 		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
@@ -589,7 +586,7 @@
 	}
 
 	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle:focus) {
-		outline: 2px solid #3b82f6 !important;
+		outline: 2px solid var(--fd-ring) !important;
 		outline-offset: 2px !important;
 	}
 
@@ -599,7 +596,7 @@
 		height: 16px !important;
 		border-radius: 50% !important;
 		border: 2px solid #ffffff !important;
-		transition: all 0.2s ease-in-out !important;
+		transition: all var(--fd-transition-normal) !important;
 		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
@@ -618,7 +615,7 @@
 	}
 
 	:global(.svelte-flow__node-terminal .svelte-flow__handle:focus) {
-		outline: 2px solid #3b82f6 !important;
+		outline: 2px solid var(--fd-ring) !important;
 		outline-offset: 2px !important;
 	}
 </style>

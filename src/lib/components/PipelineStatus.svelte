@@ -299,6 +299,11 @@
 		display: flex;
 		flex-direction: column;
 		height: 100vh;
-		background: #f3f4f6;
+		background: var(--fd-layout-background, var(--fd-muted));
+	}
+
+	/* Dark mode override */
+	:global([data-theme='dark']) .pipeline-status-container {
+		background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
 	}
 </style>

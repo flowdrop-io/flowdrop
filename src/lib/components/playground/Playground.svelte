@@ -515,87 +515,87 @@
 	<div class="playground__container">
 		<!-- Sidebar (conditionally rendered based on config.showSidebar) -->
 		{#if config.showSidebar !== false}
-		<aside class="playground__sidebar">
-			<!-- Sidebar Header -->
-			<div class="playground__sidebar-header">
-				<div class="playground__sidebar-title">
-					<Icon icon="mdi:play-circle-outline" />
-					<span>Playground</span>
-				</div>
-				{#if (mode === 'embedded' || mode === 'modal') && onClose}
-					<button
-						type="button"
-						class="playground__sidebar-close"
-						onclick={onClose}
-						title="Close playground"
-					>
-						{#if mode === 'modal'}
-							<Icon icon="mdi:close" />
-						{:else}
-							<Icon icon="mdi:dock-right" />
-						{/if}
-					</button>
-				{/if}
-			</div>
-
-			<!-- Chat Section -->
-			<div class="playground__section">
-				<div class="playground__section-header">
-					<div class="playground__section-title">
-						<Icon icon="mdi:chat-outline" />
-						<span>Chat</span>
+			<aside class="playground__sidebar">
+				<!-- Sidebar Header -->
+				<div class="playground__sidebar-header">
+					<div class="playground__sidebar-title">
+						<Icon icon="mdi:play-circle-outline" />
+						<span>Playground</span>
 					</div>
-					<button
-						type="button"
-						class="playground__add-btn"
-						onclick={handleCreateSession}
-						disabled={$isLoading}
-						title="New chat session"
-					>
-						<Icon icon="mdi:plus" />
-					</button>
-				</div>
-
-				<!-- Sessions List -->
-				<div class="playground__sessions">
-					{#if $sessions.length === 0 && !$isLoading}
-						<div class="playground__sessions-empty">
-							<span>No sessions yet</span>
-						</div>
-					{:else}
-						{#each $sessions as session (session.id)}
-							<div
-								class="playground__session"
-								class:playground__session--active={$currentSession?.id === session.id}
-								role="button"
-								tabindex="0"
-								onclick={() => handleSelectSession(session.id)}
-								onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
-							>
-								<span class="playground__session-name" title={session.name}>
-									{session.name}
-								</span>
-								<button
-									type="button"
-									class="playground__session-menu"
-									class:playground__session-menu--delete={pendingDeleteId === session.id}
-									onclick={(e) => handleDeleteClick(e, session.id)}
-									title={pendingDeleteId === session.id
-										? 'Click to confirm delete'
-										: 'Delete session'}
-								>
-									{#if pendingDeleteId === session.id}
-										<Icon icon="mdi:check" />
-									{:else}
-										<Icon icon="mdi:dots-horizontal" />
-									{/if}
-								</button>
-							</div>
-						{/each}
+					{#if (mode === 'embedded' || mode === 'modal') && onClose}
+						<button
+							type="button"
+							class="playground__sidebar-close"
+							onclick={onClose}
+							title="Close playground"
+						>
+							{#if mode === 'modal'}
+								<Icon icon="mdi:close" />
+							{:else}
+								<Icon icon="mdi:dock-right" />
+							{/if}
+						</button>
 					{/if}
 				</div>
-			</div>
-		</aside>
+
+				<!-- Chat Section -->
+				<div class="playground__section">
+					<div class="playground__section-header">
+						<div class="playground__section-title">
+							<Icon icon="mdi:chat-outline" />
+							<span>Chat</span>
+						</div>
+						<button
+							type="button"
+							class="playground__add-btn"
+							onclick={handleCreateSession}
+							disabled={$isLoading}
+							title="New chat session"
+						>
+							<Icon icon="mdi:plus" />
+						</button>
+					</div>
+
+					<!-- Sessions List -->
+					<div class="playground__sessions">
+						{#if $sessions.length === 0 && !$isLoading}
+							<div class="playground__sessions-empty">
+								<span>No sessions yet</span>
+							</div>
+						{:else}
+							{#each $sessions as session (session.id)}
+								<div
+									class="playground__session"
+									class:playground__session--active={$currentSession?.id === session.id}
+									role="button"
+									tabindex="0"
+									onclick={() => handleSelectSession(session.id)}
+									onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
+								>
+									<span class="playground__session-name" title={session.name}>
+										{session.name}
+									</span>
+									<button
+										type="button"
+										class="playground__session-menu"
+										class:playground__session-menu--delete={pendingDeleteId === session.id}
+										onclick={(e) => handleDeleteClick(e, session.id)}
+										title={pendingDeleteId === session.id
+											? 'Click to confirm delete'
+											: 'Delete session'}
+									>
+										{#if pendingDeleteId === session.id}
+											<Icon icon="mdi:check" />
+										{:else}
+											<Icon icon="mdi:dots-horizontal" />
+										{/if}
+									</button>
+								</div>
+							{/each}
+						{/if}
+					</div>
+				</div>
+			</aside>
 		{/if}
 
 		<!-- Main Content -->
@@ -662,18 +662,24 @@
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden; /* Prevent playground-level scrolling */
-		background-color: #f8fafc;
+		background-color: var(--fd-muted);
 		font-family:
 			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 	}
 
 	.playground--embedded {
-		border-left: 1px solid #e2e8f0;
+		border-left: 1px solid var(--fd-border);
 		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
 	}
 
 	.playground--standalone {
 		height: 100vh;
+		background: var(--fd-layout-background, var(--fd-muted));
+	}
+
+	/* Dark mode override for standalone */
+	:global([data-theme='dark']) .playground--standalone {
+		background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
 	}
 
 	.playground--modal {
@@ -696,8 +702,8 @@
 	/* Sidebar */
 	.playground__sidebar {
 		width: 220px;
-		background-color: #fafbfc;
-		border-right: 1px solid #e5e7eb;
+		background-color: var(--fd-background);
+		border-right: 1px solid var(--fd-border);
 		display: flex;
 		flex-direction: column;
 	}
@@ -707,7 +713,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 1rem;
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 1px solid var(--fd-border);
 	}
 
 	.playground__sidebar-title {
@@ -716,7 +722,7 @@
 		gap: 0.5rem;
 		font-size: 0.9375rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--fd-foreground);
 	}
 
 	.playground__sidebar-close {
@@ -728,14 +734,14 @@
 		border: none;
 		border-radius: 0.375rem;
 		background: transparent;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		transition: all 0.15s ease;
 	}
 
 	.playground__sidebar-close:hover {
-		background-color: #f3f4f6;
-		color: #374151;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	/* Section */
@@ -759,7 +765,7 @@
 		gap: 0.5rem;
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 	}
 
 	.playground__add-btn {
@@ -771,14 +777,14 @@
 		border: none;
 		border-radius: 0.375rem;
 		background: transparent;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		transition: all 0.15s ease;
 	}
 
 	.playground__add-btn:hover:not(:disabled) {
-		background-color: #e5e7eb;
-		color: #374151;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	.playground__add-btn:disabled {
@@ -797,7 +803,7 @@
 		padding: 1rem;
 		text-align: center;
 		font-size: 0.8125rem;
-		color: #9ca3af;
+		color: var(--fd-muted-foreground);
 	}
 
 	.playground__session {
@@ -812,28 +818,28 @@
 	}
 
 	.playground__session:hover {
-		background-color: #f3f4f6;
+		background-color: var(--fd-muted);
 	}
 
 	.playground__session--active {
-		background-color: #e0e7ff;
+		background-color: var(--fd-primary-muted);
 	}
 
 	.playground__session--active:hover {
-		background-color: #c7d2fe;
+		background-color: var(--fd-primary-muted);
 	}
 
 	.playground__session-name {
 		flex: 1;
 		font-size: 0.875rem;
-		color: #374151;
+		color: var(--fd-foreground);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
 	.playground__session--active .playground__session-name {
-		color: #4338ca;
+		color: var(--fd-primary);
 		font-weight: 500;
 	}
 
@@ -846,7 +852,7 @@
 		border: none;
 		border-radius: 0.25rem;
 		background: transparent;
-		color: #9ca3af;
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		opacity: 0;
 		transition: all 0.15s ease;
@@ -857,19 +863,19 @@
 	}
 
 	.playground__session-menu:hover {
-		background-color: #fecaca;
-		color: #dc2626;
+		background-color: var(--fd-error-muted);
+		color: var(--fd-error);
 	}
 
 	.playground__session-menu--delete {
 		opacity: 1;
-		background-color: #dcfce7;
-		color: #16a34a;
+		background-color: var(--fd-success-muted);
+		color: var(--fd-success);
 	}
 
 	.playground__session-menu--delete:hover {
-		background-color: #bbf7d0;
-		color: #15803d;
+		background-color: var(--fd-success-muted);
+		color: var(--fd-success-hover);
 	}
 
 	/* Main Content */
@@ -880,7 +886,7 @@
 		min-width: 0;
 		min-height: 0; /* Allow proper flex shrinking */
 		overflow: hidden; /* Prevent scrolling - ChatPanel handles it */
-		background-color: #ffffff;
+		background-color: var(--fd-background);
 	}
 
 	/* Header */
@@ -889,14 +895,14 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.875rem 1.25rem;
-		border-bottom: 1px solid #e5e7eb;
-		background-color: #fafbfc;
+		border-bottom: 1px solid var(--fd-border);
+		background-color: var(--fd-background);
 	}
 
 	.playground__header-title {
 		font-size: 0.9375rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--fd-foreground);
 		margin: 0;
 	}
 
@@ -909,14 +915,14 @@
 		border: none;
 		border-radius: 0.375rem;
 		background: transparent;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		transition: all 0.15s ease;
 	}
 
 	.playground__header-close:hover {
-		background-color: #f3f4f6;
-		color: #374151;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	/* Error */
@@ -925,9 +931,9 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
-		background-color: #fef2f2;
-		border-bottom: 1px solid #fecaca;
-		color: #dc2626;
+		background-color: var(--fd-error-muted);
+		border-bottom: 1px solid var(--fd-error);
+		color: var(--fd-error);
 		font-size: 0.875rem;
 	}
 
@@ -941,13 +947,13 @@
 		border: none;
 		border-radius: 0.25rem;
 		background: transparent;
-		color: #dc2626;
+		color: var(--fd-error);
 		cursor: pointer;
 		transition: background-color 0.15s ease;
 	}
 
 	.playground__error-dismiss:hover {
-		background-color: #fee2e2;
+		background-color: var(--fd-error-muted);
 	}
 
 	/* Content */
@@ -966,7 +972,7 @@
 		justify-content: center;
 		flex: 1;
 		gap: 1rem;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 	}
 
 	:global(.playground__loading-icon) {
