@@ -22,16 +22,16 @@
 	   Prefix: --_ indicates internal/private tokens
 	   ========================================================================= */
 
-	/* Grays - Zinc scale, 9 steps */
-	--_gray-1: #fafafa;
-	--_gray-2: #f4f4f5;
-	--_gray-3: #e4e4e7;
-	--_gray-4: #d4d4d8;
-	--_gray-5: #a1a1aa;
-	--_gray-6: #71717a;
-	--_gray-7: #52525b;
-	--_gray-8: #27272a;
-	--_gray-9: #18181b;
+	/* Grays - Tinted scale with subtle blue undertone for modern feel, 9 steps */
+	--_gray-1: #fafafc;
+	--_gray-2: #f5f5f8;
+	--_gray-3: #eaeaef;
+	--_gray-4: #dcdce4;
+	--_gray-5: #a3a3ad;
+	--_gray-6: #71717b;
+	--_gray-7: #52525c;
+	--_gray-8: #27272b;
+	--_gray-9: #18181c;
 
 	/* Blue - Primary/interactive color */
 	--_blue-1: #eff6ff;
@@ -66,17 +66,29 @@
 	/* ----- SURFACES (Backgrounds) ----- */
 	--fd-background: #ffffff;
 	--fd-foreground: var(--_gray-9);
-	--fd-muted: var(--_gray-2);
+	--fd-muted: #f8f8fb;
 	--fd-muted-foreground: var(--_gray-6);
-	--fd-subtle: var(--_gray-3);
+	--fd-subtle: #f0f0f5;
 	--fd-card: #ffffff;
 	--fd-card-foreground: var(--_gray-9);
 
+	/* ----- HEADER (Distinct header styling) ----- */
+	--fd-header: #f5f7fa;
+	--fd-header-foreground: var(--_gray-8);
+	--fd-header-gradient: linear-gradient(180deg, #f8f9fc 0%, #f4f5f8 100%);
+
+	/* ----- SURFACE TINT (Subtle accent for surfaces) ----- */
+	--fd-surface-tint: rgba(99, 102, 241, 0.02);
+
 	/* ----- BORDERS ----- */
-	--fd-border: var(--_gray-3);
-	--fd-border-muted: var(--_gray-2);
-	--fd-border-strong: var(--_gray-4);
+	--fd-border: var(--_gray-4);
+	--fd-border-muted: var(--_gray-3);
+	--fd-border-strong: var(--_gray-5);
 	--fd-ring: var(--_blue-2);
+
+	/* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
+	--fd-node-border: var(--_gray-5);
+	--fd-node-border-hover: var(--_gray-6);
 
 	/* ----- PRIMARY (Interactive/Brand) ----- */
 	--fd-primary: var(--_blue-2);
@@ -155,11 +167,11 @@
 	/* 16px */
 	--fd-radius-full: 9999px;
 
-	/* ----- SHADOWS ----- */
-	--fd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
-	--fd-shadow-md: 0 4px 6px rgb(0 0 0 / 0.07);
-	--fd-shadow-lg: 0 10px 15px rgb(0 0 0 / 0.1);
-	--fd-shadow-xl: 0 20px 25px rgb(0 0 0 / 0.1);
+	/* ----- SHADOWS (Refined layered shadows for modern depth) ----- */
+	--fd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
+	--fd-shadow-md: 0 4px 8px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04);
+	--fd-shadow-lg: 0 10px 20px rgb(0 0 0 / 0.08), 0 4px 8px rgb(0 0 0 / 0.04);
+	--fd-shadow-xl: 0 20px 30px rgb(0 0 0 / 0.1), 0 8px 16px rgb(0 0 0 / 0.06);
 
 	/* ----- FONT SIZES ----- */
 	--fd-text-xs: 0.75rem;
@@ -236,6 +248,10 @@
 	--fd-backdrop: rgba(255, 255, 255, 0.8);
 	--fd-backdrop-blur: blur(8px);
 
+	/* ----- HANDLE (Node connection points) ----- */
+	/* White ring around handles for contrast against node backgrounds */
+	--fd-handle-border: #ffffff;
+
 	/* ----- LAYOUT BACKGROUND (Main content area gradient) ----- */
 	--fd-layout-background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
 }
@@ -252,14 +268,30 @@
 	--fd-foreground: var(--_gray-2);
 	--fd-muted: #242428;
 	--fd-muted-foreground: var(--_gray-4);
-	--fd-subtle: var(--_gray-6);
+	--fd-subtle: #2a2a30;
 	--fd-card: #222226;
 	--fd-card-foreground: var(--_gray-2);
 
+	/* ----- HEADER (Distinct header styling for dark mode) ----- */
+	--fd-header: #1f1f24;
+	--fd-header-foreground: var(--_gray-3);
+	--fd-header-gradient: linear-gradient(180deg, #222228 0%, #1e1e24 100%);
+
+	/* ----- SURFACE TINT (Subtle accent for surfaces) ----- */
+	--fd-surface-tint: rgba(99, 102, 241, 0.03);
+
+	/* ----- HANDLE (Node connection points) ----- */
+	/* White ring around handles provides contrast on dark node backgrounds */
+	--fd-handle-border: rgba(255, 255, 255, 0.9);
+
 	/* ----- BORDERS - Subtle in dark mode for softer contrast ----- */
-	--fd-border: #2e2e33;
-	--fd-border-muted: #262629;
-	--fd-border-strong: #3d3d42;
+	--fd-border: #3a3a40;
+	--fd-border-muted: #2e2e33;
+	--fd-border-strong: #4a4a52;
+
+	/* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
+	--fd-node-border: #4a4a52;
+	--fd-node-border-hover: #5a5a62;
 
 	/* ----- PRIMARY (Interactive/Brand) ----- */
 	--fd-primary: #60a5fa;
