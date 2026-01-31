@@ -39,7 +39,8 @@
 	} from '../helpers/workflowEditorHelper.js';
 	import type { NodeExecutionInfo } from '../types/index.js';
 	import { areNodeArraysEqual, areEdgeArraysEqual, throttle } from '../utils/performanceUtils.js';
-	import { Toaster } from 'svelte-5-french-toast';
+	import { Toaster } from "svelte-5-french-toast";
+	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from "../services/toastService.js";
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -528,7 +529,11 @@
 </SvelteFlowProvider>
 
 <!-- Toast notifications container -->
-<Toaster position="bottom-center" />
+<Toaster
+		position="bottom-center"
+		containerClassName={FLOWDROP_TOASTER_CLASS}
+		toastOptions={flowdropToastOptions}
+	/>
 
 <style>
 	.flowdrop-workflow-editor {

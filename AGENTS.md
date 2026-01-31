@@ -437,16 +437,15 @@ See [API Documentation](https://flowdrop-io.github.io/flowdrop/) for full REST A
 
 ## CSS Custom Properties
 
-FlowDrop theming uses CSS custom properties:
+FlowDrop theming uses design tokens (see `src/lib/styles/tokens.css`). Semantic tokens use the `--fd-*` prefix (e.g. `--fd-primary`, `--fd-card`, `--fd-radius-lg`).
 
-```css
-:root {
-	--flowdrop-background-color: #0a0a0a;
-	--flowdrop-primary-color: #6366f1;
-	--flowdrop-border-color: #27272a;
-	--flowdrop-text-color: #fafafa;
-}
-```
+### Toast theme
+
+svelte-5-french-toast is themed via design tokens:
+
+- **Styles**: `src/lib/styles/toast.css` targets `.flowdrop-toaster` and `.flowdrop-toast-bar` using `--fd-card`, `--fd-border`, `--fd-radius-lg`, `--fd-shadow-md`, etc.
+- **Options**: `flowdropToastOptions` and `FLOWDROP_TOASTER_CLASS` from `toastService.ts`; use with `<Toaster containerClassName={FLOWDROP_TOASTER_CLASS} toastOptions={flowdropToastOptions} />`.
+- **Icons**: Success/error/loading icon colors use `--fd-success`, `--fd-error`, `--fd-primary` (and foreground/muted) via `toastOptions.iconTheme`.
 
 ---
 

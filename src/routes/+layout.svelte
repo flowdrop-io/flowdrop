@@ -23,7 +23,8 @@
 	} from '$lib/config/endpoints.js';
 	import { getDevConfig, getDevConfigSync } from './devConfig';
 	import { setEndpointConfig } from '$lib/services/api.js';
-	import { Toaster } from 'svelte-5-french-toast';
+	import { Toaster } from "svelte-5-french-toast";
+	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from "$lib/services/toastService.js";
 	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
 	import { initializeSettings } from '$lib/stores/settingsStore.js';
 
@@ -482,4 +483,8 @@
 </MainLayout>
 
 <!-- Toast Notifications (outside MainLayout for proper z-index stacking) -->
-<Toaster position="bottom-center" />
+<Toaster
+		position="bottom-center"
+		containerClassName={FLOWDROP_TOASTER_CLASS}
+		toastOptions={flowdropToastOptions}
+	/>
