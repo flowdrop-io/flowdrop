@@ -297,10 +297,35 @@
 		border-top: none;
 		border-radius: 0;
 		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-size: var(--fd-text-sm);
 		min-height: var(--editor-height, 300px);
 		transition: border-color var(--fd-transition-normal);
+	}
+
+	/* CodeMirror cursor styling for visibility in dark mode */
+	.form-markdown-editor :global(.CodeMirror-cursor) {
+		border-left-color: var(--fd-foreground);
+	}
+
+	/* CodeMirror selection styling */
+	.form-markdown-editor :global(.CodeMirror-selected) {
+		background-color: var(--fd-primary-muted) !important;
+	}
+
+	.form-markdown-editor :global(.CodeMirror-focused .CodeMirror-selected) {
+		background-color: var(--fd-primary-muted) !important;
+	}
+
+	/* CodeMirror line number gutter */
+	.form-markdown-editor :global(.CodeMirror-gutters) {
+		background-color: var(--fd-subtle);
+		border-right: 1px solid var(--fd-border);
+	}
+
+	.form-markdown-editor :global(.CodeMirror-linenumber) {
+		color: var(--fd-muted-foreground);
 	}
 
 	/* Header styling inside the editor - keep sizes reasonable */
@@ -333,6 +358,47 @@
 		color: var(--fd-foreground);
 	}
 
+	/* Markdown syntax highlighting in editor */
+	.form-markdown-editor :global(.cm-s-easymde .cm-comment) {
+		color: var(--fd-muted-foreground);
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-link) {
+		color: var(--fd-primary);
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-url) {
+		color: var(--fd-primary-hover);
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-string) {
+		color: var(--fd-success);
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-formatting) {
+		color: var(--fd-muted-foreground);
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-quote) {
+		color: var(--fd-muted-foreground);
+		font-style: italic;
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-strong) {
+		color: var(--fd-foreground);
+		font-weight: 700;
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-em) {
+		color: var(--fd-foreground);
+		font-style: italic;
+	}
+
+	.form-markdown-editor :global(.cm-s-easymde .cm-strikethrough) {
+		color: var(--fd-muted-foreground);
+		text-decoration: line-through;
+	}
+
 	.form-markdown-editor :global(.CodeMirror:hover) {
 		border-color: var(--fd-border-strong);
 	}
@@ -340,6 +406,7 @@
 	.form-markdown-editor :global(.CodeMirror-focused) {
 		border-color: var(--fd-primary);
 		background-color: var(--fd-background);
+		color: var(--fd-foreground);
 		box-shadow:
 			0 0 0 3px rgba(59, 130, 246, 0.12),
 			var(--fd-shadow-sm);
