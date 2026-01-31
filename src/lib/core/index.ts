@@ -222,3 +222,18 @@ export { defaultEndpointConfig, createEndpointConfig } from '../config/endpoints
 // ============================================================================
 
 export * from '../adapters/WorkflowAdapter.js';
+
+// ============================================================================
+// Theme System
+// ============================================================================
+
+export type { ThemePreference, ResolvedTheme } from '../stores/themeStore.js';
+export {
+	theme,
+	resolvedTheme,
+	setTheme,
+	toggleTheme,
+	cycleTheme,
+	initializeTheme,
+	isThemeInitialized
+} from '../stores/themeStore.js';

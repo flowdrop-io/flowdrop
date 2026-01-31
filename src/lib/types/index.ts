@@ -987,3 +987,34 @@ export interface WorkflowEvents {
 // Re-export auth types for convenience
 export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from './auth.js';
 export { StaticAuthProvider, CallbackAuthProvider, NoAuthProvider } from './auth.js';
+
+// Re-export settings types
+export type {
+	FlowDropSettings,
+	ThemeSettings,
+	EditorSettings,
+	UISettings,
+	BehaviorSettings,
+	ApiSettings,
+	ThemePreference,
+	ResolvedTheme,
+	ConfigPanelPosition,
+	SettingsCategory,
+	PartialSettings,
+	SyncStatus,
+	SettingsStoreState,
+	SettingsChangeEvent,
+	SettingsChangeCallback
+} from './settings.js';
+export {
+	DEFAULT_SETTINGS,
+	DEFAULT_THEME_SETTINGS,
+	DEFAULT_EDITOR_SETTINGS,
+	DEFAULT_UI_SETTINGS,
+	DEFAULT_BEHAVIOR_SETTINGS,
+	DEFAULT_API_SETTINGS,
+	SETTINGS_CATEGORIES,
+	SETTINGS_CATEGORY_LABELS,
+	SETTINGS_CATEGORY_ICONS,
+	SETTINGS_STORAGE_KEY
+} from './settings.js';
