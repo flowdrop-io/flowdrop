@@ -202,12 +202,16 @@
 
 	/* Selected state - matches other node components */
 	.flowdrop-notes-node--selected {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
 	.flowdrop-notes-node--selected:hover {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
