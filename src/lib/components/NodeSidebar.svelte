@@ -11,6 +11,7 @@
 	import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
 	import { getCategoryColorToken } from '../utils/colors.js';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { uiSettings, updateSettings } from '../stores/settingsStore.js';
 
 	interface Props {
 		nodes: NodeMetadata[];
@@ -20,6 +21,14 @@
 	let props: Props = $props();
 	let searchInput = $state('');
 	let selectedCategory = $state(props.selectedCategory || 'all');
+
+	/**
+	 * Toggle the sidebar collapsed state
+	 * Persists the new state to settings
+	 */
+	function toggleSidebar(): void {
+		updateSettings({ ui: { sidebarCollapsed: !$uiSettings.sidebarCollapsed } });
+	}
 
 	let filteredNodes = $derived(getFilteredNodes());
 	let categories = $derived(getCategories());
@@ -188,38 +197,51 @@
 </script>
 
 <!-- Components Sidebar - Always Visible -->
-<div
+<aside
 	class="flowdrop-sidebar flowdrop-sidebar--container"
-	role="complementary"
+	class:flowdrop-sidebar--collapsed={$uiSettings.sidebarCollapsed}
+	class:flowdrop-sidebar--compact={$uiSettings.compactMode}
+	style:width="{$uiSettings.sidebarCollapsed ? 48 : $uiSettings.sidebarWidth}px"
 	aria-label="Components sidebar"
 >
 	<!-- Header -->
 	<div class="flowdrop-sidebar__header">
-		<div class="flowdrop-sidebar__title">
-			<h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
-		</div>
-	</div>
-
-	<!-- Search Section -->
-	<div class="flowdrop-sidebar__search">
-		<div class="flowdrop-join flowdrop-w--full">
-			<div class="flowdrop-join__item flowdrop-flex--1">
-				<input
-					type="text"
-					placeholder="Search components..."
-					class="flowdrop-input flowdrop-join__item flowdrop-w--full"
-					bind:value={searchInput}
-					oninput={handleSearchChange}
-				/>
+		<button
+			class="flowdrop-sidebar__toggle"
+			onclick={toggleSidebar}
+			aria-label={$uiSettings.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			title={$uiSettings.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+		>
+			<Icon icon={$uiSettings.sidebarCollapsed ? 'mdi:chevron-right' : 'mdi:chevron-left'} />
+		</button>
+		{#if !$uiSettings.sidebarCollapsed}
+			<div class="flowdrop-sidebar__title">
+				<h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
 			</div>
-			<button class="flowdrop-btn flowdrop-join__item" aria-label="Search components">
-				<Icon icon="mdi:magnify" class="flowdrop-icon" />
-			</button>
-		</div>
+		{/if}
 	</div>
 
-	<!-- Node Types List -->
-	<div class="flowdrop-sidebar__content">
+	{#if !$uiSettings.sidebarCollapsed}
+		<!-- Search Section -->
+		<div class="flowdrop-sidebar__search">
+			<div class="flowdrop-join flowdrop-w--full">
+				<div class="flowdrop-join__item flowdrop-flex--1">
+					<input
+						type="text"
+						placeholder="Search components..."
+						class="flowdrop-input flowdrop-join__item flowdrop-w--full"
+						bind:value={searchInput}
+						oninput={handleSearchChange}
+					/>
+				</div>
+				<button class="flowdrop-btn flowdrop-join__item" aria-label="Search components">
+					<Icon icon="mdi:magnify" class="flowdrop-icon" />
+				</button>
+			</div>
+		</div>
+
+		<!-- Node Types List -->
+		<div class="flowdrop-sidebar__content">
 		{#if props.nodes?.length === 0}
 			<!-- No node types available -->
 			<div class="flowdrop-hero">
@@ -362,27 +384,27 @@
 		{/if}
 	</div>
 
-	<!-- Footer -->
-	<div class="flowdrop-sidebar__footer">
-		<div class="flowdrop-flex flowdrop-gap--4">
+		<!-- Footer -->
+		<div class="flowdrop-sidebar__footer">
 			<div class="flowdrop-flex flowdrop-gap--4">
-				{#if props.nodes?.length === 0}
-					<span class="flowdrop-text--xs flowdrop-text--gray">Loading components...</span>
-				{:else}
-					<span class="flowdrop-text--xs flowdrop-text--gray"
-						>Total: {props.nodes?.length || 0} components</span
-					>
-					<span class="flowdrop-text--xs flowdrop-text--gray">Showing: {filteredNodes.length}</span>
-				{/if}
+				<div class="flowdrop-flex flowdrop-gap--4">
+					{#if props.nodes?.length === 0}
+						<span class="flowdrop-text--xs flowdrop-text--gray">Loading components...</span>
+					{:else}
+						<span class="flowdrop-text--xs flowdrop-text--gray"
+							>Total: {props.nodes?.length || 0} components</span
+						>
+						<span class="flowdrop-text--xs flowdrop-text--gray">Showing: {filteredNodes.length}</span>
+					{/if}
+				</div>
 			</div>
 		</div>
-	</div>
-</div>
+	{/if}
+</aside>
 
 <style>
 	/* Components Sidebar - Always Visible */
 	.flowdrop-sidebar {
-		width: 320px;
 		height: calc(100vh - var(--fd-navbar-height)); /* Account for navbar height */
 		background-color: var(--fd-background);
 		border-right: 1px solid var(--fd-border);
@@ -390,12 +412,83 @@
 		flex-direction: column;
 		box-shadow: var(--fd-shadow-md);
 		flex-shrink: 0;
+		transition: width 0.2s ease;
 	}
 
 	.flowdrop-sidebar--container {
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+	}
+
+	/* Collapsed state */
+	.flowdrop-sidebar--collapsed {
+		overflow: hidden;
+	}
+
+	.flowdrop-sidebar--collapsed .flowdrop-sidebar__header {
+		justify-content: center;
+		padding: 0.75rem 0.5rem;
+	}
+
+	/* Compact mode styles */
+	.flowdrop-sidebar--compact .flowdrop-sidebar__header {
+		padding: 0.5rem 0.75rem;
+	}
+
+	.flowdrop-sidebar--compact .flowdrop-sidebar__search {
+		padding: 0.5rem 0.75rem;
+	}
+
+	.flowdrop-sidebar--compact .flowdrop-sidebar__content {
+		padding-bottom: 2rem;
+	}
+
+	.flowdrop-sidebar--compact .flowdrop-sidebar__footer {
+		padding: 0.375rem 0.5rem;
+		height: 32px;
+	}
+
+	.flowdrop-sidebar--compact .flowdrop-node-icon {
+		width: 1.5rem;
+		height: 1.5rem;
+		font-size: var(--fd-text-xs);
+	}
+
+	.flowdrop-sidebar--compact .flowdrop-node-list {
+		gap: 0.25rem;
+	}
+
+	.flowdrop-sidebar--compact .flowdrop-category-list {
+		gap: 0.25rem;
+	}
+
+	/* Toggle button */
+	.flowdrop-sidebar__toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border: none;
+		background: transparent;
+		color: var(--fd-muted-foreground);
+		border-radius: var(--fd-radius-md);
+		cursor: pointer;
+		transition:
+			color var(--fd-transition-fast),
+			background-color var(--fd-transition-fast);
+		flex-shrink: 0;
+	}
+
+	.flowdrop-sidebar__toggle:hover {
+		color: var(--fd-foreground);
+		background-color: var(--fd-subtle);
+	}
+
+	.flowdrop-sidebar__toggle:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px var(--fd-ring);
 	}
 
 	.flowdrop-sidebar__header {

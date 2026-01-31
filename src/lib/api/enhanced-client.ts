@@ -19,6 +19,8 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointMethod, getEndpointHeaders } from '../config/endpoints.js';
 import type { AuthProvider } from '../types/auth.js';
 import { NoAuthProvider } from '../types/auth.js';
+import { get } from 'svelte/store';
+import { apiSettings } from '../stores/settingsStore.js';
 
 /**
  * API error with additional context
@@ -77,7 +79,9 @@ export class EnhancedFlowDropApiClient {
 	}
 
 	/**
-	 * Make HTTP request with error handling, retry logic, and auth support
+	 * Make HTTP request with error handling, retry logic, timeout, and auth support
+	 *
+	 * Uses apiSettings for timeout and retry configuration, falling back to EndpointConfig values.
 	 *
 	 * @param endpointKey - Key identifying the endpoint (for method/header lookup)
 	 * @param endpointPath - The endpoint path template
@@ -96,6 +100,9 @@ export class EnhancedFlowDropApiClient {
 		const method = options.method ?? getEndpointMethod(this.config, endpointKey);
 		const configHeaders = getEndpointHeaders(this.config, endpointKey);
 
+		// Get user settings for timeout and retry
+		const userApiSettings = get(apiSettings);
+
 		// Get auth headers from provider
 		const authHeaders = await this.authProvider.getAuthHeaders();
 
@@ -106,18 +113,32 @@ export class EnhancedFlowDropApiClient {
 			...(options.headers as Record<string, string>)
 		};
 
+		// Create AbortController for timeout
+		const controller = new AbortController();
+		const timeoutMs = userApiSettings.timeout ?? this.config.timeout ?? 30000;
+		const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
 		const fetchConfig: RequestInit = {
 			method,
 			headers,
+			signal: controller.signal,
 			...options
 		};
 
 		let lastError: Error | null = null;
-		const maxAttempts = this.config.retry?.enabled ? this.config.retry.maxAttempts : 1;
+
+		// Determine retry settings: user settings override config
+		const retryEnabled = userApiSettings.retryEnabled ?? this.config.retry?.enabled ?? false;
+		const maxAttempts = retryEnabled
+			? (userApiSettings.retryAttempts ?? this.config.retry?.maxAttempts ?? 3)
+			: 1;
 
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 			try {
 				const response = await fetch(url, fetchConfig);
+
+				// Clear timeout on successful response
+				clearTimeout(timeoutId);
 
 				// Handle 401 Unauthorized
 				if (response.status === 401) {
@@ -159,6 +180,19 @@ export class EnhancedFlowDropApiClient {
 				const data = await response.json();
 				return data as T;
 			} catch (error) {
+				// Clear timeout on error
+				clearTimeout(timeoutId);
+
+				// Handle abort (timeout)
+				if (error instanceof Error && error.name === 'AbortError') {
+					lastError = new ApiError(`Request timeout after ${timeoutMs}ms`, 0, operation, {
+						timeout: true
+					});
+					// Don't retry on timeout - it's a client-side timeout
+					console.error(`API request timed out after ${timeoutMs}ms:`, lastError);
+					throw lastError;
+				}
+
 				// If it's already an ApiError, preserve it
 				if (error instanceof ApiError) {
 					lastError = error;
@@ -176,10 +210,12 @@ export class EnhancedFlowDropApiClient {
 					throw lastError;
 				}
 
-				// Wait before retry
-				const delay = this.config.retry?.delay ?? 1000;
+				// Wait before retry with exponential backoff
+				const baseDelay = this.config.retry?.delay ?? 1000;
 				const backoffDelay =
-					this.config.retry?.backoff === 'exponential' ? delay * Math.pow(2, attempt - 1) : delay;
+					this.config.retry?.backoff === 'exponential'
+						? baseDelay * Math.pow(2, attempt - 1)
+						: baseDelay;
 
 				await new Promise((resolve) => setTimeout(resolve, backoffDelay));
 			}
