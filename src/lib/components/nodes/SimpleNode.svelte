@@ -283,11 +283,10 @@
 		color: var(--fd-foreground);
 	}
 
-	/* Normal layout (default) */
+	/* Normal layout (default): min-height allows variable height for longer descriptions */
 	.flowdrop-simple-node--normal {
 		width: var(--fd-node-default-width);
-		height: var(--fd-node-simple-height);
-		overflow: hidden;
+		min-height: var(--fd-node-simple-height);
 	}
 
 	.flowdrop-simple-node:hover {
