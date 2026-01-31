@@ -699,8 +699,15 @@
 					schema={workflowConfigSchema}
 					values={workflowConfigValues}
 					showUIExtensions={false}
-					onSave={handleWorkflowSave}
-					onCancel={() => (isWorkflowSettingsOpen = false)}
+					onChange={(config) => {
+						// Sync workflow settings changes immediately on field blur
+						if ($workflowStore) {
+							workflowActions.batchUpdate({
+								name: config.name as string,
+								description: config.description as string | undefined
+							});
+						}
+					}}
 				/>
 			</ConfigPanel>
 		{:else if selectedNodeForConfig()}
@@ -718,7 +725,8 @@
 				<ConfigForm
 					node={currentNode}
 					workflowId={$workflowStore?.id}
-					onSave={async (updatedConfig, uiExtensions?: NodeUIExtensions) => {
+					onChange={async (updatedConfig, uiExtensions) => {
+						// Sync config changes to workflow immediately on field blur
 						if (selectedNodeId && currentNode) {
 							// Build the updated node data
 							const updatedData = {
@@ -734,22 +742,17 @@
 								};
 							}
 
-							// Handle nodeType switching if nodeType is in the config
+							// Update the node in the workflow store
 							const nodeUpdates: Record<string, unknown> = {
 								data: updatedData
 							};
 
-							// NOTE: We do NOT change the node's type field anymore
-							// All nodes use 'universalNode' and UniversalNode handles internal switching
 							workflowActions.updateNode(selectedNodeId, nodeUpdates);
 
-							// Refresh edge positions just in case. This is a safe bet.
+							// Refresh edge positions in case config changes affect handles
 							await workflowEditorRef.refreshEdgePositions(selectedNodeId);
 						}
-
-						closeConfigSidebar();
 					}}
-					onCancel={closeConfigSidebar}
 				/>
 			</ConfigPanel>
 		{/if}
