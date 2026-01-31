@@ -67,3 +67,50 @@ export * from './playground/index.js';
 // ============================================================================
 
 export * from './editor/index.js';
+
+// ============================================================================
+// Theme Component Export
+// ============================================================================
+
+export { default as ThemeToggle } from './components/ThemeToggle.svelte';
+
+// ============================================================================
+// Settings Component & Store Exports
+// ============================================================================
+
+export { default as SettingsPanel } from './components/SettingsPanel.svelte';
+export { default as SettingsModal } from './components/SettingsModal.svelte';
+
+// Settings store exports
+export {
+	settingsStore,
+	themeSettings,
+	editorSettings,
+	uiSettings,
+	behaviorSettings,
+	apiSettings,
+	syncStatusStore,
+	theme,
+	resolvedTheme,
+	updateSettings,
+	resetSettings,
+	getSettings,
+	setTheme,
+	toggleTheme,
+	cycleTheme,
+	initializeTheme,
+	initializeSettings,
+	setSettingsService,
+	syncSettingsToApi,
+	loadSettingsFromApi,
+	onSettingsChange
+} from './stores/settingsStore.js';
+
+// Settings service exports
+export {
+	settingsApi,
+	SettingsService,
+	createSettingsService,
+	setSettingsEndpointConfig,
+	getSettingsEndpointConfig
+} from './services/settingsService.js';
