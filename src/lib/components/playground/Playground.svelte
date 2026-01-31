@@ -519,7 +519,6 @@
 				<!-- Sidebar Header -->
 				<div class="playground__sidebar-header">
 					<div class="playground__sidebar-title">
-						<Icon icon="mdi:play-circle-outline" />
 						<span>Playground</span>
 					</div>
 					{#if (mode === 'embedded' || mode === 'modal') && onClose}
@@ -538,26 +537,25 @@
 					{/if}
 				</div>
 
-				<!-- Chat Section -->
+				<!-- New Session Section -->
 				<div class="playground__section">
-					<div class="playground__section-header">
-						<div class="playground__section-title">
-							<Icon icon="mdi:chat-outline" />
-							<span>Chat</span>
-						</div>
-						<button
-							type="button"
-							class="playground__add-btn"
-							onclick={handleCreateSession}
-							disabled={$isLoading}
-							title="New chat session"
-						>
-							<Icon icon="mdi:plus" />
-						</button>
-					</div>
+					<button
+						type="button"
+						class="playground__new-session-btn"
+						onclick={handleCreateSession}
+						disabled={$isLoading}
+						title="Start a new session"
+					>
+						<Icon icon="mdi:plus" />
+						<span>New Session</span>
+					</button>
 
-					<!-- Sessions List -->
-					<div class="playground__sessions">
+					<!-- Sessions List - click a session to load it -->
+					<div class="playground__sessions-wrap">
+						{#if $sessions.length > 0}
+							<p class="playground__sessions-hint">Click a session to load it</p>
+						{/if}
+						<div class="playground__sessions">
 						{#if $sessions.length === 0 && !$isLoading}
 							<div class="playground__sessions-empty">
 								<span>No sessions yet</span>
@@ -569,6 +567,8 @@
 									class:playground__session--active={$currentSession?.id === session.id}
 									role="button"
 									tabindex="0"
+									title="Click to load this session"
+									aria-label="Load session: {session.name}"
 									onclick={() => handleSelectSession(session.id)}
 									onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
 								>
@@ -593,6 +593,7 @@
 								</div>
 							{/each}
 						{/if}
+						</div>
 					</div>
 				</div>
 			</aside>
@@ -708,12 +709,16 @@
 		flex-direction: column;
 	}
 
+	/* Fixed height so sidebar and main session header align on same horizontal line */
 	.playground__sidebar-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem;
+		height: 3.25rem;
+		padding: 0 1rem;
 		border-bottom: 1px solid var(--fd-border);
+		box-sizing: border-box;
+		flex-shrink: 0;
 	}
 
 	.playground__sidebar-title {
@@ -722,6 +727,7 @@
 		gap: 0.5rem;
 		font-size: 0.9375rem;
 		font-weight: 600;
+		line-height: 1.25;
 		color: var(--fd-foreground);
 	}
 
@@ -750,53 +756,70 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
+		padding: 0.75rem 0.5rem 0;
 	}
 
-	.playground__section-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.75rem 1rem;
-	}
-
-	.playground__section-title {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--fd-muted-foreground);
-	}
-
-	.playground__add-btn {
+	/* New Session – neutral full-width button with icon */
+	.playground__new-session-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.5rem;
-		height: 1.5rem;
-		border: none;
-		border-radius: 0.375rem;
-		background: transparent;
-		color: var(--fd-muted-foreground);
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.playground__add-btn:hover:not(:disabled) {
-		background-color: var(--fd-muted);
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.625rem 1rem;
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-md);
+		background-color: var(--fd-background);
 		color: var(--fd-foreground);
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+		box-sizing: border-box;
 	}
 
-	.playground__add-btn:disabled {
+	.playground__new-session-btn:hover:not(:disabled) {
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border);
+		transform: translateY(-1px);
+	}
+
+	.playground__new-session-btn:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px var(--fd-ring);
+	}
+
+	.playground__new-session-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+		transform: none;
+	}
+
+	.playground__new-session-btn :global(svg) {
+		width: 1.125rem;
+		height: 1.125rem;
 	}
 
 	/* Sessions */
+	.playground__sessions-wrap {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+	}
+
+	.playground__sessions-hint {
+		font-size: 0.6875rem;
+		color: var(--fd-muted-foreground);
+		margin: 0.75rem 0 0.375rem 0.75rem;
+		line-height: 1.3;
+	}
+
 	.playground__sessions {
 		flex: 1;
 		overflow-y: auto;
 		padding: 0 0.5rem 1rem;
+		min-height: 0;
 	}
 
 	.playground__sessions-empty {
@@ -806,27 +829,32 @@
 		color: var(--fd-muted-foreground);
 	}
 
+	/* Session row - clickable to load session; clear hover/active affordance */
 	.playground__session {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.625rem 0.75rem;
 		margin-bottom: 0.25rem;
-		border-radius: 0.5rem;
+		border-radius: var(--fd-radius-md);
+		border-left: 3px solid transparent;
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: background-color 0.15s ease, border-left-color 0.15s ease;
 	}
 
 	.playground__session:hover {
 		background-color: var(--fd-muted);
+		border-left-color: var(--fd-border);
 	}
 
 	.playground__session--active {
 		background-color: var(--fd-primary-muted);
+		border-left-color: var(--fd-primary);
 	}
 
 	.playground__session--active:hover {
 		background-color: var(--fd-primary-muted);
+		border-left-color: var(--fd-primary);
 	}
 
 	.playground__session-name {
@@ -889,19 +917,23 @@
 		background-color: var(--fd-background);
 	}
 
-	/* Header */
+	/* Header - exact same height as playground__sidebar-header for alignment */
 	.playground__header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.875rem 1.25rem;
+		height: 3.25rem;
+		padding: 0 1.25rem;
 		border-bottom: 1px solid var(--fd-border);
 		background-color: var(--fd-background);
+		box-sizing: border-box;
+		flex-shrink: 0;
 	}
 
 	.playground__header-title {
 		font-size: 0.9375rem;
 		font-weight: 600;
+		line-height: 1.25;
 		color: var(--fd-foreground);
 		margin: 0;
 	}

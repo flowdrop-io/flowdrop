@@ -503,7 +503,6 @@
 		align-items: center;
 		justify-content: space-between;
 		flex-shrink: 0;
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 	}
 
 	.flowdrop-sidebar__title {

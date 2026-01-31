@@ -473,8 +473,8 @@
 						This playground is in view-only mode. No inputs are available.
 					</p>
 				{:else if showChatInput}
-					<h2 class="chat-panel__welcome-title">New chat</h2>
-					<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
+					<h2 class="chat-panel__welcome-title">New session</h2>
+					<p class="chat-panel__welcome-text">Test your flow with a prompt</p>
 				{:else}
 					<h2 class="chat-panel__welcome-title">Ready to run</h2>
 					<p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
@@ -514,8 +514,8 @@
 						This playground is in view-only mode. No inputs are available.
 					</p>
 				{:else if showChatInput}
-					<h2 class="chat-panel__welcome-title">New chat</h2>
-					<p class="chat-panel__welcome-text">Test your flow with a chat prompt</p>
+					<h2 class="chat-panel__welcome-title">New session</h2>
+					<p class="chat-panel__welcome-text">Test your flow with a prompt</p>
 				{:else}
 					<h2 class="chat-panel__welcome-title">Ready to run</h2>
 					<p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
