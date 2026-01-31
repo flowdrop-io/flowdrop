@@ -216,6 +216,19 @@ ConfigProperty:
         - uri
         - date
         - date-time
+    x-display-order:
+      type: integer
+      description: |
+        Controls the display order of fields in the configuration form.
+        Fields are sorted by this value in ascending order (lower values appear first).
+        
+        Use negative values to ensure fields appear at the top:
+        - `-2` for `instanceTitle` (appears first)
+        - `-1` for `instanceDescription` (appears second)
+        - `0` or positive values for regular fields
+        
+        Fields without `x-display-order` are sorted after fields with explicit ordering.
+      example: -2
     items:
       $ref: '#/ConfigProperty'
       description: Schema for array items

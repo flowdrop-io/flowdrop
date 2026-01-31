@@ -273,10 +273,20 @@ NodeConfig:
     Any property defined in the node's `configSchema` (e.g., model, temperature, apiKey).
     The schema defines the type, validation rules, and default values for each property.
 
-    ## Special Properties (Dynamic Ports)
+    ## Reserved Property Names
 
-    In addition to standard configuration, the config object may contain special arrays
-    that define dynamic ports for the node:
+    These property names have special meaning and trigger automatic behaviors in FlowDrop:
+
+    ### Instance Display Overrides
+
+    - **`instanceTitle`**: Per-instance title override (replaces the default `label` display)
+    - **`instanceDescription`**: Per-instance description override (replaces `metadata.description` display)
+
+    ### Visual Type Selection
+
+    - **`nodeType`**: Changes the visual rendering type of the node (e.g., "default", "simple", "square")
+
+    ### Dynamic Ports
 
     - **`dynamicInputs`**: Array of DynamicPort for user-defined input handles
     - **`dynamicOutputs`**: Array of DynamicPort for user-defined output handles
@@ -285,6 +295,53 @@ NodeConfig:
     These dynamic configuration values generate additional handles on the node
     that can be connected to other nodes in the workflow.
   properties:
+    instanceTitle:
+      type: string
+      description: |
+        Per-instance title override that replaces the default node label.
+        Useful when you have multiple instances of the same node type and want
+        to give each a meaningful name (e.g., "Email Summarizer" instead of "LLM Processor").
+
+        Fallback behavior:
+        - If `instanceTitle` is set → displays `instanceTitle`
+        - If not set → displays `label` (from node data)
+      example: Email Summarizer
+    instanceDescription:
+      type: string
+      description: |
+        Per-instance description override that replaces the default `metadata.description`.
+        Useful for documenting what a specific node instance does within your workflow.
+
+        Fallback behavior:
+        - If `instanceDescription` is set → displays `instanceDescription`
+        - If not set → displays `metadata.description` (from node type definition)
+      example: Summarizes incoming emails into 3 bullet points
+    nodeType:
+      type: string
+      description: |
+        Changes how the node is visually rendered. This allows a single node definition
+        to support multiple visual representations.
+
+        Available built-in types:
+        - `default`: Standard workflow node with full details
+        - `simple`: Compact layout with minimal chrome
+        - `square`: Geometric square layout (icon-only)
+        - `tool`: Specialized style for agent tools
+        - `gateway`: Branching control flow visualization
+        - `terminal`: Start/end/exit node styling
+        - `note`: Sticky note style for annotations
+
+        The node's `metadata.supportedTypes` defines which types are allowed.
+        If invalid or missing, falls back to `metadata.type` or "default".
+      enum:
+        - default
+        - simple
+        - square
+        - tool
+        - gateway
+        - terminal
+        - note
+      example: simple
     dynamicInputs:
       type: array
       items:
@@ -302,6 +359,9 @@ NodeConfig:
       description: Gateway node branches that define conditional output paths
   additionalProperties: true
   example:
+    instanceTitle: Email Summarizer
+    instanceDescription: Summarizes incoming emails into 3 bullet points
+    nodeType: simple
     model: gpt-4o-mini
     temperature: 0.7
     maxTokens: 1000
