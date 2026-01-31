@@ -25,6 +25,7 @@
 	import { setEndpointConfig } from '$lib/services/api.js';
 	import { Toaster } from 'svelte-5-french-toast';
 	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
+	import { initializeSettings } from '$lib/stores/settingsStore.js';
 
 	let { data, children } = $props();
 
@@ -60,6 +61,9 @@
 
 	// Initialize global save functions on mount
 	onMount(() => {
+		// Initialize settings system (loads from localStorage, applies theme to DOM)
+		initializeSettings();
+
 		// Initialize API service with runtime config from server
 		// Config is already loaded via +layout.server.ts
 		// Note: MSW is initialized in hooks.client.ts before any components mount

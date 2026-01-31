@@ -9,6 +9,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import Logo from './Logo.svelte';
+	import SettingsModal from './SettingsModal.svelte';
 
 	interface NavbarAction {
 		label: string;
@@ -25,16 +26,31 @@
 	}
 
 	interface Props {
+		/** Primary action buttons */
 		primaryActions?: NavbarAction[];
+		/** Show connection status indicator */
 		showStatus?: boolean;
+		/** Page title */
 		title?: string;
+		/** Breadcrumb navigation items */
 		breadcrumbs?: BreadcrumbItem[];
+		/** Show settings gear icon */
+		showSettings?: boolean;
 	}
 
-	let { primaryActions = [], showStatus = true, title, breadcrumbs = [] }: Props = $props();
+	let {
+		primaryActions = [],
+		showStatus = true,
+		title,
+		breadcrumbs = [],
+		showSettings = true
+	}: Props = $props();
 
 	// Dropdown state
 	let isDropdownOpen = $state(false);
+
+	// Settings modal state
+	let isSettingsOpen = $state(false);
 
 	// Close dropdown when clicking outside
 	function handleClickOutside(event: MouseEvent) {
@@ -177,9 +193,23 @@
 	</div>
 
 	<div class="flowdrop-navbar__end">
-		<!-- Additional actions or content can go here -->
+		{#if showSettings}
+			<button
+				class="flowdrop-navbar__settings-btn"
+				onclick={() => (isSettingsOpen = true)}
+				title="Settings"
+				aria-label="Open settings"
+			>
+				<Icon icon="mdi:cog" />
+			</button>
+		{/if}
 	</div>
 </div>
+
+<!-- Settings Modal -->
+{#if showSettings}
+	<SettingsModal bind:open={isSettingsOpen} />
+{/if}
 
 <style>
 	.flowdrop-navbar {
@@ -190,8 +220,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0 1rem;
-		background-color: #ffffff;
-		border-bottom: 1px solid #e5e7eb;
+		background-color: var(--fd-background);
+		border-bottom: 1px solid var(--fd-border);
 		z-index: 10;
 	}
 
@@ -204,7 +234,7 @@
 	}
 
 	.flowdrop-logo--container {
-		color: #000;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-logo--header {
@@ -247,7 +277,7 @@
 		margin: 0;
 		font-size: 1rem;
 		font-weight: 600;
-		color: #111827;
+		color: var(--fd-foreground);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -287,17 +317,17 @@
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.25rem 0.5rem;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		text-decoration: none;
-		color: #6b7280;
-		font-size: 0.875rem;
+		color: var(--fd-muted-foreground);
+		font-size: var(--fd-text-sm);
 		font-weight: 500;
-		transition: all 0.2s ease;
+		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-navbar__breadcrumb-link:hover {
-		color: #111827;
-		background-color: #f3f4f6;
+		color: var(--fd-foreground);
+		background-color: var(--fd-muted);
 	}
 
 	.flowdrop-navbar__breadcrumb-current {
@@ -305,8 +335,8 @@
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.25rem 0.5rem;
-		color: #111827;
-		font-size: 0.875rem;
+		color: var(--fd-foreground);
+		font-size: var(--fd-text-sm);
 		font-weight: 600;
 	}
 
@@ -323,7 +353,7 @@
 	.flowdrop-navbar__breadcrumb-separator {
 		display: flex;
 		align-items: center;
-		color: #9ca3af;
+		color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-navbar__breadcrumb-chevron {
@@ -342,24 +372,24 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.125rem 0.5rem;
-		background-color: #f0fdf4;
-		border: 1px solid #bbf7d0;
-		border-radius: 0.375rem;
-		font-size: 0.75rem;
+		background-color: var(--fd-success-muted);
+		border: 1px solid var(--fd-success);
+		border-radius: var(--fd-radius-md);
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 	}
 
 	.flowdrop-navbar__status-indicator {
 		width: 0.375rem;
 		height: 0.375rem;
-		background-color: #22c55e;
+		background-color: var(--fd-success);
 		border-radius: 50%;
 		animation: pulse 2s infinite;
 	}
 
 	.flowdrop-navbar__status-text {
-		color: #166534;
-		font-size: 0.75rem;
+		color: var(--fd-success);
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 	}
 
@@ -387,21 +417,21 @@
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
 		text-decoration: none;
-		border: 1px solid #d1d5db;
-		border-radius: 0.375rem 0 0 0.375rem;
-		transition: all 0.2s ease-in-out;
+		border: 1px solid var(--fd-border-strong);
+		border-radius: var(--fd-radius-md) 0 0 var(--fd-radius-md);
+		transition: all var(--fd-transition-normal);
 		font-weight: 500;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		height: 2.5rem;
 		box-sizing: border-box;
-		background-color: #ffffff;
-		color: #374151;
+		background-color: var(--fd-background);
+		color: var(--fd-foreground);
 		border-right: none;
 	}
 
 	.flowdrop-navbar__primary-action:hover {
-		background-color: #f9fafb;
-		color: #111827;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-navbar__dropdown {
@@ -417,24 +447,24 @@
 		justify-content: center;
 		width: 2rem;
 		height: 2.5rem;
-		border: 1px solid #d1d5db;
+		border: 1px solid var(--fd-border-strong);
 		border-left: none;
-		border-radius: 0 0.375rem 0.375rem 0;
-		background-color: #ffffff;
-		color: #374151;
+		border-radius: 0 var(--fd-radius-md) var(--fd-radius-md) 0;
+		background-color: var(--fd-background);
+		color: var(--fd-foreground);
 		cursor: pointer;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		box-sizing: border-box;
 	}
 
 	.flowdrop-navbar__dropdown-trigger:hover {
-		background-color: #f9fafb;
-		color: #111827;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-navbar__dropdown-trigger[aria-expanded='true'] {
-		background-color: #f3f4f6;
-		color: #111827;
+		background-color: var(--fd-subtle);
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-navbar__dropdown-menu {
@@ -444,12 +474,10 @@
 		z-index: 50;
 		margin-top: 0.25rem;
 		min-width: 12rem;
-		background-color: #ffffff;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
-		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		background-color: var(--fd-card);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
+		box-shadow: var(--fd-shadow-lg);
 		overflow: hidden;
 	}
 
@@ -459,18 +487,19 @@
 		gap: 0.75rem;
 		padding: 0.75rem 1rem;
 		text-decoration: none;
-		color: #374151;
-		font-size: 0.875rem;
+		color: var(--fd-foreground);
+		font-size: var(--fd-text-sm);
 		font-weight: 500;
-		transition: background-color 0.2s ease-in-out;
+		transition: background-color var(--fd-transition-normal);
 		border: none;
 		width: 100%;
 		text-align: left;
+		background-color: transparent;
 	}
 
 	.flowdrop-navbar__dropdown-item:hover {
-		background-color: #f9fafb;
-		color: #111827;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-navbar__dropdown-item:first-child {
@@ -487,52 +516,52 @@
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
 		text-decoration: none;
-		border-radius: 0.375rem;
-		transition: all 0.2s ease-in-out;
+		border-radius: var(--fd-radius-md);
+		transition: all var(--fd-transition-normal);
 		font-weight: 500;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		border: 1px solid transparent;
 	}
 
 	.flowdrop-navbar__action--primary {
-		background-color: #3b82f6;
-		color: #ffffff;
-		border-color: #3b82f6;
+		background-color: var(--fd-primary);
+		color: var(--fd-primary-foreground);
+		border-color: var(--fd-primary);
 	}
 
 	.flowdrop-navbar__action--primary:hover {
-		background-color: #2563eb;
-		border-color: #2563eb;
-		color: #ffffff;
+		background-color: var(--fd-primary-hover);
+		border-color: var(--fd-primary-hover);
+		color: var(--fd-primary-foreground);
 	}
 
 	.flowdrop-navbar__action--secondary {
-		background-color: #f3f4f6;
-		color: #374151;
-		border-color: #d1d5db;
+		background-color: var(--fd-secondary);
+		color: var(--fd-secondary-foreground);
+		border-color: var(--fd-border-strong);
 	}
 
 	.flowdrop-navbar__action--secondary:hover {
-		background-color: #e5e7eb;
-		color: #111827;
+		background-color: var(--fd-secondary-hover);
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-navbar__action--outline {
 		background-color: transparent;
-		color: #374151;
-		border-color: #d1d5db;
+		color: var(--fd-foreground);
+		border-color: var(--fd-border-strong);
 	}
 
 	.flowdrop-navbar__action--outline:hover {
-		background-color: #f9fafb;
-		color: #111827;
-		border-color: #9ca3af;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
+		border-color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-navbar__action--active {
-		background-color: #eff6ff;
-		color: #1d4ed8;
-		border-color: #93c5fd;
+		background-color: var(--fd-primary-muted);
+		color: var(--fd-primary);
+		border-color: var(--fd-primary);
 	}
 
 	.flowdrop-navbar__action-icon {
@@ -552,6 +581,38 @@
 	.flowdrop-navbar__end {
 		display: flex;
 		align-items: center;
+		gap: var(--fd-space-2);
+		margin-left: var(--fd-space-3);
+	}
+
+	.flowdrop-navbar__settings-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-md);
+		background-color: var(--fd-background);
+		color: var(--fd-muted-foreground);
+		font-size: 1.25rem;
+		cursor: pointer;
+		transition: all var(--fd-transition-fast);
+	}
+
+	.flowdrop-navbar__settings-btn:hover {
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
+		border-color: var(--fd-border-strong);
+	}
+
+	.flowdrop-navbar__settings-btn:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px var(--fd-ring);
+	}
+
+	.flowdrop-navbar__settings-btn:active {
+		transform: scale(0.95);
 	}
 
 	.flowdrop-api-status {
@@ -559,19 +620,19 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.25rem 0.5rem;
-		border-radius: 0.375rem;
-		background-color: #f3f4f6;
+		border-radius: var(--fd-radius-md);
+		background-color: var(--fd-muted);
 	}
 
 	.flowdrop-api-status__indicator {
 		width: 0.5rem;
 		height: 0.5rem;
 		border-radius: 50%;
-		transition: background-color 0.2s ease-in-out;
+		transition: background-color var(--fd-transition-normal);
 	}
 
 	.flowdrop-api-status__indicator--connected {
-		background-color: #10b981;
+		background-color: var(--fd-success);
 	}
 
 	/* Utility classes */
@@ -589,17 +650,17 @@
 	}
 
 	.flowdrop-text--tagline {
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		line-height: 0.5rem;
 	}
 
 	.flowdrop-text--xs {
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		line-height: 1rem;
 	}
 
 	.flowdrop-text--gray {
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-font--bold {
