@@ -97,7 +97,7 @@
 		margin: 0;
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
@@ -112,12 +112,12 @@
 	.readonly-details__label {
 		font-size: 0.75rem;
 		font-weight: 500;
-		color: #9ca3af;
+		color: var(--fd-muted-foreground);
 	}
 
 	.readonly-details__value {
 		font-size: 0.8125rem;
-		color: #374151;
+		color: var(--fd-foreground);
 		font-weight: 500;
 	}
 
@@ -130,10 +130,10 @@
 	.readonly-details__id {
 		font-size: 0.75rem;
 		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
-		color: #6b7280;
-		background-color: #f3f4f6;
+		color: var(--fd-muted-foreground);
+		background-color: var(--fd-subtle);
 		padding: 0.125rem 0.375rem;
-		border-radius: 0.25rem;
+		border-radius: var(--fd-radius-sm);
 		word-break: break-all;
 	}
 
@@ -142,29 +142,29 @@
 		border: none;
 		padding: 0.25rem;
 		cursor: pointer;
-		color: #9ca3af;
-		border-radius: 0.25rem;
+		color: var(--fd-muted-foreground);
+		border-radius: var(--fd-radius-sm);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		transition:
-			color 0.15s,
-			background-color 0.15s;
+			color var(--fd-transition-fast),
+			background-color var(--fd-transition-fast);
 	}
 
 	.readonly-details__copy-btn:hover {
-		color: #374151;
-		background-color: #f3f4f6;
+		color: var(--fd-foreground);
+		background-color: var(--fd-subtle);
 	}
 
 	.readonly-details__copy-btn:active {
-		color: #111827;
+		color: var(--fd-foreground);
 	}
 
 	.readonly-details__description {
 		margin: 0;
 		font-size: 0.8125rem;
-		color: #6b7280;
+		color: var(--fd-muted-foreground);
 		line-height: 1.5;
 	}
 </style>

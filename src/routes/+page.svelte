@@ -924,16 +924,23 @@
 		box-shadow: var(--fd-shadow-md);
 	}
 
+	/* Squircle icon wrapper - Apple-style rounded square with tinted background */
 	.workflow-card__icon {
 		width: 2.5rem;
 		height: 2.5rem;
-		border-radius: var(--fd-radius-lg);
+		border-radius: 0.625rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--fd-primary-foreground);
+		color: var(--fd-primary);
 		flex-shrink: 0;
-		background: var(--fd-primary);
+		background: color-mix(in srgb, var(--fd-primary) 15%, transparent);
+		transition: all var(--fd-transition-normal);
+	}
+
+	.workflow-card:hover .workflow-card__icon {
+		background: color-mix(in srgb, var(--fd-primary) 22%, transparent);
+		transform: scale(1.05);
 	}
 
 	.workflow-card__content {

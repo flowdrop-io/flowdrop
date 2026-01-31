@@ -462,37 +462,37 @@
 			<div class="flowdrop-canvas">
 				<FlowDropZone ondrop={handleNodeDrop}>
 					{#key svelteFlowKey}
-					<SvelteFlow
-						bind:nodes={flowNodes}
-						bind:edges={flowEdges}
-						{nodeTypes}
-						{defaultEdgeOptions}
-						onconnect={handleConnect}
-						onbeforedelete={handleBeforeDelete}
-						ondelete={handleNodesDelete}
-						minZoom={0.2}
-						maxZoom={3}
-						clickConnect={true}
-						elevateEdgesOnSelect={true}
-						connectionLineType={ConnectionLineType.Bezier}
-						connectionLineComponent={ConnectionLine}
-						{snapGrid}
-						{initialViewport}
-						colorMode={$resolvedTheme as ColorMode}
-						fitView={$editorSettings.fitViewOnLoad}
-					>
-						<Controls />
-						<!-- Always render Background for consistent bg color in dark/light mode -->
-						<Background
-							gap={$editorSettings.gridSize}
-							bgColor="var(--fd-background)"
-							variant={BackgroundVariant.Dots}
-							patternColor={$editorSettings.showGrid ? undefined : "transparent"}
-						/>
-						{#if $editorSettings.showMinimap}
-							<MiniMap />
-						{/if}
-					</SvelteFlow>
+						<SvelteFlow
+							bind:nodes={flowNodes}
+							bind:edges={flowEdges}
+							{nodeTypes}
+							{defaultEdgeOptions}
+							onconnect={handleConnect}
+							onbeforedelete={handleBeforeDelete}
+							ondelete={handleNodesDelete}
+							minZoom={0.2}
+							maxZoom={3}
+							clickConnect={true}
+							elevateEdgesOnSelect={true}
+							connectionLineType={ConnectionLineType.Bezier}
+							connectionLineComponent={ConnectionLine}
+							{snapGrid}
+							{initialViewport}
+							colorMode={$resolvedTheme as ColorMode}
+							fitView={$editorSettings.fitViewOnLoad}
+						>
+							<Controls />
+							<!-- Always render Background for consistent bg color in dark/light mode -->
+							<Background
+								gap={$editorSettings.gridSize}
+								bgColor="var(--fd-background)"
+								variant={BackgroundVariant.Dots}
+								patternColor={$editorSettings.showGrid ? undefined : 'transparent'}
+							/>
+							{#if $editorSettings.showMinimap}
+								<MiniMap />
+							{/if}
+						</SvelteFlow>
 					{/key}
 					<!-- Drop Zone Indicator -->
 					{#if flowNodes.length === 0}
