@@ -369,7 +369,7 @@
 	.flowdrop-simple-node__icon-wrapper :global(.flowdrop-simple-node__icon) {
 		width: 1.25rem;
 		height: 1.25rem;
-		color: var(--_icon-color);
+		color: var(--fd-node-icon);
 	}
 
 	/* Label styling removed - now using header title */

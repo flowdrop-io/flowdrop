@@ -272,7 +272,7 @@
 	.flowdrop-notes-node__icon-wrapper :global(.flowdrop-notes-node__icon) {
 		width: 1.25rem;
 		height: 1.25rem;
-		color: var(--_notes-icon);
+		color: var(--fd-node-icon);
 	}
 
 	.flowdrop-notes-node__type {

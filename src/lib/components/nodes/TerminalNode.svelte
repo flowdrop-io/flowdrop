@@ -510,7 +510,7 @@
 	.flowdrop-terminal-node__icon-wrapper :global(.flowdrop-terminal-node__icon) {
 		width: 1.5rem;
 		height: 1.5rem;
-		color: var(--_icon-color);
+		color: var(--fd-node-icon);
 	}
 
 	.flowdrop-terminal-node__label-container {

@@ -599,7 +599,7 @@
 		height: 2rem;
 		border-radius: 0.5rem;
 		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
-		color: var(--_icon-color);
+		color: var(--fd-node-icon);
 		font-size: var(--fd-text-sm);
 		display: flex;
 		align-items: center;

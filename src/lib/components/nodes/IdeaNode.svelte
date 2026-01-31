@@ -306,7 +306,7 @@
 	:global(.flowdrop-idea-node__icon) {
 		width: 1.25rem;
 		height: 1.25rem;
-		color: var(--idea-accent-color, var(--fd-accent));
+		color: var(--fd-node-icon);
 	}
 
 	.flowdrop-idea-node__title {
