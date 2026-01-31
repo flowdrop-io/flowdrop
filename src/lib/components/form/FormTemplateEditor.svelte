@@ -343,25 +343,25 @@
 	}
 
 	.form-template-editor__container {
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
 		overflow: hidden;
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+		background-color: var(--fd-muted);
+		transition: all var(--fd-transition-normal);
+		box-shadow: var(--fd-shadow-sm);
 	}
 
 	.form-template-editor__container:hover {
-		border-color: var(--color-ref-gray-300, #d1d5db);
-		background-color: #ffffff;
+		border-color: var(--fd-border-strong);
+		background-color: var(--fd-background);
 	}
 
 	.form-template-editor__container:focus-within {
-		border-color: var(--color-ref-purple-500, #a855f7);
-		background-color: #ffffff;
+		border-color: var(--fd-accent);
+		background-color: var(--fd-background);
 		box-shadow:
 			0 0 0 3px rgba(168, 85, 247, 0.12),
-			0 1px 2px rgba(0, 0, 0, 0.04);
+			var(--fd-shadow-sm);
 	}
 
 	/* Dark theme overrides */
@@ -376,13 +376,13 @@
 
 	/* CodeMirror styling overrides */
 	.form-template-editor__container :global(.cm-editor) {
-		border-radius: 0.5rem;
+		border-radius: var(--fd-radius-lg);
 	}
 
 	.form-template-editor__container :global(.cm-gutters) {
-		background-color: var(--color-ref-gray-100, #f3f4f6);
-		border-right: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem 0 0 0.5rem;
+		background-color: var(--fd-subtle);
+		border-right: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg) 0 0 var(--fd-radius-lg);
 	}
 
 	.form-template-editor__container--dark :global(.cm-gutters) {
@@ -394,16 +394,16 @@
 	.form-template-editor__hints {
 		margin-top: 0.625rem;
 		padding: 0.625rem;
-		background-color: var(--color-ref-purple-50, #faf5ff);
-		border: 1px solid var(--color-ref-purple-200, #e9d5ff);
-		border-radius: 0.375rem;
+		background-color: var(--fd-accent-muted);
+		border: 1px solid var(--fd-accent);
+		border-radius: var(--fd-radius-md);
 	}
 
 	.form-template-editor__hints-label {
 		display: block;
 		font-size: 0.6875rem;
 		font-weight: 500;
-		color: var(--color-ref-purple-700, #7e22ce);
+		color: var(--fd-accent-hover);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		margin-bottom: 0.375rem;
@@ -417,16 +417,16 @@
 
 	.form-template-editor__hint-btn {
 		padding: 0.25rem 0.5rem;
-		background-color: var(--color-ref-purple-100, #f3e8ff);
-		border: 1px solid var(--color-ref-purple-300, #d8b4fe);
-		border-radius: 0.25rem;
+		background-color: var(--fd-accent-muted);
+		border: 1px solid var(--fd-accent);
+		border-radius: var(--fd-radius-sm);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.form-template-editor__hint-btn:hover {
-		background-color: var(--color-ref-purple-200, #e9d5ff);
-		border-color: var(--color-ref-purple-400, #c084fc);
+		background-color: var(--fd-accent);
+		border-color: var(--fd-accent-hover);
 	}
 
 	.form-template-editor__hint-btn:active {
@@ -436,23 +436,23 @@
 	.form-template-editor__hint-btn code {
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-size: 0.6875rem;
-		color: var(--color-ref-purple-800, #6b21a8);
+		color: var(--fd-accent-hover);
 	}
 
 	/* Placeholder hint */
 	.form-template-editor__placeholder {
 		margin-top: 0.5rem;
 		padding: 0.5rem 0.75rem;
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border: 1px dashed var(--color-ref-gray-300, #d1d5db);
-		border-radius: 0.375rem;
+		background-color: var(--fd-muted);
+		border: 1px dashed var(--fd-border-strong);
+		border-radius: var(--fd-radius-md);
 	}
 
 	.form-template-editor__placeholder-label {
 		display: block;
 		font-size: 0.6875rem;
 		font-weight: 500;
-		color: var(--color-ref-gray-500, #6b7280);
+		color: var(--fd-muted-foreground);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		margin-bottom: 0.25rem;
@@ -461,8 +461,8 @@
 	.form-template-editor__placeholder-example {
 		display: block;
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-		font-size: 0.75rem;
-		color: var(--color-ref-gray-700, #374151);
+		font-size: var(--fd-text-xs);
+		color: var(--fd-foreground);
 		word-break: break-all;
 	}
 
@@ -473,7 +473,7 @@
 		gap: 0.375rem;
 		margin-top: 0.5rem;
 		font-size: 0.6875rem;
-		color: var(--color-ref-gray-500, #6b7280);
+		color: var(--fd-muted-foreground);
 	}
 
 	.form-template-editor__help-icon {
@@ -485,8 +485,8 @@
 
 	.form-template-editor__help code {
 		padding: 0.0625rem 0.25rem;
-		background-color: var(--color-ref-gray-100, #f3f4f6);
-		border-radius: 0.1875rem;
+		background-color: var(--fd-subtle);
+		border-radius: var(--fd-radius-sm);
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-size: 0.625rem;
 	}

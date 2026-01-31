@@ -138,7 +138,7 @@ Retrieve the complete port configuration system including available data types a
 				"id": "trigger",
 				"name": "Trigger",
 				"description": "Control flow of the workflow",
-				"color": "var(--color-ref-purple-500)",
+				"color": "var(--fd-node-purple)",
 				"category": "basic",
 				"enabled": true
 			},
@@ -146,7 +146,7 @@ Retrieve the complete port configuration system including available data types a
 				"id": "string",
 				"name": "String",
 				"description": "Text data",
-				"color": "var(--color-ref-emerald-500)",
+				"color": "var(--fd-node-emerald)",
 				"category": "basic",
 				"enabled": true
 			}

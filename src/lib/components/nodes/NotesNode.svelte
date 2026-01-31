@@ -34,42 +34,27 @@
 	const noteTypes = {
 		info: {
 			name: 'Info',
-			bgColor: 'bg-blue-50',
-			borderColor: 'border-blue-200',
-			textColor: 'text-blue-800',
-			iconColor: 'text-blue-500',
+			typeClass: 'flowdrop-notes-node--info',
 			icon: 'mdi:information'
 		},
 		warning: {
 			name: 'Warning',
-			bgColor: 'bg-yellow-50',
-			borderColor: 'border-yellow-200',
-			textColor: 'text-yellow-800',
-			iconColor: 'text-yellow-500',
+			typeClass: 'flowdrop-notes-node--warning',
 			icon: 'mdi:alert'
 		},
 		success: {
 			name: 'Success',
-			bgColor: 'bg-green-50',
-			borderColor: 'border-green-200',
-			textColor: 'text-green-800',
-			iconColor: 'text-green-500',
+			typeClass: 'flowdrop-notes-node--success',
 			icon: 'mdi:check-circle'
 		},
 		error: {
 			name: 'Error',
-			bgColor: 'bg-red-50',
-			borderColor: 'border-red-200',
-			textColor: 'text-red-800',
-			iconColor: 'text-red-500',
+			typeClass: 'flowdrop-notes-node--error',
 			icon: 'mdi:close-circle'
 		},
 		note: {
 			name: 'Note',
-			bgColor: 'bg-gray-50',
-			borderColor: 'border-gray-200',
-			textColor: 'text-gray-800',
-			iconColor: 'text-gray-500',
+			typeClass: 'flowdrop-notes-node--note',
 			icon: 'mdi:note-text'
 		}
 	};
@@ -111,21 +96,21 @@
 </script>
 
 <div
-	class="flowdrop-notes-node {currentType.bgColor}"
+	class="flowdrop-notes-node {currentType.typeClass}"
 	class:flowdrop-notes-node--selected={props.selected}
 	class:flowdrop-notes-node--processing={props.isProcessing}
-	class:flowdrop-notes-node--error={props.isError}
+	class:flowdrop-notes-node--has-error={props.isError}
 	ondblclick={handleDoubleClick}
 	onkeydown={handleKeydown}
 	role="button"
 	tabindex="0"
 >
 	<!-- Display Mode -->
-	<div class="flowdrop-notes-node__content {currentType.borderColor} {currentType.textColor}">
+	<div class="flowdrop-notes-node__content">
 		<!-- Header with icon and type -->
 		<div class="flowdrop-notes-node__header">
 			<div class="flowdrop-notes-node__header-left">
-				<Icon icon={currentType.icon} class="flowdrop-notes-node__icon {currentType.iconColor}" />
+				<Icon icon={currentType.icon} class="flowdrop-notes-node__icon" />
 				<span class="flowdrop-notes-node__type">{currentType.name}</span>
 			</div>
 		</div>
@@ -145,7 +130,7 @@
 
 		<!-- Error indicator -->
 		{#if props.isError}
-			<div class="flowdrop-notes-node__error">
+			<div class="flowdrop-notes-node__error-indicator">
 				<Icon icon="mdi:alert-circle" class="flowdrop-notes-node__error-icon" />
 				<span>Error occurred</span>
 			</div>
@@ -164,70 +149,88 @@
 
 <style>
 	.flowdrop-notes-node {
-		min-width: var(--notes-node-min-width);
-		max-width: var(--notes-node-max-width);
-		width: var(--notes-node-width);
-		border-radius: var(--notes-node-border-radius);
-		border: 1px solid;
-		background: var(--notes-node-background);
-		backdrop-filter: var(--notes-node-backdrop-filter);
-		box-shadow: var(--notes-node-box-shadow);
-		transition: var(--notes-node-transition);
+		min-width: var(--fd-notes-node-min-width);
+		max-width: var(--fd-notes-node-max-width);
+		width: var(--fd-notes-node-width);
+		border-radius: var(--fd-notes-node-border-radius);
+		border: 1px solid var(--fd-border);
+		background: var(--fd-notes-node-background);
+		backdrop-filter: var(--fd-notes-node-backdrop-filter);
+		box-shadow: var(--fd-notes-node-box-shadow);
+		transition: var(--fd-notes-node-transition);
 		overflow: hidden;
 		z-index: 5;
 	}
 
-	/* Background color overrides for different note types */
-	.flowdrop-notes-node.bg-blue-50 {
-		background-color: var(--notes-node-info-bg);
-		border-color: var(--notes-node-info-border);
+	/* Note type: Info (blue) */
+	.flowdrop-notes-node--info {
+		background-color: var(--fd-notes-node-info-bg);
+		border-color: var(--fd-notes-node-info-border);
+		--_notes-text: var(--fd-primary-hover);
+		--_notes-icon: var(--fd-primary);
 	}
 
-	.flowdrop-notes-node.bg-yellow-50 {
-		background-color: var(--notes-node-warning-bg);
-		border-color: var(--notes-node-warning-border);
+	/* Note type: Warning (yellow/amber) */
+	.flowdrop-notes-node--warning {
+		background-color: var(--fd-notes-node-warning-bg);
+		border-color: var(--fd-notes-node-warning-border);
+		--_notes-text: var(--fd-warning-hover);
+		--_notes-icon: var(--fd-warning);
 	}
 
-	.flowdrop-notes-node.bg-green-50 {
-		background-color: var(--notes-node-success-bg);
-		border-color: var(--notes-node-success-border);
+	/* Note type: Success (green) */
+	.flowdrop-notes-node--success {
+		background-color: var(--fd-notes-node-success-bg);
+		border-color: var(--fd-notes-node-success-border);
+		--_notes-text: var(--fd-success-hover);
+		--_notes-icon: var(--fd-success);
 	}
 
-	.flowdrop-notes-node.bg-red-50 {
-		background-color: var(--notes-node-error-bg);
-		border-color: var(--notes-node-error-border);
+	/* Note type: Error (red) */
+	.flowdrop-notes-node--error {
+		background-color: var(--fd-notes-node-error-bg);
+		border-color: var(--fd-notes-node-error-border);
+		--_notes-text: var(--fd-error-hover);
+		--_notes-icon: var(--fd-error);
 	}
 
-	.flowdrop-notes-node.bg-gray-50 {
-		background-color: var(--notes-node-note-bg);
-		border-color: var(--notes-node-note-border);
+	/* Note type: Note (gray/neutral) */
+	.flowdrop-notes-node--note {
+		background-color: var(--fd-notes-node-note-bg);
+		border-color: var(--fd-notes-node-note-border);
+		--_notes-text: var(--fd-foreground);
+		--_notes-icon: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-notes-node:hover {
-		box-shadow: var(--notes-node-hover-box-shadow);
+		box-shadow: var(--fd-notes-node-hover-box-shadow);
 		transform: translateY(-1px);
 	}
 
 	.flowdrop-notes-node--selected {
-		box-shadow: var(--notes-node-selected-box-shadow);
+		box-shadow: var(--fd-notes-node-selected-box-shadow);
 	}
 
 	.flowdrop-notes-node--processing {
 		opacity: 0.7;
 	}
 
-	.flowdrop-notes-node--error {
-		border-color: #ef4444 !important;
+	.flowdrop-notes-node--has-error {
+		border-color: var(--fd-error) !important;
 	}
 
 	/* Display Mode Styles */
 	.flowdrop-notes-node__content {
-		padding: var(--notes-node-padding);
-		border-radius: var(--notes-node-border-radius);
-		border: 1px solid;
+		padding: var(--fd-notes-node-padding);
+		border-radius: var(--fd-notes-node-border-radius);
 		height: 100%;
 		display: flex;
 		flex-direction: column;
+		color: var(--_notes-text);
+	}
+
+	.flowdrop-notes-node__icon {
+		color: var(--_notes-icon);
 	}
 
 	.flowdrop-notes-node__header {
@@ -278,12 +281,12 @@
 		animation: spin 1s linear infinite;
 	}
 
-	.flowdrop-notes-node__error {
+	.flowdrop-notes-node__error-indicator {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		font-size: 0.75rem;
-		color: #ef4444;
+		font-size: var(--fd-text-xs);
+		color: var(--fd-error);
 	}
 
 	.flowdrop-notes-node__error-icon {
@@ -299,23 +302,23 @@
 
 	.flowdrop-notes-node__config-btn {
 		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
+		top: var(--fd-space-2);
+		right: var(--fd-space-2);
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.9);
-		border: 1px solid #e5e7eb;
-		border-radius: 0.25rem;
-		color: #6b7280;
+		background-color: var(--fd-background);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-sm);
+		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		opacity: 0;
-		transition: all 0.2s ease-in-out;
+		transition: all var(--fd-transition-normal);
 		backdrop-filter: blur(4px);
 		z-index: 15;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 	}
 
 	.flowdrop-notes-node:hover .flowdrop-notes-node__config-btn {
@@ -323,9 +326,9 @@
 	}
 
 	.flowdrop-notes-node__config-btn:hover {
-		background-color: #f9fafb;
-		border-color: #d1d5db;
-		color: #374151;
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border-strong);
+		color: var(--fd-foreground);
 	}
 
 	/* Responsive design */

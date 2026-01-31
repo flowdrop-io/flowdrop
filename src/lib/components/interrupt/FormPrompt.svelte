@@ -32,8 +32,15 @@
 		onSubmit: (value: Record<string, unknown>) => void;
 	}
 
-	let { config, isResolved, resolvedValue, isSubmitting, error, resolvedByUserName, onSubmit }: Props =
-		$props();
+	let {
+		config,
+		isResolved,
+		resolvedValue,
+		isSubmitting,
+		error,
+		resolvedByUserName,
+		onSubmit
+	}: Props = $props();
 
 	/** Local state for form values */
 	let formValues = $state<Record<string, unknown>>(config.defaultValues ?? {});
@@ -130,7 +137,7 @@
 </div>
 
 <style>
-	/* Uses design tokens from base.css: --flowdrop-interrupt-*, --color-ref-* */
+	/* Uses design tokens from base.css/tokens.css */
 	.form-prompt {
 		display: flex;
 		flex-direction: column;
@@ -149,7 +156,7 @@
 		margin: 0;
 		font-size: 0.9375rem;
 		line-height: 1.5;
-		color: var(--color-ref-gray-800, #1f2937);
+		color: var(--fd-foreground);
 	}
 
 	.form-prompt__error {
@@ -157,24 +164,24 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 0.75rem;
-		background-color: var(--color-ref-red-50, #fef2f2);
-		border-radius: 0.375rem;
-		color: var(--color-ref-red-600, #dc2626);
+		background-color: var(--fd-error-muted);
+		border-radius: var(--fd-radius-md);
+		color: var(--fd-error);
 		font-size: 0.8125rem;
 	}
 
 	.form-prompt__form-wrapper {
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
+		background-color: var(--fd-muted);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
 		padding: 1rem;
 	}
 
 	/* Resolved values - neutral blue theme */
 	.form-prompt__resolved-values {
-		background-color: var(--color-ref-blue-50, #eff6ff);
-		border: 1px solid var(--flowdrop-interrupt-completed-border);
-		border-radius: 0.5rem;
+		background-color: var(--fd-primary-muted);
+		border: 1px solid var(--fd-interrupt-completed-border);
+		border-radius: var(--fd-radius-lg);
 		padding: 1rem;
 	}
 
@@ -182,7 +189,7 @@
 		margin: 0 0 0.75rem 0;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--flowdrop-interrupt-badge-completed-text);
+		color: var(--fd-interrupt-badge-completed-text);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
@@ -200,14 +207,14 @@
 	}
 
 	.form-prompt__value-label {
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
-		color: var(--color-ref-gray-500, #6b7280);
+		color: var(--fd-muted-foreground);
 	}
 
 	.form-prompt__value-content {
-		font-size: 0.875rem;
-		color: var(--color-ref-gray-800, #1f2937);
+		font-size: var(--fd-text-sm);
+		color: var(--fd-foreground);
 		word-break: break-word;
 		white-space: pre-wrap;
 	}
@@ -218,9 +225,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: var(--flowdrop-interrupt-badge-completed-bg);
+		background-color: var(--fd-interrupt-badge-completed-bg);
 		border-radius: 9999px;
-		color: var(--flowdrop-interrupt-badge-completed-text);
+		color: var(--fd-interrupt-badge-completed-text);
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;

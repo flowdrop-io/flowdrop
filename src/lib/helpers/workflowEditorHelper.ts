@@ -520,9 +520,9 @@ export class WorkflowOperationsHelper {
 			nodes: workflow.nodes.map((node) =>
 				node.id === nodeId
 					? {
-							...node,
-							data: { ...node.data, config: { ...newConfig } }
-						}
+						...node,
+						data: { ...node.data, config: { ...newConfig } }
+					}
 					: node
 			),
 			metadata: this.generateMetadata(workflow.metadata)

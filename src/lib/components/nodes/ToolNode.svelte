@@ -86,9 +86,9 @@
 	// This allows per-node color overrides while defaulting to global CSS variables
 	let nodeStyle = $derived(
 		[
-			`--flowdrop-tool-node-color: ${colorVariants.base}`,
-			`--flowdrop-tool-node-color-light: ${colorVariants.light}`,
-			`--flowdrop-tool-node-color-border: ${colorVariants.border}`
+			`--fd-tool-node-color: ${colorVariants.base}`,
+			`--fd-tool-node-color-light: ${colorVariants.light}`,
+			`--fd-tool-node-color-border: ${colorVariants.border}`
 		].join('; ')
 	);
 
@@ -243,7 +243,7 @@
 
 	.flowdrop-tool-node--selected {
 		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-		border: 2px solid var(--flowdrop-tool-node-color);
+		border: 2px solid var(--fd-tool-node-color);
 	}
 
 	.flowdrop-tool-node--processing {
@@ -257,9 +257,9 @@
 
 	.flowdrop-tool-node__header {
 		padding: 1rem;
-		background-color: var(--flowdrop-tool-node-color-light);
+		background-color: var(--fd-tool-node-color-light);
 		border-radius: 0.75rem;
-		border: 1px solid var(--flowdrop-tool-node-color-border);
+		border: 1px solid var(--fd-tool-node-color-border);
 	}
 
 	.flowdrop-tool-node__header-content {
@@ -277,7 +277,7 @@
 		height: 2.5rem;
 		border-radius: 0.5rem;
 		flex-shrink: 0;
-		background-color: var(--flowdrop-tool-node-color);
+		background-color: var(--fd-tool-node-color);
 	}
 
 	.flowdrop-tool-node__info {
@@ -301,7 +301,7 @@
 	}
 
 	.flowdrop-tool-node__badge {
-		background-color: var(--flowdrop-tool-node-color);
+		background-color: var(--fd-tool-node-color);
 		color: white;
 		font-size: 0.625rem;
 		font-weight: 700;
@@ -405,11 +405,11 @@
 
 	/* Metadata port hover effects */
 	:global(.svelte-flow__node-tool .svelte-flow__handle:hover) {
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--flowdrop-tool-node-color) 30%, transparent) !important;
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent) !important;
 	}
 
 	:global(.svelte-flow__node-tool .svelte-flow__handle:focus) {
-		outline: 2px solid var(--flowdrop-tool-node-color) !important;
+		outline: 2px solid var(--fd-tool-node-color) !important;
 		outline-offset: 2px !important;
 	}
 </style>

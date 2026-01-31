@@ -197,7 +197,7 @@
 	.workflow-edit-page {
 		display: flex;
 		flex-direction: column;
-		min-height: calc(100vh - var(--flowdrop-navbar-height, 60px));
+		min-height: calc(100vh - var(--fd-navbar-height));
 	}
 
 	.loading-container,

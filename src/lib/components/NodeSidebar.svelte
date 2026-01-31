@@ -383,7 +383,7 @@
 	/* Components Sidebar - Always Visible */
 	.flowdrop-sidebar {
 		width: 320px;
-		height: calc(100vh - var(--flowdrop-navbar-height, 60px)); /* Account for navbar height */
+		height: calc(100vh - var(--fd-navbar-height)); /* Account for navbar height */
 		background-color: #ffffff;
 		border-right: 1px solid #e5e7eb;
 		display: flex;

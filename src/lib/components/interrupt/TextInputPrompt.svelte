@@ -31,8 +31,15 @@
 		onSubmit: (value: string) => void;
 	}
 
-	let { config, isResolved, resolvedValue, isSubmitting, error, resolvedByUserName, onSubmit }: Props =
-		$props();
+	let {
+		config,
+		isResolved,
+		resolvedValue,
+		isSubmitting,
+		error,
+		resolvedByUserName,
+		onSubmit
+	}: Props = $props();
 
 	/** Local state for input value */
 	let inputValue = $state(config.defaultValue ?? '');
@@ -177,7 +184,7 @@
 </div>
 
 <style>
-	/* Uses design tokens from base.css: --flowdrop-interrupt-*, --color-ref-* */
+	/* Uses design tokens from base.css/tokens.css */
 	.text-prompt {
 		display: flex;
 		flex-direction: column;
@@ -196,7 +203,7 @@
 		margin: 0;
 		font-size: 0.9375rem;
 		line-height: 1.5;
-		color: var(--color-ref-gray-800, #1f2937);
+		color: var(--fd-foreground);
 	}
 
 	.text-prompt__error {
@@ -204,9 +211,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 0.75rem;
-		background-color: var(--color-ref-red-50, #fef2f2);
-		border-radius: 0.375rem;
-		color: var(--color-ref-red-600, #dc2626);
+		background-color: var(--fd-error-muted);
+		border-radius: var(--fd-radius-md);
+		color: var(--fd-error);
 		font-size: 0.8125rem;
 	}
 
@@ -222,36 +229,36 @@
 		font-size: 0.9375rem;
 		font-family: inherit;
 		line-height: 1.5;
-		color: var(--color-ref-gray-800, #1f2937);
-		background-color: #ffffff;
-		border: 1px solid var(--color-ref-gray-300, #d1d5db);
-		border-radius: 0.5rem;
+		color: var(--fd-foreground);
+		background-color: var(--fd-background);
+		border: 1px solid var(--fd-border-strong);
+		border-radius: var(--fd-radius-lg);
 		outline: none;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.text-prompt__input::placeholder,
 	.text-prompt__textarea::placeholder {
-		color: var(--color-ref-gray-400, #9ca3af);
+		color: var(--fd-muted-foreground);
 	}
 
 	.text-prompt__input:focus,
 	.text-prompt__textarea:focus {
-		border-color: var(--flowdrop-interrupt-completed-border);
-		box-shadow: 0 0 0 3px var(--flowdrop-interrupt-completed-shadow);
+		border-color: var(--fd-interrupt-completed-border);
+		box-shadow: 0 0 0 3px var(--fd-interrupt-completed-shadow);
 	}
 
 	.text-prompt__input:disabled,
 	.text-prompt__textarea:disabled {
-		background-color: var(--color-ref-gray-50, #f9fafb);
+		background-color: var(--fd-muted);
 		cursor: not-allowed;
 	}
 
 	/* Resolved state - neutral blue to match other interrupt prompts */
 	.text-prompt__input--resolved,
 	.text-prompt__textarea--resolved {
-		background-color: var(--color-ref-blue-50, #eff6ff);
-		border-color: var(--flowdrop-interrupt-completed-border);
+		background-color: var(--fd-primary-muted);
+		border-color: var(--fd-interrupt-completed-border);
 	}
 
 	.text-prompt__textarea {
@@ -260,14 +267,14 @@
 	}
 
 	.text-prompt__char-count {
-		font-size: 0.75rem;
-		color: var(--color-ref-gray-500, #6b7280);
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
 		text-align: right;
 		padding-right: 0.25rem;
 	}
 
 	.text-prompt__char-count--warning {
-		color: var(--color-ref-amber-500, #f59e0b);
+		color: var(--fd-warning);
 	}
 
 	.text-prompt__actions {
@@ -289,14 +296,14 @@
 		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		border: none;
 		min-height: 2.5rem;
-		background: var(--flowdrop-interrupt-btn-primary-bg);
+		background: var(--fd-interrupt-btn-primary-bg);
 		color: #ffffff;
-		box-shadow: 0 1px 3px var(--flowdrop-interrupt-btn-primary-shadow);
+		box-shadow: 0 1px 3px var(--fd-interrupt-btn-primary-shadow);
 	}
 
 	.text-prompt__submit:hover:not(:disabled) {
-		background: var(--flowdrop-interrupt-btn-primary-bg-hover);
-		box-shadow: 0 4px 12px var(--flowdrop-interrupt-btn-primary-shadow);
+		background: var(--fd-interrupt-btn-primary-bg-hover);
+		box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
 		transform: translateY(-1px);
 	}
 
@@ -328,9 +335,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: var(--flowdrop-interrupt-badge-completed-bg);
+		background-color: var(--fd-interrupt-badge-completed-bg);
 		border-radius: 9999px;
-		color: var(--flowdrop-interrupt-badge-completed-text);
+		color: var(--fd-interrupt-badge-completed-text);
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;
