@@ -242,147 +242,149 @@
 
 		<!-- Node Types List -->
 		<div class="flowdrop-sidebar__content">
-		{#if props.nodes?.length === 0}
-			<!-- No node types available -->
-			<div class="flowdrop-hero">
-				<div class="flowdrop-hero__content">
-					<div class="flowdrop-hero__icon">📦</div>
-					<h3 class="flowdrop-hero__title">No node types available</h3>
-					<p class="flowdrop-hero__description">Node type definitions will appear here</p>
-					<div class="flowdrop-mb--4">
-						<LoadingSpinner size="md" text="Loading from server..." />
-					</div>
-				</div>
-			</div>
-		{:else if searchInput.trim()}
-			<!-- Search Results -->
-			<div class="flowdrop-p--4">
-				<div class="flowdrop-divider">
-					<h3 class="flowdrop-divider__text">Search Results</h3>
-				</div>
-				{#if filteredNodes.length === 0}
-					<div class="flowdrop-hero">
-						<div class="flowdrop-hero__content">
-							<div class="flowdrop-hero__icon">🔍</div>
-							<h3 class="flowdrop-hero__title">No components found</h3>
-							<p class="flowdrop-hero__description">Try adjusting your search</p>
-							{#if props.nodes?.length === 0}
-								<div class="flowdrop-mb--4">
-									<LoadingSpinner size="sm" text="Loading components..." />
-								</div>
-							{/if}
+			{#if props.nodes?.length === 0}
+				<!-- No node types available -->
+				<div class="flowdrop-hero">
+					<div class="flowdrop-hero__content">
+						<div class="flowdrop-hero__icon">📦</div>
+						<h3 class="flowdrop-hero__title">No node types available</h3>
+						<p class="flowdrop-hero__description">Node type definitions will appear here</p>
+						<div class="flowdrop-mb--4">
+							<LoadingSpinner size="md" text="Loading from server..." />
 						</div>
 					</div>
-				{:else}
-					<div class="flowdrop-node-list">
-						{#each filteredNodes as nodeType (nodeType.id)}
-							<div
-								class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
-								draggable="true"
-								ondragstart={(e) => handleNodeDragStart(e, nodeType)}
-								role="button"
-								tabindex="0"
-							>
-								<div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
-									<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-										<!-- Node Type Icon with Squircle Background -->
-										<span
-											class="flowdrop-node-icon"
-											style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
-										>
-											<Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
-										</span>
-
-										<!-- Node Type Info - Icon and Title only -->
-										<h4
-											class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
-										>
-											{nodeType.name}
-										</h4>
+				</div>
+			{:else if searchInput.trim()}
+				<!-- Search Results -->
+				<div class="flowdrop-p--4">
+					<div class="flowdrop-divider">
+						<h3 class="flowdrop-divider__text">Search Results</h3>
+					</div>
+					{#if filteredNodes.length === 0}
+						<div class="flowdrop-hero">
+							<div class="flowdrop-hero__content">
+								<div class="flowdrop-hero__icon">🔍</div>
+								<h3 class="flowdrop-hero__title">No components found</h3>
+								<p class="flowdrop-hero__description">Try adjusting your search</p>
+								{#if props.nodes?.length === 0}
+									<div class="flowdrop-mb--4">
+										<LoadingSpinner size="sm" text="Loading components..." />
 									</div>
-									<p
-										class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
-									>
-										{nodeType.description}
-									</p>
-								</div>
+								{/if}
 							</div>
+						</div>
+					{:else}
+						<div class="flowdrop-node-list">
+							{#each filteredNodes as nodeType (nodeType.id)}
+								<div
+									class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
+									draggable="true"
+									ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+									role="button"
+									tabindex="0"
+								>
+									<div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
+										<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+											<!-- Node Type Icon with Squircle Background -->
+											<span
+												class="flowdrop-node-icon"
+												style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
+											>
+												<Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
+											</span>
+
+											<!-- Node Type Info - Icon and Title only -->
+											<h4
+												class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
+											>
+												{nodeType.name}
+											</h4>
+										</div>
+										<p
+											class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
+										>
+											{nodeType.description}
+										</p>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<!-- Show categories with details when no search is active -->
+				<div class="flowdrop-p--4">
+					<!-- Category-specific details -->
+					<div class="flowdrop-category-list">
+						{#each categories as category (category)}
+							{@const categoryNodes = getFilteredNodesForCategory(category)}
+							{#if categoryNodes.length > 0}
+								<details class="flowdrop-details">
+									<summary class="flowdrop-details__summary">
+										<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+											<span
+												class="flowdrop-node-icon"
+												style="--_icon-color: {getCategoryColorToken(category)}"
+											>
+												<Icon icon={getCategoryIcon(category)} />
+											</span>
+											<span>{getCategoryDisplayName(category)}</span>
+										</div>
+										<div class="flowdrop-badge flowdrop-badge--secondary">
+											{categoryNodes.length}
+										</div>
+									</summary>
+									<div class="flowdrop-details__content">
+										<div class="flowdrop-node-list">
+											{#each categoryNodes as nodeType (nodeType.id)}
+												<div
+													class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
+													draggable="true"
+													ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+													onclick={() => handleNodeClick(nodeType)}
+													role="button"
+													tabindex="0"
+													onkeydown={(e) => {
+														if (e.key === 'Enter' || e.key === ' ') {
+															e.preventDefault();
+															handleNodeClick(nodeType);
+														}
+													}}
+												>
+													<div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
+														<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+															<!-- Node Type Icon with Squircle Background -->
+															<span
+																class="flowdrop-node-icon"
+																style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
+															>
+																<Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
+															</span>
+
+															<!-- Node Type Info - Icon and Title only -->
+															<h4
+																class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
+															>
+																{nodeType.name}
+															</h4>
+														</div>
+														<p
+															class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
+														>
+															{nodeType.description}
+														</p>
+													</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								</details>
+							{/if}
 						{/each}
 					</div>
-				{/if}
-			</div>
-		{:else}
-			<!-- Show categories with details when no search is active -->
-			<div class="flowdrop-p--4">
-				<!-- Category-specific details -->
-				<div class="flowdrop-category-list">
-					{#each categories as category (category)}
-						{@const categoryNodes = getFilteredNodesForCategory(category)}
-						{#if categoryNodes.length > 0}
-							<details class="flowdrop-details">
-							<summary class="flowdrop-details__summary">
-								<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-									<span
-										class="flowdrop-node-icon"
-										style="--_icon-color: {getCategoryColorToken(category)}"
-									>
-										<Icon icon={getCategoryIcon(category)} />
-									</span>
-									<span>{getCategoryDisplayName(category)}</span>
-								</div>
-								<div class="flowdrop-badge flowdrop-badge--secondary">{categoryNodes.length}</div>
-							</summary>
-								<div class="flowdrop-details__content">
-									<div class="flowdrop-node-list">
-										{#each categoryNodes as nodeType (nodeType.id)}
-											<div
-												class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
-												draggable="true"
-												ondragstart={(e) => handleNodeDragStart(e, nodeType)}
-												onclick={() => handleNodeClick(nodeType)}
-												role="button"
-												tabindex="0"
-												onkeydown={(e) => {
-													if (e.key === 'Enter' || e.key === ' ') {
-														e.preventDefault();
-														handleNodeClick(nodeType);
-													}
-												}}
-											>
-												<div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
-								<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-									<!-- Node Type Icon with Squircle Background -->
-									<span
-										class="flowdrop-node-icon"
-										style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
-									>
-										<Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
-									</span>
-
-														<!-- Node Type Info - Icon and Title only -->
-														<h4
-															class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
-														>
-															{nodeType.name}
-														</h4>
-													</div>
-													<p
-														class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
-													>
-														{nodeType.description}
-													</p>
-												</div>
-											</div>
-										{/each}
-									</div>
-								</div>
-							</details>
-						{/if}
-					{/each}
 				</div>
-			</div>
-		{/if}
-	</div>
+			{/if}
+		</div>
 
 		<!-- Footer -->
 		<div class="flowdrop-sidebar__footer">
@@ -394,7 +396,9 @@
 						<span class="flowdrop-text--xs flowdrop-text--gray"
 							>Total: {props.nodes?.length || 0} components</span
 						>
-						<span class="flowdrop-text--xs flowdrop-text--gray">Showing: {filteredNodes.length}</span>
+						<span class="flowdrop-text--xs flowdrop-text--gray"
+							>Showing: {filteredNodes.length}</span
+						>
 					{/if}
 				</div>
 			</div>
