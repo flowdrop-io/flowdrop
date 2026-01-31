@@ -374,7 +374,7 @@ Mock data for development and tests is in `src/mocks/data/`:
 
 1. Update `EndpointConfig` in `src/lib/config/endpoints.ts`
 2. Add methods to appropriate client in `src/lib/api/`
-3. Update `API.md` documentation
+3. Update OpenAPI spec in `api/` directory (auto-deployed to GitHub Pages)
 
 ---
 
@@ -431,7 +431,7 @@ const authProvider = new CallbackAuthProvider({
 });
 ```
 
-See `API.md` for full REST API specification.
+See [API Documentation](https://flowdrop-io.github.io/flowdrop/) for full REST API specification.
 
 ---
 
@@ -487,7 +487,7 @@ FlowDrop theming uses CSS custom properties:
 | Document                                   | Content                         |
 | ------------------------------------------ | ------------------------------- |
 | `README.md`                                | Project overview and quickstart |
-| `API.md`                                   | REST API specification          |
+| [API Documentation][api-docs]              | REST API specification          |
 | `QUICK_START.md`                           | Getting started guide           |
 | `DOCKER.md`                                | Docker deployment               |
 | `CHANGELOG.md`                             | Version history                 |
@@ -495,3 +495,5 @@ FlowDrop theming uses CSS custom properties:
 | `docs/component-hierarchy.md`              | Component structure             |
 | `docs/configEdit-feature.md`               | Dynamic config editing          |
 | `docs/interrupt-feature.md`                | Human-in-the-Loop interrupts    |
+
+[api-docs]: https://flowdrop-io.github.io/flowdrop/

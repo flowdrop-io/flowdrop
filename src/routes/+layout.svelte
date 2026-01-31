@@ -149,12 +149,13 @@
 					icon: 'mdi:plus',
 					variant: 'primary' as const
 				},
-				{
-					label: 'API Docs',
-					href: '/api-docs',
-					icon: 'mdi:api',
-					variant: 'outline' as const
-				}
+		{
+			label: 'API Docs',
+			href: 'https://flowdrop-io.github.io/flowdrop/',
+			icon: 'mdi:api',
+			variant: 'outline' as const,
+			external: true
+		}
 			];
 		} else if (pathname.startsWith('/workflow/create')) {
 			// Create workflow page
@@ -445,9 +446,10 @@
 			},
 			{
 				label: 'API Docs',
-				href: '/api-docs',
+				href: 'https://flowdrop-io.github.io/flowdrop/',
 				icon: 'mdi:api',
-				variant: 'outline' as const
+				variant: 'outline' as const,
+				external: true
 			}
 		];
 	}

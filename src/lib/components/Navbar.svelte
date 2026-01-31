@@ -17,6 +17,8 @@
 		icon?: string;
 		variant?: 'primary' | 'secondary' | 'outline';
 		onclick?: (event: Event) => void;
+		/** If true, opens link in new tab with proper security attributes */
+		external?: boolean;
 	}
 
 	interface BreadcrumbItem {
@@ -146,6 +148,8 @@
 					class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant ||
 						'primary'}"
 					onclick={primaryAction.onclick}
+					target={primaryAction.external ? '_blank' : undefined}
+					rel={primaryAction.external ? 'noopener noreferrer' : undefined}
 				>
 					{#if primaryAction.icon}
 						<span class="flowdrop-navbar__action-icon">
@@ -178,11 +182,16 @@
 										action.onclick?.(e);
 										isDropdownOpen = false;
 									}}
+									target={action.external ? '_blank' : undefined}
+									rel={action.external ? 'noopener noreferrer' : undefined}
 								>
 									{#if action.icon}
 										<Icon icon={action.icon} class="w-4 h-4" />
 									{/if}
 									<span>{action.label}</span>
+									{#if action.external}
+										<Icon icon="mdi:open-in-new" class="w-3 h-3" />
+									{/if}
 								</a>
 							{/each}
 						</div>
