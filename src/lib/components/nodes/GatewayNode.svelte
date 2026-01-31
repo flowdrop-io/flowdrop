@@ -13,7 +13,7 @@
 	import type { WorkflowNode, NodePort, Branch } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../../utils/icons.js';
-	import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
+	import { getDataTypeColorToken, getCategoryColorToken, getPortBackgroundColor } from '../../utils/colors.js';
 	import { connectedHandles } from '../../stores/workflowStore.js';
 
 	interface Props {
@@ -159,12 +159,12 @@
 	<!-- Node Header -->
 	<div class="flowdrop-workflow-node__header">
 		<div class="flowdrop-flex flowdrop-gap--3 flowdrop-items--center">
-			<!-- Node Icon -->
+			<!-- Node Icon with Squircle Background -->
 			<div
-				class="flowdrop-workflow-node__icon"
-				style="background-color: {getCategoryColorToken(props.data.metadata.category)}"
+				class="flowdrop-workflow-node__icon-wrapper"
+				style="--_icon-color: {getCategoryColorToken(props.data.metadata.category)}"
 			>
-				<Icon icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)} />
+				<Icon icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)} class="flowdrop-workflow-node__icon" />
 			</div>
 
 			<!-- Node Title - uses instanceTitle override if set -->
@@ -198,7 +198,7 @@
 							class="flowdrop-workflow-node__handle"
 							style="top: 50%; transform: translateY(-50%); margin-left: -32px; background-color: {getDataTypeColorToken(
 								port.dataType
-							)}; border-color: '#ffffff';"
+							)}; border-color: var(--fd-handle-border);"
 							role="button"
 							tabindex={0}
 							aria-label="Connect to {port.name} input port"
@@ -210,7 +210,7 @@
 								<span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
-									style="background-color: {getDataTypeColorToken(port.dataType)}; color: #fff;"
+									style="background-color: {getPortBackgroundColor(port.dataType, 15)}; color: {getDataTypeColorToken(port.dataType)}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
 								>
 									{port.dataType}
 								</span>
@@ -263,7 +263,7 @@
 								</span>
 								<span
 									class="flowdrop-badge flowdrop-badge--sm"
-									style="background-color: {getDataTypeColorToken('trigger')}; color: #fff;"
+									style="background-color: {getPortBackgroundColor('trigger', 15)}; color: {getDataTypeColorToken('trigger')}; border: 1px solid {getPortBackgroundColor('trigger', 30)};"
 								>
 									trigger
 								</span>
@@ -278,7 +278,7 @@
 							class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
 							style="top: 50%; transform: translateY(-50%); margin-right: -32px; background-color: {isActive
 								? getDataTypeColorToken('trigger')
-								: getDataTypeColorToken('trigger')}; border-color: '#ffffff';"
+								: getDataTypeColorToken('trigger')}; border-color: var(--fd-handle-border);"
 							role="button"
 							tabindex={0}
 							aria-label="Connect from {branch.name} branch"
@@ -311,43 +311,70 @@
 <style>
 	.flowdrop-workflow-node {
 		position: relative;
-		background-color: var(--fd-background);
-		border: 2px solid var(--fd-border);
+		background-color: var(--fd-card);
+		border: 1.5px solid var(--fd-node-border);
 		border-radius: var(--fd-radius-xl);
 		box-shadow: var(--fd-shadow-md);
 		width: 18rem;
 		z-index: 10;
 		color: var(--fd-foreground);
+		transition: all var(--fd-transition-fast);
 	}
 
 	.flowdrop-workflow-node--gateway {
 		min-width: 18rem;
 	}
 
-	.flowdrop-workflow-node--selected {
+	.flowdrop-workflow-node:hover {
 		box-shadow: var(--fd-shadow-lg);
-		border: 2px solid var(--fd-primary);
+		border-color: var(--fd-node-border-hover);
+	}
+
+	.flowdrop-workflow-node--selected {
+		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		border-color: var(--fd-primary);
+	}
+
+	.flowdrop-workflow-node--selected:hover {
+		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		border-color: var(--fd-primary);
+	}
+
+	.flowdrop-workflow-node:focus-visible {
+		outline: 2px solid var(--fd-ring);
+		outline-offset: 2px;
 	}
 
 	.flowdrop-workflow-node__header {
 		padding: var(--fd-space-4);
-		border-bottom: 1px solid var(--fd-border);
-		background-color: var(--fd-muted);
+		border-bottom: 1px solid var(--fd-border-muted);
+		background: var(--fd-header);
 		border-top-left-radius: var(--fd-radius-xl);
 		border-top-right-radius: var(--fd-radius-xl);
 	}
 
-	.flowdrop-workflow-node__icon {
-		width: 2rem;
-		height: 2rem;
-		border-radius: var(--fd-radius-lg);
-		color: var(--fd-primary-foreground);
-		font-size: var(--fd-text-sm);
-		font-weight: 500;
+	/* Squircle icon wrapper - Apple-style rounded square background */
+	.flowdrop-workflow-node__icon-wrapper {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: var(--fd-shadow-sm);
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
+		flex-shrink: 0;
+		transition: all var(--fd-transition-normal);
+	}
+
+	.flowdrop-workflow-node:hover .flowdrop-workflow-node__icon-wrapper {
+		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+		transform: scale(1.05);
+	}
+
+	.flowdrop-workflow-node__icon-wrapper :global(.flowdrop-workflow-node__icon) {
+		width: 1.25rem;
+		height: 1.25rem;
+		color: var(--_icon-color);
 	}
 
 	.flowdrop-workflow-node__header h3 {
@@ -429,7 +456,7 @@
 		width: 0.75rem;
 		height: 0.75rem;
 		background-color: var(--fd-muted-foreground);
-		border: 2px solid #ffffff;
+		border: 2px solid var(--fd-handle-border);
 		border-radius: 50%;
 		transition: all var(--fd-transition-normal);
 		cursor: pointer;

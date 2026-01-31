@@ -12,7 +12,8 @@
 	import { Position, Handle } from '@xyflow/svelte';
 	import type { ConfigValues, NodeMetadata } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
-	import { getDataTypeColor } from '$lib/utils/colors.js';
+	import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
+	import { getNodeIcon } from '../../utils/icons.js';
 
 	/**
 	 * Terminal node variant types
@@ -41,21 +42,21 @@
 	const VARIANT_CONFIGS: Record<TerminalVariant, VariantConfig> = {
 		start: {
 			icon: 'mdi:play-circle',
-			color: '#10b981',
+			color: 'var(--fd-node-emerald)',
 			label: 'Start',
 			hasInputs: false,
 			hasOutputs: true
 		},
 		end: {
 			icon: 'mdi:stop-circle',
-			color: '#6b7280',
+			color: 'var(--fd-node-slate)',
 			label: 'End',
 			hasInputs: true,
 			hasOutputs: false
 		},
 		exit: {
 			icon: 'mdi:close-circle',
-			color: '#ef4444',
+			color: 'var(--fd-node-red)',
 			label: 'Exit',
 			hasInputs: true,
 			hasOutputs: false
@@ -132,21 +133,23 @@
 	let variantConfig = $derived(VARIANT_CONFIGS[variant]);
 
 	/**
-	 * Get icon - prioritize metadata/config over variant default
+	 * Get icon using the same resolution as WorkflowNode
+	 * Uses getNodeIcon utility with category fallback, or variant default
 	 */
 	let terminalIcon = $derived(
-		(props.data.metadata?.icon as string) ||
-			(props.data.config?.icon as string) ||
-			variantConfig.icon
+		props.data.metadata?.icon
+			? getNodeIcon(props.data.metadata.icon, props.data.metadata?.category)
+			: variantConfig.icon
 	);
 
 	/**
-	 * Get color - prioritize metadata/config over variant default
+	 * Get color using category-based color tokens for consistency
+	 * Falls back to variant default color if category not available
 	 */
 	let terminalColor = $derived(
-		(props.data.metadata?.color as string) ||
-			(props.data.config?.color as string) ||
-			variantConfig.color
+		props.data.metadata?.category
+			? getCategoryColorToken(props.data.metadata.category)
+			: variantConfig.color
 	);
 
 	/**
@@ -319,19 +322,23 @@
 					position={Position.Left}
 					style="background-color: {getDataTypeColor(
 						port.dataType
-					)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+					)}; border-color: var(--fd-handle-border); top: 50%; transform: translateY(-50%); z-index: 30;"
 					id={`${props.data.nodeId}-input-${port.id}`}
 				/>
 			{/each}
 		{/if}
 
-		<!-- Circular content with icon -->
+		<!-- Circular content with icon in squircle wrapper -->
 		<div class="flowdrop-terminal-node__content">
-			<Icon
-				icon={terminalIcon}
-				class="flowdrop-terminal-node__icon"
-				style="color: {terminalColor}; font-size: 2.5rem;"
-			/>
+			<div
+				class="flowdrop-terminal-node__icon-wrapper"
+				style="--_icon-color: {terminalColor}"
+			>
+				<Icon
+					icon={terminalIcon}
+					class="flowdrop-terminal-node__icon"
+				/>
+			</div>
 		</div>
 
 		<!-- Output Handles (for start variant) -->
@@ -343,7 +350,7 @@
 					id={`${props.data.nodeId}-output-${port.id}`}
 					style="background-color: {getDataTypeColor(
 						port.dataType
-					)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+					)}; border-color: var(--fd-handle-border); top: 50%; transform: translateY(-50%); z-index: 30;"
 				/>
 			{/each}
 		{/if}
@@ -422,6 +429,19 @@
 		border-color: var(--fd-primary);
 	}
 
+	.flowdrop-terminal-node--selected:hover .flowdrop-terminal-node__content {
+		box-shadow:
+			var(--fd-shadow-lg),
+			0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+		border-color: var(--fd-primary);
+		transform: scale(1.05);
+	}
+
+	.flowdrop-terminal-node:focus-visible .flowdrop-terminal-node__content {
+		outline: 2px solid var(--fd-ring);
+		outline-offset: 2px;
+	}
+
 	.flowdrop-terminal-node--processing .flowdrop-terminal-node__content {
 		opacity: 0.7;
 	}
@@ -444,6 +464,13 @@
 			0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent);
 	}
 
+	.flowdrop-terminal-node--start.flowdrop-terminal-node--selected:hover .flowdrop-terminal-node__content {
+		box-shadow:
+			0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
+			0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent),
+			0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+	}
+
 	.flowdrop-terminal-node--exit .flowdrop-terminal-node__content {
 		box-shadow:
 			0 4px 6px -1px color-mix(in srgb, var(--fd-error) 20%, transparent),
@@ -456,8 +483,34 @@
 			0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent);
 	}
 
-	:global(.flowdrop-terminal-node__icon) {
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+	.flowdrop-terminal-node--exit.flowdrop-terminal-node--selected:hover .flowdrop-terminal-node__content {
+		box-shadow:
+			0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
+			0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent),
+			0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+	}
+
+	/* Squircle icon wrapper - matching WorkflowNode style */
+	.flowdrop-terminal-node__icon-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 0.625rem;
+		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
+		flex-shrink: 0;
+		transition: all var(--fd-transition-normal);
+	}
+
+	.flowdrop-terminal-node:hover .flowdrop-terminal-node__icon-wrapper {
+		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+	}
+
+	.flowdrop-terminal-node__icon-wrapper :global(.flowdrop-terminal-node__icon) {
+		width: 1.5rem;
+		height: 1.5rem;
+		color: var(--_icon-color);
 	}
 
 	.flowdrop-terminal-node__label-container {
@@ -566,7 +619,7 @@
 		width: 16px !important;
 		height: 16px !important;
 		border-radius: 50% !important;
-		border: 2px solid #ffffff !important;
+		border: 2px solid var(--fd-handle-border) !important;
 		transition: all var(--fd-transition-normal) !important;
 		cursor: pointer !important;
 		z-index: 20 !important;
@@ -595,7 +648,7 @@
 		width: 16px !important;
 		height: 16px !important;
 		border-radius: 50% !important;
-		border: 2px solid #ffffff !important;
+		border: 2px solid var(--fd-handle-border) !important;
 		transition: all var(--fd-transition-normal) !important;
 		cursor: pointer !important;
 		z-index: 20 !important;

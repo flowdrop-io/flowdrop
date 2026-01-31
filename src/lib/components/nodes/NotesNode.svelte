@@ -110,7 +110,9 @@
 		<!-- Header with icon and type -->
 		<div class="flowdrop-notes-node__header">
 			<div class="flowdrop-notes-node__header-left">
-				<Icon icon={currentType.icon} class="flowdrop-notes-node__icon" />
+				<div class="flowdrop-notes-node__icon-wrapper">
+					<Icon icon={currentType.icon} class="flowdrop-notes-node__icon" />
+				</div>
 				<span class="flowdrop-notes-node__type">{currentType.name}</span>
 			</div>
 		</div>
@@ -152,64 +154,66 @@
 		min-width: var(--fd-notes-node-min-width);
 		max-width: var(--fd-notes-node-max-width);
 		width: var(--fd-notes-node-width);
-		border-radius: var(--fd-notes-node-border-radius);
-		border: 1px solid var(--fd-border);
-		background: var(--fd-notes-node-background);
+		border-radius: var(--fd-radius-xl);
+		border: 1.5px solid var(--fd-node-border);
+		background: var(--fd-card);
 		backdrop-filter: var(--fd-notes-node-backdrop-filter);
-		box-shadow: var(--fd-notes-node-box-shadow);
+		box-shadow: var(--fd-shadow-md);
 		color: var(--fd-foreground);
-		transition: var(--fd-notes-node-transition);
+		transition: all var(--fd-transition-fast);
 		overflow: hidden;
 		z-index: 5;
 	}
 
-	/* Note type: Info (blue) */
+	/* Note type: Info (blue) - subtle background tint, neutral border */
 	.flowdrop-notes-node--info {
-		background-color: var(--fd-notes-node-info-bg);
-		border-color: var(--fd-notes-node-info-border);
-		--_notes-text: var(--fd-primary-hover);
+		background-color: var(--fd-info-muted);
 		--_notes-icon: var(--fd-primary);
 	}
 
-	/* Note type: Warning (yellow/amber) */
+	/* Note type: Warning (yellow/amber) - subtle background tint */
 	.flowdrop-notes-node--warning {
-		background-color: var(--fd-notes-node-warning-bg);
-		border-color: var(--fd-notes-node-warning-border);
-		--_notes-text: var(--fd-warning-hover);
+		background-color: var(--fd-warning-muted);
 		--_notes-icon: var(--fd-warning);
 	}
 
-	/* Note type: Success (green) */
+	/* Note type: Success (green) - subtle background tint */
 	.flowdrop-notes-node--success {
-		background-color: var(--fd-notes-node-success-bg);
-		border-color: var(--fd-notes-node-success-border);
-		--_notes-text: var(--fd-success-hover);
+		background-color: var(--fd-success-muted);
 		--_notes-icon: var(--fd-success);
 	}
 
-	/* Note type: Error (red) */
+	/* Note type: Error (red) - subtle background tint */
 	.flowdrop-notes-node--error {
-		background-color: var(--fd-notes-node-error-bg);
-		border-color: var(--fd-notes-node-error-border);
-		--_notes-text: var(--fd-error-hover);
+		background-color: var(--fd-error-muted);
 		--_notes-icon: var(--fd-error);
 	}
 
-	/* Note type: Note (gray/neutral) */
+	/* Note type: Note (gray/neutral) - subtle background tint */
 	.flowdrop-notes-node--note {
-		background-color: var(--fd-notes-node-note-bg);
-		border-color: var(--fd-notes-node-note-border);
-		--_notes-text: var(--fd-foreground);
+		background-color: var(--fd-muted);
 		--_notes-icon: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-notes-node:hover {
-		box-shadow: var(--fd-notes-node-hover-box-shadow);
-		transform: translateY(-1px);
+		box-shadow: var(--fd-shadow-lg);
+		border-color: var(--fd-node-border-hover);
 	}
 
+	/* Selected state - matches other node components */
 	.flowdrop-notes-node--selected {
-		box-shadow: var(--fd-notes-node-selected-box-shadow);
+		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		border-color: var(--fd-primary);
+	}
+
+	.flowdrop-notes-node--selected:hover {
+		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		border-color: var(--fd-primary);
+	}
+
+	.flowdrop-notes-node:focus-visible {
+		outline: 2px solid var(--fd-ring);
+		outline-offset: 2px;
 	}
 
 	.flowdrop-notes-node--processing {
@@ -218,20 +222,15 @@
 
 	.flowdrop-notes-node--has-error {
 		border-color: var(--fd-error) !important;
+		background-color: var(--fd-error-muted) !important;
 	}
 
 	/* Display Mode Styles */
 	.flowdrop-notes-node__content {
-		padding: var(--fd-notes-node-padding);
-		border-radius: var(--fd-notes-node-border-radius);
+		padding: var(--fd-space-4);
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		color: var(--_notes-text);
-	}
-
-	.flowdrop-notes-node__icon {
-		color: var(--_notes-icon);
 	}
 
 	.flowdrop-notes-node__header {
@@ -245,39 +244,64 @@
 	.flowdrop-notes-node__header-left {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--fd-space-3);
 	}
 
-	.flowdrop-notes-node__icon {
-		width: 1.75rem;
-		height: 1.75rem;
+	/* Squircle icon wrapper - Apple-style rounded square background */
+	.flowdrop-notes-node__icon-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--_notes-icon) 15%, transparent);
 		flex-shrink: 0;
+		transition: all var(--fd-transition-normal);
+	}
+
+	.flowdrop-notes-node:hover .flowdrop-notes-node__icon-wrapper {
+		background: color-mix(in srgb, var(--_notes-icon) 22%, transparent);
+		transform: scale(1.05);
+	}
+
+	.flowdrop-notes-node__icon-wrapper :global(.flowdrop-notes-node__icon) {
+		width: 1.25rem;
+		height: 1.25rem;
+		color: var(--_notes-icon);
 	}
 
 	.flowdrop-notes-node__type {
-		font-size: 0.875rem;
-		font-weight: 600;
+		font-size: var(--fd-text-sm);
+		font-weight: 500;
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-notes-node__body {
-		margin-bottom: 0.5rem;
+		margin-bottom: var(--fd-space-2);
 		flex: 1;
 		overflow-y: auto;
+		color: var(--fd-muted-foreground);
+	}
+
+	/* Markdown content inherits foreground color for better readability */
+	.flowdrop-notes-node__body :global(.flowdrop-notes-node__markdown) {
+		color: var(--fd-foreground);
 	}
 
 	.flowdrop-notes-node__processing {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.75rem;
-		opacity: 0.7;
+		gap: var(--fd-space-2);
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
 	}
 
 	.flowdrop-notes-node__spinner {
 		width: 0.75rem;
 		height: 0.75rem;
-		border: 1px solid currentColor;
-		border-top-color: transparent;
+		border: 1px solid color-mix(in srgb, var(--fd-foreground) 30%, transparent);
+		border-top-color: var(--fd-foreground);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}
@@ -285,12 +309,12 @@
 	.flowdrop-notes-node__error-indicator {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--fd-space-2);
 		font-size: var(--fd-text-xs);
 		color: var(--fd-error);
 	}
 
-	.flowdrop-notes-node__error-icon {
+	:global(.flowdrop-notes-node__error-icon) {
 		width: 0.75rem;
 		height: 0.75rem;
 	}
@@ -307,7 +331,7 @@
 		right: var(--fd-space-2);
 		width: 1.5rem;
 		height: 1.5rem;
-		background-color: var(--fd-background);
+		background-color: var(--fd-backdrop);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-sm);
 		color: var(--fd-muted-foreground);
@@ -317,7 +341,7 @@
 		justify-content: center;
 		opacity: 0;
 		transition: all var(--fd-transition-normal);
-		backdrop-filter: blur(4px);
+		backdrop-filter: var(--fd-backdrop-blur);
 		z-index: 15;
 		font-size: var(--fd-text-sm);
 	}
@@ -340,7 +364,7 @@
 		}
 
 		.flowdrop-notes-node__content {
-			padding: 0.75rem;
+			padding: var(--fd-space-3);
 		}
 	}
 </style>
