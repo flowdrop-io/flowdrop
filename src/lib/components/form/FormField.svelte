@@ -258,6 +258,7 @@
 				placeholder={schema.placeholder ?? ''}
 				min={schema.minimum}
 				max={schema.maximum}
+				step={schema.step}
 				{required}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
