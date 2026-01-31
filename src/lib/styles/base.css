@@ -323,12 +323,22 @@
 	background-color: var(--fd-border);
 }
 
-/* Details/Summary */
+/* Details/Summary - Modern accordion styling */
 .flowdrop-details {
 	background-color: var(--fd-card);
 	border-radius: var(--fd-radius-lg);
 	box-shadow: var(--fd-shadow-sm);
 	overflow: hidden;
+	border: 1px solid var(--fd-border-muted);
+	transition: all var(--fd-transition-fast);
+}
+
+.flowdrop-details:hover {
+	border-color: var(--fd-border);
+}
+
+.flowdrop-details[open] {
+	box-shadow: var(--fd-shadow-md);
 }
 
 .flowdrop-details__summary {
@@ -340,16 +350,24 @@
 	font-weight: 500;
 	color: var(--fd-foreground);
 	cursor: pointer;
-	transition: background-color var(--fd-transition-normal);
+	transition: all var(--fd-transition-fast);
+	background: var(--fd-card);
+	border-radius: var(--fd-radius-md);
 }
 
 .flowdrop-details__summary:hover {
 	background-color: var(--fd-muted);
 }
 
+.flowdrop-details__summary::marker,
+.flowdrop-details__summary::-webkit-details-marker {
+	display: none;
+}
+
 .flowdrop-details__content {
 	padding: var(--fd-space-3);
 	padding-top: 0;
+	background: var(--fd-card);
 }
 
 /* Loading spinner */
@@ -918,31 +936,14 @@
 
 	/* =========================================================================
 	   Notes Node Component Tokens
+	   Notes node now uses standard node styling (--fd-card, --fd-node-border)
+	   for a consistent look and to avoid confusion with selected state.
 	   ========================================================================= */
 
 	--fd-notes-node-width: 500px;
 	--fd-notes-node-min-width: 250px;
 	--fd-notes-node-max-width: 500px;
-	--fd-notes-node-border-radius: var(--fd-radius-lg);
-	--fd-notes-node-padding: var(--fd-space-4);
-	--fd-notes-node-background: rgba(255, 255, 255, 0.9);
 	--fd-notes-node-backdrop-filter: blur(8px);
-	--fd-notes-node-box-shadow: var(--fd-shadow-md);
-	--fd-notes-node-hover-box-shadow: var(--fd-shadow-lg);
-	--fd-notes-node-selected-box-shadow: 0 0 0 2px var(--fd-primary);
-	--fd-notes-node-transition: all var(--fd-transition-normal);
-
-	/* Note type specific colors */
-	--fd-notes-node-info-bg: var(--fd-info-muted);
-	--fd-notes-node-info-border: var(--fd-info);
-	--fd-notes-node-warning-bg: var(--fd-warning-muted);
-	--fd-notes-node-warning-border: var(--fd-warning);
-	--fd-notes-node-success-bg: var(--fd-success-muted);
-	--fd-notes-node-success-border: var(--fd-success);
-	--fd-notes-node-error-bg: var(--fd-error-muted);
-	--fd-notes-node-error-border: var(--fd-error);
-	--fd-notes-node-note-bg: var(--fd-muted);
-	--fd-notes-node-note-border: var(--fd-border);
 }
 
 /* Dark mode overrides for interrupt component tokens */
@@ -969,9 +970,7 @@
 }
 
 /* Dark mode overrides for notes node tokens */
-[data-theme="dark"] {
-	--fd-notes-node-background: rgba(30, 30, 35, 0.95);
-}
+/* Notes node now uses standard --fd-card background which is already theme-aware */
 
 /* Markdown Display Component Styles */
 /* These styles are used for dynamically rendered markdown content */
@@ -1091,14 +1090,14 @@
 
 /* Links */
 .markdown-display a {
-	color: #3b82f6;
+	color: var(--fd-primary);
 	text-decoration: underline;
 	text-decoration-thickness: 1px;
 	text-underline-offset: 2px;
 }
 
 .markdown-display a:hover {
-	color: #2563eb;
+	color: var(--fd-primary-hover);
 	text-decoration-thickness: 2px;
 }
 
