@@ -10,9 +10,13 @@ import type { AutocompleteConfig } from '$lib/types/index.js';
 
 /**
  * Supported field types for form rendering
- * Can be extended to support complex types like 'array' and 'object'
+ * Aligned with JSON Schema specification (draft-07)
+ *
+ * Note: 'select' type was removed in favor of using standard JSON Schema patterns:
+ * - Use `enum` for simple value lists
+ * - Use `oneOf` with `const`/`title` for labeled options
  */
-export type FieldType = 'string' | 'number' | 'integer' | 'boolean' | 'select' | 'array' | 'object';
+export type FieldType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
 /**
  * Field format for specialized rendering
@@ -38,12 +42,50 @@ export type FieldFormat =
 
 /**
  * Option type for select and checkbox group fields
+ *
+ * @deprecated Use JSON Schema `oneOf` with `const`/`title` instead for labeled options.
+ * This type is kept for backwards compatibility but will be removed in a future version.
+ *
+ * @example Standard JSON Schema approach:
+ * ```json
+ * {
+ *   "type": "string",
+ *   "oneOf": [
+ *     { "const": "draft", "title": "Draft" },
+ *     { "const": "published", "title": "Published" }
+ *   ]
+ * }
+ * ```
  */
 export interface FieldOption {
 	/** The value stored when this option is selected */
 	value: string;
 	/** The display label for this option */
 	label: string;
+}
+
+/**
+ * JSON Schema oneOf item for labeled options
+ * This is the standard JSON Schema way to define labeled select options
+ *
+ * @example
+ * ```json
+ * {
+ *   "type": "string",
+ *   "oneOf": [
+ *     { "const": "draft", "title": "Draft" },
+ *     { "const": "published", "title": "Published" }
+ *   ]
+ * }
+ * ```
+ */
+export interface OneOfItem {
+	/** The constant value for this option (JSON Schema `const` keyword) */
+	const: string | number | boolean;
+	/** Human-readable label for this option (JSON Schema `title` keyword) */
+	title?: string;
+	/** Optional description for this option */
+	description?: string;
 }
 
 /**
@@ -236,6 +278,11 @@ export type { AutocompleteConfig } from '$lib/types/index.js';
 /**
  * Field schema definition derived from JSON Schema property
  * Used to determine which field component to render
+ *
+ * FlowDrop follows JSON Schema draft-07 specification for field definitions.
+ * For select/dropdown fields, use standard JSON Schema patterns:
+ * - `enum` for simple value lists (no labels)
+ * - `oneOf` with `const`/`title` for labeled options
  */
 export interface FieldSchema {
 	/** The field type from JSON Schema */
@@ -246,13 +293,33 @@ export interface FieldSchema {
 	description?: string;
 	/** Default value for the field */
 	default?: unknown;
-	/** Enum values for select/checkbox fields */
+	/** Enum values for select/checkbox fields (simple values without labels) */
 	enum?: unknown[];
-	/** Whether multiple values can be selected */
+	/**
+	 * JSON Schema oneOf for labeled options (standard approach)
+	 * Use this instead of the deprecated `options` property
+	 *
+	 * @example
+	 * ```json
+	 * {
+	 *   "type": "string",
+	 *   "oneOf": [
+	 *     { "const": "draft", "title": "Draft" },
+	 *     { "const": "published", "title": "Published" }
+	 *   ]
+	 * }
+	 * ```
+	 */
+	oneOf?: OneOfItem[];
+	/** Whether multiple values can be selected (for enum/oneOf) */
 	multiple?: boolean;
 	/** Format hint for specialized rendering */
 	format?: FieldFormat;
-	/** Options for select type fields (alternative to enum) */
+	/**
+	 * Options for select type fields
+	 * @deprecated Use JSON Schema `oneOf` with `const`/`title` instead.
+	 * This property is kept for backwards compatibility but will be removed in a future version.
+	 */
 	options?: FieldOption[];
 	/** Placeholder text */
 	placeholder?: string;
@@ -328,22 +395,77 @@ export function isFieldOptionArray(options: FieldOption[] | string[]): options i
 }
 
 /**
- * Normalize options to FieldOption format
- * Converts string arrays to FieldOption arrays for consistent handling
+ * Type guard to check if items are OneOfItem objects (JSON Schema oneOf pattern)
  */
-export function normalizeOptions(options: FieldOption[] | string[] | unknown[]): FieldOption[] {
+export function isOneOfArray(items: unknown[]): items is OneOfItem[] {
+	return items.length > 0 && typeof items[0] === 'object' && items[0] !== null && 'const' in items[0];
+}
+
+/**
+ * Convert JSON Schema oneOf items to FieldOption format
+ * This bridges the standard oneOf pattern to the internal FieldOption structure
+ *
+ * @param oneOfItems - Array of JSON Schema oneOf items with const/title
+ * @returns Array of FieldOption objects
+ */
+export function oneOfToOptions(oneOfItems: OneOfItem[]): FieldOption[] {
+	return oneOfItems.map((item) => ({
+		value: String(item.const),
+		label: item.title ?? String(item.const)
+	}));
+}
+
+/**
+ * Normalize options to FieldOption format
+ * Handles multiple input formats for consistent internal handling:
+ * - JSON Schema oneOf items (standard) -> converted to FieldOption
+ * - FieldOption array (legacy) -> passed through
+ * - String array -> converted to FieldOption
+ *
+ * @param options - Options in various formats
+ * @returns Normalized FieldOption array
+ */
+export function normalizeOptions(options: FieldOption[] | string[] | OneOfItem[] | unknown[]): FieldOption[] {
 	if (!options || options.length === 0) {
 		return [];
 	}
 
+	// Handle JSON Schema oneOf pattern (standard)
+	if (isOneOfArray(options)) {
+		return oneOfToOptions(options);
+	}
+
+	// Handle FieldOption array (legacy, deprecated)
 	if (isFieldOptionArray(options as FieldOption[] | string[])) {
 		return options as FieldOption[];
 	}
 
+	// Handle string array (simple enum values)
 	return (options as string[]).map((opt) => ({
 		value: String(opt),
 		label: String(opt)
 	}));
+}
+
+/**
+ * Get options from a schema, handling both oneOf (standard) and options (legacy) patterns
+ * Prefers oneOf if both are present
+ *
+ * @param schema - Field schema that may contain oneOf or options
+ * @returns Normalized FieldOption array
+ */
+export function getSchemaOptions(schema: FieldSchema): FieldOption[] {
+	// Prefer standard oneOf pattern
+	if (schema.oneOf && schema.oneOf.length > 0) {
+		return oneOfToOptions(schema.oneOf);
+	}
+
+	// Fall back to deprecated options property
+	if (schema.options && schema.options.length > 0) {
+		return schema.options;
+	}
+
+	return [];
 }
 
 /**

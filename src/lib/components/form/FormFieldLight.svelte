@@ -12,7 +12,8 @@
   Features:
   - Automatically selects the correct field component based on schema
   - Wraps fields with FormFieldWrapper for consistent layout
-  - Supports all basic field types (string, number, boolean, select, checkbox group, range)
+  - Supports all basic field types (string, number, boolean, checkbox group, range)
+  - Uses standard JSON Schema patterns (enum, oneOf) for select fields
   - Heavy editors (code, markdown, template) require explicit registration
   - Shows helpful fallback when heavy editors aren't registered
   
@@ -20,13 +21,13 @@
   1. Check field registry for custom/heavy components (highest priority)
   2. format: 'hidden' -> skip rendering (return nothing)
   3. enum with multiple: true -> FormCheckboxGroup
-  4. enum -> FormSelect
+  4. enum -> FormSelect (simple values without labels)
   5. format: 'multiline' -> FormTextarea
   6. format: 'range' (number/integer) -> FormRangeField
   7. type: 'string' -> FormTextField
   8. type: 'number' or 'integer' -> FormNumberField
   9. type: 'boolean' -> FormToggle
-  10. type: 'select' or has options -> FormSelect
+  10. oneOf with const/title (labeled options) -> FormSelect
   11. type: 'array' -> FormArray
   12. fallback -> FormTextField
 -->
@@ -42,7 +43,8 @@
 	import FormCheckboxGroup from './FormCheckboxGroup.svelte';
 	import FormArray from './FormArray.svelte';
 	import { resolveFieldComponent } from '$lib/form/fieldRegistry.js';
-	import type { FieldSchema, FieldOption } from './types.js';
+	import type { FieldSchema } from './types.js';
+	import { getSchemaOptions } from './types.js';
 
 	interface Props {
 		/** Unique key/id for the field */
@@ -150,8 +152,8 @@
 			return 'toggle';
 		}
 
-		// Select type or has options -> select
-		if (schema.type === 'select' || schema.options) {
+		// oneOf with labeled options (standard JSON Schema) or legacy options -> select
+		if ((schema.oneOf && schema.oneOf.length > 0) || schema.options) {
 			return 'select-options';
 		}
 
@@ -174,11 +176,9 @@
 
 	/**
 	 * Get select options for select-options type
+	 * Handles both oneOf (standard) and options (legacy) patterns
 	 */
-	const selectOptions = $derived.by((): FieldOption[] => {
-		if (!schema.options) return [];
-		return schema.options as FieldOption[];
-	});
+	const selectOptions = $derived(getSchemaOptions(schema));
 
 	/**
 	 * Get current value as the appropriate type
