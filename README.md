@@ -66,8 +66,8 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ## Features
 
-|                              |                                                                           |
-| ---------------------------- | ------------------------------------------------------------------------- |
+|                             |                                                                           |
+| --------------------------- | ------------------------------------------------------------------------- |
 | 🎨 **Visual Editor Only**    | Pure UI component. No hidden backend, no external dependencies            |
 | 🔐 **You Own Everything**    | Your data, your servers, your orchestration logic, your security policies |
 | 🔌 **Backend Agnostic**      | Connect to any API: Drupal, Laravel, Express, FastAPI, or your own        |
@@ -214,12 +214,12 @@ Runtime configuration means you build once and deploy to staging, production, or
 
 ## Documentation
 
-| Resource                                                            | Description              |
-| ------------------------------------------------------------------- | ------------------------ |
-| [API Documentation](https://flowdrop-io.github.io/flowdrop/)        | REST API specification   |
-| [DOCKER.md](./DOCKER.md)                                            | Docker deployment guide  |
-| [QUICK_START.md](./QUICK_START.md)                                  | Get running in 5 minutes |
-| [CHANGELOG.md](./CHANGELOG.md)                                      | Version history          |
+| Resource                                                     | Description              |
+| ------------------------------------------------------------ | ------------------------ |
+| [API Documentation](https://flowdrop-io.github.io/flowdrop/) | REST API specification   |
+| [DOCKER.md](./DOCKER.md)                                     | Docker deployment guide  |
+| [QUICK_START.md](./QUICK_START.md)                           | Get running in 5 minutes |
+| [CHANGELOG.md](./CHANGELOG.md)                               | Version history          |
 
 ## Development
 
