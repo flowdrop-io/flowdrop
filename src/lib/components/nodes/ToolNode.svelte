@@ -147,7 +147,7 @@
 		type="target"
 		position={Position.Left}
 		id={`${props.data.nodeId}-input-${toolInputPort.id}`}
-		style="background-color: {getDataTypeColor('tool')}; border-color: '#ffffff';"
+		style="background-color: {getDataTypeColor('tool')}; border-color: var(--fd-handle-border);"
 	/>
 {/if}
 
@@ -167,8 +167,8 @@
 	<!-- Node Header -->
 	<div class="flowdrop-tool-node__header">
 		<div class="flowdrop-tool-node__header-content">
-			<!-- Tool Icon -->
-			<div class="flowdrop-tool-node__icon-container">
+			<!-- Tool Icon with Squircle Background -->
+			<div class="flowdrop-tool-node__icon-wrapper">
 				<Icon icon={toolIcon} class="flowdrop-tool-node__icon" />
 			</div>
 
@@ -182,7 +182,7 @@
 				</div>
 			</div>
 
-			<!-- Tool Badge -->
+			<!-- Tool Badge - tinted style matching icon wrappers -->
 			<div class="flowdrop-tool-node__badge">TOOL</div>
 		</div>
 
@@ -218,21 +218,21 @@
 		type="source"
 		position={Position.Right}
 		id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
-		style="background-color: {getDataTypeColor('tool')}; border-color: '#ffffff';"
+		style="background-color: {getDataTypeColor('tool')}; border-color: var(--fd-handle-border);"
 	/>
 {/if}
 
 <style>
 	.flowdrop-tool-node {
 		position: relative;
-		background-color: var(--fd-background);
-		border: 2px solid var(--fd-border);
+		background-color: var(--fd-card);
+		border: 1.5px solid var(--fd-node-border);
 		border-radius: var(--fd-radius-xl);
 		width: 18rem;
 		display: flex;
 		flex-direction: column;
 		cursor: pointer;
-		transition: all var(--fd-transition-normal);
+		transition: all var(--fd-transition-fast);
 		box-shadow: var(--fd-shadow-md);
 		overflow: visible;
 		z-index: 10;
@@ -241,11 +241,22 @@
 
 	.flowdrop-tool-node:hover {
 		box-shadow: var(--fd-shadow-lg);
+		border-color: var(--fd-node-border-hover);
 	}
 
 	.flowdrop-tool-node--selected {
-		box-shadow: var(--fd-shadow-lg);
-		border: 2px solid var(--fd-tool-node-color);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent), var(--fd-shadow-lg);
+		border-color: var(--fd-tool-node-color);
+	}
+
+	.flowdrop-tool-node--selected:hover {
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent), var(--fd-shadow-lg);
+		border-color: var(--fd-tool-node-color);
+	}
+
+	.flowdrop-tool-node:focus-visible {
+		outline: 2px solid var(--fd-ring);
+		outline-offset: 2px;
 	}
 
 	.flowdrop-tool-node--processing {
@@ -281,15 +292,22 @@
 		margin-bottom: 0.5rem;
 	}
 
-	.flowdrop-tool-node__icon-container {
+	/* Squircle icon wrapper - Apple-style rounded square background */
+	.flowdrop-tool-node__icon-wrapper {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 2.5rem;
 		height: 2.5rem;
-		border-radius: var(--fd-radius-lg);
+		border-radius: 0.625rem;
+		background: color-mix(in srgb, var(--fd-tool-node-color) 18%, transparent);
 		flex-shrink: 0;
-		background-color: var(--fd-tool-node-color);
+		transition: all var(--fd-transition-normal);
+	}
+
+	.flowdrop-tool-node:hover .flowdrop-tool-node__icon-wrapper {
+		background: color-mix(in srgb, var(--fd-tool-node-color) 25%, transparent);
+		transform: scale(1.05);
 	}
 
 	.flowdrop-tool-node__info {
@@ -313,14 +331,14 @@
 	}
 
 	.flowdrop-tool-node__badge {
-		background-color: var(--fd-tool-node-color);
-		color: #ffffff;
+		background-color: color-mix(in srgb, var(--fd-tool-node-color) 15%, transparent);
+		color: var(--fd-tool-node-color);
+		border: 1px solid color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent);
 		font-size: 0.625rem;
 		font-weight: 700;
 		padding: 0.25rem 0.5rem;
 		border-radius: var(--fd-radius-sm);
 		letter-spacing: 0.05em;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 	}
 
 	.flowdrop-tool-node__description {
@@ -330,10 +348,10 @@
 		line-height: 1.3;
 	}
 
-	:global(.flowdrop-tool-node__icon) {
-		color: #ffffff;
-		font-size: 1.25rem;
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+	.flowdrop-tool-node__icon-wrapper :global(.flowdrop-tool-node__icon) {
+		width: 1.5rem;
+		height: 1.5rem;
+		color: var(--fd-tool-node-color);
 	}
 
 	.flowdrop-tool-node__processing {
@@ -404,7 +422,7 @@
 	:global(.svelte-flow__node-tool .svelte-flow__handle) {
 		width: 16px !important;
 		height: 16px !important;
-		border: 2px solid #ffffff !important;
+		border: 2px solid var(--fd-handle-border) !important;
 		border-radius: 50% !important;
 		transition: all 0.2s ease-in-out !important;
 		cursor: pointer !important;

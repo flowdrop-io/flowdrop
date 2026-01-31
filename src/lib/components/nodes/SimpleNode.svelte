@@ -186,7 +186,7 @@
 		position={Position.Left}
 		style="background-color: {getDataTypeColor(
 			port.dataType
-		)}; border-color: '#ffffff'; top: {inputPorts.length > 1
+		)}; border-color: var(--fd-handle-border); top: {inputPorts.length > 1
 			? index === 0
 				? '25%'
 				: '75%'
@@ -209,8 +209,8 @@
 >
 	<div class="flowdrop-simple-node__header">
 		<div class="flowdrop-simple-node__header-content">
-			<!-- Node Icon -->
-			<div class="flowdrop-simple-node__icon-container" style="background-color: {nodeColor}">
+			<!-- Node Icon with Squircle Background -->
+			<div class="flowdrop-simple-node__icon-wrapper" style="--_icon-color: {nodeColor}">
 				<Icon icon={nodeIcon} class="flowdrop-simple-node__icon" />
 			</div>
 
@@ -258,7 +258,7 @@
 		position={Position.Right}
 		style="background-color: {getDataTypeColor(
 			port.dataType
-		)}; border-color: '#ffffff'; top: {outputPorts.length > 1
+		)}; border-color: var(--fd-handle-border); top: {outputPorts.length > 1
 			? index === 0
 				? '25%'
 				: '75%'
@@ -272,13 +272,13 @@
 <style>
 	.flowdrop-simple-node {
 		position: relative;
-		background-color: var(--fd-background);
-		border: 2px solid var(--fd-border);
+		background-color: var(--fd-card);
+		border: 1.5px solid var(--fd-node-border);
 		border-radius: var(--fd-radius-xl);
 		display: flex;
 		flex-direction: column;
 		cursor: pointer;
-		transition: all var(--fd-transition-normal);
+		transition: all var(--fd-transition-fast);
 		box-shadow: var(--fd-shadow-md);
 		overflow: visible; /* Changed from hidden to visible to allow handles to be properly accessible */
 		z-index: 10;
@@ -292,11 +292,22 @@
 
 	.flowdrop-simple-node:hover {
 		box-shadow: var(--fd-shadow-lg);
+		border-color: var(--fd-node-border-hover);
 	}
 
 	.flowdrop-simple-node--selected {
-		box-shadow: var(--fd-shadow-lg);
-		border: 2px solid var(--fd-primary);
+		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		border-color: var(--fd-primary);
+	}
+
+	.flowdrop-simple-node--selected:hover {
+		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		border-color: var(--fd-primary);
+	}
+
+	.flowdrop-simple-node:focus-visible {
+		outline: 2px solid var(--fd-ring);
+		outline-offset: 2px;
 	}
 
 	.flowdrop-simple-node--processing {
@@ -310,7 +321,7 @@
 
 	.flowdrop-simple-node__header {
 		padding: var(--fd-space-4);
-		background-color: var(--fd-muted);
+		background: var(--fd-header);
 		border-radius: var(--fd-radius-xl);
 	}
 
@@ -320,14 +331,22 @@
 		gap: var(--fd-space-3);
 	}
 
-	.flowdrop-simple-node__icon-container {
+	/* Squircle icon wrapper - Apple-style rounded square background */
+	.flowdrop-simple-node__icon-wrapper {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: var(--fd-radius-md);
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
 		flex-shrink: 0;
+		transition: all var(--fd-transition-normal);
+	}
+
+	.flowdrop-simple-node:hover .flowdrop-simple-node__icon-wrapper {
+		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+		transform: scale(1.05);
 	}
 
 	.flowdrop-simple-node__title {
@@ -347,10 +366,10 @@
 		line-height: 1.3;
 	}
 
-	:global(.flowdrop-simple-node__icon) {
-		color: white;
-		font-size: var(--fd-text-base);
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+	.flowdrop-simple-node__icon-wrapper :global(.flowdrop-simple-node__icon) {
+		width: 1.25rem;
+		height: 1.25rem;
+		color: var(--_icon-color);
 	}
 
 	/* Label styling removed - now using header title */
@@ -364,8 +383,8 @@
 	.flowdrop-simple-node__spinner {
 		width: 12px;
 		height: 12px;
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		border-top: 1px solid white;
+		border: 1px solid color-mix(in srgb, var(--fd-foreground) 30%, transparent);
+		border-top: 1px solid var(--fd-foreground);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}
