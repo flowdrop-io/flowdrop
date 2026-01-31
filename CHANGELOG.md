@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.44] - 2026-01-31
+
+### Added
+
+- **Dark mode**: CSS design tokens and color utilities; components and markdown editor updated for theme-aware styling
+
+- **Settings system**: Settings types, store, and service; settings UI with navbar integration; settings integration guide
+
+- **Theme-based node icon color**: Node icons use dark color in light theme and white in dark theme for better contrast
+
+- **Themed toasts**: svelte-5-french-toast uses FlowDrop design tokens (`--fd-*`) for consistent look with the editor
+
+- **Color utilities**: CSS token-based color helpers exported from the library
+
+### Changed
+
+- **Design tokens**: Token system and base styles modernized; node and component styling aligned to design patterns
+
+- **Config panel**: Config panel position setting removed (refactor)
+
+### Fixed
+
+- **Edges**: Theme-aware edge marker colors for correct appearance in light and dark themes
+
+- **Playground sidebar**: Layout and copy updates; confusing left-sidebar resize handle removed
+
+### Documentation
+
+- **API**: Documentation consolidated and published to GitHub Pages
+
+- **Settings**: Settings integration guide added
+
+---
+
 ## [0.0.43] - 2026-01-27
 
 ### Fixed
