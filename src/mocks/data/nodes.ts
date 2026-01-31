@@ -4643,6 +4643,267 @@ export const mockNodes: NodeMetadata[] = [
 				}
 			}
 		}
+	},
+	// Task Assignment Node - demonstrates autocomplete form fields
+	{
+		id: 'task_assignment',
+		name: 'Task Assignment',
+		type: 'default',
+		supportedTypes: ['default', 'simple'],
+		description: 'Assign tasks to team members with categories and tags. Demonstrates autocomplete form fields.',
+		category: 'helpers',
+		icon: 'mdi:account-check',
+		color: '#10b981',
+		version: '1.0.0',
+		tags: ['task', 'assignment', 'team', 'autocomplete', 'demo'],
+		inputs: [
+			{
+				id: 'task_data',
+				name: 'Task Data',
+				type: 'input',
+				dataType: 'object',
+				required: false,
+				description: 'Task data to process'
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Trigger input'
+			}
+		],
+		outputs: [
+			{
+				id: 'assignment',
+				name: 'Assignment',
+				type: 'output',
+				dataType: 'object',
+				required: false,
+				description: 'Complete task assignment object'
+			},
+			{
+				id: 'assignee_id',
+				name: 'Assignee ID',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'ID of the assigned user'
+			},
+			{
+				id: 'category_id',
+				name: 'Category ID',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'ID of the selected category'
+			}
+		],
+		config: {
+			assignee: '',
+			category: '',
+			tags: '',
+			location: '',
+			priority: 'medium',
+			notifyAssignee: true,
+			description: ''
+		},
+		configSchema: {
+			type: 'object',
+			properties: {
+				nodeType: {
+					type: 'string',
+					title: 'Node Type',
+					description: 'Choose the visual representation for this node',
+					default: 'default',
+					enum: ['default', 'simple']
+				},
+				assignee: {
+					type: 'string',
+					title: 'Assignee',
+					description: 'Select a team member to assign this task to',
+					format: 'autocomplete',
+					autocomplete: {
+						url: '/api/flowdrop/autocomplete/users',
+						queryParam: 'q',
+						minChars: 0,
+						debounceMs: 300,
+						fetchOnFocus: true,
+						labelField: 'label',
+						valueField: 'value',
+						allowFreeText: false
+					}
+				},
+				category: {
+					type: 'string',
+					title: 'Category',
+					description: 'Select a category for this task',
+					format: 'autocomplete',
+					autocomplete: {
+						url: '/api/flowdrop/autocomplete/categories',
+						queryParam: 'q',
+						minChars: 0,
+						debounceMs: 300,
+						fetchOnFocus: true,
+						labelField: 'label',
+						valueField: 'value',
+						allowFreeText: false
+					}
+				},
+				tags: {
+					type: 'string',
+					title: 'Tags',
+					description: 'Add tags to categorize this task (allows custom tags)',
+					format: 'autocomplete',
+					autocomplete: {
+						url: '/api/flowdrop/autocomplete/tags',
+						queryParam: 'q',
+						minChars: 1,
+						debounceMs: 200,
+						fetchOnFocus: true,
+						labelField: 'label',
+						valueField: 'value',
+						allowFreeText: true,
+						multiple: true
+					}
+				},
+				location: {
+					type: 'string',
+					title: 'Location',
+					description: 'Select a location for this task',
+					format: 'autocomplete',
+					autocomplete: {
+						url: '/api/flowdrop/autocomplete/locations',
+						queryParam: 'q',
+						minChars: 0,
+						debounceMs: 300,
+						fetchOnFocus: true,
+						labelField: 'label',
+						valueField: 'value',
+						allowFreeText: false
+					}
+				},
+				priority: {
+					type: 'string',
+					title: 'Priority',
+					description: 'Task priority level',
+					enum: ['low', 'medium', 'high', 'urgent'],
+					default: 'medium'
+				},
+				notifyAssignee: {
+					type: 'boolean',
+					title: 'Notify Assignee',
+					description: 'Send notification to the assignee when task is created',
+					default: true
+				},
+				description: {
+					type: 'string',
+					title: 'Description',
+					description: 'Additional task details',
+					format: 'multiline',
+					default: ''
+				}
+			},
+			required: ['assignee', 'category']
+		}
+	},
+	// User Notification Node - another autocomplete example
+	{
+		id: 'user_notification',
+		name: 'User Notification',
+		type: 'default',
+		supportedTypes: ['default', 'simple'],
+		description: 'Send notifications to specific users. Demonstrates user autocomplete.',
+		category: 'outputs',
+		icon: 'mdi:bell-ring',
+		color: '#f59e0b',
+		version: '1.0.0',
+		tags: ['notification', 'user', 'alert', 'autocomplete'],
+		inputs: [
+			{
+				id: 'message',
+				name: 'Message',
+				type: 'input',
+				dataType: 'string',
+				required: false,
+				description: 'Notification message content'
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Trigger input'
+			}
+		],
+		outputs: [
+			{
+				id: 'sent',
+				name: 'Sent',
+				type: 'output',
+				dataType: 'boolean',
+				required: false,
+				description: 'Whether notification was sent successfully'
+			},
+			{
+				id: 'recipient_id',
+				name: 'Recipient ID',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'ID of the notification recipient'
+			}
+		],
+		config: {
+			recipient: '',
+			notificationType: 'info',
+			title: '',
+			message: ''
+		},
+		configSchema: {
+			type: 'object',
+			properties: {
+				recipient: {
+					type: 'string',
+					title: 'Recipient',
+					description: 'Select the user to receive this notification',
+					format: 'autocomplete',
+					autocomplete: {
+						url: '/api/flowdrop/autocomplete/users',
+						queryParam: 'q',
+						minChars: 0,
+						debounceMs: 300,
+						fetchOnFocus: true,
+						labelField: 'label',
+						valueField: 'value',
+						allowFreeText: false
+					}
+				},
+				notificationType: {
+					type: 'string',
+					title: 'Notification Type',
+					description: 'Type of notification to send',
+					enum: ['info', 'success', 'warning', 'error'],
+					default: 'info'
+				},
+				title: {
+					type: 'string',
+					title: 'Title',
+					description: 'Notification title',
+					default: ''
+				},
+				message: {
+					type: 'string',
+					title: 'Message',
+					description: 'Notification message body',
+					format: 'multiline',
+					default: ''
+				}
+			},
+			required: ['recipient']
+		}
 	}
 ];
 

@@ -1269,6 +1269,55 @@
 	--flowdrop-interrupt-badge-completed-bg: var(--color-ref-blue-50);
 	--flowdrop-interrupt-badge-completed-text: var(--color-ref-blue-600);
 
+	/* =========================================================================
+	   Form Component Tokens
+	   ========================================================================= */
+
+	/* Form field base */
+	--flowdrop-form-field-bg: var(--color-ref-gray-50);
+	--flowdrop-form-field-bg-hover: #ffffff;
+	--flowdrop-form-field-border: var(--color-ref-gray-200);
+	--flowdrop-form-field-border-hover: var(--color-ref-gray-300);
+	--flowdrop-form-field-border-focus: var(--color-ref-blue-500);
+	--flowdrop-form-field-text: var(--color-ref-gray-900);
+	--flowdrop-form-field-placeholder: var(--color-ref-gray-400);
+	--flowdrop-form-field-focus-ring: rgba(59, 130, 246, 0.12);
+
+	/* Form field icons */
+	--flowdrop-form-icon-color: var(--color-ref-gray-400);
+	--flowdrop-form-icon-color-hover: var(--color-ref-gray-600);
+
+	/* Form tags/chips (selected items) */
+	--flowdrop-form-tag-bg: var(--color-ref-blue-50);
+	--flowdrop-form-tag-border: var(--color-ref-blue-100);
+	--flowdrop-form-tag-text: var(--color-ref-blue-700);
+	--flowdrop-form-tag-icon: var(--color-ref-blue-400);
+	--flowdrop-form-tag-icon-hover: var(--color-ref-blue-600);
+	--flowdrop-form-tag-bg-hover: var(--color-ref-blue-100);
+
+	/* Form dropdown/popover */
+	--flowdrop-form-dropdown-bg: #ffffff;
+	--flowdrop-form-dropdown-border: var(--color-ref-gray-200);
+	--flowdrop-form-dropdown-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+	/* Form dropdown options */
+	--flowdrop-form-option-bg-hover: var(--color-ref-gray-50);
+	--flowdrop-form-option-bg-selected: var(--color-ref-blue-50);
+	--flowdrop-form-option-bg-selected-hover: var(--color-ref-blue-100);
+	--flowdrop-form-option-text: var(--color-ref-gray-900);
+	--flowdrop-form-option-check: var(--color-ref-blue-500);
+
+	/* Form status states */
+	--flowdrop-form-status-text: var(--color-ref-gray-500);
+	--flowdrop-form-status-loading: var(--color-ref-blue-500);
+	--flowdrop-form-status-error: var(--color-ref-red-500);
+	--flowdrop-form-status-empty: var(--color-ref-gray-400);
+
+	/* Form error/retry button */
+	--flowdrop-form-error-border: var(--color-ref-red-300);
+	--flowdrop-form-error-text: var(--color-ref-red-600);
+	--flowdrop-form-error-bg-hover: var(--color-ref-red-50);
+
 	/* NotesNode component variables */
 	--notes-node-width: 500px;
 	--notes-node-min-width: 250px;

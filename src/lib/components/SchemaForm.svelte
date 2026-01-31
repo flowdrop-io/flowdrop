@@ -50,8 +50,9 @@
 -->
 
 <script lang="ts">
+	import { setContext } from 'svelte';
 	import Icon from '@iconify/svelte';
-	import type { ConfigSchema } from '$lib/types/index.js';
+	import type { ConfigSchema, AuthProvider } from '$lib/types/index.js';
 	import { FormField } from '$lib/components/form/index.js';
 	import type { FieldSchema } from '$lib/components/form/index.js';
 
@@ -125,6 +126,18 @@
 		 * Custom CSS class for the form container.
 		 */
 		class?: string;
+
+		/**
+		 * Authentication provider for autocomplete fields.
+		 * Used to add authentication headers when fetching suggestions from callback URLs.
+		 */
+		authProvider?: AuthProvider;
+
+		/**
+		 * Base URL for resolving relative autocomplete callback URLs.
+		 * @default ""
+		 */
+		baseUrl?: string;
 	}
 
 	let {
@@ -138,8 +151,14 @@
 		onCancel,
 		loading = false,
 		disabled = false,
-		class: className = ''
+		class: className = '',
+		authProvider,
+		baseUrl = ''
 	}: Props = $props();
+
+	// Set context for child components (e.g., FormAutocomplete)
+	setContext<AuthProvider | undefined>('flowdrop:authProvider', authProvider);
+	setContext<string>('flowdrop:baseUrl', baseUrl);
 
 	/**
 	 * Internal reactive state for form values

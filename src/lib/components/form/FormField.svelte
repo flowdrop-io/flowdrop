@@ -5,24 +5,25 @@
   Features:
   - Automatically selects the correct field component based on schema
   - Wraps fields with FormFieldWrapper for consistent layout
-  - Supports all current field types (string, number, boolean, select, checkbox group, range, json, markdown, template)
+  - Supports all current field types (string, number, boolean, select, checkbox group, range, json, markdown, template, autocomplete)
   - Extensible architecture for future complex types (array, object)
   
   Type Resolution Order:
   1. format: 'hidden' -> skip rendering (return nothing)
-  2. format: 'json' or 'code' -> FormCodeEditor (CodeMirror JSON editor)
-  3. format: 'markdown' -> FormMarkdownEditor (SimpleMDE Markdown editor)
-  4. format: 'template' -> FormTemplateEditor (CodeMirror with Twig/Liquid syntax)
-  5. enum with multiple: true -> FormCheckboxGroup
-  6. enum -> FormSelect
-  7. format: 'multiline' -> FormTextarea
-  8. format: 'range' (number/integer) -> FormRangeField
-  9. type: 'string' -> FormTextField
-  10. type: 'number' or 'integer' -> FormNumberField
-  11. type: 'boolean' -> FormToggle
-  12. type: 'select' or has options -> FormSelect
-  13. type: 'object' (without format) -> FormCodeEditor (for JSON objects)
-  14. fallback -> FormTextField
+  2. format: 'autocomplete' with autocomplete.url -> FormAutocomplete
+  3. format: 'json' or 'code' -> FormCodeEditor (CodeMirror JSON editor)
+  4. format: 'markdown' -> FormMarkdownEditor (SimpleMDE Markdown editor)
+  5. format: 'template' -> FormTemplateEditor (CodeMirror with Twig/Liquid syntax)
+  6. enum with multiple: true -> FormCheckboxGroup
+  7. enum -> FormSelect
+  8. format: 'multiline' -> FormTextarea
+  9. format: 'range' (number/integer) -> FormRangeField
+  10. type: 'string' -> FormTextField
+  11. type: 'number' or 'integer' -> FormNumberField
+  12. type: 'boolean' -> FormToggle
+  13. type: 'select' or has options -> FormSelect
+  14. type: 'object' (without format) -> FormCodeEditor (for JSON objects)
+  15. fallback -> FormTextField
 -->
 
 <script lang="ts">
@@ -38,6 +39,7 @@
 	import FormCodeEditor from './FormCodeEditor.svelte';
 	import FormMarkdownEditor from './FormMarkdownEditor.svelte';
 	import FormTemplateEditor from './FormTemplateEditor.svelte';
+	import FormAutocomplete from './FormAutocomplete.svelte';
 	import type { FieldSchema, FieldOption } from './types.js';
 
 	interface Props {
@@ -81,6 +83,11 @@
 		// Hidden fields should not be rendered
 		if (schema.format === 'hidden') {
 			return 'hidden';
+		}
+
+		// Autocomplete field for format: "autocomplete" with autocomplete.url
+		if (schema.format === 'autocomplete' && schema.autocomplete?.url) {
+			return 'autocomplete';
 		}
 
 		// JSON/code editor for format: "json" or "code"
@@ -185,6 +192,19 @@
 			return value;
 		}
 		return [];
+	});
+
+	/**
+	 * Get autocomplete value - can be string or string[] based on multiple setting
+	 */
+	const autocompleteValue = $derived.by((): string | string[] => {
+		if (schema.autocomplete?.multiple) {
+			if (Array.isArray(value)) {
+				return value.map((v) => String(v));
+			}
+			return value ? [String(value)] : [];
+		}
+		return String(value ?? "");
 	});
 </script>
 
@@ -316,6 +336,16 @@
 				variableHints={(schema.variableHints as string[] | undefined) ?? []}
 				placeholderExample={(schema.placeholderExample as string | undefined) ??
 					'Hello {{ name }}, your order #{{ order_id }} is ready!'}
+				ariaDescribedBy={descriptionId}
+				onChange={(val) => onChange(val)}
+			/>
+		{:else if fieldType === 'autocomplete' && schema.autocomplete}
+			<FormAutocomplete
+				id={fieldKey}
+				value={autocompleteValue}
+				autocomplete={schema.autocomplete}
+				placeholder={schema.placeholder ?? ''}
+				{required}
 				ariaDescribedBy={descriptionId}
 				onChange={(val) => onChange(val)}
 			/>

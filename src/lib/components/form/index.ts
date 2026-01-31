@@ -51,3 +51,4 @@ export { default as FormArray } from './FormArray.svelte';
 export { default as FormCodeEditor } from './FormCodeEditor.svelte';
 export { default as FormMarkdownEditor } from './FormMarkdownEditor.svelte';
 export { default as FormTemplateEditor } from './FormTemplateEditor.svelte';
+export { default as FormAutocomplete } from './FormAutocomplete.svelte';
