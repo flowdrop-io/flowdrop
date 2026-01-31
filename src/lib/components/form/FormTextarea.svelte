@@ -20,6 +20,8 @@
 		rows?: number;
 		/** Whether the field is required */
 		required?: boolean;
+		/** Whether the field is disabled (read-only) */
+		disabled?: boolean;
 		/** ARIA description ID */
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
@@ -32,6 +34,7 @@
 		placeholder = '',
 		rows = 4,
 		required = false,
+		disabled = false,
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
@@ -51,6 +54,7 @@
 	value={value ?? ''}
 	{placeholder}
 	{rows}
+	{disabled}
 	aria-describedby={ariaDescribedBy}
 	aria-required={required}
 	oninput={handleInput}

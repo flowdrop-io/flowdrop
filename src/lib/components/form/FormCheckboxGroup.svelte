@@ -18,13 +18,22 @@
 		value: string[];
 		/** Available options */
 		options: string[];
+		/** Whether the field is disabled (read-only) */
+		disabled?: boolean;
 		/** ARIA description ID */
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
 		onChange: (value: string[]) => void;
 	}
 
-	let { id, value = [], options = [], ariaDescribedBy, onChange }: Props = $props();
+	let {
+		id,
+		value = [],
+		options = [],
+		disabled = false,
+		ariaDescribedBy,
+		onChange
+	}: Props = $props();
 
 	/**
 	 * Handle checkbox toggle
@@ -56,6 +65,7 @@
 				class="form-checkbox__input"
 				value={option}
 				checked={isChecked}
+				{disabled}
 				onchange={(e) => handleCheckboxChange(option, e.currentTarget.checked)}
 			/>
 			<span class="form-checkbox__custom" aria-hidden="true">

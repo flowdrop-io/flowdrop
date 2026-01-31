@@ -393,6 +393,60 @@ For example, a gateway node with ID `node-123` and branch name `high_priority` w
 
 ---
 
+## Read-Only Properties
+
+### `readOnly` - Prevent Editing
+
+JSON Schema's `readOnly` keyword is supported on any config property. When a property has `"readOnly": true`, the config panel shows the field but disables all editing: the user can view the value but cannot change it.
+
+This applies to:
+
+- **Any property** in `configSchema.properties` (string, number, boolean, select, etc.)
+- **`branches`** and other array/object fields: when the property schema has `readOnly: true`, add/remove/reorder and item editing are disabled
+- **All field types**: text, textarea, number, range, toggle, select, checkbox group, array, code/markdown/template editors, autocomplete
+
+**Example: Read-only branches (e.g. server-defined gateway paths)**
+
+```json
+{
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "branches": {
+        "type": "array",
+        "title": "Branches",
+        "description": "Output paths (defined by the backend)",
+        "readOnly": true,
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "title": "Name" },
+            "label": { "type": "string", "title": "Label" },
+            "condition": { "type": "string", "title": "Condition" }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+With `readOnly: true` on `branches`, users see the list of branches but cannot add, remove, reorder, or edit branch values.
+
+**Example: Read-only single property**
+
+```json
+{
+  "instanceTitle": {
+    "type": "string",
+    "title": "Title",
+    "readOnly": true
+  }
+}
+```
+
+---
+
 ## Schema Property Attributes
 
 ### Enum with Multiple Selection
@@ -537,3 +591,4 @@ const nodeMetadata: NodeMetadata = {
 | `dynamicInputs`       | Config value    | User-defined input ports                                                           |
 | `dynamicOutputs`      | Config value    | User-defined output ports                                                          |
 | `branches`            | Config value    | Gateway conditional output paths                                                   |
+| `readOnly`            | Schema property | When `true`, field is shown but not editable (any property, including `branches`)  |

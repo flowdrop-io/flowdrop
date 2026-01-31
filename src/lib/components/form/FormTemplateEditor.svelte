@@ -52,6 +52,8 @@
 		variableHints?: string[];
 		/** Placeholder variable example for the hint */
 		placeholderExample?: string;
+		/** Whether the field is disabled (read-only) */
+		disabled?: boolean;
 		/** ARIA description ID */
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
@@ -67,6 +69,7 @@
 		height = '250px',
 		variableHints = [],
 		placeholderExample = 'Hello {{ name }}, your order #{{ order_id }} is ready!',
+		disabled = false,
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
@@ -123,6 +126,7 @@
 	/**
 	 * Create editor extensions array for template editing
 	 * Uses minimal setup for better performance (no auto-closing brackets, no autocompletion)
+	 * When disabled is true, adds readOnly/editable so the editor cannot be modified
 	 */
 	function createExtensions() {
 		const extensions = [
@@ -133,20 +137,25 @@
 			highlightActiveLine(),
 			drawSelection(),
 
-			// Editing features
-			history(),
-			indentOnInput(),
+			// Editing features (skip when read-only)
+			...(disabled
+				? []
+				: [
+						history(),
+						indentOnInput(),
+						keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])
+					]),
+
+			// Read-only: prevent document changes and mark content as non-editable
+			...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
 
 			// Syntax highlighting
 			syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
 
-			// Keymaps for basic editing
-			keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-
 			// Template-specific variable highlighter
 			variableHighlighter,
 
-			// Update listener
+			// Update listener (only fires on user edit when not disabled)
 			EditorView.updateListener.of(handleUpdate),
 
 			// Custom theme

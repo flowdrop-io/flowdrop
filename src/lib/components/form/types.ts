@@ -347,6 +347,11 @@ export interface FieldSchema {
 	required?: string[];
 	/** Autocomplete configuration for fetching suggestions from callback URL */
 	autocomplete?: AutocompleteConfig;
+	/**
+	 * Whether the field is read-only (JSON Schema readOnly keyword).
+	 * When true, the field is displayed but cannot be edited.
+	 */
+	readOnly?: boolean;
 	/** Allow additional properties not defined by the schema */
 	[key: string]: unknown;
 }

@@ -47,6 +47,8 @@
 		height?: string;
 		/** Whether to auto-format JSON on blur */
 		autoFormat?: boolean;
+		/** Whether the field is disabled (read-only) */
+		disabled?: boolean;
 		/** ARIA description ID */
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
@@ -61,6 +63,7 @@
 		darkTheme = false,
 		height = '200px',
 		autoFormat = true,
+		disabled = false,
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
@@ -167,6 +170,7 @@
 	/**
 	 * Create editor extensions array
 	 * Uses minimal setup for better performance (no auto-closing brackets, no autocompletion)
+	 * When disabled is true, adds readOnly/editable so the editor cannot be modified
 	 */
 	function createExtensions() {
 		const extensions = [
@@ -177,22 +181,27 @@
 			highlightActiveLine(),
 			drawSelection(),
 
-			// Editing features
-			history(),
-			indentOnInput(),
+			// Editing features (skip when read-only)
+			...(disabled
+				? []
+				: [
+						history(),
+						indentOnInput(),
+						keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])
+					]),
+
+			// Read-only: prevent document changes and mark content as non-editable
+			...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
 
 			// Syntax highlighting
 			syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-
-			// Keymaps for basic editing
-			keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
 
 			// JSON-specific features
 			json(),
 			linter(jsonParseLinter()),
 			lintGutter(),
 
-			// Update listener
+			// Update listener (only fires on user edit when not disabled)
 			EditorView.updateListener.of(handleUpdate),
 
 			// Custom theme
