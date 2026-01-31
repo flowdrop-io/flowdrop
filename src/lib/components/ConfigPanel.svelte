@@ -9,6 +9,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import ReadOnlyDetails from './ReadOnlyDetails.svelte';
+	import { uiSettings } from '../stores/settingsStore.js';
 
 	/**
 	 * A single detail item with label and value
@@ -56,7 +57,7 @@
 	const hasDetails = $derived(id !== undefined || details.length > 0 || description !== undefined);
 </script>
 
-<div class="config-panel">
+<div class="config-panel" class:config-panel--compact={$uiSettings.compactMode}>
 	<!-- Header -->
 	<div class="config-panel__header">
 		<h2 class="config-panel__title">{title}</h2>
@@ -151,5 +152,31 @@
 		color: var(--fd-muted-foreground);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
+	}
+
+	/* Compact Mode Styles */
+	.config-panel--compact .config-panel__header {
+		padding: 0.5rem 0.75rem;
+	}
+
+	.config-panel--compact .config-panel__title {
+		font-size: 0.875rem;
+	}
+
+	.config-panel--compact .config-panel__close {
+		font-size: 1rem;
+		padding: 0.125rem;
+	}
+
+	.config-panel--compact .config-panel__details {
+		padding: 0.5rem 0.75rem;
+	}
+
+	.config-panel--compact .config-panel__content {
+		padding: 0.75rem;
+	}
+
+	.config-panel--compact .config-panel__section {
+		gap: 0.5rem;
 	}
 </style>

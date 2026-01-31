@@ -16,7 +16,7 @@
 		type ColorMode
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import { resolvedTheme } from '../stores/settingsStore.js';
+	import { resolvedTheme, editorSettings, behaviorSettings } from '../stores/settingsStore.js';
 	import type {
 		WorkflowNode as WorkflowNodeType,
 		NodeMetadata,
@@ -87,6 +87,26 @@
 	 * This forces SvelteFlow to remount with fresh state, allowing fitView to work correctly
 	 */
 	let svelteFlowKey = $derived(currentWorkflow?.id ?? 'default');
+
+	/**
+	 * Derive snap grid configuration from editor settings
+	 * Returns [gridSize, gridSize] tuple when snapToGrid is enabled, undefined otherwise
+	 */
+	let snapGrid = $derived(
+		$editorSettings.snapToGrid
+			? ([$editorSettings.gridSize, $editorSettings.gridSize] as [number, number])
+			: undefined
+	);
+
+	/**
+	 * Derive initial viewport configuration from editor settings
+	 * Sets initial zoom level based on user preferences
+	 */
+	let initialViewport = $derived({
+		zoom: $editorSettings.defaultZoom,
+		x: 0,
+		y: 0
+	});
 
 	$effect(() => {
 		if (currentWorkflow) {
@@ -285,6 +305,46 @@
 	}
 
 	/**
+	 * Handle before delete - show confirmation dialog if enabled in settings
+	 *
+	 * This callback is called before nodes/edges are deleted.
+	 * Return true to proceed with deletion, false to cancel.
+	 *
+	 * @param params - Object containing nodes and edges to be deleted
+	 * @returns Promise resolving to true if deletion should proceed, false to cancel
+	 */
+	async function handleBeforeDelete(params: {
+		nodes: WorkflowNodeType[];
+		edges: WorkflowEdge[];
+	}): Promise<boolean> {
+		// If confirmDelete setting is enabled, show confirmation dialog
+		if ($behaviorSettings.confirmDelete) {
+			const nodeCount = params.nodes.length;
+			const edgeCount = params.edges.length;
+
+			// Build a descriptive message
+			let message = 'Are you sure you want to delete ';
+			const parts: string[] = [];
+
+			if (nodeCount > 0) {
+				parts.push(`${nodeCount} node${nodeCount > 1 ? 's' : ''}`);
+			}
+			if (edgeCount > 0) {
+				parts.push(`${edgeCount} connection${edgeCount > 1 ? 's' : ''}`);
+			}
+
+			message += parts.join(' and ') + '?';
+
+			// Show native confirmation dialog
+			const confirmed = window.confirm(message);
+			return confirmed;
+		}
+
+		// If confirmDelete is disabled, proceed with deletion
+		return true;
+	}
+
+	/**
 	 * Handle node deletion - automatically remove connected edges
 	 */
 	function handleNodesDelete(params: { nodes: WorkflowNodeType[]; edges: WorkflowEdge[] }): void {
@@ -402,31 +462,37 @@
 			<div class="flowdrop-canvas">
 				<FlowDropZone ondrop={handleNodeDrop}>
 					{#key svelteFlowKey}
-						<SvelteFlow
-							bind:nodes={flowNodes}
-							bind:edges={flowEdges}
-							{nodeTypes}
-							{defaultEdgeOptions}
-							onconnect={handleConnect}
-							ondelete={handleNodesDelete}
-							minZoom={0.2}
-							maxZoom={3}
-							clickConnect={true}
-							elevateEdgesOnSelect={true}
-							connectionLineType={ConnectionLineType.Bezier}
-							connectionLineComponent={ConnectionLine}
-							snapGrid={[10, 10]}
-							colorMode={$resolvedTheme as ColorMode}
-							fitView
-						>
-							<Controls />
-							<Background
-								gap={10}
-								bgColor="var(--fd-background)"
-								variant={BackgroundVariant.Dots}
-							/>
+					<SvelteFlow
+						bind:nodes={flowNodes}
+						bind:edges={flowEdges}
+						{nodeTypes}
+						{defaultEdgeOptions}
+						onconnect={handleConnect}
+						onbeforedelete={handleBeforeDelete}
+						ondelete={handleNodesDelete}
+						minZoom={0.2}
+						maxZoom={3}
+						clickConnect={true}
+						elevateEdgesOnSelect={true}
+						connectionLineType={ConnectionLineType.Bezier}
+						connectionLineComponent={ConnectionLine}
+						{snapGrid}
+						{initialViewport}
+						colorMode={$resolvedTheme as ColorMode}
+						fitView={$editorSettings.fitViewOnLoad}
+					>
+						<Controls />
+						<!-- Always render Background for consistent bg color in dark/light mode -->
+						<Background
+							gap={$editorSettings.gridSize}
+							bgColor="var(--fd-background)"
+							variant={BackgroundVariant.Dots}
+							patternColor={$editorSettings.showGrid ? undefined : "transparent"}
+						/>
+						{#if $editorSettings.showMinimap}
 							<MiniMap />
-						</SvelteFlow>
+						{/if}
+					</SvelteFlow>
 					{/key}
 					<!-- Drop Zone Indicator -->
 					{#if flowNodes.length === 0}

@@ -28,10 +28,14 @@
 		showLeftSidebar?: boolean;
 		/** Whether to show the right sidebar */
 		showRightSidebar?: boolean;
+		/** Whether to show the bottom panel */
+		showBottomPanel?: boolean;
 		/** Initial width of the left sidebar in pixels */
 		leftSidebarWidth?: number;
 		/** Initial width of the right sidebar in pixels */
 		rightSidebarWidth?: number;
+		/** Initial height of the bottom panel in pixels */
+		bottomPanelHeight?: number;
 		/** Minimum width for left sidebar in pixels */
 		leftSidebarMinWidth?: number;
 		/** Maximum width for left sidebar in pixels */
@@ -40,10 +44,16 @@
 		rightSidebarMinWidth?: number;
 		/** Maximum width for right sidebar in pixels */
 		rightSidebarMaxWidth?: number;
+		/** Minimum height for bottom panel in pixels */
+		bottomPanelMinHeight?: number;
+		/** Maximum height for bottom panel in pixels */
+		bottomPanelMaxHeight?: number;
 		/** Whether to enable split pane resizing for left sidebar */
 		enableLeftSplitPane?: boolean;
 		/** Whether to enable split pane resizing for right sidebar */
 		enableRightSplitPane?: boolean;
+		/** Whether to enable split pane resizing for bottom panel */
+		enableBottomSplitPane?: boolean;
 		/** Background color for the main layout */
 		backgroundColor?: string;
 		/** Custom CSS class for the layout container */
@@ -54,6 +64,8 @@
 		leftSidebar?: import('svelte').Snippet;
 		/** Slot for right sidebar content */
 		rightSidebar?: import('svelte').Snippet;
+		/** Slot for bottom panel content */
+		bottomPanel?: import('svelte').Snippet;
 		/** Slot for footer content */
 		footer?: import('svelte').Snippet;
 		/** Slot for main content (default slot) */
@@ -67,19 +79,25 @@
 		showFooter = false,
 		showLeftSidebar = true,
 		showRightSidebar = true,
+		showBottomPanel = false,
 		leftSidebarWidth: initialLeftWidth = 280,
 		rightSidebarWidth: initialRightWidth = 320,
+		bottomPanelHeight: initialBottomHeight = 300,
 		leftSidebarMinWidth = 200,
 		leftSidebarMaxWidth = 500,
 		rightSidebarMinWidth = 200,
 		rightSidebarMaxWidth = 500,
+		bottomPanelMinHeight = 150,
+		bottomPanelMaxHeight = 500,
 		enableLeftSplitPane = true,
 		enableRightSplitPane = true,
+		enableBottomSplitPane = true,
 		backgroundColor = 'var(--fd-layout-background)',
 		class: customClass = '',
 		header,
 		leftSidebar,
 		rightSidebar,
+		bottomPanel,
 		footer,
 		children
 	}: Props = $props();
@@ -90,14 +108,31 @@
 	/** Current width of the right sidebar */
 	let rightSidebarWidth = $state(initialRightWidth);
 
+	/** Current height of the bottom panel */
+	let bottomPanelHeightState = $state(initialBottomHeight);
+
+	/**
+	 * Sync left sidebar width with prop changes
+	 * This allows external control (e.g., collapsed state) to update the width
+	 */
+	$effect(() => {
+		leftSidebarWidth = initialLeftWidth;
+	});
+
 	/** Whether the user is currently dragging the left divider */
 	let isDraggingLeft = $state(false);
 
 	/** Whether the user is currently dragging the right divider */
 	let isDraggingRight = $state(false);
 
+	/** Whether the user is currently dragging the bottom divider */
+	let isDraggingBottom = $state(false);
+
 	/** Reference to the layout container element */
 	let layoutRef: HTMLDivElement | null = null;
+
+	/** Reference to the main content wrapper for bottom panel calculations */
+	let mainContentRef: HTMLDivElement | null = null;
 
 	/**
 	 * Handles the start of a drag operation on the left divider
@@ -120,8 +155,18 @@
 	}
 
 	/**
+	 * Handles the start of a drag operation on the bottom divider
+	 * @param event - The mouse event that triggered the drag
+	 */
+	function handleBottomDragStart(event: MouseEvent): void {
+		if (!enableBottomSplitPane) return;
+		event.preventDefault();
+		isDraggingBottom = true;
+	}
+
+	/**
 	 * Handles mouse movement during drag operations
-	 * Updates sidebar widths based on mouse position
+	 * Updates sidebar widths and bottom panel height based on mouse position
 	 * @param event - The mouse event during drag
 	 */
 	function handleMouseMove(event: MouseEvent): void {
@@ -142,27 +187,40 @@
 			// Clamp the width between min and max values
 			rightSidebarWidth = Math.min(Math.max(newWidth, rightSidebarMinWidth), rightSidebarMaxWidth);
 		}
+
+		if (isDraggingBottom && mainContentRef) {
+			// Calculate new height from the bottom of the main content area
+			const mainRect = mainContentRef.getBoundingClientRect();
+			const newHeight = mainRect.bottom - event.clientY;
+			// Clamp the height between min and max values
+			bottomPanelHeightState = Math.min(
+				Math.max(newHeight, bottomPanelMinHeight),
+				bottomPanelMaxHeight
+			);
+		}
 	}
 
 	/**
 	 * Handles the end of a drag operation
-	 * Resets dragging state for both dividers
+	 * Resets dragging state for all dividers
 	 */
 	function handleMouseUp(): void {
 		isDraggingLeft = false;
 		isDraggingRight = false;
+		isDraggingBottom = false;
 	}
 
 	/**
 	 * Handles keyboard navigation for accessibility
 	 * Allows resizing with arrow keys when divider is focused
 	 * @param event - The keyboard event
-	 * @param side - Which sidebar divider is being adjusted
+	 * @param side - Which divider is being adjusted
 	 */
-	function handleKeyDown(event: KeyboardEvent, side: 'left' | 'right'): void {
+	function handleKeyDown(event: KeyboardEvent, side: 'left' | 'right' | 'bottom'): void {
 		// Check if the specific side's split pane is enabled
 		if (side === 'left' && !enableLeftSplitPane) return;
 		if (side === 'right' && !enableRightSplitPane) return;
+		if (side === 'bottom' && !enableBottomSplitPane) return;
 
 		const step = event.shiftKey ? 50 : 10;
 
@@ -174,13 +232,21 @@
 				event.preventDefault();
 				leftSidebarWidth = Math.max(leftSidebarWidth - step, leftSidebarMinWidth);
 			}
-		} else {
+		} else if (side === 'right') {
 			if (event.key === 'ArrowLeft') {
 				event.preventDefault();
 				rightSidebarWidth = Math.min(rightSidebarWidth + step, rightSidebarMaxWidth);
 			} else if (event.key === 'ArrowRight') {
 				event.preventDefault();
 				rightSidebarWidth = Math.max(rightSidebarWidth - step, rightSidebarMinWidth);
+			}
+		} else if (side === 'bottom') {
+			if (event.key === 'ArrowUp') {
+				event.preventDefault();
+				bottomPanelHeightState = Math.min(bottomPanelHeightState + step, bottomPanelMaxHeight);
+			} else if (event.key === 'ArrowDown') {
+				event.preventDefault();
+				bottomPanelHeightState = Math.max(bottomPanelHeightState - step, bottomPanelMinHeight);
 			}
 		}
 	}
@@ -191,7 +257,7 @@
 		 * Global mouse move handler for tracking drag operations
 		 */
 		const mouseMoveHandler = (e: MouseEvent) => {
-			if (isDraggingLeft || isDraggingRight) {
+			if (isDraggingLeft || isDraggingRight || isDraggingBottom) {
 				handleMouseMove(e);
 			}
 		};
@@ -225,17 +291,22 @@
 
 	/** Computed CSS variable for right sidebar width */
 	const rightWidthVar = $derived(`${rightSidebarWidth}px`);
+
+	/** Computed CSS variable for bottom panel height */
+	const bottomHeightVar = $derived(`${bottomPanelHeightState}px`);
 </script>
 
 <div
 	bind:this={layoutRef}
 	class="flowdrop-main-layout {customClass}"
-	class:flowdrop-main-layout--dragging={isDraggingLeft || isDraggingRight}
+	class:flowdrop-main-layout--dragging={isDraggingLeft || isDraggingRight || isDraggingBottom}
+	class:flowdrop-main-layout--dragging-vertical={isDraggingBottom}
 	style="
 		--layout-header-height: {headerHeightVar};
 		--layout-footer-height: {footerHeightVar};
 		--layout-left-sidebar-width: {leftWidthVar};
 		--layout-right-sidebar-width: {rightWidthVar};
+		--layout-bottom-panel-height: {bottomHeightVar};
 		--layout-background: {backgroundColor};
 	"
 >
@@ -276,12 +347,47 @@
 			{/if}
 		{/if}
 
-		<!-- Center Main Content -->
-		<main class="flowdrop-main-layout__main">
-			{#if children}
-				{@render children()}
+		<!-- Center Main Content Wrapper (with optional bottom panel) -->
+		<div
+			bind:this={mainContentRef}
+			class="flowdrop-main-layout__main-wrapper"
+			class:flowdrop-main-layout__main-wrapper--with-bottom={showBottomPanel && bottomPanel}
+		>
+			<!-- Main Content Area -->
+			<main class="flowdrop-main-layout__main">
+				{#if children}
+					{@render children()}
+				{/if}
+			</main>
+
+			<!-- Bottom Panel Divider -->
+			{#if showBottomPanel && bottomPanel && enableBottomSplitPane}
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+				<div
+					class="flowdrop-main-layout__divider flowdrop-main-layout__divider--bottom"
+					class:flowdrop-main-layout__divider--active={isDraggingBottom}
+					onmousedown={handleBottomDragStart}
+					onkeydown={(e) => handleKeyDown(e, 'bottom')}
+					role="separator"
+					aria-orientation="horizontal"
+					aria-valuenow={bottomPanelHeightState}
+					aria-valuemin={bottomPanelMinHeight}
+					aria-valuemax={bottomPanelMaxHeight}
+					aria-label="Resize bottom panel"
+					tabindex="0"
+				>
+					<div class="flowdrop-main-layout__divider-handle flowdrop-main-layout__divider-handle--horizontal"></div>
+				</div>
 			{/if}
-		</main>
+
+			<!-- Bottom Panel -->
+			{#if showBottomPanel && bottomPanel}
+				<aside class="flowdrop-main-layout__panel flowdrop-main-layout__panel--bottom">
+					{@render bottomPanel()}
+				</aside>
+			{/if}
+		</div>
 
 		<!-- Right Divider (Resizable Handle) -->
 		{#if showRightSidebar && rightSidebar && enableRightSplitPane}
@@ -422,15 +528,30 @@
 		min-width: var(--layout-right-sidebar-width);
 	}
 
+	/* Main Content Wrapper - Contains main content and optional bottom panel */
+	.flowdrop-main-layout__main-wrapper {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		overflow: hidden;
+	}
+
 	/* Main Content Area */
 	.flowdrop-main-layout__main {
 		flex: 1;
 		min-width: 0;
-		height: 100%;
+		min-height: 0;
 		overflow: auto;
 		position: relative;
 		display: flex;
 		flex-direction: column;
+	}
+
+	/* When bottom panel is shown, main area should shrink */
+	.flowdrop-main-layout__main-wrapper--with-bottom .flowdrop-main-layout__main {
+		height: calc(100% - var(--layout-bottom-panel-height) - 8px);
 	}
 
 	/* Divider (Resize Handle) Base Styles */
@@ -484,6 +605,76 @@
 	.flowdrop-main-layout__divider--active .flowdrop-main-layout__divider-handle {
 		background-color: var(--fd-primary-hover);
 		transform: scaleY(1.4);
+	}
+
+	/* Bottom Divider (Horizontal) */
+	.flowdrop-main-layout__divider--bottom {
+		width: 100%;
+		height: 8px;
+		cursor: row-resize;
+		flex-shrink: 0;
+		border-top: 1px solid var(--fd-border);
+		border-bottom: 1px solid var(--fd-border);
+		border-left: none;
+		border-right: none;
+	}
+
+	/* Horizontal Divider Handle */
+	.flowdrop-main-layout__divider-handle--horizontal {
+		width: 48px;
+		height: 4px;
+	}
+
+	.flowdrop-main-layout__divider--bottom:hover .flowdrop-main-layout__divider-handle--horizontal,
+	.flowdrop-main-layout__divider--bottom:focus .flowdrop-main-layout__divider-handle--horizontal {
+		transform: scaleX(1.2);
+	}
+
+	.flowdrop-main-layout__divider--bottom.flowdrop-main-layout__divider--active .flowdrop-main-layout__divider-handle--horizontal {
+		transform: scaleX(1.4);
+	}
+
+	/* Bottom Panel Styles */
+	.flowdrop-main-layout__panel--bottom {
+		height: var(--layout-bottom-panel-height);
+		min-height: var(--layout-bottom-panel-height);
+		max-height: var(--layout-bottom-panel-height);
+		width: 100%;
+		background-color: var(--fd-background);
+		overflow-y: auto;
+		overflow-x: hidden;
+		display: flex;
+		flex-direction: column;
+		flex-shrink: 0;
+		border-top: 1px solid var(--fd-border);
+		box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+
+		/* Custom scrollbar styling */
+		scrollbar-width: thin;
+		scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
+	}
+
+	.flowdrop-main-layout__panel--bottom::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.flowdrop-main-layout__panel--bottom::-webkit-scrollbar-track {
+		background: var(--fd-scrollbar-track);
+		border-radius: 4px;
+	}
+
+	.flowdrop-main-layout__panel--bottom::-webkit-scrollbar-thumb {
+		background: var(--fd-scrollbar-thumb);
+		border-radius: 4px;
+	}
+
+	.flowdrop-main-layout__panel--bottom::-webkit-scrollbar-thumb:hover {
+		background: var(--fd-scrollbar-thumb-hover);
+	}
+
+	/* Vertical dragging cursor override */
+	.flowdrop-main-layout--dragging-vertical {
+		cursor: row-resize;
 	}
 
 	/* Footer Section */
