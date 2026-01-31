@@ -198,6 +198,89 @@ export type NodeType = BuiltinNodeType | (string & Record<never, never>);
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH';
 
 /**
+ * Autocomplete configuration for form fields
+ *
+ * Defines how autocomplete suggestions are fetched from a callback URL.
+ * Supports both "on-type" (debounced search) and "on-focus" (load all options) modes.
+ *
+ * @example
+ * ```typescript
+ * const autocompleteConfig: AutocompleteConfig = {
+ *   url: "/api/users/search",
+ *   queryParam: "q",
+ *   minChars: 2,
+ *   debounceMs: 300,
+ *   fetchOnFocus: true,
+ *   labelField: "name",
+ *   valueField: "id",
+ *   allowFreeText: false
+ * };
+ * ```
+ */
+export interface AutocompleteConfig {
+	/**
+	 * The callback URL to fetch autocomplete suggestions from.
+	 * Can be relative (resolved against API base URL) or absolute.
+	 */
+	url: string;
+
+	/**
+	 * Query parameter name to pass the search term.
+	 * @default "q"
+	 */
+	queryParam?: string;
+
+	/**
+	 * Minimum number of characters before fetching suggestions.
+	 * Set to 0 to fetch immediately on focus (when fetchOnFocus is true).
+	 * @default 0
+	 */
+	minChars?: number;
+
+	/**
+	 * Debounce delay in milliseconds before fetching suggestions.
+	 * Prevents excessive API calls while typing.
+	 * @default 300
+	 */
+	debounceMs?: number;
+
+	/**
+	 * Whether to fetch all options when the field is focused.
+	 * When true, an empty query is sent on focus to load initial options.
+	 * @default false
+	 */
+	fetchOnFocus?: boolean;
+
+	/**
+	 * The field name in the response objects to use as the display label.
+	 * @default "label"
+	 */
+	labelField?: string;
+
+	/**
+	 * The field name in the response objects to use as the stored value.
+	 * @default "value"
+	 */
+	valueField?: string;
+
+	/**
+	 * Whether to allow values that are not in the suggestions list.
+	 * When true, users can enter and submit any text.
+	 * When false, only values from suggestions are accepted.
+	 * @default false
+	 */
+	allowFreeText?: boolean;
+
+	/**
+	 * Whether to allow multiple selections.
+	 * When true, users can select multiple values displayed as tags.
+	 * When false, only a single value can be selected.
+	 * @default false
+	 */
+	multiple?: boolean;
+}
+
+/**
  * Dynamic schema endpoint configuration
  * Used when the config schema needs to be fetched at runtime from a REST endpoint
  *
@@ -636,10 +719,10 @@ export type SchemaType = 'config' | 'input' | 'output';
 export type SchemaProperty<T extends SchemaType> = T extends 'config'
 	? ConfigProperty
 	: T extends 'input'
-		? InputProperty
-		: T extends 'output'
-			? OutputProperty
-			: never;
+	? InputProperty
+	: T extends 'output'
+	? OutputProperty
+	: never;
 
 /**
  * Utility type to get the appropriate schema type based on schema type
@@ -647,10 +730,10 @@ export type SchemaProperty<T extends SchemaType> = T extends 'config'
 export type SchemaTypeMap<T extends SchemaType> = T extends 'config'
 	? ConfigSchema
 	: T extends 'input'
-		? InputSchema
-		: T extends 'output'
-			? OutputSchema
-			: never;
+	? InputSchema
+	: T extends 'output'
+	? OutputSchema
+	: never;
 
 /**
  * Node configuration values
@@ -900,3 +983,7 @@ export interface WorkflowEvents {
 	executionCompleted: { result: ExecutionResult };
 	executionFailed: { error: string };
 }
+
+// Re-export auth types for convenience
+export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from './auth.js';
+export { StaticAuthProvider, CallbackAuthProvider, NoAuthProvider } from './auth.js';

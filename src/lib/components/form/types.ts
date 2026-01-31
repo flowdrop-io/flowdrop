@@ -6,6 +6,8 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
+import type { AutocompleteConfig } from '$lib/types/index.js';
+
 /**
  * Supported field types for form rendering
  * Can be extended to support complex types like 'array' and 'object'
@@ -21,6 +23,7 @@ export type FieldType = 'string' | 'number' | 'integer' | 'boolean' | 'select' |
  * - code: Alias for json, renders as CodeMirror editor
  * - markdown: Renders as SimpleMDE Markdown editor
  * - template: Renders as CodeMirror editor with Twig/Liquid syntax highlighting
+ * - autocomplete: Renders as text input with autocomplete suggestions from callback URL
  */
 export type FieldFormat =
 	| 'multiline'
@@ -30,6 +33,7 @@ export type FieldFormat =
 	| 'code'
 	| 'markdown'
 	| 'template'
+	| 'autocomplete'
 	| string;
 
 /**
@@ -209,6 +213,27 @@ export interface TemplateEditorFieldProps extends BaseFieldProps {
 }
 
 /**
+ * Properties for autocomplete fields
+ * Fetches suggestions from a callback URL with support for debouncing and keyboard navigation
+ */
+export interface AutocompleteFieldProps extends BaseFieldProps {
+	/** Current value (single string or array of strings for multiple selection) */
+	value: string | string[];
+	/** Autocomplete configuration from schema */
+	autocomplete: AutocompleteConfig;
+	/** Base URL for resolving relative callback URLs */
+	baseUrl?: string;
+	/** Callback when value changes */
+	onChange: (value: string | string[]) => void;
+}
+
+/**
+ * Autocomplete configuration imported from main types
+ * Re-exported here for convenience
+ */
+export type { AutocompleteConfig } from '$lib/types/index.js';
+
+/**
  * Field schema definition derived from JSON Schema property
  * Used to determine which field component to render
  */
@@ -253,6 +278,8 @@ export interface FieldSchema {
 	properties?: Record<string, FieldSchema>;
 	/** Required properties for object fields (future use) */
 	required?: string[];
+	/** Autocomplete configuration for fetching suggestions from callback URL */
+	autocomplete?: AutocompleteConfig;
 	/** Allow additional properties not defined by the schema */
 	[key: string]: unknown;
 }
@@ -424,4 +451,16 @@ export interface SchemaFormProps {
 	 * Use for additional styling customization.
 	 */
 	class?: string;
+
+	/**
+	 * Authentication provider for autocomplete fields.
+	 * Used to add authentication headers when fetching suggestions from callback URLs.
+	 */
+	authProvider?: import('$lib/types/index.js').AuthProvider;
+
+	/**
+	 * Base URL for resolving relative autocomplete callback URLs.
+	 * @default ""
+	 */
+	baseUrl?: string;
 }

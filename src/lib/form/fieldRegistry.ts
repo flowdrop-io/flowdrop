@@ -254,3 +254,10 @@ export const selectOptionsMatcher: FieldMatcher = (schema) =>
  */
 export const arrayMatcher: FieldMatcher = (schema) =>
 	schema.type === 'array' && Boolean(schema.items);
+
+/**
+ * Matcher for autocomplete fields
+ * Matches when format is "autocomplete" and autocomplete config with URL is provided
+ */
+export const autocompleteMatcher: FieldMatcher = (schema) =>
+	schema.format === 'autocomplete' && Boolean(schema.autocomplete?.url);

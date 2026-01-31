@@ -10,6 +10,7 @@ import { configHandlers } from './config.js';
 import { dynamicSchemaHandlers } from './dynamicSchema.js';
 import { playgroundHandlers } from './playground.js';
 import { interruptHandlers } from './interrupts.js';
+import { autocompleteHandlers } from './autocomplete.js';
 
 /**
  * All MSW request handlers for the FlowDrop API
@@ -22,7 +23,8 @@ export const handlers = [
 	...pipelineHandlers,
 	...dynamicSchemaHandlers,
 	...playgroundHandlers,
-	...interruptHandlers
+	...interruptHandlers,
+	...autocompleteHandlers
 ];
 
 // Re-export individual handler groups for selective use
@@ -33,3 +35,4 @@ export { configHandlers } from './config.js';
 export { dynamicSchemaHandlers } from './dynamicSchema.js';
 export { playgroundHandlers } from './playground.js';
 export { interruptHandlers } from './interrupts.js';
+export { autocompleteHandlers } from './autocomplete.js';

@@ -73,3 +73,29 @@ export {
 	resetInterruptData,
 	sampleInterruptConfigs
 } from './interrupts.js';
+
+// Re-export autocomplete data
+export {
+	mockUsers,
+	mockTags,
+	mockCategories,
+	mockProducts,
+	mockLocations,
+	searchUsers,
+	searchTags,
+	searchCategories,
+	searchProducts,
+	searchLocations,
+	getUserById,
+	getTagById,
+	getCategoryById,
+	sampleAutocompleteSchemas,
+	sampleAutocompleteFormSchema
+} from './autocomplete.js';
+export type {
+	MockUser,
+	MockTag,
+	MockCategory,
+	MockProduct,
+	MockLocation
+} from './autocomplete.js';
