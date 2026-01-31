@@ -419,7 +419,7 @@
 							<Controls />
 							<Background
 								gap={10}
-								bgColor="var(--flowdrop-background-color)"
+								bgColor="var(--fd-background)"
 								variant={BackgroundVariant.Dots}
 							/>
 							<MiniMap />
@@ -478,7 +478,7 @@
 	}
 
 	.flowdrop-text--error {
-		color: var(--flowdrop-text-color-error);
+		color: var(--fd-error);
 	}
 
 	.flowdrop-canvas {
@@ -575,70 +575,70 @@
 
 	/* Trigger Edge: Solid dark line for control flow */
 	:global(.flowdrop--edge--trigger path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-trigger-color);
-		stroke-width: var(--flowdrop-edge-trigger-width);
+		stroke: var(--fd-edge-trigger);
+		stroke-width: var(--fd-edge-trigger-width);
 	}
 
 	:global(.flowdrop--edge--trigger:hover path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-trigger-color-hover);
-		stroke-width: var(--flowdrop-edge-trigger-width-hover);
+		stroke: var(--fd-edge-trigger-hover);
+		stroke-width: var(--fd-edge-trigger-width-hover);
 	}
 
 	:global(.flowdrop--edge--trigger.selected path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-trigger-color-selected);
-		stroke-width: var(--flowdrop-edge-trigger-width-hover);
+		stroke: var(--fd-edge-trigger-selected);
+		stroke-width: var(--fd-edge-trigger-width-hover);
 	}
 
 	/* Tool Edge: Dashed amber line for tool connections */
 	:global(.flowdrop--edge--tool path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-tool-color);
+		stroke: var(--fd-edge-tool);
 		stroke-dasharray: 5 3;
 	}
 
 	:global(.flowdrop--edge--tool:hover path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-tool-color-hover);
+		stroke: var(--fd-edge-tool-hover);
 		stroke-width: 2;
 	}
 
 	:global(.flowdrop--edge--tool.selected path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-tool-color-selected);
+		stroke: var(--fd-edge-tool-selected);
 		stroke-dasharray: 5 3;
 		stroke-width: 2;
 	}
 
 	/* Data Edge: Normal gray line for data flow (default) */
 	:global(.flowdrop--edge--data path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-data-color);
+		stroke: var(--fd-edge-data);
 	}
 
 	:global(.flowdrop--edge--data:hover path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-data-color-hover);
+		stroke: var(--fd-edge-data-hover);
 		stroke-width: 2;
 	}
 
 	:global(.flowdrop--edge--data.selected path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-data-color-selected);
+		stroke: var(--fd-edge-data-selected);
 		stroke-width: 2;
 	}
 
 	/* Loopback Edge: Dashed gray line for loop iteration connections */
 	:global(.flowdrop--edge--loopback path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-loopback-color);
-		stroke-width: var(--flowdrop-edge-loopback-width);
-		stroke-dasharray: var(--flowdrop-edge-loopback-dasharray);
-		opacity: var(--flowdrop-edge-loopback-opacity);
+		stroke: var(--fd-edge-loopback);
+		stroke-width: var(--fd-edge-loopback-width);
+		stroke-dasharray: var(--fd-edge-loopback-dasharray);
+		opacity: var(--fd-edge-loopback-opacity);
 	}
 
 	:global(.flowdrop--edge--loopback:hover path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-loopback-color-hover);
-		stroke-width: var(--flowdrop-edge-loopback-width-hover);
+		stroke: var(--fd-edge-loopback-hover);
+		stroke-width: var(--fd-edge-loopback-width-hover);
 		opacity: 1;
 	}
 
 	:global(.flowdrop--edge--loopback.selected path.svelte-flow__edge-path) {
-		stroke: var(--flowdrop-edge-loopback-color-selected);
-		stroke-width: var(--flowdrop-edge-loopback-width-hover);
-		stroke-dasharray: var(--flowdrop-edge-loopback-dasharray);
+		stroke: var(--fd-edge-loopback-selected);
+		stroke-width: var(--fd-edge-loopback-width-hover);
+		stroke-dasharray: var(--fd-edge-loopback-dasharray);
 		filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.4));
 		opacity: 1;
 	}

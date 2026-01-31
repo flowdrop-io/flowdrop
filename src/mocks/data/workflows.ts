@@ -2489,7 +2489,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
 			target: 'if_else.1',
 			targetHandle: 'if_else.1-input-data',
 			id: 'xy-edge__text_input.1text_input.1-output-text-if_else.1if_else.1-input-data',
-			style: 'stroke: var(--flowdrop-edge-data-color);',
+			style: 'stroke: var(--fd-edge-data-color);',
 			class: 'flowdrop--edge--data',
 			markerEnd: {
 				type: 'arrowclosed',
@@ -2513,7 +2513,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
 			targetHandle: 'save_to_file.1-input-trigger',
 			id: 'xy-edge__if_else.1if_else.1-output-True-save_to_file.1save_to_file.1-input-trigger',
 			style:
-				'stroke: var(--flowdrop-edge-trigger-color); stroke-width: var(--flowdrop-edge-trigger-width);',
+				'stroke: var(--fd-edge-trigger-color); stroke-width: var(--fd-edge-trigger-width);',
 			class: 'flowdrop--edge--trigger',
 			markerEnd: {
 				type: 'arrowclosed',
@@ -2536,7 +2536,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
 			target: 'save_to_file.1',
 			targetHandle: 'save_to_file.1-input-content',
 			id: 'xy-edge__text_input.1text_input.1-output-text-save_to_file.1save_to_file.1-input-content',
-			style: 'stroke: var(--flowdrop-edge-data-color);',
+			style: 'stroke: var(--fd-edge-data-color);',
 			class: 'flowdrop--edge--data',
 			markerEnd: {
 				type: 'arrowclosed',
@@ -2934,7 +2934,7 @@ export const demoForEachLoopWorkflow: Workflow = {
 			target: 'foreach.1',
 			sourceHandle: 'json_loader.1-output-data',
 			targetHandle: 'foreach.1-input-items',
-			style: 'stroke: var(--flowdrop-edge-data-color);',
+			style: 'stroke: var(--fd-edge-data-color);',
 			class: 'flowdrop--edge--data',
 			markerEnd: {
 				type: 'arrowclosed',
@@ -2957,7 +2957,7 @@ export const demoForEachLoopWorkflow: Workflow = {
 			target: 'process_item.1',
 			sourceHandle: 'foreach.1-output-item',
 			targetHandle: 'process_item.1-input-input',
-			style: 'stroke: var(--flowdrop-edge-data-color);',
+			style: 'stroke: var(--fd-edge-data-color);',
 			class: 'flowdrop--edge--data',
 			markerEnd: {
 				type: 'arrowclosed',
@@ -2980,7 +2980,7 @@ export const demoForEachLoopWorkflow: Workflow = {
 			target: 'foreach.1',
 			sourceHandle: 'process_item.1-output-output',
 			targetHandle: 'foreach.1-input-loop_back',
-			style: 'stroke: var(--flowdrop-edge-loopback-color); stroke-dasharray: 5, 5;',
+			style: 'stroke: var(--fd-edge-loopback-color); stroke-dasharray: 5, 5;',
 			class: 'flowdrop--edge--loopback',
 			markerEnd: {
 				type: 'arrowclosed',

@@ -74,9 +74,9 @@
 		flex-direction: column;
 		gap: 0.625rem;
 		padding: 0.75rem;
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
+		background-color: var(--fd-muted);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
 	}
 
 	.form-checkbox-item {
@@ -86,12 +86,12 @@
 		cursor: pointer;
 		padding: 0.375rem;
 		margin: -0.375rem;
-		border-radius: 0.375rem;
-		transition: background-color 0.15s;
+		border-radius: var(--fd-radius-md);
+		transition: background-color var(--fd-transition-fast);
 	}
 
 	.form-checkbox-item:hover {
-		background-color: var(--color-ref-gray-100, #f3f4f6);
+		background-color: var(--fd-subtle);
 	}
 
 	.form-checkbox__input {
@@ -104,28 +104,28 @@
 	.form-checkbox__custom {
 		width: 1.125rem;
 		height: 1.125rem;
-		border: 1.5px solid var(--color-ref-gray-300, #d1d5db);
-		border-radius: 0.25rem;
-		background-color: #ffffff;
+		border: 1.5px solid var(--fd-border-strong);
+		border-radius: var(--fd-radius-sm);
+		background-color: var(--fd-background);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.15s;
+		transition: all var(--fd-transition-fast);
 		flex-shrink: 0;
 	}
 
 	.form-checkbox__custom :global(svg) {
 		width: 0.75rem;
 		height: 0.75rem;
-		color: #ffffff;
+		color: var(--fd-primary-foreground);
 		opacity: 0;
 		transform: scale(0.5);
-		transition: all 0.15s;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.form-checkbox__input:checked + .form-checkbox__custom {
-		background-color: var(--color-ref-blue-500, #3b82f6);
-		border-color: var(--color-ref-blue-500, #3b82f6);
+		background-color: var(--fd-primary);
+		border-color: var(--fd-primary);
 	}
 
 	.form-checkbox__input:checked + .form-checkbox__custom :global(svg) {
@@ -138,8 +138,8 @@
 	}
 
 	.form-checkbox__label {
-		font-size: 0.875rem;
-		color: var(--color-ref-gray-700, #374151);
+		font-size: var(--fd-text-sm);
+		color: var(--fd-foreground);
 		line-height: 1.4;
 	}
 </style>

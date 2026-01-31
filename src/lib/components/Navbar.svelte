@@ -183,7 +183,7 @@
 
 <style>
 	.flowdrop-navbar {
-		height: var(--flowdrop-navbar-height, 60px);
+		height: var(--fd-navbar-height);
 		width: 100%;
 		max-width: 100%;
 		display: flex;

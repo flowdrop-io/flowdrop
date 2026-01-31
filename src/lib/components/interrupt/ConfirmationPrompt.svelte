@@ -144,7 +144,7 @@
 		margin: 0;
 		font-size: 0.9375rem;
 		line-height: 1.5;
-		color: var(--color-ref-gray-800, #1f2937);
+		color: var(--fd-foreground);
 	}
 
 	.confirmation-prompt__error {
@@ -152,9 +152,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.5rem 0.75rem;
-		background-color: var(--color-ref-red-50, #fef2f2);
-		border-radius: 0.375rem;
-		color: var(--color-ref-red-600, #dc2626);
+		background-color: var(--fd-error-muted);
+		border-radius: var(--fd-radius-md);
+		color: var(--fd-error);
 		font-size: 0.8125rem;
 	}
 
@@ -185,16 +185,16 @@
 		cursor: not-allowed;
 	}
 
-	/* Uses design tokens from base.css: --flowdrop-interrupt-* */
+	/* Uses design tokens from base.css: --fd-interrupt-* */
 	.confirmation-prompt__button--decline {
-		background-color: var(--flowdrop-interrupt-btn-secondary-bg);
-		border-color: var(--flowdrop-interrupt-btn-secondary-border);
-		color: var(--flowdrop-interrupt-btn-secondary-text);
+		background-color: var(--fd-interrupt-btn-secondary-bg);
+		border-color: var(--fd-interrupt-btn-secondary-border);
+		color: var(--fd-interrupt-btn-secondary-text);
 	}
 
 	.confirmation-prompt__button--decline:hover:not(:disabled) {
-		background-color: var(--color-ref-gray-200, #e5e7eb);
-		border-color: var(--color-ref-gray-400, #9ca3af);
+		background-color: var(--fd-border);
+		border-color: var(--fd-muted-foreground);
 	}
 
 	.confirmation-prompt__button--decline:disabled {
@@ -203,31 +203,31 @@
 
 	/* Non-selected decline button when resolved - very dimmed */
 	.confirmation-prompt__button--decline.confirmation-prompt__button--not-selected {
-		opacity: var(--flowdrop-interrupt-not-selected-opacity);
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border-color: var(--color-ref-gray-200, #e5e7eb);
-		color: var(--color-ref-gray-400, #9ca3af);
+		opacity: var(--fd-interrupt-not-selected-opacity);
+		background-color: var(--fd-muted);
+		border-color: var(--fd-border);
+		color: var(--fd-muted-foreground);
 	}
 
 	/* Selected decline button - highlighted with border and background */
 	.confirmation-prompt__button--decline.confirmation-prompt__button--selected {
 		opacity: 1;
-		background-color: var(--flowdrop-interrupt-selected-decline-bg);
-		border-color: var(--flowdrop-interrupt-selected-decline-border);
+		background-color: var(--fd-interrupt-selected-decline-bg);
+		border-color: var(--fd-interrupt-selected-decline-border);
 		border-width: 2px;
-		color: var(--flowdrop-interrupt-selected-decline-text);
-		box-shadow: 0 0 0 3px var(--flowdrop-interrupt-selected-decline-glow);
+		color: var(--fd-interrupt-selected-decline-text);
+		box-shadow: 0 0 0 3px var(--fd-interrupt-selected-decline-glow);
 	}
 
 	.confirmation-prompt__button--confirm {
-		background: var(--flowdrop-interrupt-btn-primary-bg);
+		background: var(--fd-interrupt-btn-primary-bg);
 		color: #ffffff;
-		box-shadow: 0 1px 3px var(--flowdrop-interrupt-btn-primary-shadow);
+		box-shadow: 0 1px 3px var(--fd-interrupt-btn-primary-shadow);
 	}
 
 	.confirmation-prompt__button--confirm:hover:not(:disabled) {
-		background: var(--flowdrop-interrupt-btn-primary-bg-hover);
-		box-shadow: 0 4px 12px var(--flowdrop-interrupt-btn-primary-shadow);
+		background: var(--fd-interrupt-btn-primary-bg-hover);
+		box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
 		transform: translateY(-1px);
 	}
 
@@ -239,21 +239,21 @@
 
 	/* Non-selected confirm button when resolved - very dimmed */
 	.confirmation-prompt__button--confirm.confirmation-prompt__button--not-selected {
-		opacity: var(--flowdrop-interrupt-not-selected-opacity);
-		background: var(--color-ref-gray-200, #e5e7eb);
-		color: var(--color-ref-gray-400, #9ca3af);
+		opacity: var(--fd-interrupt-not-selected-opacity);
+		background: var(--fd-border);
+		color: var(--fd-muted-foreground);
 		box-shadow: none;
 	}
 
 	/* Selected confirm button - highlighted with glow */
 	.confirmation-prompt__button--confirm.confirmation-prompt__button--selected {
 		opacity: 1;
-		background: var(--flowdrop-interrupt-selected-confirm-bg);
+		background: var(--fd-interrupt-selected-confirm-bg);
 		border-width: 2px;
-		border-color: var(--flowdrop-interrupt-selected-confirm-border);
+		border-color: var(--fd-interrupt-selected-confirm-border);
 		box-shadow:
-			0 0 0 3px var(--flowdrop-interrupt-selected-confirm-glow),
-			0 2px 8px var(--flowdrop-interrupt-btn-primary-shadow);
+			0 0 0 3px var(--fd-interrupt-selected-confirm-glow),
+			0 2px 8px var(--fd-interrupt-btn-primary-shadow);
 	}
 
 	.confirmation-prompt__spinner {
@@ -282,9 +282,9 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: var(--flowdrop-interrupt-badge-completed-bg);
+		background-color: var(--fd-interrupt-badge-completed-bg);
 		border-radius: 9999px;
-		color: var(--flowdrop-interrupt-badge-completed-text);
+		color: var(--fd-interrupt-badge-completed-text);
 		font-size: 0.75rem;
 		font-weight: 500;
 		align-self: flex-start;

@@ -90,7 +90,7 @@
 		gap: 0.25rem;
 		font-size: 0.8125rem;
 		font-weight: 600;
-		color: var(--color-ref-gray-700, #374151);
+		color: var(--fd-foreground);
 		letter-spacing: -0.01em;
 	}
 
@@ -99,7 +99,7 @@
 	}
 
 	.form-field__required {
-		color: var(--color-ref-red-500, #ef4444);
+		color: var(--fd-error);
 		font-weight: 500;
 	}
 
@@ -117,8 +117,8 @@
 
 	.form-field__description {
 		margin: 0;
-		font-size: 0.75rem;
-		color: var(--color-ref-gray-500, #6b7280);
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
 		line-height: 1.5;
 		padding-left: 0.125rem;
 	}

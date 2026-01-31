@@ -392,10 +392,10 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 0.75rem;
-		background-color: var(--color-ref-amber-50, #fffbeb);
-		border: 1px solid var(--color-ref-amber-200, #fde68a);
-		border-radius: 0.375rem;
-		color: var(--color-ref-amber-800, #92400e);
+		background-color: var(--fd-warning-muted);
+		border: 1px solid var(--fd-warning);
+		border-radius: var(--fd-radius-md);
+		color: var(--fd-warning-hover);
 		font-size: 0.8125rem;
 		font-weight: 500;
 	}
@@ -404,19 +404,19 @@
 		width: 1rem;
 		height: 1rem;
 		flex-shrink: 0;
-		color: var(--color-ref-amber-500, #f59e0b);
+		color: var(--fd-warning);
 	}
 
 	.form-field-fallback__hint {
 		margin: 0;
 		padding: 0.5rem 0.75rem;
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.375rem;
+		background-color: var(--fd-muted);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-md);
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-size: 0.6875rem;
 		line-height: 1.5;
-		color: var(--color-ref-gray-600, #4b5563);
+		color: var(--fd-muted-foreground);
 		word-break: break-word;
 	}
 </style>

@@ -250,18 +250,18 @@
 		justify-content: center;
 		gap: 0.75rem;
 		padding: 2rem;
-		background-color: var(--color-ref-gray-50, #f9fafb);
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
-		color: var(--color-ref-gray-500, #6b7280);
-		font-size: 0.875rem;
+		background-color: var(--fd-muted);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
+		color: var(--fd-muted-foreground);
+		font-size: var(--fd-text-sm);
 	}
 
 	.form-markdown-editor__spinner {
 		width: 1.25rem;
 		height: 1.25rem;
-		border: 2px solid var(--color-ref-gray-200, #e5e7eb);
-		border-top-color: var(--color-ref-blue-500, #3b82f6);
+		border: 2px solid var(--fd-border);
+		border-top-color: var(--fd-primary);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -282,25 +282,25 @@
 		width: 100%;
 		min-height: var(--editor-height, 300px);
 		padding: 0.75rem;
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
-		border-radius: 0.5rem;
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-lg);
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		line-height: 1.5;
 		resize: vertical;
-		background-color: var(--color-ref-gray-50, #f9fafb);
+		background-color: var(--fd-muted);
 	}
 
 	/* EasyMDE container styling */
 	.form-markdown-editor :global(.CodeMirror) {
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
+		border: 1px solid var(--fd-border);
 		border-top: none;
 		border-radius: 0;
-		background-color: var(--color-ref-gray-50, #f9fafb);
+		background-color: var(--fd-muted);
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		min-height: var(--editor-height, 300px);
-		transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: border-color var(--fd-transition-normal);
 	}
 
 	/* Header styling inside the editor - keep sizes reasonable */
@@ -330,27 +330,27 @@
 	.form-markdown-editor :global(.cm-header) {
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-weight: 600;
-		color: var(--color-ref-gray-900, #111827);
+		color: var(--fd-foreground);
 	}
 
 	.form-markdown-editor :global(.CodeMirror:hover) {
-		border-color: var(--color-ref-gray-300, #d1d5db);
+		border-color: var(--fd-border-strong);
 	}
 
 	.form-markdown-editor :global(.CodeMirror-focused) {
-		border-color: var(--color-ref-blue-500, #3b82f6);
-		background-color: #ffffff;
+		border-color: var(--fd-primary);
+		background-color: var(--fd-background);
 		box-shadow:
 			0 0 0 3px rgba(59, 130, 246, 0.12),
-			0 1px 2px rgba(0, 0, 0, 0.04);
+			var(--fd-shadow-sm);
 	}
 
 	/* Editor wrapper */
 	.form-markdown-editor :global(.editor-toolbar) {
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
+		border: 1px solid var(--fd-border);
 		border-bottom: none;
-		border-radius: 0.5rem 0.5rem 0 0;
-		background-color: var(--color-ref-gray-100, #f3f4f6);
+		border-radius: var(--fd-radius-lg) var(--fd-radius-lg) 0 0;
+		background-color: var(--fd-subtle);
 		padding: 0.5rem;
 	}
 
@@ -361,49 +361,49 @@
 
 	/* Toolbar buttons */
 	.form-markdown-editor :global(.editor-toolbar button) {
-		color: var(--color-ref-gray-600, #4b5563);
+		color: var(--fd-muted-foreground);
 		border: none;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		width: 2rem;
 		height: 2rem;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.form-markdown-editor :global(.editor-toolbar button:hover) {
-		background-color: var(--color-ref-gray-200, #e5e7eb);
-		color: var(--color-ref-gray-900, #111827);
+		background-color: var(--fd-border);
+		color: var(--fd-foreground);
 	}
 
 	.form-markdown-editor :global(.editor-toolbar button.active) {
-		background-color: var(--color-ref-blue-100, #dbeafe);
-		color: var(--color-ref-blue-700, #1d4ed8);
+		background-color: var(--fd-primary-muted);
+		color: var(--fd-primary-hover);
 	}
 
 	/* Separator */
 	.form-markdown-editor :global(.editor-toolbar i.separator) {
-		border-left: 1px solid var(--color-ref-gray-300, #d1d5db);
+		border-left: 1px solid var(--fd-border-strong);
 		margin: 0 0.25rem;
 	}
 
 	/* Status bar */
 	.form-markdown-editor :global(.editor-statusbar) {
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
+		border: 1px solid var(--fd-border);
 		border-top: none;
-		border-radius: 0 0 0.5rem 0.5rem;
-		background-color: var(--color-ref-gray-50, #f9fafb);
+		border-radius: 0 0 var(--fd-radius-lg) var(--fd-radius-lg);
+		background-color: var(--fd-muted);
 		padding: 0.5rem 0.75rem;
-		font-size: 0.75rem;
-		color: var(--color-ref-gray-500, #6b7280);
+		font-size: var(--fd-text-xs);
+		color: var(--fd-muted-foreground);
 	}
 
 	/* Preview pane */
 	.form-markdown-editor :global(.editor-preview) {
-		background-color: #ffffff;
+		background-color: var(--fd-background);
 		padding: 1rem;
 		font-family: inherit;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		line-height: 1.6;
-		color: var(--color-ref-gray-900, #111827);
+		color: var(--fd-foreground);
 	}
 
 	.form-markdown-editor :global(.editor-preview h1),
@@ -415,12 +415,12 @@
 		margin-top: 1.5em;
 		margin-bottom: 0.5em;
 		font-weight: 600;
-		color: var(--color-ref-gray-900, #111827);
+		color: var(--fd-foreground);
 	}
 
 	.form-markdown-editor :global(.editor-preview h1) {
 		font-size: 1.5rem;
-		border-bottom: 1px solid var(--color-ref-gray-200, #e5e7eb);
+		border-bottom: 1px solid var(--fd-border);
 		padding-bottom: 0.5rem;
 	}
 
@@ -438,31 +438,31 @@
 
 	.form-markdown-editor :global(.editor-preview code) {
 		padding: 0.125rem 0.375rem;
-		background-color: var(--color-ref-gray-100, #f3f4f6);
-		border-radius: 0.25rem;
+		background-color: var(--fd-subtle);
+		border-radius: var(--fd-radius-sm);
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-size: 0.8125rem;
 	}
 
 	.form-markdown-editor :global(.editor-preview pre) {
 		padding: 1rem;
-		background-color: var(--color-ref-gray-900, #111827);
-		border-radius: 0.5rem;
+		background-color: var(--fd-foreground);
+		border-radius: var(--fd-radius-lg);
 		overflow-x: auto;
 	}
 
 	.form-markdown-editor :global(.editor-preview pre code) {
 		padding: 0;
 		background-color: transparent;
-		color: var(--color-ref-gray-100, #f3f4f6);
+		color: var(--fd-subtle);
 	}
 
 	.form-markdown-editor :global(.editor-preview blockquote) {
 		margin: 1rem 0;
 		padding: 0.5rem 1rem;
-		border-left: 4px solid var(--color-ref-blue-500, #3b82f6);
-		background-color: var(--color-ref-blue-50, #eff6ff);
-		color: var(--color-ref-gray-700, #374151);
+		border-left: 4px solid var(--fd-primary);
+		background-color: var(--fd-primary-muted);
+		color: var(--fd-foreground);
 	}
 
 	.form-markdown-editor :global(.editor-preview ul),
@@ -476,12 +476,12 @@
 	}
 
 	.form-markdown-editor :global(.editor-preview a) {
-		color: var(--color-ref-blue-600, #2563eb);
+		color: var(--fd-primary-hover);
 		text-decoration: underline;
 	}
 
 	.form-markdown-editor :global(.editor-preview a:hover) {
-		color: var(--color-ref-blue-700, #1d4ed8);
+		color: var(--fd-primary);
 	}
 
 	.form-markdown-editor :global(.editor-preview table) {
@@ -492,19 +492,19 @@
 
 	.form-markdown-editor :global(.editor-preview th),
 	.form-markdown-editor :global(.editor-preview td) {
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
+		border: 1px solid var(--fd-border);
 		padding: 0.5rem 0.75rem;
 		text-align: left;
 	}
 
 	.form-markdown-editor :global(.editor-preview th) {
-		background-color: var(--color-ref-gray-100, #f3f4f6);
+		background-color: var(--fd-subtle);
 		font-weight: 600;
 	}
 
 	.form-markdown-editor :global(.editor-preview img) {
 		max-width: 100%;
-		border-radius: 0.5rem;
+		border-radius: var(--fd-radius-lg);
 	}
 
 	/* Side-by-side mode */
@@ -514,9 +514,9 @@
 
 	.form-markdown-editor :global(.editor-preview-side) {
 		width: 50%;
-		border: 1px solid var(--color-ref-gray-200, #e5e7eb);
+		border: 1px solid var(--fd-border);
 		border-left: none;
-		border-radius: 0 0 0.5rem 0;
+		border-radius: 0 0 var(--fd-radius-lg) 0;
 	}
 
 	/* Fullscreen mode adjustments */
@@ -530,7 +530,7 @@
 
 	/* Placeholder */
 	.form-markdown-editor :global(.CodeMirror .CodeMirror-placeholder) {
-		color: var(--color-ref-gray-400, #9ca3af);
+		color: var(--fd-muted-foreground);
 		font-style: italic;
 	}
 

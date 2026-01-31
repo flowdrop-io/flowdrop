@@ -282,10 +282,10 @@
 <style>
 	.logs-sidebar {
 		position: fixed;
-		top: var(--flowdrop-navbar-height, 60px); /* Start below navbar */
+		top: var(--fd-navbar-height); /* Start below navbar */
 		right: 0;
 		width: 400px;
-		height: calc(100vh - var(--flowdrop-navbar-height, 60px)); /* Account for navbar height */
+		height: calc(100vh - var(--fd-navbar-height)); /* Account for navbar height */
 		background-color: #ffffff;
 		border-left: 1px solid #e5e7eb;
 		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
