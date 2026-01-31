@@ -59,11 +59,6 @@ export interface EditorSettings {
 // =========================================================================
 
 /**
- * Position options for the config panel
- */
-export type ConfigPanelPosition = "right" | "bottom";
-
-/**
  * UI layout and display settings
  */
 export interface UISettings {
@@ -71,8 +66,6 @@ export interface UISettings {
 	sidebarWidth: number;
 	/** Whether the sidebar is collapsed */
 	sidebarCollapsed: boolean;
-	/** Position of the node configuration panel */
-	configPanelPosition: ConfigPanelPosition;
 	/** Enable compact mode for denser UI */
 	compactMode: boolean;
 }
@@ -200,7 +193,6 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
 export const DEFAULT_UI_SETTINGS: UISettings = {
 	sidebarWidth: 280,
 	sidebarCollapsed: false,
-	configPanelPosition: "right",
 	compactMode: false
 };
 

@@ -157,14 +157,6 @@
 					description: "Start with sidebar collapsed",
 					default: false
 				},
-				configPanelPosition: {
-					type: "string",
-					title: "Config Panel Position",
-					description: "Position of the node configuration panel",
-					enum: ["right", "bottom"],
-					enumLabels: ["Right", "Bottom"],
-					default: "right"
-				},
 				compactMode: {
 					type: "boolean",
 					title: "Compact Mode",
