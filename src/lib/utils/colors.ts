@@ -380,6 +380,118 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
 }
 
 /**
+ * Calculate the relative luminance of a color
+ * Based on WCAG 2.1 guidelines for contrast calculations
+ * @param r - Red component (0-255)
+ * @param g - Green component (0-255)
+ * @param b - Blue component (0-255)
+ * @returns Relative luminance value (0-1)
+ */
+export function getRelativeLuminance(r: number, g: number, b: number): number {
+	const toLinear = (value: number): number => {
+		const srgb = value / 255;
+		return srgb <= 0.03928 ? srgb / 12.92 : Math.pow((srgb + 0.055) / 1.055, 2.4);
+	};
+	return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+/**
+ * Determine if a background color is considered "light" (needs dark text)
+ * @param hex - Hex color string
+ * @returns True if the color is light and needs dark text for contrast
+ */
+export function isLightColor(hex: string): boolean {
+	const rgb = hexToRgb(hex);
+	if (!rgb) {
+		return false; // Default to dark background assumption
+	}
+	const luminance = getRelativeLuminance(rgb.r, rgb.g, rgb.b);
+	// WCAG recommends contrast ratio of 4.5:1 for normal text
+	// Luminance > 0.179 generally requires dark text for good contrast
+	return luminance > 0.179;
+}
+
+/**
+ * Get the appropriate contrast text color (black or white) for a background
+ * @param backgroundColor - Hex color string of the background
+ * @returns CSS color value for text that provides good contrast
+ */
+export function getContrastTextColor(backgroundColor: string): string {
+	return isLightColor(backgroundColor) ? "#18181b" : "#ffffff";
+}
+
+/**
+ * Mapping of CSS variable tokens to their resolved hex values
+ * Used for contrast calculations when working with design tokens
+ */
+const TOKEN_TO_HEX: Record<string, string> = {
+	"var(--fd-node-cyan)": "#06b6d4",
+	"var(--fd-node-emerald)": "#10b981",
+	"var(--fd-node-blue)": "#3b82f6",
+	"var(--fd-node-amber)": "#f59e0b",
+	"var(--fd-node-indigo)": "#6366f1",
+	"var(--fd-node-teal)": "#14b8a6",
+	"var(--fd-node-purple)": "#8b5cf6",
+	"var(--fd-node-orange)": "#f97316",
+	"var(--fd-node-slate)": "#64748b",
+	"var(--fd-node-red)": "#ef4444",
+	"var(--fd-node-pink)": "#ec4899",
+	"var(--fd-node-lime)": "#84cc16"
+};
+
+/**
+ * Resolve a CSS variable token to its hex value
+ * @param token - CSS variable token (e.g., "var(--fd-node-amber)")
+ * @returns Hex color value or the original value if not a known token
+ */
+export function resolveColorToken(token: string): string {
+	return TOKEN_TO_HEX[token] || token;
+}
+
+/**
+ * Get the appropriate contrast text color for a data type badge
+ * @param dataType - The data type (e.g., "array", "string", "number")
+ * @returns CSS color value for text that provides good contrast on the data type's background
+ */
+export function getContrastTextColorForDataType(dataType: string): string {
+	const colorToken = getDataTypeColorToken(dataType);
+	const hexColor = resolveColorToken(colorToken);
+	return getContrastTextColor(hexColor);
+}
+
+/**
+ * Get the appropriate contrast text color for a category badge
+ * @param category - The node category
+ * @returns CSS color value for text that provides good contrast on the category's background
+ */
+export function getContrastTextColorForCategory(category: NodeCategory): string {
+	const colorToken = getCategoryColorToken(category);
+	const hexColor = resolveColorToken(colorToken);
+	return getContrastTextColor(hexColor);
+}
+
+/**
+ * Get a semi-transparent tinted background color for ports
+ * Creates a cohesive look with the icon wrapper styling
+ * @param dataType - The data type
+ * @param opacity - Opacity percentage (default 25%)
+ * @returns CSS color-mix expression for the tinted background
+ */
+export function getPortBackgroundColor(dataType: string, opacity: number = 25): string {
+	const colorToken = getDataTypeColorToken(dataType);
+	return `color-mix(in srgb, ${colorToken} ${opacity}%, transparent)`;
+}
+
+/**
+ * Get the border color for ports (solid data type color)
+ * @param dataType - The data type
+ * @returns CSS color value for the port border
+ */
+export function getPortBorderColor(dataType: string): string {
+	return getDataTypeColorToken(dataType);
+}
+
+/**
  * Convert RGB components to hex color string
  * @param r - Red component (0-255)
  * @param g - Green component (0-255)
