@@ -218,6 +218,9 @@
 
 	/** Icon on node squircle: dark in light theme, white in dark theme */
 	--fd-node-icon: var(--_gray-9);
+	/** Opacity of the icon squircle background (color-mix percentage). Light mode: 15% / 22% hover; dark mode uses higher values. */
+	--fd-node-icon-bg-opacity: 20%;
+	--fd-node-icon-bg-opacity-hover: 50%;
 
 	/* ----- EDGE TOKENS ----- */
 	--fd-edge-trigger: var(--_gray-9);
@@ -254,6 +257,22 @@
 	/* ----- HANDLE (Node connection points) ----- */
 	/* White ring around handles for contrast against node backgrounds */
 	--fd-handle-border: #ffffff;
+	/* Outer size = connection/hit area (px); visual = visible circle (px) */
+	--fd-handle-size: 20px;
+	--fd-handle-visual-size: 12px;
+
+	/* ----- NODE LAYOUT (Dimensions and port alignment; multiples of 10 for grid) ----- */
+	--fd-node-grid-step: 10;
+	--fd-node-default-width: 290px;
+	--fd-node-header-height: 60px;
+	--fd-node-header-title-height: 40px;
+	--fd-node-header-desc-line: 20px;
+	--fd-node-header-gap: 10px;
+	--fd-node-port-row-height: 20px;
+	--fd-node-terminal-size: 80px;
+	--fd-node-square-size: 80px;
+	--fd-node-simple-height: 80px;
+	--fd-node-tool-min-height: 80px;
 
 	/* ----- LAYOUT BACKGROUND (Main content area gradient) ----- */
 	--fd-layout-background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
@@ -296,8 +315,25 @@
 	--fd-node-border: #4a4a52;
 	--fd-node-border-hover: #5a5a62;
 
+	/* ----- NODE COLORS (port type labels/badges - lighter for readability on dark surfaces) ----- */
+	--fd-node-emerald: #34d399;
+	--fd-node-blue: #60a5fa;
+	--fd-node-amber: #fbbf24;
+	--fd-node-orange: #fb923c;
+	--fd-node-red: #f87171;
+	--fd-node-pink: #f472b6;
+	--fd-node-indigo: #818cf8;
+	--fd-node-teal: #2dd4bf;
+	--fd-node-cyan: #22d3ee;
+	--fd-node-lime: #a3e635;
+	--fd-node-slate: #94a3b8;
+	--fd-node-purple: #c084fc;
+
 	/** Icon on node squircle: white in dark theme */
 	--fd-node-icon: #ffffff;
+	/** Icon squircle background opacity: higher in dark mode for visibility on dark surfaces */
+	--fd-node-icon-bg-opacity: 50%;
+	--fd-node-icon-bg-opacity-hover: 80%;
 
 	/* ----- PRIMARY (Interactive/Brand) ----- */
 	--fd-primary: #60a5fa;

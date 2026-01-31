@@ -60,7 +60,7 @@ const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
 	datetime: 'var(--fd-node-lime)',
 	time: 'var(--fd-node-lime)',
 	tool: 'var(--fd-node-amber)',
-	trigger: '#18181b',
+	trigger: 'var(--fd-edge-trigger)',
 	branch: 'var(--fd-node-purple)'
 };
 

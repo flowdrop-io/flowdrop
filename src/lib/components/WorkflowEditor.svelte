@@ -39,8 +39,8 @@
 	} from '../helpers/workflowEditorHelper.js';
 	import type { NodeExecutionInfo } from '../types/index.js';
 	import { areNodeArraysEqual, areEdgeArraysEqual, throttle } from '../utils/performanceUtils.js';
-	import { Toaster } from "svelte-5-french-toast";
-	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from "../services/toastService.js";
+	import { Toaster } from 'svelte-5-french-toast';
+	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '../services/toastService.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -530,10 +530,10 @@
 
 <!-- Toast notifications container -->
 <Toaster
-		position="bottom-center"
-		containerClassName={FLOWDROP_TOASTER_CLASS}
-		toastOptions={flowdropToastOptions}
-	/>
+	position="bottom-center"
+	containerClassName={FLOWDROP_TOASTER_CLASS}
+	toastOptions={flowdropToastOptions}
+/>
 
 <style>
 	.flowdrop-workflow-editor {
@@ -625,10 +625,10 @@
 		fill: currentColor;
 	}
 
+	/* Handle size/position only; colors come from inline --fd-handle-fill and base.css ::before */
 	:global(.flowdrop-workflow-editor .svelte-flow__handle) {
-		width: 18px;
-		height: 18px;
-		border: 2px solid white;
+		width: var(--fd-handle-size);
+		height: var(--fd-handle-size);
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 		z-index: 20;
 	}
@@ -637,6 +637,8 @@
 	:global(.flowdrop-workflow-editor .svelte-flow__handle) {
 		pointer-events: all;
 		cursor: crosshair;
+		background-color: var(--fd-handle-fill);
+		border-color: var(--fd-handle-border-color);
 	}
 
 	/**

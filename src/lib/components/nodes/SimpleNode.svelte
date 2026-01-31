@@ -178,19 +178,18 @@
 	});
 </script>
 
-<!-- Input Handles -->
+<!-- Input Handles: center at 20/40/60px (multiple of 10), 20px connection area -->
 {#each inputPorts as port, index}
-	<!-- Data Input - positioned at top-left if both types exist, otherwise center -->
 	<Handle
 		type="target"
 		position={Position.Left}
-		style="background-color: {getDataTypeColor(
+		style="--fd-handle-fill: {getDataTypeColor(
 			port.dataType
-		)}; border-color: var(--fd-handle-border); top: {inputPorts.length > 1
+		)}; --fd-handle-border-color: var(--fd-handle-border); top: {inputPorts.length > 1
 			? index === 0
-				? '25%'
-				: '75%'
-			: '50%'}; z-index: 30;"
+				? 20
+				: 60
+			: 40}px; transform: translateY(-50%); margin-left: -10px; z-index: 30;"
 		id={`${props.data.nodeId}-input-${port.id}`}
 	/>
 {/each}
@@ -250,19 +249,18 @@
 	</button>
 </div>
 
-<!-- Output Handles -->
+<!-- Output Handles: center at 20/40/60px (multiple of 10), 20px connection area -->
 {#each outputPorts as port, index}
-	<!-- Data Output - positioned at top-right if both types exist, otherwise center -->
 	<Handle
 		type="source"
 		position={Position.Right}
-		style="background-color: {getDataTypeColor(
+		style="--fd-handle-fill: {getDataTypeColor(
 			port.dataType
-		)}; border-color: var(--fd-handle-border); top: {outputPorts.length > 1
+		)}; --fd-handle-border-color: var(--fd-handle-border); top: {outputPorts.length > 1
 			? index === 0
-				? '25%'
-				: '75%'
-			: '50%'}; z-index: 30;"
+				? 20
+				: 60
+			: 40}px; transform: translateY(-50%); margin-right: -10px; z-index: 30;"
 		id={`${props.data.nodeId}-output-${port.id}`}
 	/>
 {/each}
@@ -287,7 +285,9 @@
 
 	/* Normal layout (default) */
 	.flowdrop-simple-node--normal {
-		width: 18rem;
+		width: var(--fd-node-default-width);
+		height: var(--fd-node-simple-height);
+		overflow: hidden;
 	}
 
 	.flowdrop-simple-node:hover {
@@ -296,12 +296,16 @@
 	}
 
 	.flowdrop-simple-node--selected {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
 	.flowdrop-simple-node--selected:hover {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
@@ -339,13 +343,17 @@
 		width: 2.25rem;
 		height: 2.25rem;
 		border-radius: 0.5rem;
-		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
+		background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
 		flex-shrink: 0;
 		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-simple-node:hover .flowdrop-simple-node__icon-wrapper {
-		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+		background: color-mix(
+			in srgb,
+			var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
+			transparent
+		);
 		transform: scale(1.05);
 	}
 
@@ -438,27 +446,21 @@
 		}
 	}
 
-	/* Handle styles - matching WorkflowNode exactly */
+	/* Handle: 20px/12px from base.css; position offsets for 20px handle */
 	:global(.svelte-flow__node-simple .svelte-flow__handle) {
-		width: 18px !important;
-		height: 18px !important;
-		border-radius: 50% !important;
-		transition: all var(--fd-transition-normal) !important;
-		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
 	}
 
 	:global(.svelte-flow__node-simple .svelte-flow__handle-left) {
-		left: -6px !important;
+		left: -10px !important;
 	}
 
 	:global(.svelte-flow__node-simple .svelte-flow__handle-right) {
-		right: -6px !important;
+		right: -10px !important;
 	}
 
-	:global(.svelte-flow__node-simple .svelte-flow__handle:focus) {
-		outline: 2px solid var(--fd-ring) !important;
-		outline-offset: 2px !important;
+	:global(.svelte-flow__node-simple .svelte-flow__handle:hover) {
+		transform: translateY(-50%) scale(1.2) !important;
 	}
 </style>

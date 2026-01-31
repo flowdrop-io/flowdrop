@@ -144,26 +144,26 @@
 	tabindex="0"
 	aria-label="Idea node: {displayTitle}"
 >
-	<!-- Left Port (Target/Input) -->
+	<!-- Left Port (Target/Input): center at top 40px (multiple of 10), 20px connection area -->
 	{#if enableLeftPort}
 		<Handle
 			type="target"
 			position={Position.Left}
-			style="background-color: {getDataTypeColor(
+			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); margin-left: -10px; z-index: 30;"
 			id={`${props.data.nodeId}-input-left`}
 		/>
 	{/if}
 
-	<!-- Top Port (Target/Input) -->
+	<!-- Top Port (Target/Input): center at left 150px (multiple of 10), 20px connection area -->
 	{#if enableTopPort}
 		<Handle
 			type="target"
 			position={Position.Top}
-			style="background-color: {getDataTypeColor(
+			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; border-color: #ffffff; left: 50%; transform: translateX(-50%); z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); margin-top: -10px; z-index: 30;"
 			id={`${props.data.nodeId}-input-top`}
 		/>
 	{/if}
@@ -208,26 +208,26 @@
 		<Icon icon="mdi:cog" />
 	</button>
 
-	<!-- Right Port (Source/Output) -->
+	<!-- Right Port (Source/Output): center at top 40px (multiple of 10), 20px connection area -->
 	{#if enableRightPort}
 		<Handle
 			type="source"
 			position={Position.Right}
-			style="background-color: {getDataTypeColor(
+			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; border-color: #ffffff; top: 50%; transform: translateY(-50%); z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); margin-right: -10px; z-index: 30;"
 			id={`${props.data.nodeId}-output-right`}
 		/>
 	{/if}
 
-	<!-- Bottom Port (Source/Output) -->
+	<!-- Bottom Port (Source/Output): center at left 150px (multiple of 10), 20px connection area -->
 	{#if enableBottomPort}
 		<Handle
 			type="source"
 			position={Position.Bottom}
-			style="background-color: {getDataTypeColor(
+			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; border-color: #ffffff; left: 50%; transform: translateX(-50%); z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); margin-bottom: -10px; z-index: 30;"
 			id={`${props.data.nodeId}-output-bottom`}
 		/>
 	{/if}
@@ -236,7 +236,8 @@
 <style>
 	.flowdrop-idea-node {
 		position: relative;
-		width: 18rem;
+		width: var(--fd-node-default-width);
+		min-height: var(--fd-node-simple-height);
 		cursor: pointer;
 		transition: all var(--fd-transition-normal);
 		z-index: 10;
@@ -296,7 +297,7 @@
 		height: 2rem;
 		background-color: color-mix(
 			in srgb,
-			var(--idea-accent-color, var(--fd-accent)) 15%,
+			var(--idea-accent-color, var(--fd-accent)) var(--fd-node-icon-bg-opacity),
 			transparent
 		);
 		border-radius: var(--fd-radius-lg);
@@ -413,39 +414,28 @@
 		transform: scale(1.05);
 	}
 
-	/* Handle styles */
+	/* Handle: 20px/12px from base.css; position offsets for 20px handle */
 	:global(.flowdrop-idea-node .svelte-flow__handle) {
-		width: 16px !important;
-		height: 16px !important;
-		border-radius: 50% !important;
-		border: 2px solid #ffffff !important;
-		transition: all var(--fd-transition-normal) !important;
-		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
 	}
 
-	/* Left handle positioning */
 	:global(.flowdrop-idea-node .svelte-flow__handle-left) {
-		left: -8px !important;
+		left: -10px !important;
 	}
 
-	/* Right handle positioning */
 	:global(.flowdrop-idea-node .svelte-flow__handle-right) {
-		right: -8px !important;
+		right: -10px !important;
 	}
 
-	/* Top handle positioning */
 	:global(.flowdrop-idea-node .svelte-flow__handle-top) {
-		top: -8px !important;
+		top: -10px !important;
 	}
 
-	/* Bottom handle positioning */
 	:global(.flowdrop-idea-node .svelte-flow__handle-bottom) {
-		bottom: -8px !important;
+		bottom: -10px !important;
 	}
 
-	/* Handle hover effects */
 	:global(.flowdrop-idea-node .svelte-flow__handle-left:hover),
 	:global(.flowdrop-idea-node .svelte-flow__handle-right:hover) {
 		transform: translateY(-50%) scale(1.2) !important;
@@ -454,11 +444,6 @@
 	:global(.flowdrop-idea-node .svelte-flow__handle-top:hover),
 	:global(.flowdrop-idea-node .svelte-flow__handle-bottom:hover) {
 		transform: translateX(-50%) scale(1.2) !important;
-	}
-
-	:global(.flowdrop-idea-node .svelte-flow__handle:focus) {
-		outline: 2px solid var(--fd-ring) !important;
-		outline-offset: 2px !important;
 	}
 
 	/* Responsive design */

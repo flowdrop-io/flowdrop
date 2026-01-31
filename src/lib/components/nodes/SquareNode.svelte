@@ -49,17 +49,13 @@
 	 * Get icon using the same resolution as WorkflowNode
 	 * Uses getNodeIcon utility with category fallback
 	 */
-	let squareIcon = $derived(
-		getNodeIcon(props.data.metadata?.icon, props.data.metadata?.category)
-	);
+	let squareIcon = $derived(getNodeIcon(props.data.metadata?.icon, props.data.metadata?.category));
 
 	/**
 	 * Get icon color using category-based color tokens for consistency
 	 * Falls back to primary color if category not available
 	 */
-	let squareColor = $derived(
-		getCategoryColorToken(props.data.metadata?.category)
-	);
+	let squareColor = $derived(getCategoryColorToken(props.data.metadata?.category));
 
 	// Handle configuration sidebar - now using global ConfigSidebar
 	function openConfigSidebar(): void {
@@ -168,19 +164,18 @@
 	});
 </script>
 
-<!-- Input Handles -->
+<!-- Input Handles: center at 20/40/60px (multiple of 10), 20px connection area -->
 {#each inputPorts as port, index}
-	<!-- Data Input - positioned at top-left if both types exist, otherwise center -->
 	<Handle
 		type="target"
 		position={Position.Left}
-		style="background-color: {getDataTypeColor(
+		style="--fd-handle-fill: {getDataTypeColor(
 			port.dataType
-		)}; border-color: var(--fd-handle-border); top: {inputPorts.length > 1
+		)}; --fd-handle-border-color: var(--fd-handle-border); top: {inputPorts.length > 1
 			? index === 0
-				? '25%'
-				: '75%'
-			: '50%'}; z-index: 30;"
+				? 20
+				: 60
+			: 40}px; transform: translateY(-50%); margin-left: -10px; z-index: 30;"
 		id={`${props.data.nodeId}-input-${port.id}`}
 	/>
 {/each}
@@ -199,14 +194,8 @@
 >
 	<!-- Square Layout: Always compact with centered icon in squircle wrapper -->
 	<div class="flowdrop-square-node__compact-content">
-		<div
-			class="flowdrop-square-node__icon-wrapper"
-			style="--_icon-color: {squareColor}"
-		>
-			<Icon
-				icon={squareIcon}
-				class="flowdrop-square-node__icon"
-			/>
+		<div class="flowdrop-square-node__icon-wrapper" style="--_icon-color: {squareColor}">
+			<Icon icon={squareIcon} class="flowdrop-square-node__icon" />
 		</div>
 	</div>
 
@@ -234,19 +223,18 @@
 	</button>
 </div>
 
-<!-- Output Handles -->
+<!-- Output Handles: center at 20/40/60px (multiple of 10), 20px connection area -->
 {#each outputPorts as port, index}
-	<!-- Data Output - positioned at top-right if both types exist, otherwise center -->
 	<Handle
 		type="source"
 		position={Position.Right}
-		style="background-color: {getDataTypeColor(
+		style="--fd-handle-fill: {getDataTypeColor(
 			port.dataType
-		)}; border-color: var(--fd-handle-border); top: {outputPorts.length > 1
+		)}; --fd-handle-border-color: var(--fd-handle-border); top: {outputPorts.length > 1
 			? index === 0
-				? '25%'
-				: '75%'
-			: '50%'}; z-index: 30;"
+				? 20
+				: 60
+			: 40}px; transform: translateY(-50%); margin-right: -10px; z-index: 30;"
 		id={`${props.data.nodeId}-output-${port.id}`}
 	/>
 {/each}
@@ -269,8 +257,8 @@
 
 	/* Square layout (always compact) */
 	.flowdrop-square-node--compact {
-		width: 80px;
-		height: 80px;
+		width: var(--fd-node-square-size);
+		height: var(--fd-node-square-size);
 		justify-content: center;
 		align-items: center;
 	}
@@ -281,12 +269,16 @@
 	}
 
 	.flowdrop-square-node--selected {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
 	.flowdrop-square-node--selected:hover {
-		box-shadow: 0 0 0 2px var(--fd-primary-muted), var(--fd-shadow-lg);
+		box-shadow:
+			0 0 0 2px var(--fd-primary-muted),
+			var(--fd-shadow-lg);
 		border-color: var(--fd-primary);
 	}
 
@@ -321,13 +313,17 @@
 		width: 3rem;
 		height: 3rem;
 		border-radius: 0.625rem;
-		background: color-mix(in srgb, var(--_icon-color) 15%, transparent);
+		background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
 		flex-shrink: 0;
 		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-square-node:hover .flowdrop-square-node__icon-wrapper {
-		background: color-mix(in srgb, var(--_icon-color) 22%, transparent);
+		background: color-mix(
+			in srgb,
+			var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
+			transparent
+		);
 		transform: scale(1.05);
 	}
 
@@ -403,27 +399,21 @@
 		}
 	}
 
-	/* Handle styles - matching WorkflowNode exactly */
+	/* Handle: 20px/12px from base.css; position offsets for 20px handle */
 	:global(.svelte-flow__node-square .svelte-flow__handle) {
-		width: 18px !important;
-		height: 18px !important;
-		border-radius: 50% !important;
-		transition: all var(--fd-transition-normal) !important;
-		cursor: pointer !important;
 		z-index: 20 !important;
 		pointer-events: auto !important;
 	}
 
 	:global(.svelte-flow__node-square .svelte-flow__handle-left) {
-		left: -6px !important;
+		left: -10px !important;
 	}
 
 	:global(.svelte-flow__node-square .svelte-flow__handle-right) {
-		right: -6px !important;
+		right: -10px !important;
 	}
 
-	:global(.svelte-flow__node-square .svelte-flow__handle:focus) {
-		outline: 2px solid var(--fd-ring) !important;
-		outline-offset: 2px !important;
+	:global(.svelte-flow__node-square .svelte-flow__handle:hover) {
+		transform: translateY(-50%) scale(1.2) !important;
 	}
 </style>

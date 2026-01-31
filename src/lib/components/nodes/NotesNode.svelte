@@ -259,13 +259,17 @@
 		width: 2.25rem;
 		height: 2.25rem;
 		border-radius: 0.5rem;
-		background: color-mix(in srgb, var(--_notes-icon) 15%, transparent);
+		background: color-mix(in srgb, var(--_notes-icon) var(--fd-node-icon-bg-opacity), transparent);
 		flex-shrink: 0;
 		transition: all var(--fd-transition-normal);
 	}
 
 	.flowdrop-notes-node:hover .flowdrop-notes-node__icon-wrapper {
-		background: color-mix(in srgb, var(--_notes-icon) 22%, transparent);
+		background: color-mix(
+			in srgb,
+			var(--_notes-icon) var(--fd-node-icon-bg-opacity-hover),
+			transparent
+		);
 		transform: scale(1.05);
 	}
 
