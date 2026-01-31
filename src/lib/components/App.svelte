@@ -662,7 +662,7 @@
 	leftSidebarMaxWidth={$uiSettings.sidebarCollapsed ? 48 : 450}
 	rightSidebarMinWidth={320}
 	rightSidebarMaxWidth={550}
-	enableLeftSplitPane={!$uiSettings.sidebarCollapsed}
+	enableLeftSplitPane={false}
 	enableRightSplitPane={true}
 	class="flowdrop-app-layout"
 >
