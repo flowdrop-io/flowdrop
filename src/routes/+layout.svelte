@@ -23,8 +23,8 @@
 	} from '$lib/config/endpoints.js';
 	import { getDevConfig, getDevConfigSync } from './devConfig';
 	import { setEndpointConfig } from '$lib/services/api.js';
-	import { Toaster } from "svelte-5-french-toast";
-	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from "$lib/services/toastService.js";
+	import { Toaster } from 'svelte-5-french-toast';
+	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
 	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
 	import { initializeSettings } from '$lib/stores/settingsStore.js';
 
@@ -150,13 +150,13 @@
 					icon: 'mdi:plus',
 					variant: 'primary' as const
 				},
-		{
-			label: 'API Docs',
-			href: 'https://flowdrop-io.github.io/flowdrop/',
-			icon: 'mdi:api',
-			variant: 'outline' as const,
-			external: true
-		}
+				{
+					label: 'API Docs',
+					href: 'https://flowdrop-io.github.io/flowdrop/',
+					icon: 'mdi:api',
+					variant: 'outline' as const,
+					external: true
+				}
 			];
 		} else if (pathname.startsWith('/workflow/create')) {
 			// Create workflow page
@@ -484,7 +484,7 @@
 
 <!-- Toast Notifications (outside MainLayout for proper z-index stacking) -->
 <Toaster
-		position="bottom-center"
-		containerClassName={FLOWDROP_TOASTER_CLASS}
-		toastOptions={flowdropToastOptions}
-	/>
+	position="bottom-center"
+	containerClassName={FLOWDROP_TOASTER_CLASS}
+	toastOptions={flowdropToastOptions}
+/>

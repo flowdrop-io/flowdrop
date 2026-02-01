@@ -4650,7 +4650,8 @@ export const mockNodes: NodeMetadata[] = [
 		name: 'Task Assignment',
 		type: 'default',
 		supportedTypes: ['default', 'simple'],
-		description: 'Assign tasks to team members with categories and tags. Demonstrates autocomplete form fields.',
+		description:
+			'Assign tasks to team members with categories and tags. Demonstrates autocomplete form fields.',
 		category: 'helpers',
 		icon: 'mdi:account-check',
 		color: '#10b981',

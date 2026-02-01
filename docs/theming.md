@@ -8,12 +8,12 @@ Override the semantic tokens to customize FlowDrop:
 
 ```css
 :root {
-  /* Change the primary color */
-  --fd-primary: #8b5cf6;
-  --fd-primary-hover: #7c3aed;
-  
-  /* Adjust border radius */
-  --fd-radius-md: 0.5rem;
+	/* Change the primary color */
+	--fd-primary: #8b5cf6;
+	--fd-primary-hover: #7c3aed;
+
+	/* Adjust border radius */
+	--fd-radius-md: 0.5rem;
 }
 ```
 
@@ -226,11 +226,11 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-  --fd-primary: #8b5cf6;
-  --fd-primary-hover: #7c3aed;
-  --fd-primary-muted: #f5f3ff;
-  --fd-accent: #8b5cf6;
-  --fd-ring: #8b5cf6;
+	--fd-primary: #8b5cf6;
+	--fd-primary-hover: #7c3aed;
+	--fd-primary-muted: #f5f3ff;
+	--fd-accent: #8b5cf6;
+	--fd-ring: #8b5cf6;
 }
 ```
 
@@ -238,10 +238,10 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-  --fd-radius-sm: 0.5rem;
-  --fd-radius-md: 0.75rem;
-  --fd-radius-lg: 1rem;
-  --fd-radius-xl: 1.5rem;
+	--fd-radius-sm: 0.5rem;
+	--fd-radius-md: 0.75rem;
+	--fd-radius-lg: 1rem;
+	--fd-radius-xl: 1.5rem;
 }
 ```
 
@@ -249,10 +249,10 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-  --fd-space-1: 0.125rem;
-  --fd-space-2: 0.25rem;
-  --fd-space-3: 0.5rem;
-  --fd-space-4: 0.75rem;
+	--fd-space-1: 0.125rem;
+	--fd-space-2: 0.25rem;
+	--fd-space-3: 0.5rem;
+	--fd-space-4: 0.75rem;
 }
 ```
 
@@ -260,16 +260,16 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-  /* Override internal palette for a warmer gray */
-  --_gray-1: #fafaf9;
-  --_gray-2: #f5f5f4;
-  --_gray-3: #e7e5e4;
-  --_gray-4: #d6d3d1;
-  --_gray-5: #a8a29e;
-  --_gray-6: #78716c;
-  --_gray-7: #57534e;
-  --_gray-8: #292524;
-  --_gray-9: #1c1917;
+	/* Override internal palette for a warmer gray */
+	--_gray-1: #fafaf9;
+	--_gray-2: #f5f5f4;
+	--_gray-3: #e7e5e4;
+	--_gray-4: #d6d3d1;
+	--_gray-5: #a8a29e;
+	--_gray-6: #78716c;
+	--_gray-7: #57534e;
+	--_gray-8: #292524;
+	--_gray-9: #1c1917;
 }
 ```
 
@@ -278,7 +278,7 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 The token system supports dark mode. Semantic color tokens (surfaces, primary, accent, status, node port type colors, edges, etc.) have dark-mode equivalents for accessibility. Enable dark mode with:
 
 ```html
-<html data-theme="dark">
+<html data-theme="dark"></html>
 ```
 
 Or via JavaScript:

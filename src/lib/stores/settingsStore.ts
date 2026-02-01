@@ -10,7 +10,7 @@
  * @module stores/settingsStore
  */
 
-import { writable, derived, get } from "svelte/store";
+import { writable, derived, get } from 'svelte/store';
 import type {
 	FlowDropSettings,
 	ThemeSettings,
@@ -26,11 +26,8 @@ import type {
 	SettingsChangeCallback,
 	SettingsChangeEvent,
 	SettingsCategory
-} from "$lib/types/settings.js";
-import {
-	DEFAULT_SETTINGS,
-	SETTINGS_STORAGE_KEY
-} from "$lib/types/settings.js";
+} from '$lib/types/settings.js';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '$lib/types/settings.js';
 
 // =========================================================================
 // Internal State
@@ -60,7 +57,7 @@ const changeListeners: Set<SettingsChangeCallback> = new Set();
  * @returns Saved settings or null if not found/invalid
  */
 function loadFromStorage(): FlowDropSettings | null {
-	if (typeof window === "undefined") {
+	if (typeof window === 'undefined') {
 		return null;
 	}
 
@@ -72,7 +69,7 @@ function loadFromStorage(): FlowDropSettings | null {
 			return deepMergeSettings(DEFAULT_SETTINGS, parsed);
 		}
 	} catch (error) {
-		console.warn("Failed to load settings from localStorage:", error);
+		console.warn('Failed to load settings from localStorage:', error);
 	}
 
 	return null;
@@ -84,14 +81,14 @@ function loadFromStorage(): FlowDropSettings | null {
  * @param settings - Settings to persist
  */
 function saveToStorage(settings: FlowDropSettings): void {
-	if (typeof window === "undefined") {
+	if (typeof window === 'undefined') {
 		return;
 	}
 
 	try {
 		localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
 	} catch (error) {
-		console.warn("Failed to save settings to localStorage:", error);
+		console.warn('Failed to save settings to localStorage:', error);
 	}
 }
 
@@ -161,7 +158,7 @@ const initialSettings = loadFromStorage() ?? DEFAULT_SETTINGS;
 const storeState = writable<SettingsStoreState>({
 	settings: initialSettings,
 	initialized: true,
-	syncStatus: "idle",
+	syncStatus: 'idle',
 	lastSyncedAt: null,
 	syncError: null
 });
@@ -187,18 +184,12 @@ export const syncStatusStore = derived(storeState, ($state) => ({
 /**
  * Theme settings store
  */
-export const themeSettings = derived(
-	settingsStore,
-	($settings) => $settings.theme
-);
+export const themeSettings = derived(settingsStore, ($settings) => $settings.theme);
 
 /**
  * Editor settings store
  */
-export const editorSettings = derived(
-	settingsStore,
-	($settings) => $settings.editor
-);
+export const editorSettings = derived(settingsStore, ($settings) => $settings.editor);
 
 /**
  * UI settings store
@@ -208,18 +199,12 @@ export const uiSettings = derived(settingsStore, ($settings) => $settings.ui);
 /**
  * Behavior settings store
  */
-export const behaviorSettings = derived(
-	settingsStore,
-	($settings) => $settings.behavior
-);
+export const behaviorSettings = derived(settingsStore, ($settings) => $settings.behavior);
 
 /**
  * API settings store
  */
-export const apiSettings = derived(
-	settingsStore,
-	($settings) => $settings.api
-);
+export const apiSettings = derived(settingsStore, ($settings) => $settings.api);
 
 // =========================================================================
 // Theme Compatibility (for themeStore migration)
@@ -230,31 +215,29 @@ export const apiSettings = derived(
  * Updates when system preference changes
  */
 const systemTheme = writable<ResolvedTheme>(
-	typeof window !== "undefined" ? getSystemTheme() : "light"
+	typeof window !== 'undefined' ? getSystemTheme() : 'light'
 );
 
 /**
  * Get the system's color scheme preference
  */
 function getSystemTheme(): ResolvedTheme {
-	if (typeof window === "undefined") {
-		return "light";
+	if (typeof window === 'undefined') {
+		return 'light';
 	}
-	return window.matchMedia("(prefers-color-scheme: dark)").matches
-		? "dark"
-		: "light";
+	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 // Listen for system theme changes
-if (typeof window !== "undefined") {
-	const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+if (typeof window !== 'undefined') {
+	const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 	const handleSystemThemeChange = (event: MediaQueryListEvent): void => {
-		systemTheme.set(event.matches ? "dark" : "light");
+		systemTheme.set(event.matches ? 'dark' : 'light');
 	};
 
 	if (mediaQuery.addEventListener) {
-		mediaQuery.addEventListener("change", handleSystemThemeChange);
+		mediaQuery.addEventListener('change', handleSystemThemeChange);
 	} else {
 		// Fallback for older browsers
 		mediaQuery.addListener(handleSystemThemeChange);
@@ -273,7 +256,7 @@ export const theme = derived(themeSettings, ($theme) => $theme.preference);
 export const resolvedTheme = derived(
 	[themeSettings, systemTheme],
 	([$themeSettings, $systemTheme]) => {
-		if ($themeSettings.preference === "auto") {
+		if ($themeSettings.preference === 'auto') {
 			return $systemTheme;
 		}
 		return $themeSettings.preference;
@@ -304,7 +287,7 @@ function notifyChange(
 		try {
 			listener(event);
 		} catch (error) {
-			console.error("Settings change listener error:", error);
+			console.error('Settings change listener error:', error);
 		}
 	});
 }
@@ -335,7 +318,7 @@ export function updateSettings(partial: PartialSettings): void {
 		// Notify listeners for each changed category
 		for (const category of Object.keys(partial) as SettingsCategory[]) {
 			const partialCategory = partial[category];
-			if (partialCategory && typeof partialCategory === "object") {
+			if (partialCategory && typeof partialCategory === 'object') {
 				for (const key of Object.keys(partialCategory)) {
 					const prevCat = getCategoryAsRecord(previousSettings, category);
 					const newCat = getCategoryAsRecord(newSettings, category);
@@ -404,10 +387,10 @@ export function toggleTheme(): void {
 	const currentTheme = get(theme);
 	const currentResolved = get(resolvedTheme);
 
-	if (currentTheme === "auto") {
-		setTheme(currentResolved === "dark" ? "light" : "dark");
+	if (currentTheme === 'auto') {
+		setTheme(currentResolved === 'dark' ? 'light' : 'dark');
 	} else {
-		setTheme(currentTheme === "dark" ? "light" : "dark");
+		setTheme(currentTheme === 'dark' ? 'light' : 'dark');
 	}
 }
 
@@ -418,14 +401,14 @@ export function cycleTheme(): void {
 	const currentTheme = get(theme);
 
 	switch (currentTheme) {
-		case "light":
-			setTheme("dark");
+		case 'light':
+			setTheme('dark');
 			break;
-		case "dark":
-			setTheme("auto");
+		case 'dark':
+			setTheme('auto');
 			break;
-		case "auto":
-			setTheme("light");
+		case 'auto':
+			setTheme('light');
 			break;
 	}
 }
@@ -436,10 +419,10 @@ export function cycleTheme(): void {
  * @param resolved - The resolved theme to apply
  */
 function applyTheme(resolved: ResolvedTheme): void {
-	if (typeof document === "undefined") {
+	if (typeof document === 'undefined') {
 		return;
 	}
-	document.documentElement.setAttribute("data-theme", resolved);
+	document.documentElement.setAttribute('data-theme', resolved);
 }
 
 /**
@@ -481,13 +464,13 @@ export function setSettingsService(
  */
 export async function syncSettingsToApi(): Promise<void> {
 	if (!settingsService) {
-		console.warn("Settings service not configured for API sync");
+		console.warn('Settings service not configured for API sync');
 		return;
 	}
 
 	storeState.update((state) => ({
 		...state,
-		syncStatus: "syncing" as SyncStatus,
+		syncStatus: 'syncing' as SyncStatus,
 		syncError: null
 	}));
 
@@ -497,17 +480,16 @@ export async function syncSettingsToApi(): Promise<void> {
 
 		storeState.update((state) => ({
 			...state,
-			syncStatus: "synced" as SyncStatus,
+			syncStatus: 'synced' as SyncStatus,
 			lastSyncedAt: Date.now(),
 			syncError: null
 		}));
 	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : "Failed to sync settings";
+		const errorMessage = error instanceof Error ? error.message : 'Failed to sync settings';
 
 		storeState.update((state) => ({
 			...state,
-			syncStatus: "error" as SyncStatus,
+			syncStatus: 'error' as SyncStatus,
 			syncError: errorMessage
 		}));
 
@@ -522,13 +504,13 @@ export async function syncSettingsToApi(): Promise<void> {
  */
 export async function loadSettingsFromApi(): Promise<void> {
 	if (!settingsService) {
-		console.warn("Settings service not configured for API sync");
+		console.warn('Settings service not configured for API sync');
 		return;
 	}
 
 	storeState.update((state) => ({
 		...state,
-		syncStatus: "syncing" as SyncStatus,
+		syncStatus: 'syncing' as SyncStatus,
 		syncError: null
 	}));
 
@@ -539,7 +521,7 @@ export async function loadSettingsFromApi(): Promise<void> {
 		storeState.update((state) => ({
 			...state,
 			settings: mergedSettings,
-			syncStatus: "synced" as SyncStatus,
+			syncStatus: 'synced' as SyncStatus,
 			lastSyncedAt: Date.now(),
 			syncError: null
 		}));
@@ -548,11 +530,11 @@ export async function loadSettingsFromApi(): Promise<void> {
 		saveToStorage(mergedSettings);
 	} catch (error) {
 		const errorMessage =
-			error instanceof Error ? error.message : "Failed to load settings from API";
+			error instanceof Error ? error.message : 'Failed to load settings from API';
 
 		storeState.update((state) => ({
 			...state,
-			syncStatus: "error" as SyncStatus,
+			syncStatus: 'error' as SyncStatus,
 			syncError: errorMessage
 		}));
 
@@ -595,7 +577,10 @@ export async function initializeSettings(options?: {
 	// Apply custom defaults if provided
 	if (options?.defaults) {
 		const currentSettings = get(settingsStore);
-		const withDefaults = deepMergeSettings(currentSettings, options.defaults as Partial<FlowDropSettings>);
+		const withDefaults = deepMergeSettings(
+			currentSettings,
+			options.defaults as Partial<FlowDropSettings>
+		);
 		storeState.update((state) => ({
 			...state,
 			settings: withDefaults
@@ -612,7 +597,7 @@ export async function initializeSettings(options?: {
 			await loadSettingsFromApi();
 		} catch {
 			// Silently fail - local settings are still available
-			console.warn("Failed to sync settings from API on initialization");
+			console.warn('Failed to sync settings from API on initialization');
 		}
 	}
 }

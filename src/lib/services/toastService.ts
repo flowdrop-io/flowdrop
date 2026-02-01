@@ -4,7 +4,7 @@
  * Provides consistent toast notifications across the FlowDrop application
  */
 
-import { toast, type DefaultToastOptions } from "svelte-5-french-toast";
+import { toast, type DefaultToastOptions } from 'svelte-5-french-toast';
 
 /**
  * Default toast options themed with FlowDrop design tokens.
@@ -12,30 +12,30 @@ import { toast, type DefaultToastOptions } from "svelte-5-french-toast";
  * and import '@d34dman/flowdrop/styles/toast.css' (or app toast.css) so toast bar styles apply.
  */
 export const flowdropToastOptions: DefaultToastOptions = {
-	className: "flowdrop-toast-bar",
-	style: "",
+	className: 'flowdrop-toast-bar',
+	style: '',
 	success: {
 		iconTheme: {
-			primary: "var(--fd-success)",
-			secondary: "var(--fd-success-foreground)"
+			primary: 'var(--fd-success)',
+			secondary: 'var(--fd-success-foreground)'
 		}
 	},
 	error: {
 		iconTheme: {
-			primary: "var(--fd-error)",
-			secondary: "var(--fd-error-foreground)"
+			primary: 'var(--fd-error)',
+			secondary: 'var(--fd-error-foreground)'
 		}
 	},
 	loading: {
 		iconTheme: {
-			primary: "var(--fd-primary)",
-			secondary: "var(--fd-primary-muted)"
+			primary: 'var(--fd-primary)',
+			secondary: 'var(--fd-primary-muted)'
 		}
 	}
 };
 
 /** Container class for FlowDrop-themed Toaster (used with toast.css). */
-export const FLOWDROP_TOASTER_CLASS = "flowdrop-toaster";
+export const FLOWDROP_TOASTER_CLASS = 'flowdrop-toaster';
 
 /**
  * Toast notification types

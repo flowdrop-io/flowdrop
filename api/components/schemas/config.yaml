@@ -90,7 +90,7 @@ OneOfItem:
   description: |
     JSON Schema oneOf item for labeled options.
     This is the standard JSON Schema way to define labeled select options.
-    
+
     Example:
     ```json
     {
@@ -122,7 +122,7 @@ ConfigProperty:
   description: |
     JSON Schema property definition for node configuration.
     Follows JSON Schema draft-07 specification with FlowDrop extensions for UI rendering.
-    
+
     For select/dropdown fields, use standard JSON Schema patterns:
     - `enum` for simple value lists (no labels)
     - `oneOf` with `const`/`title` for labeled options
@@ -158,7 +158,7 @@ ConfigProperty:
       description: |
         JSON Schema oneOf for labeled options (standard approach).
         Each item should have `const` (value) and optionally `title` (label).
-        
+
         Example:
         ```json
         "oneOf": [
@@ -221,12 +221,12 @@ ConfigProperty:
       description: |
         Controls the display order of fields in the configuration form.
         Fields are sorted by this value in ascending order (lower values appear first).
-        
+
         Use negative values to ensure fields appear at the top:
         - `-2` for `instanceTitle` (appears first)
         - `-1` for `instanceDescription` (appears second)
         - `0` or positive values for regular fields
-        
+
         Fields without `x-display-order` are sorted after fields with explicit ordering.
       example: -2
     items:

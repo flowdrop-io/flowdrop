@@ -92,10 +92,4 @@ export {
 	sampleAutocompleteSchemas,
 	sampleAutocompleteFormSchema
 } from './autocomplete.js';
-export type {
-	MockUser,
-	MockTag,
-	MockCategory,
-	MockProduct,
-	MockLocation
-} from './autocomplete.js';
+export type { MockUser, MockTag, MockCategory, MockProduct, MockLocation } from './autocomplete.js';

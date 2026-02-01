@@ -66,8 +66,8 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ## Features
 
-|                             |                                                                           |
-| --------------------------- | ------------------------------------------------------------------------- |
+|                              |                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------- |
 | 🎨 **Visual Editor Only**    | Pure UI component. No hidden backend, no external dependencies            |
 | 🔐 **You Own Everything**    | Your data, your servers, your orchestration logic, your security policies |
 | 🔌 **Backend Agnostic**      | Connect to any API: Drupal, Laravel, Express, FastAPI, or your own        |

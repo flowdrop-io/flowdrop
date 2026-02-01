@@ -49,7 +49,7 @@
 }
 
 :global(.svelte-flow__handle::before) {
-	content: "";
+	content: '';
 	position: absolute;
 	inset: 0;
 	margin: auto;
@@ -914,7 +914,11 @@
 	   ========================================================================= */
 
 	/* Interrupt state: Pending (awaiting user response) */
-	--fd-interrupt-pending-bg: linear-gradient(135deg, var(--fd-warning-muted) 0%, var(--fd-warning-muted) 100%);
+	--fd-interrupt-pending-bg: linear-gradient(
+		135deg,
+		var(--fd-warning-muted) 0%,
+		var(--fd-warning-muted) 100%
+	);
 	--fd-interrupt-pending-border: var(--fd-warning);
 	--fd-interrupt-pending-shadow: rgba(245, 158, 11, 0.15);
 	--fd-interrupt-pending-avatar: var(--fd-warning);
@@ -922,7 +926,11 @@
 	--fd-interrupt-pending-text-light: var(--fd-warning-hover);
 
 	/* Interrupt state: Completed (response received - neutral) */
-	--fd-interrupt-completed-bg: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
+	--fd-interrupt-completed-bg: linear-gradient(
+		135deg,
+		var(--fd-info-muted) 0%,
+		var(--fd-primary-muted) 100%
+	);
 	--fd-interrupt-completed-border: var(--fd-primary);
 	--fd-interrupt-completed-shadow: rgba(59, 130, 246, 0.15);
 	--fd-interrupt-completed-avatar: var(--fd-primary);
@@ -938,7 +946,11 @@
 	--fd-interrupt-cancelled-text-light: var(--fd-muted-foreground);
 
 	/* Interrupt state: Error */
-	--fd-interrupt-error-bg: linear-gradient(135deg, var(--fd-error-muted) 0%, var(--fd-error-muted) 100%);
+	--fd-interrupt-error-bg: linear-gradient(
+		135deg,
+		var(--fd-error-muted) 0%,
+		var(--fd-error-muted) 100%
+	);
 	--fd-interrupt-error-border: var(--fd-error);
 	--fd-interrupt-error-shadow: rgba(239, 68, 68, 0.15);
 	--fd-interrupt-error-avatar: var(--fd-error);
@@ -953,8 +965,16 @@
 	--fd-interrupt-prompt-border-error: rgba(239, 68, 68, 0.2);
 
 	/* Interrupt button tokens */
-	--fd-interrupt-btn-primary-bg: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
-	--fd-interrupt-btn-primary-bg-hover: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
+	--fd-interrupt-btn-primary-bg: linear-gradient(
+		135deg,
+		var(--fd-primary) 0%,
+		var(--fd-primary-hover) 100%
+	);
+	--fd-interrupt-btn-primary-bg-hover: linear-gradient(
+		135deg,
+		var(--fd-primary-hover) 0%,
+		var(--fd-primary-hover) 100%
+	);
 	--fd-interrupt-btn-primary-shadow: rgba(59, 130, 246, 0.3);
 	--fd-interrupt-btn-secondary-bg: var(--fd-muted);
 	--fd-interrupt-btn-secondary-border: var(--fd-border);
@@ -987,7 +1007,7 @@
 }
 
 /* Dark mode overrides for interrupt component tokens */
-[data-theme="dark"] {
+[data-theme='dark'] {
 	/* Interrupt prompt inner styling - dark background for dark mode */
 	--fd-interrupt-prompt-bg: rgba(30, 30, 35, 0.95);
 	--fd-interrupt-prompt-border-pending: rgba(251, 191, 36, 0.25);

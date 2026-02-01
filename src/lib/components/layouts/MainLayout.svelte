@@ -377,7 +377,9 @@
 					aria-label="Resize bottom panel"
 					tabindex="0"
 				>
-					<div class="flowdrop-main-layout__divider-handle flowdrop-main-layout__divider-handle--horizontal"></div>
+					<div
+						class="flowdrop-main-layout__divider-handle flowdrop-main-layout__divider-handle--horizontal"
+					></div>
 				</div>
 			{/if}
 
@@ -630,7 +632,8 @@
 		transform: scaleX(1.2);
 	}
 
-	.flowdrop-main-layout__divider--bottom.flowdrop-main-layout__divider--active .flowdrop-main-layout__divider-handle--horizontal {
+	.flowdrop-main-layout__divider--bottom.flowdrop-main-layout__divider--active
+		.flowdrop-main-layout__divider-handle--horizontal {
 		transform: scaleX(1.4);
 	}
 

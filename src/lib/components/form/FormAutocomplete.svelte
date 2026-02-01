@@ -262,7 +262,7 @@
 	function handleInput(event: Event): void {
 		const target = event.currentTarget as HTMLInputElement;
 		inputValue = target.value;
-		
+
 		// Open dropdown
 		showDropdown();
 
@@ -493,9 +493,9 @@
 	 */
 	function showDropdown(): void {
 		if (!popoverElement || disabled) return;
-		
+
 		updatePopoverPosition();
-		
+
 		try {
 			popoverElement.showPopover();
 			isOpen = true;
@@ -510,7 +510,7 @@
 	 */
 	function hideDropdown(): void {
 		if (!popoverElement) return;
-		
+
 		try {
 			popoverElement.hidePopover();
 		} catch {
@@ -658,11 +658,7 @@
 		style={popoverStyle}
 		onmousedown={(e) => e.preventDefault()}
 	>
-		<ul
-			class="form-autocomplete__listbox"
-			role="listbox"
-			aria-label="Suggestions"
-		>
+		<ul class="form-autocomplete__listbox" role="listbox" aria-label="Suggestions">
 			{#if isLoading}
 				<li class="form-autocomplete__status form-autocomplete__status--loading">
 					<Icon icon="heroicons:arrow-path" class="form-autocomplete__status-icon" />

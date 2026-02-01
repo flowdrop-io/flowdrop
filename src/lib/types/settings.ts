@@ -17,12 +17,12 @@
  * - 'dark': Force dark theme
  * - 'auto': Follow system preference
  */
-export type ThemePreference = "light" | "dark" | "auto";
+export type ThemePreference = 'light' | 'dark' | 'auto';
 
 /**
  * Resolved theme (actual applied theme, never 'auto')
  */
-export type ResolvedTheme = "light" | "dark";
+export type ResolvedTheme = 'light' | 'dark';
 
 /**
  * Theme-related settings
@@ -134,34 +134,28 @@ export type SettingsCategory = keyof FlowDropSettings;
 /**
  * All available settings categories
  */
-export const SETTINGS_CATEGORIES: SettingsCategory[] = [
-	"theme",
-	"editor",
-	"ui",
-	"behavior",
-	"api"
-];
+export const SETTINGS_CATEGORIES: SettingsCategory[] = ['theme', 'editor', 'ui', 'behavior', 'api'];
 
 /**
  * Human-readable labels for settings categories
  */
 export const SETTINGS_CATEGORY_LABELS: Record<SettingsCategory, string> = {
-	theme: "Theme",
-	editor: "Editor",
-	ui: "UI",
-	behavior: "Behavior",
-	api: "API"
+	theme: 'Theme',
+	editor: 'Editor',
+	ui: 'UI',
+	behavior: 'Behavior',
+	api: 'API'
 };
 
 /**
  * Icons for settings categories (Iconify icon names)
  */
 export const SETTINGS_CATEGORY_ICONS: Record<SettingsCategory, string> = {
-	theme: "mdi:palette",
-	editor: "mdi:grid",
-	ui: "mdi:view-dashboard",
-	behavior: "mdi:cog-play",
-	api: "mdi:api"
+	theme: 'mdi:palette',
+	editor: 'mdi:grid',
+	ui: 'mdi:view-dashboard',
+	behavior: 'mdi:cog-play',
+	api: 'mdi:api'
 };
 
 // =========================================================================
@@ -172,7 +166,7 @@ export const SETTINGS_CATEGORY_ICONS: Record<SettingsCategory, string> = {
  * Default theme settings
  */
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
-	preference: "auto"
+	preference: 'auto'
 };
 
 /**
@@ -273,12 +267,12 @@ export type SettingsChangeCallback = (event: SettingsChangeEvent) => void;
 /**
  * localStorage key for persisting settings
  */
-export const SETTINGS_STORAGE_KEY = "flowdrop-settings";
+export const SETTINGS_STORAGE_KEY = 'flowdrop-settings';
 
 /**
  * API sync status
  */
-export type SyncStatus = "idle" | "syncing" | "synced" | "error";
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
 /**
  * Settings store state including sync metadata

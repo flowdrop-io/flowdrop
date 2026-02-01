@@ -403,7 +403,9 @@ export function isFieldOptionArray(options: FieldOption[] | string[]): options i
  * Type guard to check if items are OneOfItem objects (JSON Schema oneOf pattern)
  */
 export function isOneOfArray(items: unknown[]): items is OneOfItem[] {
-	return items.length > 0 && typeof items[0] === 'object' && items[0] !== null && 'const' in items[0];
+	return (
+		items.length > 0 && typeof items[0] === 'object' && items[0] !== null && 'const' in items[0]
+	);
 }
 
 /**
@@ -430,7 +432,9 @@ export function oneOfToOptions(oneOfItems: OneOfItem[]): FieldOption[] {
  * @param options - Options in various formats
  * @returns Normalized FieldOption array
  */
-export function normalizeOptions(options: FieldOption[] | string[] | OneOfItem[] | unknown[]): FieldOption[] {
+export function normalizeOptions(
+	options: FieldOption[] | string[] | OneOfItem[] | unknown[]
+): FieldOption[] {
 	if (!options || options.length === 0) {
 		return [];
 	}

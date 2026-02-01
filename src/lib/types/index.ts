@@ -719,10 +719,10 @@ export type SchemaType = 'config' | 'input' | 'output';
 export type SchemaProperty<T extends SchemaType> = T extends 'config'
 	? ConfigProperty
 	: T extends 'input'
-	? InputProperty
-	: T extends 'output'
-	? OutputProperty
-	: never;
+		? InputProperty
+		: T extends 'output'
+			? OutputProperty
+			: never;
 
 /**
  * Utility type to get the appropriate schema type based on schema type
@@ -730,10 +730,10 @@ export type SchemaProperty<T extends SchemaType> = T extends 'config'
 export type SchemaTypeMap<T extends SchemaType> = T extends 'config'
 	? ConfigSchema
 	: T extends 'input'
-	? InputSchema
-	: T extends 'output'
-	? OutputSchema
-	: never;
+		? InputSchema
+		: T extends 'output'
+			? OutputSchema
+			: never;
 
 /**
  * Node configuration values

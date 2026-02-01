@@ -444,7 +444,7 @@ export const workflowActions = {
 	 * Add a node
 	 */
 	addNode: (node: WorkflowNode) => {
-		pushToHistory("Add node");
+		pushToHistory('Add node');
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -466,7 +466,7 @@ export const workflowActions = {
 	 * A single undo will restore both the node and its edges.
 	 */
 	removeNode: (nodeId: string) => {
-		pushToHistory("Delete node");
+		pushToHistory('Delete node');
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -486,7 +486,7 @@ export const workflowActions = {
 	 * Add an edge
 	 */
 	addEdge: (edge: WorkflowEdge) => {
-		pushToHistory("Add connection");
+		pushToHistory('Add connection');
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -505,7 +505,7 @@ export const workflowActions = {
 	 * Remove an edge
 	 */
 	removeEdge: (edgeId: string) => {
-		pushToHistory("Delete connection");
+		pushToHistory('Delete connection');
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -526,7 +526,7 @@ export const workflowActions = {
 	 * Used for config changes. Pushes to history for undo support.
 	 */
 	updateNode: (nodeId: string, updates: Partial<WorkflowNode>) => {
-		pushToHistory("Update node config");
+		pushToHistory('Update node config');
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -587,7 +587,7 @@ export const workflowActions = {
 		description?: string;
 		metadata?: Partial<Workflow['metadata']>;
 	}) => {
-		pushToHistory("Batch update");
+		pushToHistory('Batch update');
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
