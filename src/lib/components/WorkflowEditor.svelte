@@ -82,7 +82,7 @@
 			if (currentWorkflowId !== storeWorkflowId) {
 				currentWorkflow = $workflowStore;
 				currentWorkflowId = storeWorkflowId;
-				console.log("[FlowDrop] Synced workflow from store:", storeWorkflowId);
+				console.log('[FlowDrop] Synced workflow from store:', storeWorkflowId);
 			}
 		} else if (currentWorkflow !== null) {
 			// Store was cleared
@@ -94,7 +94,7 @@
 	// Set up the history restore callback to update workflow when undo/redo is triggered
 	$effect(() => {
 		setOnRestoreCallback((restoredWorkflow: Workflow) => {
-			console.log("[FlowDrop] Restoring workflow from history");
+			console.log('[FlowDrop] Restoring workflow from history');
 			// Directly update local state (bypass store sync effect)
 			currentWorkflow = restoredWorkflow;
 			// Also update the store without triggering history
@@ -326,7 +326,7 @@
 	function handleNodeDragStart(): void {
 		isDraggingNode = true;
 		// Push current state to history before the drag changes anything
-		workflowActions.pushHistory("Move node");
+		workflowActions.pushHistory('Move node');
 	}
 
 	/**
@@ -349,6 +349,9 @@
 		sourceHandle?: string;
 		targetHandle?: string;
 	}): Promise<void> {
+		// Push to history before the connection is made
+		workflowActions.pushHistory("Add connection");
+
 		// SvelteFlow will automatically create the edge due to bind:edges
 		// Wait for DOM update before applying styling
 		await tick();
@@ -395,10 +398,24 @@
 
 			// Show native confirmation dialog
 			const confirmed = window.confirm(message);
-			return confirmed;
+			if (!confirmed) {
+				return false;
+			}
 		}
 
-		// If confirmDelete is disabled, proceed with deletion
+		// Push to history BEFORE the deletion happens so it can be undone
+		const nodeCount = params.nodes.length;
+		const edgeCount = params.edges.length;
+		let description = "Delete";
+		if (nodeCount > 0 && edgeCount > 0) {
+			description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''} and ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
+		} else if (nodeCount > 0) {
+			description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''}`;
+		} else if (edgeCount > 0) {
+			description = `Delete ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
+		}
+		workflowActions.pushHistory(description);
+
 		return true;
 	}
 
@@ -471,7 +488,7 @@
 
 		if (newNode && currentWorkflow) {
 			// Push to history before making the change
-			workflowActions.pushHistory("Add node");
+			workflowActions.pushHistory('Add node');
 
 			currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
 
@@ -529,27 +546,25 @@
 		// Don't handle shortcuts if user is typing in an input, textarea, or contenteditable
 		const target = event.target as HTMLElement;
 		const isInputElement =
-			target.tagName === "INPUT" ||
-			target.tagName === "TEXTAREA" ||
-			target.isContentEditable;
+			target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
 		if (isInputElement) {
 			return;
 		}
 
 		// Undo: Ctrl+Z (without Shift)
-		if (event.key === "z" && !event.shiftKey) {
+		if (event.key === 'z' && !event.shiftKey) {
 			event.preventDefault();
 			const success = historyActions.undo();
-			console.log("[FlowDrop] Undo triggered, success:", success);
+			console.log('[FlowDrop] Undo triggered, success:', success);
 			return;
 		}
 
 		// Redo: Ctrl+Shift+Z or Ctrl+Y
-		if ((event.key === "z" && event.shiftKey) || event.key === "y") {
+		if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
 			event.preventDefault();
 			const success = historyActions.redo();
-			console.log("[FlowDrop] Redo triggered, success:", success);
+			console.log('[FlowDrop] Redo triggered, success:', success);
 			return;
 		}
 	}
