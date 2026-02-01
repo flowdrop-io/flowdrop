@@ -126,7 +126,6 @@ export const historyActions = {
 	 */
 	undo: (): boolean => {
 		const previousState = historyService.undo();
-		console.log("[FlowDrop History Store] Undo result:", previousState ? "got state" : "null", "callback:", onRestoreCallback ? "set" : "not set");
 		if (previousState && onRestoreCallback) {
 			onRestoreCallback(previousState);
 			return true;
