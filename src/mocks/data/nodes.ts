@@ -5379,6 +5379,145 @@ export const mockNodes: NodeMetadata[] = [
 				}
 			}
 		}
+	},
+	// Test terminal nodes for multi-handle positioning
+	{
+		id: 'test_terminal_multi_output',
+		name: 'Test Multi-Output Start',
+		type: 'terminal',
+		supportedTypes: ['terminal'],
+		description: 'Test terminal node with multiple outputs for handle positioning',
+		category: 'helpers',
+		icon: 'mdi:play-circle',
+		color: '#10b981',
+		version: '1.0.0',
+		tags: ['test', 'start', 'multi-output'],
+		inputs: [],
+		outputs: [
+			{
+				id: 'trigger1',
+				name: 'Trigger 1',
+				type: 'output',
+				dataType: 'trigger',
+				required: false,
+				description: 'First trigger output'
+			},
+			{
+				id: 'trigger2',
+				name: 'Trigger 2',
+				type: 'output',
+				dataType: 'trigger',
+				required: false,
+				description: 'Second trigger output'
+			},
+			{
+				id: 'data',
+				name: 'Data',
+				type: 'output',
+				dataType: 'json',
+				required: false,
+				description: 'Data output'
+			}
+		],
+		config: {
+			variant: 'start'
+		},
+		configSchema: {
+			type: 'object',
+			properties: {}
+		}
+	},
+	{
+		id: 'test_terminal_multi_input',
+		name: 'Test Multi-Input End',
+		type: 'terminal',
+		supportedTypes: ['terminal'],
+		description: 'Test terminal node with multiple inputs for handle positioning',
+		category: 'helpers',
+		icon: 'mdi:stop-circle',
+		color: '#6b7280',
+		version: '1.0.0',
+		tags: ['test', 'end', 'multi-input'],
+		inputs: [
+			{
+				id: 'trigger1',
+				name: 'Trigger 1',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'First trigger input'
+			},
+			{
+				id: 'trigger2',
+				name: 'Trigger 2',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Second trigger input'
+			}
+		],
+		outputs: [],
+		config: {
+			variant: 'end'
+		},
+		configSchema: {
+			type: 'object',
+			properties: {}
+		}
+	},
+	{
+		id: 'test_terminal_four_inputs',
+		name: 'Test 4-Input End',
+		type: 'terminal',
+		supportedTypes: ['terminal'],
+		description: 'Test terminal node with four inputs for handle positioning',
+		category: 'helpers',
+		icon: 'mdi:stop-circle',
+		color: '#ef4444',
+		version: '1.0.0',
+		tags: ['test', 'exit', 'multi-input'],
+		inputs: [
+			{
+				id: 'input1',
+				name: 'Input 1',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'First input'
+			},
+			{
+				id: 'input2',
+				name: 'Input 2',
+				type: 'input',
+				dataType: 'json',
+				required: false,
+				description: 'Second input'
+			},
+			{
+				id: 'input3',
+				name: 'Input 3',
+				type: 'input',
+				dataType: 'string',
+				required: false,
+				description: 'Third input'
+			},
+			{
+				id: 'input4',
+				name: 'Input 4',
+				type: 'input',
+				dataType: 'number',
+				required: false,
+				description: 'Fourth input'
+			}
+		],
+		outputs: [],
+		config: {
+			variant: 'exit'
+		},
+		configSchema: {
+			type: 'object',
+			properties: {}
+		}
 	}
 ];
 

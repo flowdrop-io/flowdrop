@@ -14,6 +14,7 @@
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
 	import { getNodeIcon } from '../../utils/icons.js';
+	import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
 
 	/**
 	 * Terminal node variant types
@@ -316,13 +317,14 @@
 	<div class="flowdrop-terminal-node__circle-wrapper">
 		<!-- Input Handles (for end/exit variants) -->
 		{#if showInputs}
-			{#each inputPorts as port (port.id)}
+			{#each inputPorts as port, index (port.id)}
+				{@const pos = getCircleHandlePosition(index, inputPorts.length, 'left')}
 				<Handle
 					type="target"
 					position={Position.Left}
 					style="--fd-handle-fill: {getDataTypeColor(
 						port.dataType
-					)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); margin-left: -10px; z-index: 30;"
+					)}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
 					id={`${props.data.nodeId}-input-${port.id}`}
 				/>
 			{/each}
@@ -337,14 +339,15 @@
 
 		<!-- Output Handles (for start variant) -->
 		{#if showOutputs}
-			{#each outputPorts as port (port.id)}
+			{#each outputPorts as port, index (port.id)}
+				{@const pos = getCircleHandlePosition(index, outputPorts.length, 'right')}
 				<Handle
 					type="source"
 					position={Position.Right}
 					id={`${props.data.nodeId}-output-${port.id}`}
 					style="--fd-handle-fill: {getDataTypeColor(
 						port.dataType
-					)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); margin-right: -10px; z-index: 30;"
+					)}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
 				/>
 			{/each}
 		{/if}
@@ -614,25 +617,34 @@
 		}
 	}
 
-	/* Handle: 20px/12px from base.css; position offsets for 20px handle */
-	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle),
+	/* Handle styles - positioned along circle arc using cos/sin */
+	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle) {
+		width: 16px !important;
+		height: 16px !important;
+		border-radius: 50% !important;
+		border: 2px solid var(--fd-handle-border) !important;
+		transition: all var(--fd-transition-normal) !important;
+		cursor: pointer !important;
+		z-index: 20 !important;
+		pointer-events: auto !important;
+	}
+
+	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle:hover) {
+		transform: translate(-50%, -50%) scale(1.2) !important;
+	}
+
+	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle:focus) {
+		outline: 2px solid var(--fd-ring) !important;
+		outline-offset: 2px !important;
+	}
+
+	/* Also keep node-level handle styles for fallback */
 	:global(.svelte-flow__node-terminal .svelte-flow__handle) {
 		z-index: 20 !important;
 		pointer-events: auto !important;
 	}
 
-	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle-left),
-	:global(.svelte-flow__node-terminal .svelte-flow__handle-left) {
-		left: -10px !important;
-	}
-
-	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle-right),
-	:global(.svelte-flow__node-terminal .svelte-flow__handle-right) {
-		right: -10px !important;
-	}
-
-	:global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle:hover),
 	:global(.svelte-flow__node-terminal .svelte-flow__handle:hover) {
-		transform: translateY(-50%) scale(1.2) !important;
+		transform: translate(-50%, -50%) scale(1.2) !important;
 	}
 </style>
