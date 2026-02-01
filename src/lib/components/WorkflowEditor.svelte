@@ -30,6 +30,7 @@
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
 	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
+	import { historyActions, setOnRestoreCallback } from '../stores/historyStore.js';
 	import UniversalNode from './UniversalNode.svelte';
 	import {
 		EdgeStylingHelper,
@@ -65,11 +66,45 @@
 	// Create a local currentWorkflow variable that we can control directly
 	let currentWorkflow = $state<Workflow | null>(null);
 
+	// Track if we're currently dragging a node (for history debouncing)
+	let isDraggingNode = $state(false);
+
+	// Track the workflow ID we're currently editing to detect workflow switches
+	let currentWorkflowId: string | null = null;
+
 	// Initialize currentWorkflow from global store
+	// Only sync when workflow ID changes (new workflow loaded) or on initial load
 	$effect(() => {
 		if ($workflowStore) {
-			currentWorkflow = $workflowStore;
+			const storeWorkflowId = $workflowStore.id;
+
+			// Sync on initial load or when a different workflow is loaded
+			if (currentWorkflowId !== storeWorkflowId) {
+				currentWorkflow = $workflowStore;
+				currentWorkflowId = storeWorkflowId;
+				console.log("[FlowDrop] Synced workflow from store:", storeWorkflowId);
+			}
+		} else if (currentWorkflow !== null) {
+			// Store was cleared
+			currentWorkflow = null;
+			currentWorkflowId = null;
 		}
+	});
+
+	// Set up the history restore callback to update workflow when undo/redo is triggered
+	$effect(() => {
+		setOnRestoreCallback((restoredWorkflow: Workflow) => {
+			console.log("[FlowDrop] Restoring workflow from history");
+			// Directly update local state (bypass store sync effect)
+			currentWorkflow = restoredWorkflow;
+			// Also update the store without triggering history
+			workflowActions.restoreFromHistory(restoredWorkflow);
+		});
+
+		// Cleanup on unmount
+		return () => {
+			setOnRestoreCallback(null);
+		};
 	});
 
 	// Create local reactive variables that sync with currentWorkflow
@@ -283,6 +318,28 @@
 	const defaultEdgeOptions = {};
 
 	/**
+	 * Handle node drag start
+	 *
+	 * Captures the workflow state before dragging starts.
+	 * This ensures a single undo entry is created for the entire drag operation.
+	 */
+	function handleNodeDragStart(): void {
+		isDraggingNode = true;
+		// Push current state to history before the drag changes anything
+		workflowActions.pushHistory("Move node");
+	}
+
+	/**
+	 * Handle node drag stop
+	 *
+	 * Marks the end of a drag operation. The history entry was already
+	 * created at drag start, so we just clear the flag.
+	 */
+	function handleNodeDragStop(): void {
+		isDraggingNode = false;
+	}
+
+	/**
 	 * Handle new connections between nodes
 	 * Let SvelteFlow handle edge creation, styling will be applied via reactive effects
 	 */
@@ -413,6 +470,9 @@
 		const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
 
 		if (newNode && currentWorkflow) {
+			// Push to history before making the change
+			workflowActions.pushHistory("Add node");
+
 			currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
 
 			// Update the global store
@@ -450,7 +510,52 @@
 	function handleEdgeRefreshComplete(): void {
 		nodeIdToRefresh = null;
 	}
+
+	/**
+	 * Handle keyboard shortcuts for undo/redo
+	 *
+	 * - Ctrl+Z (or Cmd+Z on Mac): Undo
+	 * - Ctrl+Shift+Z (or Cmd+Shift+Z): Redo
+	 * - Ctrl+Y (or Cmd+Y): Redo (Windows convention)
+	 */
+	function handleKeydown(event: KeyboardEvent): void {
+		// Check for Ctrl (Windows/Linux) or Cmd (Mac)
+		const isModifierPressed = event.ctrlKey || event.metaKey;
+
+		if (!isModifierPressed) {
+			return;
+		}
+
+		// Don't handle shortcuts if user is typing in an input, textarea, or contenteditable
+		const target = event.target as HTMLElement;
+		const isInputElement =
+			target.tagName === "INPUT" ||
+			target.tagName === "TEXTAREA" ||
+			target.isContentEditable;
+
+		if (isInputElement) {
+			return;
+		}
+
+		// Undo: Ctrl+Z (without Shift)
+		if (event.key === "z" && !event.shiftKey) {
+			event.preventDefault();
+			const success = historyActions.undo();
+			console.log("[FlowDrop] Undo triggered, success:", success);
+			return;
+		}
+
+		// Redo: Ctrl+Shift+Z or Ctrl+Y
+		if ((event.key === "z" && event.shiftKey) || event.key === "y") {
+			event.preventDefault();
+			const success = historyActions.redo();
+			console.log("[FlowDrop] Redo triggered, success:", success);
+			return;
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <SvelteFlowProvider>
 	<!-- EdgeRefresher component - handles updateNodeInternals calls -->
@@ -471,6 +576,8 @@
 							onconnect={handleConnect}
 							onbeforedelete={handleBeforeDelete}
 							ondelete={handleNodesDelete}
+							onnodedragstart={handleNodeDragStart}
+							onnodedragstop={handleNodeDragStop}
 							minZoom={0.2}
 							maxZoom={3}
 							clickConnect={true}
