@@ -163,8 +163,8 @@ export function isNodeTypeSupported(metadata: NodeMetadata, nodeType: NodeType |
 }
 
 /**
- * Gets enum options for node type configuration.
- * Used in config schemas to show available options.
+ * Gets oneOf options for node type configuration.
+ * Used in config schemas to show available options with labels.
  *
  * This function combines:
  * - Types specified in metadata.supportedTypes
@@ -172,73 +172,72 @@ export function isNodeTypeSupported(metadata: NodeMetadata, nodeType: NodeType |
  *
  * @param metadata - The node metadata
  * @param includeCustomTypes - Whether to include registered custom types
- * @returns Object with enum values and display names
+ * @returns Array of oneOf items with const (type value) and title (display name)
  */
-export function getNodeTypeEnumOptions(
+export function getNodeTypeOneOfOptions(
 	metadata: NodeMetadata,
 	includeCustomTypes = false
-): {
-	enum: string[];
-	enumNames: string[];
-} {
+): Array<{ const: string; title: string }> {
 	const availableTypes = getAvailableNodeTypes(metadata);
-
-	// Build enum values and names
-	const enumValues: string[] = [];
-	const enumNames: string[] = [];
+	const options: Array<{ const: string; title: string }> = [];
+	const includedTypes = new Set<string>();
 
 	for (const type of availableTypes) {
-		enumValues.push(type);
+		includedTypes.add(type);
 
 		// Get display name from registry or fallback to built-in names
 		const registration = nodeComponentRegistry.get(type);
+		let title: string;
 		if (registration) {
-			enumNames.push(registration.displayName);
+			title = registration.displayName;
 		} else if (type in TYPE_DISPLAY_NAMES) {
-			enumNames.push(TYPE_DISPLAY_NAMES[type as NodeType]);
+			title = TYPE_DISPLAY_NAMES[type as NodeType];
 		} else {
 			// Format unknown type nicely
-			enumNames.push(formatTypeName(type));
+			title = formatTypeName(type);
 		}
+
+		options.push({ const: type, title });
 	}
 
 	// Optionally include all registered custom types
 	if (includeCustomTypes) {
 		const registrations = nodeComponentRegistry.filter({
-			predicate: (reg) => !isBuiltinType(reg.type) && !enumValues.includes(reg.type)
+			predicate: (reg) => !isBuiltinType(reg.type) && !includedTypes.has(reg.type)
 		});
 
 		for (const reg of registrations) {
-			enumValues.push(reg.type);
-			enumNames.push(reg.displayName);
+			options.push({ const: reg.type, title: reg.displayName });
 		}
 	}
 
-	return { enum: enumValues, enumNames };
+	return options;
 }
 
 /**
  * Creates a nodeType config property that respects supportedTypes.
  * This replaces hardcoded enum values in config schemas.
  *
+ * Uses JSON Schema `oneOf` pattern with `const`/`title` for labeled options,
+ * which is the standard approach supported by form components.
+ *
  * @param metadata - The node metadata
  * @param defaultType - Optional default type override
- * @returns Config schema property object
+ * @returns Config schema property object with oneOf for labeled options
  */
 export function createNodeTypeConfigProperty(
 	metadata: NodeMetadata,
 	defaultType?: NodeType | string
 ) {
-	const { enum: enumValues, enumNames } = getNodeTypeEnumOptions(metadata);
+	const oneOf = getNodeTypeOneOfOptions(metadata);
 	const primaryType = defaultType ?? getPrimaryNodeType(metadata);
 
 	return {
-		type: 'string' as const,
-		title: 'Node Type',
-		description: 'Choose the visual representation for this node',
+		type: "string" as const,
+		title: "Node Type",
+		description: "Choose the visual representation for this node",
 		default: primaryType,
-		enum: enumValues,
-		enumNames
+		oneOf
 	};
 }
 
