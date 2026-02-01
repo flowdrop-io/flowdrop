@@ -312,8 +312,11 @@ The `nodeType` config property changes how a node is visually rendered. This all
 			"nodeType": {
 				"type": "string",
 				"title": "Node Style",
-				"enum": ["default", "simple", "square"],
-				"enumNames": ["Default (detailed)", "Simple (compact)", "Square"],
+				"oneOf": [
+					{ "const": "default", "title": "Default (detailed)" },
+					{ "const": "simple", "title": "Simple (compact)" },
+					{ "const": "square", "title": "Square" }
+				],
 				"default": "default"
 			}
 		}
@@ -323,12 +326,12 @@ The `nodeType` config property changes how a node is visually rendered. This all
 
 **Utility Function:**
 
-You can use the `createNodeTypeConfigProperty()` utility to automatically generate the enum options:
+You can use the `createNodeTypeConfigProperty()` utility to automatically generate the options:
 
 ```typescript
 import { createNodeTypeConfigProperty } from '$lib/utils/nodeTypes.js';
 
-// Automatically generates enum values from metadata.supportedTypes
+// Automatically generates oneOf options from metadata.supportedTypes
 const nodeTypeProperty = createNodeTypeConfigProperty(metadata);
 ```
 
@@ -465,17 +468,21 @@ Use `multiple: true` with an `enum` to render as checkboxes instead of a dropdow
 }
 ```
 
-### Enum with Display Names
+### Select with Labeled Options
 
-Use `enumNames` to provide human-readable labels for enum values:
+Use `oneOf` with `const`/`title` to provide human-readable labels for select options:
 
 ```json
 {
 	"status": {
 		"type": "string",
 		"title": "Status",
-		"enum": ["pending", "in_progress", "completed", "cancelled"],
-		"enumNames": ["Pending", "In Progress", "Completed", "Cancelled"],
+		"oneOf": [
+			{ "const": "pending", "title": "Pending" },
+			{ "const": "in_progress", "title": "In Progress" },
+			{ "const": "completed", "title": "Completed" },
+			{ "const": "cancelled", "title": "Cancelled" }
+		],
 		"default": "pending"
 	}
 }
@@ -536,15 +543,17 @@ const nodeMetadata: NodeMetadata = {
 	configSchema: {
 		type: 'object',
 		properties: {
-			// Node type selection
+			// Node type selection (using oneOf for labeled options)
 			nodeType: {
 				type: 'string',
 				title: 'Node Style',
-				enum: ['default', 'simple'],
-				enumNames: ['Default', 'Compact'],
+				oneOf: [
+					{ const: 'default', title: 'Default' },
+					{ const: 'simple', title: 'Compact' }
+				],
 				default: 'default'
 			},
-			// Regular config
+			// Regular config (simple enum without labels)
 			model: {
 				type: 'string',
 				title: 'Model',
@@ -583,7 +592,7 @@ const nodeMetadata: NodeMetadata = {
 | --------------------- | --------------- | ---------------------------------------------------------------------------------- |
 | `format`              | Schema property | Controls form field rendering (hidden, multiline, json, markdown, template, range) |
 | `multiple`            | Schema property | With `enum`, renders checkboxes instead of dropdown                                |
-| `enumNames`           | Schema property | Human-readable labels for enum values                                              |
+| `oneOf`               | Schema property | Labeled options with `const`/`title` (standard JSON Schema pattern)                                              |
 | `x-display-order`     | Schema property | Controls field ordering (negative values appear first)                             |
 | `instanceTitle`       | Config value    | Per-instance title override for node display                                       |
 | `instanceDescription` | Config value    | Per-instance description override for node display                                 |
