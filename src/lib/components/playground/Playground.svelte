@@ -556,43 +556,43 @@
 							<p class="playground__sessions-hint">Click a session to load it</p>
 						{/if}
 						<div class="playground__sessions">
-						{#if $sessions.length === 0 && !$isLoading}
-							<div class="playground__sessions-empty">
-								<span>No sessions yet</span>
-							</div>
-						{:else}
-							{#each $sessions as session (session.id)}
-								<div
-									class="playground__session"
-									class:playground__session--active={$currentSession?.id === session.id}
-									role="button"
-									tabindex="0"
-									title="Click to load this session"
-									aria-label="Load session: {session.name}"
-									onclick={() => handleSelectSession(session.id)}
-									onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
-								>
-									<span class="playground__session-name" title={session.name}>
-										{session.name}
-									</span>
-									<button
-										type="button"
-										class="playground__session-menu"
-										class:playground__session-menu--delete={pendingDeleteId === session.id}
-										onclick={(e) => handleDeleteClick(e, session.id)}
-										title={pendingDeleteId === session.id
-											? 'Click to confirm delete'
-											: 'Delete session'}
-									>
-										{#if pendingDeleteId === session.id}
-											<Icon icon="mdi:check" />
-										{:else}
-											<Icon icon="mdi:dots-horizontal" />
-										{/if}
-									</button>
+							{#if $sessions.length === 0 && !$isLoading}
+								<div class="playground__sessions-empty">
+									<span>No sessions yet</span>
 								</div>
-							{/each}
-						{/if}
+							{:else}
+								{#each $sessions as session (session.id)}
+									<div
+										class="playground__session"
+										class:playground__session--active={$currentSession?.id === session.id}
+										role="button"
+										tabindex="0"
+										title="Click to load this session"
+										aria-label="Load session: {session.name}"
+										onclick={() => handleSelectSession(session.id)}
+										onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
+									>
+										<span class="playground__session-name" title={session.name}>
+											{session.name}
+										</span>
+										<button
+											type="button"
+											class="playground__session-menu"
+											class:playground__session-menu--delete={pendingDeleteId === session.id}
+											onclick={(e) => handleDeleteClick(e, session.id)}
+											title={pendingDeleteId === session.id
+												? 'Click to confirm delete'
+												: 'Delete session'}
+										>
+											{#if pendingDeleteId === session.id}
+												<Icon icon="mdi:check" />
+											{:else}
+												<Icon icon="mdi:dots-horizontal" />
+											{/if}
+										</button>
+									</div>
+								{/each}
+							{/if}
 						</div>
 					</div>
 				</div>
@@ -774,7 +774,10 @@
 		font-size: 0.875rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+		transition:
+			background-color 0.15s ease,
+			border-color 0.15s ease,
+			transform 0.1s ease;
 		box-sizing: border-box;
 	}
 
@@ -839,7 +842,9 @@
 		border-radius: var(--fd-radius-md);
 		border-left: 3px solid transparent;
 		cursor: pointer;
-		transition: background-color 0.15s ease, border-left-color 0.15s ease;
+		transition:
+			background-color 0.15s ease,
+			border-left-color 0.15s ease;
 	}
 
 	.playground__session:hover {

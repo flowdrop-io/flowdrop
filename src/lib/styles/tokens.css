@@ -284,7 +284,7 @@
    Designed for softer contrast and reduced eye strain
    ========================================================================= */
 
-[data-theme="dark"] {
+[data-theme='dark'] {
 	/* ----- SURFACES (Backgrounds) - Softer contrast ----- */
 	--fd-background: #1a1a1e;
 	--fd-foreground: var(--_gray-2);

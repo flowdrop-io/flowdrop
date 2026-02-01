@@ -83,34 +83,34 @@ export { default as SettingsModal } from './components/SettingsModal.svelte';
 
 // Settings store exports
 export {
-    settingsStore,
-    themeSettings,
-    editorSettings,
-    uiSettings,
-    behaviorSettings,
-    apiSettings,
-    syncStatusStore,
-    theme,
-    resolvedTheme,
-    updateSettings,
-    resetSettings,
-    getSettings,
-    setTheme,
-    toggleTheme,
-    cycleTheme,
-    initializeTheme,
-    initializeSettings,
-    setSettingsService,
-    syncSettingsToApi,
-    loadSettingsFromApi,
-    onSettingsChange
+	settingsStore,
+	themeSettings,
+	editorSettings,
+	uiSettings,
+	behaviorSettings,
+	apiSettings,
+	syncStatusStore,
+	theme,
+	resolvedTheme,
+	updateSettings,
+	resetSettings,
+	getSettings,
+	setTheme,
+	toggleTheme,
+	cycleTheme,
+	initializeTheme,
+	initializeSettings,
+	setSettingsService,
+	syncSettingsToApi,
+	loadSettingsFromApi,
+	onSettingsChange
 } from './stores/settingsStore.js';
 
 // Settings service exports
 export {
-    settingsApi,
-    SettingsService,
-    createSettingsService,
-    setSettingsEndpointConfig,
-    getSettingsEndpointConfig
+	settingsApi,
+	SettingsService,
+	createSettingsService,
+	setSettingsEndpointConfig,
+	getSettingsEndpointConfig
 } from './services/settingsService.js';

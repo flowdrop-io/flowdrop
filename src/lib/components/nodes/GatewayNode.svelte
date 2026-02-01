@@ -511,10 +511,6 @@
 		gap: var(--fd-space-2);
 	}
 
-	.flowdrop-gap--3 {
-		gap: var(--fd-space-3);
-	}
-
 	.flowdrop-items--center {
 		align-items: center;
 	}
@@ -554,10 +550,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-
-	.flowdrop-mt--1 {
-		margin-top: var(--fd-space-1);
 	}
 
 	.flowdrop-text--right {

@@ -89,10 +89,7 @@ describe('FormAutocomplete', () => {
 		});
 
 		it('should fallback to valueField when labelField is missing', () => {
-			const data = [
-				{ id: 'item-1' },
-				{ id: 'item-2' }
-			];
+			const data = [{ id: 'item-1' }, { id: 'item-2' }];
 
 			const result = mapResponse(data, 'name', 'id');
 
@@ -103,19 +100,18 @@ describe('FormAutocomplete', () => {
 		});
 
 		it('should return empty array for non-array data', () => {
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
 			const result = mapResponse({ key: 'value' });
 
 			expect(result).toEqual([]);
-			expect(consoleSpy).toHaveBeenCalledWith(
-				'[FormAutocomplete] Response is not an array:',
-				{ key: 'value' }
-			);
+			expect(consoleSpy).toHaveBeenCalledWith('[FormAutocomplete] Response is not an array:', {
+				key: 'value'
+			});
 		});
 
 		it('should return empty array for null data', () => {
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
 			const result = mapResponse(null);
 
@@ -391,10 +387,7 @@ describe('FormAutocomplete', () => {
 		/**
 		 * Helper to normalize value to array format
 		 */
-		function normalizeToArray(
-			value: string | string[],
-			multiple: boolean
-		): string[] {
+		function normalizeToArray(value: string | string[], multiple: boolean): string[] {
 			if (multiple) {
 				return Array.isArray(value) ? value : value ? [value] : [];
 			}
@@ -404,20 +397,14 @@ describe('FormAutocomplete', () => {
 		/**
 		 * Helper to check if a value is selected
 		 */
-		function isSelected(
-			selectedValues: string[],
-			optionValue: string
-		): boolean {
+		function isSelected(selectedValues: string[], optionValue: string): boolean {
 			return selectedValues.includes(optionValue);
 		}
 
 		/**
 		 * Helper to add value to selection
 		 */
-		function addToSelection(
-			currentValues: string[],
-			newValue: string
-		): string[] {
+		function addToSelection(currentValues: string[], newValue: string): string[] {
 			if (currentValues.includes(newValue)) {
 				return currentValues;
 			}
@@ -427,10 +414,7 @@ describe('FormAutocomplete', () => {
 		/**
 		 * Helper to remove value from selection
 		 */
-		function removeFromSelection(
-			currentValues: string[],
-			valueToRemove: string
-		): string[] {
+		function removeFromSelection(currentValues: string[], valueToRemove: string): string[] {
 			return currentValues.filter((v) => v !== valueToRemove);
 		}
 
@@ -586,9 +570,7 @@ describe('FormAutocomplete', () => {
 
 		it('should return label from suggestions if not in cache', () => {
 			const cache = new Map<string, string>();
-			const suggestions: FieldOption[] = [
-				{ value: 'user-1', label: 'John Doe' }
-			];
+			const suggestions: FieldOption[] = [{ value: 'user-1', label: 'John Doe' }];
 
 			const result = getDisplayLabel('user-1', cache, suggestions);
 			expect(result).toBe('John Doe');
@@ -603,9 +585,7 @@ describe('FormAutocomplete', () => {
 		it('should prefer cache over suggestions', () => {
 			const cache = new Map<string, string>();
 			cache.set('user-1', 'Cached Name');
-			const suggestions: FieldOption[] = [
-				{ value: 'user-1', label: 'Suggestion Name' }
-			];
+			const suggestions: FieldOption[] = [{ value: 'user-1', label: 'Suggestion Name' }];
 
 			const result = getDisplayLabel('user-1', cache, suggestions);
 			expect(result).toBe('Cached Name');

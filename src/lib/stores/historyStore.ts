@@ -7,9 +7,9 @@
  * @module stores/historyStore
  */
 
-import { writable, derived, get } from "svelte/store";
-import { historyService, type HistoryState, type PushOptions } from "../services/historyService.js";
-import type { Workflow } from "../types/index.js";
+import { writable, derived, get } from 'svelte/store';
+import { historyService, type HistoryState, type PushOptions } from '../services/historyService.js';
+import type { Workflow } from '../types/index.js';
 
 // =========================================================================
 // Reactive State Store
@@ -212,5 +212,5 @@ export const historyActions = {
 // Re-exports
 // =========================================================================
 
-export type { HistoryEntry, HistoryState, PushOptions } from "../services/historyService.js";
-export { HistoryService, historyService } from "../services/historyService.js";
+export type { HistoryEntry, HistoryState, PushOptions } from '../services/historyService.js';
+export { HistoryService, historyService } from '../services/historyService.js';

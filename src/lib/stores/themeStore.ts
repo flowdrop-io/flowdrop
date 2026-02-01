@@ -21,19 +21,19 @@
  * @module stores/themeStore
  */
 
-import { writable, derived, get } from "svelte/store";
+import { writable, derived, get } from 'svelte/store';
 
 /** Theme preference options */
-export type ThemePreference = "light" | "dark" | "auto";
+export type ThemePreference = 'light' | 'dark' | 'auto';
 
 /** Resolved theme (actual applied theme, never 'auto') */
-export type ResolvedTheme = "light" | "dark";
+export type ResolvedTheme = 'light' | 'dark';
 
 /** localStorage key for persisting theme preference */
-const STORAGE_KEY = "flowdrop-theme";
+const STORAGE_KEY = 'flowdrop-theme';
 
 /** Default theme preference when none is stored */
-const DEFAULT_THEME: ThemePreference = "auto";
+const DEFAULT_THEME: ThemePreference = 'auto';
 
 // =========================================================================
 // System Preference Detection
@@ -45,13 +45,11 @@ const DEFAULT_THEME: ThemePreference = "auto";
  * @returns 'dark' if system prefers dark mode, 'light' otherwise
  */
 function getSystemTheme(): ResolvedTheme {
-	if (typeof window === "undefined") {
-		return "light";
+	if (typeof window === 'undefined') {
+		return 'light';
 	}
 
-	return window.matchMedia("(prefers-color-scheme: dark)").matches
-		? "dark"
-		: "light";
+	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 /**
@@ -59,23 +57,23 @@ function getSystemTheme(): ResolvedTheme {
  * Updates when system preference changes
  */
 const systemTheme = writable<ResolvedTheme>(
-	typeof window !== "undefined" ? getSystemTheme() : "light"
+	typeof window !== 'undefined' ? getSystemTheme() : 'light'
 );
 
 // Listen for system theme changes
-if (typeof window !== "undefined") {
-	const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+if (typeof window !== 'undefined') {
+	const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 	/**
 	 * Handler for system theme preference changes
 	 */
 	const handleSystemThemeChange = (event: MediaQueryListEvent): void => {
-		systemTheme.set(event.matches ? "dark" : "light");
+		systemTheme.set(event.matches ? 'dark' : 'light');
 	};
 
 	// Modern browsers use addEventListener
 	if (mediaQuery.addEventListener) {
-		mediaQuery.addEventListener("change", handleSystemThemeChange);
+		mediaQuery.addEventListener('change', handleSystemThemeChange);
 	} else {
 		// Fallback for older browsers
 		mediaQuery.addListener(handleSystemThemeChange);
@@ -92,18 +90,18 @@ if (typeof window !== "undefined") {
  * @returns Saved theme preference or default
  */
 function loadSavedTheme(): ThemePreference {
-	if (typeof window === "undefined") {
+	if (typeof window === 'undefined') {
 		return DEFAULT_THEME;
 	}
 
 	try {
 		const saved = localStorage.getItem(STORAGE_KEY);
-		if (saved === "light" || saved === "dark" || saved === "auto") {
+		if (saved === 'light' || saved === 'dark' || saved === 'auto') {
 			return saved;
 		}
 	} catch {
 		// localStorage may be unavailable (e.g., private browsing)
-		console.warn("Failed to load theme from localStorage");
+		console.warn('Failed to load theme from localStorage');
 	}
 
 	return DEFAULT_THEME;
@@ -115,7 +113,7 @@ function loadSavedTheme(): ThemePreference {
  * @param theme - Theme preference to save
  */
 function saveTheme(theme: ThemePreference): void {
-	if (typeof window === "undefined") {
+	if (typeof window === 'undefined') {
 		return;
 	}
 
@@ -123,7 +121,7 @@ function saveTheme(theme: ThemePreference): void {
 		localStorage.setItem(STORAGE_KEY, theme);
 	} catch {
 		// localStorage may be unavailable
-		console.warn("Failed to save theme to localStorage");
+		console.warn('Failed to save theme to localStorage');
 	}
 }
 
@@ -142,15 +140,12 @@ export const theme = writable<ThemePreference>(loadSavedTheme());
  * Always returns the actual theme being applied ('light' or 'dark')
  * When theme is 'auto', this reflects the system preference
  */
-export const resolvedTheme = derived(
-	[theme, systemTheme],
-	([$theme, $systemTheme]) => {
-		if ($theme === "auto") {
-			return $systemTheme;
-		}
-		return $theme;
+export const resolvedTheme = derived([theme, systemTheme], ([$theme, $systemTheme]) => {
+	if ($theme === 'auto') {
+		return $systemTheme;
 	}
-);
+	return $theme;
+});
 
 // =========================================================================
 // Theme Actions
@@ -163,11 +158,11 @@ export const resolvedTheme = derived(
  * @param resolved - The resolved theme to apply
  */
 function applyTheme(resolved: ResolvedTheme): void {
-	if (typeof document === "undefined") {
+	if (typeof document === 'undefined') {
 		return;
 	}
 
-	document.documentElement.setAttribute("data-theme", resolved);
+	document.documentElement.setAttribute('data-theme', resolved);
 }
 
 /**
@@ -188,12 +183,12 @@ export function toggleTheme(): void {
 	const currentTheme = get(theme);
 	const currentResolved = get(resolvedTheme);
 
-	if (currentTheme === "auto") {
+	if (currentTheme === 'auto') {
 		// Switch to opposite of system preference
-		setTheme(currentResolved === "dark" ? "light" : "dark");
+		setTheme(currentResolved === 'dark' ? 'light' : 'dark');
 	} else {
 		// Toggle between light and dark
-		setTheme(currentTheme === "dark" ? "light" : "dark");
+		setTheme(currentTheme === 'dark' ? 'light' : 'dark');
 	}
 }
 
@@ -204,14 +199,14 @@ export function cycleTheme(): void {
 	const currentTheme = get(theme);
 
 	switch (currentTheme) {
-		case "light":
-			setTheme("dark");
+		case 'light':
+			setTheme('dark');
 			break;
-		case "dark":
-			setTheme("auto");
+		case 'dark':
+			setTheme('auto');
 			break;
-		case "auto":
-			setTheme("light");
+		case 'auto':
+			setTheme('light');
 			break;
 	}
 }
@@ -246,9 +241,9 @@ export function initializeTheme(): void {
  * @returns true if running in browser and theme is applied
  */
 export function isThemeInitialized(): boolean {
-	if (typeof document === "undefined") {
+	if (typeof document === 'undefined') {
 		return false;
 	}
 
-	return document.documentElement.hasAttribute("data-theme");
+	return document.documentElement.hasAttribute('data-theme');
 }

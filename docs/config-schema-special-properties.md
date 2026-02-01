@@ -409,25 +409,25 @@ This applies to:
 
 ```json
 {
-  "configSchema": {
-    "type": "object",
-    "properties": {
-      "branches": {
-        "type": "array",
-        "title": "Branches",
-        "description": "Output paths (defined by the backend)",
-        "readOnly": true,
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": { "type": "string", "title": "Name" },
-            "label": { "type": "string", "title": "Label" },
-            "condition": { "type": "string", "title": "Condition" }
-          }
-        }
-      }
-    }
-  }
+	"configSchema": {
+		"type": "object",
+		"properties": {
+			"branches": {
+				"type": "array",
+				"title": "Branches",
+				"description": "Output paths (defined by the backend)",
+				"readOnly": true,
+				"items": {
+					"type": "object",
+					"properties": {
+						"name": { "type": "string", "title": "Name" },
+						"label": { "type": "string", "title": "Label" },
+						"condition": { "type": "string", "title": "Condition" }
+					}
+				}
+			}
+		}
+	}
 }
 ```
 
@@ -437,11 +437,11 @@ With `readOnly: true` on `branches`, users see the list of branches but cannot a
 
 ```json
 {
-  "instanceTitle": {
-    "type": "string",
-    "title": "Title",
-    "readOnly": true
-  }
+	"instanceTitle": {
+		"type": "string",
+		"title": "Title",
+		"readOnly": true
+	}
 }
 ```
 

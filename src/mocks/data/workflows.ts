@@ -2512,8 +2512,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
 			target: 'save_to_file.1',
 			targetHandle: 'save_to_file.1-input-trigger',
 			id: 'xy-edge__if_else.1if_else.1-output-True-save_to_file.1save_to_file.1-input-trigger',
-			style:
-				'stroke: var(--fd-edge-trigger-color); stroke-width: var(--fd-edge-trigger-width);',
+			style: 'stroke: var(--fd-edge-trigger-color); stroke-width: var(--fd-edge-trigger-width);',
 			class: 'flowdrop--edge--trigger',
 			markerEnd: {
 				type: 'arrowclosed',

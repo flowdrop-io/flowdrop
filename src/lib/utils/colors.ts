@@ -417,7 +417,7 @@ export function isLightColor(hex: string): boolean {
  * @returns CSS color value for text that provides good contrast
  */
 export function getContrastTextColor(backgroundColor: string): string {
-	return isLightColor(backgroundColor) ? "#18181b" : "#ffffff";
+	return isLightColor(backgroundColor) ? '#18181b' : '#ffffff';
 }
 
 /**
@@ -425,18 +425,18 @@ export function getContrastTextColor(backgroundColor: string): string {
  * Used for contrast calculations when working with design tokens
  */
 const TOKEN_TO_HEX: Record<string, string> = {
-	"var(--fd-node-cyan)": "#06b6d4",
-	"var(--fd-node-emerald)": "#10b981",
-	"var(--fd-node-blue)": "#3b82f6",
-	"var(--fd-node-amber)": "#f59e0b",
-	"var(--fd-node-indigo)": "#6366f1",
-	"var(--fd-node-teal)": "#14b8a6",
-	"var(--fd-node-purple)": "#8b5cf6",
-	"var(--fd-node-orange)": "#f97316",
-	"var(--fd-node-slate)": "#64748b",
-	"var(--fd-node-red)": "#ef4444",
-	"var(--fd-node-pink)": "#ec4899",
-	"var(--fd-node-lime)": "#84cc16"
+	'var(--fd-node-cyan)': '#06b6d4',
+	'var(--fd-node-emerald)': '#10b981',
+	'var(--fd-node-blue)': '#3b82f6',
+	'var(--fd-node-amber)': '#f59e0b',
+	'var(--fd-node-indigo)': '#6366f1',
+	'var(--fd-node-teal)': '#14b8a6',
+	'var(--fd-node-purple)': '#8b5cf6',
+	'var(--fd-node-orange)': '#f97316',
+	'var(--fd-node-slate)': '#64748b',
+	'var(--fd-node-red)': '#ef4444',
+	'var(--fd-node-pink)': '#ec4899',
+	'var(--fd-node-lime)': '#84cc16'
 };
 
 /**
@@ -515,7 +515,7 @@ export function rgbToHex(r: number, g: number, b: number): string {
 export function getLightTint(hex: string): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return "#fffbeb"; // Fallback to amber-50
+		return '#fffbeb'; // Fallback to amber-50
 	}
 	// Mix with white at 95% to create a very light tint
 	const mixRatio = 0.95;
@@ -535,7 +535,7 @@ export function getLightTint(hex: string): string {
 export function getDarkTint(hex: string, opacity: number = 0.15): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return "#2a2518"; // Fallback dark amber tint
+		return '#2a2518'; // Fallback dark amber tint
 	}
 	// Mix with dark background (#1a1a1e) to create a subtle dark tint
 	const darkBg = { r: 26, g: 26, b: 30 };
@@ -554,7 +554,7 @@ export function getDarkTint(hex: string, opacity: number = 0.15): string {
 export function getBorderTint(hex: string): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return "#fcd34d"; // Fallback to amber-300
+		return '#fcd34d'; // Fallback to amber-300
 	}
 	// Mix with white at 60% to create a medium-light tint
 	const mixRatio = 0.6;
@@ -573,7 +573,7 @@ export function getBorderTint(hex: string): string {
 export function getDarkBorderTint(hex: string): string {
 	const rgb = hexToRgb(hex);
 	if (!rgb) {
-		return "#5c4a1e"; // Fallback dark amber border
+		return '#5c4a1e'; // Fallback dark amber border
 	}
 	// Mix with dark background to create a muted but visible border
 	const darkBg = { r: 26, g: 26, b: 30 };

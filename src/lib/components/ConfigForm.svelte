@@ -670,11 +670,7 @@
 	}
 
 	.config-form__button--primary {
-		background: linear-gradient(
-			135deg,
-			var(--fd-primary) 0%,
-			var(--fd-primary-hover) 100%
-		);
+		background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
 		color: var(--fd-primary-foreground);
 		box-shadow:
 			0 1px 3px rgba(59, 130, 246, 0.3),
@@ -682,11 +678,7 @@
 	}
 
 	.config-form__button--primary:hover {
-		background: linear-gradient(
-			135deg,
-			var(--fd-primary-hover) 0%,
-			var(--fd-primary-hover) 100%
-		);
+		background: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
 		box-shadow:
 			0 4px 12px rgba(59, 130, 246, 0.35),
 			inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1006,11 +998,7 @@
 	   ============================================ */
 
 	.config-form__button--external {
-		background: linear-gradient(
-			135deg,
-			var(--fd-accent) 0%,
-			var(--fd-primary) 100%
-		);
+		background: linear-gradient(135deg, var(--fd-accent) 0%, var(--fd-primary) 100%);
 		color: var(--fd-accent-foreground);
 		box-shadow:
 			0 1px 3px rgba(99, 102, 241, 0.3),
@@ -1018,11 +1006,7 @@
 	}
 
 	.config-form__button--external:hover {
-		background: linear-gradient(
-			135deg,
-			var(--fd-accent-hover) 0%,
-			var(--fd-primary-hover) 100%
-		);
+		background: linear-gradient(135deg, var(--fd-accent-hover) 0%, var(--fd-primary-hover) 100%);
 		box-shadow:
 			0 4px 12px rgba(99, 102, 241, 0.35),
 			inset 0 1px 0 rgba(255, 255, 255, 0.1);

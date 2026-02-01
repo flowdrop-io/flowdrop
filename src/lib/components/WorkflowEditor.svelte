@@ -363,7 +363,7 @@
 		// Push to history AFTER the connection is made
 		// This way undo will restore to the state before the connection
 		if (currentWorkflow) {
-			workflowActions.pushHistory("Add connection", currentWorkflow);
+			workflowActions.pushHistory('Add connection', currentWorkflow);
 		}
 	}
 
@@ -429,7 +429,7 @@
 		// Push to history AFTER the deletion so undo restores the previous state
 		const nodeCount = params.nodes.length;
 		const edgeCount = params.edges.length;
-		let description = "Delete";
+		let description = 'Delete';
 		if (nodeCount > 0 && edgeCount > 0) {
 			description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''} and ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
 		} else if (nodeCount > 0) {

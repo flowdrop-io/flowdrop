@@ -218,17 +218,17 @@ export class EdgeStylingHelper {
 		// These match the --fd-edge-* tokens in tokens.css for consistency
 		const EDGE_COLORS = isDarkMode
 			? {
-				trigger: '#eaeaef', // --_gray-3 (light for dark mode visibility)
-				tool: '#fbbf24', // Brighter amber for dark mode
-				loopback: '#a3a3ad', // --_gray-5
-				data: '#a3a3ad' // --_gray-5
-			}
+					trigger: '#eaeaef', // --_gray-3 (light for dark mode visibility)
+					tool: '#fbbf24', // Brighter amber for dark mode
+					loopback: '#a3a3ad', // --_gray-5
+					data: '#a3a3ad' // --_gray-5
+				}
 			: {
-				trigger: '#18181c', // --_gray-9 (dark for light mode)
-				tool: '#f59e0b', // --_amber-2
-				loopback: '#71717b', // --_gray-6
-				data: '#a3a3ad' // --_gray-5
-			};
+					trigger: '#18181c', // --_gray-9 (dark for light mode)
+					tool: '#f59e0b', // --_amber-2
+					loopback: '#71717b', // --_gray-6
+					data: '#a3a3ad' // --_gray-5
+				};
 
 		// Apply styling based on edge category
 		// CSS classes handle styling via tokens; inline styles are fallback
@@ -248,8 +248,7 @@ export class EdgeStylingHelper {
 
 			case 'trigger':
 				// Trigger edges: solid dark line for control flow
-				edge.style =
-					'stroke: var(--fd-edge-trigger); stroke-width: var(--fd-edge-trigger-width);';
+				edge.style = 'stroke: var(--fd-edge-trigger); stroke-width: var(--fd-edge-trigger-width);';
 				edge.class = 'flowdrop--edge--trigger';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
@@ -534,9 +533,9 @@ export class WorkflowOperationsHelper {
 			nodes: workflow.nodes.map((node) =>
 				node.id === nodeId
 					? {
-						...node,
-						data: { ...node.data, config: { ...newConfig } }
-					}
+							...node,
+							data: { ...node.data, config: { ...newConfig } }
+						}
 					: node
 			),
 			metadata: this.generateMetadata(workflow.metadata)

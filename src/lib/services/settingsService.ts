@@ -8,13 +8,10 @@
  * @module services/settingsService
  */
 
-import type { FlowDropSettings, PartialSettings } from "$lib/types/settings.js";
-import type { EndpointConfig } from "$lib/config/endpoints.js";
-import type { ApiResponse } from "$lib/types/index.js";
-import {
-	buildEndpointUrl,
-	getEndpointHeaders
-} from "$lib/config/endpoints.js";
+import type { FlowDropSettings, PartialSettings } from '$lib/types/settings.js';
+import type { EndpointConfig } from '$lib/config/endpoints.js';
+import type { ApiResponse } from '$lib/types/index.js';
+import { buildEndpointUrl, getEndpointHeaders } from '$lib/config/endpoints.js';
 
 // =========================================================================
 // Configuration
@@ -61,9 +58,7 @@ async function settingsRequest<T>(
 	options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
 	if (!endpointConfig) {
-		throw new Error(
-			"Endpoint configuration not set. Call setSettingsEndpointConfig() first."
-		);
+		throw new Error('Endpoint configuration not set. Call setSettingsEndpointConfig() first.');
 	}
 
 	const url = buildEndpointUrl(endpointConfig, endpointPath);
@@ -75,8 +70,8 @@ async function settingsRequest<T>(
 	});
 
 	// Check if response is JSON
-	const contentType = response.headers.get("content-type");
-	const isJson = contentType?.includes("application/json");
+	const contentType = response.headers.get('content-type');
+	const isJson = contentType?.includes('application/json');
 
 	if (!response.ok) {
 		let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -113,20 +108,18 @@ export const settingsApi = {
 	 */
 	async getPreferences(): Promise<FlowDropSettings> {
 		if (!endpointConfig) {
-			throw new Error("Endpoint configuration not set");
+			throw new Error('Endpoint configuration not set');
 		}
 
 		const response = await settingsRequest<FlowDropSettings>(
-			"users.preferences",
+			'users.preferences',
 			endpointConfig.endpoints.users.preferences,
-			{ method: "GET" }
+			{ method: 'GET' }
 		);
 
 		if (!response.success || !response.data) {
 			throw new Error(
-				typeof response.error === "string"
-					? response.error
-					: "Failed to fetch user preferences"
+				typeof response.error === 'string' ? response.error : 'Failed to fetch user preferences'
 			);
 		}
 
@@ -140,23 +133,21 @@ export const settingsApi = {
 	 */
 	async savePreferences(settings: FlowDropSettings): Promise<void> {
 		if (!endpointConfig) {
-			throw new Error("Endpoint configuration not set");
+			throw new Error('Endpoint configuration not set');
 		}
 
 		const response = await settingsRequest<void>(
-			"users.preferences",
+			'users.preferences',
 			endpointConfig.endpoints.users.preferences,
 			{
-				method: "PUT",
+				method: 'PUT',
 				body: JSON.stringify(settings)
 			}
 		);
 
 		if (!response.success) {
 			throw new Error(
-				typeof response.error === "string"
-					? response.error
-					: "Failed to save user preferences"
+				typeof response.error === 'string' ? response.error : 'Failed to save user preferences'
 			);
 		}
 	},
@@ -168,23 +159,21 @@ export const settingsApi = {
 	 */
 	async patchPreferences(partial: PartialSettings): Promise<FlowDropSettings> {
 		if (!endpointConfig) {
-			throw new Error("Endpoint configuration not set");
+			throw new Error('Endpoint configuration not set');
 		}
 
 		const response = await settingsRequest<FlowDropSettings>(
-			"users.preferences",
+			'users.preferences',
 			endpointConfig.endpoints.users.preferences,
 			{
-				method: "PATCH",
+				method: 'PATCH',
 				body: JSON.stringify(partial)
 			}
 		);
 
 		if (!response.success || !response.data) {
 			throw new Error(
-				typeof response.error === "string"
-					? response.error
-					: "Failed to update user preferences"
+				typeof response.error === 'string' ? response.error : 'Failed to update user preferences'
 			);
 		}
 
