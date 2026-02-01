@@ -89,8 +89,11 @@
 					type: 'string',
 					title: 'Theme Preference',
 					description: 'Choose your preferred color scheme',
-					enum: ['light', 'dark', 'auto'],
-					enumLabels: ['Light', 'Dark', 'Auto (System)'],
+					oneOf: [
+						{ const: 'light', title: 'Light' },
+						{ const: 'dark', title: 'Dark' },
+						{ const: 'auto', title: 'Auto (System)' }
+					],
 					default: 'auto'
 				}
 			}
