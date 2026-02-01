@@ -123,8 +123,10 @@ export const demoAIContentWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'tool',
-								enum: ['tool', 'default'],
-								enumNames: ['Tool Node (with metadata port)', 'Default Node (standard ports)']
+								oneOf: [
+									{ const: 'tool', title: 'Tool Node (with metadata port)' },
+									{ const: 'default', title: 'Default Node (standard ports)' }
+								]
 							},
 							contentType: {
 								type: 'string',
@@ -292,8 +294,10 @@ export const demoAIContentWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'tool',
-								enum: ['tool', 'default'],
-								enumNames: ['Tool Node (with metadata port)', 'Default Node (standard ports)']
+								oneOf: [
+									{ const: 'tool', title: 'Tool Node (with metadata port)' },
+									{ const: 'default', title: 'Default Node (standard ports)' }
+								]
 							},
 							targetText: {
 								type: 'string',
@@ -520,8 +524,11 @@ export const demoAIContentWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
-								enum: ['simple', 'square', 'default'],
-								enumNames: ['Simple (compact layout)', 'Square (square layout)', 'Default']
+								oneOf: [
+									{ const: 'simple', title: 'Simple (compact layout)' },
+									{ const: 'square', title: 'Square (square layout)' },
+									{ const: 'default', title: 'Default' }
+								]
 							},
 							placeholder: {
 								type: 'string',
@@ -599,8 +606,11 @@ export const demoAIContentWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
-								enum: ['simple', 'square', 'default'],
-								enumNames: ['Simple (compact layout)', 'Square (square layout)', 'Default']
+								oneOf: [
+									{ const: 'simple', title: 'Simple (compact layout)' },
+									{ const: 'square', title: 'Square (square layout)' },
+									{ const: 'default', title: 'Default' }
+								]
 							},
 							maxLength: {
 								type: 'integer',
@@ -849,8 +859,10 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'tool',
-								enum: ['tool', 'default'],
-								enumNames: ['Tool Node (with metadata port)', 'Default Node (standard ports)']
+								oneOf: [
+									{ const: 'tool', title: 'Tool Node (with metadata port)' },
+									{ const: 'default', title: 'Default Node (standard ports)' }
+								]
 							},
 							targetText: {
 								type: 'string',
@@ -1073,8 +1085,11 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
-								enum: ['simple', 'square', 'default'],
-								enumNames: ['Simple (compact layout)', 'Square (square layout)', 'Default']
+								oneOf: [
+									{ const: 'simple', title: 'Simple (compact layout)' },
+									{ const: 'square', title: 'Square (square layout)' },
+									{ const: 'default', title: 'Default' }
+								]
 							},
 							placeholder: {
 								type: 'string',
@@ -1282,8 +1297,11 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
-								enum: ['simple', 'square', 'default'],
-								enumNames: ['Simple (compact layout)', 'Square (square layout)', 'Default']
+								oneOf: [
+									{ const: 'simple', title: 'Simple (compact layout)' },
+									{ const: 'square', title: 'Square (square layout)' },
+									{ const: 'default', title: 'Default' }
+								]
 							},
 							maxLength: {
 								type: 'integer',
@@ -1407,21 +1425,13 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 								type: 'string',
 								title: 'Event Type',
 								description: 'The type of entity event to trigger on',
-								enum: [
-									'entity.insert',
-									'entity.update',
-									'entity.delete',
-									'entity.presave',
-									'user.login',
-									'user.logout'
-								],
-								enumLabels: [
-									'Entity Created',
-									'Entity Updated',
-									'Entity Deleted',
-									'Before Entity Save',
-									'User Login',
-									'User Logout'
+								oneOf: [
+									{ const: 'entity.insert', title: 'Entity Created' },
+									{ const: 'entity.update', title: 'Entity Updated' },
+									{ const: 'entity.delete', title: 'Entity Deleted' },
+									{ const: 'entity.presave', title: 'Before Entity Save' },
+									{ const: 'user.login', title: 'User Login' },
+									{ const: 'user.logout', title: 'User Logout' }
 								],
 								default: 'entity.insert'
 							},
@@ -1611,8 +1621,11 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
-								enum: ['simple', 'square', 'default'],
-								enumNames: ['Simple (compact layout)', 'Square (square layout)', 'Default']
+								oneOf: [
+									{ const: 'simple', title: 'Simple (compact layout)' },
+									{ const: 'square', title: 'Square (square layout)' },
+									{ const: 'default', title: 'Default' }
+								]
 							},
 							placeholder: {
 								type: 'string',
@@ -2094,8 +2107,11 @@ export const demoTriggerNodeWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'simple',
-								enum: ['simple', 'square', 'default'],
-								enumNames: ['Simple (compact layout)', 'Square (square layout)', 'Default']
+								oneOf: [
+									{ const: 'simple', title: 'Simple (compact layout)' },
+									{ const: 'square', title: 'Square (square layout)' },
+									{ const: 'default', title: 'Default' }
+								]
 							},
 							placeholder: {
 								type: 'string',
@@ -2746,8 +2762,10 @@ export const demoForEachLoopWorkflow: Workflow = {
 								title: 'Node Type',
 								description: 'Choose the visual representation for this node',
 								default: 'default',
-								enum: ['default', 'simple'],
-								enumNames: ['Default (Standard node)', 'Simple (Compact)']
+								oneOf: [
+									{ const: 'default', title: 'Default (Standard node)' },
+									{ const: 'simple', title: 'Simple (Compact)' }
+								]
 							},
 							maxIterations: {
 								type: 'integer',
