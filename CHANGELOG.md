@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.46] - 2026-02-01
+
+### Added
+
+- **Undo/Redo Support**: Full undo/redo functionality for workflow editing
+  - Keyboard shortcuts: `Ctrl+Z` / `Cmd+Z` (undo), `Ctrl+Shift+Z` / `Cmd+Shift+Z` (redo)
+  - Tracks node additions, deletions, moves, and edge connections
+
+- **Readonly Mode**: Support for `readonly` property on WorkflowEditor
+
+### Fixed
+
+- **Simple Node Height**: Simple nodes now allow variable height for longer descriptions instead of truncating
+
+### Changed
+
+- **Navbar Connected Indicator**: Aligned "Connected" status indicator styling with design tokens and badge pattern
+
+---
+
 ## [0.0.45] - 2026-01-31
 
 ### Changed
