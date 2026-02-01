@@ -309,27 +309,26 @@ class NodeComponentRegistry {
 	}
 
 	/**
-	 * Get enum options for config forms.
-	 * Returns arrays suitable for JSON Schema enum/enumNames.
+	 * Get oneOf options for config forms.
+	 * Returns array suitable for JSON Schema oneOf with const/title.
 	 *
 	 * @param filterFn - Optional filter function to limit which types are included
-	 * @returns Object with enum (type values) and enumNames (display names)
+	 * @returns Array of oneOf items with const (type value) and title (display name)
 	 *
 	 * @example
 	 * ```typescript
-	 * const { enum: types, enumNames } = nodeComponentRegistry.getEnumOptions();
-	 * // Use in configSchema: { type: "string", enum: types, enumNames }
+	 * const oneOf = nodeComponentRegistry.getOneOfOptions();
+	 * // Use in configSchema: { type: "string", oneOf }
 	 * ```
 	 */
-	getEnumOptions(filterFn?: (reg: NodeComponentRegistration) => boolean): {
-		enum: string[];
-		enumNames: string[];
-	} {
+	getOneOfOptions(
+		filterFn?: (reg: NodeComponentRegistration) => boolean
+	): Array<{ const: string; title: string }> {
 		const registrations = filterFn ? this.getAll().filter(filterFn) : this.getAll();
-		return {
-			enum: registrations.map((r) => r.type),
-			enumNames: registrations.map((r) => r.displayName)
-		};
+		return registrations.map((r) => ({
+			const: r.type,
+			title: r.displayName
+		}));
 	}
 
 	/**
