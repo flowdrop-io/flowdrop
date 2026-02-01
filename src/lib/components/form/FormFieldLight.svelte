@@ -22,12 +22,12 @@
   2. format: 'hidden' -> skip rendering (return nothing)
   3. enum with multiple: true -> FormCheckboxGroup
   4. enum -> FormSelect (simple values without labels)
-  5. format: 'multiline' -> FormTextarea
-  6. format: 'range' (number/integer) -> FormRangeField
-  7. type: 'string' -> FormTextField
-  8. type: 'number' or 'integer' -> FormNumberField
-  9. type: 'boolean' -> FormToggle
-  10. oneOf with const/title (labeled options) -> FormSelect
+  5. oneOf with const/title (labeled options) -> FormSelect
+  6. format: 'multiline' -> FormTextarea
+  7. format: 'range' (number/integer) -> FormRangeField
+  8. type: 'string' -> FormTextField
+  9. type: 'number' or 'integer' -> FormNumberField
+  10. type: 'boolean' -> FormToggle
   11. type: 'array' -> FormArray
   12. fallback -> FormTextField
 -->
@@ -128,6 +128,12 @@
 			return 'select-enum';
 		}
 
+		// oneOf with labeled options (standard JSON Schema) or legacy options -> select
+		// Must be checked before basic type checks since oneOf schemas often have type: 'string'
+		if ((schema.oneOf && schema.oneOf.length > 0) || schema.options) {
+			return 'select-options';
+		}
+
 		// Multiline string -> textarea
 		if (schema.type === 'string' && schema.format === 'multiline') {
 			return 'textarea';
@@ -151,11 +157,6 @@
 		// Boolean -> toggle
 		if (schema.type === 'boolean') {
 			return 'toggle';
-		}
-
-		// oneOf with labeled options (standard JSON Schema) or legacy options -> select
-		if ((schema.oneOf && schema.oneOf.length > 0) || schema.options) {
-			return 'select-options';
 		}
 
 		// Array type

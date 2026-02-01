@@ -17,12 +17,12 @@
   5. format: 'template' -> FormTemplateEditor (CodeMirror with Twig/Liquid syntax)
   6. enum with multiple: true -> FormCheckboxGroup
   7. enum -> FormSelect (simple values without labels)
-  8. format: 'multiline' -> FormTextarea
-  9. format: 'range' (number/integer) -> FormRangeField
-  10. type: 'string' -> FormTextField
-  11. type: 'number' or 'integer' -> FormNumberField
-  12. type: 'boolean' -> FormToggle
-  13. oneOf with const/title (labeled options) -> FormSelect
+  8. oneOf with const/title (labeled options) -> FormSelect
+  9. format: 'multiline' -> FormTextarea
+  10. format: 'range' (number/integer) -> FormRangeField
+  11. type: 'string' -> FormTextField
+  12. type: 'number' or 'integer' -> FormNumberField
+  13. type: 'boolean' -> FormToggle
   14. type: 'object' (without format) -> FormCodeEditor (for JSON objects)
   15. fallback -> FormTextField
 -->
@@ -122,6 +122,12 @@
 			return 'select-enum';
 		}
 
+		// oneOf with labeled options (standard JSON Schema) or legacy options -> select
+		// Must be checked before basic type checks since oneOf schemas often have type: 'string'
+		if ((schema.oneOf && schema.oneOf.length > 0) || schema.options) {
+			return 'select-options';
+		}
+
 		// Multiline string -> textarea
 		if (schema.type === 'string' && schema.format === 'multiline') {
 			return 'textarea';
@@ -145,11 +151,6 @@
 		// Boolean -> toggle
 		if (schema.type === 'boolean') {
 			return 'toggle';
-		}
-
-		// oneOf with labeled options (standard JSON Schema) or legacy options -> select
-		if ((schema.oneOf && schema.oneOf.length > 0) || schema.options) {
-			return 'select-options';
 		}
 
 		// Future: Array type support
