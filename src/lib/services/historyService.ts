@@ -135,7 +135,6 @@ export class HistoryService {
 			description: "Initial state"
 		});
 
-		console.log("[FlowDrop History] Initialized with workflow:", workflow.id, "Stack size:", this.undoStack.length);
 		this.notifyChange();
 	}
 
@@ -170,11 +169,8 @@ export class HistoryService {
 	 * @returns The previous workflow state, or null if cannot undo
 	 */
 	undo(): Workflow | null {
-		console.log("[FlowDrop History] Undo called. Stack size:", this.undoStack.length);
-
 		// Need at least 2 entries to undo (initial + 1 change)
 		if (this.undoStack.length <= 1) {
-			console.log("[FlowDrop History] Cannot undo - at beginning of history");
 			return null;
 		}
 
@@ -188,7 +184,6 @@ export class HistoryService {
 		const previous = this.undoStack[this.undoStack.length - 1];
 		this.notifyChange();
 
-		console.log("[FlowDrop History] Undo success. Returning state:", previous?.description);
 		return previous ? this.cloneWorkflow(previous.snapshot) : null;
 	}
 
@@ -368,7 +363,6 @@ export class HistoryService {
 		// Trim history if over limit
 		this.trimHistory();
 
-		console.log("[FlowDrop History] Pushed:", description, "Stack size:", this.undoStack.length);
 		this.notifyChange();
 	}
 

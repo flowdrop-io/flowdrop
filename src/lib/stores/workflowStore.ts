@@ -211,15 +211,16 @@ export function setRestoringFromHistory(restoring: boolean): void {
  * Push current state to history before making changes
  *
  * @param description - Description of the change about to be made
+ * @param workflow - Optional workflow to push (uses store if not provided)
  */
-function pushToHistory(description?: string): void {
+function pushToHistory(description?: string, workflow?: Workflow): void {
 	if (!historyEnabled || isRestoringFromHistory) {
 		return;
 	}
 
-	const currentWorkflow = get(workflowStore);
-	if (currentWorkflow) {
-		historyService.push(currentWorkflow, { description });
+	const workflowToPush = workflow ?? get(workflowStore);
+	if (workflowToPush) {
+		historyService.push(workflowToPush, { description });
 	}
 }
 
@@ -612,9 +613,10 @@ export const workflowActions = {
 	 * (e.g., drag operations handled by SvelteFlow directly).
 	 *
 	 * @param description - Description of the upcoming change
+	 * @param workflow - Optional workflow to push (uses store state if not provided)
 	 */
-	pushHistory: (description?: string) => {
-		pushToHistory(description);
+	pushHistory: (description?: string, workflow?: Workflow) => {
+		pushToHistory(description, workflow);
 	}
 };
 

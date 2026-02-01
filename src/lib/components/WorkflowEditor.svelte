@@ -82,7 +82,6 @@
 			if (currentWorkflowId !== storeWorkflowId) {
 				currentWorkflow = $workflowStore;
 				currentWorkflowId = storeWorkflowId;
-				console.log('[FlowDrop] Synced workflow from store:', storeWorkflowId);
 			}
 		} else if (currentWorkflow !== null) {
 			// Store was cleared
@@ -94,7 +93,6 @@
 	// Set up the history restore callback to update workflow when undo/redo is triggered
 	$effect(() => {
 		setOnRestoreCallback((restoredWorkflow: Workflow) => {
-			console.log('[FlowDrop] Restoring workflow from history');
 			// Directly update local state (bypass store sync effect)
 			currentWorkflow = restoredWorkflow;
 			// Also update the store without triggering history
@@ -320,23 +318,24 @@
 	/**
 	 * Handle node drag start
 	 *
-	 * Captures the workflow state before dragging starts.
-	 * This ensures a single undo entry is created for the entire drag operation.
+	 * Marks the beginning of a drag operation.
 	 */
 	function handleNodeDragStart(): void {
 		isDraggingNode = true;
-		// Push current state to history before the drag changes anything
-		workflowActions.pushHistory('Move node');
 	}
 
 	/**
 	 * Handle node drag stop
 	 *
-	 * Marks the end of a drag operation. The history entry was already
-	 * created at drag start, so we just clear the flag.
+	 * Push the NEW state (after drag) to history.
+	 * Undo will then restore to the previous state (before drag).
 	 */
 	function handleNodeDragStop(): void {
 		isDraggingNode = false;
+		// Push the current state AFTER the drag completed
+		if (currentWorkflow) {
+			workflowActions.pushHistory('Move node', currentWorkflow);
+		}
 	}
 
 	/**
@@ -349,9 +348,6 @@
 		sourceHandle?: string;
 		targetHandle?: string;
 	}): Promise<void> {
-		// Push to history before the connection is made
-		workflowActions.pushHistory("Add connection");
-
 		// SvelteFlow will automatically create the edge due to bind:edges
 		// Wait for DOM update before applying styling
 		await tick();
@@ -362,6 +358,12 @@
 		// Update currentWorkflow with the new edge
 		if (currentWorkflow) {
 			updateCurrentWorkflowFromSvelteFlow();
+		}
+
+		// Push to history AFTER the connection is made
+		// This way undo will restore to the state before the connection
+		if (currentWorkflow) {
+			workflowActions.pushHistory("Add connection", currentWorkflow);
 		}
 	}
 
@@ -403,24 +405,13 @@
 			}
 		}
 
-		// Push to history BEFORE the deletion happens so it can be undone
-		const nodeCount = params.nodes.length;
-		const edgeCount = params.edges.length;
-		let description = "Delete";
-		if (nodeCount > 0 && edgeCount > 0) {
-			description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''} and ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
-		} else if (nodeCount > 0) {
-			description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''}`;
-		} else if (edgeCount > 0) {
-			description = `Delete ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
-		}
-		workflowActions.pushHistory(description);
-
+		// Don't push to history here - we'll push AFTER deletion in handleNodesDelete
+		// This ensures undo will restore the state before deletion
 		return true;
 	}
 
 	/**
-	 * Handle node deletion - automatically remove connected edges
+	 * Handle node deletion - automatically remove connected edges and push to history
 	 */
 	function handleNodesDelete(params: { nodes: WorkflowNodeType[]; edges: WorkflowEdge[] }): void {
 		const deletedNodeIds = new Set(params.nodes.map((node) => node.id));
@@ -433,6 +424,21 @@
 		// Update currentWorkflow
 		if (currentWorkflow) {
 			updateCurrentWorkflowFromSvelteFlow();
+		}
+
+		// Push to history AFTER the deletion so undo restores the previous state
+		const nodeCount = params.nodes.length;
+		const edgeCount = params.edges.length;
+		let description = "Delete";
+		if (nodeCount > 0 && edgeCount > 0) {
+			description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''} and ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
+		} else if (nodeCount > 0) {
+			description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''}`;
+		} else if (edgeCount > 0) {
+			description = `Delete ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
+		}
+		if (currentWorkflow) {
+			workflowActions.pushHistory(description, currentWorkflow);
 		}
 	}
 
@@ -487,9 +493,7 @@
 		const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
 
 		if (newNode && currentWorkflow) {
-			// Push to history before making the change
-			workflowActions.pushHistory('Add node');
-
+			// Add the node first
 			currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
 
 			// Update the global store
@@ -497,6 +501,10 @@
 
 			// Wait for DOM update to ensure SvelteFlow updates
 			await tick();
+
+			// Push to history AFTER adding the node
+			// This way undo will restore to the state before the add
+			workflowActions.pushHistory('Add node', currentWorkflow);
 		} else if (!currentWorkflow) {
 			console.warn('No currentWorkflow available for new node');
 		}
@@ -555,16 +563,14 @@
 		// Undo: Ctrl+Z (without Shift)
 		if (event.key === 'z' && !event.shiftKey) {
 			event.preventDefault();
-			const success = historyActions.undo();
-			console.log('[FlowDrop] Undo triggered, success:', success);
+			historyActions.undo();
 			return;
 		}
 
 		// Redo: Ctrl+Shift+Z or Ctrl+Y
 		if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
 			event.preventDefault();
-			const success = historyActions.redo();
-			console.log('[FlowDrop] Redo triggered, success:', success);
+			historyActions.redo();
 			return;
 		}
 	}
