@@ -43,6 +43,7 @@
 	import FormCheckboxGroup from './FormCheckboxGroup.svelte';
 	import FormArray from './FormArray.svelte';
 	import { resolveFieldComponent } from '$lib/form/fieldRegistry.js';
+	import { resolvedTheme } from '$lib/stores/settingsStore.js';
 	import type { FieldSchema } from './types.js';
 	import { getSchemaOptions } from './types.js';
 
@@ -226,6 +227,7 @@
 	>
 		{#if fieldType === 'registered' && registeredComponent}
 			<!-- Render registered custom component -->
+			<!-- darkTheme: use schema value if explicitly set, otherwise derive from resolved theme -->
 			<registeredComponent.component
 				id={fieldKey}
 				{value}
@@ -233,7 +235,7 @@
 				{required}
 				ariaDescribedBy={descriptionId}
 				height={schema.height as string | undefined}
-				darkTheme={schema.darkTheme as boolean | undefined}
+				darkTheme={schema.darkTheme ?? $resolvedTheme === 'dark'}
 				autoFormat={schema.autoFormat as boolean | undefined}
 				showToolbar={schema.showToolbar as boolean | undefined}
 				showStatusBar={schema.showStatusBar as boolean | undefined}
