@@ -1,7 +1,8 @@
 /**
  * Workflow Store for FlowDrop
  *
- * Provides global state management for workflows with dirty state tracking.
+ * Provides global state management for workflows with dirty state tracking
+ * and undo/redo history integration.
  *
  * @module stores/workflowStore
  */
@@ -9,6 +10,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
 import type { WorkflowChangeType } from '$lib/types/events.js';
+import { historyService } from '../services/historyService.js';
 
 // =========================================================================
 // Core Workflow Store
@@ -51,6 +53,20 @@ let onDirtyStateChangeCallback: ((isDirty: boolean) => void) | null = null;
 let onWorkflowChangeCallback:
 	| ((workflow: Workflow, changeType: WorkflowChangeType) => void)
 	| null = null;
+
+/**
+ * Flag to track if we're currently restoring from history (undo/redo)
+ *
+ * When true, prevents pushing to history to avoid recursive loops.
+ */
+let isRestoringFromHistory = false;
+
+/**
+ * Flag to track if history recording is enabled
+ *
+ * Can be disabled for bulk operations or when history is not needed.
+ */
+let historyEnabled = true;
 
 /**
  * Set the dirty state change callback
@@ -161,6 +177,53 @@ export function isDirty(): boolean {
 }
 
 /**
+ * Enable or disable history recording
+ *
+ * Useful for bulk operations where you don't want individual history entries.
+ *
+ * @param enabled - Whether history should be recorded
+ */
+export function setHistoryEnabled(enabled: boolean): void {
+	historyEnabled = enabled;
+}
+
+/**
+ * Check if history recording is enabled
+ *
+ * @returns true if history is being recorded
+ */
+export function isHistoryEnabled(): boolean {
+	return historyEnabled;
+}
+
+/**
+ * Set the restoring from history flag
+ *
+ * Used internally by the history store when performing undo/redo.
+ *
+ * @param restoring - Whether we're currently restoring from history
+ */
+export function setRestoringFromHistory(restoring: boolean): void {
+	isRestoringFromHistory = restoring;
+}
+
+/**
+ * Push current state to history before making changes
+ *
+ * @param description - Description of the change about to be made
+ */
+function pushToHistory(description?: string): void {
+	if (!historyEnabled || isRestoringFromHistory) {
+		return;
+	}
+
+	const currentWorkflow = get(workflowStore);
+	if (currentWorkflow) {
+		historyService.push(currentWorkflow, { description });
+	}
+}
+
+/**
  * Get the current workflow
  *
  * @returns The current workflow or null
@@ -263,7 +326,7 @@ export const workflowActions = {
 	/**
 	 * Initialize workflow (from load or new)
 	 *
-	 * This sets the initial saved snapshot and clears dirty state.
+	 * This sets the initial saved snapshot, clears dirty state, and initializes history.
 	 */
 	initialize: (workflow: Workflow) => {
 		workflowStore.set(workflow);
@@ -273,14 +336,31 @@ export const workflowActions = {
 		if (onDirtyStateChangeCallback) {
 			onDirtyStateChangeCallback(false);
 		}
+		// Initialize history with the loaded workflow
+		historyService.initialize(workflow);
 	},
 
 	/**
 	 * Update the entire workflow
+	 *
+	 * Note: This is typically called from SvelteFlow sync and should not push to history
+	 * for every small change. History is pushed by specific actions or drag handlers.
 	 */
 	updateWorkflow: (workflow: Workflow) => {
 		workflowStore.set(workflow);
 		notifyWorkflowChange('metadata');
+	},
+
+	/**
+	 * Restore workflow from history (undo/redo)
+	 *
+	 * This bypasses history recording to prevent recursive loops.
+	 */
+	restoreFromHistory: (workflow: Workflow) => {
+		isRestoringFromHistory = true;
+		workflowStore.set(workflow);
+		notifyWorkflowChange('metadata');
+		isRestoringFromHistory = false;
 	},
 
 	/**
@@ -363,6 +443,7 @@ export const workflowActions = {
 	 * Add a node
 	 */
 	addNode: (node: WorkflowNode) => {
+		pushToHistory("Add node");
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -379,8 +460,12 @@ export const workflowActions = {
 
 	/**
 	 * Remove a node
+	 *
+	 * This is an atomic operation that also removes connected edges.
+	 * A single undo will restore both the node and its edges.
 	 */
 	removeNode: (nodeId: string) => {
+		pushToHistory("Delete node");
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -400,6 +485,7 @@ export const workflowActions = {
 	 * Add an edge
 	 */
 	addEdge: (edge: WorkflowEdge) => {
+		pushToHistory("Add connection");
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -418,6 +504,7 @@ export const workflowActions = {
 	 * Remove an edge
 	 */
 	removeEdge: (edgeId: string) => {
+		pushToHistory("Delete connection");
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -434,8 +521,11 @@ export const workflowActions = {
 
 	/**
 	 * Update a specific node
+	 *
+	 * Used for config changes. Pushes to history for undo support.
 	 */
 	updateNode: (nodeId: string, updates: Partial<WorkflowNode>) => {
+		pushToHistory("Update node config");
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -452,11 +542,14 @@ export const workflowActions = {
 
 	/**
 	 * Clear the workflow
+	 *
+	 * Resets the workflow and clears history.
 	 */
 	clear: () => {
 		workflowStore.set(null);
 		savedSnapshot = null;
 		isDirtyStore.set(false);
+		historyService.clear();
 		if (onDirtyStateChangeCallback) {
 			onDirtyStateChangeCallback(false);
 		}
@@ -484,6 +577,7 @@ export const workflowActions = {
 	 * Batch update nodes and edges
 	 *
 	 * Useful for complex operations that update multiple things at once.
+	 * Creates a single history entry for the entire batch.
 	 */
 	batchUpdate: (updates: {
 		nodes?: WorkflowNode[];
@@ -492,6 +586,7 @@ export const workflowActions = {
 		description?: string;
 		metadata?: Partial<Workflow['metadata']>;
 	}) => {
+		pushToHistory("Batch update");
 		workflowStore.update(($workflow) => {
 			if (!$workflow) return null;
 			return {
@@ -508,6 +603,18 @@ export const workflowActions = {
 			};
 		});
 		notifyWorkflowChange('metadata');
+	},
+
+	/**
+	 * Push current state to history manually
+	 *
+	 * Use this before operations that modify the workflow through other means
+	 * (e.g., drag operations handled by SvelteFlow directly).
+	 *
+	 * @param description - Description of the upcoming change
+	 */
+	pushHistory: (description?: string) => {
+		pushToHistory(description);
 	}
 };
 

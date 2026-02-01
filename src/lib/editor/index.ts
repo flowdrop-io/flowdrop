@@ -152,8 +152,25 @@ export {
 	markAsSaved,
 	getWorkflow as getWorkflowFromStore,
 	setOnDirtyStateChange,
-	setOnWorkflowChange
+	setOnWorkflowChange,
+	// History control
+	setHistoryEnabled,
+	isHistoryEnabled,
+	setRestoringFromHistory
 } from '../stores/workflowStore.js';
+
+// History Store and Service
+export {
+	historyStateStore,
+	canUndo,
+	canRedo,
+	historyActions,
+	setOnRestoreCallback,
+	historyService,
+	HistoryService
+} from '../stores/historyStore.js';
+
+export type { HistoryEntry, HistoryState, PushOptions } from '../stores/historyStore.js';
 
 // ============================================================================
 // Services
