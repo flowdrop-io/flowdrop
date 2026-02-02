@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.47] - 2026-02-02
+
+### Added
+
+- **Template Variable Autocomplete**: Template editor fields now provide variable autocompletion
+  - Type `{{` to trigger autocomplete popup with available variables
+  - Variables are derived from the node's input ports and upstream node outputs
+  - Improves authoring experience for Twig/Liquid-style templates
+
+### Changed
+
+- **Form Schema Migration to oneOf Pattern**: Migrated enum field handling from `enumNames`/`enumLabels` to JSON Schema `oneOf` pattern
+  - More standards-compliant enum representation
+  - Clearer schema structure with explicit `const`/`title` pairs
+  - Internal refactor: `getEnumOptions()` → `getOneOfOptions()`
+
+### Fixed
+
+- **NodeType Config Sync**: Changing a node's `nodeType` config property now immediately updates the visual representation
+  - Previously required deselecting and reselecting the node to see the change
+  - Node type changes (e.g., `default` → `simple`) now reflect instantly
+
+- **Form oneOf Detection**: Fixed field type detection to prioritize `oneOf` pattern before basic type checks
+  - Ensures enum fields with `oneOf` schema render as select dropdowns instead of text inputs
+
+- **Dark Theme for Registered Fields**: Heavy editor fields (code, markdown, template) now correctly derive dark theme from resolved system theme
+  - Previously could show light editor in dark mode when using auto theme detection
+
+### Documentation
+
+- **Config Schema oneOf Pattern**: Updated `config-schema-special-properties.md` with oneOf pattern examples and migration guidance
+
+---
+
 ## [0.0.46] - 2026-02-01
 
 ### Added
