@@ -38,10 +38,7 @@
 	import { syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
 	import { oneDark } from '@codemirror/theme-one-dark';
 	import type { VariableSchema, TemplateVariablesConfig } from '$lib/types/index.js';
-	import {
-		createTemplateAutocomplete,
-		createSimpleTemplateAutocomplete
-	} from './templateAutocomplete.js';
+	import { createTemplateAutocomplete } from './templateAutocomplete.js';
 
 	interface Props {
 		/** Field identifier */
@@ -67,12 +64,6 @@
 		 * @deprecated Use `variables.schema` instead
 		 */
 		variableSchema?: VariableSchema;
-		/**
-		 * Simple variable names for basic hints (backward compatible).
-		 * Used when variableSchema is not provided.
-		 * @deprecated Use `variables.schema` instead
-		 */
-		variableHints?: string[];
 		/** Placeholder variable example for the hint */
 		placeholderExample?: string;
 		/** Whether the field is disabled (read-only) */
@@ -92,7 +83,6 @@
 		height = '250px',
 		variables,
 		variableSchema,
-		variableHints = [],
 		placeholderExample = 'Hello {{ name }}, your order #{{ order_id }} is ready!',
 		disabled = false,
 		ariaDescribedBy,
@@ -121,13 +111,12 @@
 
 	/**
 	 * Derive the list of top-level variable names for the hints display.
-	 * Prefers effectiveVariableSchema if available, falls back to variableHints.
 	 */
 	const displayVariables = $derived.by(() => {
 		if (effectiveVariableSchema) {
 			return Object.keys(effectiveVariableSchema.variables);
 		}
-		return variableHints;
+		return [];
 	});
 
 	/** Reference to the container element */
@@ -290,9 +279,6 @@
 			if (effectiveVariableSchema) {
 				// Use full autocomplete with nested drilling
 				extensions.push(createTemplateAutocomplete(effectiveVariableSchema));
-			} else if (variableHints.length > 0) {
-				// Fallback to simple autocomplete with just variable names
-				extensions.push(createSimpleTemplateAutocomplete(variableHints));
 			}
 		}
 

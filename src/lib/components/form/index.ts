@@ -54,7 +54,4 @@ export { default as FormTemplateEditor } from './FormTemplateEditor.svelte';
 export { default as FormAutocomplete } from './FormAutocomplete.svelte';
 
 // Template autocomplete utilities
-export {
-	createTemplateAutocomplete,
-	createSimpleTemplateAutocomplete
-} from './templateAutocomplete.js';
+export { createTemplateAutocomplete } from './templateAutocomplete.js';
