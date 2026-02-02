@@ -92,6 +92,11 @@ export interface NodePort {
 	required?: boolean;
 	description?: string;
 	defaultValue?: unknown;
+	/**
+	 * Optional JSON Schema describing the structure of data on this port.
+	 * Used for template variable autocomplete to drill into nested properties.
+	 */
+	schema?: OutputSchema | InputSchema;
 }
 
 /**
@@ -696,6 +701,136 @@ export interface OutputProperty extends BaseProperty {
  */
 export interface OutputSchema extends BaseSchema {
 	properties: Record<string, OutputProperty>;
+}
+
+/**
+ * Primitive types for template variables
+ */
+export type TemplateVariableType =
+	| 'string'
+	| 'number'
+	| 'boolean'
+	| 'array'
+	| 'object'
+	| 'integer'
+	| 'mixed'
+	| 'float';
+
+/**
+ * Represents a variable available for template interpolation.
+ * Used by the template editor for autocomplete suggestions.
+ *
+ * Supports hierarchical drilling:
+ * - Objects have `properties` for dot notation (e.g., `user.name`)
+ * - Arrays have `items` for index access (e.g., `items[0].name`)
+ *
+ * @example
+ * ```typescript
+ * const userVariable: TemplateVariable = {
+ *   name: "user",
+ *   label: "User Data",
+ *   type: "object",
+ *   properties: {
+ *     name: { name: "name", type: "string", label: "User Name" },
+ *     email: { name: "email", type: "string", label: "Email Address" },
+ *     address: {
+ *       name: "address",
+ *       type: "object",
+ *       label: "Address",
+ *       properties: {
+ *         city: { name: "city", type: "string", label: "City" },
+ *         country: { name: "country", type: "string", label: "Country" }
+ *       }
+ *     }
+ *   }
+ * };
+ * ```
+ */
+export interface TemplateVariable {
+	/** Variable name (used in template as {{ name }}) */
+	name: string;
+	/** Display label for the variable in autocomplete dropdown */
+	label?: string;
+	/** Description shown in autocomplete tooltip */
+	description?: string;
+	/** Data type of the variable */
+	type: TemplateVariableType;
+	/** For objects: child properties accessible via dot notation */
+	properties?: Record<string, TemplateVariable>;
+	/** For arrays: schema of array items accessible via index notation */
+	items?: TemplateVariable;
+	/** Source port ID this variable comes from */
+	sourcePort?: string;
+	/** Source node ID */
+	sourceNode?: string;
+}
+
+/**
+ * Schema passed to template editor for autocomplete functionality.
+ * Contains all available variables derived from connected upstream nodes.
+ *
+ * @example
+ * ```typescript
+ * const variableSchema: VariableSchema = {
+ *   variables: {
+ *     user: { name: "user", type: "object", properties: { ... } },
+ *     items: { name: "items", type: "array", items: { ... } },
+ *     config: { name: "config", type: "object", properties: { ... } }
+ *   }
+ * };
+ * ```
+ */
+export interface VariableSchema {
+	/** Map of available variables keyed by variable name */
+	variables: Record<string, TemplateVariable>;
+}
+
+/**
+ * Configuration for template variable autocomplete.
+ * Used in template fields to control which variables are available
+ * and how they are derived.
+ *
+ * @example
+ * ```json
+ * {
+ *   "type": "string",
+ *   "format": "template",
+ *   "variables": {
+ *     "ports": ["data", "context"],
+ *     "includePortName": true
+ *   }
+ * }
+ * ```
+ */
+export interface TemplateVariablesConfig {
+	/**
+	 * Specifies which input port IDs should provide variables for autocomplete.
+	 * Only connections to these ports will provide variables.
+	 *
+	 * - If not specified, all input ports with connections are used.
+	 * - If specified as an empty array, no variables will be derived from ports.
+	 */
+	ports?: string[];
+
+	/**
+	 * Pre-defined variable schema to use instead of (or in addition to) deriving from ports.
+	 * Useful for providing static variables or overriding derived ones.
+	 */
+	schema?: VariableSchema;
+
+	/**
+	 * Whether to include the port name as a prefix for variables.
+	 * When true, variables are named like `data.user` instead of just `user`.
+	 * Useful when multiple ports might have overlapping variable names.
+	 * @default false
+	 */
+	includePortName?: boolean;
+
+	/**
+	 * Whether to show available variables as clickable hints below the editor.
+	 * @default true
+	 */
+	showHints?: boolean;
 }
 
 /**

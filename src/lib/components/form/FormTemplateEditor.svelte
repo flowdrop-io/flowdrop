@@ -4,10 +4,13 @@
   
   Features:
   - Custom syntax highlighting for {{ variable }} placeholders
+  - Inline autocomplete for template variables (triggered on {{ and .)
+  - Support for nested object drilling (user.address.city)
+  - Support for array index access (items[0].name)
   - Dark/light theme support
   - Consistent styling with other form components
   - Line wrapping for better template readability
-  - Optional variable hints display
+  - Optional variable hints display (clickable buttons)
   - Proper ARIA attributes for accessibility
   
   Usage:
@@ -34,6 +37,11 @@
 	import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
 	import { syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
 	import { oneDark } from '@codemirror/theme-one-dark';
+	import type { VariableSchema, TemplateVariablesConfig } from '$lib/types/index.js';
+	import {
+		createTemplateAutocomplete,
+		createSimpleTemplateAutocomplete
+	} from './templateAutocomplete.js';
 
 	interface Props {
 		/** Field identifier */
@@ -48,7 +56,22 @@
 		darkTheme?: boolean;
 		/** Editor height in pixels or CSS value */
 		height?: string;
-		/** Available variable names for hints (optional) */
+		/**
+		 * Configuration for template variable autocomplete.
+		 * Controls which variables are available and how they are displayed.
+		 */
+		variables?: TemplateVariablesConfig;
+		/**
+		 * Variable schema for advanced autocomplete with nested drilling.
+		 * When provided, enables dot notation (user.name) and array access (items[0]).
+		 * @deprecated Use `variables.schema` instead
+		 */
+		variableSchema?: VariableSchema;
+		/**
+		 * Simple variable names for basic hints (backward compatible).
+		 * Used when variableSchema is not provided.
+		 * @deprecated Use `variables.schema` instead
+		 */
 		variableHints?: string[];
 		/** Placeholder variable example for the hint */
 		placeholderExample?: string;
@@ -67,12 +90,45 @@
 		required = false,
 		darkTheme = false,
 		height = '250px',
+		variables,
+		variableSchema,
 		variableHints = [],
 		placeholderExample = 'Hello {{ name }}, your order #{{ order_id }} is ready!',
 		disabled = false,
 		ariaDescribedBy,
 		onChange
 	}: Props = $props();
+
+	/**
+	 * Get the effective variable schema.
+	 * Prefers variables.schema, falls back to deprecated variableSchema prop.
+	 */
+	const effectiveVariableSchema = $derived.by<VariableSchema | undefined>(() => {
+		if (variables?.schema && Object.keys(variables.schema.variables).length > 0) {
+			return variables.schema;
+		}
+		if (variableSchema && Object.keys(variableSchema.variables).length > 0) {
+			return variableSchema;
+		}
+		return undefined;
+	});
+
+	/**
+	 * Whether to show the variable hints section.
+	 * Controlled by variables.showHints (defaults to true).
+	 */
+	const showHints = $derived(variables?.showHints !== false);
+
+	/**
+	 * Derive the list of top-level variable names for the hints display.
+	 * Prefers effectiveVariableSchema if available, falls back to variableHints.
+	 */
+	const displayVariables = $derived.by(() => {
+		if (effectiveVariableSchema) {
+			return Object.keys(effectiveVariableSchema.variables);
+		}
+		return variableHints;
+	});
 
 	/** Reference to the container element */
 	let containerRef: HTMLDivElement | undefined = $state(undefined);
@@ -86,10 +142,15 @@
 	/**
 	 * Create a MatchDecorator for {{ variable }} patterns
 	 * This highlights the entire {{ variable }} expression
+	 * Supports:
+	 * - Simple variables: {{ name }}
+	 * - Dot notation: {{ user.name }}, {{ user.address.city }}
+	 * - Array access: {{ items[0] }}, {{ items[0].name }}
+	 * - Mixed: {{ orders[0].items[1].price }}
 	 */
 	const variableMatcher = new MatchDecorator({
-		// Match {{ variable_name }} patterns (with optional whitespace)
-		regexp: /\{\{\s*[\w.]+\s*\}\}/g,
+		// Match {{ variable_name }} patterns with dot notation and array indices
+		regexp: /\{\{\s*[\w]+(?:\.[\w]+|\[\d+\]|\[\*\])*\s*\}\}/g,
 		decoration: Decoration.mark({ class: 'cm-template-variable' })
 	});
 
@@ -125,7 +186,7 @@
 
 	/**
 	 * Create editor extensions array for template editing
-	 * Uses minimal setup for better performance (no auto-closing brackets, no autocompletion)
+	 * Includes autocomplete when variables are available
 	 * When disabled is true, adds readOnly/editable so the editor cannot be modified
 	 */
 	function createExtensions() {
@@ -158,7 +219,7 @@
 			// Update listener (only fires on user edit when not disabled)
 			EditorView.updateListener.of(handleUpdate),
 
-			// Custom theme
+			// Custom theme with autocomplete styling
 			EditorView.theme({
 				'&': {
 					height: height,
@@ -185,20 +246,73 @@
 					borderRadius: '3px',
 					padding: '1px 2px',
 					fontWeight: '500'
+				},
+				// Autocomplete dropdown styling
+				'.cm-tooltip.cm-tooltip-autocomplete': {
+					backgroundColor: 'var(--fd-background, #ffffff)',
+					border: '1px solid var(--fd-border, #e5e7eb)',
+					borderRadius: 'var(--fd-radius-lg, 0.5rem)',
+					boxShadow: 'var(--fd-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))',
+					padding: '0.25rem',
+					maxHeight: '200px',
+					overflow: 'auto'
+				},
+				'.cm-tooltip.cm-tooltip-autocomplete > ul': {
+					fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace",
+					fontSize: '0.8125rem'
+				},
+				'.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
+					padding: '0.375rem 0.625rem',
+					borderRadius: 'var(--fd-radius-md, 0.375rem)',
+					display: 'flex',
+					alignItems: 'center',
+					gap: '0.5rem'
+				},
+				'.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+					backgroundColor: 'var(--fd-accent-muted, rgba(168, 85, 247, 0.1))',
+					color: 'var(--fd-accent-hover, #7c3aed)'
+				},
+				'.cm-completionLabel': {
+					flex: '1'
+				},
+				'.cm-completionDetail': {
+					fontSize: '0.6875rem',
+					color: 'var(--fd-muted-foreground, #6b7280)',
+					opacity: '0.8'
 				}
 			}),
 			EditorView.lineWrapping,
 			EditorState.tabSize.of(2)
 		];
 
+		// Add autocomplete extension when variables are available (and not disabled)
+		if (!disabled) {
+			if (effectiveVariableSchema) {
+				// Use full autocomplete with nested drilling
+				extensions.push(createTemplateAutocomplete(effectiveVariableSchema));
+			} else if (variableHints.length > 0) {
+				// Fallback to simple autocomplete with just variable names
+				extensions.push(createSimpleTemplateAutocomplete(variableHints));
+			}
+		}
+
 		if (darkTheme) {
 			extensions.push(oneDark);
-			// Add dark theme override for variable highlighting
+			// Add dark theme override for variable highlighting and autocomplete
 			extensions.push(
 				EditorView.theme({
 					'.cm-template-variable': {
 						color: '#c084fc',
 						backgroundColor: 'rgba(192, 132, 252, 0.15)'
+					},
+					'.cm-tooltip.cm-tooltip-autocomplete': {
+						backgroundColor: '#1e1e1e',
+						border: '1px solid #3e4451',
+						boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)'
+					},
+					'.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+						backgroundColor: 'rgba(192, 132, 252, 0.2)',
+						color: '#c084fc'
 					}
 				})
 			);
@@ -298,12 +412,12 @@
 		aria-label="Template editor"
 	></div>
 
-	<!-- Variable hints section (shown when variables are available) -->
-	{#if variableHints.length > 0}
+	<!-- Variable hints section (shown when variables are available and showHints is true) -->
+	{#if showHints && displayVariables.length > 0}
 		<div class="form-template-editor__hints">
 			<span class="form-template-editor__hints-label">Available variables:</span>
 			<div class="form-template-editor__hints-list">
-				{#each variableHints as varName (varName)}
+				{#each displayVariables as varName (varName)}
 					<button
 						type="button"
 						class="form-template-editor__hint-btn"

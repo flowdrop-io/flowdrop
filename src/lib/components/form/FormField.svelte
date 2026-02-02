@@ -351,6 +351,7 @@
 				{required}
 				height={(schema.height as string | undefined) ?? '250px'}
 				darkTheme={(schema.darkTheme as boolean | undefined) ?? false}
+				variables={schema.variables}
 				variableHints={(schema.variableHints as string[] | undefined) ?? []}
 				placeholderExample={(schema.placeholderExample as string | undefined) ??
 					'Hello {{ name }}, your order #{{ order_id }} is ready!'}

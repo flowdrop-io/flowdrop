@@ -22,6 +22,7 @@
 	import type {
 		ConfigSchema,
 		WorkflowNode,
+		WorkflowEdge,
 		NodeUIExtensions,
 		ConfigEditOptions
 	} from '$lib/types/index.js';
@@ -35,6 +36,7 @@
 		type DynamicSchemaResult
 	} from '$lib/services/dynamicSchemaService.js';
 	import { globalSaveWorkflow } from '$lib/services/globalSave.js';
+	import { getAvailableVariables } from '$lib/services/variableService.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -49,6 +51,16 @@
 		workflowId?: string;
 		/** Whether to also save the workflow when saving config */
 		saveWorkflowWhenSavingConfig?: boolean;
+		/**
+		 * All workflow nodes (used for deriving template variables from connected nodes).
+		 * When provided along with workflowEdges, enables autocomplete for template fields.
+		 */
+		workflowNodes?: WorkflowNode[];
+		/**
+		 * All workflow edges (used for finding connections to derive template variables).
+		 * When provided along with workflowNodes, enables autocomplete for template fields.
+		 */
+		workflowEdges?: WorkflowEdge[];
 		/** Callback when any field value changes (fired on blur for immediate sync) */
 		onChange?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is saved (includes both config and extensions if enabled) */
@@ -64,6 +76,8 @@
 		showUIExtensions = true,
 		workflowId,
 		saveWorkflowWhenSavingConfig = false,
+		workflowNodes = [],
+		workflowEdges = [],
 		onChange,
 		onSave,
 		onCancel
@@ -364,10 +378,46 @@
 	}
 
 	/**
-	 * Convert ConfigProperty to FieldSchema for FormField component
+	 * Convert ConfigProperty to FieldSchema for FormField component.
+	 * Processes template fields to inject computed variable schema.
+	 *
+	 * For template fields, the `variables` config controls which input ports
+	 * provide variables for autocomplete.
 	 */
 	function toFieldSchema(property: Record<string, unknown>): FieldSchema {
-		return property as FieldSchema;
+		const fieldSchema = property as FieldSchema;
+
+		// Process template fields to compute variable schema
+		if (fieldSchema.format === 'template' && node && workflowNodes.length > 0 && workflowEdges.length > 0) {
+			// Get the variables config (may be undefined or partially defined)
+			const variablesConfig = fieldSchema.variables;
+
+			// Compute the variable schema with optional port filtering and port name prefixing
+			const computedSchema = getAvailableVariables(node, workflowNodes, workflowEdges, {
+				targetPortIds: variablesConfig?.ports,
+				includePortName: variablesConfig?.includePortName
+			});
+
+			// Merge computed schema with any pre-defined schema
+			const mergedSchema = variablesConfig?.schema
+				? {
+						variables: {
+							...computedSchema.variables,
+							...variablesConfig.schema.variables
+						}
+					}
+				: computedSchema;
+
+			return {
+				...fieldSchema,
+				variables: {
+					...variablesConfig,
+					schema: mergedSchema
+				}
+			} as FieldSchema;
+		}
+
+		return fieldSchema;
 	}
 </script>
 

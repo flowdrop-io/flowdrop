@@ -194,15 +194,39 @@ ConfigProperty:
       type: string
       description: |
         Special format hints for UI rendering:
+
         - `multiline`: Renders as textarea
         - `hidden`: Field is hidden from UI but included in form submission
         - `range`: Renders as range slider for numeric values
         - `json`: Renders as CodeMirror JSON editor
         - `code`: Alias for json, renders as CodeMirror editor
         - `markdown`: Renders as SimpleMDE Markdown editor
-        - `template`: Renders as CodeMirror editor with Twig/Liquid syntax highlighting
-        - `autocomplete`: Renders as text input with autocomplete suggestions from callback URL
+        - `template`: Template editor with variable autocomplete (see below)
+        - `autocomplete`: Text input with callback URL suggestions
         - `email`, `uri`, `date`, `date-time`: Standard JSON Schema formats
+
+        ## Template Format Details
+
+        The `template` format renders a CodeMirror editor with:
+
+        **Syntax highlighting** for Twig/Liquid-style `{{ variable }}` placeholders
+
+        **Inline autocomplete** triggered by:
+        - Typing `{{` - Shows available variables
+        - Typing `.` after an object - Shows nested properties
+        - Typing `[` after an array - Shows index suggestions
+
+        **Variable patterns supported:**
+        - `{{ user }}` - Simple variable
+        - `{{ user.name }}` - Nested property access
+        - `{{ user.address.city }}` - Deep nesting
+        - `{{ items[0] }}` - Array index access
+        - `{{ orders[0].product.name }}` - Combined patterns
+
+        **Autocomplete source:**
+        Variables are derived from connected upstream nodes that have output
+        schemas defined. Use the `variables` property to configure which
+        input ports provide variables.
       enum:
         - multiline
         - hidden
@@ -216,6 +240,12 @@ ConfigProperty:
         - uri
         - date
         - date-time
+    variables:
+      $ref: '#/TemplateVariablesConfig'
+      description: |
+        Configuration for template variable autocomplete.
+        Only applicable when `format: "template"`.
+        See TemplateVariablesConfig for full documentation.
     x-display-order:
       type: integer
       description: |
@@ -325,3 +355,121 @@ ConfigSchema:
   required:
     - type
     - properties
+
+TemplateVariablesConfig:
+  type: object
+  description: |
+    Configuration for template variable autocomplete in template fields.
+
+    ## Overview
+
+    When a template field is connected to upstream nodes that have output schemas,
+    FlowDrop automatically derives available variables for autocomplete. This config
+    controls which ports provide variables and how they are presented.
+
+    ## Variable Derivation
+
+    Variables are derived from connected upstream nodes' **output port schemas**.
+    When an output port has a `schema` property with `properties`, those properties
+    become available as template variables.
+
+    ### Default Behavior (includePortName: false)
+
+    Schema properties are **unpacked as top-level variables**:
+
+    ```
+    HTTP Request node (output port "json" with schema):
+      schema.properties: { user: {...}, orders: {...} }
+                              ↓
+    Template variables: {{ user }}, {{ orders }}
+    ```
+
+    ### With includePortName: true
+
+    Variables are **prefixed with the port name**:
+
+    ```
+    Same schema as above:
+                              ↓
+    Template variables: {{ data.user }}, {{ data.orders }}
+    ```
+
+    ## Nested Property Access
+
+    The autocomplete supports drilling into nested structures:
+
+    - **Dot notation**: `{{ user.address.city }}`
+    - **Array indices**: `{{ orders[0].product_name }}`
+    - **Combined**: `{{ user.orders[0].items[1].price }}`
+
+  properties:
+    ports:
+      type: array
+      items:
+        type: string
+      description: |
+        Specifies which input port IDs should provide variables for autocomplete.
+        Only connections to these ports will contribute variables.
+
+        **Behavior:**
+        - If not specified: All input ports with connections are used
+        - If empty array `[]`: No variables derived from ports (use with `schema` for static variables)
+        - If specified: Only the listed ports contribute variables
+
+        **Example:** A node with inputs "data", "context", and "trigger":
+        - `ports: ["data"]` - Only variables from the "data" connection
+        - `ports: ["data", "context"]` - Variables from both connections
+        - Not specified - Variables from all non-trigger connections
+      example:
+        - data
+        - context
+    schema:
+      $ref: './node.yaml#/VariableSchema'
+      description: |
+        Pre-defined variable schema to provide static variables or override derived ones.
+
+        When both `ports` and `schema` are specified, variables are **merged**:
+        - Variables from connected ports are computed first
+        - Static `schema` variables are added/override existing ones
+
+        **Use cases:**
+        - Provide variables that don't come from connections
+        - Override labels or descriptions for derived variables
+        - Add custom variables for specific use cases
+    includePortName:
+      type: boolean
+      default: false
+      description: |
+        Controls how variables are named when derived from port schemas.
+
+        **When false (default):**
+        Schema properties become top-level variables directly.
+        A port with schema `{ user: {...}, orders: {...} }` produces:
+        - `{{ user }}`
+        - `{{ orders }}`
+
+        **When true:**
+        Variables are prefixed with the input port name.
+        Same schema connected to input port "data" produces:
+        - `{{ data.user }}`
+        - `{{ data.orders }}`
+
+        **When to use true:**
+        - Multiple input ports with potentially overlapping property names
+        - You want to be explicit about data sources in templates
+        - Backward compatibility with existing templates
+    showHints:
+      type: boolean
+      default: true
+      description: |
+        Whether to display clickable variable hints below the editor.
+
+        When enabled, shows a row of buttons for top-level variables that users
+        can click to insert `{{ variableName }}` at the cursor position.
+
+        Disable if the variable list is too long or not useful.
+  example:
+    ports:
+      - data
+    showHints: true
+    includePortName: false

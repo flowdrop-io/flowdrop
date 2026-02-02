@@ -3,39 +3,356 @@
 
 NodePort:
   type: object
+  description: |
+    Defines an input or output port on a node.
+
+    Ports are connection points where data flows between nodes. Input ports
+    receive data from upstream nodes, and output ports send data to downstream nodes.
+
+    ## Template Variable Autocomplete
+
+    Output ports can include a `schema` property that describes the structure of
+    their data. This schema is used by downstream nodes' template fields to provide
+    autocomplete suggestions.
+
+    When a template field is connected to a port with a schema, users get:
+    - Autocomplete for top-level properties when typing `{{`
+    - Nested property drilling when typing `.`
+    - Array index suggestions when typing `[`
   properties:
     id:
       type: string
-      description: Port unique identifier
-      example: data
+      description: Port unique identifier (used in handle IDs and variable names)
+      example: json
     name:
       type: string
-      description: Port display name
-      example: Input Data
+      description: Port display name shown in the UI
+      example: JSON Response
     type:
       type: string
       enum:
         - input
         - output
         - metadata
-      description: Port type
+      description: Port direction (input receives data, output sends data)
     dataType:
       $ref: './common.yaml#/NodeDataType'
     required:
       type: boolean
       default: false
-      description: Whether the port is required
+      description: Whether the port must be connected for the node to execute
     description:
       type: string
-      description: Port description
-      example: Input data for the node
+      description: Help text describing what data the port expects or provides
+      example: Parsed JSON response from the HTTP request
     defaultValue:
-      description: Default value for the port
+      description: Default value used when no connection provides data
+    schema:
+      $ref: '#/PortDataSchema'
+      description: |
+        JSON Schema describing the structure of data on this output port.
+
+        **Purpose:** Enables template variable autocomplete in downstream nodes.
+        When a downstream node has a template field connected to this port,
+        the schema's properties become available as autocomplete suggestions.
+
+        **How it works:**
+        1. Define a schema with `properties` on an output port
+        2. Connect this port to a downstream node's input
+        3. In the downstream node's template field, typing `{{` shows the schema's properties
+
+        **Example:**
+
+        ```yaml
+        outputs:
+          - id: json
+            name: JSON Response
+            type: output
+            dataType: json
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    email: { type: string }
+                orders:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      total: { type: number }
+        ```
+
+        This enables autocomplete for:
+        - `{{ user }}`, `{{ orders }}`
+        - `{{ user.name }}`, `{{ user.email }}`
+        - `{{ orders[0].id }}`, `{{ orders[0].total }}`
   required:
     - id
     - name
     - type
     - dataType
+
+PortDataSchema:
+  type: object
+  description: |
+    JSON Schema describing the structure of data on an output port.
+    Follows JSON Schema draft-07 specification.
+
+    ## Purpose
+
+    Enables template variable autocomplete in downstream nodes by describing
+    the shape of data that flows through the port.
+
+    ## Supported Features
+
+    - **Objects**: Define `properties` to enable dot notation drilling
+    - **Arrays**: Define `items` to enable index access and item property drilling
+    - **Nested structures**: Combine objects and arrays for deep drilling
+    - **Metadata**: Use `title` and `description` for autocomplete tooltips
+
+    ## Example
+
+    A schema describing an API response with user data and orders:
+
+    ```yaml
+    type: object
+    properties:
+      user:
+        type: object
+        title: User
+        description: The authenticated user
+        properties:
+          id: { type: integer }
+          name: { type: string, description: "User's full name" }
+          email: { type: string }
+          address:
+            type: object
+            properties:
+              city: { type: string }
+              country: { type: string }
+      orders:
+        type: array
+        title: Orders
+        description: User's order history
+        items:
+          type: object
+          properties:
+            order_id: { type: string }
+            total: { type: number }
+            status: { type: string }
+    ```
+
+    This enables template patterns like:
+    - `{{ user.name }}` - Access user's name
+    - `{{ user.address.city }}` - Nested property access
+    - `{{ orders[0].total }}` - First order's total
+    - `{{ orders[0].status }}` - First order's status
+  properties:
+    type:
+      type: string
+      enum:
+        - object
+        - array
+        - string
+        - number
+        - integer
+        - boolean
+      description: |
+        The JSON Schema type. Use `object` for nested properties,
+        `array` for lists with `items` schema.
+    title:
+      type: string
+      description: |
+        Human-readable title shown in autocomplete dropdown.
+        If not provided, the property name is used.
+    description:
+      type: string
+      description: |
+        Description shown as tooltip in autocomplete.
+        Helps users understand what data the property contains.
+    properties:
+      type: object
+      additionalProperties:
+        $ref: '#/PortDataSchema'
+      description: Property schemas for object types
+    items:
+      $ref: '#/PortDataSchema'
+      description: Item schema for array types
+    required:
+      type: array
+      items:
+        type: string
+      description: Required property names
+  example:
+    type: object
+    properties:
+      user:
+        type: object
+        title: User
+        description: User information
+        properties:
+          id:
+            type: integer
+            description: User ID
+          name:
+            type: string
+            description: User full name
+          email:
+            type: string
+            description: User email address
+          address:
+            type: object
+            title: Address
+            properties:
+              street:
+                type: string
+              city:
+                type: string
+              country:
+                type: string
+      orders:
+        type: array
+        title: Orders
+        description: List of user orders
+        items:
+          type: object
+          properties:
+            order_id:
+              type: string
+            product_name:
+              type: string
+            quantity:
+              type: integer
+            price:
+              type: number
+
+TemplateVariable:
+  type: object
+  description: |
+    Represents a variable available for template interpolation.
+    Used by the template editor for autocomplete suggestions.
+
+    Supports hierarchical drilling:
+    - Objects have `properties` for dot notation (e.g., `user.name`)
+    - Arrays have `items` for index access (e.g., `items[0].name`)
+  properties:
+    name:
+      type: string
+      description: Variable name (used in template as {{ name }})
+      example: user
+    label:
+      type: string
+      description: Display label for the variable in autocomplete dropdown
+      example: User Data
+    description:
+      type: string
+      description: Description shown in autocomplete tooltip
+      example: User information from upstream node
+    type:
+      type: string
+      enum:
+        - string
+        - number
+        - integer
+        - boolean
+        - array
+        - object
+        - float
+        - mixed
+      description: Data type of the variable
+    properties:
+      type: object
+      additionalProperties:
+        $ref: '#/TemplateVariable'
+      description: For objects - child properties accessible via dot notation
+    items:
+      $ref: '#/TemplateVariable'
+      description: For arrays - schema of array items accessible via index notation
+    sourcePort:
+      type: string
+      description: Source port ID this variable comes from
+    sourceNode:
+      type: string
+      description: Source node ID
+  required:
+    - name
+    - type
+  example:
+    name: user
+    label: User Data
+    type: object
+    properties:
+      name:
+        name: name
+        type: string
+        label: User Name
+      email:
+        name: email
+        type: string
+        label: Email Address
+      address:
+        name: address
+        type: object
+        label: Address
+        properties:
+          city:
+            name: city
+            type: string
+            label: City
+          country:
+            name: country
+            type: string
+            label: Country
+
+VariableSchema:
+  type: object
+  description: |
+    Schema passed to template editor for autocomplete functionality.
+    Contains all available variables derived from connected upstream nodes.
+
+    This is computed by the frontend based on:
+    1. Finding all edges that connect to the current node's input ports
+    2. Getting the output schemas from the source nodes' output ports
+    3. Building a hierarchical variable structure for autocomplete
+  properties:
+    variables:
+      type: object
+      additionalProperties:
+        $ref: '#/TemplateVariable'
+      description: Map of available variables keyed by variable name
+  required:
+    - variables
+  example:
+    variables:
+      user:
+        name: user
+        type: object
+        label: User Data
+        properties:
+          name:
+            name: name
+            type: string
+          email:
+            name: email
+            type: string
+      items:
+        name: items
+        type: array
+        label: Order Items
+        items:
+          name: item
+          type: object
+          properties:
+            product_name:
+              name: product_name
+              type: string
+            price:
+              name: price
+              type: number
 
 DynamicPort:
   type: object
