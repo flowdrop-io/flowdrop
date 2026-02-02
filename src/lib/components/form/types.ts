@@ -257,12 +257,6 @@ export interface TemplateEditorFieldProps extends BaseFieldProps {
 	 * @deprecated Use `variables.schema` instead
 	 */
 	variableSchema?: VariableSchema;
-	/**
-	 * Simple variable names for basic hints (backward compatible).
-	 * Used when variableSchema is not provided.
-	 * @deprecated Use `variables.schema` instead
-	 */
-	variableHints?: string[];
 	/** Placeholder variable example for the hint */
 	placeholderExample?: string;
 	/** Callback when value changes */

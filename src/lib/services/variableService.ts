@@ -338,26 +338,6 @@ export function getAvailableVariables(
 }
 
 /**
- * Converts simple variable hints (string array) to a VariableSchema.
- * Used for backward compatibility with the old variableHints format.
- *
- * @param hints - Array of variable names
- * @returns A VariableSchema with basic string variables
- */
-export function hintsToVariableSchema(hints: string[]): VariableSchema {
-	const variables: Record<string, TemplateVariable> = {};
-
-	for (const hint of hints) {
-		variables[hint] = {
-			name: hint,
-			type: "mixed"
-		};
-	}
-
-	return { variables };
-}
-
-/**
  * Gets the child variables for a given path in the variable schema.
  * Used for drilling down into nested objects and arrays.
  *

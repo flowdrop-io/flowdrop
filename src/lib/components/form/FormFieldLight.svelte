@@ -242,7 +242,6 @@
 				showStatusBar={schema.showStatusBar as boolean | undefined}
 				spellChecker={schema.spellChecker as boolean | undefined}
 				variables={schema.variables}
-				variableHints={schema.variableHints as string[] | undefined}
 				placeholderExample={schema.placeholderExample as string | undefined}
 				onChange={(val: unknown) => onChange(val)}
 			/>
