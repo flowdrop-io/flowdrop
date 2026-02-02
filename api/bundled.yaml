@@ -2122,8 +2122,46 @@ components:
       required:
         - dataTypes
         - defaultDataType
+    OneOfItem:
+      type: object
+      description: |
+        JSON Schema oneOf item for labeled options.
+        This is the standard JSON Schema way to define labeled select options.
+
+        Example:
+        ```json
+        {
+          "type": "string",
+          "oneOf": [
+            { "const": "draft", "title": "Draft" },
+            { "const": "published", "title": "Published" }
+          ]
+        }
+        ```
+      properties:
+        const:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          description: The constant value for this option (JSON Schema `const` keyword)
+        title:
+          type: string
+          description: Human-readable label for this option
+        description:
+          type: string
+          description: Optional description for this option
+      required:
+        - const
     ConfigProperty:
       type: object
+      description: |
+        JSON Schema property definition for node configuration.
+        Follows JSON Schema draft-07 specification with FlowDrop extensions for UI rendering.
+
+        For select/dropdown fields, use standard JSON Schema patterns:
+        - `enum` for simple value lists (no labels)
+        - `oneOf` with `const`/`title` for labeled options
       properties:
         type:
           type: string
@@ -2134,6 +2172,7 @@ components:
             - array
             - object
             - integer
+          description: JSON Schema type
         title:
           type: string
           description: Display title for the property
@@ -2145,16 +2184,36 @@ components:
         enum:
           type: array
           items: {}
-          description: Allowed values for enum properties
+          description: |
+            Allowed values for enum properties (simple values without labels).
+            For labeled options, use `oneOf` with `const`/`title` instead.
+        oneOf:
+          type: array
+          items:
+            $ref: '#/components/schemas/OneOfItem'
+          description: |
+            JSON Schema oneOf for labeled options (standard approach).
+            Each item should have `const` (value) and optionally `title` (label).
+
+            Example:
+            ```json
+            "oneOf": [
+              { "const": "draft", "title": "Draft" },
+              { "const": "published", "title": "Published" }
+            ]
+            ```
         multiple:
           type: boolean
-          description: For enum fields, allows multiple selection
+          description: For enum/oneOf fields, allows multiple selection (renders as checkbox group)
         minimum:
           type: number
           description: Minimum value for numeric properties
         maximum:
           type: number
           description: Maximum value for numeric properties
+        step:
+          type: number
+          description: Step increment for number/range inputs
         minLength:
           type: integer
           description: Minimum length for string properties
@@ -2164,24 +2223,149 @@ components:
         pattern:
           type: string
           description: Regex pattern for string validation
+        placeholder:
+          type: string
+          description: Placeholder text for input fields
         format:
           type: string
-          description: Special formats (multiline for textarea, hidden to hide field)
+          description: |
+            Special format hints for UI rendering:
+
+            - `multiline`: Renders as textarea
+            - `hidden`: Field is hidden from UI but included in form submission
+            - `range`: Renders as range slider for numeric values
+            - `json`: Renders as CodeMirror JSON editor
+            - `code`: Alias for json, renders as CodeMirror editor
+            - `markdown`: Renders as SimpleMDE Markdown editor
+            - `template`: Template editor with variable autocomplete (see below)
+            - `autocomplete`: Text input with callback URL suggestions
+            - `email`, `uri`, `date`, `date-time`: Standard JSON Schema formats
+
+            ## Template Format Details
+
+            The `template` format renders a CodeMirror editor with:
+
+            **Syntax highlighting** for Twig/Liquid-style `{{ variable }}` placeholders
+
+            **Inline autocomplete** triggered by:
+            - Typing `{{` - Shows available variables
+            - Typing `.` after an object - Shows nested properties
+            - Typing `[` after an array - Shows index suggestions
+
+            **Variable patterns supported:**
+            - `{{ user }}` - Simple variable
+            - `{{ user.name }}` - Nested property access
+            - `{{ user.address.city }}` - Deep nesting
+            - `{{ items[0] }}` - Array index access
+            - `{{ orders[0].product.name }}` - Combined patterns
+
+            **Autocomplete source:**
+            Variables are derived from connected upstream nodes that have output
+            schemas defined. Use the `variables` property to configure which
+            input ports provide variables.
           enum:
             - multiline
             - hidden
+            - range
+            - json
+            - code
+            - markdown
+            - template
+            - autocomplete
             - email
             - uri
             - date
             - date-time
+        variables:
+          $ref: '#/components/schemas/TemplateVariablesConfig'
+          description: |
+            Configuration for template variable autocomplete.
+            Only applicable when `format: "template"`.
+            See TemplateVariablesConfig for full documentation.
+        x-display-order:
+          type: integer
+          description: |
+            Controls the display order of fields in the configuration form.
+            Fields are sorted by this value in ascending order (lower values appear first).
+
+            Use negative values to ensure fields appear at the top:
+            - `-2` for `instanceTitle` (appears first)
+            - `-1` for `instanceDescription` (appears second)
+            - `0` or positive values for regular fields
+
+            Fields without `x-display-order` are sorted after fields with explicit ordering.
+          example: -2
         items:
           $ref: '#/components/schemas/ConfigProperty'
+          description: Schema for array items
+        minItems:
+          type: integer
+          description: Minimum number of items for array fields
+        maxItems:
+          type: integer
+          description: Maximum number of items for array fields
         properties:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/ConfigProperty'
+          description: Property schemas for object fields
+        autocomplete:
+          $ref: '#/components/schemas/AutocompleteConfig'
+          description: Configuration for autocomplete fields (when format is "autocomplete")
       required:
         - type
+    AutocompleteConfig:
+      type: object
+      description: |
+        Configuration for autocomplete fields that fetch suggestions from a callback URL.
+        Used when format is "autocomplete".
+      properties:
+        url:
+          type: string
+          description: |
+            The callback URL to fetch autocomplete suggestions from.
+            Can be relative (resolved against API base URL) or absolute.
+          example: /api/users/search
+        queryParam:
+          type: string
+          default: q
+          description: Query parameter name to pass the search term
+        minChars:
+          type: integer
+          default: 0
+          description: |
+            Minimum number of characters before fetching suggestions.
+            Set to 0 to fetch immediately on focus (when fetchOnFocus is true).
+        debounceMs:
+          type: integer
+          default: 300
+          description: Debounce delay in milliseconds before fetching suggestions
+        fetchOnFocus:
+          type: boolean
+          default: false
+          description: Whether to fetch all options when the field is focused
+        labelField:
+          type: string
+          default: label
+          description: The field name in the response objects to use as the display label
+        valueField:
+          type: string
+          default: value
+          description: The field name in the response objects to use as the stored value
+        allowFreeText:
+          type: boolean
+          default: false
+          description: |
+            Whether to allow values that are not in the suggestions list.
+            When true, users can enter and submit any text.
+        multiple:
+          type: boolean
+          default: false
+          description: |
+            Whether to allow multiple selections.
+            When true, users can select multiple values displayed as tags.
+      required:
+        - url
     ConfigSchema:
       type: object
       properties:
@@ -2207,34 +2391,93 @@ components:
         - properties
     NodePort:
       type: object
+      description: |
+        Defines an input or output port on a node.
+
+        Ports are connection points where data flows between nodes. Input ports
+        receive data from upstream nodes, and output ports send data to downstream nodes.
+
+        ## Template Variable Autocomplete
+
+        Output ports can include a `schema` property that describes the structure of
+        their data. This schema is used by downstream nodes' template fields to provide
+        autocomplete suggestions.
+
+        When a template field is connected to a port with a schema, users get:
+        - Autocomplete for top-level properties when typing `{{`
+        - Nested property drilling when typing `.`
+        - Array index suggestions when typing `[`
       properties:
         id:
           type: string
-          description: Port unique identifier
-          example: data
+          description: Port unique identifier (used in handle IDs and variable names)
+          example: json
         name:
           type: string
-          description: Port display name
-          example: Input Data
+          description: Port display name shown in the UI
+          example: JSON Response
         type:
           type: string
           enum:
             - input
             - output
             - metadata
-          description: Port type
+          description: Port direction (input receives data, output sends data)
         dataType:
           $ref: '#/components/schemas/NodeDataType'
         required:
           type: boolean
           default: false
-          description: Whether the port is required
+          description: Whether the port must be connected for the node to execute
         description:
           type: string
-          description: Port description
-          example: Input data for the node
+          description: Help text describing what data the port expects or provides
+          example: Parsed JSON response from the HTTP request
         defaultValue:
-          description: Default value for the port
+          description: Default value used when no connection provides data
+        schema:
+          $ref: '#/components/schemas/PortDataSchema'
+          description: |
+            JSON Schema describing the structure of data on this output port.
+
+            **Purpose:** Enables template variable autocomplete in downstream nodes.
+            When a downstream node has a template field connected to this port,
+            the schema's properties become available as autocomplete suggestions.
+
+            **How it works:**
+            1. Define a schema with `properties` on an output port
+            2. Connect this port to a downstream node's input
+            3. In the downstream node's template field, typing `{{` shows the schema's properties
+
+            **Example:**
+
+            ```yaml
+            outputs:
+              - id: json
+                name: JSON Response
+                type: output
+                dataType: json
+                schema:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      properties:
+                        name: { type: string }
+                        email: { type: string }
+                    orders:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id: { type: string }
+                          total: { type: number }
+            ```
+
+            This enables autocomplete for:
+            - `{{ user }}`, `{{ orders }}`
+            - `{{ user.name }}`, `{{ user.email }}`
+            - `{{ orders[0].id }}`, `{{ orders[0].total }}`
       required:
         - id
         - name
@@ -2471,10 +2714,20 @@ components:
         Any property defined in the node's `configSchema` (e.g., model, temperature, apiKey).
         The schema defines the type, validation rules, and default values for each property.
 
-        ## Special Properties (Dynamic Ports)
+        ## Reserved Property Names
 
-        In addition to standard configuration, the config object may contain special arrays
-        that define dynamic ports for the node:
+        These property names have special meaning and trigger automatic behaviors in FlowDrop:
+
+        ### Instance Display Overrides
+
+        - **`instanceTitle`**: Per-instance title override (replaces the default `label` display)
+        - **`instanceDescription`**: Per-instance description override (replaces `metadata.description` display)
+
+        ### Visual Type Selection
+
+        - **`nodeType`**: Changes the visual rendering type of the node (e.g., "default", "simple", "square")
+
+        ### Dynamic Ports
 
         - **`dynamicInputs`**: Array of DynamicPort for user-defined input handles
         - **`dynamicOutputs`**: Array of DynamicPort for user-defined output handles
@@ -2483,6 +2736,53 @@ components:
         These dynamic configuration values generate additional handles on the node
         that can be connected to other nodes in the workflow.
       properties:
+        instanceTitle:
+          type: string
+          description: |
+            Per-instance title override that replaces the default node label.
+            Useful when you have multiple instances of the same node type and want
+            to give each a meaningful name (e.g., "Email Summarizer" instead of "LLM Processor").
+
+            Fallback behavior:
+            - If `instanceTitle` is set → displays `instanceTitle`
+            - If not set → displays `label` (from node data)
+          example: Email Summarizer
+        instanceDescription:
+          type: string
+          description: |
+            Per-instance description override that replaces the default `metadata.description`.
+            Useful for documenting what a specific node instance does within your workflow.
+
+            Fallback behavior:
+            - If `instanceDescription` is set → displays `instanceDescription`
+            - If not set → displays `metadata.description` (from node type definition)
+          example: Summarizes incoming emails into 3 bullet points
+        nodeType:
+          type: string
+          description: |
+            Changes how the node is visually rendered. This allows a single node definition
+            to support multiple visual representations.
+
+            Available built-in types:
+            - `default`: Standard workflow node with full details
+            - `simple`: Compact layout with minimal chrome
+            - `square`: Geometric square layout (icon-only)
+            - `tool`: Specialized style for agent tools
+            - `gateway`: Branching control flow visualization
+            - `terminal`: Start/end/exit node styling
+            - `note`: Sticky note style for annotations
+
+            The node's `metadata.supportedTypes` defines which types are allowed.
+            If invalid or missing, falls back to `metadata.type` or "default".
+          enum:
+            - default
+            - simple
+            - square
+            - tool
+            - gateway
+            - terminal
+            - note
+          example: simple
         dynamicInputs:
           type: array
           items:
@@ -2500,6 +2800,9 @@ components:
           description: Gateway node branches that define conditional output paths
       additionalProperties: true
       example:
+        instanceTitle: Email Summarizer
+        instanceDescription: Summarizes incoming emails into 3 bullet points
+        nodeType: simple
         model: gpt-4o-mini
         temperature: 0.7
         maxTokens: 1000
@@ -3602,6 +3905,377 @@ components:
                   items:
                     type: string
                   description: Improvement suggestions
+    PortDataSchema:
+      type: object
+      description: |
+        JSON Schema describing the structure of data on an output port.
+        Follows JSON Schema draft-07 specification.
+
+        ## Purpose
+
+        Enables template variable autocomplete in downstream nodes by describing
+        the shape of data that flows through the port.
+
+        ## Supported Features
+
+        - **Objects**: Define `properties` to enable dot notation drilling
+        - **Arrays**: Define `items` to enable index access and item property drilling
+        - **Nested structures**: Combine objects and arrays for deep drilling
+        - **Metadata**: Use `title` and `description` for autocomplete tooltips
+
+        ## Example
+
+        A schema describing an API response with user data and orders:
+
+        ```yaml
+        type: object
+        properties:
+          user:
+            type: object
+            title: User
+            description: The authenticated user
+            properties:
+              id: { type: integer }
+              name: { type: string, description: "User's full name" }
+              email: { type: string }
+              address:
+                type: object
+                properties:
+                  city: { type: string }
+                  country: { type: string }
+          orders:
+            type: array
+            title: Orders
+            description: User's order history
+            items:
+              type: object
+              properties:
+                order_id: { type: string }
+                total: { type: number }
+                status: { type: string }
+        ```
+
+        This enables template patterns like:
+        - `{{ user.name }}` - Access user's name
+        - `{{ user.address.city }}` - Nested property access
+        - `{{ orders[0].total }}` - First order's total
+        - `{{ orders[0].status }}` - First order's status
+      properties:
+        type:
+          type: string
+          enum:
+            - object
+            - array
+            - string
+            - number
+            - integer
+            - boolean
+          description: |
+            The JSON Schema type. Use `object` for nested properties,
+            `array` for lists with `items` schema.
+        title:
+          type: string
+          description: |
+            Human-readable title shown in autocomplete dropdown.
+            If not provided, the property name is used.
+        description:
+          type: string
+          description: |
+            Description shown as tooltip in autocomplete.
+            Helps users understand what data the property contains.
+        properties:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/PortDataSchema'
+          description: Property schemas for object types
+        items:
+          $ref: '#/components/schemas/PortDataSchema'
+          description: Item schema for array types
+        required:
+          type: array
+          items:
+            type: string
+          description: Required property names
+      example:
+        type: object
+        properties:
+          user:
+            type: object
+            title: User
+            description: User information
+            properties:
+              id:
+                type: integer
+                description: User ID
+              name:
+                type: string
+                description: User full name
+              email:
+                type: string
+                description: User email address
+              address:
+                type: object
+                title: Address
+                properties:
+                  street:
+                    type: string
+                  city:
+                    type: string
+                  country:
+                    type: string
+          orders:
+            type: array
+            title: Orders
+            description: List of user orders
+            items:
+              type: object
+              properties:
+                order_id:
+                  type: string
+                product_name:
+                  type: string
+                quantity:
+                  type: integer
+                price:
+                  type: number
+    TemplateVariable:
+      type: object
+      description: |
+        Represents a variable available for template interpolation.
+        Used by the template editor for autocomplete suggestions.
+
+        Supports hierarchical drilling:
+        - Objects have `properties` for dot notation (e.g., `user.name`)
+        - Arrays have `items` for index access (e.g., `items[0].name`)
+      properties:
+        name:
+          type: string
+          description: Variable name (used in template as {{ name }})
+          example: user
+        label:
+          type: string
+          description: Display label for the variable in autocomplete dropdown
+          example: User Data
+        description:
+          type: string
+          description: Description shown in autocomplete tooltip
+          example: User information from upstream node
+        type:
+          type: string
+          enum:
+            - string
+            - number
+            - integer
+            - boolean
+            - array
+            - object
+            - float
+            - mixed
+          description: Data type of the variable
+        properties:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/TemplateVariable'
+          description: For objects - child properties accessible via dot notation
+        items:
+          $ref: '#/components/schemas/TemplateVariable'
+          description: For arrays - schema of array items accessible via index notation
+        sourcePort:
+          type: string
+          description: Source port ID this variable comes from
+        sourceNode:
+          type: string
+          description: Source node ID
+      required:
+        - name
+        - type
+      example:
+        name: user
+        label: User Data
+        type: object
+        properties:
+          name:
+            name: name
+            type: string
+            label: User Name
+          email:
+            name: email
+            type: string
+            label: Email Address
+          address:
+            name: address
+            type: object
+            label: Address
+            properties:
+              city:
+                name: city
+                type: string
+                label: City
+              country:
+                name: country
+                type: string
+                label: Country
+    VariableSchema:
+      type: object
+      description: |
+        Schema passed to template editor for autocomplete functionality.
+        Contains all available variables derived from connected upstream nodes.
+
+        This is computed by the frontend based on:
+        1. Finding all edges that connect to the current node's input ports
+        2. Getting the output schemas from the source nodes' output ports
+        3. Building a hierarchical variable structure for autocomplete
+      properties:
+        variables:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/TemplateVariable'
+          description: Map of available variables keyed by variable name
+      required:
+        - variables
+      example:
+        variables:
+          user:
+            name: user
+            type: object
+            label: User Data
+            properties:
+              name:
+                name: name
+                type: string
+              email:
+                name: email
+                type: string
+          items:
+            name: items
+            type: array
+            label: Order Items
+            items:
+              name: item
+              type: object
+              properties:
+                product_name:
+                  name: product_name
+                  type: string
+                price:
+                  name: price
+                  type: number
+    TemplateVariablesConfig:
+      type: object
+      description: |
+        Configuration for template variable autocomplete in template fields.
+
+        ## Overview
+
+        When a template field is connected to upstream nodes that have output schemas,
+        FlowDrop automatically derives available variables for autocomplete. This config
+        controls which ports provide variables and how they are presented.
+
+        ## Variable Derivation
+
+        Variables are derived from connected upstream nodes' **output port schemas**.
+        When an output port has a `schema` property with `properties`, those properties
+        become available as template variables.
+
+        ### Default Behavior (includePortName: false)
+
+        Schema properties are **unpacked as top-level variables**:
+
+        ```
+        HTTP Request node (output port "json" with schema):
+          schema.properties: { user: {...}, orders: {...} }
+                                  ↓
+        Template variables: {{ user }}, {{ orders }}
+        ```
+
+        ### With includePortName: true
+
+        Variables are **prefixed with the port name**:
+
+        ```
+        Same schema as above:
+                                  ↓
+        Template variables: {{ data.user }}, {{ data.orders }}
+        ```
+
+        ## Nested Property Access
+
+        The autocomplete supports drilling into nested structures:
+
+        - **Dot notation**: `{{ user.address.city }}`
+        - **Array indices**: `{{ orders[0].product_name }}`
+        - **Combined**: `{{ user.orders[0].items[1].price }}`
+      properties:
+        ports:
+          type: array
+          items:
+            type: string
+          description: |
+            Specifies which input port IDs should provide variables for autocomplete.
+            Only connections to these ports will contribute variables.
+
+            **Behavior:**
+            - If not specified: All input ports with connections are used
+            - If empty array `[]`: No variables derived from ports (use with `schema` for static variables)
+            - If specified: Only the listed ports contribute variables
+
+            **Example:** A node with inputs "data", "context", and "trigger":
+            - `ports: ["data"]` - Only variables from the "data" connection
+            - `ports: ["data", "context"]` - Variables from both connections
+            - Not specified - Variables from all non-trigger connections
+          example:
+            - data
+            - context
+        schema:
+          $ref: '#/components/schemas/VariableSchema'
+          description: |
+            Pre-defined variable schema to provide static variables or override derived ones.
+
+            When both `ports` and `schema` are specified, variables are **merged**:
+            - Variables from connected ports are computed first
+            - Static `schema` variables are added/override existing ones
+
+            **Use cases:**
+            - Provide variables that don't come from connections
+            - Override labels or descriptions for derived variables
+            - Add custom variables for specific use cases
+        includePortName:
+          type: boolean
+          default: false
+          description: |
+            Controls how variables are named when derived from port schemas.
+
+            **When false (default):**
+            Schema properties become top-level variables directly.
+            A port with schema `{ user: {...}, orders: {...} }` produces:
+            - `{{ user }}`
+            - `{{ orders }}`
+
+            **When true:**
+            Variables are prefixed with the input port name.
+            Same schema connected to input port "data" produces:
+            - `{{ data.user }}`
+            - `{{ data.orders }}`
+
+            **When to use true:**
+            - Multiple input ports with potentially overlapping property names
+            - You want to be explicit about data sources in templates
+            - Backward compatibility with existing templates
+        showHints:
+          type: boolean
+          default: true
+          description: |
+            Whether to display clickable variable hints below the editor.
+
+            When enabled, shows a row of buttons for top-level variables that users
+            can click to insert `{{ variableName }}` at the cursor position.
+
+            Disable if the variable list is too long or not useful.
+      example:
+        ports:
+          - data
+        showHints: true
+        includePortName: false
   responses:
     BadRequest:
       description: Bad request - invalid parameters or request body

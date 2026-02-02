@@ -55,14 +55,84 @@ export const mockNodes: NodeMetadata[] = [
 				required: false,
 				description: 'Available tools'
 			},
-			{
-				id: 'analyzed_content',
-				name: 'analyzed_content',
-				type: 'output',
-				dataType: 'array',
-				required: false,
-				description: 'Content items with AI analysis results'
-			},
+		{
+			id: 'analyzed_content',
+			name: 'analyzed_content',
+			type: 'output',
+			dataType: 'array',
+			required: false,
+			description: 'Content items with AI analysis results',
+			// Example output schema for autocomplete demonstration
+			schema: {
+				type: 'object',
+				properties: {
+					items: {
+						type: 'array',
+						title: 'Analyzed Items',
+						description: 'Array of analyzed content items',
+						items: {
+							type: 'object',
+							properties: {
+								id: {
+									type: 'string',
+									description: 'Content item ID'
+								},
+								title: {
+									type: 'string',
+									description: 'Content title'
+								},
+								sentiment: {
+									type: 'object',
+									title: 'Sentiment',
+									description: 'Sentiment analysis results',
+									properties: {
+										score: {
+											type: 'number',
+											description: 'Sentiment score (-1 to 1)'
+										},
+										label: {
+											type: 'string',
+											description: 'Sentiment label (positive, neutral, negative)'
+										},
+										confidence: {
+											type: 'number',
+											description: 'Confidence level (0 to 1)'
+										}
+									}
+								},
+								keywords: {
+									type: 'array',
+									title: 'Keywords',
+									description: 'Extracted keywords',
+									items: {
+										type: 'string'
+									}
+								}
+							}
+						}
+					},
+					summary: {
+						type: 'object',
+						title: 'Summary',
+						description: 'Analysis summary',
+						properties: {
+							total_items: {
+								type: 'integer',
+								description: 'Total number of items analyzed'
+							},
+							average_sentiment: {
+								type: 'number',
+								description: 'Average sentiment score'
+							},
+							processing_time_ms: {
+								type: 'integer',
+								description: 'Processing time in milliseconds'
+							}
+						}
+					}
+				}
+			}
+		},
 			{
 				id: 'total_analyzed',
 				name: 'total_analyzed',
@@ -1939,14 +2009,88 @@ export const mockNodes: NodeMetadata[] = [
 				required: false,
 				description: 'HTTP response body'
 			},
-			{
-				id: 'json',
-				name: 'json',
-				type: 'output',
-				dataType: 'array',
-				required: false,
-				description: 'Parsed JSON response (if applicable)'
-			},
+		{
+			id: 'json',
+			name: 'json',
+			type: 'output',
+			dataType: 'array',
+			required: false,
+			description: 'Parsed JSON response (if applicable)',
+			// Example output schema for autocomplete demonstration
+			schema: {
+				type: 'object',
+				properties: {
+					user: {
+						type: 'object',
+						title: 'User',
+						description: 'User information from API',
+						properties: {
+							id: {
+								type: 'integer',
+								description: 'User ID'
+							},
+							name: {
+								type: 'string',
+								description: 'User full name'
+							},
+							email: {
+								type: 'string',
+								description: 'User email address'
+							},
+							address: {
+								type: 'object',
+								title: 'Address',
+								description: 'User address',
+								properties: {
+									street: {
+										type: 'string',
+										description: 'Street address'
+									},
+									city: {
+										type: 'string',
+										description: 'City name'
+									},
+									country: {
+										type: 'string',
+										description: 'Country name'
+									}
+								}
+							}
+						}
+					},
+					orders: {
+						type: 'array',
+						title: 'Orders',
+						description: 'List of user orders',
+						items: {
+							type: 'object',
+							properties: {
+								order_id: {
+									type: 'string',
+									description: 'Order identifier'
+								},
+								product_name: {
+									type: 'string',
+									description: 'Name of the product'
+								},
+								quantity: {
+									type: 'integer',
+									description: 'Quantity ordered'
+								},
+								price: {
+									type: 'number',
+									description: 'Total price'
+								},
+								status: {
+									type: 'string',
+									description: 'Order status'
+								}
+							}
+						}
+					}
+				}
+			}
+		},
 			{
 				id: 'url',
 				name: 'url',
@@ -4333,6 +4477,11 @@ export const mockNodes: NodeMetadata[] = [
 					description:
 						'Template text with {{ variable }} placeholders that will be replaced with values from the data input',
 					format: 'template',
+					// Configure which input port(s) provide variables for autocomplete
+					variables: {
+						ports: ['data'],
+						showHints: true
+					},
 					default:
 						'Hello {{ name }},\n\nYour order #{{ order_id }} has been {{ status }}.\n\nThank you for choosing us!',
 					height: '300px',

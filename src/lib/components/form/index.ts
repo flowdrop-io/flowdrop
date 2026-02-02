@@ -52,3 +52,9 @@ export { default as FormCodeEditor } from './FormCodeEditor.svelte';
 export { default as FormMarkdownEditor } from './FormMarkdownEditor.svelte';
 export { default as FormTemplateEditor } from './FormTemplateEditor.svelte';
 export { default as FormAutocomplete } from './FormAutocomplete.svelte';
+
+// Template autocomplete utilities
+export {
+	createTemplateAutocomplete,
+	createSimpleTemplateAutocomplete
+} from './templateAutocomplete.js';

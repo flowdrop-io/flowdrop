@@ -756,6 +756,8 @@
 				<ConfigForm
 					node={currentNode}
 					workflowId={$workflowStore?.id}
+					workflowNodes={$workflowStore?.nodes}
+					workflowEdges={$workflowStore?.edges}
 					onChange={async (updatedConfig, uiExtensions) => {
 						// Sync config changes to workflow immediately on field blur
 						if (selectedNodeId && currentNode) {

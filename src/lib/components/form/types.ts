@@ -6,7 +6,7 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
-import type { AutocompleteConfig } from '$lib/types/index.js';
+import type { AutocompleteConfig, VariableSchema, TemplateVariablesConfig } from '$lib/types/index.js';
 
 /**
  * Supported field types for form rendering
@@ -246,7 +246,22 @@ export interface TemplateEditorFieldProps extends BaseFieldProps {
 	darkTheme?: boolean;
 	/** Editor height in pixels or CSS value */
 	height?: string;
-	/** Available variable names for hints (optional) */
+	/**
+	 * Configuration for template variable autocomplete.
+	 * Controls which variables are available and how they are displayed.
+	 */
+	variables?: TemplateVariablesConfig;
+	/**
+	 * Variable schema for advanced autocomplete with nested drilling.
+	 * When provided, enables dot notation (user.name) and array access (items[0]).
+	 * @deprecated Use `variables.schema` instead
+	 */
+	variableSchema?: VariableSchema;
+	/**
+	 * Simple variable names for basic hints (backward compatible).
+	 * Used when variableSchema is not provided.
+	 * @deprecated Use `variables.schema` instead
+	 */
 	variableHints?: string[];
 	/** Placeholder variable example for the hint */
 	placeholderExample?: string;
@@ -352,6 +367,23 @@ export interface FieldSchema {
 	 * When true, the field is displayed but cannot be edited.
 	 */
 	readOnly?: boolean;
+	/**
+	 * Configuration for template variable autocomplete.
+	 * Controls which input ports provide variables and how they are displayed.
+	 *
+	 * @example
+	 * ```json
+	 * {
+	 *   "type": "string",
+	 *   "format": "template",
+	 *   "variables": {
+	 *     "ports": ["data", "context"],
+	 *     "showHints": true
+	 *   }
+	 * }
+	 * ```
+	 */
+	variables?: TemplateVariablesConfig;
 	/** Allow additional properties not defined by the schema */
 	[key: string]: unknown;
 }
