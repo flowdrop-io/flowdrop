@@ -43,6 +43,7 @@
 	import FormAutocomplete from './FormAutocomplete.svelte';
 	import type { FieldSchema } from './types.js';
 	import { getSchemaOptions } from './types.js';
+	import type { WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
 
 	interface Props {
 		/** Unique key/id for the field */
@@ -57,9 +58,31 @@
 		animationIndex?: number;
 		/** Callback when the field value changes */
 		onChange: (value: unknown) => void;
+		/** Current workflow node (optional, used for template variable API mode) */
+		node?: WorkflowNode;
+		/** All workflow nodes (optional, used for port-derived variables) */
+		nodes?: WorkflowNode[];
+		/** All workflow edges (optional, used for port-derived variables) */
+		edges?: WorkflowEdge[];
+		/** Workflow ID (optional, used for template variable API mode) */
+		workflowId?: string;
+		/** Auth provider (optional, used for API requests) */
+		authProvider?: AuthProvider;
 	}
 
-	let { fieldKey, schema, value, required = false, animationIndex = 0, onChange }: Props = $props();
+	let {
+		fieldKey,
+		schema,
+		value,
+		required = false,
+		animationIndex = 0,
+		onChange,
+		node,
+		nodes,
+		edges,
+		workflowId,
+		authProvider
+	}: Props = $props();
 
 	/**
 	 * When schema.readOnly is true, disable all inputs (no editing).
@@ -352,10 +375,15 @@
 				height={(schema.height as string | undefined) ?? '250px'}
 				darkTheme={(schema.darkTheme as boolean | undefined) ?? false}
 				variables={schema.variables}
-						placeholderExample={(schema.placeholderExample as string | undefined) ??
+				placeholderExample={(schema.placeholderExample as string | undefined) ??
 					'Hello {{ name }}, your order #{{ order_id }} is ready!'}
 				ariaDescribedBy={descriptionId}
 				disabled={isReadOnly}
+				{node}
+				{nodes}
+				{edges}
+				{workflowId}
+				{authProvider}
 				onChange={(val) => onChange(val)}
 			/>
 		{:else if fieldType === 'autocomplete' && schema.autocomplete}

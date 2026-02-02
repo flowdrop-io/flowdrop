@@ -4,6 +4,7 @@
  */
 
 import type { Workflow, WorkflowNode, WorkflowEdge } from '../../lib/types/index.js';
+import { getNodeById } from './nodes.js';
 
 /** Workflow metadata type extracted from Workflow interface */
 type WorkflowMetadata = NonNullable<Workflow['metadata']>;
@@ -3533,6 +3534,71 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
 };
 
 /**
+ * Demo workflow: API-Based Variable Suggestions
+ * Demonstrates dynamic variable loading from backend API for template fields
+ */
+export const demoApiVariablesWorkflow: Workflow = (() => {
+	// Get node metadata from the registry
+	const emailTemplateNode = getNodeById('email_template_generator');
+	const notificationNode = getNodeById('notification_template');
+
+	if (!emailTemplateNode || !notificationNode) {
+		throw new Error('Required nodes not found in registry');
+	}
+
+	return {
+		id: 'demo_api_variables',
+		name: 'Demo: API-Based Variable Suggestions',
+		description:
+			'Demonstrates fetching template variables from backend API for rich autocomplete experience',
+		nodes: [
+			{
+				id: 'email_template.1',
+				type: 'universalNode',
+				position: { x: 100, y: 100 },
+				data: {
+					label: 'Email Template',
+					config: {
+						templateType: 'order_confirmation',
+						subjectTemplate: 'Order {{ order.orderNumber }} Confirmed - {{ company.name }}',
+						bodyTemplate:
+							'Hello {{ user.firstName }} {{ user.lastName }},\n\nThank you for your order!\n\nOrder Number: {{ order.orderNumber }}\nTotal: {{ order.currency }}{{ order.total }}\n\nItems:\n{% for item in order.items %}\n- {{ item.name }} x{{ item.quantity }} - {{ order.currency }}{{ item.price }}\n{% endfor %}\n\nShipping Address:\n{{ order.shippingAddress.street }}\n{{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} {{ order.shippingAddress.zipCode }}\n{{ order.shippingAddress.country }}\n\nBest regards,\n{{ company.name }}\n{{ company.email }}\n{{ company.phone }}',
+						includeUnsubscribeLink: true,
+						trackOpens: true
+					},
+					metadata: emailTemplateNode,
+					nodeId: 'email_template.1'
+				}
+			},
+			{
+				id: 'notification.1',
+				type: 'universalNode',
+				position: { x: 400, y: 100 },
+				data: {
+					label: 'Notification',
+					config: {
+						title: 'Order Confirmed: {{ order.orderNumber }}',
+						message:
+							'Your order for {{ order.items[0].name }} and {{ order.total }} more items is confirmed!',
+						priority: 'high'
+					},
+					metadata: notificationNode,
+					nodeId: 'notification.1'
+				}
+			}
+		] as WorkflowNode[],
+		edges: [] as WorkflowEdge[],
+		metadata: {
+			version: '1.0.0',
+			author: 'FlowDrop Demo',
+			tags: ['demo', 'api', 'variables', 'template', 'backend'],
+			createdAt: '2026-02-03T10:00:00.000Z',
+			updatedAt: '2026-02-03T10:00:00.000Z'
+		}
+	};
+})();
+
+/**
  * All mock workflows as a Map for easy lookup
  */
 export const mockWorkflows: Map<string, Workflow> = new Map([
@@ -3540,7 +3606,8 @@ export const mockWorkflows: Map<string, Workflow> = new Map([
 	[demoNodeTypesShowcaseWorkflow.id, demoNodeTypesShowcaseWorkflow],
 	[demoTriggerNodeWorkflow.id, demoTriggerNodeWorkflow],
 	[demoForEachLoopWorkflow.id, demoForEachLoopWorkflow],
-	[demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow]
+	[demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow],
+	[demoApiVariablesWorkflow.id, demoApiVariablesWorkflow]
 ]);
 
 /**

@@ -790,6 +790,11 @@ export interface VariableSchema {
  * Used in template fields to control which variables are available
  * and how they are derived.
  *
+ * Supports three modes:
+ * 1. **Schema-only** (existing): Variables from static schema and/or upstream ports
+ * 2. **API-only** (new): Variables fetched from backend endpoint
+ * 3. **Hybrid** (new): Merge API variables with static schema/ports
+ *
  * @example
  * ```json
  * {
@@ -798,6 +803,21 @@ export interface VariableSchema {
  *   "variables": {
  *     "ports": ["data", "context"],
  *     "includePortName": true
+ *   }
+ * }
+ * ```
+ *
+ * @example API Mode
+ * ```json
+ * {
+ *   "type": "string",
+ *   "format": "template",
+ *   "variables": {
+ *     "api": {
+ *       "endpoint": {
+ *         "url": "/api/variables/{workflowId}/{nodeId}"
+ *       }
+ *     }
  *   }
  * }
  * ```
@@ -831,6 +851,135 @@ export interface TemplateVariablesConfig {
 	 * @default true
 	 */
 	showHints?: boolean;
+
+	/**
+	 * API mode configuration for fetching variables from backend endpoint.
+	 * When configured, variables will be fetched from the specified endpoint
+	 * and can be merged with static schema and/or port-derived variables.
+	 */
+	api?: ApiVariablesConfig;
+}
+
+/**
+ * Configuration for API-based variable fetching.
+ * Enables dynamic variable suggestions from backend endpoints.
+ *
+ * @example
+ * ```typescript
+ * const apiConfig: ApiVariablesConfig = {
+ *   endpoint: {
+ *     url: "/api/variables/{workflowId}/{nodeId}",
+ *     method: "GET"
+ *   },
+ *   cacheTtl: 300000,
+ *   mergeWithSchema: true,
+ *   fallbackOnError: true
+ * };
+ * ```
+ */
+export interface ApiVariablesConfig {
+	/**
+	 * Endpoint configuration for fetching variable schema
+	 */
+	endpoint: ApiVariablesEndpoint;
+
+	/**
+	 * Cache TTL in milliseconds.
+	 * Variables are cached to prevent excessive API calls during editing.
+	 * @default 300000 (5 minutes)
+	 */
+	cacheTtl?: number;
+
+	/**
+	 * Whether to merge API variables with static schema.
+	 * When true, variables from both API and schema are combined.
+	 * @default true
+	 */
+	mergeWithSchema?: boolean;
+
+	/**
+	 * Whether to merge API variables with port-derived variables.
+	 * When true, variables from both API and ports are combined.
+	 * @default false
+	 */
+	mergeWithPorts?: boolean;
+
+	/**
+	 * Whether to fallback to schema/ports on API error.
+	 * When true, gracefully degrades to static variables if API fails.
+	 * When false, shows error message to user.
+	 * @default true
+	 */
+	fallbackOnError?: boolean;
+}
+
+/**
+ * Endpoint configuration for fetching variable schemas from backend API.
+ * Supports template variables in URL (e.g., {workflowId}, {nodeId})
+ * which are resolved at runtime from node context.
+ *
+ * @example GET Request
+ * ```typescript
+ * const endpoint: ApiVariablesEndpoint = {
+ *   url: "/api/variables/{workflowId}/{nodeId}",
+ *   method: "GET"
+ * };
+ * ```
+ *
+ * @example POST Request with Body
+ * ```typescript
+ * const endpoint: ApiVariablesEndpoint = {
+ *   url: "/api/variables",
+ *   method: "POST",
+ *   body: {
+ *     workflowId: "{workflowId}",
+ *     nodeId: "{nodeId}"
+ *   }
+ * };
+ * ```
+ */
+export interface ApiVariablesEndpoint {
+	/**
+	 * URL to fetch variables from.
+	 * Supports template placeholders:
+	 * - `{workflowId}` - Resolved from workflow ID
+	 * - `{nodeId}` - Resolved from node instance ID
+	 *
+	 * @example "/api/variables/{workflowId}/{nodeId}"
+	 * @example "https://api.example.com/variables?workflow={workflowId}&node={nodeId}"
+	 */
+	url: string;
+
+	/**
+	 * HTTP method for the request.
+	 * @default "GET"
+	 */
+	method?: HttpMethod;
+
+	/**
+	 * Custom headers to include in the request.
+	 * Note: Authentication headers are automatically added via AuthProvider.
+	 */
+	headers?: Record<string, string>;
+
+	/**
+	 * Request body for POST/PUT/PATCH methods.
+	 * Supports template variables like the URL.
+	 */
+	body?: Record<string, unknown>;
+
+	/**
+	 * Request timeout in milliseconds.
+	 * @default 30000 (30 seconds)
+	 */
+	timeout?: number;
+
+	/**
+	 * Whether to cache the fetched schema.
+	 * When false, schema is fetched on every editor load.
+	 * @default true
+	 */
+	cacheEnabled?: boolean;
 }
 
 /**

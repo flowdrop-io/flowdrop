@@ -5062,6 +5062,323 @@ export const mockNodes: NodeMetadata[] = [
 			},
 			required: ['recipient']
 		}
+	},
+	{
+		id: 'email_template_generator',
+		name: 'Email Template Generator',
+		type: 'default',
+		supportedTypes: ['default'],
+		description: 'Generate personalized email templates with dynamic variables from API',
+		category: 'outputs',
+		icon: 'mdi:email-edit',
+		color: '#10b981',
+		version: '1.0.0',
+		tags: ['email', 'template', 'communication', 'api-variables'],
+		inputs: [
+			{
+				id: 'user_data',
+				name: 'User Data',
+				type: 'input',
+				dataType: 'json',
+				required: false,
+				description: 'User information for personalization',
+				schema: {
+					type: 'object',
+					properties: {
+						id: {
+							type: 'string',
+							description: 'User ID'
+						},
+						email: {
+							type: 'string',
+							description: 'User email address'
+						},
+						firstName: {
+							type: 'string',
+							description: 'First name'
+						},
+						lastName: {
+							type: 'string',
+							description: 'Last name'
+						}
+					}
+				}
+			},
+			{
+				id: 'order_data',
+				name: 'Order Data',
+				type: 'input',
+				dataType: 'json',
+				required: false,
+				description: 'Order information',
+				schema: {
+					type: 'object',
+					properties: {
+						orderNumber: {
+							type: 'string',
+							description: 'Order number'
+						},
+						total: {
+							type: 'number',
+							description: 'Order total'
+						},
+						items: {
+							type: 'array',
+							description: 'Order items',
+							items: {
+								type: 'object',
+								properties: {
+									name: {
+										type: 'string',
+										description: 'Product name'
+									},
+									quantity: {
+										type: 'integer',
+										description: 'Quantity'
+									},
+									price: {
+										type: 'number',
+										description: 'Price'
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Execution trigger'
+			}
+		],
+		outputs: [
+			{
+				id: 'email_html',
+				name: 'Email HTML',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'Generated HTML email content'
+			},
+			{
+				id: 'email_text',
+				name: 'Email Text',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'Plain text version of email'
+			},
+			{
+				id: 'subject',
+				name: 'Subject',
+				type: 'output',
+				dataType: 'string',
+				required: false,
+				description: 'Email subject line'
+			}
+		],
+		config: {
+			templateType: 'order_confirmation',
+			subjectTemplate: 'Order {{ order.orderNumber }} Confirmed',
+			bodyTemplate: 'Hello {{ user.firstName }},\n\nYour order {{ order.orderNumber }} has been confirmed!'
+		},
+		configSchema: {
+			type: 'object',
+			properties: {
+				templateType: {
+					type: 'string',
+					title: 'Template Type',
+					description: 'Type of email template',
+					enum: [
+						'order_confirmation',
+						'shipping_notification',
+						'welcome_email',
+						'password_reset',
+						'custom'
+					],
+					default: 'order_confirmation'
+				},
+				subjectTemplate: {
+					type: 'string',
+					title: 'Email Subject',
+					description: 'Subject line template with dynamic variables',
+					format: 'template',
+					default: 'Order {{ order.orderNumber }} Confirmed',
+					placeholder: 'Enter subject template...',
+					placeholderExample: 'Order {{ order.orderNumber }} Confirmed - {{ company.name }}',
+					// API mode configuration - fetches variables from backend
+					variables: {
+						api: {
+							endpoint: {
+								url: '/variables/{workflowId}/{nodeId}',
+								method: 'GET',
+								timeout: 5000,
+								cacheEnabled: true
+							},
+							cacheTtl: 300000,
+							mergeWithSchema: false,
+							mergeWithPorts: true,
+							fallbackOnError: true
+						}
+					}
+				},
+				bodyTemplate: {
+					type: 'string',
+					title: 'Email Body',
+					description: 'Email body template with dynamic variables',
+					format: 'template',
+					default:
+						'Hello {{ user.firstName }},\n\nYour order {{ order.orderNumber }} has been confirmed!\n\nOrder Details:\n{% for item in order.items %}- {{ item.name }} x{{ item.quantity }} - ${{ item.price }}\n{% endfor %}\n\nTotal: ${{ order.total }}\n\nThank you for your purchase!\n\nBest regards,\n{{ company.name }}',
+					placeholder: 'Enter email body template...',
+					height: '400px',
+					// Hybrid mode - API + port-derived variables
+					variables: {
+						ports: ['user_data', 'order_data'],
+						includePortName: false,
+						showHints: true,
+						api: {
+							endpoint: {
+								url: '/variables/{workflowId}/{nodeId}',
+								method: 'GET'
+							},
+							cacheTtl: 300000,
+							mergeWithSchema: true,
+							mergeWithPorts: true,
+							fallbackOnError: true
+						}
+					}
+				},
+				includeUnsubscribeLink: {
+					type: 'boolean',
+					title: 'Include Unsubscribe Link',
+					description: 'Add unsubscribe link to email footer',
+					default: true
+				},
+				trackOpens: {
+					type: 'boolean',
+					title: 'Track Opens',
+					description: 'Enable email open tracking',
+					default: false
+				}
+			}
+		}
+	},
+	{
+		id: 'notification_template',
+		name: 'Notification Template',
+		type: 'simple',
+		supportedTypes: ['simple', 'default'],
+		description: 'Create notification templates with API-driven variable suggestions',
+		category: 'outputs',
+		icon: 'mdi:bell-ring',
+		color: '#f59e0b',
+		version: '1.0.0',
+		tags: ['notification', 'template', 'api-variables'],
+		inputs: [
+			{
+				id: 'event',
+				name: 'Event Data',
+				type: 'input',
+				dataType: 'json',
+				required: false,
+				description: 'Event that triggered notification'
+			},
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Execution trigger'
+			}
+		],
+		outputs: [
+			{
+				id: 'notification',
+				name: 'Notification',
+				type: 'output',
+				dataType: 'json',
+				required: false,
+				description: 'Formatted notification object'
+			}
+		],
+		config: {
+			title: 'New Event: {{ event.title }}',
+			message: 'You have a new {{ event.type }} event'
+		},
+		configSchema: {
+			type: 'object',
+			properties: {
+				title: {
+					type: 'string',
+					title: 'Notification Title',
+					description: 'Title template with variables',
+					format: 'template',
+					default: 'New Event: {{ event.title }}',
+					// Pure API mode - only fetches from backend
+					variables: {
+						api: {
+							endpoint: {
+								url: '/variables/{workflowId}/{nodeId}',
+								method: 'GET'
+							},
+							fallbackOnError: false
+						}
+					}
+				},
+				message: {
+					type: 'string',
+					title: 'Notification Message',
+					description: 'Message body template',
+					format: 'template',
+					default: 'You have a new {{ event.type }} event: {{ event.description }}',
+					height: '200px',
+					// API with static fallback
+					variables: {
+						schema: {
+							variables: {
+								app: {
+									name: 'app',
+									label: 'Application',
+									type: 'object',
+									properties: {
+										name: {
+											name: 'name',
+											label: 'App Name',
+											type: 'string'
+										},
+										version: {
+											name: 'version',
+											label: 'Version',
+											type: 'string'
+										}
+									}
+								}
+							}
+						},
+						api: {
+							endpoint: {
+								url: '/variables/{workflowId}/{nodeId}',
+								method: 'GET'
+							},
+							mergeWithSchema: true,
+							fallbackOnError: true
+						}
+					}
+				},
+				priority: {
+					type: 'string',
+					title: 'Priority Level',
+					description: 'Notification priority',
+					enum: ['low', 'normal', 'high', 'urgent'],
+					default: 'normal'
+				}
+			}
+		}
 	}
 ];
 

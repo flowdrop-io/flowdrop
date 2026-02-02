@@ -24,7 +24,8 @@
 		WorkflowNode,
 		WorkflowEdge,
 		NodeUIExtensions,
-		ConfigEditOptions
+		ConfigEditOptions,
+		AuthProvider
 	} from '$lib/types/index.js';
 	import { FormField, FormFieldWrapper, FormToggle } from '$lib/components/form/index.js';
 	import type { FieldSchema } from '$lib/components/form/index.js';
@@ -61,6 +62,8 @@
 		 * When provided along with workflowNodes, enables autocomplete for template fields.
 		 */
 		workflowEdges?: WorkflowEdge[];
+		/** Auth provider for API requests (used for template variable API mode) */
+		authProvider?: AuthProvider;
 		/** Callback when any field value changes (fired on blur for immediate sync) */
 		onChange?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
 		/** Callback when form is saved (includes both config and extensions if enabled) */
@@ -78,6 +81,7 @@
 		saveWorkflowWhenSavingConfig = false,
 		workflowNodes = [],
 		workflowEdges = [],
+		authProvider,
 		onChange,
 		onSave,
 		onCancel
@@ -537,6 +541,11 @@
 						value={configValues[key]}
 						{required}
 						animationIndex={index}
+						{node}
+						nodes={workflowNodes}
+						edges={workflowEdges}
+						{workflowId}
+						{authProvider}
 						onChange={(val) => handleFieldChange(key, val)}
 					/>
 				{/each}

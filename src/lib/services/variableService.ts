@@ -15,7 +15,9 @@ import type {
 	NodePort,
 	OutputProperty,
 	InputProperty,
-	BaseProperty
+	BaseProperty,
+	TemplateVariablesConfig,
+	AuthProvider
 } from "../types/index.js";
 
 /**
@@ -478,4 +480,143 @@ export function hasChildren(
 ): boolean {
 	const children = getChildVariables(schema, path);
 	return children.length > 0;
+}
+
+/**
+ * Merges two variable schemas together.
+ * Variables from the primary schema take precedence over the secondary schema.
+ *
+ * @param primary - The primary variable schema (takes precedence)
+ * @param secondary - The secondary variable schema
+ * @returns A merged VariableSchema
+ *
+ * @example
+ * ```typescript
+ * const apiSchema = { variables: { apiKey: {...}, endpoint: {...} } };
+ * const staticSchema = { variables: { env: {...}, config: {...} } };
+ * const merged = mergeVariableSchemas(apiSchema, staticSchema);
+ * // Result: { variables: { apiKey, endpoint, env, config } }
+ * ```
+ */
+export function mergeVariableSchemas(
+	primary: VariableSchema,
+	secondary: VariableSchema
+): VariableSchema {
+	// Create a shallow copy of secondary variables
+	const mergedVariables = { ...secondary.variables };
+
+	// Overlay primary variables (they take precedence)
+	for (const [key, value] of Object.entries(primary.variables)) {
+		mergedVariables[key] = value;
+	}
+
+	return { variables: mergedVariables };
+}
+
+/**
+ * Gets variable schema using the appropriate mode (API, schema-based, or hybrid).
+ * This is the main orchestration function that determines how to fetch variables
+ * based on the configuration.
+ *
+ * @param node - The current node being configured
+ * @param nodes - All nodes in the workflow
+ * @param edges - All edges in the workflow
+ * @param config - Template variables configuration
+ * @param workflowId - Optional workflow ID for API context
+ * @param authProvider - Optional auth provider for API requests
+ * @returns A promise that resolves to the variable schema
+ *
+ * @example
+ * ```typescript
+ * // Schema-based mode (existing behavior)
+ * const config = { ports: ["data"], schema: {...} };
+ * const schema = await getVariableSchema(node, nodes, edges, config);
+ *
+ * // API mode
+ * const config = { api: { endpoint: { url: "/api/variables/{workflowId}/{nodeId}" } } };
+ * const schema = await getVariableSchema(node, nodes, edges, config, workflowId, authProvider);
+ *
+ * // Hybrid mode (API + static schema)
+ * const config = {
+ *   schema: {...},
+ *   api: { endpoint: {...}, mergeWithSchema: true }
+ * };
+ * const schema = await getVariableSchema(node, nodes, edges, config, workflowId, authProvider);
+ * ```
+ */
+export async function getVariableSchema(
+	node: WorkflowNode,
+	nodes: WorkflowNode[],
+	edges: WorkflowEdge[],
+	config: TemplateVariablesConfig,
+	workflowId?: string,
+	authProvider?: AuthProvider
+): Promise<VariableSchema> {
+	let resultSchema: VariableSchema = { variables: {} };
+
+	// Try API mode first (if configured)
+	if (config.api) {
+		try {
+			// Import API variable service dynamically to avoid circular dependencies
+			const { fetchVariableSchema } = await import("./apiVariableService.js");
+
+			const apiResult = await fetchVariableSchema(
+				workflowId,
+				node.id,
+				config.api,
+				authProvider
+			);
+
+			if (apiResult.success && apiResult.schema) {
+				resultSchema = apiResult.schema;
+
+				// Merge with static schema if configured
+				if (config.api.mergeWithSchema !== false && config.schema) {
+					resultSchema = mergeVariableSchemas(resultSchema, config.schema);
+				}
+
+				// Merge with port-derived variables if configured
+				if (config.api.mergeWithPorts) {
+					const portSchema = getAvailableVariables(node, nodes, edges, {
+						targetPortIds: config.ports,
+						includePortName: config.includePortName
+					});
+					resultSchema = mergeVariableSchemas(resultSchema, portSchema);
+				}
+
+				return resultSchema;
+			} else if (!config.api.fallbackOnError) {
+				// API failed and fallback is disabled - return empty schema
+				console.error("Failed to fetch variables from API:", apiResult.error);
+				return { variables: {} };
+			}
+			// If fallback is enabled (default), continue to schema-based mode below
+		} catch (error) {
+			console.error("Error fetching variables from API:", error);
+			// If fallback is disabled, return empty schema
+			if (config.api.fallbackOnError === false) {
+				return { variables: {} };
+			}
+			// Otherwise, continue to schema-based mode below
+		}
+	}
+
+	// Schema-based mode (existing behavior)
+	// This is the fallback when API mode is not configured or fails
+
+	// Start with port-derived variables (if ports are configured or no API mode)
+	if (config.ports !== undefined || !config.api) {
+		const portSchema = getAvailableVariables(node, nodes, edges, {
+			targetPortIds: config.ports,
+			includePortName: config.includePortName
+		});
+		resultSchema = portSchema;
+	}
+
+	// Merge with static schema (if configured)
+	if (config.schema) {
+		resultSchema = mergeVariableSchemas(config.schema, resultSchema);
+	}
+
+	return resultSchema;
 }
