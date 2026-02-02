@@ -33,12 +33,19 @@
 		type ViewUpdate,
 		MatchDecorator
 	} from '@codemirror/view';
-	import { EditorState } from '@codemirror/state';
+	import { EditorState, Compartment } from '@codemirror/state';
 	import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
 	import { syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
 	import { oneDark } from '@codemirror/theme-one-dark';
-	import type { VariableSchema, TemplateVariablesConfig } from '$lib/types/index.js';
+	import type {
+		VariableSchema,
+		TemplateVariablesConfig,
+		WorkflowNode,
+		WorkflowEdge,
+		AuthProvider
+	} from '$lib/types/index.js';
 	import { createTemplateAutocomplete } from './templateAutocomplete.js';
+	import { getVariableSchema } from '$lib/services/variableService.js';
 
 	interface Props {
 		/** Field identifier */
@@ -72,6 +79,16 @@
 		ariaDescribedBy?: string;
 		/** Callback when value changes */
 		onChange: (value: string) => void;
+		/** Current workflow node (required for API mode) */
+		node?: WorkflowNode;
+		/** All workflow nodes (required for port-derived variables) */
+		nodes?: WorkflowNode[];
+		/** All workflow edges (required for port-derived variables) */
+		edges?: WorkflowEdge[];
+		/** Workflow ID (required for API mode) */
+		workflowId?: string;
+		/** Auth provider for API requests */
+		authProvider?: AuthProvider;
 	}
 
 	let {
@@ -86,22 +103,80 @@
 		placeholderExample = 'Hello {{ name }}, your order #{{ order_id }} is ready!',
 		disabled = false,
 		ariaDescribedBy,
-		onChange
+		onChange,
+		node,
+		nodes = [],
+		edges = [],
+		workflowId,
+		authProvider
 	}: Props = $props();
 
+	/** Loading state for API variable fetching */
+	let isLoadingVariables = $state(false);
+
+	/** Error state for API variable fetching */
+	let variableLoadError = $state<string | null>(null);
+
+	/** The effective variable schema (loaded synchronously or asynchronously) */
+	let effectiveVariableSchema = $state<VariableSchema | undefined>(undefined);
+
 	/**
-	 * Get the effective variable schema.
-	 * Prefers variables.schema, falls back to deprecated variableSchema prop.
+	 * Load variable schema on mount or when configuration changes.
+	 * Handles both synchronous (schema-based) and asynchronous (API-based) loading.
 	 */
-	const effectiveVariableSchema = $derived.by<VariableSchema | undefined>(() => {
-		if (variables?.schema && Object.keys(variables.schema.variables).length > 0) {
-			return variables.schema;
-		}
+	async function loadVariableSchema() {
+		// Reset error state
+		variableLoadError = null;
+
+		// If we have deprecated variableSchema prop, use it directly
 		if (variableSchema && Object.keys(variableSchema.variables).length > 0) {
-			return variableSchema;
+			effectiveVariableSchema = variableSchema;
+			return;
 		}
-		return undefined;
-	});
+
+		// If no variables config, clear schema
+		if (!variables) {
+			effectiveVariableSchema = undefined;
+			return;
+		}
+
+		// If variables config has static schema only (no API), use it directly
+		if (variables.schema && !variables.api && Object.keys(variables.schema.variables).length > 0) {
+			effectiveVariableSchema = variables.schema;
+			return;
+		}
+
+		// If variables config requires node context (ports or API mode)
+		if ((variables.ports !== undefined || variables.api) && node && nodes && edges) {
+			try {
+				isLoadingVariables = true;
+				effectiveVariableSchema = await getVariableSchema(
+					node,
+					nodes,
+					edges,
+					variables,
+					workflowId,
+					authProvider
+				);
+			} catch (error) {
+				console.error('Failed to load variable schema:', error);
+				variableLoadError = error instanceof Error ? error.message : 'Failed to load variables';
+				effectiveVariableSchema = undefined;
+			} finally {
+				isLoadingVariables = false;
+			}
+		} else {
+			// No schema available
+			effectiveVariableSchema = undefined;
+		}
+	}
+
+	/**
+	 * Retry loading variables after an error
+	 */
+	function retryLoadVariables() {
+		loadVariableSchema();
+	}
 
 	/**
 	 * Whether to show the variable hints section.
@@ -127,6 +202,9 @@
 
 	/** Flag to prevent update loops */
 	let isInternalUpdate = false;
+
+	/** Compartment for dynamic autocomplete reconfiguration */
+	const autocompleteCompartment = new Compartment();
 
 	/**
 	 * Create a MatchDecorator for {{ variable }} patterns
@@ -274,12 +352,12 @@
 			EditorState.tabSize.of(2)
 		];
 
-		// Add autocomplete extension when variables are available (and not disabled)
-		if (!disabled) {
-			if (effectiveVariableSchema) {
-				// Use full autocomplete with nested drilling
-				extensions.push(createTemplateAutocomplete(effectiveVariableSchema));
-			}
+		// Add autocomplete compartment (can be reconfigured dynamically)
+		// When disabled or no schema, use empty array
+		if (!disabled && effectiveVariableSchema) {
+			extensions.push(autocompleteCompartment.of(createTemplateAutocomplete(effectiveVariableSchema)));
+		} else {
+			extensions.push(autocompleteCompartment.of([]));
 		}
 
 		if (darkTheme) {
@@ -327,19 +405,23 @@
 	}
 
 	/**
-	 * Initialize CodeMirror editor on mount
+	 * Initialize CodeMirror editor and load variables on mount
 	 */
 	onMount(() => {
 		if (!containerRef) {
 			return;
 		}
 
-		editorView = new EditorView({
-			state: EditorState.create({
-				doc: value,
-				extensions: createExtensions()
-			}),
-			parent: containerRef
+		// Load variables first
+		loadVariableSchema().then(() => {
+			// Then create editor with loaded schema
+			editorView = new EditorView({
+				state: EditorState.create({
+					doc: value,
+					extensions: createExtensions()
+				}),
+				parent: containerRef
+			});
 		});
 	});
 
@@ -375,6 +457,28 @@
 			isInternalUpdate = false;
 		}
 	});
+
+	/**
+	 * Reconfigure editor when variable schema changes (e.g., after async loading)
+	 */
+	$effect(() => {
+		// Only track effectiveVariableSchema changes
+		const schema = effectiveVariableSchema;
+
+		if (!editorView) {
+			return;
+		}
+
+		// When effectiveVariableSchema changes, reconfigure the autocomplete compartment
+		// This happens after async API loading completes
+		const newAutocomplete = !disabled && schema
+			? createTemplateAutocomplete(schema)
+			: [];
+
+		editorView.dispatch({
+			effects: [autocompleteCompartment.reconfigure(newAutocomplete)]
+		});
+	});
 </script>
 
 <div class="form-template-editor">
@@ -397,6 +501,60 @@
 		aria-multiline="true"
 		aria-label="Template editor"
 	></div>
+
+	<!-- Loading banner (shown while fetching variables from API) -->
+	{#if isLoadingVariables}
+		<div class="form-template-editor__banner form-template-editor__banner--loading">
+			<svg
+				class="form-template-editor__banner-icon form-template-editor__banner-icon--spin"
+				xmlns="http://www.w3.org/2000/svg"
+				fill="none"
+				viewBox="0 0 24 24"
+			>
+				<circle
+					class="opacity-25"
+					cx="12"
+					cy="12"
+					r="10"
+					stroke="currentColor"
+					stroke-width="4"
+				></circle>
+				<path
+					class="opacity-75"
+					fill="currentColor"
+					d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+				></path>
+			</svg>
+			<span>Loading variables...</span>
+		</div>
+	{/if}
+
+	<!-- Error banner (shown when API fetch fails) -->
+	{#if variableLoadError}
+		<div class="form-template-editor__banner form-template-editor__banner--error">
+			<svg
+				class="form-template-editor__banner-icon"
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 20 20"
+				fill="currentColor"
+			>
+				<path
+					fill-rule="evenodd"
+					d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+					clip-rule="evenodd"
+				/>
+			</svg>
+			<span>{variableLoadError}</span>
+			<button
+				type="button"
+				class="form-template-editor__banner-btn"
+				onclick={retryLoadVariables}
+				title="Retry loading variables"
+			>
+				Retry
+			</button>
+		</div>
+	{/if}
 
 	<!-- Variable hints section (shown when variables are available and showHints is true) -->
 	{#if showHints && displayVariables.length > 0}
@@ -598,5 +756,69 @@
 		border-radius: var(--fd-radius-sm);
 		font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
 		font-size: 0.625rem;
+	}
+
+	/* Loading and error banners */
+	.form-template-editor__banner {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.625rem;
+		padding: 0.625rem 0.75rem;
+		border-radius: var(--fd-radius-md);
+		font-size: 0.75rem;
+	}
+
+	.form-template-editor__banner--loading {
+		background-color: rgba(59, 130, 246, 0.1);
+		border: 1px solid rgba(59, 130, 246, 0.3);
+		color: rgb(29, 78, 216);
+	}
+
+	.form-template-editor__banner--error {
+		background-color: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		color: rgb(185, 28, 28);
+	}
+
+	.form-template-editor__banner-icon {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+	}
+
+	.form-template-editor__banner-icon--spin {
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.form-template-editor__banner-btn {
+		margin-left: auto;
+		padding: 0.25rem 0.625rem;
+		background-color: rgba(239, 68, 68, 0.15);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		border-radius: var(--fd-radius-sm);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		color: rgb(185, 28, 28);
+		cursor: pointer;
+		transition: all var(--fd-transition-fast);
+	}
+
+	.form-template-editor__banner-btn:hover {
+		background-color: rgba(239, 68, 68, 0.25);
+		border-color: rgba(239, 68, 68, 0.5);
+	}
+
+	.form-template-editor__banner-btn:active {
+		transform: scale(0.98);
 	}
 </style>
