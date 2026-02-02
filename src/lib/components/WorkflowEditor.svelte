@@ -516,6 +516,32 @@
 	let nodeIdToRefresh = $state<string | null>(null);
 
 	/**
+	 * Update a node's data in the local editor state.
+	 * This should be called after updating the node in the global store to ensure
+	 * the visual representation is updated immediately (e.g., for nodeType changes).
+	 *
+	 * @param nodeId - The ID of the node to update
+	 * @param dataUpdates - Partial data updates to merge into the node's data
+	 */
+	export function updateNodeData(
+		nodeId: string,
+		dataUpdates: Partial<WorkflowNodeType['data']>
+	): void {
+		flowNodes = flowNodes.map((node) => {
+			if (node.id === nodeId) {
+				return {
+					...node,
+					data: {
+						...node.data,
+						...dataUpdates
+					}
+				};
+			}
+			return node;
+		});
+	}
+
+	/**
 	 * Force edge position recalculation after node config changes
 	 * This should be called after saving gateway/switch node configs where branches are reordered
 	 * Svelte Flow doesn't automatically recalculate edge paths when handle positions change

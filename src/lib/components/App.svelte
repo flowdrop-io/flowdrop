@@ -780,6 +780,10 @@
 
 							workflowActions.updateNode(selectedNodeId, nodeUpdates);
 
+							// Update the local editor state to reflect config changes immediately
+							// This is needed for nodeType changes to take effect visually
+							workflowEditorRef.updateNodeData(selectedNodeId, updatedData);
+
 							// Refresh edge positions in case config changes affect handles
 							await workflowEditorRef.refreshEdgePositions(selectedNodeId);
 						}
