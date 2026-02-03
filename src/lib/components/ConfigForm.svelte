@@ -18,6 +18,7 @@
 -->
 
 <script lang="ts">
+	import { setContext } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import type {
 		ConfigSchema,
@@ -86,6 +87,11 @@
 		onSave,
 		onCancel
 	}: Props = $props();
+
+	// Set context for child components (e.g., FormAutocomplete)
+	// Use getter functions to ensure child components always get the current prop value,
+	// even if the prop changes after initial mount
+	setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
 
 	/**
 	 * State for dynamic schema loading
