@@ -136,13 +136,14 @@
 	});
 
 	/**
-	 * Check if the node has no static schema and needs dynamic loading
+	 * Check if the node needs dynamic schema loading
+	 * Loads when: no static schema OR preferDynamicSchema is true
 	 */
 	const needsDynamicSchemaLoad = $derived.by(() => {
 		if (!node) return false;
 		const staticSchema = schema ?? node.data.metadata?.configSchema;
-		// Need to load if: no static schema AND dynamic schema is configured
-		return !staticSchema && useDynamicSchema && !fetchedDynamicSchema && !dynamicSchemaLoading;
+		// Need to load if: (no static schema OR preferDynamicSchema is true) AND dynamic schema is configured
+		return (!staticSchema || configEditOptions?.preferDynamicSchema === true) && useDynamicSchema && !fetchedDynamicSchema && !dynamicSchemaLoading;
 	});
 
 	/**
