@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+
+# Check if any API files are staged
+API_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep "^api/" | grep -v "bundled.yaml" || true)
+
+if [ -n "$API_FILES" ]; then
+  echo "📦 API files changed, bundling OpenAPI spec..."
+  npm run api:bundle
+
+  # Check if bundled.yaml was modified
+  if [ -n "$(git diff api/bundled.yaml)" ]; then
+    echo "✅ Bundled spec updated, staging changes..."
+    git add api/bundled.yaml
+  else
+    echo "✅ Bundled spec already up to date"
+  fi
+fi
+
+# Optional: Run linting on staged API files
+if [ -n "$API_FILES" ]; then
+  echo "🔍 Linting API spec..."
+  npm run api:lint
+fi

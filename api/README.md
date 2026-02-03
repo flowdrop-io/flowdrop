@@ -1,5 +1,7 @@
 # FlowDrop OpenAPI Specification
 
+[![API Spec Validation](https://github.com/flowdrop-io/flowdrop/actions/workflows/api-lint.yml/badge.svg)](https://github.com/flowdrop-io/flowdrop/actions/workflows/api-lint.yml)
+
 This directory contains the OpenAPI 3.0 specification for the FlowDrop API.
 
 ## Directory Structure
@@ -41,16 +43,29 @@ npm run api:lint
 # Bundle into single file (regenerates bundled.yaml)
 npm run api:bundle
 
+# Watch for changes and auto-bundle (useful during development)
+npm run api:watch
+
 # Preview documentation locally (opens Redoc)
 npm run api:preview
 ```
 
 ## Development Workflow
 
+### Manual Workflow
 1. **Edit source files** in `paths/` or `components/`
 2. **Lint** with `npm run api:lint` to catch issues
 3. **Bundle** with `npm run api:bundle` before committing
 4. **Preview** with `npm run api:preview` to see rendered docs
+
+### Automated Workflow (Recommended)
+1. **Edit source files** in `paths/` or `components/`
+2. **Use watch mode** with `npm run api:watch` during development (auto-bundles on save)
+3. **Commit changes** - the pre-commit hook automatically:
+   - Bundles the spec if API files changed
+   - Runs linting validation
+   - Stages the updated `bundled.yaml`
+4. **CI validates** - GitHub Actions ensures bundled.yaml is in sync
 
 ## Best Practices
 
