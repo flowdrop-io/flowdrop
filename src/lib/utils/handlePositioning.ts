@@ -17,7 +17,7 @@ export interface HandlePosition {
  * @param index - The index of the handle (0-based)
  * @param count - Total number of handles on this side
  * @param side - 'left' for inputs, 'right' for outputs
- * @param radius - The radius of the circle (default: 36px for 72px diameter)
+ * @param radius - The radius of the circle (default: 40px for 80px diameter)
  * @param arcSpan - The arc span in radians (default: 5π/6 = 150°)
  * @returns Object with left and top pixel values relative to the circle's bounding box
  *
@@ -34,7 +34,7 @@ export function getCircleHandlePosition(
 	index: number,
 	count: number,
 	side: 'left' | 'right',
-	radius: number = 36,
+	radius: number = 40,
 	arcSpan: number = (Math.PI * 5) / 6
 ): HandlePosition {
 	const centerAngle = side === 'left' ? Math.PI : 0; // 180° for left, 0° for right
