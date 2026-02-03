@@ -157,8 +157,10 @@
 	}: Props = $props();
 
 	// Set context for child components (e.g., FormAutocomplete)
-	setContext<AuthProvider | undefined>('flowdrop:authProvider', authProvider);
-	setContext<string>('flowdrop:baseUrl', baseUrl);
+	// Use getter functions to ensure child components always get the current prop value,
+	// even if the prop changes after initial mount
+	setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
+	setContext<() => string>('flowdrop:getBaseUrl', () => baseUrl);
 
 	/**
 	 * Internal reactive state for form values

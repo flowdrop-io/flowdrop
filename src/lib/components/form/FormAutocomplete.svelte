@@ -59,9 +59,10 @@
 		onChange
 	}: Props = $props();
 
-	// Get AuthProvider from context (set by SchemaForm or parent)
-	const authProvider = getContext<AuthProvider | undefined>('flowdrop:authProvider');
-	const baseUrl = getContext<string | undefined>('flowdrop:baseUrl') ?? '';
+	// Get AuthProvider and baseUrl from context via getter functions
+	// This pattern ensures we always get the current value, even if props change after mount
+	const getAuthProvider = getContext<(() => AuthProvider | undefined) | undefined>('flowdrop:getAuthProvider');
+	const getBaseUrl = getContext<(() => string) | undefined>('flowdrop:getBaseUrl');
 
 	// Configuration with defaults
 	const queryParam = $derived(autocomplete.queryParam ?? 'q');
@@ -142,6 +143,7 @@
 	 * @returns Full URL with query parameter
 	 */
 	function buildUrl(query: string): string {
+		const baseUrl = getBaseUrl?.() ?? '';
 		const url = autocomplete.url.startsWith('http')
 			? autocomplete.url
 			: `${baseUrl}${autocomplete.url}`;
@@ -194,7 +196,8 @@
 				'Content-Type': 'application/json'
 			};
 
-			// Add auth headers if provider is available
+			// Add auth headers if provider is available (call getter to get current value)
+			const authProvider = getAuthProvider?.();
 			if (authProvider) {
 				const authHeaders = await authProvider.getAuthHeaders();
 				Object.assign(headers, authHeaders);
