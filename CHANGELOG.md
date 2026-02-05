@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.49] - 2026-02-05
+
+### Added
+
+- **Interrupts Node Category**: New `'interrupts'` category in `NodeCategory` for human-in-the-loop nodes, enabling dedicated sidebar grouping for interrupt-based workflow nodes
+
+- **Twig Syntax Highlighting**: Template editor now features proper Twig syntax highlighting with distinct styling for `{{ variables }}`, `{% tags %}`, and `{# comments #}` blocks
+
+### Fixed
+
+- **Tool Node Border Color**: Tool nodes now use their configured theme color for the header border instead of a generic color, and removed duplicate header border styling
+
+- **Autocomplete Tooltip Clipping**: Fixed autocomplete suggestion tooltip being clipped by editor container overflow constraints
+
+- **JSON Editor Cursor Jump**: Fixed cursor jumping to the start of the field when editing JSON in the code editor
+
+- **Dark Mode Code Editors in FormField**: Fixed dark mode theme not being applied to code editors rendered within FormField components
+
+- **Dark Mode JSON Syntax Highlighting**: Fixed syntax highlighting colors not applying correctly in JSON code editor when using dark mode
+
+- **JSON Code Editor Responsiveness**: Improved JSON code editor layout responsiveness to properly adapt to container size changes
+
+- **Form Save Data Loss**: Fixed pending form changes being lost on save by flushing uncommitted field values before triggering the save operation
+
+---
+
 ## [0.0.48] - 2026-02-05
 
 ### Added
