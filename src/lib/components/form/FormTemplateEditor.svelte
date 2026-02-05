@@ -27,6 +27,7 @@
 		highlightSpecialChars,
 		highlightActiveLine,
 		keymap,
+		tooltips,
 		Decoration,
 		type DecorationSet,
 		ViewPlugin,
@@ -258,6 +259,9 @@
 	 */
 	function createExtensions() {
 		const extensions = [
+			// Position tooltips using fixed strategy so they aren't clipped by container overflow
+			tooltips({ position: 'fixed' }),
+
 			// Essential visual features
 			lineNumbers(),
 			highlightActiveLineGutter(),
