@@ -592,7 +592,7 @@ const nodeMetadata: NodeMetadata = {
 | --------------------- | --------------- | ---------------------------------------------------------------------------------- |
 | `format`              | Schema property | Controls form field rendering (hidden, multiline, json, markdown, template, range) |
 | `multiple`            | Schema property | With `enum`, renders checkboxes instead of dropdown                                |
-| `oneOf`               | Schema property | Labeled options with `const`/`title` (standard JSON Schema pattern)                                              |
+| `oneOf`               | Schema property | Labeled options with `const`/`title` (standard JSON Schema pattern)                |
 | `x-display-order`     | Schema property | Controls field ordering (negative values appear first)                             |
 | `instanceTitle`       | Config value    | Per-instance title override for node display                                       |
 | `instanceDescription` | Config value    | Per-instance description override for node display                                 |

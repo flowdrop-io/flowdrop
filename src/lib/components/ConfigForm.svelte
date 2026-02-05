@@ -149,7 +149,12 @@
 		if (!node) return false;
 		const staticSchema = schema ?? node.data.metadata?.configSchema;
 		// Need to load if: (no static schema OR preferDynamicSchema is true) AND dynamic schema is configured
-		return (!staticSchema || configEditOptions?.preferDynamicSchema === true) && useDynamicSchema && !fetchedDynamicSchema && !dynamicSchemaLoading;
+		return (
+			(!staticSchema || configEditOptions?.preferDynamicSchema === true) &&
+			useDynamicSchema &&
+			!fetchedDynamicSchema &&
+			!dynamicSchemaLoading
+		);
 	});
 
 	/**
@@ -399,7 +404,12 @@
 		const fieldSchema = property as FieldSchema;
 
 		// Process template fields to compute variable schema
-		if (fieldSchema.format === 'template' && node && workflowNodes.length > 0 && workflowEdges.length > 0) {
+		if (
+			fieldSchema.format === 'template' &&
+			node &&
+			workflowNodes.length > 0 &&
+			workflowEdges.length > 0
+		) {
 			// Get the variables config (may be undefined or partially defined)
 			const variablesConfig = fieldSchema.variables;
 

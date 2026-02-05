@@ -188,10 +188,7 @@
 			// Editing features (skip when read-only)
 			...(disabled
 				? []
-				: [
-						history(),
-						keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])
-					]),
+				: [history(), keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])]),
 
 			// Read-only: prevent document changes and mark content as non-editable
 			...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
