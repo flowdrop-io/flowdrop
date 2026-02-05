@@ -161,6 +161,7 @@
 			memories: 'Memories',
 			agents: 'Agents',
 			ai: 'AI',
+			interrupts: 'Interrupts',
 			bundles: 'Bundles'
 		};
 		return names[category] || category;

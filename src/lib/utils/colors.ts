@@ -27,6 +27,7 @@ export const CATEGORY_COLOR_TOKENS: Record<NodeCategory, string> = {
 	memories: 'var(--fd-node-blue)',
 	agents: 'var(--fd-node-teal)',
 	ai: 'var(--fd-node-purple)',
+	interrupts: 'var(--fd-node-red)',
 	bundles: 'var(--fd-node-slate)'
 };
 
