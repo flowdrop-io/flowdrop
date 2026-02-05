@@ -71,6 +71,8 @@
 			variant?: 'primary' | 'secondary' | 'outline';
 			onclick?: (event: Event) => void;
 		}>;
+		/** Show settings gear icon in navbar */
+		showSettings?: boolean;
 		/** API base URL */
 		apiBaseUrl?: string;
 		/** Endpoint configuration */
@@ -96,6 +98,7 @@
 		pipelineId,
 		navbarTitle,
 		navbarActions = [],
+		showSettings = true,
 		apiBaseUrl,
 		endpointConfig: propEndpointConfig,
 		authProvider,
@@ -705,6 +708,7 @@
 						}
 					]}
 			showStatus={true}
+			{showSettings}
 		/>
 	{/snippet}
 
