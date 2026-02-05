@@ -80,6 +80,9 @@
 	/** Flag to prevent update loops */
 	let isInternalUpdate = false;
 
+	/** Flag to skip $effect when change originated from the editor */
+	let isEditorUpdate = false;
+
 	/**
 	 * Convert value to JSON string for editor display
 	 */
@@ -129,6 +132,7 @@
 		const content = update.state.doc.toString();
 		const result = validateAndParse(content);
 
+		isEditorUpdate = true;
 		if (result.valid) {
 			validationError = undefined;
 			// Emit the parsed value (object) not the string
@@ -270,6 +274,13 @@
 		}
 
 		const newContent = valueToString(value);
+
+		// Skip if the change originated from the editor itself
+		if (isEditorUpdate) {
+			isEditorUpdate = false;
+			return;
+		}
+
 		const currentContent = editorView.state.doc.toString();
 
 		// Only update if content actually changed and wasn't from internal edit
