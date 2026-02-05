@@ -230,7 +230,7 @@
 	.flowdrop-tool-node {
 		position: relative;
 		background-color: var(--fd-card);
-		border: 1.5px solid var(--fd-node-border);
+		border: 1.5px solid var(--fd-tool-node-color);
 		border-radius: var(--fd-radius-xl);
 		width: var(--fd-node-default-width);
 		min-height: var(--fd-node-tool-min-height);
@@ -246,7 +246,7 @@
 
 	.flowdrop-tool-node:hover {
 		box-shadow: var(--fd-shadow-lg);
-		border-color: var(--fd-node-border-hover);
+		border-color: var(--fd-tool-node-color);
 	}
 
 	.flowdrop-tool-node--selected {
@@ -282,16 +282,14 @@
 		/* Light mode: mix tool color with white (95%) for subtle tint */
 		background-color: color-mix(in srgb, var(--fd-tool-node-color) 5%, white);
 		border-radius: var(--fd-radius-xl);
-		/* Light mode: mix tool color with white (40%) for border */
-		border: 1px solid color-mix(in srgb, var(--fd-tool-node-color) 40%, white);
+		border: none;
 	}
 
 	/* Dark mode header styles */
 	:global([data-theme='dark']) .flowdrop-tool-node__header {
 		/* Dark mode: mix tool color with dark background (15%) for subtle tint */
 		background-color: color-mix(in srgb, var(--fd-tool-node-color) 15%, #1a1a1e);
-		/* Dark mode: mix tool color with dark background (35%) for border */
-		border-color: color-mix(in srgb, var(--fd-tool-node-color) 35%, #1a1a1e);
+		border: none;
 	}
 
 	.flowdrop-tool-node__header-content {
