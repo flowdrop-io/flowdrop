@@ -72,16 +72,25 @@
 	// Track the workflow ID we're currently editing to detect workflow switches
 	let currentWorkflowId: string | null = null;
 
+	// Track the last store value written by this editor to distinguish
+	// external programmatic changes from our own echoed writes
+	let lastEditorStoreValue: Workflow | null = null;
+
 	// Initialize currentWorkflow from global store
-	// Only sync when workflow ID changes (new workflow loaded) or on initial load
+	// Sync on workflow ID change (new workflow loaded) or external programmatic changes
 	$effect(() => {
 		if ($workflowStore) {
 			const storeWorkflowId = $workflowStore.id;
 
-			// Sync on initial load or when a different workflow is loaded
 			if (currentWorkflowId !== storeWorkflowId) {
+				// New workflow loaded
 				currentWorkflow = $workflowStore;
 				currentWorkflowId = storeWorkflowId;
+				lastEditorStoreValue = null;
+			} else if ($workflowStore !== lastEditorStoreValue) {
+				// External programmatic change (e.g. addEdge, updateNode, updateEdges)
+				// The store value differs from what this editor last wrote, so sync it
+				currentWorkflow = $workflowStore;
 			}
 		} else if (currentWorkflow !== null) {
 			// Store was cleared
@@ -95,6 +104,8 @@
 		setOnRestoreCallback((restoredWorkflow: Workflow) => {
 			// Directly update local state (bypass store sync effect)
 			currentWorkflow = restoredWorkflow;
+			// Mark as our own write so sync effect doesn't re-process it
+			lastEditorStoreValue = restoredWorkflow;
 			// Also update the store without triggering history
 			workflowActions.restoreFromHistory(restoredWorkflow);
 		});
@@ -207,6 +218,7 @@
 	 */
 	const updateGlobalStore = throttle((): void => {
 		if (currentWorkflow) {
+			lastEditorStoreValue = currentWorkflow;
 			workflowActions.updateWorkflow(currentWorkflow);
 		}
 	}, 16);
