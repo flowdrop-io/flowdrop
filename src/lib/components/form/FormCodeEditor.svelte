@@ -25,12 +25,12 @@
 	import { EditorState } from '@codemirror/state';
 	import { history, historyKeymap } from '@codemirror/commands';
 	import { highlightSpecialChars, highlightActiveLine } from '@codemirror/view';
-	import { syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
+	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { keymap } from '@codemirror/view';
 	import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 	import { json, jsonParseLinter } from '@codemirror/lang-json';
 	import { oneDark } from '@codemirror/theme-one-dark';
-	import { linter, lintGutter } from '@codemirror/lint';
+	import { linter } from '@codemirror/lint';
 
 	interface Props {
 		/** Field identifier */
@@ -186,7 +186,6 @@
 				? []
 				: [
 						history(),
-						indentOnInput(),
 						keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])
 					]),
 
@@ -198,8 +197,7 @@
 
 			// JSON-specific features
 			json(),
-			linter(jsonParseLinter()),
-			lintGutter(),
+			linter(jsonParseLinter(), { delay: 1000 }),
 
 			// Update listener (only fires on user edit when not disabled)
 			EditorView.updateListener.of(handleUpdate),
