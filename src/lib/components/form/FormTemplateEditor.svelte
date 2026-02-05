@@ -277,8 +277,8 @@
 			// Read-only: prevent document changes and mark content as non-editable
 			...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
 
-			// Syntax highlighting
-			syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+			// Syntax highlighting - use default for light mode, oneDark handles dark mode
+			...(darkTheme ? [] : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
 
 			// Template-specific variable highlighter
 			variableHighlighter,

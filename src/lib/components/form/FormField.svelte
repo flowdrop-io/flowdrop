@@ -44,6 +44,7 @@
 	import type { FieldSchema } from './types.js';
 	import { getSchemaOptions } from './types.js';
 	import type { WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
+	import { resolvedTheme } from '$lib/stores/settingsStore.js';
 
 	interface Props {
 		/** Unique key/id for the field */
@@ -345,7 +346,7 @@
 				placeholder={schema.placeholder ?? '{}'}
 				{required}
 				height={(schema.height as string | undefined) ?? '200px'}
-				darkTheme={(schema.darkTheme as boolean | undefined) ?? false}
+				darkTheme={(schema.darkTheme as boolean | undefined) ?? $resolvedTheme === 'dark'}
 				autoFormat={(schema.autoFormat as boolean | undefined) ?? true}
 				ariaDescribedBy={descriptionId}
 				disabled={isReadOnly}
@@ -373,7 +374,7 @@
 					'Enter your template here...\nUse {{ variable }} for dynamic values.'}
 				{required}
 				height={(schema.height as string | undefined) ?? '250px'}
-				darkTheme={(schema.darkTheme as boolean | undefined) ?? false}
+				darkTheme={(schema.darkTheme as boolean | undefined) ?? $resolvedTheme === 'dark'}
 				variables={schema.variables}
 				placeholderExample={(schema.placeholderExample as string | undefined) ??
 					'Hello {{ name }}, your order #{{ order_id }} is ready!'}
