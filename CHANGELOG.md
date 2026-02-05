@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.48] - 2026-02-05
+
+### Added
+
+- **Settings Toggle in Mount API**: Expose `showSettings` option in `mountFlowDropApp` API to control settings panel visibility from external consumers
+
+- **Terminal Node Handle Distribution**: Terminal node handles are now distributed evenly along the circle arc for better visual layout when multiple ports are present
+
+### Fixed
+
+- **Autocomplete Auth Provider**: Fixed autocomplete callback ignoring `authProvider` settings (#14)
+
+- **Dynamic Schema Fetching**: Fixed dynamic schema not being fetched when a static `configSchema` exists, even with `preferDynamicSchema: true` (#4)
+
+- **Pico-math Resolution**: Fixed pico-math module resolution issue
+
+- **Terminal Node Handle Radius**: Adjusted radius calculation for terminal node handle positioning
+
+- **Template Variable Suggestions**: Resolved API variable suggestions integration issues in the template editor
+
+### Changed
+
+- **Template Editor**: Removed deprecated `variableHints` property in favor of API-driven variable suggestions
+
+---
+
 ## [0.0.47] - 2026-02-02
 
 ### Added
