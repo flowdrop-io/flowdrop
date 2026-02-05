@@ -85,6 +85,8 @@ export interface FlowDropMountOptions {
 	navbarTitle?: string;
 	/** Custom navbar actions */
 	navbarActions?: NavbarAction[];
+	/** Show settings gear icon in navbar */
+	showSettings?: boolean;
 
 	// NEW: Authentication provider
 	/** Authentication provider for API requests */
@@ -190,6 +192,7 @@ export async function mountFlowDropApp(
 		pipelineId,
 		navbarTitle,
 		navbarActions,
+		showSettings,
 		authProvider,
 		eventHandlers,
 		features: userFeatures,
@@ -261,6 +264,7 @@ export async function mountFlowDropApp(
 			pipelineId,
 			navbarTitle,
 			navbarActions,
+			showSettings,
 			endpointConfig: config,
 			authProvider,
 			eventHandlers,
