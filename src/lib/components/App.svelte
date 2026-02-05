@@ -393,6 +393,13 @@
 	 * Uses enhanced API client with authProvider support when available.
 	 */
 	async function saveWorkflow(): Promise<void> {
+		// Flush any pending form changes by blurring the active element.
+		// This ensures focusout handlers (like ConfigForm's handleFormBlur)
+		// sync local state to the global store before we read it.
+		if (document.activeElement instanceof HTMLElement) {
+			document.activeElement.blur();
+		}
+
 		// Wait for any pending DOM updates before saving
 		await tick();
 

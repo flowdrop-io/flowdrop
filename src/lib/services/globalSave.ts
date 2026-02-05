@@ -69,6 +69,13 @@ async function ensureApiConfiguration(): Promise<void> {
  * Uses the current workflow from the global store
  */
 export async function globalSaveWorkflow(): Promise<void> {
+	// Flush any pending form changes by blurring the active element.
+	// This ensures focusout handlers (like ConfigForm's handleFormBlur)
+	// sync local state to the global store before we read it.
+	if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+		document.activeElement.blur();
+	}
+
 	let loadingToast: string | undefined;
 
 	try {
