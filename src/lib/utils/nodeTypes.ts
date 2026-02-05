@@ -233,9 +233,9 @@ export function createNodeTypeConfigProperty(
 	const primaryType = defaultType ?? getPrimaryNodeType(metadata);
 
 	return {
-		type: "string" as const,
-		title: "Node Type",
-		description: "Choose the visual representation for this node",
+		type: 'string' as const,
+		title: 'Node Type',
+		description: 'Choose the visual representation for this node',
 		default: primaryType,
 		oneOf
 	};

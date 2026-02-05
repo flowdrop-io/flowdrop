@@ -16,28 +16,28 @@ import {
 	type Completion,
 	type CompletionContext,
 	type CompletionResult
-} from "@codemirror/autocomplete";
-import type { Extension } from "@codemirror/state";
-import type { VariableSchema, TemplateVariable } from "$lib/types/index.js";
+} from '@codemirror/autocomplete';
+import type { Extension } from '@codemirror/state';
+import type { VariableSchema, TemplateVariable } from '$lib/types/index.js';
 import {
 	getChildVariables,
 	getArrayIndexSuggestions,
 	isArrayVariable,
 	hasChildren
-} from "$lib/services/variableService.js";
+} from '$lib/services/variableService.js';
 
 /**
  * Icon type hints for different variable types in autocomplete dropdown.
  */
 const TYPE_ICONS: Record<string, string> = {
-	string: "𝑆",
-	number: "#",
-	integer: "#",
-	float: "#",
-	boolean: "☑",
-	array: "[]",
-	object: "{}",
-	mixed: "⋯"
+	string: '𝑆',
+	number: '#',
+	integer: '#',
+	float: '#',
+	boolean: '☑',
+	array: '[]',
+	object: '{}',
+	mixed: '⋯'
 };
 
 /**
@@ -62,12 +62,12 @@ function extractVariablePath(
 
 	while (searchPos >= 0) {
 		// Check for opening {{
-		if (text[searchPos] === "{" && searchPos > 0 && text[searchPos - 1] === "{") {
+		if (text[searchPos] === '{' && searchPos > 0 && text[searchPos - 1] === '{') {
 			openBracePos = searchPos - 1;
 			break;
 		}
 		// Check for closing }} - means we're outside an expression
-		if (text[searchPos] === "}" && searchPos > 0 && text[searchPos - 1] === "}") {
+		if (text[searchPos] === '}' && searchPos > 0 && text[searchPos - 1] === '}') {
 			return null;
 		}
 		searchPos--;
@@ -88,7 +88,9 @@ function extractVariablePath(
 
 	return {
 		path: content,
-		startPos: contentStart + (text.slice(contentStart, pos).length - text.slice(contentStart, pos).trimStart().length),
+		startPos:
+			contentStart +
+			(text.slice(contentStart, pos).length - text.slice(contentStart, pos).trimStart().length),
 		isInsideExpression: true
 	};
 }
@@ -97,9 +99,9 @@ function extractVariablePath(
  * Determines what type of completion to provide based on the current path.
  */
 type CompletionType =
-	| { type: "top-level" }
-	| { type: "property"; parentPath: string }
-	| { type: "array-index"; parentPath: string };
+	| { type: 'top-level' }
+	| { type: 'property'; parentPath: string }
+	| { type: 'array-index'; parentPath: string };
 
 /**
  * Determines the completion type based on the current input.
@@ -109,39 +111,39 @@ type CompletionType =
  */
 function getCompletionType(path: string): CompletionType {
 	// Empty or only whitespace - show top-level variables
-	if (path.trim() === "") {
-		return { type: "top-level" };
+	if (path.trim() === '') {
+		return { type: 'top-level' };
 	}
 
 	// Ends with [ - show array indices
-	if (path.endsWith("[")) {
+	if (path.endsWith('[')) {
 		const parentPath = path.slice(0, -1);
-		return { type: "array-index", parentPath };
+		return { type: 'array-index', parentPath };
 	}
 
 	// Ends with . - show child properties
-	if (path.endsWith(".")) {
+	if (path.endsWith('.')) {
 		const parentPath = path.slice(0, -1);
-		return { type: "property", parentPath };
+		return { type: 'property', parentPath };
 	}
 
 	// Otherwise, we're typing a variable name - show matching options
-	const lastDotIndex = path.lastIndexOf(".");
-	const lastBracketIndex = path.lastIndexOf("[");
+	const lastDotIndex = path.lastIndexOf('.');
+	const lastBracketIndex = path.lastIndexOf('[');
 	const lastSeparator = Math.max(lastDotIndex, lastBracketIndex);
 
 	if (lastSeparator === -1) {
 		// Typing at top level
-		return { type: "top-level" };
+		return { type: 'top-level' };
 	}
 
 	// Extract parent path based on separator
 	if (lastDotIndex > lastBracketIndex) {
 		// Last separator was a dot
-		return { type: "property", parentPath: path.slice(0, lastDotIndex) };
+		return { type: 'property', parentPath: path.slice(0, lastDotIndex) };
 	} else {
 		// Last separator was a bracket
-		return { type: "array-index", parentPath: path.slice(0, lastBracketIndex) };
+		return { type: 'array-index', parentPath: path.slice(0, lastBracketIndex) };
 	}
 }
 
@@ -152,25 +154,22 @@ function getCompletionType(path: string): CompletionType {
  * @param prefix - Prefix to add to the completion label
  * @returns A CodeMirror Completion object
  */
-function variableToCompletion(
-	variable: TemplateVariable,
-	prefix: string = ""
-): Completion {
+function variableToCompletion(variable: TemplateVariable, prefix: string = ''): Completion {
 	const icon = TYPE_ICONS[variable.type] ?? TYPE_ICONS.mixed;
 	const hasChildProps = variable.properties && Object.keys(variable.properties).length > 0;
-	const isArray = variable.type === "array";
+	const isArray = variable.type === 'array';
 
 	// Add indicator if variable can be drilled into
-	let suffix = "";
-	if (hasChildProps) suffix = ".";
-	else if (isArray) suffix = "[";
+	let suffix = '';
+	if (hasChildProps) suffix = '.';
+	else if (isArray) suffix = '[';
 
 	return {
 		label: `${prefix}${variable.name}`,
-		displayLabel: `${icon} ${variable.label ?? variable.name}${suffix ? " " + suffix : ""}`,
+		displayLabel: `${icon} ${variable.label ?? variable.name}${suffix ? ' ' + suffix : ''}`,
 		detail: variable.type,
 		info: variable.description,
-		type: "variable",
+		type: 'variable',
 		boost: hasChildProps || isArray ? 1 : 0 // Boost drillable variables
 	};
 }
@@ -194,10 +193,10 @@ function createTemplateCompletionSource(
 		if (!pathInfo) {
 			// Check if user just typed {{
 			const beforeCursor = text.slice(Math.max(0, pos - 2), pos);
-			if (beforeCursor === "{{") {
+			if (beforeCursor === '{{') {
 				// Show top-level variables
-				const options: Completion[] = Object.values(schema.variables).map(
-					(v) => variableToCompletion(v)
+				const options: Completion[] = Object.values(schema.variables).map((v) =>
+					variableToCompletion(v)
 				);
 
 				return {
@@ -216,44 +215,48 @@ function createTemplateCompletionSource(
 		let from = pos;
 
 		switch (completionType.type) {
-			case "top-level": {
+			case 'top-level': {
 				// Show all top-level variables
 				const currentWord = path.trim();
 				options = Object.values(schema.variables)
-					.filter((v) => currentWord === "" || v.name.toLowerCase().startsWith(currentWord.toLowerCase()))
+					.filter(
+						(v) => currentWord === '' || v.name.toLowerCase().startsWith(currentWord.toLowerCase())
+					)
 					.map((v) => variableToCompletion(v));
 				// Calculate from position for replacement
 				from = startPos + (path.length - path.trimStart().length);
 				break;
 			}
 
-			case "property": {
+			case 'property': {
 				// Show child properties of the parent
 				const children = getChildVariables(schema, completionType.parentPath);
-				const currentWord = path.slice(path.lastIndexOf(".") + 1);
+				const currentWord = path.slice(path.lastIndexOf('.') + 1);
 				options = children
-					.filter((v) => currentWord === "" || v.name.toLowerCase().startsWith(currentWord.toLowerCase()))
+					.filter(
+						(v) => currentWord === '' || v.name.toLowerCase().startsWith(currentWord.toLowerCase())
+					)
 					.map((v) => variableToCompletion(v));
 				// From should be right after the last dot
-				from = startPos + path.lastIndexOf(".") + 1;
+				from = startPos + path.lastIndexOf('.') + 1;
 				break;
 			}
 
-			case "array-index": {
+			case 'array-index': {
 				// Check if the parent is actually an array
 				if (isArrayVariable(schema, completionType.parentPath)) {
 					const indices = getArrayIndexSuggestions(5);
-					const currentIndex = path.slice(path.lastIndexOf("[") + 1);
+					const currentIndex = path.slice(path.lastIndexOf('[') + 1);
 					options = indices
-						.filter((idx) => currentIndex === "" || idx.startsWith(currentIndex))
+						.filter((idx) => currentIndex === '' || idx.startsWith(currentIndex))
 						.map((idx) => ({
 							label: idx,
-							displayLabel: idx === "*]" ? "* (all items)" : `[${idx}`,
-							detail: idx === "*]" ? "Iterate all items" : `Index ${idx.slice(0, -1)}`,
-							type: "keyword"
+							displayLabel: idx === '*]' ? '* (all items)' : `[${idx}`,
+							detail: idx === '*]' ? 'Iterate all items' : `Index ${idx.slice(0, -1)}`,
+							type: 'keyword'
 						}));
 					// From should be right after the [
-					from = startPos + path.lastIndexOf("[") + 1;
+					from = startPos + path.lastIndexOf('[') + 1;
 				}
 				break;
 			}
@@ -290,13 +293,13 @@ export function createTemplateAutocomplete(schema: VariableSchema): Extension {
 		override: [createTemplateCompletionSource(schema)],
 		activateOnTyping: true,
 		defaultKeymap: true,
-		optionClass: () => "cm-template-autocomplete-option",
+		optionClass: () => 'cm-template-autocomplete-option',
 		icons: false, // We use our own icons in displayLabel
 		addToOptions: [
 			{
 				render: (completion: Completion) => {
-					const el = document.createElement("span");
-					el.className = "cm-template-autocomplete-info";
+					const el = document.createElement('span');
+					el.className = 'cm-template-autocomplete-info';
 					if (completion.info) {
 						el.textContent = String(completion.info);
 					}
@@ -307,4 +310,3 @@ export function createTemplateAutocomplete(schema: VariableSchema): Extension {
 		]
 	});
 }
-

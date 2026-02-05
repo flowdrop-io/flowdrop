@@ -6,7 +6,11 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
-import type { AutocompleteConfig, VariableSchema, TemplateVariablesConfig } from '$lib/types/index.js';
+import type {
+	AutocompleteConfig,
+	VariableSchema,
+	TemplateVariablesConfig
+} from '$lib/types/index.js';
 
 /**
  * Supported field types for form rendering

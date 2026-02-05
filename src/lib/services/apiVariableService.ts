@@ -108,7 +108,10 @@ function generateVariableCacheKey(workflowId: string | undefined, nodeId: string
  * @param ttl - Time-to-live in milliseconds
  * @returns True if the cache entry is still valid
  */
-function isCacheValid(entry: VariableCacheEntry, ttl: number = DEFAULT_VARIABLE_CACHE_TTL): boolean {
+function isCacheValid(
+	entry: VariableCacheEntry,
+	ttl: number = DEFAULT_VARIABLE_CACHE_TTL
+): boolean {
 	return Date.now() - entry.cachedAt < ttl;
 }
 

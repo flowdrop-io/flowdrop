@@ -61,7 +61,9 @@
 
 	// Get AuthProvider and baseUrl from context via getter functions
 	// This pattern ensures we always get the current value, even if props change after mount
-	const getAuthProvider = getContext<(() => AuthProvider | undefined) | undefined>('flowdrop:getAuthProvider');
+	const getAuthProvider = getContext<(() => AuthProvider | undefined) | undefined>(
+		'flowdrop:getAuthProvider'
+	);
 	const getBaseUrl = getContext<(() => string) | undefined>('flowdrop:getBaseUrl');
 
 	// Configuration with defaults

@@ -53,12 +53,14 @@ npm run api:preview
 ## Development Workflow
 
 ### Manual Workflow
+
 1. **Edit source files** in `paths/` or `components/`
 2. **Lint** with `npm run api:lint` to catch issues
 3. **Bundle** with `npm run api:bundle` before committing
 4. **Preview** with `npm run api:preview` to see rendered docs
 
 ### Automated Workflow (Recommended)
+
 1. **Edit source files** in `paths/` or `components/`
 2. **Use watch mode** with `npm run api:watch` during development (auto-bundles on save)
 3. **Commit changes** - the pre-commit hook automatically:

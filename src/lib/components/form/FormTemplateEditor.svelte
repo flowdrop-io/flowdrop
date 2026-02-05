@@ -271,10 +271,7 @@
 			// Editing features (skip when read-only)
 			...(disabled
 				? []
-				: [
-						history(),
-						keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])
-					]),
+				: [history(), keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])]),
 
 			// Read-only: prevent document changes and mark content as non-editable
 			...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
@@ -370,7 +367,9 @@
 		// Add autocomplete compartment (can be reconfigured dynamically)
 		// When disabled or no schema, use empty array
 		if (!disabled && effectiveVariableSchema) {
-			extensions.push(autocompleteCompartment.of(createTemplateAutocomplete(effectiveVariableSchema)));
+			extensions.push(
+				autocompleteCompartment.of(createTemplateAutocomplete(effectiveVariableSchema))
+			);
 		} else {
 			extensions.push(autocompleteCompartment.of([]));
 		}
@@ -493,9 +492,7 @@
 
 		// When effectiveVariableSchema changes, reconfigure the autocomplete compartment
 		// This happens after async API loading completes
-		const newAutocomplete = !disabled && schema
-			? createTemplateAutocomplete(schema)
-			: [];
+		const newAutocomplete = !disabled && schema ? createTemplateAutocomplete(schema) : [];
 
 		editorView.dispatch({
 			effects: [autocompleteCompartment.reconfigure(newAutocomplete)]
@@ -533,13 +530,7 @@
 				fill="none"
 				viewBox="0 0 24 24"
 			>
-				<circle
-					class="opacity-25"
-					cx="12"
-					cy="12"
-					r="10"
-					stroke="currentColor"
-					stroke-width="4"
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 				></circle>
 				<path
 					class="opacity-75"
