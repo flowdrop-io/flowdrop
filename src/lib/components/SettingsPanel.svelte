@@ -188,10 +188,10 @@
 				undoHistoryLimit: {
 					type: 'number',
 					title: 'Undo History Limit',
-					description: 'Maximum number of undo steps',
-					minimum: 10,
+					description: 'Maximum number of undo steps (0 to disable)',
+					minimum: 0,
 					maximum: 200,
-					default: 50
+					default: 0
 				},
 				confirmDelete: {
 					type: 'boolean',

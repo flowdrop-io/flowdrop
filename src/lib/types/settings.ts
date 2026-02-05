@@ -166,7 +166,7 @@ export const SETTINGS_CATEGORY_ICONS: Record<SettingsCategory, string> = {
  * Default theme settings
  */
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
-	preference: 'auto'
+	preference: 'light'
 };
 
 /**
@@ -196,8 +196,8 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
 export const DEFAULT_BEHAVIOR_SETTINGS: BehaviorSettings = {
 	autoSave: false,
 	autoSaveInterval: 30000,
-	undoHistoryLimit: 50,
-	confirmDelete: true
+	undoHistoryLimit: 0,
+	confirmDelete: false
 };
 
 /**
@@ -207,7 +207,7 @@ export const DEFAULT_API_SETTINGS: ApiSettings = {
 	timeout: 30000,
 	retryEnabled: true,
 	retryAttempts: 3,
-	cacheEnabled: true
+	cacheEnabled: false
 };
 
 /**
