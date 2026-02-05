@@ -2582,445 +2582,536 @@ export const demoTriggerNodeWorkflow: Workflow = {
  * Demonstrates the ForEach loop node with loopback edge functionality
  */
 export const demoForEachLoopWorkflow: Workflow = {
-	id: 'demo-foreach-loop',
-	name: 'Demo: ForEach Loop',
-	description:
-		'Demonstrates the ForEach loop node with loopback edge functionality for iterating over arrays',
-	nodes: [
-		{
-			id: 'json_loader.1',
-			type: 'universalNode',
-			position: { x: -200, y: 0 },
-			deletable: true,
-			data: {
-				label: 'JSON Loader',
-				config: {
-					jsonData: '["Apple", "Banana", "Cherry", "Date", "Elderberry"]'
-				},
-				metadata: {
-					id: 'json_loader',
-					name: 'JSON Loader',
-					type: 'default',
-					supportedTypes: ['default'],
-					description: 'Load and parse JSON data',
-					category: 'data',
-					icon: 'mdi:code-json',
-					color: '#f59e0b',
-					version: '1.0.0',
-					tags: ['data', 'json', 'loader'],
-					inputs: [
-						{
-							id: 'trigger',
-							name: 'Trigger',
-							type: 'input',
-							dataType: 'trigger',
-							required: false,
-							description: 'Start loading'
-						}
-					],
-					outputs: [
-						{
-							id: 'data',
-							name: 'Data',
-							type: 'output',
-							dataType: 'array',
-							required: false,
-							description: 'The parsed JSON data'
-						}
-					],
-					config: {
-						jsonData: '[]'
-					},
-					configSchema: {
-						type: 'object',
-						properties: {
-							jsonData: {
-								type: 'string',
-								title: 'JSON Data',
-								description: 'JSON data to load',
-								format: 'multiline',
-								default: '[]'
-							}
-						}
-					}
-				},
-				nodeId: 'json_loader.1'
-			},
-			measured: { width: 288, height: 200 },
-			selected: false,
-			dragging: false
-		},
-		{
-			id: 'foreach.1',
-			type: 'universalNode',
-			position: { x: 200, y: -50 },
-			deletable: true,
-			data: {
-				label: 'ForEach Loop',
-				config: {
-					nodeType: 'default',
-					maxIterations: 1000,
-					continueOnError: false
-				},
-				metadata: {
-					id: 'foreach',
-					name: 'ForEach Loop',
-					type: 'default',
-					supportedTypes: ['default', 'simple'],
-					description:
-						'Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.',
-					category: 'logic',
-					icon: 'mdi:repeat',
-					color: '#8b5cf6',
-					version: '1.0.0',
-					tags: ['logic', 'loop', 'foreach', 'iterate', 'array', 'iteration', 'loopback'],
-					inputs: [
-						{
-							id: 'items',
-							name: 'Items',
-							type: 'input',
-							dataType: 'array',
-							required: true,
-							description: 'The array of items to iterate over'
-						},
-						{
-							id: 'loop_back',
-							name: 'Loop Back',
-							type: 'input',
-							dataType: 'mixed',
-							required: false,
-							description:
-								'Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle.'
-						},
-						{
-							id: 'trigger',
-							name: 'Trigger',
-							type: 'input',
-							dataType: 'trigger',
-							required: false,
-							description: 'Start the loop iteration'
-						}
-					],
-					outputs: [
-						{
-							id: 'item',
-							name: 'Item',
-							type: 'output',
-							dataType: 'mixed',
-							required: false,
-							description: 'The current item being processed in each iteration'
-						},
-						{
-							id: 'index',
-							name: 'Index',
-							type: 'output',
-							dataType: 'number',
-							required: false,
-							description: 'Zero-based index of the current item'
-						},
-						{
-							id: 'total',
-							name: 'Total',
-							type: 'output',
-							dataType: 'number',
-							required: false,
-							description: 'Total number of items in the array'
-						},
-						{
-							id: 'is_first',
-							name: 'Is First',
-							type: 'output',
-							dataType: 'boolean',
-							required: false,
-							description: 'True if this is the first item in the array'
-						},
-						{
-							id: 'is_last',
-							name: 'Is Last',
-							type: 'output',
-							dataType: 'boolean',
-							required: false,
-							description: 'True if this is the last item in the array'
-						},
-						{
-							id: 'completed',
-							name: 'Completed',
-							type: 'output',
-							dataType: 'trigger',
-							required: false,
-							description: 'Triggered when all items have been processed'
-						}
-					],
-					config: {
-						maxIterations: 1000,
-						continueOnError: false
-					},
-					configSchema: {
-						type: 'object',
-						properties: {
-							nodeType: {
-								type: 'string',
-								title: 'Node Type',
-								description: 'Choose the visual representation for this node',
-								default: 'default',
-								oneOf: [
-									{ const: 'default', title: 'Default (Standard node)' },
-									{ const: 'simple', title: 'Simple (Compact)' }
-								]
-							},
-							maxIterations: {
-								type: 'integer',
-								title: 'Max Iterations',
-								description:
-									'Maximum number of iterations (safety limit to prevent infinite loops)',
-								default: 1000,
-								minimum: 1,
-								maximum: 100000
-							},
-							continueOnError: {
-								type: 'boolean',
-								title: 'Continue on Error',
-								description: 'If true, continue iterating even if an item fails processing',
-								default: false
-							}
-						}
-					}
-				},
-				nodeId: 'foreach.1'
-			},
-			measured: { width: 288, height: 600 },
-			selected: false,
-			dragging: false
-		},
-		{
-			id: 'process_item.1',
-			type: 'universalNode',
-			position: { x: 600, y: 50 },
-			deletable: true,
-			data: {
-				label: 'Process Item',
-				config: {
-					operation: 'uppercase'
-				},
-				metadata: {
-					id: 'process_item',
-					name: 'Process Item',
-					type: 'default',
-					supportedTypes: ['default'],
-					description: 'Process each item in the loop - displays and passes through data',
-					category: 'processing',
-					icon: 'mdi:cog',
-					color: '#06b6d4',
-					version: '1.0.0',
-					tags: ['processing', 'transform', 'item'],
-					inputs: [
-						{
-							id: 'input',
-							name: 'Input',
-							type: 'input',
-							dataType: 'mixed',
-							required: false,
-							description: 'The item to process'
-						},
-						{
-							id: 'trigger',
-							name: 'Trigger',
-							type: 'input',
-							dataType: 'trigger',
-							required: false,
-							description: ''
-						}
-					],
-					outputs: [
-						{
-							id: 'output',
-							name: 'Output',
-							type: 'output',
-							dataType: 'mixed',
-							required: false,
-							description: 'The processed item - connect back to ForEach Loop for iteration'
-						},
-						{
-							id: 'completed',
-							name: 'Completed',
-							type: 'output',
-							dataType: 'trigger',
-							required: false,
-							description: 'Triggered when processing is complete'
-						}
-					],
-					config: {
-						operation: 'uppercase'
-					},
-					configSchema: {
-						type: 'object',
-						properties: {
-							operation: {
-								type: 'string',
-								title: 'Operation',
-								description: 'Operation to perform on the item',
-								default: 'uppercase',
-								enum: ['uppercase', 'lowercase', 'passthrough']
-							}
-						}
-					}
-				},
-				nodeId: 'process_item.1'
-			},
-			measured: { width: 288, height: 300 },
-			selected: false,
-			dragging: false
-		},
-		{
-			id: 'notes.1',
-			type: 'universalNode',
-			position: { x: 100, y: -350 },
-			deletable: true,
-			data: {
-				label: 'Notes',
-				config: {
-					content:
-						'# ForEach Loop Demo\n\nThis workflow demonstrates the **ForEach Loop** node:\n\n1. **JSON Loader** provides an array of items\n2. **ForEach Loop** iterates over each item\n3. **Process Item** processes the current item\n4. The loopback edge (dashed gray) connects back to trigger the next iteration\n\n> The loopback edge uses a special `loop_back` port that accepts any data type.',
-					noteType: 'info'
-				},
-				metadata: {
-					id: 'notes',
-					name: 'Notes',
-					type: 'note',
-					supportedTypes: ['note'],
-					description: 'Add documentation and comments to your workflow with Markdown support',
-					category: 'tools',
-					icon: 'mdi:note-text',
-					color: '#fbbf24',
-					version: '1.0.0',
-					tags: ['tools', 'notes', 'documentation', 'comments', 'markdown'],
-					inputs: [
-						{
-							id: 'trigger',
-							name: 'Trigger',
-							type: 'input',
-							dataType: 'trigger',
-							required: false,
-							description: ''
-						}
-					],
-					outputs: [
-						{
-							id: 'content',
-							name: 'Note Content',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'The markdown content of the note'
-						}
-					],
-					config: {
-						content: '',
-						noteType: 'info'
-					},
-					configSchema: {
-						type: 'object',
-						properties: {
-							content: {
-								type: 'string',
-								title: 'Note Content',
-								description: 'Documentation or comment text (supports Markdown)',
-								format: 'multiline',
-								default: ''
-							},
-							noteType: {
-								type: 'string',
-								title: 'Note Type',
-								description: 'Visual style and color of the note',
-								default: 'info',
-								enum: ['info', 'warning', 'success', 'error', 'note']
-							}
-						}
-					}
-				},
-				nodeId: 'notes.1'
-			},
-			measured: { width: 500, height: 300 },
-			selected: false,
-			dragging: false
-		}
-	] as WorkflowNode[],
-	edges: [
-		{
-			id: 'xy-edge__json_loader.1json_loader.1-output-data-foreach.1foreach.1-input-items',
-			source: 'json_loader.1',
-			target: 'foreach.1',
-			sourceHandle: 'json_loader.1-output-data',
-			targetHandle: 'foreach.1-input-items',
-			style: 'stroke: var(--fd-edge-data-color);',
-			class: 'flowdrop--edge--data',
-			markerEnd: {
-				type: 'arrowclosed',
-				width: 16,
-				height: 16,
-				color: '#9ca3af'
-			},
-			data: {
-				metadata: {
-					edgeType: 'data',
-					sourcePortDataType: 'array'
-				},
-				targetNodeType: 'universalNode',
-				targetCategory: 'logic'
-			}
-		},
-		{
-			id: 'xy-edge__foreach.1foreach.1-output-item-process_item.1process_item.1-input-input',
-			source: 'foreach.1',
-			target: 'process_item.1',
-			sourceHandle: 'foreach.1-output-item',
-			targetHandle: 'process_item.1-input-input',
-			style: 'stroke: var(--fd-edge-data-color);',
-			class: 'flowdrop--edge--data',
-			markerEnd: {
-				type: 'arrowclosed',
-				width: 16,
-				height: 16,
-				color: '#9ca3af'
-			},
-			data: {
-				metadata: {
-					edgeType: 'data',
-					sourcePortDataType: 'mixed'
-				},
-				targetNodeType: 'universalNode',
-				targetCategory: 'processing'
-			}
-		},
-		{
-			id: 'xy-edge__process_item.1process_item.1-output-output-foreach.1foreach.1-input-loop_back',
-			source: 'process_item.1',
-			target: 'foreach.1',
-			sourceHandle: 'process_item.1-output-output',
-			targetHandle: 'foreach.1-input-loop_back',
-			style: 'stroke: var(--fd-edge-loopback-color); stroke-dasharray: 5, 5;',
-			class: 'flowdrop--edge--loopback',
-			markerEnd: {
-				type: 'arrowclosed',
-				width: 16,
-				height: 16,
-				color: '#6b7280'
-			},
-			data: {
-				metadata: {
-					edgeType: 'loopback',
-					sourcePortDataType: 'mixed'
-				},
-				targetNodeType: 'universalNode',
-				targetCategory: 'logic'
-			}
-		}
-	] as WorkflowEdge[],
-	metadata: {
-		version: '1.0.0',
-		createdAt: '2026-01-19T10:00:00.000Z',
-		updatedAt: '2026-01-19T10:00:00.000Z'
-	}
+  "id": "demo-foreach-loop",
+  "name": "Demo: ForEach Loop",
+  "nodes": [
+    {
+      "id": "json_loader.1",
+      "type": "universalNode",
+      "position": {
+        "x": -400,
+        "y": -40
+      },
+      "deletable": true,
+      "data": {
+        "label": "JSON Loader",
+        "config": {
+          "jsonData": "[\"Apple\", \"Banana\", \"Cherry\", \"Date\", \"Elderberry\"]"
+        },
+        "metadata": {
+          "id": "json_loader",
+          "name": "JSON Loader",
+          "type": "default",
+          "supportedTypes": [
+            "default"
+          ],
+          "description": "Load and parse JSON data",
+          "category": "data",
+          "icon": "mdi:code-json",
+          "color": "#f59e0b",
+          "version": "1.0.0",
+          "tags": [
+            "data",
+            "json",
+            "loader"
+          ],
+          "inputs": [
+            {
+              "id": "trigger",
+              "name": "Trigger",
+              "type": "input",
+              "dataType": "trigger",
+              "required": false,
+              "description": "Start loading"
+            }
+          ],
+          "outputs": [
+            {
+              "id": "data",
+              "name": "Data",
+              "type": "output",
+              "dataType": "array",
+              "required": false,
+              "description": "The parsed JSON data"
+            }
+          ],
+          "config": {
+            "jsonData": "[]"
+          },
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "jsonData": {
+                "type": "string",
+                "title": "JSON Data",
+                "description": "JSON data to load",
+                "format": "multiline",
+                "default": "[]"
+              }
+            }
+          }
+        },
+        "nodeId": "json_loader.1"
+      },
+      "measured": {
+        "width": 290,
+        "height": 265
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "foreach.1",
+      "type": "universalNode",
+      "position": {
+        "x": 200,
+        "y": -40
+      },
+      "deletable": true,
+      "data": {
+        "label": "ForEach Loop",
+        "config": {
+          "nodeType": "default",
+          "maxIterations": 1000,
+          "continueOnError": false
+        },
+        "metadata": {
+          "id": "foreach",
+          "name": "ForEach Loop",
+          "type": "default",
+          "supportedTypes": [
+            "default",
+            "simple"
+          ],
+          "description": "Iterates over an array, processing each item sequentially. Connect the output back to the loop_back input to trigger the next iteration.",
+          "category": "logic",
+          "icon": "mdi:repeat",
+          "color": "#8b5cf6",
+          "version": "1.0.0",
+          "tags": [
+            "logic",
+            "loop",
+            "foreach",
+            "iterate",
+            "array",
+            "iteration",
+            "loopback"
+          ],
+          "inputs": [
+            {
+              "id": "items",
+              "name": "Items",
+              "type": "input",
+              "dataType": "array",
+              "required": true,
+              "description": "The array of items to iterate over"
+            },
+            {
+              "id": "loop_back",
+              "name": "Loop Back",
+              "type": "input",
+              "dataType": "mixed",
+              "required": false,
+              "description": "Connect any output here to trigger the next iteration. Accepts any data type. This creates a valid loopback cycle."
+            },
+            {
+              "id": "trigger",
+              "name": "Trigger",
+              "type": "input",
+              "dataType": "trigger",
+              "required": false,
+              "description": "Start the loop iteration"
+            }
+          ],
+          "outputs": [
+            {
+              "id": "item",
+              "name": "Item",
+              "type": "output",
+              "dataType": "mixed",
+              "required": false,
+              "description": "The current item being processed in each iteration"
+            },
+            {
+              "id": "index",
+              "name": "Index",
+              "type": "output",
+              "dataType": "number",
+              "required": false,
+              "description": "Zero-based index of the current item"
+            },
+            {
+              "id": "total",
+              "name": "Total",
+              "type": "output",
+              "dataType": "number",
+              "required": false,
+              "description": "Total number of items in the array"
+            },
+            {
+              "id": "is_first",
+              "name": "Is First",
+              "type": "output",
+              "dataType": "boolean",
+              "required": false,
+              "description": "True if this is the first item in the array"
+            },
+            {
+              "id": "is_last",
+              "name": "Is Last",
+              "type": "output",
+              "dataType": "boolean",
+              "required": false,
+              "description": "True if this is the last item in the array"
+            },
+            {
+              "id": "completed",
+              "name": "Completed",
+              "type": "output",
+              "dataType": "trigger",
+              "required": false,
+              "description": "Triggered when all items have been processed"
+            }
+          ],
+          "config": {
+            "maxIterations": 1000,
+            "continueOnError": false
+          },
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "nodeType": {
+                "type": "string",
+                "title": "Node Type",
+                "description": "Choose the visual representation for this node",
+                "default": "default",
+                "oneOf": [
+                  {
+                    "const": "default",
+                    "title": "Default (Standard node)"
+                  },
+                  {
+                    "const": "simple",
+                    "title": "Simple (Compact)"
+                  }
+                ]
+              },
+              "maxIterations": {
+                "type": "integer",
+                "title": "Max Iterations",
+                "description": "Maximum number of iterations (safety limit to prevent infinite loops)",
+                "default": 1000,
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "continueOnError": {
+                "type": "boolean",
+                "title": "Continue on Error",
+                "description": "If true, continue iterating even if an item fails processing",
+                "default": false
+              }
+            }
+          }
+        },
+        "nodeId": "foreach.1",
+        "extensions": {
+          "ui": {
+            "hideUnconnectedHandles": true
+          }
+        }
+      },
+      "measured": {
+        "width": 290,
+        "height": 381
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "process_item.1",
+      "type": "universalNode",
+      "position": {
+        "x": 580,
+        "y": 300
+      },
+      "deletable": true,
+      "data": {
+        "label": "Process Item",
+        "config": {
+          "operation": "uppercase"
+        },
+        "metadata": {
+          "id": "process_item",
+          "name": "Process Item",
+          "type": "default",
+          "supportedTypes": [
+            "default"
+          ],
+          "description": "Process each item in the loop - displays and passes through data",
+          "category": "processing",
+          "icon": "mdi:cog",
+          "color": "#06b6d4",
+          "version": "1.0.0",
+          "tags": [
+            "processing",
+            "transform",
+            "item"
+          ],
+          "inputs": [
+            {
+              "id": "input",
+              "name": "Input",
+              "type": "input",
+              "dataType": "mixed",
+              "required": false,
+              "description": "The item to process"
+            },
+            {
+              "id": "trigger",
+              "name": "Trigger",
+              "type": "input",
+              "dataType": "trigger",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "outputs": [
+            {
+              "id": "output",
+              "name": "Output",
+              "type": "output",
+              "dataType": "mixed",
+              "required": false,
+              "description": "The processed item - connect back to ForEach Loop for iteration"
+            },
+            {
+              "id": "completed",
+              "name": "Completed",
+              "type": "output",
+              "dataType": "trigger",
+              "required": false,
+              "description": "Triggered when processing is complete"
+            }
+          ],
+          "config": {
+            "operation": "uppercase"
+          },
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "title": "Operation",
+                "description": "Operation to perform on the item",
+                "default": "uppercase",
+                "enum": [
+                  "uppercase",
+                  "lowercase",
+                  "passthrough"
+                ]
+              }
+            }
+          }
+        },
+        "nodeId": "process_item.1",
+        "extensions": {
+          "ui": {
+            "hideUnconnectedHandles": true
+          }
+        }
+      },
+      "measured": {
+        "width": 290,
+        "height": 285
+      },
+      "selected": true,
+      "dragging": true
+    },
+    {
+      "id": "notes.1",
+      "type": "universalNode",
+      "position": {
+        "x": -400,
+        "y": 240
+      },
+      "deletable": true,
+      "data": {
+        "label": "Notes",
+        "config": {
+          "content": "# ForEach Loop Demo\n\nThis workflow demonstrates the **ForEach Loop** node:\n\n1. **JSON Loader** provides an array of items\n2. **ForEach Loop** iterates over each item\n3. **Process Item** processes the current item\n4. The loopback edge (dashed gray) connects back to trigger the next iteration\n\n> The loopback edge uses a special `loop_back` port that accepts any data type.",
+          "noteType": "info"
+        },
+        "metadata": {
+          "id": "notes",
+          "name": "Notes",
+          "type": "note",
+          "supportedTypes": [
+            "note"
+          ],
+          "description": "Add documentation and comments to your workflow with Markdown support",
+          "category": "tools",
+          "icon": "mdi:note-text",
+          "color": "#fbbf24",
+          "version": "1.0.0",
+          "tags": [
+            "tools",
+            "notes",
+            "documentation",
+            "comments",
+            "markdown"
+          ],
+          "inputs": [
+            {
+              "id": "trigger",
+              "name": "Trigger",
+              "type": "input",
+              "dataType": "trigger",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "outputs": [
+            {
+              "id": "content",
+              "name": "Note Content",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The markdown content of the note"
+            },
+            {
+              "id": "noteType",
+              "name": "Note Type",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The visual type of the note (info, warning, success, error, note)"
+            },
+            {
+              "id": "message",
+              "name": "Message",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "Status message about the note"
+            }
+          ],
+          "config": {
+            "content": "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!",
+            "noteType": "info"
+          },
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "title": "Note Content",
+                "description": "Documentation or comment text (supports Markdown)",
+                "format": "markdown",
+                "default": "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!"
+              },
+              "noteType": {
+                "type": "string",
+                "title": "Note Type",
+                "description": "Visual style and color of the note",
+                "default": "info",
+                "enum": [
+                  "info",
+                  "warning",
+                  "success",
+                  "error",
+                  "note"
+                ]
+              }
+            }
+          }
+        },
+        "nodeId": "notes.1"
+      },
+      "measured": {
+        "width": 500,
+        "height": 375
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "id": "xy-edge__json_loader.1json_loader.1-output-data-foreach.1foreach.1-input-items",
+      "source": "json_loader.1",
+      "target": "foreach.1",
+      "sourceHandle": "json_loader.1-output-data",
+      "targetHandle": "foreach.1-input-items",
+      "style": "stroke: var(--fd-edge-data);",
+      "class": "flowdrop--edge--data",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "width": 16,
+        "height": 16,
+        "color": "#a3a3ad"
+      },
+      "data": {
+        "metadata": {
+          "edgeType": "data",
+          "sourcePortDataType": "array"
+        },
+        "targetNodeType": "universalNode",
+        "targetCategory": "logic"
+      }
+    },
+    {
+      "id": "xy-edge__foreach.1foreach.1-output-item-process_item.1process_item.1-input-input",
+      "source": "foreach.1",
+      "target": "process_item.1",
+      "sourceHandle": "foreach.1-output-item",
+      "targetHandle": "process_item.1-input-input",
+      "style": "stroke: var(--fd-edge-data);",
+      "class": "flowdrop--edge--data",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "width": 16,
+        "height": 16,
+        "color": "#a3a3ad"
+      },
+      "data": {
+        "metadata": {
+          "edgeType": "data",
+          "sourcePortDataType": "mixed"
+        },
+        "targetNodeType": "universalNode",
+        "targetCategory": "processing"
+      }
+    },
+    {
+      "id": "xy-edge__process_item.1process_item.1-output-output-foreach.1foreach.1-input-loop_back",
+      "source": "process_item.1",
+      "target": "foreach.1",
+      "sourceHandle": "process_item.1-output-output",
+      "targetHandle": "foreach.1-input-loop_back",
+      "style": "stroke: var(--fd-edge-loopback); stroke-dasharray: var(--fd-edge-loopback-dasharray); stroke-width: var(--fd-edge-loopback-width); opacity: var(--fd-edge-loopback-opacity);",
+      "class": "flowdrop--edge--loopback",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "width": 14,
+        "height": 14,
+        "color": "#71717b"
+      },
+      "data": {
+        "metadata": {
+          "edgeType": "loopback",
+          "sourcePortDataType": "mixed"
+        },
+        "targetNodeType": "universalNode",
+        "targetCategory": "logic"
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "createdAt": "2026-02-05T21:24:59.988Z",
+    "updatedAt": "2026-02-05T21:24:59.988Z"
+  }
 };
 
 /**
@@ -3028,509 +3119,586 @@ export const demoForEachLoopWorkflow: Workflow = {
  * Demonstrates the template autocomplete feature with nested object and array drilling
  */
 export const demoTemplateAutocompleteWorkflow: Workflow = {
-	id: 'demo_template_autocomplete',
-	name: 'Demo: Template Variable Autocomplete',
-	description:
-		'Demonstrates template autocomplete with nested object properties and array access from upstream node output schemas',
-	nodes: [
-		{
-			id: 'http_request.1',
-			type: 'universalNode',
-			position: { x: 50, y: 100 },
-			data: {
-				label: 'HTTP Request',
-				config: {
-					method: 'GET',
-					url: 'https://api.example.com/users/123',
-					headers: {},
-					timeout: 30,
-					followRedirects: true
-				},
-				metadata: {
-					id: 'http_request',
-					name: 'HTTP Request',
-					type: 'default',
-					supportedTypes: ['default'],
-					description: 'Make HTTP requests to external APIs and services',
-					category: 'tools',
-					icon: 'mdi:web',
-					color: '#3b82f6',
-					version: '1.0.0',
-					tags: ['tool', 'http', 'api', 'request'],
-					inputs: [
-						{
-							id: 'url',
-							name: 'URL',
-							type: 'input',
-							dataType: 'string',
-							required: false,
-							description: 'The URL to request (overrides config)'
-						},
-						{
-							id: 'method',
-							name: 'HTTP Method',
-							type: 'input',
-							dataType: 'string',
-							required: false,
-							description: 'The HTTP method to use (overrides config)'
-						},
-						{
-							id: 'headers',
-							name: 'Headers',
-							type: 'input',
-							dataType: 'json',
-							required: false,
-							description: 'Additional headers to send'
-						},
-						{
-							id: 'body',
-							name: 'Request Body',
-							type: 'input',
-							dataType: 'string',
-							required: false,
-							description: 'Request body (overrides config)'
-						},
-						{
-							id: 'trigger',
-							name: 'Trigger',
-							type: 'input',
-							dataType: 'trigger',
-							required: false,
-							description: ''
-						}
-					],
-					outputs: [
-						{
-							id: 'status_code',
-							name: 'status_code',
-							type: 'output',
-							dataType: 'number',
-							required: false,
-							description: 'HTTP response status code'
-						},
-						{
-							id: 'headers',
-							name: 'headers',
-							type: 'output',
-							dataType: 'array',
-							required: false,
-							description: 'HTTP response headers'
-						},
-						{
-							id: 'body',
-							name: 'body',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'HTTP response body'
-						},
-						{
-							id: 'json',
-							name: 'json',
-							type: 'output',
-							dataType: 'array',
-							required: false,
-							description: 'Parsed JSON response (if applicable)',
-							// Output schema for autocomplete demonstration
-							schema: {
-								type: 'object',
-								properties: {
-									user: {
-										type: 'object',
-										title: 'User',
-										description: 'User information from API',
-										properties: {
-											id: {
-												type: 'integer',
-												description: 'User ID'
-											},
-											name: {
-												type: 'string',
-												description: 'User full name'
-											},
-											email: {
-												type: 'string',
-												description: 'User email address'
-											},
-											address: {
-												type: 'object',
-												title: 'Address',
-												description: 'User address',
-												properties: {
-													street: {
-														type: 'string',
-														description: 'Street address'
-													},
-													city: {
-														type: 'string',
-														description: 'City name'
-													},
-													country: {
-														type: 'string',
-														description: 'Country name'
-													}
-												}
-											}
-										}
-									},
-									orders: {
-										type: 'array',
-										title: 'Orders',
-										description: 'List of user orders',
-										items: {
-											type: 'object',
-											properties: {
-												order_id: {
-													type: 'string',
-													description: 'Order identifier'
-												},
-												product_name: {
-													type: 'string',
-													description: 'Name of the product'
-												},
-												quantity: {
-													type: 'integer',
-													description: 'Quantity ordered'
-												},
-												price: {
-													type: 'number',
-													description: 'Total price'
-												},
-												status: {
-													type: 'string',
-													description: 'Order status'
-												}
-											}
-										}
-									}
-								}
-							}
-						},
-						{
-							id: 'url',
-							name: 'url',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'The URL that was requested'
-						},
-						{
-							id: 'method',
-							name: 'method',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'The HTTP method used'
-						},
-						{
-							id: 'request_time',
-							name: 'request_time',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'Timestamp when request was made'
-						}
-					],
-					config: {
-						method: 'GET',
-						url: '',
-						headers: [],
-						timeout: 30,
-						followRedirects: true
-					},
-					configSchema: {
-						type: 'object',
-						properties: {
-							url: {
-								type: 'string',
-								title: 'URL',
-								description: 'The URL to request',
-								default: ''
-							},
-							method: {
-								type: 'string',
-								title: 'HTTP Method',
-								description: 'The HTTP method to use',
-								default: 'GET',
-								enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
-							},
-							headers: {
-								type: 'object',
-								title: 'Headers',
-								description: 'HTTP headers to send',
-								additionalProperties: { type: 'string' },
-								default: {}
-							},
-							timeout: {
-								type: 'integer',
-								title: 'Timeout (seconds)',
-								description: 'Request timeout in seconds',
-								default: 30,
-								minimum: 1,
-								maximum: 300
-							},
-							followRedirects: {
-								type: 'boolean',
-								title: 'Follow Redirects',
-								description: 'Automatically follow HTTP redirects',
-								default: true
-							}
-						}
-					}
-				},
-				nodeId: 'http_request.1'
-			},
-			measured: { width: 288, height: 400 },
-			selected: false,
-			dragging: false
-		},
-		{
-			id: 'prompt_template.1',
-			type: 'universalNode',
-			position: { x: 450, y: 100 },
-			data: {
-				label: 'Prompt Template',
-				config: {
-					template:
-						'# User Report\n\nHello {{ user.name }},\n\nYour email: {{ user.email }}\n\n## Address\nStreet: {{ user.address.street }}\nCity: {{ user.address.city }}\nCountry: {{ user.address.country }}\n\n## Recent Orders\n{% for order in orders %}\n- Order #{{ order.order_id }}: {{ order.product_name }} (x{{ order.quantity }}) - ${{ order.price }}\n  Status: {{ order.status }}\n{% endfor %}\n\nFirst order: {{ orders[0].product_name }}',
-					strictMode: false,
-					preserveWhitespace: true
-				},
-				metadata: {
-					id: 'prompt_template',
-					name: 'Prompt Template',
-					type: 'default',
-					supportedTypes: ['default'],
-					description:
-						'Render dynamic templates using Twig-style {{ variable }} placeholders with data from inputs',
-					category: 'processing',
-					icon: 'mdi:text-box-edit-outline',
-					color: '#a855f7',
-					version: '1.0.0',
-					tags: ['template', 'prompt', 'text', 'variable', 'twig', 'render', 'interpolation'],
-					inputs: [
-						{
-							id: 'data',
-							name: 'Data',
-							type: 'input',
-							dataType: 'json',
-							required: false,
-							description:
-								"Object containing variables to substitute in the template (e.g., { name: 'John', order_id: 123 })"
-						},
-						{
-							id: 'trigger',
-							name: 'Trigger',
-							type: 'input',
-							dataType: 'trigger',
-							required: false,
-							description: ''
-						}
-					],
-					outputs: [
-						{
-							id: 'output',
-							name: 'output',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'The rendered template with all variables substituted'
-						},
-						{
-							id: 'template',
-							name: 'template',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'The original template string used'
-						},
-						{
-							id: 'variables',
-							name: 'variables',
-							type: 'output',
-							dataType: 'json',
-							required: false,
-							description: 'Object containing the variables that were substituted'
-						},
-						{
-							id: 'missing_variables',
-							name: 'missing_variables',
-							type: 'output',
-							dataType: 'array',
-							required: false,
-							description: 'List of variable names found in template but missing from data'
-						},
-						{
-							id: 'success',
-							name: 'success',
-							type: 'output',
-							dataType: 'boolean',
-							required: false,
-							description: 'Whether template rendering completed without errors'
-						}
-					],
-					config: {
-						template:
-							'Hello {{ name }},\n\nYour order #{{ order_id }} has been {{ status }}.\n\nThank you for choosing us!',
-						strictMode: false,
-						preserveWhitespace: true
-					},
-					configSchema: {
-						type: 'object',
-						properties: {
-							template: {
-								type: 'string',
-								title: 'Template',
-								description:
-									'Template text with {{ variable }} placeholders that will be replaced with values from the data input',
-								format: 'template',
-								// Configure which input port(s) provide variables for autocomplete
-								variables: {
-									ports: ['data'],
-									showHints: true
-								},
-								default:
-									'Hello {{ name }},\n\nYour order #{{ order_id }} has been {{ status }}.\n\nThank you for choosing us!',
-								height: '300px',
-								placeholderExample:
-									'Dear {{ customer_name }}, your {{ product_name }} is ready for pickup.'
-							},
-							strictMode: {
-								type: 'boolean',
-								title: 'Strict Mode',
-								description:
-									'When enabled, throw an error if a variable in the template is missing from the data. When disabled, missing variables are left as-is.',
-								default: false
-							},
-							preserveWhitespace: {
-								type: 'boolean',
-								title: 'Preserve Whitespace',
-								description: 'Preserve whitespace and newlines in the rendered output',
-								default: true
-							},
-							fallbackValue: {
-								type: 'string',
-								title: 'Fallback Value',
-								description:
-									'Value to use for missing variables when strict mode is off (leave empty to keep the placeholder)',
-								default: ''
-							}
-						}
-					}
-				},
-				nodeId: 'prompt_template.1'
-			},
-			measured: { width: 288, height: 400 },
-			selected: false,
-			dragging: false
-		},
-		{
-			id: 'notes.autocomplete',
-			type: 'universalNode',
-			position: { x: 50, y: -200 },
-			deletable: true,
-			data: {
-				label: 'Notes',
-				config: {
-					content:
-						'# Template Variable Autocomplete Demo\n\nThis workflow demonstrates the **template variable autocomplete** feature:\n\n## How to Test\n\n1. **Click on the Prompt Template node** to open its config panel\n2. **Find the Template field** (CodeMirror editor)\n3. **Type `{{`** to trigger autocomplete\n4. **Try these patterns:**\n   - `{{ user.` → shows `name`, `email`, `address`\n   - `{{ user.address.` → shows `street`, `city`, `country`\n   - `{{ orders[0].` → shows order properties like `product_name`, `price`\n\n## Available Variables\n\nFrom HTTP Request `json` output:\n- `user` (object): id, name, email, address\n- `user.address` (object): street, city, country\n- `orders` (array): order_id, product_name, quantity, price, status',
-					noteType: 'info'
-				},
-				metadata: {
-					id: 'notes',
-					name: 'Notes',
-					type: 'note',
-					supportedTypes: ['note'],
-					description:
-						'Add documentation and comments to your workflow with Markdown support',
-					category: 'tools',
-					icon: 'mdi:note-text',
-					color: '#fbbf24',
-					version: '1.0.0',
-					tags: ['tools', 'notes', 'documentation', 'comments', 'markdown'],
-					inputs: [
-						{
-							id: 'trigger',
-							name: 'Trigger',
-							type: 'input',
-							dataType: 'trigger',
-							required: false,
-							description: ''
-						}
-					],
-					outputs: [
-						{
-							id: 'content',
-							name: 'Note Content',
-							type: 'output',
-							dataType: 'string',
-							required: false,
-							description: 'The markdown content of the note'
-						}
-					],
-					config: {
-						content: '',
-						noteType: 'info'
-					},
-					configSchema: {
-						type: 'object',
-						properties: {
-							content: {
-								type: 'string',
-								title: 'Note Content',
-								description: 'Documentation or comment text (supports Markdown)',
-								format: 'multiline',
-								default: ''
-							},
-							noteType: {
-								type: 'string',
-								title: 'Note Type',
-								description: 'Visual style and color of the note',
-								default: 'info',
-								enum: ['info', 'warning', 'success', 'error', 'note']
-							}
-						}
-					}
-				},
-				nodeId: 'notes.autocomplete'
-			},
-			measured: { width: 500, height: 400 },
-			selected: false,
-			dragging: false
-		}
-	] as WorkflowNode[],
-	edges: [
-		{
-			id: 'xy-edge__http_request.1-json-prompt_template.1-data',
-			source: 'http_request.1',
-			target: 'prompt_template.1',
-			sourceHandle: 'http_request.1-output-json',
-			targetHandle: 'prompt_template.1-input-data',
-			style: 'stroke: var(--fd-edge-data-color);',
-			class: 'flowdrop--edge--data',
-			markerEnd: {
-				type: 'arrowclosed',
-				width: 16,
-				height: 16,
-				color: '#9ca3af'
-			},
-			data: {
-				metadata: {
-					edgeType: 'data',
-					sourcePortDataType: 'array'
-				},
-				targetNodeType: 'universalNode',
-				targetCategory: 'processing'
-			}
-		}
-	] as WorkflowEdge[],
-	metadata: {
-		version: '1.0.0',
-		author: 'FlowDrop Demo',
-		tags: ['demo', 'template', 'autocomplete', 'variables'],
-		createdAt: '2026-02-02T10:00:00.000Z',
-		updatedAt: '2026-02-02T10:00:00.000Z'
-	}
+  "id": "demo_template_autocomplete",
+  "name": "Demo: Template Variable Autocomplete",
+  "nodes": [
+    {
+      "id": "notes.autocomplete",
+      "type": "universalNode",
+      "position": {
+        "x": -600,
+        "y": -280
+      },
+      "deletable": true,
+      "data": {
+        "label": "Notes",
+        "config": {
+          "content": "# Template Variable Autocomplete Demo\n\nThis workflow demonstrates the **template variable autocomplete** feature:\n\n## How to Test\n\n1. **Click on the Prompt Template node** to open its config panel\n2. **Find the Template field** (CodeMirror editor)\n3. **Type `{{`** to trigger autocomplete\n4. **Try these patterns:**\n   - `{{ user.` → shows `name`, `email`, `address`\n   - `{{ user.address.` → shows `street`, `city`, `country`\n   - `{{ orders[0].` → shows order properties like `product_name`, `price`\n\n## Available Variables\n\nFrom HTTP Request `json` output:\n- `user` (object): id, name, email, address\n- `user.address` (object): street, city, country\n- `orders` (array): order_id, product_name, quantity, price, status",
+          "noteType": "info"
+        },
+        "metadata": {
+          "id": "notes",
+          "name": "Notes",
+          "type": "note",
+          "supportedTypes": [
+            "note"
+          ],
+          "description": "Add documentation and comments to your workflow with Markdown support",
+          "category": "tools",
+          "icon": "mdi:note-text",
+          "color": "#fbbf24",
+          "version": "1.0.0",
+          "tags": [
+            "tools",
+            "notes",
+            "documentation",
+            "comments",
+            "markdown"
+          ],
+          "inputs": [
+            {
+              "id": "trigger",
+              "name": "Trigger",
+              "type": "input",
+              "dataType": "trigger",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "outputs": [
+            {
+              "id": "content",
+              "name": "Note Content",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The markdown content of the note"
+            },
+            {
+              "id": "noteType",
+              "name": "Note Type",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The visual type of the note (info, warning, success, error, note)"
+            },
+            {
+              "id": "message",
+              "name": "Message",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "Status message about the note"
+            }
+          ],
+          "config": {
+            "content": "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!",
+            "noteType": "info"
+          },
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "title": "Note Content",
+                "description": "Documentation or comment text (supports Markdown)",
+                "format": "markdown",
+                "default": "# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!"
+              },
+              "noteType": {
+                "type": "string",
+                "title": "Note Type",
+                "description": "Visual style and color of the note",
+                "default": "info",
+                "enum": [
+                  "info",
+                  "warning",
+                  "success",
+                  "error",
+                  "note"
+                ]
+              }
+            }
+          }
+        },
+        "nodeId": "notes.autocomplete"
+      },
+      "measured": {
+        "width": 500,
+        "height": 685
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "http_request.1",
+      "type": "universalNode",
+      "position": {
+        "x": -40,
+        "y": -280
+      },
+      "deletable": true,
+      "data": {
+        "label": "HTTP Request",
+        "config": {
+          "url": "",
+          "method": "GET",
+          "headers": [],
+          "body": "",
+          "timeout": 30,
+          "follow_redirects": true
+        },
+        "metadata": {
+          "id": "http_request",
+          "name": "HTTP Request",
+          "type": "default",
+          "supportedTypes": [
+            "default"
+          ],
+          "description": "Make HTTP requests to external APIs and services",
+          "category": "tools",
+          "icon": "mdi:web",
+          "color": "#3b82f6",
+          "version": "1.0.0",
+          "tags": [
+            "tool",
+            "http",
+            "api",
+            "request"
+          ],
+          "inputs": [
+            {
+              "id": "url",
+              "name": "URL",
+              "type": "input",
+              "dataType": "string",
+              "required": false,
+              "description": "The URL to request (overrides config)"
+            },
+            {
+              "id": "method",
+              "name": "HTTP Method",
+              "type": "input",
+              "dataType": "string",
+              "required": false,
+              "description": "The HTTP method to use (overrides config)"
+            },
+            {
+              "id": "headers",
+              "name": "Headers",
+              "type": "input",
+              "dataType": "json",
+              "required": false,
+              "description": "Additional headers to send"
+            },
+            {
+              "id": "body",
+              "name": "Request Body",
+              "type": "input",
+              "dataType": "string",
+              "required": false,
+              "description": "Request body (overrides config)"
+            },
+            {
+              "id": "trigger",
+              "name": "Trigger",
+              "type": "input",
+              "dataType": "trigger",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "outputs": [
+            {
+              "id": "status_code",
+              "name": "status_code",
+              "type": "output",
+              "dataType": "number",
+              "required": false,
+              "description": "HTTP response status code"
+            },
+            {
+              "id": "headers",
+              "name": "headers",
+              "type": "output",
+              "dataType": "array",
+              "required": false,
+              "description": "HTTP response headers"
+            },
+            {
+              "id": "body",
+              "name": "body",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "HTTP response body"
+            },
+            {
+              "id": "json",
+              "name": "json",
+              "type": "output",
+              "dataType": "array",
+              "required": false,
+              "description": "Parsed JSON response (if applicable)",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "type": "object",
+                    "title": "User",
+                    "description": "User information from API",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "User ID"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "User full name"
+                      },
+                      "email": {
+                        "type": "string",
+                        "description": "User email address"
+                      },
+                      "address": {
+                        "type": "object",
+                        "title": "Address",
+                        "description": "User address",
+                        "properties": {
+                          "street": {
+                            "type": "string",
+                            "description": "Street address"
+                          },
+                          "city": {
+                            "type": "string",
+                            "description": "City name"
+                          },
+                          "country": {
+                            "type": "string",
+                            "description": "Country name"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "orders": {
+                    "type": "array",
+                    "title": "Orders",
+                    "description": "List of user orders",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "order_id": {
+                          "type": "string",
+                          "description": "Order identifier"
+                        },
+                        "product_name": {
+                          "type": "string",
+                          "description": "Name of the product"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "description": "Quantity ordered"
+                        },
+                        "price": {
+                          "type": "number",
+                          "description": "Total price"
+                        },
+                        "status": {
+                          "type": "string",
+                          "description": "Order status"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "url",
+              "name": "url",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The URL that was requested"
+            },
+            {
+              "id": "method",
+              "name": "method",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The HTTP method used"
+            },
+            {
+              "id": "request_time",
+              "name": "request_time",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "Timestamp when request was made"
+            }
+          ],
+          "config": {
+            "method": "GET",
+            "url": "",
+            "headers": [],
+            "timeout": 30,
+            "followRedirects": true
+          },
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "title": "URL",
+                "description": "The URL to request",
+                "default": ""
+              },
+              "method": {
+                "type": "string",
+                "title": "HTTP Method",
+                "description": "The HTTP method to use",
+                "default": "GET",
+                "enum": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "PATCH",
+                  "HEAD",
+                  "OPTIONS"
+                ]
+              },
+              "headers": {
+                "type": "object",
+                "title": "Headers",
+                "description": "HTTP headers to send",
+                "default": []
+              },
+              "body": {
+                "type": "string",
+                "title": "Request Body",
+                "description": "Request body for POST/PUT requests",
+                "default": ""
+              },
+              "timeout": {
+                "type": "integer",
+                "title": "Timeout",
+                "description": "Request timeout in seconds",
+                "default": 30,
+                "minimum": 1,
+                "maximum": 300
+              },
+              "follow_redirects": {
+                "type": "boolean",
+                "title": "Follow Redirects",
+                "description": "Whether to follow HTTP redirects",
+                "default": true
+              }
+            }
+          }
+        },
+        "nodeId": "http_request.1",
+        "extensions": {
+          "ui": {
+            "hideUnconnectedHandles": true
+          }
+        }
+      },
+      "measured": {
+        "width": 290,
+        "height": 200
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "prompt_template.1",
+      "type": "universalNode",
+      "position": {
+        "x": 380,
+        "y": -280
+      },
+      "deletable": true,
+      "data": {
+        "label": "Prompt Template",
+        "config": {
+          "template": "# User Report\n\nHello {{ user.name }},\n\nYour email: {{ user.email }}\n\n## Address\nStreet: {{ user.address.street }}\nCity: {{ user.address.city }}\nCountry: {{ user.address.country }}\n\n## Recent Orders\n{% for order in orders %}\n- Order #{{ order.order_id }}: {{ order.product_name }} (x{{ order.quantity }}) - ${{ order.price }}\n  Status: {{ order.status }}\n{% endfor %}\n\nFirst order: {{ orders[0].product_name }}",
+          "strictMode": false,
+          "preserveWhitespace": true,
+          "fallbackValue": ""
+        },
+        "metadata": {
+          "id": "prompt_template",
+          "name": "Prompt Template",
+          "type": "default",
+          "supportedTypes": [
+            "default"
+          ],
+          "description": "Render dynamic templates using Twig-style {{ variable }} placeholders with data from inputs",
+          "category": "processing",
+          "icon": "mdi:text-box-edit-outline",
+          "color": "#a855f7",
+          "version": "1.0.0",
+          "tags": [
+            "template",
+            "prompt",
+            "text",
+            "variable",
+            "twig",
+            "render",
+            "interpolation"
+          ],
+          "inputs": [
+            {
+              "id": "data",
+              "name": "Data",
+              "type": "input",
+              "dataType": "json",
+              "required": false,
+              "description": "Object containing variables to substitute in the template (e.g., { name: 'John', order_id: 123 })"
+            },
+            {
+              "id": "trigger",
+              "name": "Trigger",
+              "type": "input",
+              "dataType": "trigger",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "outputs": [
+            {
+              "id": "output",
+              "name": "output",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The rendered template with all variables substituted"
+            },
+            {
+              "id": "template",
+              "name": "template",
+              "type": "output",
+              "dataType": "string",
+              "required": false,
+              "description": "The original template string used"
+            },
+            {
+              "id": "variables",
+              "name": "variables",
+              "type": "output",
+              "dataType": "json",
+              "required": false,
+              "description": "Object containing the variables that were substituted"
+            },
+            {
+              "id": "missing_variables",
+              "name": "missing_variables",
+              "type": "output",
+              "dataType": "array",
+              "required": false,
+              "description": "List of variable names found in template but missing from data"
+            },
+            {
+              "id": "success",
+              "name": "success",
+              "type": "output",
+              "dataType": "boolean",
+              "required": false,
+              "description": "Whether template rendering completed without errors"
+            }
+          ],
+          "config": {
+            "template": "Hello {{ name }},\n\nYour order #{{ order_id }} has been {{ status }}.\n\nThank you for choosing us!",
+            "strictMode": false,
+            "preserveWhitespace": true
+          },
+          "configSchema": {
+            "type": "object",
+            "properties": {
+              "template": {
+                "type": "string",
+                "title": "Template",
+                "description": "Template text with {{ variable }} placeholders that will be replaced with values from the data input",
+                "format": "template",
+                "variables": {
+                  "ports": [
+                    "data"
+                  ],
+                  "showHints": true
+                },
+                "default": "Hello {{ name }},\n\nYour order #{{ order_id }} has been {{ status }}.\n\nThank you for choosing us!",
+                "height": "300px",
+                "placeholderExample": "Dear {{ customer_name }}, your {{ product_name }} is ready for pickup."
+              },
+              "strictMode": {
+                "type": "boolean",
+                "title": "Strict Mode",
+                "description": "When enabled, throw an error if a variable in the template is missing from the data. When disabled, missing variables are left as-is.",
+                "default": false
+              },
+              "preserveWhitespace": {
+                "type": "boolean",
+                "title": "Preserve Whitespace",
+                "description": "Preserve whitespace and newlines in the rendered output",
+                "default": true
+              },
+              "fallbackValue": {
+                "type": "string",
+                "title": "Fallback Value",
+                "description": "Value to use for missing variables when strict mode is off (leave empty to keep the placeholder)",
+                "default": ""
+              }
+            }
+          }
+        },
+        "nodeId": "prompt_template.1",
+        "extensions": {
+          "ui": {
+            "hideUnconnectedHandles": true
+          }
+        }
+      },
+      "measured": {
+        "width": 290,
+        "height": 220
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "http_request.1",
+      "sourceHandle": "http_request.1-output-json",
+      "target": "prompt_template.1",
+      "targetHandle": "prompt_template.1-input-data",
+      "id": "xy-edge__http_request.1http_request.1-output-json-prompt_template.1prompt_template.1-input-data",
+      "style": "stroke: var(--fd-edge-data);",
+      "class": "flowdrop--edge--data",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "width": 16,
+        "height": 16,
+        "color": "#a3a3ad"
+      },
+      "data": {
+        "metadata": {
+          "edgeType": "data",
+          "sourcePortDataType": "array"
+        },
+        "targetNodeType": "universalNode",
+        "targetCategory": "processing"
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "createdAt": "2026-02-05T21:22:21.689Z",
+    "updatedAt": "2026-02-05T21:22:21.689Z"
+  }
 };
 
 /**
@@ -3606,8 +3774,7 @@ export const mockWorkflows: Map<string, Workflow> = new Map([
 	[demoNodeTypesShowcaseWorkflow.id, demoNodeTypesShowcaseWorkflow],
 	[demoTriggerNodeWorkflow.id, demoTriggerNodeWorkflow],
 	[demoForEachLoopWorkflow.id, demoForEachLoopWorkflow],
-	[demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow],
-	[demoApiVariablesWorkflow.id, demoApiVariablesWorkflow]
+	[demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow]
 ]);
 
 /**
