@@ -26,6 +26,8 @@ import {
 } from './stores/workflowStore.js';
 import { DraftAutoSaveManager, getDraftStorageKey } from './services/draftStorage.js';
 import { mergeFeatures } from './types/events.js';
+import type { PartialSettings } from './types/settings.js';
+import { initializeSettings } from './stores/settingsStore.js';
 
 // Extend Window interface for global save/export functions
 declare global {
@@ -99,6 +101,10 @@ export interface FlowDropMountOptions {
 	// NEW: Feature flags
 	/** Feature configuration */
 	features?: FlowDropFeatures;
+
+	// NEW: Default settings overrides
+	/** Initial settings overrides (theme, behavior, editor, ui, api) */
+	settings?: PartialSettings;
 
 	// NEW: Draft storage key
 	/** Custom storage key for localStorage drafts */
@@ -196,11 +202,17 @@ export async function mountFlowDropApp(
 		authProvider,
 		eventHandlers,
 		features: userFeatures,
+		settings: initialSettings,
 		draftStorageKey: customDraftKey
 	} = options;
 
 	// Merge features with defaults
 	const features = mergeFeatures(userFeatures);
+
+	// Apply initial settings overrides and initialize theme
+	await initializeSettings({
+		defaults: initialSettings
+	});
 
 	// Create endpoint configuration
 	let config: EndpointConfig | undefined;
