@@ -111,6 +111,7 @@ export const CATEGORY_ICONS: Record<NodeCategory, string> = {
 	memories: 'mdi:brain',
 	agents: 'mdi:account-cog',
 	ai: 'mdi:shimmer',
+	interrupts: 'mdi:hand-back-left',
 	bundles: 'mdi:package-variant'
 };
 
