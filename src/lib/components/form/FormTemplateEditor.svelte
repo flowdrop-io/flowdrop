@@ -29,14 +29,12 @@
 		keymap,
 		tooltips,
 		Decoration,
-		type DecorationSet,
 		ViewPlugin,
-		type ViewUpdate,
 		MatchDecorator
 	} from '@codemirror/view';
 	import { EditorState, Compartment } from '@codemirror/state';
 	import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
-	import { syntaxHighlighting, defaultHighlightStyle, indentOnInput } from '@codemirror/language';
+	import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 	import { oneDark } from '@codemirror/theme-one-dark';
 	import type {
 		VariableSchema,
@@ -208,36 +206,37 @@
 	const autocompleteCompartment = new Compartment();
 
 	/**
-	 * Create a MatchDecorator for {{ variable }} patterns
-	 * This highlights the entire {{ variable }} expression
-	 * Supports:
-	 * - Simple variables: {{ name }}
-	 * - Dot notation: {{ user.name }}, {{ user.address.city }}
-	 * - Array access: {{ items[0] }}, {{ items[0].name }}
-	 * - Mixed: {{ orders[0].items[1].price }}
+	 * Custom Twig syntax highlighter using MatchDecorator
+	 * Highlights three Twig delimiter types with different styles:
+	 * - {{ expression }} — variables/output (purple)
+	 * - {% block %}      — control structures (teal)
+	 * - {# comment #}    — comments (gray/italic)
 	 */
-	const variableMatcher = new MatchDecorator({
-		// Match {{ variable_name }} patterns with dot notation and array indices
-		regexp: /\{\{\s*[\w]+(?:\.[\w]+|\[\d+\]|\[\*\])*\s*\}\}/g,
-		decoration: Decoration.mark({ class: 'cm-template-variable' })
+	const twigMatcher = new MatchDecorator({
+		regexp: /\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\}/g,
+		decoration: (match) => {
+			const text = match[0];
+			if (text.startsWith('{{')) {
+				return Decoration.mark({ class: 'cm-twig-expression' });
+			} else if (text.startsWith('{%')) {
+				return Decoration.mark({ class: 'cm-twig-block' });
+			} else {
+				return Decoration.mark({ class: 'cm-twig-comment' });
+			}
+		}
 	});
 
-	/**
-	 * ViewPlugin that applies the variable highlighting decorations
-	 */
-	const variableHighlighter = ViewPlugin.fromClass(
+	const twigHighlighter = ViewPlugin.fromClass(
 		class {
-			decorations: DecorationSet;
+			decorations;
 			constructor(view: EditorView) {
-				this.decorations = variableMatcher.createDeco(view);
+				this.decorations = twigMatcher.createDeco(view);
 			}
-			update(update: ViewUpdate) {
-				this.decorations = variableMatcher.updateDeco(update, this.decorations);
+			update(update: import('@codemirror/view').ViewUpdate) {
+				this.decorations = twigMatcher.updateDeco(update, this.decorations);
 			}
 		},
-		{
-			decorations: (v) => v.decorations
-		}
+		{ decorations: (v) => v.decorations }
 	);
 
 	/**
@@ -274,7 +273,6 @@
 				? []
 				: [
 						history(),
-						indentOnInput(),
 						keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])
 					]),
 
@@ -284,8 +282,8 @@
 			// Syntax highlighting - use default for light mode, oneDark handles dark mode
 			...(darkTheme ? [] : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
 
-			// Template-specific variable highlighter
-			variableHighlighter,
+			// Twig syntax highlighting ({{ expressions }}, {% blocks %}, {# comments #})
+			twigHighlighter,
 
 			// Update listener (only fires on user edit when not disabled)
 			EditorView.updateListener.of(handleUpdate),
@@ -310,13 +308,26 @@
 				'.cm-line': {
 					padding: '0 0.5rem'
 				},
-				// Style for the highlighted {{ variable }} pattern
-				'.cm-template-variable': {
+				// Twig expression: {{ variable }}
+				'.cm-twig-expression': {
 					color: '#a855f7',
 					backgroundColor: 'rgba(168, 85, 247, 0.1)',
 					borderRadius: '3px',
 					padding: '1px 2px',
 					fontWeight: '500'
+				},
+				// Twig block: {% for ... %}
+				'.cm-twig-block': {
+					color: '#14b8a6',
+					backgroundColor: 'rgba(20, 184, 166, 0.1)',
+					borderRadius: '3px',
+					padding: '1px 2px',
+					fontWeight: '500'
+				},
+				// Twig comment: {# ... #}
+				'.cm-twig-comment': {
+					color: '#6b7280',
+					fontStyle: 'italic'
 				},
 				// Autocomplete dropdown styling
 				'.cm-tooltip.cm-tooltip-autocomplete': {
@@ -366,12 +377,19 @@
 
 		if (darkTheme) {
 			extensions.push(oneDark);
-			// Add dark theme override for variable highlighting and autocomplete
+			// Add dark theme overrides for Twig highlighting and autocomplete
 			extensions.push(
 				EditorView.theme({
-					'.cm-template-variable': {
+					'.cm-twig-expression': {
 						color: '#c084fc',
 						backgroundColor: 'rgba(192, 132, 252, 0.15)'
+					},
+					'.cm-twig-block': {
+						color: '#5eead4',
+						backgroundColor: 'rgba(94, 234, 212, 0.1)'
+					},
+					'.cm-twig-comment': {
+						color: '#6b7280'
 					},
 					'.cm-tooltip.cm-tooltip-autocomplete': {
 						backgroundColor: '#1e1e1e',
