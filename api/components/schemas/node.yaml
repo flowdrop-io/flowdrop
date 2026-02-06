@@ -534,6 +534,13 @@ NodeMetadata:
       type: string
       description: Node color (CSS color value)
       example: '#3b82f6'
+    badge:
+      type: string
+      description: |
+        Default badge label displayed in the node header (e.g., "TOOL", "API", "LLM").
+        Currently used by tool nodes. Can be overridden per-instance via `config.instanceBadge`.
+        Defaults to "TOOL" for tool nodes if not specified.
+      example: API
     inputs:
       type: array
       items:
@@ -598,6 +605,7 @@ NodeConfig:
 
     - **`instanceTitle`**: Per-instance title override (replaces the default `label` display)
     - **`instanceDescription`**: Per-instance description override (replaces `metadata.description` display)
+    - **`instanceBadge`**: Per-instance badge label override (replaces the default `metadata.badge` or "TOOL" badge)
 
     ### Visual Type Selection
 
@@ -633,6 +641,17 @@ NodeConfig:
         - If `instanceDescription` is set → displays `instanceDescription`
         - If not set → displays `metadata.description` (from node type definition)
       example: Summarizes incoming emails into 3 bullet points
+    instanceBadge:
+      type: string
+      description: |
+        Per-instance badge label override for tool nodes.
+        Replaces the default badge text shown in the node header.
+
+        Fallback behavior:
+        - If `instanceBadge` is set → displays `instanceBadge`
+        - If not set → displays `metadata.badge` (from node type definition)
+        - If neither set → displays "TOOL"
+      example: API
     nodeType:
       type: string
       description: |
@@ -678,6 +697,7 @@ NodeConfig:
   example:
     instanceTitle: Email Summarizer
     instanceDescription: Summarizes incoming emails into 3 bullet points
+    instanceBadge: LLM
     nodeType: simple
     model: gpt-4o-mini
     temperature: 0.7
