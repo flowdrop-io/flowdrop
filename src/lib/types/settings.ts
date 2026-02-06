@@ -52,6 +52,10 @@ export interface EditorSettings {
 	defaultZoom: number;
 	/** Automatically fit workflow to view on load */
 	fitViewOnLoad: boolean;
+	/** Enable proximity connect when dragging nodes near other nodes */
+	proximityConnect: boolean;
+	/** Distance threshold in pixels for proximity connect */
+	proximityConnectDistance: number;
 }
 
 // =========================================================================
@@ -178,7 +182,9 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
 	gridSize: 20,
 	showMinimap: true,
 	defaultZoom: 1,
-	fitViewOnLoad: true
+	fitViewOnLoad: true,
+	proximityConnect: false,
+	proximityConnectDistance: 150
 };
 
 /**

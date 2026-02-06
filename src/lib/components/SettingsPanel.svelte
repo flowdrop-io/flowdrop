@@ -140,6 +140,21 @@
 					title: 'Fit View on Load',
 					description: 'Automatically fit workflow to view when loading',
 					default: true
+				},
+				proximityConnect: {
+					type: 'boolean',
+					title: 'Proximity Connect',
+					description:
+						'Auto-connect compatible ports when dragging nodes near each other',
+					default: false
+				},
+				proximityConnectDistance: {
+					type: 'number',
+					title: 'Proximity Distance',
+					description: 'Distance threshold in pixels for proximity connect',
+					minimum: 50,
+					maximum: 500,
+					default: 150
 				}
 			}
 		},

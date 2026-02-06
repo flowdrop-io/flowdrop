@@ -42,6 +42,10 @@
 	import { areNodeArraysEqual, areEdgeArraysEqual, throttle } from '../utils/performanceUtils.js';
 	import { Toaster } from 'svelte-5-french-toast';
 	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '../services/toastService.js';
+	import {
+		ProximityConnectHelper,
+		type ProximityEdgeCandidate
+	} from '../helpers/proximityConnect.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -68,6 +72,9 @@
 
 	// Track if we're currently dragging a node (for history debouncing)
 	let isDraggingNode = $state(false);
+
+	// Proximity connect state
+	let currentProximityCandidates = $state<ProximityEdgeCandidate[]>([]);
 
 	// Track the workflow ID we're currently editing to detect workflow switches
 	let currentWorkflowId: string | null = null;
@@ -334,6 +341,46 @@
 	 */
 	function handleNodeDragStart(): void {
 		isDraggingNode = true;
+		// Clear any leftover proximity previews
+		currentProximityCandidates = [];
+	}
+
+	/**
+	 * Handle node drag - compute proximity connect preview edges
+	 * Called continuously during drag if proximity connect is enabled
+	 */
+	function handleNodeDrag({
+		targetNode
+	}: {
+		targetNode: WorkflowNodeType | null;
+		nodes: WorkflowNodeType[];
+		event: MouseEvent | TouchEvent;
+	}): void {
+		if (!$editorSettings.proximityConnect || !targetNode || props.readOnly || props.lockWorkflow) {
+			if (currentProximityCandidates.length > 0) {
+				flowEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
+				currentProximityCandidates = [];
+			}
+			return;
+		}
+
+		// Remove previous preview edges
+		const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
+
+		// Find the best compatible edge with nearby nodes
+		const candidates = ProximityConnectHelper.findCompatibleEdges(
+			targetNode,
+			flowNodes,
+			baseEdges,
+			$editorSettings.proximityConnectDistance
+		);
+
+		// Create preview edges
+		const previews = ProximityConnectHelper.createPreviewEdges(candidates);
+
+		// Update state
+		currentProximityCandidates = candidates;
+		flowEdges = [...baseEdges, ...previews];
 	}
 
 	/**
@@ -344,6 +391,38 @@
 	 */
 	function handleNodeDragStop(): void {
 		isDraggingNode = false;
+
+		// Finalize proximity connect if there are candidates
+		if ($editorSettings.proximityConnect && currentProximityCandidates.length > 0) {
+			// Remove all preview edges
+			const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
+
+			// Create permanent edges from candidates
+			const permanentEdges = ProximityConnectHelper.createPermanentEdges(
+				currentProximityCandidates
+			);
+
+			// Apply proper styling to each new permanent edge
+			for (const edge of permanentEdges) {
+				const sourceNode = flowNodes.find((n) => n.id === edge.source);
+				const targetNode = flowNodes.find((n) => n.id === edge.target);
+				if (sourceNode && targetNode) {
+					EdgeStylingHelper.applyConnectionStyling(edge, sourceNode, targetNode);
+				}
+			}
+
+			// Set final edges
+			flowEdges = [...baseEdges, ...permanentEdges];
+
+			// Clear proximity state
+			currentProximityCandidates = [];
+
+			// Update workflow
+			if (currentWorkflow) {
+				updateCurrentWorkflowFromSvelteFlow();
+			}
+		}
+
 		// Push the current state AFTER the drag completed
 		if (currentWorkflow) {
 			workflowActions.pushHistory('Move node', currentWorkflow);
@@ -636,6 +715,7 @@
 							onbeforedelete={handleBeforeDelete}
 							ondelete={handleNodesDelete}
 							onnodedragstart={handleNodeDragStart}
+							onnodedrag={handleNodeDrag}
 							onnodedragstop={handleNodeDragStop}
 							minZoom={0.2}
 							maxZoom={3}
@@ -883,5 +963,20 @@
 		stroke-dasharray: var(--fd-edge-loopback-dasharray);
 		filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.4));
 		opacity: 1;
+	}
+
+	/* Proximity Connect Preview Edge: animated dashed line */
+	:global(.flowdrop--edge--proximity-preview path.svelte-flow__edge-path) {
+		stroke: var(--fd-primary);
+		stroke-width: 2;
+		stroke-dasharray: 5 5;
+		opacity: 0.6;
+		animation: flowdrop-proximity-dash 0.5s linear infinite;
+	}
+
+	@keyframes flowdrop-proximity-dash {
+		to {
+			stroke-dashoffset: -10;
+		}
 	}
 </style>

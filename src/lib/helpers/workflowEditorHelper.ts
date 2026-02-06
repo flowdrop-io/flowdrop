@@ -133,6 +133,18 @@ export class EdgeStylingHelper {
 			}
 		}
 
+		// Check dynamic ports from config (dynamicInputs/dynamicOutputs)
+		const dynamicKey = portType === 'output' ? 'dynamicOutputs' : 'dynamicInputs';
+		const dynamicPorts = node.data?.config?.[dynamicKey] as
+			| Array<{ name: string; dataType: string }>
+			| undefined;
+		if (dynamicPorts && Array.isArray(dynamicPorts)) {
+			const dynamicPort = dynamicPorts.find((p) => p.name === portId);
+			if (dynamicPort?.dataType) {
+				return dynamicPort.dataType;
+			}
+		}
+
 		// For output ports, also check dynamic Gateway branches
 		// Gateway branches are always trigger type (control flow)
 		if (portType === 'output' && this.isGatewayBranch(node, portId)) {
