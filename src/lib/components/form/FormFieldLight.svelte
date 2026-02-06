@@ -43,7 +43,7 @@
 	import FormCheckboxGroup from './FormCheckboxGroup.svelte';
 	import FormArray from './FormArray.svelte';
 	import { resolveFieldComponent } from '$lib/form/fieldRegistry.js';
-	import { resolvedTheme } from '$lib/stores/settingsStore.js';
+	import { resolvedTheme } from '$lib/stores/themeStore.js';
 	import type { FieldSchema } from './types.js';
 	import { getSchemaOptions } from './types.js';
 
