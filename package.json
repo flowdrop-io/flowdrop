@@ -128,6 +128,11 @@
 			"svelte": "./dist/playground/index.js",
 			"default": "./dist/playground/index.js"
 		},
+		"./settings": {
+			"types": "./dist/settings/index.d.ts",
+			"svelte": "./dist/settings/index.js",
+			"default": "./dist/settings/index.js"
+		},
 		"./styles": "./dist/styles/base.css",
 		"./styles/*": "./dist/styles/*"
 	},

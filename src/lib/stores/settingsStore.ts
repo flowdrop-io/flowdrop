@@ -245,15 +245,14 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Theme preference store (backward compatible with themeStore)
+ * Theme preference (internal - exported via core/themeStore)
  */
-export const theme = derived(themeSettings, ($theme) => $theme.preference);
+const theme = derived(themeSettings, ($theme) => $theme.preference);
 
 /**
- * Resolved theme store
- * Always returns the actual theme being applied ('light' or 'dark')
+ * Resolved theme (internal - exported via core/themeStore)
  */
-export const resolvedTheme = derived(
+const resolvedTheme = derived(
 	[themeSettings, systemTheme],
 	([$themeSettings, $systemTheme]) => {
 		if ($themeSettings.preference === 'auto') {
@@ -371,19 +370,16 @@ export function getSettings(): FlowDropSettings {
 // =========================================================================
 
 /**
- * Set the theme preference
- *
- * @param newTheme - The new theme preference ('light', 'dark', or 'auto')
+ * Set the theme preference (internal - exported via core/themeStore)
  */
-export function setTheme(newTheme: ThemePreference): void {
+function setTheme(newTheme: ThemePreference): void {
 	updateSettings({ theme: { preference: newTheme } });
 }
 
 /**
- * Toggle between light and dark themes
- * If currently 'auto', switches to the opposite of system preference
+ * Toggle between light and dark themes (internal - exported via core/themeStore)
  */
-export function toggleTheme(): void {
+function toggleTheme(): void {
 	const currentTheme = get(theme);
 	const currentResolved = get(resolvedTheme);
 
@@ -395,9 +391,9 @@ export function toggleTheme(): void {
 }
 
 /**
- * Cycle through theme options: light -> dark -> auto -> light
+ * Cycle through theme options (internal - exported via core/themeStore)
  */
-export function cycleTheme(): void {
+function cycleTheme(): void {
 	const currentTheme = get(theme);
 
 	switch (currentTheme) {
@@ -426,10 +422,9 @@ function applyTheme(resolved: ResolvedTheme): void {
 }
 
 /**
- * Initialize the theme system
- * Should be called once on app startup
+ * Initialize the theme system (internal - exported via core/themeStore)
  */
-export function initializeTheme(): void {
+function initializeTheme(): void {
 	const resolved = get(resolvedTheme);
 	applyTheme(resolved);
 

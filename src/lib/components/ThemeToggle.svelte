@@ -7,8 +7,7 @@
 
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	// Use settingsStore for theme (themeStore is deprecated)
-	import { theme, resolvedTheme, cycleTheme } from '../stores/settingsStore.js';
+	import { theme, resolvedTheme, cycleTheme } from '../stores/themeStore.js';
 	import type { ThemePreference } from '../types/settings.js';
 
 	/**
