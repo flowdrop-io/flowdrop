@@ -554,6 +554,8 @@ export interface NodeMetadata {
 	version: string;
 	icon?: string;
 	color?: string;
+	/** Badge label displayed in the node header (e.g., "TOOL", "API", "LLM"). Overridable per-instance via config.instanceBadge. */
+	badge?: string;
 	inputs: NodePort[];
 	outputs: NodePort[];
 	configSchema?: ConfigSchema;

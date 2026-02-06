@@ -62,6 +62,17 @@
 	);
 
 	/**
+	 * Instance-specific badge label override from config.
+	 * Falls back to metadata badge or default 'TOOL' if not set.
+	 * This allows users to customize the badge text per-instance via config.
+	 */
+	const displayBadge = $derived(
+		(props.data.config?.instanceBadge as string) ||
+			(props.data.metadata?.badge as string) ||
+			'TOOL'
+	);
+
+	/**
 	 * Instance-specific description override from config.
 	 * Falls back to metadata description or toolDescription config if not set.
 	 * This allows users to customize the tool description per-instance via config.
@@ -185,7 +196,7 @@
 			</div>
 
 			<!-- Tool Badge - tinted style matching icon wrappers -->
-			<div class="flowdrop-tool-node__badge">TOOL</div>
+			<div class="flowdrop-tool-node__badge">{displayBadge}</div>
 		</div>
 
 		<!-- Tool Description - uses instanceDescription override if set -->
