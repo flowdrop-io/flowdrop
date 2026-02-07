@@ -5,10 +5,14 @@
 
 import { http, HttpResponse } from 'msw';
 import { DEFAULT_PORT_CONFIG } from '../../lib/config/defaultPortConfig.js';
-import type { ApiResponse, PortConfig } from '../../lib/types/index.js';
+import { DEFAULT_CATEGORIES } from '../../lib/config/defaultCategories.js';
+import type { ApiResponse, PortConfig, CategoryDefinition } from '../../lib/types/index.js';
 
 /** Response type for port configuration */
 type PortConfigResponse = ApiResponse<PortConfig>;
+
+/** Response type for categories */
+type CategoriesResponse = ApiResponse<CategoryDefinition[]>;
 
 /** Base API path for flowdrop endpoints */
 const API_BASE = '/api/flowdrop';
@@ -61,6 +65,20 @@ export const getPortConfigHandler = http.get(`${API_BASE}/port-config`, () => {
 });
 
 /**
+ * GET /api/flowdrop/categories
+ * Retrieve category definitions for node organization
+ */
+export const getCategoriesHandler = http.get(`${API_BASE}/categories`, () => {
+	const response: CategoriesResponse = {
+		success: true,
+		data: DEFAULT_CATEGORIES,
+		message: 'Categories loaded successfully'
+	};
+
+	return HttpResponse.json(response);
+});
+
+/**
  * OPTIONS handlers for CORS preflight
  */
 export const healthOptionsHandler = http.options(`${API_BASE}/health`, () => {
@@ -88,10 +106,26 @@ export const portConfigOptionsHandler = http.options(`${API_BASE}/port-config`, 
 /**
  * Export all config handlers
  */
+export const categoriesOptionsHandler = http.options(`${API_BASE}/categories`, () => {
+	return new HttpResponse(null, {
+		status: 204,
+		headers: {
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+		}
+	});
+});
+
+/**
+ * Export all config handlers
+ */
 export const configHandlers = [
 	runtimeConfigHandler,
 	healthCheckHandler,
 	getPortConfigHandler,
+	getCategoriesHandler,
 	healthOptionsHandler,
-	portConfigOptionsHandler
+	portConfigOptionsHandler,
+	categoriesOptionsHandler
 ];

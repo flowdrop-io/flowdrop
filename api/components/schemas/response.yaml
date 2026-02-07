@@ -27,6 +27,16 @@ PortConfigResponse:
         data:
           $ref: './config.yaml#/PortConfig'
 
+CategoriesResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './common.yaml#/CategoryDefinition'
+
 WorkflowsResponse:
   allOf:
     - $ref: './common.yaml#/ApiResponse'

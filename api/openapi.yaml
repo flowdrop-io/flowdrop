@@ -89,6 +89,10 @@ paths:
   /port-config:
     $ref: './paths/port-config.yaml#/~1port-config'
 
+  # Categories
+  /categories:
+    $ref: './paths/categories.yaml#/~1categories'
+
   # Workflows
   /workflows:
     $ref: './paths/workflows.yaml#/~1workflows'
@@ -174,6 +178,8 @@ components:
       $ref: './components/schemas/common.yaml#/ApiResponse'
     ErrorResponse:
       $ref: './components/schemas/common.yaml#/ErrorResponse'
+    CategoryDefinition:
+      $ref: './components/schemas/common.yaml#/CategoryDefinition'
 
     # Configuration Types
     PortDataTypeConfig:
@@ -298,6 +304,8 @@ components:
       $ref: './components/schemas/response.yaml#/NodeTypeResponse'
     PortConfigResponse:
       $ref: './components/schemas/response.yaml#/PortConfigResponse'
+    CategoriesResponse:
+      $ref: './components/schemas/response.yaml#/CategoriesResponse'
     WorkflowsResponse:
       $ref: './components/schemas/response.yaml#/WorkflowsResponse'
     WorkflowResponse:

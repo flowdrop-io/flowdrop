@@ -4,6 +4,7 @@
  */
 
 import type { NodeCategory } from '../types/index.js';
+import { getCategoryIcon as getCategoryIconFromStore } from '../stores/categoriesStore.js';
 
 /**
  * Default icons for different contexts
@@ -93,9 +94,11 @@ export const DEFAULT_ICONS = {
 } as const;
 
 /**
- * Category-specific icons matching Langflow's visual style
+ * Category-specific icons for built-in categories.
+ * Custom categories fall back to DEFAULT_ICONS.CATEGORY.
+ * These serve as static defaults; the categories store provides dynamic overrides.
  */
-export const CATEGORY_ICONS: Record<NodeCategory, string> = {
+export const CATEGORY_ICONS: Record<string, string> = {
 	triggers: 'mdi:lightning-bolt',
 	inputs: 'mdi:arrow-down-circle',
 	outputs: 'mdi:arrow-up-circle',
@@ -127,9 +130,9 @@ export function getNodeIcon(nodeIcon?: string, category?: NodeCategory): string 
 		return nodeIcon;
 	}
 
-	// If category is provided, use category icon
-	if (category && CATEGORY_ICONS[category]) {
-		return CATEGORY_ICONS[category];
+	// If category is provided, use category icon from store (which includes API overrides)
+	if (category) {
+		return getCategoryIconFromStore(category);
 	}
 
 	// Fallback to default node icon
@@ -137,12 +140,14 @@ export function getNodeIcon(nodeIcon?: string, category?: NodeCategory): string 
 }
 
 /**
- * Get the appropriate icon for a category
+ * Get the appropriate icon for a category.
+ * Checks the categories store first (which includes API overrides),
+ * then falls back to the static CATEGORY_ICONS map, then to the default.
  * @param category - The category
  * @returns The icon to use
  */
 export function getCategoryIcon(category: NodeCategory): string {
-	return CATEGORY_ICONS[category] || DEFAULT_ICONS.CATEGORY;
+	return getCategoryIconFromStore(category);
 }
 
 /**

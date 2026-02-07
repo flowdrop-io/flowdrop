@@ -7,10 +7,10 @@ import { ConnectionLineType } from '@xyflow/svelte';
 import type { EndpointConfig } from '../config/endpoints.js';
 
 /**
- * Node category types for organizing nodes in the sidebar
- * Based on actual API response categories
+ * Built-in node categories that ship with FlowDrop.
+ * These categories have predefined icons, colors, and display names.
  */
-export type NodeCategory =
+export type BuiltinNodeCategory =
 	| 'triggers'
 	| 'inputs'
 	| 'outputs'
@@ -28,6 +28,41 @@ export type NodeCategory =
 	| 'ai'
 	| 'interrupts'
 	| 'bundles';
+
+/**
+ * Node category for organizing nodes in the sidebar.
+ * Includes all built-in categories plus any custom string.
+ * Custom categories can be defined via the `/categories` API endpoint.
+ *
+ * @example
+ * ```typescript
+ * // Built-in category
+ * const cat: NodeCategory = 'triggers';
+ *
+ * // Custom category
+ * const custom: NodeCategory = 'my-custom-category';
+ * ```
+ */
+export type NodeCategory = BuiltinNodeCategory | (string & Record<never, never>);
+
+/**
+ * Category definition with metadata for display and organization.
+ * Fetched from the `/categories` API endpoint or provided as defaults.
+ */
+export interface CategoryDefinition {
+	/** Machine name / unique identifier */
+	name: string;
+	/** Display label shown in UI */
+	label: string;
+	/** Icon identifier (e.g. 'mdi:brain') */
+	icon?: string;
+	/** Color token or CSS value (e.g. 'var(--fd-node-purple)') */
+	color?: string;
+	/** Category description */
+	description?: string;
+	/** Sort weight for ordering (lower = earlier) */
+	weight?: number;
+}
 
 /**
  * Port data type configuration

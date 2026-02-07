@@ -20,6 +20,9 @@ export interface EndpointConfig {
 		// Port configuration endpoint
 		portConfig: string;
 
+		// Categories configuration endpoint
+		categories: string;
+
 		// Workflow endpoints
 		workflows: {
 			list: string;
@@ -152,6 +155,7 @@ export const defaultEndpointConfig: EndpointConfig = {
 			metadata: '/nodes/{id}/metadata'
 		},
 		portConfig: '/port-config',
+		categories: '/categories',
 		workflows: {
 			list: '/workflows',
 			get: '/workflows/{id}',

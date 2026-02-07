@@ -6,12 +6,14 @@
 
 import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
 import { getPortCompatibilityChecker } from './connections.js';
+import { getCategoryColor as getCategoryColorFromStore } from '../stores/categoriesStore.js';
 
 /**
  * Category color mapping to design tokens (CSS variables)
  * Uses --fd-node-* tokens from tokens.css
+ * These serve as static defaults; the categories store provides dynamic overrides.
  */
-export const CATEGORY_COLOR_TOKENS: Record<NodeCategory, string> = {
+export const CATEGORY_COLOR_TOKENS: Record<string, string> = {
 	triggers: 'var(--fd-node-cyan)',
 	inputs: 'var(--fd-node-emerald)',
 	outputs: 'var(--fd-node-blue)',
@@ -66,10 +68,12 @@ const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
 };
 
 /**
- * Get the design token for a category color
+ * Get the design token for a category color.
+ * Checks the categories store first (which includes API overrides),
+ * then falls back to the static CATEGORY_COLOR_TOKENS map, then to slate.
  */
 export function getCategoryColorToken(category: NodeCategory): string {
-	return CATEGORY_COLOR_TOKENS[category] || 'var(--fd-node-slate)';
+	return getCategoryColorFromStore(category);
 }
 
 /**
@@ -132,7 +136,7 @@ export const DEFAULT_COLORS = {
  * @returns The color configuration for the category
  */
 export function getCategoryColors(category: NodeCategory): string {
-	return CATEGORY_COLOR_TOKENS[category] || 'var(--fd-node-slate)';
+	return getCategoryColorFromStore(category);
 }
 
 /**

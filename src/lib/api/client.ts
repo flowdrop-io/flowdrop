@@ -10,7 +10,8 @@ import type {
 	NodesResponse,
 	WorkflowResponse,
 	WorkflowsResponse,
-	PortConfig
+	PortConfig,
+	CategoryDefinition
 } from '../types/index.js';
 
 /**
@@ -306,6 +307,19 @@ export class FlowDropApiClient {
 
 		if (!response.success || !response.data) {
 			throw new Error(response.error || 'Failed to fetch port configuration');
+		}
+
+		return response.data;
+	}
+
+	/**
+	 * Fetch category definitions
+	 */
+	async getCategories(): Promise<CategoryDefinition[]> {
+		const response = await this.request<ApiResponse<CategoryDefinition[]>>('/categories');
+
+		if (!response.success || !response.data) {
+			throw new Error(response.error || 'Failed to fetch categories');
 		}
 
 		return response.data;
