@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.52] - 2026-02-07
+
+### Added
+
+- **Extensible Category System**: `NodeCategory` is now an open string type, allowing custom categories beyond the built-in set
+  - Built-in categories remain available as typed suggestions via `BuiltinNodeCategory`
+  - New `/categories` API endpoint returns category metadata (name, label, icon, color, weight)
+  - Categories are fetched at initialization and stored in a Svelte store with built-in defaults as fallbacks
+  - New `defaultCategories` config provides built-in category definitions with icons, colors, and sort weights
+  - `NodeSidebar` now derives grouping from the categories store instead of hardcoded logic
+
 ## [0.0.51] - 2026-02-06
 
 ### Added
