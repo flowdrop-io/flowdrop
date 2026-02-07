@@ -22,6 +22,8 @@
 // Main workflow types
 export type {
 	NodeCategory,
+	BuiltinNodeCategory,
+	CategoryDefinition,
 	NodeDataType,
 	NodePort,
 	DynamicPort,

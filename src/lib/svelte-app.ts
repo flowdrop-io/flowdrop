@@ -10,13 +10,15 @@
 import { mount, unmount } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
-import type { Workflow, NodeMetadata, PortConfig } from './types/index.js';
+import type { Workflow, NodeMetadata, PortConfig, CategoryDefinition } from './types/index.js';
 import type { EndpointConfig } from './config/endpoints.js';
 import type { AuthProvider } from './types/auth.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
 import { initializePortCompatibility } from './utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
+import { fetchCategories } from './services/categoriesApi.js';
+import { initializeCategories } from './stores/categoriesStore.js';
 import {
 	isDirty,
 	markAsSaved,
@@ -61,6 +63,8 @@ export interface FlowDropMountOptions {
 	endpointConfig?: EndpointConfig;
 	/** Port configuration for connections */
 	portConfig?: PortConfig;
+	/** Category definitions for node categories */
+	categories?: CategoryDefinition[];
 	/** Editor height */
 	height?: string | number;
 	/** Editor width */
@@ -188,6 +192,7 @@ export async function mountFlowDropApp(
 		nodes,
 		endpointConfig,
 		portConfig,
+		categories,
 		height = '100vh',
 		width = '100%',
 		showNavbar = false,
@@ -250,6 +255,18 @@ export async function mountFlowDropApp(
 	}
 
 	initializePortCompatibility(finalPortConfig);
+
+	// Initialize categories
+	if (categories) {
+		initializeCategories(categories);
+	} else if (config) {
+		try {
+			const fetchedCategories = await fetchCategories(config);
+			initializeCategories(fetchedCategories);
+		} catch (error) {
+			console.warn('Failed to fetch categories from API, using defaults:', error);
+		}
+	}
 
 	// Set up event handler callbacks in the store
 	if (eventHandlers?.onDirtyStateChange) {
@@ -384,9 +401,10 @@ export async function mountWorkflowEditor(
 		nodes?: NodeMetadata[];
 		endpointConfig?: EndpointConfig;
 		portConfig?: PortConfig;
+		categories?: CategoryDefinition[];
 	} = {}
 ): Promise<MountedFlowDropApp> {
-	const { nodes = [], endpointConfig, portConfig } = options;
+	const { nodes = [], endpointConfig, portConfig, categories } = options;
 
 	// Create endpoint configuration
 	let config: EndpointConfig | undefined;
@@ -424,6 +442,18 @@ export async function mountWorkflowEditor(
 	}
 
 	initializePortCompatibility(finalPortConfig);
+
+	// Initialize categories
+	if (categories) {
+		initializeCategories(categories);
+	} else if (config) {
+		try {
+			const fetchedCategories = await fetchCategories(config);
+			initializeCategories(fetchedCategories);
+		} catch (error) {
+			console.warn('Failed to fetch categories from API, using defaults:', error);
+		}
+	}
 
 	// Create the Svelte component
 	const svelteApp = mount(WorkflowEditor, {

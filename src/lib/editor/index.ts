@@ -239,6 +239,8 @@ export {
 
 export { fetchPortConfig, validatePortConfig } from '../services/portConfigApi.js';
 
+export { fetchCategories, validateCategories } from '../services/categoriesApi.js';
+
 export {
 	fetchDynamicSchema,
 	resolveExternalEditUrl,

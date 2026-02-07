@@ -10,6 +10,7 @@
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
 	import { getCategoryColorToken } from '../utils/colors.js';
+	import { getCategoryLabel } from '../stores/categoriesStore.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { uiSettings, updateSettings } from '../stores/settingsStore.js';
 
@@ -142,29 +143,11 @@
 	}
 
 	/**
-	 * Get category display name
+	 * Get category display name from the categories store.
+	 * Falls back to auto-capitalizing the category machine name.
 	 */
 	function getCategoryDisplayName(category: NodeCategory): string {
-		const names: Record<NodeCategory, string> = {
-			triggers: 'Triggers',
-			inputs: 'Inputs',
-			outputs: 'Outputs',
-			prompts: 'Prompts',
-			models: 'Models',
-			processing: 'Processing',
-			logic: 'Logic',
-			data: 'Data',
-			tools: 'Tools',
-			helpers: 'Helpers',
-			'vector stores': 'Vector Stores',
-			embeddings: 'Embeddings',
-			memories: 'Memories',
-			agents: 'Agents',
-			ai: 'AI',
-			interrupts: 'Interrupts',
-			bundles: 'Bundles'
-		};
-		return names[category] || category;
+		return getCategoryLabel(category);
 	}
 
 	/**

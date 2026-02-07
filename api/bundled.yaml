@@ -383,6 +383,50 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /categories:
+    get:
+      operationId: getCategories
+      summary: Get category definitions
+      description: |
+        Retrieve all available category definitions including display labels,
+        icons, colors, and ordering. Categories determine how nodes are organized
+        in the sidebar.
+
+        Built-in categories are always available as defaults. This endpoint allows
+        overriding built-in category metadata and defining custom categories.
+      tags:
+        - Configuration
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriesResponse'
+              example:
+                success: true
+                data:
+                  - name: triggers
+                    label: Triggers
+                    icon: mdi:lightning-bolt
+                    color: var(--fd-node-cyan)
+                    weight: 0
+                  - name: inputs
+                    label: Inputs
+                    icon: mdi:arrow-down-circle
+                    color: var(--fd-node-emerald)
+                    weight: 1
+                  - name: ml
+                    label: Machine Learning
+                    icon: mdi:brain
+                    color: var(--fd-node-purple)
+                    description: Custom ML processing nodes
+                    weight: 20
+                message: Categories loaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows:
     get:
       operationId: listWorkflows
@@ -1927,24 +1971,18 @@ components:
   schemas:
     NodeCategory:
       type: string
-      enum:
-        - triggers
-        - inputs
-        - outputs
-        - prompts
-        - models
-        - processing
-        - logic
-        - data
-        - tools
-        - helpers
-        - vector stores
-        - embeddings
-        - memories
-        - agents
-        - ai
-        - bundles
-      description: Node category for organizing nodes in the sidebar
+      description: |
+        Node category for organizing nodes in the sidebar.
+
+        Any string value is accepted, allowing custom categories.
+        Custom categories can be defined via the `/categories` endpoint
+        with display labels, icons, and colors.
+
+        Built-in categories with dedicated icons and colors:
+        triggers, inputs, outputs, prompts, models, processing,
+        logic, data, tools, helpers, vector stores, embeddings,
+        memories, agents, ai, interrupts, bundles
+      example: processing
     NodeDataType:
       type: string
       description: |
@@ -2041,6 +2079,39 @@ components:
             details:
               type: object
               description: Additional error details
+    CategoryDefinition:
+      type: object
+      description: |
+        Category definition with metadata for display and organization.
+        Returned by the `/categories` endpoint.
+      properties:
+        name:
+          type: string
+          description: Machine name / unique identifier
+          example: ml
+        label:
+          type: string
+          description: Display label shown in UI
+          example: Machine Learning
+        icon:
+          type: string
+          description: Icon identifier (Iconify format)
+          example: mdi:brain
+        color:
+          type: string
+          description: Color token or CSS value
+          example: var(--fd-node-purple)
+        description:
+          type: string
+          description: Category description
+          example: Machine learning and AI model nodes
+        weight:
+          type: number
+          description: Sort weight for ordering (lower = earlier)
+          example: 20
+      required:
+        - name
+        - label
     PortDataTypeConfig:
       type: object
       properties:
@@ -3883,6 +3954,15 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/PortConfig'
+    CategoriesResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoryDefinition'
     WorkflowsResponse:
       allOf:
         - $ref: '#/components/schemas/ApiResponse'
