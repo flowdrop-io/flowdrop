@@ -5,7 +5,8 @@
  * preferences with hybrid persistence (localStorage + optional API sync).
  *
  * Theme stores and functions (theme, resolvedTheme, setTheme, toggleTheme,
- * cycleTheme, initializeTheme) are exported from `@d34dman/flowdrop/core`.
+ * cycleTheme, initializeTheme) are exported from `@d34dman/flowdrop/core`
+ * (sourced from settingsStore).
  *
  * @module settings
  *
@@ -28,7 +29,7 @@ export { default as SettingsModal } from '../components/SettingsModal.svelte';
 // Settings Types
 // ============================================================================
 
-// Note: ThemePreference and ResolvedTheme are exported from core (via themeStore)
+// Note: ThemePreference and ResolvedTheme are exported from core (via settingsStore)
 export type {
 	ThemeSettings,
 	EditorSettings,

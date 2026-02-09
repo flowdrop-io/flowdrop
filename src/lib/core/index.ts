@@ -229,7 +229,7 @@ export * from '../adapters/WorkflowAdapter.js';
 // Theme System
 // ============================================================================
 
-export type { ThemePreference, ResolvedTheme } from '../stores/themeStore.js';
+export type { ThemePreference, ResolvedTheme } from '../stores/settingsStore.js';
 export {
 	theme,
 	resolvedTheme,
@@ -238,4 +238,4 @@ export {
 	cycleTheme,
 	initializeTheme,
 	isThemeInitialized
-} from '../stores/themeStore.js';
+} from '../stores/settingsStore.js';

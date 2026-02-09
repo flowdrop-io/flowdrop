@@ -44,7 +44,7 @@
 	import type { FieldSchema } from './types.js';
 	import { getSchemaOptions } from './types.js';
 	import type { WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
-	import { resolvedTheme } from '$lib/stores/themeStore.js';
+	import { resolvedTheme } from '$lib/stores/settingsStore.js';
 
 	interface Props {
 		/** Unique key/id for the field */
