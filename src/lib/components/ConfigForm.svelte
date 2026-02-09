@@ -600,6 +600,7 @@
 							ariaDescribedBy="ext-hideUnconnectedHandles-description"
 							onChange={(val) => {
 								uiExtensionValues.hideUnconnectedHandles = val;
+								handleFormBlur();
 							}}
 						/>
 					</FormFieldWrapper>
