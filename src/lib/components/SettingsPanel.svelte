@@ -144,8 +144,7 @@
 				proximityConnect: {
 					type: 'boolean',
 					title: 'Proximity Connect',
-					description:
-						'Auto-connect compatible ports when dragging nodes near each other',
+					description: 'Auto-connect compatible ports when dragging nodes near each other',
 					default: false
 				},
 				proximityConnectDistance: {

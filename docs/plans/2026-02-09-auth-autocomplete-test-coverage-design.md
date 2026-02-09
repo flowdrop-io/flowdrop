@@ -25,17 +25,17 @@ Extract the header-building logic from `FormAutocomplete.svelte:194-206` into a 
 
 ```typescript
 export async function buildFetchHeaders(
-  authProvider?: AuthProvider
+	authProvider?: AuthProvider
 ): Promise<Record<string, string>> {
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json'
-  };
-  if (authProvider) {
-    const authHeaders = await authProvider.getAuthHeaders();
-    Object.assign(headers, authHeaders);
-  }
-  return headers;
+	const headers: Record<string, string> = {
+		Accept: 'application/json',
+		'Content-Type': 'application/json'
+	};
+	if (authProvider) {
+		const authHeaders = await authProvider.getAuthHeaders();
+		Object.assign(headers, authHeaders);
+	}
+	return headers;
 }
 ```
 
@@ -100,14 +100,14 @@ A variant without `authProvider` that verifies the same interaction results in a
 
 ## Files Changed
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/lib/utils/fetchWithAuth.ts` | Create | Extracted auth header utility |
-| `src/lib/components/form/FormAutocomplete.svelte` | Modify | Use extracted utility |
-| `src/mocks/handlers/autocomplete.ts` | Modify | Add auth-required handler |
-| `src/routes/test/auth-autocomplete/+page.svelte` | Create | Test route with auth |
-| `tests/unit/components/FormAutocomplete.test.ts` | Modify | Add auth header tests |
-| `tests/e2e/auth-autocomplete.spec.ts` | Create | E2E auth propagation tests |
+| File                                              | Action | Purpose                       |
+| ------------------------------------------------- | ------ | ----------------------------- |
+| `src/lib/utils/fetchWithAuth.ts`                  | Create | Extracted auth header utility |
+| `src/lib/components/form/FormAutocomplete.svelte` | Modify | Use extracted utility         |
+| `src/mocks/handlers/autocomplete.ts`              | Modify | Add auth-required handler     |
+| `src/routes/test/auth-autocomplete/+page.svelte`  | Create | Test route with auth          |
+| `tests/unit/components/FormAutocomplete.test.ts`  | Modify | Add auth header tests         |
+| `tests/e2e/auth-autocomplete.spec.ts`             | Create | E2E auth propagation tests    |
 
 ## Dependencies
 
