@@ -541,6 +541,13 @@ NodeMetadata:
         Currently used by tool nodes. Can be overridden per-instance via `config.instanceBadge`.
         Defaults to "TOOL" for tool nodes if not specified.
       example: API
+    portDataType:
+      type: string
+      description: |
+        Port dataType to expose on tool nodes. Defaults to "tool".
+        Set to another type (e.g., "trigger") to show that port type instead.
+        This allows repurposing the tool node with a custom badge and matching port type.
+      example: trigger
     inputs:
       type: array
       items:

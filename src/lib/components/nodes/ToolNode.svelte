@@ -67,9 +67,7 @@
 	 * This allows users to customize the badge text per-instance via config.
 	 */
 	const displayBadge = $derived(
-		(props.data.config?.instanceBadge as string) ||
-			(props.data.metadata?.badge as string) ||
-			'TOOL'
+		(props.data.config?.instanceBadge as string) || (props.data.metadata?.badge as string) || 'TOOL'
 	);
 
 	/**
@@ -96,20 +94,28 @@
 	 */
 	let nodeStyle = $derived(`--fd-tool-node-color: ${toolColor}`);
 
-	// Check for tool interface ports in metadata
+	/**
+	 * Configurable port dataType to expose on this tool node.
+	 * Defaults to 'tool', but can be overridden via metadata.portDataType
+	 * to show a different port type (e.g., 'trigger') when the node is
+	 * repurposed with a custom badge.
+	 */
+	let portDataType = $derived((props.data.metadata?.portDataType as string) || 'tool');
+
+	// Check for matching interface ports in metadata
 	let hasToolInputPort = $derived(
-		props.data.metadata?.inputs?.some((port) => port.dataType === 'tool') || false
+		props.data.metadata?.inputs?.some((port) => port.dataType === portDataType) || false
 	);
 	let hasToolOutputPort = $derived(
-		props.data.metadata?.outputs?.some((port) => port.dataType === 'tool') || false
+		props.data.metadata?.outputs?.some((port) => port.dataType === portDataType) || false
 	);
 
-	// Get the actual tool ports for proper handle generation
+	// Get the actual matching ports for proper handle generation
 	let toolInputPort = $derived(
-		props.data.metadata?.inputs?.find((port) => port.dataType === 'tool')
+		props.data.metadata?.inputs?.find((port) => port.dataType === portDataType)
 	);
 	let toolOutputPort = $derived(
-		props.data.metadata?.outputs?.find((port) => port.dataType === 'tool')
+		props.data.metadata?.outputs?.find((port) => port.dataType === portDataType)
 	);
 
 	/**
@@ -159,7 +165,7 @@
 		position={Position.Left}
 		id={`${props.data.nodeId}-input-${toolInputPort.id}`}
 		style="top: 40px; transform: translateY(-50%); margin-left: -10px; --fd-handle-fill: {getDataTypeColor(
-			'tool'
+			portDataType
 		)}; --fd-handle-border-color: var(--fd-handle-border);"
 	/>
 {/if}
@@ -232,7 +238,7 @@
 		position={Position.Right}
 		id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
 		style="top: 40px; transform: translateY(-50%); margin-right: -10px; --fd-handle-fill: {getDataTypeColor(
-			'tool'
+			portDataType
 		)}; --fd-handle-border-color: var(--fd-handle-border);"
 	/>
 {/if}
