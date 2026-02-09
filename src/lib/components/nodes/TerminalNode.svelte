@@ -10,11 +10,12 @@
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { ConfigValues, NodeMetadata } from '../../types/index.js';
+	import type { ConfigValues, NodeMetadata, NodeExtensions, NodePort } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
 	import { getNodeIcon } from '../../utils/icons.js';
 	import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
+	import { connectedHandles } from '../../stores/workflowStore.js';
 
 	/**
 	 * Terminal node variant types
@@ -70,6 +71,7 @@
 			config: ConfigValues;
 			metadata: NodeMetadata;
 			nodeId?: string;
+			extensions?: NodeExtensions;
 			onConfigOpen?: (node: {
 				id: string;
 				type: string;
@@ -132,6 +134,30 @@
 	 * Get current variant configuration
 	 */
 	let variantConfig = $derived(VARIANT_CONFIGS[variant]);
+
+	/**
+	 * Get the hideUnconnectedHandles setting from extensions
+	 * Merges node type defaults with instance overrides
+	 */
+	const hideUnconnectedHandles = $derived(() => {
+		const typeDefault = props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ?? false;
+		const instanceOverride = props.data.extensions?.ui?.hideUnconnectedHandles;
+		return instanceOverride ?? typeDefault;
+	});
+
+	/**
+	 * Check if a port should be visible based on connection state and settings
+	 */
+	function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
+		if (!hideUnconnectedHandles()) {
+			return true;
+		}
+		if (port.required) {
+			return true;
+		}
+		const handleId = `${props.data.nodeId}-${type}-${port.id}`;
+		return $connectedHandles.has(handleId);
+	}
 
 	/**
 	 * Get icon using the same resolution as WorkflowNode
@@ -239,14 +265,24 @@
 	);
 
 	/**
-	 * Determine if we should show inputs based on ports
+	 * Visible input ports filtered by hideUnconnectedHandles setting
 	 */
-	let showInputs = $derived(inputPorts.length > 0);
+	let visibleInputPorts = $derived(inputPorts.filter((port) => isPortVisible(port, 'input')));
 
 	/**
-	 * Determine if we should show outputs based on ports
+	 * Visible output ports filtered by hideUnconnectedHandles setting
 	 */
-	let showOutputs = $derived(outputPorts.length > 0);
+	let visibleOutputPorts = $derived(outputPorts.filter((port) => isPortVisible(port, 'output')));
+
+	/**
+	 * Determine if we should show inputs based on visible ports
+	 */
+	let showInputs = $derived(visibleInputPorts.length > 0);
+
+	/**
+	 * Determine if we should show outputs based on visible ports
+	 */
+	let showOutputs = $derived(visibleOutputPorts.length > 0);
 
 	/**
 	 * Handle configuration sidebar - using global ConfigSidebar
@@ -317,8 +353,8 @@
 	<div class="flowdrop-terminal-node__circle-wrapper">
 		<!-- Input Handles (for end/exit variants) -->
 		{#if showInputs}
-			{#each inputPorts as port, index (port.id)}
-				{@const pos = getCircleHandlePosition(index, inputPorts.length, 'left')}
+			{#each visibleInputPorts as port, index (`${port.id}-${visibleInputPorts.length}`)}
+				{@const pos = getCircleHandlePosition(index, visibleInputPorts.length, 'left')}
 				<Handle
 					type="target"
 					position={Position.Left}
@@ -339,8 +375,8 @@
 
 		<!-- Output Handles (for start variant) -->
 		{#if showOutputs}
-			{#each outputPorts as port, index (port.id)}
-				{@const pos = getCircleHandlePosition(index, outputPorts.length, 'right')}
+			{#each visibleOutputPorts as port, index (`${port.id}-${visibleOutputPorts.length}`)}
+				{@const pos = getCircleHandlePosition(index, visibleOutputPorts.length, 'right')}
 				<Handle
 					type="source"
 					position={Position.Right}
