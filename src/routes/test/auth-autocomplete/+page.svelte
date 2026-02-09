@@ -90,9 +90,10 @@
 		nodes: [
 			{
 				id: 'node-1',
-				type: 'default',
-				position: { x: 250, y: 200 },
+				type: 'universalNode',
+				position: { x: 600, y: 200 },
 				data: {
+					nodeId: 'node-1',
 					label: 'Task Assignment (Auth Test)',
 					config: { assignee: '' },
 					metadata: taskAssignmentNode
