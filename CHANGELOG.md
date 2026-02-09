@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.53] - 2026-02-10
+
+### Added
+
+- **Configurable portDataType for ToolNode**: ToolNode can now expose a port type other than `"tool"` via `metadata.portDataType`, enabling repurposing with a custom badge and matching port type (e.g. `"trigger"`)
+- **hideUnconnectedHandles for TerminalNode**: TerminalNode now supports filtering port visibility via `extensions.ui.hideUnconnectedHandles`, matching existing behavior in WorkflowNode/SimpleNode/SquareNode
+
+### Fixed
+
+- **Unified theme management**: Removed deprecated `themeStore` and unified all theme state through `settingsStore`, fixing SvelteFlow and form components not reflecting theme changes
+- **Auth provider propagation** (issue #21): Both ConfigForm instances in App.svelte (workflow settings and node config) now receive the `authProvider` prop, fixing unauthenticated autocomplete requests
+- **ConfigForm toggle propagation**: The `hideUnconnectedHandles` toggle now calls `handleFormBlur()` on change, ensuring immediate propagation to node data
+
 ## [0.0.52] - 2026-02-07
 
 ### Added
