@@ -114,9 +114,7 @@ export class ProximityConnectHelper {
 
 		// Build lookup sets for O(1) duplicate/connected checks
 		const existingEdgeSet = new Set(
-			existingEdges.map(
-				(e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`
-			)
+			existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)
 		);
 		const connectedTargetHandles = new Set(
 			existingEdges.map((e) => `${e.target}:${e.targetHandle}`)

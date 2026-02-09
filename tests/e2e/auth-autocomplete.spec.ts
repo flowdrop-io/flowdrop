@@ -26,7 +26,10 @@ const EXPECTED_TOKEN = 'test-auth-token-123';
 test.describe('Auth Autocomplete Propagation', () => {
 	// Skip mobile viewports - the config sidebar requires desktop-width layout
 	test.beforeEach(({}, testInfo) => {
-		test.skip(testInfo.project.name === 'Mobile Chrome', 'Config sidebar not available on mobile viewports');
+		test.skip(
+			testInfo.project.name === 'Mobile Chrome',
+			'Config sidebar not available on mobile viewports'
+		);
 	});
 
 	test('autocomplete includes auth headers and loads suggestions', async ({ page }) => {

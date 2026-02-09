@@ -252,15 +252,12 @@ const theme = derived(themeSettings, ($theme) => $theme.preference);
 /**
  * Resolved theme (internal - exported via core/themeStore)
  */
-const resolvedTheme = derived(
-	[themeSettings, systemTheme],
-	([$themeSettings, $systemTheme]) => {
-		if ($themeSettings.preference === 'auto') {
-			return $systemTheme;
-		}
-		return $themeSettings.preference;
+const resolvedTheme = derived([themeSettings, systemTheme], ([$themeSettings, $systemTheme]) => {
+	if ($themeSettings.preference === 'auto') {
+		return $systemTheme;
 	}
-);
+	return $themeSettings.preference;
+});
 
 // =========================================================================
 // Settings Update Functions

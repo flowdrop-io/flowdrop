@@ -9,11 +9,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import type { AutocompleteConfig } from '$lib/types/index.js';
 import type { FieldOption } from '$lib/components/form/types.js';
 import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
-import {
-	StaticAuthProvider,
-	CallbackAuthProvider,
-	NoAuthProvider
-} from '$lib/types/auth.js';
+import { StaticAuthProvider, CallbackAuthProvider, NoAuthProvider } from '$lib/types/auth.js';
 
 /**
  * Helper function to map API response to FieldOption array

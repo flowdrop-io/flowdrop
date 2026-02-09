@@ -11,7 +11,9 @@ import { FlowDropApiClient } from '../api/client.js';
 /**
  * Fetch category definitions from API
  */
-export async function fetchCategories(endpointConfig: EndpointConfig): Promise<CategoryDefinition[]> {
+export async function fetchCategories(
+	endpointConfig: EndpointConfig
+): Promise<CategoryDefinition[]> {
 	try {
 		const client = new FlowDropApiClient(endpointConfig.baseUrl);
 		const categories = await client.getCategories();
