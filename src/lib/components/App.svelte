@@ -738,6 +738,7 @@
 				onClose={() => (isWorkflowSettingsOpen = false)}
 			>
 				<ConfigForm
+					{authProvider}
 					schema={workflowConfigSchema}
 					values={workflowConfigValues}
 					showUIExtensions={false}
@@ -765,6 +766,7 @@
 				onClose={closeConfigSidebar}
 			>
 				<ConfigForm
+					{authProvider}
 					node={currentNode}
 					workflowId={$workflowStore?.id}
 					workflowNodes={$workflowStore?.nodes}

@@ -8,6 +8,12 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import type { AutocompleteConfig } from '$lib/types/index.js';
 import type { FieldOption } from '$lib/components/form/types.js';
+import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
+import {
+	StaticAuthProvider,
+	CallbackAuthProvider,
+	NoAuthProvider
+} from '$lib/types/auth.js';
 
 /**
  * Helper function to map API response to FieldOption array
@@ -589,6 +595,115 @@ describe('FormAutocomplete', () => {
 
 			const result = getDisplayLabel('user-1', cache, suggestions);
 			expect(result).toBe('Cached Name');
+		});
+	});
+
+	describe('buildFetchHeaders', () => {
+		it('should return default headers when no auth provider is given', async () => {
+			const headers = await buildFetchHeaders(undefined);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			});
+		});
+
+		it('should include bearer token from StaticAuthProvider', async () => {
+			const provider = new StaticAuthProvider({
+				type: 'bearer',
+				token: 'my-secret-token'
+			});
+
+			const headers = await buildFetchHeaders(provider);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer my-secret-token'
+			});
+		});
+
+		it('should include API key from StaticAuthProvider', async () => {
+			const provider = new StaticAuthProvider({
+				type: 'api_key',
+				apiKey: 'my-api-key'
+			});
+
+			const headers = await buildFetchHeaders(provider);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				'X-API-Key': 'my-api-key'
+			});
+		});
+
+		it('should include custom headers from StaticAuthProvider', async () => {
+			const provider = new StaticAuthProvider({
+				type: 'custom',
+				headers: {
+					'X-Custom-Auth': 'custom-value',
+					'X-Tenant-ID': 'tenant-123'
+				}
+			});
+
+			const headers = await buildFetchHeaders(provider);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				'X-Custom-Auth': 'custom-value',
+				'X-Tenant-ID': 'tenant-123'
+			});
+		});
+
+		it('should include bearer token from CallbackAuthProvider', async () => {
+			const provider = new CallbackAuthProvider({
+				getToken: async () => 'callback-token-456'
+			});
+
+			const headers = await buildFetchHeaders(provider);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer callback-token-456'
+			});
+		});
+
+		it('should not add auth headers when CallbackAuthProvider returns null token', async () => {
+			const provider = new CallbackAuthProvider({
+				getToken: async () => null
+			});
+
+			const headers = await buildFetchHeaders(provider);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			});
+		});
+
+		it('should not add auth headers from NoAuthProvider', async () => {
+			const provider = new NoAuthProvider();
+
+			const headers = await buildFetchHeaders(provider);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			});
+		});
+
+		it('should not add auth headers when StaticAuthProvider has type none', async () => {
+			const provider = new StaticAuthProvider({ type: 'none' });
+
+			const headers = await buildFetchHeaders(provider);
+
+			expect(headers).toEqual({
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			});
 		});
 	});
 });
