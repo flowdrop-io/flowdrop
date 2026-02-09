@@ -591,6 +591,8 @@ export interface NodeMetadata {
 	color?: string;
 	/** Badge label displayed in the node header (e.g., "TOOL", "API", "LLM"). Overridable per-instance via config.instanceBadge. */
 	badge?: string;
+	/** Port dataType to expose on tool nodes. Defaults to 'tool'. Set to another type (e.g., 'trigger') to show that port instead. */
+	portDataType?: string;
 	inputs: NodePort[];
 	outputs: NodePort[];
 	configSchema?: ConfigSchema;
