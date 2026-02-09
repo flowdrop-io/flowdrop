@@ -329,6 +329,40 @@ export const getAutocompleteSlowHandler = http.get(
 );
 
 /**
+ * Auth-required users handler for testing auth propagation
+ *
+ * GET /api/flowdrop/autocomplete/auth-users
+ *
+ * Requires Authorization: Bearer test-auth-token-123
+ * Returns 401 if the header is missing or has wrong token
+ */
+export const AUTH_TEST_TOKEN = 'test-auth-token-123';
+
+export const getAuthUsersAutocompleteHandler = http.get(
+	`${API_BASE}/autocomplete/auth-users`,
+	async ({ request }) => {
+		await delay(getRandomDelay());
+
+		const authHeader = request.headers.get('Authorization');
+		if (!authHeader || authHeader !== `Bearer ${AUTH_TEST_TOKEN}`) {
+			return HttpResponse.json(
+				{ error: 'Unauthorized', message: 'Missing or invalid authorization token' },
+				{ status: 401 }
+			);
+		}
+
+		const url = new URL(request.url);
+		const query = url.searchParams.get('q') || '';
+		const limit = parseInt(url.searchParams.get('limit') || '10');
+
+		const users = searchUsers(query);
+		const limitedUsers = users.slice(0, limit);
+
+		return HttpResponse.json(formatUsersResponse(limitedUsers));
+	}
+);
+
+/**
  * Export all autocomplete handlers
  */
 export const autocompleteHandlers = [
@@ -339,5 +373,6 @@ export const autocompleteHandlers = [
 	getLocationsAutocompleteHandler,
 	getGenericAutocompleteHandler,
 	getAutocompleteErrorHandler,
-	getAutocompleteSlowHandler
+	getAutocompleteSlowHandler,
+	getAuthUsersAutocompleteHandler
 ];

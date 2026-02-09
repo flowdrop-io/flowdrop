@@ -10,7 +10,7 @@ export default defineConfig({
 
 		// Test file patterns
 		include: ['tests/**/*.{test,spec}.{js,ts}'],
-		exclude: ['node_modules', 'build', 'dist', '.svelte-kit'],
+		exclude: ['node_modules', 'build', 'dist', '.svelte-kit', 'tests/e2e'],
 
 		// Coverage configuration
 		coverage: {

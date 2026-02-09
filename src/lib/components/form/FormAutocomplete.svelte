@@ -25,6 +25,7 @@
 	import Icon from '@iconify/svelte';
 	import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
 	import type { FieldOption } from './types.js';
+	import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
 
 	/**
 	 * Props interface for FormAutocomplete component
@@ -192,18 +193,8 @@
 		abortController = new AbortController();
 
 		try {
-			// Build headers with authentication
-			const headers: Record<string, string> = {
-				Accept: 'application/json',
-				'Content-Type': 'application/json'
-			};
-
-			// Add auth headers if provider is available (call getter to get current value)
-			const authProvider = getAuthProvider?.();
-			if (authProvider) {
-				const authHeaders = await authProvider.getAuthHeaders();
-				Object.assign(headers, authHeaders);
-			}
+			// Build headers with authentication (call getter to get current value)
+			const headers = await buildFetchHeaders(getAuthProvider?.());
 
 			// Fetch with timeout
 			const timeoutId = setTimeout(() => {
