@@ -16,8 +16,7 @@
 		type ColorMode
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import { resolvedTheme } from '../stores/themeStore.js';
-	import { editorSettings, behaviorSettings } from '../stores/settingsStore.js';
+	import { resolvedTheme, editorSettings, behaviorSettings } from '../stores/settingsStore.js';
 	import type {
 		WorkflowNode as WorkflowNodeType,
 		NodeMetadata,

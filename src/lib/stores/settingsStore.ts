@@ -5,7 +5,7 @@
  * - Hybrid persistence (localStorage primary, optional API sync)
  * - Category-specific derived stores for performance
  * - Deep merge support for partial updates
- * - Theme system compatibility (backward compatible with themeStore)
+ * - Integrated theme system with system preference detection
  *
  * @module stores/settingsStore
  */
@@ -27,6 +27,7 @@ import type {
 	SettingsChangeEvent,
 	SettingsCategory
 } from '$lib/types/settings.js';
+export type { ThemePreference, ResolvedTheme } from '$lib/types/settings.js';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '$lib/types/settings.js';
 
 // =========================================================================
@@ -207,7 +208,7 @@ export const behaviorSettings = derived(settingsStore, ($settings) => $settings.
 export const apiSettings = derived(settingsStore, ($settings) => $settings.api);
 
 // =========================================================================
-// Theme Compatibility (for themeStore migration)
+// Theme System
 // =========================================================================
 
 /**
@@ -245,14 +246,16 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Theme preference (internal - exported via core/themeStore)
+ * Theme preference store
+ * Derived from themeSettings for convenient access
  */
-const theme = derived(themeSettings, ($theme) => $theme.preference);
+export const theme = derived(themeSettings, ($theme) => $theme.preference);
 
 /**
- * Resolved theme (internal - exported via core/themeStore)
+ * Resolved theme - the actual theme applied ('light' or 'dark')
+ * When preference is 'auto', resolves based on system preference
  */
-const resolvedTheme = derived([themeSettings, systemTheme], ([$themeSettings, $systemTheme]) => {
+export const resolvedTheme = derived([themeSettings, systemTheme], ([$themeSettings, $systemTheme]) => {
 	if ($themeSettings.preference === 'auto') {
 		return $systemTheme;
 	}
@@ -363,20 +366,23 @@ export function getSettings(): FlowDropSettings {
 }
 
 // =========================================================================
-// Theme-Specific Functions (backward compatible with themeStore)
+// Theme Actions
 // =========================================================================
 
 /**
- * Set the theme preference (internal - exported via core/themeStore)
+ * Set the theme preference
+ *
+ * @param newTheme - The new theme preference ('light', 'dark', or 'auto')
  */
-function setTheme(newTheme: ThemePreference): void {
+export function setTheme(newTheme: ThemePreference): void {
 	updateSettings({ theme: { preference: newTheme } });
 }
 
 /**
- * Toggle between light and dark themes (internal - exported via core/themeStore)
+ * Toggle between light and dark themes
+ * If currently 'auto', switches to the opposite of system preference
  */
-function toggleTheme(): void {
+export function toggleTheme(): void {
 	const currentTheme = get(theme);
 	const currentResolved = get(resolvedTheme);
 
@@ -388,9 +394,9 @@ function toggleTheme(): void {
 }
 
 /**
- * Cycle through theme options (internal - exported via core/themeStore)
+ * Cycle through theme options: light -> dark -> auto -> light
  */
-function cycleTheme(): void {
+export function cycleTheme(): void {
 	const currentTheme = get(theme);
 
 	switch (currentTheme) {
@@ -419,9 +425,14 @@ function applyTheme(resolved: ResolvedTheme): void {
 }
 
 /**
- * Initialize the theme system (internal - exported via core/themeStore)
+ * Initialize the theme system
+ * Should be called once on app startup
+ *
+ * This function:
+ * 1. Applies the current resolved theme to the document
+ * 2. Sets up reactivity to apply theme changes
  */
-function initializeTheme(): void {
+export function initializeTheme(): void {
 	const resolved = get(resolvedTheme);
 	applyTheme(resolved);
 
@@ -429,6 +440,19 @@ function initializeTheme(): void {
 	resolvedTheme.subscribe((theme) => {
 		applyTheme(theme);
 	});
+}
+
+/**
+ * Check if theme system is initialized
+ * Useful for SSR scenarios
+ *
+ * @returns true if running in browser and theme is applied
+ */
+export function isThemeInitialized(): boolean {
+	if (typeof document === 'undefined') {
+		return false;
+	}
+	return document.documentElement.hasAttribute('data-theme');
 }
 
 // =========================================================================
