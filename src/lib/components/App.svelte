@@ -36,6 +36,8 @@
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 	import { initAutoSave } from '$lib/services/autoSaveService.js';
 	import { uiSettings } from '../stores/settingsStore.js';
+	import { initializePortCompatibility } from '$lib/utils/connections.js';
+	import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
 
 	/**
 	 * Configuration props for runtime customization
@@ -591,6 +593,11 @@
 	onMount(() => {
 		(async () => {
 			await initializeApiEndpoints();
+
+			// Ensure port compatibility checker is initialized (needed for proximity connect, etc.)
+			// mountFlowDropApp initializes this before mounting, but SvelteKit routes need it here.
+			initializePortCompatibility(DEFAULT_PORT_CONFIG);
+
 			await fetchNodeTypes();
 
 			// Initialize the workflow store if we have an initial workflow
