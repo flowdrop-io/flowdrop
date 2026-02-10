@@ -159,6 +159,17 @@ export {
 	setRestoringFromHistory
 } from '../stores/workflowStore.js';
 
+// Port Coordinate Store
+export {
+	portCoordinateStore,
+	rebuildAllPortCoordinates,
+	updateNodePortCoordinates,
+	removeNodePortCoordinates,
+	getPortCoordinate,
+	getNodePortCoordinates,
+	getPortCoordinateSnapshot
+} from '../stores/portCoordinateStore.js';
+
 // History Store and Service
 export {
 	historyStateStore,
