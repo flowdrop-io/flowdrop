@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.54] - 2026-02-11
+
+### Added
+
+- **Port Coordinate Store**: New port coordinate store enables port-to-port proximity connect, replacing node-center-based distance calculations with precise port position tracking
+
+### Fixed
+
+- **Port compatibility checker initialization**: Initialize port compatibility checker in App.svelte for SvelteKit routes, ensuring compatibility checks work on first load
+
+### Performance
+
+- **Optimized proximity connect**: Skip incompatible port pairs early during proximity connect, reducing unnecessary distance calculations
+- **Debounced port coordinate rebuilds**: Debounce full port coordinate rebuilds during bulk position updates (e.g. layout changes), preventing redundant recalculations
+
+### Chore
+
+- Removed stale "Removed" comments from component files
+- Removed unused deprecated code from interrupt store and port config
+
 ## [0.0.53] - 2026-02-10
 
 ### Added
