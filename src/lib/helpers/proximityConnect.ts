@@ -106,7 +106,7 @@ export class ProximityConnectHelper {
 	 * 1. Find the closest node within minDistance (edge-to-edge)
 	 * 2. Check both directions (dragged->nearby and nearby->dragged)
 	 * 3. Return the first exact-type match, or first compatible match
-	 * 4. Skip pairs where an edge already exists or input handle is already connected
+	 * 4. Skip pairs where an edge already exists
 	 *
 	 * @returns Array with at most ONE ProximityEdgeCandidate
 	 */
@@ -118,12 +118,9 @@ export class ProximityConnectHelper {
 	): ProximityEdgeCandidate[] {
 		const checker = getPortCompatibilityChecker();
 
-		// Build lookup sets for O(1) duplicate/connected checks
+		// Build lookup set for O(1) duplicate checks
 		const existingEdgeSet = new Set(
 			existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)
-		);
-		const connectedTargetHandles = new Set(
-			existingEdges.map((e) => `${e.target}:${e.targetHandle}`)
 		);
 
 		// Find the closest node within distance
@@ -158,10 +155,7 @@ export class ProximityConnectHelper {
 				const sourceHandle = this.buildHandleId(draggedNode.id, 'output', outPort.id);
 				const targetHandle = this.buildHandleId(closestNode.id, 'input', inPort.id);
 				const edgeKey = `${draggedNode.id}:${sourceHandle}->${closestNode.id}:${targetHandle}`;
-				const targetHandleKey = `${closestNode.id}:${targetHandle}`;
-
 				if (existingEdgeSet.has(edgeKey)) continue;
-				if (connectedTargetHandles.has(targetHandleKey)) continue;
 
 				const candidate: ProximityEdgeCandidate = {
 					id: `proximity-${uuidv4()}`,
@@ -194,10 +188,7 @@ export class ProximityConnectHelper {
 					const sourceHandle = this.buildHandleId(closestNode.id, 'output', outPort.id);
 					const targetHandle = this.buildHandleId(draggedNode.id, 'input', inPort.id);
 					const edgeKey = `${closestNode.id}:${sourceHandle}->${draggedNode.id}:${targetHandle}`;
-					const targetHandleKey = `${draggedNode.id}:${targetHandle}`;
-
 					if (existingEdgeSet.has(edgeKey)) continue;
-					if (connectedTargetHandles.has(targetHandleKey)) continue;
 
 					const candidate: ProximityEdgeCandidate = {
 						id: `proximity-${uuidv4()}`,
@@ -248,12 +239,9 @@ export class ProximityConnectHelper {
 	): ProximityEdgeCandidate[] {
 		const checker = getPortCompatibilityChecker();
 
-		// Build lookup sets for O(1) duplicate/connected checks
+		// Build lookup set for O(1) duplicate checks
 		const existingEdgeSet = new Set(
 			existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)
-		);
-		const connectedTargetHandles = new Set(
-			existingEdges.map((e) => `${e.target}:${e.targetHandle}`)
 		);
 
 		// Partition ports by owner and direction, group other-node ports by dataType
@@ -285,10 +273,6 @@ export class ProximityConnectHelper {
 			// Check for existing edge
 			const edgeKey = `${sourceCoord.nodeId}:${sourceCoord.handleId}->${targetCoord.nodeId}:${targetCoord.handleId}`;
 			if (existingEdgeSet.has(edgeKey)) return;
-
-			// Check target handle not already connected (single-input rule)
-			const targetHandleKey = `${targetCoord.nodeId}:${targetCoord.handleId}`;
-			if (connectedTargetHandles.has(targetHandleKey)) return;
 
 			// Calculate port-to-port distance
 			const dx = sourceCoord.x - targetCoord.x;
