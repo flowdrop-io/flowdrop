@@ -11,6 +11,7 @@ import type {
 	WorkflowEdge,
 	NodePort,
 	DynamicPort,
+	PortCoordinate,
 	PortCoordinateMap
 } from '../types/index.js';
 import { dynamicPortToNodePort } from '../types/index.js';
@@ -232,9 +233,10 @@ export class ProximityConnectHelper {
 	 * This is more accurate for large nodes or nodes with many ports.
 	 *
 	 * Algorithm:
-	 * 1. Partition port coordinates into dragged-node ports vs other-node ports
-	 * 2. For each valid output→input pair, check compatibility and distance
-	 * 3. Return the closest compatible pair (exact type match preferred)
+	 * 1. Partition ports by owner (dragged vs other) and direction (input vs output)
+	 * 2. Group other-node ports by dataType for O(1) lookup of compatible groups
+	 * 3. For each dragged port, only iterate compatible dataType groups
+	 * 4. Return the closest compatible pair (exact type match preferred)
 	 *
 	 * @returns Array with at most ONE ProximityEdgeCandidate
 	 */
@@ -254,15 +256,24 @@ export class ProximityConnectHelper {
 			existingEdges.map((e) => `${e.target}:${e.targetHandle}`)
 		);
 
-		// Partition port coordinates into dragged vs other
-		const draggedPorts = [];
-		const otherPorts = [];
+		// Partition ports by owner and direction, group other-node ports by dataType
+		const draggedOutputs: PortCoordinate[] = [];
+		const draggedInputs: PortCoordinate[] = [];
+		const otherInputsByType = new Map<string, PortCoordinate[]>();
+		const otherOutputsByType = new Map<string, PortCoordinate[]>();
 
 		for (const coord of portCoordinates.values()) {
 			if (coord.nodeId === draggedNodeId) {
-				draggedPorts.push(coord);
+				if (coord.direction === 'output') draggedOutputs.push(coord);
+				else draggedInputs.push(coord);
 			} else {
-				otherPorts.push(coord);
+				const groupMap = coord.direction === 'input' ? otherInputsByType : otherOutputsByType;
+				let group = groupMap.get(coord.dataType);
+				if (!group) {
+					group = [];
+					groupMap.set(coord.dataType, group);
+				}
+				group.push(coord);
 			}
 		}
 
@@ -270,50 +281,58 @@ export class ProximityConnectHelper {
 		let bestDistance = Infinity;
 		let bestIsExact = false;
 
-		for (const dp of draggedPorts) {
-			for (const op of otherPorts) {
-				// Only consider valid directions: output→input
-				const isForward = dp.direction === 'output' && op.direction === 'input';
-				const isReverse = dp.direction === 'input' && op.direction === 'output';
-				if (!isForward && !isReverse) continue;
+		const evaluatePair = (sourceCoord: PortCoordinate, targetCoord: PortCoordinate) => {
+			// Check for existing edge
+			const edgeKey = `${sourceCoord.nodeId}:${sourceCoord.handleId}->${targetCoord.nodeId}:${targetCoord.handleId}`;
+			if (existingEdgeSet.has(edgeKey)) return;
 
-				const sourceCoord = isForward ? dp : op;
-				const targetCoord = isForward ? op : dp;
+			// Check target handle not already connected (single-input rule)
+			const targetHandleKey = `${targetCoord.nodeId}:${targetCoord.handleId}`;
+			if (connectedTargetHandles.has(targetHandleKey)) return;
 
-				// Check compatibility
-				if (!checker.areDataTypesCompatible(sourceCoord.dataType, targetCoord.dataType))
-					continue;
+			// Calculate port-to-port distance
+			const dx = sourceCoord.x - targetCoord.x;
+			const dy = sourceCoord.y - targetCoord.y;
+			const dist = Math.sqrt(dx * dx + dy * dy);
 
-				// Check for existing edge
-				const edgeKey = `${sourceCoord.nodeId}:${sourceCoord.handleId}->${targetCoord.nodeId}:${targetCoord.handleId}`;
-				if (existingEdgeSet.has(edgeKey)) continue;
+			if (dist > maxDistance) return;
 
-				// Check target handle not already connected (single-input rule)
-				const targetHandleKey = `${targetCoord.nodeId}:${targetCoord.handleId}`;
-				if (connectedTargetHandles.has(targetHandleKey)) continue;
+			const isExact = sourceCoord.dataType === targetCoord.dataType;
 
-				// Calculate port-to-port distance
-				const dx = sourceCoord.x - targetCoord.x;
-				const dy = sourceCoord.y - targetCoord.y;
-				const dist = Math.sqrt(dx * dx + dy * dy);
+			// Prefer exact match, then closest distance
+			if ((isExact && !bestIsExact) || (isExact === bestIsExact && dist < bestDistance)) {
+				bestCandidate = {
+					id: `proximity-${uuidv4()}`,
+					source: sourceCoord.nodeId,
+					target: targetCoord.nodeId,
+					sourceHandle: sourceCoord.handleId,
+					targetHandle: targetCoord.handleId,
+					sourcePortDataType: sourceCoord.dataType,
+					targetPortDataType: targetCoord.dataType
+				};
+				bestDistance = dist;
+				bestIsExact = isExact;
+			}
+		};
 
-				if (dist > maxDistance) continue;
+		// Direction A: dragged outputs → other inputs (only compatible types)
+		for (const srcPort of draggedOutputs) {
+			const compatibleTypes = checker.getCompatibleTypes(srcPort.dataType);
+			for (const targetType of compatibleTypes) {
+				const targets = otherInputsByType.get(targetType);
+				if (!targets) continue;
+				for (const tgtPort of targets) {
+					evaluatePair(srcPort, tgtPort);
+				}
+			}
+		}
 
-				const isExact = sourceCoord.dataType === targetCoord.dataType;
-
-				// Prefer exact match, then closest distance
-				if ((isExact && !bestIsExact) || (isExact === bestIsExact && dist < bestDistance)) {
-					bestCandidate = {
-						id: `proximity-${uuidv4()}`,
-						source: sourceCoord.nodeId,
-						target: targetCoord.nodeId,
-						sourceHandle: sourceCoord.handleId,
-						targetHandle: targetCoord.handleId,
-						sourcePortDataType: sourceCoord.dataType,
-						targetPortDataType: targetCoord.dataType
-					};
-					bestDistance = dist;
-					bestIsExact = isExact;
+		// Direction B: other outputs → dragged inputs (only compatible types)
+		for (const tgtPort of draggedInputs) {
+			for (const [srcType, sources] of otherOutputsByType) {
+				if (!checker.areDataTypesCompatible(srcType, tgtPort.dataType)) continue;
+				for (const srcPort of sources) {
+					evaluatePair(srcPort, tgtPort);
 				}
 			}
 		}
