@@ -46,6 +46,8 @@
 		ProximityConnectHelper,
 		type ProximityEdgeCandidate
 	} from '../helpers/proximityConnect.js';
+	import PortCoordinateTracker from './PortCoordinateTracker.svelte';
+	import { getPortCoordinateSnapshot } from '../stores/portCoordinateStore.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -75,6 +77,10 @@
 
 	// Proximity connect state
 	let currentProximityCandidates = $state<ProximityEdgeCandidate[]>([]);
+
+	// Port coordinate tracker state
+	let portCoordNodeToUpdate = $state<WorkflowNodeType | null>(null);
+	let portCoordRebuildTrigger = $state(0);
 
 	// Track the workflow ID we're currently editing to detect workflow switches
 	let currentWorkflowId: string | null = null;
@@ -177,6 +183,14 @@
 				nodesWithCallbacks
 			);
 			flowEdges = styledEdges;
+
+			// Trigger port coordinate rebuild after workflow load
+			// (PortCoordinateTracker will wait for SvelteFlow to render before reading handleBounds)
+			// Note: Using Date.now() instead of ++ to avoid reading the old value,
+			// which would make this effect depend on portCoordRebuildTrigger and loop.
+			if ($editorSettings.proximityConnect) {
+				portCoordRebuildTrigger = Date.now();
+			}
 
 			// Only load execution info if we have a pipelineId (pipeline status mode)
 			// and if the workflow or pipeline has changed
@@ -347,7 +361,8 @@
 
 	/**
 	 * Handle node drag - compute proximity connect preview edges
-	 * Called continuously during drag if proximity connect is enabled
+	 * Called continuously during drag if proximity connect is enabled.
+	 * Uses port-to-port distance via the port coordinate store.
 	 */
 	function handleNodeDrag({
 		targetNode
@@ -361,19 +376,31 @@
 				flowEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
 				currentProximityCandidates = [];
 			}
+			portCoordNodeToUpdate = null;
 			return;
 		}
+
+		// Update the dragged node's port coordinates (position changed during drag)
+		portCoordNodeToUpdate = targetNode;
 
 		// Remove previous preview edges
 		const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
 
-		// Find the best compatible edge with nearby nodes
-		const candidates = ProximityConnectHelper.findCompatibleEdges(
-			targetNode,
-			flowNodes,
-			baseEdges,
-			$editorSettings.proximityConnectDistance
-		);
+		// Find the best compatible edge using port-to-port distance
+		const portCoordinates = getPortCoordinateSnapshot();
+		const candidates = portCoordinates.size > 0
+			? ProximityConnectHelper.findCompatibleEdgesByPortCoordinates(
+					targetNode.id,
+					portCoordinates,
+					baseEdges,
+					$editorSettings.proximityConnectDistance
+				)
+			: ProximityConnectHelper.findCompatibleEdges(
+					targetNode,
+					flowNodes,
+					baseEdges,
+					$editorSettings.proximityConnectDistance
+				);
 
 		// Create preview edges
 		const previews = ProximityConnectHelper.createPreviewEdges(candidates);
@@ -391,6 +418,7 @@
 	 */
 	function handleNodeDragStop(): void {
 		isDraggingNode = false;
+		portCoordNodeToUpdate = null;
 
 		// Finalize proximity connect if there are candidates
 		if ($editorSettings.proximityConnect && currentProximityCandidates.length > 0) {
@@ -698,6 +726,13 @@
 <SvelteFlowProvider>
 	<!-- EdgeRefresher component - handles updateNodeInternals calls -->
 	<EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
+
+	<!-- Port Coordinate Tracker - maintains port positions for proximity connect -->
+	<PortCoordinateTracker
+		nodeToUpdate={portCoordNodeToUpdate}
+		rebuildTrigger={portCoordRebuildTrigger}
+		nodes={flowNodes}
+	/>
 
 	<div class="flowdrop-workflow-editor">
 		<!-- Main Editor Area -->

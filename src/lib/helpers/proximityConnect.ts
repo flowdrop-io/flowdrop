@@ -10,7 +10,8 @@ import type {
 	WorkflowNode as WorkflowNodeType,
 	WorkflowEdge,
 	NodePort,
-	DynamicPort
+	DynamicPort,
+	PortCoordinateMap
 } from '../types/index.js';
 import { dynamicPortToNodePort } from '../types/index.js';
 import { getPortCompatibilityChecker } from '../utils/connections.js';
@@ -74,7 +75,7 @@ export class ProximityConnectHelper {
 	}
 
 	/**
-	 * Calculate center-to-center Euclidean distance between two nodes.
+	 * Calculate center-to-center distance between two nodes.
 	 */
 	static getNodeDistance(
 		nodeA: {
@@ -86,18 +87,22 @@ export class ProximityConnectHelper {
 			measured?: { width?: number; height?: number };
 		}
 	): number {
-		const ax = nodeA.position.x + (nodeA.measured?.width ?? 0) / 2;
-		const ay = nodeA.position.y + (nodeA.measured?.height ?? 0) / 2;
-		const bx = nodeB.position.x + (nodeB.measured?.width ?? 0) / 2;
-		const by = nodeB.position.y + (nodeB.measured?.height ?? 0) / 2;
-		return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
+		const aCenterX = nodeA.position.x + (nodeA.measured?.width ?? 0) / 2;
+		const aCenterY = nodeA.position.y + (nodeA.measured?.height ?? 0) / 2;
+		const bCenterX = nodeB.position.x + (nodeB.measured?.width ?? 0) / 2;
+		const bCenterY = nodeB.position.y + (nodeB.measured?.height ?? 0) / 2;
+
+		const dx = aCenterX - bCenterX;
+		const dy = aCenterY - bCenterY;
+
+		return Math.sqrt(dx * dx + dy * dy);
 	}
 
 	/**
 	 * Find the single best compatible edge between a dragged node and nearby nodes.
 	 *
 	 * Algorithm:
-	 * 1. Find the closest node within minDistance
+	 * 1. Find the closest node within minDistance (edge-to-edge)
 	 * 2. Check both directions (dragged->nearby and nearby->dragged)
 	 * 3. Return the first exact-type match, or first compatible match
 	 * 4. Skip pairs where an edge already exists or input handle is already connected
@@ -217,6 +222,103 @@ export class ProximityConnectHelper {
 
 		const best = exactMatch ?? compatibleMatch;
 		return best ? [best] : [];
+	}
+
+	/**
+	 * Find the single best compatible edge using port-to-port distance.
+	 *
+	 * Unlike findCompatibleEdges() which uses node center distance,
+	 * this method compares actual handle positions from the port coordinate store.
+	 * This is more accurate for large nodes or nodes with many ports.
+	 *
+	 * Algorithm:
+	 * 1. Partition port coordinates into dragged-node ports vs other-node ports
+	 * 2. For each valid output→input pair, check compatibility and distance
+	 * 3. Return the closest compatible pair (exact type match preferred)
+	 *
+	 * @returns Array with at most ONE ProximityEdgeCandidate
+	 */
+	static findCompatibleEdgesByPortCoordinates(
+		draggedNodeId: string,
+		portCoordinates: PortCoordinateMap,
+		existingEdges: WorkflowEdge[],
+		maxDistance: number
+	): ProximityEdgeCandidate[] {
+		const checker = getPortCompatibilityChecker();
+
+		// Build lookup sets for O(1) duplicate/connected checks
+		const existingEdgeSet = new Set(
+			existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)
+		);
+		const connectedTargetHandles = new Set(
+			existingEdges.map((e) => `${e.target}:${e.targetHandle}`)
+		);
+
+		// Partition port coordinates into dragged vs other
+		const draggedPorts = [];
+		const otherPorts = [];
+
+		for (const coord of portCoordinates.values()) {
+			if (coord.nodeId === draggedNodeId) {
+				draggedPorts.push(coord);
+			} else {
+				otherPorts.push(coord);
+			}
+		}
+
+		let bestCandidate: ProximityEdgeCandidate | null = null;
+		let bestDistance = Infinity;
+		let bestIsExact = false;
+
+		for (const dp of draggedPorts) {
+			for (const op of otherPorts) {
+				// Only consider valid directions: output→input
+				const isForward = dp.direction === 'output' && op.direction === 'input';
+				const isReverse = dp.direction === 'input' && op.direction === 'output';
+				if (!isForward && !isReverse) continue;
+
+				const sourceCoord = isForward ? dp : op;
+				const targetCoord = isForward ? op : dp;
+
+				// Check compatibility
+				if (!checker.areDataTypesCompatible(sourceCoord.dataType, targetCoord.dataType))
+					continue;
+
+				// Check for existing edge
+				const edgeKey = `${sourceCoord.nodeId}:${sourceCoord.handleId}->${targetCoord.nodeId}:${targetCoord.handleId}`;
+				if (existingEdgeSet.has(edgeKey)) continue;
+
+				// Check target handle not already connected (single-input rule)
+				const targetHandleKey = `${targetCoord.nodeId}:${targetCoord.handleId}`;
+				if (connectedTargetHandles.has(targetHandleKey)) continue;
+
+				// Calculate port-to-port distance
+				const dx = sourceCoord.x - targetCoord.x;
+				const dy = sourceCoord.y - targetCoord.y;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+
+				if (dist > maxDistance) continue;
+
+				const isExact = sourceCoord.dataType === targetCoord.dataType;
+
+				// Prefer exact match, then closest distance
+				if ((isExact && !bestIsExact) || (isExact === bestIsExact && dist < bestDistance)) {
+					bestCandidate = {
+						id: `proximity-${uuidv4()}`,
+						source: sourceCoord.nodeId,
+						target: targetCoord.nodeId,
+						sourceHandle: sourceCoord.handleId,
+						targetHandle: targetCoord.handleId,
+						sourcePortDataType: sourceCoord.dataType,
+						targetPortDataType: targetCoord.dataType
+					};
+					bestDistance = dist;
+					bestIsExact = isExact;
+				}
+			}
+		}
+
+		return bestCandidate ? [bestCandidate] : [];
 	}
 
 	/**

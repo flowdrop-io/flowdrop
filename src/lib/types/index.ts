@@ -136,6 +136,28 @@ export interface NodePort {
 }
 
 /**
+ * Absolute position of a port handle in canvas space.
+ * Used by proximity connect and other features that need port positions.
+ */
+export interface PortCoordinate {
+	/** Absolute X position in canvas space */
+	x: number;
+	/** Absolute Y position in canvas space */
+	y: number;
+	/** Handle ID in format: ${nodeId}-${direction}-${portId} */
+	handleId: string;
+	/** The node this port belongs to */
+	nodeId: string;
+	/** Port direction */
+	direction: 'input' | 'output';
+	/** Port data type for compatibility checks */
+	dataType: string;
+}
+
+/** Map of handle IDs to their absolute canvas coordinates */
+export type PortCoordinateMap = Map<string, PortCoordinate>;
+
+/**
  * Dynamic port configuration for user-defined inputs/outputs
  * These are defined in the node's config and allow users to create
  * custom input/output handles at runtime similar to gateway branches
