@@ -179,9 +179,6 @@
 	// WorkflowEditor reference for save functionality
 	let workflowEditorRef: WorkflowEditor | null = null;
 
-	// Removed currentWorkflowState - no longer needed
-	// The global store ($workflowStore) serves as the single source of truth
-
 	/**
 	 * Fetch node types from the server
 	 *
@@ -384,9 +381,6 @@
 			// The user can still manually save via the main Save button if needed
 		}
 	}
-
-	// Removed handleWorkflowChange function - no longer needed
-	// The global store serves as the single source of truth and is already reactive
 
 	/**
 	 * Save workflow - exposed API function

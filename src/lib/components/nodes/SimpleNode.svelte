@@ -42,8 +42,6 @@
 		return instanceOverride ?? typeDefault;
 	});
 
-	// Removed local config state - now using global ConfigSidebar
-
 	// Prioritize metadata icon over config icon for simple nodes (metadata is the node definition)
 	let nodeIcon = $derived(
 		(props.data.metadata?.icon as string) || (props.data.config?.icon as string) || 'mdi:square'
@@ -265,8 +263,6 @@
 	/>
 {/each}
 
-<!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
-
 <style>
 	.flowdrop-simple-node {
 		position: relative;
@@ -378,8 +374,6 @@
 		height: 1.25rem;
 		color: var(--fd-node-icon);
 	}
-
-	/* Label styling removed - now using header title */
 
 	.flowdrop-simple-node__processing {
 		position: absolute;

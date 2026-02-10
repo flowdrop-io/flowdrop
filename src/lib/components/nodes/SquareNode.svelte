@@ -43,8 +43,6 @@
 		return instanceOverride ?? typeDefault;
 	});
 
-	// Removed local config state - now using global ConfigSidebar
-
 	/**
 	 * Get icon using the same resolution as WorkflowNode
 	 * Uses getNodeIcon utility with category fallback
@@ -332,8 +330,6 @@
 		height: 1.75rem;
 		color: var(--fd-node-icon);
 	}
-
-	/* Label styling removed - now using header title */
 
 	.flowdrop-square-node__processing {
 		position: absolute;
