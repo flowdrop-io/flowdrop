@@ -51,7 +51,6 @@
 
 	interface Props {
 		nodes?: NodeMetadata[];
-		// workflow?: Workflow; // Removed - use global store directly
 		endpointConfig?: EndpointConfig;
 		height?: string | number;
 		width?: string | number;

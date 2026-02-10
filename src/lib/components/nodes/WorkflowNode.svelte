@@ -125,11 +125,6 @@
 	);
 
 	/**
-	 * Handle configuration value changes - now handled by global ConfigSidebar
-	 */
-	// Removed local config handling - now using global ConfigSidebar
-
-	/**
 	 * Handle node click - only handle selection, no config opening
 	 */
 	function handleNodeClick(): void {
@@ -201,7 +196,6 @@
 
 			<!-- Status Indicators -->
 			<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-				<!-- Status indicators removed - using outer NodeStatusOverlay instead -->
 			</div>
 		</div>
 		<!-- Node Description - line-height 20px so header grows in steps of 10 -->
@@ -326,8 +320,6 @@
 	</button>
 </div>
 
-<!-- ConfigSidebar removed - now using global ConfigSidebar in WorkflowEditor -->
-
 <style>
 	.flowdrop-workflow-node {
 		position: relative;
@@ -435,8 +427,6 @@
 		margin: 0;
 		line-height: 1;
 	}
-
-	/* Status indicator styles removed - using outer NodeStatusOverlay instead */
 
 	@keyframes pulse {
 		0%,

@@ -494,8 +494,6 @@
 		align-items: center;
 	}
 
-	/* Close button styles removed - no longer needed */
-
 	.flowdrop-sidebar__title h2 {
 		font-size: 1rem;
 		font-weight: 600;
