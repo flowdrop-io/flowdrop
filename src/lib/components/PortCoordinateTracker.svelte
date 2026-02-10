@@ -33,12 +33,16 @@
 
 	/**
 	 * Rebuild all port coordinates when rebuildTrigger changes.
+	 * Debounced to batch rapid position updates (e.g., animated auto-layout,
+	 * magnetic child nodes following a parent drag).
 	 */
 	$effect(() => {
-		// Access rebuildTrigger to establish dependency
 		const _trigger = rebuildTrigger;
 		if (_trigger > 0) {
-			rebuildAllPortCoordinates(nodes, getInternal);
+			const timeout = setTimeout(() => {
+				rebuildAllPortCoordinates(nodes, getInternal);
+			}, 150);
+			return () => clearTimeout(timeout);
 		}
 	});
 
