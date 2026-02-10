@@ -8,7 +8,7 @@
  */
 
 import { writable, derived, get } from 'svelte/store';
-import type { Interrupt, InterruptStatus } from '../types/interrupt.js';
+import type { Interrupt } from '../types/interrupt.js';
 import {
 	type InterruptState,
 	type InterruptAction,
@@ -106,35 +106,6 @@ export const isAnySubmitting = derived(interrupts, ($interrupts): boolean => {
 		}
 	}
 	return false;
-});
-
-/**
- * Legacy derived store for submitting interrupt IDs
- * @deprecated Use interrupt.machineState.status === "submitting" instead
- */
-export const submittingInterrupts = derived(interrupts, ($interrupts): Set<string> => {
-	const submitting = new Set<string>();
-	$interrupts.forEach((interrupt, id) => {
-		if (checkIsSubmitting(interrupt.machineState)) {
-			submitting.add(id);
-		}
-	});
-	return submitting;
-});
-
-/**
- * Legacy derived store for interrupt errors
- * @deprecated Use interrupt.machineState.error instead
- */
-export const interruptErrors = derived(interrupts, ($interrupts): Map<string, string> => {
-	const errors = new Map<string, string>();
-	$interrupts.forEach((interrupt, id) => {
-		const errorMsg = getErrorMessage(interrupt.machineState);
-		if (errorMsg) {
-			errors.set(id, errorMsg);
-		}
-	});
-	return errors;
 });
 
 // =========================================================================
@@ -309,36 +280,13 @@ export const interruptActions = {
 		return applyAction(interruptId, { type: 'RESET' });
 	},
 
-	// =========================================================================
-	// Legacy Actions (for backward compatibility)
-	// =========================================================================
-
 	/**
-	 * Update an interrupt's status (legacy)
-	 * @deprecated Use startSubmit/submitSuccess/submitFailure instead
-	 */
-	updateStatus: (interruptId: string, status: InterruptStatus, responseValue?: unknown): void => {
-		// Map legacy status to state machine actions
-		if (status === 'resolved' && responseValue !== undefined) {
-			const submitResult = applyAction(interruptId, { type: 'SUBMIT', value: responseValue });
-			if (submitResult.valid) {
-				applyAction(interruptId, { type: 'SUCCESS' });
-			}
-		} else if (status === 'cancelled') {
-			const cancelResult = applyAction(interruptId, { type: 'CANCEL' });
-			if (cancelResult.valid) {
-				applyAction(interruptId, { type: 'SUCCESS' });
-			}
-		}
-	},
-
-	/**
-	 * Mark an interrupt as resolved with the user's response (legacy)
-	 * @deprecated Use startSubmit + submitSuccess instead
+	 * Mark an interrupt as resolved with the user's response
+	 *
+	 * @param interruptId - The interrupt ID
+	 * @param value - The resolved value
 	 */
 	resolveInterrupt: (interruptId: string, value: unknown): void => {
-		// For backward compatibility, immediately resolve
-		// (assumes sync operation or already completed API call)
 		const submitResult = applyAction(interruptId, { type: 'SUBMIT', value });
 		if (submitResult.valid) {
 			applyAction(interruptId, { type: 'SUCCESS' });
@@ -346,39 +294,15 @@ export const interruptActions = {
 	},
 
 	/**
-	 * Mark an interrupt as cancelled (legacy)
-	 * @deprecated Use startCancel + submitSuccess instead
+	 * Mark an interrupt as cancelled
+	 *
+	 * @param interruptId - The interrupt ID
 	 */
 	cancelInterrupt: (interruptId: string): void => {
 		const cancelResult = applyAction(interruptId, { type: 'CANCEL' });
 		if (cancelResult.valid) {
 			applyAction(interruptId, { type: 'SUCCESS' });
 		}
-	},
-
-	/**
-	 * Set submitting state for an interrupt (legacy)
-	 * @deprecated State is automatically managed by startSubmit/submitSuccess
-	 */
-	setSubmitting: (interruptId: string, isSubmitting: boolean): void => {
-		// This is now a no-op - state is managed by the state machine
-		// Kept for backward compatibility
-		if (isSubmitting) {
-			console.warn(
-				'[InterruptStore] setSubmitting(true) is deprecated. Use startSubmit() instead.'
-			);
-		}
-	},
-
-	/**
-	 * Set error for an interrupt (legacy)
-	 * @deprecated Use submitFailure() instead
-	 */
-	setError: (interruptId: string, error: string | null): void => {
-		if (error) {
-			applyAction(interruptId, { type: 'FAILURE', error });
-		}
-		// Clearing error is not directly supported - use retry or reset
 	},
 
 	/**

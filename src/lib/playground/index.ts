@@ -240,8 +240,6 @@ export {
 export {
 	// Core stores
 	interrupts,
-	submittingInterrupts,
-	interruptErrors,
 	// Derived stores
 	pendingInterruptIds,
 	pendingInterrupts,

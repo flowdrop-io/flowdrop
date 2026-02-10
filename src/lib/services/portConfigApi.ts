@@ -58,17 +58,5 @@ export function validatePortConfig(config: PortConfig): boolean {
 		}
 	}
 
-	// Check that compatibility rules reference valid data types
-	if (config.compatibilityRules) {
-		// TODO: Fix type definition for PortCompatibilityRule - sourceType and targetType properties missing
-		// const dataTypeIds = new Set(config.dataTypes.map((dt) => dt.id));
-		// for (const rule of config.compatibilityRules) {
-		//   if (!dataTypeIds.has(rule.sourceType) || !dataTypeIds.has(rule.targetType)) {
-		//     console.warn("⚠️ Compatibility rule references unknown data type:", rule);
-		//     return false;
-		//   }
-		// }
-	}
-
 	return true;
 }
