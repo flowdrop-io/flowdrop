@@ -53,7 +53,9 @@
 	import { setContext } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import type { ConfigSchema, AuthProvider } from '$lib/types/index.js';
+	import type { UISchemaElement } from '$lib/types/uischema.js';
 	import { FormField } from '$lib/components/form/index.js';
+	import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
 	import type { FieldSchema } from '$lib/components/form/index.js';
 
 	/**
@@ -65,6 +67,14 @@
 		 * Should follow JSON Schema draft-07 format with type: "object".
 		 */
 		schema: ConfigSchema;
+
+		/**
+		 * Optional UI Schema that controls field layout and grouping.
+		 * When provided, fields render according to the UISchema tree structure.
+		 * When absent, fields render in flat order from schema.properties.
+		 * @see https://jsonforms.io/docs/uischema
+		 */
+		uiSchema?: UISchemaElement;
 
 		/**
 		 * Current form values as key-value pairs.
@@ -142,6 +152,7 @@
 
 	let {
 		schema,
+		uiSchema,
 		values = {},
 		onChange,
 		showActions = false,
@@ -297,19 +308,30 @@
 		}}
 	>
 		<div class="schema-form__fields">
-			{#each Object.entries(schema.properties) as [key, field], index (key)}
-				{@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
-				{@const required = isFieldRequired(key)}
-
-				<FormField
-					fieldKey={key}
-					schema={fieldSchema}
-					value={formValues[key]}
-					{required}
-					animationIndex={index}
-					onChange={(val) => handleFieldChange(key, val)}
+			{#if uiSchema}
+				<FormUISchemaRenderer
+					element={uiSchema}
+					{schema}
+					values={formValues}
+					requiredFields={schema.required ?? []}
+					onFieldChange={handleFieldChange}
+					{toFieldSchema}
 				/>
-			{/each}
+			{:else}
+				{#each Object.entries(schema.properties) as [key, field], index (key)}
+					{@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
+					{@const required = isFieldRequired(key)}
+
+					<FormField
+						fieldKey={key}
+						schema={fieldSchema}
+						value={formValues[key]}
+						{required}
+						animationIndex={index}
+						onChange={(val) => handleFieldChange(key, val)}
+					/>
+				{/each}
+			{/if}
 		</div>
 
 		{#if showActions}

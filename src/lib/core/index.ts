@@ -56,7 +56,20 @@ export type {
 	ExternalEditLink,
 	ConfigEditOptions,
 	// Edge types
-	EdgeCategory
+	EdgeCategory,
+	// UISchema types
+	UISchemaElementType,
+	UISchemaElementBase,
+	UISchemaControl,
+	UISchemaVerticalLayout,
+	UISchemaGroup,
+	UISchemaElement
+} from '../types/index.js';
+
+export {
+	isUISchemaControl,
+	isUISchemaVerticalLayout,
+	isUISchemaGroup
 } from '../types/index.js';
 
 // Configuration types
@@ -211,6 +224,14 @@ export {
 
 // Form type utilities
 export { isFieldOptionArray, normalizeOptions } from '../components/form/types.js';
+
+// UISchema utilities
+export {
+	resolveScopeToKey,
+	keyToScope,
+	generateDefaultUISchema,
+	collectReferencedKeys
+} from '../utils/uischema.js';
 
 // ============================================================================
 // Configuration

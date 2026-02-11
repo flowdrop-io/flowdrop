@@ -53,5 +53,9 @@ export { default as FormMarkdownEditor } from './FormMarkdownEditor.svelte';
 export { default as FormTemplateEditor } from './FormTemplateEditor.svelte';
 export { default as FormAutocomplete } from './FormAutocomplete.svelte';
 
+// UISchema rendering components
+export { default as FormFieldset } from './FormFieldset.svelte';
+export { default as FormUISchemaRenderer } from './FormUISchemaRenderer.svelte';
+
 // Template autocomplete utilities
 export { createTemplateAutocomplete } from './templateAutocomplete.js';

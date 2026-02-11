@@ -83,6 +83,10 @@ export { default as FormSelect } from '../components/form/FormSelect.svelte';
 export { default as FormCheckboxGroup } from '../components/form/FormCheckboxGroup.svelte';
 export { default as FormArray } from '../components/form/FormArray.svelte';
 
+// UISchema rendering components
+export { default as FormFieldset } from '../components/form/FormFieldset.svelte';
+export { default as FormUISchemaRenderer } from '../components/form/FormUISchemaRenderer.svelte';
+
 // ============================================================================
 // Types
 // ============================================================================
