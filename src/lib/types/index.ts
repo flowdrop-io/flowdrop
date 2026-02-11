@@ -618,6 +618,17 @@ export interface NodeMetadata {
 	inputs: NodePort[];
 	outputs: NodePort[];
 	configSchema?: ConfigSchema;
+	/**
+	 * Optional UI Schema that controls how configSchema fields are
+	 * arranged, grouped, and displayed in the configuration form.
+	 *
+	 * When not provided, fields render in flat order (backward compatible).
+	 * Uses JSON Forms-inspired format with VerticalLayout, Group, and Control elements.
+	 *
+	 * @see UISchemaElement for the element type definitions
+	 * @see https://jsonforms.io/docs/uischema
+	 */
+	uiSchema?: import('./uischema.js').UISchemaElement;
 	/** Default configuration values for this node type */
 	config?: Record<string, unknown>;
 	tags?: string[];
@@ -1363,3 +1374,19 @@ export {
 	SETTINGS_CATEGORY_ICONS,
 	SETTINGS_STORAGE_KEY
 } from './settings.js';
+
+// UISchema types for form layout control
+export type {
+	UISchemaElementType,
+	UISchemaElementBase,
+	UISchemaControl,
+	UISchemaVerticalLayout,
+	UISchemaGroup,
+	UISchemaElement
+} from './uischema.js';
+
+export {
+	isUISchemaControl,
+	isUISchemaVerticalLayout,
+	isUISchemaGroup
+} from './uischema.js';

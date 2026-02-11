@@ -28,7 +28,9 @@
 		ConfigEditOptions,
 		AuthProvider
 	} from '$lib/types/index.js';
+	import type { UISchemaElement } from '$lib/types/uischema.js';
 	import { FormField, FormFieldWrapper, FormToggle } from '$lib/components/form/index.js';
+	import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
 	import type { FieldSchema } from '$lib/components/form/index.js';
 	import {
 		getEffectiveConfigEditOptions,
@@ -45,6 +47,13 @@
 		node?: WorkflowNode;
 		/** Direct config schema (used when node is not provided) */
 		schema?: ConfigSchema;
+		/**
+		 * Optional UI Schema that controls field layout and grouping.
+		 * When provided, fields render according to the UISchema tree structure.
+		 * When absent, falls back to node.data.metadata.uiSchema, then flat rendering.
+		 * @see https://jsonforms.io/docs/uischema
+		 */
+		uiSchema?: UISchemaElement;
 		/** Direct config values (used when node is not provided) */
 		values?: Record<string, unknown>;
 		/** Whether to show UI extension settings section */
@@ -76,6 +85,7 @@
 	let {
 		node,
 		schema,
+		uiSchema,
 		values,
 		showUIExtensions = true,
 		workflowId,
@@ -139,6 +149,14 @@
 		}
 		// Otherwise use the direct prop or node metadata
 		return schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
+	});
+
+	/**
+	 * Get the UI schema from direct prop or node metadata
+	 * Priority: direct uiSchema prop > node metadata uiSchema
+	 */
+	const configUISchema = $derived.by<UISchemaElement | undefined>(() => {
+		return uiSchema ?? (node?.data.metadata?.uiSchema as UISchemaElement | undefined);
 	});
 
 	/**
@@ -548,24 +566,40 @@
 
 		{#if configSchema.properties}
 			<div class="config-form__fields">
-				{#each Object.entries(configSchema.properties) as [key, field], index (key)}
-					{@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
-					{@const required = isFieldRequired(key)}
-
-					<FormField
-						fieldKey={key}
-						schema={fieldSchema}
-						value={configValues[key]}
-						{required}
-						animationIndex={index}
+				{#if configUISchema}
+					<FormUISchemaRenderer
+						element={configUISchema}
+						schema={configSchema}
+						values={configValues}
+						requiredFields={configSchema.required ?? []}
+						onFieldChange={handleFieldChange}
+						{toFieldSchema}
 						{node}
 						nodes={workflowNodes}
 						edges={workflowEdges}
 						{workflowId}
 						{authProvider}
-						onChange={(val) => handleFieldChange(key, val)}
 					/>
-				{/each}
+				{:else}
+					{#each Object.entries(configSchema.properties) as [key, field], index (key)}
+						{@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
+						{@const required = isFieldRequired(key)}
+
+						<FormField
+							fieldKey={key}
+							schema={fieldSchema}
+							value={configValues[key]}
+							{required}
+							animationIndex={index}
+							{node}
+							nodes={workflowNodes}
+							edges={workflowEdges}
+							{workflowId}
+							{authProvider}
+							onChange={(val) => handleFieldChange(key, val)}
+						/>
+					{/each}
+				{/if}
 			</div>
 		{:else}
 			<!-- If no properties, show the raw schema for debugging -->
