@@ -155,6 +155,16 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
 			enabled: true
 		},
 
+		// Tool type
+		{
+			id: 'tool',
+			name: 'Tool',
+			description: 'Tool interface for agent connections',
+			color: 'var(--fd-node-amber)',
+			category: 'special',
+			enabled: true
+		},
+
 		// Special types
 		{
 			id: 'url',
