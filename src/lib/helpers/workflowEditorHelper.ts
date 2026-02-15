@@ -17,6 +17,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { workflowActions } from '../stores/workflowStore.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
 import type { EndpointConfig } from '../config/endpoints.js';
+import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
+import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
+import { validateForAgentSpecExport } from '../adapters/agentspec/validator.js';
 
 /**
  * Generate a unique node ID based on node type and existing nodes
@@ -651,6 +654,72 @@ export class WorkflowOperationsHelper {
 		link.download = `${workflowToExport.name}.json`;
 		link.click();
 		URL.revokeObjectURL(url);
+	}
+
+	/**
+	 * Export workflow as Agent Spec JSON file.
+	 *
+	 * Converts the FlowDrop workflow to Agent Spec format and triggers a download.
+	 * Validates the workflow for Agent Spec compatibility first.
+	 *
+	 * @param workflow - The FlowDrop workflow to export
+	 * @returns Validation result (check .valid before assuming success)
+	 */
+	static exportAsAgentSpec(workflow: Workflow | null): {
+		valid: boolean;
+		errors: string[];
+		warnings: string[];
+	} {
+		if (!workflow) {
+			return { valid: false, errors: ['No workflow data available to export'], warnings: [] };
+		}
+
+		// Convert to StandardWorkflow first
+		const workflowAdapter = new WorkflowAdapter();
+		const standardWorkflow = workflowAdapter.fromSvelteFlow(workflow);
+
+		// Validate for Agent Spec
+		const validation = validateForAgentSpecExport(standardWorkflow);
+		if (!validation.valid) {
+			return validation;
+		}
+
+		// Convert to Agent Spec
+		const agentSpecAdapter = new AgentSpecAdapter();
+		const agentSpecJson = agentSpecAdapter.exportJSON(standardWorkflow);
+
+		// Trigger download
+		const dataBlob = new Blob([agentSpecJson], { type: 'application/json' });
+		const url = URL.createObjectURL(dataBlob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = `${workflow.name || 'workflow'}-agentspec.json`;
+		link.click();
+		URL.revokeObjectURL(url);
+
+		return validation;
+	}
+
+	/**
+	 * Import a workflow from an Agent Spec JSON or YAML file.
+	 *
+	 * Reads the file, detects format, converts to FlowDrop format,
+	 * and returns a Workflow ready for the editor.
+	 *
+	 * @param file - The file to import (JSON or YAML)
+	 * @returns Promise resolving to the imported FlowDrop Workflow
+	 */
+	static async importFromAgentSpec(file: File): Promise<Workflow> {
+		const text = await file.text();
+
+		const agentSpecAdapter = new AgentSpecAdapter();
+		const workflowAdapter = new WorkflowAdapter();
+
+		// Parse the Agent Spec data
+		const standardWorkflow = agentSpecAdapter.importJSON(text);
+
+		// Convert to SvelteFlow format
+		return workflowAdapter.toSvelteFlow(standardWorkflow);
 	}
 
 	/**
