@@ -28,6 +28,8 @@
 		"format": "prettier --write .",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build",
+		"schema:generate": "node scripts/generate-schema.mjs",
+		"schema:check": "node scripts/generate-schema.mjs --check",
 		"api:lint": "redocly lint api/openapi.yaml --config api/redocly.yaml",
 		"api:bundle": "redocly bundle api/openapi.yaml -o api/bundled.yaml --config api/redocly.yaml",
 		"api:watch": "nodemon --watch api --ext yaml --ignore api/bundled.yaml --exec 'npm run api:bundle'",
@@ -71,6 +73,7 @@
 	},
 	"files": [
 		"dist",
+		"schemas",
 		"!dist/**/*.test.*",
 		"!dist/**/*.spec.*"
 	],
@@ -134,7 +137,13 @@
 			"default": "./dist/settings/index.js"
 		},
 		"./styles": "./dist/styles/base.css",
-		"./styles/*": "./dist/styles/*"
+		"./styles/*": "./dist/styles/*",
+		"./schema": {
+			"default": "./schemas/v1/workflow.schema.json"
+		},
+		"./schema/v1": {
+			"default": "./schemas/v1/workflow.schema.json"
+		}
 	},
 	"peerDependencies": {
 		"@iconify/svelte": "^5.0.0",

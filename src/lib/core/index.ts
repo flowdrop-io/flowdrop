@@ -333,6 +333,12 @@ export {
 export type { AgentSpecExecutionHandle } from '../services/agentSpecExecutionService.js';
 
 // ============================================================================
+// Workflow JSON Schema
+// ============================================================================
+
+export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schema/index.js';
+
+// ============================================================================
 // Theme System
 // ============================================================================
 
