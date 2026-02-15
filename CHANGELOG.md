@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Agent Spec Integration**: Full support for [Oracle Open Agent Spec](https://github.com/oracle/open-agent-spec) import/export
+- **Agent Spec Integration**: Full support for [Oracle Open Agent Spec](https://github.com/oracle/agent-spec) import/export
   - TypeScript types mirroring the Agent Spec format (nodes, edges, flows, tools, agents, LLM configs)
   - Node type registry mapping all 9 Agent Spec node types to FlowDrop node metadata with visual type, category, ports, config schemas, and icons
   - Bidirectional adapter converting between FlowDrop's unified edge format and Agent Spec's control-flow/data-flow split
