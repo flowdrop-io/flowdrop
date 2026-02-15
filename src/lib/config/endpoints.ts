@@ -3,6 +3,8 @@
  * Provides configurable endpoints for all API actions
  */
 
+import type { AgentSpecEndpointConfig } from './agentSpecEndpoints.js';
+
 export interface EndpointConfig {
 	/** Base URL for all endpoints */
 	baseUrl: string;
@@ -111,6 +113,12 @@ export interface EndpointConfig {
 			version: string;
 		};
 	};
+
+	/**
+	 * Optional Agent Spec runtime configuration.
+	 * When provided, enables Agent Spec execution features.
+	 */
+	agentSpec?: AgentSpecEndpointConfig;
 
 	/** HTTP method overrides for specific endpoints */
 	methods?: {
