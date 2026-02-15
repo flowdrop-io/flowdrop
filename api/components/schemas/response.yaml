@@ -81,3 +81,57 @@ ValidationResponse:
               items:
                 type: string
               description: Improvement suggestions
+
+# Agent Spec Response Types
+
+AgentSpecFlowResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: './agentspec.yaml#/AgentSpecFlow'
+
+AgentSpecDocumentResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: './agentspec.yaml#/AgentSpecDocument'
+
+AgentSpecValidationResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: './agentspec.yaml#/AgentSpecValidationResult'
+
+AgentSpecExecutionStatusResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: './agentspec.yaml#/AgentSpecExecutionStatus'
+
+AgentSpecAgentsResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './agentspec.yaml#/AgentSpecRuntimeAgent'
+
+AgentSpecToolsResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: './agentspec.yaml#/AgentSpecRuntimeTool'
