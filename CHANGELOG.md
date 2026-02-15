@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.57] - 2026-02-15
+
+### Added
+
+- **Agent Spec Integration**: Full support for [Oracle Open Agent Spec](https://github.com/oracle/open-agent-spec) import/export
+  - TypeScript types mirroring the Agent Spec format (nodes, edges, flows, tools, agents, LLM configs)
+  - Node type registry mapping all 9 Agent Spec node types to FlowDrop node metadata with visual type, category, ports, config schemas, and icons
+  - Bidirectional adapter converting between FlowDrop's unified edge format and Agent Spec's control-flow/data-flow split
+  - Auto-layout for imported flows (Agent Spec has no position data)
+  - Agent Spec constraint validation
+  - Runtime execution service for connecting to WayFlow/PyAgentSpec runtimes with status polling, result retrieval, and cancellation
+  - Endpoint configuration and auth headers for Agent Spec runtimes
+  - `exportAsAgentSpec()` and `importFromAgentSpec()` on WorkflowOperationsHelper
+  - OpenAPI 3.0.3 definitions for Agent Spec schemas and 12 new endpoints
+- **Collapsible Fieldset and Field Group via UISchema**: New UISchema system (inspired by JSON Forms) for controlling form field layout and grouping in ConfigForm and SchemaForm
+  - Separates presentation concerns from the data schema
+  - New element types: `VerticalLayout`, `Group` (with collapsible support), and `Control` (with JSON Pointer scope)
+  - Groups render as collapsible fieldsets using the existing `.flowdrop-details` CSS pattern
+
 ## [0.0.56] - 2026-02-11
 
 ### Fixed
