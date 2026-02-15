@@ -247,6 +247,92 @@ export { defaultEndpointConfig, createEndpointConfig } from '../config/endpoints
 export * from '../adapters/WorkflowAdapter.js';
 
 // ============================================================================
+// Agent Spec Types & Adapter
+// ============================================================================
+
+// Agent Spec type definitions
+export type {
+	AgentSpecNodeComponentType,
+	AgentSpecToolComponentType,
+	AgentSpecComponentType,
+	AgentSpecProperty,
+	AgentSpecNodeBase,
+	AgentSpecStartNode,
+	AgentSpecEndNode,
+	AgentSpecLLMNode,
+	AgentSpecAPINode,
+	AgentSpecAgentNode,
+	AgentSpecFlowNode,
+	AgentSpecMapNode,
+	AgentSpecBranchingNode,
+	AgentSpecToolNode,
+	AgentSpecNode,
+	AgentSpecBranch,
+	AgentSpecControlFlowEdge,
+	AgentSpecDataFlowEdge,
+	AgentSpecFlow,
+	AgentSpecToolBase,
+	AgentSpecServerTool,
+	AgentSpecClientTool,
+	AgentSpecRemoteTool,
+	AgentSpecTool,
+	AgentSpecLLMConfig,
+	AgentSpecAgent,
+	AgentSpecDocument
+} from '../types/agentspec.js';
+
+export {
+	COMPONENT_REF_PREFIX,
+	isComponentRef,
+	extractComponentRefId,
+	createComponentRef
+} from '../types/agentspec.js';
+
+// Agent Spec node type registry
+export {
+	getAgentSpecNodeMetadata,
+	getAllAgentSpecNodeTypes,
+	createAgentSpecNodeMetadata,
+	isAgentSpecNodeId,
+	extractComponentType,
+	AGENTSPEC_NAMESPACE
+} from '../adapters/agentspec/nodeTypeRegistry.js';
+
+// Agent Spec adapter (bidirectional conversion)
+export { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
+
+// Agent Spec agent-level adapter
+export { AgentSpecAgentAdapter } from '../adapters/agentspec/agentAdapter.js';
+export type { AgentConfig, AgentSpecImportResult } from '../adapters/agentspec/agentAdapter.js';
+
+// Agent Spec validation
+export {
+	validateForAgentSpecExport,
+	validateAgentSpecFlow
+} from '../adapters/agentspec/validator.js';
+export type { AgentSpecValidationResult } from '../adapters/agentspec/validator.js';
+
+// Agent Spec auto-layout
+export { computeAutoLayout } from '../adapters/agentspec/autoLayout.js';
+export type { AutoLayoutConfig } from '../adapters/agentspec/autoLayout.js';
+
+// Agent Spec runtime endpoint configuration
+export type { AgentSpecEndpointConfig } from '../config/agentSpecEndpoints.js';
+export {
+	defaultAgentSpecEndpoints,
+	createAgentSpecEndpointConfig,
+	buildAgentSpecUrl,
+	getAgentSpecAuthHeaders
+} from '../config/agentSpecEndpoints.js';
+
+// Agent Spec execution service
+export {
+	AgentSpecExecutionService,
+	agentSpecExecutionService
+} from '../services/agentSpecExecutionService.js';
+export type { AgentSpecExecutionHandle } from '../services/agentSpecExecutionService.js';
+
+// ============================================================================
 // Theme System
 // ============================================================================
 
