@@ -7,7 +7,7 @@
  * @module types/events
  */
 
-import type { Workflow } from './index.js';
+import type { Workflow, NodeExecutionInfo } from './index.js';
 
 /**
  * Types of workflow changes
@@ -132,6 +132,44 @@ export interface FlowDropEventHandlers {
 	 * @returns true to suppress default error handling, false/void to show default toast
 	 */
 	onApiError?: (error: Error, operation: string) => boolean | void;
+
+	// ========================================================================
+	// Agent Spec Runtime Events
+	// ========================================================================
+
+	/**
+	 * Called when an Agent Spec execution starts
+	 *
+	 * @param executionId - The runtime execution ID
+	 */
+	onAgentSpecExecutionStarted?: (executionId: string) => void;
+
+	/**
+	 * Called when an Agent Spec execution completes successfully
+	 *
+	 * @param executionId - The runtime execution ID
+	 * @param results - Execution results from the runtime
+	 */
+	onAgentSpecExecutionCompleted?: (
+		executionId: string,
+		results: Record<string, unknown>
+	) => void;
+
+	/**
+	 * Called when an Agent Spec execution fails
+	 *
+	 * @param executionId - The runtime execution ID
+	 * @param error - The error that occurred
+	 */
+	onAgentSpecExecutionFailed?: (executionId: string, error: Error) => void;
+
+	/**
+	 * Called when a node's execution status is updated during Agent Spec execution
+	 *
+	 * @param nodeId - The FlowDrop node ID
+	 * @param status - Updated execution info
+	 */
+	onAgentSpecNodeStatusUpdate?: (nodeId: string, status: NodeExecutionInfo) => void;
 }
 
 /**
