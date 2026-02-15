@@ -470,15 +470,28 @@ NodeExtensions:
 
     Use namespaced keys (e.g., "myapp:analytics", "acme:settings") to avoid conflicts
     between different integrations.
+
+    ## Reserved Extension Keys
+
+    - `agentspec:component_type` — Stores the Oracle Open Agent Spec component type
+      (e.g., "llm_node", "branching_node") for nodes imported from Agent Spec.
+      Used for round-trip preservation during import/export.
   properties:
     ui:
       $ref: '#/NodeUIExtensions'
+    'agentspec:component_type':
+      type: string
+      description: |
+        Agent Spec component type for round-trip preservation.
+        Set automatically when importing from Agent Spec format.
+      example: llm_node
   additionalProperties: true
   example:
     ui:
       hideUnconnectedHandles: true
       style:
         opacity: 0.8
+    'agentspec:component_type': llm_node
     'myapp:analytics':
       trackUsage: true
       customField: value

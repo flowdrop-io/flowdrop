@@ -13,6 +13,7 @@ info:
     - **Real-time Updates**: Track node execution status and pipeline progress
     - **Import/Export**: Import and export workflows in JSON format
     - **Validation**: Workflow validation before execution
+    - **Agent Spec Integration**: Import/export Oracle Open Agent Spec flows and execute on compatible runtimes (WayFlow/PyAgentSpec)
 
     ## Architecture
     - **Frontend**: Svelte 5 + XYFlow for visual workflow editing
@@ -64,6 +65,12 @@ tags:
     description: Workflow validation
   - name: Import/Export
     description: Workflow import and export operations
+  - name: Agent Spec
+    description: |
+      Oracle Open Agent Spec integration endpoints.
+      Provides bidirectional conversion between FlowDrop workflows and Agent Spec format,
+      plus runtime execution on compatible runtimes (WayFlow, PyAgentSpec).
+      @see https://github.com/oracle/agent-spec
 paths:
   /health:
     get:
@@ -1956,6 +1963,384 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /agentspec/flows/execute:
+    post:
+      operationId: agentSpecExecuteFlow
+      summary: Execute an Agent Spec flow
+      description: |
+        Submit an Agent Spec flow for execution on the configured runtime
+        (WayFlow, PyAgentSpec, or other compatible runtimes).
+
+        The flow is posted as Agent Spec JSON. The runtime returns an
+        execution ID for tracking progress via polling or WebSocket.
+      tags:
+        - Agent Spec
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentSpecExecutionRequest'
+      responses:
+        '200':
+          description: Flow execution started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecExecutionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /agentspec/executions/{id}:
+    get:
+      operationId: agentSpecGetExecutionStatus
+      summary: Get Agent Spec execution status
+      description: |
+        Retrieve the current status and per-node execution info
+        for a running or completed Agent Spec execution.
+      tags:
+        - Agent Spec
+      parameters:
+        - name: id
+          in: path
+          description: Execution ID from the runtime
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Execution status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecExecutionStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /agentspec/executions/{id}/cancel:
+    post:
+      operationId: agentSpecCancelExecution
+      summary: Cancel Agent Spec execution
+      description: |
+        Cancel a running Agent Spec execution. Only executions in
+        'running' status can be cancelled.
+      tags:
+        - Agent Spec
+      parameters:
+        - name: id
+          in: path
+          description: Execution ID from the runtime
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Execution cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Execution cancelled successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Execution cannot be cancelled (already completed or failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /agentspec/executions/{id}/results:
+    get:
+      operationId: agentSpecGetExecutionResults
+      summary: Get Agent Spec execution results
+      description: |
+        Retrieve the final results of a completed Agent Spec execution.
+        Returns null/404 if the execution is still running or was cancelled.
+      tags:
+        - Agent Spec
+      parameters:
+        - name: id
+          in: path
+          description: Execution ID from the runtime
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Execution results retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecExecutionResults'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /agentspec/executions/{id}/stream:
+    get:
+      operationId: agentSpecStreamExecution
+      summary: Stream Agent Spec execution updates (WebSocket)
+      description: |
+        WebSocket endpoint for real-time execution updates.
+        Streams per-node status changes and execution events as they occur.
+
+        **Protocol**: WebSocket (upgrade from HTTP)
+
+        **Messages sent by server**:
+        - `{"type": "node_status", "node": "<name>", "status": {...}}`
+        - `{"type": "execution_complete", "results": {...}}`
+        - `{"type": "execution_error", "error": "<message>"}`
+      tags:
+        - Agent Spec
+      parameters:
+        - name: id
+          in: path
+          description: Execution ID from the runtime
+          required: true
+          schema:
+            type: string
+      responses:
+        '101':
+          description: WebSocket upgrade successful
+        '200':
+          description: WebSocket connection established (upgrade to ws://)
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /agentspec/flows/validate:
+    post:
+      operationId: agentSpecValidateFlow
+      summary: Validate Agent Spec flow on runtime
+      description: |
+        Validate an Agent Spec flow specification against the runtime
+        without executing it. Checks for structural correctness,
+        valid node references, and property compatibility.
+      tags:
+        - Agent Spec
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentSpecFlow'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecRuntimeValidation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /agentspec/agents:
+    get:
+      operationId: agentSpecListAgents
+      summary: List available agents on the runtime
+      description: |
+        Retrieve a list of agents registered on the Agent Spec runtime.
+        These agents can be referenced by `agent_node` components.
+      tags:
+        - Agent Spec
+      responses:
+        '200':
+          description: List of available agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentSpecRuntimeAgent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /agentspec/tools:
+    get:
+      operationId: agentSpecListTools
+      summary: List available tools on the runtime
+      description: |
+        Retrieve a list of tools registered on the Agent Spec runtime.
+        These tools can be referenced by `tool_node` components.
+      tags:
+        - Agent Spec
+      responses:
+        '200':
+          description: List of available tools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentSpecRuntimeTool'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /agentspec/health:
+    get:
+      operationId: agentSpecHealthCheck
+      summary: Check Agent Spec runtime health
+      description: |
+        Verify that the configured Agent Spec runtime is available
+        and responding. Used to check connectivity before execution.
+      tags:
+        - Agent Spec
+      security: []
+      responses:
+        '200':
+          description: Runtime is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecRuntimeHealth'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          description: Runtime unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /workflows/{id}/export/agentspec:
+    get:
+      operationId: exportWorkflowAsAgentSpec
+      summary: Export workflow as Agent Spec JSON
+      description: |
+        Convert a FlowDrop workflow to Agent Spec format and return it.
+
+        The conversion:
+        - Maps FlowDrop node types to Agent Spec component types
+        - Splits unified edges into control_flow_connections and data_flow_connections
+        - Stores FlowDrop-specific data (positions, dynamic ports) in metadata extensions
+        - Validates the workflow for Agent Spec compatibility before export
+      tags:
+        - Agent Spec
+        - Import/Export
+      parameters:
+        - name: id
+          in: path
+          description: Workflow UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          description: Output format (document wraps flow with agent/tools/LLM config)
+          required: false
+          schema:
+            type: string
+            enum:
+              - flow
+              - document
+            default: flow
+      responses:
+        '200':
+          description: Agent Spec JSON exported successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AgentSpecFlow'
+                  - $ref: '#/components/schemas/AgentSpecDocument'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Workflow cannot be exported as Agent Spec
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecValidationResult'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /workflows/import/agentspec:
+    post:
+      operationId: importWorkflowFromAgentSpec
+      summary: Import workflow from Agent Spec JSON
+      description: |
+        Convert an Agent Spec flow or document to a FlowDrop workflow.
+
+        The conversion:
+        - Maps Agent Spec component types to FlowDrop node types
+        - Merges control_flow_connections and data_flow_connections into unified edges
+        - Auto-layouts nodes if no position metadata is present
+        - Preserves Agent Spec component_type in FlowDrop extensions
+      tags:
+        - Agent Spec
+        - Import/Export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AgentSpecFlow'
+                - $ref: '#/components/schemas/AgentSpecDocument'
+      responses:
+        '200':
+          description: Workflow imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          description: Invalid Agent Spec format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecValidationResult'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /workflows/{id}/validate/agentspec:
+    get:
+      operationId: validateWorkflowForAgentSpec
+      summary: Validate workflow for Agent Spec export
+      description: |
+        Check if a FlowDrop workflow can be exported as Agent Spec.
+        Returns validation errors and warnings without performing the export.
+
+        Checks include:
+        - Exactly one start node (terminal/trigger type)
+        - At least one end node (terminal/output type)
+        - Gateway nodes have branches defined
+        - All nodes are reachable from start
+      tags:
+        - Agent Spec
+        - Validation
+      parameters:
+        - name: id
+          in: path
+          description: Workflow UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSpecValidationResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   securitySchemes:
     BearerAuth:
@@ -2667,15 +3052,28 @@ components:
 
         Use namespaced keys (e.g., "myapp:analytics", "acme:settings") to avoid conflicts
         between different integrations.
+
+        ## Reserved Extension Keys
+
+        - `agentspec:component_type` — Stores the Oracle Open Agent Spec component type
+          (e.g., "llm_node", "branching_node") for nodes imported from Agent Spec.
+          Used for round-trip preservation during import/export.
       properties:
         ui:
           $ref: '#/components/schemas/NodeUIExtensions'
+        agentspec:component_type:
+          type: string
+          description: |
+            Agent Spec component type for round-trip preservation.
+            Set automatically when importing from Agent Spec format.
+          example: llm_node
       additionalProperties: true
       example:
         ui:
           hideUnconnectedHandles: true
           style:
             opacity: 0.8
+        agentspec:component_type: llm_node
         myapp:analytics:
           trackUsage: true
           customField: value
@@ -3938,6 +4336,778 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Interrupt'
+    AgentSpecComponentType:
+      type: string
+      enum:
+        - agent
+        - flow
+        - start_node
+        - end_node
+        - llm_node
+        - api_node
+        - agent_node
+        - flow_node
+        - map_node
+        - branching_node
+        - tool_node
+        - server_tool
+        - client_tool
+        - remote_tool
+        - llm_config
+      description: All possible Agent Spec component_type values
+    AgentSpecNodeComponentType:
+      type: string
+      enum:
+        - start_node
+        - end_node
+        - llm_node
+        - api_node
+        - agent_node
+        - flow_node
+        - map_node
+        - branching_node
+        - tool_node
+      description: |
+        Agent Spec node component_type discriminator.
+
+        Determines the node's behavior and available configuration:
+        - `start_node` — Graph entry point
+        - `end_node` — Graph exit point
+        - `llm_node` — LLM text generation
+        - `api_node` — HTTP API call
+        - `agent_node` — Multi-round agent conversation
+        - `flow_node` — Nested flow execution
+        - `map_node` — Map-reduce operation
+        - `branching_node` — Conditional routing
+        - `tool_node` — Tool execution
+    AgentSpecToolComponentType:
+      type: string
+      enum:
+        - server_tool
+        - client_tool
+        - remote_tool
+      description: |
+        Agent Spec tool component_type discriminator.
+
+        - `server_tool` — Executed in the same runtime environment
+        - `client_tool` — Executed by the client, results returned to runtime
+        - `remote_tool` — Triggered via RPC/REST calls
+    AgentSpecProperty:
+      type: object
+      description: |
+        JSON Schema-based input/output property definition.
+        Uses JSON Schema types and structure for describing data shape.
+        Placeholder syntax `{{variable_name}}` generates implicit input properties.
+      properties:
+        title:
+          type: string
+          description: Property name (used as identifier in edges and templates)
+          example: user_query
+        type:
+          type: string
+          description: JSON Schema type
+          example: string
+          enum:
+            - string
+            - number
+            - integer
+            - boolean
+            - array
+            - object
+        description:
+          type: string
+          description: Human-readable description
+        default:
+          description: Default value
+        enum:
+          type: array
+          items: {}
+          description: Allowed values (JSON Schema enum)
+        items:
+          $ref: '#/components/schemas/AgentSpecProperty'
+          description: Array item schema (for type=array)
+        properties:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AgentSpecProperty'
+          description: Object property schemas (for type=object)
+        required:
+          type: array
+          items:
+            type: string
+          description: Required properties (for type=object)
+      required:
+        - title
+        - type
+    AgentSpecBranch:
+      type: object
+      description: Branch definition for BranchingNode conditional routing
+      properties:
+        name:
+          type: string
+          description: Branch name (used as from_branch in ControlFlowEdge)
+          example: high_priority
+        condition:
+          type: string
+          description: Condition expression for this branch
+          example: '{{priority}} == "high"'
+        description:
+          type: string
+          description: Human-readable description
+      required:
+        - name
+    AgentSpecNode:
+      description: |
+        Union of all Agent Spec node types. Discriminated by `component_type`.
+      oneOf:
+        - $ref: '#/components/schemas/AgentSpecStartNode'
+        - $ref: '#/components/schemas/AgentSpecEndNode'
+        - $ref: '#/components/schemas/AgentSpecLLMNode'
+        - $ref: '#/components/schemas/AgentSpecAPINode'
+        - $ref: '#/components/schemas/AgentSpecAgentNode'
+        - $ref: '#/components/schemas/AgentSpecFlowNode'
+        - $ref: '#/components/schemas/AgentSpecMapNode'
+        - $ref: '#/components/schemas/AgentSpecBranchingNode'
+        - $ref: '#/components/schemas/AgentSpecToolNode'
+      discriminator:
+        propertyName: component_type
+        mapping:
+          start_node: '#/components/schemas/AgentSpecStartNode'
+          end_node: '#/components/schemas/AgentSpecEndNode'
+          llm_node: '#/components/schemas/AgentSpecLLMNode'
+          api_node: '#/components/schemas/AgentSpecAPINode'
+          agent_node: '#/components/schemas/AgentSpecAgentNode'
+          flow_node: '#/components/schemas/AgentSpecFlowNode'
+          map_node: '#/components/schemas/AgentSpecMapNode'
+          branching_node: '#/components/schemas/AgentSpecBranchingNode'
+          tool_node: '#/components/schemas/AgentSpecToolNode'
+    AgentSpecStartNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - start_node
+          description: Graph entry point node
+    AgentSpecEndNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - end_node
+          description: Graph exit point node
+    AgentSpecLLMNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - llm_node
+            llm_config:
+              description: LLM configuration (inline object or $component_ref string)
+              oneOf:
+                - $ref: '#/components/schemas/AgentSpecLLMConfig'
+                - type: string
+                  description: Component reference (e.g., "$component_ref:my_llm")
+            system_prompt:
+              type: string
+              description: System prompt template (supports {{variable}} syntax)
+            prompt_template:
+              type: string
+              description: User prompt template (supports {{variable}} syntax)
+            output_schema:
+              type: object
+              additionalProperties: true
+              description: Output JSON Schema for structured output
+          description: LLM text generation node
+    AgentSpecAPINode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - api_node
+            endpoint:
+              type: string
+              description: API endpoint URL
+              example: https://api.example.com/v1/data
+            method:
+              type: string
+              description: HTTP method
+              enum:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+                - PATCH
+              example: POST
+            headers:
+              type: object
+              additionalProperties:
+                type: string
+              description: Request headers
+            body:
+              type: object
+              additionalProperties: true
+              description: Request body template
+          description: HTTP API call node
+    AgentSpecAgentNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - agent_node
+            agent:
+              description: Agent reference ($component_ref or inline)
+              oneOf:
+                - $ref: '#/components/schemas/AgentSpecAgent'
+                - type: string
+          description: Multi-round agent conversation node
+    AgentSpecFlowNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - flow_node
+            flow:
+              description: Flow reference ($component_ref or inline)
+              oneOf:
+                - $ref: '#/components/schemas/AgentSpecFlow'
+                - type: string
+          description: Nested flow execution node
+    AgentSpecMapNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - map_node
+            input_collection:
+              type: string
+              description: Input collection property name
+            output_collection:
+              type: string
+              description: Output collection property name
+            map_flow:
+              description: Flow or node to execute per item ($component_ref or inline)
+              oneOf:
+                - $ref: '#/components/schemas/AgentSpecFlow'
+                - type: string
+          description: Map-reduce operation node
+    AgentSpecBranchingNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - branching_node
+            branches:
+              type: array
+              items:
+                $ref: '#/components/schemas/AgentSpecBranch'
+              description: Branch definitions with conditions
+          required:
+            - branches
+          description: Conditional routing node
+    AgentSpecToolNode:
+      allOf:
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
+        - type: object
+          properties:
+            component_type:
+              type: string
+              enum:
+                - tool_node
+            tool:
+              description: Tool reference ($component_ref or inline)
+              oneOf:
+                - $ref: '#/components/schemas/AgentSpecServerTool'
+                - $ref: '#/components/schemas/AgentSpecClientTool'
+                - $ref: '#/components/schemas/AgentSpecRemoteTool'
+                - type: string
+          description: Tool execution node
+    AgentSpecControlFlowEdge:
+      type: object
+      description: |
+        Control flow edge — defines execution order between nodes.
+        Multiple control flow connections from the same branch are prohibited.
+      properties:
+        name:
+          type: string
+          description: Edge name (identifier)
+          example: start_to_process
+        from_node:
+          type: string
+          description: Source node name
+          example: start
+        to_node:
+          type: string
+          description: Target node name
+          example: process_input
+        from_branch:
+          type: string
+          nullable: true
+          description: Source branch name (null = default "next" branch)
+          example: high_priority
+      required:
+        - name
+        - from_node
+        - to_node
+    AgentSpecDataFlowEdge:
+      type: object
+      description: |
+        Data flow edge — routes data between node outputs and inputs.
+        Maps a specific output property of a source node to a specific
+        input property of a destination node.
+      properties:
+        name:
+          type: string
+          description: Edge name (identifier)
+          example: query_to_llm
+        source_node:
+          type: string
+          description: Source node name
+          example: process_input
+        source_output:
+          type: string
+          description: Source output property title
+          example: processed_text
+        destination_node:
+          type: string
+          description: Destination node name
+          example: llm_generate
+        destination_input:
+          type: string
+          description: Destination input property title
+          example: prompt
+      required:
+        - name
+        - source_node
+        - source_output
+        - destination_node
+        - destination_input
+    AgentSpecFlow:
+      type: object
+      description: |
+        Agent Spec Flow — a directed, potentially cyclic graph of nodes.
+        Flows function as "subroutines" encapsulating repeatable processes.
+        They separate control-flow (execution order) from data-flow (data routing).
+      properties:
+        component_type:
+          type: string
+          enum:
+            - flow
+        name:
+          type: string
+          description: Flow name
+          example: document_processing
+        description:
+          type: string
+          description: Human-readable description
+        start_node:
+          type: string
+          description: Reference to the StartNode name
+          example: start
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecNode'
+          description: All nodes in the flow
+        control_flow_connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecControlFlowEdge'
+          description: Execution order edges
+        data_flow_connections:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/AgentSpecDataFlowEdge'
+          description: |
+            Data routing edges. When null, data flows by matching
+            input/output property names across connected nodes.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Extension metadata
+      required:
+        - component_type
+        - name
+        - start_node
+        - nodes
+        - control_flow_connections
+    AgentSpecServerTool:
+      type: object
+      description: Tool executed in the same runtime environment
+      properties:
+        component_type:
+          type: string
+          enum:
+            - server_tool
+        name:
+          type: string
+          description: Tool name
+          example: web_search
+        description:
+          type: string
+          description: Human-readable description
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        function_name:
+          type: string
+          description: Function name or module path
+          example: tools.web_search
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - component_type
+        - name
+    AgentSpecClientTool:
+      type: object
+      description: Tool executed by the client, results returned to runtime
+      properties:
+        component_type:
+          type: string
+          enum:
+            - client_tool
+        name:
+          type: string
+          description: Tool name
+        description:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - component_type
+        - name
+    AgentSpecRemoteTool:
+      type: object
+      description: Tool triggered via RPC/REST calls
+      properties:
+        component_type:
+          type: string
+          enum:
+            - remote_tool
+        name:
+          type: string
+          description: Tool name
+        description:
+          type: string
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        endpoint:
+          type: string
+          description: Remote endpoint URL
+        method:
+          type: string
+          description: HTTP method
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Request headers
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - component_type
+        - name
+    AgentSpecTool:
+      description: Union of all Agent Spec tool types
+      oneOf:
+        - $ref: '#/components/schemas/AgentSpecServerTool'
+        - $ref: '#/components/schemas/AgentSpecClientTool'
+        - $ref: '#/components/schemas/AgentSpecRemoteTool'
+      discriminator:
+        propertyName: component_type
+        mapping:
+          server_tool: '#/components/schemas/AgentSpecServerTool'
+          client_tool: '#/components/schemas/AgentSpecClientTool'
+          remote_tool: '#/components/schemas/AgentSpecRemoteTool'
+    AgentSpecLLMConfig:
+      type: object
+      description: LLM model configuration
+      properties:
+        component_type:
+          type: string
+          enum:
+            - llm_config
+        name:
+          type: string
+          description: Configuration name
+          example: gpt4_config
+        model_id:
+          type: string
+          description: Model identifier (e.g., "gpt-4o", "claude-sonnet-4-5-20250929")
+          example: gpt-4o
+        provider:
+          type: string
+          description: Provider name (e.g., "openai", "anthropic")
+          example: openai
+        url:
+          type: string
+          description: API endpoint URL
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Generation parameters (temperature, max_tokens, etc.)
+          example:
+            temperature: 0.7
+            max_tokens: 2048
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - component_type
+        - name
+        - model_id
+    AgentSpecAgent:
+      type: object
+      description: |
+        Agent Spec Agent — top-level conversational AI system.
+        Serves as the entry point and holds shared resources like
+        tools, memory, and LLM configuration.
+      properties:
+        component_type:
+          type: string
+          enum:
+            - agent
+        name:
+          type: string
+          description: Agent name
+          example: customer_support_agent
+        description:
+          type: string
+          description: Human-readable description
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        tools:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/AgentSpecTool'
+              - type: string
+                description: Component reference string
+          description: Available tools (inline or $component_ref strings)
+        llm_config:
+          description: LLM configuration (inline or $component_ref string)
+          oneOf:
+            - $ref: '#/components/schemas/AgentSpecLLMConfig'
+            - type: string
+        system_prompt:
+          type: string
+          description: System prompt template
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - component_type
+        - name
+    AgentSpecDocument:
+      type: object
+      description: |
+        Top-level Agent Spec document. Contains a flow and/or agent
+        definition along with shared tool and LLM configuration declarations.
+      properties:
+        agent:
+          $ref: '#/components/schemas/AgentSpecAgent'
+        flow:
+          $ref: '#/components/schemas/AgentSpecFlow'
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecTool'
+          description: Shared tool declarations
+        llm_configs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecLLMConfig'
+          description: Shared LLM configurations
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Document-level metadata
+    AgentSpecValidationResult:
+      type: object
+      description: Result of validating a workflow for Agent Spec export
+      properties:
+        valid:
+          type: boolean
+          description: Whether the workflow is valid for Agent Spec export
+        errors:
+          type: array
+          items:
+            type: string
+          description: Validation errors (must be fixed before export)
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Validation warnings (may affect runtime behavior)
+      required:
+        - valid
+    AgentSpecExecutionRequest:
+      type: object
+      description: Request to execute an Agent Spec flow on a runtime
+      properties:
+        flow:
+          $ref: '#/components/schemas/AgentSpecFlow'
+        inputs:
+          type: object
+          additionalProperties: true
+          description: Initial input values for the flow
+          example:
+            user_query: What is the weather today?
+      required:
+        - flow
+    AgentSpecExecutionResponse:
+      type: object
+      description: Response after starting an Agent Spec execution
+      properties:
+        execution_id:
+          type: string
+          description: Unique execution ID from the runtime
+          example: exec-abc-123
+        id:
+          type: string
+          description: Alternative execution ID field
+        status:
+          type: string
+          enum:
+            - running
+            - completed
+            - failed
+            - cancelled
+          description: Initial execution status
+      required:
+        - execution_id
+    AgentSpecExecutionStatus:
+      type: object
+      description: Status of an Agent Spec runtime execution
+      properties:
+        execution_id:
+          type: string
+          description: Execution ID
+        status:
+          type: string
+          enum:
+            - running
+            - completed
+            - success
+            - failed
+            - error
+            - cancelled
+          description: Current execution status
+        execution_status:
+          type: string
+          description: Alternative status field
+        node_statuses:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AgentSpecNodeStatus'
+          description: Per-node execution status (keyed by node name)
+        nodes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AgentSpecNodeStatus'
+          description: Alternative per-node status field
+        error:
+          type: string
+          description: Error message if execution failed
+        message:
+          type: string
+          description: Alternative error message field
+    AgentSpecNodeStatus:
+      type: object
+      description: Execution status for a single node in an Agent Spec runtime
+      properties:
+        status:
+          type: string
+          description: Node execution status
+          enum:
+            - idle
+            - pending
+            - queued
+            - running
+            - executing
+            - completed
+            - success
+            - done
+            - failed
+            - error
+            - cancelled
+            - canceled
+            - skipped
+        state:
+          type: string
+          description: Alternative status field
+        execution_count:
+          type: integer
+          description: Number of times this node has been executed
+        started_at:
+          type: string
+          format: date-time
+          description: When execution started
+        duration_ms:
+          type: number
+          description: Execution duration in milliseconds
+        error:
+          type: string
+          description: Error message if node failed
+    AgentSpecExecutionResults:
+      type: object
+      description: Results from a completed Agent Spec execution
+      additionalProperties: true
+      example:
+        response: The weather today is sunny with a high of 72°F.
+        confidence: 0.95
     NodesResponse:
       allOf:
         - $ref: '#/components/schemas/ApiResponse'
@@ -4012,6 +5182,52 @@ components:
                   items:
                     type: string
                   description: Improvement suggestions
+    AgentSpecFlowResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AgentSpecFlow'
+    AgentSpecDocumentResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AgentSpecDocument'
+    AgentSpecValidationResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AgentSpecValidationResult'
+    AgentSpecExecutionStatusResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AgentSpecExecutionStatus'
+    AgentSpecAgentsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AgentSpecRuntimeAgent'
+    AgentSpecToolsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AgentSpecRuntimeTool'
     PortDataSchema:
       type: object
       description: |
@@ -4383,6 +5599,105 @@ components:
           - data
         showHints: true
         includePortName: false
+    AgentSpecNodeBase:
+      type: object
+      description: Base properties shared by all Agent Spec nodes
+      properties:
+        component_type:
+          $ref: '#/components/schemas/AgentSpecNodeComponentType'
+        name:
+          type: string
+          description: Node name (used as identifier in edges)
+          example: process_input
+        description:
+          type: string
+          description: Human-readable description
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+          description: Input properties
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+          description: Output properties
+        metadata:
+          type: object
+          additionalProperties: true
+          description: |
+            Extension metadata. Includes FlowDrop-specific data for round-trip:
+            - `flowdrop:position` — Node position `{x, y}` on the canvas
+            - `flowdrop:dynamic` — Whether ports are dynamically configured
+      required:
+        - component_type
+        - name
+    AgentSpecRuntimeValidation:
+      type: object
+      description: Runtime validation result for an Agent Spec flow
+      properties:
+        valid:
+          type: boolean
+          description: Whether the flow is valid on the runtime
+        errors:
+          type: array
+          items:
+            type: string
+          description: Validation errors from the runtime
+      required:
+        - valid
+    AgentSpecRuntimeAgent:
+      type: object
+      description: Agent available on the runtime
+      properties:
+        name:
+          type: string
+          description: Agent name
+        description:
+          type: string
+          description: Agent description
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+    AgentSpecRuntimeTool:
+      type: object
+      description: Tool available on the runtime
+      properties:
+        name:
+          type: string
+          description: Tool name
+        description:
+          type: string
+          description: Tool description
+        component_type:
+          $ref: '#/components/schemas/AgentSpecToolComponentType'
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSpecProperty'
+    AgentSpecRuntimeHealth:
+      type: object
+      description: Health status of the Agent Spec runtime
+      properties:
+        status:
+          type: string
+          example: healthy
+        version:
+          type: string
+          example: 1.0.0
+        runtime:
+          type: string
+          description: Runtime name (e.g., "wayflow", "pyagentspec")
+          example: wayflow
   responses:
     BadRequest:
       description: Bad request - invalid parameters or request body

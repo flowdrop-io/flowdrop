@@ -13,6 +13,7 @@ info:
     - **Real-time Updates**: Track node execution status and pipeline progress
     - **Import/Export**: Import and export workflows in JSON format
     - **Validation**: Workflow validation before execution
+    - **Agent Spec Integration**: Import/export Oracle Open Agent Spec flows and execute on compatible runtimes (WayFlow/PyAgentSpec)
 
     ## Architecture
     - **Frontend**: Svelte 5 + XYFlow for visual workflow editing
@@ -67,6 +68,12 @@ tags:
     description: Workflow validation
   - name: Import/Export
     description: Workflow import and export operations
+  - name: Agent Spec
+    description: |
+      Oracle Open Agent Spec integration endpoints.
+      Provides bidirectional conversion between FlowDrop workflows and Agent Spec format,
+      plus runtime execution on compatible runtimes (WayFlow, PyAgentSpec).
+      @see https://github.com/oracle/agent-spec
 
 paths:
   # Health Check (root level - industry standard)
@@ -154,6 +161,34 @@ paths:
     $ref: './paths/interrupts.yaml#/~1playground~1sessions~1{sessionId}~1interrupts'
   /pipelines/{pipelineId}/interrupts:
     $ref: './paths/interrupts.yaml#/~1pipelines~1{pipelineId}~1interrupts'
+
+  # Agent Spec Runtime
+  /agentspec/flows/execute:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1flows~1execute'
+  /agentspec/executions/{id}:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}'
+  /agentspec/executions/{id}/cancel:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1cancel'
+  /agentspec/executions/{id}/results:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1results'
+  /agentspec/executions/{id}/stream:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1stream'
+  /agentspec/flows/validate:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1flows~1validate'
+  /agentspec/agents:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1agents'
+  /agentspec/tools:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1tools'
+  /agentspec/health:
+    $ref: './paths/agentspec.yaml#/~1agentspec~1health'
+
+  # Agent Spec Import/Export
+  /workflows/{id}/export/agentspec:
+    $ref: './paths/agentspec.yaml#/~1workflows~1{id}~1export~1agentspec'
+  /workflows/import/agentspec:
+    $ref: './paths/agentspec.yaml#/~1workflows~1import~1agentspec'
+  /workflows/{id}/validate/agentspec:
+    $ref: './paths/agentspec.yaml#/~1workflows~1{id}~1validate~1agentspec'
 
 components:
   securitySchemes:
@@ -297,6 +332,70 @@ components:
     InterruptListResponse:
       $ref: './components/schemas/interrupt.yaml#/InterruptListResponse'
 
+    # Agent Spec Types
+    AgentSpecComponentType:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecComponentType'
+    AgentSpecNodeComponentType:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecNodeComponentType'
+    AgentSpecToolComponentType:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecToolComponentType'
+    AgentSpecProperty:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecProperty'
+    AgentSpecBranch:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecBranch'
+    AgentSpecNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecNode'
+    AgentSpecStartNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecStartNode'
+    AgentSpecEndNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecEndNode'
+    AgentSpecLLMNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecLLMNode'
+    AgentSpecAPINode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecAPINode'
+    AgentSpecAgentNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecAgentNode'
+    AgentSpecFlowNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecFlowNode'
+    AgentSpecMapNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecMapNode'
+    AgentSpecBranchingNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecBranchingNode'
+    AgentSpecToolNode:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecToolNode'
+    AgentSpecControlFlowEdge:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecControlFlowEdge'
+    AgentSpecDataFlowEdge:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecDataFlowEdge'
+    AgentSpecFlow:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecFlow'
+    AgentSpecServerTool:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecServerTool'
+    AgentSpecClientTool:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecClientTool'
+    AgentSpecRemoteTool:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecRemoteTool'
+    AgentSpecTool:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecTool'
+    AgentSpecLLMConfig:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecLLMConfig'
+    AgentSpecAgent:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecAgent'
+    AgentSpecDocument:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecDocument'
+    AgentSpecValidationResult:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecValidationResult'
+    AgentSpecExecutionRequest:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionRequest'
+    AgentSpecExecutionResponse:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionResponse'
+    AgentSpecExecutionStatus:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionStatus'
+    AgentSpecNodeStatus:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecNodeStatus'
+    AgentSpecExecutionResults:
+      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionResults'
+
     # Response Types
     NodesResponse:
       $ref: './components/schemas/response.yaml#/NodesResponse'
@@ -312,6 +411,18 @@ components:
       $ref: './components/schemas/response.yaml#/WorkflowResponse'
     ValidationResponse:
       $ref: './components/schemas/response.yaml#/ValidationResponse'
+    AgentSpecFlowResponse:
+      $ref: './components/schemas/response.yaml#/AgentSpecFlowResponse'
+    AgentSpecDocumentResponse:
+      $ref: './components/schemas/response.yaml#/AgentSpecDocumentResponse'
+    AgentSpecValidationResponse:
+      $ref: './components/schemas/response.yaml#/AgentSpecValidationResponse'
+    AgentSpecExecutionStatusResponse:
+      $ref: './components/schemas/response.yaml#/AgentSpecExecutionStatusResponse'
+    AgentSpecAgentsResponse:
+      $ref: './components/schemas/response.yaml#/AgentSpecAgentsResponse'
+    AgentSpecToolsResponse:
+      $ref: './components/schemas/response.yaml#/AgentSpecToolsResponse'
 
   responses:
     BadRequest:

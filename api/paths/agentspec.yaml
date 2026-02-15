@@ -1,0 +1,412 @@
+# Agent Spec Runtime Endpoints
+# Endpoints for interacting with Agent Spec runtimes (WayFlow/PyAgentSpec)
+
+# ============================================================================
+# Flow Execution
+# ============================================================================
+
+/agentspec/flows/execute:
+  post:
+    operationId: agentSpecExecuteFlow
+    summary: Execute an Agent Spec flow
+    description: |
+      Submit an Agent Spec flow for execution on the configured runtime
+      (WayFlow, PyAgentSpec, or other compatible runtimes).
+
+      The flow is posted as Agent Spec JSON. The runtime returns an
+      execution ID for tracking progress via polling or WebSocket.
+    tags:
+      - Agent Spec
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionRequest'
+    responses:
+      '200':
+        description: Flow execution started successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+# ============================================================================
+# Execution Status & Results
+# ============================================================================
+
+/agentspec/executions/{id}:
+  get:
+    operationId: agentSpecGetExecutionStatus
+    summary: Get Agent Spec execution status
+    description: |
+      Retrieve the current status and per-node execution info
+      for a running or completed Agent Spec execution.
+    tags:
+      - Agent Spec
+    parameters:
+      - name: id
+        in: path
+        description: Execution ID from the runtime
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Execution status retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionStatus'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/agentspec/executions/{id}/cancel:
+  post:
+    operationId: agentSpecCancelExecution
+    summary: Cancel Agent Spec execution
+    description: |
+      Cancel a running Agent Spec execution. Only executions in
+      'running' status can be cancelled.
+    tags:
+      - Agent Spec
+    parameters:
+      - name: id
+        in: path
+        description: Execution ID from the runtime
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Execution cancelled successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Execution cancelled successfully
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: Execution cannot be cancelled (already completed or failed)
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/agentspec/executions/{id}/results:
+  get:
+    operationId: agentSpecGetExecutionResults
+    summary: Get Agent Spec execution results
+    description: |
+      Retrieve the final results of a completed Agent Spec execution.
+      Returns null/404 if the execution is still running or was cancelled.
+    tags:
+      - Agent Spec
+    parameters:
+      - name: id
+        in: path
+        description: Execution ID from the runtime
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Execution results retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionResults'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/agentspec/executions/{id}/stream:
+  get:
+    operationId: agentSpecStreamExecution
+    summary: Stream Agent Spec execution updates (WebSocket)
+    description: |
+      WebSocket endpoint for real-time execution updates.
+      Streams per-node status changes and execution events as they occur.
+
+      **Protocol**: WebSocket (upgrade from HTTP)
+
+      **Messages sent by server**:
+      - `{"type": "node_status", "node": "<name>", "status": {...}}`
+      - `{"type": "execution_complete", "results": {...}}`
+      - `{"type": "execution_error", "error": "<message>"}`
+    tags:
+      - Agent Spec
+    parameters:
+      - name: id
+        in: path
+        description: Execution ID from the runtime
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: WebSocket connection established (upgrade to ws://)
+      '101':
+        description: WebSocket upgrade successful
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+# ============================================================================
+# Flow Validation
+# ============================================================================
+
+/agentspec/flows/validate:
+  post:
+    operationId: agentSpecValidateFlow
+    summary: Validate Agent Spec flow on runtime
+    description: |
+      Validate an Agent Spec flow specification against the runtime
+      without executing it. Checks for structural correctness,
+      valid node references, and property compatibility.
+    tags:
+      - Agent Spec
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/agentspec.yaml#/AgentSpecFlow'
+    responses:
+      '200':
+        description: Validation result
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeValidation'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+# ============================================================================
+# Runtime Discovery
+# ============================================================================
+
+/agentspec/agents:
+  get:
+    operationId: agentSpecListAgents
+    summary: List available agents on the runtime
+    description: |
+      Retrieve a list of agents registered on the Agent Spec runtime.
+      These agents can be referenced by `agent_node` components.
+    tags:
+      - Agent Spec
+    responses:
+      '200':
+        description: List of available agents
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeAgent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/agentspec/tools:
+  get:
+    operationId: agentSpecListTools
+    summary: List available tools on the runtime
+    description: |
+      Retrieve a list of tools registered on the Agent Spec runtime.
+      These tools can be referenced by `tool_node` components.
+    tags:
+      - Agent Spec
+    responses:
+      '200':
+        description: List of available tools
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeTool'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/agentspec/health:
+  get:
+    operationId: agentSpecHealthCheck
+    summary: Check Agent Spec runtime health
+    description: |
+      Verify that the configured Agent Spec runtime is available
+      and responding. Used to check connectivity before execution.
+    tags:
+      - Agent Spec
+    security: []
+    responses:
+      '200':
+        description: Runtime is healthy
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeHealth'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '503':
+        description: Runtime unavailable
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+# ============================================================================
+# Workflow Import/Export as Agent Spec
+# ============================================================================
+
+/workflows/{id}/export/agentspec:
+  get:
+    operationId: exportWorkflowAsAgentSpec
+    summary: Export workflow as Agent Spec JSON
+    description: |
+      Convert a FlowDrop workflow to Agent Spec format and return it.
+
+      The conversion:
+      - Maps FlowDrop node types to Agent Spec component types
+      - Splits unified edges into control_flow_connections and data_flow_connections
+      - Stores FlowDrop-specific data (positions, dynamic ports) in metadata extensions
+      - Validates the workflow for Agent Spec compatibility before export
+    tags:
+      - Agent Spec
+      - Import/Export
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: format
+        in: query
+        description: Output format (document wraps flow with agent/tools/LLM config)
+        required: false
+        schema:
+          type: string
+          enum:
+            - flow
+            - document
+          default: flow
+    responses:
+      '200':
+        description: Agent Spec JSON exported successfully
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '../components/schemas/agentspec.yaml#/AgentSpecFlow'
+                - $ref: '../components/schemas/agentspec.yaml#/AgentSpecDocument'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        description: Workflow cannot be exported as Agent Spec
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecValidationResult'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/workflows/import/agentspec:
+  post:
+    operationId: importWorkflowFromAgentSpec
+    summary: Import workflow from Agent Spec JSON
+    description: |
+      Convert an Agent Spec flow or document to a FlowDrop workflow.
+
+      The conversion:
+      - Maps Agent Spec component types to FlowDrop node types
+      - Merges control_flow_connections and data_flow_connections into unified edges
+      - Auto-layouts nodes if no position metadata is present
+      - Preserves Agent Spec component_type in FlowDrop extensions
+    tags:
+      - Agent Spec
+      - Import/Export
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '../components/schemas/agentspec.yaml#/AgentSpecFlow'
+              - $ref: '../components/schemas/agentspec.yaml#/AgentSpecDocument'
+    responses:
+      '200':
+        description: Workflow imported successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/response.yaml#/WorkflowResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '422':
+        description: Invalid Agent Spec format
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecValidationResult'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+/workflows/{id}/validate/agentspec:
+  get:
+    operationId: validateWorkflowForAgentSpec
+    summary: Validate workflow for Agent Spec export
+    description: |
+      Check if a FlowDrop workflow can be exported as Agent Spec.
+      Returns validation errors and warnings without performing the export.
+
+      Checks include:
+      - Exactly one start node (terminal/trigger type)
+      - At least one end node (terminal/output type)
+      - Gateway nodes have branches defined
+      - All nodes are reachable from start
+    tags:
+      - Agent Spec
+      - Validation
+    parameters:
+      - name: id
+        in: path
+        description: Workflow UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Validation result
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/agentspec.yaml#/AgentSpecValidationResult'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
