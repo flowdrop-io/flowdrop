@@ -3168,6 +3168,17 @@ components:
             - math
             - calculation
             - processing
+        formats:
+          type: array
+          items:
+            type: string
+          description: |
+            Workflow formats this node is compatible with.
+            When omitted, the node is universal (compatible with all formats).
+            When specified, the node only appears in the sidebar for workflows
+            matching one of the listed formats.
+          example:
+            - agentspec
         extensions:
           $ref: '#/components/schemas/NodeExtensions'
           description: |
@@ -3516,6 +3527,15 @@ components:
         updateNumber:
           type: integer
           description: Update sequence number
+        format:
+          type: string
+          description: |
+            Workflow format identifier. Determines which node types are shown
+            in the sidebar and how the workflow is exported.
+            Built-in formats: 'flowdrop' (default), 'agentspec'.
+            Custom formats can be registered via WorkflowFormatRegistry.
+          example: flowdrop
+          default: flowdrop
       required:
         - version
         - createdAt

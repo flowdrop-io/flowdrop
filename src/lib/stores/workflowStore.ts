@@ -9,6 +9,7 @@
 
 import { writable, derived, get } from 'svelte/store';
 import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
+import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 import type { WorkflowChangeType } from '$lib/types/events.js';
 import { historyService } from '../services/historyService.js';
 
@@ -263,6 +264,12 @@ export const workflowMetadata = derived(
 			versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 			updateNumber: 0
 		}
+);
+
+/** Derived store for the current workflow format */
+export const workflowFormat = derived(
+	workflowStore,
+	($workflow) => $workflow?.metadata?.format ?? DEFAULT_WORKFLOW_FORMAT
 );
 
 // =========================================================================

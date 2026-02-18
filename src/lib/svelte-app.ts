@@ -14,6 +14,9 @@ import type { Workflow, NodeMetadata, PortConfig, CategoryDefinition } from './t
 import type { EndpointConfig } from './config/endpoints.js';
 import type { AuthProvider } from './types/auth.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
+import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
+import { workflowFormatRegistry } from './registry/workflowFormatRegistry.js';
+import './registry/builtinFormats.js';
 import { initializePortCompatibility } from './utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
@@ -113,6 +116,10 @@ export interface FlowDropMountOptions {
 	// NEW: Draft storage key
 	/** Custom storage key for localStorage drafts */
 	draftStorageKey?: string;
+
+	// NEW: Workflow format adapters
+	/** Custom workflow format adapters to register */
+	formatAdapters?: WorkflowFormatAdapter[];
 }
 
 /**
@@ -208,8 +215,16 @@ export async function mountFlowDropApp(
 		eventHandlers,
 		features: userFeatures,
 		settings: initialSettings,
-		draftStorageKey: customDraftKey
+		draftStorageKey: customDraftKey,
+		formatAdapters
 	} = options;
+
+	// Register custom format adapters before mounting
+	if (formatAdapters) {
+		for (const adapter of formatAdapters) {
+			workflowFormatRegistry.register(adapter);
+		}
+	}
 
 	// Merge features with defaults
 	const features = mergeFeatures(userFeatures);

@@ -46,6 +46,23 @@ export type BuiltinNodeCategory =
 export type NodeCategory = BuiltinNodeCategory | (string & Record<never, never>);
 
 /**
+ * Built-in workflow format identifiers that ship with FlowDrop.
+ */
+export type BuiltinWorkflowFormat = 'flowdrop' | 'agentspec';
+
+/**
+ * Workflow format identifier.
+ * Determines sidebar node filtering and export behavior.
+ * Includes built-in formats plus any custom string for third-party adapters.
+ */
+export type WorkflowFormat = BuiltinWorkflowFormat | (string & Record<never, never>);
+
+/**
+ * Default workflow format used when none is specified.
+ */
+export const DEFAULT_WORKFLOW_FORMAT: WorkflowFormat = 'flowdrop';
+
+/**
  * Category definition with metadata for display and organization.
  * Fetched from the `/categories` API endpoint or provided as defaults.
  */
@@ -632,6 +649,8 @@ export interface NodeMetadata {
 	/** Default configuration values for this node type */
 	config?: Record<string, unknown>;
 	tags?: string[];
+	/** Workflow formats this node is compatible with. Omit = universal (all formats). */
+	formats?: WorkflowFormat[];
 	/**
 	 * Admin/Edit configuration for nodes with dynamic or external configuration.
 	 * Used when the config schema cannot be determined at workflow load time
@@ -1245,6 +1264,8 @@ export interface Workflow {
 		tags?: string[];
 		versionId?: string;
 		updateNumber?: number;
+		/** Workflow format. Determines sidebar filtering and export behavior. */
+		format?: WorkflowFormat;
 	};
 }
 

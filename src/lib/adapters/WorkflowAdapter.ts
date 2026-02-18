@@ -14,7 +14,7 @@
  * - Systems that need to generate or modify workflows programmatically
  */
 
-import type { Workflow, NodeMetadata } from '../types/index.js';
+import type { Workflow, NodeMetadata, WorkflowFormat } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -82,6 +82,7 @@ export interface StandardWorkflow {
 		updatedAt: string;
 		author?: string;
 		tags?: string[];
+		format?: WorkflowFormat;
 	};
 }
 

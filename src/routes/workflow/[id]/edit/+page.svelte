@@ -128,6 +128,7 @@
 				status: workflowData.status || 'Active',
 				nodes: refreshedNodes,
 				edges: workflowData.edges || [],
+				metadata: workflowData.metadata,
 				created: workflowData.created,
 				changed: workflowData.changed
 			};

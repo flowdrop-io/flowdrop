@@ -173,6 +173,15 @@ WorkflowMetadata:
     updateNumber:
       type: integer
       description: Update sequence number
+    format:
+      type: string
+      description: |
+        Workflow format identifier. Determines which node types are shown
+        in the sidebar and how the workflow is exported.
+        Built-in formats: 'flowdrop' (default), 'agentspec'.
+        Custom formats can be registered via WorkflowFormatRegistry.
+      example: flowdrop
+      default: flowdrop
   required:
     - version
     - createdAt
