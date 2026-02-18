@@ -5,6 +5,7 @@
 
 import type { Workflow, WorkflowNode, WorkflowEdge } from '../../lib/types/index.js';
 import { getNodeById } from './nodes.js';
+import { getAgentSpecNodeMetadata } from '../../lib/adapters/agentspec/nodeTypeRegistry.js';
 
 /** Workflow metadata type extracted from Workflow interface */
 type WorkflowMetadata = NonNullable<Workflow['metadata']>;
@@ -3703,6 +3704,417 @@ export const demoApiVariablesWorkflow: Workflow = (() => {
 	};
 })();
 
+// ============================================================================
+// Agent Spec Demo Workflows
+// ============================================================================
+
+/**
+ * Demo workflow: Agent Spec — LLM Pipeline
+ * Simple 3-node flow: Start → LLM → End
+ * Demonstrates basic Agent Spec usage with control and data flow connections.
+ */
+export const demoAgentSpecLLMPipelineWorkflow: Workflow = (() => {
+	const startMeta = getAgentSpecNodeMetadata('start_node')!;
+	const llmMeta = getAgentSpecNodeMetadata('llm_node')!;
+	const endMeta = getAgentSpecNodeMetadata('end_node')!;
+
+	return {
+		id: 'agentspec-llm-pipeline',
+		name: 'Demo: Agent Spec — LLM Pipeline',
+		description:
+			'A simple Start → LLM → End pipeline using Oracle Agent Spec node types. Demonstrates basic control flow and data flow connections.',
+		nodes: [
+			{
+				id: 'agentspec.start_node.1',
+				type: 'universalNode',
+				position: { x: 0, y: 100 },
+				data: {
+					nodeId: 'agentspec.start_node.1',
+					label: 'Start',
+					config: {},
+					metadata: {
+						...startMeta,
+						outputs: [
+							...startMeta.outputs,
+							{
+								id: 'user_query',
+								name: 'User Query',
+								type: 'output',
+								dataType: 'string',
+								description: 'The user question to answer'
+							}
+						]
+					}
+				}
+			},
+			{
+				id: 'agentspec.llm_node.1',
+				type: 'universalNode',
+				position: { x: 350, y: 100 },
+				data: {
+					nodeId: 'agentspec.llm_node.1',
+					label: 'Summarizer LLM',
+					config: {
+						prompt_template: '{{prompt}}',
+						system_prompt:
+							'You are a helpful summarizer. Summarize the input concisely.',
+						llm_config_ref: 'gpt-4o'
+					},
+					metadata: {
+						...llmMeta,
+						inputs: [
+							...llmMeta.inputs,
+							{
+								id: 'prompt',
+								name: 'Prompt',
+								type: 'input',
+								dataType: 'string',
+								required: true
+							}
+						],
+						outputs: [
+							...llmMeta.outputs,
+							{
+								id: 'response',
+								name: 'Response',
+								type: 'output',
+								dataType: 'string'
+							}
+						]
+					}
+				}
+			},
+			{
+				id: 'agentspec.end_node.1',
+				type: 'universalNode',
+				position: { x: 700, y: 100 },
+				data: {
+					nodeId: 'agentspec.end_node.1',
+					label: 'End',
+					config: {},
+					metadata: {
+						...endMeta,
+						inputs: [
+							...endMeta.inputs,
+							{
+								id: 'result',
+								name: 'Result',
+								type: 'input',
+								dataType: 'string',
+								required: true
+							}
+						]
+					}
+				}
+			}
+		] as WorkflowNode[],
+		edges: [
+			// Control flow: Start → LLM
+			{
+				id: 'cf-start-llm',
+				source: 'agentspec.start_node.1',
+				target: 'agentspec.llm_node.1',
+				sourceHandle: 'agentspec.start_node.1-output-trigger',
+				targetHandle: 'agentspec.llm_node.1-input-trigger'
+			},
+			// Control flow: LLM → End
+			{
+				id: 'cf-llm-end',
+				source: 'agentspec.llm_node.1',
+				target: 'agentspec.end_node.1',
+				sourceHandle: 'agentspec.llm_node.1-output-trigger',
+				targetHandle: 'agentspec.end_node.1-input-trigger'
+			},
+			// Data flow: Start.user_query → LLM.prompt
+			{
+				id: 'df-query-prompt',
+				source: 'agentspec.start_node.1',
+				target: 'agentspec.llm_node.1',
+				sourceHandle: 'agentspec.start_node.1-output-user_query',
+				targetHandle: 'agentspec.llm_node.1-input-prompt',
+				data: { metadata: { edgeType: 'data' } },
+				style: 'stroke: grey;'
+			},
+			// Data flow: LLM.response → End.result
+			{
+				id: 'df-response-result',
+				source: 'agentspec.llm_node.1',
+				target: 'agentspec.end_node.1',
+				sourceHandle: 'agentspec.llm_node.1-output-response',
+				targetHandle: 'agentspec.end_node.1-input-result',
+				data: { metadata: { edgeType: 'data' } },
+				style: 'stroke: grey;'
+			}
+		] as WorkflowEdge[],
+		metadata: {
+			version: '1.0.0',
+			createdAt: '2025-01-15T10:00:00.000Z',
+			updatedAt: '2025-01-15T10:00:00.000Z',
+			tags: ['agent-spec', 'llm', 'demo'],
+			format: 'agentspec'
+		}
+	};
+})();
+
+/**
+ * Demo workflow: Agent Spec — Customer Support Router
+ * 6-node flow: Start → LLM Classifier → Branch → 3x End nodes
+ * Demonstrates branching, LLM classification, and multiple endpoints.
+ */
+export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
+	const startMeta = getAgentSpecNodeMetadata('start_node')!;
+	const llmMeta = getAgentSpecNodeMetadata('llm_node')!;
+	const branchMeta = getAgentSpecNodeMetadata('branching_node')!;
+	const endMeta = getAgentSpecNodeMetadata('end_node')!;
+
+	return {
+		id: 'agentspec-customer-support',
+		name: 'Demo: Agent Spec — Customer Support Router',
+		description:
+			'Routes customer queries through LLM classification and branching. Demonstrates branching_node, multiple endpoints, and data flow.',
+		nodes: [
+			{
+				id: 'agentspec.start_node.1',
+				type: 'universalNode',
+				position: { x: 0, y: 200 },
+				data: {
+					nodeId: 'agentspec.start_node.1',
+					label: 'Intake',
+					config: {},
+					metadata: {
+						...startMeta,
+						outputs: [
+							...startMeta.outputs,
+							{
+								id: 'customer_message',
+								name: 'Customer Message',
+								type: 'output',
+								dataType: 'string',
+								description: 'Raw customer message'
+							}
+						]
+					}
+				}
+			},
+			{
+				id: 'agentspec.llm_node.1',
+				type: 'universalNode',
+				position: { x: 350, y: 200 },
+				data: {
+					nodeId: 'agentspec.llm_node.1',
+					label: 'Classifier',
+					config: {
+						prompt_template: '{{message}}',
+						system_prompt:
+							'Classify the customer message as: billing, technical, or general. Respond with only the category name.',
+						llm_config_ref: 'claude-sonnet-4-6'
+					},
+					metadata: {
+						...llmMeta,
+						inputs: [
+							...llmMeta.inputs,
+							{
+								id: 'message',
+								name: 'Message',
+								type: 'input',
+								dataType: 'string',
+								required: true
+							}
+						],
+						outputs: [
+							...llmMeta.outputs,
+							{
+								id: 'category',
+								name: 'Category',
+								type: 'output',
+								dataType: 'string',
+								description: 'billing, technical, or general'
+							}
+						]
+					}
+				}
+			},
+			{
+				id: 'agentspec.branching_node.1',
+				type: 'universalNode',
+				position: { x: 700, y: 200 },
+				data: {
+					nodeId: 'agentspec.branching_node.1',
+					label: 'Router',
+					config: {
+						branches: [
+							{
+								name: 'billing',
+								label: 'Billing',
+								condition: 'category == "billing"'
+							},
+							{
+								name: 'technical',
+								label: 'Technical',
+								condition: 'category == "technical"'
+							},
+							{
+								name: 'general',
+								label: 'General',
+								condition: 'default',
+								isDefault: true
+							}
+						]
+					},
+					metadata: {
+						...branchMeta,
+						inputs: [
+							...branchMeta.inputs,
+							{
+								id: 'category',
+								name: 'Category',
+								type: 'input',
+								dataType: 'string',
+								required: true
+							}
+						]
+					}
+				}
+			},
+			{
+				id: 'agentspec.end_node.1',
+				type: 'universalNode',
+				position: { x: 1050, y: 50 },
+				data: {
+					nodeId: 'agentspec.end_node.1',
+					label: 'Billing Response',
+					config: {},
+					metadata: {
+						...endMeta,
+						inputs: [
+							...endMeta.inputs,
+							{
+								id: 'result',
+								name: 'Result',
+								type: 'input',
+								dataType: 'string'
+							}
+						]
+					}
+				}
+			},
+			{
+				id: 'agentspec.end_node.2',
+				type: 'universalNode',
+				position: { x: 1050, y: 200 },
+				data: {
+					nodeId: 'agentspec.end_node.2',
+					label: 'Tech Response',
+					config: {},
+					metadata: {
+						...endMeta,
+						inputs: [
+							...endMeta.inputs,
+							{
+								id: 'result',
+								name: 'Result',
+								type: 'input',
+								dataType: 'string'
+							}
+						]
+					}
+				}
+			},
+			{
+				id: 'agentspec.end_node.3',
+				type: 'universalNode',
+				position: { x: 1050, y: 350 },
+				data: {
+					nodeId: 'agentspec.end_node.3',
+					label: 'General Response',
+					config: {},
+					metadata: {
+						...endMeta,
+						inputs: [
+							...endMeta.inputs,
+							{
+								id: 'result',
+								name: 'Result',
+								type: 'input',
+								dataType: 'string'
+							}
+						]
+					}
+				}
+			}
+		] as WorkflowNode[],
+		edges: [
+			// Control flow: Start → Classifier
+			{
+				id: 'cf-start-classifier',
+				source: 'agentspec.start_node.1',
+				target: 'agentspec.llm_node.1',
+				sourceHandle: 'agentspec.start_node.1-output-trigger',
+				targetHandle: 'agentspec.llm_node.1-input-trigger'
+			},
+			// Control flow: Classifier → Router
+			{
+				id: 'cf-classifier-router',
+				source: 'agentspec.llm_node.1',
+				target: 'agentspec.branching_node.1',
+				sourceHandle: 'agentspec.llm_node.1-output-trigger',
+				targetHandle: 'agentspec.branching_node.1-input-trigger'
+			},
+			// Control flow: Router → Billing End
+			{
+				id: 'cf-router-billing',
+				source: 'agentspec.branching_node.1',
+				target: 'agentspec.end_node.1',
+				sourceHandle: 'agentspec.branching_node.1-output-billing',
+				targetHandle: 'agentspec.end_node.1-input-trigger'
+			},
+			// Control flow: Router → Tech End
+			{
+				id: 'cf-router-tech',
+				source: 'agentspec.branching_node.1',
+				target: 'agentspec.end_node.2',
+				sourceHandle: 'agentspec.branching_node.1-output-technical',
+				targetHandle: 'agentspec.end_node.2-input-trigger'
+			},
+			// Control flow: Router → General End
+			{
+				id: 'cf-router-general',
+				source: 'agentspec.branching_node.1',
+				target: 'agentspec.end_node.3',
+				sourceHandle: 'agentspec.branching_node.1-output-general',
+				targetHandle: 'agentspec.end_node.3-input-trigger'
+			},
+			// Data flow: Start.customer_message → Classifier.message
+			{
+				id: 'df-msg-classifier',
+				source: 'agentspec.start_node.1',
+				target: 'agentspec.llm_node.1',
+				sourceHandle: 'agentspec.start_node.1-output-customer_message',
+				targetHandle: 'agentspec.llm_node.1-input-message',
+				data: { metadata: { edgeType: 'data' } },
+				style: 'stroke: grey;'
+			},
+			// Data flow: Classifier.category → Router.category
+			{
+				id: 'df-category-router',
+				source: 'agentspec.llm_node.1',
+				target: 'agentspec.branching_node.1',
+				sourceHandle: 'agentspec.llm_node.1-output-category',
+				targetHandle: 'agentspec.branching_node.1-input-category',
+				data: { metadata: { edgeType: 'data' } },
+				style: 'stroke: grey;'
+			}
+		] as WorkflowEdge[],
+		metadata: {
+			version: '1.0.0',
+			createdAt: '2025-01-15T10:00:00.000Z',
+			updatedAt: '2025-01-15T10:00:00.000Z',
+			tags: ['agent-spec', 'branching', 'llm', 'demo'],
+			format: 'agentspec'
+		}
+	};
+})();
+
 /**
  * All mock workflows as a Map for easy lookup
  */
@@ -3711,7 +4123,9 @@ export const mockWorkflows: Map<string, Workflow> = new Map([
 	[demoNodeTypesShowcaseWorkflow.id, demoNodeTypesShowcaseWorkflow],
 	[demoTriggerNodeWorkflow.id, demoTriggerNodeWorkflow],
 	[demoForEachLoopWorkflow.id, demoForEachLoopWorkflow],
-	[demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow]
+	[demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow],
+	[demoAgentSpecLLMPipelineWorkflow.id, demoAgentSpecLLMPipelineWorkflow],
+	[demoAgentSpecCustomerSupportWorkflow.id, demoAgentSpecCustomerSupportWorkflow]
 ]);
 
 /**
