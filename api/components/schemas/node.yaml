@@ -587,6 +587,17 @@ NodeMetadata:
         - math
         - calculation
         - processing
+    formats:
+      type: array
+      items:
+        type: string
+      description: |
+        Workflow formats this node is compatible with.
+        When omitted, the node is universal (compatible with all formats).
+        When specified, the node only appears in the sidebar for workflows
+        matching one of the listed formats.
+      example:
+        - agentspec
     extensions:
       $ref: '#/NodeExtensions'
       description: |

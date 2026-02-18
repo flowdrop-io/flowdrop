@@ -22,6 +22,7 @@
 		ConfigSchema,
 		NodeUIExtensions
 	} from '$lib/types/index.js';
+	import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import type { AuthProvider } from '$lib/types/auth.js';
@@ -31,6 +32,7 @@
 		workflowStore,
 		workflowActions,
 		workflowName,
+		workflowFormat,
 		markAsSaved
 	} from '../stores/workflowStore.js';
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
@@ -38,6 +40,7 @@
 	import { uiSettings } from '../stores/settingsStore.js';
 	import { initializePortCompatibility } from '$lib/utils/connections.js';
 	import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
+	import { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
 
 	/**
 	 * Configuration props for runtime customization
@@ -143,9 +146,9 @@
 	// Workflow settings sidebar state
 	let isWorkflowSettingsOpen = $state(false);
 
-	// Workflow configuration schema
-	const workflowConfigSchema: ConfigSchema = {
-		type: 'object',
+	// Workflow configuration schema (derived to pick up dynamic format options)
+	let workflowConfigSchema: ConfigSchema = $derived({
+		type: 'object' as const,
 		properties: {
 			name: {
 				type: 'string',
@@ -159,15 +162,23 @@
 				description: 'A description of the workflow',
 				format: 'multiline',
 				default: ''
+			},
+			format: {
+				type: 'string',
+				title: 'Workflow Format',
+				description: 'The specification format for this workflow',
+				oneOf: workflowFormatRegistry.getOneOfOptions(),
+				default: 'flowdrop'
 			}
 		},
 		required: ['name']
-	};
+	});
 
 	// Workflow configuration values
 	let workflowConfigValues = $derived({
 		name: $workflowName || '',
-		description: $workflowStore?.description || ''
+		description: $workflowStore?.description || '',
+		format: $workflowStore?.metadata?.format || 'flowdrop'
 	});
 
 	// Get the current node from the workflow store
@@ -188,7 +199,11 @@
 	async function fetchNodeTypes(): Promise<void> {
 		// If nodes were provided as props, use them directly (skip API fetch)
 		if (propNodes && propNodes.length > 0) {
-			nodes = propNodes;
+			// Merge format-provided nodes with prop nodes (deduplicate by ID, props take priority)
+			const formatNodes = workflowFormatRegistry.getAllFormatNodes();
+			const existingIds = new Set(propNodes.map((n) => n.id));
+			const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
+			nodes = [...propNodes, ...uniqueFormatNodes];
 			return;
 		}
 
@@ -205,7 +220,11 @@
 				fetchedNodes = await api.nodes.getNodes();
 			}
 
-			nodes = fetchedNodes;
+			// Merge format-provided nodes with API nodes (deduplicate by ID, API takes priority)
+			const formatNodes = workflowFormatRegistry.getAllFormatNodes();
+			const existingIds = new Set(fetchedNodes.map((n) => n.id));
+			const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
+			nodes = [...fetchedNodes, ...uniqueFormatNodes];
 			error = null;
 
 			// Dismiss loading toast
@@ -430,7 +449,7 @@
 				workflowId = uuidv4();
 			}
 
-			// Create workflow object for saving
+			// Create workflow object for saving (spread existing metadata to preserve format, tags, etc.)
 			const finalWorkflow: Workflow = {
 				id: workflowId,
 				name: workflowToSave.name || 'Untitled Workflow',
@@ -438,7 +457,9 @@
 				nodes: workflowToSave.nodes || [],
 				edges: workflowToSave.edges || [],
 				metadata: {
-					version: '1.0.0',
+					...workflowToSave.metadata,
+					version: workflowToSave.metadata?.version || '1.0.0',
+					format: workflowToSave.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
 					createdAt: workflowToSave.metadata?.createdAt || new Date().toISOString(),
 					updatedAt: new Date().toISOString()
 				}
@@ -538,14 +559,16 @@
 				return;
 			}
 
-			// Create workflow object for export
+			// Create workflow object for export (spread existing metadata to preserve format, tags, etc.)
 			const finalWorkflow = {
 				id: workflowToExport.id || 'untitled-workflow',
 				name: workflowToExport.name || 'Untitled Workflow',
 				nodes: workflowToExport.nodes || [],
 				edges: workflowToExport.edges || [],
 				metadata: {
-					version: '1.0.0',
+					...workflowToExport.metadata,
+					version: workflowToExport.metadata?.version || '1.0.0',
+					format: workflowToExport.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
 					createdAt: workflowToExport.metadata?.createdAt || new Date().toISOString(),
 					updatedAt: new Date().toISOString()
 				}
@@ -722,7 +745,7 @@
 
 	<!-- Left Sidebar: Node Components -->
 	{#snippet leftSidebar()}
-		<NodeSidebar {nodes} />
+		<NodeSidebar {nodes} activeFormat={$workflowFormat} />
 	{/snippet}
 
 	<!-- Right Sidebar: Configuration or Workflow Settings -->
@@ -746,9 +769,35 @@
 					onChange={(config) => {
 						// Sync workflow settings changes immediately on field blur
 						if ($workflowStore) {
+							const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
+							const currentFormat =
+								$workflowStore.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
+
+							// Warn about incompatible nodes when format changes
+							if (newFormat !== currentFormat) {
+								const incompatibleNodes = $workflowStore.nodes?.filter((node) => {
+									const formats = node.data?.metadata?.formats;
+									return (
+										formats &&
+										formats.length > 0 &&
+										!formats.includes(newFormat)
+									);
+								});
+								if (incompatibleNodes && incompatibleNodes.length > 0) {
+									console.warn(
+										`Format changed to '${newFormat}'. ${incompatibleNodes.length} node(s) are not compatible with this format and may not export correctly:`,
+										incompatibleNodes.map((n) => n.data?.label || n.type)
+									);
+								}
+							}
+
 							workflowActions.batchUpdate({
 								name: config.name as string,
-								description: config.description as string | undefined
+								description: config.description as string | undefined,
+								metadata: {
+									...$workflowStore.metadata,
+									format: newFormat
+								}
 							});
 						}
 					}}

@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-	import type { NodeMetadata, NodeCategory } from '../types/index.js';
+	import type { NodeMetadata, NodeCategory, WorkflowFormat } from '../types/index.js';
 	import LoadingSpinner from './LoadingSpinner.svelte';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
@@ -17,6 +17,7 @@
 	interface Props {
 		nodes: NodeMetadata[];
 		selectedCategory?: NodeCategory;
+		activeFormat?: WorkflowFormat;
 	}
 
 	let props: Props = $props();
@@ -31,6 +32,21 @@
 		updateSettings({ ui: { sidebarCollapsed: !$uiSettings.sidebarCollapsed } });
 	}
 
+	/**
+	 * Check if a node is compatible with the active workflow format.
+	 * Nodes without formats are universal (compatible with all formats).
+	 */
+	function isNodeCompatibleWithFormat(node: NodeMetadata): boolean {
+		if (!props.activeFormat) return true;
+		if (!node.formats || node.formats.length === 0) return true;
+		return node.formats.includes(props.activeFormat);
+	}
+
+	/** Nodes filtered by format compatibility */
+	let formatCompatibleNodes = $derived(
+		(props.nodes || []).filter(isNodeCompatibleWithFormat)
+	);
+
 	let filteredNodes = $derived(getFilteredNodes());
 	let categories = $derived(getCategories());
 
@@ -39,12 +55,11 @@
 	 * Categories appear in the order their first node appears in the API response
 	 */
 	function getCategories(): NodeCategory[] {
-		const nodes = props.nodes || [];
-		if (nodes.length === 0) return [];
+		if (formatCompatibleNodes.length === 0) return [];
 		// Use a Set to track uniqueness while preserving insertion order
 		const seen = new SvelteSet<NodeCategory>();
 		const orderedCategories: NodeCategory[] = [];
-		for (const node of nodes) {
+		for (const node of formatCompatibleNodes) {
 			if (!seen.has(node.category)) {
 				seen.add(node.category);
 				orderedCategories.push(node.category);
@@ -58,8 +73,8 @@
 	 * Preserves the API order - no client-side sorting applied
 	 */
 	function getFilteredNodes(): NodeMetadata[] {
-		// Use actual node types from props
-		let filtered = props.nodes || [];
+		// Start with format-compatible nodes
+		let filtered = formatCompatibleNodes;
 
 		// Filter by category
 		if (selectedCategory !== 'all') {
@@ -155,8 +170,7 @@
 	 * Preserves the API order - no client-side sorting applied
 	 */
 	function getNodesForCategory(category: NodeCategory): NodeMetadata[] {
-		const nodes = props.nodes || [];
-		return nodes.filter((node) => node.category === category);
+		return formatCompatibleNodes.filter((node) => node.category === category);
 	}
 
 	/**

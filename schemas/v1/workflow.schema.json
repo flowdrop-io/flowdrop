@@ -539,6 +539,13 @@
           },
           "description": "Node tags for search and filtering"
         },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Workflow formats this node is compatible with.\nWhen omitted, the node is universal (compatible with all formats).\nWhen specified, the node only appears in the sidebar for workflows\nmatching one of the listed formats.\n"
+        },
         "extensions": {
           "allOf": [
             {
@@ -981,6 +988,11 @@
         "updateNumber": {
           "type": "integer",
           "description": "Update sequence number"
+        },
+        "format": {
+          "type": "string",
+          "description": "Workflow format identifier. Determines which node types are shown\nin the sidebar and how the workflow is exported.\nBuilt-in formats: 'flowdrop' (default), 'agentspec'.\nCustom formats can be registered via WorkflowFormatRegistry.\n",
+          "default": "flowdrop"
         }
       },
       "required": [
