@@ -1,36 +1,38 @@
 /**
- * Agent Spec Node Type Registry
+ * Agent Spec Default Node Types
  *
- * Maps Agent Spec component types to FlowDrop NodeMetadata definitions.
- * Each Agent Spec node type gets a full NodeMetadata with visual type,
- * category, default ports, config schema, and icon.
+ * Provides optional starter node type definitions for the Agent Spec format.
+ * These are full NodeMetadata objects with visual type, category, default ports,
+ * config schema, and icon — suitable for populating the sidebar.
+ *
+ * These definitions are NOT required by the adapter — the adapter uses
+ * componentTypeDefaults.ts for import/export infrastructure.
+ * Users can provide their own node definitions instead.
+ *
+ * @example
+ * ```typescript
+ * import { getDefaultAgentSpecNodeTypes } from '@d34dman/flowdrop/core';
+ *
+ * mountFlowDropApp(container, {
+ *   nodes: getDefaultAgentSpecNodeTypes(), // or your own definitions
+ * });
+ * ```
  */
 
 import type { NodeMetadata, NodePort, ConfigSchema } from '../../types/index.js';
 import type { AgentSpecNodeComponentType } from '../../types/agentspec.js';
+import {
+	AGENTSPEC_NAMESPACE as AGENTSPEC_NS,
+	TRIGGER_INPUT,
+	TRIGGER_OUTPUT
+} from './componentTypeDefaults.js';
 
-/** Namespace prefix for Agent Spec node type IDs */
-const AGENTSPEC_NS = 'agentspec';
-
-/** Standard trigger input port shared by most nodes */
-const TRIGGER_INPUT: NodePort = {
-	id: 'trigger',
-	name: 'Trigger',
-	type: 'input',
-	dataType: 'trigger',
-	required: false,
-	description: 'Control flow input'
-};
-
-/** Standard trigger output port shared by most nodes */
-const TRIGGER_OUTPUT: NodePort = {
-	id: 'trigger',
-	name: 'Trigger',
-	type: 'output',
-	dataType: 'trigger',
-	required: false,
-	description: 'Control flow output'
-};
+// Re-export from componentTypeDefaults for backward compatibility
+export {
+	extractComponentType,
+	isAgentSpecNodeId,
+	AGENTSPEC_NAMESPACE
+} from './componentTypeDefaults.js';
 
 /**
  * Registry entry with FlowDrop NodeMetadata for an Agent Spec node type.
@@ -69,6 +71,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 				type: 'object',
 				properties: {}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'start_node' }
 		}
 	});
@@ -94,6 +97,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 				type: 'object',
 				properties: {}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'end_node' }
 		}
 	});
@@ -161,6 +165,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					}
 				}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'llm_node' }
 		}
 	});
@@ -229,6 +234,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					}
 				}
 			} as ConfigSchema,
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'branching_node' }
 		}
 	});
@@ -287,6 +293,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					}
 				}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'tool_node' }
 		}
 	});
@@ -358,6 +365,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					}
 				}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'api_node' }
 		}
 	});
@@ -416,6 +424,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					}
 				}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'agent_node' }
 		}
 	});
@@ -467,6 +476,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					}
 				}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'flow_node' }
 		}
 	});
@@ -530,6 +540,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					}
 				}
 			},
+			formats: ['agentspec'],
 			extensions: { 'agentspec:component_type': 'map_node' }
 		}
 	});
@@ -563,14 +574,19 @@ export function getAgentSpecNodeMetadata(
 }
 
 /**
- * Get all Agent Spec node types as FlowDrop NodeMetadata.
- * Useful for populating the node sidebar with Agent Spec node types.
+ * Get all default Agent Spec node types as FlowDrop NodeMetadata.
+ * These are starter templates — users can provide their own node types instead.
  *
- * @returns Array of NodeMetadata for all 9 Agent Spec node types
+ * @returns Array of NodeMetadata for all 9 default Agent Spec node types
  */
-export function getAllAgentSpecNodeTypes(): NodeMetadata[] {
+export function getDefaultAgentSpecNodeTypes(): NodeMetadata[] {
 	return Array.from(registry.values()).map((entry) => entry.metadata);
 }
+
+/**
+ * @deprecated Use getDefaultAgentSpecNodeTypes() instead.
+ */
+export const getAllAgentSpecNodeTypes = getDefaultAgentSpecNodeTypes;
 
 /**
  * Get a copy of the NodeMetadata for a component type with custom inputs/outputs.
@@ -597,37 +613,3 @@ export function createAgentSpecNodeMetadata(
 	};
 }
 
-/**
- * Check if a FlowDrop node ID belongs to an Agent Spec node type.
- *
- * @example
- * ```typescript
- * isAgentSpecNodeId('agentspec.llm_node') // true
- * isAgentSpecNodeId('calculator') // false
- * ```
- */
-export function isAgentSpecNodeId(nodeId: string): boolean {
-	return nodeId.startsWith(`${AGENTSPEC_NS}.`);
-}
-
-/**
- * Extract the Agent Spec component_type from a FlowDrop node type ID.
- *
- * @example
- * ```typescript
- * extractComponentType('agentspec.llm_node') // 'llm_node'
- * extractComponentType('calculator') // undefined
- * ```
- */
-export function extractComponentType(
-	nodeTypeId: string
-): AgentSpecNodeComponentType | undefined {
-	if (!isAgentSpecNodeId(nodeTypeId)) return undefined;
-	const componentType = nodeTypeId.slice(AGENTSPEC_NS.length + 1);
-	return registry.has(componentType as AgentSpecNodeComponentType)
-		? (componentType as AgentSpecNodeComponentType)
-		: undefined;
-}
-
-/** The namespace prefix used for Agent Spec node type IDs */
-export const AGENTSPEC_NAMESPACE = AGENTSPEC_NS;

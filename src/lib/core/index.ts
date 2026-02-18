@@ -19,6 +19,10 @@
 // Type Exports
 // ============================================================================
 
+// Workflow format types
+export type { WorkflowFormat, BuiltinWorkflowFormat } from '../types/index.js';
+export { DEFAULT_WORKFLOW_FORMAT } from '../types/index.js';
+
 // Main workflow types
 export type {
 	NodeCategory,
@@ -127,6 +131,20 @@ export type {
 	PluginNodeDefinition,
 	PluginRegistrationResult
 } from '../registry/index.js';
+
+// Workflow format registry
+export { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
+export type {
+	WorkflowFormatAdapter,
+	FormatValidationResult
+} from '../registry/workflowFormatRegistry.js';
+
+// Built-in format registration helpers
+export {
+	registerBuiltinFormats,
+	areBuiltinFormatsRegistered,
+	resetBuiltinFormatRegistration
+} from '../registry/builtinFormats.js';
 
 // Service types
 export type { ToastType, ToastOptions } from '../services/toastService.js';
@@ -288,15 +306,20 @@ export {
 	createComponentRef
 } from '../types/agentspec.js';
 
-// Agent Spec node type registry
+// Agent Spec default node types (optional starter templates — users can provide their own)
 export {
 	getAgentSpecNodeMetadata,
+	getDefaultAgentSpecNodeTypes,
 	getAllAgentSpecNodeTypes,
 	createAgentSpecNodeMetadata,
 	isAgentSpecNodeId,
 	extractComponentType,
 	AGENTSPEC_NAMESPACE
 } from '../adapters/agentspec/nodeTypeRegistry.js';
+
+// Agent Spec component type defaults (adapter infrastructure)
+export { getComponentTypeDefaults } from '../adapters/agentspec/componentTypeDefaults.js';
+export type { ComponentTypeDefaults } from '../adapters/agentspec/componentTypeDefaults.js';
 
 // Agent Spec adapter (bidirectional conversion)
 export { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';

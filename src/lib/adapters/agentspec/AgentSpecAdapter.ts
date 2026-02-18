@@ -31,11 +31,10 @@ import type { StandardWorkflow, StandardNode, StandardEdge } from '../WorkflowAd
 import type { NodePort, NodeMetadata, Branch } from '../../types/index.js';
 
 import {
-	getAgentSpecNodeMetadata,
-	createAgentSpecNodeMetadata,
+	getComponentTypeDefaults,
 	extractComponentType,
 	AGENTSPEC_NAMESPACE
-} from './nodeTypeRegistry.js';
+} from './componentTypeDefaults.js';
 
 import { computeAutoLayout } from './autoLayout.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -462,7 +461,7 @@ export class AgentSpecAdapter {
 
 		// Infer from FlowDrop node type ID
 		const fromId = extractComponentType(node.data.metadata.id);
-		if (fromId) return fromId;
+		if (fromId) return fromId as AgentSpecNodeComponentType;
 
 		// Infer from FlowDrop visual type + category
 		const nodeType = node.data.metadata.type;
@@ -482,6 +481,10 @@ export class AgentSpecAdapter {
 
 	/**
 	 * Convert an Agent Spec node to a FlowDrop StandardNode.
+	 *
+	 * Uses lightweight component type defaults for trigger ports and visual styling.
+	 * Does NOT depend on the full node type registry — works with any component_type,
+	 * including custom/unknown types (falls back to sensible defaults).
 	 */
 	private convertNodeFromAgentSpec(
 		asNode: AgentSpecNode,
@@ -502,32 +505,27 @@ export class AgentSpecAdapter {
 			agentSpecPropertyToNodePort(p, 'output')
 		);
 
-		// Get base metadata from registry and merge with actual ports
-		const metadata = createAgentSpecNodeMetadata(
-			asNode.component_type,
-			undefined, // Let the method build from base
-			undefined
-		);
+		// Use lightweight adapter defaults (never throws on unknown types)
+		const defaults = getComponentTypeDefaults(asNode.component_type);
+		const nodeTypeId =
+			(asNode.metadata?.['flowdrop:node_type_id'] as string) ||
+			`${AGENTSPEC_NAMESPACE}.${asNode.component_type}`;
 
-		if (!metadata) {
-			throw new Error(`Unknown Agent Spec component type: ${asNode.component_type}`);
-		}
-
-		// Merge data ports with the base trigger/tool ports from registry
-		const triggerInputs = metadata.inputs.filter(
-			(p) => p.dataType === 'trigger' || p.dataType === 'tool'
-		);
-		const triggerOutputs = metadata.outputs.filter(
-			(p) => p.dataType === 'trigger' || p.dataType === 'tool'
-		);
-
-		const finalMetadata: NodeMetadata = {
-			...metadata,
-			description: asNode.description || metadata.description,
-			inputs: [...triggerInputs, ...dataInputs],
-			outputs: [...triggerOutputs, ...dataOutputs],
+		const metadata: NodeMetadata = {
+			id: nodeTypeId,
+			name: defaults.defaultName,
+			type: defaults.visualType,
+			description: asNode.description || defaults.defaultDescription,
+			category: defaults.category as NodeMetadata['category'],
+			version: '1.0.0',
+			icon: defaults.icon,
+			color: defaults.color,
+			badge: defaults.badge,
+			inputs: [...defaults.triggerInputs, ...dataInputs],
+			outputs: [...defaults.triggerOutputs, ...dataOutputs],
+			configSchema: { type: 'object', properties: {} },
+			formats: ['agentspec'],
 			extensions: {
-				...metadata.extensions,
 				'agentspec:component_type': asNode.component_type,
 				'agentspec:original_name': asNode.name
 			}
@@ -538,12 +536,12 @@ export class AgentSpecAdapter {
 
 		return {
 			id: nodeId,
-			type: asNode.metadata?.['flowdrop:node_type_id'] as string || metadata.id,
+			type: nodeTypeId,
 			position: finalPosition,
 			data: {
 				label: asNode.name,
 				config,
-				metadata: finalMetadata
+				metadata
 			}
 		};
 	}
