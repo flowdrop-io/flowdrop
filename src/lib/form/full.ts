@@ -2,7 +2,7 @@
  * FlowDrop Form Full Module
  *
  * Convenience module that imports and registers all form field types,
- * including heavy editors (CodeMirror, EasyMDE).
+ * including heavy editors (CodeMirror).
  *
  * This is equivalent to importing from the light form module and manually
  * registering all editor types.
@@ -61,7 +61,7 @@ let allFieldTypesInitialized = false;
  * This includes:
  * - Code/JSON editor (CodeMirror)
  * - Template editor (CodeMirror with Twig/Liquid syntax)
- * - Markdown editor (EasyMDE)
+ * - Markdown editor (CodeMirror 6)
  *
  * @example
  * ```typescript

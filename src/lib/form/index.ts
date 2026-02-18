@@ -6,7 +6,7 @@
  * only basic field types (text, number, select, checkbox, etc.).
  *
  * For code editor support (CodeMirror), import from "@d34dman/flowdrop/form/code"
- * For markdown editor support (EasyMDE), import from "@d34dman/flowdrop/form/markdown"
+ * For markdown editor support (CodeMirror 6), import from "@d34dman/flowdrop/form/markdown"
  *
  * @module form
  *

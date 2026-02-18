@@ -8,7 +8,7 @@
  *
  * @module form/fieldRegistry
  *
- * @example Basic usage with light fields only (no codemirror/easymde):
+ * @example Basic usage with light fields only (no codemirror):
  * ```typescript
  * import { SchemaForm } from "@d34dman/flowdrop/form";
  * // Uses only basic fields - small bundle size
