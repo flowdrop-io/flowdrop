@@ -16,6 +16,7 @@ import {
 } from '$lib/adapters/agentspec/validator.js';
 import {
 	getAgentSpecNodeMetadata,
+	getDefaultAgentSpecNodeTypes,
 	getAllAgentSpecNodeTypes,
 	AGENTSPEC_NAMESPACE
 } from '$lib/adapters/agentspec/nodeTypeRegistry.js';
@@ -166,7 +167,7 @@ function buildLLMPipelineWorkflow(): StandardWorkflow {
 
 describe('Demo 1: Agent Spec Node Type Registry', () => {
 	it('lists all 9 Agent Spec node types', () => {
-		const allTypes = getAllAgentSpecNodeTypes();
+		const allTypes = getDefaultAgentSpecNodeTypes();
 
 		console.log('\n=== All Agent Spec Node Types ===');
 		for (const meta of allTypes) {
@@ -518,5 +519,49 @@ describe('Demo 6: Validation catches issues', () => {
 
 		expect(result.valid).toBe(false);
 		expect(result.errors.some((e) => /start/i.test(e))).toBe(true);
+	});
+});
+
+// ============================================================================
+// Demo 7: Deprecated alias + Unknown component types
+// ============================================================================
+
+describe('Demo 7: Backward compatibility and unknown component types', () => {
+	it('getAllAgentSpecNodeTypes is a deprecated alias for getDefaultAgentSpecNodeTypes', () => {
+		const fromDefault = getDefaultAgentSpecNodeTypes();
+		const fromAlias = getAllAgentSpecNodeTypes();
+
+		expect(fromDefault).toEqual(fromAlias);
+	});
+
+	it('imports flows with unknown component types without throwing', () => {
+		const adapter = new AgentSpecAdapter();
+		const json = JSON.stringify({
+			name: 'Custom Flow',
+			start_node: 'start',
+			nodes: [
+				{ name: 'start', component_type: 'start_node' },
+				{ name: 'custom', component_type: 'my_custom_node' },
+				{ name: 'end', component_type: 'end_node' }
+			],
+			control_flow_connections: [
+				{ from_node: 'start', to_node: 'custom' },
+				{ from_node: 'custom', to_node: 'end' }
+			]
+		});
+
+		const workflow = adapter.importJSON(json);
+
+		console.log('\n=== Unknown Component Type Import ===');
+		for (const node of workflow.nodes) {
+			console.log(
+				`  ${node.data.label.padEnd(10)} | type: ${node.data.metadata.id.padEnd(30)} | category: ${node.data.metadata.category}`
+			);
+		}
+
+		expect(workflow.nodes).toHaveLength(3);
+		const customNode = workflow.nodes.find((n) => n.data.label === 'custom');
+		expect(customNode).toBeDefined();
+		expect(customNode!.data.metadata.category).toBe('processing'); // fallback
 	});
 });

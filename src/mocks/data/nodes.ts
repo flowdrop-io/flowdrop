@@ -4,11 +4,13 @@
  */
 
 import type { NodeMetadata } from '../../lib/types/index.js';
+import { getDefaultAgentSpecNodeTypes } from '../../lib/adapters/agentspec/nodeTypeRegistry.js';
+import { AGENTSPEC_NAMESPACE } from '../../lib/adapters/agentspec/componentTypeDefaults.js';
 
 /**
- * All available mock nodes - actual node definitions from FlowDrop API
+ * FlowDrop native node definitions (format-agnostic)
  */
-export const mockNodes: NodeMetadata[] = [
+const flowdropNativeNodes: NodeMetadata[] = [
 	{
 		id: 'ai_content_analyzer',
 		name: 'AI Content Analyzer',
@@ -5520,6 +5522,258 @@ export const mockNodes: NodeMetadata[] = [
 			properties: {}
 		}
 	}
+];
+
+// ============================================================================
+// Agent Spec Node Types
+// ============================================================================
+//
+// Agent Spec nodes are user-provided — the library does not bundle them.
+// Here we demonstrate how a backend would serve Agent Spec node types:
+//   1. The 9 default starter templates from getDefaultAgentSpecNodeTypes()
+//   2. Custom user-defined Agent Spec node types (code_executor, data_transform, human_review)
+
+/**
+ * Custom Agent Spec node types — examples of user-defined nodes
+ * beyond the library's starter templates.
+ */
+const customAgentSpecNodes: NodeMetadata[] = [
+	{
+		id: `${AGENTSPEC_NAMESPACE}.code_executor`,
+		name: 'Code Executor',
+		type: 'default',
+		description: 'Execute code snippets in a sandboxed runtime and return the result.',
+		category: 'processing',
+		version: '1.0.0',
+		icon: 'mdi:code-braces',
+		color: '#10b981',
+		badge: 'CODE',
+		inputs: [
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Execution trigger'
+			},
+			{
+				id: 'code',
+				name: 'Code',
+				type: 'input',
+				dataType: 'string',
+				required: true,
+				description: 'Source code to execute'
+			},
+			{
+				id: 'context',
+				name: 'Context',
+				type: 'input',
+				dataType: 'json',
+				required: false,
+				description: 'Execution context variables'
+			}
+		],
+		outputs: [
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'output',
+				dataType: 'trigger',
+				description: 'Completion trigger'
+			},
+			{
+				id: 'result',
+				name: 'Result',
+				type: 'output',
+				dataType: 'mixed',
+				description: 'Execution result'
+			},
+			{
+				id: 'stdout',
+				name: 'Stdout',
+				type: 'output',
+				dataType: 'string',
+				description: 'Standard output from execution'
+			}
+		],
+		configSchema: {
+			type: 'object',
+			properties: {
+				language: {
+					type: 'string',
+					title: 'Language',
+					enum: ['python', 'javascript', 'typescript'],
+					default: 'python'
+				},
+				timeout_seconds: {
+					type: 'integer',
+					title: 'Timeout (seconds)',
+					description: 'Maximum execution time',
+					minimum: 1,
+					maximum: 300,
+					default: 30
+				}
+			}
+		},
+		formats: ['agentspec'],
+		extensions: { 'agentspec:component_type': 'code_executor' }
+	},
+	{
+		id: `${AGENTSPEC_NAMESPACE}.data_transform`,
+		name: 'Data Transform',
+		type: 'default',
+		description: 'Transform data between formats using JSONPath, JMESPath, or Jinja templates.',
+		category: 'data',
+		version: '1.0.0',
+		icon: 'mdi:swap-horizontal',
+		color: '#6366f1',
+		badge: 'XFORM',
+		inputs: [
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Execution trigger'
+			},
+			{
+				id: 'data',
+				name: 'Data',
+				type: 'input',
+				dataType: 'json',
+				required: true,
+				description: 'Input data to transform'
+			}
+		],
+		outputs: [
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'output',
+				dataType: 'trigger',
+				description: 'Completion trigger'
+			},
+			{
+				id: 'transformed',
+				name: 'Transformed',
+				type: 'output',
+				dataType: 'json',
+				description: 'Transformed output data'
+			}
+		],
+		configSchema: {
+			type: 'object',
+			properties: {
+				transform_type: {
+					type: 'string',
+					title: 'Transform Type',
+					enum: ['jsonpath', 'jmespath', 'jinja'],
+					default: 'jmespath'
+				},
+				expression: {
+					type: 'string',
+					title: 'Expression',
+					description: 'Transform expression (JSONPath, JMESPath, or Jinja template)',
+					format: 'multiline',
+					default: ''
+				}
+			}
+		},
+		formats: ['agentspec'],
+		extensions: { 'agentspec:component_type': 'data_transform' }
+	},
+	{
+		id: `${AGENTSPEC_NAMESPACE}.human_review`,
+		name: 'Human Review',
+		type: 'gateway',
+		description: 'Pause flow execution and wait for human approval before continuing.',
+		category: 'logic',
+		version: '1.0.0',
+		icon: 'mdi:account-check',
+		color: '#d946ef',
+		badge: 'REVIEW',
+		inputs: [
+			{
+				id: 'trigger',
+				name: 'Trigger',
+				type: 'input',
+				dataType: 'trigger',
+				required: false,
+				description: 'Execution trigger'
+			},
+			{
+				id: 'content',
+				name: 'Content',
+				type: 'input',
+				dataType: 'mixed',
+				required: true,
+				description: 'Content to present for human review'
+			}
+		],
+		outputs: [
+			{
+				id: 'approved',
+				name: 'Approved',
+				type: 'output',
+				dataType: 'trigger',
+				description: 'Fires when human approves'
+			},
+			{
+				id: 'rejected',
+				name: 'Rejected',
+				type: 'output',
+				dataType: 'trigger',
+				description: 'Fires when human rejects'
+			},
+			{
+				id: 'feedback',
+				name: 'Feedback',
+				type: 'output',
+				dataType: 'string',
+				description: 'Optional reviewer feedback text'
+			}
+		],
+		configSchema: {
+			type: 'object',
+			properties: {
+				review_prompt: {
+					type: 'string',
+					title: 'Review Prompt',
+					description: 'Instructions shown to the reviewer',
+					format: 'multiline',
+					default: 'Please review the following content and approve or reject.'
+				},
+				timeout_minutes: {
+					type: 'integer',
+					title: 'Timeout (minutes)',
+					description: 'Auto-reject after this many minutes (0 = no timeout)',
+					minimum: 0,
+					default: 0
+				}
+			}
+		},
+		formats: ['agentspec'],
+		extensions: { 'agentspec:component_type': 'human_review' }
+	}
+];
+
+/**
+ * Combined mock nodes: FlowDrop native nodes + Agent Spec default templates + custom Agent Spec nodes
+ *
+ * FlowDrop native nodes get `formats: ['flowdrop']` so the sidebar only shows
+ * them when viewing FlowDrop-format workflows (and Agent Spec nodes when viewing
+ * Agent Spec workflows). Nodes without a `formats` property are treated as
+ * universal by the sidebar filter.
+ */
+export const mockNodes: NodeMetadata[] = [
+	...flowdropNativeNodes.map((node) => ({
+		...node,
+		formats: node.formats ?? ['flowdrop']
+	})),
+	...getDefaultAgentSpecNodeTypes(),
+	...customAgentSpecNodes
 ];
 
 /**
