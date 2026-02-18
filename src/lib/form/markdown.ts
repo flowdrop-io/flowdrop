@@ -1,8 +1,8 @@
 /**
  * FlowDrop Form Markdown Editor Module
  *
- * Adds EasyMDE-based markdown editor support to SchemaForm.
- * This module bundles EasyMDE dependencies (~200KB).
+ * Adds CodeMirror 6-based markdown editor support to SchemaForm.
+ * Uses @codemirror/lang-markdown for syntax highlighting and marked for preview.
  *
  * @module form/markdown
  *
@@ -50,7 +50,7 @@ let markdownEditorRegistered = false;
  * Register the markdown editor field component
  *
  * Call this function once at application startup to enable
- * markdown editor fields in SchemaForm. This loads EasyMDE dependencies.
+ * markdown editor fields in SchemaForm.
  *
  * @param priority - Priority for field matching (default: 100)
  *

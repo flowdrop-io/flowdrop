@@ -29,8 +29,7 @@ npm install @d34dman/flowdrop
 | Vite           | Build tool                   |
 | Vitest         | Unit/integration testing     |
 | Playwright     | E2E testing                  |
-| CodeMirror 6   | Code/JSON editing            |
-| EasyMDE        | Markdown editing             |
+| CodeMirror 6   | Code/JSON/Markdown editing   |
 | Iconify/Svelte | Icon library                 |
 
 ---

@@ -11,7 +11,7 @@
  * - `@d34dman/flowdrop/editor` - WorkflowEditor with @xyflow/svelte
  * - `@d34dman/flowdrop/form` - SchemaForm with basic fields
  * - `@d34dman/flowdrop/form/code` - Code editor support (adds CodeMirror)
- * - `@d34dman/flowdrop/form/markdown` - Markdown editor support (adds EasyMDE)
+ * - `@d34dman/flowdrop/form/markdown` - Markdown editor support (CodeMirror 6)
  * - `@d34dman/flowdrop/display` - MarkdownDisplay (adds marked)
  * - `@d34dman/flowdrop/playground` - Playground for interactive workflow testing
  * - `@d34dman/flowdrop/styles` - CSS styles
@@ -25,7 +25,7 @@
  * ```
  *
  * **Note**: This will bundle ALL dependencies including @xyflow/svelte,
- * CodeMirror, EasyMDE, and marked. For smaller bundles, use sub-modules.
+ * CodeMirror and marked. For smaller bundles, use sub-modules.
  *
  * @module flowdrop
  */

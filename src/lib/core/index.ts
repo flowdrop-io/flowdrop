@@ -3,7 +3,7 @@
  *
  * This module exports types, utilities, and lightweight functionality
  * with zero heavy dependencies. Safe to import without bundling
- * @xyflow/svelte, codemirror, easymde, or marked.
+ * @xyflow/svelte, codemirror, or marked.
  *
  * @module core
  *
