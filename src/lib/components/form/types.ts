@@ -223,7 +223,7 @@ export interface CodeEditorFieldProps extends BaseFieldProps {
 }
 
 /**
- * Properties for markdown editor fields (SimpleMDE-based)
+ * Properties for markdown editor fields (CodeMirror 6-based)
  */
 export interface MarkdownEditorFieldProps extends BaseFieldProps {
 	/** Current value (markdown string) */
