@@ -1,15 +1,16 @@
-test-results
 node_modules
+test-results
 .playwright-mcp
+
 # Output
 .output
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
-/dist
-/dist-iife
+.svelte-kit
+build
+dist
+dist-iife
 
 # OS
 .DS_Store
@@ -30,5 +31,5 @@ storybook-static
 coverage/
 playwright-report/
 
-# Generated API documentation
-api-docs/
+# Generated API documentation build output
+apps/api-docs/dist/

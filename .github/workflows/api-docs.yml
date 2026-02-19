@@ -5,7 +5,8 @@ on:
     branches:
       - 1.x
     paths:
-      - 'api/**'
+      - 'libs/flowdrop/api/**'
+      - 'apps/api-docs/**'
       - '.github/workflows/api-docs.yml'
   workflow_dispatch: # Allow manual trigger
 
@@ -24,29 +25,38 @@ jobs:
   build:
     name: Build API Docs
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api-docs
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
+          cache-dependency-path: apps/api-docs/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Lint API spec
-        run: npm run api:lint
+        run: pnpm run lint
 
       - name: Build Redoc documentation
-        run: npx @redocly/cli build-docs api/bundled.yaml -o api-docs/index.html
+        run: pnpm run build
 
       - name: Create docs assets
         run: |
           # Create a simple landing page if needed
-          cat > api-docs/404.html << 'EOF'
+          cat > dist/404.html << 'EOF'
           <!DOCTYPE html>
           <html>
           <head>
@@ -60,12 +70,12 @@ jobs:
           EOF
 
           # Add OpenAPI spec for download
-          cp api/bundled.yaml api-docs/openapi.yaml
+          cp ../../libs/flowdrop/api/bundled.yaml dist/openapi.yaml
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: api-docs
+          path: apps/api-docs/dist
 
   deploy:
     name: Deploy to GitHub Pages
