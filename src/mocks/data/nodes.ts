@@ -4,7 +4,7 @@
  */
 
 import type { NodeMetadata } from '../../lib/types/index.js';
-import { getDefaultAgentSpecNodeTypes } from '../../lib/adapters/agentspec/nodeTypeRegistry.js';
+import { getDefaultAgentSpecNodeTypes } from '../../lib/adapters/agentspec/defaultNodeTypes.js';
 import { AGENTSPEC_NAMESPACE } from '../../lib/adapters/agentspec/componentTypeDefaults.js';
 
 /**

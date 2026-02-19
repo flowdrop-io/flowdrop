@@ -16,10 +16,9 @@ import {
 } from '$lib/adapters/agentspec/validator.js';
 import {
 	getAgentSpecNodeMetadata,
-	getDefaultAgentSpecNodeTypes,
-	getAllAgentSpecNodeTypes,
-	AGENTSPEC_NAMESPACE
-} from '$lib/adapters/agentspec/nodeTypeRegistry.js';
+	getDefaultAgentSpecNodeTypes
+} from '$lib/adapters/agentspec/defaultNodeTypes.js';
+import { AGENTSPEC_NAMESPACE } from '$lib/adapters/agentspec/componentTypeDefaults.js';
 import type { StandardWorkflow, StandardNode, StandardEdge } from '$lib/adapters/WorkflowAdapter.js';
 
 // ============================================================================
@@ -523,17 +522,10 @@ describe('Demo 6: Validation catches issues', () => {
 });
 
 // ============================================================================
-// Demo 7: Deprecated alias + Unknown component types
+// Demo 7: Unknown component types
 // ============================================================================
 
-describe('Demo 7: Backward compatibility and unknown component types', () => {
-	it('getAllAgentSpecNodeTypes is a deprecated alias for getDefaultAgentSpecNodeTypes', () => {
-		const fromDefault = getDefaultAgentSpecNodeTypes();
-		const fromAlias = getAllAgentSpecNodeTypes();
-
-		expect(fromDefault).toEqual(fromAlias);
-	});
-
+describe('Demo 7: Unknown component types', () => {
 	it('imports flows with unknown component types without throwing', () => {
 		const adapter = new AgentSpecAdapter();
 		const json = JSON.stringify({

@@ -27,13 +27,6 @@ import {
 	TRIGGER_OUTPUT
 } from './componentTypeDefaults.js';
 
-// Re-export from componentTypeDefaults for backward compatibility
-export {
-	extractComponentType,
-	isAgentSpecNodeId,
-	AGENTSPEC_NAMESPACE
-} from './componentTypeDefaults.js';
-
 /**
  * Registry entry with FlowDrop NodeMetadata for an Agent Spec node type.
  */
@@ -582,11 +575,6 @@ export function getAgentSpecNodeMetadata(
 export function getDefaultAgentSpecNodeTypes(): NodeMetadata[] {
 	return Array.from(registry.values()).map((entry) => entry.metadata);
 }
-
-/**
- * @deprecated Use getDefaultAgentSpecNodeTypes() instead.
- */
-export const getAllAgentSpecNodeTypes = getDefaultAgentSpecNodeTypes;
 
 /**
  * Get a copy of the NodeMetadata for a component type with custom inputs/outputs.

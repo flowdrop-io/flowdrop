@@ -119,9 +119,13 @@ export type {
 	FormFieldWrapperProps
 } from '../components/form/types.js';
 
+// Base registry
+export { BaseRegistry } from '../registry/BaseRegistry.js';
+
 // Registry types
 export type {
 	NodeComponentProps,
+	NodeTypeInfo,
 	NodeComponentRegistration,
 	NodeComponentCategory,
 	StatusPosition,
@@ -131,6 +135,9 @@ export type {
 	PluginNodeDefinition,
 	PluginRegistrationResult
 } from '../registry/index.js';
+
+// Field registry types (framework-agnostic)
+export type { FieldMatcherRegistration } from '../form/fieldRegistry.js';
 
 // Workflow format registry
 export { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
@@ -310,15 +317,16 @@ export {
 export {
 	getAgentSpecNodeMetadata,
 	getDefaultAgentSpecNodeTypes,
-	getAllAgentSpecNodeTypes,
-	createAgentSpecNodeMetadata,
-	isAgentSpecNodeId,
-	extractComponentType,
-	AGENTSPEC_NAMESPACE
-} from '../adapters/agentspec/nodeTypeRegistry.js';
+	createAgentSpecNodeMetadata
+} from '../adapters/agentspec/defaultNodeTypes.js';
 
 // Agent Spec component type defaults (adapter infrastructure)
-export { getComponentTypeDefaults } from '../adapters/agentspec/componentTypeDefaults.js';
+export {
+	getComponentTypeDefaults,
+	extractComponentType,
+	isAgentSpecNodeId,
+	AGENTSPEC_NAMESPACE
+} from '../adapters/agentspec/componentTypeDefaults.js';
 export type { ComponentTypeDefaults } from '../adapters/agentspec/componentTypeDefaults.js';
 
 // Agent Spec adapter (bidirectional conversion)

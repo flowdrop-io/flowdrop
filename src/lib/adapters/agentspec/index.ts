@@ -37,15 +37,16 @@ export type { AgentConfig, AgentSpecImportResult } from './agentAdapter.js';
 export {
 	getAgentSpecNodeMetadata,
 	getDefaultAgentSpecNodeTypes,
-	getAllAgentSpecNodeTypes,
-	createAgentSpecNodeMetadata,
-	isAgentSpecNodeId,
-	extractComponentType,
-	AGENTSPEC_NAMESPACE
-} from './nodeTypeRegistry.js';
+	createAgentSpecNodeMetadata
+} from './defaultNodeTypes.js';
 
 // Component type defaults (adapter infrastructure)
-export { getComponentTypeDefaults } from './componentTypeDefaults.js';
+export {
+	getComponentTypeDefaults,
+	extractComponentType,
+	isAgentSpecNodeId,
+	AGENTSPEC_NAMESPACE
+} from './componentTypeDefaults.js';
 export type { ComponentTypeDefaults } from './componentTypeDefaults.js';
 
 // Validation
