@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.58] - 2026-02-19
+
+### Added
+
+- **CodeMirror 6 Markdown Editor**: Replaced EasyMDE with CodeMirror 6 for the markdown form editor, bringing improved performance and modern editing capabilities
+- **Versioned JSON Schema**: Added JSON Schema for the workflow format with generation script (`schema:generate`, `schema:check`) and published under `@d34dman/flowdrop/schema`
+- **Pluggable Workflow Format System**: New `WorkflowFormatRegistry` enabling third-party workflow format plugins with sidebar filtering support
+- **Example Apps**: Added example Svelte client and Express server demonstrating FlowDrop integration
+
+### Changed
+
+- **Monorepo Conversion**: Restructured project as a pnpm monorepo with `libs/flowdrop` as the core library and separate `apps/` for examples, docs, and API docs
+- **`nodeTypeRegistry` renamed to `defaultNodeTypes`** (breaking): Clearer naming for the default node type definitions; removed Agent Spec deprecation shims
+- **Class-based Registries**: Introduced `BaseRegistry` base class and migrated `FieldComponentRegistry`, node component registry, and workflow format registry to class-based pattern
+- **Decoupled Agent Spec Adapter**: Extracted hardcoded node definitions into `componentTypeDefaults`, making the adapter configurable
+
 ## [0.0.57] - 2026-02-15
 
 ### Added
