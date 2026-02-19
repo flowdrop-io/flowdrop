@@ -199,6 +199,7 @@ Make it yours with CSS custom properties:
 ### Docker (Recommended)
 
 ```bash
+cd apps/example-client-docker
 cp env.example .env
 docker-compose up -d
 ```
@@ -217,7 +218,7 @@ Runtime configuration means you build once and deploy to staging, production, or
 | Resource                                                     | Description              |
 | ------------------------------------------------------------ | ------------------------ |
 | [API Documentation](https://flowdrop-io.github.io/flowdrop/) | REST API specification   |
-| [DOCKER.md](libs/flowdrop/DOCKER.md)                         | Docker deployment guide  |
+| [Docker Guide](apps/example-client-docker/README.md)         | Docker deployment guide  |
 | [QUICK_START.md](libs/flowdrop/QUICK_START.md)               | Get running in 5 minutes |
 | [CHANGELOG.md](libs/flowdrop/CHANGELOG.md)                   | Version history          |
 
@@ -228,8 +229,9 @@ Runtime configuration means you build once and deploy to staging, production, or
 | [libs/flowdrop](libs/flowdrop/) | The FlowDrop library ([npm](https://www.npmjs.com/package/@d34dman/flowdrop)) | Active |
 | [apps/api-docs](apps/api-docs/) | OpenAPI documentation (Redocly) | Active |
 | [apps/docs](apps/docs/) | Documentation site | Placeholder |
-| [apps/example-server](apps/example-server/) | Example Express API server | Placeholder |
-| [apps/example-svelte](apps/example-svelte/) | Svelte/SvelteKit example app | Placeholder |
+| [apps/example-client-svelte](apps/example-client-svelte/) | Svelte/SvelteKit example client | Placeholder |
+| [apps/example-client-docker](apps/example-client-docker/) | Docker deployment example | Active |
+| [apps/example-server-express](apps/example-server-express/) | Example Express API server | Placeholder |
 
 ## Development
 

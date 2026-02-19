@@ -9,14 +9,17 @@ Get FlowDrop UI running in production in 5 minutes.
 git clone https://github.com/flowdrop-io/flowdrop.git
 cd flowdrop
 
-# 2. Copy environment file
+# 2. Navigate to docker example
+cd apps/example-client-docker
+
+# 3. Copy environment file
 cp env.example .env
 
-# 3. Edit .env and set your backend API URL
+# 4. Edit .env and set your backend API URL
 nano .env
 # Change: FLOWDROP_API_BASE_URL=http://your-backend-server:8080/api/flowdrop
 
-# 4. Start with Docker Compose
+# 5. Start with Docker Compose
 docker-compose up -d
 
 # 5. Open in browser
@@ -127,7 +130,7 @@ docker logs flowdrop-ui
 
 ## Next Steps
 
-- Read [DOCKER.md](./DOCKER.md) for Docker details
+- Read the [Docker guide](../../apps/example-client-docker/README.md) for Docker details
 
 ## Support
 

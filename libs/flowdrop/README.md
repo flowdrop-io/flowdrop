@@ -199,6 +199,7 @@ Make it yours with CSS custom properties:
 ### Docker (Recommended)
 
 ```bash
+cd ../../apps/example-client-docker
 cp env.example .env
 docker-compose up -d
 ```
@@ -217,7 +218,7 @@ Runtime configuration means you build once and deploy to staging, production, or
 | Resource                                                     | Description              |
 | ------------------------------------------------------------ | ------------------------ |
 | [API Documentation](https://flowdrop-io.github.io/flowdrop/) | REST API specification   |
-| [DOCKER.md](./DOCKER.md)                                     | Docker deployment guide  |
+| [Docker Guide](../../apps/example-client-docker/README.md)   | Docker deployment guide  |
 | [QUICK_START.md](./QUICK_START.md)                           | Get running in 5 minutes |
 | [CHANGELOG.md](./CHANGELOG.md)                               | Version history          |
 
