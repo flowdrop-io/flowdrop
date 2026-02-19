@@ -233,5 +233,10 @@ export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
 	'idea'
 ];
 
+// Sync registration flag with registry.clear() for test isolation
+nodeComponentRegistry.onClear(() => {
+	builtinsRegistered = false;
+});
+
 // Auto-register built-ins when this module is imported
 registerBuiltinNodes();

@@ -9,11 +9,12 @@
  * - Format adapters to bundle their own node types
  * - Bidirectional conversion between FlowDrop's StandardWorkflow and external formats
  *
- * Mirrors the nodeComponentRegistry pattern.
+ * Extends BaseRegistry for shared mechanics (subscribe, onClear, etc.).
  */
 
 import type { StandardWorkflow } from '../adapters/WorkflowAdapter.js';
 import type { NodeMetadata, WorkflowFormat } from '../types/index.js';
+import { BaseRegistry } from './BaseRegistry.js';
 
 /**
  * Validation result returned by format adapters.
@@ -68,7 +69,7 @@ export interface WorkflowFormatAdapter {
 
 /**
  * Central registry for workflow format adapters.
- * Singleton — mirrors nodeComponentRegistry pattern.
+ * Singleton — extends BaseRegistry for shared mechanics.
  *
  * @example
  * ```typescript
@@ -84,16 +85,7 @@ export interface WorkflowFormatAdapter {
  * const adapter = workflowFormatRegistry.get('n8n');
  * ```
  */
-class WorkflowFormatRegistry {
-	/** Map of format id -> adapter */
-	private adapters: Map<string, WorkflowFormatAdapter> = new Map();
-
-	/** Listeners for registry changes */
-	private listeners: Set<() => void> = new Set();
-
-	/** Callbacks invoked when registry is cleared (for resetting registration flags) */
-	private clearCallbacks: Set<() => void> = new Set();
-
+class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter> {
 	/**
 	 * Register a workflow format adapter.
 	 *
@@ -102,57 +94,14 @@ class WorkflowFormatRegistry {
 	 * @throws Error if format already registered and overwrite is false
 	 */
 	register(adapter: WorkflowFormatAdapter, overwrite = false): void {
-		if (this.adapters.has(adapter.id) && !overwrite) {
+		if (this.items.has(adapter.id) && !overwrite) {
 			throw new Error(
 				`Workflow format "${adapter.id}" is already registered. ` +
 					`Use overwrite: true to replace it.`
 			);
 		}
-		this.adapters.set(adapter.id, adapter);
+		this.items.set(adapter.id, adapter);
 		this.notifyListeners();
-	}
-
-	/**
-	 * Unregister a workflow format adapter.
-	 *
-	 * @param id - The format identifier to remove
-	 * @returns true if the format was found and removed
-	 */
-	unregister(id: WorkflowFormat): boolean {
-		const result = this.adapters.delete(id);
-		if (result) {
-			this.notifyListeners();
-		}
-		return result;
-	}
-
-	/**
-	 * Get an adapter by format id.
-	 *
-	 * @param id - The format identifier
-	 * @returns The adapter if found, undefined otherwise
-	 */
-	get(id: WorkflowFormat): WorkflowFormatAdapter | undefined {
-		return this.adapters.get(id);
-	}
-
-	/**
-	 * Check if a format is registered.
-	 *
-	 * @param id - The format identifier
-	 * @returns true if the format is registered
-	 */
-	has(id: WorkflowFormat): boolean {
-		return this.adapters.has(id);
-	}
-
-	/**
-	 * Get all registered adapters.
-	 *
-	 * @returns Array of all registered format adapters
-	 */
-	getAll(): WorkflowFormatAdapter[] {
-		return Array.from(this.adapters.values());
 	}
 
 	/**
@@ -161,7 +110,7 @@ class WorkflowFormatRegistry {
 	 * @returns Array of format id strings
 	 */
 	getIds(): string[] {
-		return Array.from(this.adapters.keys());
+		return this.getKeys();
 	}
 
 	/**
@@ -172,7 +121,7 @@ class WorkflowFormatRegistry {
 	 */
 	getAllFormatNodes(): NodeMetadata[] {
 		const allNodes: NodeMetadata[] = [];
-		for (const adapter of this.adapters.values()) {
+		for (const adapter of this.items.values()) {
 			if (adapter.nodes && adapter.nodes.length > 0) {
 				allNodes.push(...adapter.nodes);
 			}
@@ -187,29 +136,8 @@ class WorkflowFormatRegistry {
 	 * @returns Array of NodeMetadata for the format, or empty array
 	 */
 	getFormatNodes(formatId: WorkflowFormat): NodeMetadata[] {
-		const adapter = this.adapters.get(formatId);
+		const adapter = this.items.get(formatId);
 		return adapter?.nodes ?? [];
-	}
-
-	/**
-	 * Subscribe to registry changes.
-	 * Called whenever adapters are registered or unregistered.
-	 *
-	 * @param listener - Callback to invoke on changes
-	 * @returns Unsubscribe function
-	 */
-	subscribe(listener: () => void): () => void {
-		this.listeners.add(listener);
-		return () => this.listeners.delete(listener);
-	}
-
-	/**
-	 * Notify all listeners of a change.
-	 */
-	private notifyListeners(): void {
-		for (const listener of this.listeners) {
-			listener();
-		}
 	}
 
 	/**
@@ -223,38 +151,6 @@ class WorkflowFormatRegistry {
 			const: adapter.id,
 			title: adapter.name
 		}));
-	}
-
-	/**
-	 * Register a callback invoked when the registry is cleared.
-	 * Useful for resetting module-level registration flags in tests.
-	 *
-	 * @param callback - Function to call on clear
-	 * @returns Unsubscribe function
-	 */
-	onClear(callback: () => void): () => void {
-		this.clearCallbacks.add(callback);
-		return () => this.clearCallbacks.delete(callback);
-	}
-
-	/**
-	 * Clear all registrations.
-	 * Primarily useful for testing. Also invokes onClear callbacks
-	 * so modules can reset their registration flags.
-	 */
-	clear(): void {
-		this.adapters.clear();
-		for (const cb of this.clearCallbacks) {
-			cb();
-		}
-		this.notifyListeners();
-	}
-
-	/**
-	 * Get the count of registered formats.
-	 */
-	get size(): number {
-		return this.adapters.size;
 	}
 }
 

@@ -3,12 +3,16 @@
  * Exports all registry-related functionality.
  */
 
+// Base registry
+export { BaseRegistry } from './BaseRegistry.js';
+
 // Core registry
 export {
 	nodeComponentRegistry,
 	createNamespacedType,
 	parseNamespacedType,
 	type NodeComponentProps,
+	type NodeTypeInfo,
 	type NodeComponentRegistration,
 	type NodeComponentCategory,
 	type StatusPosition,
