@@ -1,5 +1,6 @@
 {
 	"name": "@d34dman/flowdrop-example-server",
+	"description": "[PLACEHOLDER] Example Express server for FlowDrop API — not yet ready for use",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",

@@ -224,10 +224,10 @@ Runtime configuration means you build once and deploy to staging, production, or
 ## Development
 
 ```bash
-npm install          # Install dependencies
-npm run dev          # Start dev server
-npm run build        # Build library
-npm test             # Run all tests
+pnpm install         # Install dependencies
+pnpm dev             # Start dev server
+pnpm build           # Build library
+pnpm test            # Run all tests
 ```
 
 ## Contributing
