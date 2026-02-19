@@ -11,6 +11,7 @@
 
 import type { Component } from 'svelte';
 import type { WorkflowNode } from '../types/index.js';
+import { BaseRegistry } from './BaseRegistry.js';
 
 /**
  * Props interface that all node components must accept.
@@ -46,18 +47,17 @@ export type StatusSize = 'sm' | 'md' | 'lg';
 export type NodeComponentCategory = 'visual' | 'functional' | 'layout' | 'custom';
 
 /**
- * Metadata for registered node components.
- * Contains all information needed to use and display a node type.
+ * Framework-agnostic metadata for a node type.
+ * Contains all display/organizational information without any Svelte dependency.
+ * Use this interface when you only need node metadata (e.g., in adapters, headless consumers).
  */
-export interface NodeComponentRegistration {
+export interface NodeTypeInfo {
 	/** Unique identifier for this node type (e.g., "simple", "mylib:custom") */
 	type: string;
 	/** Display name for UI purposes (e.g., "Simple Node") */
 	displayName: string;
 	/** Description of what this node type is for */
 	description?: string;
-	/** The Svelte component to render for this node type */
-	component: Component<NodeComponentProps>;
 	/** Icon to show in the node type selector (iconify format) */
 	icon?: string;
 	/** Category for grouping in UI */
@@ -68,6 +68,15 @@ export interface NodeComponentRegistration {
 	statusPosition?: StatusPosition;
 	/** Default status overlay size for this node type */
 	statusSize?: StatusSize;
+}
+
+/**
+ * Full registration for a node component.
+ * Extends NodeTypeInfo with the Svelte component needed for rendering.
+ */
+export interface NodeComponentRegistration extends NodeTypeInfo {
+	/** The Svelte component to render for this node type */
+	component: Component<NodeComponentProps>;
 }
 
 /**
@@ -86,6 +95,8 @@ export interface NodeRegistrationFilter {
  * Central registry for node component types.
  * Allows built-in and third-party components to be registered and resolved.
  *
+ * Extends BaseRegistry for shared mechanics (subscribe, onClear, etc.).
+ *
  * @example
  * ```typescript
  * // Register a custom node
@@ -101,15 +112,12 @@ export interface NodeRegistrationFilter {
  * const component = nodeComponentRegistry.getComponent("myCustomNode");
  * ```
  */
-class NodeComponentRegistry {
-	/** Map of type -> registration */
-	private components: Map<string, NodeComponentRegistration> = new Map();
-
+class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistration> {
 	/** Default type to use when requested type is not found */
 	private defaultType: string = 'workflowNode';
 
-	/** Listeners for registry changes */
-	private listeners: Set<() => void> = new Set();
+	/** Initial default type, restored on clear() */
+	private static readonly INITIAL_DEFAULT_TYPE = 'workflowNode';
 
 	/**
 	 * Register a node component type.
@@ -128,14 +136,22 @@ class NodeComponentRegistry {
 	 * });
 	 * ```
 	 */
+	/**
+	 * Clear all registrations and reset default type.
+	 */
+	override clear(): void {
+		super.clear();
+		this.defaultType = NodeComponentRegistry.INITIAL_DEFAULT_TYPE;
+	}
+
 	register(registration: NodeComponentRegistration, overwrite = false): void {
-		if (this.components.has(registration.type) && !overwrite) {
+		if (this.items.has(registration.type) && !overwrite) {
 			throw new Error(
 				`Node type "${registration.type}" is already registered. ` +
 					`Use overwrite: true to replace it, or use a namespaced type like "mylib:${registration.type}".`
 			);
 		}
-		this.components.set(registration.type, registration);
+		this.items.set(registration.type, registration);
 		this.notifyListeners();
 	}
 
@@ -153,48 +169,27 @@ class NodeComponentRegistry {
 	}
 
 	/**
-	 * Unregister a node component type.
-	 *
-	 * @param type - The type identifier to remove
-	 * @returns true if the type was found and removed, false otherwise
-	 */
-	unregister(type: string): boolean {
-		const result = this.components.delete(type);
-		if (result) {
-			this.notifyListeners();
-		}
-		return result;
-	}
-
-	/**
-	 * Get a registration by type.
-	 *
-	 * @param type - The type identifier to look up
-	 * @returns The registration if found, undefined otherwise
-	 */
-	get(type: string): NodeComponentRegistration | undefined {
-		return this.components.get(type);
-	}
-
-	/**
 	 * Get the component for a type, with fallback to default.
 	 *
 	 * @param type - The type identifier to look up
 	 * @returns The component if found, or the default component
 	 */
 	getComponent(type: string): Component<NodeComponentProps> | undefined {
-		const registration = this.components.get(type) ?? this.components.get(this.defaultType);
+		const registration = this.items.get(type) ?? this.items.get(this.defaultType);
 		return registration?.component;
 	}
 
 	/**
-	 * Check if a type is registered.
+	 * Get framework-agnostic metadata for a type, without the Svelte component.
 	 *
-	 * @param type - The type identifier to check
-	 * @returns true if the type is registered
+	 * @param type - The type identifier to look up
+	 * @returns The metadata if found, undefined otherwise
 	 */
-	has(type: string): boolean {
-		return this.components.has(type);
+	getMetadata(type: string): NodeTypeInfo | undefined {
+		const reg = this.items.get(type);
+		if (!reg) return undefined;
+		const { component: _, ...metadata } = reg;
+		return metadata;
 	}
 
 	/**
@@ -203,16 +198,7 @@ class NodeComponentRegistry {
 	 * @returns Array of registered type strings
 	 */
 	getTypes(): string[] {
-		return Array.from(this.components.keys());
-	}
-
-	/**
-	 * Get all registrations.
-	 *
-	 * @returns Array of all registered node component metadata
-	 */
-	getAll(): NodeComponentRegistration[] {
-		return Array.from(this.components.values());
+		return this.getKeys();
 	}
 
 	/**
@@ -272,7 +258,7 @@ class NodeComponentRegistry {
 	 * @throws Error if the type is not registered
 	 */
 	setDefaultType(type: string): void {
-		if (!this.components.has(type)) {
+		if (!this.items.has(type)) {
 			throw new Error(`Cannot set default to unregistered type: ${type}`);
 		}
 		this.defaultType = type;
@@ -285,27 +271,6 @@ class NodeComponentRegistry {
 	 */
 	getDefaultType(): string {
 		return this.defaultType;
-	}
-
-	/**
-	 * Subscribe to registry changes.
-	 * Called whenever components are registered or unregistered.
-	 *
-	 * @param listener - Callback to invoke on changes
-	 * @returns Unsubscribe function
-	 */
-	subscribe(listener: () => void): () => void {
-		this.listeners.add(listener);
-		return () => this.listeners.delete(listener);
-	}
-
-	/**
-	 * Notify all listeners of a change.
-	 */
-	private notifyListeners(): void {
-		for (const listener of this.listeners) {
-			listener();
-		}
 	}
 
 	/**
@@ -338,7 +303,7 @@ class NodeComponentRegistry {
 	 * @returns The status position, or default "top-right"
 	 */
 	getStatusPosition(type: string): StatusPosition {
-		return this.components.get(type)?.statusPosition ?? 'top-right';
+		return this.items.get(type)?.statusPosition ?? 'top-right';
 	}
 
 	/**
@@ -348,25 +313,7 @@ class NodeComponentRegistry {
 	 * @returns The status size, or default "md"
 	 */
 	getStatusSize(type: string): StatusSize {
-		return this.components.get(type)?.statusSize ?? 'md';
-	}
-
-	/**
-	 * Clear all registrations.
-	 * Primarily useful for testing.
-	 */
-	clear(): void {
-		this.components.clear();
-		this.notifyListeners();
-	}
-
-	/**
-	 * Get the count of registered components.
-	 *
-	 * @returns Number of registered node types
-	 */
-	get size(): number {
-		return this.components.size;
+		return this.items.get(type)?.statusSize ?? 'md';
 	}
 }
 
