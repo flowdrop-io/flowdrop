@@ -215,9 +215,7 @@ export class AgentSpecAdapter {
 			const sourcePortDataType = this.getSourcePortDataType(sourceNode, sourcePortId);
 
 			if (sourcePortDataType === 'trigger') {
-				controlFlowEdges.push(
-					this.convertToControlFlowEdge(edge, sourceNode, nodeIdToName)
-				);
+				controlFlowEdges.push(this.convertToControlFlowEdge(edge, sourceNode, nodeIdToName));
 			} else {
 				dataFlowEdges.push(this.convertToDataFlowEdge(edge, nodeIdToName));
 			}
@@ -432,8 +430,7 @@ export class AgentSpecAdapter {
 			}
 			case 'map_node': {
 				const mapNode = asNode as AgentSpecMapNode;
-				if (config.input_collection)
-					mapNode.input_collection = config.input_collection as string;
+				if (config.input_collection) mapNode.input_collection = config.input_collection as string;
 				if (config.output_collection)
 					mapNode.output_collection = config.output_collection as string;
 				if (config.map_flow_ref) mapNode.map_flow = config.map_flow_ref as string;
@@ -586,8 +583,7 @@ export class AgentSpecAdapter {
 			case 'agent_node': {
 				const agent = asNode as AgentSpecAgentNode;
 				if (agent.agent) {
-					config.agent_ref =
-						typeof agent.agent === 'string' ? agent.agent : agent.agent.name;
+					config.agent_ref = typeof agent.agent === 'string' ? agent.agent : agent.agent.name;
 				}
 				break;
 			}
@@ -603,8 +599,7 @@ export class AgentSpecAdapter {
 				if (map.input_collection) config.input_collection = map.input_collection;
 				if (map.output_collection) config.output_collection = map.output_collection;
 				if (map.map_flow) {
-					config.map_flow_ref =
-						typeof map.map_flow === 'string' ? map.map_flow : map.map_flow.name;
+					config.map_flow_ref = typeof map.map_flow === 'string' ? map.map_flow : map.map_flow.name;
 				}
 				break;
 			}
@@ -627,10 +622,7 @@ export class AgentSpecAdapter {
 	/**
 	 * Get the data type of a source port from a FlowDrop node.
 	 */
-	private getSourcePortDataType(
-		node: StandardNode,
-		portId: string | null
-	): string | null {
+	private getSourcePortDataType(node: StandardNode, portId: string | null): string | null {
 		if (!portId) return null;
 
 		// Check static output ports
@@ -757,10 +749,7 @@ export class AgentSpecAdapter {
 	/**
 	 * Find the start node name from converted Agent Spec nodes.
 	 */
-	private findStartNodeName(
-		nodes: AgentSpecNode[],
-		nodeIdToName: Map<string, string>
-	): string {
+	private findStartNodeName(nodes: AgentSpecNode[], nodeIdToName: Map<string, string>): string {
 		// Look for an explicit start_node
 		const startNode = nodes.find((n) => n.component_type === 'start_node');
 		if (startNode) return startNode.name;

@@ -23,9 +23,7 @@ export interface AgentSpecValidationResult {
  * - Must have at least 1 end node (terminal/outputs)
  * - Gateway nodes must have branches defined
  */
-export function validateForAgentSpecExport(
-	workflow: StandardWorkflow
-): AgentSpecValidationResult {
+export function validateForAgentSpecExport(workflow: StandardWorkflow): AgentSpecValidationResult {
 	const errors: string[] = [];
 	const warnings: string[] = [];
 

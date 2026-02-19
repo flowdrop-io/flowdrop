@@ -1406,8 +1406,4 @@ export type {
 	UISchemaElement
 } from './uischema.js';
 
-export {
-	isUISchemaControl,
-	isUISchemaVerticalLayout,
-	isUISchemaGroup
-} from './uischema.js';
+export { isUISchemaControl, isUISchemaVerticalLayout, isUISchemaGroup } from './uischema.js';

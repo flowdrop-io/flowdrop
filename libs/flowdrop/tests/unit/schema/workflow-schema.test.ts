@@ -106,9 +106,7 @@ describe('Workflow JSON Schema', () => {
 
 		it('WorkflowMetadata should require version, createdAt, and updatedAt', () => {
 			const def = schema.$defs.WorkflowMetadata;
-			expect(def.required).toEqual(
-				expect.arrayContaining(['version', 'createdAt', 'updatedAt'])
-			);
+			expect(def.required).toEqual(expect.arrayContaining(['version', 'createdAt', 'updatedAt']));
 		});
 
 		it('NodeMetadata should require id, name, description, category, version, inputs, and outputs', () => {
@@ -154,16 +152,13 @@ describe('Workflow JSON Schema', () => {
 		it('ConfigProperty should be recursive (items references itself)', () => {
 			const def = schema.$defs.ConfigProperty;
 			// items uses allOf with $ref to ConfigProperty
-			const itemsRef =
-				def.properties.items.$ref || def.properties.items.allOf?.[0]?.$ref;
+			const itemsRef = def.properties.items.$ref || def.properties.items.allOf?.[0]?.$ref;
 			expect(itemsRef).toBe('#/$defs/ConfigProperty');
 		});
 
 		it('PortDataSchema should be recursive (properties/items reference itself)', () => {
 			const def = schema.$defs.PortDataSchema;
-			expect(def.properties.properties.additionalProperties.$ref).toBe(
-				'#/$defs/PortDataSchema'
-			);
+			expect(def.properties.properties.additionalProperties.$ref).toBe('#/$defs/PortDataSchema');
 		});
 	});
 

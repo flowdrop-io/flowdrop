@@ -387,19 +387,20 @@
 
 		// Find the best compatible edge using port-to-port distance
 		const portCoordinates = getPortCoordinateSnapshot();
-		const candidates = portCoordinates.size > 0
-			? ProximityConnectHelper.findCompatibleEdgesByPortCoordinates(
-					targetNode.id,
-					portCoordinates,
-					baseEdges,
-					$editorSettings.proximityConnectDistance
-				)
-			: ProximityConnectHelper.findCompatibleEdges(
-					targetNode,
-					flowNodes,
-					baseEdges,
-					$editorSettings.proximityConnectDistance
-				);
+		const candidates =
+			portCoordinates.size > 0
+				? ProximityConnectHelper.findCompatibleEdgesByPortCoordinates(
+						targetNode.id,
+						portCoordinates,
+						baseEdges,
+						$editorSettings.proximityConnectDistance
+					)
+				: ProximityConnectHelper.findCompatibleEdges(
+						targetNode,
+						flowNodes,
+						baseEdges,
+						$editorSettings.proximityConnectDistance
+					);
 
 		// Create preview edges
 		const previews = ProximityConnectHelper.createPreviewEdges(candidates);

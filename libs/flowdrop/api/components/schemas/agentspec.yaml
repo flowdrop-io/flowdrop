@@ -758,7 +758,7 @@ AgentSpecExecutionRequest:
       additionalProperties: true
       description: Initial input values for the flow
       example:
-        user_query: "What is the weather today?"
+        user_query: 'What is the weather today?'
   required:
     - flow
 
@@ -864,7 +864,7 @@ AgentSpecExecutionResults:
   description: Results from a completed Agent Spec execution
   additionalProperties: true
   example:
-    response: "The weather today is sunny with a high of 72°F."
+    response: 'The weather today is sunny with a high of 72°F.'
     confidence: 0.95
 
 AgentSpecRuntimeValidation:

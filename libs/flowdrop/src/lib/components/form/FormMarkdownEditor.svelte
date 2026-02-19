@@ -112,8 +112,10 @@
 	// Inline SVG icons (heroicons outline, 16x16)
 	const icons = {
 		link: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z"/><path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z"/></svg>',
-		image: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a.75.75 0 0 0-1.06 0l-1.91 1.909.47.47a.75.75 0 1 1-1.06 1.06L6.53 8.091a.75.75 0 0 0-1.06 0L2.5 11.06Zm6.5-3.31a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" clip-rule="evenodd"/></svg>',
-		table: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M.99 5.24A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm8.26 4.51v3.75h1.5v-3.75h-1.5Zm1.5-1.5v-3.75h-1.5v3.75h1.5Zm-3-3.75H3.25a.75.75 0 0 0-.75.75v3h5.25v-3.75Zm-5.25 5.25v3.75c0 .414.336.75.75.75h4.5v-4.5H2.5Zm14.5 0h-5.25v4.5h4.5a.75.75 0 0 0 .75-.75v-3.75Zm0-1.5v-3a.75.75 0 0 0-.75-.75h-4.5v3.75H17Z" clip-rule="evenodd"/></svg>'
+		image:
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a.75.75 0 0 0-1.06 0l-1.91 1.909.47.47a.75.75 0 1 1-1.06 1.06L6.53 8.091a.75.75 0 0 0-1.06 0L2.5 11.06Zm6.5-3.31a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" clip-rule="evenodd"/></svg>',
+		table:
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M.99 5.24A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm8.26 4.51v3.75h1.5v-3.75h-1.5Zm1.5-1.5v-3.75h-1.5v3.75h1.5Zm-3-3.75H3.25a.75.75 0 0 0-.75.75v3h5.25v-3.75Zm-5.25 5.25v3.75c0 .414.336.75.75.75h4.5v-4.5H2.5Zm14.5 0h-5.25v4.5h4.5a.75.75 0 0 0 .75-.75v-3.75Zm0-1.5v-3a.75.75 0 0 0-.75-.75h-4.5v3.75H17Z" clip-rule="evenodd"/></svg>'
 	};
 
 	function wrapSelection(before: string, after: string) {
@@ -342,9 +344,7 @@
 
 			// Theme
 			themeCompartment.of(
-				darkTheme
-					? oneDark
-					: syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+				darkTheme ? oneDark : syntaxHighlighting(defaultHighlightStyle, { fallback: true })
 			),
 
 			// Markdown language support
@@ -495,7 +495,13 @@
 						{#if item.isSvg}
 							<span class="form-markdown-editor__btn-svg">{@html item.icon}</span>
 						{:else}
-							<span class="form-markdown-editor__btn-icon" class:form-markdown-editor__btn-icon--bold={item.id === 'bold'} class:form-markdown-editor__btn-icon--italic={item.id === 'italic'} class:form-markdown-editor__btn-icon--strike={item.id === 'strikethrough'}>{item.icon}</span>
+							<span
+								class="form-markdown-editor__btn-icon"
+								class:form-markdown-editor__btn-icon--bold={item.id === 'bold'}
+								class:form-markdown-editor__btn-icon--italic={item.id === 'italic'}
+								class:form-markdown-editor__btn-icon--strike={item.id === 'strikethrough'}
+								>{item.icon}</span
+							>
 						{/if}
 					</button>
 				{/if}
@@ -504,10 +510,7 @@
 	{/if}
 
 	<!-- CodeMirror container -->
-	<div
-		bind:this={containerRef}
-		class="form-markdown-editor__body"
-	></div>
+	<div bind:this={containerRef} class="form-markdown-editor__body"></div>
 
 	<!-- Status bar -->
 	{#if showStatusBar}
@@ -637,7 +640,9 @@
 	}
 
 	/* When no toolbar AND no status bar, body gets full radius */
-	.form-markdown-editor:not(:has(.form-markdown-editor__toolbar)):not(:has(.form-markdown-editor__status))
+	.form-markdown-editor:not(:has(.form-markdown-editor__toolbar)):not(
+			:has(.form-markdown-editor__status)
+		)
 		.form-markdown-editor__body {
 		border-radius: var(--fd-radius-lg);
 	}

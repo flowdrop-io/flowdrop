@@ -3756,8 +3756,7 @@ export const demoAgentSpecLLMPipelineWorkflow: Workflow = (() => {
 					label: 'Summarizer LLM',
 					config: {
 						prompt_template: '{{prompt}}',
-						system_prompt:
-							'You are a helpful summarizer. Summarize the input concisely.',
+						system_prompt: 'You are a helpful summarizer. Summarize the input concisely.',
 						llm_config_ref: 'gpt-4o'
 					},
 					metadata: {

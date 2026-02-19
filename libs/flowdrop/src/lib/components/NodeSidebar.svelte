@@ -43,9 +43,7 @@
 	}
 
 	/** Nodes filtered by format compatibility */
-	let formatCompatibleNodes = $derived(
-		(props.nodes || []).filter(isNodeCompatibleWithFormat)
-	);
+	let formatCompatibleNodes = $derived((props.nodes || []).filter(isNodeCompatibleWithFormat));
 
 	let filteredNodes = $derived(getFilteredNodes());
 	let categories = $derived(getCategories());

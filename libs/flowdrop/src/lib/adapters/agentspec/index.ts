@@ -50,10 +50,7 @@ export {
 export type { ComponentTypeDefaults } from './componentTypeDefaults.js';
 
 // Validation
-export {
-	validateForAgentSpecExport,
-	validateAgentSpecFlow
-} from './validator.js';
+export { validateForAgentSpecExport, validateAgentSpecFlow } from './validator.js';
 export type { AgentSpecValidationResult } from './validator.js';
 
 // Auto-layout

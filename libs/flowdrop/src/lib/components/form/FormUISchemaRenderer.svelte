@@ -13,16 +13,12 @@
 
 <script lang="ts">
 	import type { UISchemaElement } from '$lib/types/uischema.js';
-	import type {
-		ConfigSchema,
-		WorkflowNode,
-		WorkflowEdge,
-		AuthProvider
-	} from '$lib/types/index.js';
+	import type { ConfigSchema, WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
 	import type { FieldSchema } from './types.js';
 	import { resolveScopeToKey } from '$lib/utils/uischema.js';
 	import FormField from './FormField.svelte';
 	import FormFieldset from './FormFieldset.svelte';
+	import Self from './FormUISchemaRenderer.svelte';
 
 	interface Props {
 		/** The UISchema element to render */
@@ -92,7 +88,7 @@
 {:else if element.type === 'VerticalLayout'}
 	<div class="form-uischema-layout form-uischema-layout--vertical">
 		{#each element.elements as child, idx (idx)}
-			<svelte:self
+			<Self
 				element={child}
 				{schema}
 				{values}
@@ -112,7 +108,7 @@
 	<FormFieldset group={element}>
 		<div class="form-uischema-layout form-uischema-layout--vertical">
 			{#each element.elements as child, idx (idx)}
-				<svelte:self
+				<Self
 					element={child}
 					{schema}
 					{values}

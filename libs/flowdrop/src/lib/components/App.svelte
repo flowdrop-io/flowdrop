@@ -770,18 +770,13 @@
 						// Sync workflow settings changes immediately on field blur
 						if ($workflowStore) {
 							const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
-							const currentFormat =
-								$workflowStore.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
+							const currentFormat = $workflowStore.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
 
 							// Warn about incompatible nodes when format changes
 							if (newFormat !== currentFormat) {
 								const incompatibleNodes = $workflowStore.nodes?.filter((node) => {
 									const formats = node.data?.metadata?.formats;
-									return (
-										formats &&
-										formats.length > 0 &&
-										!formats.includes(newFormat)
-									);
+									return formats && formats.length > 0 && !formats.includes(newFormat);
 								});
 								if (incompatibleNodes && incompatibleNodes.length > 0) {
 									console.warn(

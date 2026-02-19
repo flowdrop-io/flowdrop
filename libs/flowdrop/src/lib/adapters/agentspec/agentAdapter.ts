@@ -120,9 +120,7 @@ export class AgentSpecAgentAdapter {
 				name: doc.agent.name,
 				description: doc.agent.description,
 				systemPrompt: doc.agent.system_prompt,
-				tools: doc.agent.tools?.filter(
-					(t): t is AgentSpecTool => typeof t !== 'string'
-				),
+				tools: doc.agent.tools?.filter((t): t is AgentSpecTool => typeof t !== 'string'),
 				llmConfig:
 					doc.agent.llm_config && typeof doc.agent.llm_config !== 'string'
 						? doc.agent.llm_config

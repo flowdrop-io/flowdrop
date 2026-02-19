@@ -9,13 +9,8 @@
 
 import type { NodeExecutionInfo, NodeExecutionStatus } from '../types/index.js';
 import type { StandardWorkflow } from '../adapters/WorkflowAdapter.js';
-import type {
-	AgentSpecEndpointConfig
-} from '../config/agentSpecEndpoints.js';
-import {
-	buildAgentSpecUrl,
-	getAgentSpecAuthHeaders
-} from '../config/agentSpecEndpoints.js';
+import type { AgentSpecEndpointConfig } from '../config/agentSpecEndpoints.js';
+import { buildAgentSpecUrl, getAgentSpecAuthHeaders } from '../config/agentSpecEndpoints.js';
 import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
 
 /** Execution state tracked per active execution */
@@ -189,9 +184,7 @@ export class AgentSpecExecutionService {
 	/**
 	 * Get current execution status.
 	 */
-	async getExecutionStatus(
-		executionId: string
-	): Promise<Record<string, NodeExecutionInfo> | null> {
+	async getExecutionStatus(executionId: string): Promise<Record<string, NodeExecutionInfo> | null> {
 		this.ensureConfigured();
 
 		try {

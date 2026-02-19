@@ -116,9 +116,7 @@ export function buildAgentSpecUrl(
 /**
  * Get authentication headers for Agent Spec runtime requests.
  */
-export function getAgentSpecAuthHeaders(
-	config: AgentSpecEndpointConfig
-): Record<string, string> {
+export function getAgentSpecAuthHeaders(config: AgentSpecEndpointConfig): Record<string, string> {
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json'
 	};
