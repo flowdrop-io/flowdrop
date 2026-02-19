@@ -1,0 +1,134 @@
+/* =============================================================================
+   FlowDrop Starlight Theme — Netlify-Inspired
+
+   Maps design tokens (from tokens.css) → Starlight CSS variables.
+   Do NOT hardcode colors here — use --fd-* tokens instead.
+   ============================================================================= */
+
+/* ---------------------------------------------------------------------------
+   Accent Colors — Dark Mode
+   --------------------------------------------------------------------------- */
+
+:root {
+	--sl-color-accent-low: var(--fd-accent-low);
+	--sl-color-accent: var(--fd-accent);
+	--sl-color-accent-high: var(--fd-accent-high);
+}
+
+/* ---------------------------------------------------------------------------
+   Accent Colors — Light Mode
+   --------------------------------------------------------------------------- */
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: var(--fd-accent-low);
+	--sl-color-accent: var(--fd-accent);
+	--sl-color-accent-high: var(--fd-accent-high);
+}
+
+/* ---------------------------------------------------------------------------
+   Gray Scale — Dark Mode
+
+   Cool neutral grays derived from --fd-gray-hue token.
+   Scale: white (lightest text) → black (page background)
+   --------------------------------------------------------------------------- */
+
+:root {
+	--sl-color-white: hsl(0, 0%, 100%);
+	--sl-color-gray-1: hsl(var(--fd-gray-hue), 15%, 93%);
+	--sl-color-gray-2: hsl(var(--fd-gray-hue), 8%, 75%);
+	--sl-color-gray-3: hsl(var(--fd-gray-hue), 6%, 54%);
+	--sl-color-gray-4: hsl(var(--fd-gray-hue), 7%, 34%);
+	--sl-color-gray-5: hsl(var(--fd-gray-hue), 10%, 21%);
+	--sl-color-gray-6: hsl(var(--fd-gray-hue), 14%, 14%);
+	--sl-color-black: hsl(var(--fd-gray-hue), 15%, 8%);
+}
+
+/* ---------------------------------------------------------------------------
+   Gray Scale — Light Mode
+   --------------------------------------------------------------------------- */
+
+:root[data-theme='light'] {
+	--sl-color-white: hsl(var(--fd-gray-hue), 15%, 8%);
+	--sl-color-gray-1: hsl(var(--fd-gray-hue), 14%, 14%);
+	--sl-color-gray-2: hsl(var(--fd-gray-hue), 10%, 21%);
+	--sl-color-gray-3: hsl(var(--fd-gray-hue), 7%, 34%);
+	--sl-color-gray-4: hsl(var(--fd-gray-hue), 6%, 54%);
+	--sl-color-gray-5: hsl(var(--fd-gray-hue), 8%, 75%);
+	--sl-color-gray-6: hsl(var(--fd-gray-hue), 15%, 93%);
+	--sl-color-gray-7: hsl(var(--fd-gray-hue), 15%, 96%);
+	--sl-color-black: hsl(0, 0%, 100%);
+}
+
+/* ---------------------------------------------------------------------------
+   Card Hover — Netlify-style teal border glow
+   --------------------------------------------------------------------------- */
+
+.card {
+	border-radius: 0.75rem;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+	border-color: var(--sl-color-accent);
+	box-shadow: 0 0 0 1px var(--sl-color-accent);
+}
+
+.sl-link-card {
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sl-link-card:hover {
+	border-color: var(--sl-color-accent);
+	box-shadow: 0 0 0 1px var(--sl-color-accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Hero Button Glow
+   --------------------------------------------------------------------------- */
+
+.sl-link-button.primary:hover {
+	box-shadow: 0 0 20px hsla(var(--fd-accent-hue), var(--fd-accent-saturation), var(--fd-accent-lightness), 0.3);
+}
+
+/* ---------------------------------------------------------------------------
+   Code Block Accent
+   --------------------------------------------------------------------------- */
+
+.sl-markdown-content pre:not(:where(.not-content *)) {
+	border-top: 2px solid var(--sl-color-accent);
+	border-radius: 0.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Link Refinement
+   --------------------------------------------------------------------------- */
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+	text-underline-offset: 0.2em;
+}
+
+/* ---------------------------------------------------------------------------
+   Aside Callout Border-Radius
+   --------------------------------------------------------------------------- */
+
+.starlight-aside {
+	border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Table Header Accent
+   --------------------------------------------------------------------------- */
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+	border-bottom-color: var(--sl-color-accent);
+	border-bottom-width: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Scrollbar
+   --------------------------------------------------------------------------- */
+
+:root {
+	scrollbar-color: var(--sl-color-gray-4) transparent;
+	scrollbar-width: thin;
+}

@@ -15,6 +15,15 @@ export default defineConfig({
 					href: 'https://github.com/flowdrop-io/flowdrop'
 				}
 			],
+			customCss: ['./src/styles/tokens.css', './src/styles/theme.css'],
+			components: {
+				ThemeProvider: './src/components/ThemeProvider.astro',
+			},
+			expressiveCode: {
+				styleOverrides: {
+					borderRadius: '0.5rem',
+				},
+			},
 			sidebar: [
 				{
 					label: 'Getting Started',
