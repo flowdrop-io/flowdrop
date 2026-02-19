@@ -137,8 +137,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					prompt_template: {
 						type: 'string',
 						title: 'Prompt Template',
-						description:
-							'Prompt template with {{variable}} placeholders for dynamic inputs',
+						description: 'Prompt template with {{variable}} placeholders for dynamic inputs',
 						format: 'multiline',
 						default: '{{prompt}}'
 					},
@@ -152,8 +151,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
 					llm_config_ref: {
 						type: 'string',
 						title: 'LLM Configuration',
-						description:
-							'Reference to an LLM configuration (e.g., model name, provider)',
+						description: 'Reference to an LLM configuration (e.g., model name, provider)',
 						default: ''
 					}
 				}
@@ -600,4 +598,3 @@ export function createAgentSpecNodeMetadata(
 		outputs: outputs ?? base.outputs
 	};
 }
-

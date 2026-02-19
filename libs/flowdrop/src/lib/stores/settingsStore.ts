@@ -255,12 +255,15 @@ export const theme = derived(themeSettings, ($theme) => $theme.preference);
  * Resolved theme - the actual theme applied ('light' or 'dark')
  * When preference is 'auto', resolves based on system preference
  */
-export const resolvedTheme = derived([themeSettings, systemTheme], ([$themeSettings, $systemTheme]) => {
-	if ($themeSettings.preference === 'auto') {
-		return $systemTheme;
+export const resolvedTheme = derived(
+	[themeSettings, systemTheme],
+	([$themeSettings, $systemTheme]) => {
+		if ($themeSettings.preference === 'auto') {
+			return $systemTheme;
+		}
+		return $themeSettings.preference;
 	}
-	return $themeSettings.preference;
-});
+);
 
 // =========================================================================
 // Settings Update Functions

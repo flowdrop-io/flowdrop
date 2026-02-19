@@ -134,8 +134,7 @@ const COMPONENT_TYPE_DEFAULTS = new Map<string, ComponentTypeDefaults>([
 			icon: 'mdi:brain',
 			badge: 'LLM',
 			defaultName: 'LLM',
-			defaultDescription:
-				'Generate text using a large language model with configurable prompts.',
+			defaultDescription: 'Generate text using a large language model with configurable prompts.',
 			triggerInputs: [TRIGGER_INPUT],
 			triggerOutputs: [TRIGGER_OUTPUT]
 		}
@@ -177,8 +176,7 @@ const COMPONENT_TYPE_DEFAULTS = new Map<string, ComponentTypeDefaults>([
 			icon: 'mdi:api',
 			badge: 'API',
 			defaultName: 'API Call',
-			defaultDescription:
-				'Make an HTTP API call with configurable endpoint, method, and headers.',
+			defaultDescription: 'Make an HTTP API call with configurable endpoint, method, and headers.',
 			triggerInputs: [TRIGGER_INPUT],
 			triggerOutputs: [TRIGGER_OUTPUT]
 		}
@@ -220,8 +218,7 @@ const COMPONENT_TYPE_DEFAULTS = new Map<string, ComponentTypeDefaults>([
 			icon: 'mdi:map-marker-path',
 			badge: 'MAP',
 			defaultName: 'Map',
-			defaultDescription:
-				'Apply a flow or operation to each item in a collection (map-reduce).',
+			defaultDescription: 'Apply a flow or operation to each item in a collection (map-reduce).',
 			triggerInputs: [TRIGGER_INPUT],
 			triggerOutputs: [TRIGGER_OUTPUT]
 		}

@@ -195,8 +195,7 @@
 			</h3>
 
 			<!-- Status Indicators -->
-			<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
-			</div>
+			<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"></div>
 		</div>
 		<!-- Node Description - line-height 20px so header grows in steps of 10 -->
 		<p

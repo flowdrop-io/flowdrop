@@ -19,7 +19,11 @@ import {
 	getDefaultAgentSpecNodeTypes
 } from '$lib/adapters/agentspec/defaultNodeTypes.js';
 import { AGENTSPEC_NAMESPACE } from '$lib/adapters/agentspec/componentTypeDefaults.js';
-import type { StandardWorkflow, StandardNode, StandardEdge } from '$lib/adapters/WorkflowAdapter.js';
+import type {
+	StandardWorkflow,
+	StandardNode,
+	StandardEdge
+} from '$lib/adapters/WorkflowAdapter.js';
 
 // ============================================================================
 // Helper: Build a FlowDrop workflow using Agent Spec node types
@@ -226,13 +230,19 @@ describe('Demo 2: Export FlowDrop workflow to Agent Spec JSON', () => {
 				console.log(`      outputs: ${node.output_properties.map((p) => p.title).join(', ')}`);
 			}
 		}
-		console.log(`  Control-flow connections: ${agentSpecFlow.control_flow_connections?.length ?? 0}`);
+		console.log(
+			`  Control-flow connections: ${agentSpecFlow.control_flow_connections?.length ?? 0}`
+		);
 		agentSpecFlow.control_flow_connections?.forEach((e) => {
-			console.log(`    ${e.from_node} → ${e.to_node}${e.from_branch ? ` [branch: ${e.from_branch}]` : ''}`);
+			console.log(
+				`    ${e.from_node} → ${e.to_node}${e.from_branch ? ` [branch: ${e.from_branch}]` : ''}`
+			);
 		});
 		console.log(`  Data-flow connections:    ${agentSpecFlow.data_flow_connections?.length ?? 0}`);
 		agentSpecFlow.data_flow_connections?.forEach((e) => {
-			console.log(`    ${e.source_node}.${e.source_output} → ${e.destination_node}.${e.destination_input}`);
+			console.log(
+				`    ${e.source_node}.${e.source_output} → ${e.destination_node}.${e.destination_input}`
+			);
 		});
 
 		// Full JSON output
@@ -272,9 +282,7 @@ describe('Demo 3: Import Agent Spec JSON into FlowDrop', () => {
 					{
 						name: 'classifier',
 						component_type: 'llm_node',
-						input_properties: [
-							{ title: 'message', type: 'string' }
-						],
+						input_properties: [{ title: 'message', type: 'string' }],
 						output_properties: [
 							{ title: 'category', type: 'string', description: 'billing, technical, or general' }
 						],
@@ -286,9 +294,7 @@ describe('Demo 3: Import Agent Spec JSON into FlowDrop', () => {
 					{
 						name: 'router',
 						component_type: 'branching_node',
-						input_properties: [
-							{ title: 'category', type: 'string' }
-						],
+						input_properties: [{ title: 'category', type: 'string' }],
 						branches: [
 							{ name: 'billing', condition: 'category == "billing"' },
 							{ name: 'technical', condition: 'category == "technical"' },
@@ -298,23 +304,17 @@ describe('Demo 3: Import Agent Spec JSON into FlowDrop', () => {
 					{
 						name: 'billing_response',
 						component_type: 'end_node',
-						input_properties: [
-							{ title: 'result', type: 'string' }
-						]
+						input_properties: [{ title: 'result', type: 'string' }]
 					},
 					{
 						name: 'tech_response',
 						component_type: 'end_node',
-						input_properties: [
-							{ title: 'result', type: 'string' }
-						]
+						input_properties: [{ title: 'result', type: 'string' }]
 					},
 					{
 						name: 'general_response',
 						component_type: 'end_node',
-						input_properties: [
-							{ title: 'result', type: 'string' }
-						]
+						input_properties: [{ title: 'result', type: 'string' }]
 					}
 				],
 				control_flow_connections: [
@@ -394,8 +394,12 @@ describe('Demo 4: Round-trip conversion preserves workflow semantics', () => {
 		const reimported = adapter.importJSON(agentSpecJson);
 
 		console.log('\n=== Round-trip Comparison ===');
-		console.log(`  Original nodes: ${original.nodes.length}   | Re-imported nodes: ${reimported.nodes.length}`);
-		console.log(`  Original edges: ${original.edges.length}   | Re-imported edges: ${reimported.edges.length}`);
+		console.log(
+			`  Original nodes: ${original.nodes.length}   | Re-imported nodes: ${reimported.nodes.length}`
+		);
+		console.log(
+			`  Original edges: ${original.edges.length}   | Re-imported edges: ${reimported.edges.length}`
+		);
 		console.log(`  Original name:  ${original.name}`);
 		console.log(`  Reimported name: ${reimported.name}`);
 

@@ -173,7 +173,7 @@ if (isCheck) {
 	}
 	if (committed !== output) {
 		console.error(
-			'ERROR: Committed schema is out of date. Run \'npm run schema:generate\' to update.'
+			"ERROR: Committed schema is out of date. Run 'npm run schema:generate' to update."
 		);
 		process.exit(1);
 	}

@@ -150,10 +150,7 @@ export interface FlowDropEventHandlers {
 	 * @param executionId - The runtime execution ID
 	 * @param results - Execution results from the runtime
 	 */
-	onAgentSpecExecutionCompleted?: (
-		executionId: string,
-		results: Record<string, unknown>
-	) => void;
+	onAgentSpecExecutionCompleted?: (executionId: string, results: Record<string, unknown>) => void;
 
 	/**
 	 * Called when an Agent Spec execution fails

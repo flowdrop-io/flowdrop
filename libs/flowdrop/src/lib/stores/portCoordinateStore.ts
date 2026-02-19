@@ -87,10 +87,7 @@ function computeNodePortCoordinates(
 	const dataTypeLookup = buildPortDataTypeLookup(node);
 	const coordinates: PortCoordinate[] = [];
 
-	const allHandles = [
-		...(handleBounds.source ?? []),
-		...(handleBounds.target ?? [])
-	];
+	const allHandles = [...(handleBounds.source ?? []), ...(handleBounds.target ?? [])];
 
 	for (const handle of allHandles) {
 		if (!handle.id) continue;

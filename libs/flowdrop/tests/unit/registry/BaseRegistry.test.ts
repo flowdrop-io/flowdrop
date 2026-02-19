@@ -13,9 +13,7 @@ interface TestItem {
 class TestRegistry extends BaseRegistry<string, TestItem> {
 	register(item: TestItem, overwrite = false): void {
 		if (this.items.has(item.id) && !overwrite) {
-			throw new Error(
-				`Key "${item.id}" is already registered. Use overwrite: true to replace it.`
-			);
+			throw new Error(`Key "${item.id}" is already registered. Use overwrite: true to replace it.`);
 		}
 		this.items.set(item.id, item);
 		this.notifyListeners();

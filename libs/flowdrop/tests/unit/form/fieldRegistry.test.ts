@@ -412,7 +412,9 @@ describe('Field Registry', () => {
 			it('should resolve via the singleton instance', () => {
 				registerFieldComponent('test-resolve', {} as never, (s) => s.format === 'test', 50);
 
-				const result = fieldComponentRegistry.resolveFieldComponent({ format: 'test' } as FieldSchema);
+				const result = fieldComponentRegistry.resolveFieldComponent({
+					format: 'test'
+				} as FieldSchema);
 				expect(result).not.toBeNull();
 				expect(result!.priority).toBe(50);
 			});

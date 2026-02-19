@@ -70,11 +70,7 @@ export type {
 	UISchemaElement
 } from '../types/index.js';
 
-export {
-	isUISchemaControl,
-	isUISchemaVerticalLayout,
-	isUISchemaGroup
-} from '../types/index.js';
+export { isUISchemaControl, isUISchemaVerticalLayout, isUISchemaGroup } from '../types/index.js';
 
 // Configuration types
 export type {
