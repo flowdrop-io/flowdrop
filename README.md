@@ -232,6 +232,7 @@ Runtime configuration means you build once and deploy to staging, production, or
 | [apps/example-client-svelte](apps/example-client-svelte/) | Svelte/SvelteKit example client | Placeholder |
 | [apps/example-client-docker](apps/example-client-docker/) | Docker deployment example | Active |
 | [apps/example-server-express](apps/example-server-express/) | Example Express API server | Placeholder |
+| [apps/example-server-drupal](apps/example-server-drupal/) | Drupal backend integration | Active |
 
 ## Development
 
