@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="static/logo.svg" alt="FlowDrop" width="120" />
+  <img src="https://raw.githubusercontent.com/flowdrop-io/flowdrop/main/libs/flowdrop/static/logo.svg" alt="FlowDrop" width="120" />
 </p>
 
 <h1 align="center">FlowDrop</h1>
@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  <img src="static/FlowDrop-Screenshot.jpg" alt="FlowDrop Screenshot" width="800" />
+  <img src="https://raw.githubusercontent.com/flowdrop-io/flowdrop/main/libs/flowdrop/static/FlowDrop-Screenshot.jpg" alt="FlowDrop Screenshot" width="800" />
 </p>
 <p align="center">
   <em>Build AI-powered workflows with drag-and-drop simplicity. Connect nodes, configure inputs/outputs, and visualize your entire pipeline.</em>
@@ -90,7 +90,7 @@ FlowDrop ships with 7 beautifully designed node types:
 | `note`     | Markdown documentation blocks           |
 
 <p align="center">
-  <img src="static/Node-Types.jpg" alt="FlowDrop Node Types" width="800" />
+  <img src="https://raw.githubusercontent.com/flowdrop-io/flowdrop/main/libs/flowdrop/static/Node-Types.jpg" alt="FlowDrop Node Types" width="800" />
 </p>
 <p align="center">
   <em>From simple triggers to complex branching logic, each node type is designed for specific workflow patterns.</em>
