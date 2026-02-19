@@ -1,5 +1,7 @@
 {
   "name": "docs",
+  "description": "[PLACEHOLDER] Documentation site for FlowDrop — not yet ready for use",
+  "private": true,
   "type": "module",
   "version": "0.0.1",
   "scripts": {
