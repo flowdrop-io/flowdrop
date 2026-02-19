@@ -487,7 +487,7 @@ svelte-5-french-toast is themed via design tokens:
 | `README.md`                                | Project overview and quickstart |
 | [API Documentation][api-docs]              | REST API specification          |
 | `QUICK_START.md`                           | Getting started guide           |
-| `DOCKER.md`                                | Docker deployment               |
+| `../../apps/example-client-docker/README.md`| Docker deployment               |
 | `CHANGELOG.md`                             | Version history                 |
 | `docs/config-schema-special-properties.md` | Config schema magic properties  |
 | `docs/component-hierarchy.md`              | Component structure             |

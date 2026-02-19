@@ -1,35 +1,27 @@
-# FlowDrop Production Dockerfile
-# Multi-stage build for optimized production image
+# FlowDrop Docker Example
+# Builds a production-ready FlowDrop UI from the published npm package
 
 # Stage 1: Build the application
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy configuration files
-COPY tsconfig.json tsconfig.node.json svelte.config.js vite.config.ts ./
-
-# Copy source code
+# Copy source and config files
+COPY svelte.config.js vite.config.ts tsconfig.json ./
 COPY src ./src
 COPY static ./static
-COPY index.html ./
 
-# Build the application (use NODE_ENV=production to ensure adapter-node is used)
+# Build the application with adapter-node
 ENV NODE_ENV=production
-ENV DOCKER_BUILD=true
 RUN npm run build
 
 # Stage 2: Production image
 FROM node:20-alpine AS runner
 
-# Set working directory
 WORKDIR /app
 
 # Install production dependencies only
@@ -64,4 +56,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application
 CMD ["node", "build"]
-
