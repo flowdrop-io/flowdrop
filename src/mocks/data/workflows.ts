@@ -5,7 +5,7 @@
 
 import type { Workflow, WorkflowNode, WorkflowEdge } from '../../lib/types/index.js';
 import { getNodeById } from './nodes.js';
-import { getAgentSpecNodeMetadata } from '../../lib/adapters/agentspec/nodeTypeRegistry.js';
+import { getAgentSpecNodeMetadata } from '../../lib/adapters/agentspec/defaultNodeTypes.js';
 
 /** Workflow metadata type extracted from Workflow interface */
 type WorkflowMetadata = NonNullable<Workflow['metadata']>;
