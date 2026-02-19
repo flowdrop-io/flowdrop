@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+	fieldComponentRegistry,
 	registerFieldComponent,
 	unregisterFieldComponent,
 	resolveFieldComponent,
@@ -337,6 +338,83 @@ describe('Field Registry', () => {
 					type: 'string'
 				};
 				expect(autocompleteMatcher(schema)).toBe(false);
+			});
+		});
+	});
+
+	describe('fieldComponentRegistry class API', () => {
+		describe('subscribe', () => {
+			it('should notify listeners on register', () => {
+				let callCount = 0;
+				const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
+
+				registerFieldComponent('test-sub', {} as never, () => true, 0);
+				expect(callCount).toBe(1);
+
+				unsubscribe();
+				registerFieldComponent('test-sub2', {} as never, () => true, 0);
+				expect(callCount).toBe(1); // No longer called
+			});
+
+			it('should notify listeners on unregister', () => {
+				registerFieldComponent('test-unsub', {} as never, () => true, 0);
+
+				let callCount = 0;
+				const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
+
+				unregisterFieldComponent('test-unsub');
+				expect(callCount).toBe(1);
+
+				unsubscribe();
+			});
+
+			it('should notify listeners on clear', () => {
+				let callCount = 0;
+				const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
+
+				clearFieldRegistry();
+				expect(callCount).toBe(1);
+
+				unsubscribe();
+			});
+		});
+
+		describe('onClear', () => {
+			it('should call onClear callbacks when clear is called', () => {
+				let cleared = false;
+				const unsubscribe = fieldComponentRegistry.onClear(() => {
+					cleared = true;
+				});
+
+				registerFieldComponent('test-onclear', {} as never, () => true, 0);
+				expect(cleared).toBe(false);
+
+				clearFieldRegistry();
+				expect(cleared).toBe(true);
+
+				unsubscribe();
+			});
+
+			it('should call onClear before subscribe listeners', () => {
+				const order: string[] = [];
+				const unsub1 = fieldComponentRegistry.onClear(() => order.push('onClear'));
+				const unsub2 = fieldComponentRegistry.subscribe(() => order.push('listener'));
+
+				clearFieldRegistry();
+				expect(order).toEqual(['onClear', 'listener']);
+
+				unsub1();
+				unsub2();
+			});
+		});
+
+		describe('resolveFieldComponent via class', () => {
+			it('should resolve via the singleton instance', () => {
+				registerFieldComponent('test-resolve', {} as never, (s) => s.format === 'test', 50);
+
+				const result = fieldComponentRegistry.resolveFieldComponent({ format: 'test' } as FieldSchema);
+				expect(result).not.toBeNull();
+				expect(result!.priority).toBe(50);
 			});
 		});
 	});
