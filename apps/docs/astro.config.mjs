@@ -15,7 +15,11 @@ export default defineConfig({
 					href: 'https://github.com/flowdrop-io/flowdrop'
 				}
 			],
-			customCss: ['./src/styles/tokens.css', './src/styles/theme.css'],
+			customCss: [
+				'@fontsource-variable/inter',
+				'./src/styles/tokens.css',
+				'./src/styles/theme.css',
+			],
 			components: {
 				ThemeProvider: './src/components/ThemeProvider.astro',
 			},
