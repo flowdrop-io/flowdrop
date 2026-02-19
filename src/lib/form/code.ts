@@ -21,7 +21,7 @@
  * ```
  */
 
-import { registerFieldComponent } from './fieldRegistry.js';
+import { registerFieldComponent, fieldComponentRegistry } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
 
 // Re-export the components for direct usage if needed
@@ -66,6 +66,12 @@ let codeEditorRegistered = false;
  * Track if template editor is registered
  */
 let templateEditorRegistered = false;
+
+// Sync registration flags with registry.clear() for test isolation
+fieldComponentRegistry.onClear(() => {
+	codeEditorRegistered = false;
+	templateEditorRegistered = false;
+});
 
 /**
  * Register the code/JSON editor field component

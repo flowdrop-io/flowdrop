@@ -6,6 +6,8 @@
  * - Dynamic field types: Users can add custom field renderers
  * - Lazy loading: Components can be registered at runtime
  *
+ * Extends BaseRegistry for shared mechanics (subscribe, onClear, etc.).
+ *
  * @module form/fieldRegistry
  *
  * @example Basic usage with light fields only (no codemirror):
@@ -25,6 +27,7 @@
 
 import type { Component } from 'svelte';
 import type { FieldSchema } from '../components/form/types.js';
+import { BaseRegistry } from '../registry/BaseRegistry.js';
 
 /**
  * Base field component props that all registered field components should accept.
@@ -60,31 +63,110 @@ export type FieldMatcher = (schema: FieldSchema) => boolean;
 export type FieldComponent = Component<any, any, any>;
 
 /**
- * Registration entry for a field component
+ * Framework-agnostic matcher registration (no Svelte dependency).
+ * Contains the matching logic and priority without the component.
  */
-export interface FieldComponentRegistration {
-	/** The Svelte component to render */
-	component: FieldComponent;
-	/** Function to determine if this component should handle a given schema */
+export interface FieldMatcherRegistration {
+	/** Function to determine if this registration should handle a given schema */
 	matcher: FieldMatcher;
 	/** Priority for matching (higher = checked first) */
 	priority: number;
 }
 
 /**
- * Field component registry
- * Stores registered field components with their matchers
+ * Full registration entry for a field component.
+ * Extends FieldMatcherRegistration with the Svelte component needed for rendering.
  */
-const fieldRegistry = new Map<string, FieldComponentRegistration>();
+export interface FieldComponentRegistration extends FieldMatcherRegistration {
+	/** The Svelte component to render */
+	component: FieldComponent;
+}
 
 /**
- * Ordered list of field type keys by priority (highest first)
- * Cached and invalidated when registry changes
+ * Class-based field component registry.
+ * Extends BaseRegistry with priority-based field resolution.
  */
-let orderedKeys: string[] | null = null;
+class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistration> {
+	/** Cached ordered keys by priority (highest first), invalidated on mutation */
+	private orderedKeys: string[] | null = null;
+
+	/**
+	 * Register a field component.
+	 * Silently overwrites existing registrations (preserves legacy behavior).
+	 *
+	 * @param type - Unique identifier for this field type
+	 * @param registration - The field component registration
+	 */
+	register(type: string, registration: FieldComponentRegistration): void {
+		this.items.set(type, registration);
+		this.orderedKeys = null;
+		this.notifyListeners();
+	}
+
+	/**
+	 * Override unregister to invalidate the priority cache.
+	 */
+	override unregister(key: string): boolean {
+		const result = super.unregister(key);
+		if (result) {
+			this.orderedKeys = null;
+		}
+		return result;
+	}
+
+	/**
+	 * Override clear to invalidate the priority cache.
+	 */
+	override clear(): void {
+		super.clear();
+		this.orderedKeys = null;
+	}
+
+	/**
+	 * Resolve which component should render a given field schema.
+	 * Checks registered matchers in priority order (highest first).
+	 *
+	 * @param schema - The field schema to resolve
+	 * @returns The matching registration or null if no match
+	 */
+	resolveFieldComponent(schema: FieldSchema): FieldComponentRegistration | null {
+		const keys = this.getOrderedKeys();
+
+		for (const key of keys) {
+			const registration = this.items.get(key);
+			if (registration && registration.matcher(schema)) {
+				return registration;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get keys ordered by priority (cached).
+	 */
+	private getOrderedKeys(): string[] {
+		if (this.orderedKeys === null) {
+			this.orderedKeys = Array.from(this.items.entries())
+				.sort((a, b) => b[1].priority - a[1].priority)
+				.map(([key]) => key);
+		}
+		return this.orderedKeys;
+	}
+}
+
+/** Singleton instance of the field component registry */
+export const fieldComponentRegistry = new FieldComponentRegistry();
+
+// ============================================================================
+// Backward-compatible function exports
+// These delegate to the singleton and preserve the existing public API.
+// ============================================================================
 
 /**
- * Register a field component for a specific field type
+ * Register a field component for a specific field type.
+ *
+ * @deprecated Use `fieldComponentRegistry.register()` instead.
  *
  * @param type - Unique identifier for this field type
  * @param component - Svelte component to render for matching fields
@@ -107,90 +189,76 @@ export function registerFieldComponent(
 	matcher: FieldMatcher,
 	priority: number = 0
 ): void {
-	fieldRegistry.set(type, { component, matcher, priority });
-	orderedKeys = null; // Invalidate cache
+	fieldComponentRegistry.register(type, { component, matcher, priority });
 }
 
 /**
- * Unregister a field component
+ * Unregister a field component.
+ *
+ * @deprecated Use `fieldComponentRegistry.unregister()` instead.
  *
  * @param type - The field type to unregister
  * @returns true if the component was registered and removed
  */
 export function unregisterFieldComponent(type: string): boolean {
-	const removed = fieldRegistry.delete(type);
-	if (removed) {
-		orderedKeys = null; // Invalidate cache
-	}
-	return removed;
+	return fieldComponentRegistry.unregister(type);
 }
 
 /**
- * Get all registered field types
+ * Get all registered field types.
+ *
+ * @deprecated Use `fieldComponentRegistry.getKeys()` instead.
  *
  * @returns Array of registered field type identifiers
  */
 export function getRegisteredFieldTypes(): string[] {
-	return Array.from(fieldRegistry.keys());
+	return fieldComponentRegistry.getKeys();
 }
 
 /**
- * Check if a field type is registered
+ * Check if a field type is registered.
+ *
+ * @deprecated Use `fieldComponentRegistry.has()` instead.
  *
  * @param type - Field type to check
  * @returns true if the type is registered
  */
 export function isFieldTypeRegistered(type: string): boolean {
-	return fieldRegistry.has(type);
+	return fieldComponentRegistry.has(type);
 }
 
 /**
- * Get ordered keys by priority (cached)
- */
-function getOrderedKeys(): string[] {
-	if (orderedKeys === null) {
-		orderedKeys = Array.from(fieldRegistry.entries())
-			.sort((a, b) => b[1].priority - a[1].priority)
-			.map(([key]) => key);
-	}
-	return orderedKeys;
-}
-
-/**
- * Resolve which component should render a given field schema
- * Checks registered matchers in priority order
+ * Resolve which component should render a given field schema.
+ * Checks registered matchers in priority order.
+ *
+ * @deprecated Use `fieldComponentRegistry.resolveFieldComponent()` instead.
  *
  * @param schema - The field schema to resolve
  * @returns The matching registration or null if no match
  */
 export function resolveFieldComponent(schema: FieldSchema): FieldComponentRegistration | null {
-	const keys = getOrderedKeys();
-
-	for (const key of keys) {
-		const registration = fieldRegistry.get(key);
-		if (registration && registration.matcher(schema)) {
-			return registration;
-		}
-	}
-
-	return null;
+	return fieldComponentRegistry.resolveFieldComponent(schema);
 }
 
 /**
- * Clear all registered field components
- * Useful for testing or reset scenarios
+ * Clear all registered field components.
+ * Useful for testing or reset scenarios.
+ *
+ * @deprecated Use `fieldComponentRegistry.clear()` instead.
  */
 export function clearFieldRegistry(): void {
-	fieldRegistry.clear();
-	orderedKeys = null;
+	fieldComponentRegistry.clear();
 }
 
 /**
- * Get the registry size
+ * Get the registry size.
+ *
+ * @deprecated Use `fieldComponentRegistry.size` instead.
+ *
  * @returns Number of registered field components
  */
 export function getFieldRegistrySize(): number {
-	return fieldRegistry.size;
+	return fieldComponentRegistry.size;
 }
 
 // ============================================================================

@@ -124,6 +124,9 @@ export {
 // ============================================================================
 
 export {
+	// Registry singleton
+	fieldComponentRegistry,
+	// Backward-compatible function wrappers
 	registerFieldComponent,
 	unregisterFieldComponent,
 	resolveFieldComponent,
@@ -147,6 +150,7 @@ export {
 export type {
 	FieldComponentProps,
 	FieldMatcher,
+	FieldMatcherRegistration,
 	FieldComponent,
 	FieldComponentRegistration
 } from './fieldRegistry.js';

@@ -24,7 +24,7 @@
  * ```
  */
 
-import { registerFieldComponent } from './fieldRegistry.js';
+import { registerFieldComponent, fieldComponentRegistry } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
 
 // Re-export the component for direct usage if needed
@@ -45,6 +45,11 @@ export function markdownEditorFieldMatcher(schema: FieldSchema): boolean {
  * Track if markdown editor is registered
  */
 let markdownEditorRegistered = false;
+
+// Sync registration flag with registry.clear() for test isolation
+fieldComponentRegistry.onClear(() => {
+	markdownEditorRegistered = false;
+});
 
 /**
  * Register the markdown editor field component
