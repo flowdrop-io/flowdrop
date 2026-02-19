@@ -1,0 +1,33 @@
+---
+title: Quick Start
+description: Get up and running with FlowDrop in minutes.
+---
+
+## Basic Setup
+
+After [installing](/getting-started/installation/) FlowDrop, import the styles and mount the editor:
+
+```svelte
+<script lang="ts">
+  import '@d34dman/flowdrop/styles';
+  import { mountFlowDropApp } from '@d34dman/flowdrop';
+  import { onMount } from 'svelte';
+
+  let container: HTMLDivElement;
+
+  onMount(() => {
+    const app = mountFlowDropApp(container, {
+      // Your configuration here
+    });
+
+    return () => app.destroy();
+  });
+</script>
+
+<div bind:this={container} style="width: 100%; height: 600px;" />
+```
+
+## What's Next?
+
+- Learn about [configuring the editor](/guides/example/) with custom node types
+- Explore the [API reference](/reference/)

@@ -1,0 +1,34 @@
+---
+title: FlowDrop
+description: Build beautiful workflow editors in minutes, not months.
+template: splash
+hero:
+  tagline: An awesome workflow editor built with Svelte 5 and @xyflow/svelte. You own the backend. You own the data. You own the orchestration.
+  actions:
+    - text: Get Started
+      link: /getting-started/installation/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/flowdrop-io/flowdrop
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+	<Card title="Visual Workflow Editor" icon="pencil">
+		Drag-and-drop node-based editor with real-time validation and auto-layout.
+	</Card>
+	<Card title="Agent Spec Support" icon="setting">
+		Import and export Oracle Open Agent Spec format with bidirectional conversion.
+	</Card>
+	<Card title="Plugin System" icon="add-document">
+		Extensible registries for custom node types, formats, and field components.
+	</Card>
+	<Card title="Backend Agnostic" icon="open-book">
+		Pure UI component library — bring your own backend, data, and orchestration.
+	</Card>
+</CardGrid>

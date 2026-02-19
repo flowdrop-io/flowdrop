@@ -1,0 +1,49 @@
+---
+title: Installation
+description: How to install FlowDrop in your project.
+---
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) v20 or later
+- A [SvelteKit](https://svelte.dev/docs/kit) project with Svelte 5
+
+## Install
+
+```bash
+npm install @d34dman/flowdrop @iconify/svelte
+```
+
+Or with pnpm:
+
+```bash
+pnpm add @d34dman/flowdrop @iconify/svelte
+```
+
+## Peer Dependencies
+
+FlowDrop requires the following peer dependencies:
+
+| Package | Version |
+|---------|---------|
+| `svelte` | `^5.0.0` |
+| `@iconify/svelte` | `^5.0.0` |
+| `@sveltejs/kit` | `^2.0.0` (optional) |
+
+## Entry Points
+
+FlowDrop provides modular entry points so you can import only what you need:
+
+| Entry Point | Description |
+|-------------|-------------|
+| `@d34dman/flowdrop` | Main editor components |
+| `@d34dman/flowdrop/core` | Types and utilities (zero heavy dependencies) |
+| `@d34dman/flowdrop/editor` | Editor module |
+| `@d34dman/flowdrop/form` | Form field components |
+| `@d34dman/flowdrop/form/code` | Form with code editor support |
+| `@d34dman/flowdrop/form/markdown` | Form with markdown editor |
+| `@d34dman/flowdrop/form/full` | All form components |
+| `@d34dman/flowdrop/display` | Display-only components |
+| `@d34dman/flowdrop/playground` | Interactive playground |
+| `@d34dman/flowdrop/settings` | Settings UI |
+| `@d34dman/flowdrop/styles` | Base CSS styles |
