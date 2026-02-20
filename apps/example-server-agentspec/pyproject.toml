@@ -1,0 +1,26 @@
+[project]
+name = "flowdrop-example-server-agentspec"
+description = "Example Agent Spec runtime server for FlowDrop — powered by pyagentspec + WayFlow"
+version = "0.1.0"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "pyagentspec>=26.1.0",
+    "wayflowcore>=26.1.0",
+    "pydantic>=2.0.0",
+    "openai>=1.0.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+agentspec-server = "agentspec_server.main:run"
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
