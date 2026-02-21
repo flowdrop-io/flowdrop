@@ -177,11 +177,148 @@ agentspec-server
 
 ## Integration with FlowDrop
 
-The server implements the exact endpoint paths defined in FlowDrop's
+This server implements the exact endpoint paths defined in FlowDrop's
 [`agentSpecEndpoints.ts`](../../libs/flowdrop/src/lib/config/agentSpecEndpoints.ts).
-FlowDrop's `AgentSpecExecutionService` connects to `http://localhost:8000` by default.
+FlowDrop's `AgentSpecExecutionService` connects to `http://localhost:8000` by default —
+no extra configuration needed.
 
-To use with FlowDrop:
-1. Start this server on port 8000
-2. Start the FlowDrop Express server on port 3001
-3. Open the FlowDrop UI and create/execute Agent Spec workflows
+### Running Both Servers
+
+FlowDrop uses two servers during development:
+
+| Server | Port | Purpose |
+|---|---|---|
+| FlowDrop API (`example-server-express`) | 3001 | Nodes, workflows, categories, port config |
+| Agent Spec Runtime (this server) | 8000 | Flow execution, validation, agents, tools |
+
+```bash
+# Terminal 1 — Start the Agent Spec runtime
+cd apps/example-server-agentspec
+pip install -e .
+uvicorn agentspec_server.main:app --reload --port 8000
+
+# Terminal 2 — Start the FlowDrop API server
+cd apps/example-server-express
+npm install
+npm run dev
+```
+
+### Connecting from a FlowDrop Client
+
+FlowDrop's `AgentSpecExecutionService` is a singleton that manages the connection
+to this runtime. Here's how to wire it up in your application:
+
+#### 1. Configure the Service
+
+```typescript
+import { AgentSpecExecutionService } from '@d34dman/flowdrop';
+import { createAgentSpecEndpointConfig } from '@d34dman/flowdrop/core';
+
+const service = AgentSpecExecutionService.getInstance();
+
+// Default: connects to http://localhost:8000 (this server)
+service.configure(createAgentSpecEndpointConfig('http://localhost:8000'));
+
+// Or with authentication
+service.configure(createAgentSpecEndpointConfig('https://your-runtime.example.com', {
+  auth: { type: 'bearer', token: 'your-api-key' },
+  timeout: 120000
+}));
+```
+
+#### 2. Check Runtime Health
+
+```typescript
+const healthy = await service.checkHealth();
+if (!healthy) {
+  console.error('Agent Spec runtime is not responding on port 8000');
+}
+```
+
+#### 3. Execute a Workflow
+
+```typescript
+// Execute a StandardWorkflow — the service handles conversion to Agent Spec format
+const handle = await service.executeWorkflow(
+  workflow,                         // StandardWorkflow from FlowDrop editor
+  { user_prompt: 'Hello, world!' }, // Input values for the flow
+  {
+    onNodeUpdate: (nodeId, info) => {
+      // Called each poll cycle with per-node status
+      // info.status: 'idle' | 'pending' | 'running' | 'completed' | 'failed'
+      console.log(`Node ${nodeId}: ${info.status}`);
+    },
+    onComplete: (results) => {
+      console.log('Workflow completed:', results);
+    },
+    onError: (error) => {
+      console.error('Workflow failed:', error.message);
+    }
+  },
+  2000 // polling interval in ms (default)
+);
+
+// Cancel if needed
+await service.cancelExecution(handle.executionId);
+
+// Or stop polling without cancelling
+handle.stop();
+```
+
+#### 4. Validate Before Executing
+
+```typescript
+const validation = await service.validateOnRuntime(workflow);
+if (!validation.valid) {
+  console.error('Flow validation errors:', validation.errors);
+}
+```
+
+### How It Works
+
+```
+FlowDrop UI
+  │
+  ├── User designs a workflow in the visual editor
+  │
+  ├── AgentSpecAdapter.toAgentSpec(workflow)
+  │     Converts StandardWorkflow → Agent Spec flow JSON
+  │
+  ├── POST http://localhost:8000/flows/execute
+  │     { flow: <AgentSpecFlow>, inputs: {...} }
+  │     Returns: { execution_id: "exec-abc123", status: "running" }
+  │
+  ├── GET http://localhost:8000/executions/exec-abc123  (polls every 2s)
+  │     Returns: { status: "running", node_statuses: { "llm": { status: "running", ... } } }
+  │     → onNodeUpdate callback fires for each node
+  │
+  └── GET http://localhost:8000/executions/exec-abc123/results
+        Returns: { response: "Paris is the capital of France." }
+        → onComplete callback fires
+```
+
+### Using with the Docker Client
+
+The [Docker client example](../example-client-docker/) can be configured via environment
+variables to connect to this runtime:
+
+```bash
+# .env for the Docker client
+FLOWDROP_API_BASE_URL=http://localhost:3001/api/flowdrop
+```
+
+Start all three services together:
+
+```bash
+# Terminal 1 — Agent Spec runtime (this server)
+cd apps/example-server-agentspec && uvicorn agentspec_server.main:app --reload --port 8000
+
+# Terminal 2 — FlowDrop API server
+cd apps/example-server-express && npm run dev
+
+# Terminal 3 — FlowDrop UI (Docker client)
+cd apps/example-client-docker && npm run dev
+```
+
+Then open the FlowDrop UI, create an Agent Spec workflow with LLM nodes, and hit execute.
+The UI will show real-time node status updates as the runtime processes each node.
