@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // Load the committed schema directly from disk (avoids bundler issues in tests)
-const schemaPath = resolve(__dirname, '../../../schemas/v1/workflow.schema.json');
+const schemaPath = resolve(__dirname, '../../../src/lib/schemas/v1/workflow.schema.json');
 const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
 
 describe('Workflow JSON Schema', () => {

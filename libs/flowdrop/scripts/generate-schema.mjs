@@ -3,7 +3,7 @@
  * from the existing OpenAPI YAML component schemas.
  *
  * Usage:
- *   node scripts/generate-schema.mjs          # Generate schemas/v1/workflow.schema.json
+ *   node scripts/generate-schema.mjs          # Generate src/lib/schemas/v1/workflow.schema.json
  *   node scripts/generate-schema.mjs --check  # Verify committed file matches generated output
  */
 
@@ -15,7 +15,7 @@ import { parse as parseYAML } from 'yaml';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const SCHEMAS_DIR = resolve(ROOT, 'api/components/schemas');
-const OUTPUT_PATH = resolve(ROOT, 'schemas/v1/workflow.schema.json');
+const OUTPUT_PATH = resolve(ROOT, 'src/lib/schemas/v1/workflow.schema.json');
 
 // ---------------------------------------------------------------------------
 // 1. Load and parse all YAML source files
