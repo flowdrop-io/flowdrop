@@ -1,0 +1,1078 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowdrop.io/schemas/v1/workflow.schema.json",
+  "title": "FlowDrop Workflow",
+  "description": "Schema for a FlowDrop workflow document. Validates the structure of workflows created by the FlowDrop visual workflow editor.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Workflow UUID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Workflow name",
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "description": "Workflow description",
+      "maxLength": 1000
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/WorkflowNode"
+      },
+      "description": "Workflow nodes"
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/WorkflowEdge"
+      },
+      "description": "Workflow edges"
+    },
+    "metadata": {
+      "$ref": "#/$defs/WorkflowMetadata"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "nodes",
+    "edges",
+    "metadata"
+  ],
+  "$defs": {
+    "AutocompleteConfig": {
+      "type": "object",
+      "description": "Configuration for autocomplete fields that fetch suggestions from a callback URL.\nUsed when format is \"autocomplete\".\n",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "The callback URL to fetch autocomplete suggestions from.\nCan be relative (resolved against API base URL) or absolute.\n"
+        },
+        "queryParam": {
+          "type": "string",
+          "default": "q",
+          "description": "Query parameter name to pass the search term"
+        },
+        "minChars": {
+          "type": "integer",
+          "default": 0,
+          "description": "Minimum number of characters before fetching suggestions.\nSet to 0 to fetch immediately on focus (when fetchOnFocus is true).\n"
+        },
+        "debounceMs": {
+          "type": "integer",
+          "default": 300,
+          "description": "Debounce delay in milliseconds before fetching suggestions"
+        },
+        "fetchOnFocus": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to fetch all options when the field is focused"
+        },
+        "labelField": {
+          "type": "string",
+          "default": "label",
+          "description": "The field name in the response objects to use as the display label"
+        },
+        "valueField": {
+          "type": "string",
+          "default": "value",
+          "description": "The field name in the response objects to use as the stored value"
+        },
+        "allowFreeText": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to allow values that are not in the suggestions list.\nWhen true, users can enter and submit any text.\n"
+        },
+        "multiple": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to allow multiple selections.\nWhen true, users can select multiple values displayed as tags.\n"
+        }
+      },
+      "required": [
+        "url"
+      ]
+    },
+    "Branch": {
+      "type": "object",
+      "description": "Branch configuration for gateway nodes.\nBranches define conditional output paths in gateway/switch nodes.\nEach branch creates an output handle that can be connected to downstream nodes.\n\nBranches are stored in `config.branches` array and support dynamic addition/removal\nthrough the node configuration panel.\n",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique identifier for the branch (used as handle ID)"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display label shown in the UI"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of when this branch is activated"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Optional condition expression for this branch"
+        },
+        "isDefault": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this is the default/fallback branch"
+        }
+      },
+      "required": [
+        "name",
+        "label"
+      ]
+    },
+    "ConfigProperty": {
+      "type": "object",
+      "description": "JSON Schema property definition for node configuration.\nFollows JSON Schema draft-07 specification with FlowDrop extensions for UI rendering.\n\nFor select/dropdown fields, use standard JSON Schema patterns:\n- `enum` for simple value lists (no labels)\n- `oneOf` with `const`/`title` for labeled options\n",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "integer"
+          ],
+          "description": "JSON Schema type"
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title for the property"
+        },
+        "description": {
+          "type": "string",
+          "description": "Property description"
+        },
+        "default": {
+          "description": "Default value for the property"
+        },
+        "enum": {
+          "type": "array",
+          "items": {},
+          "description": "Allowed values for enum properties (simple values without labels).\nFor labeled options, use `oneOf` with `const`/`title` instead.\n"
+        },
+        "oneOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OneOfItem"
+          },
+          "description": "JSON Schema oneOf for labeled options (standard approach).\nEach item should have `const` (value) and optionally `title` (label).\n\nExample:\n```json\n\"oneOf\": [\n  { \"const\": \"draft\", \"title\": \"Draft\" },\n  { \"const\": \"published\", \"title\": \"Published\" }\n]\n```\n"
+        },
+        "multiple": {
+          "type": "boolean",
+          "description": "For enum/oneOf fields, allows multiple selection (renders as checkbox group)"
+        },
+        "minimum": {
+          "type": "number",
+          "description": "Minimum value for numeric properties"
+        },
+        "maximum": {
+          "type": "number",
+          "description": "Maximum value for numeric properties"
+        },
+        "step": {
+          "type": "number",
+          "description": "Step increment for number/range inputs"
+        },
+        "minLength": {
+          "type": "integer",
+          "description": "Minimum length for string properties"
+        },
+        "maxLength": {
+          "type": "integer",
+          "description": "Maximum length for string properties"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regex pattern for string validation"
+        },
+        "placeholder": {
+          "type": "string",
+          "description": "Placeholder text for input fields"
+        },
+        "format": {
+          "type": "string",
+          "description": "Special format hints for UI rendering:\n\n- `multiline`: Renders as textarea\n- `hidden`: Field is hidden from UI but included in form submission\n- `range`: Renders as range slider for numeric values\n- `json`: Renders as CodeMirror JSON editor\n- `code`: Alias for json, renders as CodeMirror editor\n- `markdown`: Renders as SimpleMDE Markdown editor\n- `template`: Template editor with variable autocomplete (see below)\n- `autocomplete`: Text input with callback URL suggestions\n- `email`, `uri`, `date`, `date-time`: Standard JSON Schema formats\n\n## Template Format Details\n\nThe `template` format renders a CodeMirror editor with:\n\n**Syntax highlighting** for Twig/Liquid-style `{{ variable }}` placeholders\n\n**Inline autocomplete** triggered by:\n- Typing `{{` - Shows available variables\n- Typing `.` after an object - Shows nested properties\n- Typing `[` after an array - Shows index suggestions\n\n**Variable patterns supported:**\n- `{{ user }}` - Simple variable\n- `{{ user.name }}` - Nested property access\n- `{{ user.address.city }}` - Deep nesting\n- `{{ items[0] }}` - Array index access\n- `{{ orders[0].product.name }}` - Combined patterns\n\n**Autocomplete source:**\nVariables are derived from connected upstream nodes that have output\nschemas defined. Use the `variables` property to configure which\ninput ports provide variables.\n",
+          "enum": [
+            "multiline",
+            "hidden",
+            "range",
+            "json",
+            "code",
+            "markdown",
+            "template",
+            "autocomplete",
+            "email",
+            "uri",
+            "date",
+            "date-time"
+          ]
+        },
+        "variables": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/TemplateVariablesConfig"
+            },
+            {
+              "description": "Configuration for template variable autocomplete.\nOnly applicable when `format: \"template\"`.\nSee TemplateVariablesConfig for full documentation.\n"
+            }
+          ]
+        },
+        "x-display-order": {
+          "type": "integer",
+          "description": "Controls the display order of fields in the configuration form.\nFields are sorted by this value in ascending order (lower values appear first).\n\nUse negative values to ensure fields appear at the top:\n- `-2` for `instanceTitle` (appears first)\n- `-1` for `instanceDescription` (appears second)\n- `0` or positive values for regular fields\n\nFields without `x-display-order` are sorted after fields with explicit ordering.\n"
+        },
+        "items": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ConfigProperty"
+            },
+            {
+              "description": "Schema for array items"
+            }
+          ]
+        },
+        "minItems": {
+          "type": "integer",
+          "description": "Minimum number of items for array fields"
+        },
+        "maxItems": {
+          "type": "integer",
+          "description": "Maximum number of items for array fields"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/ConfigProperty"
+          },
+          "description": "Property schemas for object fields"
+        },
+        "autocomplete": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/AutocompleteConfig"
+            },
+            {
+              "description": "Configuration for autocomplete fields (when format is \"autocomplete\")"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "ConfigSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "object"
+          ]
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/ConfigProperty"
+          },
+          "description": "Configuration properties"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required property names"
+        },
+        "additionalProperties": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "type",
+        "properties"
+      ]
+    },
+    "DynamicPort": {
+      "type": "object",
+      "description": "Dynamic port configuration for user-defined inputs/outputs.\nThese are defined in the node's config and allow users to create\ncustom input/output handles at runtime, similar to gateway branches.\n\nDynamic ports are stored in `config.dynamicInputs` and `config.dynamicOutputs`\narrays and are rendered alongside static ports defined in the node metadata.\n",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique identifier for the port (used for handle IDs and connections)"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display label shown in the UI"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what this port accepts/provides"
+        },
+        "dataType": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/NodeDataType"
+            },
+            {
+              "description": "Data type for the port (affects color and connection validation)"
+            }
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this port is required for execution"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "dataType"
+      ]
+    },
+    "NodeCategory": {
+      "type": "string",
+      "description": "Node category for organizing nodes in the sidebar.\n\nAny string value is accepted, allowing custom categories.\nCustom categories can be defined via the `/categories` endpoint\nwith display labels, icons, and colors.\n\nBuilt-in categories with dedicated icons and colors:\ntriggers, inputs, outputs, prompts, models, processing,\nlogic, data, tools, helpers, vector stores, embeddings,\nmemories, agents, ai, interrupts, bundles\n"
+    },
+    "NodeConfig": {
+      "type": "object",
+      "description": "Node configuration values containing all user-configured settings for a node instance.\n\nThis object stores configuration based on the node type's `configSchema` and is used by\nthe backend to:\n- **Store and retrieve** node configuration persistently\n- **Pass values** to node processors during workflow execution\n- **Persist state** across sessions\n\n## Standard Properties\n\nAny property defined in the node's `configSchema` (e.g., model, temperature, apiKey).\nThe schema defines the type, validation rules, and default values for each property.\n\n## Reserved Property Names\n\nThese property names have special meaning and trigger automatic behaviors in FlowDrop:\n\n### Instance Display Overrides\n\n- **`instanceTitle`**: Per-instance title override (replaces the default `label` display)\n- **`instanceDescription`**: Per-instance description override (replaces `metadata.description` display)\n- **`instanceBadge`**: Per-instance badge label override (replaces the default `metadata.badge` or \"TOOL\" badge)\n\n### Visual Type Selection\n\n- **`nodeType`**: Changes the visual rendering type of the node (e.g., \"default\", \"simple\", \"square\")\n\n### Dynamic Ports\n\n- **`dynamicInputs`**: Array of DynamicPort for user-defined input handles\n- **`dynamicOutputs`**: Array of DynamicPort for user-defined output handles\n- **`branches`**: Array of Branch for gateway node conditional output paths\n\nThese dynamic configuration values generate additional handles on the node\nthat can be connected to other nodes in the workflow.\n",
+      "properties": {
+        "instanceTitle": {
+          "type": "string",
+          "description": "Per-instance title override that replaces the default node label.\nUseful when you have multiple instances of the same node type and want\nto give each a meaningful name (e.g., \"Email Summarizer\" instead of \"LLM Processor\").\n\nFallback behavior:\n- If `instanceTitle` is set → displays `instanceTitle`\n- If not set → displays `label` (from node data)\n"
+        },
+        "instanceDescription": {
+          "type": "string",
+          "description": "Per-instance description override that replaces the default `metadata.description`.\nUseful for documenting what a specific node instance does within your workflow.\n\nFallback behavior:\n- If `instanceDescription` is set → displays `instanceDescription`\n- If not set → displays `metadata.description` (from node type definition)\n"
+        },
+        "instanceBadge": {
+          "type": "string",
+          "description": "Per-instance badge label override for tool nodes.\nReplaces the default badge text shown in the node header.\n\nFallback behavior:\n- If `instanceBadge` is set → displays `instanceBadge`\n- If not set → displays `metadata.badge` (from node type definition)\n- If neither set → displays \"TOOL\"\n"
+        },
+        "nodeType": {
+          "type": "string",
+          "description": "Changes how the node is visually rendered. This allows a single node definition\nto support multiple visual representations.\n\nAvailable built-in types:\n- `default`: Standard workflow node with full details\n- `simple`: Compact layout with minimal chrome\n- `square`: Geometric square layout (icon-only)\n- `tool`: Specialized style for agent tools\n- `gateway`: Branching control flow visualization\n- `terminal`: Start/end/exit node styling\n- `note`: Sticky note style for annotations\n\nThe node's `metadata.supportedTypes` defines which types are allowed.\nIf invalid or missing, falls back to `metadata.type` or \"default\".\n",
+          "enum": [
+            "default",
+            "simple",
+            "square",
+            "tool",
+            "gateway",
+            "terminal",
+            "note"
+          ]
+        },
+        "dynamicInputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DynamicPort"
+          },
+          "description": "User-defined dynamic input ports that appear as additional input handles"
+        },
+        "dynamicOutputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DynamicPort"
+          },
+          "description": "User-defined dynamic output ports that appear as additional output handles"
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Branch"
+          },
+          "description": "Gateway node branches that define conditional output paths"
+        }
+      },
+      "additionalProperties": true
+    },
+    "NodeDataType": {
+      "type": "string",
+      "description": "Data type for node ports. The available data types are configured\ndynamically through the port configuration system.\n"
+    },
+    "NodeExecutionInfo": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/NodeExecutionStatus"
+        },
+        "executionCount": {
+          "type": "integer",
+          "description": "Total number of times this node has been executed"
+        },
+        "lastExecuted": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last execution timestamp"
+        },
+        "lastExecutionDuration": {
+          "type": "integer",
+          "description": "Last execution duration in milliseconds"
+        },
+        "lastError": {
+          "type": "string",
+          "description": "Last error message if execution failed"
+        },
+        "isExecuting": {
+          "type": "boolean",
+          "description": "Whether the node is currently being executed"
+        }
+      },
+      "required": [
+        "status",
+        "executionCount",
+        "isExecuting"
+      ]
+    },
+    "NodeExecutionStatus": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "pending",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "skipped"
+      ],
+      "description": "Current execution status of a node"
+    },
+    "NodeExtensions": {
+      "type": "object",
+      "description": "Custom extension properties for 3rd party integrations.\nAllows storing additional configuration and UI state data.\n\nUse namespaced keys (e.g., \"myapp:analytics\", \"acme:settings\") to avoid conflicts\nbetween different integrations.\n\n## Reserved Extension Keys\n\n- `agentspec:component_type` — Stores the Oracle Open Agent Spec component type\n  (e.g., \"llm_node\", \"branching_node\") for nodes imported from Agent Spec.\n  Used for round-trip preservation during import/export.\n",
+      "properties": {
+        "ui": {
+          "$ref": "#/$defs/NodeUIExtensions"
+        },
+        "agentspec:component_type": {
+          "type": "string",
+          "description": "Agent Spec component type for round-trip preservation.\nSet automatically when importing from Agent Spec format.\n"
+        }
+      },
+      "additionalProperties": true
+    },
+    "NodeMetadata": {
+      "type": "object",
+      "description": "Complete metadata for a node type including ports, configuration schema, and extensions.\n\n## Dynamic Port Support\n\nNodes can support user-defined dynamic ports through their configSchema:\n- Add `dynamicInputs` array property to allow custom input handles\n- Add `dynamicOutputs` array property to allow custom output handles\n- Add `branches` array property for gateway nodes with conditional paths\n\n## Extensions Support\n\nThe `extensions` property allows storing UI settings and 3rd party data:\n- Use `extensions.ui.hideUnconnectedHandles` to hide unconnected ports by default\n- Use namespaced keys for custom integrations (e.g., \"myapp:settings\")\n",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node type unique identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Node type display name"
+        },
+        "type": {
+          "$ref": "#/$defs/NodeType"
+        },
+        "supportedTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NodeType"
+          },
+          "description": "Array of supported rendering types"
+        },
+        "description": {
+          "type": "string",
+          "description": "Node type description"
+        },
+        "category": {
+          "$ref": "#/$defs/NodeCategory"
+        },
+        "version": {
+          "type": "string",
+          "description": "Node type version"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon identifier (Material Design Icons)"
+        },
+        "color": {
+          "type": "string",
+          "description": "Node color (CSS color value)"
+        },
+        "badge": {
+          "type": "string",
+          "description": "Default badge label displayed in the node header (e.g., \"TOOL\", \"API\", \"LLM\").\nCurrently used by tool nodes. Can be overridden per-instance via `config.instanceBadge`.\nDefaults to \"TOOL\" for tool nodes if not specified.\n"
+        },
+        "portDataType": {
+          "type": "string",
+          "description": "Port dataType to expose on tool nodes. Defaults to \"tool\".\nSet to another type (e.g., \"trigger\") to show that port type instead.\nThis allows repurposing the tool node with a custom badge and matching port type.\n"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NodePort"
+          },
+          "description": "Static input ports defined by the node type.\nAdditional dynamic inputs can be added via config.dynamicInputs.\n"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NodePort"
+          },
+          "description": "Static output ports defined by the node type.\nAdditional dynamic outputs can be added via config.dynamicOutputs.\nFor gateway nodes, branches create additional output handles.\n"
+        },
+        "configSchema": {
+          "$ref": "#/$defs/ConfigSchema"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Node tags for search and filtering"
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Workflow formats this node is compatible with.\nWhen omitted, the node is universal (compatible with all formats).\nWhen specified, the node only appears in the sidebar for workflows\nmatching one of the listed formats.\n"
+        },
+        "extensions": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/NodeExtensions"
+            },
+            {
+              "description": "Default extension properties for all instances of this node type.\nCan be overridden at the instance level via WorkflowNode.data.extensions.\n"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "category",
+        "version",
+        "inputs",
+        "outputs"
+      ]
+    },
+    "NodePort": {
+      "type": "object",
+      "description": "Defines an input or output port on a node.\n\nPorts are connection points where data flows between nodes. Input ports\nreceive data from upstream nodes, and output ports send data to downstream nodes.\n\n## Template Variable Autocomplete\n\nOutput ports can include a `schema` property that describes the structure of\ntheir data. This schema is used by downstream nodes' template fields to provide\nautocomplete suggestions.\n\nWhen a template field is connected to a port with a schema, users get:\n- Autocomplete for top-level properties when typing `{{`\n- Nested property drilling when typing `.`\n- Array index suggestions when typing `[`\n",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Port unique identifier (used in handle IDs and variable names)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Port display name shown in the UI"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "input",
+            "output",
+            "metadata"
+          ],
+          "description": "Port direction (input receives data, output sends data)"
+        },
+        "dataType": {
+          "$ref": "#/$defs/NodeDataType"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the port must be connected for the node to execute"
+        },
+        "description": {
+          "type": "string",
+          "description": "Help text describing what data the port expects or provides"
+        },
+        "defaultValue": {
+          "description": "Default value used when no connection provides data"
+        },
+        "schema": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/PortDataSchema"
+            },
+            {
+              "description": "JSON Schema describing the structure of data on this output port.\n\n**Purpose:** Enables template variable autocomplete in downstream nodes.\nWhen a downstream node has a template field connected to this port,\nthe schema's properties become available as autocomplete suggestions.\n\n**How it works:**\n1. Define a schema with `properties` on an output port\n2. Connect this port to a downstream node's input\n3. In the downstream node's template field, typing `{{` shows the schema's properties\n\n**Example:**\n\n```yaml\noutputs:\n  - id: json\n    name: JSON Response\n    type: output\n    dataType: json\n    schema:\n      type: object\n      properties:\n        user:\n          type: object\n          properties:\n            name: { type: string }\n            email: { type: string }\n        orders:\n          type: array\n          items:\n            type: object\n            properties:\n              id: { type: string }\n              total: { type: number }\n```\n\nThis enables autocomplete for:\n- `{{ user }}`, `{{ orders }}`\n- `{{ user.name }}`, `{{ user.email }}`\n- `{{ orders[0].id }}`, `{{ orders[0].total }}`\n"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "dataType"
+      ]
+    },
+    "NodeType": {
+      "type": "string",
+      "enum": [
+        "note",
+        "simple",
+        "square",
+        "tool",
+        "gateway",
+        "terminal",
+        "default"
+      ],
+      "description": "Visual rendering type for the node.\n\nBuilt-in types:\n- `note` - Sticky note with markdown support\n- `simple` - Compact layout with header and description\n- `square` - Minimal square node with centered icon\n- `tool` - Specialized node for agent tools\n- `gateway` - Branching control flow with dynamic branches (uses config.branches)\n- `terminal` - Circular node for workflow start/end/exit points\n- `default` - Full-featured workflow node with dynamic port support\n\n## Dynamic Port Support\n\nThe `default` and `gateway` node types support dynamic ports:\n\n- **default**: Supports `config.dynamicInputs` and `config.dynamicOutputs`\n  for user-defined input/output handles\n- **gateway**: Supports `config.branches` for conditional branching paths\n\n## UI Extensions\n\nAll node types support `extensions.ui.hideUnconnectedHandles` to control\nvisibility of unconnected ports.\n"
+    },
+    "NodeUIExtensions": {
+      "type": "object",
+      "description": "UI-related extension settings for nodes.\nUsed to control visual behavior in the workflow editor.\n\nThese settings can be defined at two levels:\n1. **Node Type Level** (`metadata.extensions.ui`): Default settings for all instances\n2. **Instance Level** (`data.extensions.ui`): Override for specific node instances\n\nInstance-level settings take precedence over type-level defaults.\n",
+      "properties": {
+        "hideUnconnectedHandles": {
+          "type": "boolean",
+          "description": "Show/hide unconnected handles (ports) to reduce visual noise.\nWhen true, only ports with active connections are displayed.\nUseful for nodes with many optional ports.\n"
+        },
+        "style": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Custom styles or theme overrides"
+        }
+      },
+      "additionalProperties": true
+    },
+    "OneOfItem": {
+      "type": "object",
+      "description": "JSON Schema oneOf item for labeled options.\nThis is the standard JSON Schema way to define labeled select options.\n\nExample:\n```json\n{\n  \"type\": \"string\",\n  \"oneOf\": [\n    { \"const\": \"draft\", \"title\": \"Draft\" },\n    { \"const\": \"published\", \"title\": \"Published\" }\n  ]\n}\n```\n",
+      "properties": {
+        "const": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            }
+          ],
+          "description": "The constant value for this option (JSON Schema `const` keyword)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable label for this option"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description for this option"
+        }
+      },
+      "required": [
+        "const"
+      ]
+    },
+    "PortDataSchema": {
+      "type": "object",
+      "description": "JSON Schema describing the structure of data on an output port.\nFollows JSON Schema draft-07 specification.\n\n## Purpose\n\nEnables template variable autocomplete in downstream nodes by describing\nthe shape of data that flows through the port.\n\n## Supported Features\n\n- **Objects**: Define `properties` to enable dot notation drilling\n- **Arrays**: Define `items` to enable index access and item property drilling\n- **Nested structures**: Combine objects and arrays for deep drilling\n- **Metadata**: Use `title` and `description` for autocomplete tooltips\n\n## Example\n\nA schema describing an API response with user data and orders:\n\n```yaml\ntype: object\nproperties:\n  user:\n    type: object\n    title: User\n    description: The authenticated user\n    properties:\n      id: { type: integer }\n      name: { type: string, description: \"User's full name\" }\n      email: { type: string }\n      address:\n        type: object\n        properties:\n          city: { type: string }\n          country: { type: string }\n  orders:\n    type: array\n    title: Orders\n    description: User's order history\n    items:\n      type: object\n      properties:\n        order_id: { type: string }\n        total: { type: number }\n        status: { type: string }\n```\n\nThis enables template patterns like:\n- `{{ user.name }}` - Access user's name\n- `{{ user.address.city }}` - Nested property access\n- `{{ orders[0].total }}` - First order's total\n- `{{ orders[0].status }}` - First order's status\n",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "object",
+            "array",
+            "string",
+            "number",
+            "integer",
+            "boolean"
+          ],
+          "description": "The JSON Schema type. Use `object` for nested properties,\n`array` for lists with `items` schema.\n"
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable title shown in autocomplete dropdown.\nIf not provided, the property name is used.\n"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description shown as tooltip in autocomplete.\nHelps users understand what data the property contains.\n"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/PortDataSchema"
+          },
+          "description": "Property schemas for object types"
+        },
+        "items": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/PortDataSchema"
+            },
+            {
+              "description": "Item schema for array types"
+            }
+          ]
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required property names"
+        }
+      }
+    },
+    "Position": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "X coordinate"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y coordinate"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    },
+    "TemplateVariable": {
+      "type": "object",
+      "description": "Represents a variable available for template interpolation.\nUsed by the template editor for autocomplete suggestions.\n\nSupports hierarchical drilling:\n- Objects have `properties` for dot notation (e.g., `user.name`)\n- Arrays have `items` for index access (e.g., `items[0].name`)\n",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variable name (used in template as {{ name }})"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display label for the variable in autocomplete dropdown"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description shown in autocomplete tooltip"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "integer",
+            "boolean",
+            "array",
+            "object",
+            "float",
+            "mixed"
+          ],
+          "description": "Data type of the variable"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/TemplateVariable"
+          },
+          "description": "For objects - child properties accessible via dot notation"
+        },
+        "items": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/TemplateVariable"
+            },
+            {
+              "description": "For arrays - schema of array items accessible via index notation"
+            }
+          ]
+        },
+        "sourcePort": {
+          "type": "string",
+          "description": "Source port ID this variable comes from"
+        },
+        "sourceNode": {
+          "type": "string",
+          "description": "Source node ID"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ]
+    },
+    "TemplateVariablesConfig": {
+      "type": "object",
+      "description": "Configuration for template variable autocomplete in template fields.\n\n## Overview\n\nWhen a template field is connected to upstream nodes that have output schemas,\nFlowDrop automatically derives available variables for autocomplete. This config\ncontrols which ports provide variables and how they are presented.\n\n## Variable Derivation\n\nVariables are derived from connected upstream nodes' **output port schemas**.\nWhen an output port has a `schema` property with `properties`, those properties\nbecome available as template variables.\n\n### Default Behavior (includePortName: false)\n\nSchema properties are **unpacked as top-level variables**:\n\n```\nHTTP Request node (output port \"json\" with schema):\n  schema.properties: { user: {...}, orders: {...} }\n                          ↓\nTemplate variables: {{ user }}, {{ orders }}\n```\n\n### With includePortName: true\n\nVariables are **prefixed with the port name**:\n\n```\nSame schema as above:\n                          ↓\nTemplate variables: {{ data.user }}, {{ data.orders }}\n```\n\n## Nested Property Access\n\nThe autocomplete supports drilling into nested structures:\n\n- **Dot notation**: `{{ user.address.city }}`\n- **Array indices**: `{{ orders[0].product_name }}`\n- **Combined**: `{{ user.orders[0].items[1].price }}`\n",
+      "properties": {
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Specifies which input port IDs should provide variables for autocomplete.\nOnly connections to these ports will contribute variables.\n\n**Behavior:**\n- If not specified: All input ports with connections are used\n- If empty array `[]`: No variables derived from ports (use with `schema` for static variables)\n- If specified: Only the listed ports contribute variables\n\n**Example:** A node with inputs \"data\", \"context\", and \"trigger\":\n- `ports: [\"data\"]` - Only variables from the \"data\" connection\n- `ports: [\"data\", \"context\"]` - Variables from both connections\n- Not specified - Variables from all non-trigger connections\n"
+        },
+        "schema": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/VariableSchema"
+            },
+            {
+              "description": "Pre-defined variable schema to provide static variables or override derived ones.\n\nWhen both `ports` and `schema` are specified, variables are **merged**:\n- Variables from connected ports are computed first\n- Static `schema` variables are added/override existing ones\n\n**Use cases:**\n- Provide variables that don't come from connections\n- Override labels or descriptions for derived variables\n- Add custom variables for specific use cases\n"
+            }
+          ]
+        },
+        "includePortName": {
+          "type": "boolean",
+          "default": false,
+          "description": "Controls how variables are named when derived from port schemas.\n\n**When false (default):**\nSchema properties become top-level variables directly.\nA port with schema `{ user: {...}, orders: {...} }` produces:\n- `{{ user }}`\n- `{{ orders }}`\n\n**When true:**\nVariables are prefixed with the input port name.\nSame schema connected to input port \"data\" produces:\n- `{{ data.user }}`\n- `{{ data.orders }}`\n\n**When to use true:**\n- Multiple input ports with potentially overlapping property names\n- You want to be explicit about data sources in templates\n- Backward compatibility with existing templates\n"
+        },
+        "showHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to display clickable variable hints below the editor.\n\nWhen enabled, shows a row of buttons for top-level variables that users\ncan click to insert `{{ variableName }}` at the cursor position.\n\nDisable if the variable list is too long or not useful.\n"
+        }
+      }
+    },
+    "VariableSchema": {
+      "type": "object",
+      "description": "Schema passed to template editor for autocomplete functionality.\nContains all available variables derived from connected upstream nodes.\n\nThis is computed by the frontend based on:\n1. Finding all edges that connect to the current node's input ports\n2. Getting the output schemas from the source nodes' output ports\n3. Building a hierarchical variable structure for autocomplete\n",
+      "properties": {
+        "variables": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/TemplateVariable"
+          },
+          "description": "Map of available variables keyed by variable name"
+        }
+      },
+      "required": [
+        "variables"
+      ]
+    },
+    "WorkflowEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Edge UUID"
+        },
+        "source": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Source node UUID"
+        },
+        "target": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Target node UUID"
+        },
+        "sourceHandle": {
+          "type": "string",
+          "description": "Source port ID"
+        },
+        "targetHandle": {
+          "type": "string",
+          "description": "Target port ID"
+        },
+        "type": {
+          "type": "string",
+          "description": "Connection line type",
+          "enum": [
+            "default",
+            "straight",
+            "step",
+            "smoothstep"
+          ]
+        },
+        "selectable": {
+          "type": "boolean",
+          "default": true
+        },
+        "deletable": {
+          "type": "boolean",
+          "default": true
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Edge label"
+            },
+            "condition": {
+              "type": "string",
+              "description": "Conditional expression for conditional edges"
+            },
+            "metadata": {
+              "type": "object",
+              "description": "Edge metadata for API and persistence",
+              "properties": {
+                "edgeType": {
+                  "type": "string",
+                  "enum": [
+                    "trigger",
+                    "tool",
+                    "data"
+                  ],
+                  "description": "Edge type for visual styling"
+                },
+                "sourcePortDataType": {
+                  "type": "string",
+                  "description": "Data type of the source output port (e.g., tool, string, number)"
+                }
+              }
+            },
+            "isToolConnection": {
+              "type": "boolean",
+              "description": "Whether this is a tool connection (deprecated, use metadata.edgeType instead)"
+            },
+            "targetNodeType": {
+              "type": "string",
+              "description": "Target node type"
+            },
+            "targetCategory": {
+              "type": "string",
+              "description": "Target node category"
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "target"
+      ]
+    },
+    "WorkflowMetadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Workflow version"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        },
+        "author": {
+          "type": "string",
+          "description": "Workflow author"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Workflow tags"
+        },
+        "versionId": {
+          "type": "string",
+          "description": "Version control ID"
+        },
+        "updateNumber": {
+          "type": "integer",
+          "description": "Update sequence number"
+        },
+        "format": {
+          "type": "string",
+          "description": "Workflow format identifier. Determines which node types are shown\nin the sidebar and how the workflow is exported.\nBuilt-in formats: 'flowdrop' (default), 'agentspec'.\nCustom formats can be registered via WorkflowFormatRegistry.\n",
+          "default": "flowdrop"
+        }
+      },
+      "required": [
+        "version",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WorkflowNode": {
+      "type": "object",
+      "description": "Represents a node instance in a workflow.\n\nEach node instance contains:\n- Position on the canvas\n- Display data (label)\n- Configuration values (config) - user-defined settings\n- Metadata from the node type definition\n- Optional execution state and extensions\n",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Node instance UUID"
+        },
+        "type": {
+          "type": "string",
+          "description": "Node type ID (references NodeMetadata.id)"
+        },
+        "position": {
+          "$ref": "#/$defs/Position"
+        },
+        "deletable": {
+          "type": "boolean",
+          "default": true
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Node instance label"
+            },
+            "config": {
+              "$ref": "#/$defs/NodeConfig"
+            },
+            "metadata": {
+              "$ref": "#/$defs/NodeMetadata"
+            },
+            "isProcessing": {
+              "type": "boolean",
+              "description": "Whether the node is currently processing"
+            },
+            "error": {
+              "type": "string",
+              "description": "Error message if node execution failed"
+            },
+            "nodeId": {
+              "type": "string",
+              "description": "Alternative node ID"
+            },
+            "executionInfo": {
+              "$ref": "#/$defs/NodeExecutionInfo"
+            },
+            "extensions": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/NodeExtensions"
+                },
+                {
+                  "description": "Per-instance extension properties for 3rd party integrations.\nOverrides or extends the node type extensions defined in metadata.extensions.\nUse for instance-specific UI states or custom data.\n\nCommon use cases:\n- `extensions.ui.hideUnconnectedHandles`: Hide ports without connections\n- `extensions.ui.style`: Custom styling for this node instance\n"
+                }
+              ]
+            }
+          },
+          "required": [
+            "label",
+            "config",
+            "metadata"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "position",
+        "data"
+      ]
+    }
+  }
+}

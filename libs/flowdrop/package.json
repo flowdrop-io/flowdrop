@@ -70,7 +70,6 @@
 	},
 	"files": [
 		"dist",
-		"schemas",
 		"!dist/**/*.test.*",
 		"!dist/**/*.spec.*"
 	],
@@ -136,10 +135,10 @@
 		"./styles": "./dist/styles/base.css",
 		"./styles/*": "./dist/styles/*",
 		"./schema": {
-			"default": "./schemas/v1/workflow.schema.json"
+			"default": "./dist/schemas/v1/workflow.schema.json"
 		},
 		"./schema/v1": {
-			"default": "./schemas/v1/workflow.schema.json"
+			"default": "./dist/schemas/v1/workflow.schema.json"
 		}
 	},
 	"peerDependencies": {
