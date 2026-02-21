@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.59] - 2026-02-21
+
+### Fixed
+
+- **Schema import paths in dist output**: Moved `schemas/` into `src/lib/` so svelte-package correctly rewrites `$lib` alias to relative paths — previously dist output escaped the package boundary
+- **README images on npmjs.com**: Replaced relative image paths with absolute `raw.githubusercontent.com` URLs so images render on the npm package page
+
 ## [0.0.58] - 2026-02-19
 
 ### Added
