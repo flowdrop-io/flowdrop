@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>FlowDrop Playground</title>
+	<meta name="description" content="Try FlowDrop — an open-source visual workflow editor built with Svelte 5. Build beautiful workflow editors in minutes, not months.">
+	<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+	<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+	<!-- Hero -->
+	<section class="hero">
+		<img src="/assets/logo.svg" alt="FlowDrop" class="hero-logo">
+		<h1>
+			Build workflow editors<br>
+			<span class="highlight">in minutes, not months.</span>
+		</h1>
+		<p class="hero-subtitle">
+			An open-source visual workflow editor built with Svelte 5.
+			You own the backend. You own the data. You own the orchestration.
+		</p>
+		<div class="hero-actions">
+			<a href="/editor" class="btn btn-primary">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+				Try FlowDrop
+			</a>
+			<a href="/editor?agentspec" class="btn btn-accent">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+				Try FlowDrop with Agent Spec
+			</a>
+			<a href="https://flowdrop-io.github.io/flowdrop/" class="btn btn-secondary" target="_blank" rel="noopener">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+				API Documentation
+			</a>
+		</div>
+	</section>
+
+	<!-- Features -->
+	<section class="section">
+		<div class="container">
+			<h2 class="section-title">Why FlowDrop?</h2>
+			<p class="section-desc">A pure visual editor — no vendor lock-in, no surprise bills, no data leaving your infrastructure.</p>
+
+			<div class="features-grid">
+				<div class="feature-card">
+					<span class="feature-icon" aria-hidden="true">&#x1F3A8;</span>
+					<h3>Visual Workflow Editor</h3>
+					<p>Drag-and-drop node-based editor with 7 built-in node types — from simple cards to complex gateway logic.</p>
+				</div>
+				<div class="feature-card">
+					<span class="feature-icon" aria-hidden="true">&#x1F916;</span>
+					<h3>Agent Spec Support</h3>
+					<p>Import and export Oracle Open Agent Spec format. Execute flows with the built-in Agent Spec runtime.</p>
+				</div>
+				<div class="feature-card">
+					<span class="feature-icon" aria-hidden="true">&#x1F512;</span>
+					<h3>You Own Everything</h3>
+					<p>Your data stays on your infrastructure. No vendor lock-in, no SaaS dependency, full control always.</p>
+				</div>
+				<div class="feature-card">
+					<span class="feature-icon" aria-hidden="true">&#x1F517;</span>
+					<h3>Backend Agnostic</h3>
+					<p>Pure UI component — connect to any backend. Express, FastAPI, Drupal, Laravel, or your own.</p>
+				</div>
+				<div class="feature-card">
+					<span class="feature-icon" aria-hidden="true">&#x2699;&#xFE0F;</span>
+					<h3>Framework Flexible</h3>
+					<p>Native Svelte 5 component, or embed into React, Vue, Angular, or any framework via web components.</p>
+				</div>
+				<div class="feature-card">
+					<span class="feature-icon" aria-hidden="true">&#x1F680;</span>
+					<h3>Deploy Anywhere</h3>
+					<p>Runtime configuration means build once, deploy everywhere. Docker-ready with full environment variable support.</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Service Status -->
+	<section class="section status-section">
+		<div class="container">
+			<h2 class="section-title">Live Services</h2>
+			<p class="section-desc">This playground runs the full FlowDrop stack. All services are checked in real time.</p>
+
+			<div class="status-grid">
+				<div class="status-card">
+					<span class="status-dot checking" id="express-status"></span>
+					<div class="status-info">
+						<div class="status-name">FlowDrop API (Express)</div>
+						<div class="status-endpoint">/api/flowdrop/health</div>
+					</div>
+				</div>
+				<div class="status-card">
+					<span class="status-dot checking" id="agentspec-status"></span>
+					<div class="status-info">
+						<div class="status-name">Agent Spec Runtime (FastAPI)</div>
+						<div class="status-endpoint">/agentspec/health</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Quick Links -->
+	<section class="section">
+		<div class="container">
+			<h2 class="section-title">Explore</h2>
+			<p class="section-desc">Jump into the editor, browse the APIs, or check out the source code.</p>
+
+			<div class="links-grid">
+				<a href="/editor" class="link-card">
+					<span class="link-icon" aria-hidden="true">&#x270F;&#xFE0F;</span>
+					<span class="link-label">FlowDrop Editor</span>
+					<span class="link-desc">Visual editor with Express backend</span>
+				</a>
+				<a href="/editor?agentspec" class="link-card">
+					<span class="link-icon" aria-hidden="true">&#x1F916;</span>
+					<span class="link-label">FlowDrop + Agent Spec</span>
+					<span class="link-desc">Editor with flow execution</span>
+				</a>
+				<a href="https://flowdrop-io.github.io/flowdrop/" class="link-card" target="_blank" rel="noopener">
+					<span class="link-icon" aria-hidden="true">&#x1F4D6;</span>
+					<span class="link-label">API Reference</span>
+					<span class="link-desc">FlowDrop REST API docs</span>
+				</a>
+				<a href="https://github.com/flowdrop-io/flowdrop" class="link-card" target="_blank" rel="noopener">
+					<span class="link-icon" aria-hidden="true">&#x2B50;</span>
+					<span class="link-label">GitHub</span>
+					<span class="link-desc">Source code &amp; issues</span>
+				</a>
+			</div>
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<div>
+			Powered by <strong>FlowDrop</strong> &mdash; MIT License
+		</div>
+		<div class="footer-links">
+			<a href="https://www.npmjs.com/package/@d34dman/flowdrop" target="_blank" rel="noopener">npm</a>
+			<a href="https://github.com/flowdrop-io/flowdrop" target="_blank" rel="noopener">GitHub</a>
+			<a href="https://flowdrop-io.github.io/flowdrop/" target="_blank" rel="noopener">API Docs</a>
+		</div>
+	</footer>
+
+	<script>
+		async function checkHealth(url, dotId) {
+			const dot = document.getElementById(dotId);
+			try {
+				const resp = await fetch(url);
+				dot.classList.remove('checking');
+				dot.classList.add(resp.ok ? 'healthy' : 'unhealthy');
+			} catch {
+				dot.classList.remove('checking');
+				dot.classList.add('unhealthy');
+			}
+		}
+		checkHealth('/api/flowdrop/health', 'express-status');
+		checkHealth('/agentspec/health', 'agentspec-status');
+	</script>
+
+</body>
+</html>
