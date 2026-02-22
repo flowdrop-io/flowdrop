@@ -172,6 +172,8 @@ export {
 	sessionCount,
 	// Actions
 	playgroundActions,
+	// Polling callback factory
+	createPollingCallback,
 	// Utilities
 	getCurrentSessionId,
 	isSessionSelected,
@@ -202,7 +204,14 @@ export type {
 	PlaygroundMessagesApiResponse
 } from '../types/playground.js';
 
-export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';
+export {
+	isChatInputNode,
+	CHAT_INPUT_PATTERNS,
+	defaultShouldStopPolling,
+	defaultIsTerminalStatus,
+	DEFAULT_STOP_POLLING_STATUSES,
+	DEFAULT_TERMINAL_STATUSES
+} from '../types/playground.js';
 
 // ============================================================================
 // Interrupt Types (Human-in-the-Loop)
