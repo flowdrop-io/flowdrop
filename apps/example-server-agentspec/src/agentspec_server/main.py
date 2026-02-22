@@ -1,5 +1,7 @@
 """FastAPI application for the Agent Spec runtime server."""
 
+import os
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,8 @@ from .routes.health import router as health_router
 from .routes.flows import router as flows_router
 from .routes.executions import router as executions_router
 from .routes.discovery import router as discovery_router
+
+root_path = os.environ.get("ROOT_PATH", "")
 
 app = FastAPI(
     title="FlowDrop Agent Spec Runtime",
@@ -18,6 +22,7 @@ app = FastAPI(
         "validation, and discovery."
     ),
     version="0.1.0",
+    root_path=root_path,
 )
 
 app.add_middleware(
