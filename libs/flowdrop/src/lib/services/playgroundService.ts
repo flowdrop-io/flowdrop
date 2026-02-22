@@ -13,8 +13,10 @@ import type {
 	PlaygroundMessageRequest,
 	PlaygroundMessagesApiResponse,
 	PlaygroundSessionResponse,
-	PlaygroundSessionsResponse
+	PlaygroundSessionsResponse,
+	PlaygroundSessionStatus
 } from '../types/playground.js';
+import { defaultShouldStopPolling } from '../types/playground.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
 import { getEndpointConfig } from './api.js';
@@ -301,11 +303,13 @@ export class PlaygroundService {
 	 * @param sessionId - The session UUID to poll
 	 * @param callback - Callback function to handle new messages
 	 * @param interval - Polling interval in milliseconds (default: 1500)
+	 * @param shouldStopPolling - Optional override for stop conditions (default: defaultShouldStopPolling)
 	 */
 	startPolling(
 		sessionId: string,
 		callback: (response: PlaygroundMessagesApiResponse) => void,
-		interval: number = DEFAULT_POLLING_INTERVAL
+		interval: number = DEFAULT_POLLING_INTERVAL,
+		shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean
 	): void {
 		// Stop any existing polling
 		this.stopPolling();
@@ -313,6 +317,8 @@ export class PlaygroundService {
 		this.pollingSessionId = sessionId;
 		this.currentBackoff = interval;
 		this.lastMessageTimestamp = null;
+
+		const shouldStop = shouldStopPolling ?? defaultShouldStopPolling;
 
 		const poll = async () => {
 			if (this.pollingSessionId !== sessionId) {
@@ -334,13 +340,8 @@ export class PlaygroundService {
 				// Call the callback with new messages
 				callback(response);
 
-				// Stop polling if session is idle, completed, or failed
-				// "idle" means no processing is happening (execution finished)
-				if (
-					response.sessionStatus === 'idle' ||
-					response.sessionStatus === 'completed' ||
-					response.sessionStatus === 'failed'
-				) {
+				// Stop polling if the status matches the stop condition
+				if (response.sessionStatus && shouldStop(response.sessionStatus)) {
 					this.stopPolling();
 					return;
 				}
