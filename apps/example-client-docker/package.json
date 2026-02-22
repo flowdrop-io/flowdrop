@@ -10,7 +10,7 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@d34dman/flowdrop": "^0.0.57"
+		"@d34dman/flowdrop": "^0.0.59"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.0.0",

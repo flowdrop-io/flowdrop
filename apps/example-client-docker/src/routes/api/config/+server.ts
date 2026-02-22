@@ -14,6 +14,7 @@ export const GET: RequestHandler = async () => {
 		timeout: process.env.FLOWDROP_TIMEOUT ? parseInt(process.env.FLOWDROP_TIMEOUT, 10) : 30000,
 		authType: process.env.FLOWDROP_AUTH_TYPE || 'none',
 		version: process.env.FLOWDROP_VERSION || '1.0.0',
-		environment: process.env.NODE_ENV || 'production'
+		environment: process.env.NODE_ENV || 'production',
+		agentSpecBaseUrl: process.env.FLOWDROP_AGENTSPEC_BASE_URL || undefined
 	});
 };
