@@ -6,7 +6,7 @@
 	"scripts": {
 		"lint": "redocly lint ../../libs/flowdrop/api/openapi.yaml --config ../../libs/flowdrop/api/redocly.yaml",
 		"bundle": "redocly bundle ../../libs/flowdrop/api/openapi.yaml -o ../../libs/flowdrop/api/bundled.yaml --config ../../libs/flowdrop/api/redocly.yaml",
-		"preview": "redocly preview-docs ../../libs/flowdrop/api/openapi.yaml --config ../../libs/flowdrop/api/redocly.yaml",
+		"preview": "node scripts/preview.mjs",
 		"build": "redocly build-docs ../../libs/flowdrop/api/bundled.yaml -o dist/index.html"
 	},
 	"devDependencies": {
