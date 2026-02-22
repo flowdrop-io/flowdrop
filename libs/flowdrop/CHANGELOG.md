@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.60] - 2026-02-22
+
+### Fixed
+
+- **App component standalone usage**: Removed `$page` store dependency from the library `App` component, making it usable outside SvelteKit route contexts (e.g. embedded in external apps)
+- **Empty editor state**: App now initializes a default empty workflow when none is provided, ensuring drag-and-drop and other editor features work without an explicit `initialWorkflow` prop
+- **Header visibility in edit page**: Simplified `showHeader` logic in `App` by removing URL-based check; edit page now passes `showNavbar=false` directly to avoid redundant header rendering
+
 ## [0.0.59] - 2026-02-21
 
 ### Fixed
