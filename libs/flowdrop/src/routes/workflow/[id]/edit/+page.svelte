@@ -185,7 +185,7 @@
 			<button onclick={fetchWorkflow} class="retry-button">Retry</button>
 		</div>
 	{:else if workflow}
-		<App workflow={workflow as any} height={canvasHeight} width={canvasWidth} showNavbar={true} />
+		<App workflow={workflow as any} height={canvasHeight} width={canvasWidth} showNavbar={false} />
 	{:else}
 		<div class="no-workflow">
 			<h3>Workflow Not Found</h3>

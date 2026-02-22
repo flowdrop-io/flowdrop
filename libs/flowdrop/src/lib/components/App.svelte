@@ -6,7 +6,6 @@
 
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { page } from '$app/stores';
 	import MainLayout from '$lib/components/layouts/MainLayout.svelte';
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
@@ -617,7 +616,7 @@
 
 			await fetchNodeTypes();
 
-			// Initialize the workflow store if we have an initial workflow
+			// Initialize the workflow store
 			if (initialWorkflow) {
 				workflowActions.initialize(initialWorkflow);
 
@@ -625,6 +624,22 @@
 				if (eventHandlers?.onWorkflowLoad) {
 					eventHandlers.onWorkflowLoad(initialWorkflow);
 				}
+			} else {
+				// Initialize with a default empty workflow so the editor is functional
+				// (e.g., drag-and-drop requires a non-null workflow in the store)
+				const defaultWorkflow: Workflow = {
+					id: '',
+					name: 'Untitled Workflow',
+					nodes: [],
+					edges: [],
+					metadata: {
+						version: '1.0.0',
+						format: DEFAULT_WORKFLOW_FORMAT,
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString()
+					}
+				};
+				workflowActions.initialize(defaultWorkflow);
 			}
 		})();
 
@@ -684,7 +699,7 @@
 
 <!-- MainLayout wrapper for workflow editor -->
 <MainLayout
-	showHeader={showNavbar && !$page.url.pathname.includes('/edit')}
+	showHeader={showNavbar}
 	showLeftSidebar={!disableSidebar}
 	showRightSidebar={showRightPanel}
 	showBottomPanel={false}
