@@ -1,22 +1,29 @@
 <script lang="ts">
-	import { WorkflowEditor } from '@d34dman/flowdrop';
-	import { createEndpointConfig } from '@d34dman/flowdrop/core';
+	import { App } from '@d34dman/flowdrop';
+	import { createEndpointConfig, createAgentSpecEndpointConfig } from '@d34dman/flowdrop/core';
 	import '@d34dman/flowdrop/styles/base.css';
+	import { page } from '$app/stores';
 
 	let { data } = $props();
 	const { runtimeConfig } = data;
 
-	const endpointConfig = createEndpointConfig(runtimeConfig.apiBaseUrl, {
-		auth: {
-			type: runtimeConfig.authType,
-			token: runtimeConfig.authToken
-		},
-		timeout: runtimeConfig.timeout
+	const endpointConfig = $derived.by(() => {
+		const useAgentSpec = $page.url.searchParams.has('agentspec');
+		return createEndpointConfig(runtimeConfig.apiBaseUrl, {
+			auth: {
+				type: runtimeConfig.authType,
+				token: runtimeConfig.authToken
+			},
+			timeout: runtimeConfig.timeout,
+			agentSpec: useAgentSpec && runtimeConfig.agentSpecBaseUrl
+				? createAgentSpecEndpointConfig(runtimeConfig.agentSpecBaseUrl)
+				: undefined
+		});
 	});
 </script>
 
 <div class="editor-container">
-	<WorkflowEditor {endpointConfig} />
+	<App {endpointConfig} showNavbar={true} />
 </div>
 
 <style>
