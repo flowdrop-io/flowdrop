@@ -49,14 +49,16 @@ import Playground from '../components/playground/Playground.svelte';
 import PlaygroundModal from '../components/playground/PlaygroundModal.svelte';
 import type { Workflow } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import type { PlaygroundMode, PlaygroundConfig, PlaygroundSession } from '../types/playground.js';
+import type { PlaygroundMode, PlaygroundConfig, PlaygroundSession, PlaygroundMessagesApiResponse, PlaygroundSessionStatus } from '../types/playground.js';
 import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
 	currentSession,
 	sessions,
 	messages,
-	playgroundActions
+	sessionStatus,
+	playgroundActions,
+	createPollingCallback
 } from '../stores/playgroundStore.js';
 import { get } from 'svelte/store';
 
@@ -118,6 +120,14 @@ export interface PlaygroundMountOptions {
 	 * Callback when playground is closed (required for embedded and modal modes)
 	 */
 	onClose?: () => void;
+
+	/**
+	 * Called when session status changes (from polling or actions)
+	 *
+	 * @param status - The new session status
+	 * @param previousStatus - The previous session status
+	 */
+	onSessionStatusChange?: (status: PlaygroundSessionStatus, previousStatus: PlaygroundSessionStatus) => void;
 }
 
 /**
@@ -158,6 +168,20 @@ export interface MountedPlayground {
 	 * Stop any active polling
 	 */
 	stopPolling: () => void;
+
+	/**
+	 * Restart polling for the current session
+	 * Useful after polling stops (e.g., on awaiting_input) and you want to resume
+	 */
+	startPolling: () => void;
+
+	/**
+	 * Push a poll response into the store pipeline.
+	 * Use with custom transports (WebSocket/SSE) instead of built-in polling.
+	 *
+	 * @param response - A PlaygroundMessagesApiResponse to process
+	 */
+	pushMessages: (response: PlaygroundMessagesApiResponse) => void;
 
 	/**
 	 * Reset the playground state
@@ -222,7 +246,8 @@ export async function mountPlayground(
 		config = {},
 		height = '100%',
 		width = '100%',
-		onClose
+		onClose,
+		onSessionStatusChange
 	} = options;
 
 	// Validate required parameters
@@ -314,9 +339,28 @@ export async function mountPlayground(
 		workflowId
 	};
 
+	// Create shared polling callback using lifecycle hooks from config
+	const pollingCallback = createPollingCallback(config.isTerminalStatus);
+	const pollingInterval = config.pollingInterval ?? 1500;
+
+	// Subscribe to session status changes if callback provided
+	let unsubscribeStatus: (() => void) | undefined;
+	if (onSessionStatusChange) {
+		let previousStatus = get(sessionStatus);
+		unsubscribeStatus = sessionStatus.subscribe((status) => {
+			if (status !== previousStatus) {
+				onSessionStatusChange(status, previousStatus);
+				previousStatus = status;
+			}
+		});
+	}
+
 	// Create the mounted playground interface
 	const mountedPlayground: MountedPlayground = {
 		destroy: () => {
+			// Unsubscribe from status changes
+			unsubscribeStatus?.();
+
 			// Stop any active polling
 			playgroundService.stopPolling();
 
@@ -345,6 +389,22 @@ export async function mountPlayground(
 
 		stopPolling: () => {
 			playgroundService.stopPolling();
+		},
+
+		startPolling: () => {
+			const session = get(currentSession);
+			if (session) {
+				playgroundService.startPolling(
+					session.id,
+					pollingCallback,
+					pollingInterval,
+					config.shouldStopPolling
+				);
+			}
+		},
+
+		pushMessages: (response: PlaygroundMessagesApiResponse) => {
+			pollingCallback(response);
 		},
 
 		reset: () => {

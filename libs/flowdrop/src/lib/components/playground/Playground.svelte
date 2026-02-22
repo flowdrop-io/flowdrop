@@ -15,8 +15,7 @@
 	import type { EndpointConfig } from '../../config/endpoints.js';
 	import type {
 		PlaygroundMode,
-		PlaygroundConfig,
-		PlaygroundMessagesApiResponse
+		PlaygroundConfig
 	} from '../../types/playground.js';
 	import { playgroundService } from '../../services/playgroundService.js';
 	import { interruptService } from '../../services/interruptService.js';
@@ -29,7 +28,8 @@
 		isLoading,
 		error,
 		playgroundActions,
-		inputFields
+		inputFields,
+		createPollingCallback
 	} from '../../stores/playgroundStore.js';
 	import { interruptActions } from '../../stores/interruptStore.js';
 	import { get } from 'svelte/store';
@@ -408,6 +408,9 @@
 		}
 	}
 
+	/** Shared polling callback created from config lifecycle hooks */
+	const pollingCallback = createPollingCallback(config.isTerminalStatus);
+
 	/**
 	 * Start polling for messages
 	 */
@@ -416,28 +419,9 @@
 
 		playgroundService.startPolling(
 			sessionId,
-			(response: PlaygroundMessagesApiResponse) => {
-				// Add new messages
-				if (response.data && response.data.length > 0) {
-					playgroundActions.addMessages(response.data);
-				}
-
-				// Update session status
-				if (response.sessionStatus) {
-					playgroundActions.updateSessionStatus(response.sessionStatus);
-
-					// Stop executing if idle, completed, or failed
-					// "idle" means no processing is happening (execution finished)
-					if (
-						response.sessionStatus === 'idle' ||
-						response.sessionStatus === 'completed' ||
-						response.sessionStatus === 'failed'
-					) {
-						playgroundActions.setExecuting(false);
-					}
-				}
-			},
-			pollingInterval
+			pollingCallback,
+			pollingInterval,
+			config.shouldStopPolling
 		);
 	}
 
@@ -451,25 +435,7 @@
 
 		try {
 			const response = await playgroundService.getMessages(sessionId);
-
-			// Add new messages (deduplicates automatically)
-			if (response.data && response.data.length > 0) {
-				playgroundActions.addMessages(response.data);
-			}
-
-			// Update session status
-			if (response.sessionStatus) {
-				playgroundActions.updateSessionStatus(response.sessionStatus);
-
-				// Update executing state based on session status
-				if (
-					response.sessionStatus === 'idle' ||
-					response.sessionStatus === 'completed' ||
-					response.sessionStatus === 'failed'
-				) {
-					playgroundActions.setExecuting(false);
-				}
-			}
+			pollingCallback(response);
 		} catch (err) {
 			console.error('[Playground] Failed to refresh messages after interrupt:', err);
 		}
