@@ -1,49 +1,45 @@
-# Starlight Starter Kit: Basics
+# FlowDrop Documentation Site
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+> **Status: Placeholder** — This documentation site is under active development and not yet ready for use.
 
-```
-pnpm create astro@latest -- --template starlight
-```
+The official documentation site for [FlowDrop](../../README.md), built with [Astro](https://astro.build) and [Starlight](https://starlight.astro.build/).
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+## Project Structure
 
 ```
-.
-├── public/
+apps/docs/
+├── public/                    # Static assets (favicons, etc.)
 ├── src/
-│   ├── assets/
+│   ├── assets/                # Images and media
+│   ├── components/            # Custom Astro components
 │   ├── content/
 │   │   └── docs/
+│   │       ├── getting-started/   # Installation & quick start guides
+│   │       ├── guides/            # Usage guides
+│   │       └── reference/         # API reference
+│   ├── styles/                # Custom theme and design tokens
 │   └── content.config.ts
 ├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+├── svelte.config.js
+└── package.json
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+Documentation pages live in `src/content/docs/` as `.md` or `.mdx` files. Each file becomes a route based on its file name.
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+## Commands
 
-Static assets, like favicons, can be placed in the `public/` directory.
+All commands are run from `apps/docs/`:
 
-## 🧞 Commands
+| Command        | Action                                       |
+| :------------- | :------------------------------------------- |
+| `pnpm install` | Install dependencies                         |
+| `pnpm dev`     | Start local dev server at `localhost:4321`    |
+| `pnpm build`   | Build production site to `./dist/`            |
+| `pnpm preview` | Preview the production build locally          |
 
-All commands are run from the root of the project, from a terminal:
+## Tech Stack
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+- [Astro](https://astro.build) — Static site framework
+- [Starlight](https://starlight.astro.build/) — Documentation theme
+- [Svelte](https://svelte.dev) — For interactive components and FlowDrop embeds
+- [@d34dman/flowdrop](https://www.npmjs.com/package/@d34dman/flowdrop) — FlowDrop library (for live demos)
