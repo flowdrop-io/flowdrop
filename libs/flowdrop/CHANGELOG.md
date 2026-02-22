@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.61] - 2026-02-22
+
+### Added
+
+- **`awaiting_input` session status**: New `awaiting_input` value in `PlaygroundSessionStatus` for human-in-the-loop flows where the runtime is waiting for user input
+- **Configurable polling lifecycle hooks**: `shouldStopPolling` and `isTerminalStatus` hooks on `PlaygroundConfig` let consumers customize which statuses stop polling and clear the executing state, with exported defaults (`defaultShouldStopPolling`, `defaultIsTerminalStatus`)
+- **`startPolling()` on MountedPlayground**: Resume polling after it stops (e.g., on `awaiting_input`), without needing to re-execute the workflow
+- **`pushMessages()` on MountedPlayground**: Push poll responses directly into the store pipeline, enabling custom transports (WebSocket/SSE) as an alternative to built-in polling
+- **`onSessionStatusChange` callback**: New mount option that fires whenever the session status changes, providing both new and previous status values
+
+### Changed
+
+- **`createPollingCallback` factory**: Extracted a single `createPollingCallback()` factory in `playgroundStore` as the source of truth for poll response processing (addMessages, updateSessionStatus, setExecuting), replacing duplicated callback logic across `mount.ts`, `Playground.svelte`, and the store
+
 ## [0.0.60] - 2026-02-22
 
 ### Fixed
