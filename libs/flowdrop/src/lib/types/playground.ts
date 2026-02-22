@@ -12,7 +12,49 @@ import type { ConfigProperty } from './index.js';
 /**
  * Status of a playground session
  */
-export type PlaygroundSessionStatus = 'idle' | 'running' | 'completed' | 'failed';
+export type PlaygroundSessionStatus = 'idle' | 'running' | 'awaiting_input' | 'completed' | 'failed';
+
+/**
+ * Statuses that stop polling by default (resource efficiency)
+ */
+export const DEFAULT_STOP_POLLING_STATUSES: PlaygroundSessionStatus[] = [
+	'idle',
+	'completed',
+	'failed',
+	'awaiting_input'
+];
+
+/**
+ * Statuses that are considered terminal by default (clears isExecuting)
+ */
+export const DEFAULT_TERMINAL_STATUSES: PlaygroundSessionStatus[] = [
+	'idle',
+	'completed',
+	'failed',
+	'awaiting_input'
+];
+
+/**
+ * Default implementation for determining if polling should stop.
+ * Consumers can override this via PlaygroundConfig.shouldStopPolling.
+ *
+ * @param status - The current session status
+ * @returns True if polling should stop
+ */
+export function defaultShouldStopPolling(status: PlaygroundSessionStatus): boolean {
+	return (DEFAULT_STOP_POLLING_STATUSES as string[]).includes(status);
+}
+
+/**
+ * Default implementation for determining if a status is terminal (clears isExecuting).
+ * Consumers can override this via PlaygroundConfig.isTerminalStatus.
+ *
+ * @param status - The current session status
+ * @returns True if the status is terminal
+ */
+export function defaultIsTerminalStatus(status: PlaygroundSessionStatus): boolean {
+	return (DEFAULT_TERMINAL_STATUSES as string[]).includes(status);
+}
 
 /**
  * Role of a message sender in the playground
@@ -243,6 +285,20 @@ export interface PlaygroundConfig {
 	 * Typically used together with showSidebar: false for minimal UI.
 	 */
 	showSessionHeader?: boolean;
+
+	/**
+	 * Determines if polling should stop for a given session status.
+	 * Override to customize which statuses pause polling.
+	 * @default defaultShouldStopPolling (stops on idle, completed, failed, awaiting_input)
+	 */
+	shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean;
+
+	/**
+	 * Determines if a session status is terminal (clears isExecuting).
+	 * Override to customize which statuses end the executing state.
+	 * @default defaultIsTerminalStatus (terminal on idle, completed, failed, awaiting_input)
+	 */
+	isTerminalStatus?: (status: PlaygroundSessionStatus) => boolean;
 }
 
 /**
