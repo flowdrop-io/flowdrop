@@ -4,11 +4,13 @@
 # Stage 1: Build the application
 FROM node:20-alpine AS builder
 
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /app
 
 # Copy package files and install dependencies
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile || pnpm install
 
 # Copy source and config files
 COPY svelte.config.js vite.config.ts tsconfig.json ./
@@ -17,16 +19,18 @@ COPY static ./static
 
 # Build the application with adapter-node
 ENV NODE_ENV=production
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Production image
 FROM node:20-alpine AS runner
 
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /app
 
 # Install production dependencies only
-COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --prod || pnpm install --prod --no-frozen-lockfile
 
 # Copy built application from builder
 COPY --from=builder /app/build ./build
