@@ -9,7 +9,8 @@ import type {
 	ConfirmationConfig,
 	ChoiceConfig,
 	TextConfig,
-	FormConfig
+	FormConfig,
+	ReviewConfig
 } from '../../lib/types/interrupt.js';
 
 /**
@@ -147,6 +148,37 @@ export function createFormInterrupt(
 		id: generateInterruptId(),
 		messageId,
 		type: 'form',
+		config,
+		nodeId,
+		executionId,
+		sessionId,
+		status: 'pending',
+		allowCancel,
+		createdAt: new Date().toISOString(),
+		message: config.message
+	};
+
+	mockInterrupts.set(interrupt.id, interrupt);
+	addInterruptToSession(sessionId, interrupt.id);
+
+	return interrupt;
+}
+
+/**
+ * Create a review interrupt
+ */
+export function createReviewInterrupt(
+	sessionId: string,
+	messageId: string,
+	nodeId: string,
+	executionId: string,
+	config: ReviewConfig,
+	allowCancel: boolean = true
+): Interrupt {
+	const interrupt: Interrupt = {
+		id: generateInterruptId(),
+		messageId,
+		type: 'review',
 		config,
 		nodeId,
 		executionId,
@@ -358,5 +390,57 @@ export const sampleInterruptConfigs = {
 		defaultValues: {
 			priority: 'medium'
 		}
-	} as FormConfig
+	} as FormConfig,
+
+	review: {
+		message: 'Review proposed changes to Page: About Us',
+		changes: [
+			{
+				field: 'title',
+				label: 'Page Title',
+				original: 'About Us',
+				proposed: 'About Our Company'
+			},
+			{
+				field: 'meta_description',
+				label: 'Meta Description',
+				original: 'Learn about us',
+				proposed: 'Discover our mission, values, and the team behind the product'
+			},
+			{
+				field: 'hero_heading',
+				label: 'Hero Heading',
+				original: 'Welcome to Our Page',
+				proposed: 'Building the Future Together'
+			},
+			{
+				field: 'tags',
+				label: 'Tags',
+				original: ['about', 'company'],
+				proposed: ['about', 'company', 'mission', 'team']
+			},
+			{
+				field: 'seo_settings',
+				label: 'SEO Settings',
+				original: { indexable: true, follow: false, canonical: '/about' },
+				proposed: {
+					indexable: true,
+					follow: true,
+					canonical: '/about-us',
+					sitemap_priority: 0.8
+				}
+			},
+			{
+				field: 'body',
+				label: 'Page Body',
+				original:
+					'<p>We are a small team dedicated to <strong>building great products</strong>.</p><p>Contact us for more info.</p>',
+				proposed:
+					'<p>We are a growing company dedicated to <strong>building innovative solutions</strong> for our customers.</p><ul><li>Award-winning team</li><li>Global presence</li></ul>'
+			}
+		],
+		acceptAllLabel: 'Accept All',
+		rejectAllLabel: 'Reject All',
+		submitLabel: 'Submit Review'
+	} as ReviewConfig
 };

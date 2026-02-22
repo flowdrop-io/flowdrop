@@ -19,6 +19,7 @@ import {
 	createChoiceInterrupt,
 	createTextInterrupt,
 	createFormInterrupt,
+	createReviewInterrupt,
 	sampleInterruptConfigs
 } from './interrupts.js';
 
@@ -255,7 +256,7 @@ export function addMessage(
  */
 function detectInterruptType(
 	userMessage: string
-): 'confirmation' | 'choice' | 'text' | 'form' | null {
+): 'confirmation' | 'choice' | 'text' | 'form' | 'review' | null {
 	const lowerMessage = userMessage.toLowerCase();
 
 	if (
@@ -285,6 +286,13 @@ function detectInterruptType(
 		lowerMessage.includes('details')
 	) {
 		return 'form';
+	}
+	if (
+		lowerMessage.includes('review') ||
+		lowerMessage.includes('diff') ||
+		lowerMessage.includes('changes')
+	) {
+		return 'review';
 	}
 
 	return null;
@@ -439,7 +447,7 @@ function simulateNormalExecution(
 function simulateInterruptExecution(
 	sessionId: string,
 	userMessage: string,
-	interruptType: 'confirmation' | 'choice' | 'text' | 'form',
+	interruptType: 'confirmation' | 'choice' | 'text' | 'form' | 'review',
 	parentMessageId?: string
 ): void {
 	const executionId = `exec-${Date.now().toString(36)}`;
@@ -475,7 +483,7 @@ function simulateInterruptExecution(
  */
 function createInterruptMessage(
 	sessionId: string,
-	interruptType: 'confirmation' | 'choice' | 'text' | 'form',
+	interruptType: 'confirmation' | 'choice' | 'text' | 'form' | 'review',
 	executionId: string,
 	parentMessageId?: string
 ): void {
@@ -558,6 +566,31 @@ function createInterruptMessage(
 				execution_id: executionId,
 				schema: config.schema,
 				default_value: config.defaultValues,
+				allow_cancel: true
+			};
+			break;
+		}
+		case 'review': {
+			const config = sampleInterruptConfigs.review;
+			interrupt = createReviewInterrupt(
+				sessionId,
+				messageId,
+				nodeId,
+				executionId,
+				config,
+				true
+			);
+			content = config.message;
+			metadata = {
+				type: 'interrupt_request',
+				interrupt_id: interrupt.id,
+				interrupt_type: 'review',
+				node_id: nodeId,
+				execution_id: executionId,
+				changes: config.changes,
+				accept_all_label: config.acceptAllLabel,
+				reject_all_label: config.rejectAllLabel,
+				submit_label: config.submitLabel,
 				allow_cancel: true
 			};
 			break;

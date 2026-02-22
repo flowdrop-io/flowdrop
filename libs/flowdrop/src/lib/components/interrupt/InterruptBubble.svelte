@@ -13,13 +13,16 @@
 	import ChoicePrompt from './ChoicePrompt.svelte';
 	import TextInputPrompt from './TextInputPrompt.svelte';
 	import FormPrompt from './FormPrompt.svelte';
+	import ReviewPrompt from './ReviewPrompt.svelte';
 	import type {
 		Interrupt,
 		InterruptType,
 		ConfirmationConfig,
 		ChoiceConfig,
 		TextConfig,
-		FormConfig
+		FormConfig,
+		ReviewConfig,
+		ReviewResolution
 	} from '../../types/interrupt.js';
 	import {
 		isTerminalState,
@@ -94,6 +97,8 @@
 				return 'mdi:text-box';
 			case 'form':
 				return 'mdi:form-select';
+			case 'review':
+				return 'mdi:file-compare';
 			default:
 				return 'mdi:bell';
 		}
@@ -112,6 +117,8 @@
 				return 'Input Required';
 			case 'form':
 				return 'Form Required';
+			case 'review':
+				return 'Review Required';
 			default:
 				return 'Action Required';
 		}
@@ -128,6 +135,8 @@
 				return 'Input Submitted';
 			case 'form':
 				return 'Form Submitted';
+			case 'review':
+				return 'Review Submitted';
 			default:
 				return 'Response Submitted';
 		}
@@ -218,6 +227,7 @@
 	const choiceConfig = $derived(currentInterrupt.config as ChoiceConfig);
 	const textConfig = $derived(currentInterrupt.config as TextConfig);
 	const formConfig = $derived(currentInterrupt.config as FormConfig);
+	const reviewConfig = $derived(currentInterrupt.config as ReviewConfig);
 
 	// Determine the actual resolved value to pass to prompt components
 	const displayResolvedValue = $derived(resolvedValue ?? currentInterrupt.responseValue);
@@ -326,6 +336,16 @@
 					config={formConfig}
 					{isResolved}
 					resolvedValue={displayResolvedValue as Record<string, unknown> | undefined}
+					{isSubmitting}
+					{error}
+					{resolvedByUserName}
+					onSubmit={(value) => handleResolve(value)}
+				/>
+			{:else if currentInterrupt.type === 'review'}
+				<ReviewPrompt
+					config={reviewConfig}
+					{isResolved}
+					resolvedValue={displayResolvedValue as ReviewResolution | undefined}
 					{isSubmitting}
 					{error}
 					{resolvedByUserName}

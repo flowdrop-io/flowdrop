@@ -47,7 +47,7 @@ export {
  * - `text`: Free-form text input
  * - `form`: JSON Schema-based form
  */
-export type InterruptType = 'confirmation' | 'choice' | 'text' | 'form';
+export type InterruptType = 'confirmation' | 'choice' | 'text' | 'form' | 'review';
 
 /**
  * Status of an interrupt request
@@ -139,9 +139,94 @@ export interface FormConfig {
 }
 
 /**
+ * A single field change proposed for review
+ *
+ * @example
+ * ```typescript
+ * const change: ReviewChange = {
+ *   field: "title",
+ *   label: "Page Title",
+ *   original: "About Us",
+ *   proposed: "About Our Company"
+ * };
+ * ```
+ */
+export interface ReviewChange {
+	/** Field identifier (machine key) */
+	field: string;
+	/** Human-readable field label */
+	label: string;
+	/** Original value before the proposed change */
+	original: unknown;
+	/** Proposed new value */
+	proposed: unknown;
+}
+
+/**
+ * Configuration for review-type interrupts
+ *
+ * Displays a list of proposed field changes for the user to
+ * accept or reject individually before submitting.
+ */
+export interface ReviewConfig {
+	/** The prompt message to display */
+	message: string;
+	/** List of field changes to review */
+	changes: ReviewChange[];
+	/** Label for the "Accept All" button */
+	acceptAllLabel?: string;
+	/** Label for the "Reject All" button */
+	rejectAllLabel?: string;
+	/** Label for the submit button */
+	submitLabel?: string;
+}
+
+/**
+ * Per-field decision in a review resolution
+ */
+export interface ReviewFieldDecision {
+	/** Whether the proposed change was accepted */
+	accepted: boolean;
+	/** The effective value (proposed if accepted, original if rejected) */
+	value: unknown;
+}
+
+/**
+ * Resolution value for review-type interrupts
+ *
+ * Contains individual decisions for each field and a summary count.
+ *
+ * @example
+ * ```typescript
+ * const resolution: ReviewResolution = {
+ *   decisions: {
+ *     title: { accepted: true, value: "About Our Company" },
+ *     meta_description: { accepted: false, value: "Learn about us" }
+ *   },
+ *   summary: { accepted: 1, rejected: 1, total: 2 }
+ * };
+ * ```
+ */
+export interface ReviewResolution {
+	/** Map of field identifier to the user's decision */
+	decisions: Record<string, ReviewFieldDecision>;
+	/** Summary counts of accepted/rejected fields */
+	summary: {
+		accepted: number;
+		rejected: number;
+		total: number;
+	};
+}
+
+/**
  * Union type for interrupt-specific configuration
  */
-export type InterruptConfig = ConfirmationConfig | ChoiceConfig | TextConfig | FormConfig;
+export type InterruptConfig =
+	| ConfirmationConfig
+	| ChoiceConfig
+	| TextConfig
+	| FormConfig
+	| ReviewConfig;
 
 /**
  * Core interrupt data structure
@@ -311,6 +396,14 @@ export interface InterruptMessageMetadata {
 	resolvedByUserName?: string;
 	/** User ID of the person who resolved the interrupt */
 	resolvedByUserId?: string;
+	/** Review: list of field changes to review */
+	changes?: ReviewChange[];
+	/** Review: label for the "Accept All" button */
+	accept_all_label?: string;
+	/** Review: label for the "Reject All" button */
+	reject_all_label?: string;
+	/** Review: label for the submit button */
+	submit_label?: string;
 }
 
 /**
@@ -362,7 +455,11 @@ export function extractInterruptMetadata(
 		min_selections: metadata.min_selections as number | undefined,
 		max_selections: metadata.max_selections as number | undefined,
 		resolvedByUserName: metadata.resolvedByUserName as string | undefined,
-		resolvedByUserId: metadata.resolvedByUserId as string | undefined
+		resolvedByUserId: metadata.resolvedByUserId as string | undefined,
+		changes: metadata.changes as ReviewChange[] | undefined,
+		accept_all_label: metadata.accept_all_label as string | undefined,
+		reject_all_label: metadata.reject_all_label as string | undefined,
+		submit_label: metadata.submit_label as string | undefined
 	};
 }
 
@@ -444,6 +541,15 @@ function buildInterruptConfig(
 				schema: metadata.schema ?? { type: 'object', properties: {} },
 				defaultValues: metadata.default_value as Record<string, unknown> | undefined
 			} as FormConfig;
+
+		case 'review':
+			return {
+				message,
+				changes: metadata.changes ?? [],
+				acceptAllLabel: metadata.accept_all_label,
+				rejectAllLabel: metadata.reject_all_label,
+				submitLabel: metadata.submit_label
+			} as ReviewConfig;
 
 		default:
 			return { message } as ConfirmationConfig;
