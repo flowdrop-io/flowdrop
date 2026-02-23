@@ -668,7 +668,7 @@
 
 	/* Sidebar */
 	.playground__sidebar {
-		width: 220px;
+		width: var(--fd-playground-sidebar-width);
 		background-color: var(--fd-background);
 		border-right: 1px solid var(--fd-border);
 		display: flex;
@@ -680,8 +680,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		height: 3.25rem;
-		padding: 0 1rem;
+		height: var(--fd-playground-header-height);
+		padding: 0 var(--fd-space-xl);
 		border-bottom: 1px solid var(--fd-border);
 		box-sizing: border-box;
 		flex-shrink: 0;
@@ -690,8 +690,8 @@
 	.playground__sidebar-title {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.9375rem;
+		gap: var(--fd-space-xs);
+		font-size: var(--fd-text-md);
 		font-weight: 600;
 		line-height: 1.25;
 		color: var(--fd-foreground);
@@ -701,14 +701,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.75rem;
-		height: 1.75rem;
+		width: var(--fd-playground-icon-btn-size);
+		height: var(--fd-playground-icon-btn-size);
 		border: none;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		background: transparent;
 		color: var(--fd-muted-foreground);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.playground__sidebar-close:hover {
@@ -722,7 +722,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
-		padding: 0.75rem 0.5rem 0;
+		padding: var(--fd-space-md) var(--fd-space-xs) 0;
 	}
 
 	/* New Session – neutral full-width button with icon */
@@ -730,19 +730,19 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5rem;
+		gap: var(--fd-space-xs);
 		width: 100%;
-		padding: 0.625rem 1rem;
+		padding: var(--fd-space-sm) var(--fd-space-xl);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-md);
 		background-color: var(--fd-background);
 		color: var(--fd-foreground);
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		font-weight: 500;
 		cursor: pointer;
 		transition:
-			background-color 0.15s ease,
-			border-color 0.15s ease,
+			background-color var(--fd-transition-fast),
+			border-color var(--fd-transition-fast),
 			transform 0.1s ease;
 		box-sizing: border-box;
 	}
@@ -778,23 +778,23 @@
 	}
 
 	.playground__sessions-hint {
-		font-size: 0.6875rem;
+		font-size: var(--fd-text-2xs);
 		color: var(--fd-muted-foreground);
-		margin: 0.75rem 0 0.375rem 0.75rem;
+		margin: var(--fd-space-md) 0 var(--fd-space-2xs) var(--fd-space-md);
 		line-height: 1.3;
 	}
 
 	.playground__sessions {
 		flex: 1;
 		overflow-y: auto;
-		padding: 0 0.5rem 1rem;
+		padding: 0 var(--fd-space-xs) var(--fd-space-xl);
 		min-height: 0;
 	}
 
 	.playground__sessions-empty {
-		padding: 1rem;
+		padding: var(--fd-space-xl);
 		text-align: center;
-		font-size: 0.8125rem;
+		font-size: var(--fd-text-xsm);
 		color: var(--fd-muted-foreground);
 	}
 
@@ -803,14 +803,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.625rem 0.75rem;
-		margin-bottom: 0.25rem;
+		padding: var(--fd-space-sm) var(--fd-space-md);
+		margin-bottom: var(--fd-space-3xs);
 		border-radius: var(--fd-radius-md);
 		border-left: 3px solid transparent;
 		cursor: pointer;
 		transition:
-			background-color 0.15s ease,
-			border-left-color 0.15s ease;
+			background-color var(--fd-transition-fast),
+			border-left-color var(--fd-transition-fast);
 	}
 
 	.playground__session:hover {
@@ -830,7 +830,7 @@
 
 	.playground__session-name {
 		flex: 1;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		color: var(--fd-foreground);
 		white-space: nowrap;
 		overflow: hidden;
@@ -846,15 +846,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.5rem;
-		height: 1.5rem;
+		width: var(--fd-space-3xl);
+		height: var(--fd-space-3xl);
 		border: none;
-		border-radius: 0.25rem;
+		border-radius: var(--fd-radius-sm);
 		background: transparent;
 		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		opacity: 0;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.playground__session:hover .playground__session-menu {
@@ -893,8 +893,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		height: 3.25rem;
-		padding: 0 1.25rem;
+		height: var(--fd-playground-header-height);
+		padding: 0 var(--fd-space-2xl);
 		border-bottom: 1px solid var(--fd-border);
 		background-color: var(--fd-background);
 		box-sizing: border-box;
@@ -902,7 +902,7 @@
 	}
 
 	.playground__header-title {
-		font-size: 0.9375rem;
+		font-size: var(--fd-text-md);
 		font-weight: 600;
 		line-height: 1.25;
 		color: var(--fd-foreground);
@@ -913,14 +913,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.75rem;
-		height: 1.75rem;
+		width: var(--fd-playground-icon-btn-size);
+		height: var(--fd-playground-icon-btn-size);
 		border: none;
-		border-radius: 0.375rem;
+		border-radius: var(--fd-radius-md);
 		background: transparent;
 		color: var(--fd-muted-foreground);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all var(--fd-transition-fast);
 	}
 
 	.playground__header-close:hover {
@@ -932,12 +932,12 @@
 	.playground__error {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		background-color: var(--fd-error-muted);
 		border-bottom: 1px solid var(--fd-error);
 		color: var(--fd-error);
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 	}
 
 	.playground__error-dismiss {
@@ -945,14 +945,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.5rem;
-		height: 1.5rem;
+		width: var(--fd-space-3xl);
+		height: var(--fd-space-3xl);
 		border: none;
-		border-radius: 0.25rem;
+		border-radius: var(--fd-radius-sm);
 		background: transparent;
 		color: var(--fd-error);
 		cursor: pointer;
-		transition: background-color 0.15s ease;
+		transition: background-color var(--fd-transition-fast);
 	}
 
 	.playground__error-dismiss:hover {
@@ -974,12 +974,12 @@
 		align-items: center;
 		justify-content: center;
 		flex: 1;
-		gap: 1rem;
+		gap: var(--fd-space-xl);
 		color: var(--fd-muted-foreground);
 	}
 
 	:global(.playground__loading-icon) {
-		font-size: 2rem;
+		font-size: var(--fd-text-2xl);
 		animation: spin 1s linear infinite;
 	}
 

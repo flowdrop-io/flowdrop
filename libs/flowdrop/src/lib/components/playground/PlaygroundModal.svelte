@@ -121,7 +121,7 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 1100;
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 	}
 
 	.playground-modal {
@@ -141,7 +141,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--fd-space-4) var(--fd-space-5);
+		padding: var(--fd-space-xl) var(--fd-space-2xl);
 		border-bottom: 1px solid var(--fd-border);
 		background-color: var(--fd-muted);
 		flex-shrink: 0;
@@ -150,7 +150,7 @@
 	.playground-modal__title {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		font-size: var(--fd-text-base);
 		font-weight: 600;
 		color: var(--fd-foreground);
@@ -207,7 +207,7 @@
 		}
 
 		.playground-modal__header {
-			padding: var(--fd-space-3) var(--fd-space-4);
+			padding: var(--fd-space-md) var(--fd-space-xl);
 		}
 	}
 
