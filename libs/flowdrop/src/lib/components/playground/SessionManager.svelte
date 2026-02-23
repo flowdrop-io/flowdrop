@@ -295,7 +295,7 @@
 		align-items: center;
 		justify-content: space-between;
 		width: 100%;
-		padding: var(--fd-space-3) var(--fd-space-4);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		border: none;
 		background: transparent;
 		cursor: pointer;
@@ -309,7 +309,7 @@
 	.session-manager__title {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		font-size: var(--fd-text-sm);
 		font-weight: 500;
 		color: var(--fd-foreground);
@@ -321,7 +321,7 @@
 		justify-content: center;
 		min-width: 1.25rem;
 		height: 1.25rem;
-		padding: 0 var(--fd-space-1);
+		padding: 0 var(--fd-space-3xs);
 		border-radius: var(--fd-radius-full);
 		font-size: var(--fd-text-xs);
 		font-weight: 600;
@@ -340,7 +340,7 @@
 
 	/* Content */
 	.session-manager__content {
-		padding: var(--fd-space-2);
+		padding: var(--fd-space-xs);
 	}
 
 	/* New Session Button */
@@ -348,10 +348,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: var(--fd-space-1);
+		gap: var(--fd-space-3xs);
 		width: 100%;
-		padding: 0.625rem var(--fd-space-4);
-		margin-bottom: var(--fd-space-2);
+		padding: var(--fd-space-sm) var(--fd-space-xl);
+		margin-bottom: var(--fd-space-xs);
 		border: 1px dashed var(--fd-border-strong);
 		border-radius: var(--fd-radius-lg);
 		background: transparent;
@@ -383,8 +383,8 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-8) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-4xl) var(--fd-space-xl);
 		color: var(--fd-muted-foreground);
 		font-size: var(--fd-text-sm);
 	}
@@ -395,8 +395,8 @@
 		align-items: center;
 		justify-content: space-between;
 		width: 100%;
-		padding: 0.625rem var(--fd-space-3);
-		margin-bottom: var(--fd-space-1);
+		padding: var(--fd-space-sm) var(--fd-space-md);
+		margin-bottom: var(--fd-space-3xs);
 		border: 1px solid transparent;
 		border-radius: var(--fd-radius-lg);
 		background: transparent;
@@ -422,7 +422,7 @@
 	.session-manager__item-header {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		margin-bottom: 0.125rem;
 	}
 
@@ -478,7 +478,7 @@
 	/* Delete Button */
 	.session-manager__item-actions {
 		display: flex;
-		gap: var(--fd-space-1);
+		gap: var(--fd-space-3xs);
 		opacity: 0;
 		transition: opacity var(--fd-transition-normal);
 	}
@@ -528,11 +528,11 @@
 	/* Responsive */
 	@media (max-width: 640px) {
 		.session-manager__content {
-			padding: var(--fd-space-1);
+			padding: var(--fd-space-3xs);
 		}
 
 		.session-manager__item {
-			padding: var(--fd-space-2);
+			padding: var(--fd-space-xs);
 		}
 	}
 </style>

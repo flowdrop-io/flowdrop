@@ -637,7 +637,7 @@
 		flex: 1;
 		min-height: 0; /* Critical: allows overflow to work in flex container */
 		overflow-y: auto;
-		padding: var(--fd-space-6);
+		padding: var(--fd-space-3xl);
 		scroll-behavior: smooth;
 	}
 
@@ -649,7 +649,7 @@
 		justify-content: center;
 		height: 100%;
 		text-align: center;
-		padding: var(--fd-space-8);
+		padding: var(--fd-space-4xl);
 	}
 
 	.chat-panel__welcome-icon {
@@ -658,7 +658,7 @@
 		justify-content: center;
 		width: 80px;
 		height: 80px;
-		margin-bottom: var(--fd-space-6);
+		margin-bottom: var(--fd-space-3xl);
 		color: var(--fd-foreground);
 	}
 
@@ -671,7 +671,7 @@
 		font-size: var(--fd-text-2xl);
 		font-weight: 600;
 		color: var(--fd-foreground);
-		margin: 0 0 var(--fd-space-2) 0;
+		margin: 0 0 var(--fd-space-xs) 0;
 	}
 
 	.chat-panel__welcome-text {
@@ -684,9 +684,9 @@
 	.chat-panel__typing {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-3) var(--fd-space-4);
-		margin-top: var(--fd-space-2);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md) var(--fd-space-xl);
+		margin-top: var(--fd-space-xs);
 		background-color: var(--fd-muted);
 		border-radius: var(--fd-radius-2xl);
 		width: fit-content;
@@ -694,12 +694,12 @@
 
 	.chat-panel__typing-indicator {
 		display: flex;
-		gap: var(--fd-space-1);
+		gap: var(--fd-space-3xs);
 	}
 
 	.chat-panel__typing-indicator span {
-		width: 0.375rem;
-		height: 0.375rem;
+		width: var(--fd-space-2xs);
+		height: var(--fd-space-2xs);
 		background-color: var(--fd-muted-foreground);
 		border-radius: var(--fd-radius-full);
 		animation: bounce 1.4s ease-in-out infinite;
@@ -736,7 +736,7 @@
 	/* Input Area - Always stays at bottom, never shrinks */
 	.chat-panel__input-area {
 		flex-shrink: 0;
-		padding: var(--fd-space-4) var(--fd-space-6) var(--fd-space-6);
+		padding: var(--fd-space-xl) var(--fd-space-3xl) var(--fd-space-3xl);
 		background-color: var(--fd-background);
 		border-top: 1px solid var(--fd-border-muted);
 	}
@@ -744,7 +744,7 @@
 	.chat-panel__input-container {
 		display: flex;
 		align-items: flex-end;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 		max-width: 800px;
 		margin: 0 auto;
 	}
@@ -756,7 +756,7 @@
 		background-color: var(--fd-background);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-xl);
-		padding: 0.625rem var(--fd-space-3);
+		padding: var(--fd-space-sm) var(--fd-space-md);
 		transition:
 			border-color var(--fd-transition-fast),
 			box-shadow var(--fd-transition-fast);
@@ -774,7 +774,7 @@
 		resize: none;
 		font-family: inherit;
 		font-size: var(--fd-text-base);
-		line-height: 1.5;
+		line-height: var(--fd-leading-normal);
 		max-height: 120px;
 		background: transparent;
 		color: var(--fd-foreground);
@@ -793,7 +793,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0.625rem var(--fd-space-5);
+		padding: var(--fd-space-sm) var(--fd-space-2xl);
 		border: none;
 		border-radius: var(--fd-radius-lg);
 		background-color: var(--fd-foreground);
@@ -818,8 +818,8 @@
 	.chat-panel__stop-btn {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-1);
-		padding: 0.625rem var(--fd-space-4);
+		gap: var(--fd-space-3xs);
+		padding: var(--fd-space-sm) var(--fd-space-xl);
 		border: none;
 		border-radius: var(--fd-radius-lg);
 		background-color: var(--fd-error);
@@ -839,8 +839,8 @@
 	.chat-panel__run-btn {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-1);
-		padding: 0.625rem var(--fd-space-5);
+		gap: var(--fd-space-3xs);
+		padding: var(--fd-space-sm) var(--fd-space-2xl);
 		border: none;
 		border-radius: var(--fd-radius-lg);
 		background-color: var(--fd-success);
@@ -872,8 +872,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-3) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		background-color: var(--fd-muted);
 		border-radius: var(--fd-radius-lg);
 		color: var(--fd-muted-foreground);
@@ -885,21 +885,21 @@
 	/* Responsive */
 	@media (max-width: 640px) {
 		.chat-panel__messages {
-			padding: var(--fd-space-4);
+			padding: var(--fd-space-xl);
 		}
 
 		.chat-panel__input-area {
-			padding: var(--fd-space-3) var(--fd-space-4) var(--fd-space-4);
+			padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-xl);
 		}
 
 		.chat-panel__input-container {
-			gap: var(--fd-space-2);
+			gap: var(--fd-space-xs);
 		}
 
 		.chat-panel__send-btn,
 		.chat-panel__stop-btn,
 		.chat-panel__run-btn {
-			padding: var(--fd-space-2) var(--fd-space-4);
+			padding: var(--fd-space-xs) var(--fd-space-xl);
 		}
 	}
 </style>
