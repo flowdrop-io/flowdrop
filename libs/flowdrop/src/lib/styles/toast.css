@@ -11,7 +11,7 @@
 
 /* Toaster container: use design token for offset from viewport edges */
 .flowdrop-toaster.flowdrop-toaster {
-	--default-offset: var(--fd-space-4, 16px);
+	--default-offset: var(--fd-space-xl, 16px);
 }
 
 /*

@@ -4053,12 +4053,14 @@ components:
         - choice
         - text
         - form
+        - review
       description: |
         Type of interrupt prompt:
         - `confirmation`: Yes/No approval prompt
         - `choice`: Single or multiple selection from options
         - `text`: Free-form text input
         - `form`: JSON Schema-based form
+        - `review`: Review proposed field changes (accept/reject individually)
     InterruptStatus:
       type: string
       enum:
@@ -4185,6 +4187,110 @@ components:
       required:
         - message
         - schema
+    ReviewChange:
+      type: object
+      description: A single field change proposed for review
+      properties:
+        field:
+          type: string
+          description: Field identifier (machine key)
+          example: title
+        label:
+          type: string
+          description: Human-readable field label
+          example: Page Title
+        original:
+          description: Original value before the proposed change
+          example: About Us
+        proposed:
+          description: Proposed new value
+          example: About Our Company
+      required:
+        - field
+        - label
+        - original
+        - proposed
+    ReviewInterruptConfig:
+      type: object
+      description: Configuration for review-type interrupts. Displays a list of proposed field changes for the user to accept or reject individually.
+      properties:
+        message:
+          type: string
+          description: Prompt message to display above the review
+          example: Please review the following changes
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewChange'
+          description: List of field changes to review
+          minItems: 1
+        accept_all_label:
+          type: string
+          description: Label for the "Accept All" button
+          default: Accept All
+        reject_all_label:
+          type: string
+          description: Label for the "Reject All" button
+          default: Reject All
+        submit_label:
+          type: string
+          description: Label for the submit button
+          default: Submit Review
+      required:
+        - message
+        - changes
+    ReviewFieldDecision:
+      type: object
+      description: Per-field decision in a review resolution
+      properties:
+        accepted:
+          type: boolean
+          description: Whether the proposed change was accepted
+        value:
+          description: The effective value (proposed if accepted, original if rejected)
+      required:
+        - accepted
+        - value
+    ReviewResolution:
+      type: object
+      description: Resolution value for review-type interrupts
+      properties:
+        decisions:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ReviewFieldDecision'
+          description: Map of field identifier to the user's decision
+        summary:
+          type: object
+          properties:
+            accepted:
+              type: integer
+              description: Number of accepted changes
+            rejected:
+              type: integer
+              description: Number of rejected changes
+            total:
+              type: integer
+              description: Total number of changes
+          required:
+            - accepted
+            - rejected
+            - total
+      required:
+        - decisions
+        - summary
+      example:
+        decisions:
+          title:
+            accepted: true
+            value: About Our Company
+          meta_description:
+            accepted: false
+            value: Learn about us
+        summary:
+          accepted: 1
+          rejected: 1
+          total: 2
     Interrupt:
       type: object
       description: |
@@ -4215,6 +4321,7 @@ components:
             - $ref: '#/components/schemas/ChoiceInterruptConfig'
             - $ref: '#/components/schemas/TextInterruptConfig'
             - $ref: '#/components/schemas/FormInterruptConfig'
+            - $ref: '#/components/schemas/ReviewInterruptConfig'
           description: Type-specific configuration
         allowCancel:
           type: boolean
@@ -4311,6 +4418,20 @@ components:
         default_values:
           type: object
           description: Form default values (form type)
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewChange'
+          description: List of field changes to review (review type)
+        accept_all_label:
+          type: string
+          description: Label for "Accept All" button (review type)
+        reject_all_label:
+          type: string
+          description: Label for "Reject All" button (review type)
+        submit_label:
+          type: string
+          description: Label for submit button (review type)
       required:
         - type
         - interrupt_id
@@ -4338,6 +4459,7 @@ components:
             - choice: string or string[]
             - text: string
             - form: object
+            - review: ReviewResolution (decisions map + summary)
       required:
         - value
     InterruptResponse:

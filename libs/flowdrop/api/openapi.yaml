@@ -321,6 +321,14 @@ components:
       $ref: './components/schemas/interrupt.yaml#/TextInterruptConfig'
     FormInterruptConfig:
       $ref: './components/schemas/interrupt.yaml#/FormInterruptConfig'
+    ReviewChange:
+      $ref: './components/schemas/interrupt.yaml#/ReviewChange'
+    ReviewInterruptConfig:
+      $ref: './components/schemas/interrupt.yaml#/ReviewInterruptConfig'
+    ReviewFieldDecision:
+      $ref: './components/schemas/interrupt.yaml#/ReviewFieldDecision'
+    ReviewResolution:
+      $ref: './components/schemas/interrupt.yaml#/ReviewResolution'
     Interrupt:
       $ref: './components/schemas/interrupt.yaml#/Interrupt'
     InterruptMessageMetadata:

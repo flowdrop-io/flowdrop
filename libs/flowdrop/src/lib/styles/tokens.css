@@ -326,6 +326,7 @@
 	--fd-border: #3a3a40;
 	--fd-border-muted: #2e2e33;
 	--fd-border-strong: #4a4a52;
+	--fd-ring: #60a5fa;
 
 	/* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
 	--fd-node-border: #4a4a52;
