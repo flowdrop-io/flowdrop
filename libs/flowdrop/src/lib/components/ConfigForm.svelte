@@ -702,13 +702,13 @@
 	.config-form {
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-6);
+		gap: var(--fd-space-3xl);
 	}
 
 	.config-form__fields {
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-5);
+		gap: var(--fd-space-2xl);
 	}
 
 	/* ============================================
@@ -718,11 +718,11 @@
 
 	.config-form__footer {
 		display: flex;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 		justify-content: flex-end;
-		padding-top: var(--fd-space-4);
+		padding-top: var(--fd-space-xl);
 		border-top: 1px solid var(--fd-border-muted);
-		margin-top: var(--fd-space-2);
+		margin-top: var(--fd-space-xs);
 	}
 
 	/* Button Spinner */
@@ -744,8 +744,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: var(--fd-space-2);
-		padding: 0.625rem var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: 0.625rem var(--fd-space-xl);
 		border-radius: var(--fd-radius-lg);
 		font-size: var(--fd-text-sm);
 		font-weight: 600;
@@ -816,14 +816,14 @@
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-lg);
 		overflow: hidden;
-		margin-top: var(--fd-space-2);
+		margin-top: var(--fd-space-xs);
 	}
 
 	.config-form__extensions-header {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-3) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		background-color: var(--fd-subtle);
 		border-bottom: 1px solid var(--fd-border);
 		font-size: 0.8125rem;
@@ -838,10 +838,10 @@
 	}
 
 	.config-form__extensions-content {
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-4);
+		gap: var(--fd-space-xl);
 	}
 
 	/* ============================================
@@ -858,8 +858,8 @@
 	.config-form__debug-header {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-3) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		background-color: var(--fd-warning-muted);
 		border-bottom: 1px solid var(--fd-warning);
 		font-size: 0.8125rem;
@@ -874,7 +874,7 @@
 
 	.config-form__debug-content {
 		margin: 0;
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		font-size: var(--fd-text-xs);
 		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 		color: var(--fd-foreground);
@@ -892,14 +892,14 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: var(--fd-space-12) var(--fd-space-6);
+		padding: var(--fd-space-6xl) var(--fd-space-3xl);
 		text-align: center;
 	}
 
 	.config-form__empty-icon {
 		width: 3rem;
 		height: 3rem;
-		margin-bottom: var(--fd-space-4);
+		margin-bottom: var(--fd-space-xl);
 		color: var(--fd-border);
 	}
 
@@ -917,7 +917,7 @@
 	}
 
 	.config-form__empty-button {
-		margin-top: var(--fd-space-4);
+		margin-top: var(--fd-space-xl);
 	}
 
 	/* ============================================
@@ -929,14 +929,14 @@
 		border: 1px solid var(--fd-primary);
 		border-radius: 0.625rem;
 		overflow: hidden;
-		margin-bottom: var(--fd-space-4);
+		margin-bottom: var(--fd-space-xl);
 	}
 
 	.config-form__admin-edit-header {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-3) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		background: linear-gradient(135deg, var(--fd-primary-muted) 0%, var(--fd-primary-muted) 100%);
 		border-bottom: 1px solid var(--fd-primary);
 		font-size: 0.8125rem;
@@ -951,10 +951,10 @@
 	}
 
 	.config-form__admin-edit-content {
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 	}
 
 	.config-form__admin-edit-description {
@@ -973,8 +973,8 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: var(--fd-space-12) var(--fd-space-6);
-		gap: var(--fd-space-4);
+		padding: var(--fd-space-6xl) var(--fd-space-3xl);
+		gap: var(--fd-space-xl);
 	}
 
 	.config-form__loading-spinner {
@@ -1012,8 +1012,8 @@
 	.config-form__error-header {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-3) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		background-color: var(--fd-error-muted);
 		border-bottom: 1px solid var(--fd-error);
 		font-size: 0.8125rem;
@@ -1028,10 +1028,10 @@
 	}
 
 	.config-form__error-content {
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 	}
 
 	.config-form__error-message {
@@ -1043,7 +1043,7 @@
 
 	.config-form__error-actions {
 		display: flex;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		flex-wrap: wrap;
 	}
 
@@ -1053,9 +1053,9 @@
 
 	.config-form__schema-actions {
 		display: flex;
-		gap: var(--fd-space-2);
-		margin-bottom: var(--fd-space-4);
-		padding-bottom: var(--fd-space-3);
+		gap: var(--fd-space-xs);
+		margin-bottom: var(--fd-space-xl);
+		padding-bottom: var(--fd-space-md);
 		border-bottom: 1px solid var(--fd-border-muted);
 	}
 
@@ -1063,8 +1063,8 @@
 	.config-form__schema-external {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--fd-space-1);
-		padding: var(--fd-space-1) var(--fd-space-2);
+		gap: var(--fd-space-3xs);
+		padding: var(--fd-space-3xs) var(--fd-space-xs);
 		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		font-family: inherit;

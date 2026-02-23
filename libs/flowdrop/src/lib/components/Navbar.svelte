@@ -380,7 +380,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
-		padding: var(--fd-space-1) var(--fd-space-2);
+		padding: var(--fd-space-3xs) var(--fd-space-xs);
 		background-color: var(--fd-success-muted);
 		border-radius: var(--fd-radius-md);
 		font-size: var(--fd-text-xs);
@@ -589,8 +589,8 @@
 	.flowdrop-navbar__end {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		margin-left: var(--fd-space-3);
+		gap: var(--fd-space-xs);
+		margin-left: var(--fd-space-md);
 	}
 
 	.flowdrop-navbar__settings-btn {
@@ -705,7 +705,7 @@
 
 		.flowdrop-navbar__status {
 			font-size: var(--fd-text-xs);
-			padding: var(--fd-space-1) var(--fd-space-2);
+			padding: var(--fd-space-3xs) var(--fd-space-xs);
 		}
 	}
 

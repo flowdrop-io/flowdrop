@@ -458,8 +458,8 @@
 	/* Tabs */
 	.flowdrop-settings-panel__tabs {
 		display: flex;
-		gap: var(--fd-space-1);
-		padding: var(--fd-space-3);
+		gap: var(--fd-space-3xs);
+		padding: var(--fd-space-md);
 		border-bottom: 1px solid var(--fd-border);
 		overflow-x: auto;
 	}
@@ -467,8 +467,8 @@
 	.flowdrop-settings-panel__tab {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-2) var(--fd-space-3);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		border: none;
 		border-radius: var(--fd-radius-md);
 		background-color: transparent;
@@ -508,7 +508,7 @@
 	.flowdrop-settings-panel__content {
 		flex: 1;
 		overflow-y: auto;
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 	}
 
 	.flowdrop-settings-panel__panel {
@@ -524,15 +524,15 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: var(--fd-space-3) var(--fd-space-4);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		border-top: 1px solid var(--fd-border);
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 	}
 
 	.flowdrop-settings-panel__footer-start,
 	.flowdrop-settings-panel__footer-end {
 		display: flex;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		align-items: center;
 	}
 
@@ -540,8 +540,8 @@
 	.flowdrop-settings-panel__btn {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-2) var(--fd-space-3);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		border-radius: var(--fd-radius-md);
 		font-size: var(--fd-text-sm);
 		font-weight: 500;
@@ -601,8 +601,8 @@
 	.flowdrop-settings-panel__synced {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-2) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-xs) var(--fd-space-xl);
 		font-size: var(--fd-text-xs);
 	}
 

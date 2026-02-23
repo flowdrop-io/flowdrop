@@ -408,7 +408,7 @@
 	.workflows-header {
 		background: var(--fd-background);
 		border-bottom: 1px solid var(--fd-border);
-		padding: var(--fd-space-4) var(--fd-space-8);
+		padding: var(--fd-space-xl) var(--fd-space-4xl);
 	}
 
 	.workflows-header__content {
@@ -426,7 +426,7 @@
 
 	.workflows-filters {
 		background: transparent;
-		padding: var(--fd-space-6) var(--fd-space-8) var(--fd-space-4) var(--fd-space-8);
+		padding: var(--fd-space-3xl) var(--fd-space-4xl) var(--fd-space-xl) var(--fd-space-4xl);
 	}
 
 	.workflows-search {
@@ -441,7 +441,7 @@
 
 	.flowdrop-search__input {
 		width: 100%;
-		padding: var(--fd-space-3) var(--fd-space-4) var(--fd-space-3) 2.5rem;
+		padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-md) 2.5rem;
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-lg);
 		font-size: var(--fd-text-sm);
@@ -461,7 +461,7 @@
 
 	.flowdrop-search__icon {
 		position: absolute;
-		left: var(--fd-space-3);
+		left: var(--fd-space-md);
 		top: 50%;
 		transform: translateY(-50%);
 		color: var(--fd-muted-foreground);
@@ -474,7 +474,7 @@
 
 	.workflows-content {
 		flex: 1;
-		padding: var(--fd-space-4) var(--fd-space-8);
+		padding: var(--fd-space-xl) var(--fd-space-4xl);
 		overflow-y: auto;
 	}
 
@@ -506,7 +506,7 @@
 		font-size: var(--fd-text-lg);
 		font-weight: 600;
 		color: var(--fd-foreground);
-		margin: 0 0 var(--fd-space-1) 0;
+		margin: 0 0 var(--fd-space-3xs) 0;
 		line-height: 1.4;
 	}
 
@@ -519,7 +519,7 @@
 	}
 
 	.status-badge {
-		padding: var(--fd-space-1) var(--fd-space-3);
+		padding: var(--fd-space-3xs) var(--fd-space-md);
 		border-radius: var(--fd-radius-lg);
 		font-size: var(--fd-text-xs);
 		font-weight: 600;
@@ -550,7 +550,7 @@
 		font-weight: 600;
 		text-align: center;
 		background: var(--fd-secondary);
-		padding: var(--fd-space-1) var(--fd-space-2);
+		padding: var(--fd-space-3xs) var(--fd-space-xs);
 		border-radius: var(--fd-radius-md);
 		display: inline-block;
 		min-width: 2rem;
@@ -568,7 +568,7 @@
 	.workflow-dropdown__trigger {
 		background: var(--fd-muted);
 		border: 1px solid var(--fd-border);
-		padding: var(--fd-space-3);
+		padding: var(--fd-space-md);
 		cursor: pointer;
 		color: var(--fd-muted-foreground);
 		border-radius: var(--fd-radius-lg);
@@ -602,16 +602,16 @@
 		box-shadow: var(--fd-shadow-xl);
 		z-index: 50;
 		min-width: 220px;
-		margin-top: var(--fd-space-3);
+		margin-top: var(--fd-space-md);
 		overflow: hidden;
 	}
 
 	.workflow-dropdown__item {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 		width: 100%;
-		padding: var(--fd-space-3) var(--fd-space-5);
+		padding: var(--fd-space-md) var(--fd-space-2xl);
 		border: none;
 		background: none;
 		text-align: left;
@@ -664,7 +664,7 @@
 	.workflow-dropdown__divider {
 		height: 1px;
 		background: var(--fd-border);
-		margin: var(--fd-space-2) 0;
+		margin: var(--fd-space-xs) 0;
 	}
 
 	.workflows-empty {
@@ -680,7 +680,7 @@
 	}
 
 	.workflows-empty__icon {
-		margin-bottom: var(--fd-space-4);
+		margin-bottom: var(--fd-space-xl);
 		color: var(--fd-muted-foreground);
 	}
 
@@ -693,12 +693,12 @@
 		font-size: var(--fd-text-xl);
 		font-weight: 600;
 		color: var(--fd-foreground);
-		margin: 0 0 var(--fd-space-2) 0;
+		margin: 0 0 var(--fd-space-xs) 0;
 	}
 
 	.workflows-empty__content p {
 		color: var(--fd-muted-foreground);
-		margin: 0 0 var(--fd-space-6) 0;
+		margin: 0 0 var(--fd-space-3xl) 0;
 	}
 
 	.workflows-loading {
@@ -711,7 +711,7 @@
 	.workflows-loading__content {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-4);
+		gap: var(--fd-space-xl);
 		color: var(--fd-muted-foreground);
 	}
 
@@ -737,7 +737,7 @@
 	}
 
 	.workflows-error__icon {
-		margin-bottom: var(--fd-space-4);
+		margin-bottom: var(--fd-space-xl);
 		color: var(--fd-error);
 	}
 
@@ -745,12 +745,12 @@
 		font-size: var(--fd-text-xl);
 		font-weight: 600;
 		color: var(--fd-foreground);
-		margin: 0 0 var(--fd-space-2) 0;
+		margin: 0 0 var(--fd-space-xs) 0;
 	}
 
 	.workflows-error__content p {
 		color: var(--fd-muted-foreground);
-		margin: 0 0 var(--fd-space-6) 0;
+		margin: 0 0 var(--fd-space-3xl) 0;
 	}
 
 	@keyframes spin {
@@ -763,7 +763,7 @@
 	}
 
 	.flowdrop-btn {
-		padding: var(--fd-space-2) var(--fd-space-4);
+		padding: var(--fd-space-xs) var(--fd-space-xl);
 		border-radius: var(--fd-radius-md);
 		font-size: var(--fd-text-sm);
 		font-weight: 500;
@@ -772,7 +772,7 @@
 		transition: all var(--fd-transition-normal);
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 	}
 
 	.flowdrop-btn--primary {
@@ -793,11 +793,11 @@
 	/* New Card-Based Styles */
 	.workflows-header__tabs {
 		display: flex;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 	}
 
 	.workflows-tab {
-		padding: var(--fd-space-2) var(--fd-space-4);
+		padding: var(--fd-space-xs) var(--fd-space-xl);
 		border: none;
 		background: none;
 		color: var(--fd-muted-foreground);
@@ -820,25 +820,25 @@
 	.workflows-header__controls {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-4);
+		gap: var(--fd-space-xl);
 	}
 
 	.workflows-search {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-4);
+		gap: var(--fd-space-xl);
 	}
 
 	.workflows-view-toggle {
 		display: flex;
-		gap: var(--fd-space-1);
+		gap: var(--fd-space-3xs);
 		background: var(--fd-secondary);
 		border-radius: var(--fd-radius-lg);
-		padding: var(--fd-space-1);
+		padding: var(--fd-space-3xs);
 	}
 
 	.view-toggle {
-		padding: var(--fd-space-2);
+		padding: var(--fd-space-xs);
 		border: none;
 		background: none;
 		color: var(--fd-muted-foreground);
@@ -871,49 +871,49 @@
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 	}
 
 	.workflows-list--grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-		gap: var(--fd-space-4);
+		gap: var(--fd-space-xl);
 	}
 
 	.workflows-list--grid .workflow-card {
 		flex-direction: column;
 		align-items: flex-start;
 		text-align: left;
-		padding: var(--fd-space-5);
+		padding: var(--fd-space-2xl);
 		position: relative;
 	}
 
 	.workflows-list--grid .workflow-card__icon {
 		width: 2rem;
 		height: 2rem;
-		margin-bottom: var(--fd-space-3);
+		margin-bottom: var(--fd-space-md);
 	}
 
 	.workflows-list--grid .workflow-card__header {
 		flex-direction: column;
 		align-items: flex-start;
-		gap: var(--fd-space-2);
-		margin-bottom: var(--fd-space-2);
+		gap: var(--fd-space-xs);
+		margin-bottom: var(--fd-space-xs);
 	}
 
 	.workflows-list--grid .workflow-card__actions {
 		position: absolute;
-		top: var(--fd-space-4);
-		right: var(--fd-space-4);
+		top: var(--fd-space-xl);
+		right: var(--fd-space-xl);
 	}
 
 	.workflow-card {
 		background: var(--fd-card);
 		border-radius: var(--fd-radius-lg);
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 		transition: all var(--fd-transition-normal);
 		border: 1px solid var(--fd-border);
 		cursor: pointer;
@@ -951,8 +951,8 @@
 	.workflow-card__header {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-3);
-		margin-bottom: var(--fd-space-1);
+		gap: var(--fd-space-md);
+		margin-bottom: var(--fd-space-3xs);
 	}
 
 	.workflow-card__title {
@@ -972,14 +972,14 @@
 		color: var(--fd-muted-foreground);
 		font-size: var(--fd-text-xs);
 		line-height: 1.4;
-		margin: 0 0 var(--fd-space-2) 0;
+		margin: 0 0 var(--fd-space-xs) 0;
 		max-width: 500px;
 	}
 
 	.workflow-card__meta {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 	}
 
 	.workflow-meta {
@@ -987,14 +987,14 @@
 		font-size: 0.625rem;
 		font-weight: 500;
 		background: var(--fd-secondary);
-		padding: 0.125rem var(--fd-space-1);
+		padding: 0.125rem var(--fd-space-3xs);
 		border-radius: var(--fd-radius-sm);
 	}
 
 	.workflow-status {
 		font-size: 0.625rem;
 		font-weight: 500;
-		padding: 0.125rem var(--fd-space-1);
+		padding: 0.125rem var(--fd-space-3xs);
 		border-radius: var(--fd-radius-sm);
 		text-transform: uppercase;
 		letter-spacing: 0.025em;

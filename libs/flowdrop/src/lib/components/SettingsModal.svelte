@@ -213,7 +213,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		border-bottom: 1px solid var(--fd-border);
 		flex-shrink: 0;
 	}
@@ -221,7 +221,7 @@
 	.flowdrop-settings-modal__title {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		margin: 0;
 		font-size: var(--fd-text-lg);
 		font-weight: 600;

@@ -120,7 +120,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-md);
 		background-color: var(--fd-background);
@@ -146,7 +146,7 @@
 
 	/* Size variants */
 	.flowdrop-theme-toggle--sm {
-		padding: var(--fd-space-1) var(--fd-space-2);
+		padding: var(--fd-space-3xs) var(--fd-space-xs);
 		font-size: var(--fd-text-xs);
 	}
 
@@ -155,7 +155,7 @@
 	}
 
 	.flowdrop-theme-toggle--md {
-		padding: var(--fd-space-2) var(--fd-space-3);
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		font-size: var(--fd-text-sm);
 	}
 
@@ -164,7 +164,7 @@
 	}
 
 	.flowdrop-theme-toggle--lg {
-		padding: var(--fd-space-3) var(--fd-space-4);
+		padding: var(--fd-space-md) var(--fd-space-xl);
 		font-size: var(--fd-text-base);
 	}
 
