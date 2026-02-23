@@ -423,11 +423,12 @@
 </div>
 
 <style>
-	/* Uses design tokens from base.css/tokens.css */
+	/* Uses design tokens from tokens.css / base.css
+	   Component tokens: --fd-review-* defined in base.css */
 	.review-prompt {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: var(--fd-space-md);
 	}
 
 	.review-prompt--resolved {
@@ -440,20 +441,20 @@
 
 	.review-prompt__message {
 		margin: 0;
-		font-size: 0.9375rem;
-		line-height: 1.5;
+		font-size: var(--fd-review-font-size-message);
+		line-height: var(--fd-review-line-height);
 		color: var(--fd-foreground);
 	}
 
 	.review-prompt__error {
 		display: flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.75rem;
+		gap: var(--fd-review-space-sm);
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		background-color: var(--fd-error-muted);
 		border-radius: var(--fd-radius-md);
 		color: var(--fd-error);
-		font-size: 0.8125rem;
+		font-size: var(--fd-review-font-size-error);
 	}
 
 	/* Toolbar: bulk actions + counter */
@@ -461,21 +462,21 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.75rem;
+		gap: var(--fd-space-md);
 		flex-wrap: wrap;
 	}
 
 	.review-prompt__bulk-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--fd-space-xs);
 	}
 
 	.review-prompt__bulk-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.75rem;
+		gap: var(--fd-review-space-sm);
+		padding: var(--fd-review-space-sm) var(--fd-space-md);
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		font-family: inherit;
 		border-radius: var(--fd-radius-md);
@@ -516,7 +517,7 @@
 	.review-prompt__changes {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--fd-space-xs);
 	}
 
 	.review-prompt__change {
@@ -539,7 +540,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.625rem 0.875rem;
+		padding: var(--fd-review-space-md) var(--fd-review-space-lg);
 		border-bottom: 1px solid var(--fd-border);
 	}
 
@@ -562,23 +563,23 @@
 	/* Accept/Reject toggle buttons */
 	.review-prompt__toggle-group {
 		display: flex;
-		gap: 0.25rem;
+		gap: var(--fd-space-3xs);
 	}
 
 	.review-prompt__toggle-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.25rem;
-		height: 1.75rem;
-		padding: 0 0.5rem;
+		gap: var(--fd-space-3xs);
+		height: var(--fd-review-toggle-height);
+		padding: 0 var(--fd-space-xs);
 		border-radius: var(--fd-radius-md);
 		border: 1px solid var(--fd-border);
 		background-color: var(--fd-background);
 		color: var(--fd-muted-foreground);
 		cursor: pointer;
 		transition: all var(--fd-transition-fast);
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		font-family: inherit;
 	}
@@ -590,13 +591,13 @@
 	.review-prompt__toggle-btn--accept.review-prompt__toggle-btn--active {
 		background-color: var(--fd-success);
 		border-color: var(--fd-success);
-		color: #ffffff;
+		color: var(--fd-success-foreground);
 	}
 
 	.review-prompt__toggle-btn--reject.review-prompt__toggle-btn--active {
 		background-color: var(--fd-error);
 		border-color: var(--fd-error);
-		color: #ffffff;
+		color: var(--fd-error-foreground);
 	}
 
 	.review-prompt__toggle-btn:disabled {
@@ -608,8 +609,8 @@
 	.review-prompt__decision-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.75rem;
+		gap: var(--fd-space-3xs);
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 	}
 
@@ -630,8 +631,8 @@
 	.review-prompt__diff-row {
 		display: flex;
 		align-items: baseline;
-		gap: 0.5rem;
-		padding: 0.5rem 0.875rem;
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-xs) var(--fd-review-space-lg);
 		border-bottom: 1px solid var(--fd-border);
 	}
 
@@ -643,7 +644,7 @@
 		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		color: var(--fd-muted-foreground);
-		min-width: 5rem;
+		min-width: var(--fd-review-diff-label-width);
 		flex-shrink: 0;
 	}
 
@@ -660,22 +661,22 @@
 
 	/* Inline diff display */
 	.review-prompt__diff-inline {
-		line-height: 1.6;
+		line-height: var(--fd-review-line-height-content);
 	}
 
 	/* HTML view toggle */
 	.review-prompt__html-toggle-row {
 		display: flex;
 		justify-content: flex-end;
-		padding: 0.375rem 0.875rem 0;
+		padding: var(--fd-review-space-sm) var(--fd-review-space-lg) 0;
 	}
 
 	.review-prompt__html-toggle-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
-		padding: 0.125rem 0.5rem;
-		font-size: 0.6875rem;
+		gap: var(--fd-space-3xs);
+		padding: var(--fd-review-space-xs) var(--fd-space-xs);
+		font-size: var(--fd-review-font-size-html-toggle);
 		font-weight: 500;
 		font-family: inherit;
 		color: var(--fd-muted-foreground);
@@ -693,9 +694,9 @@
 
 	/* Raw HTML code display */
 	.review-prompt__raw-html {
-		font-family: monospace;
+		font-family: var(--fd-review-font-mono);
 		font-size: var(--fd-text-xs);
-		line-height: 1.5;
+		line-height: var(--fd-review-line-height);
 		white-space: pre-wrap;
 		word-break: break-word;
 	}
@@ -703,7 +704,7 @@
 	/* Rendered HTML content */
 	.review-prompt__html-content {
 		font-size: var(--fd-text-sm);
-		line-height: 1.6;
+		line-height: var(--fd-review-line-height-content);
 	}
 
 	.review-prompt__html-content :global(p) {
@@ -734,9 +735,9 @@
 	/* Block diff display (for JSON/multi-line diffs) */
 	.review-prompt__diff-block {
 		margin: 0;
-		font-family: monospace;
+		font-family: var(--fd-review-font-mono);
 		font-size: var(--fd-text-xs);
-		line-height: 1.5;
+		line-height: var(--fd-review-line-height);
 		white-space: pre-wrap;
 		word-break: break-word;
 		overflow-x: auto;
@@ -745,47 +746,47 @@
 	.review-prompt__diff-token--added {
 		background-color: var(--fd-success-muted);
 		color: var(--fd-success);
-		padding: 0.0625rem 0.125rem;
-		border-radius: 0.125rem;
+		padding: var(--fd-review-diff-token-padding);
+		border-radius: var(--fd-radius-sm);
 	}
 
 	.review-prompt__diff-token--removed {
 		background-color: var(--fd-error-muted);
 		color: var(--fd-error);
 		text-decoration: line-through;
-		padding: 0.0625rem 0.125rem;
-		border-radius: 0.125rem;
+		padding: var(--fd-review-diff-token-padding);
+		border-radius: var(--fd-radius-sm);
 	}
 
 	/* Actions */
 	.review-prompt__actions {
 		display: flex;
-		gap: 0.75rem;
-		margin-top: 0.25rem;
+		gap: var(--fd-space-md);
+		margin-top: var(--fd-space-3xs);
 	}
 
 	.review-prompt__submit {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5rem;
-		padding: 0.625rem 1.25rem;
+		gap: var(--fd-space-xs);
+		padding: var(--fd-review-space-md) var(--fd-space-2xl);
 		border-radius: var(--fd-radius-lg);
 		font-size: var(--fd-text-sm);
 		font-weight: 600;
 		font-family: inherit;
 		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: all var(--fd-transition-normal);
 		border: none;
-		min-height: 2.5rem;
+		min-height: var(--fd-space-5xl);
 		background: var(--fd-interrupt-btn-primary-bg);
 		color: var(--fd-primary-foreground);
-		box-shadow: 0 1px 3px var(--fd-interrupt-btn-primary-shadow);
+		box-shadow: var(--fd-shadow-sm);
 	}
 
 	.review-prompt__submit:hover:not(:disabled) {
 		background: var(--fd-interrupt-btn-primary-bg-hover);
-		box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
+		box-shadow: var(--fd-shadow-md);
 		transform: translateY(-1px);
 	}
 
@@ -797,8 +798,8 @@
 	}
 
 	.review-prompt__spinner {
-		width: 1rem;
-		height: 1rem;
+		width: var(--fd-space-xl);
+		height: var(--fd-space-xl);
 		border: 2px solid var(--fd-border);
 		border-top-color: currentColor;
 		border-radius: 50%;
@@ -813,7 +814,7 @@
 
 	/* Summary */
 	.review-prompt__summary {
-		padding: 0.5rem 0.75rem;
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		background-color: var(--fd-primary-muted);
 		border: 1px solid var(--fd-interrupt-completed-border);
 		border-radius: var(--fd-radius-md);
@@ -828,12 +829,12 @@
 	.review-prompt__resolved-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
+		gap: var(--fd-review-space-sm);
+		padding: var(--fd-review-space-sm) var(--fd-space-md);
 		background-color: var(--fd-interrupt-badge-completed-bg);
-		border-radius: 9999px;
+		border-radius: var(--fd-radius-full);
 		color: var(--fd-interrupt-badge-completed-text);
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		align-self: flex-start;
 	}

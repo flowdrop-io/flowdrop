@@ -141,7 +141,7 @@
 	.form-prompt {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: var(--fd-space-md);
 	}
 
 	.form-prompt--resolved {
@@ -154,27 +154,27 @@
 
 	.form-prompt__message {
 		margin: 0;
-		font-size: 0.9375rem;
-		line-height: 1.5;
+		font-size: var(--fd-interrupt-font-message);
+		line-height: var(--fd-interrupt-line-height);
 		color: var(--fd-foreground);
 	}
 
 	.form-prompt__error {
 		display: flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.75rem;
+		gap: var(--fd-space-2xs);
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		background-color: var(--fd-error-muted);
 		border-radius: var(--fd-radius-md);
 		color: var(--fd-error);
-		font-size: 0.8125rem;
+		font-size: var(--fd-interrupt-font-error);
 	}
 
 	.form-prompt__form-wrapper {
 		background-color: var(--fd-muted);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-lg);
-		padding: 1rem;
+		padding: var(--fd-space-xl);
 	}
 
 	/* Resolved values - neutral blue theme */
@@ -182,12 +182,12 @@
 		background-color: var(--fd-primary-muted);
 		border: 1px solid var(--fd-interrupt-completed-border);
 		border-radius: var(--fd-radius-lg);
-		padding: 1rem;
+		padding: var(--fd-space-xl);
 	}
 
 	.form-prompt__resolved-title {
-		margin: 0 0 0.75rem 0;
-		font-size: 0.8125rem;
+		margin: 0 0 var(--fd-space-md) 0;
+		font-size: var(--fd-interrupt-font-error);
 		font-weight: 600;
 		color: var(--fd-interrupt-badge-completed-text);
 		text-transform: uppercase;
@@ -197,7 +197,7 @@
 	.form-prompt__values-list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--fd-space-xs);
 	}
 
 	.form-prompt__value-item {
@@ -223,12 +223,12 @@
 	.form-prompt__resolved-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
+		gap: var(--fd-space-2xs);
+		padding: var(--fd-space-2xs) var(--fd-space-md);
 		background-color: var(--fd-interrupt-badge-completed-bg);
-		border-radius: 9999px;
+		border-radius: var(--fd-radius-full);
 		color: var(--fd-interrupt-badge-completed-text);
-		font-size: 0.75rem;
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		align-self: flex-start;
 	}
