@@ -385,10 +385,10 @@
 	/* Uses design tokens from base.css: --fd-interrupt-* */
 	.interrupt-bubble {
 		display: flex;
-		gap: 0.75rem;
-		padding: 1rem 1.25rem;
-		margin: 0.75rem 1rem;
-		border-radius: 0.75rem;
+		gap: var(--fd-space-md);
+		padding: var(--fd-space-xl) var(--fd-space-2xl);
+		margin: var(--fd-space-md) var(--fd-space-xl);
+		border-radius: var(--fd-radius-xl);
 		background: var(--fd-interrupt-pending-bg);
 		border: 1px solid var(--fd-interrupt-pending-border);
 		box-shadow: 0 2px 8px var(--fd-interrupt-pending-shadow);
@@ -432,15 +432,15 @@
 	/* Avatar */
 	.interrupt-bubble__avatar {
 		flex-shrink: 0;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: var(--fd-interrupt-avatar-size);
+		height: var(--fd-interrupt-avatar-size);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		border-radius: 50%;
 		background-color: var(--fd-interrupt-pending-avatar);
-		color: #ffffff;
-		font-size: 1.125rem;
+		color: var(--fd-primary-foreground);
+		font-size: var(--fd-text-lg);
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__avatar {
@@ -461,7 +461,7 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: var(--fd-space-md);
 	}
 
 	/* Header */
@@ -469,15 +469,15 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem;
+		gap: var(--fd-space-xs);
 	}
 
 	.interrupt-bubble__type {
 		display: flex;
 		align-items: center;
-		gap: 0.375rem;
+		gap: var(--fd-space-2xs);
 		font-weight: 600;
-		font-size: 0.875rem;
+		font-size: var(--fd-text-sm);
 		color: var(--fd-interrupt-pending-text);
 	}
 
@@ -494,9 +494,9 @@
 	}
 
 	.interrupt-bubble__timestamp {
-		font-size: 0.6875rem;
+		font-size: var(--fd-text-2xs);
 		color: var(--fd-interrupt-pending-text-light);
-		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+		font-family: var(--fd-font-mono);
 	}
 
 	.interrupt-bubble--completed .interrupt-bubble__timestamp {
@@ -515,29 +515,29 @@
 	.interrupt-bubble__error {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 0.75rem;
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		background-color: var(--fd-error-muted);
 		border-radius: var(--fd-radius-md);
 		color: var(--fd-interrupt-error-text);
-		font-size: 0.8125rem;
+		font-size: var(--fd-interrupt-font-error);
 	}
 
 	.interrupt-bubble__retry-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--fd-space-3xs);
 		margin-left: auto;
-		padding: 0.25rem 0.5rem;
-		font-size: 0.75rem;
+		padding: var(--fd-space-3xs) var(--fd-space-xs);
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		font-family: inherit;
-		color: #ffffff;
+		color: var(--fd-error-foreground);
 		background-color: var(--fd-interrupt-error-avatar);
 		border: none;
-		border-radius: 0.25rem;
+		border-radius: var(--fd-radius-sm);
 		cursor: pointer;
-		transition: background-color 0.15s ease;
+		transition: background-color var(--fd-transition-fast);
 	}
 
 	.interrupt-bubble__retry-btn:hover {
@@ -547,8 +547,8 @@
 	/* Prompt */
 	.interrupt-bubble__prompt {
 		background-color: var(--fd-interrupt-prompt-bg);
-		border-radius: 0.5rem;
-		padding: 1rem;
+		border-radius: var(--fd-radius-lg);
+		padding: var(--fd-space-xl);
 		border: 1px solid var(--fd-interrupt-prompt-border-pending);
 	}
 
@@ -574,9 +574,9 @@
 	.interrupt-bubble__cancel-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.75rem;
+		gap: var(--fd-space-2xs);
+		padding: var(--fd-space-2xs) var(--fd-space-md);
+		font-size: var(--fd-text-xs);
 		font-weight: 500;
 		font-family: inherit;
 		color: var(--fd-muted-foreground);
@@ -602,8 +602,8 @@
 	.interrupt-bubble__footer {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding-top: 0.5rem;
+		gap: var(--fd-space-xs);
+		padding-top: var(--fd-space-xs);
 		border-top: 1px solid var(--fd-interrupt-prompt-border-pending);
 	}
 
@@ -622,8 +622,8 @@
 	.interrupt-bubble__node {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
-		font-size: 0.6875rem;
+		gap: var(--fd-space-3xs);
+		font-size: var(--fd-text-2xs);
 		color: var(--fd-interrupt-pending-text);
 	}
 
@@ -642,14 +642,14 @@
 	/* Responsive */
 	@media (max-width: 640px) {
 		.interrupt-bubble {
-			margin: 0.5rem;
-			padding: 0.875rem 1rem;
+			margin: var(--fd-space-xs);
+			padding: var(--fd-space-lg) var(--fd-space-xl);
 		}
 
 		.interrupt-bubble__avatar {
-			width: 2rem;
-			height: 2rem;
-			font-size: 1rem;
+			width: var(--fd-space-4xl);
+			height: var(--fd-space-4xl);
+			font-size: var(--fd-text-base);
 		}
 	}
 </style>
