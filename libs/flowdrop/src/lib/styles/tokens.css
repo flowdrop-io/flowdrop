@@ -127,6 +127,7 @@
 
 	/* ----- STATUS: INFO ----- */
 	--fd-info: var(--_blue-2);
+	--fd-info-hover: var(--_blue-3);
 	--fd-info-foreground: #ffffff;
 	--fd-info-muted: var(--_blue-1);
 
@@ -372,6 +373,7 @@
 
 	/* ----- STATUS: INFO ----- */
 	--fd-info: #60a5fa;
+	--fd-info-hover: #93c5fd;
 	--fd-info-foreground: var(--_gray-9);
 	--fd-info-muted: rgba(59, 130, 246, 0.12);
 
