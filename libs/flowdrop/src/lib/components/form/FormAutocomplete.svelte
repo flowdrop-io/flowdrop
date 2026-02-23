@@ -713,9 +713,9 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: flex-start;
-		gap: var(--fd-space-1);
+		gap: var(--fd-space-3xs);
 		min-height: 2.625rem;
-		padding: var(--fd-space-1) 2.5rem var(--fd-space-1) var(--fd-space-3);
+		padding: var(--fd-space-3xs) 2.5rem var(--fd-space-3xs) var(--fd-space-md);
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-lg);
 		font-size: var(--fd-text-sm);
@@ -751,7 +751,7 @@
 	.form-autocomplete__tags {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--fd-space-1);
+		gap: var(--fd-space-3xs);
 		align-items: center;
 	}
 
@@ -759,8 +759,8 @@
 	.form-autocomplete__tag {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--fd-space-1);
-		padding: var(--fd-space-1) var(--fd-space-1) var(--fd-space-1) var(--fd-space-2);
+		gap: var(--fd-space-3xs);
+		padding: var(--fd-space-3xs) var(--fd-space-3xs) var(--fd-space-3xs) var(--fd-space-xs);
 		background-color: var(--fd-primary-muted);
 		border: 1px solid var(--fd-primary-muted);
 		border-radius: var(--fd-radius-md);
@@ -812,7 +812,7 @@
 
 	.form-autocomplete__input {
 		width: 100%;
-		padding: var(--fd-space-1) 0;
+		padding: var(--fd-space-3xs) 0;
 		border: none;
 		outline: none;
 		font-size: var(--fd-text-sm);
@@ -828,11 +828,11 @@
 	/* Status icons */
 	.form-autocomplete__icons {
 		position: absolute;
-		right: var(--fd-space-2);
+		right: var(--fd-space-xs);
 		top: 0.625rem;
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-1);
+		gap: var(--fd-space-3xs);
 	}
 
 	.form-autocomplete__chevron,
@@ -867,7 +867,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: var(--fd-space-1);
+		padding: var(--fd-space-3xs);
 		border: none;
 		border-radius: var(--fd-radius-sm);
 		background: transparent;
@@ -904,7 +904,7 @@
 	/* Dropdown listbox inside popover */
 	.form-autocomplete__listbox {
 		margin: 0;
-		padding: var(--fd-space-1);
+		padding: var(--fd-space-3xs);
 		list-style: none;
 		background-color: var(--fd-background);
 		border: 1px solid var(--fd-border);
@@ -918,7 +918,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--fd-space-2) var(--fd-space-3);
+		padding: var(--fd-space-xs) var(--fd-space-md);
 		border-radius: var(--fd-radius-md);
 		cursor: pointer;
 		transition: background-color var(--fd-transition-fast);
@@ -951,15 +951,15 @@
 		height: 1rem;
 		color: var(--fd-primary);
 		flex-shrink: 0;
-		margin-left: var(--fd-space-2);
+		margin-left: var(--fd-space-xs);
 	}
 
 	/* Status messages */
 	.form-autocomplete__status {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-3);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-md);
 		font-size: var(--fd-text-sm);
 		color: var(--fd-muted-foreground);
 	}
@@ -989,7 +989,7 @@
 
 	.form-autocomplete__retry {
 		margin-left: auto;
-		padding: var(--fd-space-1) var(--fd-space-2);
+		padding: var(--fd-space-3xs) var(--fd-space-xs);
 		border: 1px solid var(--fd-error);
 		border-radius: var(--fd-radius-sm);
 		background-color: transparent;
