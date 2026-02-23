@@ -70,8 +70,8 @@
 	/** Track session being edited for rename */
 	let editingSessionId = $state<string | null>(null);
 
-	/** Track session pending delete */
-	let pendingDeleteId = $state<string | null>(null);
+	/** Track which session's dropdown menu is open */
+	let openMenuId = $state<string | null>(null);
 
 	/** Track if initial session has been loaded to prevent duplicate loads */
 	let initialSessionLoaded = $state(false);
@@ -194,6 +194,20 @@
 	});
 
 	/**
+	 * Close dropdown menu when clicking outside
+	 */
+	$effect(() => {
+		if (!openMenuId) return;
+
+		function onDocumentClick() {
+			openMenuId = null;
+		}
+
+		document.addEventListener('click', onDocumentClick);
+		return () => document.removeEventListener('click', onDocumentClick);
+	});
+
+	/**
 	 * Load sessions for the workflow
 	 */
 	async function loadSessions(): Promise<void> {
@@ -290,7 +304,6 @@
 			if (get(currentSession)?.id === sessionId) {
 				playgroundService.stopPolling();
 			}
-			pendingDeleteId = null;
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : 'Failed to delete session';
 			playgroundActions.setError(errorMessage);
@@ -299,22 +312,20 @@
 	}
 
 	/**
-	 * Handle delete click - show confirmation or execute
+	 * Toggle session dropdown menu
 	 */
-	function handleDeleteClick(event: Event, sessionId: string): void {
+	function handleMenuToggle(event: Event, sessionId: string): void {
 		event.stopPropagation();
-		if (pendingDeleteId === sessionId) {
-			// Confirm deletion
-			void handleDeleteSession(sessionId);
-		} else {
-			pendingDeleteId = sessionId;
-			// Auto-reset after 3 seconds
-			setTimeout(() => {
-				if (pendingDeleteId === sessionId) {
-					pendingDeleteId = null;
-				}
-			}, 3000);
-		}
+		openMenuId = openMenuId === sessionId ? null : sessionId;
+	}
+
+	/**
+	 * Handle delete from dropdown menu
+	 */
+	function handleMenuDelete(event: Event, sessionId: string): void {
+		event.stopPropagation();
+		openMenuId = null;
+		void handleDeleteSession(sessionId);
 	}
 
 	/**
@@ -541,21 +552,29 @@
 										<span class="playground__session-name" title={session.name}>
 											{session.name}
 										</span>
-										<button
-											type="button"
-											class="playground__session-menu"
-											class:playground__session-menu--delete={pendingDeleteId === session.id}
-											onclick={(e) => handleDeleteClick(e, session.id)}
-											title={pendingDeleteId === session.id
-												? 'Click to confirm delete'
-												: 'Delete session'}
-										>
-											{#if pendingDeleteId === session.id}
-												<Icon icon="mdi:check" />
-											{:else}
-												<Icon icon="mdi:dots-horizontal" />
+										<div class="playground__session-actions">
+											<button
+												type="button"
+												class="playground__session-menu"
+												class:playground__session-menu--open={openMenuId === session.id}
+												onclick={(e) => handleMenuToggle(e, session.id)}
+												title="Session options"
+											>
+												<Icon icon="mdi:dots-vertical" />
+											</button>
+											{#if openMenuId === session.id}
+												<div class="playground__session-dropdown">
+													<button
+														type="button"
+														class="playground__session-dropdown-item playground__session-dropdown-item--danger"
+														onclick={(e) => handleMenuDelete(e, session.id)}
+													>
+														<Icon icon="mdi:delete-outline" />
+														<span>Delete</span>
+													</button>
+												</div>
 											{/if}
-										</button>
+										</div>
 									</div>
 								{/each}
 							{/if}
@@ -862,19 +881,63 @@
 	}
 
 	.playground__session-menu:hover {
-		background-color: var(--fd-error-muted);
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
+	}
+
+	.playground__session-menu--open {
+		opacity: 1;
+		background-color: var(--fd-muted);
+		color: var(--fd-foreground);
+	}
+
+	.playground__session-actions {
+		position: relative;
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.playground__session-dropdown {
+		position: absolute;
+		top: 100%;
+		right: 0;
+		z-index: 50;
+		min-width: 140px;
+		padding: var(--fd-space-xs);
+		background-color: var(--fd-background);
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-md);
+		box-shadow: var(--fd-shadow-lg);
+	}
+
+	.playground__session-dropdown-item {
+		display: flex;
+		align-items: center;
+		gap: var(--fd-space-sm);
+		width: 100%;
+		padding: var(--fd-space-sm) var(--fd-space-md);
+		border: none;
+		border-radius: var(--fd-radius-sm);
+		background: transparent;
+		color: var(--fd-foreground);
+		font-size: var(--fd-text-sm);
+		cursor: pointer;
+		transition: all var(--fd-transition-fast);
+		white-space: nowrap;
+	}
+
+	.playground__session-dropdown-item:hover {
+		background-color: var(--fd-muted);
+	}
+
+	.playground__session-dropdown-item--danger {
 		color: var(--fd-error);
 	}
 
-	.playground__session-menu--delete {
-		opacity: 1;
-		background-color: var(--fd-success-muted);
-		color: var(--fd-success);
-	}
-
-	.playground__session-menu--delete:hover {
-		background-color: var(--fd-success-muted);
-		color: var(--fd-success-hover);
+	.playground__session-dropdown-item--danger:hover {
+		background-color: var(--fd-error-muted);
+		color: var(--fd-error);
 	}
 
 	/* Main Content */
