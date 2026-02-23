@@ -360,8 +360,8 @@
 
 	.flowdrop-square-node__config-btn {
 		position: absolute;
-		top: var(--fd-space-2);
-		right: var(--fd-space-2);
+		top: var(--fd-space-xs);
+		right: var(--fd-space-xs);
 		width: 1.5rem;
 		height: 1.5rem;
 		background-color: var(--fd-backdrop);

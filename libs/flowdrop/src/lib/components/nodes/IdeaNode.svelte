@@ -286,7 +286,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.625rem;
-		padding: var(--fd-space-3) var(--fd-space-4) var(--fd-space-2);
+		padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-xs);
 	}
 
 	.flowdrop-idea-node__icon-wrapper {
@@ -323,7 +323,7 @@
 
 	/* Body section */
 	.flowdrop-idea-node__body {
-		padding: 0 var(--fd-space-4) var(--fd-space-3);
+		padding: 0 var(--fd-space-xl) var(--fd-space-md);
 	}
 
 	.flowdrop-idea-node__description {
@@ -342,8 +342,8 @@
 	.flowdrop-idea-node__processing {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-2) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-xs) var(--fd-space-xl);
 		font-size: var(--fd-text-xs);
 		color: var(--fd-muted-foreground);
 		border-top: 1px solid var(--fd-border-muted);
@@ -362,8 +362,8 @@
 	.flowdrop-idea-node__error {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
-		padding: var(--fd-space-2) var(--fd-space-4);
+		gap: var(--fd-space-xs);
+		padding: var(--fd-space-xs) var(--fd-space-xl);
 		font-size: var(--fd-text-xs);
 		color: var(--fd-error);
 		border-top: 1px solid color-mix(in srgb, var(--fd-error) 30%, transparent);

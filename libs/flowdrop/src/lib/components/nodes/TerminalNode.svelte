@@ -422,7 +422,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		cursor: pointer;
 		transition: all var(--fd-transition-normal);
 		z-index: 10;
@@ -558,7 +558,7 @@
 		align-items: center;
 		gap: 0.125rem;
 		background-color: var(--fd-backdrop);
-		padding: var(--fd-space-1) var(--fd-space-2);
+		padding: var(--fd-space-3xs) var(--fd-space-xs);
 		border-radius: var(--fd-radius-sm);
 		box-shadow: var(--fd-shadow-sm);
 		max-width: 140px;

@@ -231,7 +231,7 @@
 
 	/* Display Mode Styles */
 	.flowdrop-notes-node__content {
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		height: 100%;
 		display: flex;
 		flex-direction: column;
@@ -248,7 +248,7 @@
 	.flowdrop-notes-node__header-left {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 	}
 
 	/* Squircle icon wrapper - Apple-style rounded square background */
@@ -286,7 +286,7 @@
 	}
 
 	.flowdrop-notes-node__body {
-		margin-bottom: var(--fd-space-2);
+		margin-bottom: var(--fd-space-xs);
 		flex: 1;
 		overflow-y: auto;
 		color: var(--fd-muted-foreground);
@@ -300,7 +300,7 @@
 	.flowdrop-notes-node__processing {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		font-size: var(--fd-text-xs);
 		color: var(--fd-muted-foreground);
 	}
@@ -317,7 +317,7 @@
 	.flowdrop-notes-node__error-indicator {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 		font-size: var(--fd-text-xs);
 		color: var(--fd-error);
 	}
@@ -335,8 +335,8 @@
 
 	.flowdrop-notes-node__config-btn {
 		position: absolute;
-		top: var(--fd-space-2);
-		right: var(--fd-space-2);
+		top: var(--fd-space-xs);
+		right: var(--fd-space-xs);
 		width: 1.5rem;
 		height: 1.5rem;
 		background-color: var(--fd-backdrop);
@@ -372,7 +372,7 @@
 		}
 
 		.flowdrop-notes-node__content {
-			padding: var(--fd-space-3);
+			padding: var(--fd-space-md);
 		}
 	}
 </style>
