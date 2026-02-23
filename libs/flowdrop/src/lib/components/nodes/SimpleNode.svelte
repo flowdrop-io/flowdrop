@@ -319,7 +319,7 @@
 	}
 
 	.flowdrop-simple-node__header {
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		background: var(--fd-header);
 		border-radius: var(--fd-radius-xl);
 	}
@@ -327,7 +327,7 @@
 	.flowdrop-simple-node__header-content {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-3);
+		gap: var(--fd-space-md);
 	}
 
 	/* Squircle icon wrapper - Apple-style rounded square background */
@@ -365,7 +365,7 @@
 	.flowdrop-simple-node__description {
 		font-size: var(--fd-text-xs);
 		color: var(--fd-muted-foreground);
-		margin: var(--fd-space-1) 0 0 0;
+		margin: var(--fd-space-3xs) 0 0 0;
 		line-height: 1.3;
 	}
 
@@ -404,8 +404,8 @@
 
 	.flowdrop-simple-node__config-btn {
 		position: absolute;
-		top: var(--fd-space-2);
-		right: var(--fd-space-2);
+		top: var(--fd-space-xs);
+		right: var(--fd-space-xs);
 		width: 1.5rem;
 		height: 1.5rem;
 		background-color: var(--fd-backdrop);
