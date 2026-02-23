@@ -394,10 +394,15 @@
 	/* ----- EDGE TOKENS (adjusted for dark mode visibility) ----- */
 	--fd-edge-trigger: var(--_gray-3);
 	--fd-edge-trigger-hover: var(--_gray-2);
+	--fd-edge-trigger-selected: #a78bfa;
 	--fd-edge-data: var(--_gray-5);
 	--fd-edge-data-hover: var(--_gray-4);
+	--fd-edge-data-selected: #a78bfa;
+	--fd-edge-tool-hover: #fbbf24;
+	--fd-edge-tool-selected: #a78bfa;
 	--fd-edge-loopback: var(--_gray-5);
 	--fd-edge-loopback-hover: var(--_gray-4);
+	--fd-edge-loopback-selected: #a78bfa;
 
 	/* ----- LAYOUT BACKGROUND (darker gradient for dark mode) ----- */
 	--fd-layout-background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
