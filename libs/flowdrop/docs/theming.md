@@ -102,6 +102,7 @@ FlowDrop's token system has three tiers:
 | `--fd-error-foreground`   | Text on error      | `#ffffff` |
 | `--fd-error-muted`        | Error background   | Red 50    |
 | `--fd-info`               | Info state         | Blue 500  |
+| `--fd-info-hover`         | Info hover         | Blue 700  |
 | `--fd-info-foreground`    | Text on info       | `#ffffff` |
 | `--fd-info-muted`         | Info background    | Blue 50   |
 
