@@ -67,13 +67,13 @@
 	   ============================================ */
 
 	.form-fieldset__summary {
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 	}
 
 	.form-fieldset__label {
 		display: flex;
 		align-items: center;
-		gap: var(--fd-space-2);
+		gap: var(--fd-space-xs);
 	}
 
 	.form-fieldset__title {
@@ -106,13 +106,13 @@
 	}
 
 	.form-fieldset__content {
-		padding-top: var(--fd-space-2);
+		padding-top: var(--fd-space-xs);
 	}
 
 	.form-fieldset__fields {
 		display: flex;
 		flex-direction: column;
-		gap: var(--fd-space-5);
+		gap: var(--fd-space-2xl);
 	}
 
 	/* ============================================
@@ -122,19 +122,19 @@
 	.form-fieldset--static {
 		border: 1px solid var(--fd-border-muted);
 		border-radius: var(--fd-radius-lg);
-		padding: var(--fd-space-4);
+		padding: var(--fd-space-xl);
 		margin: 0;
 	}
 
 	.form-fieldset__legend {
-		padding: 0 var(--fd-space-2);
+		padding: 0 var(--fd-space-xs);
 		font-size: var(--fd-text-sm);
 		font-weight: 600;
 		color: var(--fd-foreground);
 	}
 
 	.form-fieldset__description {
-		margin: 0 0 var(--fd-space-3) 0;
+		margin: 0 0 var(--fd-space-md) 0;
 		font-size: var(--fd-text-xs);
 		color: var(--fd-muted-foreground);
 		line-height: 1.4;
