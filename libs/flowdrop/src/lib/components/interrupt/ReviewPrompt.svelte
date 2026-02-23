@@ -53,6 +53,11 @@
 		Object.fromEntries(config.changes.map((c) => [c.field, true]))
 	);
 
+	/** Local state: map of field -> HTML view mode ('rendered' or 'raw'). Default to 'rendered'. */
+	let htmlViewMode = $state<Record<string, 'rendered' | 'raw'>>(
+		Object.fromEntries(config.changes.map((c) => [c.field, 'rendered']))
+	);
+
 	/** Count of accepted fields */
 	const acceptedCount = $derived(Object.values(decisions).filter((v) => v).length);
 
@@ -119,6 +124,16 @@
 	}
 
 	/**
+	 * Toggle HTML view mode between rendered and raw for a field.
+	 */
+	function toggleHtmlView(field: string): void {
+		htmlViewMode = {
+			...htmlViewMode,
+			[field]: htmlViewMode[field] === 'rendered' ? 'raw' : 'rendered'
+		};
+	}
+
+	/**
 	 * Check if a string contains HTML tags.
 	 */
 	function containsHtml(value: unknown): boolean {
@@ -160,10 +175,10 @@
 	 * Supports strings (word-level), arrays (element-level), and objects (JSON line-level).
 	 * For HTML strings, strips tags and diffs the plain text content.
 	 */
-	function computeDiff(original: unknown, proposed: unknown): Change[] | null {
+	function computeDiff(original: unknown, proposed: unknown, rawMode: boolean = false): Change[] | null {
 		if (typeof original === 'string' && typeof proposed === 'string') {
-			const origText = containsHtml(original) ? stripHtmlTags(original) : original;
-			const propText = containsHtml(proposed) ? stripHtmlTags(proposed) : proposed;
+			const origText = !rawMode && containsHtml(original) ? stripHtmlTags(original) : original;
+			const propText = !rawMode && containsHtml(proposed) ? stripHtmlTags(proposed) : proposed;
 			return diffWords(origText, propText);
 		}
 		if (Array.isArray(original) && Array.isArray(proposed)) {
@@ -247,8 +262,9 @@
 			{@const isAccepted = isResolved
 				? (resolvedValue?.decisions[change.field]?.accepted ?? true)
 				: (decisions[change.field] ?? true)}
-			{@const diff = computeDiff(change.original, change.proposed)}
 			{@const isHtml = containsHtml(change.original) || containsHtml(change.proposed)}
+			{@const isRawView = htmlViewMode[change.field] === 'raw'}
+			{@const diff = computeDiff(change.original, change.proposed, isRawView)}
 			<div
 				class="review-prompt__change"
 				class:review-prompt__change--accepted={isAccepted}
@@ -303,10 +319,24 @@
 
 				<!-- Change diff content -->
 				<div class="review-prompt__change-body">
+					{#if isHtml}
+						<div class="review-prompt__html-toggle-row">
+							<button
+								type="button"
+								class="review-prompt__html-toggle-btn"
+								onclick={() => toggleHtmlView(change.field)}
+							>
+								<Icon icon={isRawView ? 'mdi:eye' : 'mdi:code-tags'} />
+								<span>{isRawView ? 'Rendered' : 'Raw HTML'}</span>
+							</button>
+						</div>
+					{/if}
 					<div class="review-prompt__diff-row">
 						<span class="review-prompt__diff-label">Original:</span>
-						{#if isHtml}
+						{#if isHtml && !isRawView}
 							<span class="review-prompt__diff-value review-prompt__html-content">{@html change.original}</span>
+						{:else if isHtml && isRawView}
+							<code class="review-prompt__diff-value review-prompt__raw-html">{change.original}</code>
 						{:else}
 							<span class="review-prompt__diff-value">
 								{formatValue(change.original)}
@@ -315,8 +345,10 @@
 					</div>
 					<div class="review-prompt__diff-row">
 						<span class="review-prompt__diff-label">Proposed:</span>
-						{#if isHtml}
+						{#if isHtml && !isRawView}
 							<span class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content">{@html change.proposed}</span>
+						{:else if isHtml && isRawView}
+							<code class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__raw-html">{change.proposed}</code>
 						{:else}
 							<span class="review-prompt__diff-value review-prompt__diff-value--proposed">
 								{formatValue(change.proposed)}
@@ -490,18 +522,17 @@
 	.review-prompt__change {
 		border: 1px solid var(--fd-border);
 		border-radius: var(--fd-radius-lg);
-		border-left: 3px solid var(--fd-border);
-		background-color: var(--fd-muted);
+		background-color: var(--fd-background);
 		overflow: hidden;
 		transition: all var(--fd-transition-fast);
 	}
 
 	.review-prompt__change--accepted {
-		border-left-color: var(--fd-success);
+		border-color: var(--fd-success);
 	}
 
 	.review-prompt__change--rejected {
-		border-left-color: var(--fd-error);
+		border-color: var(--fd-error);
 	}
 
 	.review-prompt__change-header {
@@ -510,6 +541,16 @@
 		justify-content: space-between;
 		padding: 0.625rem 0.875rem;
 		border-bottom: 1px solid var(--fd-border);
+	}
+
+	.review-prompt__change--accepted .review-prompt__change-header {
+		background-color: var(--fd-success-muted);
+		border-bottom-color: var(--fd-success);
+	}
+
+	.review-prompt__change--rejected .review-prompt__change-header {
+		background-color: var(--fd-error-muted);
+		border-bottom-color: var(--fd-error);
 	}
 
 	.review-prompt__change-label {
@@ -582,16 +623,20 @@
 
 	/* Diff content */
 	.review-prompt__change-body {
-		padding: 0.625rem 0.875rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.375rem;
 	}
 
 	.review-prompt__diff-row {
 		display: flex;
 		align-items: baseline;
 		gap: 0.5rem;
+		padding: 0.5rem 0.875rem;
+		border-bottom: 1px solid var(--fd-border);
+	}
+
+	.review-prompt__diff-row:last-child {
+		border-bottom: none;
 	}
 
 	.review-prompt__diff-label {
@@ -618,14 +663,47 @@
 		line-height: 1.6;
 	}
 
+	/* HTML view toggle */
+	.review-prompt__html-toggle-row {
+		display: flex;
+		justify-content: flex-end;
+		padding: 0.375rem 0.875rem 0;
+	}
+
+	.review-prompt__html-toggle-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.125rem 0.5rem;
+		font-size: 0.6875rem;
+		font-weight: 500;
+		font-family: inherit;
+		color: var(--fd-muted-foreground);
+		background: none;
+		border: 1px solid var(--fd-border);
+		border-radius: var(--fd-radius-md);
+		cursor: pointer;
+		transition: all var(--fd-transition-fast);
+	}
+
+	.review-prompt__html-toggle-btn:hover {
+		color: var(--fd-foreground);
+		border-color: var(--fd-border-strong);
+	}
+
+	/* Raw HTML code display */
+	.review-prompt__raw-html {
+		font-family: monospace;
+		font-size: var(--fd-text-xs);
+		line-height: 1.5;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
 	/* Rendered HTML content */
 	.review-prompt__html-content {
 		font-size: var(--fd-text-sm);
 		line-height: 1.6;
-		padding: 0.5rem 0.75rem;
-		background-color: var(--fd-muted);
-		border: 1px solid var(--fd-border);
-		border-radius: var(--fd-radius-md);
 	}
 
 	.review-prompt__html-content :global(p) {
@@ -656,10 +734,6 @@
 	/* Block diff display (for JSON/multi-line diffs) */
 	.review-prompt__diff-block {
 		margin: 0;
-		padding: 0.5rem 0.75rem;
-		background-color: var(--fd-muted);
-		border: 1px solid var(--fd-border);
-		border-radius: var(--fd-radius-md);
 		font-family: monospace;
 		font-size: var(--fd-text-xs);
 		line-height: 1.5;
