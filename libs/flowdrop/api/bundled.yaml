@@ -107,6 +107,8 @@ paths:
                     type: integer
                     description: Uptime in seconds
                     example: 3600
+        '404':
+          $ref: '#/components/responses/NotFound'
         '503':
           description: Service unavailable
           content:
