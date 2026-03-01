@@ -12,6 +12,7 @@ import type { StandardWorkflow } from '../adapters/WorkflowAdapter.js';
 import type { AgentSpecEndpointConfig } from '../config/agentSpecEndpoints.js';
 import { buildAgentSpecUrl, getAgentSpecAuthHeaders } from '../config/agentSpecEndpoints.js';
 import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
+import { logger } from '../utils/logger.js';
 
 /** Execution state tracked per active execution */
 interface ExecutionState {
@@ -357,7 +358,7 @@ export class AgentSpecExecutionService {
 				}
 			} catch (error) {
 				// Don't stop polling on transient errors — let it retry
-				console.error('[AgentSpecExecution] Polling error:', error);
+				logger.error('[AgentSpecExecution] Polling error:', error);
 			}
 		};
 

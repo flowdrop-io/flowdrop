@@ -19,6 +19,7 @@ import { defaultInterruptPollingConfig } from '../types/interrupt.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
 import { getEndpointConfig } from './api.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Interrupt Service class
@@ -39,7 +40,7 @@ export class InterruptService {
 	 */
 	private constructor() {
 		this.pollingConfig = { ...defaultInterruptPollingConfig };
-		this.currentBackoff = this.pollingConfig.interval ?? 2000;
+		this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
 	}
 
 	/**
@@ -61,7 +62,7 @@ export class InterruptService {
 	 */
 	public setPollingConfig(config: Partial<InterruptPollingConfig>): void {
 		this.pollingConfig = { ...this.pollingConfig, ...config };
-		this.currentBackoff = this.pollingConfig.interval ?? 2000;
+		this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
 	}
 
 	/**
@@ -251,7 +252,7 @@ export class InterruptService {
 	 */
 	startPolling(sessionId: string, callback: (interrupts: Interrupt[]) => void): void {
 		if (!this.pollingConfig.enabled) {
-			console.warn('[InterruptService] Polling is disabled. Enable via setPollingConfig().');
+			logger.warn('[InterruptService] Polling is disabled. Enable via setPollingConfig().');
 			return;
 		}
 
@@ -259,7 +260,7 @@ export class InterruptService {
 		this.stopPolling();
 
 		this.pollingSessionId = sessionId;
-		this.currentBackoff = this.pollingConfig.interval ?? 2000;
+		this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
 
 		const poll = async (): Promise<void> => {
 			if (this.pollingSessionId !== sessionId) {
@@ -271,15 +272,15 @@ export class InterruptService {
 				const pendingInterrupts = interrupts.filter((i) => i.status === 'pending');
 
 				// Reset backoff on successful request
-				this.currentBackoff = this.pollingConfig.interval ?? 2000;
+				this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
 
 				// Call the callback with pending interrupts
 				callback(pendingInterrupts);
 			} catch (error) {
-				console.error('[InterruptService] Polling error:', error);
+				logger.error('[InterruptService] Polling error:', error);
 
 				// Exponential backoff on error
-				const maxBackoff = this.pollingConfig.maxBackoff ?? 10000;
+				const maxBackoff = this.pollingConfig.maxBackoff ?? defaultInterruptPollingConfig.maxBackoff;
 				this.currentBackoff = Math.min(this.currentBackoff * 2, maxBackoff);
 			}
 
@@ -302,7 +303,7 @@ export class InterruptService {
 			this.pollingInterval = null;
 		}
 		this.pollingSessionId = null;
-		this.currentBackoff = this.pollingConfig.interval ?? 2000;
+		this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
 	}
 
 	/**

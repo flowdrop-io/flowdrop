@@ -22,6 +22,7 @@ import {
 	getResolvedValue,
 	toLegacyStatus
 } from '../types/interruptState.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Types
@@ -156,7 +157,7 @@ function applyAction(interruptId: string, action: InterruptAction): TransitionRe
 			return updated;
 		});
 	} else {
-		console.warn(`[InterruptStore] Invalid transition: ${result.error}`);
+		logger.warn(`[InterruptStore] Invalid transition: ${result.error}`);
 	}
 
 	return result;

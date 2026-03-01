@@ -5,8 +5,9 @@
 
 import type { CategoryDefinition } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
+import { buildEndpointUrl } from '../config/endpoints.js';
 import { DEFAULT_CATEGORIES } from '../config/defaultCategories.js';
-import { FlowDropApiClient } from '../api/client.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Fetch category definitions from API
@@ -15,17 +16,26 @@ export async function fetchCategories(
 	endpointConfig: EndpointConfig
 ): Promise<CategoryDefinition[]> {
 	try {
-		const client = new FlowDropApiClient(endpointConfig.baseUrl);
-		const categories = await client.getCategories();
+		const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.categories);
+		const response = await fetch(url, {
+			headers: { 'Content-Type': 'application/json' }
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		const data = await response.json();
+		const categories: CategoryDefinition[] = data.data ?? data;
 
 		if (!categories || !Array.isArray(categories)) {
-			console.warn('Invalid categories received from API, using default');
+			logger.warn('Invalid categories received from API, using default');
 			return DEFAULT_CATEGORIES;
 		}
 
 		return categories;
 	} catch (error) {
-		console.error('Error fetching categories:', error);
+		logger.error('Error fetching categories:', error);
 		return DEFAULT_CATEGORIES;
 	}
 }

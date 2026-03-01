@@ -20,6 +20,7 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
 import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
 import { validateForAgentSpecExport } from '../adapters/agentspec/validator.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Generate a unique node ID based on node type and existing nodes
@@ -362,7 +363,7 @@ export class NodeOperationsHelper {
 			const fetchedNodes = await nodeApi.getNodes();
 			return fetchedNodes;
 		} catch (error) {
-			console.error('❌ Failed to load nodes from API:', error);
+			logger.error('Failed to load nodes from API:', error);
 
 			// Use fallback sample nodes
 			return [
@@ -411,7 +412,7 @@ export class NodeOperationsHelper {
 
 			return executionInfo;
 		} catch (error) {
-			console.error('Failed to load node execution info:', error);
+			logger.error('Failed to load node execution info:', error);
 			return {};
 		}
 	}
@@ -485,7 +486,7 @@ export class NodeOperationsHelper {
 
 			return newNode;
 		} catch (error) {
-			console.error('Error parsing node data:', error);
+			logger.error('Error parsing node data:', error);
 			return null;
 		}
 	}
@@ -573,7 +574,7 @@ export class WorkflowOperationsHelper {
 	 */
 	static async saveWorkflow(workflow: Workflow | null): Promise<Workflow | null> {
 		if (!workflow) {
-			console.warn('No workflow data available to save');
+			logger.warn('No workflow data available to save');
 			return null;
 		}
 
@@ -617,7 +618,7 @@ export class WorkflowOperationsHelper {
 
 			return savedWorkflow;
 		} catch (error) {
-			console.error('❌ Failed to save workflow:', error);
+			logger.error('Failed to save workflow:', error);
 			throw error;
 		}
 	}
@@ -627,7 +628,7 @@ export class WorkflowOperationsHelper {
 	 */
 	static exportWorkflow(workflow: Workflow | null): void {
 		if (!workflow) {
-			console.warn('No workflow data available to export');
+			logger.warn('No workflow data available to export');
 			return;
 		}
 

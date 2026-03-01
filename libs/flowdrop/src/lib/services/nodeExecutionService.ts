@@ -6,6 +6,11 @@
 import type { NodeExecutionInfo } from '../types/index.js';
 import { getEndpointConfig } from './api.js';
 import { buildEndpointUrl } from '../config/endpoints.js';
+import {
+	NODE_EXECUTION_CACHE_TIMEOUT_MS,
+	PIPELINE_API_UNAVAILABLE_DURATION_MS
+} from '../config/constants.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Service for managing node execution information
@@ -13,7 +18,7 @@ import { buildEndpointUrl } from '../config/endpoints.js';
 export class NodeExecutionService {
 	private static instance: NodeExecutionService;
 	private cache: Map<string, NodeExecutionInfo> = new Map();
-	private cacheTimeout = 30000; // 30 seconds
+	private cacheTimeout = NODE_EXECUTION_CACHE_TIMEOUT_MS;
 	private lastFetch: number = 0;
 	private apiUnavailable: boolean = false;
 	private apiUnavailableUntil: number = 0;
@@ -77,7 +82,7 @@ export class NodeExecutionService {
 			this.cache.set(nodeId, executionInfo);
 			return executionInfo;
 		} catch (error) {
-			console.error('Failed to fetch node execution info:', error);
+			logger.error('Failed to fetch node execution info:', error);
 			return null;
 		}
 	}
@@ -117,9 +122,9 @@ export class NodeExecutionService {
 				// If the endpoint returns 404, it means the pipeline API is not available
 				// Mark API as unavailable for 5 minutes to prevent repeated calls
 				if (response.status === 404) {
-					console.warn(`Pipeline API endpoint not available for pipeline ${pipelineId}`);
+					logger.warn(`Pipeline API endpoint not available for pipeline ${pipelineId}`);
 					this.apiUnavailable = true;
-					this.apiUnavailableUntil = Date.now() + 5 * 60 * 1000; // 5 minutes
+					this.apiUnavailableUntil = Date.now() + PIPELINE_API_UNAVAILABLE_DURATION_MS;
 					const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
 					nodeIds.forEach((nodeId) => {
 						defaultExecutionInfo[nodeId] = {
@@ -167,7 +172,7 @@ export class NodeExecutionService {
 
 			return executionInfoMap;
 		} catch (error) {
-			console.error('Failed to fetch multiple node execution info:', error);
+			logger.error('Failed to fetch multiple node execution info:', error);
 			// Return default values instead of empty object to prevent repeated calls
 			const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
 			nodeIds.forEach((nodeId) => {
@@ -201,7 +206,7 @@ export class NodeExecutionService {
 
 			return {};
 		} catch (error) {
-			console.error('Failed to fetch all node execution counts:', error);
+			logger.error('Failed to fetch all node execution counts:', error);
 			return {};
 		}
 	}

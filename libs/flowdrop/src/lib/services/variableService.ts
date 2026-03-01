@@ -19,6 +19,7 @@ import type {
 	TemplateVariablesConfig,
 	AuthProvider
 } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Converts a JSON Schema property type to a TemplateVariableType.
@@ -564,12 +565,12 @@ export async function getVariableSchema(
 				return resultSchema;
 			} else if (!config.api.fallbackOnError) {
 				// API failed and fallback is disabled - return empty schema
-				console.error('Failed to fetch variables from API:', apiResult.error);
+				logger.error('Failed to fetch variables from API:', apiResult.error);
 				return { variables: {} };
 			}
 			// If fallback is enabled (default), continue to schema-based mode below
 		} catch (error) {
-			console.error('Error fetching variables from API:', error);
+			logger.error('Error fetching variables from API:', error);
 			// If fallback is disabled, return empty schema
 			if (config.api.fallbackOnError === false) {
 				return { variables: {} };

@@ -29,6 +29,7 @@ import type {
 } from '$lib/types/settings.js';
 export type { ThemePreference, ResolvedTheme } from '$lib/types/settings.js';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '$lib/types/settings.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Internal State
@@ -70,7 +71,7 @@ function loadFromStorage(): FlowDropSettings | null {
 			return deepMergeSettings(DEFAULT_SETTINGS, parsed);
 		}
 	} catch (error) {
-		console.warn('Failed to load settings from localStorage:', error);
+		logger.warn('Failed to load settings from localStorage:', error);
 	}
 
 	return null;
@@ -89,7 +90,7 @@ function saveToStorage(settings: FlowDropSettings): void {
 	try {
 		localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
 	} catch (error) {
-		console.warn('Failed to save settings to localStorage:', error);
+		logger.warn('Failed to save settings to localStorage:', error);
 	}
 }
 
@@ -289,7 +290,7 @@ function notifyChange(
 		try {
 			listener(event);
 		} catch (error) {
-			console.error('Settings change listener error:', error);
+			logger.error('Settings change listener error:', error);
 		}
 	});
 }
@@ -483,7 +484,7 @@ export function setSettingsService(
  */
 export async function syncSettingsToApi(): Promise<void> {
 	if (!settingsService) {
-		console.warn('Settings service not configured for API sync');
+		logger.warn('Settings service not configured for API sync');
 		return;
 	}
 
@@ -523,7 +524,7 @@ export async function syncSettingsToApi(): Promise<void> {
  */
 export async function loadSettingsFromApi(): Promise<void> {
 	if (!settingsService) {
-		console.warn('Settings service not configured for API sync');
+		logger.warn('Settings service not configured for API sync');
 		return;
 	}
 
@@ -616,7 +617,7 @@ export async function initializeSettings(options?: {
 			await loadSettingsFromApi();
 		} catch {
 			// Silently fail - local settings are still available
-			console.warn('Failed to sync settings from API on initialization');
+			logger.warn('Failed to sync settings from API on initialization');
 		}
 	}
 }

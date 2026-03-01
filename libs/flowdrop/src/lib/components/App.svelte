@@ -40,6 +40,7 @@
 	import { initializePortCompatibility } from '$lib/utils/connections.js';
 	import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
 	import { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
+	import { logger } from '../utils/logger.js';
 
 	/**
 	 * Configuration props for runtime customization
@@ -394,7 +395,7 @@
 		try {
 			await saveWorkflow();
 		} catch (error) {
-			console.error('Failed to save workflow to backend:', error);
+			logger.error('Failed to save workflow to backend:', error);
 			// Note: We don't throw the error here to avoid breaking the UI flow
 			// The user can still manually save via the main Save button if needed
 		}
@@ -657,10 +658,10 @@
 			},
 			onError: (error) => {
 				// Don't show toast for auto-save errors to avoid noise
-				console.warn('Auto-save failed:', error);
+				logger.warn('Auto-save failed:', error);
 			},
 			onSuccess: () => {
-				console.debug('Auto-saved workflow');
+				logger.debug('Auto-saved workflow');
 			}
 		});
 
@@ -794,7 +795,7 @@
 									return formats && formats.length > 0 && !formats.includes(newFormat);
 								});
 								if (incompatibleNodes && incompatibleNodes.length > 0) {
-									console.warn(
+									logger.warn(
 										`Format changed to '${newFormat}'. ${incompatibleNodes.length} node(s) are not compatible with this format and may not export correctly:`,
 										incompatibleNodes.map((n) => n.data?.label || n.type)
 									);

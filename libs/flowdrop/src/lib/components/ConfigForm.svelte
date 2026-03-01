@@ -41,6 +41,7 @@
 	} from '$lib/services/dynamicSchemaService.js';
 	import { globalSaveWorkflow } from '$lib/services/globalSave.js';
 	import { getAvailableVariables } from '$lib/services/variableService.js';
+	import { logger } from '../utils/logger.js';
 
 	interface Props {
 		/** Optional workflow node (if provided, schema and values are derived from it) */
@@ -404,7 +405,7 @@
 			try {
 				await globalSaveWorkflow();
 			} catch (error) {
-				console.error('Failed to save workflow after config save:', error);
+				logger.error('Failed to save workflow after config save:', error);
 			} finally {
 				isSavingWorkflow = false;
 			}

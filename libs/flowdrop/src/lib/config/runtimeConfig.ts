@@ -6,6 +6,8 @@
  * time rather than build time.
  */
 
+import { logger } from '../utils/logger.js';
+
 export interface RuntimeConfig {
 	/** Base URL for the FlowDrop API */
 	apiBaseUrl: string;
@@ -61,7 +63,7 @@ export async function fetchRuntimeConfig(force = false): Promise<RuntimeConfig> 
 
 		return config;
 	} catch (error) {
-		console.error('Failed to fetch runtime configuration:', error);
+		logger.error('Failed to fetch runtime configuration:', error);
 
 		// Return default configuration if fetch fails
 		const defaultConfig: RuntimeConfig = {

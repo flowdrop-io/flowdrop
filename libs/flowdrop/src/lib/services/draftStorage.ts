@@ -8,6 +8,7 @@
  */
 
 import type { Workflow } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Default storage key prefix
@@ -80,7 +81,7 @@ export function saveDraft(workflow: Workflow, storageKey: string): boolean {
 		return true;
 	} catch (error) {
 		// localStorage might be full or disabled
-		console.warn('Failed to save draft to localStorage:', error);
+		logger.warn('Failed to save draft to localStorage:', error);
 		return false;
 	}
 }
@@ -102,13 +103,13 @@ export function loadDraft(storageKey: string): StoredDraft | null {
 
 		// Validate the draft structure
 		if (!draft.workflow || !draft.metadata) {
-			console.warn('Invalid draft structure in localStorage');
+			logger.warn('Invalid draft structure in localStorage');
 			return null;
 		}
 
 		return draft;
 	} catch (error) {
-		console.warn('Failed to load draft from localStorage:', error);
+		logger.warn('Failed to load draft from localStorage:', error);
 		return null;
 	}
 }
@@ -122,7 +123,7 @@ export function deleteDraft(storageKey: string): void {
 	try {
 		localStorage.removeItem(storageKey);
 	} catch (error) {
-		console.warn('Failed to delete draft from localStorage:', error);
+		logger.warn('Failed to delete draft from localStorage:', error);
 	}
 }
 

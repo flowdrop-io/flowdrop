@@ -11,6 +11,7 @@
 	import { FlowDropApiClient } from '$lib/api/client.js';
 	import type { Workflow } from '$lib/types/index.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
+	import { logger } from '../utils/logger.js';
 
 	interface Props {
 		pipelineId: string;
@@ -119,7 +120,7 @@
 
 			addLog('info', `Job status updated: ${jobStatusData.status_summary.total} total jobs`);
 		} catch (error) {
-			console.error('Failed to fetch pipeline data:', error);
+			logger.error('Failed to fetch pipeline data:', error);
 			addLog(
 				'error',
 				`Failed to fetch pipeline data: ${error instanceof Error ? error.message : 'Unknown error'}`

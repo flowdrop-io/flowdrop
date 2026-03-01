@@ -40,5 +40,12 @@ export default ts.config(
 			}
 		}
 	},
-	storybook.configs['flat/recommended']
+	storybook.configs['flat/recommended'],
+	{
+		files: ['src/lib/**/*.ts', 'src/lib/**/*.svelte'],
+		ignores: ['src/lib/utils/logger.ts', 'src/lib/mocks/**'],
+		rules: {
+			'no-console': 'warn'
+		}
+	}
 );

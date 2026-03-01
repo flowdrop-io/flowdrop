@@ -45,6 +45,7 @@
 	} from '$lib/types/index.js';
 	import { createTemplateAutocomplete } from './templateAutocomplete.js';
 	import { getVariableSchema } from '$lib/services/variableService.js';
+	import { logger } from '../../utils/logger.js';
 
 	interface Props {
 		/** Field identifier */
@@ -158,7 +159,7 @@
 					authProvider
 				);
 			} catch (error) {
-				console.error('Failed to load variable schema:', error);
+				logger.error('Failed to load variable schema:', error);
 				variableLoadError = error instanceof Error ? error.message : 'Failed to load variables';
 				effectiveVariableSchema = undefined;
 			} finally {

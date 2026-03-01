@@ -379,3 +379,16 @@ export {
 	initializeTheme,
 	isThemeInitialized
 } from '../stores/settingsStore.js';
+
+// ============================================================================
+// HTML Sanitization
+// ============================================================================
+
+export { sanitizeHtml } from '../utils/sanitize.js';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+export { logger, setLogLevel, getLogLevel } from '../utils/logger.js';
+export type { LogLevel } from '../utils/logger.js';

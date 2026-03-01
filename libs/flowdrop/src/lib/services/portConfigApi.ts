@@ -7,7 +7,7 @@ import type { PortConfig } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl } from '../config/endpoints.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
-import { FlowDropApiClient } from '../api/client.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Fetch port configuration from API
@@ -15,22 +15,26 @@ import { FlowDropApiClient } from '../api/client.js';
 export async function fetchPortConfig(endpointConfig: EndpointConfig): Promise<PortConfig> {
 	try {
 		const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.portConfig);
+		const response = await fetch(url, {
+			headers: { 'Content-Type': 'application/json' }
+		});
 
-		// Create API client instance
-		const client = new FlowDropApiClient(endpointConfig.baseUrl);
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
 
-		// Use the client to fetch port configuration
-		const portConfig = await client.getPortConfig();
+		const data = await response.json();
+		const portConfig: PortConfig = data.data ?? data;
 
 		// Validate the configuration has required fields
 		if (!portConfig.dataTypes || !Array.isArray(portConfig.dataTypes)) {
-			console.warn('Invalid port config received from API, using default');
+			logger.warn('Invalid port config received from API, using default');
 			return DEFAULT_PORT_CONFIG;
 		}
 
 		return portConfig;
 	} catch (error) {
-		console.error('Error fetching port configuration:', error);
+		logger.error('Error fetching port configuration:', error);
 		return DEFAULT_PORT_CONFIG;
 	}
 }

@@ -33,6 +33,7 @@ import { DraftAutoSaveManager, getDraftStorageKey } from './services/draftStorag
 import { mergeFeatures } from './types/events.js';
 import type { PartialSettings } from './types/settings.js';
 import { initializeSettings } from './stores/settingsStore.js';
+import { logger } from './utils/logger.js';
 
 // Extend Window interface for global save/export functions
 declare global {
@@ -262,7 +263,7 @@ export async function mountFlowDropApp(
 		try {
 			finalPortConfig = await fetchPortConfig(config);
 		} catch (error) {
-			console.warn('Failed to fetch port config from API, using default:', error);
+			logger.warn('Failed to fetch port config from API, using default:', error);
 			finalPortConfig = DEFAULT_PORT_CONFIG;
 		}
 	} else if (!finalPortConfig) {
@@ -279,7 +280,7 @@ export async function mountFlowDropApp(
 			const fetchedCategories = await fetchCategories(config);
 			initializeCategories(fetchedCategories);
 		} catch (error) {
-			console.warn('Failed to fetch categories from API, using defaults:', error);
+			logger.warn('Failed to fetch categories from API, using defaults:', error);
 		}
 	}
 
@@ -384,7 +385,7 @@ export async function mountFlowDropApp(
 			if (typeof window !== 'undefined' && window.flowdropSave) {
 				await window.flowdropSave();
 			} else {
-				console.warn('⚠️ Save functionality not available');
+				logger.warn('Save functionality not available');
 			}
 		},
 
@@ -392,7 +393,7 @@ export async function mountFlowDropApp(
 			if (typeof window !== 'undefined' && window.flowdropExport) {
 				window.flowdropExport();
 			} else {
-				console.warn('⚠️ Export functionality not available');
+				logger.warn('Export functionality not available');
 			}
 		}
 	};
@@ -449,7 +450,7 @@ export async function mountWorkflowEditor(
 		try {
 			finalPortConfig = await fetchPortConfig(config);
 		} catch (error) {
-			console.warn('Failed to fetch port config from API, using default:', error);
+			logger.warn('Failed to fetch port config from API, using default:', error);
 			finalPortConfig = DEFAULT_PORT_CONFIG;
 		}
 	} else if (!finalPortConfig) {
@@ -466,7 +467,7 @@ export async function mountWorkflowEditor(
 			const fetchedCategories = await fetchCategories(config);
 			initializeCategories(fetchedCategories);
 		} catch (error) {
-			console.warn('Failed to fetch categories from API, using defaults:', error);
+			logger.warn('Failed to fetch categories from API, using defaults:', error);
 		}
 	}
 
@@ -495,7 +496,7 @@ export async function mountWorkflowEditor(
 			if (typeof window !== 'undefined' && window.flowdropSave) {
 				await window.flowdropSave();
 			} else {
-				console.warn('⚠️ Save functionality not available');
+				logger.warn('Save functionality not available');
 			}
 		},
 
@@ -503,7 +504,7 @@ export async function mountWorkflowEditor(
 			if (typeof window !== 'undefined' && window.flowdropExport) {
 				window.flowdropExport();
 			} else {
-				console.warn('⚠️ Export functionality not available');
+				logger.warn('Export functionality not available');
 			}
 		}
 	};

@@ -33,6 +33,7 @@
 	} from '../../stores/playgroundStore.js';
 	import { interruptActions } from '../../stores/interruptStore.js';
 	import { get } from 'svelte/store';
+	import { logger } from '../../utils/logger.js';
 
 	/**
 	 * Component props
@@ -111,11 +112,11 @@
 				if (config.autoRun && !autoRunTriggered) {
 					autoRunTriggered = true;
 					const predefinedMessage = config.predefinedMessage ?? 'Run workflow';
-					console.log('[Playground] Auto-run triggered with message:', predefinedMessage);
+					logger.debug('[Playground] Auto-run triggered with message:', predefinedMessage);
 					await handleSendMessage(predefinedMessage);
 				}
 			} catch (err) {
-				console.error('[Playground] Initialization error:', err);
+				logger.error('[Playground] Initialization error:', err);
 			}
 		};
 
@@ -161,7 +162,7 @@
 		const sessionExists = sessionList.some((s) => s.id === sessionId);
 
 		if (!sessionExists) {
-			console.warn(
+			logger.warn(
 				`[Playground] Initial session "${sessionId}" not found in available sessions. ` +
 					`Available sessions: ${sessionList.map((s) => s.id).join(', ') || 'none'}`
 			);
@@ -176,7 +177,7 @@
 			initialSessionLoaded = true;
 			loadedInitialSessionId = sessionId;
 		} catch (err) {
-			console.error('[Playground] Failed to load initial session:', err);
+			logger.error('[Playground] Failed to load initial session:', err);
 			// Mark as attempted to prevent retry loops
 			initialSessionLoaded = true;
 			loadedInitialSessionId = sessionId;
@@ -220,7 +221,7 @@
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
 			playgroundActions.setError(errorMessage);
-			console.error('Failed to load sessions:', err);
+			logger.error('Failed to load sessions:', err);
 		} finally {
 			playgroundActions.setLoading(false);
 		}
@@ -249,7 +250,7 @@
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : 'Failed to load session';
 			playgroundActions.setError(errorMessage);
-			console.error('Failed to load session:', err);
+			logger.error('Failed to load session:', err);
 		} finally {
 			playgroundActions.setLoading(false);
 		}
@@ -271,7 +272,7 @@
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : 'Failed to create session';
 			playgroundActions.setError(errorMessage);
-			console.error('Failed to create session:', err);
+			logger.error('Failed to create session:', err);
 		} finally {
 			playgroundActions.setLoading(false);
 		}
@@ -307,7 +308,7 @@
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : 'Failed to delete session';
 			playgroundActions.setError(errorMessage);
-			console.error('Failed to delete session:', err);
+			logger.error('Failed to delete session:', err);
 		}
 	}
 
@@ -394,7 +395,7 @@
 			const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
 			playgroundActions.setError(errorMessage);
 			playgroundActions.setExecuting(false);
-			console.error('Failed to send message:', err);
+			logger.error('Failed to send message:', err);
 		}
 	}
 
@@ -415,7 +416,7 @@
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : 'Failed to stop execution';
 			playgroundActions.setError(errorMessage);
-			console.error('Failed to stop execution:', err);
+			logger.error('Failed to stop execution:', err);
 		}
 	}
 
@@ -448,7 +449,7 @@
 			const response = await playgroundService.getMessages(sessionId);
 			pollingCallback(response);
 		} catch (err) {
-			console.error('[Playground] Failed to refresh messages after interrupt:', err);
+			logger.error('[Playground] Failed to refresh messages after interrupt:', err);
 		}
 	}
 

@@ -13,9 +13,14 @@ import type {
 	PortConfig,
 	CategoryDefinition
 } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * HTTP API client for FlowDrop
+ *
+ * @deprecated Use {@link EnhancedFlowDropApiClient} instead, which supports
+ * configurable endpoints, authentication providers, retry logic, and timeouts.
+ * This class will be removed in a future major version.
  */
 export class FlowDropApiClient {
 	private baseUrl: string;
@@ -52,7 +57,7 @@ export class FlowDropApiClient {
 			const data = await response.json();
 			return data as T;
 		} catch (error) {
-			console.error('API request failed:', error);
+			logger.error('API request failed:', error);
 			throw new Error(
 				`API request failed: ${error instanceof Error ? error.message : 'Unknown error'}`
 			);
