@@ -12,6 +12,7 @@
 	import Icon from '@iconify/svelte';
 	import { diffWords, diffArrays, diffJson } from 'diff';
 	import type { Change } from 'diff';
+	import { sanitizeHtml } from '../../utils/sanitize.js';
 	import type {
 		ReviewConfig,
 		ReviewResolution,
@@ -334,7 +335,7 @@
 					<div class="review-prompt__diff-row">
 						<span class="review-prompt__diff-label">Original:</span>
 						{#if isHtml && !isRawView}
-							<span class="review-prompt__diff-value review-prompt__html-content">{@html change.original}</span>
+							<span class="review-prompt__diff-value review-prompt__html-content">{@html sanitizeHtml(String(change.original))}</span>
 						{:else if isHtml && isRawView}
 							<code class="review-prompt__diff-value review-prompt__raw-html">{change.original}</code>
 						{:else}
@@ -346,7 +347,7 @@
 					<div class="review-prompt__diff-row">
 						<span class="review-prompt__diff-label">Proposed:</span>
 						{#if isHtml && !isRawView}
-							<span class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content">{@html change.proposed}</span>
+							<span class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content">{@html sanitizeHtml(String(change.proposed))}</span>
 						{:else if isHtml && isRawView}
 							<code class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__raw-html">{change.proposed}</code>
 						{:else}
