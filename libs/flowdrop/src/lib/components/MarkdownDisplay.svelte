@@ -6,6 +6,7 @@
 
 <script lang="ts">
 	import { marked } from 'marked';
+	import { sanitizeHtml } from '../utils/sanitize.js';
 
 	interface Props {
 		content: string;
@@ -14,15 +15,15 @@
 
 	let props: Props = $props();
 
-	// Parse markdown content
-	let renderedContent = $derived(marked.parse(props.content || ''));
+	// Parse markdown content and sanitize to prevent XSS
+	let renderedContent = $derived(sanitizeHtml(marked.parse(props.content || '') as string));
 
 	// Default class name if none provided
 	let displayClass = $derived(props.className || 'markdown-display');
 </script>
 
 <div class={displayClass}>
-	<!-- marked.js sanitizes content by default to prevent XSS attacks -->
+	<!-- Content is sanitized with DOMPurify to prevent XSS -->
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html renderedContent}
 </div>

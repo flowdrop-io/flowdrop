@@ -170,6 +170,7 @@
 		"@sveltejs/kit": "^2.49.2",
 		"@sveltejs/package": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@types/dompurify": "^3.2.0",
 		"@types/marked": "^6.0.0",
 		"@types/node": "^20",
 		"@types/uuid": "^10.0.0",
@@ -222,6 +223,7 @@
 		"@xyflow/svelte": "~1.2",
 		"codemirror": "^6.0.2",
 		"diff": "^8.0.3",
+		"dompurify": "^3.3.1",
 		"marked": "^16.1.1",
 		"svelte-5-french-toast": "^2.0.6",
 		"uuid": "^11.1.0"

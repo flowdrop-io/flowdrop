@@ -11,6 +11,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { marked } from 'marked';
+	import { sanitizeHtml } from '../../utils/sanitize.js';
 	import type {
 		PlaygroundMessage,
 		PlaygroundMessageMetadata,
@@ -56,7 +57,9 @@
 	 * Render content as markdown or plain text
 	 */
 	const renderedContent = $derived(
-		enableMarkdown && message.role !== 'log' ? marked.parse(message.content || '') : message.content
+		enableMarkdown && message.role !== 'log'
+			? sanitizeHtml(marked.parse(message.content || '') as string)
+			: message.content
 	);
 
 	/**
@@ -193,7 +196,7 @@
 			<!-- Message Text -->
 			<div class="message-bubble__text">
 				{#if enableMarkdown && message.role !== 'log'}
-					<!-- Markdown content - marked.js sanitizes content by default -->
+					<!-- Markdown content - sanitized with DOMPurify to prevent XSS -->
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html renderedContent}
 				{:else}
