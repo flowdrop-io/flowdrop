@@ -17,6 +17,7 @@ import type {
 } from '../types/playground.js';
 import { isChatInputNode, defaultIsTerminalStatus } from '../types/playground.js';
 import type { Workflow, WorkflowNode } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Core Stores
@@ -511,6 +512,6 @@ export async function refreshSessionMessages(
 		const callback = createPollingCallback(isTerminalStatus);
 		callback(response);
 	} catch (err) {
-		console.error('[playgroundStore] Failed to refresh messages:', err);
+		logger.error('[playgroundStore] Failed to refresh messages:', err);
 	}
 }

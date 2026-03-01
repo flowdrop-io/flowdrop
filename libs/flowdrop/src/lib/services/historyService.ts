@@ -9,6 +9,7 @@
 
 import type { Workflow } from '../types/index.js';
 import { DEFAULT_BEHAVIOR_SETTINGS } from '../types/settings.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Types
@@ -221,7 +222,7 @@ export class HistoryService {
 	 */
 	startTransaction(workflow: Workflow, description?: string): void {
 		if (this.inTransaction) {
-			console.warn('HistoryService: Transaction already in progress, ignoring startTransaction');
+			logger.warn('HistoryService: Transaction already in progress, ignoring startTransaction');
 			return;
 		}
 
@@ -237,7 +238,7 @@ export class HistoryService {
 	 */
 	commitTransaction(): void {
 		if (!this.inTransaction || !this.transactionSnapshot) {
-			console.warn('HistoryService: No transaction in progress, ignoring commitTransaction');
+			logger.warn('HistoryService: No transaction in progress, ignoring commitTransaction');
 			return;
 		}
 

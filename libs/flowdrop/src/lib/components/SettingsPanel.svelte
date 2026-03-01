@@ -40,6 +40,7 @@
 		syncSettingsToApi,
 		syncStatusStore
 	} from '$lib/stores/settingsStore.js';
+	import { logger } from '../utils/logger.js';
 
 	/**
 	 * Props interface for SettingsPanel component
@@ -280,7 +281,7 @@
 		try {
 			await syncSettingsToApi();
 		} catch (error) {
-			console.error('Failed to sync settings:', error);
+			logger.error('Failed to sync settings:', error);
 		}
 	}
 

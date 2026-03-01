@@ -36,6 +36,7 @@
 		type InterruptWithState
 	} from '../../stores/interruptStore.js';
 	import { interruptService } from '../../services/interruptService.js';
+	import { logger } from '../../utils/logger.js';
 
 	/**
 	 * Component props
@@ -162,7 +163,7 @@
 		// Start the submission - state machine validates this transition
 		const startResult = interruptActions.startSubmit(currentInterrupt.id, value);
 		if (!startResult.valid) {
-			console.warn('[InterruptBubble] Cannot submit:', startResult.error);
+			logger.warn('[InterruptBubble] Cannot submit:', startResult.error);
 			return;
 		}
 
@@ -181,7 +182,7 @@
 			// Mark as failed - transitions to error state (can retry)
 			const errorMessage = err instanceof Error ? err.message : 'Failed to submit response';
 			interruptActions.submitFailure(currentInterrupt.id, errorMessage);
-			console.error('[InterruptBubble] Resolve error:', err);
+			logger.error('[InterruptBubble] Resolve error:', err);
 		}
 	}
 
@@ -192,7 +193,7 @@
 		// Start the cancel - state machine validates this transition
 		const startResult = interruptActions.startCancel(currentInterrupt.id);
 		if (!startResult.valid) {
-			console.warn('[InterruptBubble] Cannot cancel:', startResult.error);
+			logger.warn('[InterruptBubble] Cannot cancel:', startResult.error);
 			return;
 		}
 
@@ -211,7 +212,7 @@
 			// Mark as failed - transitions to error state (can retry)
 			const errorMessage = err instanceof Error ? err.message : 'Failed to cancel';
 			interruptActions.submitFailure(currentInterrupt.id, errorMessage);
-			console.error('[InterruptBubble] Cancel error:', err);
+			logger.error('[InterruptBubble] Cancel error:', err);
 		}
 	}
 

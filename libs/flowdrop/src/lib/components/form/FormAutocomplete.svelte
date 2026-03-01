@@ -26,6 +26,7 @@
 	import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
 	import type { FieldOption } from './types.js';
 	import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
+	import { logger } from '../../utils/logger.js';
 
 	/**
 	 * Props interface for FormAutocomplete component
@@ -162,7 +163,7 @@
 	 */
 	function mapResponse(data: unknown): FieldOption[] {
 		if (!Array.isArray(data)) {
-			console.warn('[FormAutocomplete] Response is not an array:', data);
+			logger.warn('[FormAutocomplete] Response is not an array:', data);
 			return [];
 		}
 
@@ -228,7 +229,7 @@
 				// Request was cancelled, ignore
 				return;
 			}
-			console.error('[FormAutocomplete] Fetch error:', err);
+			logger.error('[FormAutocomplete] Fetch error:', err);
 			error = err instanceof Error ? err.message : 'Failed to fetch suggestions';
 			suggestions = [];
 		} finally {

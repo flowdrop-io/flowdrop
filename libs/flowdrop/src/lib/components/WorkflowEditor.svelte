@@ -48,6 +48,7 @@
 	} from '../helpers/proximityConnect.js';
 	import PortCoordinateTracker from './PortCoordinateTracker.svelte';
 	import { getPortCoordinateSnapshot } from '../stores/portCoordinateStore.js';
+	import { logger } from '../utils/logger.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -292,7 +293,7 @@
 		} catch (error) {
 			// Only log if it's not an abort error
 			if (error instanceof Error && error.name !== 'AbortError') {
-				console.error('Failed to load node execution info:', error);
+				logger.error('Failed to load node execution info:', error);
 			}
 		}
 	}
@@ -625,7 +626,7 @@
 			// This way undo will restore to the state before the add
 			workflowActions.pushHistory('Add node', currentWorkflow);
 		} else if (!currentWorkflow) {
-			console.warn('No currentWorkflow available for new node');
+			logger.warn('No currentWorkflow available for new node');
 		}
 	}
 

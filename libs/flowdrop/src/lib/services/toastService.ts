@@ -5,6 +5,7 @@
  */
 
 import { toast, type DefaultToastOptions } from 'svelte-5-french-toast';
+import { TOAST_DURATION } from '../config/constants.js';
 
 /**
  * Default toast options themed with FlowDrop design tokens.
@@ -61,7 +62,7 @@ export interface ToastOptions {
  */
 export function showSuccess(message: string, options?: ToastOptions): string {
 	return toast.success(message, {
-		duration: options?.duration || 4000,
+		duration: options?.duration || TOAST_DURATION.SUCCESS,
 		position: options?.position || 'bottom-center'
 	});
 }
@@ -71,7 +72,7 @@ export function showSuccess(message: string, options?: ToastOptions): string {
  */
 export function showError(message: string, options?: ToastOptions): string {
 	return toast.error(message, {
-		duration: options?.duration || 6000,
+		duration: options?.duration || TOAST_DURATION.ERROR,
 		position: options?.position || 'bottom-center'
 	});
 }
@@ -81,7 +82,7 @@ export function showError(message: string, options?: ToastOptions): string {
  */
 export function showWarning(message: string, options?: ToastOptions): string {
 	return toast.error(message, {
-		duration: options?.duration || 5000,
+		duration: options?.duration || TOAST_DURATION.WARNING,
 		position: options?.position || 'bottom-center'
 	});
 }
@@ -91,7 +92,7 @@ export function showWarning(message: string, options?: ToastOptions): string {
  */
 export function showInfo(message: string, options?: ToastOptions): string {
 	return toast.success(message, {
-		duration: options?.duration || 4000,
+		duration: options?.duration || TOAST_DURATION.INFO,
 		position: options?.position || 'bottom-center'
 	});
 }
@@ -150,7 +151,7 @@ export function showPromise<T>(
  */
 export function showConfirmation(message: string, options?: ToastOptions): string {
 	return toast(message, {
-		duration: options?.duration || 5000,
+		duration: options?.duration || TOAST_DURATION.CONFIRMATION,
 		position: options?.position || 'bottom-center'
 	});
 }

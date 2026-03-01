@@ -10,6 +10,7 @@
 import { get, type Unsubscriber } from 'svelte/store';
 import { behaviorSettings } from '../stores/settingsStore.js';
 import { isDirtyStore, isDirty } from '../stores/workflowStore.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Auto-save configuration options
@@ -100,7 +101,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
 			onSuccess?.();
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error));
-			console.error('Auto-save failed:', err);
+			logger.error('Auto-save failed:', err);
 			onError?.(err);
 		} finally {
 			state.isSaving = false;
@@ -273,7 +274,7 @@ export class AutoSaveManager {
 			this.onSuccess?.();
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error));
-			console.error('Auto-save failed:', err);
+			logger.error('Auto-save failed:', err);
 			this.onError?.(err);
 		} finally {
 			this.isSaving = false;

@@ -21,6 +21,8 @@ import type { AuthProvider } from '../types/auth.js';
 import { NoAuthProvider } from '../types/auth.js';
 import { get } from 'svelte/store';
 import { apiSettings } from '../stores/settingsStore.js';
+import { logger } from '../utils/logger.js';
+import { DEFAULT_API_TIMEOUT_MS } from '../config/constants.js';
 
 /**
  * API error with additional context
@@ -115,7 +117,7 @@ export class EnhancedFlowDropApiClient {
 
 		// Create AbortController for timeout
 		const controller = new AbortController();
-		const timeoutMs = userApiSettings.timeout ?? this.config.timeout ?? 30000;
+		const timeoutMs = userApiSettings.timeout ?? this.config.timeout ?? DEFAULT_API_TIMEOUT_MS;
 		const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
 		const fetchConfig: RequestInit = {
@@ -189,7 +191,7 @@ export class EnhancedFlowDropApiClient {
 						timeout: true
 					});
 					// Don't retry on timeout - it's a client-side timeout
-					console.error(`API request timed out after ${timeoutMs}ms:`, lastError);
+					logger.error(`API request timed out after ${timeoutMs}ms:`, lastError);
 					throw lastError;
 				}
 
@@ -206,7 +208,7 @@ export class EnhancedFlowDropApiClient {
 						(lastError.status === 401 || lastError.status === 403)) ||
 					attempt === maxAttempts
 				) {
-					console.error(`API request failed after ${attempt} attempts:`, lastError);
+					logger.error(`API request failed after ${attempt} attempts:`, lastError);
 					throw lastError;
 				}
 

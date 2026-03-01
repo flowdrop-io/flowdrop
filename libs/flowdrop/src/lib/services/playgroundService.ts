@@ -20,6 +20,7 @@ import { defaultShouldStopPolling } from '../types/playground.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
 import { getEndpointConfig } from './api.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Default polling interval in milliseconds
@@ -346,7 +347,7 @@ export class PlaygroundService {
 					return;
 				}
 			} catch (error) {
-				console.error('Polling error:', error);
+				logger.error('Polling error:', error);
 
 				// Exponential backoff on error
 				this.currentBackoff = Math.min(this.currentBackoff * 2, MAX_POLLING_BACKOFF);

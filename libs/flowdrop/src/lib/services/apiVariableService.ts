@@ -13,6 +13,7 @@ import type {
 	AuthProvider
 } from '../types/index.js';
 import { getEndpointConfig } from './api.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Context for variable API requests
@@ -231,7 +232,7 @@ export async function fetchVariableSchema(
 			const authHeaders = await authProvider.getAuthHeaders();
 			Object.assign(headers, authHeaders);
 		} catch (error) {
-			console.warn('Failed to get auth headers:', error);
+			logger.warn('Failed to get auth headers:', error);
 		}
 	}
 

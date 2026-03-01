@@ -7,6 +7,7 @@
 import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
 import { getPortCompatibilityChecker } from './connections.js';
 import { getCategoryColor as getCategoryColorFromStore } from '../stores/categoriesStore.js';
+import { logger } from './logger.js';
 
 /**
  * Category color mapping to design tokens (CSS variables)
@@ -102,7 +103,7 @@ export function getDataTypeConfig(dataType: string): PortDataTypeConfig | undefi
 		const checker = getPortCompatibilityChecker();
 		return checker.getDataTypeConfig(dataType);
 	} catch (error) {
-		console.warn('Port compatibility checker not initialized:', error);
+		logger.warn('Port compatibility checker not initialized:', error);
 		return undefined;
 	}
 }
@@ -115,7 +116,7 @@ export function getAvailableDataTypes(): PortDataTypeConfig[] {
 		const checker = getPortCompatibilityChecker();
 		return checker.getEnabledDataTypes();
 	} catch (error) {
-		console.warn('Port compatibility checker not initialized:', error);
+		logger.warn('Port compatibility checker not initialized:', error);
 		return [];
 	}
 }
