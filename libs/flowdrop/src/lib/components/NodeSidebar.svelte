@@ -12,7 +12,7 @@
 	import { getCategoryColorToken } from '../utils/colors.js';
 	import { getCategoryLabel } from '../stores/categoriesStore.js';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { uiSettings, updateSettings } from '../stores/settingsStore.js';
+	import { getUiSettings, updateSettings } from '../stores/settingsStore.svelte.js';
 
 	interface Props {
 		nodes: NodeMetadata[];
@@ -29,7 +29,7 @@
 	 * Persists the new state to settings
 	 */
 	function toggleSidebar(): void {
-		updateSettings({ ui: { sidebarCollapsed: !$uiSettings.sidebarCollapsed } });
+		updateSettings({ ui: { sidebarCollapsed: !getUiSettings().sidebarCollapsed } });
 	}
 
 	/**
@@ -101,7 +101,7 @@
 		if (!event.dataTransfer) return;
 
 		// Extract initial config from configSchema with proper null checks
-		let initialConfig = {};
+		let initialConfig: Record<string, unknown> = {};
 		if (
 			nodeType.configSchema &&
 			typeof nodeType.configSchema === 'object' &&
@@ -195,9 +195,9 @@
 <!-- Components Sidebar - Always Visible -->
 <aside
 	class="flowdrop-sidebar flowdrop-sidebar--container"
-	class:flowdrop-sidebar--collapsed={$uiSettings.sidebarCollapsed}
-	class:flowdrop-sidebar--compact={$uiSettings.compactMode}
-	style:width="{$uiSettings.sidebarCollapsed ? 48 : $uiSettings.sidebarWidth}px"
+	class:flowdrop-sidebar--collapsed={getUiSettings().sidebarCollapsed}
+	class:flowdrop-sidebar--compact={getUiSettings().compactMode}
+	style:width="{getUiSettings().sidebarCollapsed ? 48 : getUiSettings().sidebarWidth}px"
 	aria-label="Components sidebar"
 >
 	<!-- Header -->
@@ -205,19 +205,19 @@
 		<button
 			class="flowdrop-sidebar__toggle"
 			onclick={toggleSidebar}
-			aria-label={$uiSettings.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-			title={$uiSettings.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			aria-label={getUiSettings().sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			title={getUiSettings().sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 		>
-			<Icon icon={$uiSettings.sidebarCollapsed ? 'mdi:chevron-right' : 'mdi:chevron-left'} />
+			<Icon icon={getUiSettings().sidebarCollapsed ? 'mdi:chevron-right' : 'mdi:chevron-left'} />
 		</button>
-		{#if !$uiSettings.sidebarCollapsed}
+		{#if !getUiSettings().sidebarCollapsed}
 			<div class="flowdrop-sidebar__title">
 				<h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
 			</div>
 		{/if}
 	</div>
 
-	{#if !$uiSettings.sidebarCollapsed}
+	{#if !getUiSettings().sidebarCollapsed}
 		<!-- Search Section -->
 		<div class="flowdrop-sidebar__search">
 			<div class="flowdrop-join flowdrop-w--full">

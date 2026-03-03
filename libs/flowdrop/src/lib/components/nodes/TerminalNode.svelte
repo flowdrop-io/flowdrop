@@ -15,7 +15,7 @@
 	import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
 	import { getNodeIcon } from '../../utils/icons.js';
 	import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
-	import { connectedHandles } from '../../stores/workflowStore.js';
+	import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
 
 	/**
 	 * Terminal node variant types
@@ -156,7 +156,7 @@
 			return true;
 		}
 		const handleId = `${props.data.nodeId}-${type}-${port.id}`;
-		return $connectedHandles.has(handleId);
+		return getConnectedHandles().has(handleId);
 	}
 
 	/**
@@ -267,12 +267,12 @@
 	/**
 	 * Visible input ports filtered by hideUnconnectedHandles setting
 	 */
-	let visibleInputPorts = $derived(inputPorts.filter((port) => isPortVisible(port, 'input')));
+	let visibleInputPorts = $derived(inputPorts.filter((port: NodePort) => isPortVisible(port, 'input')));
 
 	/**
 	 * Visible output ports filtered by hideUnconnectedHandles setting
 	 */
-	let visibleOutputPorts = $derived(outputPorts.filter((port) => isPortVisible(port, 'output')));
+	let visibleOutputPorts = $derived(outputPorts.filter((port: NodePort) => isPortVisible(port, 'output')));
 
 	/**
 	 * Determine if we should show inputs based on visible ports

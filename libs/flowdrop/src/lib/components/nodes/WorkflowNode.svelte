@@ -19,7 +19,7 @@
 		getCategoryColorToken,
 		getPortBackgroundColor
 	} from '../../utils/colors.js';
-	import { connectedHandles } from '../../stores/workflowStore.js';
+	import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
 
 	interface Props {
 		data: WorkflowNode['data'] & {
@@ -107,7 +107,7 @@
 
 		// Check if port is connected
 		const handleId = `${props.data.nodeId}-${type}-${port.id}`;
-		return $connectedHandles.has(handleId);
+		return getConnectedHandles().has(handleId);
 	}
 
 	/**

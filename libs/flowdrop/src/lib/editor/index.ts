@@ -5,6 +5,10 @@
  * building visual workflow editors. This module includes @xyflow/svelte
  * and all node components.
  *
+ * **Important: Single-instance only.** FlowDrop uses module-level singleton
+ * stores for state management. Only one FlowDrop editor instance per page
+ * is supported. This is a known architectural limitation.
+ *
  * @module editor
  *
  * @example Mounting a standalone workflow editor:
@@ -48,9 +52,9 @@ export { default as App } from '../components/App.svelte';
 // ============================================================================
 
 export { default as WorkflowNodeComponent } from '../components/nodes/WorkflowNode.svelte';
-export { default as SimpleNodeComponent } from '../components/nodes/SimpleNode.svelte';
-export { default as ToolNodeComponent } from '../components/nodes/ToolNode.svelte';
-export { default as NotesNodeComponent } from '../components/nodes/NotesNode.svelte';
+export { default as SimpleNode } from '../components/nodes/SimpleNode.svelte';
+export { default as ToolNode } from '../components/nodes/ToolNode.svelte';
+export { default as NotesNode } from '../components/nodes/NotesNode.svelte';
 export { default as GatewayNode } from '../components/nodes/GatewayNode.svelte';
 export { default as SquareNode } from '../components/nodes/SquareNode.svelte';
 export { default as TerminalNode } from '../components/nodes/TerminalNode.svelte';
@@ -135,19 +139,20 @@ export {
 // ============================================================================
 
 export {
-	workflowStore,
+	getWorkflowStore,
 	workflowActions,
-	workflowId,
-	workflowName,
-	workflowNodes,
-	workflowEdges,
-	workflowMetadata,
-	workflowChanged,
-	workflowValidation,
-	workflowMetadataChanged,
-	connectedHandles,
+	getWorkflowId,
+	getWorkflowName,
+	getWorkflowNodes,
+	getWorkflowEdges,
+	getWorkflowMetadata,
+	getWorkflowFormat,
+	getWorkflowChanged,
+	getWorkflowValidation,
+	getWorkflowMetadataChanged,
+	getConnectedHandles,
 	// Dirty state tracking
-	isDirtyStore,
+	getIsDirty,
 	isDirty,
 	markAsSaved,
 	getWorkflow as getWorkflowFromStore,
@@ -157,31 +162,32 @@ export {
 	setHistoryEnabled,
 	isHistoryEnabled,
 	setRestoringFromHistory
-} from '../stores/workflowStore.js';
+} from '../stores/workflowStore.svelte.js';
 
-// Port Coordinate Store
+// Port Coordinate Store (Svelte 5 runes-based)
 export {
-	portCoordinateStore,
 	rebuildAllPortCoordinates,
 	updateNodePortCoordinates,
 	removeNodePortCoordinates,
 	getPortCoordinate,
 	getNodePortCoordinates,
-	getPortCoordinateSnapshot
-} from '../stores/portCoordinateStore.js';
+	getPortCoordinateSnapshot,
+	getPortCoordinates
+} from '../stores/portCoordinateStore.svelte.js';
 
 // History Store and Service
 export {
-	historyStateStore,
-	canUndo,
-	canRedo,
+	getHistoryState,
+	getCanUndo,
+	getCanRedo,
 	historyActions,
 	setOnRestoreCallback,
+	cleanupHistorySubscription,
 	historyService,
 	HistoryService
-} from '../stores/historyStore.js';
+} from '../stores/historyStore.svelte.js';
 
-export type { HistoryEntry, HistoryState, PushOptions } from '../stores/historyStore.js';
+export type { HistoryEntry, HistoryState, PushOptions } from '../stores/historyStore.svelte.js';
 
 // ============================================================================
 // Services
@@ -209,28 +215,30 @@ export { NodeExecutionService, nodeExecutionService } from '../services/nodeExec
 // Playground Service and Store
 export { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 export {
-	currentSession,
-	sessions,
-	messages,
-	isExecuting,
-	isLoading,
-	error as playgroundError,
-	currentWorkflow,
-	lastPollTimestamp,
-	sessionStatus,
-	messageCount,
-	chatMessages,
-	logMessages,
-	latestMessage,
-	inputFields,
-	hasChatInput,
-	sessionCount,
+	getCurrentSession,
+	getSessions,
+	getMessages,
+	getIsExecuting,
+	getIsLoading,
+	getError as getPlaygroundError,
+	getCurrentWorkflow,
+	getLastPollTimestamp,
+	getSessionStatus,
+	getMessageCount,
+	getChatMessages,
+	getLogMessages,
+	getLatestMessage,
+	getInputFields,
+	getHasChatInput,
+	getSessionCount,
 	playgroundActions,
+	createPollingCallback,
+	subscribeToSessionStatus,
 	getCurrentSessionId,
 	isSessionSelected,
 	getMessagesSnapshot,
 	getLatestMessageTimestamp
-} from '../stores/playgroundStore.js';
+} from '../stores/playgroundStore.svelte.js';
 
 export {
 	saveWorkflow,
@@ -242,11 +250,7 @@ export {
 	initializeSampleWorkflows
 } from '../services/workflowStorage.js';
 
-export {
-	globalSaveWorkflow,
-	globalExportWorkflow,
-	initializeGlobalSave
-} from '../services/globalSave.js';
+export { globalSaveWorkflow, globalExportWorkflow } from '../services/globalSave.js';
 
 export { fetchPortConfig, validatePortConfig } from '../services/portConfigApi.js';
 
