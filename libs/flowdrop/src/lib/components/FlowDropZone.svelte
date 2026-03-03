@@ -10,6 +10,8 @@
 
 	interface Props {
 		ondrop: (nodeTypeData: string, position: { x: number; y: number }) => void;
+		/** Optional callback invoked when a JSON file is dropped onto the canvas. */
+		onfiledrop?: (file: File) => void;
 		children: Snippet;
 	}
 
@@ -29,12 +31,26 @@
 	}
 
 	/**
-	 * Handle drop event with proper coordinate transformation
+	 * Handle drop event with proper coordinate transformation.
+	 *
+	 * If the drag event carries a JSON file (e.g. a workflow file dragged from the OS),
+	 * the `onfiledrop` callback is invoked with the file.
+	 * Otherwise the node-type drop path is used as before.
 	 */
 	function handleDrop(e: DragEvent): void {
 		e.preventDefault();
 
-		// Get the data from the drag event
+		// Check if the drop contains files (e.g. a workflow JSON file from the OS)
+		const files = e.dataTransfer?.files;
+		if (files && files.length > 0) {
+			const file = files[0];
+			if (props.onfiledrop && (file.type === 'application/json' || file.name.endsWith('.json'))) {
+				props.onfiledrop(file);
+			}
+			return;
+		}
+
+		// Get the data from the drag event (node type dropped from sidebar)
 		const nodeTypeData = e.dataTransfer?.getData('application/json');
 		if (nodeTypeData) {
 			// Convert screen coordinates to flow coordinates (accounts for zoom and pan)

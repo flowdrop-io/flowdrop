@@ -16,7 +16,7 @@
 		type ColorMode
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import { resolvedTheme, editorSettings, behaviorSettings } from '../stores/settingsStore.js';
+	import { getResolvedTheme, getEditorSettings, getBehaviorSettings } from '../stores/settingsStore.svelte.js';
 	import type {
 		WorkflowNode as WorkflowNodeType,
 		NodeMetadata,
@@ -29,8 +29,8 @@
 	import { tick } from 'svelte';
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
-	import { workflowStore, workflowActions } from '../stores/workflowStore.js';
-	import { historyActions, setOnRestoreCallback } from '../stores/historyStore.js';
+	import { getWorkflowStore, workflowActions } from '../stores/workflowStore.svelte.js';
+	import { historyActions, setOnRestoreCallback } from '../stores/historyStore.svelte.js';
 	import UniversalNode from './UniversalNode.svelte';
 	import {
 		EdgeStylingHelper,
@@ -41,14 +41,15 @@
 	import type { NodeExecutionInfo } from '../types/index.js';
 	import { areNodeArraysEqual, areEdgeArraysEqual, throttle } from '../utils/performanceUtils.js';
 	import { Toaster } from 'svelte-5-french-toast';
-	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '../services/toastService.js';
+	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS, apiToasts } from '../services/toastService.js';
 	import {
 		ProximityConnectHelper,
 		type ProximityEdgeCandidate
 	} from '../helpers/proximityConnect.js';
 	import PortCoordinateTracker from './PortCoordinateTracker.svelte';
-	import { getPortCoordinateSnapshot } from '../stores/portCoordinateStore.js';
+	import { getPortCoordinateSnapshot } from '../stores/portCoordinateStore.svelte.js';
 	import { logger } from '../utils/logger.js';
+	import { validateWorkflowData } from '../utils/validation.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -92,18 +93,19 @@
 	// Initialize currentWorkflow from global store
 	// Sync on workflow ID change (new workflow loaded) or external programmatic changes
 	$effect(() => {
-		if ($workflowStore) {
-			const storeWorkflowId = $workflowStore.id;
+		const storeValue = getWorkflowStore();
+		if (storeValue) {
+			const storeWorkflowId = storeValue.id;
 
 			if (currentWorkflowId !== storeWorkflowId) {
 				// New workflow loaded
-				currentWorkflow = $workflowStore;
+				currentWorkflow = storeValue;
 				currentWorkflowId = storeWorkflowId;
 				lastEditorStoreValue = null;
-			} else if ($workflowStore !== lastEditorStoreValue) {
+			} else if (storeValue !== lastEditorStoreValue) {
 				// External programmatic change (e.g. addEdge, updateNode, updateEdges)
 				// The store value differs from what this editor last wrote, so sync it
-				currentWorkflow = $workflowStore;
+				currentWorkflow = storeValue;
 			}
 		} else if (currentWorkflow !== null) {
 			// Store was cleared
@@ -151,8 +153,8 @@
 	 * Returns [gridSize, gridSize] tuple when snapToGrid is enabled, undefined otherwise
 	 */
 	let snapGrid = $derived(
-		$editorSettings.snapToGrid
-			? ([$editorSettings.gridSize, $editorSettings.gridSize] as [number, number])
+		getEditorSettings().snapToGrid
+			? ([getEditorSettings().gridSize, getEditorSettings().gridSize] as [number, number])
 			: undefined
 	);
 
@@ -161,7 +163,7 @@
 	 * Sets initial zoom level based on user preferences
 	 */
 	let initialViewport = $derived({
-		zoom: $editorSettings.defaultZoom,
+		zoom: getEditorSettings().defaultZoom,
 		x: 0,
 		y: 0
 	});
@@ -188,7 +190,7 @@
 			// (PortCoordinateTracker will wait for SvelteFlow to render before reading handleBounds)
 			// Note: Using Date.now() instead of ++ to avoid reading the old value,
 			// which would make this effect depend on portCoordRebuildTrigger and loop.
-			if ($editorSettings.proximityConnect) {
+			if (getEditorSettings().proximityConnect) {
 				portCoordRebuildTrigger = Date.now();
 			}
 
@@ -371,7 +373,7 @@
 		nodes: WorkflowNodeType[];
 		event: MouseEvent | TouchEvent;
 	}): void {
-		if (!$editorSettings.proximityConnect || !targetNode || props.readOnly || props.lockWorkflow) {
+		if (!getEditorSettings().proximityConnect || !targetNode || props.readOnly || props.lockWorkflow) {
 			if (currentProximityCandidates.length > 0) {
 				flowEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
 				currentProximityCandidates = [];
@@ -394,13 +396,13 @@
 						targetNode.id,
 						portCoordinates,
 						baseEdges,
-						$editorSettings.proximityConnectDistance
+						getEditorSettings().proximityConnectDistance
 					)
 				: ProximityConnectHelper.findCompatibleEdges(
 						targetNode,
 						flowNodes,
 						baseEdges,
-						$editorSettings.proximityConnectDistance
+						getEditorSettings().proximityConnectDistance
 					);
 
 		// Create preview edges
@@ -422,7 +424,7 @@
 		portCoordNodeToUpdate = null;
 
 		// Finalize proximity connect if there are candidates
-		if ($editorSettings.proximityConnect && currentProximityCandidates.length > 0) {
+		if (getEditorSettings().proximityConnect && currentProximityCandidates.length > 0) {
 			// Remove all preview edges
 			const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
 
@@ -501,7 +503,7 @@
 		edges: WorkflowEdge[];
 	}): Promise<boolean> {
 		// If confirmDelete setting is enabled, show confirmation dialog
-		if ($behaviorSettings.confirmDelete) {
+		if (getBehaviorSettings().confirmDelete) {
 			const nodeCount = params.nodes.length;
 			const edgeCount = params.edges.length;
 
@@ -631,6 +633,42 @@
 	}
 
 	/**
+	 * Handle a workflow JSON file dropped directly onto the canvas.
+	 *
+	 * Validates the JSON against the minimum required Workflow fields and, if valid,
+	 * loads it into the workflow store. Shows a toast on validation failure or read error.
+	 */
+	function handleWorkflowFileDrop(file: File): void {
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			try {
+				const text = event.target?.result;
+				if (typeof text !== 'string') {
+					throw new Error('Could not read file contents.');
+				}
+				const data = JSON.parse(text);
+				const validation = validateWorkflowData(data);
+				if (!validation.valid) {
+					apiToasts.error('Import workflow', validation.error ?? 'Invalid workflow JSON');
+					logger.warn('Workflow file drop validation failed:', validation.error);
+					return;
+				}
+				workflowActions.initialize(data as Workflow);
+			} catch (error) {
+				const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
+				logger.error('Workflow file drop import failed:', errorObj);
+				apiToasts.error('Import workflow', errorObj.message);
+			}
+		};
+		reader.onerror = () => {
+			const message = 'Failed to read the dropped file.';
+			logger.error(message);
+			apiToasts.error('Import workflow', message);
+		};
+		reader.readAsText(file);
+	}
+
+	/**
 	 * Node ID that needs edge refresh - used to trigger EdgeRefresher component
 	 */
 	let nodeIdToRefresh = $state<string | null>(null);
@@ -740,14 +778,14 @@
 		<div class="flowdrop-workflow-editor__main">
 			<!-- Flow Canvas -->
 			<div class="flowdrop-canvas">
-				<FlowDropZone ondrop={handleNodeDrop}>
+				<FlowDropZone ondrop={handleNodeDrop} onfiledrop={handleWorkflowFileDrop}>
 					{#key svelteFlowKey}
 						<SvelteFlow
 							bind:nodes={flowNodes}
 							bind:edges={flowEdges}
 							{nodeTypes}
 							{defaultEdgeOptions}
-							onconnect={handleConnect}
+							onconnect={(connection) => void handleConnect({ source: connection.source, target: connection.target, sourceHandle: connection.sourceHandle ?? undefined, targetHandle: connection.targetHandle ?? undefined })}
 							onbeforedelete={handleBeforeDelete}
 							ondelete={handleNodesDelete}
 							onnodedragstart={handleNodeDragStart}
@@ -761,18 +799,18 @@
 							connectionLineComponent={ConnectionLine}
 							{snapGrid}
 							{initialViewport}
-							colorMode={$resolvedTheme as ColorMode}
-							fitView={$editorSettings.fitViewOnLoad}
+							colorMode={getResolvedTheme() as ColorMode}
+							fitView={getEditorSettings().fitViewOnLoad}
 						>
 							<Controls />
 							<!-- Always render Background for consistent bg color in dark/light mode -->
 							<Background
-								gap={$editorSettings.gridSize}
+								gap={getEditorSettings().gridSize}
 								bgColor="var(--fd-background)"
 								variant={BackgroundVariant.Dots}
-								patternColor={$editorSettings.showGrid ? undefined : 'transparent'}
+								patternColor={getEditorSettings().showGrid ? undefined : 'transparent'}
 							/>
-							{#if $editorSettings.showMinimap}
+							{#if getEditorSettings().showMinimap}
 								<MiniMap />
 							{/if}
 						</SvelteFlow>
@@ -788,8 +826,8 @@
 				</FlowDropZone>
 			</div>
 
-			<!-- Status Bar -->
-			<div class="flowdrop-status-bar">
+			<!-- Status Bar: aria-live announces dynamic changes (node/edge counts, cycle warnings) -->
+			<div class="flowdrop-status-bar" aria-live="polite" aria-atomic="true">
 				<div class="flowdrop-status-bar__content">
 					<div class="flowdrop-flex flowdrop-gap--4">
 						<span class="flowdrop-text--xs flowdrop-text--gray">{flowNodes.length} nodes</span>
@@ -811,11 +849,14 @@
 </SvelteFlowProvider>
 
 <!-- Toast notifications container -->
-<Toaster
-	position="bottom-center"
-	containerClassName={FLOWDROP_TOASTER_CLASS}
-	toastOptions={flowdropToastOptions}
-/>
+<!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->
+<div aria-live="polite" aria-atomic="true">
+	<Toaster
+		position="bottom-center"
+		containerClassName={FLOWDROP_TOASTER_CLASS}
+		toastOptions={flowdropToastOptions}
+	/>
+</div>
 
 <style>
 	.flowdrop-workflow-editor {

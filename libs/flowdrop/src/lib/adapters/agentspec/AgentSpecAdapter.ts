@@ -38,6 +38,7 @@ import {
 
 import { computeAutoLayout } from './autoLayout.js';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../../utils/logger.js';
 
 // ============================================================================
 // Handle ID Helpers
@@ -412,8 +413,9 @@ export class AgentSpecAdapter {
 							typeof config.headers === 'string'
 								? JSON.parse(config.headers)
 								: (config.headers as Record<string, string>);
-					} catch {
+					} catch (error) {
 						// Ignore parse errors
+						logger.warn('Failed to parse header JSON', error);
 					}
 				}
 				return apiNode;

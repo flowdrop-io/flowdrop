@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import MainLayout from '$lib/components/layouts/MainLayout.svelte';
 	import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 	import NodeSidebar from '$lib/components/NodeSidebar.svelte';
@@ -28,19 +28,21 @@
 	import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 	import { mergeFeatures } from '$lib/types/events.js';
 	import {
-		workflowStore,
+		getWorkflowStore,
 		workflowActions,
-		workflowName,
-		workflowFormat,
+		getWorkflowName,
+		getWorkflowFormat,
 		markAsSaved
-	} from '../stores/workflowStore.js';
+	} from '../stores/workflowStore.svelte.js';
+	import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
 	import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 	import { initAutoSave } from '$lib/services/autoSaveService.js';
-	import { uiSettings } from '../stores/settingsStore.js';
+	import { getUiSettings } from '../stores/settingsStore.svelte.js';
 	import { initializePortCompatibility } from '$lib/utils/connections.js';
 	import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
 	import { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
 	import { logger } from '../utils/logger.js';
+	import { validateWorkflowData } from '../utils/validation.js';
 
 	/**
 	 * Configuration props for runtime customization
@@ -121,10 +123,11 @@
 			return navbarTitle;
 		}
 		// Default workflow title logic
-		if (!$workflowName || $workflowName === 'Untitled Workflow') {
+		const wfName = getWorkflowName();
+		if (!wfName || wfName === 'Untitled Workflow') {
 			return 'Workflow / New Workflow';
 		}
-		return `Workflow / ${$workflowName}`;
+		return `Workflow / ${wfName}`;
 	});
 
 	let nodes = $state<NodeMetadata[]>([]);
@@ -176,15 +179,16 @@
 
 	// Workflow configuration values
 	let workflowConfigValues = $derived({
-		name: $workflowName || '',
-		description: $workflowStore?.description || '',
-		format: $workflowStore?.metadata?.format || 'flowdrop'
+		name: getWorkflowName() || '',
+		description: getWorkflowStore()?.description || '',
+		format: getWorkflowStore()?.metadata?.format || 'flowdrop'
 	});
 
 	// Get the current node from the workflow store
 	let selectedNodeForConfig = $derived(() => {
-		if (!selectedNodeId || !$workflowStore) return null;
-		return $workflowStore.nodes.find((node) => node.id === selectedNodeId) || null;
+		const wf = getWorkflowStore();
+		if (!selectedNodeId || !wf) return null;
+		return wf.nodes.find((node) => node.id === selectedNodeId) || null;
 	});
 
 	// WorkflowEditor reference for save functionality
@@ -383,9 +387,11 @@
 	 */
 	async function handleWorkflowSave(config: any): Promise<void> {
 		// Update the workflow store
-		if ($workflowStore) {
-			$workflowStore.name = config.name;
-			$workflowStore.description = config.description;
+		if (getWorkflowStore()) {
+			workflowActions.batchUpdate({
+				name: config.name,
+				description: config.description
+			});
 		}
 
 		// Close the sidebar
@@ -402,196 +408,88 @@
 	}
 
 	/**
-	 * Save workflow - exposed API function
+	 * Save workflow - thin wrapper that delegates to globalSaveWorkflow().
 	 *
-	 * Integrates with event handlers for enterprise customization.
-	 * Uses enhanced API client with authProvider support when available.
+	 * All save logic (blur flush, metadata construction, API call, event hooks,
+	 * toast notifications) lives in globalSave.ts — the single source of truth.
 	 */
 	async function saveWorkflow(): Promise<void> {
-		// Flush any pending form changes by blurring the active element.
-		// This ensures focusout handlers (like ConfigForm's handleFormBlur)
-		// sync local state to the global store before we read it.
-		if (document.activeElement instanceof HTMLElement) {
-			document.activeElement.blur();
-		}
-
-		// Wait for any pending DOM updates before saving
-		await tick();
-
-		// Use current workflow from global store
-		const workflowToSave = $workflowStore;
-
-		if (!workflowToSave) {
-			return;
-		}
-
-		// Call onBeforeSave if provided - allows cancellation
-		if (eventHandlers?.onBeforeSave) {
-			const shouldContinue = await eventHandlers.onBeforeSave(workflowToSave);
-			if (shouldContinue === false) {
-				// Save cancelled by event handler
-				return;
-			}
-		}
-
-		// Show loading toast (if enabled)
-		const loadingToast = features.showToasts ? apiToasts.loading('Saving workflow') : null;
-
-		try {
-			// Import uuid for new workflow ID generation
-			const { v4: uuidv4 } = await import('uuid');
-
-			// Determine the workflow ID
-			let workflowId: string;
-			if (workflowToSave.id) {
-				workflowId = workflowToSave.id;
-			} else {
-				workflowId = uuidv4();
-			}
-
-			// Create workflow object for saving (spread existing metadata to preserve format, tags, etc.)
-			const finalWorkflow: Workflow = {
-				id: workflowId,
-				name: workflowToSave.name || 'Untitled Workflow',
-				description: workflowToSave.description || '',
-				nodes: workflowToSave.nodes || [],
-				edges: workflowToSave.edges || [],
-				metadata: {
-					...workflowToSave.metadata,
-					version: workflowToSave.metadata?.version || '1.0.0',
-					format: workflowToSave.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
-					createdAt: workflowToSave.metadata?.createdAt || new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				}
-			};
-
-			// Use enhanced client with authProvider if available, otherwise fall back to legacy api
-			let savedWorkflow: Workflow;
-			if (apiClient) {
-				// Check if this is an existing workflow (non-UUID ID indicates existing)
-				const isExistingWorkflow =
-					finalWorkflow.id &&
-					finalWorkflow.id.length > 0 &&
-					!finalWorkflow.id.match(
-						/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-					);
-
-				if (isExistingWorkflow) {
-					savedWorkflow = await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow);
-				} else {
-					savedWorkflow = await apiClient.saveWorkflow(finalWorkflow);
-				}
-			} else {
-				// Fall back to legacy workflowApi
-				const { workflowApi } = await import('$lib/services/api.js');
-				savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
-			}
-
-			// Update the workflow ID if it changed (new workflow)
-			// Keep our current workflow state, only update ID and metadata from backend
-			if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
-				workflowActions.batchUpdate({
-					nodes: finalWorkflow.nodes,
-					edges: finalWorkflow.edges,
-					name: finalWorkflow.name,
-					metadata: {
-						...finalWorkflow.metadata,
-						...savedWorkflow.metadata
-					}
-				});
-			}
-
-			// Mark as saved (clears dirty state)
-			markAsSaved();
-
-			// Dismiss loading toast and show success
-			if (loadingToast) {
-				dismissToast(loadingToast);
-			}
-			if (features.showToasts) {
-				apiToasts.success('Save workflow', 'Workflow saved successfully');
-			}
-
-			// Call onAfterSave if provided
-			if (eventHandlers?.onAfterSave) {
-				await eventHandlers.onAfterSave(savedWorkflow);
-			}
-		} catch (error) {
-			// Dismiss loading toast
-			if (loadingToast) {
-				dismissToast(loadingToast);
-			}
-
-			const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
-
-			// Call onSaveError if provided
-			if (eventHandlers?.onSaveError && workflowToSave) {
-				await eventHandlers.onSaveError(errorObj, workflowToSave);
-			}
-
-			// Check if parent wants to handle API errors
-			let suppressToast = false;
-			if (eventHandlers?.onApiError) {
-				suppressToast = eventHandlers.onApiError(errorObj, 'save') === true;
-			}
-
-			// Show error toast if not suppressed
-			if (features.showToasts && !suppressToast) {
-				apiToasts.error('Save workflow', errorObj.message);
-			}
-
-			throw error; // Re-throw to allow calling code to handle if needed
-		}
+		await globalSaveWorkflow({
+			apiClient: apiClient ?? undefined,
+			eventHandlers,
+			features,
+			onMarkAsSaved: markAsSaved
+		});
 	}
 
 	/**
-	 * Export workflow - exposed API function
+	 * Export workflow - thin wrapper that delegates to globalExportWorkflow().
+	 *
+	 * All export logic (flush, metadata construction, file download) lives
+	 * in globalSave.ts — the single source of truth.
 	 */
 	async function exportWorkflow(): Promise<void> {
-		try {
-			// Wait for any pending DOM updates before exporting
-			await tick();
-
-			// Use current workflow from global store
-			const workflowToExport = $workflowStore;
-
-			if (!workflowToExport) {
-				return;
-			}
-
-			// Create workflow object for export (spread existing metadata to preserve format, tags, etc.)
-			const finalWorkflow = {
-				id: workflowToExport.id || 'untitled-workflow',
-				name: workflowToExport.name || 'Untitled Workflow',
-				nodes: workflowToExport.nodes || [],
-				edges: workflowToExport.edges || [],
-				metadata: {
-					...workflowToExport.metadata,
-					version: workflowToExport.metadata?.version || '1.0.0',
-					format: workflowToExport.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
-					createdAt: workflowToExport.metadata?.createdAt || new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				}
-			};
-
-			// Create and download the file
-			const dataStr = JSON.stringify(finalWorkflow, null, 2);
-			const dataBlob = new Blob([dataStr], { type: 'application/json' });
-			const url = URL.createObjectURL(dataBlob);
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = `${finalWorkflow.name}.json`;
-			link.click();
-			URL.revokeObjectURL(url);
-		} catch {
-			// Export failed
-		}
+		await globalExportWorkflow({ features });
 	}
 
-	// Expose save and export functions globally for external access
-	if (typeof window !== 'undefined') {
-		window.flowdropSave = saveWorkflow;
-		window.flowdropExport = exportWorkflow;
+	/**
+	 * Import workflow from a JSON file
+	 *
+	 * Reads the selected file, validates its structure, and loads it into the workflow store.
+	 */
+	function importWorkflow(file: File): void {
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			try {
+				const text = event.target?.result;
+				if (typeof text !== 'string') {
+					throw new Error('Could not read file contents.');
+				}
+				const data = JSON.parse(text);
+				const validation = validateWorkflowData(data);
+				if (!validation.valid) {
+					if (features.showToasts) {
+						apiToasts.error('Import workflow', validation.error ?? 'Invalid workflow JSON');
+					}
+					logger.warn('Workflow import validation failed:', validation.error);
+					return;
+				}
+				workflowActions.initialize(data as Workflow);
+				if (features.showToasts) {
+					apiToasts.success('Import workflow', 'Workflow imported successfully');
+				}
+				if (eventHandlers?.onWorkflowLoad) {
+					eventHandlers.onWorkflowLoad(data as Workflow);
+				}
+			} catch (error) {
+				const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
+				logger.error('Workflow import failed:', errorObj);
+				if (features.showToasts) {
+					apiToasts.error('Import workflow', errorObj.message);
+				}
+			}
+		};
+		reader.onerror = () => {
+			const message = 'Failed to read the selected file.';
+			logger.error(message);
+			if (features.showToasts) {
+				apiToasts.error('Import workflow', message);
+			}
+		};
+		reader.readAsText(file);
+	}
+
+	/**
+	 * Handle file input change event for workflow import
+	 */
+	function handleImportFileChange(event: Event): void {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (file) {
+			importWorkflow(file);
+		}
+		// Reset input so same file can be re-imported
+		input.value = '';
 	}
 
 	// Function to handle clicks outside the sidebar
@@ -673,7 +571,7 @@
 
 	// Monitor workflow store changes for testing node drag updates
 	$effect(() => {
-		const currentWorkflow = $workflowStore;
+		const currentWorkflow = getWorkflowStore();
 		if (currentWorkflow) {
 			// Workflow store updated
 		}
@@ -690,13 +588,25 @@
 	 * Calculate left sidebar width based on collapsed state
 	 * When collapsed, use 48px; otherwise use user-configured width
 	 */
-	const leftSidebarWidth = $derived($uiSettings.sidebarCollapsed ? 48 : $uiSettings.sidebarWidth);
+	const leftSidebarWidth = $derived(getUiSettings().sidebarCollapsed ? 48 : getUiSettings().sidebarWidth);
+
+	// File input reference for workflow import
+	let fileInputRef = $state<HTMLInputElement | null>(null);
 </script>
 
 <svelte:head>
 	<title>FlowDrop - Visual Workflow Manager</title>
 	<meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
+
+<!-- Hidden file input for workflow JSON import -->
+<input
+	bind:this={fileInputRef}
+	type="file"
+	accept=".json,application/json"
+	style="display: none;"
+	onchange={handleImportFileChange}
+/>
 
 <!-- MainLayout wrapper for workflow editor -->
 <MainLayout
@@ -708,8 +618,8 @@
 	headerHeight={60}
 	{leftSidebarWidth}
 	rightSidebarWidth={400}
-	leftSidebarMinWidth={$uiSettings.sidebarCollapsed ? 48 : 280}
-	leftSidebarMaxWidth={$uiSettings.sidebarCollapsed ? 48 : 450}
+	leftSidebarMinWidth={getUiSettings().sidebarCollapsed ? 48 : 280}
+	leftSidebarMaxWidth={getUiSettings().sidebarCollapsed ? 48 : 450}
 	rightSidebarMinWidth={320}
 	rightSidebarMaxWidth={550}
 	enableLeftSplitPane={false}
@@ -744,6 +654,16 @@
 							}
 						},
 						{
+							label: 'Import',
+							href: '#import',
+							icon: 'heroicons:arrow-up-tray',
+							variant: 'outline',
+							onclick: (e) => {
+								e.preventDefault();
+								fileInputRef?.click();
+							}
+						},
+						{
 							label: 'Workflow Settings',
 							href: '#settings',
 							icon: 'heroicons:cog-6-tooth',
@@ -761,7 +681,7 @@
 
 	<!-- Left Sidebar: Node Components -->
 	{#snippet leftSidebar()}
-		<NodeSidebar {nodes} activeFormat={$workflowFormat} />
+		<NodeSidebar {nodes} activeFormat={getWorkflowFormat()} />
 	{/snippet}
 
 	<!-- Right Sidebar: Configuration or Workflow Settings -->
@@ -769,10 +689,10 @@
 		{#if isWorkflowSettingsOpen}
 			<ConfigPanel
 				title="Workflow Settings"
-				id={$workflowStore?.id}
+				id={getWorkflowStore()?.id}
 				details={[
-					{ label: 'Nodes', value: String($workflowStore?.nodes?.length ?? 0) },
-					{ label: 'Connections', value: String($workflowStore?.edges?.length ?? 0) }
+					{ label: 'Nodes', value: String(getWorkflowStore()?.nodes?.length ?? 0) },
+					{ label: 'Connections', value: String(getWorkflowStore()?.edges?.length ?? 0) }
 				]}
 				configTitle="Settings"
 				onClose={() => (isWorkflowSettingsOpen = false)}
@@ -784,13 +704,14 @@
 					showUIExtensions={false}
 					onChange={(config) => {
 						// Sync workflow settings changes immediately on field blur
-						if ($workflowStore) {
+						const wf = getWorkflowStore();
+						if (wf) {
 							const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
-							const currentFormat = $workflowStore.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
+							const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
 
 							// Warn about incompatible nodes when format changes
 							if (newFormat !== currentFormat) {
-								const incompatibleNodes = $workflowStore.nodes?.filter((node) => {
+								const incompatibleNodes = wf.nodes?.filter((node) => {
 									const formats = node.data?.metadata?.formats;
 									return formats && formats.length > 0 && !formats.includes(newFormat);
 								});
@@ -806,7 +727,7 @@
 								name: config.name as string,
 								description: config.description as string | undefined,
 								metadata: {
-									...$workflowStore.metadata,
+									...wf.metadata,
 									format: newFormat
 								}
 							});
@@ -815,7 +736,7 @@
 				/>
 			</ConfigPanel>
 		{:else if selectedNodeForConfig()}
-			{@const currentNode = selectedNodeForConfig()}
+			{@const currentNode = selectedNodeForConfig()!}
 			<ConfigPanel
 				title={currentNode.data.label}
 				id={currentNode.id}
@@ -829,9 +750,9 @@
 				<ConfigForm
 					{authProvider}
 					node={currentNode}
-					workflowId={$workflowStore?.id}
-					workflowNodes={$workflowStore?.nodes}
-					workflowEdges={$workflowStore?.edges}
+					workflowId={getWorkflowStore()?.id}
+					workflowNodes={getWorkflowStore()?.nodes}
+					workflowEdges={getWorkflowStore()?.edges}
 					onChange={async (updatedConfig, uiExtensions) => {
 						// Sync config changes to workflow immediately on field blur
 						if (selectedNodeId && currentNode) {
@@ -858,10 +779,10 @@
 
 							// Update the local editor state to reflect config changes immediately
 							// This is needed for nodeType changes to take effect visually
-							workflowEditorRef.updateNodeData(selectedNodeId, updatedData);
+							workflowEditorRef?.updateNodeData(selectedNodeId, updatedData);
 
 							// Refresh edge positions in case config changes affect handles
-							await workflowEditorRef.refreshEdgePositions(selectedNodeId);
+							await workflowEditorRef?.refreshEdgePositions(selectedNodeId);
 						}
 					}}
 				/>
@@ -870,9 +791,9 @@
 	{/snippet}
 
 	<!-- Main Content: Workflow Editor with Error Status -->
-	<!-- Status Display -->
+	<!-- Status Display: aria-live announces API errors dynamically without requiring focus -->
 	{#if error}
-		<div class="flowdrop-status flowdrop-status--error">
+		<div class="flowdrop-status flowdrop-status--error" aria-live="polite" aria-atomic="true">
 			<div class="flowdrop-status__content">
 				<div class="flowdrop-flex flowdrop-gap--3">
 					<div class="flowdrop-status__indicator flowdrop-status__indicator--error"></div>
@@ -935,7 +856,7 @@
 			{nodes}
 			{height}
 			{width}
-			{endpointConfig}
+			endpointConfig={endpointConfig ?? undefined}
 			{isConfigSidebarOpen}
 			selectedNodeForConfig={selectedNodeForConfig()}
 			{openConfigSidebar}
