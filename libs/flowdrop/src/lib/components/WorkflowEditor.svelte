@@ -39,7 +39,7 @@
 		ConfigurationHelper
 	} from '../helpers/workflowEditorHelper.js';
 	import type { NodeExecutionInfo } from '../types/index.js';
-	import { areNodeArraysEqual, areEdgeArraysEqual, throttle } from '../utils/performanceUtils.js';
+	import { throttle } from '../utils/performanceUtils.js';
 	import { Toaster } from 'svelte-5-french-toast';
 	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS, apiToasts } from '../services/toastService.js';
 	import {
@@ -132,8 +132,8 @@
 	});
 
 	// Create local reactive variables that sync with currentWorkflow
-	let flowNodes = $state<WorkflowNodeType[]>([]);
-	let flowEdges = $state<WorkflowEdge[]>([]);
+	let flowNodes = $state.raw<WorkflowNodeType[]>([]);
+	let flowEdges = $state.raw<WorkflowEdge[]>([]);
 
 	// Sync local state with currentWorkflow
 	let loadExecutionInfoTimeout: number | null = null;
@@ -314,29 +314,6 @@
 		}
 	}
 
-	// Track previous values to detect changes from SvelteFlow
-	let previousNodes = $state<WorkflowNodeType[]>([]);
-	let previousEdges = $state<WorkflowEdge[]>([]);
-
-	/**
-	 * Watch for changes from SvelteFlow and update currentWorkflow
-	 * Uses efficient comparison instead of expensive JSON.stringify
-	 * This reduces event handler time from 290-310ms to <50ms
-	 */
-	$effect(() => {
-		// Check if nodes have changed from SvelteFlow using fast comparison
-		const nodesChanged = !areNodeArraysEqual(flowNodes, previousNodes);
-		const edgesChanged = !areEdgeArraysEqual(flowEdges, previousEdges);
-
-		if ((nodesChanged || edgesChanged) && currentWorkflow) {
-			updateCurrentWorkflowFromSvelteFlow();
-
-			// Update previous values with shallow copies
-			previousNodes = [...flowNodes];
-			previousEdges = [...flowEdges];
-		}
-	});
-
 	// The global store should be initialized by the parent App component
 
 	// Sidebar is now always visible - removed toggle functionality
@@ -452,6 +429,9 @@
 			if (currentWorkflow) {
 				updateCurrentWorkflowFromSvelteFlow();
 			}
+		} else {
+			// No proximity connect — sync position changes from drag
+			updateCurrentWorkflowFromSvelteFlow();
 		}
 
 		// Push the current state AFTER the drag completed
@@ -697,6 +677,9 @@
 			}
 			return node;
 		});
+
+		// Explicitly sync to currentWorkflow (no longer handled by reactive effect)
+		updateCurrentWorkflowFromSvelteFlow();
 	}
 
 	/**
