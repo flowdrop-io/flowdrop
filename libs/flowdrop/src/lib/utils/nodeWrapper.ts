@@ -42,7 +42,7 @@ export function createNodeWrapperConfig(
 		executionInfo,
 		statusPosition: config.position || DEFAULT_NODE_STATUS_CONFIG.position,
 		statusSize: config.size || DEFAULT_NODE_STATUS_CONFIG.size,
-		showStatusDetails: config.showDetails ?? DEFAULT_NODE_STATUS_CONFIG.showDetails
+		showStatusDetails: config.showDetails ?? DEFAULT_NODE_STATUS_CONFIG.showDetails ?? true
 	};
 }
 

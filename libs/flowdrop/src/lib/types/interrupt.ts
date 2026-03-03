@@ -412,7 +412,7 @@ export interface InterruptMessageMetadata {
  * @param metadata - Message metadata to check
  * @returns True if the metadata indicates an interrupt request
  */
-export function isInterruptMetadata(metadata: Record<string, unknown> | undefined): boolean {
+export function isInterruptMetadata(metadata: Record<string, unknown> | undefined): metadata is Record<string, unknown> {
 	return (
 		metadata !== undefined &&
 		metadata.type === 'interrupt_request' &&
@@ -563,9 +563,9 @@ export interface InterruptPollingConfig {
 	/** Whether to enable dedicated interrupt polling */
 	enabled: boolean;
 	/** Polling interval in milliseconds */
-	interval?: number;
+	interval: number;
 	/** Maximum polling backoff interval in milliseconds */
-	maxBackoff?: number;
+	maxBackoff: number;
 }
 
 /**

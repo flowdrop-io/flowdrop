@@ -18,7 +18,7 @@
 		fill="none"
 		stroke-width={1.5}
 		class="animated"
-		stroke={getDataTypeColor(connection.current.fromHandle.id)}
+		stroke={getDataTypeColor(connection.current.fromHandle.id ?? '')}
 		d={path}
 	/>
 	<circle
@@ -26,7 +26,7 @@
 		cy={connection.current.to.y}
 		fill="#fff"
 		r={3}
-		stroke={getDataTypeColor(connection.current.fromHandle.id)}
+		stroke={getDataTypeColor(connection.current.fromHandle.id ?? '')}
 		stroke-width={1.5}
 	/>
 {/if}

@@ -446,18 +446,18 @@ export function getEffectiveConfigEditOptions(node: WorkflowNode): ConfigEditOpt
 		// Deep merge external edit link
 		externalEditLink:
 			(instanceConfig.externalEditLink ?? typeConfig.externalEditLink)
-				? {
-						...typeConfig.externalEditLink,
-						...instanceConfig.externalEditLink
-					}
+				? ({
+						...(typeConfig.externalEditLink ?? {}),
+						...(instanceConfig.externalEditLink ?? {})
+					} as NonNullable<typeof typeConfig.externalEditLink>)
 				: undefined,
 		// Deep merge dynamic schema
 		dynamicSchema:
 			(instanceConfig.dynamicSchema ?? typeConfig.dynamicSchema)
-				? {
-						...typeConfig.dynamicSchema,
-						...instanceConfig.dynamicSchema
-					}
+				? ({
+						...(typeConfig.dynamicSchema ?? {}),
+						...(instanceConfig.dynamicSchema ?? {})
+					} as NonNullable<typeof typeConfig.dynamicSchema>)
 				: undefined
 	};
 }

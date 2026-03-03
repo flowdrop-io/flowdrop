@@ -55,7 +55,7 @@ export const getWorkflowsHandler = http.get(`${API_BASE}/workflows`, ({ request 
 	if (tags) {
 		const tagList = tags.split(',').map((t) => t.trim().toLowerCase());
 		workflows = workflows.filter((workflow) =>
-			workflow.metadata.tags?.some((tag) => tagList.includes(tag.toLowerCase()))
+			workflow.metadata?.tags?.some((tag) => tagList.includes(tag.toLowerCase()))
 		);
 	}
 
@@ -66,8 +66,8 @@ export const getWorkflowsHandler = http.get(`${API_BASE}/workflows`, ({ request 
 
 		switch (sort) {
 			case 'created_at':
-				valueA = a.metadata.createdAt;
-				valueB = b.metadata.createdAt;
+				valueA = a.metadata?.createdAt;
+				valueB = b.metadata?.createdAt;
 				break;
 			case 'name':
 				valueA = a.name;
@@ -75,8 +75,8 @@ export const getWorkflowsHandler = http.get(`${API_BASE}/workflows`, ({ request 
 				break;
 			case 'updated_at':
 			default:
-				valueA = a.metadata.updatedAt;
-				valueB = b.metadata.updatedAt;
+				valueA = a.metadata?.updatedAt;
+				valueB = b.metadata?.updatedAt;
 				break;
 		}
 
@@ -429,10 +429,10 @@ id: ${workflow.id}
 name: ${workflow.name}
 description: ${workflow.description || ''}
 metadata:
-  version: ${workflow.metadata.version}
-  createdAt: ${workflow.metadata.createdAt}
-  updatedAt: ${workflow.metadata.updatedAt}
-  author: ${workflow.metadata.author || ''}
+  version: ${workflow.metadata?.version ?? ''}
+  createdAt: ${workflow.metadata?.createdAt ?? ''}
+  updatedAt: ${workflow.metadata?.updatedAt ?? ''}
+  author: ${workflow.metadata?.author || ''}
 nodes: ${JSON.stringify(workflow.nodes, null, 2)}
 edges: ${JSON.stringify(workflow.edges, null, 2)}
 `;

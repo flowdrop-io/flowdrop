@@ -4190,10 +4190,10 @@ export function updateWorkflow(
 		...updates,
 		id, // Ensure ID cannot be changed
 		metadata: {
-			...existing.metadata,
-			...updates.metadata,
+			...(existing.metadata ?? {}),
+			...(updates.metadata ?? {}),
 			updatedAt: new Date().toISOString()
-		}
+		} as Workflow['metadata']
 	};
 
 	mockWorkflows.set(id, updated);

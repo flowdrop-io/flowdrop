@@ -6,7 +6,8 @@
  * ensuring all built-in node types are available without user action.
  */
 
-import { nodeComponentRegistry, type NodeComponentRegistration } from './nodeComponentRegistry.js';
+import { nodeComponentRegistry, type NodeComponentRegistration, type NodeComponentProps } from './nodeComponentRegistry.js';
+import type { Component } from 'svelte';
 import WorkflowNode from '../components/nodes/WorkflowNode.svelte';
 import SimpleNode from '../components/nodes/SimpleNode.svelte';
 import SquareNode from '../components/nodes/SquareNode.svelte';
@@ -63,7 +64,7 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
 		type: 'tool',
 		displayName: 'Tool (Agent Tool)',
 		description: 'Specialized node for agent tools with tool metadata',
-		component: ToolNode,
+		component: ToolNode as Component<NodeComponentProps>,
 		icon: 'mdi:tools',
 		category: 'functional',
 		source: FLOWDROP_SOURCE,
