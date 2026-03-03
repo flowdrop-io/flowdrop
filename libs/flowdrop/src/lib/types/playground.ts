@@ -274,6 +274,11 @@ export interface PlaygroundConfig {
 	 */
 	autoRun?: boolean;
 	/**
+	 * Width of the sidebar in CSS units (default: "280px")
+	 * Accepts any valid CSS width value, e.g. "300px", "20rem".
+	 */
+	sidebarWidth?: string;
+	/**
 	 * Whether to show the sidebar with session list (default: true)
 	 * When false, the sidebar is hidden, creating a minimal chat widget experience.
 	 * Use with initialSessionId to load a pre-created session directly.

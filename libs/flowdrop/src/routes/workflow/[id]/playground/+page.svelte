@@ -50,18 +50,21 @@
 	 * - showRunButton: "true" | "false" - Show/hide Run button
 	 * - predefinedMessage: string - Message sent when Run is clicked
 	 * - autoRun: "true" | "false" - Auto-execute workflow on load
+	 * - sidebarWidth: string - CSS width for sidebar (e.g. "300px", "20rem")
 	 *
 	 * Example URLs:
 	 * - /workflow/demo/playground?showChatInput=false (Run button only)
 	 * - /workflow/demo/playground?showChatInput=false&showRunButton=false (View-only)
 	 * - /workflow/demo/playground?showChatInput=false&predefinedMessage=Execute%20pipeline
 	 * - /workflow/demo/playground?showChatInput=false&autoRun=true (Auto-execute on load)
+	 * - /workflow/demo/playground?sidebarWidth=320px (Wider sidebar)
 	 */
 	const playgroundConfig: PlaygroundConfig = {
 		showChatInput: parseBoolParam(pageData.url.searchParams.get('showChatInput')),
 		showRunButton: parseBoolParam(pageData.url.searchParams.get('showRunButton')),
 		predefinedMessage: pageData.url.searchParams.get('predefinedMessage') ?? undefined,
-		autoRun: parseBoolParam(pageData.url.searchParams.get('autoRun'))
+		autoRun: parseBoolParam(pageData.url.searchParams.get('autoRun')),
+		sidebarWidth: pageData.url.searchParams.get('sidebarWidth') ?? undefined
 	};
 
 	/** Workflow data */
