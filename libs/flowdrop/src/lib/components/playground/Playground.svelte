@@ -491,7 +491,10 @@
 	<div class="playground__container">
 		<!-- Sidebar (conditionally rendered based on config.showSidebar) -->
 		{#if config.showSidebar !== false}
-			<aside class="playground__sidebar">
+			<aside
+				class="playground__sidebar"
+				style={config.sidebarWidth ? `--fd-playground-sidebar-width: ${config.sidebarWidth}` : ''}
+			>
 				<!-- Sidebar Header -->
 				<div class="playground__sidebar-header">
 					<div class="playground__sidebar-title">
