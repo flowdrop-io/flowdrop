@@ -14,7 +14,7 @@ import type {
 import { hasCycles, hasInvalidCycles, isLoopbackEdge } from '../utils/connections.js';
 import { workflowApi, nodeApi, setEndpointConfig } from '../services/api.js';
 import { v4 as uuidv4 } from 'uuid';
-import { workflowActions } from '../stores/workflowStore.js';
+import { workflowActions } from '../stores/workflowStore.svelte.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
@@ -500,9 +500,12 @@ export class WorkflowOperationsHelper {
 	 * Generate workflow metadata for updates
 	 */
 	static generateMetadata(existingMetadata?: Workflow['metadata']): Workflow['metadata'] {
+		const now = new Date().toISOString();
 		return {
-			...existingMetadata,
-			updatedAt: new Date().toISOString(),
+			version: '1.0.0',
+			createdAt: now,
+			...(existingMetadata ?? {}),
+			updatedAt: now,
 			versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 			updateNumber: (existingMetadata?.updateNumber || 0) + 1
 		};

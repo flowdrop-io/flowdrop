@@ -28,20 +28,13 @@ import {
 	getWorkflow as getWorkflowFromStore,
 	setOnDirtyStateChange,
 	setOnWorkflowChange
-} from './stores/workflowStore.js';
+} from './stores/workflowStore.svelte.js';
 import { DraftAutoSaveManager, getDraftStorageKey } from './services/draftStorage.js';
 import { mergeFeatures } from './types/events.js';
 import type { PartialSettings } from './types/settings.js';
-import { initializeSettings } from './stores/settingsStore.js';
+import { initializeSettings } from './stores/settingsStore.svelte.js';
 import { logger } from './utils/logger.js';
-
-// Extend Window interface for global save/export functions
-declare global {
-	interface Window {
-		flowdropSave?: () => Promise<void>;
-		flowdropExport?: () => void;
-	}
-}
+import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
 
 /**
  * Navbar action configuration
@@ -382,19 +375,11 @@ export async function mountFlowDropApp(
 		getWorkflow: () => getWorkflowFromStore(),
 
 		save: async () => {
-			if (typeof window !== 'undefined' && window.flowdropSave) {
-				await window.flowdropSave();
-			} else {
-				logger.warn('Save functionality not available');
-			}
+			await globalSaveWorkflow();
 		},
 
 		export: () => {
-			if (typeof window !== 'undefined' && window.flowdropExport) {
-				window.flowdropExport();
-			} else {
-				logger.warn('Export functionality not available');
-			}
+			globalExportWorkflow();
 		}
 	};
 
@@ -493,19 +478,11 @@ export async function mountWorkflowEditor(
 		getWorkflow: () => getWorkflowFromStore(),
 
 		save: async () => {
-			if (typeof window !== 'undefined' && window.flowdropSave) {
-				await window.flowdropSave();
-			} else {
-				logger.warn('Save functionality not available');
-			}
+			await globalSaveWorkflow();
 		},
 
 		export: () => {
-			if (typeof window !== 'undefined' && window.flowdropExport) {
-				window.flowdropExport();
-			} else {
-				logger.warn('Export functionality not available');
-			}
+			globalExportWorkflow();
 		}
 	};
 
