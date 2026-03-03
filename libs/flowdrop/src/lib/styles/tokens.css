@@ -1,281 +1,338 @@
 /**
  * FlowDrop Design Tokens
- * 
+ *
  * A semantic-first token system with three tiers:
  * 1. Internal palette (--_*) - Raw color values, not documented for users
  * 2. Semantic tokens (--fd-*) - The public API for theming
  * 3. Component tokens - Built using semantic tokens
- * 
+ *
  * Users customize FlowDrop by overriding --fd-* tokens.
- * 
+ *
  * @example Quick theming
  * :root {
  *   --fd-primary: #8b5cf6;
  *   --fd-primary-hover: #7c3aed;
  *   --fd-radius-md: 0.5rem;
  * }
+ *
+ * =============================================================================
+ * THEMING CONTRACT
+ * =============================================================================
+ *
+ * Tokens in this file are annotated with one of two stability markers:
+ *
+ *   @public  — Stable API. These tokens are safe to override in consumer
+ *              stylesheets. Breaking changes to public tokens are only made
+ *              in major (semver) releases and are announced in the changelog.
+ *
+ *   @internal — Private implementation detail. These tokens may be renamed,
+ *               removed, or have their values changed in any release without
+ *               notice. Do NOT reference them in consumer stylesheets.
+ *
+ * Overriding tokens
+ * -----------------
+ * Override @public tokens by targeting `:root` in your own stylesheet:
+ *
+ *   :root {
+ *     --fd-primary: #7c3aed;
+ *     --fd-radius-md: 8px;
+ *   }
+ *
+ * Dark mode support
+ * -----------------
+ * FlowDrop respects `data-theme="dark"` on the <html> element. Override the
+ * same @public tokens inside `[data-theme="dark"]` to customise dark mode:
+ *
+ *   [data-theme="dark"] {
+ *     --fd-primary: #a78bfa;
+ *   }
+ *
+ * Token categories
+ * ----------------
+ * @public tokens include:
+ *   - Semantic surface tokens:  --fd-surface-*, --fd-background, --fd-foreground,
+ *                               --fd-muted*, --fd-card*, --fd-header*
+ *   - Border tokens:            --fd-border-*, --fd-ring
+ *   - Primary/brand tokens:     --fd-primary-*, --fd-secondary-*, --fd-accent-*
+ *   - Status tokens:            --fd-success-*, --fd-warning-*, --fd-error-*,
+ *                               --fd-info-*
+ *   - Text/font-size tokens:    --fd-text-*
+ *   - Spacing tokens:           --fd-space-*
+ *   - Border-radius tokens:     --fd-radius-*
+ *   - Shadow tokens:            --fd-shadow-*
+ *   - Component tokens:         --fd-node-*, --fd-edge-*, --fd-handle-*
+ *
+ * @internal tokens include:
+ *   - Raw palette values:       --_gray-*, --_blue-*, --_green-*, --_red-*,
+ *                               --_amber-*, --_violet-*
+ *   (Any token prefixed with --_ is internal by convention.)
+ * =============================================================================
  */
 
 :root {
 	/* =========================================================================
 	   INTERNAL PALETTE (Private - not documented for users)
 	   Prefix: --_ indicates internal/private tokens
+	   @internal — Do NOT override these in consumer stylesheets.
 	   ========================================================================= */
 
 	/* Grays - Tinted scale with subtle blue undertone for modern feel, 9 steps */
-	--_gray-1: #fafafc;
-	--_gray-2: #f5f5f8;
-	--_gray-3: #eaeaef;
-	--_gray-4: #dcdce4;
-	--_gray-5: #a3a3ad;
-	--_gray-6: #71717b;
-	--_gray-7: #52525c;
-	--_gray-8: #27272b;
-	--_gray-9: #18181c;
+	--_gray-1: #fafafc; /* @internal */
+	--_gray-2: #f5f5f8; /* @internal */
+	--_gray-3: #eaeaef; /* @internal */
+	--_gray-4: #dcdce4; /* @internal */
+	--_gray-5: #a3a3ad; /* @internal */
+	--_gray-6: #71717b; /* @internal */
+	--_gray-7: #52525c; /* @internal */
+	--_gray-8: #27272b; /* @internal */
+	--_gray-9: #18181c; /* @internal */
 
 	/* Blue - Primary/interactive color */
-	--_blue-1: #eff6ff;
-	--_blue-2: #3b82f6;
-	--_blue-3: #1d4ed8;
+	--_blue-1: #eff6ff; /* @internal */
+	--_blue-2: #3b82f6; /* @internal */
+	--_blue-3: #1d4ed8; /* @internal */
 
 	/* Green - Success states */
-	--_green-1: #f0fdf4;
-	--_green-2: #22c55e;
-	--_green-3: #15803d;
+	--_green-1: #f0fdf4; /* @internal */
+	--_green-2: #22c55e; /* @internal */
+	--_green-3: #15803d; /* @internal */
 
 	/* Red - Error/destructive states */
-	--_red-1: #fef2f2;
-	--_red-2: #ef4444;
-	--_red-3: #b91c1c;
+	--_red-1: #fef2f2; /* @internal */
+	--_red-2: #ef4444; /* @internal */
+	--_red-3: #b91c1c; /* @internal */
 
 	/* Amber - Warning states */
-	--_amber-1: #fffbeb;
-	--_amber-2: #f59e0b;
-	--_amber-3: #b45309;
+	--_amber-1: #fffbeb; /* @internal */
+	--_amber-2: #f59e0b; /* @internal */
+	--_amber-3: #b45309; /* @internal */
 
 	/* Violet - Selection/accent */
-	--_violet-1: #f5f3ff;
-	--_violet-2: #8b5cf6;
-	--_violet-3: #6d28d9;
+	--_violet-1: #f5f3ff; /* @internal */
+	--_violet-2: #8b5cf6; /* @internal */
+	--_violet-3: #6d28d9; /* @internal */
 
 	/* =========================================================================
 	   SEMANTIC TOKENS (Public API)
-	   These are the tokens users override for theming
+	   These are the tokens users override for theming.
+	   @public — All tokens in this section are safe to override.
 	   ========================================================================= */
 
 	/* ----- SURFACES (Backgrounds) ----- */
-	--fd-background: #ffffff;
-	--fd-foreground: var(--_gray-9);
-	--fd-muted: #f8f8fb;
-	--fd-muted-foreground: var(--_gray-6);
-	--fd-subtle: #f0f0f5;
-	--fd-card: #ffffff;
-	--fd-card-foreground: var(--_gray-9);
+	--fd-background: #ffffff;              /* @public */
+	--fd-foreground: var(--_gray-9);       /* @public */
+	--fd-muted: #f8f8fb;                   /* @public */
+	--fd-muted-foreground: var(--_gray-6); /* @public */
+	--fd-subtle: #f0f0f5;                  /* @public */
+	--fd-card: #ffffff;                    /* @public */
+	--fd-card-foreground: var(--_gray-9);  /* @public */
 
 	/* ----- HEADER (Distinct header styling) ----- */
-	--fd-header: #f5f7fa;
-	--fd-header-foreground: var(--_gray-8);
-	--fd-header-gradient: linear-gradient(180deg, #f8f9fc 0%, #f4f5f8 100%);
+	--fd-header: #f5f7fa;                                              /* @public */
+	--fd-header-foreground: var(--_gray-8);                            /* @public */
+	--fd-header-gradient: linear-gradient(180deg, #f8f9fc 0%, #f4f5f8 100%); /* @public */
 
 	/* ----- SURFACE TINT (Subtle accent for surfaces) ----- */
-	--fd-surface-tint: rgba(99, 102, 241, 0.02);
+	--fd-surface-tint: rgba(99, 102, 241, 0.02); /* @public */
 
 	/* ----- BORDERS ----- */
-	--fd-border: var(--_gray-4);
-	--fd-border-muted: var(--_gray-3);
-	--fd-border-strong: var(--_gray-5);
-	--fd-ring: var(--_blue-2);
+	--fd-border: var(--_gray-4);        /* @public */
+	--fd-border-muted: var(--_gray-3);  /* @public */
+	--fd-border-strong: var(--_gray-5); /* @public */
+	--fd-ring: var(--_blue-2);          /* @public */
 
 	/* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
-	--fd-node-border: var(--_gray-5);
-	--fd-node-border-hover: var(--_gray-6);
+	--fd-node-border: var(--_gray-5);       /* @public */
+	--fd-node-border-hover: var(--_gray-6); /* @public */
 
 	/* ----- PRIMARY (Interactive/Brand) ----- */
-	--fd-primary: var(--_blue-2);
-	--fd-primary-hover: var(--_blue-3);
-	--fd-primary-foreground: #ffffff;
-	--fd-primary-muted: var(--_blue-1);
+	--fd-primary: var(--_blue-2);          /* @public */
+	--fd-primary-hover: var(--_blue-3);    /* @public */
+	--fd-primary-foreground: #ffffff;      /* @public */
+	--fd-primary-muted: var(--_blue-1);    /* @public */
 
 	/* ----- SECONDARY ----- */
-	--fd-secondary: var(--_gray-2);
-	--fd-secondary-hover: var(--_gray-3);
-	--fd-secondary-foreground: var(--_gray-9);
+	--fd-secondary: var(--_gray-2);            /* @public */
+	--fd-secondary-hover: var(--_gray-3);      /* @public */
+	--fd-secondary-foreground: var(--_gray-9); /* @public */
 
 	/* ----- ACCENT ----- */
-	--fd-accent: var(--_violet-2);
-	--fd-accent-hover: var(--_violet-3);
-	--fd-accent-foreground: #ffffff;
-	--fd-accent-muted: var(--_violet-1);
+	--fd-accent: var(--_violet-2);          /* @public */
+	--fd-accent-hover: var(--_violet-3);    /* @public */
+	--fd-accent-foreground: #ffffff;        /* @public */
+	--fd-accent-muted: var(--_violet-1);    /* @public */
 
 	/* ----- STATUS: SUCCESS ----- */
-	--fd-success: var(--_green-2);
-	--fd-success-hover: var(--_green-3);
-	--fd-success-foreground: #ffffff;
-	--fd-success-muted: var(--_green-1);
+	--fd-success: var(--_green-2);            /* @public */
+	--fd-success-hover: var(--_green-3);      /* @public */
+	--fd-success-foreground: #ffffff;         /* @public */
+	--fd-success-muted: var(--_green-1);      /* @public */
 
 	/* ----- STATUS: WARNING ----- */
-	--fd-warning: var(--_amber-2);
-	--fd-warning-hover: var(--_amber-3);
-	--fd-warning-foreground: var(--_gray-9);
-	--fd-warning-muted: var(--_amber-1);
+	--fd-warning: var(--_amber-2);            /* @public */
+	--fd-warning-hover: var(--_amber-3);      /* @public */
+	--fd-warning-foreground: var(--_gray-9);  /* @public */
+	--fd-warning-muted: var(--_amber-1);      /* @public */
 
 	/* ----- STATUS: ERROR/DESTRUCTIVE ----- */
-	--fd-error: var(--_red-2);
-	--fd-error-hover: var(--_red-3);
-	--fd-error-foreground: #ffffff;
-	--fd-error-muted: var(--_red-1);
+	--fd-error: var(--_red-2);           /* @public */
+	--fd-error-hover: var(--_red-3);     /* @public */
+	--fd-error-foreground: #ffffff;      /* @public */
+	--fd-error-muted: var(--_red-1);     /* @public */
 
 	/* ----- STATUS: INFO ----- */
-	--fd-info: var(--_blue-2);
-	--fd-info-hover: var(--_blue-3);
-	--fd-info-foreground: #ffffff;
-	--fd-info-muted: var(--_blue-1);
+	--fd-info: var(--_blue-2);           /* @public */
+	--fd-info-hover: var(--_blue-3);     /* @public */
+	--fd-info-foreground: #ffffff;       /* @public */
+	--fd-info-muted: var(--_blue-1);     /* @public */
 
 	/* ----- SPACING SCALE (Named sizes) ----- */
-	--fd-space-0: 0;
-	--fd-space-3xs: 0.25rem;  /* 4px */
-	--fd-space-2xs: 0.375rem; /* 6px */
-	--fd-space-xs: 0.5rem;    /* 8px */
-	--fd-space-sm: 0.625rem;  /* 10px */
-	--fd-space-md: 0.75rem;   /* 12px */
-	--fd-space-lg: 0.875rem;  /* 14px */
-	--fd-space-xl: 1rem;      /* 16px */
-	--fd-space-2xl: 1.25rem;  /* 20px */
-	--fd-space-3xl: 1.5rem;   /* 24px */
-	--fd-space-4xl: 2rem;     /* 32px */
-	--fd-space-5xl: 2.5rem;   /* 40px */
-	--fd-space-6xl: 3rem;     /* 48px */
-	--fd-space-7xl: 4rem;     /* 64px */
+	--fd-space-0: 0;              /* @public */
+	--fd-space-3xs: 0.25rem;      /* @public  4px */
+	--fd-space-2xs: 0.375rem;     /* @public  6px */
+	--fd-space-xs: 0.5rem;        /* @public  8px */
+	--fd-space-sm: 0.625rem;      /* @public  10px */
+	--fd-space-md: 0.75rem;       /* @public  12px */
+	--fd-space-lg: 0.875rem;      /* @public  14px */
+	--fd-space-xl: 1rem;          /* @public  16px */
+	--fd-space-2xl: 1.25rem;      /* @public  20px */
+	--fd-space-3xl: 1.5rem;       /* @public  24px */
+	--fd-space-4xl: 2rem;         /* @public  32px */
+	--fd-space-5xl: 2.5rem;       /* @public  40px */
+	--fd-space-6xl: 3rem;         /* @public  48px */
+	--fd-space-7xl: 4rem;         /* @public  64px */
 
 	/* ----- BORDER RADIUS ----- */
-	--fd-radius-none: 0;
-	--fd-radius-sm: 0.25rem;   /* 4px */
-	--fd-radius-md: 0.375rem;  /* 6px */
-	--fd-radius-lg: 0.5rem;    /* 8px */
-	--fd-radius-xl: 0.75rem;   /* 12px */
-	--fd-radius-2xl: 1rem;     /* 16px */
-	--fd-radius-full: 9999px;
+	--fd-radius-none: 0;           /* @public */
+	--fd-radius-sm: 0.25rem;       /* @public  4px */
+	--fd-radius-md: 0.375rem;      /* @public  6px */
+	--fd-radius-lg: 0.5rem;        /* @public  8px */
+	--fd-radius-xl: 0.75rem;       /* @public  12px */
+	--fd-radius-2xl: 1rem;         /* @public  16px */
+	--fd-radius-full: 9999px;      /* @public */
 
 	/* ----- SHADOWS (Refined layered shadows for modern depth) ----- */
-	--fd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
-	--fd-shadow-md: 0 4px 8px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04);
-	--fd-shadow-lg: 0 10px 20px rgb(0 0 0 / 0.08), 0 4px 8px rgb(0 0 0 / 0.04);
-	--fd-shadow-xl: 0 20px 30px rgb(0 0 0 / 0.1), 0 8px 16px rgb(0 0 0 / 0.06);
+	--fd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06); /* @public */
+	--fd-shadow-md: 0 4px 8px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04); /* @public */
+	--fd-shadow-lg: 0 10px 20px rgb(0 0 0 / 0.08), 0 4px 8px rgb(0 0 0 / 0.04); /* @public */
+	--fd-shadow-xl: 0 20px 30px rgb(0 0 0 / 0.1), 0 8px 16px rgb(0 0 0 / 0.06); /* @public */
 
 	/* ----- FONT SIZES ----- */
-	--fd-text-2xs: 0.6875rem; /* 11px */
-	--fd-text-xs: 0.75rem;    /* 12px */
-	--fd-text-xsm: 0.8125rem; /* 13px */
-	--fd-text-sm: 0.875rem;   /* 14px */
-	--fd-text-md: 0.9375rem;  /* 15px */
-	--fd-text-base: 1rem;     /* 16px */
-	--fd-text-lg: 1.125rem;   /* 18px */
-	--fd-text-xl: 1.25rem;    /* 20px */
-	--fd-text-2xl: 1.5rem;    /* 24px */
+	--fd-text-2xs: 0.6875rem;  /* @public  11px */
+	--fd-text-xs: 0.75rem;     /* @public  12px */
+	--fd-text-xsm: 0.8125rem;  /* @public  13px */
+	--fd-text-sm: 0.875rem;    /* @public  14px */
+	--fd-text-md: 0.9375rem;   /* @public  15px */
+	--fd-text-base: 1rem;      /* @public  16px */
+	--fd-text-lg: 1.125rem;    /* @public  18px */
+	--fd-text-xl: 1.25rem;     /* @public  20px */
+	--fd-text-2xl: 1.5rem;     /* @public  24px */
 
 	/* ----- LINE HEIGHTS ----- */
-	--fd-leading-tight: 1.4;
-	--fd-leading-normal: 1.5;
-	--fd-leading-relaxed: 1.6;
+	--fd-leading-tight: 1.4;    /* @public */
+	--fd-leading-normal: 1.5;   /* @public */
+	--fd-leading-relaxed: 1.6;  /* @public */
 
 	/* ----- FONT FAMILIES ----- */
-	--fd-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+	--fd-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; /* @public */
 
 	/* ----- COMPONENT SIZES ----- */
-	--fd-size-icon-btn: 1.75rem;  /* 28px */
-	--fd-size-btn-min: 2.5rem;    /* 40px */
-	--fd-size-avatar: 2.25rem;    /* 36px */
-	--fd-size-spinner: 1rem;      /* 16px */
+	--fd-size-icon-btn: 1.75rem;  /* @internal  28px — may change with component redesigns */
+	--fd-size-btn-min: 2.5rem;    /* @internal  40px — may change with component redesigns */
+	--fd-size-avatar: 2.25rem;    /* @internal  36px — may change with component redesigns */
+	--fd-size-spinner: 1rem;      /* @internal  16px — may change with component redesigns */
 
 	/* ----- TRANSITIONS ----- */
-	--fd-transition-fast: 150ms ease;
-	--fd-transition-normal: 200ms ease;
-	--fd-transition-slow: 300ms ease;
+	--fd-transition-fast: 150ms ease;    /* @public */
+	--fd-transition-normal: 200ms ease;  /* @public */
+	--fd-transition-slow: 300ms ease;    /* @public */
 
 	/* =========================================================================
 	   COMPONENT TOKENS
-	   These provide fine-grained control while defaulting to semantic tokens
+	   These provide fine-grained control while defaulting to semantic tokens.
+	   @public tokens in this section are safe to override.
+	   @internal tokens may change without notice.
 	   ========================================================================= */
 
 	/* ----- LAYOUT ----- */
-	--fd-sidebar-width: 320px;
-	--fd-navbar-height: 60px;
-	--fd-toolbar-height: 40px;
+	--fd-sidebar-width: 320px;  /* @internal — controlled programmatically */
+	--fd-navbar-height: 60px;   /* @internal — controlled programmatically */
+	--fd-toolbar-height: 40px;  /* @internal — controlled programmatically */
 
 	/* ----- NODE COLORS (for workflow editor) ----- */
-	--fd-node-emerald: #10b981;
-	--fd-node-blue: #2563eb;
-	--fd-node-amber: #f59e0b;
-	--fd-node-orange: #f97316;
-	--fd-node-red: #ef4444;
-	--fd-node-pink: #ec4899;
-	--fd-node-indigo: #6366f1;
-	--fd-node-teal: #14b8a6;
-	--fd-node-cyan: #06b6d4;
-	--fd-node-lime: #84cc16;
-	--fd-node-slate: #64748b;
-	--fd-node-purple: #9333ea;
+	--fd-node-emerald: #10b981; /* @public */
+	--fd-node-blue: #2563eb;    /* @public */
+	--fd-node-amber: #f59e0b;   /* @public */
+	--fd-node-orange: #f97316;  /* @public */
+	--fd-node-red: #ef4444;     /* @public */
+	--fd-node-pink: #ec4899;    /* @public */
+	--fd-node-indigo: #6366f1;  /* @public */
+	--fd-node-teal: #14b8a6;    /* @public */
+	--fd-node-cyan: #06b6d4;    /* @public */
+	--fd-node-lime: #84cc16;    /* @public */
+	--fd-node-slate: #64748b;   /* @public */
+	--fd-node-purple: #9333ea;  /* @public */
 
 	/** Icon on node squircle: dark in light theme, white in dark theme */
-	--fd-node-icon: var(--_gray-9);
+	--fd-node-icon: var(--_gray-9); /* @public */
 	/** Opacity of the icon squircle background (color-mix percentage). Light mode: 15% / 22% hover; dark mode uses higher values. */
-	--fd-node-icon-bg-opacity: 20%;
-	--fd-node-icon-bg-opacity-hover: 50%;
+	--fd-node-icon-bg-opacity: 20%;       /* @public */
+	--fd-node-icon-bg-opacity-hover: 50%; /* @public */
 
 	/* ----- EDGE TOKENS ----- */
-	--fd-edge-trigger: var(--_gray-9);
-	--fd-edge-trigger-hover: var(--_gray-9);
-	--fd-edge-trigger-selected: var(--_violet-2);
-	--fd-edge-trigger-width: 2px;
-	--fd-edge-trigger-width-hover: 3px;
+	--fd-edge-trigger: var(--_gray-9);          /* @public */
+	--fd-edge-trigger-hover: var(--_gray-9);    /* @public */
+	--fd-edge-trigger-selected: var(--_violet-2); /* @public */
+	--fd-edge-trigger-width: 2px;               /* @public */
+	--fd-edge-trigger-width-hover: 3px;         /* @public */
 
-	--fd-edge-tool: var(--_amber-2);
-	--fd-edge-tool-hover: var(--_amber-3);
-	--fd-edge-tool-selected: var(--_violet-2);
+	--fd-edge-tool: var(--_amber-2);            /* @public */
+	--fd-edge-tool-hover: var(--_amber-3);      /* @public */
+	--fd-edge-tool-selected: var(--_violet-2);  /* @public */
 
-	--fd-edge-data: var(--_gray-5);
-	--fd-edge-data-hover: var(--_gray-6);
-	--fd-edge-data-selected: var(--_violet-2);
+	--fd-edge-data: var(--_gray-5);             /* @public */
+	--fd-edge-data-hover: var(--_gray-6);       /* @public */
+	--fd-edge-data-selected: var(--_violet-2);  /* @public */
 
-	--fd-edge-loopback: var(--_gray-6);
-	--fd-edge-loopback-hover: var(--_gray-7);
-	--fd-edge-loopback-selected: var(--_violet-2);
-	--fd-edge-loopback-width: 1.5px;
-	--fd-edge-loopback-width-hover: 2.5px;
-	--fd-edge-loopback-dasharray: 5 5;
-	--fd-edge-loopback-opacity: 0.85;
+	--fd-edge-loopback: var(--_gray-6);             /* @public */
+	--fd-edge-loopback-hover: var(--_gray-7);       /* @public */
+	--fd-edge-loopback-selected: var(--_violet-2);  /* @public */
+	--fd-edge-loopback-width: 1.5px;                /* @public */
+	--fd-edge-loopback-width-hover: 2.5px;          /* @public */
+	--fd-edge-loopback-dasharray: 5 5;              /* @public */
+	--fd-edge-loopback-opacity: 0.85;               /* @public */
 
 	/* ----- SCROLLBAR COLORS ----- */
-	--fd-scrollbar-thumb: var(--_gray-4);
-	--fd-scrollbar-thumb-hover: var(--_gray-5);
-	--fd-scrollbar-track: var(--_gray-2);
+	--fd-scrollbar-thumb: var(--_gray-4);       /* @internal */
+	--fd-scrollbar-thumb-hover: var(--_gray-5); /* @internal */
+	--fd-scrollbar-track: var(--_gray-2);       /* @internal */
 
 	/* ----- BACKDROP/OVERLAY ----- */
-	--fd-backdrop: rgba(255, 255, 255, 0.8);
-	--fd-backdrop-blur: blur(8px);
+	--fd-backdrop: rgba(255, 255, 255, 0.8); /* @internal */
+	--fd-backdrop-blur: blur(8px);            /* @internal */
 
 	/* ----- HANDLE (Node connection points) ----- */
 	/* White ring around handles for contrast against node backgrounds */
-	--fd-handle-border: #ffffff;
+	--fd-handle-border: #ffffff;     /* @public */
 	/* Outer size = connection/hit area (px); visual = visible circle (px) */
-	--fd-handle-size: 20px;
-	--fd-handle-visual-size: 12px;
+	--fd-handle-size: 20px;          /* @public */
+	--fd-handle-visual-size: 12px;   /* @public */
 
 	/* ----- NODE LAYOUT (Dimensions and port alignment; multiples of 10 for grid) ----- */
-	--fd-node-grid-step: 10;
-	--fd-node-default-width: 290px;
-	--fd-node-header-height: 60px;
-	--fd-node-header-title-height: 40px;
-	--fd-node-header-desc-line: 20px;
-	--fd-node-header-gap: 10px;
-	--fd-node-port-row-height: 20px;
-	--fd-node-terminal-size: 80px;
-	--fd-node-square-size: 80px;
-	--fd-node-simple-height: 80px;
-	--fd-node-tool-min-height: 80px;
+	--fd-node-grid-step: 10;              /* @internal — layout algorithm detail */
+	--fd-node-default-width: 290px;       /* @public */
+	--fd-node-header-height: 60px;        /* @public */
+	--fd-node-header-title-height: 40px;  /* @internal */
+	--fd-node-header-desc-line: 20px;     /* @internal */
+	--fd-node-header-gap: 10px;           /* @internal */
+	--fd-node-port-row-height: 20px;      /* @internal */
+	--fd-node-terminal-size: 80px;        /* @public */
+	--fd-node-square-size: 80px;          /* @public */
+	--fd-node-simple-height: 80px;        /* @public */
+	--fd-node-tool-min-height: 80px;      /* @public */
 
 	/* ----- LAYOUT BACKGROUND (Main content area gradient) ----- */
-	--fd-layout-background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%);
+	--fd-layout-background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%); /* @public */
 }
 
 /* =========================================================================
