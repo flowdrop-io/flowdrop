@@ -43,7 +43,7 @@
 	import FormCheckboxGroup from './FormCheckboxGroup.svelte';
 	import FormArray from './FormArray.svelte';
 	import { resolveFieldComponent } from '$lib/form/fieldRegistry.js';
-	import { resolvedTheme } from '$lib/stores/settingsStore.js';
+	import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
 	import type { FieldSchema } from './types.js';
 	import { getSchemaOptions } from './types.js';
 
@@ -236,7 +236,7 @@
 				{required}
 				ariaDescribedBy={descriptionId}
 				height={schema.height as string | undefined}
-				darkTheme={schema.darkTheme ?? $resolvedTheme === 'dark'}
+				darkTheme={schema.darkTheme ?? getResolvedTheme() === 'dark'}
 				autoFormat={schema.autoFormat as boolean | undefined}
 				showToolbar={schema.showToolbar as boolean | undefined}
 				showStatusBar={schema.showStatusBar as boolean | undefined}

@@ -10,7 +10,7 @@
 	import Icon from '@iconify/svelte';
 	import { slide } from 'svelte/transition';
 	import type { PlaygroundInputField } from '../../types/playground.js';
-	import { inputFields, hasChatInput } from '../../stores/playgroundStore.js';
+	import { getInputFields, getHasChatInput } from '../../stores/playgroundStore.svelte.js';
 
 	/**
 	 * Component props
@@ -41,14 +41,14 @@
 	 */
 	$effect(() => {
 		// Only initialize once when we have input fields and haven't initialized yet
-		if ($inputFields.length > 0 && !hasInitializedDefaults) {
+		if (getInputFields().length > 0 && !hasInitializedDefaults) {
 			hasInitializedDefaults = true;
 
 			// Only set values if there are actual defaults to set
 			const initialValues: Record<string, unknown> = {};
 			let hasDefaults = false;
 
-			$inputFields.forEach((field) => {
+			getInputFields().forEach((field) => {
 				if (field.defaultValue !== undefined) {
 					initialValues[`${field.nodeId}:${field.fieldId}`] = field.defaultValue;
 					hasDefaults = true;
@@ -117,7 +117,7 @@
 	 */
 	function resetToDefaults(): void {
 		const defaultValues: Record<string, unknown> = {};
-		$inputFields.forEach((field) => {
+		getInputFields().forEach((field) => {
 			if (field.defaultValue !== undefined) {
 				defaultValues[`${field.nodeId}:${field.fieldId}`] = field.defaultValue;
 			}
@@ -127,7 +127,7 @@
 	}
 </script>
 
-{#if $inputFields.length > 0}
+{#if getInputFields().length > 0}
 	<div class="input-collector" class:input-collector--expanded={isExpanded}>
 		<!-- Header -->
 		<button
@@ -139,7 +139,7 @@
 			<div class="input-collector__title">
 				<Icon icon="mdi:form-textbox" />
 				<span>Workflow Inputs</span>
-				<span class="input-collector__count">{$inputFields.length}</span>
+				<span class="input-collector__count">{getInputFields().length}</span>
 			</div>
 			<Icon
 				icon="mdi:chevron-down"
@@ -150,7 +150,7 @@
 		<!-- Content -->
 		{#if isExpanded}
 			<div class="input-collector__content" transition:slide={{ duration: 200 }}>
-				{#if $hasChatInput}
+				{#if getHasChatInput()}
 					<div class="input-collector__hint">
 						<Icon icon="mdi:information-outline" />
 						<span>Chat input will be collected from the message field below</span>
@@ -158,7 +158,7 @@
 				{/if}
 
 				<div class="input-collector__fields">
-					{#each $inputFields as field (field.nodeId + ':' + field.fieldId)}
+					{#each getInputFields() as field (field.nodeId + ':' + field.fieldId)}
 						<div class="input-collector__field">
 							<label class="input-collector__label" for="input-{field.nodeId}-{field.fieldId}">
 								{field.label}

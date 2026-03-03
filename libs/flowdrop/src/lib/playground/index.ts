@@ -152,34 +152,36 @@ export { InterruptService, interruptService } from '../services/interruptService
 // ============================================================================
 
 export {
-	// Core stores
-	currentSession,
-	sessions,
-	messages,
-	isExecuting,
-	isLoading,
-	error as playgroundError,
-	currentWorkflow,
-	lastPollTimestamp,
-	// Derived stores
-	sessionStatus,
-	messageCount,
-	chatMessages,
-	logMessages,
-	latestMessage,
-	inputFields,
-	hasChatInput,
-	sessionCount,
+	// Core state getters
+	getCurrentSession,
+	getSessions,
+	getMessages,
+	getIsExecuting,
+	getIsLoading,
+	getError as getPlaygroundError,
+	getCurrentWorkflow,
+	getLastPollTimestamp,
+	// Derived getters
+	getSessionStatus,
+	getMessageCount,
+	getChatMessages,
+	getLogMessages,
+	getLatestMessage,
+	getInputFields,
+	getHasChatInput,
+	getSessionCount,
 	// Actions
 	playgroundActions,
 	// Polling callback factory
 	createPollingCallback,
+	// Subscription utility
+	subscribeToSessionStatus,
 	// Utilities
 	getCurrentSessionId,
 	isSessionSelected,
 	getMessagesSnapshot,
 	getLatestMessageTimestamp
-} from '../stores/playgroundStore.js';
+} from '../stores/playgroundStore.svelte.js';
 
 // ============================================================================
 // Playground Types
@@ -251,14 +253,14 @@ export {
 // ============================================================================
 
 export {
-	// Core stores
-	interrupts,
-	// Derived stores
-	pendingInterruptIds,
-	pendingInterrupts,
-	pendingInterruptCount,
-	resolvedInterrupts,
-	isAnySubmitting,
+	// Core state accessor
+	getInterruptsMap,
+	// Getter functions (replace derived stores)
+	getPendingInterruptIds,
+	getPendingInterrupts,
+	getPendingInterruptCount,
+	getResolvedInterrupts,
+	getIsAnySubmitting,
 	// Actions
 	interruptActions,
 	// Utilities
@@ -266,8 +268,11 @@ export {
 	isInterruptPending,
 	isInterruptSubmitting,
 	getInterruptError,
-	getInterruptByMessageId
-} from '../stores/interruptStore.js';
+	getInterruptByMessageId,
+	interruptHasError
+} from '../stores/interruptStore.svelte.js';
+
+export type { InterruptWithState } from '../stores/interruptStore.svelte.js';
 
 // ============================================================================
 // Playground Mount Functions (for vanilla JS / Drupal / IIFE integration)

@@ -64,13 +64,13 @@ export {
 // ============================================================================
 
 export {
-	settingsStore,
-	themeSettings,
-	editorSettings,
-	uiSettings,
-	behaviorSettings,
-	apiSettings,
-	syncStatusStore,
+	getSettings as settingsStore,
+	getThemeSettings as themeSettings,
+	getEditorSettings as editorSettings,
+	getUiSettings as uiSettings,
+	getBehaviorSettings as behaviorSettings,
+	getApiSettings as apiSettings,
+	getSyncStatus as syncStatusStore,
 	updateSettings,
 	resetSettings,
 	getSettings,
@@ -79,7 +79,7 @@ export {
 	syncSettingsToApi,
 	loadSettingsFromApi,
 	onSettingsChange
-} from '../stores/settingsStore.js';
+} from '../stores/settingsStore.svelte.js';
 
 // ============================================================================
 // Settings Service

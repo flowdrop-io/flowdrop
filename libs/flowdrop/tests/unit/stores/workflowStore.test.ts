@@ -6,17 +6,16 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { get } from 'svelte/store';
 import {
-	workflowStore,
+	getWorkflowStore,
 	workflowActions,
-	isDirtyStore,
+	getIsDirty,
 	markAsSaved,
 	isDirty,
-	workflowNodes,
-	workflowEdges,
+	getWorkflowNodes,
+	getWorkflowEdges,
 	setOnDirtyStateChange
-} from '$lib/stores/workflowStore.js';
+} from '$lib/stores/workflowStore.svelte.js';
 import { createTestWorkflow, createTestNode, createTestEdge } from '../../utils/index.js';
 
 describe('workflowStore', () => {
@@ -28,12 +27,12 @@ describe('workflowStore', () => {
 
 	describe('initialization', () => {
 		it('should start with null workflow', () => {
-			const workflow = get(workflowStore);
+			const workflow = getWorkflowStore();
 			expect(workflow).toBeNull();
 		});
 
 		it('should start with clean state', () => {
-			expect(get(isDirtyStore)).toBe(false);
+			expect(getIsDirty()).toBe(false);
 			expect(isDirty()).toBe(false);
 		});
 
@@ -42,7 +41,7 @@ describe('workflowStore', () => {
 
 			workflowActions.initialize(testWorkflow);
 
-			expect(get(workflowStore)).toEqual(testWorkflow);
+			expect(getWorkflowStore()).toEqual(testWorkflow);
 			expect(isDirty()).toBe(false);
 		});
 	});
@@ -100,7 +99,7 @@ describe('workflowStore', () => {
 			const node = createTestNode({ id: 'test-node' });
 			workflowActions.addNode(node);
 
-			const nodes = get(workflowNodes);
+			const nodes = getWorkflowNodes();
 			expect(nodes).toHaveLength(1);
 			expect(nodes[0].id).toBe('test-node');
 		});
@@ -114,7 +113,7 @@ describe('workflowStore', () => {
 
 			workflowActions.removeNode('test-node');
 
-			expect(get(workflowNodes)).toHaveLength(0);
+			expect(getWorkflowNodes()).toHaveLength(0);
 		});
 
 		it('should update node data', () => {
@@ -128,7 +127,7 @@ describe('workflowStore', () => {
 				data: { ...node.data, label: 'Updated Label' }
 			});
 
-			const updatedNode = get(workflowNodes)[0];
+			const updatedNode = getWorkflowNodes()[0];
 			expect(updatedNode.data.label).toBe('Updated Label');
 		});
 
@@ -149,8 +148,8 @@ describe('workflowStore', () => {
 
 			workflowActions.removeNode('node-1');
 
-			expect(get(workflowNodes)).toHaveLength(1);
-			expect(get(workflowEdges)).toHaveLength(0);
+			expect(getWorkflowNodes()).toHaveLength(1);
+			expect(getWorkflowEdges()).toHaveLength(0);
 		});
 	});
 
@@ -162,7 +161,7 @@ describe('workflowStore', () => {
 			const edge = createTestEdge({ id: 'test-edge' });
 			workflowActions.addEdge(edge);
 
-			const edges = get(workflowEdges);
+			const edges = getWorkflowEdges();
 			expect(edges).toHaveLength(1);
 			expect(edges[0].id).toBe('test-edge');
 		});
@@ -176,7 +175,7 @@ describe('workflowStore', () => {
 
 			workflowActions.removeEdge('test-edge');
 
-			expect(get(workflowEdges)).toHaveLength(0);
+			expect(getWorkflowEdges()).toHaveLength(0);
 		});
 	});
 
@@ -195,7 +194,7 @@ describe('workflowStore', () => {
 				edges: [edge]
 			});
 
-			const updated = get(workflowStore);
+			const updated = getWorkflowStore();
 			expect(updated?.name).toBe('Batch Updated');
 			expect(updated?.description).toBe('New description');
 			expect(updated?.nodes).toHaveLength(1);
@@ -216,13 +215,13 @@ describe('workflowStore', () => {
 			});
 			workflowActions.initialize(workflow);
 
-			const beforeUpdate = get(workflowStore)?.metadata.updatedAt;
+			const beforeUpdate = getWorkflowStore()?.metadata.updatedAt;
 
 			// Wait a tiny bit to ensure timestamp changes
 			setTimeout(() => {
 				workflowActions.updateName('New Name');
 
-				const afterUpdate = get(workflowStore)?.metadata.updatedAt;
+				const afterUpdate = getWorkflowStore()?.metadata.updatedAt;
 				expect(afterUpdate).not.toBe(beforeUpdate);
 			}, 10);
 		});
@@ -242,7 +241,7 @@ describe('workflowStore', () => {
 			const node = createTestNode();
 			workflowActions.addNode(node);
 
-			const metadata = get(workflowStore)?.metadata;
+			const metadata = getWorkflowStore()?.metadata;
 			// Adding a node updates metadata but doesn't increment updateNumber
 			// Only updateNodes and updateEdges increment it
 			expect(metadata?.updatedAt).not.toBe(workflow.metadata.updatedAt);
@@ -257,7 +256,7 @@ describe('workflowStore', () => {
 			});
 			workflowActions.initialize(workflow);
 
-			expect(get(workflowNodes)).toEqual([node]);
+			expect(getWorkflowNodes()).toEqual([node]);
 		});
 
 		it('should derive workflow edges correctly', () => {
@@ -267,7 +266,7 @@ describe('workflowStore', () => {
 			});
 			workflowActions.initialize(workflow);
 
-			expect(get(workflowEdges)).toEqual([edge]);
+			expect(getWorkflowEdges()).toEqual([edge]);
 		});
 	});
 
@@ -279,7 +278,7 @@ describe('workflowStore', () => {
 
 			workflowActions.clear();
 
-			expect(get(workflowStore)).toBeNull();
+			expect(getWorkflowStore()).toBeNull();
 			expect(isDirty()).toBe(false);
 		});
 	});

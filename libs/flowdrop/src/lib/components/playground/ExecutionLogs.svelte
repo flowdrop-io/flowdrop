@@ -10,7 +10,7 @@
 	import Icon from '@iconify/svelte';
 	import { slide } from 'svelte/transition';
 	import type { PlaygroundMessage, PlaygroundMessageLevel } from '../../types/playground.js';
-	import { logMessages } from '../../stores/playgroundStore.js';
+	import { getLogMessages } from '../../stores/playgroundStore.svelte.js';
 
 	/**
 	 * Component props
@@ -37,19 +37,19 @@
 	 */
 	const filteredLogs = $derived(
 		levelFilter === 'all'
-			? $logMessages
-			: $logMessages.filter((log) => log.metadata?.level === levelFilter)
+			? getLogMessages()
+			: getLogMessages().filter((log) => log.metadata?.level === levelFilter)
 	);
 
 	/**
 	 * Count of logs by level
 	 */
 	const logCounts = $derived({
-		all: $logMessages.length,
-		info: $logMessages.filter((l) => l.metadata?.level === 'info').length,
-		warning: $logMessages.filter((l) => l.metadata?.level === 'warning').length,
-		error: $logMessages.filter((l) => l.metadata?.level === 'error').length,
-		debug: $logMessages.filter((l) => l.metadata?.level === 'debug').length
+		all: getLogMessages().length,
+		info: getLogMessages().filter((l) => l.metadata?.level === 'info').length,
+		warning: getLogMessages().filter((l) => l.metadata?.level === 'warning').length,
+		error: getLogMessages().filter((l) => l.metadata?.level === 'error').length,
+		debug: getLogMessages().filter((l) => l.metadata?.level === 'debug').length
 	});
 
 	/**

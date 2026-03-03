@@ -19,8 +19,7 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointMethod, getEndpointHeaders } from '../config/endpoints.js';
 import type { AuthProvider } from '../types/auth.js';
 import { NoAuthProvider } from '../types/auth.js';
-import { get } from 'svelte/store';
-import { apiSettings } from '../stores/settingsStore.js';
+import { getApiSettings } from '../stores/settingsStore.svelte.js';
 import { logger } from '../utils/logger.js';
 import { DEFAULT_API_TIMEOUT_MS } from '../config/constants.js';
 
@@ -103,7 +102,7 @@ export class EnhancedFlowDropApiClient {
 		const configHeaders = getEndpointHeaders(this.config, endpointKey);
 
 		// Get user settings for timeout and retry
-		const userApiSettings = get(apiSettings);
+		const userApiSettings = getApiSettings();
 
 		// Get auth headers from provider
 		const authHeaders = await this.authProvider.getAuthHeaders();
