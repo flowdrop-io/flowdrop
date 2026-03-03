@@ -369,6 +369,19 @@ export function getConnectionSuggestions(
  * @returns True if any cycle exists in the workflow
  */
 export function hasCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): boolean {
+	// Build adjacency map once (O(E)) so the DFS inner loop is O(1) per lookup
+	// instead of scanning all edges on every recursive call (which was O(V*E)).
+	const adjacencyMap = new Map<string, string[]>();
+	for (const node of nodes) {
+		adjacencyMap.set(node.id, []);
+	}
+	for (const edge of edges) {
+		const neighbors = adjacencyMap.get(edge.source);
+		if (neighbors) {
+			neighbors.push(edge.target);
+		}
+	}
+
 	const visited = new Set<string>();
 	const recursionStack = new Set<string>();
 
@@ -379,11 +392,11 @@ export function hasCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): boolean
 		visited.add(nodeId);
 		recursionStack.add(nodeId);
 
-		// Get all outgoing edges from this node
-		const outgoingEdges = edges.filter((e) => e.source === nodeId);
+		// Use pre-built adjacency map instead of filtering all edges each call
+		const neighbors = adjacencyMap.get(nodeId) || [];
 
-		for (const edge of outgoingEdges) {
-			if (hasCycleUtil(edge.target)) return true;
+		for (const target of neighbors) {
+			if (hasCycleUtil(target)) return true;
 		}
 
 		recursionStack.delete(nodeId);
@@ -420,6 +433,20 @@ export function hasInvalidCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): 
 	// Filter out loopback edges - these create valid cycles for loop iteration
 	const nonLoopbackEdges = edges.filter((edge) => !isLoopbackEdge(edge));
 
+	// Build adjacency map from non-loopback edges once (O(E)) so the DFS inner
+	// loop is O(1) per lookup instead of scanning all edges on every recursive
+	// call (which was O(V*E)).
+	const adjacencyMap = new Map<string, string[]>();
+	for (const node of nodes) {
+		adjacencyMap.set(node.id, []);
+	}
+	for (const edge of nonLoopbackEdges) {
+		const neighbors = adjacencyMap.get(edge.source);
+		if (neighbors) {
+			neighbors.push(edge.target);
+		}
+	}
+
 	// Check for cycles using only non-loopback edges
 	const visited = new Set<string>();
 	const recursionStack = new Set<string>();
@@ -436,11 +463,11 @@ export function hasInvalidCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): 
 		visited.add(nodeId);
 		recursionStack.add(nodeId);
 
-		// Get all outgoing non-loopback edges from this node
-		const outgoingEdges = nonLoopbackEdges.filter((e) => e.source === nodeId);
+		// Use pre-built adjacency map instead of filtering all edges each call
+		const neighbors = adjacencyMap.get(nodeId) || [];
 
-		for (const edge of outgoingEdges) {
-			if (hasCycleUtil(edge.target)) return true;
+		for (const target of neighbors) {
+			if (hasCycleUtil(target)) return true;
 		}
 
 		recursionStack.delete(nodeId);
