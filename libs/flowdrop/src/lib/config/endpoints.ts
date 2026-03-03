@@ -148,6 +148,26 @@ export interface EndpointConfig {
 		delay: number;
 		backoff?: 'linear' | 'exponential';
 	};
+
+	/**
+	 * Optional transform applied to workflow objects before they are sent to the backend
+	 * (i.e., in create and update requests).
+	 *
+	 * Use this to adapt the generic FlowDrop `Workflow` shape to whatever your backend
+	 * expects. The function receives the workflow data and must return the body that will
+	 * be JSON-serialised and posted.
+	 *
+	 * Default: identity — the workflow is sent as-is.
+	 *
+	 * @example Drupal integration — Drupal expects `label` in addition to `name`:
+	 * ```ts
+	 * transformWorkflowPayload: (workflow) => ({
+	 *   ...workflow,
+	 *   label: workflow.name,
+	 * })
+	 * ```
+	 */
+	transformWorkflowPayload?: (workflow: Record<string, unknown>) => Record<string, unknown>;
 }
 
 /**

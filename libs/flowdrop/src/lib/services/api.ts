@@ -188,13 +188,10 @@ export const workflowApi = {
 			throw new Error('Endpoint configuration not set');
 		}
 
-		// Transform workflow data for Drupal backend compatibility
-		// Drupal expects "label" instead of "name"
-		const drupalWorkflow = {
-			...workflow,
-			label: workflow.name, // Map name to label for Drupal
-			name: workflow.name // Keep name as well for compatibility
-		};
+		// Apply the consumer-provided payload transform (e.g. Drupal's label mapping).
+		// The default is the identity function — no CMS-specific logic in the core library.
+		const transform = endpointConfig.transformWorkflowPayload ?? ((w) => w);
+		const body = transform(workflow as Record<string, unknown>);
 
 		const response = await apiRequest<Workflow>(
 			'workflows.create',
@@ -202,7 +199,7 @@ export const workflowApi = {
 			undefined,
 			{
 				method: 'POST',
-				body: JSON.stringify(drupalWorkflow)
+				body: JSON.stringify(body)
 			}
 		);
 
@@ -220,15 +217,10 @@ export const workflowApi = {
 			throw new Error('Endpoint configuration not set');
 		}
 
-		// Transform workflow data for Drupal backend compatibility
-		// Drupal expects "label" instead of "name"
-		const drupalWorkflow = workflow.name
-			? {
-					...workflow,
-					label: workflow.name, // Map name to label for Drupal
-					name: workflow.name // Keep name as well for compatibility
-				}
-			: workflow;
+		// Apply the consumer-provided payload transform (e.g. Drupal's label mapping).
+		// The default is the identity function — no CMS-specific logic in the core library.
+		const transform = endpointConfig.transformWorkflowPayload ?? ((w) => w);
+		const body = transform(workflow as Record<string, unknown>);
 
 		const response = await apiRequest<Workflow>(
 			'workflows.update',
@@ -236,7 +228,7 @@ export const workflowApi = {
 			{ id },
 			{
 				method: 'PUT',
-				body: JSON.stringify(drupalWorkflow)
+				body: JSON.stringify(body)
 			}
 		);
 

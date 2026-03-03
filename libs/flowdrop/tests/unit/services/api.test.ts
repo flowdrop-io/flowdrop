@@ -232,9 +232,33 @@ describe('API Service', () => {
 				expect(result.name).toBe(workflow.name);
 			});
 
-			it('should map name to label for Drupal compatibility', async () => {
+			it('should not add label by default (Drupal mapping is opt-in via transformWorkflowPayload)', async () => {
 				const workflow = createTestWorkflow({ name: 'Test Workflow' });
 				const { id, ...workflowData } = workflow;
+
+				global.fetch = vi.fn(() => Promise.resolve(mockFetchResponse(workflow)));
+
+				await workflowApi.createWorkflow(workflowData);
+
+				const callBody = JSON.parse(
+					(global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body
+				);
+				expect(callBody.label).toBeUndefined();
+				expect(callBody.name).toBe('Test Workflow');
+			});
+
+			it('should apply transformWorkflowPayload hook when configured', async () => {
+				const workflow = createTestWorkflow({ name: 'Test Workflow' });
+				const { id, ...workflowData } = workflow;
+
+				const config = createMockEndpointConfig('/api/flowdrop');
+				config.transformWorkflowPayload = (payload: Record<string, unknown>) => {
+					if (payload.name) {
+						return { ...payload, label: payload.name };
+					}
+					return payload;
+				};
+				setEndpointConfig(config);
 
 				global.fetch = vi.fn(() => Promise.resolve(mockFetchResponse(workflow)));
 
@@ -280,9 +304,33 @@ describe('API Service', () => {
 				expect(result.name).toBe('Updated Name');
 			});
 
-			it('should map name to label for Drupal compatibility on update', async () => {
+			it('should not add label by default on update (Drupal mapping is opt-in)', async () => {
 				const workflow = createTestWorkflow();
 				const updates = { name: 'Updated Name' };
+
+				global.fetch = vi.fn(() => Promise.resolve(mockFetchResponse(workflow)));
+
+				await workflowApi.updateWorkflow(workflow.id, updates);
+
+				const callBody = JSON.parse(
+					(global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body
+				);
+				expect(callBody.label).toBeUndefined();
+				expect(callBody.name).toBe('Updated Name');
+			});
+
+			it('should apply transformWorkflowPayload hook on update when configured', async () => {
+				const workflow = createTestWorkflow();
+				const updates = { name: 'Updated Name' };
+
+				const config = createMockEndpointConfig('/api/flowdrop');
+				config.transformWorkflowPayload = (payload: Record<string, unknown>) => {
+					if (payload.name) {
+						return { ...payload, label: payload.name };
+					}
+					return payload;
+				};
+				setEndpointConfig(config);
 
 				global.fetch = vi.fn(() => Promise.resolve(mockFetchResponse(workflow)));
 
