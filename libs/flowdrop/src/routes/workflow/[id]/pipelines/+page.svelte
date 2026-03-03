@@ -16,7 +16,7 @@
 		defaultEndpointConfig,
 		type EndpointConfig
 	} from '$lib/config/endpoints.js';
-	import { apiToasts, pipelineToasts } from '$lib/services/toastService.js';
+	import { apiToasts } from '$lib/services/toastService.js';
 	import type { NodeExecutionStatus } from '$lib/types/index.js';
 
 	let { data } = $props();
@@ -151,10 +151,6 @@
 		goto(`/workflow/${workflowId}/pipelines/${pipelineId}`);
 	}
 
-	function handleCreatePipeline() {
-		// TODO: Implement pipeline creation
-		pipelineToasts.created('New Pipeline');
-	}
 </script>
 
 <svelte:head>
@@ -213,12 +209,6 @@
 						No pipelines have been created for this workflow yet.
 					{/if}
 				</p>
-				{#if !searchQuery}
-					<button class="pipelines-btn pipelines-btn--primary" onclick={handleCreatePipeline}>
-						<Icon icon="mdi:plus" />
-						Create First Pipeline
-					</button>
-				{/if}
 			</div>
 		{:else}
 			<div class="pipelines-list">
@@ -304,26 +294,6 @@
 								title="Monitor Pipeline"
 							>
 								<Icon icon="mdi:play" />
-							</button>
-							<button
-								class="pipelines-list-item__action-btn"
-								onclick={(e) => {
-									e.stopPropagation();
-									// TODO: Implement stop action
-								}}
-								title="Stop Pipeline"
-							>
-								<Icon icon="mdi:stop" />
-							</button>
-							<button
-								class="pipelines-list-item__action-btn"
-								onclick={(e) => {
-									e.stopPropagation();
-									// TODO: Implement download action
-								}}
-								title="Download Logs"
-							>
-								<Icon icon="mdi:download" />
 							</button>
 						</div>
 					</div>
@@ -670,17 +640,6 @@
 		box-shadow: var(--fd-shadow-md);
 	}
 
-	.pipelines-list-item__action-btn:last-child {
-		background-color: var(--fd-error-muted);
-		color: var(--fd-error);
-		border-color: var(--fd-error);
-	}
-
-	.pipelines-list-item__action-btn:last-child:hover {
-		background-color: var(--fd-error-muted);
-		color: var(--fd-error-hover);
-		border-color: var(--fd-error-hover);
-	}
 
 	.pipelines-btn {
 		display: flex;
@@ -696,16 +655,6 @@
 		text-decoration: none;
 	}
 
-	.pipelines-btn--primary {
-		background-color: var(--fd-primary);
-		border-color: var(--fd-primary);
-		color: var(--fd-primary-foreground);
-	}
-
-	.pipelines-btn--primary:hover {
-		background-color: var(--fd-primary-hover);
-		border-color: var(--fd-primary-hover);
-	}
 
 	.pipelines-btn--outline {
 		background-color: transparent;

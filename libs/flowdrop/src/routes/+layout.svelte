@@ -11,7 +11,6 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import {
-		initializeGlobalSave,
 		globalSaveWorkflow,
 		globalExportWorkflow
 	} from '$lib/services/globalSave.js';
@@ -26,7 +25,7 @@
 	import { Toaster } from 'svelte-5-french-toast';
 	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
 	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
-	import { initializeSettings } from '$lib/stores/settingsStore.js';
+	import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
 
 	let { data, children } = $props();
 
@@ -79,18 +78,15 @@
 		});
 		setEndpointConfig(endpointConfig);
 
-		// Now initialize global save (will use the config we just set)
-		initializeGlobalSave();
-
 		// Listen for breadcrumb updates
 		const handleBreadcrumbs = (event: CustomEvent) => {
 			pageBreadcrumbs = event.detail.breadcrumbs || [];
 		};
 
-		window.addEventListener('page-breadcrumbs-update', handleBreadcrumbs);
+		window.addEventListener('page-breadcrumbs-update', handleBreadcrumbs as EventListener);
 
 		return () => {
-			window.removeEventListener('page-breadcrumbs-update', handleBreadcrumbs);
+			window.removeEventListener('page-breadcrumbs-update', handleBreadcrumbs as EventListener);
 		};
 	});
 
@@ -311,15 +307,8 @@
 					}
 				];
 			} else {
-				// Pipeline selection page
-				return [
-					{
-						label: 'Create Pipeline',
-						href: '#',
-						icon: 'mdi:plus',
-						variant: 'primary' as const
-					}
-				];
+				// Pipeline selection page (pipeline creation is not yet implemented)
+				return [];
 			}
 		}
 
@@ -483,8 +472,11 @@
 </MainLayout>
 
 <!-- Toast Notifications (outside MainLayout for proper z-index stacking) -->
-<Toaster
-	position="bottom-center"
-	containerClassName={FLOWDROP_TOASTER_CLASS}
-	toastOptions={flowdropToastOptions}
-/>
+<!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->
+<div aria-live="polite" aria-atomic="true">
+	<Toaster
+		position="bottom-center"
+		containerClassName={FLOWDROP_TOASTER_CLASS}
+		toastOptions={flowdropToastOptions}
+	/>
+</div>
