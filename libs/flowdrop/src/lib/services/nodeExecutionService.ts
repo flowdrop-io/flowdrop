@@ -13,6 +13,21 @@ import {
 import { logger } from '../utils/logger.js';
 
 /**
+ * Internal type for pipeline job data from the API response
+ */
+interface PipelineJob {
+	node_id: string;
+	status: string;
+	execution_count?: number;
+	started?: string;
+	completed?: string;
+	last_executed?: string;
+	execution_time?: number;
+	error?: string;
+	error_message?: string;
+}
+
+/**
  * Service for managing node execution information
  */
 export class NodeExecutionService {
@@ -45,6 +60,7 @@ export class NodeExecutionService {
 
 		try {
 			const endpointConfig = getEndpointConfig();
+			if (!endpointConfig) throw new Error('Endpoint config not available');
 			const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
 				id: pipelineId
 			});
@@ -55,11 +71,11 @@ export class NodeExecutionService {
 			}
 
 			const pipelineData = await response.json();
-			const jobs = pipelineData.jobs || [];
+			const jobs: PipelineJob[] = pipelineData.jobs || [];
 			const nodeStatuses = pipelineData.node_statuses || {};
 
 			// Find the job for this node
-			const nodeJob = jobs.find((job: any) => job.node_id === nodeId);
+			const nodeJob = jobs.find((job: PipelineJob) => job.node_id === nodeId);
 			const nodeStatus = nodeStatuses[nodeId];
 
 			if (!nodeJob && !nodeStatus) {
@@ -113,6 +129,7 @@ export class NodeExecutionService {
 
 		try {
 			const endpointConfig = getEndpointConfig();
+			if (!endpointConfig) throw new Error('Endpoint config not available');
 			const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
 				id: pipelineId
 			});
@@ -139,7 +156,7 @@ export class NodeExecutionService {
 			}
 
 			const result = await response.json();
-			const jobs = result.jobs || [];
+			const jobs: PipelineJob[] = result.jobs || [];
 
 			const executionInfoMap: Record<string, NodeExecutionInfo> = {};
 
@@ -153,7 +170,7 @@ export class NodeExecutionService {
 			});
 
 			// Update with actual job data
-			jobs.forEach((job: any) => {
+			jobs.forEach((job: PipelineJob) => {
 				const nodeId = job.node_id;
 				if (nodeIds.includes(nodeId)) {
 					executionInfoMap[nodeId] = {
@@ -192,6 +209,7 @@ export class NodeExecutionService {
 	async getAllNodeExecutionCounts(): Promise<Record<string, number>> {
 		try {
 			const endpointConfig = getEndpointConfig();
+			if (!endpointConfig) throw new Error('Endpoint config not available');
 			const url = buildEndpointUrl(endpointConfig, '/node-execution-counts');
 
 			const response = await fetch(url);

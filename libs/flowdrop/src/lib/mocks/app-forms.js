@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Mock for $app/forms
  * Provides minimal implementations for SvelteKit forms in library context

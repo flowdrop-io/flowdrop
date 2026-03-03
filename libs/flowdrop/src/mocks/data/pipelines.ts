@@ -74,7 +74,7 @@ export interface LogEntry {
 /**
  * Sample pipeline executions
  */
-export const mockPipelines: Map<string, Pipeline> = new Map([
+export const mockPipelines = new Map<string, Pipeline>([
 	// Completed pipeline
 	[
 		'pipeline-001',

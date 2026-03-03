@@ -95,11 +95,11 @@ export interface OneOfItem {
 /**
  * Base properties shared by all form fields
  */
-export interface BaseFieldProps {
+export interface BaseFieldProps<T = unknown> {
 	/** Unique identifier for the field (used for id and name attributes) */
 	id: string;
 	/** Current value of the field */
-	value: unknown;
+	value: T;
 	/** Whether the field is required */
 	required?: boolean;
 	/** Whether the field is disabled */
@@ -109,92 +109,77 @@ export interface BaseFieldProps {
 	/** ARIA description ID for accessibility */
 	ariaDescribedBy?: string;
 	/** Callback when the field value changes */
-	onChange: (value: unknown) => void;
+	onChange: (value: T) => void;
 }
 
 /**
  * Properties for text input fields
  */
-export interface TextFieldProps extends BaseFieldProps {
-	value: string;
-	onChange: (value: string) => void;
+export interface TextFieldProps extends BaseFieldProps<string> {
 }
 
 /**
  * Properties for multiline text fields (textarea)
  */
-export interface TextareaFieldProps extends BaseFieldProps {
-	value: string;
+export interface TextareaFieldProps extends BaseFieldProps<string> {
 	/** Number of visible rows */
 	rows?: number;
-	onChange: (value: string) => void;
 }
 
 /**
  * Properties for number input fields
  */
-export interface NumberFieldProps extends BaseFieldProps {
-	value: number | string;
+export interface NumberFieldProps extends BaseFieldProps<number | string> {
 	/** Minimum allowed value */
 	min?: number;
 	/** Maximum allowed value */
 	max?: number;
 	/** Step increment for the input */
 	step?: number;
-	onChange: (value: number | string) => void;
 }
 
 /**
  * Properties for boolean toggle fields
  */
-export interface ToggleFieldProps extends BaseFieldProps {
-	value: boolean;
+export interface ToggleFieldProps extends BaseFieldProps<boolean> {
 	/** Label shown when toggle is on */
 	onLabel?: string;
 	/** Label shown when toggle is off */
 	offLabel?: string;
-	onChange: (value: boolean) => void;
 }
 
 /**
  * Properties for range slider fields
  */
-export interface RangeFieldProps extends BaseFieldProps {
-	value: number | string;
+export interface RangeFieldProps extends BaseFieldProps<number | string> {
 	/** Minimum allowed value */
 	min?: number;
 	/** Maximum allowed value */
 	max?: number;
 	/** Step increment for the slider */
 	step?: number;
-	onChange: (value: number) => void;
 }
 
 /**
  * Properties for select dropdown fields
  */
-export interface SelectFieldProps extends BaseFieldProps {
-	value: string;
+export interface SelectFieldProps extends BaseFieldProps<string> {
 	/** Available options for selection */
 	options: FieldOption[] | string[];
-	onChange: (value: string) => void;
 }
 
 /**
  * Properties for checkbox group fields (multiple selection)
  */
-export interface CheckboxGroupFieldProps extends BaseFieldProps {
-	value: string[];
+export interface CheckboxGroupFieldProps extends BaseFieldProps<string[]> {
 	/** Available options for selection */
 	options: string[];
-	onChange: (value: string[]) => void;
 }
 
 /**
  * Properties for array fields (dynamic lists)
  */
-export interface ArrayFieldProps extends BaseFieldProps {
-	value: unknown[];
+export interface ArrayFieldProps extends BaseFieldProps<unknown[]> {
 	/** Schema for array items */
 	itemSchema: FieldSchema;
 	/** Minimum number of items required */
@@ -203,31 +188,24 @@ export interface ArrayFieldProps extends BaseFieldProps {
 	maxItems?: number;
 	/** Label for the add button */
 	addLabel?: string;
-	onChange: (value: unknown[]) => void;
 }
 
 /**
  * Properties for code editor fields (CodeMirror-based)
  */
-export interface CodeEditorFieldProps extends BaseFieldProps {
-	/** Current value - can be string (raw JSON) or object */
-	value: unknown;
+export interface CodeEditorFieldProps extends BaseFieldProps<unknown> {
 	/** Whether to use dark theme */
 	darkTheme?: boolean;
 	/** Editor height in pixels or CSS value */
 	height?: string;
 	/** Whether to auto-format JSON on blur */
 	autoFormat?: boolean;
-	/** Callback when value changes */
-	onChange: (value: unknown) => void;
 }
 
 /**
  * Properties for markdown editor fields (CodeMirror 6-based)
  */
-export interface MarkdownEditorFieldProps extends BaseFieldProps {
-	/** Current value (markdown string) */
-	value: string;
+export interface MarkdownEditorFieldProps extends BaseFieldProps<string> {
 	/** Editor height in pixels or CSS value */
 	height?: string;
 	/** Whether to show the toolbar */
@@ -236,16 +214,12 @@ export interface MarkdownEditorFieldProps extends BaseFieldProps {
 	showStatusBar?: boolean;
 	/** Whether to enable spell checking */
 	spellChecker?: boolean;
-	/** Callback when value changes */
-	onChange: (value: string) => void;
 }
 
 /**
  * Properties for template editor fields (CodeMirror with Twig/Liquid syntax)
  */
-export interface TemplateEditorFieldProps extends BaseFieldProps {
-	/** Current template value */
-	value: string;
+export interface TemplateEditorFieldProps extends BaseFieldProps<string> {
 	/** Whether to use dark theme */
 	darkTheme?: boolean;
 	/** Editor height in pixels or CSS value */
@@ -263,23 +237,17 @@ export interface TemplateEditorFieldProps extends BaseFieldProps {
 	variableSchema?: VariableSchema;
 	/** Placeholder variable example for the hint */
 	placeholderExample?: string;
-	/** Callback when value changes */
-	onChange: (value: string) => void;
 }
 
 /**
  * Properties for autocomplete fields
  * Fetches suggestions from a callback URL with support for debouncing and keyboard navigation
  */
-export interface AutocompleteFieldProps extends BaseFieldProps {
-	/** Current value (single string or array of strings for multiple selection) */
-	value: string | string[];
+export interface AutocompleteFieldProps extends BaseFieldProps<string | string[]> {
 	/** Autocomplete configuration from schema */
 	autocomplete: AutocompleteConfig;
 	/** Base URL for resolving relative callback URLs */
 	baseUrl?: string;
-	/** Callback when value changes */
-	onChange: (value: string | string[]) => void;
 }
 
 /**

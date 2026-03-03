@@ -2768,7 +2768,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
 		id: 'openai_chat',
 		name: 'OpenAI Chat',
 		type: 'default',
-		supportedTypes: null,
+		supportedTypes: undefined,
 		description: 'OpenAI GPT models for text generation',
 		category: 'models',
 		icon: 'mdi:robot',
