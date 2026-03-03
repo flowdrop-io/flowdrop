@@ -1,24 +1,23 @@
 /**
- * History Store for FlowDrop
+ * History Store for FlowDrop (Svelte 5 Runes)
  *
- * Provides reactive Svelte store bindings for the history service.
+ * Provides reactive Svelte 5 rune-based bindings for the history service.
  * Exposes undo/redo state and actions for the workflow editor.
  *
  * @module stores/historyStore
  */
 
-import { writable, derived, get } from 'svelte/store';
 import { historyService, type HistoryState, type PushOptions } from '../services/historyService.js';
 import type { Workflow } from '../types/index.js';
 
 // =========================================================================
-// Reactive State Store
+// Reactive State (Runes)
 // =========================================================================
 
 /**
- * Internal writable store for history state
+ * Internal reactive state for history, powered by $state.
  */
-const historyStateStore = writable<HistoryState>({
+let historyState = $state<HistoryState>({
 	canUndo: false,
 	canRedo: false,
 	currentIndex: 0,
@@ -26,43 +25,65 @@ const historyStateStore = writable<HistoryState>({
 	isInTransaction: false
 });
 
-// Subscribe to history service changes and update the store
-historyService.subscribe((state) => {
-	historyStateStore.set(state);
+// Subscribe to history service changes and update the rune state.
+// The unsubscribe function is stored so it can be called via
+// cleanupHistorySubscription() when the store is torn down.
+const _unsubscribeHistoryService = historyService.subscribe((state) => {
+	historyState = state;
 });
 
 /**
- * Reactive history state store
+ * Clean up the historyService subscription created at module initialisation.
+ * Call this when tearing down the history store (e.g., in tests or on app
+ * unmount) to prevent memory leaks.
+ */
+export function cleanupHistorySubscription(): void {
+	_unsubscribeHistoryService();
+}
+
+// =========================================================================
+// Reactive Getters
+// =========================================================================
+
+/**
+ * Get the current history state snapshot.
  *
  * Use this for binding to UI elements like undo/redo buttons.
- * Subscribe using Svelte's $ prefix or the subscribe method.
  *
  * @example
  * ```svelte
  * <script>
- *   import { historyStateStore } from "$lib/stores/historyStore.js";
+ *   import { getHistoryState } from "$lib/stores/historyStore.svelte.js";
+ *
+ *   const state = $derived(getHistoryState());
  * </script>
  *
- * <button disabled={!$historyStateStore.canUndo} onclick={historyActions.undo}>
+ * <button disabled={!state.canUndo} onclick={historyActions.undo}>
  *   Undo
  * </button>
  * ```
  */
-export { historyStateStore };
+export function getHistoryState(): HistoryState {
+	return historyState;
+}
 
 /**
- * Derived store for canUndo state
+ * Convenience getter for canUndo state.
  *
- * Convenience store that directly exposes the canUndo boolean.
+ * @returns Whether undo is currently available
  */
-export const canUndo = derived(historyStateStore, ($state) => $state.canUndo);
+export function getCanUndo(): boolean {
+	return historyState.canUndo;
+}
 
 /**
- * Derived store for canRedo state
+ * Convenience getter for canRedo state.
  *
- * Convenience store that directly exposes the canRedo boolean.
+ * @returns Whether redo is currently available
  */
-export const canRedo = derived(historyStateStore, ($state) => $state.canRedo);
+export function getCanRedo(): boolean {
+	return historyState.canRedo;
+}
 
 // =========================================================================
 // History Actions
@@ -204,7 +225,7 @@ export const historyActions = {
 	 * @returns The current history state
 	 */
 	getState: (): HistoryState => {
-		return get(historyStateStore);
+		return historyState;
 	}
 };
 

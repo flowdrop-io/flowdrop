@@ -7,7 +7,7 @@
 
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { theme, resolvedTheme, cycleTheme } from '../stores/settingsStore.js';
+	import { getTheme, getResolvedTheme, cycleTheme } from '../stores/settingsStore.svelte.js';
 	import type { ThemePreference } from '../types/settings.js';
 
 	/**
@@ -30,7 +30,7 @@
 	 * - dark: moon icon
 	 * - auto: computer/system icon
 	 */
-	const themeIcon = $derived(getThemeIcon($theme));
+	const themeIcon = $derived(getThemeIcon(getTheme()));
 
 	/**
 	 * Get icon name based on theme preference
@@ -49,7 +49,7 @@
 	/**
 	 * Get accessible label for the current theme
 	 */
-	const themeLabel = $derived(getThemeLabel($theme));
+	const themeLabel = $derived(getThemeLabel(getTheme()));
 
 	/**
 	 * Get label text based on theme preference
@@ -68,7 +68,7 @@
 	/**
 	 * Get tooltip text describing current state and next action
 	 */
-	const tooltipText = $derived(getTooltipText($theme, $resolvedTheme));
+	const tooltipText = $derived(getTooltipText(getTheme(), getResolvedTheme()));
 
 	/**
 	 * Get tooltip text based on theme preference

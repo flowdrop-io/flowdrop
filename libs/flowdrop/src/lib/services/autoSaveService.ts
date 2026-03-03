@@ -7,9 +7,8 @@
  * @module services/autoSaveService
  */
 
-import { get, type Unsubscriber } from 'svelte/store';
-import { behaviorSettings } from '../stores/settingsStore.js';
-import { isDirtyStore, isDirty } from '../stores/workflowStore.js';
+import { getBehaviorSettings, onSettingsChange } from '../stores/settingsStore.svelte.js';
+import { isDirty } from '../stores/workflowStore.svelte.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -40,17 +39,17 @@ interface AutoSaveState {
 	/** Whether auto-save is currently in progress */
 	isSaving: boolean;
 	/** Unsubscriber for settings changes */
-	settingsUnsubscriber: Unsubscriber | null;
+	settingsUnsubscriber: (() => void) | null;
 	/** Unsubscriber for dirty state changes */
-	dirtyUnsubscriber: Unsubscriber | null;
+	dirtyUnsubscriber: (() => void) | null;
 }
 
 /**
  * Initialize auto-save functionality based on user settings
  *
  * Creates an interval-based auto-save mechanism that:
- * - Subscribes to behaviorSettings for auto-save configuration
- * - Monitors the isDirtyStore to check for unsaved changes
+ * - Listens to behaviorSettings changes for auto-save configuration
+ * - Monitors the isDirty state to check for unsaved changes
  * - Calls the provided save callback when dirty and auto-save is enabled
  *
  * @param options - Auto-save configuration options
@@ -118,7 +117,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
 			state.intervalId = null;
 		}
 
-		const settings = get(behaviorSettings);
+		const settings = getBehaviorSettings();
 
 		// Start new interval if auto-save is enabled
 		if (settings.autoSave) {
@@ -128,9 +127,11 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
 		}
 	}
 
-	// Subscribe to settings changes to react to auto-save toggle/interval changes
-	state.settingsUnsubscriber = behaviorSettings.subscribe(() => {
-		updateAutoSaveInterval();
+	// Listen for settings changes to react to auto-save toggle/interval changes
+	state.settingsUnsubscriber = onSettingsChange((event) => {
+		if (event.category === 'behavior') {
+			updateAutoSaveInterval();
+		}
 	});
 
 	// Initial setup
@@ -146,7 +147,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
 			state.intervalId = null;
 		}
 
-		// Unsubscribe from stores
+		// Unsubscribe from settings changes
 		if (state.settingsUnsubscriber) {
 			state.settingsUnsubscriber();
 			state.settingsUnsubscriber = null;
@@ -168,7 +169,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
 export class AutoSaveManager {
 	private intervalId: ReturnType<typeof setInterval> | null = null;
 	private isSaving = false;
-	private settingsUnsubscriber: Unsubscriber | null = null;
+	private settingsUnsubscriber: (() => void) | null = null;
 	private onSave: () => Promise<void>;
 	private onError?: (error: Error) => void;
 	private onSuccess?: () => void;
@@ -187,15 +188,17 @@ export class AutoSaveManager {
 	/**
 	 * Start the auto-save manager
 	 *
-	 * Subscribes to settings changes and starts the auto-save interval.
+	 * Listens for settings changes and starts the auto-save interval.
 	 */
 	start(): void {
 		if (this.settingsUnsubscriber) {
 			return; // Already started
 		}
 
-		this.settingsUnsubscriber = behaviorSettings.subscribe(() => {
-			this.updateInterval();
+		this.settingsUnsubscriber = onSettingsChange((event) => {
+			if (event.category === 'behavior') {
+				this.updateInterval();
+			}
 		});
 
 		this.updateInterval();
@@ -231,7 +234,7 @@ export class AutoSaveManager {
 	 * Check if auto-save is currently enabled
 	 */
 	isEnabled(): boolean {
-		return get(behaviorSettings).autoSave;
+		return getBehaviorSettings().autoSave;
 	}
 
 	/**
@@ -250,7 +253,7 @@ export class AutoSaveManager {
 			this.intervalId = null;
 		}
 
-		const settings = get(behaviorSettings);
+		const settings = getBehaviorSettings();
 
 		if (settings.autoSave) {
 			this.intervalId = setInterval(() => {

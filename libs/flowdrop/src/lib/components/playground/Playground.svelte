@@ -21,18 +21,16 @@
 	import { interruptService } from '../../services/interruptService.js';
 	import { setEndpointConfig } from '../../services/api.js';
 	import {
-		currentSession,
-		sessions,
-		messages,
-		isExecuting,
-		isLoading,
-		error,
+		getCurrentSession,
+		getSessions,
+		getIsExecuting,
+		getIsLoading,
+		getError,
 		playgroundActions,
-		inputFields,
+		getInputFields,
 		createPollingCallback
-	} from '../../stores/playgroundStore.js';
-	import { interruptActions } from '../../stores/interruptStore.js';
-	import { get } from 'svelte/store';
+	} from '../../stores/playgroundStore.svelte.js';
+	import { interruptActions } from '../../stores/interruptStore.svelte.js';
 	import { logger } from '../../utils/logger.js';
 
 	/**
@@ -140,8 +138,8 @@
 		}
 
 		// Skip if sessions haven't been loaded yet (will be handled by onMount)
-		const sessionList = get(sessions);
-		if (sessionList.length === 0 && get(isLoading)) {
+		const sessionList = getSessions();
+		if (sessionList.length === 0 && getIsLoading()) {
 			return;
 		}
 
@@ -158,7 +156,7 @@
 	 */
 	async function loadInitialSession(sessionId: string): Promise<void> {
 		// Validate session exists in loaded sessions
-		const sessionList = get(sessions);
+		const sessionList = getSessions();
 		const sessionExists = sessionList.some((s) => s.id === sessionId);
 
 		if (!sessionExists) {
@@ -264,7 +262,7 @@
 		playgroundActions.setError(null);
 
 		try {
-			const sessionName = `Session ${get(sessions).length + 1}`;
+			const sessionName = `Session ${getSessions().length + 1}`;
 			const session = await playgroundService.createSession(workflowId, sessionName);
 			playgroundActions.addSession(session);
 			playgroundActions.setCurrentSession(session);
@@ -282,7 +280,7 @@
 	 * Select a session
 	 */
 	async function handleSelectSession(sessionId: string): Promise<void> {
-		const currentSessionId = get(currentSession)?.id;
+		const currentSessionId = getCurrentSession()?.id;
 		if (currentSessionId === sessionId) {
 			return;
 		}
@@ -302,7 +300,7 @@
 			playgroundActions.removeSession(sessionId);
 
 			// If we deleted the current session, clear it
-			if (get(currentSession)?.id === sessionId) {
+			if (getCurrentSession()?.id === sessionId) {
 				playgroundService.stopPolling();
 			}
 		} catch (err) {
@@ -338,7 +336,7 @@
 		playgroundActions.setCurrentSession(null);
 		playgroundActions.clearMessages();
 		// Clear interrupts for this session
-		const sessionId = get(currentSession)?.id;
+		const sessionId = getCurrentSession()?.id;
 		if (sessionId) {
 			interruptActions.clearSessionInterrupts(sessionId);
 		}
@@ -348,17 +346,17 @@
 	 * Send a message
 	 */
 	async function handleSendMessage(content: string): Promise<void> {
-		const session = get(currentSession);
+		const session = getCurrentSession();
 		if (!session) {
 			// Create a session first if none exists
 			await handleCreateSession();
-			const newSession = get(currentSession);
+			const newSession = getCurrentSession();
 			if (!newSession) {
 				return;
 			}
 		}
 
-		const sessionId = get(currentSession)?.id;
+		const sessionId = getCurrentSession()?.id;
 		if (!sessionId) {
 			return;
 		}
@@ -369,7 +367,7 @@
 		try {
 			// Prepare inputs from the input collector
 			const inputs: Record<string, unknown> = {};
-			const fields = get(inputFields);
+			const fields = getInputFields();
 
 			fields.forEach((field) => {
 				const key = `${field.nodeId}:${field.fieldId}`;
@@ -403,7 +401,7 @@
 	 * Stop execution
 	 */
 	async function handleStopExecution(): Promise<void> {
-		const sessionId = get(currentSession)?.id;
+		const sessionId = getCurrentSession()?.id;
 		if (!sessionId) {
 			return;
 		}
@@ -442,7 +440,7 @@
 	 * Called after interrupt resolution when polling has stopped
 	 */
 	async function handleInterruptResolved(): Promise<void> {
-		const sessionId = get(currentSession)?.id;
+		const sessionId = getCurrentSession()?.id;
 		if (!sessionId) return;
 
 		try {
@@ -521,7 +519,7 @@
 						type="button"
 						class="playground__new-session-btn"
 						onclick={handleCreateSession}
-						disabled={$isLoading}
+						disabled={getIsLoading()}
 						title="Start a new session"
 					>
 						<Icon icon="mdi:plus" />
@@ -530,19 +528,19 @@
 
 					<!-- Sessions List - click a session to load it -->
 					<div class="playground__sessions-wrap">
-						{#if $sessions.length > 0}
+						{#if getSessions().length > 0}
 							<p class="playground__sessions-hint">Click a session to load it</p>
 						{/if}
 						<div class="playground__sessions">
-							{#if $sessions.length === 0 && !$isLoading}
+							{#if getSessions().length === 0 && !getIsLoading()}
 								<div class="playground__sessions-empty">
 									<span>No sessions yet</span>
 								</div>
 							{:else}
-								{#each $sessions as session (session.id)}
+								{#each getSessions() as session (session.id)}
 									<div
 										class="playground__session"
-										class:playground__session--active={$currentSession?.id === session.id}
+										class:playground__session--active={getCurrentSession()?.id === session.id}
 										role="button"
 										tabindex="0"
 										title="Click to load this session"
@@ -588,9 +586,9 @@
 		<!-- Main Content -->
 		<main class="playground__main">
 			<!-- Session Header (conditionally rendered based on config.showSessionHeader) -->
-			{#if $currentSession && config.showSessionHeader !== false}
+			{#if getCurrentSession() && config.showSessionHeader !== false}
 				<header class="playground__header">
-					<h2 class="playground__header-title">{$currentSession.name}</h2>
+					<h2 class="playground__header-title">{getCurrentSession()?.name}</h2>
 					<button
 						type="button"
 						class="playground__header-close"
@@ -603,10 +601,10 @@
 			{/if}
 
 			<!-- Error Banner -->
-			{#if $error}
+			{#if getError()}
 				<div class="playground__error">
 					<Icon icon="mdi:alert-circle" />
-					<span>{$error}</span>
+					<span>{getError()}</span>
 					<button
 						type="button"
 						class="playground__error-dismiss"
@@ -619,7 +617,7 @@
 
 			<!-- Chat Content -->
 			<div class="playground__content">
-				{#if $isLoading && !$currentSession}
+				{#if getIsLoading() && !getCurrentSession()}
 					<div class="playground__loading">
 						<Icon icon="mdi:loading" class="playground__loading-icon" />
 						<span>Loading...</span>

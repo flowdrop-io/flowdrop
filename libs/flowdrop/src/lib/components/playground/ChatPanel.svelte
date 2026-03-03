@@ -19,17 +19,17 @@
 		metadataToInterrupt
 	} from '../../types/interrupt.js';
 	import {
-		messages,
-		chatMessages,
-		isExecuting,
-		sessionStatus,
-		currentSession
-	} from '../../stores/playgroundStore.js';
+		getMessages,
+		getChatMessages,
+		getIsExecuting,
+		getSessionStatus,
+		getCurrentSession
+	} from '../../stores/playgroundStore.svelte.js';
 	import {
-		interrupts,
+		getInterruptsMap,
 		interruptActions,
 		getInterruptByMessageId
-	} from '../../stores/interruptStore.js';
+	} from '../../stores/interruptStore.svelte.js';
 
 	/**
 	 * Component props
@@ -115,7 +115,7 @@
 	/**
 	 * Filter messages based on showLogsInline setting
 	 */
-	const displayMessages = $derived(showLogsInline ? $messages : $chatMessages);
+	const displayMessages = $derived(showLogsInline ? getMessages() : getChatMessages());
 
 	/**
 	 * Track previous message count for detecting new messages.
@@ -209,7 +209,7 @@
 	 */
 	const interruptsByMessageId = $derived(
 		new Map(
-			Array.from($interrupts.values())
+			Array.from(getInterruptsMap().values())
 				.filter((i) => i.messageId)
 				.map((i) => [i.messageId, i])
 		)
@@ -225,19 +225,19 @@
 	/**
 	 * Check if we should show the welcome state
 	 */
-	const showWelcome = $derived(!$currentSession && displayMessages.length === 0);
+	const showWelcome = $derived(!getCurrentSession() && displayMessages.length === 0);
 
 	/**
 	 * Check if we should show the empty chat state (session exists but no messages)
 	 */
-	const showEmptyChat = $derived($currentSession && displayMessages.length === 0);
+	const showEmptyChat = $derived(getCurrentSession() && displayMessages.length === 0);
 
 	/**
 	 * Handle sending a message
 	 */
 	function handleSend(): void {
 		const trimmedValue = inputValue.trim();
-		if (!trimmedValue || $isExecuting) {
+		if (!trimmedValue || getIsExecuting()) {
 			return;
 		}
 
@@ -278,7 +278,7 @@
 	 * Disables the Run button after clicking until backend re-enables it.
 	 */
 	function handleRun(): void {
-		if ($isExecuting || !runEnabled) {
+		if (getIsExecuting() || !runEnabled) {
 			return;
 		}
 		// Disable the Run button after clicking
@@ -318,7 +318,7 @@
 	 * This ensures a fresh state for each session.
 	 */
 	$effect(() => {
-		const session = $currentSession;
+		const session = getCurrentSession();
 		if (session) {
 			// Reset to enabled state for new/changed sessions
 			runEnabled = true;
@@ -388,7 +388,7 @@
 	 * Auto-focus input when execution completes or session becomes ready
 	 */
 	$effect(() => {
-		const currentlyExecuting = $isExecuting;
+		const currentlyExecuting = getIsExecuting();
 
 		// Focus input when execution completes (was executing, now not)
 		if (wasExecuting && !currentlyExecuting && inputField) {
@@ -405,8 +405,8 @@
 	 * Focus input when session status changes to idle or completed
 	 */
 	$effect(() => {
-		const status = $sessionStatus;
-		if ((status === 'idle' || status === 'completed') && inputField && !$isExecuting) {
+		const status = getSessionStatus();
+		if ((status === 'idle' || status === 'completed') && inputField && !getIsExecuting()) {
 			tick().then(() => {
 				inputField?.focus();
 			});
@@ -417,8 +417,8 @@
 	 * Focus input when a new session is created/loaded
 	 */
 	$effect(() => {
-		const session = $currentSession;
-		if (session && inputField && !$isExecuting) {
+		const session = getCurrentSession();
+		if (session && inputField && !getIsExecuting()) {
 			tick().then(() => {
 				inputField?.focus();
 			});
@@ -545,7 +545,7 @@
 				{/if}
 			{/each}
 
-			{#if $isExecuting}
+			{#if getIsExecuting()}
 				<div class="chat-panel__typing">
 					<div class="chat-panel__typing-indicator">
 						<span></span>
@@ -579,14 +579,14 @@
 							class="chat-panel__input"
 							{placeholder}
 							rows="1"
-							disabled={$isExecuting}
+							disabled={getIsExecuting()}
 							onkeydown={handleKeydown}
 							oninput={handleInput}
 						></textarea>
 					</div>
 				{/if}
 
-				{#if $sessionStatus === 'running' || $isExecuting}
+				{#if getSessionStatus() === 'running' || getIsExecuting()}
 					<button
 						type="button"
 						class="chat-panel__stop-btn"

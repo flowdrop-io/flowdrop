@@ -1,13 +1,13 @@
 /**
- * Interrupt Store
+ * Interrupt Store (Svelte 5 Runes)
  *
- * Svelte stores for managing interrupt state using a lightweight state machine.
+ * Rune-based reactive state for managing interrupt state using a lightweight state machine.
  * Ensures valid state transitions and prevents deadlocks.
  *
  * @module stores/interruptStore
  */
 
-import { writable, derived, get } from 'svelte/store';
+import { SvelteMap } from 'svelte/reactivity';
 import type { Interrupt } from '../types/interrupt.js';
 import {
 	type InterruptState,
@@ -37,77 +37,87 @@ export interface InterruptWithState extends Interrupt {
 }
 
 // =========================================================================
-// Core Stores
+// Core Reactive State
 // =========================================================================
 
 /**
- * Map of all interrupts by ID
+ * Reactive map of all interrupts by ID.
+ * Uses SvelteMap for deep reactivity with Svelte 5 runes.
  * Key: interrupt ID, Value: Interrupt object with state
  */
-export const interrupts = writable<Map<string, InterruptWithState>>(new Map());
+let interrupts: SvelteMap<string, InterruptWithState> = $state(
+	new SvelteMap<string, InterruptWithState>()
+);
 
 // =========================================================================
-// Derived Stores
+// Getter Functions (replace derived stores)
 // =========================================================================
 
 /**
- * Derived store for pending interrupt IDs
+ * Get the reactive interrupts map.
+ * Use this in components within $derived() for reactivity.
  */
-export const pendingInterruptIds = derived(interrupts, ($interrupts): string[] => {
+export function getInterruptsMap(): SvelteMap<string, InterruptWithState> {
+	return interrupts;
+}
+
+/**
+ * Get pending interrupt IDs (interrupts not in a terminal state)
+ */
+export function getPendingInterruptIds(): string[] {
 	const pending: string[] = [];
-	$interrupts.forEach((interrupt, id) => {
+	interrupts.forEach((interrupt, id) => {
 		if (!isTerminalState(interrupt.machineState)) {
 			pending.push(id);
 		}
 	});
 	return pending;
-});
+}
 
 /**
- * Derived store for pending interrupts array
+ * Get pending interrupts array (interrupts not in a terminal state)
  */
-export const pendingInterrupts = derived(interrupts, ($interrupts): InterruptWithState[] => {
+export function getPendingInterrupts(): InterruptWithState[] {
 	const pending: InterruptWithState[] = [];
-	$interrupts.forEach((interrupt) => {
+	interrupts.forEach((interrupt) => {
 		if (!isTerminalState(interrupt.machineState)) {
 			pending.push(interrupt);
 		}
 	});
 	return pending;
-});
+}
 
 /**
- * Derived store for count of pending interrupts
+ * Get count of pending interrupts
  */
-export const pendingInterruptCount = derived(
-	pendingInterruptIds,
-	($pendingIds) => $pendingIds.length
-);
+export function getPendingInterruptCount(): number {
+	return getPendingInterruptIds().length;
+}
 
 /**
- * Derived store for resolved interrupts
+ * Get resolved interrupts array
  */
-export const resolvedInterrupts = derived(interrupts, ($interrupts): InterruptWithState[] => {
+export function getResolvedInterrupts(): InterruptWithState[] {
 	const resolved: InterruptWithState[] = [];
-	$interrupts.forEach((interrupt) => {
+	interrupts.forEach((interrupt) => {
 		if (interrupt.machineState.status === 'resolved') {
 			resolved.push(interrupt);
 		}
 	});
 	return resolved;
-});
+}
 
 /**
- * Derived store to check if any interrupt is currently submitting
+ * Check if any interrupt is currently submitting
  */
-export const isAnySubmitting = derived(interrupts, ($interrupts): boolean => {
-	for (const interrupt of $interrupts.values()) {
+export function getIsAnySubmitting(): boolean {
+	for (const interrupt of interrupts.values()) {
 		if (checkIsSubmitting(interrupt.machineState)) {
 			return true;
 		}
 	}
 	return false;
-});
+}
 
 // =========================================================================
 // State Machine Actions
@@ -121,8 +131,7 @@ export const isAnySubmitting = derived(interrupts, ($interrupts): boolean => {
  * @returns Transition result with validity and any errors
  */
 function applyAction(interruptId: string, action: InterruptAction): TransitionResult {
-	const currentInterrupts = get(interrupts);
-	const interrupt = currentInterrupts.get(interruptId);
+	const interrupt = interrupts.get(interruptId);
 
 	if (!interrupt) {
 		return {
@@ -135,27 +144,23 @@ function applyAction(interruptId: string, action: InterruptAction): TransitionRe
 	const result = transition(interrupt.machineState, action);
 
 	if (result.valid) {
-		interrupts.update(($interrupts) => {
-			const updated = new Map($interrupts);
-			const current = updated.get(interruptId);
-			if (current) {
-				// Update machine state and sync legacy fields
-				const newInterrupt: InterruptWithState = {
-					...current,
-					machineState: result.state,
-					status: toLegacyStatus(result.state),
-					responseValue: getResolvedValue(result.state) ?? current.responseValue,
-					resolvedAt:
-						result.state.status === 'resolved'
-							? (result.state as { resolvedAt: string }).resolvedAt
-							: result.state.status === 'cancelled'
-								? (result.state as { cancelledAt: string }).cancelledAt
-								: current.resolvedAt
-				};
-				updated.set(interruptId, newInterrupt);
-			}
-			return updated;
-		});
+		const current = interrupts.get(interruptId);
+		if (current) {
+			// Update machine state and sync legacy fields
+			const newInterrupt: InterruptWithState = {
+				...current,
+				machineState: result.state,
+				status: toLegacyStatus(result.state),
+				responseValue: getResolvedValue(result.state) ?? current.responseValue,
+				resolvedAt:
+					result.state.status === 'resolved'
+						? (result.state as { resolvedAt: string }).resolvedAt
+						: result.state.status === 'cancelled'
+							? (result.state as { cancelledAt: string }).cancelledAt
+							: current.resolvedAt
+			};
+			interrupts.set(interruptId, newInterrupt);
+		}
 	} else {
 		logger.warn(`[InterruptStore] Invalid transition: ${result.error}`);
 	}
@@ -177,21 +182,17 @@ export const interruptActions = {
 	 * @param interrupt - The interrupt to add or update
 	 */
 	addInterrupt: (interrupt: Interrupt): void => {
-		interrupts.update(($interrupts) => {
-			const updated = new Map($interrupts);
-			const existing = updated.get(interrupt.id);
+		const existing = interrupts.get(interrupt.id);
 
-			// Preserve existing machine state if interrupt already exists
-			const machineState = existing?.machineState ?? initialState;
+		// Preserve existing machine state if interrupt already exists
+		const machineState = existing?.machineState ?? initialState;
 
-			const interruptWithState: InterruptWithState = {
-				...interrupt,
-				machineState
-			};
+		const interruptWithState: InterruptWithState = {
+			...interrupt,
+			machineState
+		};
 
-			updated.set(interrupt.id, interruptWithState);
-			return updated;
-		});
+		interrupts.set(interrupt.id, interruptWithState);
 	},
 
 	/**
@@ -202,20 +203,16 @@ export const interruptActions = {
 	addInterrupts: (interruptList: Interrupt[]): void => {
 		if (interruptList.length === 0) return;
 
-		interrupts.update(($interrupts) => {
-			const updated = new Map($interrupts);
-			interruptList.forEach((interrupt) => {
-				const existing = updated.get(interrupt.id);
-				const machineState = existing?.machineState ?? initialState;
+		interruptList.forEach((interrupt) => {
+			const existing = interrupts.get(interrupt.id);
+			const machineState = existing?.machineState ?? initialState;
 
-				const interruptWithState: InterruptWithState = {
-					...interrupt,
-					machineState
-				};
+			const interruptWithState: InterruptWithState = {
+				...interrupt,
+				machineState
+			};
 
-				updated.set(interrupt.id, interruptWithState);
-			});
-			return updated;
+			interrupts.set(interrupt.id, interruptWithState);
 		});
 	},
 
@@ -312,11 +309,7 @@ export const interruptActions = {
 	 * @param interruptId - The interrupt ID to remove
 	 */
 	removeInterrupt: (interruptId: string): void => {
-		interrupts.update(($interrupts) => {
-			const updated = new Map($interrupts);
-			updated.delete(interruptId);
-			return updated;
-		});
+		interrupts.delete(interruptId);
 	},
 
 	/**
@@ -325,29 +318,27 @@ export const interruptActions = {
 	 * @param sessionId - The session ID to clear interrupts for
 	 */
 	clearSessionInterrupts: (sessionId: string): void => {
-		interrupts.update(($interrupts) => {
-			const updated = new Map($interrupts);
-			$interrupts.forEach((interrupt, id) => {
-				if (interrupt.sessionId === sessionId) {
-					updated.delete(id);
-				}
-			});
-			return updated;
+		const toDelete: string[] = [];
+		interrupts.forEach((interrupt, id) => {
+			if (interrupt.sessionId === sessionId) {
+				toDelete.push(id);
+			}
 		});
+		toDelete.forEach((id) => interrupts.delete(id));
 	},
 
 	/**
 	 * Alias for clearSessionInterrupts
 	 */
 	clearInterrupts: (): void => {
-		interrupts.set(new Map());
+		interrupts.clear();
 	},
 
 	/**
 	 * Reset all interrupt state
 	 */
 	reset: (): void => {
-		interrupts.set(new Map());
+		interrupts.clear();
 	}
 };
 
@@ -362,7 +353,7 @@ export const interruptActions = {
  * @returns The interrupt or undefined
  */
 export function getInterrupt(interruptId: string): InterruptWithState | undefined {
-	return get(interrupts).get(interruptId);
+	return interrupts.get(interruptId);
 }
 
 /**
@@ -372,7 +363,7 @@ export function getInterrupt(interruptId: string): InterruptWithState | undefine
  * @returns True if the interrupt exists and is pending
  */
 export function isInterruptPending(interruptId: string): boolean {
-	const interrupt = get(interrupts).get(interruptId);
+	const interrupt = interrupts.get(interruptId);
 	return interrupt ? !isTerminalState(interrupt.machineState) : false;
 }
 
@@ -383,7 +374,7 @@ export function isInterruptPending(interruptId: string): boolean {
  * @returns True if the interrupt is being submitted
  */
 export function isInterruptSubmitting(interruptId: string): boolean {
-	const interrupt = get(interrupts).get(interruptId);
+	const interrupt = interrupts.get(interruptId);
 	return interrupt ? checkIsSubmitting(interrupt.machineState) : false;
 }
 
@@ -394,7 +385,7 @@ export function isInterruptSubmitting(interruptId: string): boolean {
  * @returns The error message or undefined
  */
 export function getInterruptError(interruptId: string): string | undefined {
-	const interrupt = get(interrupts).get(interruptId);
+	const interrupt = interrupts.get(interruptId);
 	return interrupt ? getErrorMessage(interrupt.machineState) : undefined;
 }
 
@@ -405,8 +396,7 @@ export function getInterruptError(interruptId: string): string | undefined {
  * @returns The interrupt or undefined
  */
 export function getInterruptByMessageId(messageId: string): InterruptWithState | undefined {
-	const interruptMap = get(interrupts);
-	for (const interrupt of interruptMap.values()) {
+	for (const interrupt of interrupts.values()) {
 		if (interrupt.messageId === messageId) {
 			return interrupt;
 		}
@@ -421,6 +411,6 @@ export function getInterruptByMessageId(messageId: string): InterruptWithState |
  * @returns True if the interrupt has an error
  */
 export function interruptHasError(interruptId: string): boolean {
-	const interrupt = get(interrupts).get(interruptId);
+	const interrupt = interrupts.get(interruptId);
 	return interrupt ? checkHasError(interrupt.machineState) : false;
 }

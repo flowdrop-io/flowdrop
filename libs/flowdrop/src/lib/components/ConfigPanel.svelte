@@ -9,7 +9,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import ReadOnlyDetails from './ReadOnlyDetails.svelte';
-	import { uiSettings } from '../stores/settingsStore.js';
+	import { getUiSettings } from '../stores/settingsStore.svelte.js';
 
 	/**
 	 * A single detail item with label and value
@@ -57,7 +57,7 @@
 	const hasDetails = $derived(id !== undefined || details.length > 0 || description !== undefined);
 </script>
 
-<div class="config-panel" class:config-panel--compact={$uiSettings.compactMode}>
+<div class="config-panel" class:config-panel--compact={getUiSettings().compactMode}>
 	<!-- Header -->
 	<div class="config-panel__header">
 		<h2 class="config-panel__title">{title}</h2>

@@ -31,10 +31,10 @@
 		getResolvedValue
 	} from '../../types/interruptState.js';
 	import {
-		interrupts,
+		getInterruptsMap,
 		interruptActions,
 		type InterruptWithState
-	} from '../../stores/interruptStore.js';
+	} from '../../stores/interruptStore.svelte.js';
 	import { interruptService } from '../../services/interruptService.js';
 	import { logger } from '../../utils/logger.js';
 
@@ -57,7 +57,7 @@
 	 * This ensures we react to store updates (like status changes).
 	 */
 	const currentInterrupt = $derived(
-		$interrupts.get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
+		getInterruptsMap().get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
 	);
 
 	/**

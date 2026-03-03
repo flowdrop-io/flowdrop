@@ -1,13 +1,12 @@
 /**
  * Playground Store
  *
- * Svelte stores for managing playground state including sessions,
+ * Svelte 5 rune-based state for managing playground state including sessions,
  * messages, and execution status.
  *
  * @module stores/playgroundStore
  */
 
-import { writable, derived, get } from 'svelte/store';
 import type {
 	PlaygroundSession,
 	PlaygroundMessage,
@@ -20,102 +19,164 @@ import type { Workflow, WorkflowNode } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
 // =========================================================================
-// Core Stores
+// Core State
 // =========================================================================
 
 /**
  * Currently active playground session
  */
-export const currentSession = writable<PlaygroundSession | null>(null);
+let _currentSession = $state<PlaygroundSession | null>(null);
 
 /**
  * List of all sessions for the current workflow
  */
-export const sessions = writable<PlaygroundSession[]>([]);
+let _sessions = $state<PlaygroundSession[]>([]);
 
 /**
  * Messages in the current session
  */
-export const messages = writable<PlaygroundMessage[]>([]);
+let _messages = $state<PlaygroundMessage[]>([]);
 
 /**
  * Whether an execution is currently running
  */
-export const isExecuting = writable<boolean>(false);
+let _isExecuting = $state<boolean>(false);
 
 /**
  * Whether we are currently loading data
  */
-export const isLoading = writable<boolean>(false);
+let _isLoading = $state<boolean>(false);
 
 /**
  * Current error message, if any
  */
-export const error = writable<string | null>(null);
+let _error = $state<string | null>(null);
 
 /**
  * Current workflow being tested
  */
-export const currentWorkflow = writable<Workflow | null>(null);
+let _currentWorkflow = $state<Workflow | null>(null);
 
 /**
  * Last polling timestamp for incremental message fetching
  */
-export const lastPollTimestamp = writable<string | null>(null);
+let _lastPollTimestamp = $state<string | null>(null);
 
 // =========================================================================
-// Derived Stores
+// Getter Functions (for reactive access in components)
 // =========================================================================
 
 /**
- * Derived store for current session status
+ * Get the current session
  */
-export const sessionStatus = derived(
-	currentSession,
-	($session): PlaygroundSessionStatus => $session?.status ?? 'idle'
-);
+export function getCurrentSession(): PlaygroundSession | null {
+	return _currentSession;
+}
 
 /**
- * Derived store for message count
+ * Get all sessions
  */
-export const messageCount = derived(messages, ($messages) => $messages.length);
+export function getSessions(): PlaygroundSession[] {
+	return _sessions;
+}
 
 /**
- * Derived store for chat messages (excludes log messages)
+ * Get all messages
  */
-export const chatMessages = derived(messages, ($messages) =>
-	$messages.filter((m) => m.role !== 'log')
-);
+export function getMessages(): PlaygroundMessage[] {
+	return _messages;
+}
 
 /**
- * Derived store for log messages only
+ * Get executing state
  */
-export const logMessages = derived(messages, ($messages) =>
-	$messages.filter((m) => m.role === 'log')
-);
+export function getIsExecuting(): boolean {
+	return _isExecuting;
+}
 
 /**
- * Derived store for the latest message
+ * Get loading state
  */
-export const latestMessage = derived(messages, ($messages) =>
-	$messages.length > 0 ? $messages[$messages.length - 1] : null
-);
+export function getIsLoading(): boolean {
+	return _isLoading;
+}
 
 /**
- * Derived store for input fields from workflow input nodes
+ * Get error state
+ */
+export function getError(): string | null {
+	return _error;
+}
+
+/**
+ * Get the current workflow
+ */
+export function getCurrentWorkflow(): Workflow | null {
+	return _currentWorkflow;
+}
+
+/**
+ * Get the last poll timestamp
+ */
+export function getLastPollTimestamp(): string | null {
+	return _lastPollTimestamp;
+}
+
+// =========================================================================
+// Derived Getters
+// =========================================================================
+
+/**
+ * Get current session status
+ */
+export function getSessionStatus(): PlaygroundSessionStatus {
+	return _currentSession?.status ?? 'idle';
+}
+
+/**
+ * Get message count
+ */
+export function getMessageCount(): number {
+	return _messages.length;
+}
+
+/**
+ * Get chat messages (excludes log messages)
+ */
+export function getChatMessages(): PlaygroundMessage[] {
+	return _messages.filter((m) => m.role !== 'log');
+}
+
+/**
+ * Get log messages only
+ */
+export function getLogMessages(): PlaygroundMessage[] {
+	return _messages.filter((m) => m.role === 'log');
+}
+
+/**
+ * Get the latest message
+ */
+export function getLatestMessage(): PlaygroundMessage | null {
+	return _messages.length > 0 ? _messages[_messages.length - 1] : null;
+}
+
+/**
+ * Get input fields from workflow input nodes
  *
  * Analyzes the workflow to extract input nodes and their configuration
  * schemas for auto-generating input forms.
  */
-export const inputFields = derived(currentWorkflow, ($workflow): PlaygroundInputField[] => {
-	if (!$workflow) {
+export function getInputFields(): PlaygroundInputField[] {
+	const workflow = _currentWorkflow;
+	if (!workflow) {
 		return [];
 	}
 
 	const fields: PlaygroundInputField[] = [];
 
 	// Find input nodes in the workflow
-	$workflow.nodes.forEach((node: WorkflowNode) => {
+	workflow.nodes.forEach((node: WorkflowNode) => {
 		const category = node.data.metadata?.category;
 		const nodeTypeId = node.data.metadata?.id ?? node.type;
 
@@ -171,19 +232,22 @@ export const inputFields = derived(currentWorkflow, ($workflow): PlaygroundInput
 	});
 
 	return fields;
-});
+}
 
 /**
- * Derived store for detecting if workflow has a chat input
+ * Check if workflow has a chat input
  */
-export const hasChatInput = derived(inputFields, ($fields) =>
-	$fields.some((field) => isChatInputNode(field.nodeId) || field.type === 'string')
-);
+export function getHasChatInput(): boolean {
+	const fields = getInputFields();
+	return fields.some((field) => isChatInputNode(field.nodeId) || field.type === 'string');
+}
 
 /**
- * Derived store for session count
+ * Get session count
  */
-export const sessionCount = derived(sessions, ($sessions) => $sessions.length);
+export function getSessionCount(): number {
+	return _sessions.length;
+}
 
 // =========================================================================
 // Helper Functions
@@ -237,7 +301,7 @@ export const playgroundActions = {
 	 * @param workflow - The workflow to test
 	 */
 	setWorkflow: (workflow: Workflow | null): void => {
-		currentWorkflow.set(workflow);
+		_currentWorkflow = workflow;
 	},
 
 	/**
@@ -246,10 +310,10 @@ export const playgroundActions = {
 	 * @param session - The session to set as active
 	 */
 	setCurrentSession: (session: PlaygroundSession | null): void => {
-		currentSession.set(session);
+		_currentSession = session;
 		if (session) {
 			// Update session in the list
-			sessions.update(($sessions) => $sessions.map((s) => (s.id === session.id ? session : s)));
+			_sessions = _sessions.map((s) => (s.id === session.id ? session : s));
 		}
 	},
 
@@ -259,17 +323,14 @@ export const playgroundActions = {
 	 * @param status - The new status
 	 */
 	updateSessionStatus: (status: PlaygroundSessionStatus): void => {
-		currentSession.update(($session) => {
-			if (!$session) return null;
-			return { ...$session, status, updatedAt: new Date().toISOString() };
-		});
+		if (_currentSession) {
+			_currentSession = { ..._currentSession, status, updatedAt: new Date().toISOString() };
+		}
 
 		// Also update in sessions list
-		const session = get(currentSession);
+		const session = _currentSession;
 		if (session) {
-			sessions.update(($sessions) =>
-				$sessions.map((s) => (s.id === session.id ? { ...s, status } : s))
-			);
+			_sessions = _sessions.map((s) => (s.id === session.id ? { ...s, status } : s));
 		}
 	},
 
@@ -279,7 +340,7 @@ export const playgroundActions = {
 	 * @param sessionList - Array of sessions
 	 */
 	setSessions: (sessionList: PlaygroundSession[]): void => {
-		sessions.set(sessionList);
+		_sessions = sessionList;
 	},
 
 	/**
@@ -288,7 +349,7 @@ export const playgroundActions = {
 	 * @param session - The session to add
 	 */
 	addSession: (session: PlaygroundSession): void => {
-		sessions.update(($sessions) => [session, ...$sessions]);
+		_sessions = [session, ..._sessions];
 	},
 
 	/**
@@ -297,13 +358,12 @@ export const playgroundActions = {
 	 * @param sessionId - The session ID to remove
 	 */
 	removeSession: (sessionId: string): void => {
-		sessions.update(($sessions) => $sessions.filter((s) => s.id !== sessionId));
+		_sessions = _sessions.filter((s) => s.id !== sessionId);
 
 		// Clear current session if it was removed
-		const current = get(currentSession);
-		if (current?.id === sessionId) {
-			currentSession.set(null);
-			messages.set([]);
+		if (_currentSession?.id === sessionId) {
+			_currentSession = null;
+			_messages = [];
 		}
 	},
 
@@ -314,7 +374,7 @@ export const playgroundActions = {
 	 * @param messageList - Array of messages
 	 */
 	setMessages: (messageList: PlaygroundMessage[]): void => {
-		messages.set(sortMessagesChronologically(messageList));
+		_messages = sortMessagesChronologically(messageList);
 	},
 
 	/**
@@ -324,7 +384,7 @@ export const playgroundActions = {
 	 * @param message - The message to add
 	 */
 	addMessage: (message: PlaygroundMessage): void => {
-		messages.update(($messages) => sortMessagesChronologically([...$messages, message]));
+		_messages = sortMessagesChronologically([..._messages, message]);
 	},
 
 	/**
@@ -336,21 +396,19 @@ export const playgroundActions = {
 	addMessages: (newMessages: PlaygroundMessage[]): void => {
 		if (newMessages.length === 0) return;
 
-		messages.update(($messages) => {
-			// Deduplicate by message ID
-			const existingIds = new Set($messages.map((m) => m.id));
-			const uniqueNewMessages = newMessages.filter((m) => !existingIds.has(m.id));
-			// Sort the combined messages chronologically
-			return sortMessagesChronologically([...$messages, ...uniqueNewMessages]);
-		});
+		// Deduplicate by message ID
+		const existingIds = new Set(_messages.map((m) => m.id));
+		const uniqueNewMessages = newMessages.filter((m) => !existingIds.has(m.id));
+		// Sort the combined messages chronologically
+		_messages = sortMessagesChronologically([..._messages, ...uniqueNewMessages]);
 	},
 
 	/**
 	 * Clear all messages
 	 */
 	clearMessages: (): void => {
-		messages.set([]);
-		lastPollTimestamp.set(null);
+		_messages = [];
+		_lastPollTimestamp = null;
 	},
 
 	/**
@@ -359,7 +417,7 @@ export const playgroundActions = {
 	 * @param executing - Whether execution is in progress
 	 */
 	setExecuting: (executing: boolean): void => {
-		isExecuting.set(executing);
+		_isExecuting = executing;
 	},
 
 	/**
@@ -368,7 +426,7 @@ export const playgroundActions = {
 	 * @param loading - Whether loading is in progress
 	 */
 	setLoading: (loading: boolean): void => {
-		isLoading.set(loading);
+		_isLoading = loading;
 	},
 
 	/**
@@ -377,7 +435,7 @@ export const playgroundActions = {
 	 * @param errorMessage - The error message or null to clear
 	 */
 	setError: (errorMessage: string | null): void => {
-		error.set(errorMessage);
+		_error = errorMessage;
 	},
 
 	/**
@@ -386,21 +444,21 @@ export const playgroundActions = {
 	 * @param timestamp - ISO 8601 timestamp
 	 */
 	updateLastPollTimestamp: (timestamp: string): void => {
-		lastPollTimestamp.set(timestamp);
+		_lastPollTimestamp = timestamp;
 	},
 
 	/**
 	 * Reset all playground state
 	 */
 	reset: (): void => {
-		currentSession.set(null);
-		sessions.set([]);
-		messages.set([]);
-		isExecuting.set(false);
-		isLoading.set(false);
-		error.set(null);
-		currentWorkflow.set(null);
-		lastPollTimestamp.set(null);
+		_currentSession = null;
+		_sessions = [];
+		_messages = [];
+		_isExecuting = false;
+		_isLoading = false;
+		_error = null;
+		_currentWorkflow = null;
+		_lastPollTimestamp = null;
 	},
 
 	/**
@@ -409,12 +467,11 @@ export const playgroundActions = {
 	 * @param sessionId - The session ID to switch to
 	 */
 	switchSession: (sessionId: string): void => {
-		const sessionList = get(sessions);
-		const session = sessionList.find((s) => s.id === sessionId);
+		const session = _sessions.find((s) => s.id === sessionId);
 		if (session) {
-			currentSession.set(session);
-			messages.set([]);
-			lastPollTimestamp.set(null);
+			_currentSession = session;
+			_messages = [];
+			_lastPollTimestamp = null;
 		}
 	}
 };
@@ -457,7 +514,7 @@ export function createPollingCallback(
  * @returns The current session ID or null
  */
 export function getCurrentSessionId(): string | null {
-	return get(currentSession)?.id ?? null;
+	return _currentSession?.id ?? null;
 }
 
 /**
@@ -467,7 +524,7 @@ export function getCurrentSessionId(): string | null {
  * @returns True if the session is currently selected
  */
 export function isSessionSelected(sessionId: string): boolean {
-	return get(currentSession)?.id === sessionId;
+	return _currentSession?.id === sessionId;
 }
 
 /**
@@ -476,7 +533,7 @@ export function isSessionSelected(sessionId: string): boolean {
  * @returns Array of all messages
  */
 export function getMessagesSnapshot(): PlaygroundMessage[] {
-	return get(messages);
+	return _messages;
 }
 
 /**
@@ -485,9 +542,31 @@ export function getMessagesSnapshot(): PlaygroundMessage[] {
  * @returns ISO 8601 timestamp of the latest message, or null
  */
 export function getLatestMessageTimestamp(): string | null {
-	const msgs = get(messages);
-	if (msgs.length === 0) return null;
-	return msgs[msgs.length - 1].timestamp;
+	if (_messages.length === 0) return null;
+	return _messages[_messages.length - 1].timestamp;
+}
+
+/**
+ * Subscribe to session status changes using $effect.root.
+ * This is designed for use in non-component contexts (e.g., mount.ts).
+ *
+ * @param callback - Called when session status changes
+ * @returns Cleanup function to stop the subscription
+ */
+export function subscribeToSessionStatus(
+	callback: (status: PlaygroundSessionStatus, previousStatus: PlaygroundSessionStatus) => void
+): () => void {
+	let previousStatus = getSessionStatus();
+	const cleanup = $effect.root(() => {
+		$effect(() => {
+			const status = getSessionStatus();
+			if (status !== previousStatus) {
+				callback(status, previousStatus);
+				previousStatus = status;
+			}
+		});
+	});
+	return cleanup;
 }
 
 /**
@@ -504,7 +583,7 @@ export async function refreshSessionMessages(
 	fetchMessages: (sessionId: string) => Promise<PlaygroundMessagesApiResponse>,
 	isTerminalStatus?: (status: PlaygroundSessionStatus) => boolean
 ): Promise<void> {
-	const session = get(currentSession);
+	const session = _currentSession;
 	if (!session) return;
 
 	try {

@@ -34,12 +34,12 @@
 		SETTINGS_CATEGORY_ICONS
 	} from '$lib/types/settings.js';
 	import {
-		settingsStore,
+		getSettings,
 		updateSettings,
 		resetSettings,
 		syncSettingsToApi,
-		syncStatusStore
-	} from '$lib/stores/settingsStore.js';
+		getSyncStatus
+	} from '$lib/stores/settingsStore.svelte.js';
 	import { logger } from '../utils/logger.js';
 
 	/**
@@ -77,7 +77,7 @@
 	/**
 	 * Whether sync is in progress
 	 */
-	let isSyncing = $derived($syncStatusStore.status === 'syncing');
+	let isSyncing = $derived(getSyncStatus().status === 'syncing');
 
 	/**
 	 * JSON Schema definitions for each settings category
@@ -255,7 +255,7 @@
 	 * Get current values for a category from the store
 	 */
 	function getCategoryValues(category: SettingsCategory): Record<string, unknown> {
-		const settings = $settingsStore;
+		const settings = getSettings();
 		const categorySettings = settings[category];
 		// Convert to Record<string, unknown> for SchemaForm compatibility
 		return Object.fromEntries(Object.entries(categorySettings));
@@ -434,15 +434,15 @@
 	</div>
 
 	<!-- Sync Status Indicator -->
-	{#if $syncStatusStore.error}
+	{#if getSyncStatus().error}
 		<div class="flowdrop-settings-panel__error">
 			<Icon icon="mdi:alert-circle" />
-			<span>{$syncStatusStore.error}</span>
+			<span>{getSyncStatus().error}</span>
 		</div>
-	{:else if $syncStatusStore.status === 'synced' && $syncStatusStore.lastSyncedAt}
+	{:else if getSyncStatus().status === 'synced' && getSyncStatus().lastSyncedAt}
 		<div class="flowdrop-settings-panel__synced">
 			<Icon icon="mdi:check-circle" />
-			<span>Synced {new Date($syncStatusStore.lastSyncedAt).toLocaleTimeString()}</span>
+			<span>Synced {new Date(getSyncStatus().lastSyncedAt!).toLocaleTimeString()}</span>
 		</div>
 	{/if}
 </div>

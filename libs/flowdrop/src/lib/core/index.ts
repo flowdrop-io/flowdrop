@@ -369,16 +369,16 @@ export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schema/index.js';
 // Theme System
 // ============================================================================
 
-export type { ThemePreference, ResolvedTheme } from '../stores/settingsStore.js';
+export type { ThemePreference, ResolvedTheme } from '../stores/settingsStore.svelte.js';
 export {
-	theme,
-	resolvedTheme,
+	getTheme as theme,
+	getResolvedTheme as resolvedTheme,
 	setTheme,
 	toggleTheme,
 	cycleTheme,
 	initializeTheme,
 	isThemeInitialized
-} from '../stores/settingsStore.js';
+} from '../stores/settingsStore.svelte.js';
 
 // ============================================================================
 // HTML Sanitization

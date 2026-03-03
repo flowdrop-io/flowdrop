@@ -53,14 +53,13 @@ import type { PlaygroundMode, PlaygroundConfig, PlaygroundSession, PlaygroundMes
 import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
-	currentSession,
-	sessions,
-	messages,
-	sessionStatus,
+	getCurrentSession,
+	getSessions,
+	getMessages,
 	playgroundActions,
-	createPollingCallback
-} from '../stores/playgroundStore.js';
-import { get } from 'svelte/store';
+	createPollingCallback,
+	subscribeToSessionStatus
+} from '../stores/playgroundStore.svelte.js';
 
 /**
  * Mount options for Playground component
@@ -346,13 +345,7 @@ export async function mountPlayground(
 	// Subscribe to session status changes if callback provided
 	let unsubscribeStatus: (() => void) | undefined;
 	if (onSessionStatusChange) {
-		let previousStatus = get(sessionStatus);
-		unsubscribeStatus = sessionStatus.subscribe((status) => {
-			if (status !== previousStatus) {
-				onSessionStatusChange(status, previousStatus);
-				previousStatus = status;
-			}
-		});
+		unsubscribeStatus = subscribeToSessionStatus(onSessionStatusChange);
 	}
 
 	// Create the mounted playground interface
@@ -372,15 +365,15 @@ export async function mountPlayground(
 		},
 
 		getCurrentSession: () => {
-			return get(currentSession);
+			return getCurrentSession();
 		},
 
 		getSessions: () => {
-			return get(sessions);
+			return getSessions();
 		},
 
 		getMessageCount: () => {
-			return get(messages).length;
+			return getMessages().length;
 		},
 
 		isExecuting: () => {
@@ -392,7 +385,7 @@ export async function mountPlayground(
 		},
 
 		startPolling: () => {
-			const session = get(currentSession);
+			const session = getCurrentSession();
 			if (session) {
 				playgroundService.startPolling(
 					session.id,

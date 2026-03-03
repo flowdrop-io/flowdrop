@@ -13,7 +13,7 @@
 	import {
 		rebuildAllPortCoordinates,
 		updateNodePortCoordinates
-	} from '../stores/portCoordinateStore.js';
+	} from '../stores/portCoordinateStore.svelte.js';
 
 	interface Props {
 		/** Node to update coordinates for (e.g., during drag). Set to null when not dragging. */

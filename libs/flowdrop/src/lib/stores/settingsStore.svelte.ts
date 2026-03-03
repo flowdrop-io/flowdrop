@@ -1,16 +1,15 @@
 /**
- * Settings Store for FlowDrop
+ * Settings Store for FlowDrop (Svelte 5 Runes)
  *
  * Provides unified state management for all user-configurable settings with:
  * - Hybrid persistence (localStorage primary, optional API sync)
- * - Category-specific derived stores for performance
+ * - Category-specific getter functions for performance
  * - Deep merge support for partial updates
  * - Integrated theme system with system preference detection
  *
  * @module stores/settingsStore
  */
 
-import { writable, derived, get } from 'svelte/store';
 import type {
 	FlowDropSettings,
 	ThemeSettings,
@@ -146,7 +145,7 @@ function deepMergeSettings(
 }
 
 // =========================================================================
-// Main Settings Store
+// Main Settings Store (Rune-based)
 // =========================================================================
 
 /**
@@ -155,9 +154,9 @@ function deepMergeSettings(
 const initialSettings = loadFromStorage() ?? DEFAULT_SETTINGS;
 
 /**
- * Main settings store state
+ * Main settings store state using $state rune
  */
-const storeState = writable<SettingsStoreState>({
+let storeState = $state<SettingsStoreState>({
 	settings: initialSettings,
 	initialized: true,
 	syncStatus: 'idle',
@@ -166,59 +165,99 @@ const storeState = writable<SettingsStoreState>({
 });
 
 /**
- * Main settings store (read-only access to current settings)
+ * System theme preference using $state rune
+ * Updates when system preference changes
  */
-export const settingsStore = derived(storeState, ($state) => $state.settings);
-
-/**
- * Sync status store for UI indicators
- */
-export const syncStatusStore = derived(storeState, ($state) => ({
-	status: $state.syncStatus,
-	lastSyncedAt: $state.lastSyncedAt,
-	error: $state.syncError
-}));
+let systemThemeState = $state<ResolvedTheme>(
+	typeof window !== 'undefined' ? getSystemTheme() : 'light'
+);
 
 // =========================================================================
-// Category-Specific Derived Stores
+// Getter Functions (replacing derived stores)
 // =========================================================================
 
 /**
- * Theme settings store
+ * Get current settings (replaces settingsStore derived store)
  */
-export const themeSettings = derived(settingsStore, ($settings) => $settings.theme);
+export function getSettings(): FlowDropSettings {
+	return storeState.settings;
+}
 
 /**
- * Editor settings store
+ * Get sync status (replaces syncStatusStore derived store)
  */
-export const editorSettings = derived(settingsStore, ($settings) => $settings.editor);
+export function getSyncStatus(): { status: SyncStatus; lastSyncedAt: number | null; error: string | null } {
+	return {
+		status: storeState.syncStatus,
+		lastSyncedAt: storeState.lastSyncedAt,
+		error: storeState.syncError
+	};
+}
 
 /**
- * UI settings store
+ * Get theme settings (replaces themeSettings derived store)
  */
-export const uiSettings = derived(settingsStore, ($settings) => $settings.ui);
+export function getThemeSettings(): ThemeSettings {
+	return storeState.settings.theme;
+}
 
 /**
- * Behavior settings store
+ * Get editor settings (replaces editorSettings derived store)
  */
-export const behaviorSettings = derived(settingsStore, ($settings) => $settings.behavior);
+export function getEditorSettings(): EditorSettings {
+	return storeState.settings.editor;
+}
 
 /**
- * API settings store
+ * Get UI settings (replaces uiSettings derived store)
  */
-export const apiSettings = derived(settingsStore, ($settings) => $settings.api);
+export function getUiSettings(): UISettings {
+	return storeState.settings.ui;
+}
+
+/**
+ * Get behavior settings (replaces behaviorSettings derived store)
+ */
+export function getBehaviorSettings(): BehaviorSettings {
+	return storeState.settings.behavior;
+}
+
+/**
+ * Get API settings (replaces apiSettings derived store)
+ */
+export function getApiSettings(): ApiSettings {
+	return storeState.settings.api;
+}
+
+/**
+ * Get theme preference (replaces theme derived store)
+ */
+export function getTheme(): ThemePreference {
+	return storeState.settings.theme.preference;
+}
+
+/**
+ * Get resolved theme - the actual theme applied ('light' or 'dark')
+ * When preference is 'auto', resolves based on system preference
+ * (replaces resolvedTheme derived store)
+ */
+export function getResolvedTheme(): ResolvedTheme {
+	if (storeState.settings.theme.preference === 'auto') {
+		return systemThemeState;
+	}
+	return storeState.settings.theme.preference;
+}
+
+/**
+ * Get system theme state (for internal use)
+ */
+export function getSystemThemeState(): ResolvedTheme {
+	return systemThemeState;
+}
 
 // =========================================================================
 // Theme System
 // =========================================================================
-
-/**
- * System theme preference store
- * Updates when system preference changes
- */
-const systemTheme = writable<ResolvedTheme>(
-	typeof window !== 'undefined' ? getSystemTheme() : 'light'
-);
 
 /**
  * Get the system's color scheme preference
@@ -230,41 +269,29 @@ function getSystemTheme(): ResolvedTheme {
 	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-// Listen for system theme changes
-if (typeof window !== 'undefined') {
+/**
+ * Initialize the system theme change listener.
+ * Sets up a media query listener for the system color scheme preference.
+ *
+ * @returns Cleanup function that removes the listener
+ */
+export function initThemeListener(): () => void {
+	if (typeof window === 'undefined') {
+		return () => {};
+	}
+
 	const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 	const handleSystemThemeChange = (event: MediaQueryListEvent): void => {
-		systemTheme.set(event.matches ? 'dark' : 'light');
+		systemThemeState = event.matches ? 'dark' : 'light';
 	};
 
-	if (mediaQuery.addEventListener) {
-		mediaQuery.addEventListener('change', handleSystemThemeChange);
-	} else {
-		// Fallback for older browsers
-		mediaQuery.addListener(handleSystemThemeChange);
-	}
+	mediaQuery.addEventListener('change', handleSystemThemeChange);
+
+	return () => {
+		mediaQuery.removeEventListener('change', handleSystemThemeChange);
+	};
 }
-
-/**
- * Theme preference store
- * Derived from themeSettings for convenient access
- */
-export const theme = derived(themeSettings, ($theme) => $theme.preference);
-
-/**
- * Resolved theme - the actual theme applied ('light' or 'dark')
- * When preference is 'auto', resolves based on system preference
- */
-export const resolvedTheme = derived(
-	[themeSettings, systemTheme],
-	([$themeSettings, $systemTheme]) => {
-		if ($themeSettings.preference === 'auto') {
-			return $systemTheme;
-		}
-		return $themeSettings.preference;
-	}
-);
 
 // =========================================================================
 // Settings Update Functions
@@ -311,32 +338,30 @@ function getCategoryAsRecord(
  * @param partial - Partial settings to merge
  */
 export function updateSettings(partial: PartialSettings): void {
-	storeState.update((state) => {
-		const previousSettings = state.settings;
-		const newSettings = deepMergeSettings(state.settings, partial as Partial<FlowDropSettings>);
+	const previousSettings = storeState.settings;
+	const newSettings = deepMergeSettings(storeState.settings, partial as Partial<FlowDropSettings>);
 
-		// Persist to localStorage immediately
-		saveToStorage(newSettings);
+	// Persist to localStorage immediately
+	saveToStorage(newSettings);
 
-		// Notify listeners for each changed category
-		for (const category of Object.keys(partial) as SettingsCategory[]) {
-			const partialCategory = partial[category];
-			if (partialCategory && typeof partialCategory === 'object') {
-				for (const key of Object.keys(partialCategory)) {
-					const prevCat = getCategoryAsRecord(previousSettings, category);
-					const newCat = getCategoryAsRecord(newSettings, category);
-					if (prevCat[key] !== newCat[key]) {
-						notifyChange(category, key, prevCat[key], newCat[key]);
-					}
+	// Notify listeners for each changed category
+	for (const category of Object.keys(partial) as SettingsCategory[]) {
+		const partialCategory = partial[category];
+		if (partialCategory && typeof partialCategory === 'object') {
+			for (const key of Object.keys(partialCategory)) {
+				const prevCat = getCategoryAsRecord(previousSettings, category);
+				const newCat = getCategoryAsRecord(newSettings, category);
+				if (prevCat[key] !== newCat[key]) {
+					notifyChange(category, key, prevCat[key], newCat[key]);
 				}
 			}
 		}
+	}
 
-		return {
-			...state,
-			settings: newSettings
-		};
-	});
+	storeState = {
+		...storeState,
+		settings: newSettings
+	};
 }
 
 /**
@@ -352,21 +377,12 @@ export function resetSettings(categories?: SettingsCategory[]): void {
 		}
 		updateSettings(partial);
 	} else {
-		storeState.update((state) => {
-			saveToStorage(DEFAULT_SETTINGS);
-			return {
-				...state,
-				settings: DEFAULT_SETTINGS
-			};
-		});
+		saveToStorage(DEFAULT_SETTINGS);
+		storeState = {
+			...storeState,
+			settings: DEFAULT_SETTINGS
+		};
 	}
-}
-
-/**
- * Get current settings synchronously
- */
-export function getSettings(): FlowDropSettings {
-	return get(settingsStore);
 }
 
 // =========================================================================
@@ -387,8 +403,8 @@ export function setTheme(newTheme: ThemePreference): void {
  * If currently 'auto', switches to the opposite of system preference
  */
 export function toggleTheme(): void {
-	const currentTheme = get(theme);
-	const currentResolved = get(resolvedTheme);
+	const currentTheme = getTheme();
+	const currentResolved = getResolvedTheme();
 
 	if (currentTheme === 'auto') {
 		setTheme(currentResolved === 'dark' ? 'light' : 'dark');
@@ -401,7 +417,7 @@ export function toggleTheme(): void {
  * Cycle through theme options: light -> dark -> auto -> light
  */
 export function cycleTheme(): void {
-	const currentTheme = get(theme);
+	const currentTheme = getTheme();
 
 	switch (currentTheme) {
 		case 'light':
@@ -429,20 +445,46 @@ function applyTheme(resolved: ResolvedTheme): void {
 }
 
 /**
+ * Stored cleanup function for the theme effect.
+ * Retained so it can be called by cleanupThemeSubscription().
+ */
+let themeEffectCleanup: (() => void) | null = null;
+
+/**
+ * Clean up the theme subscription created by initializeTheme().
+ * Call this when tearing down the settings system (e.g., in tests or
+ * component cleanup) to prevent memory leaks.
+ */
+export function cleanupThemeSubscription(): void {
+	if (themeEffectCleanup) {
+		themeEffectCleanup();
+		themeEffectCleanup = null;
+	}
+}
+
+/**
  * Initialize the theme system
  * Should be called once on app startup
  *
  * This function:
  * 1. Applies the current resolved theme to the document
  * 2. Sets up reactivity to apply theme changes
+ *
+ * Note: In Svelte 5, we use $effect for reactivity. Since $effect can only
+ * be used in component context or $effect.root, we use $effect.root here
+ * to create a standalone reactive scope.
  */
 export function initializeTheme(): void {
-	const resolved = get(resolvedTheme);
+	const resolved = getResolvedTheme();
 	applyTheme(resolved);
 
-	// Subscribe to resolved theme changes and apply them
-	resolvedTheme.subscribe((theme) => {
-		applyTheme(theme);
+	// Create a standalone reactive root to watch for theme changes.
+	// $effect.root returns a cleanup function.
+	themeEffectCleanup = $effect.root(() => {
+		$effect(() => {
+			const currentResolved = getResolvedTheme();
+			applyTheme(currentResolved);
+		});
 	});
 }
 
@@ -488,30 +530,30 @@ export async function syncSettingsToApi(): Promise<void> {
 		return;
 	}
 
-	storeState.update((state) => ({
-		...state,
+	storeState = {
+		...storeState,
 		syncStatus: 'syncing' as SyncStatus,
 		syncError: null
-	}));
+	};
 
 	try {
-		const currentSettings = get(settingsStore);
+		const currentSettings = getSettings();
 		await settingsService.savePreferences(currentSettings);
 
-		storeState.update((state) => ({
-			...state,
+		storeState = {
+			...storeState,
 			syncStatus: 'synced' as SyncStatus,
 			lastSyncedAt: Date.now(),
 			syncError: null
-		}));
+		};
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Failed to sync settings';
 
-		storeState.update((state) => ({
-			...state,
+		storeState = {
+			...storeState,
 			syncStatus: 'error' as SyncStatus,
 			syncError: errorMessage
-		}));
+		};
 
 		throw error;
 	}
@@ -528,23 +570,23 @@ export async function loadSettingsFromApi(): Promise<void> {
 		return;
 	}
 
-	storeState.update((state) => ({
-		...state,
+	storeState = {
+		...storeState,
 		syncStatus: 'syncing' as SyncStatus,
 		syncError: null
-	}));
+	};
 
 	try {
-		const apiSettings = await settingsService.getPreferences();
-		const mergedSettings = deepMergeSettings(DEFAULT_SETTINGS, apiSettings);
+		const apiSettingsData = await settingsService.getPreferences();
+		const mergedSettings = deepMergeSettings(DEFAULT_SETTINGS, apiSettingsData);
 
-		storeState.update((state) => ({
-			...state,
+		storeState = {
+			...storeState,
 			settings: mergedSettings,
 			syncStatus: 'synced' as SyncStatus,
 			lastSyncedAt: Date.now(),
 			syncError: null
-		}));
+		};
 
 		// Also persist to localStorage
 		saveToStorage(mergedSettings);
@@ -552,11 +594,11 @@ export async function loadSettingsFromApi(): Promise<void> {
 		const errorMessage =
 			error instanceof Error ? error.message : 'Failed to load settings from API';
 
-		storeState.update((state) => ({
-			...state,
+		storeState = {
+			...storeState,
 			syncStatus: 'error' as SyncStatus,
 			syncError: errorMessage
-		}));
+		};
 
 		throw error;
 	}
@@ -596,15 +638,15 @@ export async function initializeSettings(options?: {
 }): Promise<void> {
 	// Apply custom defaults if provided
 	if (options?.defaults) {
-		const currentSettings = get(settingsStore);
+		const currentSettings = getSettings();
 		const withDefaults = deepMergeSettings(
 			currentSettings,
 			options.defaults as Partial<FlowDropSettings>
 		);
-		storeState.update((state) => ({
-			...state,
+		storeState = {
+			...storeState,
 			settings: withDefaults
-		}));
+		};
 		saveToStorage(withDefaults);
 	}
 
