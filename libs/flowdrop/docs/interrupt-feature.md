@@ -37,15 +37,16 @@ Interrupts allow AI workflows to request human approval, input, or decisions at 
 
 ### Components
 
-| Component            | Purpose                                   |
-| -------------------- | ----------------------------------------- |
-| `InterruptService`   | API client for interrupt operations       |
-| `interruptStore`     | Svelte store for active interrupts        |
-| `InterruptBubble`    | Container component for rendering prompts |
-| `ConfirmationPrompt` | Yes/No approval UI                        |
-| `ChoicePrompt`       | Single/multiple selection UI              |
-| `TextInputPrompt`    | Text input UI                             |
-| `FormPrompt`         | JSON Schema-based form UI                 |
+| Component            | Purpose                                         |
+| -------------------- | ----------------------------------------------- |
+| `InterruptService`   | API client for interrupt operations             |
+| `interruptStore`     | Svelte 5 rune-based store for active interrupts |
+| `InterruptBubble`    | Container component for rendering prompts       |
+| `ConfirmationPrompt` | Yes/No approval UI                              |
+| `ChoicePrompt`       | Single/multiple selection UI                    |
+| `TextInputPrompt`    | Text input UI                                   |
+| `FormPrompt`         | JSON Schema-based form UI                       |
+| `ReviewPrompt`       | Field-level change review with accept/reject UI |
 
 ## Interrupt Types
 
@@ -140,6 +141,95 @@ interface FormInterruptConfig {
 - Structured input with validation
 - Multi-field forms
 
+### Review
+
+Review proposed field changes with per-field accept/reject decisions. Displays a visual diff of original vs proposed values with bulk actions.
+
+```typescript
+interface ReviewChange {
+	/** Field identifier (machine key) */
+	field: string;
+	/** Human-readable field label */
+	label: string;
+	/** Original value before the proposed change */
+	original: unknown;
+	/** Proposed new value */
+	proposed: unknown;
+}
+
+interface ReviewConfig {
+	message: string;
+	changes: ReviewChange[];
+	acceptAllLabel?: string; // Default: "Accept All"
+	rejectAllLabel?: string; // Default: "Reject All"
+	submitLabel?: string; // Default: "Submit Review"
+}
+```
+
+**Response type**: `ReviewResolution`
+
+```typescript
+interface ReviewFieldDecision {
+	/** Whether the proposed change was accepted */
+	accepted: boolean;
+	/** The effective value (proposed if accepted, original if rejected) */
+	value: unknown;
+}
+
+interface ReviewResolution {
+	/** Map of field identifier to the user's decision */
+	decisions: Record<string, ReviewFieldDecision>;
+	/** Summary counts */
+	summary: {
+		accepted: number;
+		rejected: number;
+		total: number;
+	};
+}
+```
+
+**Use cases**:
+
+- Reviewing AI-generated content changes before applying
+- Approving or rejecting individual field updates
+- Auditing proposed modifications with visual diffs
+
+**Features**:
+
+- Per-field accept/reject toggle buttons
+- Bulk "Accept All" / "Reject All" actions
+- Visual word-level, array, and JSON diffs
+- HTML content rendering with raw/rendered toggle
+- Summary of accepted/rejected counts on resolution
+
+**Backend metadata example**:
+
+```json
+{
+	"type": "interrupt_request",
+	"interrupt_id": "int-789",
+	"interrupt_type": "review",
+	"node_id": "content-review",
+	"execution_id": "exec-123",
+	"changes": [
+		{
+			"field": "title",
+			"label": "Page Title",
+			"original": "About Us",
+			"proposed": "About Our Company"
+		},
+		{
+			"field": "body",
+			"label": "Body Content",
+			"original": "<p>Welcome to our site.</p>",
+			"proposed": "<p>Welcome to our company website.</p>"
+		}
+	],
+	"accept_all_label": "Accept All Changes",
+	"submit_label": "Confirm Review"
+}
+```
+
 ## Frontend Integration
 
 ### Basic Usage
@@ -168,36 +258,46 @@ The `ChatPanel` component automatically detects and renders interrupts embedded 
 
 ### Manual Integration
 
-For custom implementations:
+For custom implementations using the Svelte 5 rune-based store API:
 
 ```typescript
-import { interruptService, interruptActions, activeInterrupts } from '@d34dman/flowdrop/playground';
+import {
+	interruptService,
+	interruptActions,
+	getPendingInterrupts,
+	getInterrupt,
+	isInterruptPending
+} from '@d34dman/flowdrop/playground';
 
-// Subscribe to active interrupts
-activeInterrupts.subscribe((interrupts) => {
-	console.log('Active interrupts:', interrupts);
-});
+// Read pending interrupts reactively (inside a component with $derived)
+const pending = $derived(getPendingInterrupts());
 
-// Resolve an interrupt
+// Or read a specific interrupt
+const interrupt = $derived(getInterrupt('int-123'));
+
+// Resolve an interrupt (state machine handles transitions)
 async function resolveInterrupt(interruptId: string, value: unknown) {
+	const result = interruptActions.startSubmit(interruptId, value);
+	if (!result.valid) return;
+
 	try {
-		const resolved = await interruptService.resolveInterrupt(interruptId, value);
-		interruptActions.updateInterrupt(interruptId, {
-			status: 'resolved',
-			response: resolved.response
-		});
+		await interruptService.resolveInterrupt(interruptId, value);
+		interruptActions.submitSuccess(interruptId);
 	} catch (error) {
-		console.error('Failed to resolve:', error);
+		interruptActions.submitFailure(interruptId, String(error));
 	}
 }
 
 // Cancel an interrupt
 async function cancelInterrupt(interruptId: string) {
+	const result = interruptActions.startCancel(interruptId);
+	if (!result.valid) return;
+
 	try {
 		await interruptService.cancelInterrupt(interruptId);
-		interruptActions.updateInterrupt(interruptId, { status: 'cancelled' });
+		interruptActions.submitSuccess(interruptId);
 	} catch (error) {
-		console.error('Failed to cancel:', error);
+		interruptActions.submitFailure(interruptId, String(error));
 	}
 }
 ```
@@ -286,17 +386,53 @@ const config = createEndpointConfig({
 
 ### Interrupt Store
 
-The `interruptStore` manages active interrupts:
+The `interruptStore` uses Svelte 5 runes (`$state` / `$derived`) with a state machine for tracking interaction state. Each interrupt has a `machineState` field that ensures valid transitions (idle -> submitting -> resolved/error).
+
+#### Getter Functions
 
 ```typescript
-import { activeInterrupts, interruptActions } from '@d34dman/flowdrop/playground';
+import {
+	getInterruptsMap,
+	getPendingInterrupts,
+	getPendingInterruptCount,
+	getResolvedInterrupts,
+	getIsAnySubmitting,
+	getInterrupt,
+	isInterruptPending,
+	isInterruptSubmitting,
+	getInterruptError,
+	getInterruptByMessageId,
+	interruptHasError
+} from '@d34dman/flowdrop/playground';
 
-// Available actions
+// Use inside components with $derived for reactivity
+const pending = $derived(getPendingInterrupts());
+const count = $derived(getPendingInterruptCount());
+const submitting = $derived(getIsAnySubmitting());
+```
+
+#### Actions
+
+```typescript
+import { interruptActions } from '@d34dman/flowdrop/playground';
+
+// Add/remove interrupts
 interruptActions.addInterrupt(interrupt);
-interruptActions.updateInterrupt(id, { status: 'resolved' });
+interruptActions.addInterrupts(interruptList);
 interruptActions.removeInterrupt(id);
+interruptActions.clearSessionInterrupts(sessionId);
 interruptActions.clearInterrupts();
-interruptActions.getInterruptById(id);
+
+// State machine transitions
+interruptActions.startSubmit(id, value); // idle -> submitting
+interruptActions.startCancel(id);        // idle -> cancelling
+interruptActions.submitSuccess(id);      // submitting/cancelling -> resolved/cancelled
+interruptActions.submitFailure(id, err); // submitting/cancelling -> error
+interruptActions.retry(id);              // error -> idle
+
+// Convenience (submit + success in one call)
+interruptActions.resolveInterrupt(id, value);
+interruptActions.cancelInterrupt(id);
 ```
 
 ### Resolved State Display
@@ -304,12 +440,19 @@ interruptActions.getInterruptById(id);
 When an interrupt is resolved, the UI remains visible but disabled, showing the user's selection:
 
 ```svelte
-{#if interrupt.status === 'pending'}
+<script lang="ts">
+	import { getInterrupt } from '@d34dman/flowdrop/playground';
+
+	let { interruptId }: { interruptId: string } = $props();
+	const interrupt = $derived(getInterrupt(interruptId));
+</script>
+
+{#if interrupt?.machineState.status === 'idle'}
 	<!-- Active form -->
-{:else}
+{:else if interrupt?.machineState.status === 'resolved'}
 	<!-- Disabled form showing response -->
 	<div class="resolved-overlay">
-		Resolved: {formatResponse(interrupt.response)}
+		Resolved: {JSON.stringify(interrupt.responseValue)}
 	</div>
 {/if}
 ```
@@ -437,38 +580,71 @@ All interrupt types are exported from the playground module:
 
 ```typescript
 import type {
+	// Core types
 	Interrupt,
 	InterruptType,
+	InterruptStatus,
 	InterruptConfig,
-	ConfirmationInterruptConfig,
-	ChoiceOption,
-	ChoiceInterruptConfig,
-	TextInterruptConfig,
-	FormInterruptConfig,
+	InterruptWithState,
 	InterruptMessageMetadata,
 	InterruptApiResponse,
-	InterruptListApiResponse,
-	InterruptResolveRequest
+	InterruptListResponse,
+	InterruptResolution,
+
+	// Config types (per interrupt type)
+	ConfirmationConfig,
+	ChoiceConfig,
+	InterruptChoice,
+	TextConfig,
+	FormConfig,
+	ReviewConfig,
+	ReviewChange,
+	ReviewFieldDecision,
+	ReviewResolution,
+
+	// State machine types
+	InterruptState,
+	InterruptAction,
+	TransitionResult
 } from '@d34dman/flowdrop/playground';
 
-// Type guards
-import { isInterruptMessageMetadata, metadataToInterrupt } from '@d34dman/flowdrop/playground';
+// Type guards and converters
+import {
+	isInterruptMetadata,
+	extractInterruptMetadata,
+	metadataToInterrupt
+} from '@d34dman/flowdrop/playground';
+
+// State machine utilities
+import {
+	initialState,
+	transition,
+	isTerminalState,
+	isSubmitting,
+	hasError,
+	canSubmit,
+	getErrorMessage,
+	getResolvedValue,
+	toLegacyStatus
+} from '@d34dman/flowdrop/playground';
 ```
 
 ## Files Reference
 
-| File                                                     | Purpose             |
-| -------------------------------------------------------- | ------------------- |
-| `src/lib/types/interrupt.ts`                             | Type definitions    |
-| `src/lib/services/interruptService.ts`                   | API client          |
-| `src/lib/stores/interruptStore.ts`                       | State management    |
-| `src/lib/components/interrupt/InterruptBubble.svelte`    | Main container      |
-| `src/lib/components/interrupt/ConfirmationPrompt.svelte` | Confirmation UI     |
-| `src/lib/components/interrupt/ChoicePrompt.svelte`       | Choice selection UI |
-| `src/lib/components/interrupt/TextInputPrompt.svelte`    | Text input UI       |
-| `src/lib/components/interrupt/FormPrompt.svelte`         | Form UI             |
-| `src/lib/components/interrupt/index.ts`                  | Barrel exports      |
-| `src/lib/config/endpoints.ts`                            | API endpoint config |
+| File                                                     | Purpose                      |
+| -------------------------------------------------------- | ---------------------------- |
+| `src/lib/types/interrupt.ts`                             | Type definitions             |
+| `src/lib/types/interruptState.ts`                        | State machine types & logic  |
+| `src/lib/services/interruptService.ts`                   | API client                   |
+| `src/lib/stores/interruptStore.svelte.ts`                | Rune-based state management  |
+| `src/lib/components/interrupt/InterruptBubble.svelte`    | Main container               |
+| `src/lib/components/interrupt/ConfirmationPrompt.svelte` | Confirmation UI              |
+| `src/lib/components/interrupt/ChoicePrompt.svelte`       | Choice selection UI          |
+| `src/lib/components/interrupt/TextInputPrompt.svelte`    | Text input UI                |
+| `src/lib/components/interrupt/FormPrompt.svelte`         | Form UI                      |
+| `src/lib/components/interrupt/ReviewPrompt.svelte`       | Field change review UI       |
+| `src/lib/components/interrupt/index.ts`                  | Barrel exports               |
+| `src/lib/config/endpoints.ts`                            | API endpoint config          |
 
 ## See Also
 
