@@ -9,11 +9,11 @@
 
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
-	import type { ConfigValues, NodeMetadata, NodeExtensions } from '../../types/index.js';
+	import type { ConfigValues, NodeMetadata, NodeExtensions, NodePort } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
 	import { getNodeIcon } from '../../utils/icons.js';
-	import { connectedHandles } from '../../stores/workflowStore.js';
+	import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
 
 	const props = $props<{
 		data: {
@@ -93,7 +93,7 @@
 	 */
 	function isPortConnected(portId: string, type: 'input' | 'output'): boolean {
 		const handleId = `${props.data.nodeId}-${type}-${portId}`;
-		return $connectedHandles.has(handleId);
+		return getConnectedHandles().has(handleId);
 	}
 
 	/**
@@ -110,30 +110,30 @@
 	// Get first input/output ports for square node representation
 	// Special handling for trigger ports - they should always be shown if present
 	let triggerInputPort = $derived(
-		props.data.metadata?.inputs?.find((port) => port.dataType === 'trigger')
+		props.data.metadata?.inputs?.find((port: NodePort) => port.dataType === 'trigger')
 	);
 	let triggerOutputPort = $derived(
-		props.data.metadata?.outputs?.find((port) => port.dataType === 'trigger')
+		props.data.metadata?.outputs?.find((port: NodePort) => port.dataType === 'trigger')
 	);
 
 	// Get first non-trigger ports for data connections
 	let firstConnectedDataInputPort = $derived(
 		props.data.metadata?.inputs?.find(
-			(port) => port.dataType !== 'trigger' && isPortConnected(port.id, 'input')
+			(port: NodePort) => port.dataType !== 'trigger' && isPortConnected(port.id, 'input')
 		)
 	);
 
 	let firstDataInputPort = $derived(
-		props.data.metadata?.inputs?.find((port) => port.dataType !== 'trigger')
+		props.data.metadata?.inputs?.find((port: NodePort) => port.dataType !== 'trigger')
 	);
 
 	let firstConnectedDataOutputPort = $derived(
 		props.data.metadata?.outputs?.find(
-			(port) => port.dataType !== 'trigger' && isPortConnected(port.id, 'output')
+			(port: NodePort) => port.dataType !== 'trigger' && isPortConnected(port.id, 'output')
 		)
 	);
 	let firstDataOutputPort = $derived(
-		props.data.metadata?.outputs?.find((port) => port.dataType !== 'trigger')
+		props.data.metadata?.outputs?.find((port: NodePort) => port.dataType !== 'trigger')
 	);
 
 	let inputPorts = $derived.by(() => {

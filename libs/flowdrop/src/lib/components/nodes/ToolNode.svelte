@@ -8,7 +8,7 @@
 	import { Position, Handle } from '@xyflow/svelte';
 	import Icon from '@iconify/svelte';
 	import { getDataTypeColor } from '$lib/utils/colors';
-	import type { NodeMetadata } from '../../types/index.js';
+	import type { NodeMetadata, NodePort } from '../../types/index.js';
 
 	interface ToolNodeParameter {
 		name: string;
@@ -104,18 +104,18 @@
 
 	// Check for matching interface ports in metadata
 	let hasToolInputPort = $derived(
-		props.data.metadata?.inputs?.some((port) => port.dataType === portDataType) || false
+		props.data.metadata?.inputs?.some((port: NodePort) => port.dataType === portDataType) || false
 	);
 	let hasToolOutputPort = $derived(
-		props.data.metadata?.outputs?.some((port) => port.dataType === portDataType) || false
+		props.data.metadata?.outputs?.some((port: NodePort) => port.dataType === portDataType) || false
 	);
 
 	// Get the actual matching ports for proper handle generation
 	let toolInputPort = $derived(
-		props.data.metadata?.inputs?.find((port) => port.dataType === portDataType)
+		props.data.metadata?.inputs?.find((port: NodePort) => port.dataType === portDataType)
 	);
 	let toolOutputPort = $derived(
-		props.data.metadata?.outputs?.find((port) => port.dataType === portDataType)
+		props.data.metadata?.outputs?.find((port: NodePort) => port.dataType === portDataType)
 	);
 
 	/**
