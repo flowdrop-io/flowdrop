@@ -224,30 +224,8 @@ export class EdgeStylingHelper {
 		// Determine edge category (loopback takes precedence)
 		const edgeCategory = this.getEdgeCategoryWithLoopback(edge, sourcePortDataType);
 
-		// Detect current theme for marker colors
-		// Marker colors are baked in at creation time, so we check the theme here
-		const isDarkMode =
-			typeof document !== 'undefined' &&
-			document.documentElement.getAttribute('data-theme') === 'dark';
-
-		// Edge color constants for marker arrows - matched to CSS token values
-		// These match the --fd-edge-* tokens in tokens.css for consistency
-		const EDGE_COLORS = isDarkMode
-			? {
-					trigger: '#eaeaef', // --_gray-3 (light for dark mode visibility)
-					tool: '#fbbf24', // Brighter amber for dark mode
-					loopback: '#a3a3ad', // --_gray-5
-					data: '#a3a3ad' // --_gray-5
-				}
-			: {
-					trigger: '#18181c', // --_gray-9 (dark for light mode)
-					tool: '#f59e0b', // --_amber-2
-					loopback: '#71717b', // --_gray-6
-					data: '#a3a3ad' // --_gray-5
-				};
-
 		// Apply styling based on edge category
-		// CSS classes handle styling via tokens; inline styles are fallback
+		// Marker colors use CSS custom properties so they respond to theme changes automatically
 		switch (edgeCategory) {
 			case 'loopback':
 				// Loopback edges: dashed gray line for loop iteration
@@ -258,7 +236,7 @@ export class EdgeStylingHelper {
 					type: MarkerType.ArrowClosed,
 					width: 14,
 					height: 14,
-					color: EDGE_COLORS.loopback
+					color: 'var(--fd-edge-loopback)'
 				};
 				break;
 
@@ -270,7 +248,7 @@ export class EdgeStylingHelper {
 					type: MarkerType.ArrowClosed,
 					width: 16,
 					height: 16,
-					color: EDGE_COLORS.trigger
+					color: 'var(--fd-edge-trigger)'
 				};
 				break;
 
@@ -282,7 +260,7 @@ export class EdgeStylingHelper {
 					type: MarkerType.ArrowClosed,
 					width: 16,
 					height: 16,
-					color: EDGE_COLORS.tool
+					color: 'var(--fd-edge-tool)'
 				};
 				break;
 
@@ -295,7 +273,7 @@ export class EdgeStylingHelper {
 					type: MarkerType.ArrowClosed,
 					width: 16,
 					height: 16,
-					color: EDGE_COLORS.data
+					color: 'var(--fd-edge-data)'
 				};
 				break;
 		}
