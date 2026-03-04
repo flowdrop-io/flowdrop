@@ -36,7 +36,7 @@ importers:
         specifier: ^6.39.14
         version: 6.39.14
       '@xyflow/svelte':
-        specifier: ~1.2
+        specifier: ^1.2
         version: 1.2.4(svelte@5.41.3)
       codemirror:
         specifier: ^6.0.2

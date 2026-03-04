@@ -75,6 +75,12 @@ You get a production-ready workflow UI. You keep full control of everything else
 | 🎭 **Framework Flexible**    | Use as Svelte component or mount into React, Vue, Angular, or vanilla JS  |
 | 🐳 **Deploy Anywhere**       | Runtime config means build once, deploy everywhere                        |
 
+## Architecture Notes
+
+- **Single instance per page.** FlowDrop uses module-level singleton stores for state management. Only one FlowDrop editor instance can exist on a page at a time.
+- **Svelte 5 required.** FlowDrop uses Svelte 5 runes (`$state`, `$derived`, `$effect`) throughout. Svelte 4 is not supported.
+- **Modern browsers only.** The library targets ES2020+ and does not include polyfills for older browsers.
+
 ## Node Types
 
 FlowDrop ships with 7 beautifully designed node types:
