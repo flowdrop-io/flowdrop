@@ -173,7 +173,7 @@
 			? index === 0
 				? 20
 				: 60
-			: 40}px; transform: translateY(-50%); margin-left: -10px; z-index: 30;"
+			: 40}px; transform: translateY(-50%); z-index: 30;"
 		id={`${props.data.nodeId}-input-${port.id}`}
 	/>
 {/each}
@@ -232,7 +232,7 @@
 			? index === 0
 				? 20
 				: 60
-			: 40}px; transform: translateY(-50%); margin-right: -10px; z-index: 30;"
+			: 40}px; transform: translateY(-50%); z-index: 30;"
 		id={`${props.data.nodeId}-output-${port.id}`}
 	/>
 {/each}
@@ -399,14 +399,6 @@
 	:global(.svelte-flow__node-square .svelte-flow__handle) {
 		z-index: 20 !important;
 		pointer-events: auto !important;
-	}
-
-	:global(.svelte-flow__node-square .svelte-flow__handle-left) {
-		left: -10px !important;
-	}
-
-	:global(.svelte-flow__node-square .svelte-flow__handle-right) {
-		right: -10px !important;
 	}
 
 	:global(.svelte-flow__node-square .svelte-flow__handle:hover) {

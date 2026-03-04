@@ -202,7 +202,7 @@
 							position={Position.Left}
 							id={`${props.data.nodeId}-input-${port.id}`}
 							class="flowdrop-workflow-node__handle"
-							style="top: 50%; transform: translateY(-50%); left: calc(-1 * (var(--fd-handle-size) / 2)); --fd-handle-fill: {getDataTypeColorToken(
+							style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
 								port.dataType
 							)}; --fd-handle-border-color: var(--fd-handle-border);"
 							role="button"
@@ -288,7 +288,7 @@
 							position={Position.Right}
 							id={`${props.data.nodeId}-output-${branch.name}`}
 							class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
-							style="top: 50%; transform: translateY(-50%); right: calc(-1 * (var(--fd-handle-size) / 2)); --fd-handle-fill: {isActive
+							style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {isActive
 								? getDataTypeColorToken('trigger')
 								: getDataTypeColorToken(
 										'trigger'
