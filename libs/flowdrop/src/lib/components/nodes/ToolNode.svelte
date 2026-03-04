@@ -164,7 +164,7 @@
 		type="target"
 		position={Position.Left}
 		id={`${props.data.nodeId}-input-${toolInputPort.id}`}
-		style="top: 40px; transform: translateY(-50%); margin-left: -10px; --fd-handle-fill: {getDataTypeColor(
+		style="top: 40px; transform: translateY(-50%); --fd-handle-fill: {getDataTypeColor(
 			portDataType
 		)}; --fd-handle-border-color: var(--fd-handle-border);"
 	/>
@@ -237,7 +237,7 @@
 		type="source"
 		position={Position.Right}
 		id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
-		style="top: 40px; transform: translateY(-50%); margin-right: -10px; --fd-handle-fill: {getDataTypeColor(
+		style="top: 40px; transform: translateY(-50%); --fd-handle-fill: {getDataTypeColor(
 			portDataType
 		)}; --fd-handle-border-color: var(--fd-handle-border);"
 	/>
@@ -454,14 +454,6 @@
 	:global(.svelte-flow__node-tool .svelte-flow__handle) {
 		z-index: 20 !important;
 		pointer-events: auto !important;
-	}
-
-	:global(.svelte-flow__node-tool .svelte-flow__handle-left) {
-		left: -10px !important;
-	}
-
-	:global(.svelte-flow__node-tool .svelte-flow__handle-right) {
-		right: -10px !important;
 	}
 
 	:global(.svelte-flow__node-tool .svelte-flow__handle:hover) {

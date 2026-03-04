@@ -151,7 +151,7 @@
 			position={Position.Left}
 			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); margin-left: -10px; z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-input-left`}
 		/>
 	{/if}
@@ -163,7 +163,7 @@
 			position={Position.Top}
 			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); margin-top: -10px; z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-input-top`}
 		/>
 	{/if}
@@ -215,7 +215,7 @@
 			position={Position.Right}
 			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); margin-right: -10px; z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-output-right`}
 		/>
 	{/if}
@@ -227,7 +227,7 @@
 			position={Position.Bottom}
 			style="--fd-handle-fill: {getDataTypeColor(
 				IDEA_DATA_TYPE
-			)}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); margin-bottom: -10px; z-index: 30;"
+			)}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); z-index: 30;"
 			id={`${props.data.nodeId}-output-bottom`}
 		/>
 	{/if}
@@ -418,22 +418,6 @@
 	:global(.flowdrop-idea-node .svelte-flow__handle) {
 		z-index: 20 !important;
 		pointer-events: auto !important;
-	}
-
-	:global(.flowdrop-idea-node .svelte-flow__handle-left) {
-		left: -10px !important;
-	}
-
-	:global(.flowdrop-idea-node .svelte-flow__handle-right) {
-		right: -10px !important;
-	}
-
-	:global(.flowdrop-idea-node .svelte-flow__handle-top) {
-		top: -10px !important;
-	}
-
-	:global(.flowdrop-idea-node .svelte-flow__handle-bottom) {
-		bottom: -10px !important;
 	}
 
 	:global(.flowdrop-idea-node .svelte-flow__handle-left:hover),
