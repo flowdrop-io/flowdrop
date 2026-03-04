@@ -385,12 +385,12 @@
 	/**
 	 * Handle workflow configuration save
 	 */
-	async function handleWorkflowSave(config: any): Promise<void> {
+	async function handleWorkflowSave(config: Record<string, unknown>): Promise<void> {
 		// Update the workflow store
 		if (getWorkflowStore()) {
 			workflowActions.batchUpdate({
-				name: config.name,
-				description: config.description
+				name: config.name as string | undefined,
+				description: config.description as string | undefined
 			});
 		}
 

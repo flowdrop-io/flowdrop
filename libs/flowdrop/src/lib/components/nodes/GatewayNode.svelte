@@ -103,7 +103,9 @@
 
 	// Gateway-specific data - branches are calculated at runtime from config
 	let branches = $derived((props.data.config?.branches as Branch[]) || []);
-	let activeBranches = $derived((props.data.executionInfo as any)?.output?.active_branches || []);
+	let activeBranches = $derived(
+		(props.data.executionInfo?.output?.active_branches as string[]) || []
+	);
 
 	/**
 	 * Derived list of visible branches based on hideUnconnectedHandles setting
