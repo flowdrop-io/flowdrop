@@ -1,20 +1,36 @@
 <!--
-  NodeDecorator: Wraps node components in a SvelteFlow context
-  so that @xyflow/svelte Handle components and store access work properly.
+  NodeDecorator: Renders node components as real SvelteFlow nodes
+  inside a canvas, matching how they appear in the workflow editor.
 -->
 <script lang="ts">
 	import { SvelteFlow } from "@xyflow/svelte";
-	import type { Snippet } from "svelte";
+	import type { Node } from "@xyflow/svelte";
 	import "@xyflow/svelte/dist/style.css";
+	import UniversalNode from "$lib/components/UniversalNode.svelte";
+	import { registerBuiltinNodes } from "$lib/registry/builtinNodes.js";
 
-	let { children }: { children: Snippet } = $props();
+	let { data, selected = false }: { data: Record<string, unknown>; selected?: boolean } = $props();
+
+	// Ensure built-in node components are registered
+	registerBuiltinNodes();
+
+	const nodeTypes = {
+		universalNode: UniversalNode,
+	};
+
+	let nodes = $derived<Node[]>([
+		{
+			id: "story-node",
+			type: "universalNode",
+			position: { x: 0, y: 0 },
+			selected,
+			data,
+		},
+	]);
 </script>
 
 <div class="node-decorator-wrapper">
-	<SvelteFlow nodes={[]} edges={[]} fitView>
-		<div class="node-decorator-content">
-			{@render children()}
-		</div>
+	<SvelteFlow {nodes} edges={[]} {nodeTypes} fitView>
 	</SvelteFlow>
 </div>
 
@@ -23,13 +39,5 @@
 		width: 600px;
 		height: 400px;
 		position: relative;
-	}
-
-	.node-decorator-content {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		z-index: 10;
 	}
 </style>
