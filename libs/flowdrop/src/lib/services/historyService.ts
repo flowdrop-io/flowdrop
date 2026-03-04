@@ -368,9 +368,11 @@ export class HistoryService {
 	}
 
 	/**
-	 * Trim history to stay within maxEntries limit
+	 * Trim history to stay within maxEntries limit.
+	 * A maxEntries of 0 means unlimited (no trimming).
 	 */
 	private trimHistory(): void {
+		if (this.maxEntries <= 0) return;
 		while (this.undoStack.length > this.maxEntries) {
 			this.undoStack.shift();
 		}
