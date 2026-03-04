@@ -202,7 +202,7 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
 export const DEFAULT_BEHAVIOR_SETTINGS: BehaviorSettings = {
 	autoSave: false,
 	autoSaveInterval: 30000,
-	undoHistoryLimit: 0,
+	undoHistoryLimit: 50,
 	confirmDelete: false
 };
 
