@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.0.62] - 2026-03-04
+
+### Breaking Changes :warning:
+
+- **Svelte 5 runes store migration**: All stores migrated from Svelte 4 `writable` to Svelte 5 runes (`$state`/`$derived`), including `categoriesStore` and the main workflow stores
+- **3-layer to 2-layer store sync**: Simplified store synchronization architecture by removing the intermediate layer
+- **Node component naming normalized**: Renamed node components with consistent conventions and documented limitations
+- **Window globals removed**: Removed `window` global assignments and consolidated save/export logic into explicit API
+- **`@sveltejs/kit` removed from peer dependencies**: Library no longer requires SvelteKit as a peer dependency
+- **TypeScript strict mode enabled**: All source files now compile under `strict: true`
+
+### Upgrade Notes
+
+> If you are upgrading from **0.0.61**, please review the following:
+>
+> 1. **Store subscriptions** — Replace `$storeVariable` (Svelte 4 store syntax) with the new runes-based reactive access. Any code using `subscribe()` or `get()` from `svelte/store` on FlowDrop stores must be updated.
+> 2. **Node component imports** — Component names have been normalized. Check your imports if you reference node components directly (e.g. `GatewayNode`, `ToolNode`).
+> 3. **Window globals removed** — If your integration relied on `window.flowdrop` or similar globals for save/export, switch to the explicit `WorkflowOperationsHelper` API.
+> 4. **SvelteKit no longer required** — `@sveltejs/kit` was removed from peer dependencies. If you were relying on this transitive dependency, add it to your own `package.json`.
+> 5. **CSS custom properties** — Old numbered spacing aliases (e.g. `--fd-space-1`) have been removed. Use the new named tokens (e.g. `--fd-space-xs`, `--fd-space-sm`).
+
+### Added
+
+- **Review interrupt type**: New `review` interrupt with visual diff for field changes, HTML view toggle, and redesigned `InterruptBubble` layout
+- **Dark mode support**: FlowDrop logo, `CanvasBanner`, `NodeDecorator`, and design tokens now support dark mode; Storybook also gained dark mode toggle
+- **Configurable playground sidebar width**: `playgroundSidebarWidth` mount option lets consumers set the sidebar width
+- **Workflow JSON validation**: Validates workflow JSON on import/paste with user-friendly error feedback
+- **Accessibility improvements**: Improved keyboard navigation and hidden unimplemented pipeline UI elements
+- **Configurable logger utility**: Replaced bare `console` calls with a pluggable logger, enabling consumers to intercept or silence log output
+- **Configurable Drupal hook**: Extracted Drupal-specific API code into a configurable hook for cleaner decoupling
+- **Comprehensive E2E tests**: Added Playwright end-to-end tests for the workflow editor
+- **Storybook 10 upgrade**: Upgraded to Storybook 10 with `storybook-addon-tag-badges` for component status tracking
+
+### Changed
+
+- **Named design token scale**: Introduced a semantic design token system (`--fd-*` CSS custom properties) and migrated all components — base styles, nodes, forms, interrupts, playground, and remaining pages — from raw values to named tokens
+- **Handle offset via CSS variable**: Replaced hardcoded `-10px` handle offsets with a `--fd-handle-offset` CSS variable and increased specificity to override xyflow defaults
+- **Strict type annotations**: Replaced `any` types with proper type annotations across the codebase
+- **Magic numbers extracted**: Replaced inline numeric constants with named constants
+- **Deprecated spacing aliases removed**: Removed old numbered spacing aliases and fixed radius token comments
+- **Cycle detection optimized**: Improved cycle detection algorithm from O(V·E) to O(V+E)
+
+### Fixed
+
+- **ToolNode handle z-index**: Handles now render above the node body so they are always clickable
+- **Undo/redo restored**: Corrected default `undoHistoryLimit` value that was preventing undo/redo from working
+- **Reactive loop causing UI freeze on node drag**: Resolved a reactive dependency cycle that froze the canvas when dragging nodes
+- **Sidebar close on canvas click**: Fixed CSS selector in `handleCanvasClick` so clicking the canvas correctly closes the config panel
+- **XSS prevention**: Sanitized HTML output in markdown and review components to prevent cross-site scripting
+- **Handle CSS selectors**: Removed invalid `:global()` wrappers from handle selectors
+- **SchemaForm binding**: Switched to `bind:this` in `SchemaForm` and added `svelte-ignore` justifications
+- **StatusIcon styling**: Fixed background-mode color and icon sizing in `StatusIcon`
+- **Dark mode tokens**: Added missing `--fd-info-hover` token and dark-mode overrides for edge-selected and tool-hover tokens
+- **Playground sidebar UX**: Replaced confusing double-click delete with an explicit dropdown menu
+
+---
+
 ## [0.0.61] - 2026-02-22
 
 ### Added
