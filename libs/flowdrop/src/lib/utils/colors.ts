@@ -6,7 +6,7 @@
 
 import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
 import { getPortCompatibilityChecker } from './connections.js';
-import { getCategoryColor as getCategoryColorFromStore } from '../stores/categoriesStore.js';
+import { getCategoryColor as getCategoryColorFromStore } from '../stores/categoriesStore.svelte.js';
 import { logger } from './logger.js';
 
 /**
@@ -89,7 +89,6 @@ export function getDataTypeColorToken(dataType: string): string {
 		}
 	} catch {
 		// Fallback to static color mapping if port checker not initialized
-		// console.warn("Port compatibility checker not initialized, using fallback colors");
 	}
 
 	return DEFAULT_DATA_TYPE_COLORS[dataType.toLowerCase()] || 'var(--fd-node-slate)';
