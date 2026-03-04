@@ -14,34 +14,43 @@
 
 <Story name="Default">
 	<NodeDecorator data={createSampleNodeData({
-		label: "Calculator",
+		label: "Text Input",
 		metadata: {
-			id: "calculator",
-			name: "Calculator",
-			description: "Perform mathematical operations",
-			category: "tools",
+			id: "text_input",
+			name: "Text Input",
+			description: "Simple text input for user data",
+			category: "inputs",
 			version: "1.0.0",
 			type: "square",
-			icon: "mdi:calculator",
-			inputs: [{ id: "input", name: "Input", type: "input", dataType: "number", required: true }],
-			outputs: [{ id: "result", name: "Result", type: "output", dataType: "number" }],
+			supportedTypes: ["simple", "square", "default"],
+			icon: "mdi:text",
+			color: "#22c55e",
+			inputs: [],
+			outputs: [
+				{ id: "text", name: "text", type: "output", dataType: "string", required: false, description: "The input text value" },
+			],
 		},
 	})} />
 </Story>
 
 <Story name="Selected">
 	<NodeDecorator data={createSampleNodeData({
-		label: "Timer",
+		label: "Text Output",
 		metadata: {
-			id: "timer",
-			name: "Timer",
-			description: "Wait for a specified duration",
-			category: "helpers",
+			id: "text_output",
+			name: "Text Output",
+			description: "Simple text output for displaying data",
+			category: "outputs",
 			version: "1.0.0",
 			type: "square",
-			icon: "mdi:timer",
-			inputs: [{ id: "trigger", name: "Trigger", type: "input", dataType: "any", required: true }],
-			outputs: [{ id: "done", name: "Done", type: "output", dataType: "any" }],
+			supportedTypes: ["square", "simple", "default"],
+			icon: "mdi:text-box",
+			color: "#ef4444",
+			inputs: [
+				{ id: "text", name: "Text Input", type: "input", dataType: "string", required: false, description: "The text to output" },
+				{ id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" },
+			],
+			outputs: [],
 		},
 	})} selected={true} />
 </Story>

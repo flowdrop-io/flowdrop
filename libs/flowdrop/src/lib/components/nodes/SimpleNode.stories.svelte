@@ -14,70 +14,88 @@
 
 <Story name="Default">
 	<NodeDecorator data={createSampleNodeData({
-		label: "Text Splitter",
+		label: "Text Input",
 		metadata: {
-			id: "text-splitter",
-			name: "Text Splitter",
-			description: "Split text into chunks",
-			category: "processing",
+			id: "text_input",
+			name: "Text Input",
+			description: "Simple text input for user data",
+			category: "inputs",
 			version: "1.0.0",
 			type: "simple",
-			inputs: [{ id: "input", name: "Input", type: "input", dataType: "any", required: false }],
-			outputs: [{ id: "output", name: "Output", type: "output", dataType: "any" }],
+			supportedTypes: ["simple", "square", "default"],
+			icon: "mdi:text",
+			color: "#22c55e",
+			inputs: [],
+			outputs: [
+				{ id: "text", name: "text", type: "output", dataType: "string", required: false, description: "The input text value" },
+			],
 		},
 	})} />
 </Story>
 
 <Story name="With Icon">
 	<NodeDecorator data={createSampleNodeData({
-		label: "HTTP Request",
+		label: "Notification Template",
 		metadata: {
-			id: "http-request",
-			name: "HTTP Request",
-			description: "Send HTTP requests to external APIs",
-			category: "tools",
+			id: "notification_template",
+			name: "Notification Template",
+			description: "Create notification templates with API-driven variable suggestions",
+			category: "outputs",
 			version: "1.0.0",
 			type: "simple",
-			icon: "mdi:web",
-			inputs: [{ id: "input", name: "Input", type: "input", dataType: "any", required: false }],
-			outputs: [{ id: "output", name: "Output", type: "output", dataType: "any" }],
+			supportedTypes: ["simple", "default"],
+			icon: "mdi:bell-ring",
+			color: "#f59e0b",
+			inputs: [
+				{ id: "event", name: "Event Data", type: "input", dataType: "json", required: false, description: "Event that triggered notification" },
+				{ id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "Execution trigger" },
+			],
+			outputs: [
+				{ id: "notification", name: "Notification", type: "output", dataType: "json", required: false, description: "Formatted notification object" },
+			],
 		},
 	})} />
 </Story>
 
 <Story name="Selected">
 	<NodeDecorator data={createSampleNodeData({
-		label: "Selected Node",
+		label: "Text Input",
 		metadata: {
-			id: "selected-node",
-			name: "Selected Node",
-			description: "A selected simple node",
-			category: "processing",
+			id: "text_input",
+			name: "Text Input",
+			description: "Simple text input for user data",
+			category: "inputs",
 			version: "1.0.0",
 			type: "simple",
-			inputs: [{ id: "input", name: "Input", type: "input", dataType: "any", required: false }],
-			outputs: [{ id: "output", name: "Output", type: "output", dataType: "any" }],
+			supportedTypes: ["simple", "square", "default"],
+			icon: "mdi:text",
+			color: "#22c55e",
+			inputs: [],
+			outputs: [
+				{ id: "text", name: "text", type: "output", dataType: "string", required: false, description: "The input text value" },
+			],
 		},
 	})} selected={true} />
 </Story>
 
 <Story name="Multiple Ports">
 	<NodeDecorator data={createSampleNodeData({
-		label: "Data Merger",
+		label: "Text Output",
 		metadata: {
-			id: "data-merger",
-			name: "Data Merger",
-			description: "Merge multiple data streams",
-			category: "processing",
+			id: "text_output",
+			name: "Text Output",
+			description: "Simple text output for displaying data",
+			category: "outputs",
 			version: "1.0.0",
 			type: "simple",
+			supportedTypes: ["square", "simple", "default"],
+			icon: "mdi:text-box",
+			color: "#ef4444",
 			inputs: [
-				{ id: "input-a", name: "Stream A", type: "input", dataType: "string", required: true },
-				{ id: "input-b", name: "Stream B", type: "input", dataType: "string", required: false },
+				{ id: "text", name: "Text Input", type: "input", dataType: "string", required: false, description: "The text to output" },
+				{ id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" },
 			],
-			outputs: [
-				{ id: "merged", name: "Merged", type: "output", dataType: "string" },
-			],
+			outputs: [],
 		},
 	})} />
 </Story>

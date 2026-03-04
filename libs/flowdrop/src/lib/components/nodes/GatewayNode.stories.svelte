@@ -1,6 +1,5 @@
 <script module>
 	import { defineMeta } from "@storybook/addon-svelte-csf";
-	import GatewayNode from "./GatewayNode.svelte";
 	import NodeDecorator from "../../stories/NodeDecorator.svelte";
 	import { createSampleNodeData } from "../../stories/utils.js";
 
@@ -17,12 +16,13 @@
 	<NodeDecorator data={createSampleNodeData({
 		label: "If/Else",
 		config: {
+			textInput: "",
 			matchText: "",
 			operator: "equals",
 			caseSensitive: false,
 			branches: [
-				{ name: "True", value: "true" },
-				{ name: "False", value: "false" },
+				{ name: "True", value: true },
+				{ name: "False", value: false },
 			],
 		},
 		metadata: {
@@ -32,10 +32,12 @@
 			category: "logic",
 			version: "1.0.0",
 			type: "gateway",
+			supportedTypes: ["gateway"],
 			icon: "mdi:code-braces",
+			color: "#8b5cf6",
 			inputs: [
 				{ id: "data", name: "Input Data", type: "input", dataType: "mixed", required: false, description: "Optional input data (if not using textInput config)" },
-				{ id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false },
+				{ id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" },
 			],
 			outputs: [],
 		},
@@ -44,23 +46,30 @@
 
 <Story name="Multiple Branches">
 	<NodeDecorator data={createSampleNodeData({
-		label: "Router",
+		label: "Switch",
 		config: {
+			defaultBranch: "default",
+			caseSensitive: false,
 			branches: [
-				{ name: "Route A", value: "route-a" },
-				{ name: "Route B", value: "route-b" },
-				{ name: "Route C", value: "route-c" },
+				{ name: "case_1", label: "Case 1", value: "option1" },
+				{ name: "case_2", label: "Case 2", value: "option2" },
+				{ name: "default", label: "Default", value: "" },
 			],
 		},
 		metadata: {
-			id: "router",
-			name: "Router",
-			description: "Route to multiple outputs",
+			id: "switch",
+			name: "Switch",
+			description: "Multi-branch routing based on configurable case values",
 			category: "logic",
 			version: "1.0.0",
 			type: "gateway",
-			icon: "mdi:call-split",
-			inputs: [{ id: "input", name: "Input", type: "input", dataType: "any", required: true }],
+			supportedTypes: ["gateway"],
+			icon: "mdi:source-branch-sync",
+			color: "#8b5cf6",
+			inputs: [
+				{ id: "value", name: "Value", type: "input", dataType: "string", required: true, description: "The value to match against branch cases" },
+				{ id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false, description: "" },
+			],
 			outputs: [],
 		},
 	})} />
