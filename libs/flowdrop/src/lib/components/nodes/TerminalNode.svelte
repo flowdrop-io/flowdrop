@@ -658,7 +658,7 @@
 		width: 16px !important;
 		height: 16px !important;
 		border-radius: 50% !important;
-		border: 2px solid var(--fd-handle-border) !important;
+		border: none !important;
 		transition: all var(--fd-transition-normal) !important;
 		cursor: pointer !important;
 		z-index: 20 !important;
