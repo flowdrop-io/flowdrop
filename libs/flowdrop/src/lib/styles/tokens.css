@@ -317,6 +317,7 @@
 	/* Outer size = connection/hit area (px); visual = visible circle (px) */
 	--fd-handle-size: 20px;          /* @public */
 	--fd-handle-visual-size: 12px;   /* @public */
+	--fd-handle-offset: calc(-1 * var(--fd-handle-size) / 2); /* @internal — half handle size for edge positioning */
 
 	/* ----- NODE LAYOUT (Dimensions and port alignment; multiples of 10 for grid) ----- */
 	--fd-node-grid-step: 10;              /* @internal — layout algorithm detail */

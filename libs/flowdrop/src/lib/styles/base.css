@@ -31,8 +31,9 @@
 }
 
 /* Flow node handles: 20px connection area, 12px visible circle (::before)
-   Override xyflow's default background so port color (--fd-handle-fill from inline style) shows */
-.svelte-flow__handle {
+   Override xyflow's default background so port color (--fd-handle-fill from inline style) shows.
+   Use `.svelte-flow` parent for higher specificity (0-2-0) to beat xyflow defaults (0-1-0). */
+.svelte-flow .svelte-flow__handle {
 	--fd-handle-fill: var(--fd-muted-foreground);
 	--fd-handle-border-color: var(--fd-handle-border);
 	width: var(--fd-handle-size);
@@ -48,7 +49,7 @@
 	cursor: pointer;
 }
 
-.svelte-flow__handle::before {
+.svelte-flow .svelte-flow__handle::before {
 	content: '';
 	position: absolute;
 	inset: 0;
@@ -61,14 +62,20 @@
 	pointer-events: none;
 }
 
-.svelte-flow__handle:hover::before {
+.svelte-flow .svelte-flow__handle:hover::before {
 	background-color: var(--fd-primary);
 }
 
-.svelte-flow__handle:focus {
+.svelte-flow .svelte-flow__handle:focus {
 	outline: 2px solid var(--fd-ring);
 	outline-offset: 2px;
 }
+
+/* Centralized handle edge positioning — offset derived from --fd-handle-size */
+.svelte-flow .svelte-flow__handle-left   { left:   var(--fd-handle-offset); }
+.svelte-flow .svelte-flow__handle-right  { right:  var(--fd-handle-offset); }
+.svelte-flow .svelte-flow__handle-top    { top:    var(--fd-handle-offset); }
+.svelte-flow .svelte-flow__handle-bottom { bottom: var(--fd-handle-offset); }
 
 /* Button styles */
 .flowdrop-btn {
