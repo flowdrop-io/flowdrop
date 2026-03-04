@@ -15,20 +15,29 @@
 
 <Story name="Default">
 	<NodeDecorator data={createSampleNodeData({
-		label: "Condition",
+		label: "If/Else",
+		config: {
+			matchText: "",
+			operator: "equals",
+			caseSensitive: false,
+			branches: [
+				{ name: "True", value: "true" },
+				{ name: "False", value: "false" },
+			],
+		},
 		metadata: {
-			id: "condition",
-			name: "Condition",
-			description: "Branch workflow based on a condition",
+			id: "if_else",
+			name: "If/Else",
+			description: "Simple conditional logic with text input, match text, and operator",
 			category: "logic",
 			version: "1.0.0",
 			type: "gateway",
-			icon: "mdi:source-branch",
-			inputs: [{ id: "input", name: "Input", type: "input", dataType: "any", required: true }],
-			outputs: [
-				{ id: "true", name: "True", type: "output", dataType: "any" },
-				{ id: "false", name: "False", type: "output", dataType: "any" },
+			icon: "mdi:code-braces",
+			inputs: [
+				{ id: "data", name: "Input Data", type: "input", dataType: "mixed", required: false, description: "Optional input data (if not using textInput config)" },
+				{ id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false },
 			],
+			outputs: [],
 		},
 	})} />
 </Story>
@@ -36,6 +45,13 @@
 <Story name="Multiple Branches">
 	<NodeDecorator data={createSampleNodeData({
 		label: "Router",
+		config: {
+			branches: [
+				{ name: "Route A", value: "route-a" },
+				{ name: "Route B", value: "route-b" },
+				{ name: "Route C", value: "route-c" },
+			],
+		},
 		metadata: {
 			id: "router",
 			name: "Router",
@@ -45,11 +61,7 @@
 			type: "gateway",
 			icon: "mdi:call-split",
 			inputs: [{ id: "input", name: "Input", type: "input", dataType: "any", required: true }],
-			outputs: [
-				{ id: "route-a", name: "Route A", type: "output", dataType: "any" },
-				{ id: "route-b", name: "Route B", type: "output", dataType: "any" },
-				{ id: "route-c", name: "Route C", type: "output", dataType: "any" },
-			],
+			outputs: [],
 		},
 	})} />
 </Story>
