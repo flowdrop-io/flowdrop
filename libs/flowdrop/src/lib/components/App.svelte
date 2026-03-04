@@ -495,7 +495,7 @@
 	// Function to handle clicks outside the sidebar
 	function handleCanvasClick(event: MouseEvent): void {
 		// Check if the click is outside the right sidebar
-		const rightSidebar = document.querySelector('.flowdrop-sidebar--right');
+		const rightSidebar = document.querySelector('.flowdrop-main-layout__sidebar--right');
 		if (rightSidebar && !rightSidebar.contains(event.target as Node)) {
 			// Close sidebar when clicking outside of it
 			if (isConfigSidebarOpen) {
