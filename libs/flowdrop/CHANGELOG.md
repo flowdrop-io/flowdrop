@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.0.63] - 2026-03-04
+
+### Fixed
+
+- **SquareNode stories**: Use only square type in SquareNode stories to render the correct component
+- **TerminalNode double border**: Remove double border on TerminalNode handle ports
+- **Edge marker arrow colors**: Use CSS custom properties for edge marker arrow colors
+
+---
+
 ## [0.0.62] - 2026-03-04
 
 ### Breaking Changes :warning:
