@@ -22,7 +22,7 @@
 			category: "inputs",
 			version: "1.0.0",
 			type: "square",
-			supportedTypes: ["simple", "square", "default"],
+			supportedTypes: ["square"],
 			icon: "mdi:text",
 			color: "#22c55e",
 			inputs: [],
@@ -43,7 +43,7 @@
 			category: "outputs",
 			version: "1.0.0",
 			type: "square",
-			supportedTypes: ["square", "simple", "default"],
+			supportedTypes: ["square"],
 			icon: "mdi:text-box",
 			color: "#ef4444",
 			inputs: [
