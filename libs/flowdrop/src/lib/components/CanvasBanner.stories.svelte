@@ -5,7 +5,7 @@
 	const { Story } = defineMeta({
 		title: "Display/CanvasBanner",
 		component: CanvasBanner,
-		tags: ["autodocs"],
+		tags: ["autodocs", "alpha"],
 		argTypes: {
 			title: { control: "text" },
 			description: { control: "text" },

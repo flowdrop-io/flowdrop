@@ -5,7 +5,7 @@
 	const { Story } = defineMeta({
 		title: "Editor/NodeStatusOverlay",
 		component: NodeStatusOverlay,
-		tags: ["autodocs"],
+		tags: ["autodocs", "alpha"],
 		parameters: {
 			layout: "centered",
 		},
