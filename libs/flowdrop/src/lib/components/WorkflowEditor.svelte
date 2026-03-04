@@ -26,7 +26,7 @@
 	import CanvasBanner from './CanvasBanner.svelte';
 	import FlowDropZone from './FlowDropZone.svelte';
 	import EdgeRefresher from './EdgeRefresher.svelte';
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
 	import { getWorkflowStore, workflowActions } from '../stores/workflowStore.svelte.js';
@@ -39,7 +39,6 @@
 		ConfigurationHelper
 	} from '../helpers/workflowEditorHelper.js';
 	import type { NodeExecutionInfo } from '../types/index.js';
-	import { throttle } from '../utils/performanceUtils.js';
 	import { Toaster } from 'svelte-5-french-toast';
 	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS, apiToasts } from '../services/toastService.js';
 	import {
@@ -50,6 +49,7 @@
 	import { getPortCoordinateSnapshot } from '../stores/portCoordinateStore.svelte.js';
 	import { logger } from '../utils/logger.js';
 	import { validateWorkflowData } from '../utils/validation.js';
+	import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
 
 	interface Props {
 		nodes?: NodeMetadata[];
@@ -70,14 +70,19 @@
 
 	let props: Props = $props();
 
-	// Create a local currentWorkflow variable that we can control directly
-	// Must be $state.raw to prevent deep proxy leaking into flowNodes/flowEdges
-	// (SvelteFlow mutates node internals during drag, which triggers the proxy
-	// and creates an infinite reactive loop if currentWorkflow is deep-proxied)
-	let currentWorkflow = $state.raw<Workflow | null>(null);
+	// ---------------------------------------------------------------------------
+	// Editor State Machine
+	// Centralizes reactive guards — replaces scattered boolean flags
+	// (isDraggingNode, lastEditorStoreValue identity checks, etc.)
+	// ---------------------------------------------------------------------------
+	const machine = createEditorStateMachine();
 
-	// Track if we're currently dragging a node (for history debouncing)
-	let isDraggingNode = $state(false);
+	// Dev-mode transition logging
+	if (import.meta.env?.DEV) {
+		machine.onTransition((from, event, to) => {
+			logger.debug(`[EditorFSM] ${from} --${event}--> ${to}`);
+		});
+	}
 
 	// Proximity connect state
 	let currentProximityCandidates = $state<ProximityEdgeCandidate[]>([]);
@@ -86,74 +91,26 @@
 	let portCoordNodeToUpdate = $state<WorkflowNodeType | null>(null);
 	let portCoordRebuildTrigger = $state(0);
 
-	// Track the workflow ID we're currently editing to detect workflow switches
-	let currentWorkflowId: string | null = null;
-
-	// Track the last store value written by this editor to distinguish
-	// external programmatic changes from our own echoed writes
-	let lastEditorStoreValue: Workflow | null = null;
-
-	// Initialize currentWorkflow from global store
-	// Sync on workflow ID change (new workflow loaded) or external programmatic changes
-	$effect(() => {
-		const storeValue = getWorkflowStore();
-		if (storeValue) {
-			const storeWorkflowId = storeValue.id;
-
-			if (currentWorkflowId !== storeWorkflowId) {
-				// New workflow loaded
-				currentWorkflow = storeValue;
-				currentWorkflowId = storeWorkflowId;
-				lastEditorStoreValue = null;
-			} else if (storeValue !== lastEditorStoreValue) {
-				// External programmatic change (e.g. addEdge, updateNode, updateEdges)
-				// The store value differs from what this editor last wrote, so sync it
-				currentWorkflow = storeValue;
-			}
-		} else if (currentWorkflow !== null) {
-			// Store was cleared
-			currentWorkflow = null;
-			currentWorkflowId = null;
-		}
-	});
-
-	// Set up the history restore callback to update workflow when undo/redo is triggered
-	$effect(() => {
-		setOnRestoreCallback((restoredWorkflow: Workflow) => {
-			// Directly update local state (bypass store sync effect)
-			currentWorkflow = restoredWorkflow;
-			// Also update the store without triggering history
-			workflowActions.restoreFromHistory(restoredWorkflow);
-			// Read back the proxy so sync effect identity check works
-			lastEditorStoreValue = getWorkflowStore();
-		});
-
-		// Cleanup on unmount
-		return () => {
-			setOnRestoreCallback(null);
-		};
-	});
-
-	// Create local reactive variables that sync with currentWorkflow
+	// ---------------------------------------------------------------------------
+	// Flow state — bound to SvelteFlow via bind:nodes / bind:edges
+	// These are $state.raw to prevent deep proxy leaking (SvelteFlow mutates
+	// node internals during drag which would cause infinite loops with $state).
+	// ---------------------------------------------------------------------------
 	let flowNodes = $state.raw<WorkflowNodeType[]>([]);
 	let flowEdges = $state.raw<WorkflowEdge[]>([]);
 
-	// Sync local state with currentWorkflow
+	// Execution info loading state
 	let loadExecutionInfoTimeout: number | null = null;
 	let executionInfoAbortController: AbortController | null = null;
-	// Track previous workflow ID to detect when we need to reload execution info
-	let previousWorkflowId: string | null = null;
-	let previousPipelineId: string | undefined = undefined;
 
 	/**
-	 * Key for SvelteFlow component - changes when workflow ID changes
-	 * This forces SvelteFlow to remount with fresh state, allowing fitView to work correctly
+	 * Key for SvelteFlow component — changes when workflow ID changes.
+	 * Forces SvelteFlow to remount with fresh state, allowing fitView to work correctly.
 	 */
-	let svelteFlowKey = $derived(currentWorkflow?.id ?? 'default');
+	let svelteFlowKey = $derived(getWorkflowStore()?.id ?? 'default');
 
 	/**
 	 * Derive snap grid configuration from editor settings
-	 * Returns [gridSize, gridSize] tuple when snapToGrid is enabled, undefined otherwise
 	 */
 	let snapGrid = $derived(
 		getEditorSettings().snapToGrid
@@ -163,7 +120,6 @@
 
 	/**
 	 * Derive initial viewport configuration from editor settings
-	 * Sets initial zoom level based on user preferences
 	 */
 	let initialViewport = $derived({
 		zoom: getEditorSettings().defaultZoom,
@@ -171,152 +127,189 @@
 		y: 0
 	});
 
+	// ---------------------------------------------------------------------------
+	// Helper: derive flowNodes/flowEdges from a Workflow object
+	// ---------------------------------------------------------------------------
+	function buildFlowNodesFromStore(workflow: Workflow): {
+		nodes: WorkflowNodeType[];
+		edges: WorkflowEdge[];
+	} {
+		const nodesWithCallbacks = workflow.nodes.map((node) => ({
+			...node,
+			data: {
+				...node.data,
+				onConfigOpen: props.openConfigSidebar
+			}
+		}));
+		const styledEdges = EdgeStylingHelper.updateEdgeStyles(workflow.edges, nodesWithCallbacks);
+		return { nodes: nodesWithCallbacks, edges: styledEdges };
+	}
+
+	// ---------------------------------------------------------------------------
+	// Helper: sync current flowNodes/flowEdges back to the global store
+	// ---------------------------------------------------------------------------
+	function syncFlowToStore(): void {
+		const storeValue = untrack(() => getWorkflowStore());
+		if (!storeValue) return;
+		const updatedWorkflow = WorkflowOperationsHelper.updateWorkflow(
+			storeValue,
+			flowNodes,
+			flowEdges
+		);
+		workflowActions.updateWorkflow(updatedWorkflow);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Single sync effect: workflowStore → flowNodes / flowEdges
+	// Replaces the old Effect A (store→currentWorkflow) + Effect B (currentWorkflow→flow).
+	// Suppressed during operations via state machine; handlers update flowNodes directly.
+	// ---------------------------------------------------------------------------
+	let previousSyncedWorkflowId: string | null = null;
+
 	$effect(() => {
-		if (currentWorkflow) {
-			const nodesWithCallbacks = currentWorkflow.nodes.map((node) => ({
-				...node,
-				data: {
-					...node.data,
-					onConfigOpen: props.openConfigSidebar
-				}
-			}));
-			flowNodes = nodesWithCallbacks;
+		const storeValue = getWorkflowStore();
 
-			// Apply edge styling based on source port data type when loading workflow
-			const styledEdges = EdgeStylingHelper.updateEdgeStyles(
-				currentWorkflow.edges,
-				nodesWithCallbacks
+		// Suppressed during operations — handlers write to flowNodes directly
+		if (untrack(() => machine.permissions.suppressEffect)) return;
+
+		if (!storeValue) {
+			if (flowNodes.length > 0 || flowEdges.length > 0) {
+				flowNodes = [];
+				flowEdges = [];
+				previousSyncedWorkflowId = null;
+				untrack(() => machine.send('WORKFLOW_CLEARED'));
+			}
+			return;
+		}
+
+		const isNewWorkflow = storeValue.id !== previousSyncedWorkflowId;
+
+		if (isNewWorkflow) {
+			untrack(() =>
+				machine.send(previousSyncedWorkflowId ? 'WORKFLOW_SWITCHED' : 'WORKFLOW_LOADED')
 			);
-			flowEdges = styledEdges;
+		}
 
-			// Trigger port coordinate rebuild after workflow load
-			// (PortCoordinateTracker will wait for SvelteFlow to render before reading handleBounds)
-			// Note: Using Date.now() instead of ++ to avoid reading the old value,
-			// which would make this effect depend on portCoordRebuildTrigger and loop.
-			if (getEditorSettings().proximityConnect) {
-				portCoordRebuildTrigger = Date.now();
-			}
+		// Derive flowNodes/flowEdges from store
+		const derived = buildFlowNodesFromStore(storeValue);
+		flowNodes = derived.nodes;
+		flowEdges = derived.edges;
+		previousSyncedWorkflowId = storeValue.id;
 
-			// Only load execution info if we have a pipelineId (pipeline status mode)
-			// and if the workflow or pipeline has changed
-			const workflowChanged = currentWorkflow.id !== previousWorkflowId;
-			const pipelineChanged = props.pipelineId !== previousPipelineId;
+		// Trigger port coordinate rebuild after workflow load
+		if (getEditorSettings().proximityConnect) {
+			portCoordRebuildTrigger = Date.now();
+		}
 
-			if (props.pipelineId && (workflowChanged || pipelineChanged)) {
-				// Cancel any pending timeout
-				if (loadExecutionInfoTimeout) {
-					clearTimeout(loadExecutionInfoTimeout);
-					loadExecutionInfoTimeout = null;
-				}
-
-				// Cancel any in-flight request
-				if (executionInfoAbortController) {
-					executionInfoAbortController.abort();
-					executionInfoAbortController = null;
-				}
-
-				// Update tracking variables
-				previousWorkflowId = currentWorkflow.id;
-				previousPipelineId = props.pipelineId;
-
-				// Use requestIdleCallback for non-critical updates (falls back to setTimeout)
-				if (typeof requestIdleCallback !== 'undefined') {
-					loadExecutionInfoTimeout = requestIdleCallback(
-						() => {
-							loadNodeExecutionInfo();
-						},
-						{ timeout: 500 }
-					) as unknown as number;
-				} else {
-					// Fallback to setTimeout with longer delay for better performance
-					loadExecutionInfoTimeout = setTimeout(() => {
-						loadNodeExecutionInfo();
-					}, 300) as unknown as number;
-				}
-			}
+		if (isNewWorkflow) {
+			untrack(() => machine.send('LOAD_COMPLETE'));
 		}
 	});
 
-	/**
-	 * Throttled function to update the global store
-	 * Reduces update frequency during rapid changes (e.g., node dragging)
-	 * Uses 16ms throttle (~60fps) for smooth performance
-	 */
-	const updateGlobalStore = throttle((): void => {
-		if (currentWorkflow) {
-			workflowActions.updateWorkflow(currentWorkflow);
-			// Read back the store value (which is a $state proxy) so that the
-			// sync effect's identity check (storeValue !== lastEditorStoreValue)
-			// correctly recognises our own writes and skips re-syncing.
-			lastEditorStoreValue = getWorkflowStore();
+	// ---------------------------------------------------------------------------
+	// Execution info effect (separate — async, depends on workflow + pipeline ID)
+	// ---------------------------------------------------------------------------
+	let previousExecWorkflowId: string | null = null;
+	let previousExecPipelineId: string | undefined = undefined;
+
+	$effect(() => {
+		const storeValue = getWorkflowStore();
+		const pipelineId = props.pipelineId;
+
+		if (!storeValue || !pipelineId) return;
+
+		const workflowChanged = storeValue.id !== previousExecWorkflowId;
+		const pipelineChanged = pipelineId !== previousExecPipelineId;
+
+		if (!workflowChanged && !pipelineChanged) return;
+
+		previousExecWorkflowId = storeValue.id;
+		previousExecPipelineId = pipelineId;
+
+		// Cancel any pending timeout / in-flight request
+		if (loadExecutionInfoTimeout) {
+			clearTimeout(loadExecutionInfoTimeout);
+			loadExecutionInfoTimeout = null;
 		}
-	}, 16);
+		if (executionInfoAbortController) {
+			executionInfoAbortController.abort();
+			executionInfoAbortController = null;
+		}
+
+		// Schedule loading with requestIdleCallback (falls back to setTimeout)
+		if (typeof requestIdleCallback !== 'undefined') {
+			loadExecutionInfoTimeout = requestIdleCallback(
+				() => {
+					loadNodeExecutionInfo();
+				},
+				{ timeout: 500 }
+			) as unknown as number;
+		} else {
+			loadExecutionInfoTimeout = setTimeout(() => {
+				loadNodeExecutionInfo();
+			}, 300) as unknown as number;
+		}
+	});
+
+	// ---------------------------------------------------------------------------
+	// History restore callback
+	// ---------------------------------------------------------------------------
+	$effect(() => {
+		setOnRestoreCallback((restoredWorkflow: Workflow) => {
+			machine.send('START_RESTORE');
+			// Update the store (effect is suppressed during 'restoring')
+			workflowActions.restoreFromHistory(restoredWorkflow);
+			// Derive flowNodes/flowEdges directly for immediate visual update
+			const derived = buildFlowNodesFromStore(restoredWorkflow);
+			flowNodes = derived.nodes;
+			flowEdges = derived.edges;
+			machine.send('RESTORE_COMPLETE');
+			// After RESTORE_COMPLETE → idle, the sync effect runs but produces
+			// the same data (no-op re-derive).
+		});
+
+		return () => {
+			setOnRestoreCallback(null);
+		};
+	});
 
 	/**
 	 * Load node execution information for all nodes in the workflow
-	 * Optimized to reduce processing time and prevent blocking the main thread
 	 */
 	async function loadNodeExecutionInfo(): Promise<void> {
-		if (!currentWorkflow?.nodes || !props.pipelineId) return;
+		const workflow = untrack(() => getWorkflowStore());
+		if (!workflow?.nodes || !props.pipelineId) return;
 
 		try {
-			// Create abort controller for this request
 			executionInfoAbortController = new AbortController();
 
-			// Fetch execution info with abort signal
 			const executionInfo = await NodeOperationsHelper.loadNodeExecutionInfo(
-				currentWorkflow,
+				workflow,
 				props.pipelineId
 			);
 
-			// Check if request was aborted
-			if (executionInfoAbortController?.signal.aborted) {
-				return;
-			}
+			if (executionInfoAbortController?.signal.aborted) return;
 
-			// Default execution info for nodes without data
 			const defaultExecutionInfo: NodeExecutionInfo = {
 				status: 'idle' as const,
 				executionCount: 0,
 				isExecuting: false
 			};
 
-			// Optimize: Single pass through nodes instead of multiple maps
-			// This reduces processing time from ~100ms to ~10-20ms for large workflows
-			const updatedNodes = currentWorkflow.nodes.map((node) => ({
+			// Update flowNodes with execution info (visual-only, no store sync needed)
+			flowNodes = flowNodes.map((node) => ({
 				...node,
 				data: {
 					...node.data,
-					executionInfo: executionInfo[node.id] || defaultExecutionInfo,
-					onConfigOpen: props.openConfigSidebar
+					executionInfo: executionInfo[node.id] || defaultExecutionInfo
 				}
 			}));
 
-			// Update state in a single operation (replace reference since currentWorkflow is $state.raw)
-			flowNodes = updatedNodes;
-			currentWorkflow = { ...currentWorkflow, nodes: updatedNodes };
-
-			// Clear abort controller
 			executionInfoAbortController = null;
 		} catch (error) {
-			// Only log if it's not an abort error
 			if (error instanceof Error && error.name !== 'AbortError') {
 				logger.error('Failed to load node execution info:', error);
 			}
-		}
-	}
-
-	// Function to update currentWorkflow when SvelteFlow changes nodes/edges
-	function updateCurrentWorkflowFromSvelteFlow(): void {
-		if (currentWorkflow) {
-			currentWorkflow = WorkflowOperationsHelper.updateWorkflow(
-				currentWorkflow,
-				flowNodes,
-				flowEdges
-			);
-
-			// Update the global store
-			updateGlobalStore();
 		}
 	}
 
@@ -336,10 +329,12 @@
 	/**
 	 * Handle node drag start
 	 *
-	 * Marks the beginning of a drag operation.
+	 * Transitions the state machine to 'dragging', which suppresses
+	 * the sync effect to prevent reactive loops during high-frequency
+	 * position updates. SvelteFlow mutates flowNodes directly via bind:nodes.
 	 */
 	function handleNodeDragStart(): void {
-		isDraggingNode = true;
+		machine.send('START_DRAG');
 		// Clear any leftover proximity previews
 		currentProximityCandidates = [];
 	}
@@ -399,24 +394,19 @@
 	/**
 	 * Handle node drag stop
 	 *
-	 * Push the NEW state (after drag) to history.
-	 * Undo will then restore to the previous state (before drag).
+	 * Still in 'dragging' state — sync effect suppressed.
+	 * Syncs final positions to store, pushes history, then transitions to idle.
 	 */
 	function handleNodeDragStop(): void {
-		isDraggingNode = false;
 		portCoordNodeToUpdate = null;
 
 		// Finalize proximity connect if there are candidates
 		if (getEditorSettings().proximityConnect && currentProximityCandidates.length > 0) {
-			// Remove all preview edges
 			const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
-
-			// Create permanent edges from candidates
 			const permanentEdges = ProximityConnectHelper.createPermanentEdges(
 				currentProximityCandidates
 			);
 
-			// Apply proper styling to each new permanent edge
 			for (const edge of permanentEdges) {
 				const sourceNode = flowNodes.find((n) => n.id === edge.source);
 				const targetNode = flowNodes.find((n) => n.id === edge.target);
@@ -425,30 +415,25 @@
 				}
 			}
 
-			// Set final edges
 			flowEdges = [...baseEdges, ...permanentEdges];
-
-			// Clear proximity state
 			currentProximityCandidates = [];
-
-			// Update workflow
-			if (currentWorkflow) {
-				updateCurrentWorkflowFromSvelteFlow();
-			}
-		} else {
-			// No proximity connect — sync position changes from drag
-			updateCurrentWorkflowFromSvelteFlow();
 		}
 
-		// Push the current state AFTER the drag completed
-		if (currentWorkflow) {
-			workflowActions.pushHistory('Move node', currentWorkflow);
+		// Sync flowNodes/flowEdges → store
+		syncFlowToStore();
+
+		// Push history AFTER the drag completed
+		const storeValue = getWorkflowStore();
+		if (storeValue) {
+			workflowActions.pushHistory('Move node', storeValue);
 		}
+
+		// Transition to idle — sync effect is now unblocked
+		machine.send('STOP_DRAG');
 	}
 
 	/**
 	 * Handle new connections between nodes
-	 * Let SvelteFlow handle edge creation, styling will be applied via reactive effects
 	 */
 	async function handleConnect(connection: {
 		source: string;
@@ -456,23 +441,23 @@
 		sourceHandle?: string;
 		targetHandle?: string;
 	}): Promise<void> {
-		// SvelteFlow will automatically create the edge due to bind:edges
-		// Wait for DOM update before applying styling
+		machine.send('START_CONNECT');
+
+		// SvelteFlow auto-creates the edge via bind:edges — wait for DOM update
 		await tick();
 
-		// Apply styling to the new edge (including arrows)
-		updateExistingEdgeStyles();
+		// Apply styling to all edges (including the new one)
+		flowEdges = EdgeStylingHelper.updateEdgeStyles(flowEdges, flowNodes);
 
-		// Update currentWorkflow with the new edge
-		if (currentWorkflow) {
-			updateCurrentWorkflowFromSvelteFlow();
+		// Sync to store
+		syncFlowToStore();
+
+		const storeValue = getWorkflowStore();
+		if (storeValue) {
+			workflowActions.pushHistory('Add connection', storeValue);
 		}
 
-		// Push to history AFTER the connection is made
-		// This way undo will restore to the state before the connection
-		if (currentWorkflow) {
-			workflowActions.pushHistory('Add connection', currentWorkflow);
-		}
+		machine.send('CONNECTION_MADE');
 	}
 
 	/**
@@ -522,6 +507,8 @@
 	 * Handle node deletion - automatically remove connected edges and push to history
 	 */
 	function handleNodesDelete(params: { nodes: WorkflowNodeType[]; edges: WorkflowEdge[] }): void {
+		machine.send('START_DELETE');
+
 		const deletedNodeIds = new Set(params.nodes.map((node) => node.id));
 
 		// Filter out edges connected to deleted nodes
@@ -529,10 +516,8 @@
 			(edge) => !deletedNodeIds.has(edge.source) && !deletedNodeIds.has(edge.target)
 		);
 
-		// Update currentWorkflow
-		if (currentWorkflow) {
-			updateCurrentWorkflowFromSvelteFlow();
-		}
+		// Sync to store
+		syncFlowToStore();
 
 		// Push to history AFTER the deletion so undo restores the previous state
 		const nodeCount = params.nodes.length;
@@ -545,32 +530,12 @@
 		} else if (edgeCount > 0) {
 			description = `Delete ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
 		}
-		if (currentWorkflow) {
-			workflowActions.pushHistory(description, currentWorkflow);
+		const storeValue = getWorkflowStore();
+		if (storeValue) {
+			workflowActions.pushHistory(description, storeValue);
 		}
-	}
 
-	/**
-	 * Update existing edges with our custom styling rules
-	 * This ensures all edges (including existing ones) follow our rules
-	 */
-	async function updateExistingEdgeStyles(): Promise<void> {
-		// Wait for any pending DOM updates
-		await tick();
-
-		const updatedEdges = EdgeStylingHelper.updateEdgeStyles(flowEdges, flowNodes);
-
-		// Update currentWorkflow with the styled edges
-		if (currentWorkflow) {
-			currentWorkflow = WorkflowOperationsHelper.updateWorkflow(
-				currentWorkflow,
-				flowNodes,
-				updatedEdges
-			);
-
-			// Update the global store
-			updateGlobalStore();
-		}
+		machine.send('DELETE_COMPLETE');
 	}
 
 	// Edge styling will be handled when edges are first created or manually updated
@@ -591,31 +556,37 @@
 
 	/**
 	 * Handle drop event and add new node to canvas
-	 * This will be called from the inner DropZone component
 	 */
 	async function handleNodeDrop(
 		nodeTypeData: string,
 		position: { x: number; y: number }
 	): Promise<void> {
-		// Create the node using the helper, passing existing nodes for ID generation
+		machine.send('START_DROP');
+
 		const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
 
-		if (newNode && currentWorkflow) {
-			// Add the node first
-			currentWorkflow = WorkflowOperationsHelper.addNode(currentWorkflow, newNode);
+		if (newNode) {
+			// Add onConfigOpen callback and append to flowNodes for immediate visual feedback
+			const nodeWithCallback = {
+				...newNode,
+				data: { ...newNode.data, onConfigOpen: props.openConfigSidebar }
+			};
+			flowNodes = [...flowNodes, nodeWithCallback];
 
-			// Update the global store
-			updateGlobalStore();
+			// Sync to store
+			syncFlowToStore();
 
-			// Wait for DOM update to ensure SvelteFlow updates
 			await tick();
 
-			// Push to history AFTER adding the node
-			// This way undo will restore to the state before the add
-			workflowActions.pushHistory('Add node', currentWorkflow);
-		} else if (!currentWorkflow) {
-			logger.warn('No currentWorkflow available for new node');
+			const storeValue = getWorkflowStore();
+			if (storeValue) {
+				workflowActions.pushHistory('Add node', storeValue);
+			}
+		} else {
+			logger.warn('Failed to create node from drop data');
 		}
+
+		machine.send('DROP_COMPLETE');
 	}
 
 	/**
@@ -661,8 +632,9 @@
 
 	/**
 	 * Update a node's data in the local editor state.
-	 * This should be called after updating the node in the global store to ensure
-	 * the visual representation is updated immediately (e.g., for nodeType changes).
+	 * Called by App.svelte AFTER it has already updated the global store via
+	 * workflowActions.updateNode(). We only need to update flowNodes for
+	 * immediate visual feedback — no store sync needed.
 	 *
 	 * @param nodeId - The ID of the node to update
 	 * @param dataUpdates - Partial data updates to merge into the node's data
@@ -671,6 +643,8 @@
 		nodeId: string,
 		dataUpdates: Partial<WorkflowNodeType['data']>
 	): void {
+		machine.send('START_NODE_UPDATE');
+
 		flowNodes = flowNodes.map((node) => {
 			if (node.id === nodeId) {
 				return {
@@ -684,8 +658,7 @@
 			return node;
 		});
 
-		// Explicitly sync to currentWorkflow (no longer handled by reactive effect)
-		updateCurrentWorkflowFromSvelteFlow();
+		machine.send('UPDATE_COMPLETE');
 	}
 
 	/**
