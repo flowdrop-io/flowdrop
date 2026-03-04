@@ -19,6 +19,15 @@ const config = {
 		runes: true
 	},
 
+	// Allow addon-svelte-csf's LegacyTemplate.svelte to use `export let`
+	vitePlugin: {
+		dynamicCompileOptions({ filename }) {
+			if (filename.includes('LegacyTemplate.svelte')) {
+				return { runes: false };
+			}
+		}
+	},
+
 	kit: {
 		// Use adapter-node for production/Docker, adapter-auto for development
 		adapter: adapter(),
