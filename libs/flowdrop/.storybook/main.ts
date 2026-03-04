@@ -7,6 +7,7 @@ const config: StorybookConfig = {
 		'@chromatic-com/storybook',
 		'@storybook/addon-docs',
 		'@storybook/addon-vitest',
+		'@storybook/addon-themes',
 		'storybook-addon-tag-badges'
 	],
 	framework: {

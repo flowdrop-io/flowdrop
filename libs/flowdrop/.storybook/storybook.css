@@ -13,4 +13,16 @@ body {
 		'Helvetica Neue',
 		Arial,
 		sans-serif;
+	background-color: var(--fd-background);
+	color: var(--fd-foreground);
+}
+
+/* Theme-aware Docs page */
+#storybook-docs {
+	background-color: var(--fd-background);
+	color: var(--fd-foreground);
+}
+
+.docs-story {
+	background-color: var(--fd-background);
 }
