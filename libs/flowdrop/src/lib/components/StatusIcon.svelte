@@ -84,9 +84,16 @@
 		width: var(--background-size);
 		height: var(--background-size);
 		background-color: var(--status-color);
+		color: #fff;
 		border-radius: var(--background-radius);
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 		position: relative;
+	}
+
+	.status-icon--with-background :global(.status-icon__icon) {
+		width: var(--icon-size);
+		height: var(--icon-size);
+		font-size: var(--icon-size);
 	}
 
 	.status-icon--icon-only {
