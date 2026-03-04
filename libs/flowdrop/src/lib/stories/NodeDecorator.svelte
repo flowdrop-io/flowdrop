@@ -65,4 +65,10 @@
 		height: 400px;
 		position: relative;
 	}
+
+	/* Fix: SvelteFlow's scoped styles use non-prefixed --background-color-default
+	   which doesn't update with colorMode="dark". Map the --xy- themed value. */
+	.node-decorator-wrapper :global(.svelte-flow.dark) {
+		--background-color-default: var(--xy-background-color-default);
+	}
 </style>
