@@ -645,7 +645,7 @@
 	</div>
 
 	<!-- Dropdown popover (uses Popover API to render in top layer, bypassing stacking contexts) -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_no_static_element_interactions — role="presentation" container; onmousedown prevents focus loss from input -->
 	<div
 		bind:this={popoverElement}
 		id={listboxId}
@@ -676,7 +676,7 @@
 				</li>
 			{:else}
 				{#each suggestions as option, index (option.value)}
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<!-- svelte-ignore a11y_click_events_have_key_events — WAI-ARIA combobox: keyboard nav handled on input, not individual options -->
 					<li
 						id={getOptionId(index)}
 						class="form-autocomplete__option"

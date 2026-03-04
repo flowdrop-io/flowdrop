@@ -130,7 +130,7 @@
 <div class="universal-node">
 	<!-- Render the node component dynamically (Svelte 5 dynamic component syntax) -->
 	{#if nodeComponent}
-		<!-- svelte-ignore binding_property_non_reactive -->
+		<!-- svelte-ignore binding_property_non_reactive — Svelte 5 dynamic component limitation; reactivity maintained via $derived -->
 		{@const NodeComponent = nodeComponent}
 		<NodeComponent {data} {selected} />
 	{/if}
