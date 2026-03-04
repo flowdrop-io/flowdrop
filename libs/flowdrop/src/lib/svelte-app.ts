@@ -21,7 +21,7 @@ import { initializePortCompatibility } from './utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
 import { fetchCategories } from './services/categoriesApi.js';
-import { initializeCategories } from './stores/categoriesStore.js';
+import { initializeCategories } from './stores/categoriesStore.svelte.js';
 import {
 	isDirty,
 	markAsSaved,

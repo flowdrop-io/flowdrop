@@ -10,7 +10,7 @@
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
 	import { getCategoryColorToken } from '../utils/colors.js';
-	import { getCategoryLabel } from '../stores/categoriesStore.js';
+	import { getCategoryLabel } from '../stores/categoriesStore.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { getUiSettings, updateSettings } from '../stores/settingsStore.svelte.js';
 

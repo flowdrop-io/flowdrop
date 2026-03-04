@@ -4,7 +4,7 @@
  */
 
 import type { NodeCategory } from '../types/index.js';
-import { getCategoryIcon as getCategoryIconFromStore } from '../stores/categoriesStore.js';
+import { getCategoryIcon as getCategoryIconFromStore } from '../stores/categoriesStore.svelte.js';
 
 /**
  * Default icons for different contexts

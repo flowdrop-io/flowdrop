@@ -1,37 +1,38 @@
 /**
- * Categories Store for FlowDrop
+ * Categories Store for FlowDrop (Svelte 5 Runes)
  *
  * Manages category definitions with merged defaults and API-provided overrides.
  * Exposes lookup helpers for icon, color, and label resolution.
  */
 
-import { writable, derived, get } from 'svelte/store';
 import type { CategoryDefinition, NodeCategory } from '../types/index.js';
 import { DEFAULT_CATEGORIES } from '../config/defaultCategories.js';
 
 /**
- * Internal writable store holding the category definitions.
+ * Internal reactive state holding the category definitions.
  * Initialized with defaults, updated when API data is fetched.
  */
-const categoriesInternal = writable<CategoryDefinition[]>(DEFAULT_CATEGORIES);
+let categoriesState = $state<CategoryDefinition[]>([...DEFAULT_CATEGORIES]);
 
 /**
  * Derived lookup map: category name → CategoryDefinition
  */
-const categoryMap = derived(categoriesInternal, ($categories) => {
-	const map = new Map<string, CategoryDefinition>();
-	for (const cat of $categories) {
-		map.set(cat.name, cat);
-	}
-	return map;
-});
+let categoryMap = $derived(
+	(() => {
+		const map = new Map<string, CategoryDefinition>();
+		for (const cat of categoriesState) {
+			map.set(cat.name, cat);
+		}
+		return map;
+	})()
+);
 
 /**
- * Readable store of all category definitions, sorted by weight.
+ * Get all category definitions, sorted by weight.
  */
-export const categories = derived(categoriesInternal, ($categories) =>
-	[...$categories].sort((a, b) => (a.weight ?? 999) - (b.weight ?? 999))
-);
+export function getCategories(): CategoryDefinition[] {
+	return [...categoriesState].sort((a, b) => (a.weight ?? 999) - (b.weight ?? 999));
+}
 
 /**
  * Initialize categories with API data, merging with defaults.
@@ -51,15 +52,14 @@ export function initializeCategories(apiCategories: CategoryDefinition[]): void 
 		});
 	}
 
-	categoriesInternal.set(Array.from(defaultMap.values()));
+	categoriesState = Array.from(defaultMap.values());
 }
 
 /**
  * Get the display label for a category.
  */
 export function getCategoryLabel(category: NodeCategory): string {
-	const map = get(categoryMap);
-	const def = map.get(category);
+	const def = categoryMap.get(category);
 	if (def?.label) return def.label;
 
 	// Auto-generate: capitalize each word
@@ -73,22 +73,19 @@ export function getCategoryLabel(category: NodeCategory): string {
  * Get the icon for a category.
  */
 export function getCategoryIcon(category: NodeCategory): string {
-	const map = get(categoryMap);
-	return map.get(category)?.icon ?? 'mdi:folder';
+	return categoryMap.get(category)?.icon ?? 'mdi:folder';
 }
 
 /**
  * Get the color token for a category.
  */
 export function getCategoryColor(category: NodeCategory): string {
-	const map = get(categoryMap);
-	return map.get(category)?.color ?? 'var(--fd-node-slate)';
+	return categoryMap.get(category)?.color ?? 'var(--fd-node-slate)';
 }
 
 /**
  * Get the full category definition, or undefined if not found.
  */
 export function getCategoryDefinition(category: NodeCategory): CategoryDefinition | undefined {
-	const map = get(categoryMap);
-	return map.get(category);
+	return categoryMap.get(category);
 }
