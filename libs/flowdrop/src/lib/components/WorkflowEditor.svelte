@@ -71,7 +71,10 @@
 	let props: Props = $props();
 
 	// Create a local currentWorkflow variable that we can control directly
-	let currentWorkflow = $state<Workflow | null>(null);
+	// Must be $state.raw to prevent deep proxy leaking into flowNodes/flowEdges
+	// (SvelteFlow mutates node internals during drag, which triggers the proxy
+	// and creates an infinite reactive loop if currentWorkflow is deep-proxied)
+	let currentWorkflow = $state.raw<Workflow | null>(null);
 
 	// Track if we're currently dragging a node (for history debouncing)
 	let isDraggingNode = $state(false);
@@ -119,10 +122,10 @@
 		setOnRestoreCallback((restoredWorkflow: Workflow) => {
 			// Directly update local state (bypass store sync effect)
 			currentWorkflow = restoredWorkflow;
-			// Mark as our own write so sync effect doesn't re-process it
-			lastEditorStoreValue = restoredWorkflow;
 			// Also update the store without triggering history
 			workflowActions.restoreFromHistory(restoredWorkflow);
+			// Read back the proxy so sync effect identity check works
+			lastEditorStoreValue = getWorkflowStore();
 		});
 
 		// Cleanup on unmount
@@ -241,8 +244,11 @@
 	 */
 	const updateGlobalStore = throttle((): void => {
 		if (currentWorkflow) {
-			lastEditorStoreValue = currentWorkflow;
 			workflowActions.updateWorkflow(currentWorkflow);
+			// Read back the store value (which is a $state proxy) so that the
+			// sync effect's identity check (storeValue !== lastEditorStoreValue)
+			// correctly recognises our own writes and skips re-syncing.
+			lastEditorStoreValue = getWorkflowStore();
 		}
 	}, 16);
 
@@ -286,9 +292,9 @@
 				}
 			}));
 
-			// Update state in a single operation
+			// Update state in a single operation (replace reference since currentWorkflow is $state.raw)
 			flowNodes = updatedNodes;
-			currentWorkflow.nodes = updatedNodes;
+			currentWorkflow = { ...currentWorkflow, nodes: updatedNodes };
 
 			// Clear abort controller
 			executionInfoAbortController = null;
