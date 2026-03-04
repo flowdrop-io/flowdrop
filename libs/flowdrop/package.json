@@ -162,6 +162,7 @@
 		"@playwright/test": "^1.49.1",
 		"@storybook/addon-docs": "^10.2.15",
 		"@storybook/addon-svelte-csf": "^5.0.11",
+		"@storybook/addon-themes": "^10.2.15",
 		"@storybook/addon-vitest": "^10.2.15",
 		"@storybook/sveltekit": "^10.2.15",
 		"@sveltejs/adapter-auto": "^6.0.0",
