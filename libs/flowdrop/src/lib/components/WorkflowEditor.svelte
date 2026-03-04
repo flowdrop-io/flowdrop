@@ -905,10 +905,6 @@
 		cursor: pointer;
 	}
 
-	/* Enhanced arrow markers for input ports */
-	:global(.flowdrop-workflow-editor .svelte-flow__edge-marker) {
-		fill: currentColor;
-	}
 
 	/* Handle size/position only; colors come from inline --fd-handle-fill and base.css ::before */
 	:global(.flowdrop-workflow-editor .svelte-flow__handle) {
