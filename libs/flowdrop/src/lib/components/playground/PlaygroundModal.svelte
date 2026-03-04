@@ -74,7 +74,7 @@
 		tabindex="-1"
 	>
 		<!-- Modal Container -->
-		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events — role="presentation" container stops backdrop click propagation -->
 		<div class="playground-modal" onclick={(e) => e.stopPropagation()} role="presentation">
 			<!-- Modal Header -->
 			<div class="playground-modal__header">

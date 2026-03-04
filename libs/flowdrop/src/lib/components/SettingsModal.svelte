@@ -117,7 +117,7 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions — native <dialog> backdrop click-to-close pattern -->
 <dialog
 	bind:this={dialogRef}
 	class="flowdrop-settings-modal {className}"

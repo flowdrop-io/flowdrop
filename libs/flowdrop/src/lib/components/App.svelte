@@ -588,7 +588,9 @@
 	 * Calculate left sidebar width based on collapsed state
 	 * When collapsed, use 48px; otherwise use user-configured width
 	 */
-	const leftSidebarWidth = $derived(getUiSettings().sidebarCollapsed ? 48 : getUiSettings().sidebarWidth);
+	const leftSidebarWidth = $derived(
+		getUiSettings().sidebarCollapsed ? 48 : getUiSettings().sidebarWidth
+	);
 
 	// File input reference for workflow import
 	let fileInputRef = $state<HTMLInputElement | null>(null);
@@ -842,7 +844,7 @@
 	{/if}
 
 	<!-- Main Editor Area -->
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions — interactive workflow canvas region with keyboard support -->
 	<div
 		class="flowdrop-editor-main"
 		class:pipeline-view={!!pipelineId}

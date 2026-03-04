@@ -174,6 +174,11 @@
 	setContext<() => string>('flowdrop:getBaseUrl', () => baseUrl);
 
 	/**
+	 * Reference to this component's form element
+	 */
+	let formRef: HTMLFormElement | undefined = $state();
+
+	/**
 	 * Internal reactive state for form values
 	 */
 	let formValues = $state<Record<string, unknown>>({});
@@ -231,11 +236,10 @@
 		}
 
 		// Collect all form values including hidden fields
-		const form = document.querySelector('.schema-form');
 		const updatedValues: Record<string, unknown> = { ...formValues };
 
-		if (form) {
-			const inputs = form.querySelectorAll('input, select, textarea');
+		if (formRef) {
+			const inputs = formRef.querySelectorAll('input, select, textarea');
 			inputs.forEach((input: Element) => {
 				const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 				if (inputEl.id) {
@@ -299,6 +303,7 @@
 
 {#if schema?.properties}
 	<form
+		bind:this={formRef}
 		class="schema-form {className}"
 		class:schema-form--loading={loading}
 		class:schema-form--disabled={disabled}
