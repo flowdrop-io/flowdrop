@@ -39,9 +39,14 @@
 
 	// Pipeline status and job data
 	let pipelineStatus = $state<string>('unknown');
+	interface PipelineNodeStatus {
+		status: string;
+		[key: string]: unknown;
+	}
+
 	let jobStatusData = $state<{
-		jobs: any[];
-		node_statuses: Record<string, any>;
+		jobs: Record<string, unknown>[];
+		node_statuses: Record<string, PipelineNodeStatus>;
 		status_summary: {
 			total: number;
 			pending: number;
@@ -112,7 +117,8 @@
 				for (const nodeId in jobStatusData.node_statuses) {
 					const status = jobStatusData.node_statuses[nodeId].status;
 					if (['pending', 'running', 'completed', 'failed', 'cancelled'].includes(status)) {
-						newNodeStatuses[nodeId] = status === 'failed' ? 'error' : status;
+						newNodeStatuses[nodeId] =
+							status === 'failed' ? 'error' : (status as 'pending' | 'running' | 'completed');
 					}
 				}
 				nodeStatuses = newNodeStatuses;

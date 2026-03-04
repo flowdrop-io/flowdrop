@@ -22,6 +22,7 @@
  */
 
 import { registerFieldComponent, fieldComponentRegistry } from './fieldRegistry.js';
+import type { FieldComponent } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
 
 // Re-export the components for direct usage if needed
@@ -155,8 +156,7 @@ export function registerAllCodeEditors(priority: number = 100): void {
  * ```
  */
 export function registerCodeEditorFieldWithComponent(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	component: any,
+	component: FieldComponent,
 	priority: number = 100
 ): void {
 	if (codeEditorRegistered) {

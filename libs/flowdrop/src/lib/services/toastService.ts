@@ -134,7 +134,7 @@ export function showPromise<T>(
 	}: {
 		loading: string;
 		success: string | ((data: T) => string);
-		error: string | ((error: any) => string);
+		error: string | ((error: unknown) => string);
 		options?: ToastOptions;
 	}
 ): Promise<T> {

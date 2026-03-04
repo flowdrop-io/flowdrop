@@ -1311,6 +1311,8 @@ export interface NodeExecutionInfo {
 	lastError?: string;
 	/** Whether the node is currently being executed */
 	isExecuting: boolean;
+	/** Execution output data (e.g., active branches for gateway nodes) */
+	output?: Record<string, unknown>;
 }
 
 /**
