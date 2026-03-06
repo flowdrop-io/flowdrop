@@ -213,21 +213,15 @@ export const numberFieldMatcher: FieldMatcher = (schema) =>
 export const toggleMatcher: FieldMatcher = (schema) => schema.type === 'boolean';
 
 /**
- * Matcher for select fields with labeled options
- * Supports both standard JSON Schema oneOf pattern and legacy options property
+ * Matcher for select fields with labeled options (JSON Schema oneOf pattern)
  *
- * Standard JSON Schema approach (preferred):
+ * @example
  * ```json
  * { "type": "string", "oneOf": [{ "const": "a", "title": "Option A" }] }
  * ```
- *
- * Legacy approach (deprecated):
- * ```json
- * { "type": "string", "options": [{ "value": "a", "label": "Option A" }] }
- * ```
  */
 export const selectOptionsMatcher: FieldMatcher = (schema) =>
-	Boolean(schema.oneOf && schema.oneOf.length > 0) || Boolean(schema.options);
+	Boolean(schema.oneOf && schema.oneOf.length > 0);
 
 /**
  * Matcher for array fields

@@ -128,9 +128,9 @@
 			return 'select-enum';
 		}
 
-		// oneOf with labeled options (standard JSON Schema) or legacy options -> select
+		// oneOf with labeled options (standard JSON Schema) -> select
 		// Must be checked before basic type checks since oneOf schemas often have type: 'string'
-		if ((schema.oneOf && schema.oneOf.length > 0) || schema.options) {
+		if (schema.oneOf && schema.oneOf.length > 0) {
 			return 'select-options';
 		}
 

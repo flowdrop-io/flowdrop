@@ -65,12 +65,6 @@
 		 * Controls which variables are available and how they are displayed.
 		 */
 		variables?: TemplateVariablesConfig;
-		/**
-		 * Variable schema for advanced autocomplete with nested drilling.
-		 * When provided, enables dot notation (user.name) and array access (items[0]).
-		 * @deprecated Use `variables.schema` instead
-		 */
-		variableSchema?: VariableSchema;
 		/** Placeholder variable example for the hint */
 		placeholderExample?: string;
 		/** Whether the field is disabled (read-only) */
@@ -99,7 +93,6 @@
 		darkTheme = false,
 		height = '250px',
 		variables,
-		variableSchema,
 		placeholderExample = 'Hello {{ name }}, your order #{{ order_id }} is ready!',
 		disabled = false,
 		ariaDescribedBy,
@@ -127,12 +120,6 @@
 	async function loadVariableSchema() {
 		// Reset error state
 		variableLoadError = null;
-
-		// If we have deprecated variableSchema prop, use it directly
-		if (variableSchema && Object.keys(variableSchema.variables).length > 0) {
-			effectiveVariableSchema = variableSchema;
-			return;
-		}
 
 		// If no variables config, clear schema
 		if (!variables) {
