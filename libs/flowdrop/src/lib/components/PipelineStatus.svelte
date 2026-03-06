@@ -270,15 +270,8 @@
 		}
 	});
 
-	// Cleanup on unmount
-	onMount(() => {
-		return () => {
-			if (refreshInterval) {
-				clearInterval(refreshInterval);
-				refreshInterval = null;
-			}
-		};
-	});
+	// Note: Interval cleanup is handled by the $effect above.
+	// In Svelte 5, $effect cleanup runs both on re-execution and component destroy.
 </script>
 
 <div class="pipeline-status-container">
