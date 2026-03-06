@@ -52,15 +52,17 @@ describe('NodeExecutionService', () => {
 
 		global.fetch = vi.fn();
 		mockGetEndpointConfig.mockReturnValue(createMockPipelineConfig());
-		mockBuildEndpointUrl.mockImplementation((_config: unknown, path: string, params?: Record<string, string>) => {
-			let url = `/api${path}`;
-			if (params) {
-				for (const [key, value] of Object.entries(params)) {
-					url = url.replace(`{${key}}`, value);
+		mockBuildEndpointUrl.mockImplementation(
+			(_config: unknown, path: string, params?: Record<string, string>) => {
+				let url = `/api${path}`;
+				if (params) {
+					for (const [key, value] of Object.entries(params)) {
+						url = url.replace(`{${key}}`, value);
+					}
 				}
+				return url;
 			}
-			return url;
-		});
+		);
 	});
 
 	afterEach(() => {

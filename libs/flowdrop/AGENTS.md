@@ -482,16 +482,16 @@ svelte-5-french-toast is themed via design tokens:
 
 ## Related Documentation
 
-| Document                                   | Content                         |
-| ------------------------------------------ | ------------------------------- |
-| `README.md`                                | Project overview and quickstart |
-| [API Documentation][api-docs]              | REST API specification          |
-| `QUICK_START.md`                           | Getting started guide           |
-| `../../apps/example-client-docker/README.md`| Docker deployment               |
-| `CHANGELOG.md`                             | Version history                 |
-| `docs/config-schema-special-properties.md` | Config schema magic properties  |
-| `docs/component-hierarchy.md`              | Component structure             |
-| `docs/configEdit-feature.md`               | Dynamic config editing          |
-| `docs/interrupt-feature.md`                | Human-in-the-Loop interrupts    |
+| Document                                     | Content                         |
+| -------------------------------------------- | ------------------------------- |
+| `README.md`                                  | Project overview and quickstart |
+| [API Documentation][api-docs]                | REST API specification          |
+| `QUICK_START.md`                             | Getting started guide           |
+| `../../apps/example-client-docker/README.md` | Docker deployment               |
+| `CHANGELOG.md`                               | Version history                 |
+| `docs/config-schema-special-properties.md`   | Config schema magic properties  |
+| `docs/component-hierarchy.md`                | Component structure             |
+| `docs/configEdit-feature.md`                 | Dynamic config editing          |
+| `docs/interrupt-feature.md`                  | Human-in-the-Loop interrupts    |
 
 [api-docs]: https://flowdrop-io.github.io/flowdrop/

@@ -157,17 +157,39 @@
 		"svelte": "^5.0.0"
 	},
 	"peerDependenciesMeta": {
-		"@codemirror/autocomplete": { "optional": true },
-		"@codemirror/commands": { "optional": true },
-		"@codemirror/lang-json": { "optional": true },
-		"@codemirror/lang-markdown": { "optional": true },
-		"@codemirror/language": { "optional": true },
-		"@codemirror/lint": { "optional": true },
-		"@codemirror/state": { "optional": true },
-		"@codemirror/theme-one-dark": { "optional": true },
-		"@codemirror/view": { "optional": true },
-		"@iconify/svelte": { "optional": true },
-		"codemirror": { "optional": true }
+		"@codemirror/autocomplete": {
+			"optional": true
+		},
+		"@codemirror/commands": {
+			"optional": true
+		},
+		"@codemirror/lang-json": {
+			"optional": true
+		},
+		"@codemirror/lang-markdown": {
+			"optional": true
+		},
+		"@codemirror/language": {
+			"optional": true
+		},
+		"@codemirror/lint": {
+			"optional": true
+		},
+		"@codemirror/state": {
+			"optional": true
+		},
+		"@codemirror/theme-one-dark": {
+			"optional": true
+		},
+		"@codemirror/view": {
+			"optional": true
+		},
+		"@iconify/svelte": {
+			"optional": true
+		},
+		"codemirror": {
+			"optional": true
+		}
 	},
 	"repository": {
 		"type": "git",

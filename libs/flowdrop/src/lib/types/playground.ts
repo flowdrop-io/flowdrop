@@ -12,7 +12,12 @@ import type { ConfigProperty } from './index.js';
 /**
  * Status of a playground session
  */
-export type PlaygroundSessionStatus = 'idle' | 'running' | 'awaiting_input' | 'completed' | 'failed';
+export type PlaygroundSessionStatus =
+	| 'idle'
+	| 'running'
+	| 'awaiting_input'
+	| 'completed'
+	| 'failed';
 
 /**
  * Statuses that stop polling by default (resource efficiency)

@@ -54,15 +54,17 @@ describe('InterruptService', () => {
 
 		global.fetch = vi.fn();
 		mockGetEndpointConfig.mockReturnValue(createMockInterruptConfig());
-		mockBuildEndpointUrl.mockImplementation((_config: unknown, path: string, params?: Record<string, string>) => {
-			let url = `/api${path}`;
-			if (params) {
-				for (const [key, value] of Object.entries(params)) {
-					url = url.replace(`{${key}}`, value);
+		mockBuildEndpointUrl.mockImplementation(
+			(_config: unknown, path: string, params?: Record<string, string>) => {
+				let url = `/api${path}`;
+				if (params) {
+					for (const [key, value] of Object.entries(params)) {
+						url = url.replace(`{${key}}`, value);
+					}
 				}
+				return url;
 			}
-			return url;
-		});
+		);
 		mockGetEndpointHeaders.mockReturnValue({ 'Content-Type': 'application/json' });
 	});
 

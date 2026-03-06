@@ -72,10 +72,18 @@
 }
 
 /* Centralized handle edge positioning — offset derived from --fd-handle-size */
-.svelte-flow .svelte-flow__handle-left   { left:   var(--fd-handle-offset); }
-.svelte-flow .svelte-flow__handle-right  { right:  var(--fd-handle-offset); }
-.svelte-flow .svelte-flow__handle-top    { top:    var(--fd-handle-offset); }
-.svelte-flow .svelte-flow__handle-bottom { bottom: var(--fd-handle-offset); }
+.svelte-flow .svelte-flow__handle-left {
+	left: var(--fd-handle-offset);
+}
+.svelte-flow .svelte-flow__handle-right {
+	right: var(--fd-handle-offset);
+}
+.svelte-flow .svelte-flow__handle-top {
+	top: var(--fd-handle-offset);
+}
+.svelte-flow .svelte-flow__handle-bottom {
+	bottom: var(--fd-handle-offset);
+}
 
 /* Button styles */
 .flowdrop-btn {

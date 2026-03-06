@@ -280,7 +280,8 @@ export class InterruptService {
 				logger.error('[InterruptService] Polling error:', error);
 
 				// Exponential backoff on error
-				const maxBackoff = this.pollingConfig.maxBackoff ?? defaultInterruptPollingConfig.maxBackoff;
+				const maxBackoff =
+					this.pollingConfig.maxBackoff ?? defaultInterruptPollingConfig.maxBackoff;
 				this.currentBackoff = Math.min(this.currentBackoff * 2, maxBackoff);
 			}
 

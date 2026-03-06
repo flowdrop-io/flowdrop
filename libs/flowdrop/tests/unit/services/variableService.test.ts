@@ -14,12 +14,7 @@ import {
 	hasChildren,
 	mergeVariableSchemas
 } from '$lib/services/variableService.js';
-import type {
-	WorkflowNode,
-	WorkflowEdge,
-	VariableSchema,
-	NodePort
-} from '$lib/types/index.js';
+import type { WorkflowNode, WorkflowEdge, VariableSchema, NodePort } from '$lib/types/index.js';
 
 vi.mock('$lib/utils/logger.js', () => ({
 	logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
@@ -37,11 +32,7 @@ function makePort(overrides: Partial<NodePort> = {}): NodePort {
 	} as NodePort;
 }
 
-function makeNode(
-	id: string,
-	outputs: NodePort[] = [],
-	inputs: NodePort[] = []
-): WorkflowNode {
+function makeNode(id: string, outputs: NodePort[] = [], inputs: NodePort[] = []): WorkflowNode {
 	return {
 		id,
 		type: 'default',
@@ -159,12 +150,9 @@ describe('variableService', () => {
 			const edge1 = makeEdge('upstream', 'downstream', 'text', 'text');
 			const edge2 = makeEdge('upstream', 'downstream', 'context', 'context');
 
-			const result = getAvailableVariables(
-				downstream,
-				[upstream, downstream],
-				[edge1, edge2],
-				{ targetPortIds: ['text'] }
-			);
+			const result = getAvailableVariables(downstream, [upstream, downstream], [edge1, edge2], {
+				targetPortIds: ['text']
+			});
 
 			expect(Object.keys(result.variables)).toContain('text');
 			expect(Object.keys(result.variables)).not.toContain('context');
@@ -176,12 +164,9 @@ describe('variableService', () => {
 			const downstream = makeNode('downstream', [], [makePort({ id: 'data', type: 'input' })]);
 			const edge = makeEdge('upstream', 'downstream', 'data', 'data');
 
-			const result = getAvailableVariables(
-				downstream,
-				[upstream, downstream],
-				[edge],
-				{ targetPortIds: [] }
-			);
+			const result = getAvailableVariables(downstream, [upstream, downstream], [edge], {
+				targetPortIds: []
+			});
 
 			expect(result.variables).toEqual({});
 		});

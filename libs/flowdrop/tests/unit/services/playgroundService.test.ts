@@ -55,15 +55,17 @@ describe('PlaygroundService', () => {
 
 		global.fetch = vi.fn();
 		mockGetEndpointConfig.mockReturnValue(createMockPlaygroundConfig());
-		mockBuildEndpointUrl.mockImplementation((_config: unknown, path: string, params?: Record<string, string>) => {
-			let url = `/api${path}`;
-			if (params) {
-				for (const [key, value] of Object.entries(params)) {
-					url = url.replace(`{${key}}`, value);
+		mockBuildEndpointUrl.mockImplementation(
+			(_config: unknown, path: string, params?: Record<string, string>) => {
+				let url = `/api${path}`;
+				if (params) {
+					for (const [key, value] of Object.entries(params)) {
+						url = url.replace(`{${key}}`, value);
+					}
 				}
+				return url;
 			}
-			return url;
-		});
+		);
 		mockGetEndpointHeaders.mockReturnValue({ 'Content-Type': 'application/json' });
 	});
 
@@ -82,9 +84,7 @@ describe('PlaygroundService', () => {
 
 	describe('listSessions', () => {
 		it('should fetch sessions for workflow', async () => {
-			const mockSessions = [
-				{ id: 'session-1', name: 'Test Session' }
-			];
+			const mockSessions = [{ id: 'session-1', name: 'Test Session' }];
 			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
 				ok: true,
 				json: async () => ({ data: mockSessions })
@@ -137,9 +137,7 @@ describe('PlaygroundService', () => {
 				json: async () => ({ data: null })
 			});
 
-			await expect(service.createSession('workflow-1')).rejects.toThrow(
-				'Failed to create session'
-			);
+			await expect(service.createSession('workflow-1')).rejects.toThrow('Failed to create session');
 		});
 	});
 

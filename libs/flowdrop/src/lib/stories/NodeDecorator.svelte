@@ -3,11 +3,11 @@
   inside a canvas, matching how they appear in the workflow editor.
 -->
 <script lang="ts">
-	import { SvelteFlow, Controls } from "@xyflow/svelte";
-	import type { Node, ColorMode } from "@xyflow/svelte";
-	import "@xyflow/svelte/dist/style.css";
-	import UniversalNode from "$lib/components/UniversalNode.svelte";
-	import { registerBuiltinNodes } from "$lib/registry/builtinNodes.js";
+	import { SvelteFlow, Controls } from '@xyflow/svelte';
+	import type { Node, ColorMode } from '@xyflow/svelte';
+	import '@xyflow/svelte/dist/style.css';
+	import UniversalNode from '$lib/components/UniversalNode.svelte';
+	import { registerBuiltinNodes } from '$lib/registry/builtinNodes.js';
 
 	let { data, selected = false }: { data: Record<string, unknown>; selected?: boolean } = $props();
 
@@ -15,32 +15,31 @@
 	registerBuiltinNodes();
 
 	const nodeTypes = {
-		universalNode: UniversalNode,
+		universalNode: UniversalNode
 	};
 
 	let nodes = $derived<Node[]>([
 		{
-			id: "story-node",
-			type: "universalNode",
+			id: 'story-node',
+			type: 'universalNode',
 			position: { x: 0, y: 0 },
 			selected,
-			data,
-		},
+			data
+		}
 	]);
 
 	// Watch the data-theme attribute set by Storybook's addon-themes
 	let colorMode = $state<ColorMode>(
-		(document.documentElement.getAttribute("data-theme") as ColorMode) || "light",
+		(document.documentElement.getAttribute('data-theme') as ColorMode) || 'light'
 	);
 
 	$effect(() => {
 		const observer = new MutationObserver(() => {
-			colorMode =
-				(document.documentElement.getAttribute("data-theme") as ColorMode) || "light";
+			colorMode = (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light';
 		});
 		observer.observe(document.documentElement, {
 			attributes: true,
-			attributeFilter: ["data-theme"],
+			attributeFilter: ['data-theme']
 		});
 		return () => observer.disconnect();
 	});

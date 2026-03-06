@@ -5,7 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [0.0.64] - 2026-03-06
 
 ### Breaking Changes :warning:
@@ -24,13 +23,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Unit tests for historyService, autoSaveService, interruptService, playgroundService, nodeExecutionService
+- Unit tests for historyService, autoSaveService, interruptService, playgroundService, nodeExecutionService, dynamicSchemaService, variableService, agentSpecExecutionService
 - Prominent single-instance warning in README quickstart section
 
 ### Changed
 
-- Wildcard exports in core module replaced with explicit named exports for better documentation tooling
+- Wildcard exports in core, editor, and form modules replaced with explicit named exports for better documentation tooling
 - Deprecated API cleanup: removed `variableSchema` prop and legacy `options` field
+
+### Fixed
+
+- **`@xyflow/svelte` dependency classification**: Moved from `dependencies` to `peerDependencies` and `devDependencies` — consumers must now install it directly, avoiding version conflicts
+- **App component lifecycle**: Added error handling to `onMount` and removed a dead workflow reactive effect that could cause unnecessary re-runs
+- **Navbar and PipelineStatus lifecycle**: Replaced Svelte 4 `onDestroy` patterns with `$effect` cleanup for correct Svelte 5 lifecycle management
+
+### Docs
+
+- Removed `console.log` statements from JSDoc code examples
 
 ---
 

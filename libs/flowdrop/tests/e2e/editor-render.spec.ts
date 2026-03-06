@@ -6,19 +6,11 @@
  */
 
 import { test, expect } from '@playwright/test';
-import {
-	gotoEditor,
-	getNodeCount,
-	getEdgeCount,
-	assertStatusBar
-} from './helpers/editor-helpers';
+import { gotoEditor, getNodeCount, getEdgeCount, assertStatusBar } from './helpers/editor-helpers';
 
 test.describe('Editor Rendering', () => {
 	test.beforeEach(({}, testInfo) => {
-		test.skip(
-			testInfo.project.name === 'Mobile Chrome',
-			'Editor requires desktop-width viewport'
-		);
+		test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
 	});
 
 	test('canvas renders with nodes and edges from simple workflow', async ({ page }) => {

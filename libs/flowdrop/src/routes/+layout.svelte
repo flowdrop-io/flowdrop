@@ -10,10 +10,7 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import {
-		globalSaveWorkflow,
-		globalExportWorkflow
-	} from '$lib/services/globalSave.js';
+	import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
 	import {
 		buildEndpointUrl,
 		type EndpointConfig,

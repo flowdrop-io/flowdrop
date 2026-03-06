@@ -16,10 +16,7 @@ import {
 
 test.describe('Node Operations', () => {
 	test.beforeEach(({}, testInfo) => {
-		test.skip(
-			testInfo.project.name === 'Mobile Chrome',
-			'Editor requires desktop-width viewport'
-		);
+		test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
 	});
 
 	test('add node by dragging from sidebar to canvas', async ({ page }) => {
