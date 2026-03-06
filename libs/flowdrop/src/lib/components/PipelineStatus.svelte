@@ -8,7 +8,8 @@
 	import { onMount } from 'svelte';
 	import App from './App.svelte';
 	import LogsSidebar from './LogsSidebar.svelte';
-	import { FlowDropApiClient } from '$lib/api/client.js';
+	import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
+	import { createEndpointConfig } from '$lib/config/endpoints.js';
 	import type { Workflow } from '$lib/types/index.js';
 	import type { EndpointConfig } from '$lib/config/endpoints.js';
 	import { logger } from '../utils/logger.js';
@@ -16,7 +17,7 @@
 	interface Props {
 		pipelineId: string;
 		workflow: Workflow;
-		apiClient?: FlowDropApiClient;
+		apiClient?: EnhancedFlowDropApiClient;
 		baseUrl?: string;
 		endpointConfig?: EndpointConfig;
 		onActionsReady?: (
@@ -35,7 +36,7 @@
 
 	// Initialize API client if not provided
 	const client =
-		apiClient || new FlowDropApiClient(endpointConfig?.baseUrl || baseUrl || '/api/flowdrop');
+		apiClient || new EnhancedFlowDropApiClient(endpointConfig ?? createEndpointConfig(baseUrl || '/api/flowdrop'));
 
 	// Pipeline status and job data
 	let pipelineStatus = $state<string>('unknown');
