@@ -224,16 +224,83 @@ export {
 export type { NodeStatusConfig } from '../utils/nodeWrapper.js';
 
 // Color utilities
-export * from '../utils/colors.js';
+export {
+	CATEGORY_COLOR_TOKENS,
+	DEFAULT_COLORS,
+	getCategoryColorToken,
+	getDataTypeColorToken,
+	getDataTypeConfig,
+	getAvailableDataTypes,
+	getCategoryColors,
+	getCategoryBackground,
+	getCategoryAccent,
+	getCategoryText,
+	getCategoryBorder,
+	getNodeColors,
+	getNodeBackground,
+	getNodeAccent,
+	getNodeText,
+	getNodeBorder,
+	getDataTypeColor,
+	parseDataTypeDisplay,
+	getDataTypeDisplayText,
+	isArrayDataType,
+	getArrayElementType,
+	hexToRgb,
+	getRelativeLuminance,
+	isLightColor,
+	getContrastTextColor,
+	resolveColorToken,
+	getContrastTextColorForDataType,
+	getContrastTextColorForCategory,
+	getPortBackgroundColor,
+	getPortBorderColor,
+	rgbToHex,
+	getLightTint,
+	getDarkTint,
+	getBorderTint,
+	getDarkBorderTint,
+	getColorVariants,
+	getThemeAwareColorVariants
+} from '../utils/colors.js';
+export type { ColorVariants } from '../utils/colors.js';
 
 // Icon utilities
-export * from '../utils/icons.js';
+export {
+	DEFAULT_ICONS,
+	CATEGORY_ICONS,
+	getNodeIcon,
+	getCategoryIcon,
+	getDefaultIcon,
+	isValidIcon,
+	getValidIcon
+} from '../utils/icons.js';
 
 // Config utilities
-export * from '../utils/config.js';
+export {
+	createDefaultFeatures,
+	createDefaultUIConfig,
+	createDefaultAPIConfig,
+	createDefaultExecutionConfig,
+	createDefaultStorageConfig,
+	createDefaultConfig,
+	mergeConfig,
+	validateConfig
+} from '../utils/config.js';
 
 // Node type utilities
-export * from '../utils/nodeTypes.js';
+export {
+	getComponentNameForNodeType,
+	getAvailableNodeTypes,
+	getPrimaryNodeType,
+	resolveNodeType,
+	resolveComponentName,
+	isNodeTypeSupported,
+	getNodeTypeOneOfOptions,
+	createNodeTypeConfigProperty,
+	isValidNodeType,
+	getAllNodeTypes
+} from '../utils/nodeTypes.js';
 
 // Connection utilities (including loopback edge detection)
 export {
@@ -265,7 +332,14 @@ export { defaultEndpointConfig, createEndpointConfig } from '../config/endpoints
 // Adapters
 // ============================================================================
 
-export * from '../adapters/WorkflowAdapter.js';
+export { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
+export type {
+	StandardNode,
+	StandardEdge,
+	StandardWorkflow,
+	WorkflowExecutionResult,
+	WorkflowValidationResult
+} from '../adapters/WorkflowAdapter.js';
 
 // ============================================================================
 // Agent Spec Types & Adapter
