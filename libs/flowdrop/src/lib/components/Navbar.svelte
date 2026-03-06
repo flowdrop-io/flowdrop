@@ -62,10 +62,13 @@
 		}
 	}
 
-	// Add event listener for click outside
-	if (typeof window !== 'undefined') {
+	// Add event listener for click outside with proper cleanup
+	$effect(() => {
 		document.addEventListener('click', handleClickOutside);
-	}
+		return () => {
+			document.removeEventListener('click', handleClickOutside);
+		};
+	});
 </script>
 
 <div class="flowdrop-navbar">
