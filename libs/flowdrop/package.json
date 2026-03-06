@@ -2,7 +2,7 @@
 	"name": "@d34dman/flowdrop",
 	"license": "MIT",
 	"private": false,
-	"version": "0.0.63",
+	"version": "0.0.64",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pnpm run prepack",
@@ -142,13 +142,31 @@
 		}
 	},
 	"peerDependencies": {
+		"@codemirror/autocomplete": "^6.20.0",
+		"@codemirror/commands": "^6.10.2",
+		"@codemirror/lang-json": "^6.0.2",
+		"@codemirror/lang-markdown": "^6.5.0",
+		"@codemirror/language": "^6.12.1",
+		"@codemirror/lint": "^6.9.2",
+		"@codemirror/state": "^6.5.4",
+		"@codemirror/theme-one-dark": "^6.1.3",
+		"@codemirror/view": "^6.39.14",
 		"@iconify/svelte": "^5.0.0",
+		"codemirror": "^6.0.2",
 		"svelte": "^5.0.0"
 	},
 	"peerDependenciesMeta": {
-		"@iconify/svelte": {
-			"optional": true
-		}
+		"@codemirror/autocomplete": { "optional": true },
+		"@codemirror/commands": { "optional": true },
+		"@codemirror/lang-json": { "optional": true },
+		"@codemirror/lang-markdown": { "optional": true },
+		"@codemirror/language": { "optional": true },
+		"@codemirror/lint": { "optional": true },
+		"@codemirror/state": { "optional": true },
+		"@codemirror/theme-one-dark": { "optional": true },
+		"@codemirror/view": { "optional": true },
+		"@iconify/svelte": { "optional": true },
+		"codemirror": { "optional": true }
 	},
 	"repository": {
 		"type": "git",
@@ -156,6 +174,16 @@
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^5.0.1",
+		"@codemirror/autocomplete": "^6.20.0",
+		"@codemirror/commands": "^6.10.2",
+		"@codemirror/lang-json": "^6.0.2",
+		"@codemirror/lang-markdown": "^6.5.0",
+		"@codemirror/language": "^6.12.1",
+		"@codemirror/lint": "^6.9.2",
+		"@codemirror/state": "^6.5.4",
+		"@codemirror/theme-one-dark": "^6.1.3",
+		"@codemirror/view": "^6.39.14",
+		"codemirror": "^6.0.2",
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@iconify/svelte": "^5.0.0",
@@ -221,17 +249,7 @@
 		"dag"
 	],
 	"dependencies": {
-		"@codemirror/autocomplete": "^6.20.0",
-		"@codemirror/commands": "^6.10.2",
-		"@codemirror/lang-json": "^6.0.2",
-		"@codemirror/lang-markdown": "^6.5.0",
-		"@codemirror/language": "^6.12.1",
-		"@codemirror/lint": "^6.9.2",
-		"@codemirror/state": "^6.5.4",
-		"@codemirror/theme-one-dark": "^6.1.3",
-		"@codemirror/view": "^6.39.14",
 		"@xyflow/svelte": "^1.2",
-		"codemirror": "^6.0.2",
 		"diff": "^8.0.3",
 		"dompurify": "^3.3.1",
 		"marked": "^16.1.1",

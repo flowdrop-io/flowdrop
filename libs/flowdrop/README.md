@@ -49,6 +49,8 @@ No vendor lock-in. No data leaving your walls. No surprise bills.
 npm install @d34dman/flowdrop
 ```
 
+> **Note:** FlowDrop supports **one editor instance per page** (module-level singleton stores). See [Architecture Notes](#architecture-notes) for details.
+
 You get a production-ready workflow UI. You keep full control of everything else.
 
 ## Quickstart
