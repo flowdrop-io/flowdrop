@@ -22,7 +22,73 @@
  */
 
 // Re-export everything from the light form module
-export * from './index.js';
+// Components
+export {
+	SchemaForm,
+	FormField,
+	FormFieldFull,
+	FormFieldWrapper,
+	FormTextField,
+	FormTextarea,
+	FormNumberField,
+	FormRangeField,
+	FormToggle,
+	FormSelect,
+	FormCheckboxGroup,
+	FormArray,
+	FormFieldset,
+	FormUISchemaRenderer
+} from './index.js';
+
+// Types
+export type {
+	FieldSchema,
+	FieldType,
+	FieldFormat,
+	FieldOption,
+	OneOfItem,
+	SchemaFormProps,
+	BaseFieldProps,
+	TextFieldProps,
+	TextareaFieldProps,
+	NumberFieldProps,
+	ToggleFieldProps,
+	RangeFieldProps,
+	SelectFieldProps,
+	CheckboxGroupFieldProps,
+	ArrayFieldProps,
+	FormFieldFactoryProps,
+	FormFieldWrapperProps,
+	FieldComponentProps,
+	FieldMatcher,
+	FieldMatcherRegistration,
+	FieldComponent,
+	FieldComponentRegistration
+} from './index.js';
+
+// Utility functions
+export {
+	isFieldOptionArray,
+	isOneOfArray,
+	normalizeOptions,
+	oneOfToOptions,
+	getSchemaOptions
+} from './index.js';
+
+// Field Registry
+export {
+	fieldComponentRegistry,
+	hiddenFieldMatcher,
+	checkboxGroupMatcher,
+	enumSelectMatcher,
+	textareaMatcher,
+	rangeMatcher,
+	textFieldMatcher,
+	numberFieldMatcher,
+	toggleMatcher,
+	selectOptionsMatcher,
+	arrayMatcher
+} from './index.js';
 
 // Import registration functions
 import { registerCodeEditorField, registerTemplateEditorField } from './code.js';

@@ -33,6 +33,9 @@
 // ============================================================================
 // IMPORTANT: This module re-exports from sub-modules for backward compatibility.
 // New code should import directly from sub-modules for better tree-shaking.
+//
+// The wildcard re-exports below are intentional: each sub-module barrel uses
+// explicit named exports, so the public API surface is fully controlled there.
 // ============================================================================
 
 // ============================================================================
