@@ -14,6 +14,7 @@ import type {
 } from '../types/index.js';
 import { getEndpointConfig } from './api.js';
 import { logger } from '../utils/logger.js';
+import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 
 /**
  * Context for variable API requests
@@ -57,10 +58,8 @@ interface VariableCacheEntry {
  */
 const variableCache = new Map<string, VariableCacheEntry>();
 
-/**
- * Default cache TTL in milliseconds (5 minutes)
- */
-export const DEFAULT_VARIABLE_CACHE_TTL = 5 * 60 * 1000;
+/** Default cache TTL for variable data */
+export const DEFAULT_VARIABLE_CACHE_TTL = DEFAULT_CACHE_TTL_MS;
 
 /**
  * Replaces {workflowId} and {nodeId} placeholders in URL template.

@@ -14,6 +14,7 @@ import type {
 	WorkflowNode
 } from '../types/index.js';
 import { getEndpointConfig } from './api.js';
+import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -65,10 +66,8 @@ interface SchemaCacheEntry {
  */
 const schemaCache = new Map<string, SchemaCacheEntry>();
 
-/**
- * Default cache TTL in milliseconds (5 minutes)
- */
-const DEFAULT_CACHE_TTL = 5 * 60 * 1000;
+/** Local alias for cache TTL */
+const DEFAULT_CACHE_TTL = DEFAULT_CACHE_TTL_MS;
 
 /**
  * Resolves a template variable path from the node context.
