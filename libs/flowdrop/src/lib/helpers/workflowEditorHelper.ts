@@ -21,6 +21,7 @@ import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
 import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
 import { validateForAgentSpecExport } from '../adapters/agentspec/validator.js';
 import { extractPortId } from '../utils/handleIds.js';
+import { EDGE_MARKER_SIZES } from '../config/constants.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -214,8 +215,7 @@ export class EdgeStylingHelper {
 				edge.class = 'flowdrop--edge--loopback';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
-					width: 14,
-					height: 14,
+					...EDGE_MARKER_SIZES.loopback,
 					color: 'var(--fd-edge-loopback)'
 				};
 				break;
@@ -226,8 +226,7 @@ export class EdgeStylingHelper {
 				edge.class = 'flowdrop--edge--trigger';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
-					width: 16,
-					height: 16,
+					...EDGE_MARKER_SIZES.trigger,
 					color: 'var(--fd-edge-trigger)'
 				};
 				break;
@@ -238,8 +237,7 @@ export class EdgeStylingHelper {
 				edge.class = 'flowdrop--edge--tool';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
-					width: 16,
-					height: 16,
+					...EDGE_MARKER_SIZES.tool,
 					color: 'var(--fd-edge-tool)'
 				};
 				break;
@@ -251,8 +249,7 @@ export class EdgeStylingHelper {
 				edge.class = 'flowdrop--edge--data';
 				edge.markerEnd = {
 					type: MarkerType.ArrowClosed,
-					width: 16,
-					height: 16,
+					...EDGE_MARKER_SIZES.data,
 					color: 'var(--fd-edge-data)'
 				};
 				break;
