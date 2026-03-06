@@ -281,7 +281,6 @@ export {
 // API Clients
 // ============================================================================
 
-export { FlowDropApiClient } from '../api/client.js';
 export { EnhancedFlowDropApiClient, ApiError } from '../api/enhanced-client.js';
 
 // ============================================================================
