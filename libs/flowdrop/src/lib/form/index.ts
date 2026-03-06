@@ -126,14 +126,6 @@ export {
 export {
 	// Registry singleton
 	fieldComponentRegistry,
-	// Backward-compatible function wrappers
-	registerFieldComponent,
-	unregisterFieldComponent,
-	resolveFieldComponent,
-	getRegisteredFieldTypes,
-	isFieldTypeRegistered,
-	clearFieldRegistry,
-	getFieldRegistrySize,
 	// Built-in matchers for custom components
 	hiddenFieldMatcher,
 	checkboxGroupMatcher,

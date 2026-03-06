@@ -24,7 +24,7 @@
  * ```
  */
 
-import { registerFieldComponent, fieldComponentRegistry } from './fieldRegistry.js';
+import { fieldComponentRegistry } from './fieldRegistry.js';
 import type { FieldComponent } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
 
@@ -75,7 +75,7 @@ export function registerMarkdownEditorField(priority: number = 100): void {
 
 	// Dynamic import to ensure proper code splitting
 	import('../components/form/FormMarkdownEditor.svelte').then((module) => {
-		registerFieldComponent('markdown-editor', module.default, markdownEditorFieldMatcher, priority);
+		fieldComponentRegistry.register('markdown-editor', { component: module.default, matcher: markdownEditorFieldMatcher, priority });
 		markdownEditorRegistered = true;
 	});
 }
@@ -101,7 +101,7 @@ export function registerMarkdownEditorFieldWithComponent(
 		return;
 	}
 
-	registerFieldComponent('markdown-editor', component, markdownEditorFieldMatcher, priority);
+	fieldComponentRegistry.register('markdown-editor', { component, matcher: markdownEditorFieldMatcher, priority });
 	markdownEditorRegistered = true;
 }
 
