@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.0.64] - 2026-03-06
+
+### Breaking Changes :warning:
+
+- **Removed `variableSchema` prop**: FormTemplateEditor no longer accepts the deprecated `variableSchema` prop. Use `variables.schema` instead.
+- **Removed `options` field from FieldSchema**: The deprecated `options` property on field schemas has been removed. Use JSON Schema `oneOf` with `const`/`title` for labeled select options.
+- **CodeMirror moved to optional peer dependencies**: `@codemirror/*` packages are now optional peer dependencies. If you use `form/code` or `form/markdown` modules, install CodeMirror packages in your project.
+
+### Upgrade Notes
+
+> If you are upgrading from **0.0.x**, please review the following:
+>
+> 1. **`variableSchema` to `variables.schema`** -- Replace `variableSchema={schema}` with `variables={{ schema }}` on FormTemplateEditor.
+> 2. **`options` to `oneOf`** -- Replace `options: [{ value: "x", label: "X" }]` with `oneOf: [{ const: "x", title: "X" }]` in your field schemas.
+> 3. **CodeMirror installation** -- If you import from `@d34dman/flowdrop/form/code` or `@d34dman/flowdrop/form/markdown`, add CodeMirror to your dependencies: `npm install codemirror @codemirror/state @codemirror/view @codemirror/commands @codemirror/language @codemirror/theme-one-dark @codemirror/autocomplete @codemirror/lang-json @codemirror/lang-markdown @codemirror/lint`
+
+### Added
+
+- Unit tests for historyService, autoSaveService, interruptService, playgroundService, nodeExecutionService
+- Prominent single-instance warning in README quickstart section
+
+### Changed
+
+- Wildcard exports in core module replaced with explicit named exports for better documentation tooling
+- Deprecated API cleanup: removed `variableSchema` prop and legacy `options` field
+
+---
+
 ## [0.0.63] - 2026-03-04
 
 ### Fixed
