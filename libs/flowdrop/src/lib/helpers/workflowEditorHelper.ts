@@ -20,6 +20,7 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
 import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
 import { validateForAgentSpecExport } from '../adapters/agentspec/validator.js';
+import { extractPortId } from '../utils/handleIds.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -62,32 +63,11 @@ export type EdgeCategory = 'trigger' | 'tool' | 'loopback' | 'data';
 export class EdgeStylingHelper {
 	/**
 	 * Extract the port ID from a handle ID
-	 * Supports two formats:
-	 * 1. Standard format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
-	 * 2. Short format: just the portId (e.g., "text", "trigger")
 	 * @param handleId - The handle ID string (e.g., "sample-node.1-output-trigger" or "trigger")
 	 * @returns The port ID (e.g., "trigger") or the handleId itself for short format
 	 */
 	static extractPortIdFromHandle(handleId: string | undefined): string | null {
-		if (!handleId) {
-			return null;
-		}
-
-		// Try standard format: "${nodeId}-output-${portId}" or "${nodeId}-input-${portId}"
-		// We need to find the last occurrence of "-output-" or "-input-" and get what follows
-		const outputMatch = handleId.lastIndexOf('-output-');
-		const inputMatch = handleId.lastIndexOf('-input-');
-
-		if (outputMatch !== -1) {
-			return handleId.substring(outputMatch + '-output-'.length);
-		}
-
-		if (inputMatch !== -1) {
-			return handleId.substring(inputMatch + '-input-'.length);
-		}
-
-		// Short format: the handleId IS the port ID
-		return handleId;
+		return extractPortId(handleId);
 	}
 
 	/**
