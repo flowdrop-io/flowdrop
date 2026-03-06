@@ -267,12 +267,16 @@
 	/**
 	 * Visible input ports filtered by hideUnconnectedHandles setting
 	 */
-	let visibleInputPorts = $derived(inputPorts.filter((port: NodePort) => isPortVisible(port, 'input')));
+	let visibleInputPorts = $derived(
+		inputPorts.filter((port: NodePort) => isPortVisible(port, 'input'))
+	);
 
 	/**
 	 * Visible output ports filtered by hideUnconnectedHandles setting
 	 */
-	let visibleOutputPorts = $derived(outputPorts.filter((port: NodePort) => isPortVisible(port, 'output')));
+	let visibleOutputPorts = $derived(
+		outputPorts.filter((port: NodePort) => isPortVisible(port, 'output'))
+	);
 
 	/**
 	 * Determine if we should show inputs based on visible ports

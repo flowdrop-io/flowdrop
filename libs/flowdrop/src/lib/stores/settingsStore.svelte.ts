@@ -186,7 +186,11 @@ export function getSettings(): FlowDropSettings {
 /**
  * Get sync status (replaces syncStatusStore derived store)
  */
-export function getSyncStatus(): { status: SyncStatus; lastSyncedAt: number | null; error: string | null } {
+export function getSyncStatus(): {
+	status: SyncStatus;
+	lastSyncedAt: number | null;
+	error: string | null;
+} {
 	return {
 		status: storeState.syncStatus,
 		lastSyncedAt: storeState.lastSyncedAt,

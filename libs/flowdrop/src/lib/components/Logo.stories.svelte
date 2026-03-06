@@ -1,11 +1,11 @@
 <script module>
-	import { defineMeta } from "@storybook/addon-svelte-csf";
-	import Logo from "./Logo.svelte";
+	import { defineMeta } from '@storybook/addon-svelte-csf';
+	import Logo from './Logo.svelte';
 
 	const { Story } = defineMeta({
-		title: "Display/Logo",
+		title: 'Display/Logo',
 		component: Logo,
-		tags: ["autodocs"],
+		tags: ['autodocs']
 	});
 </script>
 

@@ -6,11 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import {
-	gotoEditor,
-	openNodeConfig,
-	clickCanvas
-} from './helpers/editor-helpers';
+import { gotoEditor, openNodeConfig, clickCanvas } from './helpers/editor-helpers';
 
 test.describe('Node Configuration', () => {
 	test.beforeEach(({}, testInfo) => {
@@ -103,5 +99,4 @@ test.describe('Node Configuration', () => {
 		// Config panel should close
 		await expect(configPanel).not.toBeVisible({ timeout: 5000 });
 	});
-
 });

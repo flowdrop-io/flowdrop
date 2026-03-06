@@ -108,22 +108,22 @@ FlowDrop's token system has three tiers:
 
 ### Spacing
 
-| Token             | Value       | Pixels |
-| ----------------- | ----------- | ------ |
-| `--fd-space-0`    | `0`         | 0px    |
-| `--fd-space-3xs`  | `0.25rem`   | 4px    |
-| `--fd-space-2xs`  | `0.375rem`  | 6px    |
-| `--fd-space-xs`   | `0.5rem`    | 8px    |
-| `--fd-space-sm`   | `0.625rem`  | 10px   |
-| `--fd-space-md`   | `0.75rem`   | 12px   |
-| `--fd-space-lg`   | `0.875rem`  | 14px   |
-| `--fd-space-xl`   | `1rem`      | 16px   |
-| `--fd-space-2xl`  | `1.25rem`   | 20px   |
-| `--fd-space-3xl`  | `1.5rem`    | 24px   |
-| `--fd-space-4xl`  | `2rem`      | 32px   |
-| `--fd-space-5xl`  | `2.5rem`    | 40px   |
-| `--fd-space-6xl`  | `3rem`      | 48px   |
-| `--fd-space-7xl`  | `4rem`      | 64px   |
+| Token            | Value      | Pixels |
+| ---------------- | ---------- | ------ |
+| `--fd-space-0`   | `0`        | 0px    |
+| `--fd-space-3xs` | `0.25rem`  | 4px    |
+| `--fd-space-2xs` | `0.375rem` | 6px    |
+| `--fd-space-xs`  | `0.5rem`   | 8px    |
+| `--fd-space-sm`  | `0.625rem` | 10px   |
+| `--fd-space-md`  | `0.75rem`  | 12px   |
+| `--fd-space-lg`  | `0.875rem` | 14px   |
+| `--fd-space-xl`  | `1rem`     | 16px   |
+| `--fd-space-2xl` | `1.25rem`  | 20px   |
+| `--fd-space-3xl` | `1.5rem`   | 24px   |
+| `--fd-space-4xl` | `2rem`     | 32px   |
+| `--fd-space-5xl` | `2.5rem`   | 40px   |
+| `--fd-space-6xl` | `3rem`     | 48px   |
+| `--fd-space-7xl` | `4rem`     | 64px   |
 
 ### Border Radius
 

@@ -36,7 +36,10 @@
 
 	// Initialize API client if not provided
 	const client =
-		apiClient || new EnhancedFlowDropApiClient(endpointConfig ?? createEndpointConfig(baseUrl || '/api/flowdrop'));
+		apiClient ||
+		new EnhancedFlowDropApiClient(
+			endpointConfig ?? createEndpointConfig(baseUrl || '/api/flowdrop')
+		);
 
 	// Pipeline status and job data
 	let pipelineStatus = $state<string>('unknown');

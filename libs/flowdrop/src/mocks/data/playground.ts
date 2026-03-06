@@ -572,14 +572,7 @@ function createInterruptMessage(
 		}
 		case 'review': {
 			const config = sampleInterruptConfigs.review;
-			interrupt = createReviewInterrupt(
-				sessionId,
-				messageId,
-				nodeId,
-				executionId,
-				config,
-				true
-			);
+			interrupt = createReviewInterrupt(sessionId, messageId, nodeId, executionId, config, true);
 			content = config.message;
 			metadata = {
 				type: 'interrupt_request',

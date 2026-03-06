@@ -176,7 +176,11 @@
 	 * Supports strings (word-level), arrays (element-level), and objects (JSON line-level).
 	 * For HTML strings, strips tags and diffs the plain text content.
 	 */
-	function computeDiff(original: unknown, proposed: unknown, rawMode: boolean = false): Change[] | null {
+	function computeDiff(
+		original: unknown,
+		proposed: unknown,
+		rawMode: boolean = false
+	): Change[] | null {
 		if (typeof original === 'string' && typeof proposed === 'string') {
 			const origText = !rawMode && containsHtml(original) ? stripHtmlTags(original) : original;
 			const propText = !rawMode && containsHtml(proposed) ? stripHtmlTags(proposed) : proposed;
@@ -335,9 +339,13 @@
 					<div class="review-prompt__diff-row">
 						<span class="review-prompt__diff-label">Original:</span>
 						{#if isHtml && !isRawView}
-							<span class="review-prompt__diff-value review-prompt__html-content">{@html sanitizeHtml(String(change.original))}</span>
+							<span class="review-prompt__diff-value review-prompt__html-content"
+								>{@html sanitizeHtml(String(change.original))}</span
+							>
 						{:else if isHtml && isRawView}
-							<code class="review-prompt__diff-value review-prompt__raw-html">{change.original}</code>
+							<code class="review-prompt__diff-value review-prompt__raw-html"
+								>{change.original}</code
+							>
 						{:else}
 							<span class="review-prompt__diff-value">
 								{formatValue(change.original)}
@@ -347,9 +355,15 @@
 					<div class="review-prompt__diff-row">
 						<span class="review-prompt__diff-label">Proposed:</span>
 						{#if isHtml && !isRawView}
-							<span class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content">{@html sanitizeHtml(String(change.proposed))}</span>
+							<span
+								class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content"
+								>{@html sanitizeHtml(String(change.proposed))}</span
+							>
 						{:else if isHtml && isRawView}
-							<code class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__raw-html">{change.proposed}</code>
+							<code
+								class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__raw-html"
+								>{change.proposed}</code
+							>
 						{:else}
 							<span class="review-prompt__diff-value review-prompt__diff-value--proposed">
 								{formatValue(change.proposed)}
@@ -359,21 +373,26 @@
 					{#if diff}
 						<div class="review-prompt__diff-row">
 							<span class="review-prompt__diff-label">Diff:</span>
-						{#if isMultiLineDiff(diff)}
-							<pre class="review-prompt__diff-value review-prompt__diff-block">{#each diff as part}{#if part.added}<span class="review-prompt__diff-token--added">{part.value}</span>{:else if part.removed}<span class="review-prompt__diff-token--removed">{part.value}</span>{:else}<span>{part.value}</span>{/if}{/each}</pre>
-						{:else}
-							<span class="review-prompt__diff-value review-prompt__diff-inline">
-								{#each diff as part}
-									{#if part.added}
-										<span class="review-prompt__diff-token--added">{part.value}</span>
-									{:else if part.removed}
-										<span class="review-prompt__diff-token--removed">{part.value}</span>
-									{:else}
-										<span>{part.value}</span>
-									{/if}
-								{/each}
-							</span>
-						{/if}
+							{#if isMultiLineDiff(diff)}
+								<pre
+									class="review-prompt__diff-value review-prompt__diff-block">{#each diff as part}{#if part.added}<span
+												class="review-prompt__diff-token--added">{part.value}</span
+											>{:else if part.removed}<span class="review-prompt__diff-token--removed"
+												>{part.value}</span
+											>{:else}<span>{part.value}</span>{/if}{/each}</pre>
+							{:else}
+								<span class="review-prompt__diff-value review-prompt__diff-inline">
+									{#each diff as part}
+										{#if part.added}
+											<span class="review-prompt__diff-token--added">{part.value}</span>
+										{:else if part.removed}
+											<span class="review-prompt__diff-token--removed">{part.value}</span>
+										{:else}
+											<span>{part.value}</span>
+										{/if}
+									{/each}
+								</span>
+							{/if}
 						</div>
 					{/if}
 				</div>
@@ -404,8 +423,8 @@
 	{#if isResolved && resolvedValue}
 		<div class="review-prompt__summary">
 			<span class="review-prompt__summary-text">
-				{resolvedValue.summary.accepted} accepted, {resolvedValue.summary.rejected} rejected
-				out of {resolvedValue.summary.total} changes
+				{resolvedValue.summary.accepted} accepted, {resolvedValue.summary.rejected} rejected out of {resolvedValue
+					.summary.total} changes
 			</span>
 		</div>
 	{/if}
@@ -415,9 +434,7 @@
 		<div class="review-prompt__resolved-badge">
 			<Icon icon="mdi:check-circle" />
 			<span>
-				{resolvedByUserName
-					? `Response submitted by ${resolvedByUserName}`
-					: 'Response submitted'}
+				{resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
 			</span>
 		</div>
 	{/if}

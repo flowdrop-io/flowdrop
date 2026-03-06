@@ -409,7 +409,9 @@ export interface InterruptMessageMetadata {
  * @param metadata - Message metadata to check
  * @returns True if the metadata indicates an interrupt request
  */
-export function isInterruptMetadata(metadata: Record<string, unknown> | undefined): metadata is Record<string, unknown> {
+export function isInterruptMetadata(
+	metadata: Record<string, unknown> | undefined
+): metadata is Record<string, unknown> {
 	return (
 		metadata !== undefined &&
 		metadata.type === 'interrupt_request' &&

@@ -75,7 +75,11 @@ export function registerMarkdownEditorField(priority: number = 100): void {
 
 	// Dynamic import to ensure proper code splitting
 	import('../components/form/FormMarkdownEditor.svelte').then((module) => {
-		fieldComponentRegistry.register('markdown-editor', { component: module.default, matcher: markdownEditorFieldMatcher, priority });
+		fieldComponentRegistry.register('markdown-editor', {
+			component: module.default,
+			matcher: markdownEditorFieldMatcher,
+			priority
+		});
 		markdownEditorRegistered = true;
 	});
 }
@@ -101,7 +105,11 @@ export function registerMarkdownEditorFieldWithComponent(
 		return;
 	}
 
-	fieldComponentRegistry.register('markdown-editor', { component, matcher: markdownEditorFieldMatcher, priority });
+	fieldComponentRegistry.register('markdown-editor', {
+		component,
+		matcher: markdownEditorFieldMatcher,
+		priority
+	});
 	markdownEditorRegistered = true;
 }
 

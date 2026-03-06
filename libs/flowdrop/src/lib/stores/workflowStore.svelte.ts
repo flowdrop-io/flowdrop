@@ -625,9 +625,7 @@ export const workflowActions = {
 		workflowState = {
 			...workflowState,
 			nodes: workflowState.nodes.filter((node) => node.id !== nodeId),
-			edges: workflowState.edges.filter(
-				(edge) => edge.source !== nodeId && edge.target !== nodeId
-			),
+			edges: workflowState.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
 			metadata: buildMetadata(workflowState.metadata)
 		};
 		notifyWorkflowChange('node_remove');

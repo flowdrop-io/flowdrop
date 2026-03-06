@@ -13,10 +13,7 @@
 	import ChatPanel from './ChatPanel.svelte';
 	import type { Workflow } from '../../types/index.js';
 	import type { EndpointConfig } from '../../config/endpoints.js';
-	import type {
-		PlaygroundMode,
-		PlaygroundConfig
-	} from '../../types/playground.js';
+	import type { PlaygroundMode, PlaygroundConfig } from '../../types/playground.js';
 	import { playgroundService } from '../../services/playgroundService.js';
 	import { interruptService } from '../../services/interruptService.js';
 	import { setEndpointConfig } from '../../services/api.js';

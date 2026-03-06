@@ -119,97 +119,97 @@
 	   ========================================================================= */
 
 	/* ----- SURFACES (Backgrounds) ----- */
-	--fd-background: #ffffff;              /* @public */
-	--fd-foreground: var(--_gray-9);       /* @public */
-	--fd-muted: #f8f8fb;                   /* @public */
+	--fd-background: #ffffff; /* @public */
+	--fd-foreground: var(--_gray-9); /* @public */
+	--fd-muted: #f8f8fb; /* @public */
 	--fd-muted-foreground: var(--_gray-6); /* @public */
-	--fd-subtle: #f0f0f5;                  /* @public */
-	--fd-card: #ffffff;                    /* @public */
-	--fd-card-foreground: var(--_gray-9);  /* @public */
+	--fd-subtle: #f0f0f5; /* @public */
+	--fd-card: #ffffff; /* @public */
+	--fd-card-foreground: var(--_gray-9); /* @public */
 
 	/* ----- HEADER (Distinct header styling) ----- */
-	--fd-header: #f5f7fa;                                              /* @public */
-	--fd-header-foreground: var(--_gray-8);                            /* @public */
+	--fd-header: #f5f7fa; /* @public */
+	--fd-header-foreground: var(--_gray-8); /* @public */
 	--fd-header-gradient: linear-gradient(180deg, #f8f9fc 0%, #f4f5f8 100%); /* @public */
 
 	/* ----- SURFACE TINT (Subtle accent for surfaces) ----- */
 	--fd-surface-tint: rgba(99, 102, 241, 0.02); /* @public */
 
 	/* ----- BORDERS ----- */
-	--fd-border: var(--_gray-4);        /* @public */
-	--fd-border-muted: var(--_gray-3);  /* @public */
+	--fd-border: var(--_gray-4); /* @public */
+	--fd-border-muted: var(--_gray-3); /* @public */
 	--fd-border-strong: var(--_gray-5); /* @public */
-	--fd-ring: var(--_blue-2);          /* @public */
+	--fd-ring: var(--_blue-2); /* @public */
 
 	/* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
-	--fd-node-border: var(--_gray-5);       /* @public */
+	--fd-node-border: var(--_gray-5); /* @public */
 	--fd-node-border-hover: var(--_gray-6); /* @public */
 
 	/* ----- PRIMARY (Interactive/Brand) ----- */
-	--fd-primary: var(--_blue-2);          /* @public */
-	--fd-primary-hover: var(--_blue-3);    /* @public */
-	--fd-primary-foreground: #ffffff;      /* @public */
-	--fd-primary-muted: var(--_blue-1);    /* @public */
+	--fd-primary: var(--_blue-2); /* @public */
+	--fd-primary-hover: var(--_blue-3); /* @public */
+	--fd-primary-foreground: #ffffff; /* @public */
+	--fd-primary-muted: var(--_blue-1); /* @public */
 
 	/* ----- SECONDARY ----- */
-	--fd-secondary: var(--_gray-2);            /* @public */
-	--fd-secondary-hover: var(--_gray-3);      /* @public */
+	--fd-secondary: var(--_gray-2); /* @public */
+	--fd-secondary-hover: var(--_gray-3); /* @public */
 	--fd-secondary-foreground: var(--_gray-9); /* @public */
 
 	/* ----- ACCENT ----- */
-	--fd-accent: var(--_violet-2);          /* @public */
-	--fd-accent-hover: var(--_violet-3);    /* @public */
-	--fd-accent-foreground: #ffffff;        /* @public */
-	--fd-accent-muted: var(--_violet-1);    /* @public */
+	--fd-accent: var(--_violet-2); /* @public */
+	--fd-accent-hover: var(--_violet-3); /* @public */
+	--fd-accent-foreground: #ffffff; /* @public */
+	--fd-accent-muted: var(--_violet-1); /* @public */
 
 	/* ----- STATUS: SUCCESS ----- */
-	--fd-success: var(--_green-2);            /* @public */
-	--fd-success-hover: var(--_green-3);      /* @public */
-	--fd-success-foreground: #ffffff;         /* @public */
-	--fd-success-muted: var(--_green-1);      /* @public */
+	--fd-success: var(--_green-2); /* @public */
+	--fd-success-hover: var(--_green-3); /* @public */
+	--fd-success-foreground: #ffffff; /* @public */
+	--fd-success-muted: var(--_green-1); /* @public */
 
 	/* ----- STATUS: WARNING ----- */
-	--fd-warning: var(--_amber-2);            /* @public */
-	--fd-warning-hover: var(--_amber-3);      /* @public */
-	--fd-warning-foreground: var(--_gray-9);  /* @public */
-	--fd-warning-muted: var(--_amber-1);      /* @public */
+	--fd-warning: var(--_amber-2); /* @public */
+	--fd-warning-hover: var(--_amber-3); /* @public */
+	--fd-warning-foreground: var(--_gray-9); /* @public */
+	--fd-warning-muted: var(--_amber-1); /* @public */
 
 	/* ----- STATUS: ERROR/DESTRUCTIVE ----- */
-	--fd-error: var(--_red-2);           /* @public */
-	--fd-error-hover: var(--_red-3);     /* @public */
-	--fd-error-foreground: #ffffff;      /* @public */
-	--fd-error-muted: var(--_red-1);     /* @public */
+	--fd-error: var(--_red-2); /* @public */
+	--fd-error-hover: var(--_red-3); /* @public */
+	--fd-error-foreground: #ffffff; /* @public */
+	--fd-error-muted: var(--_red-1); /* @public */
 
 	/* ----- STATUS: INFO ----- */
-	--fd-info: var(--_blue-2);           /* @public */
-	--fd-info-hover: var(--_blue-3);     /* @public */
-	--fd-info-foreground: #ffffff;       /* @public */
-	--fd-info-muted: var(--_blue-1);     /* @public */
+	--fd-info: var(--_blue-2); /* @public */
+	--fd-info-hover: var(--_blue-3); /* @public */
+	--fd-info-foreground: #ffffff; /* @public */
+	--fd-info-muted: var(--_blue-1); /* @public */
 
 	/* ----- SPACING SCALE (Named sizes) ----- */
-	--fd-space-0: 0;              /* @public */
-	--fd-space-3xs: 0.25rem;      /* @public  4px */
-	--fd-space-2xs: 0.375rem;     /* @public  6px */
-	--fd-space-xs: 0.5rem;        /* @public  8px */
-	--fd-space-sm: 0.625rem;      /* @public  10px */
-	--fd-space-md: 0.75rem;       /* @public  12px */
-	--fd-space-lg: 0.875rem;      /* @public  14px */
-	--fd-space-xl: 1rem;          /* @public  16px */
-	--fd-space-2xl: 1.25rem;      /* @public  20px */
-	--fd-space-3xl: 1.5rem;       /* @public  24px */
-	--fd-space-4xl: 2rem;         /* @public  32px */
-	--fd-space-5xl: 2.5rem;       /* @public  40px */
-	--fd-space-6xl: 3rem;         /* @public  48px */
-	--fd-space-7xl: 4rem;         /* @public  64px */
+	--fd-space-0: 0; /* @public */
+	--fd-space-3xs: 0.25rem; /* @public  4px */
+	--fd-space-2xs: 0.375rem; /* @public  6px */
+	--fd-space-xs: 0.5rem; /* @public  8px */
+	--fd-space-sm: 0.625rem; /* @public  10px */
+	--fd-space-md: 0.75rem; /* @public  12px */
+	--fd-space-lg: 0.875rem; /* @public  14px */
+	--fd-space-xl: 1rem; /* @public  16px */
+	--fd-space-2xl: 1.25rem; /* @public  20px */
+	--fd-space-3xl: 1.5rem; /* @public  24px */
+	--fd-space-4xl: 2rem; /* @public  32px */
+	--fd-space-5xl: 2.5rem; /* @public  40px */
+	--fd-space-6xl: 3rem; /* @public  48px */
+	--fd-space-7xl: 4rem; /* @public  64px */
 
 	/* ----- BORDER RADIUS ----- */
-	--fd-radius-none: 0;           /* @public */
-	--fd-radius-sm: 0.25rem;       /* @public  4px */
-	--fd-radius-md: 0.375rem;      /* @public  6px */
-	--fd-radius-lg: 0.5rem;        /* @public  8px */
-	--fd-radius-xl: 0.75rem;       /* @public  12px */
-	--fd-radius-2xl: 1rem;         /* @public  16px */
-	--fd-radius-full: 9999px;      /* @public */
+	--fd-radius-none: 0; /* @public */
+	--fd-radius-sm: 0.25rem; /* @public  4px */
+	--fd-radius-md: 0.375rem; /* @public  6px */
+	--fd-radius-lg: 0.5rem; /* @public  8px */
+	--fd-radius-xl: 0.75rem; /* @public  12px */
+	--fd-radius-2xl: 1rem; /* @public  16px */
+	--fd-radius-full: 9999px; /* @public */
 
 	/* ----- SHADOWS (Refined layered shadows for modern depth) ----- */
 	--fd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06); /* @public */
@@ -218,34 +218,35 @@
 	--fd-shadow-xl: 0 20px 30px rgb(0 0 0 / 0.1), 0 8px 16px rgb(0 0 0 / 0.06); /* @public */
 
 	/* ----- FONT SIZES ----- */
-	--fd-text-2xs: 0.6875rem;  /* @public  11px */
-	--fd-text-xs: 0.75rem;     /* @public  12px */
-	--fd-text-xsm: 0.8125rem;  /* @public  13px */
-	--fd-text-sm: 0.875rem;    /* @public  14px */
-	--fd-text-md: 0.9375rem;   /* @public  15px */
-	--fd-text-base: 1rem;      /* @public  16px */
-	--fd-text-lg: 1.125rem;    /* @public  18px */
-	--fd-text-xl: 1.25rem;     /* @public  20px */
-	--fd-text-2xl: 1.5rem;     /* @public  24px */
+	--fd-text-2xs: 0.6875rem; /* @public  11px */
+	--fd-text-xs: 0.75rem; /* @public  12px */
+	--fd-text-xsm: 0.8125rem; /* @public  13px */
+	--fd-text-sm: 0.875rem; /* @public  14px */
+	--fd-text-md: 0.9375rem; /* @public  15px */
+	--fd-text-base: 1rem; /* @public  16px */
+	--fd-text-lg: 1.125rem; /* @public  18px */
+	--fd-text-xl: 1.25rem; /* @public  20px */
+	--fd-text-2xl: 1.5rem; /* @public  24px */
 
 	/* ----- LINE HEIGHTS ----- */
-	--fd-leading-tight: 1.4;    /* @public */
-	--fd-leading-normal: 1.5;   /* @public */
-	--fd-leading-relaxed: 1.6;  /* @public */
+	--fd-leading-tight: 1.4; /* @public */
+	--fd-leading-normal: 1.5; /* @public */
+	--fd-leading-relaxed: 1.6; /* @public */
 
 	/* ----- FONT FAMILIES ----- */
-	--fd-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; /* @public */
+	--fd-font-mono:
+		ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; /* @public */
 
 	/* ----- COMPONENT SIZES ----- */
-	--fd-size-icon-btn: 1.75rem;  /* @internal  28px — may change with component redesigns */
-	--fd-size-btn-min: 2.5rem;    /* @internal  40px — may change with component redesigns */
-	--fd-size-avatar: 2.25rem;    /* @internal  36px — may change with component redesigns */
-	--fd-size-spinner: 1rem;      /* @internal  16px — may change with component redesigns */
+	--fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
+	--fd-size-btn-min: 2.5rem; /* @internal  40px — may change with component redesigns */
+	--fd-size-avatar: 2.25rem; /* @internal  36px — may change with component redesigns */
+	--fd-size-spinner: 1rem; /* @internal  16px — may change with component redesigns */
 
 	/* ----- TRANSITIONS ----- */
-	--fd-transition-fast: 150ms ease;    /* @public */
-	--fd-transition-normal: 200ms ease;  /* @public */
-	--fd-transition-slow: 300ms ease;    /* @public */
+	--fd-transition-fast: 150ms ease; /* @public */
+	--fd-transition-normal: 200ms ease; /* @public */
+	--fd-transition-slow: 300ms ease; /* @public */
 
 	/* =========================================================================
 	   COMPONENT TOKENS
@@ -255,85 +256,92 @@
 	   ========================================================================= */
 
 	/* ----- LAYOUT ----- */
-	--fd-sidebar-width: 320px;  /* @internal — controlled programmatically */
-	--fd-navbar-height: 60px;   /* @internal — controlled programmatically */
-	--fd-toolbar-height: 40px;  /* @internal — controlled programmatically */
+	--fd-sidebar-width: 320px; /* @internal — controlled programmatically */
+	--fd-navbar-height: 60px; /* @internal — controlled programmatically */
+	--fd-toolbar-height: 40px; /* @internal — controlled programmatically */
 
 	/* ----- NODE COLORS (for workflow editor) ----- */
 	--fd-node-emerald: #10b981; /* @public */
-	--fd-node-blue: #2563eb;    /* @public */
-	--fd-node-amber: #f59e0b;   /* @public */
-	--fd-node-orange: #f97316;  /* @public */
-	--fd-node-red: #ef4444;     /* @public */
-	--fd-node-pink: #ec4899;    /* @public */
-	--fd-node-indigo: #6366f1;  /* @public */
-	--fd-node-teal: #14b8a6;    /* @public */
-	--fd-node-cyan: #06b6d4;    /* @public */
-	--fd-node-lime: #84cc16;    /* @public */
-	--fd-node-slate: #64748b;   /* @public */
-	--fd-node-purple: #9333ea;  /* @public */
+	--fd-node-blue: #2563eb; /* @public */
+	--fd-node-amber: #f59e0b; /* @public */
+	--fd-node-orange: #f97316; /* @public */
+	--fd-node-red: #ef4444; /* @public */
+	--fd-node-pink: #ec4899; /* @public */
+	--fd-node-indigo: #6366f1; /* @public */
+	--fd-node-teal: #14b8a6; /* @public */
+	--fd-node-cyan: #06b6d4; /* @public */
+	--fd-node-lime: #84cc16; /* @public */
+	--fd-node-slate: #64748b; /* @public */
+	--fd-node-purple: #9333ea; /* @public */
 
 	/** Icon on node squircle: dark in light theme, white in dark theme */
 	--fd-node-icon: var(--_gray-9); /* @public */
 	/** Opacity of the icon squircle background (color-mix percentage). Light mode: 15% / 22% hover; dark mode uses higher values. */
-	--fd-node-icon-bg-opacity: 20%;       /* @public */
+	--fd-node-icon-bg-opacity: 20%; /* @public */
 	--fd-node-icon-bg-opacity-hover: 50%; /* @public */
 
 	/* ----- EDGE TOKENS ----- */
-	--fd-edge-trigger: var(--_gray-9);          /* @public */
-	--fd-edge-trigger-hover: var(--_gray-9);    /* @public */
+	--fd-edge-trigger: var(--_gray-9); /* @public */
+	--fd-edge-trigger-hover: var(--_gray-9); /* @public */
 	--fd-edge-trigger-selected: var(--_violet-2); /* @public */
-	--fd-edge-trigger-width: 2px;               /* @public */
-	--fd-edge-trigger-width-hover: 3px;         /* @public */
+	--fd-edge-trigger-width: 2px; /* @public */
+	--fd-edge-trigger-width-hover: 3px; /* @public */
 
-	--fd-edge-tool: var(--_amber-2);            /* @public */
-	--fd-edge-tool-hover: var(--_amber-3);      /* @public */
-	--fd-edge-tool-selected: var(--_violet-2);  /* @public */
+	--fd-edge-tool: var(--_amber-2); /* @public */
+	--fd-edge-tool-hover: var(--_amber-3); /* @public */
+	--fd-edge-tool-selected: var(--_violet-2); /* @public */
 
-	--fd-edge-data: var(--_gray-5);             /* @public */
-	--fd-edge-data-hover: var(--_gray-6);       /* @public */
-	--fd-edge-data-selected: var(--_violet-2);  /* @public */
+	--fd-edge-data: var(--_gray-5); /* @public */
+	--fd-edge-data-hover: var(--_gray-6); /* @public */
+	--fd-edge-data-selected: var(--_violet-2); /* @public */
 
-	--fd-edge-loopback: var(--_gray-6);             /* @public */
-	--fd-edge-loopback-hover: var(--_gray-7);       /* @public */
-	--fd-edge-loopback-selected: var(--_violet-2);  /* @public */
-	--fd-edge-loopback-width: 1.5px;                /* @public */
-	--fd-edge-loopback-width-hover: 2.5px;          /* @public */
-	--fd-edge-loopback-dasharray: 5 5;              /* @public */
-	--fd-edge-loopback-opacity: 0.85;               /* @public */
+	--fd-edge-loopback: var(--_gray-6); /* @public */
+	--fd-edge-loopback-hover: var(--_gray-7); /* @public */
+	--fd-edge-loopback-selected: var(--_violet-2); /* @public */
+	--fd-edge-loopback-width: 1.5px; /* @public */
+	--fd-edge-loopback-width-hover: 2.5px; /* @public */
+	--fd-edge-loopback-dasharray: 5 5; /* @public */
+	--fd-edge-loopback-opacity: 0.85; /* @public */
 
 	/* ----- SCROLLBAR COLORS ----- */
-	--fd-scrollbar-thumb: var(--_gray-4);       /* @internal */
+	--fd-scrollbar-thumb: var(--_gray-4); /* @internal */
 	--fd-scrollbar-thumb-hover: var(--_gray-5); /* @internal */
-	--fd-scrollbar-track: var(--_gray-2);       /* @internal */
+	--fd-scrollbar-track: var(--_gray-2); /* @internal */
 
 	/* ----- BACKDROP/OVERLAY ----- */
 	--fd-backdrop: rgba(255, 255, 255, 0.8); /* @internal */
-	--fd-backdrop-blur: blur(8px);            /* @internal */
+	--fd-backdrop-blur: blur(8px); /* @internal */
 
 	/* ----- HANDLE (Node connection points) ----- */
 	/* White ring around handles for contrast against node backgrounds */
-	--fd-handle-border: #ffffff;     /* @public */
+	--fd-handle-border: #ffffff; /* @public */
 	/* Outer size = connection/hit area (px); visual = visible circle (px) */
-	--fd-handle-size: 20px;          /* @public */
-	--fd-handle-visual-size: 12px;   /* @public */
-	--fd-handle-offset: calc(-1 * var(--fd-handle-size) / 2); /* @internal — half handle size for edge positioning */
+	--fd-handle-size: 20px; /* @public */
+	--fd-handle-visual-size: 12px; /* @public */
+	--fd-handle-offset: calc(
+		-1 * var(--fd-handle-size) / 2
+	); /* @internal — half handle size for edge positioning */
 
 	/* ----- NODE LAYOUT (Dimensions and port alignment; multiples of 10 for grid) ----- */
-	--fd-node-grid-step: 10;              /* @internal — layout algorithm detail */
-	--fd-node-default-width: 290px;       /* @public */
-	--fd-node-header-height: 60px;        /* @public */
-	--fd-node-header-title-height: 40px;  /* @internal */
-	--fd-node-header-desc-line: 20px;     /* @internal */
-	--fd-node-header-gap: 10px;           /* @internal */
-	--fd-node-port-row-height: 20px;      /* @internal */
-	--fd-node-terminal-size: 80px;        /* @public */
-	--fd-node-square-size: 80px;          /* @public */
-	--fd-node-simple-height: 80px;        /* @public */
-	--fd-node-tool-min-height: 80px;      /* @public */
+	--fd-node-grid-step: 10; /* @internal — layout algorithm detail */
+	--fd-node-default-width: 290px; /* @public */
+	--fd-node-header-height: 60px; /* @public */
+	--fd-node-header-title-height: 40px; /* @internal */
+	--fd-node-header-desc-line: 20px; /* @internal */
+	--fd-node-header-gap: 10px; /* @internal */
+	--fd-node-port-row-height: 20px; /* @internal */
+	--fd-node-terminal-size: 80px; /* @public */
+	--fd-node-square-size: 80px; /* @public */
+	--fd-node-simple-height: 80px; /* @public */
+	--fd-node-tool-min-height: 80px; /* @public */
 
 	/* ----- LAYOUT BACKGROUND (Main content area gradient) ----- */
-	--fd-layout-background: linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%); /* @public */
+	--fd-layout-background: linear-gradient(
+		135deg,
+		#f9fafb 0%,
+		#e0e7ff 50%,
+		#c7d2fe 100%
+	); /* @public */
 }
 
 /* =========================================================================

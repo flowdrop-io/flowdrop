@@ -16,7 +16,11 @@
 		type ColorMode
 	} from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import { getResolvedTheme, getEditorSettings, getBehaviorSettings } from '../stores/settingsStore.svelte.js';
+	import {
+		getResolvedTheme,
+		getEditorSettings,
+		getBehaviorSettings
+	} from '../stores/settingsStore.svelte.js';
 	import type {
 		WorkflowNode as WorkflowNodeType,
 		NodeMetadata,
@@ -40,7 +44,11 @@
 	} from '../helpers/workflowEditorHelper.js';
 	import type { NodeExecutionInfo } from '../types/index.js';
 	import { Toaster } from 'svelte-5-french-toast';
-	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS, apiToasts } from '../services/toastService.js';
+	import {
+		flowdropToastOptions,
+		FLOWDROP_TOASTER_CLASS,
+		apiToasts
+	} from '../services/toastService.js';
 	import {
 		ProximityConnectHelper,
 		type ProximityEdgeCandidate
@@ -351,7 +359,12 @@
 		nodes: WorkflowNodeType[];
 		event: MouseEvent | TouchEvent;
 	}): void {
-		if (!getEditorSettings().proximityConnect || !targetNode || props.readOnly || props.lockWorkflow) {
+		if (
+			!getEditorSettings().proximityConnect ||
+			!targetNode ||
+			props.readOnly ||
+			props.lockWorkflow
+		) {
 			if (currentProximityCandidates.length > 0) {
 				flowEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
 				currentProximityCandidates = [];
@@ -747,7 +760,13 @@
 							bind:edges={flowEdges}
 							{nodeTypes}
 							{defaultEdgeOptions}
-							onconnect={(connection) => void handleConnect({ source: connection.source, target: connection.target, sourceHandle: connection.sourceHandle ?? undefined, targetHandle: connection.targetHandle ?? undefined })}
+							onconnect={(connection) =>
+								void handleConnect({
+									source: connection.source,
+									target: connection.target,
+									sourceHandle: connection.sourceHandle ?? undefined,
+									targetHandle: connection.targetHandle ?? undefined
+								})}
 							onbeforedelete={handleBeforeDelete}
 							ondelete={handleNodesDelete}
 							onnodedragstart={handleNodeDragStart}
@@ -904,7 +923,6 @@
 		pointer-events: all;
 		cursor: pointer;
 	}
-
 
 	/* Handle size/position only; colors come from inline --fd-handle-fill and base.css ::before */
 	:global(.flowdrop-workflow-editor .svelte-flow__handle) {

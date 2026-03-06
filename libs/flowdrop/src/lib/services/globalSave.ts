@@ -9,7 +9,11 @@
  */
 
 import { tick } from 'svelte';
-import { getWorkflowStore, workflowActions, markAsSaved as storeMarkAsSaved } from '$lib/stores/workflowStore.svelte.js';
+import {
+	getWorkflowStore,
+	workflowActions,
+	markAsSaved as storeMarkAsSaved
+} from '$lib/stores/workflowStore.svelte.js';
 import { workflowApi, setEndpointConfig } from './api.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import { v4 as uuidv4 } from 'uuid';

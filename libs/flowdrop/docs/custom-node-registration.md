@@ -22,11 +22,11 @@ FlowDrop ships with 8 built-in node types, but you can register your own custom 
 
 There are three ways to register custom nodes, depending on your use case:
 
-| Approach | When to use |
-| --- | --- |
-| **`registerCustomNode()`** | One-off project-specific nodes |
-| **`registerFlowDropPlugin()`** | Libraries providing multiple node types |
-| **`createPlugin()`** | Same as above, with a chainable builder API |
+| Approach                       | When to use                                 |
+| ------------------------------ | ------------------------------------------- |
+| **`registerCustomNode()`**     | One-off project-specific nodes              |
+| **`registerFlowDropPlugin()`** | Libraries providing multiple node types     |
+| **`createPlugin()`**           | Same as above, with a chainable builder API |
 
 All approaches register a Svelte component in the global `nodeComponentRegistry`. The editor's `UniversalNode` resolver looks up components from this registry at render time.
 
@@ -41,84 +41,80 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 ```svelte
 <!-- CodeEditorNode.svelte -->
 <script lang="ts">
-  import type { NodeComponentProps } from "@d34dman/flowdrop/editor";
+	import type { NodeComponentProps } from '@d34dman/flowdrop/editor';
 
-  let { data, selected = false }: NodeComponentProps = $props();
+	let { data, selected = false }: NodeComponentProps = $props();
 </script>
 
 <div class="code-editor-node" class:selected>
-  <h4>{data.label}</h4>
-  <pre>{data.config?.code ?? ""}</pre>
+	<h4>{data.label}</h4>
+	<pre>{data.config?.code ?? ''}</pre>
 </div>
 
 <style>
-  .code-editor-node {
-    padding: 12px;
-    border: 1px solid var(--fd-border);
-    border-radius: 6px;
-    background: var(--fd-surface);
-    min-width: 200px;
-  }
-  .code-editor-node.selected {
-    border-color: var(--fd-primary);
-  }
+	.code-editor-node {
+		padding: 12px;
+		border: 1px solid var(--fd-border);
+		border-radius: 6px;
+		background: var(--fd-surface);
+		min-width: 200px;
+	}
+	.code-editor-node.selected {
+		border-color: var(--fd-primary);
+	}
 </style>
 ```
 
 **2. Register it:**
 
 ```typescript
-import { registerCustomNode } from "@d34dman/flowdrop/editor";
-import CodeEditorNode from "./CodeEditorNode.svelte";
+import { registerCustomNode } from '@d34dman/flowdrop/editor';
+import CodeEditorNode from './CodeEditorNode.svelte';
 
-registerCustomNode("myapp:code-editor", "Code Editor", CodeEditorNode, {
-  icon: "mdi:code-braces",
-  description: "A custom code editor node",
-  category: "custom"
+registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
+	icon: 'mdi:code-braces',
+	description: 'A custom code editor node',
+	category: 'custom'
 });
 ```
 
 **3. Mount the editor with node metadata:**
 
 ```typescript
-import { mountFlowDropApp } from "@d34dman/flowdrop/editor";
-import "@d34dman/flowdrop/styles";
+import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
+import '@d34dman/flowdrop/styles';
 
-const app = await mountFlowDropApp(document.getElementById("editor")!, {
-  nodes: [
-    {
-      id: "myapp:code-editor",
-      name: "Code Editor",
-      type: "myapp:code-editor",
-      description: "Write and edit code",
-      category: "processing",
-      version: "1.0.0",
-      icon: "mdi:code-braces",
-      inputs: [
-        { id: "input", name: "Input", type: "input", dataType: "string" }
-      ],
-      outputs: [
-        { id: "output", name: "Output", type: "output", dataType: "string" }
-      ],
-      configSchema: {
-        type: "object",
-        properties: {
-          language: {
-            type: "string",
-            title: "Language",
-            enum: ["javascript", "python", "rust"],
-            default: "javascript"
-          },
-          code: {
-            type: "string",
-            title: "Code",
-            format: "multiline",
-            default: ""
-          }
-        }
-      }
-    }
-  ]
+const app = await mountFlowDropApp(document.getElementById('editor')!, {
+	nodes: [
+		{
+			id: 'myapp:code-editor',
+			name: 'Code Editor',
+			type: 'myapp:code-editor',
+			description: 'Write and edit code',
+			category: 'processing',
+			version: '1.0.0',
+			icon: 'mdi:code-braces',
+			inputs: [{ id: 'input', name: 'Input', type: 'input', dataType: 'string' }],
+			outputs: [{ id: 'output', name: 'Output', type: 'output', dataType: 'string' }],
+			configSchema: {
+				type: 'object',
+				properties: {
+					language: {
+						type: 'string',
+						title: 'Language',
+						enum: ['javascript', 'python', 'rust'],
+						default: 'javascript'
+					},
+					code: {
+						type: 'string',
+						title: 'Code',
+						format: 'multiline',
+						default: ''
+					}
+				}
+			}
+		}
+	]
 });
 ```
 
@@ -132,25 +128,25 @@ All custom node components must accept `NodeComponentProps`:
 
 ```typescript
 interface NodeComponentProps {
-  /** Node data containing label, config, metadata, and execution info */
-  data: {
-    label: string;
-    config: Record<string, unknown>;
-    metadata: NodeMetadata;
-    nodeId?: string;
-    executionInfo?: NodeExecutionInfo;
-    extensions?: NodeExtensions;
-    onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode["data"] }) => void;
-  };
+	/** Node data containing label, config, metadata, and execution info */
+	data: {
+		label: string;
+		config: Record<string, unknown>;
+		metadata: NodeMetadata;
+		nodeId?: string;
+		executionInfo?: NodeExecutionInfo;
+		extensions?: NodeExtensions;
+		onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
+	};
 
-  /** Whether the node is currently selected on the canvas */
-  selected?: boolean;
+	/** Whether the node is currently selected on the canvas */
+	selected?: boolean;
 
-  /** Whether the node is currently executing */
-  isProcessing?: boolean;
+	/** Whether the node is currently executing */
+	isProcessing?: boolean;
 
-  /** Whether the node has encountered an error */
-  isError?: boolean;
+	/** Whether the node has encountered an error */
+	isError?: boolean;
 }
 ```
 
@@ -160,18 +156,23 @@ User-configured values are available under `data.config`. These correspond to th
 
 ```svelte
 <script lang="ts">
-  import type { NodeComponentProps } from "@d34dman/flowdrop/editor";
+	import type { NodeComponentProps } from '@d34dman/flowdrop/editor';
 
-  let { data, selected = false, isProcessing = false, isError = false }: NodeComponentProps = $props();
+	let {
+		data,
+		selected = false,
+		isProcessing = false,
+		isError = false
+	}: NodeComponentProps = $props();
 
-  const language = $derived(data.config?.language ?? "javascript");
-  const code = $derived(data.config?.code ?? "");
+	const language = $derived(data.config?.language ?? 'javascript');
+	const code = $derived(data.config?.code ?? '');
 </script>
 
 <div class="node" class:selected class:processing={isProcessing} class:error={isError}>
-  <header>{data.label}</header>
-  <span class="badge">{language}</span>
-  <pre><code>{code}</code></pre>
+	<header>{data.label}</header>
+	<span class="badge">{language}</span>
+	<pre><code>{code}</code></pre>
 </div>
 ```
 
@@ -194,13 +195,13 @@ If you want a button that opens the node's configuration panel:
 The simplest API. Registers one component with an explicit type string.
 
 ```typescript
-import { registerCustomNode } from "@d34dman/flowdrop/editor";
-import MyNode from "./MyNode.svelte";
+import { registerCustomNode } from '@d34dman/flowdrop/editor';
+import MyNode from './MyNode.svelte';
 
-registerCustomNode("myproject:special", "Special Node", MyNode, {
-  description: "A special node for my project",
-  icon: "mdi:star",
-  category: "custom"
+registerCustomNode('myproject:special', 'Special Node', MyNode, {
+	description: 'A special node for my project',
+	icon: 'mdi:star',
+	category: 'custom'
 });
 ```
 
@@ -208,18 +209,18 @@ registerCustomNode("myproject:special", "Special Node", MyNode, {
 
 ```typescript
 function registerCustomNode(
-  type: string,
-  displayName: string,
-  component: Component<NodeComponentProps>,
-  options?: {
-    description?: string;
-    icon?: string;                        // Iconify format (e.g., "mdi:star")
-    category?: NodeComponentCategory;     // "visual" | "functional" | "layout" | "custom"
-    source?: string;                      // Defaults to "custom"
-    statusPosition?: StatusPosition;      // "top-left" | "top-right" | "bottom-left" | "bottom-right"
-    statusSize?: StatusSize;              // "sm" | "md" | "lg"
-  }
-): void
+	type: string,
+	displayName: string,
+	component: Component<NodeComponentProps>,
+	options?: {
+		description?: string;
+		icon?: string; // Iconify format (e.g., "mdi:star")
+		category?: NodeComponentCategory; // "visual" | "functional" | "layout" | "custom"
+		source?: string; // Defaults to "custom"
+		statusPosition?: StatusPosition; // "top-left" | "top-right" | "bottom-left" | "bottom-right"
+		statusSize?: StatusSize; // "sm" | "md" | "lg"
+	}
+): void;
 ```
 
 ### `registerFlowDropPlugin` — Multi-Node Plugin
@@ -227,29 +228,29 @@ function registerCustomNode(
 Registers multiple node types under a shared namespace. All type identifiers are automatically prefixed with the namespace (e.g., `"awesome"` + `"fancy"` becomes `"awesome:fancy"`).
 
 ```typescript
-import { registerFlowDropPlugin } from "@d34dman/flowdrop/editor";
-import FancyNode from "./FancyNode.svelte";
-import GlowNode from "./GlowNode.svelte";
+import { registerFlowDropPlugin } from '@d34dman/flowdrop/editor';
+import FancyNode from './FancyNode.svelte';
+import GlowNode from './GlowNode.svelte';
 
 const result = registerFlowDropPlugin({
-  namespace: "awesome",
-  name: "Awesome Nodes",
-  version: "1.0.0",
-  nodes: [
-    {
-      type: "fancy",
-      displayName: "Fancy Node",
-      component: FancyNode,
-      icon: "mdi:sparkles",
-      category: "custom"
-    },
-    {
-      type: "glow",
-      displayName: "Glowing Node",
-      component: GlowNode,
-      icon: "mdi:lightbulb"
-    }
-  ]
+	namespace: 'awesome',
+	name: 'Awesome Nodes',
+	version: '1.0.0',
+	nodes: [
+		{
+			type: 'fancy',
+			displayName: 'Fancy Node',
+			component: FancyNode,
+			icon: 'mdi:sparkles',
+			category: 'custom'
+		},
+		{
+			type: 'glow',
+			displayName: 'Glowing Node',
+			component: GlowNode,
+			icon: 'mdi:lightbulb'
+		}
+	]
 });
 
 // result:
@@ -268,65 +269,61 @@ const result = registerFlowDropPlugin({
 A chainable API that builds and registers a plugin in one expression:
 
 ```typescript
-import { createPlugin } from "@d34dman/flowdrop/editor";
-import FancyNode from "./FancyNode.svelte";
-import GlowNode from "./GlowNode.svelte";
+import { createPlugin } from '@d34dman/flowdrop/editor';
+import FancyNode from './FancyNode.svelte';
+import GlowNode from './GlowNode.svelte';
 
-createPlugin("awesome", "Awesome Nodes")
-  .version("1.0.0")
-  .description("A collection of awesome nodes")
-  .node("fancy", "Fancy Node", FancyNode, { icon: "mdi:sparkles" })
-  .node("glow", "Glowing Node", GlowNode, { icon: "mdi:lightbulb" })
-  .register();
+createPlugin('awesome', 'Awesome Nodes')
+	.version('1.0.0')
+	.description('A collection of awesome nodes')
+	.node('fancy', 'Fancy Node', FancyNode, { icon: 'mdi:sparkles' })
+	.node('glow', 'Glowing Node', GlowNode, { icon: 'mdi:lightbulb' })
+	.register();
 ```
 
 **Builder methods:**
 
-| Method | Description |
-| --- | --- |
-| `.version(v)` | Set plugin version |
-| `.description(desc)` | Set plugin description |
-| `.node(type, displayName, component, options?)` | Add a node definition |
-| `.register()` | Register the plugin, returns `PluginRegistrationResult` |
-| `.getConfig()` | Get the config object without registering (useful for testing) |
+| Method                                          | Description                                                    |
+| ----------------------------------------------- | -------------------------------------------------------------- |
+| `.version(v)`                                   | Set plugin version                                             |
+| `.description(desc)`                            | Set plugin description                                         |
+| `.node(type, displayName, component, options?)` | Add a node definition                                          |
+| `.register()`                                   | Register the plugin, returns `PluginRegistrationResult`        |
+| `.getConfig()`                                  | Get the config object without registering (useful for testing) |
 
 ---
 
 ## Making Nodes Available in the Sidebar
 
-Registering a component tells FlowDrop *how to render* a node type. To make the node **appear in the sidebar** for users to drag onto the canvas, pass `NodeMetadata` entries in the `nodes` option when mounting:
+Registering a component tells FlowDrop _how to render_ a node type. To make the node **appear in the sidebar** for users to drag onto the canvas, pass `NodeMetadata` entries in the `nodes` option when mounting:
 
 ```typescript
 const app = await mountFlowDropApp(container, {
-  nodes: [
-    {
-      id: "myapp:code-editor",
-      name: "Code Editor",
-      type: "myapp:code-editor",       // Must match the registered component type
-      description: "Write and edit code",
-      category: "processing",
-      version: "1.0.0",
-      icon: "mdi:code-braces",
-      inputs: [
-        { id: "input", name: "Input", type: "input", dataType: "string", required: true }
-      ],
-      outputs: [
-        { id: "output", name: "Output", type: "output", dataType: "string" }
-      ],
-      configSchema: {
-        type: "object",
-        properties: {
-          language: {
-            type: "string",
-            title: "Language",
-            enum: ["javascript", "python"],
-            default: "javascript"
-          }
-        },
-        required: ["language"]
-      }
-    }
-  ]
+	nodes: [
+		{
+			id: 'myapp:code-editor',
+			name: 'Code Editor',
+			type: 'myapp:code-editor', // Must match the registered component type
+			description: 'Write and edit code',
+			category: 'processing',
+			version: '1.0.0',
+			icon: 'mdi:code-braces',
+			inputs: [{ id: 'input', name: 'Input', type: 'input', dataType: 'string', required: true }],
+			outputs: [{ id: 'output', name: 'Output', type: 'output', dataType: 'string' }],
+			configSchema: {
+				type: 'object',
+				properties: {
+					language: {
+						type: 'string',
+						title: 'Language',
+						enum: ['javascript', 'python'],
+						default: 'javascript'
+					}
+				},
+				required: ['language']
+			}
+		}
+	]
 });
 ```
 
@@ -334,36 +331,36 @@ The `type` field in `NodeMetadata` is the key link — it must match the type st
 
 ### NodeMetadata fields
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | `string` | Unique identifier |
-| `name` | `string` | Display name |
-| `type` | `string` | Visual component type (matches registered type) |
-| `supportedTypes` | `string[]` | Alternative visual types the node can switch to |
-| `description` | `string` | Description shown in sidebar and tooltips |
-| `category` | `string` | Sidebar grouping (`"triggers"`, `"models"`, `"processing"`, etc.) |
-| `version` | `string` | Version string |
-| `icon` | `string` | Iconify icon (e.g., `"mdi:code-braces"`) |
-| `color` | `string` | CSS color for node accent |
-| `badge` | `string` | Label badge (e.g., `"TOOL"`, `"API"`, `"LLM"`) |
-| `inputs` | `NodePort[]` | Input port definitions |
-| `outputs` | `NodePort[]` | Output port definitions |
-| `configSchema` | `ConfigSchema` | JSON Schema for the node's configuration form |
-| `uiSchema` | `UISchemaElement` | Layout hints for the config form |
-| `config` | `object` | Default config values |
-| `tags` | `string[]` | Searchable tags |
+| Field            | Type              | Description                                                       |
+| ---------------- | ----------------- | ----------------------------------------------------------------- |
+| `id`             | `string`          | Unique identifier                                                 |
+| `name`           | `string`          | Display name                                                      |
+| `type`           | `string`          | Visual component type (matches registered type)                   |
+| `supportedTypes` | `string[]`        | Alternative visual types the node can switch to                   |
+| `description`    | `string`          | Description shown in sidebar and tooltips                         |
+| `category`       | `string`          | Sidebar grouping (`"triggers"`, `"models"`, `"processing"`, etc.) |
+| `version`        | `string`          | Version string                                                    |
+| `icon`           | `string`          | Iconify icon (e.g., `"mdi:code-braces"`)                          |
+| `color`          | `string`          | CSS color for node accent                                         |
+| `badge`          | `string`          | Label badge (e.g., `"TOOL"`, `"API"`, `"LLM"`)                    |
+| `inputs`         | `NodePort[]`      | Input port definitions                                            |
+| `outputs`        | `NodePort[]`      | Output port definitions                                           |
+| `configSchema`   | `ConfigSchema`    | JSON Schema for the node's configuration form                     |
+| `uiSchema`       | `UISchemaElement` | Layout hints for the config form                                  |
+| `config`         | `object`          | Default config values                                             |
+| `tags`           | `string[]`        | Searchable tags                                                   |
 
 ### NodePort fields
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | `string` | Unique port identifier |
-| `name` | `string` | Display name |
-| `type` | `string` | `"input"`, `"output"`, or `"metadata"` |
-| `dataType` | `string` | Data type (e.g., `"string"`, `"number"`, `"tool"`, `"trigger"`) |
-| `required` | `boolean` | Whether a connection is required |
-| `description` | `string` | Port description |
-| `defaultValue` | `unknown` | Default value |
+| Field          | Type      | Description                                                     |
+| -------------- | --------- | --------------------------------------------------------------- |
+| `id`           | `string`  | Unique port identifier                                          |
+| `name`         | `string`  | Display name                                                    |
+| `type`         | `string`  | `"input"`, `"output"`, or `"metadata"`                          |
+| `dataType`     | `string`  | Data type (e.g., `"string"`, `"number"`, `"tool"`, `"trigger"`) |
+| `required`     | `boolean` | Whether a connection is required                                |
+| `description`  | `string`  | Port description                                                |
+| `defaultValue` | `unknown` | Default value                                                   |
 
 ---
 
@@ -371,16 +368,16 @@ The `type` field in `NodeMetadata` is the key link — it must match the type st
 
 These are the visual types that ship with FlowDrop. When a `NodeMetadata` entry has a `type` field matching one of these, FlowDrop uses the corresponding built-in component instead of requiring a custom registration.
 
-| Type | Display Name | Description | Icon |
-| --- | --- | --- | --- |
-| `workflowNode` | Default | Full-featured node with inputs/outputs display | `mdi:vector-square` |
-| `simple` | Simple | Compact layout with header, icon, and description | `mdi:card-outline` |
-| `square` | Square | Minimal icon-only design | `mdi:square` |
-| `tool` | Tool | Agent tools with tool metadata | `mdi:tools` |
-| `gateway` | Gateway | Branching control flow with multiple outputs | `mdi:source-branch` |
-| `note` | Note | Sticky note with markdown support | `mdi:note-text` |
-| `terminal` | Terminal | Circular nodes for start/end/exit points | `mdi:circle-double` |
-| `idea` | Idea | Conceptual flow for BPMN-like diagrams | `mdi:lightbulb-outline` |
+| Type           | Display Name | Description                                       | Icon                    |
+| -------------- | ------------ | ------------------------------------------------- | ----------------------- |
+| `workflowNode` | Default      | Full-featured node with inputs/outputs display    | `mdi:vector-square`     |
+| `simple`       | Simple       | Compact layout with header, icon, and description | `mdi:card-outline`      |
+| `square`       | Square       | Minimal icon-only design                          | `mdi:square`            |
+| `tool`         | Tool         | Agent tools with tool metadata                    | `mdi:tools`             |
+| `gateway`      | Gateway      | Branching control flow with multiple outputs      | `mdi:source-branch`     |
+| `note`         | Note         | Sticky note with markdown support                 | `mdi:note-text`         |
+| `terminal`     | Terminal     | Circular nodes for start/end/exit points          | `mdi:circle-double`     |
+| `idea`         | Idea         | Conceptual flow for BPMN-like diagrams            | `mdi:lightbulb-outline` |
 
 If your `NodeMetadata.type` doesn't match any registered type (built-in or custom), FlowDrop falls back to `workflowNode`.
 
@@ -392,14 +389,14 @@ You can also use `supportedTypes` on `NodeMetadata` to allow users to switch bet
 
 ```typescript
 import {
-  unregisterFlowDropPlugin,
-  getRegisteredPlugins,
-  getPluginNodeCount,
-  isValidNamespace
-} from "@d34dman/flowdrop/editor";
+	unregisterFlowDropPlugin,
+	getRegisteredPlugins,
+	getPluginNodeCount,
+	isValidNamespace
+} from '@d34dman/flowdrop/editor';
 
 // Remove all nodes from a plugin
-const removed = unregisterFlowDropPlugin("awesome");
+const removed = unregisterFlowDropPlugin('awesome');
 // Returns ["awesome:fancy", "awesome:glow"]
 
 // List all registered plugin namespaces
@@ -407,13 +404,13 @@ const plugins = getRegisteredPlugins();
 // Returns ["awesome", "mylib"]
 
 // Count nodes registered by a plugin
-const count = getPluginNodeCount("awesome");
+const count = getPluginNodeCount('awesome');
 // Returns 2
 
 // Validate a namespace before registration
-isValidNamespace("my-lib");   // true
-isValidNamespace("MyLib");    // false — uppercase not allowed
-isValidNamespace("123lib");   // false — must start with a letter
+isValidNamespace('my-lib'); // true
+isValidNamespace('MyLib'); // false — uppercase not allowed
+isValidNamespace('123lib'); // false — must start with a letter
 ```
 
 ---
@@ -424,11 +421,11 @@ isValidNamespace("123lib");   // false — must start with a letter
 
 ```typescript
 interface FlowDropPluginConfig {
-  namespace: string;              // Unique namespace (lowercase alphanumeric + hyphens)
-  name: string;                   // Display name
-  version?: string;               // Plugin version
-  description?: string;           // Plugin description
-  nodes: PluginNodeDefinition[];  // Node definitions
+	namespace: string; // Unique namespace (lowercase alphanumeric + hyphens)
+	name: string; // Display name
+	version?: string; // Plugin version
+	description?: string; // Plugin description
+	nodes: PluginNodeDefinition[]; // Node definitions
 }
 ```
 
@@ -436,14 +433,14 @@ interface FlowDropPluginConfig {
 
 ```typescript
 interface PluginNodeDefinition {
-  type: string;                                // Type identifier (auto-prefixed with namespace)
-  displayName: string;                         // Display name shown in UI
-  description?: string;                        // Node description
-  component: Component<NodeComponentProps>;     // Svelte component
-  icon?: string;                               // Iconify icon
-  category?: NodeComponentCategory;            // "visual" | "functional" | "layout" | "custom"
-  statusPosition?: StatusPosition;             // "top-left" | "top-right" | "bottom-left" | "bottom-right"
-  statusSize?: StatusSize;                     // "sm" | "md" | "lg"
+	type: string; // Type identifier (auto-prefixed with namespace)
+	displayName: string; // Display name shown in UI
+	description?: string; // Node description
+	component: Component<NodeComponentProps>; // Svelte component
+	icon?: string; // Iconify icon
+	category?: NodeComponentCategory; // "visual" | "functional" | "layout" | "custom"
+	statusPosition?: StatusPosition; // "top-left" | "top-right" | "bottom-left" | "bottom-right"
+	statusSize?: StatusSize; // "sm" | "md" | "lg"
 }
 ```
 
@@ -451,10 +448,10 @@ interface PluginNodeDefinition {
 
 ```typescript
 interface PluginRegistrationResult {
-  success: boolean;          // Whether all nodes registered successfully
-  namespace: string;         // The plugin namespace
-  registeredTypes: string[]; // Successfully registered namespaced types
-  errors: string[];          // Error messages for failed registrations
+	success: boolean; // Whether all nodes registered successfully
+	namespace: string; // The plugin namespace
+	registeredTypes: string[]; // Successfully registered namespaced types
+	errors: string[]; // Error messages for failed registrations
 }
 ```
 
@@ -462,13 +459,13 @@ interface PluginRegistrationResult {
 
 ```typescript
 interface NodeComponentProps {
-  data: WorkflowNode["data"] & {
-    nodeId?: string;
-    onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode["data"] }) => void;
-  };
-  selected?: boolean;
-  isProcessing?: boolean;
-  isError?: boolean;
+	data: WorkflowNode['data'] & {
+		nodeId?: string;
+		onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
+	};
+	selected?: boolean;
+	isProcessing?: boolean;
+	isError?: boolean;
 }
 ```
 
@@ -476,14 +473,14 @@ interface NodeComponentProps {
 
 ```typescript
 interface NodeComponentRegistration {
-  type: string;
-  displayName: string;
-  description?: string;
-  icon?: string;
-  category?: NodeComponentCategory;
-  source?: string;
-  statusPosition?: StatusPosition;
-  statusSize?: StatusSize;
-  component: Component<NodeComponentProps>;
+	type: string;
+	displayName: string;
+	description?: string;
+	icon?: string;
+	category?: NodeComponentCategory;
+	source?: string;
+	statusPosition?: StatusPosition;
+	statusSize?: StatusSize;
+	component: Component<NodeComponentProps>;
 }
 ```

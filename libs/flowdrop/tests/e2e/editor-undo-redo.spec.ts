@@ -6,18 +6,11 @@
  */
 
 import { test, expect } from '@playwright/test';
-import {
-	gotoEditor,
-	assertStatusBar,
-	selectNode
-} from './helpers/editor-helpers';
+import { gotoEditor, assertStatusBar, selectNode } from './helpers/editor-helpers';
 
 test.describe('Undo/Redo', () => {
 	test.beforeEach(({}, testInfo) => {
-		test.skip(
-			testInfo.project.name === 'Mobile Chrome',
-			'Editor requires desktop-width viewport'
-		);
+		test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
 	});
 
 	test('Ctrl+Z undoes node deletion', async ({ page }) => {

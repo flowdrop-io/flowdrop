@@ -150,7 +150,6 @@
 	function handlePipelineSelect(pipelineId: string) {
 		goto(`/workflow/${workflowId}/pipelines/${pipelineId}`);
 	}
-
 </script>
 
 <svelte:head>
@@ -640,7 +639,6 @@
 		box-shadow: var(--fd-shadow-md);
 	}
 
-
 	.pipelines-btn {
 		display: flex;
 		align-items: center;
@@ -654,7 +652,6 @@
 		transition: all var(--fd-transition-normal);
 		text-decoration: none;
 	}
-
 
 	.pipelines-btn--outline {
 		background-color: transparent;

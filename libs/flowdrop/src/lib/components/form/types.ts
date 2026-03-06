@@ -6,10 +6,7 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
-import type {
-	AutocompleteConfig,
-	TemplateVariablesConfig
-} from '$lib/types/index.js';
+import type { AutocompleteConfig, TemplateVariablesConfig } from '$lib/types/index.js';
 
 /**
  * Supported field types for form rendering
@@ -114,8 +111,7 @@ export interface BaseFieldProps<T = unknown> {
 /**
  * Properties for text input fields
  */
-export interface TextFieldProps extends BaseFieldProps<string> {
-}
+export interface TextFieldProps extends BaseFieldProps<string> {}
 
 /**
  * Properties for multiline text fields (textarea)

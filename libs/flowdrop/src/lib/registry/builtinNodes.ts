@@ -6,7 +6,11 @@
  * ensuring all built-in node types are available without user action.
  */
 
-import { nodeComponentRegistry, type NodeComponentRegistration, type NodeComponentProps } from './nodeComponentRegistry.js';
+import {
+	nodeComponentRegistry,
+	type NodeComponentRegistration,
+	type NodeComponentProps
+} from './nodeComponentRegistry.js';
 import type { Component } from 'svelte';
 import WorkflowNode from '../components/nodes/WorkflowNode.svelte';
 import SimpleNode from '../components/nodes/SimpleNode.svelte';

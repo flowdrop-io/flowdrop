@@ -10,10 +10,7 @@ import { gotoEditor, setupEditorApiMocks } from './helpers/editor-helpers';
 
 test.describe('Save Workflow', () => {
 	test.beforeEach(({}, testInfo) => {
-		test.skip(
-			testInfo.project.name === 'Mobile Chrome',
-			'Editor requires desktop-width viewport'
-		);
+		test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
 	});
 
 	test('save button sends workflow data via API', async ({ page }) => {

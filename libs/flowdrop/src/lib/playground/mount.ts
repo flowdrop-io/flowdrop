@@ -49,7 +49,13 @@ import Playground from '../components/playground/Playground.svelte';
 import PlaygroundModal from '../components/playground/PlaygroundModal.svelte';
 import type { Workflow } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import type { PlaygroundMode, PlaygroundConfig, PlaygroundSession, PlaygroundMessagesApiResponse, PlaygroundSessionStatus } from '../types/playground.js';
+import type {
+	PlaygroundMode,
+	PlaygroundConfig,
+	PlaygroundSession,
+	PlaygroundMessagesApiResponse,
+	PlaygroundSessionStatus
+} from '../types/playground.js';
 import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
@@ -126,7 +132,10 @@ export interface PlaygroundMountOptions {
 	 * @param status - The new session status
 	 * @param previousStatus - The previous session status
 	 */
-	onSessionStatusChange?: (status: PlaygroundSessionStatus, previousStatus: PlaygroundSessionStatus) => void;
+	onSessionStatusChange?: (
+		status: PlaygroundSessionStatus,
+		previousStatus: PlaygroundSessionStatus
+	) => void;
 }
 
 /**

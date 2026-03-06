@@ -32,7 +32,11 @@ describe('Field Registry', () => {
 			const mockComponent = {} as never;
 			const mockMatcher: FieldMatcher = () => true;
 
-			fieldComponentRegistry.register('test', { component: mockComponent, matcher: mockMatcher, priority: 10 });
+			fieldComponentRegistry.register('test', {
+				component: mockComponent,
+				matcher: mockMatcher,
+				priority: 10
+			});
 
 			expect(fieldComponentRegistry.has('test')).toBe(true);
 			expect(fieldComponentRegistry.getKeys()).toContain('test');
@@ -44,10 +48,18 @@ describe('Field Registry', () => {
 
 			expect(fieldComponentRegistry.size).toBe(0);
 
-			fieldComponentRegistry.register('type1', { component: mockComponent, matcher: mockMatcher, priority: 0 });
+			fieldComponentRegistry.register('type1', {
+				component: mockComponent,
+				matcher: mockMatcher,
+				priority: 0
+			});
 			expect(fieldComponentRegistry.size).toBe(1);
 
-			fieldComponentRegistry.register('type2', { component: mockComponent, matcher: mockMatcher, priority: 0 });
+			fieldComponentRegistry.register('type2', {
+				component: mockComponent,
+				matcher: mockMatcher,
+				priority: 0
+			});
 			expect(fieldComponentRegistry.size).toBe(2);
 		});
 	});
@@ -57,7 +69,11 @@ describe('Field Registry', () => {
 			const mockComponent = {} as never;
 			const mockMatcher: FieldMatcher = () => true;
 
-			fieldComponentRegistry.register('test', { component: mockComponent, matcher: mockMatcher, priority: 0 });
+			fieldComponentRegistry.register('test', {
+				component: mockComponent,
+				matcher: mockMatcher,
+				priority: 0
+			});
 			expect(fieldComponentRegistry.has('test')).toBe(true);
 
 			const removed = fieldComponentRegistry.unregister('test');
@@ -79,8 +95,16 @@ describe('Field Registry', () => {
 			const lowPriorityComponent = { name: 'low' } as never;
 			const alwaysTrueMatcher: FieldMatcher = () => true;
 
-			fieldComponentRegistry.register('low', { component: lowPriorityComponent, matcher: alwaysTrueMatcher, priority: 10 });
-			fieldComponentRegistry.register('high', { component: highPriorityComponent, matcher: alwaysTrueMatcher, priority: 100 });
+			fieldComponentRegistry.register('low', {
+				component: lowPriorityComponent,
+				matcher: alwaysTrueMatcher,
+				priority: 10
+			});
+			fieldComponentRegistry.register('high', {
+				component: highPriorityComponent,
+				matcher: alwaysTrueMatcher,
+				priority: 100
+			});
 
 			const schema: FieldSchema = { type: 'string' };
 			const result = fieldComponentRegistry.resolveFieldComponent(schema);
@@ -92,7 +116,11 @@ describe('Field Registry', () => {
 			const mockComponent = {} as never;
 			const neverMatcher: FieldMatcher = () => false;
 
-			fieldComponentRegistry.register('test', { component: mockComponent, matcher: neverMatcher, priority: 0 });
+			fieldComponentRegistry.register('test', {
+				component: mockComponent,
+				matcher: neverMatcher,
+				priority: 0
+			});
 
 			const schema: FieldSchema = { type: 'string' };
 			const result = fieldComponentRegistry.resolveFieldComponent(schema);
@@ -333,16 +361,28 @@ describe('Field Registry', () => {
 				let callCount = 0;
 				const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
 
-				fieldComponentRegistry.register('test-sub', { component: {} as never, matcher: () => true, priority: 0 });
+				fieldComponentRegistry.register('test-sub', {
+					component: {} as never,
+					matcher: () => true,
+					priority: 0
+				});
 				expect(callCount).toBe(1);
 
 				unsubscribe();
-				fieldComponentRegistry.register('test-sub2', { component: {} as never, matcher: () => true, priority: 0 });
+				fieldComponentRegistry.register('test-sub2', {
+					component: {} as never,
+					matcher: () => true,
+					priority: 0
+				});
 				expect(callCount).toBe(1); // No longer called
 			});
 
 			it('should notify listeners on unregister', () => {
-				fieldComponentRegistry.register('test-unsub', { component: {} as never, matcher: () => true, priority: 0 });
+				fieldComponentRegistry.register('test-unsub', {
+					component: {} as never,
+					matcher: () => true,
+					priority: 0
+				});
 
 				let callCount = 0;
 				const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
@@ -371,7 +411,11 @@ describe('Field Registry', () => {
 					cleared = true;
 				});
 
-				fieldComponentRegistry.register('test-onclear', { component: {} as never, matcher: () => true, priority: 0 });
+				fieldComponentRegistry.register('test-onclear', {
+					component: {} as never,
+					matcher: () => true,
+					priority: 0
+				});
 				expect(cleared).toBe(false);
 
 				fieldComponentRegistry.clear();
@@ -395,7 +439,11 @@ describe('Field Registry', () => {
 
 		describe('resolveFieldComponent via class', () => {
 			it('should resolve via the singleton instance', () => {
-				fieldComponentRegistry.register('test-resolve', { component: {} as never, matcher: (s) => s.format === 'test', priority: 50 });
+				fieldComponentRegistry.register('test-resolve', {
+					component: {} as never,
+					matcher: (s) => s.format === 'test',
+					priority: 50
+				});
 
 				const result = fieldComponentRegistry.resolveFieldComponent({
 					format: 'test'

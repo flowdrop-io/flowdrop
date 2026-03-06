@@ -30,9 +30,7 @@
 			icon: 'mdi:text-box',
 			color: '#3b82f6',
 			inputs: [],
-			outputs: [
-				{ id: 'value', name: 'Value', type: 'output', dataType: 'string' }
-			],
+			outputs: [{ id: 'value', name: 'Value', type: 'output', dataType: 'string' }],
 			configSchema: {
 				type: 'object',
 				properties: {
@@ -51,9 +49,7 @@
 			type: 'default',
 			icon: 'mdi:text-box-check',
 			color: '#10b981',
-			inputs: [
-				{ id: 'value', name: 'Value', type: 'input', dataType: 'string', required: true }
-			],
+			inputs: [{ id: 'value', name: 'Value', type: 'input', dataType: 'string', required: true }],
 			outputs: [],
 			configSchema: {
 				type: 'object',
@@ -74,9 +70,7 @@
 				{ id: 'a', name: 'Number A', type: 'input', dataType: 'number', required: true },
 				{ id: 'b', name: 'Number B', type: 'input', dataType: 'number', required: true }
 			],
-			outputs: [
-				{ id: 'result', name: 'Result', type: 'output', dataType: 'number' }
-			],
+			outputs: [{ id: 'result', name: 'Result', type: 'output', dataType: 'number' }],
 			configSchema: {
 				type: 'object',
 				properties: {
@@ -100,9 +94,7 @@
 			type: 'gateway',
 			icon: 'mdi:call-split',
 			color: '#8b5cf6',
-			inputs: [
-				{ id: 'input', name: 'Input', type: 'input', dataType: 'mixed', required: true }
-			],
+			inputs: [{ id: 'input', name: 'Input', type: 'input', dataType: 'mixed', required: true }],
 			outputs: [],
 			configSchema: {
 				type: 'object',
@@ -134,9 +126,7 @@
 			icon: 'mdi:circle',
 			color: '#6366f1',
 			inputs: [],
-			outputs: [
-				{ id: 'trigger', name: 'Trigger', type: 'output', dataType: 'trigger' }
-			],
+			outputs: [{ id: 'trigger', name: 'Trigger', type: 'output', dataType: 'trigger' }],
 			configSchema: {
 				type: 'object',
 				properties: {

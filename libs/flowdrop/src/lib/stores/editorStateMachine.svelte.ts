@@ -163,9 +163,7 @@ export function createEditorStateMachine(
 ): EditorStateMachine {
 	let _current = $state<EditorState>(initialState);
 	let _permissions = $state<StatePermissions>(permissions[initialState]);
-	const _listeners = new Set<
-		(from: EditorState, event: EditorEvent, to: EditorState) => void
-	>();
+	const _listeners = new Set<(from: EditorState, event: EditorEvent, to: EditorState) => void>();
 
 	function send(event: EditorEvent): boolean {
 		// Check global transitions first (valid from any state)

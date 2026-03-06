@@ -425,10 +425,10 @@ interruptActions.clearInterrupts();
 
 // State machine transitions
 interruptActions.startSubmit(id, value); // idle -> submitting
-interruptActions.startCancel(id);        // idle -> cancelling
-interruptActions.submitSuccess(id);      // submitting/cancelling -> resolved/cancelled
+interruptActions.startCancel(id); // idle -> cancelling
+interruptActions.submitSuccess(id); // submitting/cancelling -> resolved/cancelled
 interruptActions.submitFailure(id, err); // submitting/cancelling -> error
-interruptActions.retry(id);              // error -> idle
+interruptActions.retry(id); // error -> idle
 
 // Convenience (submit + success in one call)
 interruptActions.resolveInterrupt(id, value);
@@ -631,20 +631,20 @@ import {
 
 ## Files Reference
 
-| File                                                     | Purpose                      |
-| -------------------------------------------------------- | ---------------------------- |
-| `src/lib/types/interrupt.ts`                             | Type definitions             |
-| `src/lib/types/interruptState.ts`                        | State machine types & logic  |
-| `src/lib/services/interruptService.ts`                   | API client                   |
-| `src/lib/stores/interruptStore.svelte.ts`                | Rune-based state management  |
-| `src/lib/components/interrupt/InterruptBubble.svelte`    | Main container               |
-| `src/lib/components/interrupt/ConfirmationPrompt.svelte` | Confirmation UI              |
-| `src/lib/components/interrupt/ChoicePrompt.svelte`       | Choice selection UI          |
-| `src/lib/components/interrupt/TextInputPrompt.svelte`    | Text input UI                |
-| `src/lib/components/interrupt/FormPrompt.svelte`         | Form UI                      |
-| `src/lib/components/interrupt/ReviewPrompt.svelte`       | Field change review UI       |
-| `src/lib/components/interrupt/index.ts`                  | Barrel exports               |
-| `src/lib/config/endpoints.ts`                            | API endpoint config          |
+| File                                                     | Purpose                     |
+| -------------------------------------------------------- | --------------------------- |
+| `src/lib/types/interrupt.ts`                             | Type definitions            |
+| `src/lib/types/interruptState.ts`                        | State machine types & logic |
+| `src/lib/services/interruptService.ts`                   | API client                  |
+| `src/lib/stores/interruptStore.svelte.ts`                | Rune-based state management |
+| `src/lib/components/interrupt/InterruptBubble.svelte`    | Main container              |
+| `src/lib/components/interrupt/ConfirmationPrompt.svelte` | Confirmation UI             |
+| `src/lib/components/interrupt/ChoicePrompt.svelte`       | Choice selection UI         |
+| `src/lib/components/interrupt/TextInputPrompt.svelte`    | Text input UI               |
+| `src/lib/components/interrupt/FormPrompt.svelte`         | Form UI                     |
+| `src/lib/components/interrupt/ReviewPrompt.svelte`       | Field change review UI      |
+| `src/lib/components/interrupt/index.ts`                  | Barrel exports              |
+| `src/lib/config/endpoints.ts`                            | API endpoint config         |
 
 ## See Also
 
