@@ -40,48 +40,7 @@ import { computeAutoLayout } from './autoLayout.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.js';
 
-// ============================================================================
-// Handle ID Helpers
-// ============================================================================
-
-/**
- * Build a FlowDrop handle ID from node ID, direction, and port ID.
- * Format: `${nodeId}-${direction}-${portId}`
- */
-function buildHandleId(nodeId: string, direction: 'input' | 'output', portId: string): string {
-	return `${nodeId}-${direction}-${portId}`;
-}
-
-/**
- * Extract port ID from a FlowDrop handle ID.
- * Handles format: `${nodeId}-output-${portId}` or `${nodeId}-input-${portId}`
- */
-function extractPortId(handleId: string | undefined): string | null {
-	if (!handleId) return null;
-
-	const outputMatch = handleId.lastIndexOf('-output-');
-	if (outputMatch !== -1) {
-		return handleId.substring(outputMatch + '-output-'.length);
-	}
-
-	const inputMatch = handleId.lastIndexOf('-input-');
-	if (inputMatch !== -1) {
-		return handleId.substring(inputMatch + '-input-'.length);
-	}
-
-	// Short format: the handleId IS the port ID
-	return handleId;
-}
-
-/**
- * Extract direction from a FlowDrop handle ID.
- */
-function extractDirection(handleId: string | undefined): 'input' | 'output' | null {
-	if (!handleId) return null;
-	if (handleId.lastIndexOf('-output-') !== -1) return 'output';
-	if (handleId.lastIndexOf('-input-') !== -1) return 'input';
-	return null;
-}
+import { buildHandleId, extractPortId, extractDirection } from '../../utils/handleIds.js';
 
 // ============================================================================
 // Property ↔ Port Conversion
