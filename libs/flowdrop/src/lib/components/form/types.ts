@@ -8,7 +8,6 @@
 
 import type {
 	AutocompleteConfig,
-	VariableSchema,
 	TemplateVariablesConfig
 } from '$lib/types/index.js';
 
@@ -229,12 +228,6 @@ export interface TemplateEditorFieldProps extends BaseFieldProps<string> {
 	 * Controls which variables are available and how they are displayed.
 	 */
 	variables?: TemplateVariablesConfig;
-	/**
-	 * Variable schema for advanced autocomplete with nested drilling.
-	 * When provided, enables dot notation (user.name) and array access (items[0]).
-	 * Prefer `variables.schema` for new code.
-	 */
-	variableSchema?: VariableSchema;
 	/** Placeholder variable example for the hint */
 	placeholderExample?: string;
 }
@@ -296,11 +289,6 @@ export interface FieldSchema {
 	multiple?: boolean;
 	/** Format hint for specialized rendering */
 	format?: FieldFormat;
-	/**
-	 * Options for select type fields
-	 * For new schemas, prefer JSON Schema `oneOf` with `const`/`title` instead.
-	 */
-	options?: FieldOption[];
 	/** Placeholder text */
 	placeholder?: string;
 	/** Minimum value for numbers */
@@ -422,8 +410,8 @@ export function oneOfToOptions(oneOfItems: OneOfItem[]): FieldOption[] {
 /**
  * Normalize options to FieldOption format
  * Handles multiple input formats for consistent internal handling:
- * - JSON Schema oneOf items (standard) -> converted to FieldOption
- * - FieldOption array (legacy) -> passed through
+ * - JSON Schema oneOf items -> converted to FieldOption
+ * - FieldOption array -> passed through
  * - String array -> converted to FieldOption
  *
  * @param options - Options in various formats
@@ -441,7 +429,7 @@ export function normalizeOptions(
 		return oneOfToOptions(options);
 	}
 
-	// Handle FieldOption array (legacy, deprecated)
+	// Handle FieldOption array
 	if (isFieldOptionArray(options as FieldOption[] | string[])) {
 		return options as FieldOption[];
 	}
@@ -461,14 +449,8 @@ export function normalizeOptions(
  * @returns Normalized FieldOption array
  */
 export function getSchemaOptions(schema: FieldSchema): FieldOption[] {
-	// Prefer standard oneOf pattern
 	if (schema.oneOf && schema.oneOf.length > 0) {
 		return oneOfToOptions(schema.oneOf);
-	}
-
-	// Fall back to deprecated options property
-	if (schema.options && schema.options.length > 0) {
-		return schema.options;
 	}
 
 	return [];

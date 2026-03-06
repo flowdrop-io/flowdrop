@@ -153,32 +153,7 @@ describe("getSchemaOptions", () => {
 		]);
 	});
 
-	it("should fall back to deprecated options property", () => {
-		const schema: FieldSchema = {
-			type: "string",
-			options: [
-				{ value: "x", label: "X" },
-				{ value: "y", label: "Y" }
-			]
-		};
-		expect(getSchemaOptions(schema)).toEqual([
-			{ value: "x", label: "X" },
-			{ value: "y", label: "Y" }
-		]);
-	});
-
-	it("should prefer oneOf over options when both are present", () => {
-		const schema: FieldSchema = {
-			type: "string",
-			oneOf: [{ const: "preferred", title: "Preferred" }],
-			options: [{ value: "legacy", label: "Legacy" }]
-		};
-		expect(getSchemaOptions(schema)).toEqual([
-			{ value: "preferred", label: "Preferred" }
-		]);
-	});
-
-	it("should return empty array when no options exist", () => {
+	it("should return empty array when no oneOf exists", () => {
 		const schema: FieldSchema = { type: "string" };
 		expect(getSchemaOptions(schema)).toEqual([]);
 	});

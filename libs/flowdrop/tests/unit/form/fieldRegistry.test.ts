@@ -234,15 +234,7 @@ describe('Field Registry', () => {
 				expect(selectOptionsMatcher(schema)).toBe(true);
 			});
 
-			it('should match schema with options (legacy, deprecated)', () => {
-				const schema: FieldSchema = {
-					type: 'string',
-					options: [{ label: 'A', value: 'a' }]
-				};
-				expect(selectOptionsMatcher(schema)).toBe(true);
-			});
-
-			it('should not match schema without oneOf or options', () => {
+			it('should not match schema without oneOf', () => {
 				const schema: FieldSchema = { type: 'string' };
 				expect(selectOptionsMatcher(schema)).toBe(false);
 			});
