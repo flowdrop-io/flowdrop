@@ -34,7 +34,11 @@
     }
 
     function handleSave(finalValues: Record<string, unknown>) {
-      console.log("Saved:", finalValues);
+      // Process saved form values
+    }
+
+    function handleCancel() {
+      // Handle form cancellation
     }
   </script>
 
@@ -44,7 +48,7 @@
     onChange={handleChange}
     showActions={true}
     onSave={handleSave}
-    onCancel={() => console.log("Cancelled")}
+    onCancel={handleCancel}
   />
   ```
 -->

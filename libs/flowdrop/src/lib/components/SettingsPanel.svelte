@@ -14,11 +14,15 @@
   ```svelte
   <script>
     import { SettingsPanel } from "@d34dman/flowdrop";
+
+    function handleClose() {
+      // Handle settings panel close
+    }
   </script>
 
   <SettingsPanel
     showSyncButton={true}
-    onClose={() => console.log("Closed")}
+    onClose={handleClose}
   />
   ```
 -->
