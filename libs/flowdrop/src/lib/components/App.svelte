@@ -507,38 +507,42 @@
 	// Load node types on mount
 	onMount(() => {
 		(async () => {
-			await initializeApiEndpoints();
+			try {
+				await initializeApiEndpoints();
 
-			// Ensure port compatibility checker is initialized (needed for proximity connect, etc.)
-			// mountFlowDropApp initializes this before mounting, but SvelteKit routes need it here.
-			initializePortCompatibility(DEFAULT_PORT_CONFIG);
+				// Ensure port compatibility checker is initialized (needed for proximity connect, etc.)
+				// mountFlowDropApp initializes this before mounting, but SvelteKit routes need it here.
+				initializePortCompatibility(DEFAULT_PORT_CONFIG);
 
-			await fetchNodeTypes();
+				await fetchNodeTypes();
 
-			// Initialize the workflow store
-			if (initialWorkflow) {
-				workflowActions.initialize(initialWorkflow);
+				// Initialize the workflow store
+				if (initialWorkflow) {
+					workflowActions.initialize(initialWorkflow);
 
-				// Emit onWorkflowLoad event
-				if (eventHandlers?.onWorkflowLoad) {
-					eventHandlers.onWorkflowLoad(initialWorkflow);
-				}
-			} else {
-				// Initialize with a default empty workflow so the editor is functional
-				// (e.g., drag-and-drop requires a non-null workflow in the store)
-				const defaultWorkflow: Workflow = {
-					id: '',
-					name: 'Untitled Workflow',
-					nodes: [],
-					edges: [],
-					metadata: {
-						version: '1.0.0',
-						format: DEFAULT_WORKFLOW_FORMAT,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString()
+					// Emit onWorkflowLoad event
+					if (eventHandlers?.onWorkflowLoad) {
+						eventHandlers.onWorkflowLoad(initialWorkflow);
 					}
-				};
-				workflowActions.initialize(defaultWorkflow);
+				} else {
+					// Initialize with a default empty workflow so the editor is functional
+					// (e.g., drag-and-drop requires a non-null workflow in the store)
+					const defaultWorkflow: Workflow = {
+						id: '',
+						name: 'Untitled Workflow',
+						nodes: [],
+						edges: [],
+						metadata: {
+							version: '1.0.0',
+							format: DEFAULT_WORKFLOW_FORMAT,
+							createdAt: new Date().toISOString(),
+							updatedAt: new Date().toISOString()
+						}
+					};
+					workflowActions.initialize(defaultWorkflow);
+				}
+			} catch (error) {
+				logger.error('Failed to initialize editor:', error);
 			}
 		})();
 
@@ -567,14 +571,6 @@
 			window.removeEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
 			cleanupAutoSave();
 		};
-	});
-
-	// Monitor workflow store changes for testing node drag updates
-	$effect(() => {
-		const currentWorkflow = getWorkflowStore();
-		if (currentWorkflow) {
-			// Workflow store updated
-		}
 	});
 
 	/**
