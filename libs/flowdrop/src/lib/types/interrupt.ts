@@ -260,10 +260,7 @@ export interface Interrupt {
 	id: string;
 	/** Type of interrupt (confirmation, choice, text, form) */
 	type: InterruptType;
-	/**
-	 * Current status of the interrupt (legacy field)
-	 * @deprecated Use `state` for more detailed status tracking
-	 */
+	/** Current status of the interrupt */
 	status: InterruptStatus;
 	/** Primary message/prompt to display */
 	message: string;

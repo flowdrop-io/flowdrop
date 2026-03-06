@@ -47,10 +47,10 @@ export type FieldFormat =
 /**
  * Option type for select and checkbox group fields
  *
- * @deprecated Use JSON Schema `oneOf` with `const`/`title` instead for labeled options.
- * This type is kept for backwards compatibility but will be removed in a future version.
+ * For new schemas, prefer JSON Schema `oneOf` with `const`/`title`.
+ * This type is supported for simpler use cases and backward compatibility.
  *
- * @example Standard JSON Schema approach:
+ * @example Standard JSON Schema approach (preferred):
  * ```json
  * {
  *   "type": "string",
@@ -232,7 +232,7 @@ export interface TemplateEditorFieldProps extends BaseFieldProps<string> {
 	/**
 	 * Variable schema for advanced autocomplete with nested drilling.
 	 * When provided, enables dot notation (user.name) and array access (items[0]).
-	 * @deprecated Use `variables.schema` instead
+	 * Prefer `variables.schema` for new code.
 	 */
 	variableSchema?: VariableSchema;
 	/** Placeholder variable example for the hint */
@@ -298,8 +298,7 @@ export interface FieldSchema {
 	format?: FieldFormat;
 	/**
 	 * Options for select type fields
-	 * @deprecated Use JSON Schema `oneOf` with `const`/`title` instead.
-	 * This property is kept for backwards compatibility but will be removed in a future version.
+	 * For new schemas, prefer JSON Schema `oneOf` with `const`/`title` instead.
 	 */
 	options?: FieldOption[];
 	/** Placeholder text */
