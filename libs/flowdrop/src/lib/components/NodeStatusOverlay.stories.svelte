@@ -11,22 +11,6 @@
 	});
 </script>
 
-{#snippet nodeBox(label)}
-	<div
-		style="position: relative; width: 220px; height: 100px; margin-top: 60px; border: 1px solid var(--fd-border, #e5e7eb); border-radius: 8px; background: var(--fd-card, white);"
-	>
-		<NodeStatusOverlay
-			executionInfo={{
-				status: 'idle',
-				executionCount: 3,
-				isExecuting: false,
-				lastExecuted: new Date().toISOString()
-			}}
-		/>
-		<div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">{label}</div>
-	</div>
-{/snippet}
-
 <Story name="Idle (with history)">
 	<div
 		style="position: relative; width: 220px; height: 100px; margin-top: 60px; border: 1px solid var(--fd-border, #e5e7eb); border-radius: 8px; background: var(--fd-card, white);"
