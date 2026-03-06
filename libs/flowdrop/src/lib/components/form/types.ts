@@ -474,9 +474,9 @@ export function getSchemaOptions(schema: FieldSchema): FieldOption[] {
  *     required: ["name"]
  *   },
  *   values: { name: "John", age: 30 },
- *   onChange: (values) => console.log("Changed:", values),
+ *   onChange: (values) => handleChange(values),
  *   showActions: true,
- *   onSave: (values) => console.log("Saved:", values)
+ *   onSave: (values) => handleSave(values)
  * };
  * ```
  */
