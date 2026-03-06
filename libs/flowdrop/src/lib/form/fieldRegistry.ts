@@ -18,10 +18,14 @@
  *
  * @example Adding code editor support:
  * ```typescript
- * import { SchemaForm, registerFieldComponent } from "@d34dman/flowdrop/form";
+ * import { fieldComponentRegistry } from "@d34dman/flowdrop/form";
  * import { FormCodeEditor, codeEditorFieldMatcher } from "@d34dman/flowdrop/form/code";
  *
- * registerFieldComponent("code-editor", FormCodeEditor, codeEditorFieldMatcher);
+ * fieldComponentRegistry.register("code-editor", {
+ *   component: FormCodeEditor,
+ *   matcher: codeEditorFieldMatcher,
+ *   priority: 100
+ * });
  * ```
  */
 
@@ -157,109 +161,6 @@ class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistra
 
 /** Singleton instance of the field component registry */
 export const fieldComponentRegistry = new FieldComponentRegistry();
-
-// ============================================================================
-// Backward-compatible function exports
-// These delegate to the singleton and preserve the existing public API.
-// ============================================================================
-
-/**
- * Register a field component for a specific field type.
- *
- * @deprecated Use `fieldComponentRegistry.register()` instead.
- *
- * @param type - Unique identifier for this field type
- * @param component - Svelte component to render for matching fields
- * @param matcher - Function to determine if a schema matches this type
- * @param priority - Priority for matching (default: 0, higher = checked first)
- *
- * @example
- * ```typescript
- * registerFieldComponent(
- *   "code-editor",
- *   FormCodeEditor,
- *   (schema) => schema.format === "json" || schema.format === "code",
- *   100 // High priority to override default
- * );
- * ```
- */
-export function registerFieldComponent(
-	type: string,
-	component: FieldComponent,
-	matcher: FieldMatcher,
-	priority: number = 0
-): void {
-	fieldComponentRegistry.register(type, { component, matcher, priority });
-}
-
-/**
- * Unregister a field component.
- *
- * @deprecated Use `fieldComponentRegistry.unregister()` instead.
- *
- * @param type - The field type to unregister
- * @returns true if the component was registered and removed
- */
-export function unregisterFieldComponent(type: string): boolean {
-	return fieldComponentRegistry.unregister(type);
-}
-
-/**
- * Get all registered field types.
- *
- * @deprecated Use `fieldComponentRegistry.getKeys()` instead.
- *
- * @returns Array of registered field type identifiers
- */
-export function getRegisteredFieldTypes(): string[] {
-	return fieldComponentRegistry.getKeys();
-}
-
-/**
- * Check if a field type is registered.
- *
- * @deprecated Use `fieldComponentRegistry.has()` instead.
- *
- * @param type - Field type to check
- * @returns true if the type is registered
- */
-export function isFieldTypeRegistered(type: string): boolean {
-	return fieldComponentRegistry.has(type);
-}
-
-/**
- * Resolve which component should render a given field schema.
- * Checks registered matchers in priority order.
- *
- * @deprecated Use `fieldComponentRegistry.resolveFieldComponent()` instead.
- *
- * @param schema - The field schema to resolve
- * @returns The matching registration or null if no match
- */
-export function resolveFieldComponent(schema: FieldSchema): FieldComponentRegistration | null {
-	return fieldComponentRegistry.resolveFieldComponent(schema);
-}
-
-/**
- * Clear all registered field components.
- * Useful for testing or reset scenarios.
- *
- * @deprecated Use `fieldComponentRegistry.clear()` instead.
- */
-export function clearFieldRegistry(): void {
-	fieldComponentRegistry.clear();
-}
-
-/**
- * Get the registry size.
- *
- * @deprecated Use `fieldComponentRegistry.size` instead.
- *
- * @returns Number of registered field components
- */
-export function getFieldRegistrySize(): number {
-	return fieldComponentRegistry.size;
-}
 
 // ============================================================================
 // Built-in Field Matchers (for light fields)

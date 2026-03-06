@@ -21,7 +21,7 @@
  * ```
  */
 
-import { registerFieldComponent, fieldComponentRegistry } from './fieldRegistry.js';
+import { fieldComponentRegistry } from './fieldRegistry.js';
 import type { FieldComponent } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
 
@@ -97,7 +97,7 @@ export function registerCodeEditorField(priority: number = 100): void {
 
 	// Dynamic import to ensure proper code splitting
 	import('../components/form/FormCodeEditor.svelte').then((module) => {
-		registerFieldComponent('code-editor', module.default, codeEditorFieldMatcher, priority);
+		fieldComponentRegistry.register('code-editor', { component: module.default, matcher: codeEditorFieldMatcher, priority });
 		codeEditorRegistered = true;
 	});
 }
@@ -125,7 +125,7 @@ export function registerTemplateEditorField(priority: number = 100): void {
 
 	// Dynamic import to ensure proper code splitting
 	import('../components/form/FormTemplateEditor.svelte').then((module) => {
-		registerFieldComponent('template-editor', module.default, templateEditorFieldMatcher, priority);
+		fieldComponentRegistry.register('template-editor', { component: module.default, matcher: templateEditorFieldMatcher, priority });
 		templateEditorRegistered = true;
 	});
 }
@@ -163,7 +163,7 @@ export function registerCodeEditorFieldWithComponent(
 		return;
 	}
 
-	registerFieldComponent('code-editor', component, codeEditorFieldMatcher, priority);
+	fieldComponentRegistry.register('code-editor', { component, matcher: codeEditorFieldMatcher, priority });
 	codeEditorRegistered = true;
 }
 
