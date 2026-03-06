@@ -31,7 +31,38 @@
  */
 
 // Types
-export * from './types.js';
+export type {
+	FieldType,
+	FieldFormat,
+	FieldOption,
+	OneOfItem,
+	BaseFieldProps,
+	TextFieldProps,
+	TextareaFieldProps,
+	NumberFieldProps,
+	ToggleFieldProps,
+	RangeFieldProps,
+	SelectFieldProps,
+	CheckboxGroupFieldProps,
+	ArrayFieldProps,
+	CodeEditorFieldProps,
+	MarkdownEditorFieldProps,
+	TemplateEditorFieldProps,
+	AutocompleteFieldProps,
+	FieldSchema,
+	FormFieldFactoryProps,
+	FormFieldWrapperProps,
+	SchemaFormProps,
+	AutocompleteConfig
+} from './types.js';
+
+export {
+	isFieldOptionArray,
+	isOneOfArray,
+	oneOfToOptions,
+	normalizeOptions,
+	getSchemaOptions
+} from './types.js';
 
 // Main factory component
 export { default as FormField } from './FormField.svelte';

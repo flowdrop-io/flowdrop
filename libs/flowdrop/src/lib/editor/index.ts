@@ -193,7 +193,13 @@ export type { HistoryEntry, HistoryState, PushOptions } from '../stores/historyS
 // Services
 // ============================================================================
 
-export * from '../services/api.js';
+export {
+	setEndpointConfig,
+	getEndpointConfig,
+	nodeApi,
+	workflowApi,
+	api
+} from '../services/api.js';
 
 export {
 	showSuccess,
@@ -287,13 +293,32 @@ export { EnhancedFlowDropApiClient, ApiError } from '../api/enhanced-client.js';
 // Connection Utilities
 // ============================================================================
 
-export * from '../utils/connections.js';
+export {
+	isLoopbackEdge,
+	isValidLoopbackCycle,
+	PortCompatibilityChecker,
+	initializePortCompatibility,
+	getPortCompatibilityChecker,
+	getPossibleConnections,
+	validateConnection,
+	getConnectionSuggestions,
+	hasCycles,
+	hasInvalidCycles,
+	getExecutionOrder
+} from '../utils/connections.js';
 
 // ============================================================================
 // Runtime Configuration
 // ============================================================================
 
-export * from '../config/runtimeConfig.js';
+export {
+	fetchRuntimeConfig,
+	getRuntimeConfig,
+	clearRuntimeConfigCache,
+	initRuntimeConfig
+} from '../config/runtimeConfig.js';
+
+export type { RuntimeConfig } from '../config/runtimeConfig.js';
 
 // ============================================================================
 // Re-export core types (for convenience)
