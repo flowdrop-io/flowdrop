@@ -3,8 +3,27 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import svelte from '@astrojs/svelte';
 
+// Stub module path for optional CodeMirror peer deps (not needed in docs demos)
+const cmStub = new URL('./src/stubs/codemirror.ts', import.meta.url).pathname;
+
 // https://astro.build/config
 export default defineConfig({
+	vite: {
+		resolve: {
+			alias: {
+				'@codemirror/lang-markdown': cmStub,
+				'@codemirror/lang-json': cmStub,
+				'@codemirror/autocomplete': cmStub,
+				'@codemirror/commands': cmStub,
+				'@codemirror/language': cmStub,
+				'@codemirror/lint': cmStub,
+				'@codemirror/state': cmStub,
+				'@codemirror/theme-one-dark': cmStub,
+				'@codemirror/view': cmStub,
+				'codemirror': cmStub,
+			}
+		}
+	},
 	integrations: [
 		starlight({
 			title: 'FlowDrop',
@@ -19,6 +38,7 @@ export default defineConfig({
 				'@fontsource-variable/inter',
 				'./src/styles/tokens.css',
 				'./src/styles/theme.css',
+				'./src/styles/demo.css',
 			],
 			components: {
 				ThemeProvider: './src/components/ThemeProvider.astro',
