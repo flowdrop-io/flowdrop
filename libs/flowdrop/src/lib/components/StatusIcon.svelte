@@ -42,7 +42,7 @@
 		}
 	};
 
-	const config = sizeConfig[props.size || 'md'];
+	const config = $derived(sizeConfig[props.size || 'md']);
 	const statusColor = $derived(getStatusColor(props.status));
 	const statusIcon = $derived(getStatusIcon(props.status));
 </script>

@@ -29,9 +29,9 @@
 	let props: Props = $props();
 
 	// Default values
-	let position = $state(props.position || 'top-right');
-	let size = $state(props.size || 'md');
-	let showDetails = $state(props.showDetails || false);
+	let position = $derived(props.position || 'top-right');
+	let size = $derived(props.size || 'md');
+	let showDetails = $derived(props.showDetails || false);
 	let isHovered = $state(false);
 
 	// Size configurations - optimized for larger, centered overlay
@@ -56,7 +56,7 @@
 		}
 	};
 
-	const config = sizeConfig[size];
+	const config = $derived(sizeConfig[size]);
 
 	// Position styles - horizontal center aligned with top edge of node
 	const positionStyles = {
