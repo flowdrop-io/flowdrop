@@ -50,11 +50,13 @@
 	}: Props = $props();
 
 	/** Local state: map of field -> accepted boolean. Default all to true (accept). */
+	// svelte-ignore state_referenced_locally — initial default, user toggles during review
 	let decisions = $state<Record<string, boolean>>(
 		Object.fromEntries(config.changes.map((c) => [c.field, true]))
 	);
 
 	/** Local state: map of field -> HTML view mode ('rendered' or 'raw'). Default to 'rendered'. */
+	// svelte-ignore state_referenced_locally
 	let htmlViewMode = $state<Record<string, 'rendered' | 'raw'>>(
 		Object.fromEntries(config.changes.map((c) => [c.field, 'rendered']))
 	);

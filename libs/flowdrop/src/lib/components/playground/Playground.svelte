@@ -416,6 +416,7 @@
 	}
 
 	/** Shared polling callback created from config lifecycle hooks */
+	// svelte-ignore state_referenced_locally — config is static
 	const pollingCallback = createPollingCallback(config.isTerminalStatus);
 
 	/**

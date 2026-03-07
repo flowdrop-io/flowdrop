@@ -113,7 +113,7 @@
 		features: propFeatures
 	}: Props = $props();
 
-	// Merge features with defaults
+	// svelte-ignore state_referenced_locally — feature flags don't change at runtime
 	const features = mergeFeatures(propFeatures);
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues

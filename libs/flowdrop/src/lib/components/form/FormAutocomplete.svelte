@@ -98,7 +98,9 @@
 	let labelCache = $state<Map<string, string>>(new Map());
 
 	// Generate unique IDs for accessibility
+	// svelte-ignore state_referenced_locally — id prop never changes
 	const listboxId = `${id}-listbox`;
+	// svelte-ignore state_referenced_locally
 	const getOptionId = (index: number): string => `${id}-option-${index}`;
 
 	/**

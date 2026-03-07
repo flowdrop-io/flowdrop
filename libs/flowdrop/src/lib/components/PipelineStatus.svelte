@@ -35,6 +35,7 @@
 		$props();
 
 	// Initialize API client if not provided
+	// svelte-ignore state_referenced_locally — client created once from props
 	const client =
 		apiClient ||
 		new EnhancedFlowDropApiClient(
