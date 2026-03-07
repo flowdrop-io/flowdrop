@@ -1,7 +1,7 @@
 {
 	"name": "@d34dman/flowdrop-api-docs",
 	"private": true,
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
 		"lint": "redocly lint ../../libs/flowdrop/api/openapi.yaml --config ../../libs/flowdrop/api/redocly.yaml",
