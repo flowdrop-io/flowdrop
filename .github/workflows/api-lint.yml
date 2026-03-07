@@ -50,11 +50,10 @@ jobs:
       - name: Validate bundled spec is up to date
         run: |
           pnpm run bundle
-          git diff --exit-code libs/flowdrop/api/bundled.yaml || {
+          git diff --exit-code ../../libs/flowdrop/api/bundled.yaml || {
             echo "::error::bundled.yaml is out of date. Run 'cd apps/api-docs && pnpm run bundle' and commit the changes."
             exit 1
           }
-        working-directory: .
 
   breaking-changes:
     name: Check Breaking Changes
