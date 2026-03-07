@@ -21,6 +21,7 @@
 	let { data } = $props();
 
 	// Get API configuration from server-loaded runtime config
+	// svelte-ignore state_referenced_locally — page remounts on navigation
 	let endpointConfig = $state<EndpointConfig>(
 		createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
 			auth: { type: data.runtimeConfig.authType, token: data.runtimeConfig.authToken },

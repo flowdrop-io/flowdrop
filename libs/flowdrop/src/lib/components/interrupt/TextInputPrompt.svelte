@@ -42,6 +42,7 @@
 	}: Props = $props();
 
 	/** Local state for input value */
+	// svelte-ignore state_referenced_locally — initial default, user edits the input
 	let inputValue = $state(config.defaultValue ?? '');
 
 	/** Display value - either resolved or current input */

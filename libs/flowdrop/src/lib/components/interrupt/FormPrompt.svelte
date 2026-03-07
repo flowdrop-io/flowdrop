@@ -43,6 +43,7 @@
 	}: Props = $props();
 
 	/** Local state for form values */
+	// svelte-ignore state_referenced_locally — initial default, user fills the form
 	let formValues = $state<Record<string, unknown>>(config.defaultValues ?? {});
 
 	/** Display values - either resolved or current form values */

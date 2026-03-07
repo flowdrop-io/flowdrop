@@ -76,6 +76,7 @@
 	/**
 	 * Currently active tab
 	 */
+	// svelte-ignore state_referenced_locally — initial default, user switches tabs
 	let activeTab = $state<SettingsCategory>(categories[0] ?? 'theme');
 
 	/**

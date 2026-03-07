@@ -103,12 +103,15 @@
 	}: Props = $props();
 
 	/** Current width of the left sidebar */
+	// svelte-ignore state_referenced_locally — initial default, component owns draggable state
 	let leftSidebarWidth = $state(initialLeftWidth);
 
 	/** Current width of the right sidebar */
+	// svelte-ignore state_referenced_locally
 	let rightSidebarWidth = $state(initialRightWidth);
 
 	/** Current height of the bottom panel */
+	// svelte-ignore state_referenced_locally
 	let bottomPanelHeightState = $state(initialBottomHeight);
 
 	/**

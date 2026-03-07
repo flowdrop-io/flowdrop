@@ -22,6 +22,7 @@
 
 	let props: Props = $props();
 	let searchInput = $state('');
+	// svelte-ignore state_referenced_locally — initial default, user selects interactively
 	let selectedCategory = $state(props.selectedCategory || 'all');
 
 	/**
