@@ -10,7 +10,7 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@d34dman/flowdrop": "^0.0.57",
+		"@d34dman/flowdrop": "^1.0.0",
 		"@iconify/svelte": "^5.0.0"
 	},
 	"devDependencies": {
