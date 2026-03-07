@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Svelte 5 migration**: Migrated `ConfigModal` and `LogsSidebar` from `createEventDispatcher` to callback props
 - **Type error**: Removed unused snippet causing `svelte-check` type error
+- **Reactivity bug**: `NodeStatusOverlay` and `StatusIcon` now use `$derived` for props-derived values (`position`, `size`, `showDetails`, `config`) so they correctly update when props change
+- **Svelte warnings**: Suppressed 25 intentional `state_referenced_locally` warnings for component-owned state initialized from props (form defaults, draggable dimensions, one-time config, SvelteKit page data)
 
 ### Changed
 
