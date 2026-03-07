@@ -38,11 +38,27 @@ export default defineConfig({
 				},
 				{
 					label: 'Guides',
-					autogenerate: { directory: 'guides' }
+					items: [
+						{ label: 'Creating Workflows', slug: 'guides/creating-workflows' },
+						{ label: 'Node Types', slug: 'guides/node-types' },
+						{ label: 'Framework Integration', slug: 'guides/integration' },
+						{ label: 'Configuration Forms', slug: 'guides/config-schema' },
+						{ label: 'Theming', slug: 'guides/theming' },
+						{ label: 'Interactive Playground', slug: 'guides/playground' },
+						{ label: 'Human-in-the-Loop', slug: 'guides/interrupts' },
+						{ label: 'Custom Nodes', slug: 'guides/custom-nodes' },
+						{ label: 'Custom Form Fields', slug: 'guides/custom-form-fields' }
+					]
 				},
 				{
 					label: 'Reference',
-					autogenerate: { directory: 'reference' }
+					items: [
+						{ label: 'API Overview', slug: 'reference/api-overview' },
+						{ label: 'Mount API', slug: 'reference/mount-api' },
+						{ label: 'Core Types', slug: 'reference/types' },
+						{ label: 'Components', slug: 'reference/components' },
+						{ label: 'Migration Guide', slug: 'reference/migration' }
+					]
 				}
 			]
 		}),

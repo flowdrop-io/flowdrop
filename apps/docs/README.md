@@ -1,8 +1,6 @@
 # FlowDrop Documentation Site
 
-> **Status: Placeholder** — This documentation site is under active development and not yet ready for use.
-
-The official documentation site for [FlowDrop](../../README.md), built with [Astro](https://astro.build) and [Starlight](https://starlight.astro.build/).
+The official documentation site for [FlowDrop](../../libs/flowdrop/README.md), built with [Astro](https://astro.build) and [Starlight](https://starlight.astro.build/).
 
 ## Project Structure
 

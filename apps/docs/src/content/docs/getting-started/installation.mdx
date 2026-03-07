@@ -3,6 +3,8 @@ title: Installation
 description: How to install FlowDrop in your project.
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) v20 or later
@@ -11,24 +13,34 @@ description: How to install FlowDrop in your project.
 ## Install
 
 ```bash
-npm install @d34dman/flowdrop @iconify/svelte
+npm install @d34dman/flowdrop @iconify/svelte @xyflow/svelte
 ```
 
 Or with pnpm:
 
 ```bash
-pnpm add @d34dman/flowdrop @iconify/svelte
+pnpm add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
 ```
 
 ## Peer Dependencies
 
 FlowDrop requires the following peer dependencies:
 
-| Package | Version |
-|---------|---------|
-| `svelte` | `^5.0.0` |
-| `@iconify/svelte` | `^5.0.0` |
-| `@sveltejs/kit` | `^2.0.0` (optional) |
+| Package | Version | Required |
+|---------|---------|----------|
+| `svelte` | `^5.0.0` | Yes |
+| `@xyflow/svelte` | `^1.2` | Yes (for editor module) |
+| `@iconify/svelte` | `^5.0.0` | Yes (for icons) |
+
+### Optional: CodeMirror (for code/markdown editors)
+
+If you use the `form/code` or `form/markdown` entry points, install CodeMirror packages:
+
+```bash
+npm install codemirror @codemirror/state @codemirror/view @codemirror/commands \
+  @codemirror/language @codemirror/theme-one-dark @codemirror/autocomplete \
+  @codemirror/lang-json @codemirror/lang-markdown @codemirror/lint
+```
 
 ## Entry Points
 
@@ -36,14 +48,23 @@ FlowDrop provides modular entry points so you can import only what you need:
 
 | Entry Point | Description |
 |-------------|-------------|
-| `@d34dman/flowdrop` | Main editor components |
+| `@d34dman/flowdrop` | Full bundle — re-exports everything |
 | `@d34dman/flowdrop/core` | Types and utilities (zero heavy dependencies) |
-| `@d34dman/flowdrop/editor` | Editor module |
-| `@d34dman/flowdrop/form` | Form field components |
-| `@d34dman/flowdrop/form/code` | Form with code editor support |
-| `@d34dman/flowdrop/form/markdown` | Form with markdown editor |
-| `@d34dman/flowdrop/form/full` | All form components |
-| `@d34dman/flowdrop/display` | Display-only components |
-| `@d34dman/flowdrop/playground` | Interactive playground |
-| `@d34dman/flowdrop/settings` | Settings UI |
-| `@d34dman/flowdrop/styles` | Base CSS styles |
+| `@d34dman/flowdrop/editor` | Visual workflow editor components |
+| `@d34dman/flowdrop/form` | Dynamic form field components |
+| `@d34dman/flowdrop/form/code` | Code and JSON editor fields (requires CodeMirror) |
+| `@d34dman/flowdrop/form/markdown` | Markdown editor field (requires CodeMirror) |
+| `@d34dman/flowdrop/form/full` | All form components pre-bundled |
+| `@d34dman/flowdrop/display` | Display-only components (MarkdownDisplay) |
+| `@d34dman/flowdrop/playground` | Interactive workflow playground |
+| `@d34dman/flowdrop/settings` | Settings UI components and stores |
+| `@d34dman/flowdrop/styles` | Base CSS styles and design tokens |
+
+## Architecture Notes
+
+<Aside type="caution" title="Single Instance Per Page">
+FlowDrop uses module-level singleton stores for state management. Only **one FlowDrop editor instance** can exist on a page at a time.
+</Aside>
+
+- **Svelte 5 required.** FlowDrop uses Svelte 5 runes (`$state`, `$derived`, `$effect`) throughout. Svelte 4 is not supported.
+- **Modern browsers only.** The library targets ES2020+ and does not include polyfills for older browsers.
