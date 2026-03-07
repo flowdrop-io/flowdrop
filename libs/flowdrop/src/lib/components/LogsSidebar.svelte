@@ -7,10 +7,7 @@
 
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { createEventDispatcher } from 'svelte';
 	import type { WorkflowNode as WorkflowNodeType } from '../types/index.js';
-
-	const dispatch = createEventDispatcher();
 
 	interface LogEntry {
 		timestamp: string;
@@ -24,19 +21,19 @@
 		logs: LogEntry[];
 		selectedNode?: WorkflowNodeType | null;
 		onClose?: () => void;
+		onClear?: () => void;
 	}
 
 	let props: Props = $props();
+
+	let sidebarRef: HTMLElement | undefined = $state();
 
 	// Focus management and body scroll control
 	$effect(() => {
 		if (props.isOpen) {
 			// Focus management - focus the sidebar when it opens
 			setTimeout(() => {
-				const sidebar = document.querySelector('.logs-sidebar--open');
-				if (sidebar) {
-					(sidebar as HTMLElement).focus();
-				}
+				sidebarRef?.focus();
 			}, 100);
 
 			// Prevent body scroll
@@ -52,7 +49,6 @@
 	 */
 	function handleClose(): void {
 		props.onClose?.();
-		dispatch('close');
 	}
 
 	/**
@@ -129,7 +125,7 @@
 	 * Clear logs
 	 */
 	function clearLogs(): void {
-		dispatch('clear');
+		props.onClear?.();
 	}
 
 	/**
@@ -163,6 +159,7 @@
 
 <!-- Sidebar -->
 <div
+	bind:this={sidebarRef}
 	class="logs-sidebar"
 	class:logs-sidebar--open={props.isOpen}
 	role="dialog"
