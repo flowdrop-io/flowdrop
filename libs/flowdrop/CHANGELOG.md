@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.65] - 2026-03-07
+
+### Fixed
+
+- **Svelte 5 migration**: Migrated `ConfigModal` and `LogsSidebar` from `createEventDispatcher` to callback props
+- **Type error**: Removed unused snippet causing `svelte-check` type error
+
+### Changed
+
+- Regenerated workflow JSON schema
+
+### Security
+
+- Updated dependencies and added `cookie` override to address known vulnerability
+
+---
+
 ## [0.0.64] - 2026-03-06
 
 ### Breaking Changes :warning:
