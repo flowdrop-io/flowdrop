@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { ConfigSchema, ConfigValues } from '$lib/types';
 	import ConfigForm from './ConfigForm.svelte';
 
@@ -8,23 +7,20 @@
 		nodeLabel: string;
 		configSchema: ConfigSchema;
 		configValues: ConfigValues;
+		onClose?: () => void;
+		onSave?: (values: ConfigValues) => void;
+		onCancel?: () => void;
 	}
 
-	let props: Props = $props();
+	let { onClose, onSave, onCancel, ...props }: Props = $props();
 	let localConfigValues = $derived.by(() => ({ ...props.configValues }));
 
-	const dispatch = createEventDispatcher<{
-		close: void;
-		save: { values: ConfigValues };
-		cancel: void;
-	}>();
-
 	function handleCancel() {
-		dispatch('cancel');
+		onCancel?.();
 	}
 
 	function handleClose() {
-		dispatch('close');
+		onClose?.();
 	}
 
 	// Close modal on escape key
@@ -77,7 +73,7 @@
 					values={localConfigValues}
 					showUIExtensions={false}
 					onSave={(config) => {
-						dispatch('save', { values: config });
+						onSave?.(config);
 					}}
 					onCancel={handleCancel}
 				/>
