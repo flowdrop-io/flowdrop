@@ -19,7 +19,10 @@ api/
 │   ├── pipelines.yaml        # /pipeline endpoints
 │   ├── executions.yaml       # /executions endpoints
 │   ├── playground.yaml       # /playground endpoints
-│   └── interrupts.yaml       # /interrupts endpoints (HITL)
+│   ├── interrupts.yaml       # /interrupts endpoints (HITL)
+│   ├── categories.yaml       # /categories endpoints
+│   ├── port-config.yaml      # /port-config endpoints
+│   └── agentspec.yaml        # /agentspec endpoints (Oracle Agent Spec)
 └── components/               # Reusable components
     ├── schemas/              # Data type definitions
     │   ├── common.yaml       # Shared types (enums, Position, ApiResponse)
@@ -29,6 +32,7 @@ api/
     │   ├── pipeline.yaml     # Pipeline/execution schemas
     │   ├── playground.yaml   # Playground session schemas
     │   ├── interrupt.yaml    # HITL interrupt schemas
+    │   ├── agentspec.yaml    # Agent Spec type definitions
     │   └── response.yaml     # API response wrappers
     ├── responses.yaml        # Common error responses (400, 401, 404, etc.)
     └── securitySchemes.yaml  # Authentication schemes
@@ -36,38 +40,40 @@ api/
 
 ## Commands
 
+Run from the library root (`libs/flowdrop/`):
+
 ```bash
 # Lint the spec (validates structure and best practices)
-npm run api:lint
+pnpm api:lint
 
 # Bundle into single file (regenerates bundled.yaml)
-npm run api:bundle
+pnpm api:bundle
+```
 
-# Watch for changes and auto-bundle (useful during development)
-npm run api:watch
+Or run directly from `apps/api-docs/`:
 
-# Preview documentation locally (opens Redoc)
-npm run api:preview
+```bash
+# Lint the OpenAPI spec
+pnpm lint
+
+# Bundle the spec into a single file
+pnpm bundle
+
+# Preview documentation locally (live reload, auto-finds available port)
+pnpm preview
+
+# Build the static HTML docs
+pnpm build
 ```
 
 ## Development Workflow
 
-### Manual Workflow
-
-1. **Edit source files** in `paths/` or `components/`
-2. **Lint** with `npm run api:lint` to catch issues
-3. **Bundle** with `npm run api:bundle` before committing
-4. **Preview** with `npm run api:preview` to see rendered docs
-
-### Automated Workflow (Recommended)
-
-1. **Edit source files** in `paths/` or `components/`
-2. **Use watch mode** with `npm run api:watch` during development (auto-bundles on save)
-3. **Commit changes** - the pre-commit hook automatically:
-   - Bundles the spec if API files changed
-   - Runs linting validation
-   - Stages the updated `bundled.yaml`
-4. **CI validates** - GitHub Actions ensures bundled.yaml is in sync
+1. **Edit** source files in `paths/` or `components/`
+2. **Lint** with `pnpm api:lint` to catch issues
+3. **Preview** with `pnpm preview` (from `apps/api-docs/`) to see rendered docs
+4. **Bundle** with `pnpm api:bundle` before committing
+5. **Commit** — the pre-commit hook automatically bundles if API files changed and stages the updated `bundled.yaml`
+6. **CI validates** — GitHub Actions ensures `bundled.yaml` is in sync and checks for breaking changes
 
 ## Best Practices
 
@@ -91,8 +97,8 @@ npm run api:preview
 1. Create or update the appropriate file in `paths/`
 2. Reference it in `openapi.yaml` under `paths:`
 3. Add any new schemas to `components/schemas/`
-4. Run `npm run api:lint` to validate
-5. Run `npm run api:bundle` to update bundled.yaml
+4. Run `pnpm api:lint` to validate
+5. Run `pnpm api:bundle` to update bundled.yaml
 
 ### Adding New Schemas
 
@@ -115,7 +121,7 @@ The API spec is validated in CI:
 
 ## Hosted Documentation
 
-API documentation is automatically deployed to GitHub Pages on every push to `main`:
+API documentation is automatically deployed to GitHub Pages on every push to `1.x`:
 
 **https://flowdrop-io.github.io/flowdrop/**
 

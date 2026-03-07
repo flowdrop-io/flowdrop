@@ -4,6 +4,8 @@ Static API documentation site for FlowDrop, built with [Redocly](https://redocly
 
 **Live docs:** [flowdrop-io.github.io/flowdrop](https://flowdrop-io.github.io/flowdrop/)
 
+**API version:** 1.0.0
+
 ## Overview
 
 This app lints, bundles, and builds the FlowDrop OpenAPI spec into a standalone HTML documentation page. The source spec lives in [`libs/flowdrop/api/openapi.yaml`](../../libs/flowdrop/api/openapi.yaml) and is processed using the Redocly CLI.
@@ -49,20 +51,20 @@ pnpm build
 ## How It Works
 
 ```
-libs/flowdrop/api/openapi.yaml    ← Source OpenAPI spec (multi-file)
-libs/flowdrop/api/redocly.yaml    ← Redocly config and lint rules
-                │
-                ▼
-        redocly bundle             ← Merges into a single file
-                │
-                ▼
-libs/flowdrop/api/bundled.yaml    ← Bundled spec
-                │
-                ▼
-        redocly build-docs         ← Generates static HTML
-                │
-                ▼
-        dist/index.html            ← Deployable documentation page
+libs/flowdrop/api/openapi.yaml    <- Source OpenAPI spec (multi-file)
+libs/flowdrop/api/redocly.yaml    <- Redocly config and lint rules
+                |
+                v
+        redocly bundle             <- Merges into a single file
+                |
+                v
+libs/flowdrop/api/bundled.yaml    <- Bundled spec
+                |
+                v
+        redocly build-docs         <- Generates static HTML
+                |
+                v
+        dist/index.html            <- Deployable documentation page
 ```
 
 ### Workflow
@@ -72,6 +74,10 @@ libs/flowdrop/api/bundled.yaml    ← Bundled spec
 3. **Preview** with `pnpm preview` for live-reload development
 4. **Bundle** with `pnpm bundle` to produce the merged spec
 5. **Build** with `pnpm build` to generate the static HTML
+
+## Deployment
+
+Documentation is automatically deployed to GitHub Pages on every push to the `1.x` branch (or via manual workflow dispatch). See [`.github/workflows/api-docs.yml`](../../.github/workflows/api-docs.yml) for the full pipeline.
 
 ## Key Files
 
