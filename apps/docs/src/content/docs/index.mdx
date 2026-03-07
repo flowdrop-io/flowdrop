@@ -15,6 +15,9 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import FlowDropDemo from '../../components/FlowDropDemo.svelte';
+
+<FlowDropDemo client:visible readOnly={true} buttonLabel="Try the Workflow Editor" buttonDescription="Opens a fullscreen interactive demo — no install needed." />
 
 ## Why FlowDrop?
 
