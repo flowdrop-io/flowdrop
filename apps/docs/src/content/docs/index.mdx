@@ -3,7 +3,7 @@ title: FlowDrop
 description: Build beautiful workflow editors in minutes, not months.
 template: splash
 hero:
-  tagline: An awesome workflow editor built with Svelte 5 and @xyflow/svelte. You own the backend. You own the data. You own the orchestration.
+  tagline: "A visual workflow editor built with Svelte 5 and @xyflow/svelte. You own the backend. You own the data. You own the orchestration."
   actions:
     - text: Get Started
       link: /getting-started/installation/
@@ -16,19 +16,37 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
+## Why FlowDrop?
+
+Most workflow tools are SaaS platforms that lock you in. Your data lives on their servers, your execution logic runs in their cloud, and you pay per workflow, per user, per run.
+
+**FlowDrop is different.** It is a pure visual editor component library. You implement the backend. You control the orchestration. Your workflows run on your infrastructure, with your security policies, at your scale. No vendor lock-in. No data leaving your walls.
+
 ## Features
 
 <CardGrid stagger>
 	<Card title="Visual Workflow Editor" icon="pencil">
-		Drag-and-drop node-based editor with real-time validation and auto-layout.
-	</Card>
-	<Card title="Agent Spec Support" icon="setting">
-		Import and export Oracle Open Agent Spec format with bidirectional conversion.
-	</Card>
-	<Card title="Plugin System" icon="add-document">
-		Extensible registries for custom node types, formats, and field components.
+		Drag-and-drop node-based editor with 7 built-in node types, real-time validation, and auto-layout.
 	</Card>
 	<Card title="Backend Agnostic" icon="open-book">
-		Pure UI component library — bring your own backend, data, and orchestration.
+		Pure UI component library — connect to any API: Drupal, Laravel, Express, FastAPI, or your own.
+	</Card>
+	<Card title="Agent Spec Support" icon="setting">
+		Import and export Oracle Open Agent Spec format with full bidirectional conversion for AI agent workflows.
+	</Card>
+	<Card title="Dynamic Forms" icon="document">
+		Auto-generate configuration forms from JSON Schema with support for dynamic fields, UISchema layout, and autocomplete.
+	</Card>
+	<Card title="Plugin System" icon="add-document">
+		Extensible registries for custom node types, workflow formats, and form field components.
+	</Card>
+	<Card title="Human-in-the-Loop" icon="approve-check">
+		Pause workflows for human approval, input, choices, or review with a built-in interrupt system.
+	</Card>
+	<Card title="Interactive Playground" icon="rocket">
+		Test workflows interactively with a chat interface, session management, and real-time execution feedback.
+	</Card>
+	<Card title="Framework Flexible" icon="puzzle">
+		Use as a native Svelte component or mount into React, Vue, Angular, or vanilla JS applications.
 	</Card>
 </CardGrid>

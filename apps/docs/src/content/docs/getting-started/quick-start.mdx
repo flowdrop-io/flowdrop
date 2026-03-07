@@ -3,21 +3,40 @@ title: Quick Start
 description: Get up and running with FlowDrop in minutes.
 ---
 
-## Basic Setup
+## Svelte Component (Simplest)
 
-After [installing](/getting-started/installation/) FlowDrop, import the styles and mount the editor:
+Import the editor component directly in a Svelte 5 project:
+
+```svelte
+<script lang="ts">
+  import { WorkflowEditor } from '@d34dman/flowdrop';
+  import '@d34dman/flowdrop/styles/base.css';
+</script>
+
+<WorkflowEditor />
+```
+
+**5 lines. One fully-functional workflow editor.**
+
+## Mount API (Any Framework)
+
+For vanilla JS, React, Vue, Angular, or any framework — use the mount API:
 
 ```svelte
 <script lang="ts">
   import '@d34dman/flowdrop/styles';
-  import { mountFlowDropApp } from '@d34dman/flowdrop';
+  import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop';
   import { onMount } from 'svelte';
 
   let container: HTMLDivElement;
 
   onMount(() => {
     const app = mountFlowDropApp(container, {
-      // Your configuration here
+      endpointConfig: createEndpointConfig('/api/flowdrop'),
+      eventHandlers: {
+        onDirtyStateChange: (isDirty) => console.log('Unsaved changes:', isDirty),
+        onAfterSave: (workflow) => console.log('Saved!', workflow)
+      }
     });
 
     return () => app.destroy();
@@ -27,7 +46,28 @@ After [installing](/getting-started/installation/) FlowDrop, import the styles a
 <div bind:this={container} style="width: 100%; height: 600px;" />
 ```
 
+### Vanilla JS
+
+```javascript
+import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop';
+import '@d34dman/flowdrop/styles';
+
+const app = await mountFlowDropApp(document.getElementById('editor'), {
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  eventHandlers: {
+    onAfterSave: (workflow) => console.log('Saved!', workflow)
+  }
+});
+
+// Full control over the editor
+const workflow = app.getWorkflow();
+await app.save();
+app.destroy();
+```
+
 ## What's Next?
 
-- Learn about [configuring the editor](/guides/example/) with custom node types
-- Explore the [API reference](/reference/)
+- Learn about [node types](/guides/node-types/) and how workflows are structured
+- Connect to a backend with the [integration guide](/guides/integration/)
+- Customize the look with the [theming guide](/guides/theming/)
+- Explore the [API reference](/reference/api-overview/)

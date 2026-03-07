@@ -1,0 +1,116 @@
+---
+title: Interactive Playground
+description: Test workflows interactively with the FlowDrop playground.
+---
+
+The playground provides an interactive testing environment for workflows, featuring a chat interface, session management, and real-time execution feedback.
+
+## Quick Start
+
+### Mount API
+
+```typescript
+import { mountPlayground } from '@d34dman/flowdrop/playground';
+import '@d34dman/flowdrop/styles';
+
+const playground = await mountPlayground(container, {
+  workflowId: 'my-workflow-id',
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  onSessionStatusChange: (newStatus, previousStatus) => {
+    console.log(`Session status: ${previousStatus} -> ${newStatus}`);
+  }
+});
+
+// Control the playground
+playground.startPolling();
+playground.destroy();
+```
+
+### Svelte Component
+
+```svelte
+<script lang="ts">
+  import { Playground } from '@d34dman/flowdrop/playground';
+</script>
+
+<Playground workflowId="my-workflow-id" />
+```
+
+## Features
+
+### Session Management
+
+The playground supports multiple parallel sessions. Each session represents an independent conversation with the workflow:
+
+- Create new sessions
+- Switch between active sessions
+- View session history
+- Delete sessions via dropdown menu
+
+### Chat Interface
+
+The chat panel displays messages from both the user and the workflow execution:
+
+- User messages are shown on the right
+- System/assistant messages on the left
+- Execution logs inline in the conversation
+- Interrupt prompts rendered as interactive UI elements
+
+### Real-Time Polling
+
+The playground polls the backend for new messages during execution. Configure polling behavior:
+
+```typescript
+const playground = await mountPlayground(container, {
+  playgroundConfig: {
+    pollingInterval: 1500,
+    shouldStopPolling: (status) => {
+      // Stop polling on terminal statuses
+      return ['completed', 'failed', 'cancelled'].includes(status);
+    },
+    isTerminalStatus: (status) => {
+      return ['completed', 'failed', 'cancelled'].includes(status);
+    }
+  }
+});
+```
+
+### Configurable Lifecycle Hooks
+
+```typescript
+import {
+  defaultShouldStopPolling,
+  defaultIsTerminalStatus
+} from '@d34dman/flowdrop/playground';
+```
+
+The `awaiting_input` status pauses polling automatically — call `playground.startPolling()` to resume after an interrupt is resolved.
+
+### Push Messages
+
+For custom transports (WebSocket, SSE), push poll responses directly:
+
+```typescript
+// Push messages from a WebSocket
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  playground.pushMessages(data);
+};
+```
+
+## Human-in-the-Loop
+
+The playground integrates with FlowDrop's interrupt system. See the [Human-in-the-Loop guide](/guides/interrupts/) for details on interrupt types and configuration.
+
+## API Endpoints
+
+The playground uses these backend endpoints:
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/playground/sessions` | POST | Create a new session |
+| `/playground/sessions` | GET | List sessions |
+| `/playground/sessions/{id}` | GET | Get session details |
+| `/playground/sessions/{id}` | DELETE | Delete session |
+| `/playground/sessions/{id}/execute` | POST | Execute workflow |
+| `/playground/sessions/{id}/messages` | GET | Poll for messages |
