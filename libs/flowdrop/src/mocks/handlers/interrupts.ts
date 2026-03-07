@@ -142,16 +142,17 @@ export const resolveInterruptHandler = http.post(
 				nodeLabel: 'Processor'
 			});
 
-			addMessage(
-				sessionId,
-				'assistant',
-				`Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response: **${formatValue(value)}**`,
-				{
-					nodeId: 'node-output',
-					nodeLabel: 'Output',
-					duration: 500
-				}
-			);
+			const formatted = formatValue(value);
+			const isCodeBlock = formatted.startsWith('```');
+			const responseText = isCodeBlock
+				? `Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response:\n\n${formatted}`
+				: `Thank you for your response! The workflow has processed your input and completed successfully.\n\nYour response: **${formatted}**`;
+
+			addMessage(sessionId, 'assistant', responseText, {
+				nodeId: 'node-output',
+				nodeLabel: 'Output',
+				duration: 500
+			});
 
 			addMessage(sessionId, 'log', 'Workflow execution completed', {
 				level: 'info',
@@ -181,7 +182,7 @@ function formatValue(value: unknown): string {
 		return value.join(', ');
 	}
 	if (typeof value === 'object' && value !== null) {
-		return JSON.stringify(value, null, 2);
+		return '```json\n' + JSON.stringify(value, null, 2) + '\n```';
 	}
 	return String(value);
 }
