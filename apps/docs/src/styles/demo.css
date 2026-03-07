@@ -59,7 +59,8 @@
 .fd-modal-close {
 	position: absolute;
 	top: 0.75rem;
-	right: 0.75rem;
+	left: 50%;
+	transform: translateX(-50%);
 	z-index: 10;
 	display: flex;
 	align-items: center;
