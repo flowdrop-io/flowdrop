@@ -279,6 +279,11 @@
 		"svelte-5-french-toast": "^2.0.6",
 		"uuid": "^11.1.0"
 	},
+	"pnpm": {
+		"overrides": {
+			"cookie@<0.7.0": "0.7.2"
+		}
+	},
 	"msw": {
 		"workerDirectory": [
 			"static"
