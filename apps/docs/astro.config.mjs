@@ -67,17 +67,26 @@ export default defineConfig({
 					]
 				},
 				{
-					label: 'Guides',
+					label: 'Using the Editor',
 					items: [
 						{ label: 'Creating Workflows', slug: 'guides/creating-workflows' },
 						{ label: 'Node Types', slug: 'guides/node-types' },
 						{ label: 'Framework Integration', slug: 'guides/integration' },
-						{ label: 'Configuration Forms', slug: 'guides/config-schema' },
 						{ label: 'Theming', slug: 'guides/theming' },
 						{ label: 'Interactive Playground', slug: 'guides/playground' },
 						{ label: 'Human-in-the-Loop', slug: 'guides/interrupts' },
 						{ label: 'Custom Nodes', slug: 'guides/custom-nodes' },
 						{ label: 'Custom Form Fields', slug: 'guides/custom-form-fields' }
+					]
+				},
+				{
+					label: 'Data Model',
+					items: [
+						{ label: 'Workflow Structure', slug: 'guides/workflow-json' },
+						{ label: 'Node Structure', slug: 'guides/node-json' },
+						{ label: 'Edge Structure', slug: 'guides/edge-json' },
+						{ label: 'Port System & Data Types', slug: 'guides/port-system' },
+						{ label: 'Configuration Schema', slug: 'guides/config-schema' }
 					]
 				},
 				{
