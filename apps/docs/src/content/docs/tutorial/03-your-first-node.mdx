@@ -133,7 +133,7 @@ The `id` must match the `category` field in your node definitions.
 
 ## Mounting with nodes
 
-Pass the `nodes` and `categories` arrays when mounting:
+Pass the `nodes` and `categories` arrays when mounting, along with the `endpointConfig` [from the previous step](/tutorial/02-configuring-endpoints):
 
 ```js
 import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop/editor';
@@ -151,8 +151,6 @@ const app = await mountFlowDropApp(
 );
 ```
 
-The `endpointConfig` tells FlowDrop where to find the backend API. Even if you don't have a backend yet, providing it ensures the editor initializes correctly. The `createEndpointConfig` helper sets up sensible defaults for all endpoints.
-
 ## Try it
 
 In the demo above:
@@ -165,4 +163,4 @@ In the demo above:
 
 One node is a good start, but workflows need variety. Next, you'll add multiple nodes across several categories to build a full editing experience.
 
-<a href="/tutorial/03-multiple-nodes-and-categories">Next: Multiple Nodes &amp; Categories &rarr;</a>
+<a href="/tutorial/04-multiple-nodes-and-categories">Next: Multiple Nodes &amp; Categories &rarr;</a>
