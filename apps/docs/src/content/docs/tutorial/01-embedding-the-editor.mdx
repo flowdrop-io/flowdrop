@@ -1,0 +1,72 @@
+---
+title: Embedding the Editor
+description: Mount the FlowDrop visual workflow editor in any web page.
+---
+
+import TutorialDemo from '../../../components/TutorialDemo.svelte';
+
+<TutorialDemo client:visible step="empty-editor" showNavbar={true} height="50vh" />
+
+> **What you'll learn:** How to install FlowDrop and mount a blank workflow editor canvas in your application.
+
+Notice the empty canvas above — no nodes in the sidebar, no workflow loaded. This is the most minimal FlowDrop setup: just the editor itself. You can already zoom (scroll wheel) and pan (click and drag the background).
+
+## Mount the editor
+
+After [installing FlowDrop](/getting-started/installation), two imports are all you need:
+
+```js
+import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
+import '@d34dman/flowdrop/styles';
+```
+
+Then mount it into any container element:
+
+```js
+const app = await mountFlowDropApp(
+  document.getElementById('editor'),
+  {
+    height: '600px',
+  }
+);
+```
+
+That's it. The editor renders a pannable, zoomable canvas with a grid background.
+
+### What `mountFlowDropApp` returns
+
+The mount function returns a controller object you can use later:
+
+```js
+const app = await mountFlowDropApp(container, options);
+
+// Check if the user has unsaved changes
+app.isDirty();
+
+// Get the current workflow data
+app.getWorkflow();
+
+// Clean up when done
+app.destroy();
+```
+
+## Using with Svelte
+
+If you're building a Svelte application, you can use the `WorkflowEditor` component directly:
+
+```svelte
+<script>
+  import { WorkflowEditor } from '@d34dman/flowdrop/editor';
+  import '@d34dman/flowdrop/styles';
+</script>
+
+<div style="height: 600px;">
+  <WorkflowEditor />
+</div>
+```
+
+## What's next
+
+The editor is running, but there's nothing to build with yet. In the next step, you'll define your first node and see it appear in the sidebar.
+
+<a href="/tutorial/02-your-first-node">Next: Your First Node &rarr;</a>

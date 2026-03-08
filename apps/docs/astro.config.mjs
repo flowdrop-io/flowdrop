@@ -57,6 +57,15 @@ export default defineConfig({
 					]
 				},
 				{
+					label: 'Tutorial',
+					items: [
+						{ label: '1. Embedding the Editor', slug: 'tutorial/01-embedding-the-editor' },
+						{ label: '2. Your First Node', slug: 'tutorial/02-your-first-node' },
+						{ label: '3. Nodes & Categories', slug: 'tutorial/03-multiple-nodes-and-categories' },
+						{ label: '4. Saving Workflows', slug: 'tutorial/04-saving-workflows' }
+					]
+				},
+				{
 					label: 'Guides',
 					items: [
 						{ label: 'Creating Workflows', slug: 'guides/creating-workflows' },

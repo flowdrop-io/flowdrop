@@ -2,13 +2,11 @@
 /**
  * Standalone FlowDrop demo page.
  * Rendered in an iframe from the docs site for complete style isolation.
- * Query params:
- *   ?readOnly=true  — read-only mode (no editing)
- *   ?showNavbar=true — show the navbar
+ * Query params (parsed client-side):
+ *   ?readOnly=true   — read-only mode (no editing)
+ *   ?showNavbar=true  — show the navbar
+ *   ?step=1           — tutorial step (1-4)
  */
-const url = new URL(Astro.request.url);
-const readOnly = url.searchParams.get('readOnly') === 'true';
-const showNavbar = url.searchParams.get('showNavbar') === 'true';
 ---
 
 <!doctype html>
@@ -66,21 +64,64 @@ const showNavbar = url.searchParams.get('showNavbar') === 'true';
 		</div>
 		<div id="editor" class="hidden"></div>
 
-		<script define:vars={{ readOnly, showNavbar }}>
-			window.__DEMO_CONFIG = { readOnly, showNavbar };
-		</script>
 		<script>
 			(async () => {
-				const config = window.__DEMO_CONFIG;
+				const params = new URLSearchParams(window.location.search);
+				const config = {
+					readOnly: params.get('readOnly') === 'true',
+					showNavbar: params.get('showNavbar') === 'true',
+					step: params.get('step') || '',
+					zoom: params.get('zoom') ? parseFloat(params.get('zoom')) : null
+				};
 				const loadingEl = document.getElementById('loading');
 				const errorEl = document.getElementById('error');
 				const editorEl = document.getElementById('editor');
 
 				try {
-					// Start MSW mock server
-					const { setupWorker } = await import('msw/browser');
-					const { handlers } = await import('../mocks/handlers');
+					// Determine handlers and mount options based on tutorial step
+					let handlers;
+					let mountOptions;
 
+					const { setupWorker } = await import('msw/browser');
+					const { mountFlowDropApp } = await import('@d34dman/flowdrop/editor');
+					const { createEndpointConfig } = await import('@d34dman/flowdrop/core');
+					await import('@d34dman/flowdrop/styles');
+
+					if (config.step) {
+						// Tutorial mode: load step-specific config
+						const { getTutorialConfig } = await import('../mocks/tutorial-data');
+						const tutorial = getTutorialConfig(config.step);
+						handlers = tutorial.handlers;
+						mountOptions = {
+							workflow: tutorial.workflow,
+							nodes: tutorial.nodes,
+							endpointConfig: createEndpointConfig('/api/flowdrop'),
+							height: '100%',
+							width: '100%',
+							showNavbar: config.showNavbar,
+							readOnly: config.readOnly,
+							features: { autoSaveDraft: false },
+							...(config.zoom && { settings: { editor: { defaultZoom: config.zoom } } })
+						};
+					} else {
+						// Default demo mode
+						const { handlers: defaultHandlers } = await import('../mocks/handlers');
+						const { demoWorkflow, demoNodes } = await import('../mocks/data');
+						handlers = defaultHandlers;
+						mountOptions = {
+							workflow: demoWorkflow,
+							nodes: demoNodes,
+							endpointConfig: createEndpointConfig('/api/flowdrop'),
+							height: '100%',
+							width: '100%',
+							showNavbar: config.showNavbar,
+							readOnly: config.readOnly,
+							features: { autoSaveDraft: false },
+							...(config.zoom && { settings: { editor: { defaultZoom: config.zoom } } })
+						};
+					}
+
+					// Start MSW mock server
 					const worker = setupWorker(...handlers);
 					await worker.start({
 						onUnhandledRequest: 'bypass',
@@ -88,26 +129,10 @@ const showNavbar = url.searchParams.get('showNavbar') === 'true';
 						quiet: true
 					});
 
-					// Import FlowDrop
-					const { mountFlowDropApp } = await import('@d34dman/flowdrop/editor');
-					const { createEndpointConfig } = await import('@d34dman/flowdrop/core');
-					await import('@d34dman/flowdrop/styles');
-
-					const { demoWorkflow, demoNodes } = await import('../mocks/data');
-
 					loadingEl.classList.add('hidden');
 					editorEl.classList.remove('hidden');
 
-					await mountFlowDropApp(editorEl, {
-						workflow: demoWorkflow,
-						nodes: demoNodes,
-						endpointConfig: createEndpointConfig('/api/flowdrop'),
-						height: '100%',
-						width: '100%',
-						showNavbar: config.showNavbar,
-						readOnly: config.readOnly,
-						features: { autoSaveDraft: false }
-					});
+					await mountFlowDropApp(editorEl, mountOptions);
 				} catch (err) {
 					console.error('FlowDrop demo failed:', err);
 					loadingEl.classList.add('hidden');
