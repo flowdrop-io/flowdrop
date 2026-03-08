@@ -17,63 +17,9 @@ FlowDrop ships with 7 built-in node types, each designed for specific workflow p
 | `terminal` | Start/end points | Circular nodes for workflow entry and exit |
 | `note` | Documentation | Markdown-enabled sticky notes (no execution) |
 
-## Node Metadata
+For the complete JSON structure, see [Node Structure](/guides/node-json/). For port definitions and data types, see [Port System & Data Types](/guides/port-system/).
 
-Every node type in the sidebar is defined by a `NodeMetadata` object:
-
-```typescript
-interface NodeMetadata {
-  id: string;              // Unique identifier
-  name: string;            // Display name
-  type: string;            // Visual component type
-  description?: string;    // Shown in sidebar and tooltips
-  category?: string;       // Sidebar grouping
-  version?: string;
-  icon?: string;           // Iconify icon (e.g., "mdi:code-braces")
-  color?: string;          // CSS color for node accent
-  badge?: string;          // Label badge (e.g., "TOOL", "API")
-  inputs?: NodePort[];     // Input port definitions
-  outputs?: NodePort[];    // Output port definitions
-  configSchema?: object;   // JSON Schema for config form
-  uiSchema?: object;       // Layout hints for config form
-  config?: object;         // Default config values
-  tags?: string[];         // Searchable tags
-  supportedTypes?: string[]; // Alternative visual types
-}
-```
-
-## Port System
-
-Ports define how nodes connect. Each port has a data type that determines compatibility:
-
-```typescript
-interface NodePort {
-  id: string;           // Unique port identifier
-  name: string;         // Display name
-  type: string;         // "input", "output", or "metadata"
-  dataType: string;     // e.g., "string", "number", "tool", "trigger"
-  required?: boolean;   // Whether connection is required
-  description?: string;
-  defaultValue?: unknown;
-}
-```
-
-### Port Data Types
-
-The port configuration system defines which data types exist and which types are compatible:
-
-```typescript
-interface PortDataTypeConfig {
-  id: string;
-  name: string;
-  description?: string;
-  color: string;        // Visual color for the port
-  category?: string;
-  aliases?: string[];
-}
-```
-
-### Connection Validation
+## Connection Validation
 
 FlowDrop validates connections automatically:
 

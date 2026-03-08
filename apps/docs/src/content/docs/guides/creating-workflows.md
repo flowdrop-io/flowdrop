@@ -5,52 +5,7 @@ description: How to create and manage workflows with FlowDrop.
 
 Workflows in FlowDrop are composed of **nodes** connected by **edges**. Each node represents a step in your workflow, and edges define the flow between steps.
 
-## Workflow Structure
-
-A workflow is a JSON document with this structure:
-
-```typescript
-interface Workflow {
-  id: string;
-  name: string;
-  description?: string;
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  metadata?: Record<string, any>;
-}
-```
-
-### Nodes
-
-Each node has a position on the canvas, a type that determines how it renders, and data containing its label, configuration, and metadata:
-
-```typescript
-interface WorkflowNode {
-  id: string;
-  type: string;
-  position: { x: number; y: number };
-  data: {
-    label: string;
-    config?: Record<string, unknown>;
-    metadata?: NodeMetadata;
-    branches?: Branch[];
-  };
-}
-```
-
-### Edges
-
-Edges connect output ports to input ports:
-
-```typescript
-interface WorkflowEdge {
-  id: string;
-  source: string;       // Source node ID
-  sourceHandle: string;  // Source port ID
-  target: string;       // Target node ID
-  targetHandle: string;  // Target port ID
-}
-```
+For details on the JSON format, see [Workflow Structure](/guides/workflow-json/), [Node Structure](/guides/node-json/), and [Edge Structure](/guides/edge-json/).
 
 ## Building a Workflow
 
