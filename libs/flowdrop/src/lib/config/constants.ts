@@ -19,6 +19,15 @@ export const PIPELINE_API_UNAVAILABLE_DURATION_MS = 5 * 60 * 1000;
 /** Default cache TTL for schema and variable data in milliseconds (5 minutes) */
 export const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
 
+/**
+ * Custom arrowhead dimensions (in pixels) drawn by FlowDropEdge.
+ * The edge path is shortened by ARROW_LENGTH_PX so the stroke ends
+ * at the arrow base, and the arrowhead polygon is rendered separately
+ * at the target handle position.
+ */
+export const ARROW_LENGTH_PX = 8;
+export const ARROW_HALF_WIDTH_PX = 4;
+
 /** Edge marker arrow sizes by category */
 export const EDGE_MARKER_SIZES = {
 	loopback: { width: 14, height: 14 },
