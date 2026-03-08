@@ -64,6 +64,58 @@ Key fields:
 | `inputs` / `outputs` | Define the connection ports on the node |
 | `configSchema` | JSON Schema that generates the configuration form |
 
+### Icons
+
+The `icon` field accepts any [Iconify](https://iconify.design/) icon identifier in `set:name` format. FlowDrop uses [`@iconify/svelte`](https://iconify.design/docs/icon-components/svelte/) to render icons, which loads them on demand from the Iconify API — so you have access to **200,000+ icons** from 150+ open-source icon sets without bundling anything extra.
+
+```js
+icon: 'mdi:text'          // Material Design Icons
+icon: 'heroicons:sparkles' // Heroicons
+icon: 'lucide:bot'         // Lucide
+icon: 'ph:brain'           // Phosphor Icons
+```
+
+Browse all available icons at [icon-sets.iconify.design](https://icon-sets.iconify.design/).
+
+:::note
+`@iconify/svelte` is listed as an optional peer dependency of FlowDrop. If it's not installed, icons will not render. See the [Icons reference](/reference/icons) for the full details including built-in defaults and fallback behavior.
+:::
+
+### The `configSchema` and JSON Schema
+
+The `configSchema` field uses [JSON Schema](https://json-schema.org/) — an open standard for describing the structure of JSON data. FlowDrop reads this schema and **automatically generates a configuration form** for each node, so you never need to build form UI by hand.
+
+In the example above, the schema defines a single `placeholder` property of type `string`:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "placeholder": {
+      "type": "string",
+      "title": "Placeholder",
+      "default": "Enter text..."
+    }
+  }
+}
+```
+
+This produces a text input labeled "Placeholder" with a default value. You can use any standard JSON Schema features to build richer forms:
+
+| JSON Schema feature | What it generates |
+|---------------------|-------------------|
+| `type: "string"` | Text input |
+| `type: "number"` | Number input |
+| `type: "boolean"` | Toggle / checkbox |
+| `type: "string"` + `enum` | Dropdown select |
+| `title` | Field label |
+| `description` | Help text below the field |
+| `default` | Pre-filled value |
+
+:::tip[Learn more about JSON Schema]
+The full specification is at [json-schema.org](https://json-schema.org/). The [Understanding JSON Schema](https://json-schema.org/understanding-json-schema/) guide is an excellent starting point if you're new to it.
+:::
+
 ### Defining a category
 
 A category groups related nodes in the sidebar:

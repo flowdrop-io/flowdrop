@@ -86,6 +86,7 @@ export default defineConfig({
 						{ label: 'Mount API', slug: 'reference/mount-api' },
 						{ label: 'Core Types', slug: 'reference/types' },
 						{ label: 'Components', slug: 'reference/components' },
+						{ label: 'Icons', slug: 'reference/icons' },
 						{ label: 'Migration Guide', slug: 'reference/migration' }
 					]
 				}
