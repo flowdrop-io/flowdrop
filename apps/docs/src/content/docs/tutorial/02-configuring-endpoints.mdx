@@ -1,0 +1,80 @@
+---
+title: Configuring Endpoints
+description: Tell FlowDrop where your backend API lives so it can load nodes, save workflows, and more.
+---
+
+import TutorialDemo from '../../../components/TutorialDemo.svelte';
+
+<TutorialDemo client:visible step="empty-editor" showNavbar={true} height="50vh" />
+
+> **What you'll learn:** How to configure the API endpoint so FlowDrop knows where to send requests for loading nodes, saving workflows, and executing pipelines.
+
+The canvas above looks the same as Step 1 — but behind the scenes, it now has an endpoint configuration. This tells FlowDrop where your backend API lives, even before you've built one.
+
+## Why endpoints matter
+
+FlowDrop is a **frontend editor** that talks to a **backend API** for things like:
+
+- Loading available node types and categories
+- Saving and loading workflows
+- Executing workflows and pipelines
+- Managing playground sessions
+
+Without an endpoint configuration, the editor can render a canvas, but it can't load nodes into the sidebar or persist any data. This is why Step 1 showed an empty canvas — there was no API to fetch nodes from.
+
+## The `createEndpointConfig` helper
+
+FlowDrop provides a helper that generates a full endpoint configuration from a single base URL:
+
+```js
+import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop/editor';
+import '@d34dman/flowdrop/styles';
+
+const app = await mountFlowDropApp(
+  document.getElementById('editor'),
+  {
+    endpointConfig: createEndpointConfig('/api/flowdrop'),
+    height: '600px',
+  }
+);
+```
+
+The `createEndpointConfig('/api/flowdrop')` call sets up paths for all API operations under that base URL:
+
+| Operation | Endpoint |
+|-----------|----------|
+| List nodes | `GET /api/flowdrop/nodes` |
+| List categories | `GET /api/flowdrop/categories` |
+| Port config | `GET /api/flowdrop/port-config` |
+| Save workflow | `PUT /api/flowdrop/workflows/{id}` |
+| Create workflow | `POST /api/flowdrop/workflows` |
+| Execute workflow | `POST /api/flowdrop/workflows/{id}/execute` |
+| Health check | `GET /api/flowdrop/health` |
+
+It also configures sensible defaults: a 30-second timeout and automatic retries with exponential backoff.
+
+## Customizing endpoints
+
+You can override individual settings by passing a second argument:
+
+```js
+const endpointConfig = createEndpointConfig('/api/v2/flowdrop', {
+  timeout: 60000,
+  retry: {
+    enabled: true,
+    maxAttempts: 5,
+    delay: 2000,
+    backoff: 'exponential'
+  }
+});
+```
+
+:::note[No backend yet? No problem.]
+You don't need a running backend to continue the tutorial. The interactive demos on these pages use mock API handlers (via [MSW](https://mswjs.io/)) that simulate a real backend. When you provide `endpointConfig`, the editor initializes correctly and will call your API only when actions like saving or loading are triggered.
+:::
+
+## What's next
+
+Now that the editor knows where the API lives, it's time to define your first node and see it appear in the sidebar.
+
+<a href="/tutorial/03-your-first-node">Next: Your First Node &rarr;</a>
