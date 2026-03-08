@@ -1,0 +1,181 @@
+---
+title: Saving Workflows
+description: Persist workflow data with save callbacks and understand the workflow data model.
+---
+
+import TutorialDemo from '../../../components/TutorialDemo.svelte';
+
+<TutorialDemo client:visible step="saving-workflows" showNavbar={true} height="60vh" />
+
+> **What you'll learn:** The workflow data structure (nodes and edges), how to implement save callbacks, and how to handle workflow lifecycle events.
+
+This demo loads with a pre-built workflow. Click **Save** in the toolbar to see the save flow in action. You can also modify the workflow and save your changes.
+
+## The workflow data structure
+
+When you save or export a workflow, FlowDrop produces a JSON object with two main arrays: **nodes** and **edges**.
+
+### Nodes
+
+Each node on the canvas is represented as:
+
+```json
+{
+  "id": "text_input.1",
+  "type": "universalNode",
+  "position": { "x": 0, "y": 100 },
+  "data": {
+    "label": "Text Input",
+    "config": {
+      "placeholder": "Enter text..."
+    },
+    "metadata": {
+      "id": "text_input",
+      "name": "Text Input",
+      "type": "simple",
+      "category": "inputs"
+    },
+    "nodeId": "text_input.1"
+  }
+}
+```
+
+- `position` — where the node sits on the canvas (x, y coordinates)
+- `data.config` — the user's configuration values (from the config form)
+- `data.metadata` — the full node definition (type, ports, schema)
+
+### Edges
+
+Each connection between nodes is an edge:
+
+```json
+{
+  "id": "e-text_input-ai_analyzer",
+  "source": "text_input.1",
+  "target": "ai_content_analyzer.1",
+  "sourceHandle": "text_input.1-output-text",
+  "targetHandle": "ai_content_analyzer.1-input-content"
+}
+```
+
+- `source` / `target` — the node IDs being connected
+- `sourceHandle` / `targetHandle` — the specific port IDs (format: `{nodeId}-{direction}-{portId}`)
+
+## Event handlers
+
+FlowDrop provides lifecycle hooks to respond to workflow changes and saves:
+
+```js
+const app = await mountFlowDropApp(container, {
+  nodes,
+  categories,
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  showNavbar: true,
+
+  eventHandlers: {
+    // Called before save — return false to cancel
+    onBeforeSave: async (workflow) => {
+      console.log('Saving workflow:', workflow.name);
+      const isValid = workflow.nodes.length > 0;
+      return isValid;
+    },
+
+    // Called after successful save
+    onAfterSave: async (workflow) => {
+      console.log('Workflow saved!', workflow.id);
+    },
+
+    // Called when save fails
+    onSaveError: async (error, workflow) => {
+      console.error('Save failed:', error.message);
+    },
+
+    // Called on any workflow change
+    onWorkflowChange: (workflow, changeType) => {
+      // changeType: 'node_add', 'node_remove', 'node_move',
+      //             'node_config', 'edge_add', 'edge_remove',
+      //             'metadata', 'name', 'description'
+      console.log(`Change: ${changeType}`);
+    },
+
+    // Called when dirty state changes
+    onDirtyStateChange: (isDirty) => {
+      // Update your UI (e.g., show unsaved indicator)
+      document.title = isDirty ? '* My Editor' : 'My Editor';
+    }
+  }
+});
+```
+
+## Implementing a save endpoint
+
+FlowDrop sends the workflow data to your API when the user clicks Save. Here's a minimal backend example:
+
+```js
+// Express.js example
+app.put('/api/flowdrop/workflows/:id', (req, res) => {
+  const { id } = req.params;
+  const { nodes, edges, name, description } = req.body;
+
+  // Save to your database
+  db.workflows.update(id, { nodes, edges, name, description });
+
+  res.json({
+    success: true,
+    data: { id, nodes, edges, name, description },
+    message: 'Workflow saved'
+  });
+});
+```
+
+The API response should follow the pattern `{ success: boolean, data: Workflow, message: string }`.
+
+## Complete setup
+
+Here's everything from the tutorial combined into a single setup:
+
+```js
+import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop/editor';
+import '@d34dman/flowdrop/styles';
+
+const nodes = [
+  { id: 'text_input', name: 'Text Input', type: 'simple', category: 'inputs', /* ... */ },
+  { id: 'text_output', name: 'Text Output', type: 'simple', category: 'outputs', /* ... */ },
+  { id: 'ai_analyzer', name: 'AI Analyzer', type: 'tool', category: 'ai', /* ... */ },
+  // ...more nodes
+];
+
+const categories = [
+  { id: 'inputs', name: 'Inputs', icon: 'mdi:import', color: '#22c55e' },
+  { id: 'outputs', name: 'Outputs', icon: 'mdi:export', color: '#ef4444' },
+  { id: 'ai', name: 'AI & ML', icon: 'mdi:brain', color: '#9C27B0' },
+  // ...more categories
+];
+
+const app = await mountFlowDropApp(
+  document.getElementById('editor'),
+  {
+    nodes,
+    categories,
+    endpointConfig: createEndpointConfig('/api/flowdrop'),
+    height: '100vh',
+    showNavbar: true,
+    eventHandlers: {
+      onAfterSave: async (wf) => console.log('Saved:', wf.id),
+      onDirtyStateChange: (dirty) => {
+        document.title = dirty ? '* Editor' : 'Editor';
+      }
+    }
+  }
+);
+```
+
+## What's next
+
+You've completed the tutorial! Here are some areas to explore next:
+
+- [Node Types](/guides/node-types) — deep dive into all built-in node types and custom nodes
+- [Configuration Forms](/guides/config-schema) — advanced JSON Schema forms with UI schema layouts
+- [Framework Integration](/guides/integration) — use FlowDrop with React, Vue, Angular, or vanilla JS
+- [Theming](/guides/theming) — customize colors, fonts, and dark mode with CSS tokens
+- [Interactive Playground](/guides/playground) — add a chat-based testing interface to your editor

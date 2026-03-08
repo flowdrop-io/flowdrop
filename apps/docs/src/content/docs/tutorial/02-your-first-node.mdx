@@ -1,0 +1,116 @@
+---
+title: Your First Node
+description: Define a node type and see it appear in the editor sidebar.
+---
+
+import TutorialDemo from '../../../components/TutorialDemo.svelte';
+
+<TutorialDemo client:visible step="first-node" showNavbar={true} height="50vh" />
+
+> **What you'll learn:** How to define a node, group it into a category, and pass both to the editor so it appears in the sidebar.
+
+Open the sidebar (click the panel icon in the top-left) and you'll see a single **Text Input** node under the **Inputs** category. Drag it onto the canvas, then click it to see its configuration form.
+
+## Core concepts
+
+FlowDrop needs two things to populate the sidebar:
+
+1. **Nodes** — definitions of the building blocks users can drag onto the canvas.
+2. **Categories** — groups that organize nodes in the sidebar.
+
+### Defining a node
+
+A node is a plain object describing its identity, appearance, and ports:
+
+```js
+const textInput = {
+  id: 'text_input',
+  name: 'Text Input',
+  type: 'simple',              // Visual style: simple, tool, gateway, terminal
+  description: 'Simple text input for user data',
+  category: 'inputs',          // Must match a category id
+  icon: 'mdi:text',            // Any Iconify icon
+  color: '#22c55e',
+  version: '1.0.0',
+  inputs: [],                  // No input ports
+  outputs: [
+    {
+      id: 'text',
+      name: 'text',
+      type: 'output',
+      dataType: 'string',
+      description: 'The input text value'
+    }
+  ],
+  configSchema: {               // JSON Schema for the config form
+    type: 'object',
+    properties: {
+      placeholder: {
+        type: 'string',
+        title: 'Placeholder',
+        default: 'Enter text...'
+      }
+    }
+  }
+};
+```
+
+Key fields:
+
+| Field | Purpose |
+|-------|---------|
+| `type` | Controls the visual style of the node on the canvas |
+| `category` | Determines which sidebar group the node appears in |
+| `inputs` / `outputs` | Define the connection ports on the node |
+| `configSchema` | JSON Schema that generates the configuration form |
+
+### Defining a category
+
+A category groups related nodes in the sidebar:
+
+```js
+const inputsCategory = {
+  id: 'inputs',
+  name: 'Inputs',
+  icon: 'mdi:import',
+  color: '#22c55e'
+};
+```
+
+The `id` must match the `category` field in your node definitions.
+
+## Mounting with nodes
+
+Pass the `nodes` and `categories` arrays when mounting:
+
+```js
+import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop/editor';
+import '@d34dman/flowdrop/styles';
+
+const app = await mountFlowDropApp(
+  document.getElementById('editor'),
+  {
+    nodes: [textInput],
+    categories: [inputsCategory],
+    endpointConfig: createEndpointConfig('/api/flowdrop'),
+    height: '600px',
+    showNavbar: true,
+  }
+);
+```
+
+The `endpointConfig` tells FlowDrop where to find the backend API. Even if you don't have a backend yet, providing it ensures the editor initializes correctly. The `createEndpointConfig` helper sets up sensible defaults for all endpoints.
+
+## Try it
+
+In the demo above:
+
+1. Open the sidebar and drag **Text Input** onto the canvas.
+2. Click the node to open its configuration panel.
+3. Change the **Placeholder** value — this is generated from the `configSchema`.
+
+## What's next
+
+One node is a good start, but workflows need variety. Next, you'll add multiple nodes across several categories to build a full editing experience.
+
+<a href="/tutorial/03-multiple-nodes-and-categories">Next: Multiple Nodes &amp; Categories &rarr;</a>
