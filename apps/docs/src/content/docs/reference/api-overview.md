@@ -103,20 +103,38 @@ Full bundle — re-exports from all sub-modules for convenience. Use this when b
 
 ## REST API
 
-FlowDrop expects a backend implementing these endpoint groups:
+FlowDrop expects a backend implementing these endpoint groups. Not all are required — see [Backend Implementation](/guides/integration/backend-implementation/) for which tier each belongs to.
 
-| Group | Base Path | Purpose |
-|-------|-----------|---------|
-| Health | `/health` | Health check |
-| System | `/system/config`, `/system/version` | System configuration |
-| Nodes | `/nodes` | Node type discovery and metadata |
-| Categories | `/categories` | Category definitions |
-| Port Config | `/port-config` | Port configuration |
-| Workflows | `/workflows` | CRUD operations |
-| Execution | `/workflows/{id}/execute` | Workflow execution |
-| Pipelines | `/pipeline/{id}` | Pipeline status |
-| Playground | `/playground/sessions` | Interactive testing sessions |
-| Interrupts | `/interrupts` | Human-in-the-loop management |
+### Required (Tier 1 — Minimum Viable Backend)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/health` | Health check (called on mount) |
+| `GET` | `/nodes` | List available node types |
+| `GET` | `/workflows/:id` | Load a workflow |
+| `POST` | `/workflows` | Create a new workflow |
+| `PUT` | `/workflows/:id` | Update a workflow |
+
+### Recommended (Tier 2 — Full Editor)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/categories` | Category definitions for sidebar groups |
+| `GET` | `/port-config` | Port data types and compatibility rules |
+| `GET` | `/nodes/:id` | Get single node metadata |
+| `GET` | `/workflows` | List all workflows |
+| `DELETE` | `/workflows/:id` | Delete a workflow |
+| `GET` | `/system/config` | Runtime configuration |
+
+### Optional (Tier 3 — Advanced Features)
+
+| Group | Paths | Purpose |
+|-------|-------|---------|
+| Execution | `/workflows/{id}/execute`, `/executions/{id}/status` | Workflow execution |
+| Pipelines | `/pipeline/{id}` | Pipeline status & logs |
+| Playground | `/playground/sessions`, `/playground/sessions/{id}/messages` | Interactive testing |
+| Interrupts | `/interrupts/{id}`, `/interrupts/{id}/resolve` | Human-in-the-loop |
+| Settings | `/settings` | User preferences |
 | Agent Spec | `/agentspec` | Agent Spec import/export |
 
-See the [OpenAPI specification](https://flowdrop-io.github.io/flowdrop/) for full endpoint documentation.
+See the [OpenAPI specification](https://flowdrop-io.github.io/flowdrop/) for full endpoint documentation, or follow the [Backend: Express.js](/recipes/backend-express/) recipe to get started quickly.

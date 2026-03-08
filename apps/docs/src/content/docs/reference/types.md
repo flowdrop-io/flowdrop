@@ -202,14 +202,62 @@ function createEndpointConfig(
 ): EndpointConfig;
 ```
 
+## WorkflowChangeType
+
+```typescript
+type WorkflowChangeType =
+  | 'node_add'
+  | 'node_remove'
+  | 'node_move'
+  | 'node_config'
+  | 'edge_add'
+  | 'edge_remove'
+  | 'metadata'
+  | 'name'
+  | 'description';
+```
+
 ## Event Handlers
+
+All 11 event handlers for lifecycle integration. See [Event System](/guides/advanced/event-system/) for usage examples.
 
 ```typescript
 interface FlowDropEventHandlers {
-  onBeforeSave?: (workflow: Workflow) => Workflow | void;
-  onAfterSave?: (workflow: Workflow) => void;
+  /** Called on any workflow modification */
+  onWorkflowChange?: (workflow: Workflow, changeType: WorkflowChangeType) => void;
+
+  /** Called when dirty state changes (saved ↔ unsaved) */
   onDirtyStateChange?: (isDirty: boolean) => void;
+
+  /** Called before save — return false to cancel */
+  onBeforeSave?: (workflow: Workflow) => Promise<boolean | void>;
+
+  /** Called after successful save */
+  onAfterSave?: (workflow: Workflow) => Promise<void>;
+
+  /** Called when save fails */
+  onSaveError?: (error: Error, workflow: Workflow) => Promise<void>;
+
+  /** Called after a workflow is loaded */
+  onWorkflowLoad?: (workflow: Workflow) => void;
+
+  /** Called before FlowDrop is destroyed */
   onBeforeUnmount?: (workflow: Workflow, isDirty: boolean) => void;
+
+  /** Called on any API error — return true to suppress default toast */
+  onApiError?: (error: Error, operation: string) => boolean | void;
+
+  /** Called when Agent Spec execution starts */
+  onAgentSpecExecutionStarted?: (executionId: string) => void;
+
+  /** Called when Agent Spec execution completes */
+  onAgentSpecExecutionCompleted?: (executionId: string, results: Record<string, unknown>) => void;
+
+  /** Called when Agent Spec execution fails */
+  onAgentSpecExecutionFailed?: (executionId: string, error: Error) => void;
+
+  /** Called when a node's execution status updates during Agent Spec execution */
+  onAgentSpecNodeStatusUpdate?: (nodeId: string, status: NodeExecutionInfo) => void;
 }
 ```
 
@@ -217,10 +265,14 @@ interface FlowDropEventHandlers {
 
 ```typescript
 interface FlowDropFeatures {
+  /** Save drafts to localStorage automatically @default true */
   autoSaveDraft?: boolean;
+
+  /** Auto-save interval in ms @default 30000 */
   autoSaveDraftInterval?: number;
-  proximityConnect?: boolean;
-  proximityConnectDistance?: number;
+
+  /** Show toast notifications @default true */
+  showToasts?: boolean;
 }
 ```
 
