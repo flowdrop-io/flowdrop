@@ -11,14 +11,33 @@ Use FlowDrop components directly in Svelte:
 
 ```svelte
 <script>
-  import { WorkflowEditor, NodeSidebar } from '@d34dman/flowdrop';
-  import '@d34dman/flowdrop/styles/base.css';
+  import { App } from '@d34dman/flowdrop/editor';
+  import { createEndpointConfig } from '@d34dman/flowdrop/core';
+  import '@d34dman/flowdrop/styles';
+
+  const endpointConfig = createEndpointConfig('/api/flowdrop');
 </script>
 
-<div class="flex h-screen">
-  <NodeSidebar {nodes} />
-  <WorkflowEditor {nodes} />
-</div>
+<App
+  {endpointConfig}
+  showNavbar={true}
+  eventHandlers={{
+    onAfterSave: async (workflow) => console.log('Saved:', workflow.id)
+  }}
+/>
+```
+
+For SvelteKit, ensure FlowDrop runs only on the client:
+
+```svelte
+<script>
+  import { browser } from '$app/environment';
+  import { App } from '@d34dman/flowdrop/editor';
+</script>
+
+{#if browser}
+  <App {endpointConfig} />
+{/if}
 ```
 
 ## Vanilla JS / React / Vue / Angular
@@ -26,31 +45,38 @@ Use FlowDrop components directly in Svelte:
 Use the mount API to embed FlowDrop in any container element:
 
 ```javascript
-import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop';
+import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
+import { createEndpointConfig } from '@d34dman/flowdrop/core';
 import '@d34dman/flowdrop/styles';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
-  workflow: myWorkflow,
   endpointConfig: createEndpointConfig('/api/flowdrop'),
   eventHandlers: {
-    onDirtyStateChange: (isDirty) => console.log('Unsaved changes:', isDirty),
-    onAfterSave: (workflow) => console.log('Saved!', workflow)
+    onDirtyStateChange: (isDirty) => console.log('Unsaved:', isDirty),
+    onAfterSave: async (workflow) => console.log('Saved!', workflow)
   }
 });
 
-// Full control over the editor
+// Programmatic control
 app.save();
 app.getWorkflow();
+app.isDirty();
 app.destroy();
 ```
 
+See [Mount API](/reference/mount-api/) for the complete options and return value.
+
 ## API Configuration
 
-Connect to any backend by configuring endpoints:
+Connect to your backend by configuring endpoints:
 
 ```typescript
-import { createEndpointConfig } from '@d34dman/flowdrop';
+import { createEndpointConfig } from '@d34dman/flowdrop/core';
 
+// Simple: just a base URL (all endpoints use defaults)
+const config = createEndpointConfig('/api/flowdrop');
+
+// Custom: override specific endpoint paths
 const config = createEndpointConfig({
   baseUrl: 'https://api.example.com',
   endpoints: {
@@ -59,105 +85,99 @@ const config = createEndpointConfig({
       list: '/workflows',
       get: '/workflows/{id}',
       create: '/workflows',
-      update: '/workflows/{id}',
-      execute: '/workflows/{id}/execute'
-    }
-  },
-  auth: { type: 'bearer', token: 'your-token' }
-});
-```
-
-## Authentication
-
-FlowDrop supports three authentication providers:
-
-### No Authentication
-
-```typescript
-import { NoAuthProvider } from '@d34dman/flowdrop';
-
-const app = await mountFlowDropApp(container, {
-  authProvider: new NoAuthProvider()
-});
-```
-
-### Static Token
-
-```typescript
-import { StaticAuthProvider } from '@d34dman/flowdrop';
-
-const app = await mountFlowDropApp(container, {
-  authProvider: new StaticAuthProvider('your-bearer-token')
-});
-```
-
-### Dynamic Token (Enterprise)
-
-```typescript
-import { CallbackAuthProvider } from '@d34dman/flowdrop';
-
-const app = await mountFlowDropApp(container, {
-  authProvider: new CallbackAuthProvider({
-    getToken: () => authService.getAccessToken(),
-    onUnauthorized: () => authService.refreshToken()
-  })
-});
-```
-
-## Event Handlers
-
-React to editor lifecycle events:
-
-```typescript
-const app = await mountFlowDropApp(container, {
-  eventHandlers: {
-    onBeforeSave: (workflow) => {
-      // Validate or transform before saving
-      return workflow;
-    },
-    onAfterSave: (workflow) => {
-      // Post-save actions
-    },
-    onDirtyStateChange: (isDirty) => {
-      // Update UI to show unsaved changes
-    },
-    onBeforeUnmount: (workflow, isDirty) => {
-      if (isDirty) saveDraft(workflow);
+      update: '/workflows/{id}'
     }
   }
 });
 ```
 
-## Features
+See [Backend Implementation](/guides/integration/backend-implementation/) for which endpoints to implement.
+
+## Authentication
+
+FlowDrop supports three auth providers. Quick examples:
+
+```typescript
+import { NoAuthProvider, StaticAuthProvider, CallbackAuthProvider } from '@d34dman/flowdrop/core';
+
+// No auth (development)
+authProvider: new NoAuthProvider()
+
+// Static bearer token
+authProvider: new StaticAuthProvider({ type: 'bearer', token: 'your-jwt' })
+
+// Dynamic token with refresh (enterprise)
+authProvider: new CallbackAuthProvider({
+  getToken: async () => authService.getAccessToken(),
+  onUnauthorized: async () => authService.refreshToken()
+})
+```
+
+For full details on each provider, token refresh patterns, and OAuth2 integration, see [Authentication Patterns](/guides/integration/authentication-patterns/).
+
+## Event Handlers
+
+React to all 11 editor lifecycle events:
+
+```typescript
+const app = await mountFlowDropApp(container, {
+  eventHandlers: {
+    onWorkflowChange: (workflow, changeType) => {
+      analytics.track('workflow_modified', { changeType });
+    },
+    onDirtyStateChange: (isDirty) => {
+      saveButton.disabled = !isDirty;
+    },
+    onBeforeSave: async (workflow) => {
+      // Return false to cancel save
+    },
+    onAfterSave: async (workflow) => {
+      showNotification('Saved!');
+    },
+    onApiError: (error, operation) => {
+      if (error.message.includes('401')) {
+        redirectToLogin();
+        return true; // suppress default toast
+      }
+    }
+  }
+});
+```
+
+For the complete event reference, see [Event System](/guides/advanced/event-system/).
+
+## Feature Flags
 
 Enable optional editor features:
 
 ```typescript
 const app = await mountFlowDropApp(container, {
   features: {
-    autoSaveDraft: true,
-    autoSaveDraftInterval: 30000, // 30 seconds
-    proximityConnect: true,
-    proximityConnectDistance: 50
+    autoSaveDraft: true,           // default: true
+    autoSaveDraftInterval: 30000,  // default: 30 seconds
+    showToasts: true               // default: true
   }
 });
 ```
 
-## Deployment
+## Read-Only & Lock Modes
 
-### Docker
+```typescript
+// Read-only: no editing at all
+const app = await mountFlowDropApp(container, {
+  readOnly: true
+});
 
-```bash
-cd apps/example-client-docker
-cp env.example .env
-docker-compose up -d
+// Locked: can view and configure nodes, but not add/remove/connect
+const app = await mountFlowDropApp(container, {
+  lockWorkflow: true
+});
 ```
 
-### Node.js
+## Next Steps
 
-```bash
-npm run build
-FLOWDROP_API_BASE_URL=http://your-backend/api node build
-```
-
-Runtime configuration means you build once and deploy to staging, production, or anywhere else with just environment variables.
+- [Mount API](/reference/mount-api/) — complete mount options and return values
+- [Backend Implementation](/guides/integration/backend-implementation/) — build the API
+- [Authentication Patterns](/guides/integration/authentication-patterns/) — secure your integration
+- [Deployment](/guides/integration/deployment/) — production deployment patterns
+- [Event System](/guides/advanced/event-system/) — all 11 event handlers
