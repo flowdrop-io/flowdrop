@@ -33,6 +33,7 @@
 	import { tick, untrack } from 'svelte';
 	import type { EndpointConfig } from '../config/endpoints.js';
 	import ConnectionLine from './ConnectionLine.svelte';
+	import FlowDropEdge from './FlowDropEdge.svelte';
 	import { getWorkflowStore, workflowActions } from '../stores/workflowStore.svelte.js';
 	import { historyActions, setOnRestoreCallback } from '../stores/historyStore.svelte.js';
 	import UniversalNode from './UniversalNode.svelte';
@@ -329,6 +330,11 @@
 	// All nodes use 'universalNode' type, and UniversalNode handles internal switching
 	const nodeTypes = {
 		universalNode: UniversalNode
+	};
+
+	// Use custom edge that shortens the path so the stroke ends at the arrow base
+	const edgeTypes = {
+		default: FlowDropEdge
 	};
 
 	// Handle arrows in our custom connection handler
@@ -759,6 +765,7 @@
 							bind:nodes={flowNodes}
 							bind:edges={flowEdges}
 							{nodeTypes}
+							{edgeTypes}
 							{defaultEdgeOptions}
 							onconnect={(connection) =>
 								void handleConnect({
