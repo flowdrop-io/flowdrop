@@ -50,6 +50,14 @@ export default defineConfig({
 			},
 			sidebar: [
 				{
+					label: 'Concepts',
+					items: [
+						{ label: 'What is a Workflow?', slug: 'concepts/what-is-a-workflow' },
+						{ label: 'Architecture Overview', slug: 'concepts/architecture-overview' },
+						{ label: 'Glossary', slug: 'concepts/glossary' }
+					]
+				},
+				{
 					label: 'Getting Started',
 					items: [
 						{ label: 'Installation', slug: 'getting-started/installation' },
@@ -67,16 +75,44 @@ export default defineConfig({
 					]
 				},
 				{
-					label: 'Using the Editor',
+					label: 'Guides',
 					items: [
-						{ label: 'Creating Workflows', slug: 'guides/creating-workflows' },
-						{ label: 'Node Types', slug: 'guides/node-types' },
-						{ label: 'Framework Integration', slug: 'guides/integration' },
-						{ label: 'Theming', slug: 'guides/theming' },
-						{ label: 'Interactive Playground', slug: 'guides/playground' },
-						{ label: 'Human-in-the-Loop', slug: 'guides/interrupts' },
-						{ label: 'Custom Nodes', slug: 'guides/custom-nodes' },
-						{ label: 'Custom Form Fields', slug: 'guides/custom-form-fields' }
+						{
+							label: 'Editor',
+							items: [
+								{ label: 'Creating Workflows', slug: 'guides/creating-workflows' },
+								{ label: 'Node Types', slug: 'guides/node-types' },
+								{ label: 'Theming', slug: 'guides/theming' },
+								{ label: 'Interactive Playground', slug: 'guides/playground' },
+								{ label: 'Human-in-the-Loop', slug: 'guides/interrupts' }
+							]
+						},
+						{
+							label: 'Extending',
+							items: [
+								{ label: 'Custom Nodes', slug: 'guides/custom-nodes' },
+								{ label: 'Custom Form Fields', slug: 'guides/custom-form-fields' }
+							]
+						},
+						{
+							label: 'Integration',
+							items: [
+								{ label: 'Framework Integration', slug: 'guides/integration' },
+								{ label: 'Backend Implementation', slug: 'guides/integration/backend-implementation' },
+								{ label: 'Authentication Patterns', slug: 'guides/integration/authentication-patterns' },
+								{ label: 'Deployment', slug: 'guides/integration/deployment' }
+							]
+						},
+						{
+							label: 'Advanced',
+							items: [
+								{ label: 'Event System', slug: 'guides/advanced/event-system' },
+								{ label: 'Store System', slug: 'guides/advanced/store-system' },
+								{ label: 'Programmatic API', slug: 'guides/advanced/programmatic-api' },
+								{ label: 'Template Variables', slug: 'guides/advanced/template-variables' },
+								{ label: 'Agent Spec', slug: 'guides/advanced/agent-spec' }
+							]
+						}
 					]
 				},
 				{
@@ -90,14 +126,34 @@ export default defineConfig({
 					]
 				},
 				{
+					label: 'Recipes',
+					items: [
+						{ label: 'Backend: Express.js', slug: 'recipes/backend-express' },
+						{ label: 'AI Agent Workflow', slug: 'recipes/ai-agent-workflow' },
+						{ label: 'Conditional Branching', slug: 'recipes/conditional-branching' },
+						{ label: 'Auto-Save & Drafts', slug: 'recipes/auto-save-and-drafts' },
+						{ label: 'Undo & Redo', slug: 'recipes/undo-redo' }
+					]
+				},
+				{
 					label: 'Reference',
 					items: [
 						{ label: 'API Overview', slug: 'reference/api-overview' },
 						{ label: 'Mount API', slug: 'reference/mount-api' },
 						{ label: 'Core Types', slug: 'reference/types' },
 						{ label: 'Components', slug: 'reference/components' },
+						{ label: 'Event Handlers', slug: 'reference/event-handlers' },
+						{ label: 'Stores', slug: 'reference/stores' },
+						{ label: 'CSS Design Tokens', slug: 'reference/css-tokens' },
 						{ label: 'Icons', slug: 'reference/icons' },
+						{ label: 'OpenAPI Spec', slug: 'reference/openapi' },
 						{ label: 'Migration Guide', slug: 'reference/migration' }
+					]
+				},
+				{
+					label: 'Troubleshooting',
+					items: [
+						{ label: 'Common Issues & FAQ', slug: 'troubleshooting/common-issues' }
 					]
 				}
 			]
