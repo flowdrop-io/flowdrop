@@ -36,6 +36,11 @@ export default defineConfig({
 					icon: 'github',
 					label: 'GitHub',
 					href: 'https://github.com/flowdrop-io/flowdrop'
+				},
+				{
+					icon: 'github',
+					label: 'Discussions',
+					href: 'https://github.com/flowdrop-io/flowdrop/discussions'
 				}
 			],
 			customCss: [
@@ -116,19 +121,21 @@ export default defineConfig({
 								{ label: 'Store System', slug: 'guides/advanced/store-system' },
 								{ label: 'Programmatic API', slug: 'guides/advanced/programmatic-api' },
 								{ label: 'Template Variables', slug: 'guides/advanced/template-variables' },
-								{ label: 'Agent Spec', slug: 'guides/advanced/agent-spec' }
+								{ label: 'Agent Spec', slug: 'guides/advanced/agent-spec' },
+								{ label: 'Performance', slug: 'guides/performance' },
+								{ label: 'Testing', slug: 'guides/testing' }
+							]
+						},
+						{
+							label: 'Data Model',
+							items: [
+								{ label: 'Workflow Structure', slug: 'guides/workflow-json' },
+								{ label: 'Node Structure', slug: 'guides/node-json' },
+								{ label: 'Edge Structure', slug: 'guides/edge-json' },
+								{ label: 'Port System & Data Types', slug: 'guides/port-system' },
+								{ label: 'Configuration Schema', slug: 'guides/config-schema' }
 							]
 						}
-					]
-				},
-				{
-					label: 'Data Model',
-					items: [
-						{ label: 'Workflow Structure', slug: 'guides/workflow-json' },
-						{ label: 'Node Structure', slug: 'guides/node-json' },
-						{ label: 'Edge Structure', slug: 'guides/edge-json' },
-						{ label: 'Port System & Data Types', slug: 'guides/port-system' },
-						{ label: 'Configuration Schema', slug: 'guides/config-schema' }
 					]
 				},
 				{
@@ -152,8 +159,9 @@ export default defineConfig({
 						{ label: 'Stores', slug: 'reference/stores' },
 						{ label: 'CSS Design Tokens', slug: 'reference/css-tokens' },
 						{ label: 'Icons', slug: 'reference/icons' },
+						{ label: 'Error Reference', slug: 'reference/errors' },
 						{ label: 'OpenAPI Spec', slug: 'reference/openapi' },
-						{ label: 'Migration Guide', slug: 'reference/migration' }
+						{ label: 'Changelog & Migration', slug: 'reference/migration' }
 					]
 				},
 				{
