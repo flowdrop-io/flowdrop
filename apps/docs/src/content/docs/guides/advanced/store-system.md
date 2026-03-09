@@ -1,6 +1,10 @@
 ---
 title: Store System
 description: Understand FlowDrop's reactive state management for programmatic access.
+sidebar:
+  badge:
+    text: 'Advanced'
+    variant: caution
 ---
 
 FlowDrop uses **Svelte 5 runes** for reactive state management. Stores are module-level singletons that hold the editor's state. While most developers won't need to interact with stores directly, they're essential for advanced integrations.
