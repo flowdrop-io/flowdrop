@@ -649,5 +649,5 @@ import {
 ## See Also
 
 - [API Documentation](https://flowdrop-io.github.io/flowdrop/) - REST API documentation (GitHub Pages)
-- [api/openapi.yaml](../api/openapi.yaml) - OpenAPI specification
+- [api/v1/openapi.yaml](../api/v1/openapi.yaml) - OpenAPI specification
 - [configEdit-feature.md](./configEdit-feature.md) - Dynamic configuration editing

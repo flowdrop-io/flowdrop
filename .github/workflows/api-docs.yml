@@ -47,30 +47,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Lint API spec
+      - name: Lint API specs
         run: pnpm run lint
 
-      - name: Build Redoc documentation
+      - name: Bundle API specs
+        run: pnpm run bundle
+
+      - name: Build versioned documentation
         run: pnpm run build
-
-      - name: Create docs assets
-        run: |
-          # Create a simple landing page if needed
-          cat > dist/404.html << 'EOF'
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta http-equiv="refresh" content="0; url=/flowdrop/">
-            <title>Redirecting...</title>
-          </head>
-          <body>
-            <p>Redirecting to <a href="/flowdrop/">API Documentation</a>...</p>
-          </body>
-          </html>
-          EOF
-
-          # Add OpenAPI spec for download
-          cp ../../libs/flowdrop/api/bundled.yaml dist/openapi.yaml
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

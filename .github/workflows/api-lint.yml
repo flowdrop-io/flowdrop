@@ -47,10 +47,10 @@ jobs:
       - name: Lint OpenAPI spec
         run: pnpm run lint
 
-      - name: Validate bundled spec is up to date
+      - name: Validate bundled specs are up to date
         run: |
           pnpm run bundle
-          git diff --exit-code ../../libs/flowdrop/api/bundled.yaml || {
+          git diff --exit-code ../../libs/flowdrop/api/*/bundled.yaml || {
             echo "::error::bundled.yaml is out of date. Run 'cd apps/api-docs && pnpm run bundle' and commit the changes."
             exit 1
           }
@@ -82,13 +82,23 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Run breaking change detection
-          if oasdiff breaking base/libs/flowdrop/api/bundled.yaml pr/libs/flowdrop/api/bundled.yaml --fail-on ERR; then
-            echo "✅ No breaking changes detected" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Breaking changes detected - review required" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Run locally: \`npx oasdiff breaking libs/flowdrop/api/bundled.yaml <new-spec>\`" >> $GITHUB_STEP_SUMMARY
-          fi
+          # Check each version for breaking changes
+          for version_dir in pr/libs/flowdrop/api/*/; do
+            version=$(basename "$version_dir")
+            base_spec="base/libs/flowdrop/api/${version}/bundled.yaml"
+            pr_spec="pr/libs/flowdrop/api/${version}/bundled.yaml"
+
+            if [ ! -f "$base_spec" ]; then
+              echo "ℹ️ New version ${version} - no base to compare" >> $GITHUB_STEP_SUMMARY
+              continue
+            fi
+
+            if oasdiff breaking "$base_spec" "$pr_spec" --fail-on ERR; then
+              echo "✅ ${version}: No breaking changes detected" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ ${version}: Breaking changes detected - review required" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
 
       - name: Generate changelog
         if: always()
@@ -96,5 +106,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### API Changelog" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          oasdiff changelog base/libs/flowdrop/api/bundled.yaml pr/libs/flowdrop/api/bundled.yaml >> $GITHUB_STEP_SUMMARY || echo "No changes detected"
+          for version_dir in pr/libs/flowdrop/api/*/; do
+            version=$(basename "$version_dir")
+            base_spec="base/libs/flowdrop/api/${version}/bundled.yaml"
+            pr_spec="pr/libs/flowdrop/api/${version}/bundled.yaml"
+
+            if [ ! -f "$base_spec" ]; then continue; fi
+
+            echo "#### ${version}" >> $GITHUB_STEP_SUMMARY
+            oasdiff changelog "$base_spec" "$pr_spec" >> $GITHUB_STEP_SUMMARY || echo "No changes detected"
+          done
           echo '```' >> $GITHUB_STEP_SUMMARY

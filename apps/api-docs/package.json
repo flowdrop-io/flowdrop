@@ -4,10 +4,10 @@
 	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
-		"lint": "redocly lint ../../libs/flowdrop/api/openapi.yaml --config ../../libs/flowdrop/api/redocly.yaml",
-		"bundle": "redocly bundle ../../libs/flowdrop/api/openapi.yaml -o ../../libs/flowdrop/api/bundled.yaml --config ../../libs/flowdrop/api/redocly.yaml",
+		"lint": "node scripts/lint.mjs",
+		"bundle": "node scripts/bundle.mjs",
 		"preview": "node scripts/preview.mjs",
-		"build": "redocly build-docs ../../libs/flowdrop/api/bundled.yaml -o dist/index.html"
+		"build": "node scripts/build.mjs"
 	},
 	"devDependencies": {
 		"@redocly/cli": "^1.31.0"

@@ -1,31 +1,31 @@
 # FlowDrop API Docs
 
-Static API documentation site for FlowDrop, built with [Redocly](https://redocly.com/) from the OpenAPI specification.
+Static API documentation site for FlowDrop, built with [Redocly](https://redocly.com/) from the OpenAPI specification. Supports multiple API versions.
 
 **Live docs:** [flowdrop-io.github.io/flowdrop](https://flowdrop-io.github.io/flowdrop/)
 
-**API version:** 1.0.0
+## API Versions
 
-## Overview
+Versions are defined in [`libs/flowdrop/api/versions.json`](../../libs/flowdrop/api/versions.json).
 
-This app lints, bundles, and builds the FlowDrop OpenAPI spec into a standalone HTML documentation page. The source spec lives in [`libs/flowdrop/api/openapi.yaml`](../../libs/flowdrop/api/openapi.yaml) and is processed using the Redocly CLI.
+| Version | Spec Path | Status |
+|---------|-----------|--------|
+| v1 | `libs/flowdrop/api/v1/` | Current |
 
-### API Coverage
+### Adding a New Version
 
-The OpenAPI spec documents the following endpoint groups:
-
-| Tag | Description |
-|---|---|
-| System | Health and status endpoints |
-| Node Types | Node type discovery and metadata |
-| Configuration | System configuration including port config |
-| Workflows | Workflow CRUD operations |
-| Pipeline | Pipeline execution and monitoring |
-| Playground | Interactive workflow testing and chat |
-| Interrupts | Human-in-the-Loop (HITL) interrupt endpoints |
-| Validation | Workflow validation |
-| Import/Export | Workflow import and export operations |
-| Agent Spec | Oracle Open Agent Spec integration |
+1. Copy an existing version directory (e.g. `libs/flowdrop/api/v1/`) to a new one (e.g. `v2/`)
+2. Update the spec in the new directory
+3. Add the version to `libs/flowdrop/api/versions.json`:
+   ```json
+   {
+     "id": "v2",
+     "label": "v2 (2.0.0)",
+     "path": "v2",
+     "default": true
+   }
+   ```
+4. Set `"default": false` on the previous version if the new one should be the default
 
 ## Prerequisites
 
@@ -35,45 +35,53 @@ The OpenAPI spec documents the following endpoint groups:
 ## Scripts
 
 ```bash
-# Lint the OpenAPI spec
+# Lint all API versions (or a specific one)
 pnpm lint
+pnpm lint v1
 
-# Bundle the spec into a single file
+# Bundle all versions into single files
 pnpm bundle
+pnpm bundle v1
 
-# Preview the docs locally (live reload, auto-finds available port)
+# Preview a version locally (live reload, auto-finds available port)
 pnpm preview
+pnpm preview v1
 
-# Build the static HTML docs
+# Build all versions into static HTML
 pnpm build
 ```
 
 ## How It Works
 
 ```
-libs/flowdrop/api/openapi.yaml    <- Source OpenAPI spec (multi-file)
-libs/flowdrop/api/redocly.yaml    <- Redocly config and lint rules
+libs/flowdrop/api/
+├── versions.json                <- Version registry
+├── v1/
+│   ├── openapi.yaml             <- Source OpenAPI spec (multi-file)
+│   ├── components/              <- Shared schema definitions
+│   ├── paths/                   <- Path definitions
+│   ├── redocly.yaml             <- Redocly config and lint rules
+│   └── bundled.yaml             <- Bundled spec (generated)
+├── v2/                          <- Future versions follow same structure
+│   └── ...
                 |
                 v
-        redocly bundle             <- Merges into a single file
+        build.mjs                <- Builds each version
                 |
                 v
-libs/flowdrop/api/bundled.yaml    <- Bundled spec
-                |
-                v
-        redocly build-docs         <- Generates static HTML
-                |
-                v
-        dist/index.html            <- Deployable documentation page
+        dist/
+        ├── index.html           <- Version picker landing page
+        ├── v1/index.html        <- v1 documentation
+        └── v2/index.html        <- v2 documentation (when added)
 ```
 
 ### Workflow
 
-1. **Edit** the OpenAPI spec in `libs/flowdrop/api/`
+1. **Edit** the OpenAPI spec in the version directory (e.g. `libs/flowdrop/api/v1/`)
 2. **Lint** with `pnpm lint` to catch issues early
-3. **Preview** with `pnpm preview` for live-reload development
+3. **Preview** with `pnpm preview v1` for live-reload development
 4. **Bundle** with `pnpm bundle` to produce the merged spec
-5. **Build** with `pnpm build` to generate the static HTML
+5. **Build** with `pnpm build` to generate static HTML for all versions
 
 ## Deployment
 
@@ -83,10 +91,11 @@ Documentation is automatically deployed to GitHub Pages on every push to the `1.
 
 | File | Description |
 |---|---|
-| [`libs/flowdrop/api/openapi.yaml`](../../libs/flowdrop/api/openapi.yaml) | Source OpenAPI 3.0.3 specification |
-| [`libs/flowdrop/api/redocly.yaml`](../../libs/flowdrop/api/redocly.yaml) | Redocly configuration and linting rules |
-| [`libs/flowdrop/api/bundled.yaml`](../../libs/flowdrop/api/bundled.yaml) | Bundled single-file spec (generated) |
-| `dist/index.html` | Built documentation page (generated) |
+| [`libs/flowdrop/api/versions.json`](../../libs/flowdrop/api/versions.json) | Version registry |
+| [`libs/flowdrop/api/v1/openapi.yaml`](../../libs/flowdrop/api/v1/openapi.yaml) | v1 OpenAPI 3.0.3 specification |
+| [`libs/flowdrop/api/v1/redocly.yaml`](../../libs/flowdrop/api/v1/redocly.yaml) | v1 Redocly config and linting rules |
+| `dist/index.html` | Version picker landing page (generated) |
+| `dist/v1/index.html` | v1 documentation page (generated) |
 
 ## Lint Rules
 
@@ -96,4 +105,4 @@ The Redocly config enforces strict linting rules for production quality:
 - **Warnings** (should fix): tag descriptions, unused components, operation descriptions, 4xx responses, example validation
 - **Disabled**: parameter descriptions, localhost server warnings
 
-See [`redocly.yaml`](../../libs/flowdrop/api/redocly.yaml) for the full ruleset.
+See [`redocly.yaml`](../../libs/flowdrop/api/v1/redocly.yaml) for the full ruleset.

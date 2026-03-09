@@ -14,7 +14,7 @@ import { parse as parseYAML } from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const SCHEMAS_DIR = resolve(ROOT, 'api/components/schemas');
+const SCHEMAS_DIR = resolve(ROOT, 'api/v1/components/schemas');
 const OUTPUT_PATH = resolve(ROOT, 'src/lib/schemas/v1/workflow.schema.json');
 
 // ---------------------------------------------------------------------------
