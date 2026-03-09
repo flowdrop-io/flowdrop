@@ -7,6 +7,12 @@ const { head } = Astro.locals.starlightRoute;
 ---
 
 {head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
+{Astro.site && <meta property="og:image" content={new URL('/og-default.png', Astro.site).href} />}
+{Astro.site && <meta name="twitter:image" content={new URL('/og-default.png', Astro.site).href} />}
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
 <script>
 	import mermaid from 'mermaid';
 

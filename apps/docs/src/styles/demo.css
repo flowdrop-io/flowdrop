@@ -21,3 +21,23 @@
 		display: none;
 	}
 }
+
+/* Screenshot fallback shown on mobile when interactive demo is hidden */
+.fd-demo-screenshot {
+	display: none;
+	margin: 1.5rem 0;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	border: 1px solid var(--sl-color-gray-5, #374151);
+}
+
+.fd-demo-screenshot img {
+	width: 100%;
+	display: block;
+}
+
+@media (max-width: 768px) {
+	.fd-demo-screenshot {
+		display: block;
+	}
+}
