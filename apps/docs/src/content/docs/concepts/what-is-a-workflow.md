@@ -84,19 +84,24 @@ FlowDrop communicates with your backend through a REST API. The contract is simp
 3. **FlowDrop sends the workflow JSON to your backend** — for storage and execution
 
 ```mermaid
-flowchart LR
+flowchart TD
   subgraph FD["FlowDrop (Browser)"]
     direction TB
     FD1["Visual Editor"]
   end
   subgraph BE["Your Backend"]
     direction TB
-    BE1["Node defs"]
+    BE1["Node 
+          definitions"]
     BE2["Storage"]
     BE3["Execution"]
     BE4["Logic"]
   end
-  FD <-->|"REST API\nGET /nodes\nGET /workflows\nPOST /workflows\nPOST /execute"| BE
+  FD <-->|"REST API
+    GET /nodes
+    GET /workflows
+    POST /workflows
+    POST /execute"| BE
 ```
 
 For a detailed breakdown of this architecture, see [Architecture Overview](/concepts/architecture-overview/).
