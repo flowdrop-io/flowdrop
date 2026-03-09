@@ -1,9 +1,11 @@
 ---
 title: Quick Start
-description: Get up and running with FlowDrop in minutes.
+description: "Get FlowDrop running in 5 minutes. Mount a workflow editor in Svelte, React, Vue, Angular, or vanilla JS."
 ---
 
 import FlowDropDemo from '../../../components/FlowDropDemo.svelte';
+
+FlowDrop is a visual workflow editor you embed directly in your application. Below is a live instance — drag nodes from the left sidebar onto the canvas, connect their ports, and click **Save**. This is exactly what your users will see.
 
 <FlowDropDemo client:visible showNavbar={true} height="70vh" />
 
@@ -71,7 +73,14 @@ app.destroy();
 
 ## What's Next?
 
-- Learn about [node types](/guides/node-types/) and how workflows are structured
-- Connect to a backend with the [integration guide](/guides/integration/)
-- Customize the look with the [theming guide](/guides/theming/)
-- Explore the [API reference](/reference/api-overview/)
+**New to FlowDrop?** Follow the tutorial — it builds a complete integration step by step:
+
+→ **[Tutorial: Embedding the Editor](/tutorial/01-embedding-the-editor/)** *(Step 1 of 5)*
+
+**Already have a backend?** Jump straight to connecting it:
+- [Backend Implementation](/guides/integration/backend-implementation/) — the exact REST endpoints FlowDrop needs
+- [Framework Integration](/guides/integration/) — React, Vue, Angular, or vanilla JS patterns
+
+**Going deeper:**
+- [Node Types](/guides/node-types/) — all 8 built-in visual shapes
+- [Mount API Reference](/reference/mount-api/) — complete options and return values
