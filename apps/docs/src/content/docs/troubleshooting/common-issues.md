@@ -200,3 +200,16 @@ Currently, FlowDrop fetches nodes on mount. To refresh the palette, destroy and 
 ### Can I use FlowDrop with React/Vue/Angular?
 
 Yes, via the [Mount API](/reference/mount-api/). FlowDrop mounts into any HTML container element, regardless of your framework.
+
+## Getting Help
+
+If none of the above resolves your issue:
+
+- **[GitHub Issues](https://github.com/flowdrop-io/flowdrop/issues)** — Bug reports and reproducible problems
+- **[GitHub Discussions](https://github.com/flowdrop-io/flowdrop/discussions)** — Questions, ideas, and community support
+
+When reporting a bug, include:
+1. FlowDrop version (`npm list @d34dman/flowdrop`)
+2. Browser and version
+3. The error message from the browser console
+4. Minimal reproduction: your node metadata JSON and mount options
