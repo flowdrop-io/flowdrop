@@ -1,6 +1,10 @@
 ---
 title: "Build an AI Agent Workflow"
 description: Create a complete AI agent workflow with branching, tools, and human-in-the-loop.
+sidebar:
+  badge:
+    text: 'Intermediate'
+    variant: note
 ---
 
 This recipe walks you through building a real-world AI agent workflow with four node types, conditional routing, and a human-in-the-loop review step.

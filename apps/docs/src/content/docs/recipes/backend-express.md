@@ -1,6 +1,10 @@
 ---
 title: "Backend: Express.js"
 description: Build a working FlowDrop backend with Express in 15 minutes.
+sidebar:
+  badge:
+    text: '~15 min'
+    variant: success
 ---
 
 This recipe walks you through building a complete FlowDrop backend using Express.js. By the end, you'll have a working API that FlowDrop can talk to.
