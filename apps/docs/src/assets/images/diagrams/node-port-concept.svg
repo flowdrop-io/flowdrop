@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <style>
+      .node-box { fill: #1e1e2e; stroke: #6366f1; stroke-width: 2; rx: 12; }
+      .node-title { fill: #e2e8f0; font-size: 16px; font-weight: 600; }
+      .node-label { fill: #94a3b8; font-size: 12px; }
+      .config-key { fill: #a78bfa; font-size: 12px; font-family: monospace; }
+      .config-val { fill: #94a3b8; font-size: 12px; font-family: monospace; }
+      .port-circle { stroke-width: 2; }
+      .port-output { fill: #6366f1; stroke: #818cf8; }
+      .port-input { fill: #6366f1; stroke: #818cf8; }
+      .port-label { fill: #cbd5e1; font-size: 11px; }
+      .edge-line { fill: none; stroke: #6366f1; stroke-width: 2; }
+      .edge-arrow { fill: #6366f1; }
+      .flow-label { fill: #94a3b8; font-size: 12px; font-style: italic; }
+      .section-label { fill: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+      .workflow-box { fill: none; stroke: #334155; stroke-width: 1.5; stroke-dasharray: 8 4; rx: 16; }
+      .workflow-label { fill: #64748b; font-size: 13px; font-weight: 500; }
+    </style>
+  </defs>
+
+  <!-- Workflow container -->
+  <rect class="workflow-box" x="10" y="10" width="700" height="300" />
+  <text class="workflow-label" x="30" y="35">Workflow</text>
+
+  <!-- Node A -->
+  <rect class="node-box" x="50" y="60" width="220" height="220" />
+  <text class="node-title" x="130" y="92" text-anchor="middle">Node A</text>
+  <line x1="60" y1="105" x2="260" y2="105" stroke="#334155" stroke-width="1" />
+
+  <!-- Node A config -->
+  <text class="section-label" x="70" y="128">Config</text>
+  <text class="config-key" x="70" y="150">url:</text>
+  <text class="config-val" x="105" y="150">"https://api.example.com"</text>
+  <text class="config-key" x="70" y="170">method:</text>
+  <text class="config-val" x="128" y="170">"POST"</text>
+
+  <!-- Node A output port -->
+  <circle class="port-circle port-output" cx="270" cy="210" r="8" />
+  <text class="port-label" x="252" y="240" text-anchor="end">output</text>
+  <text class="node-label" x="252" y="255" text-anchor="end">port</text>
+
+  <!-- Node B -->
+  <rect class="node-box" x="450" y="60" width="220" height="220" />
+  <text class="node-title" x="530" y="92" text-anchor="middle">Node B</text>
+  <line x1="460" y1="105" x2="660" y2="105" stroke="#334155" stroke-width="1" />
+
+  <!-- Node B config -->
+  <text class="section-label" x="470" y="128">Config</text>
+  <text class="config-key" x="470" y="150">model:</text>
+  <text class="config-val" x="520" y="150">"gpt-4"</text>
+  <text class="config-key" x="470" y="170">temp:</text>
+  <text class="config-val" x="514" y="170">0.7</text>
+
+  <!-- Node B input port -->
+  <circle class="port-circle port-input" cx="450" cy="210" r="8" />
+  <text class="port-label" x="468" y="240">input</text>
+  <text class="node-label" x="468" y="255">port</text>
+
+  <!-- Edge (curved path from output port to input port) -->
+  <path class="edge-line" d="M 278 210 C 340 210, 380 210, 442 210" />
+  <!-- Arrow head -->
+  <polygon class="edge-arrow" points="440,204 452,210 440,216" />
+
+  <!-- Edge label -->
+  <text class="flow-label" x="360" y="198" text-anchor="middle">edge</text>
+  <text class="flow-label" x="360" y="228" text-anchor="middle">data flow</text>
+</svg>

@@ -1,0 +1,13 @@
+/* Mermaid diagram styling */
+pre.mermaid {
+	background: transparent;
+	border: none;
+	text-align: center;
+	padding: 1.5rem 0;
+}
+
+/* Responsive: allow horizontal scroll on small screens */
+pre.mermaid svg {
+	max-width: 100%;
+	height: auto;
+}

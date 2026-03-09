@@ -44,22 +44,11 @@ The configuration schema also controls the **form UI** that appears when users c
 
 ## How It All Fits Together
 
-```
-┌─────────────────────────────────────────────────┐
-│  Workflow                                       │
-│                                                 │
-│   ┌──────────┐    edge     ┌──────────┐        │
-│   │  Node A  │────────────▸│  Node B  │        │
-│   │          │             │          │        │
-│   │ [output]─┘  data flow  └─[input]  │        │
-│   │  port       ─────────▸    port    │        │
-│   │          │             │          │        │
-│   │  config: │             │  config: │        │
-│   │  {url,   │             │  {model, │        │
-│   │   method}│             │   temp}  │        │
-│   └──────────┘             └──────────┘        │
-└─────────────────────────────────────────────────┘
-```
+![Workflow diagram showing Node A connected to Node B via an edge, with labeled input/output ports and configuration fields](../../../assets/images/diagrams/node-port-concept.svg)
+
+:::note
+Each node has typed **ports** (input/output connection points) and **config** (user-editable settings). An **edge** connects an output port to an input port, defining data flow.
+:::
 
 A workflow is a **graph**: nodes are the vertices, edges are the connections, ports define where connections attach, and config controls what each node does.
 
@@ -94,15 +83,20 @@ FlowDrop communicates with your backend through a REST API. The contract is simp
 2. **Users build workflows visually** — FlowDrop handles all the UI
 3. **FlowDrop sends the workflow JSON to your backend** — for storage and execution
 
-```
-┌──────────────┐     REST API      ┌──────────────┐
-│   FlowDrop   │◀────────────────▸│ Your Backend │
-│   (Browser)  │                   │              │
-│              │  GET /nodes       │  Node defs   │
-│  Visual      │  GET /workflows   │  Storage     │
-│  Editor      │  POST /workflows  │  Execution   │
-│              │  POST /execute    │  Logic       │
-└──────────────┘                   └──────────────┘
+```mermaid
+flowchart LR
+  subgraph FD["FlowDrop (Browser)"]
+    direction TB
+    FD1["Visual Editor"]
+  end
+  subgraph BE["Your Backend"]
+    direction TB
+    BE1["Node defs"]
+    BE2["Storage"]
+    BE3["Execution"]
+    BE4["Logic"]
+  end
+  FD <-->|"REST API\nGET /nodes\nGET /workflows\nPOST /workflows\nPOST /execute"| BE
 ```
 
 For a detailed breakdown of this architecture, see [Architecture Overview](/concepts/architecture-overview/).

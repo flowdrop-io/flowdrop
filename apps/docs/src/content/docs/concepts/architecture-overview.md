@@ -9,35 +9,23 @@ This page explains how FlowDrop is structured internally, so you can make inform
 
 FlowDrop is a **frontend library** that communicates with **your backend** via REST.
 
-```
-┌─ Browser ──────────────────────────────────────┐
-│                                                 │
-│  ┌─────────────────────────────────────────┐   │
-│  │           FlowDrop Editor               │   │
-│  │                                         │   │
-│  │  ┌─────────┐ ┌──────────┐ ┌─────────┐  │   │
-│  │  │ Navbar  │ │ Workflow │ │ Config  │  │   │
-│  │  │         │ │ Canvas   │ │ Panel   │  │   │
-│  │  ├─────────┤ │          │ │         │  │   │
-│  │  │  Node   │ │  Nodes   │ │  JSON   │  │   │
-│  │  │ Sidebar │ │  Edges   │ │ Schema  │  │   │
-│  │  │         │ │  Ports   │ │  Forms  │  │   │
-│  │  └─────────┘ └──────────┘ └─────────┘  │   │
-│  │                                         │   │
-│  │  ┌─ Stores ───────────────────────────┐ │   │
-│  │  │ workflow │ history │ settings │ ... │ │   │
-│  │  └────────────────────────────────────┘ │   │
-│  │                                         │   │
-│  │  ┌─ Services ─────────────────────────┐ │   │
-│  │  │ API client │ drafts │ toasts │ ... │ │   │
-│  │  └────────────────────────────────────┘ │   │
-│  └─────────────────────────────────────────┘   │
-│                     │ REST                      │
-└─────────────────────┼──────────────────────────┘
-                      ▼
-┌─ Your Backend ─────────────────────────────────┐
-│  Nodes │ Workflows │ Execution │ Storage       │
-└─────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+  subgraph browser ["Browser"]
+    direction TB
+    subgraph editor ["FlowDrop Editor"]
+      direction LR
+      ui["UI Components\nNavbar · Canvas · Config Panel"]
+    end
+    stores["Stores\nworkflow · history · settings"]
+    services["Services\nAPI client · drafts · toasts"]
+    editor --> stores --> services
+  end
+  services -- "REST API" --> backend
+  subgraph backend ["Your Backend"]
+    direction LR
+    api["Nodes · Workflows · Execution · Storage"]
+  end
 ```
 
 ## Module Structure
@@ -58,11 +46,11 @@ FlowDrop is tree-shakable. Each sub-module has different dependencies and bundle
 | `@d34dman/flowdrop` | Full bundle (everything) | All of the above |
 
 **Dependency chain:**
-```
-core (types only, zero UI)
-  └─▸ form (JSON Schema forms)
-       └─▸ editor (@xyflow canvas + forms)
-            └─▸ playground (editor + chat + interrupts)
+```mermaid
+flowchart LR
+  core["core\n(types only, zero UI)"] --> form["form\n(JSON Schema forms)"]
+  form --> editor["editor\n(@xyflow canvas + forms)"]
+  editor --> playground["playground\n(editor + chat + interrupts)"]
 ```
 
 Import from the most specific module possible to minimize bundle size.
@@ -134,46 +122,26 @@ Services handle communication and side effects:
 
 Here's what happens when a user makes a change:
 
-```
-User action (drag node, edit config, draw edge)
-  │
-  ▼
-Component event handler
-  │
-  ▼
-workflowStore update (state mutation)
-  │
-  ├──▸ historyStore records snapshot (for undo)
-  ├──▸ isDirty flag set to true
-  ├──▸ UI re-renders (Svelte reactivity)
-  │
-  ▼
-eventHandlers.onWorkflowChange(workflow, changeType)
-  │  (your callback — analytics, validation, etc.)
-  │
-  ▼
-eventHandlers.onDirtyStateChange(true)
-     (your callback — update save button, etc.)
+```mermaid
+flowchart TD
+  A["User action\n(drag node, edit config, draw edge)"] --> B["Component event handler"]
+  B --> C["workflowStore update\n(state mutation)"]
+  C --> D["historyStore records snapshot\n(for undo)"]
+  C --> E["isDirty flag set to true"]
+  C --> F["UI re-renders\n(Svelte reactivity)"]
+  C --> G["onWorkflowChange(workflow, changeType)\nyour callback — analytics, validation, etc."]
+  G --> H["onDirtyStateChange(true)\nyour callback — update save button, etc."]
 ```
 
 When the user saves:
 
-```
-User clicks Save
-  │
-  ▼
-eventHandlers.onBeforeSave(workflow)
-  │  return false to cancel
-  │
-  ▼
-API client: PUT /workflows/{id}
-  │
-  ├──▸ Success: isDirty = false, draft cleared
-  │    eventHandlers.onAfterSave(workflow)
-  │
-  └──▸ Failure: toast notification
-       eventHandlers.onSaveError(error, workflow)
-       eventHandlers.onApiError(error, "save")
+```mermaid
+flowchart TD
+  A["User clicks Save"] --> B["onBeforeSave(workflow)"]
+  B -->|"return false"| X["Cancel"]
+  B --> C["API client: PUT /workflows/{id}"]
+  C -->|"Success"| D["isDirty = false, draft cleared\nonAfterSave(workflow)"]
+  C -->|"Failure"| E["Toast notification\nonSaveError(error, workflow)\nonApiError(error, 'save')"]
 ```
 
 ## Registry System
