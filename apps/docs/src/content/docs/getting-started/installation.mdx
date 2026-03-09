@@ -1,34 +1,54 @@
 ---
 title: Installation
-description: How to install FlowDrop in your project.
+description: Install @d34dman/flowdrop and set up your build pipeline. Works with React, Vue, Angular, Svelte, and vanilla JS.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Package name">
+FlowDrop is published as `@d34dman/flowdrop` on npm — `d34dman` is the maintainer's namespace. This is the official FlowDrop package.
+</Aside>
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) v20 or later
-- A [SvelteKit](https://svelte.dev/docs/kit) project with Svelte 5
+- **Node.js** v20 or later
+- A build pipeline that can bundle ES modules (Vite, webpack, esbuild, Rollup, Next.js, Nuxt, SvelteKit, or similar)
+
+<Aside type="note" title="No Svelte required in your app">
+FlowDrop is built with Svelte 5 internally, but **you do not need to write Svelte** to use it.
+The [Mount API](/guides/integration/) works in React, Vue, Angular, vanilla JS, or any framework.
+</Aside>
 
 ## Install
 
-```bash
-npm install @d34dman/flowdrop @iconify/svelte @xyflow/svelte
-```
-
-Or with pnpm:
-
-```bash
-pnpm add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
-```
+<Tabs>
+  <TabItem label="npm">
+  ```bash
+  npm install @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  ```
+  </TabItem>
+  <TabItem label="pnpm">
+  ```bash
+  pnpm add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  ```
+  </TabItem>
+  <TabItem label="yarn">
+  ```bash
+  yarn add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  ```
+  </TabItem>
+  <TabItem label="bun">
+  ```bash
+  bun add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  ```
+  </TabItem>
+</Tabs>
 
 ## Peer Dependencies
 
-FlowDrop requires the following peer dependencies:
-
 | Package | Version | Required |
 |---------|---------|----------|
-| `svelte` | `^5.0.0` | Yes |
+| `svelte` | `^5.0.0` | Yes (internal runtime) |
 | `@xyflow/svelte` | `^1.2` | Yes (for editor module) |
 | `@iconify/svelte` | `^5.0.0` | Yes (for icons) |
 
@@ -43,8 +63,6 @@ npm install codemirror @codemirror/state @codemirror/view @codemirror/commands \
 ```
 
 ## Entry Points
-
-FlowDrop provides modular entry points so you can import only what you need:
 
 | Entry Point | Description |
 |-------------|-------------|
@@ -63,8 +81,36 @@ FlowDrop provides modular entry points so you can import only what you need:
 ## Architecture Notes
 
 <Aside type="caution" title="Single Instance Per Page">
-FlowDrop uses module-level singleton stores for state management. Only **one FlowDrop editor instance** can exist on a page at a time.
+FlowDrop uses module-level singleton stores. Only **one FlowDrop editor instance** can exist on a page at a time.
 </Aside>
 
-- **Svelte 5 required.** FlowDrop uses Svelte 5 runes (`$state`, `$derived`, `$effect`) throughout. Svelte 4 is not supported.
-- **Modern browsers only.** The library targets ES2020+ and does not include polyfills for older browsers.
+- **Svelte 5 required (internally).** FlowDrop uses Svelte 5 runes internally. Your app does not need to be written in Svelte.
+- **Modern browsers only.** The library targets ES2020+ and does not include polyfills.
+
+<Aside type="caution" title="Vite projects">
+If you see `Failed to resolve import` errors, add FlowDrop to Vite's `optimizeDeps` exclusion list:
+
+```javascript
+// vite.config.ts
+export default defineConfig({
+  optimizeDeps: {
+    exclude: ['@d34dman/flowdrop', '@xyflow/svelte']
+  }
+})
+```
+</Aside>
+
+## Verify Your Installation
+
+Confirm the package resolved correctly:
+
+```javascript
+import { createEndpointConfig } from '@d34dman/flowdrop/core';
+const config = createEndpointConfig('/api/flowdrop');
+console.log(config); // EndpointConfig object
+```
+
+If you see `Cannot find module '@d34dman/flowdrop'`, check:
+1. Install completed without errors
+2. Your bundler supports ES modules (Vite 5+, webpack 5+)
+3. You are not importing in a server-side context — see [Framework Integration](/guides/integration/)
