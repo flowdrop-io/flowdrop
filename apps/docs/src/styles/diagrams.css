@@ -11,3 +11,34 @@ pre.mermaid svg {
 	max-width: 100%;
 	height: auto;
 }
+
+/* Thicker node borders */
+pre.mermaid .node rect,
+pre.mermaid .node circle,
+pre.mermaid .node ellipse,
+pre.mermaid .node polygon,
+pre.mermaid .node path,
+pre.mermaid .cluster rect {
+	stroke-width: 2px !important;
+}
+
+/* Multi-level cluster depth — progressively lighter/darker backgrounds */
+/* Level 1 (outermost cluster) */
+pre.mermaid .cluster .cluster rect {
+	fill: var(--sl-color-gray-5) !important;
+	stroke: var(--sl-color-gray-3) !important;
+}
+:root[data-theme='light'] pre.mermaid .cluster .cluster rect {
+	fill: var(--sl-color-gray-5) !important;
+	stroke: var(--sl-color-gray-4) !important;
+}
+
+/* Level 2 (nested cluster) */
+pre.mermaid .cluster .cluster .cluster rect {
+	fill: var(--sl-color-gray-4) !important;
+	stroke: var(--sl-color-gray-2) !important;
+}
+:root[data-theme='light'] pre.mermaid .cluster .cluster .cluster rect {
+	fill: var(--sl-color-gray-4) !important;
+	stroke: var(--sl-color-gray-3) !important;
+}

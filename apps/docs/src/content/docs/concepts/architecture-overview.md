@@ -15,10 +15,13 @@ flowchart TD
     direction TB
     subgraph editor ["FlowDrop Editor"]
       direction LR
-      ui["UI Components\nNavbar · Canvas · Config Panel"]
+      ui["UI Components
+        Navbar · Canvas · Config Panel"]
     end
-    stores["Stores\nworkflow · history · settings"]
-    services["Services\nAPI client · drafts · toasts"]
+    stores["Stores
+      workflow · history · settings"]
+    services["Services
+      API client · drafts · toasts"]
     editor --> stores --> services
   end
   services -- "REST API" --> backend
@@ -48,9 +51,13 @@ FlowDrop is tree-shakable. Each sub-module has different dependencies and bundle
 **Dependency chain:**
 ```mermaid
 flowchart LR
-  core["core\n(types only, zero UI)"] --> form["form\n(JSON Schema forms)"]
-  form --> editor["editor\n(@xyflow canvas + forms)"]
-  editor --> playground["playground\n(editor + chat + interrupts)"]
+  core["core
+    (types only, zero UI)"] --> form["form
+      (JSON Schema forms)"]
+  form --> editor["editor
+    (@xyflow canvas + forms)"]
+  editor --> playground["playground
+    (editor + chat + interrupts)"]
 ```
 
 Import from the most specific module possible to minimize bundle size.
@@ -124,13 +131,25 @@ Here's what happens when a user makes a change:
 
 ```mermaid
 flowchart TD
-  A["User action\n(drag node, edit config, draw edge)"] --> B["Component event handler"]
-  B --> C["workflowStore update\n(state mutation)"]
-  C --> D["historyStore records snapshot\n(for undo)"]
-  C --> E["isDirty flag set to true"]
-  C --> F["UI re-renders\n(Svelte reactivity)"]
-  C --> G["onWorkflowChange(workflow, changeType)\nyour callback — analytics, validation, etc."]
-  G --> H["onDirtyStateChange(true)\nyour callback — update save button, etc."]
+  A["User action
+    (drag node, edit config, draw edge)"] --> B["Component event handler"]
+  B --> C["workflowStore update
+    (state mutation)"]
+  C --> D["historyStore 
+    records snapshot
+    (for undo)"]
+  C --> E["isDirty 
+      flag set to true"]
+  C --> F["UI re-renders
+    (Svelte reactivity)"]
+  C --> G["onWorkflowChange
+    (workflow, changeType)
+    ---
+    your callback — analytics, validation, etc."]
+  G --> H["onDirtyStateChange
+    (true)
+    ---
+    your callback — update save button, etc."]
 ```
 
 When the user saves:
@@ -140,8 +159,13 @@ flowchart TD
   A["User clicks Save"] --> B["onBeforeSave(workflow)"]
   B -->|"return false"| X["Cancel"]
   B --> C["API client: PUT /workflows/{id}"]
-  C -->|"Success"| D["isDirty = false, draft cleared\nonAfterSave(workflow)"]
-  C -->|"Failure"| E["Toast notification\nonSaveError(error, workflow)\nonApiError(error, 'save')"]
+  C -->|"Success"| D["isDirty = false, draft cleared
+        ---
+        onAfterSave(workflow)"]
+  C -->|"Failure"| E["Toast notification
+        ---
+        onSaveError(error, workflow)
+        onApiError(error, 'save')"]
 ```
 
 ## Registry System
