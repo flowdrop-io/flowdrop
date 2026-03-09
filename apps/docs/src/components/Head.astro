@@ -1,0 +1,32 @@
+---
+/**
+ * Override of Starlight's Head component to add Mermaid initialization.
+ * Renders the default head entries plus a client-side mermaid init script.
+ */
+const { head } = Astro.locals.starlightRoute;
+---
+
+{head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
+<script>
+	import mermaid from 'mermaid';
+
+	function getTheme(): 'dark' | 'default' {
+		return document.documentElement.dataset.theme === 'light' ? 'default' : 'dark';
+	}
+
+	mermaid.initialize({
+		startOnLoad: true,
+		theme: getTheme(),
+	});
+
+	// Re-render diagrams when user toggles theme
+	const observer = new MutationObserver(async () => {
+		mermaid.initialize({ startOnLoad: false, theme: getTheme() });
+		await mermaid.run({ querySelector: 'pre.mermaid' });
+	});
+
+	observer.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ['data-theme'],
+	});
+</script>

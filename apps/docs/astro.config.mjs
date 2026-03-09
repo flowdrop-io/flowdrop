@@ -2,12 +2,16 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import svelte from '@astrojs/svelte';
+import { remarkMermaid } from './src/plugins/remark-mermaid.mjs';
 
 // Stub module path for optional CodeMirror peer deps (not needed in docs demos)
 const cmStub = new URL('./src/stubs/codemirror.ts', import.meta.url).pathname;
 
 // https://astro.build/config
 export default defineConfig({
+	markdown: {
+		remarkPlugins: [remarkMermaid],
+	},
 	vite: {
 		resolve: {
 			alias: {
@@ -39,9 +43,11 @@ export default defineConfig({
 				'./src/styles/tokens.css',
 				'./src/styles/theme.css',
 				'./src/styles/demo.css',
+				'./src/styles/diagrams.css',
 			],
 			components: {
 				ThemeProvider: './src/components/ThemeProvider.astro',
+				Head: './src/components/Head.astro',
 			},
 			expressiveCode: {
 				styleOverrides: {
