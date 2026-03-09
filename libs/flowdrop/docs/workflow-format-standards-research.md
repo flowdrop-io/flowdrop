@@ -189,10 +189,10 @@ These are unique to FlowDrop and would require custom extensions in any standard
 | -------------------------------------- | ------------------------------------------------------------- |
 | `src/lib/types/index.ts`               | Core TypeScript interfaces (Workflow, Node, Edge, Port, etc.) |
 | `src/lib/adapters/WorkflowAdapter.ts`  | StandardWorkflow <-> SvelteFlow conversion                    |
-| `api/components/schemas/workflow.yaml` | OpenAPI workflow schema                                       |
-| `api/components/schemas/node.yaml`     | OpenAPI node schema                                           |
-| `api/components/schemas/common.yaml`   | OpenAPI common types                                          |
-| `api/components/schemas/config.yaml`   | OpenAPI config schema                                         |
+| `api/v1/components/schemas/workflow.yaml` | OpenAPI workflow schema                                       |
+| `api/v1/components/schemas/node.yaml`     | OpenAPI node schema                                           |
+| `api/v1/components/schemas/common.yaml`   | OpenAPI common types                                          |
+| `api/v1/components/schemas/config.yaml`   | OpenAPI config schema                                         |
 | `src/lib/services/workflowStorage.ts`  | Storage interface                                             |
 | `src/mocks/data/workflows.ts`          | Example workflows                                             |
 

@@ -2,7 +2,7 @@
  * FlowDrop Workflow JSON Schema
  *
  * Provides the versioned JSON Schema for the FlowDrop workflow document format.
- * The schema is generated from the OpenAPI YAML definitions in `api/components/schemas/`.
+ * The schema is generated from the OpenAPI YAML definitions in `api/v1/components/schemas/`.
  *
  * @example
  * ```typescript

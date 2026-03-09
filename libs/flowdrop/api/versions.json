@@ -1,0 +1,10 @@
+{
+  "versions": [
+    {
+      "id": "v1",
+      "label": "v1 (1.0.0)",
+      "path": "v1",
+      "default": true
+    }
+  ]
+}

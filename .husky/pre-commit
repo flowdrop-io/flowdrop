@@ -4,20 +4,21 @@
 API_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep "^libs/flowdrop/api/" | grep -v "bundled.yaml" || true)
 
 if [ -n "$API_FILES" ]; then
-  echo "📦 API files changed, bundling OpenAPI spec..."
+  echo "📦 API files changed, bundling OpenAPI specs..."
   cd apps/api-docs && pnpm run bundle && cd ../..
 
-  # Check if bundled.yaml was modified
-  if [ -n "$(git diff libs/flowdrop/api/bundled.yaml)" ]; then
-    echo "✅ Bundled spec updated, staging changes..."
-    git add libs/flowdrop/api/bundled.yaml
+  # Check if any bundled.yaml was modified
+  BUNDLED_CHANGES=$(git diff libs/flowdrop/api/*/bundled.yaml 2>/dev/null || true)
+  if [ -n "$BUNDLED_CHANGES" ]; then
+    echo "✅ Bundled specs updated, staging changes..."
+    git add libs/flowdrop/api/*/bundled.yaml
   else
-    echo "✅ Bundled spec already up to date"
+    echo "✅ Bundled specs already up to date"
   fi
 fi
 
 # Optional: Run linting on staged API files
 if [ -n "$API_FILES" ]; then
-  echo "🔍 Linting API spec..."
+  echo "🔍 Linting API specs..."
   cd apps/api-docs && pnpm run lint && cd ../..
 fi
