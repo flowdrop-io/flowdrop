@@ -1,6 +1,6 @@
 ---
 title: Mount API
-description: Mount FlowDrop into any container element.
+description: "Complete reference for mountFlowDropApp(), mountWorkflowEditor(), and mountPlayground() — all options, return values, and lifecycle."
 ---
 
 The mount API lets you embed FlowDrop into any HTML container, regardless of framework.
@@ -80,6 +80,24 @@ interface FlowDropMountOptions {
   formatAdapters?: WorkflowFormatAdapter[];
 }
 ```
+
+### Feature Flags (`FlowDropFeatures`)
+
+```typescript
+interface FlowDropFeatures {
+  /** Auto-save the current workflow to localStorage as a draft. @default true */
+  autoSaveDraft?: boolean;
+
+  /** How often to auto-save the draft, in milliseconds. @default 30000 */
+  autoSaveDraftInterval?: number;
+
+  /** Show toast notifications for save success, failure, and API errors.
+   * Disable if you want to handle notifications yourself via event handlers. @default true */
+  showToasts?: boolean;
+}
+```
+
+See [Auto-Save & Drafts](/recipes/auto-save-and-drafts/) for practical examples.
 
 See [Core Types](/reference/types/) for `FlowDropEventHandlers` and `FlowDropFeatures`.
 

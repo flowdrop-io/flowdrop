@@ -1,6 +1,6 @@
 ---
-title: "Migration Guide"
-description: "Upgrade from 0.0.x to 1.0.0."
+title: "Changelog & Migration"
+description: "What's new in 1.0.0 and how to upgrade from 0.0.x."
 ---
 
 import { Aside, Steps } from '@astrojs/starlight/components';
@@ -10,6 +10,20 @@ This guide covers all breaking changes when upgrading from `@d34dman/flowdrop` 0
 <Aside type="tip">
 1.0.0 is the first stable release. The API is now considered production-ready and will follow semantic versioning for future changes.
 </Aside>
+
+## What's New in 1.0.0
+
+1.0.0 is the first stable release. Key additions since 0.0.x:
+
+- **Stable public API** — `mountFlowDropApp()`, `mountWorkflowEditor()`, `mountPlayground()` with semantic versioning guarantees
+- **Agent Spec support** — Import/export [Agent Spec](https://github.com/oracle/agent-spec) format
+- **Human-in-the-Loop interrupts** — Five interrupt types: confirmation, choice, text input, form, review
+- **Interactive Playground** — Built-in workflow testing UI with session management
+- **Plugin system** — `registerFlowDropPlugin()` and `createPlugin()` for multi-node registration
+- **Programmatic API** — `WorkflowAdapter` for creating and manipulating workflows in code
+- **History transactions** — Group changes into one undo step with `historyActions.startTransaction()`
+- **Template variables** — `format: "template"` fields with port-aware autocomplete
+- **Dynamic port config** — Runtime port compatibility via `/port-config` API endpoint
 
 ## Breaking Changes in 0.0.64
 
