@@ -3,7 +3,7 @@ name: Deploy API Documentation
 on:
   push:
     branches:
-      - 1.x
+      - main
     paths:
       - 'libs/flowdrop/api/**'
       - 'apps/api-docs/**'

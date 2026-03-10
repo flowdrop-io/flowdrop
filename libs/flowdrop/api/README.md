@@ -121,7 +121,7 @@ The API spec is validated in CI:
 
 ## Hosted Documentation
 
-API documentation is automatically deployed to GitHub Pages on every push to `1.x`:
+API documentation is automatically deployed to GitHub Pages on every push to `main`:
 
 **https://flowdrop-io.github.io/flowdrop/**
 

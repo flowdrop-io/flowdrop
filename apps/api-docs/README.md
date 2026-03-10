@@ -85,7 +85,7 @@ libs/flowdrop/api/
 
 ## Deployment
 
-Documentation is automatically deployed to GitHub Pages on every push to the `1.x` branch (or via manual workflow dispatch). See [`.github/workflows/api-docs.yml`](../../.github/workflows/api-docs.yml) for the full pipeline.
+Documentation is automatically deployed to GitHub Pages on every push to the `main` branch (or via manual workflow dispatch). See [`.github/workflows/api-docs.yml`](../../.github/workflows/api-docs.yml) for the full pipeline.
 
 ## Key Files
 
