@@ -7,21 +7,21 @@
  *
  * For optimal bundle size, import from specific sub-modules:
  *
- * - `@d34dman/flowdrop/core` - Types and utilities only (no heavy deps)
- * - `@d34dman/flowdrop/editor` - WorkflowEditor with @xyflow/svelte
- * - `@d34dman/flowdrop/form` - SchemaForm with basic fields
- * - `@d34dman/flowdrop/form/code` - Code editor support (adds CodeMirror)
- * - `@d34dman/flowdrop/form/markdown` - Markdown editor support (CodeMirror 6)
- * - `@d34dman/flowdrop/display` - MarkdownDisplay (adds marked)
- * - `@d34dman/flowdrop/playground` - Playground for interactive workflow testing
- * - `@d34dman/flowdrop/styles` - CSS styles
+ * - `@flowdrop/flowdrop/core` - Types and utilities only (no heavy deps)
+ * - `@flowdrop/flowdrop/editor` - WorkflowEditor with @xyflow/svelte
+ * - `@flowdrop/flowdrop/form` - SchemaForm with basic fields
+ * - `@flowdrop/flowdrop/form/code` - Code editor support (adds CodeMirror)
+ * - `@flowdrop/flowdrop/form/markdown` - Markdown editor support (CodeMirror 6)
+ * - `@flowdrop/flowdrop/display` - MarkdownDisplay (adds marked)
+ * - `@flowdrop/flowdrop/playground` - Playground for interactive workflow testing
+ * - `@flowdrop/flowdrop/styles` - CSS styles
  *
  * ## Legacy Import (Full Bundle)
  *
  * Importing from the main entry point includes everything:
  *
  * ```typescript
- * import { WorkflowEditor, SchemaForm } from "@d34dman/flowdrop";
+ * import { WorkflowEditor, SchemaForm } from "@flowdrop/flowdrop";
  * ```
  *
  * **Note**: This will bundle ALL dependencies including @xyflow/svelte,

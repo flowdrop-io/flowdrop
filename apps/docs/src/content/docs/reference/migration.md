@@ -5,7 +5,7 @@ description: "What's new in 1.0.0 and how to upgrade from 0.0.x."
 
 import { Aside, Steps } from '@astrojs/starlight/components';
 
-This guide covers all breaking changes when upgrading from `@d34dman/flowdrop` 0.0.x to 1.0.0.
+This guide covers all breaking changes when upgrading from `@flowdrop/flowdrop` 0.0.x to 1.0.0.
 
 <Aside type="tip">
 1.0.0 is the first stable release. The API is now considered production-ready and will follow semantic versioning for future changes.
@@ -153,7 +153,7 @@ All source files now compile under `strict: true`. This may surface type errors 
 <Steps>
 1. Update the package:
    ```bash
-   npm install @d34dman/flowdrop@^1.0.0 @xyflow/svelte@^1.2
+   npm install @flowdrop/flowdrop@^1.0.0 @xyflow/svelte@^1.2
    ```
 
 2. Replace `variableSchema` with `variables.schema` on any `FormTemplateEditor` usage.

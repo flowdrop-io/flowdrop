@@ -7,7 +7,7 @@ This document provides guidance for AI agents working with the FlowDrop codebase
 **FlowDrop** is a pure visual workflow editor - not a SaaS platform. Users implement their own backend, control their orchestration, and run workflows on their infrastructure.
 
 ```bash
-npm install @d34dman/flowdrop
+npm install @flowdrop/flowdrop
 ```
 
 ### Key Philosophy
@@ -383,22 +383,22 @@ FlowDrop uses module exports for tree-shaking:
 
 ```typescript
 // Main entry - includes all components
-import { WorkflowEditor, NodeSidebar } from '@d34dman/flowdrop';
+import { WorkflowEditor, NodeSidebar } from '@flowdrop/flowdrop';
 
 // Core - types and utilities only (zero heavy deps)
-import type { Workflow, WorkflowNode } from '@d34dman/flowdrop/core';
+import type { Workflow, WorkflowNode } from '@flowdrop/flowdrop/core';
 
 // Editor - editor-specific exports
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
 
 // Form - form components
-import { SchemaForm, registerField } from '@d34dman/flowdrop/form';
+import { SchemaForm, registerField } from '@flowdrop/flowdrop/form';
 
 // Display - read-only display components
-import { MarkdownDisplay } from '@d34dman/flowdrop/display';
+import { MarkdownDisplay } from '@flowdrop/flowdrop/display';
 
 // Styles
-import '@d34dman/flowdrop/styles/base.css';
+import '@flowdrop/flowdrop/styles/base.css';
 ```
 
 ---

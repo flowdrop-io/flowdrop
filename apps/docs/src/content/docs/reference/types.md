@@ -3,7 +3,7 @@ title: Core Types
 description: Key TypeScript types exported by FlowDrop.
 ---
 
-All types are exported from `@d34dman/flowdrop/core` (or the main `@d34dman/flowdrop` entry point).
+All types are exported from `@flowdrop/flowdrop/core` (or the main `@flowdrop/flowdrop` entry point).
 
 ## Workflow
 

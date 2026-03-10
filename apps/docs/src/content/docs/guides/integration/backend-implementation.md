@@ -55,7 +55,7 @@ These enable playground, execution, interrupts, and settings:
 All paths above are relative to a base URL you configure:
 
 ```typescript
-import { createEndpointConfig } from '@d34dman/flowdrop/core';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
 
 const endpointConfig = createEndpointConfig('/api/flowdrop');
 // Nodes endpoint becomes: GET /api/flowdrop/nodes

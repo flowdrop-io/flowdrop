@@ -160,7 +160,7 @@ FlowDrop auto-switches tokens based on `data-theme`:
 Or programmatically:
 
 ```typescript
-import { setTheme, toggleTheme } from '@d34dman/flowdrop/settings';
+import { setTheme, toggleTheme } from '@flowdrop/flowdrop/settings';
 
 setTheme('dark');
 toggleTheme();

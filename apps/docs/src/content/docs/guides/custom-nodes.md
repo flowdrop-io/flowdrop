@@ -28,7 +28,7 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 ```svelte
 <!-- CodeEditorNode.svelte -->
 <script lang="ts">
-  import type { NodeComponentProps } from '@d34dman/flowdrop/editor';
+  import type { NodeComponentProps } from '@flowdrop/flowdrop/editor';
 
   let { data, selected = false }: NodeComponentProps = $props();
 </script>
@@ -55,7 +55,7 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 **2. Register it:**
 
 ```typescript
-import { registerCustomNode } from '@d34dman/flowdrop/editor';
+import { registerCustomNode } from '@flowdrop/flowdrop/editor';
 import CodeEditorNode from './CodeEditorNode.svelte';
 
 registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
@@ -106,7 +106,7 @@ interface NodeComponentProps {
 Register multiple nodes under a shared namespace:
 
 ```typescript
-import { registerFlowDropPlugin } from '@d34dman/flowdrop/editor';
+import { registerFlowDropPlugin } from '@flowdrop/flowdrop/editor';
 
 const result = registerFlowDropPlugin({
   namespace: 'awesome',
@@ -134,7 +134,7 @@ const result = registerFlowDropPlugin({
 ### Fluent Builder
 
 ```typescript
-import { createPlugin } from '@d34dman/flowdrop/editor';
+import { createPlugin } from '@flowdrop/flowdrop/editor';
 
 createPlugin('awesome', 'Awesome Nodes')
   .version('1.0.0')
@@ -151,7 +151,7 @@ import {
   getRegisteredPlugins,
   getPluginNodeCount,
   isValidNamespace
-} from '@d34dman/flowdrop/editor';
+} from '@flowdrop/flowdrop/editor';
 
 unregisterFlowDropPlugin('awesome');  // Remove all nodes from a plugin
 getRegisteredPlugins();               // List registered namespaces

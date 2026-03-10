@@ -6,10 +6,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/github/actions/workflow/status/flowdrop-io/flowdrop/docker-publish.yml?style=flat-square&label=Build" alt="GitHub pages build status" />
-  <a href="https://www.npmjs.com/package/@d34dman/flowdrop"><img src="https://img.shields.io/npm/v/@d34dman/flowdrop?style=flat-square" alt="npm" /></a>
-  <img src="https://img.shields.io/npm/unpacked-size/%40d34dman%2Fflowdrop?style=flat-square" alt="NPM Unpacked Size" />
-  <img src="https://img.shields.io/npm/types/@d34dman/flowdrop?style=flat-square" alt="npm type definitions" />
-  <a href="http://npmjs.com/package/@d34dman/flowdrop"><img src="https://img.shields.io/npm/dt/@d34dman/flowdrop.svg?maxAge=2592000&style=flat-square" alt="npm downloads" /></a>
+  <a href="https://www.npmjs.com/package/@flowdrop/flowdrop"><img src="https://img.shields.io/npm/v/@flowdrop/flowdrop?style=flat-square" alt="npm" /></a>
+  <img src="https://img.shields.io/npm/unpacked-size/%40flowdrop%2Fflowdrop?style=flat-square" alt="NPM Unpacked Size" />
+  <img src="https://img.shields.io/npm/types/@flowdrop/flowdrop?style=flat-square" alt="npm type definitions" />
+  <a href="http://npmjs.com/package/@flowdrop/flowdrop"><img src="https://img.shields.io/npm/dt/@flowdrop/flowdrop.svg?maxAge=2592000&style=flat-square" alt="npm downloads" /></a>
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@ FlowDrop is a pure visual editor. You implement the backend. You control the orc
 No vendor lock-in. No data leaving your walls. No surprise bills.
 
 ```bash
-npm install @d34dman/flowdrop
+npm install @flowdrop/flowdrop
 ```
 
 You get a production-ready workflow UI. You keep full control of everything else.
@@ -55,8 +55,8 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ```svelte
 <script lang="ts">
-	import { WorkflowEditor } from '@d34dman/flowdrop';
-	import '@d34dman/flowdrop/styles/base.css';
+	import { WorkflowEditor } from '@flowdrop/flowdrop';
+	import '@flowdrop/flowdrop/styles/base.css';
 </script>
 
 <WorkflowEditor />
@@ -102,7 +102,7 @@ FlowDrop ships with 7 beautifully designed node types:
 
 ```svelte
 <script>
-	import { WorkflowEditor, NodeSidebar } from '@d34dman/flowdrop';
+	import { WorkflowEditor, NodeSidebar } from '@flowdrop/flowdrop';
 </script>
 
 <div class="flex h-screen">
@@ -114,7 +114,7 @@ FlowDrop ships with 7 beautifully designed node types:
 ### Vanilla JS / React / Vue / Angular
 
 ```javascript
-import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop';
+import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
 	workflow: myWorkflow,
@@ -134,7 +134,7 @@ app.destroy();
 ### Enterprise Integration
 
 ```javascript
-import { mountFlowDropApp, CallbackAuthProvider } from '@d34dman/flowdrop';
+import { mountFlowDropApp, CallbackAuthProvider } from '@flowdrop/flowdrop';
 
 const app = await mountFlowDropApp(container, {
 	// Dynamic token refresh
@@ -163,7 +163,7 @@ const app = await mountFlowDropApp(container, {
 Connect to any backend in seconds:
 
 ```typescript
-import { createEndpointConfig } from '@d34dman/flowdrop';
+import { createEndpointConfig } from '@flowdrop/flowdrop';
 
 const config = createEndpointConfig({
 	baseUrl: 'https://api.example.com',
@@ -226,7 +226,7 @@ Runtime configuration means you build once and deploy to staging, production, or
 
 | Directory | Description | Status |
 |-----------|-------------|--------|
-| [libs/flowdrop](libs/flowdrop/) | The FlowDrop library ([npm](https://www.npmjs.com/package/@d34dman/flowdrop)) | Active |
+| [libs/flowdrop](libs/flowdrop/) | The FlowDrop library ([npm](https://www.npmjs.com/package/@flowdrop/flowdrop)) | Active |
 | [apps/api-docs](apps/api-docs/) | OpenAPI documentation (Redocly) | Active |
 | [apps/docs](apps/docs/) | Documentation site | Placeholder |
 | [apps/example-client-svelte](apps/example-client-svelte/) | Svelte/SvelteKit example client | Placeholder |

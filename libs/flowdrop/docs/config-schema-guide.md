@@ -720,7 +720,7 @@ You can render the `ConfigForm` component directly, independent of the workflow 
 
 ```svelte
 <script>
-	import { ConfigForm } from '@d34dman/flowdrop';
+	import { ConfigForm } from '@flowdrop/flowdrop';
 
 	const schema = {
 		type: 'object',
@@ -800,7 +800,7 @@ import {
 	hasConfigEditOptions,
 	shouldShowExternalEdit,
 	shouldUseDynamicSchema
-} from '@d34dman/flowdrop';
+} from '@flowdrop/flowdrop';
 ```
 
 ### `fetchDynamicSchema(endpoint, node, workflowId?)`
@@ -886,7 +886,7 @@ import type {
 	// Nodes
 	NodeMetadata,
 	WorkflowNode
-} from '@d34dman/flowdrop';
+} from '@flowdrop/flowdrop';
 ```
 
 ---

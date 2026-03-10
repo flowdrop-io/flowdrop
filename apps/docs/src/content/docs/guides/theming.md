@@ -182,7 +182,7 @@ document.documentElement.setAttribute('data-theme', 'dark');
 Or use the built-in theme toggle:
 
 ```typescript
-import { toggleTheme, setTheme } from '@d34dman/flowdrop/core';
+import { toggleTheme, setTheme } from '@flowdrop/flowdrop/core';
 
 toggleTheme();         // Cycles through light/dark/auto
 setTheme('dark');      // Set explicitly

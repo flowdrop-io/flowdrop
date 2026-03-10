@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { getDefaultAgentSpecNodeTypes } from '@d34dman/flowdrop/core';
+ * import { getDefaultAgentSpecNodeTypes } from '@flowdrop/flowdrop/core';
  *
  * mountFlowDropApp(container, {
  *   nodes: getDefaultAgentSpecNodeTypes(), // or your own definitions

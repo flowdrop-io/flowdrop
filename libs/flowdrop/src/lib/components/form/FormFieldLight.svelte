@@ -6,8 +6,8 @@
   (code editor, markdown editor, template editor) instead of static imports.
   
   Heavy components are only loaded if registered via:
-  - `registerCodeEditorField()` from "@d34dman/flowdrop/form/code"
-  - `registerMarkdownEditorField()` from "@d34dman/flowdrop/form/markdown"
+  - `registerCodeEditorField()` from "@flowdrop/flowdrop/form/code"
+  - `registerMarkdownEditorField()` from "@flowdrop/flowdrop/form/markdown"
   
   Features:
   - Automatically selects the correct field component based on schema
@@ -207,11 +207,11 @@
 	function getEditorHint(editorType: string): string {
 		switch (editorType) {
 			case 'code-editor-fallback':
-				return "Code editor requires: import { registerCodeEditorField } from '@d34dman/flowdrop/form/code'; registerCodeEditorField();";
+				return "Code editor requires: import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code'; registerCodeEditorField();";
 			case 'markdown-editor-fallback':
-				return "Markdown editor requires: import { registerMarkdownEditorField } from '@d34dman/flowdrop/form/markdown'; registerMarkdownEditorField();";
+				return "Markdown editor requires: import { registerMarkdownEditorField } from '@flowdrop/flowdrop/form/markdown'; registerMarkdownEditorField();";
 			case 'template-editor-fallback':
-				return "Template editor requires: import { registerTemplateEditorField } from '@d34dman/flowdrop/form/code'; registerTemplateEditorField();";
+				return "Template editor requires: import { registerTemplateEditorField } from '@flowdrop/flowdrop/form/code'; registerTemplateEditorField();";
 			default:
 				return 'This field type requires additional registration.';
 		}

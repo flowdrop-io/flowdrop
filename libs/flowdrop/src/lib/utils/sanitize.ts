@@ -21,7 +21,7 @@ import DOMPurify from 'dompurify';
  *
  * @example
  * ```typescript
- * import { sanitizeHtml } from '@d34dman/flowdrop/core';
+ * import { sanitizeHtml } from '@flowdrop/flowdrop/core';
  * import { marked } from 'marked';
  *
  * const safeHtml = sanitizeHtml(marked.parse(userInput) as string);

@@ -27,7 +27,7 @@ import {
   getWorkflowEdges,
   getWorkflowName,
   getWorkflowValidation
-} from '@d34dman/flowdrop/editor';
+} from '@flowdrop/flowdrop/editor';
 
 // Reactive getters (re-evaluate when state changes)
 const workflow = getWorkflowStore();    // Workflow | null
@@ -42,7 +42,7 @@ const validation = getWorkflowValidation();
 ### Modifying State
 
 ```typescript
-import { workflowActions } from '@d34dman/flowdrop/editor';
+import { workflowActions } from '@flowdrop/flowdrop/editor';
 
 // Initialize with a loaded workflow
 workflowActions.initialize(workflow);
@@ -74,7 +74,7 @@ workflowActions.clear();
 ### Dirty State
 
 ```typescript
-import { markAsSaved, isDirty } from '@d34dman/flowdrop/editor';
+import { markAsSaved, isDirty } from '@flowdrop/flowdrop/editor';
 
 // Check dirty state (non-reactive)
 if (isDirty()) {
@@ -94,7 +94,7 @@ import {
   getCanUndo,
   getCanRedo,
   historyActions
-} from '@d34dman/flowdrop/editor';
+} from '@flowdrop/flowdrop/editor';
 
 // Check availability (reactive)
 const canUndo = getCanUndo(); // boolean
@@ -127,7 +127,7 @@ import {
   getUiSettings,
   updateSettings,
   resetSettings
-} from '@d34dman/flowdrop/settings';
+} from '@flowdrop/flowdrop/settings';
 
 // Read settings (reactive)
 const settings = getSettings();           // FlowDropSettings
@@ -161,7 +161,7 @@ import {
   setTheme,
   toggleTheme,
   cycleTheme
-} from '@d34dman/flowdrop/core';
+} from '@flowdrop/flowdrop/core';
 
 getTheme();         // 'light' | 'dark' | 'auto'
 getResolvedTheme(); // 'light' | 'dark' (actual applied theme)
@@ -183,7 +183,7 @@ import {
   getLogMessages,
   getIsExecuting,
   playgroundActions
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 
 // Read state (reactive)
 const session = getCurrentSession();   // PlaygroundSession | null
@@ -203,7 +203,7 @@ import {
   getPendingInterrupts,
   getResolvedInterrupts,
   interruptActions
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 
 // Read state (reactive)
 const pending = getPendingInterrupts();    // Interrupt[]
@@ -216,7 +216,7 @@ Since stores use Svelte 5 runes, you can use them directly in `.svelte` files wi
 
 ```svelte
 <script>
-  import { getWorkflowNodes, getIsDirty } from '@d34dman/flowdrop/editor';
+  import { getWorkflowNodes, getIsDirty } from '@flowdrop/flowdrop/editor';
 
   const nodes = $derived(getWorkflowNodes());
   const isDirty = $derived(getIsDirty());

@@ -5,14 +5,14 @@
  * from JSON Schema definitions. This is the "light" version that includes
  * only basic field types (text, number, select, checkbox, etc.).
  *
- * For code editor support (CodeMirror), import from "@d34dman/flowdrop/form/code"
- * For markdown editor support (CodeMirror 6), import from "@d34dman/flowdrop/form/markdown"
+ * For code editor support (CodeMirror), import from "@flowdrop/flowdrop/form/code"
+ * For markdown editor support (CodeMirror 6), import from "@flowdrop/flowdrop/form/markdown"
  *
  * @module form
  *
  * @example Basic usage (small bundle - ~20KB):
  * ```typescript
- * import { SchemaForm } from "@d34dman/flowdrop/form";
+ * import { SchemaForm } from "@flowdrop/flowdrop/form";
  *
  * const schema = {
  *   type: "object",
@@ -43,8 +43,8 @@
  *
  * @example With code editor support (adds ~300KB):
  * ```typescript
- * import { SchemaForm } from "@d34dman/flowdrop/form";
- * import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
+ * import { SchemaForm } from "@flowdrop/flowdrop/form";
+ * import { registerCodeEditorField } from "@flowdrop/flowdrop/form/code";
  *
  * // Register code editor support before using
  * registerCodeEditorField();

@@ -1,5 +1,5 @@
 {
-	"name": "@d34dman/flowdrop-example-server-drupal",
+	"name": "@flowdrop/flowdrop-example-server-drupal",
 	"description": "Drupal backend integration for FlowDrop",
 	"private": true,
 	"version": "0.0.1"

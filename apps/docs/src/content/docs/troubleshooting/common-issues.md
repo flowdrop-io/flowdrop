@@ -35,7 +35,7 @@ description: Solutions to frequently encountered problems when integrating FlowD
 
 1. **CSS is not imported.** You must import FlowDrop styles:
    ```typescript
-   import '@d34dman/flowdrop/styles';
+   import '@flowdrop/flowdrop/styles';
    ```
 
 2. **Container has no height.** The editor needs a container with explicit dimensions:
@@ -76,15 +76,15 @@ description: Solutions to frequently encountered problems when integrating FlowD
 **Fix:** You must explicitly register CodeMirror fields. They're in a separate module to avoid the ~300KB bundle cost:
 
 ```typescript
-import { registerCodeEditorField } from '@d34dman/flowdrop/form/code';
+import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code';
 registerCodeEditorField();
 
 // For template fields with variable autocomplete:
-import { registerTemplateEditorField } from '@d34dman/flowdrop/form/code';
+import { registerTemplateEditorField } from '@flowdrop/flowdrop/form/code';
 registerTemplateEditorField();
 
 // For markdown:
-import { registerMarkdownEditorField } from '@d34dman/flowdrop/form/markdown';
+import { registerMarkdownEditorField } from '@flowdrop/flowdrop/form/markdown';
 registerMarkdownEditorField();
 ```
 
@@ -209,7 +209,7 @@ If none of the above resolves your issue:
 - **[GitHub Discussions](https://github.com/flowdrop-io/flowdrop/discussions)** — Questions, ideas, and community support
 
 When reporting a bug, include:
-1. FlowDrop version (`npm list @d34dman/flowdrop`)
+1. FlowDrop version (`npm list @flowdrop/flowdrop`)
 2. Browser and version
 3. The error message from the browser console
 4. Minimal reproduction: your node metadata JSON and mount options

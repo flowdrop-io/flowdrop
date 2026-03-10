@@ -13,7 +13,7 @@
   @example
   ```svelte
   <script>
-    import { SettingsPanel } from "@d34dman/flowdrop";
+    import { SettingsPanel } from "@flowdrop/flowdrop";
 
     function handleClose() {
       // Handle settings panel close

@@ -12,14 +12,14 @@
  *
  * @example Basic usage with light fields only (no codemirror):
  * ```typescript
- * import { SchemaForm } from "@d34dman/flowdrop/form";
+ * import { SchemaForm } from "@flowdrop/flowdrop/form";
  * // Uses only basic fields - small bundle size
  * ```
  *
  * @example Adding code editor support:
  * ```typescript
- * import { fieldComponentRegistry } from "@d34dman/flowdrop/form";
- * import { FormCodeEditor, codeEditorFieldMatcher } from "@d34dman/flowdrop/form/code";
+ * import { fieldComponentRegistry } from "@flowdrop/flowdrop/form";
+ * import { FormCodeEditor, codeEditorFieldMatcher } from "@flowdrop/flowdrop/form/code";
  *
  * fieldComponentRegistry.register("code-editor", {
  *   component: FormCodeEditor,

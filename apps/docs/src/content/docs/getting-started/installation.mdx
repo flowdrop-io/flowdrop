@@ -1,12 +1,12 @@
 ---
 title: Installation
-description: Install @d34dman/flowdrop and set up your build pipeline. Works with React, Vue, Angular, Svelte, and vanilla JS.
+description: Install @flowdrop/flowdrop and set up your build pipeline. Works with React, Vue, Angular, Svelte, and vanilla JS.
 ---
 
 import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Package name">
-FlowDrop is published as `@d34dman/flowdrop` on npm — `d34dman` is the maintainer's namespace. This is the official FlowDrop package.
+FlowDrop is published as `@flowdrop/flowdrop` on npm — `d34dman` is the maintainer's namespace. This is the official FlowDrop package.
 </Aside>
 
 ## Prerequisites
@@ -24,22 +24,22 @@ The [Mount API](/guides/integration/) works in React, Vue, Angular, vanilla JS, 
 <Tabs>
   <TabItem label="npm">
   ```bash
-  npm install @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  npm install @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
   ```
   </TabItem>
   <TabItem label="pnpm">
   ```bash
-  pnpm add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  pnpm add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
   ```
   </TabItem>
   <TabItem label="yarn">
   ```bash
-  yarn add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  yarn add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
   ```
   </TabItem>
   <TabItem label="bun">
   ```bash
-  bun add @d34dman/flowdrop @iconify/svelte @xyflow/svelte
+  bun add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
   ```
   </TabItem>
 </Tabs>
@@ -66,17 +66,17 @@ npm install codemirror @codemirror/state @codemirror/view @codemirror/commands \
 
 | Entry Point | Description |
 |-------------|-------------|
-| `@d34dman/flowdrop` | Full bundle — re-exports everything |
-| `@d34dman/flowdrop/core` | Types and utilities (zero heavy dependencies) |
-| `@d34dman/flowdrop/editor` | Visual workflow editor components |
-| `@d34dman/flowdrop/form` | Dynamic form field components |
-| `@d34dman/flowdrop/form/code` | Code and JSON editor fields (requires CodeMirror) |
-| `@d34dman/flowdrop/form/markdown` | Markdown editor field (requires CodeMirror) |
-| `@d34dman/flowdrop/form/full` | All form components pre-bundled |
-| `@d34dman/flowdrop/display` | Display-only components (MarkdownDisplay) |
-| `@d34dman/flowdrop/playground` | Interactive workflow playground |
-| `@d34dman/flowdrop/settings` | Settings UI components and stores |
-| `@d34dman/flowdrop/styles` | Base CSS styles and design tokens |
+| `@flowdrop/flowdrop` | Full bundle — re-exports everything |
+| `@flowdrop/flowdrop/core` | Types and utilities (zero heavy dependencies) |
+| `@flowdrop/flowdrop/editor` | Visual workflow editor components |
+| `@flowdrop/flowdrop/form` | Dynamic form field components |
+| `@flowdrop/flowdrop/form/code` | Code and JSON editor fields (requires CodeMirror) |
+| `@flowdrop/flowdrop/form/markdown` | Markdown editor field (requires CodeMirror) |
+| `@flowdrop/flowdrop/form/full` | All form components pre-bundled |
+| `@flowdrop/flowdrop/display` | Display-only components (MarkdownDisplay) |
+| `@flowdrop/flowdrop/playground` | Interactive workflow playground |
+| `@flowdrop/flowdrop/settings` | Settings UI components and stores |
+| `@flowdrop/flowdrop/styles` | Base CSS styles and design tokens |
 
 ## Architecture Notes
 
@@ -94,7 +94,7 @@ If you see `Failed to resolve import` errors, add FlowDrop to Vite's `optimizeDe
 // vite.config.ts
 export default defineConfig({
   optimizeDeps: {
-    exclude: ['@d34dman/flowdrop', '@xyflow/svelte']
+    exclude: ['@flowdrop/flowdrop', '@xyflow/svelte']
   }
 })
 ```
@@ -105,12 +105,12 @@ export default defineConfig({
 Confirm the package resolved correctly:
 
 ```javascript
-import { createEndpointConfig } from '@d34dman/flowdrop/core';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
 const config = createEndpointConfig('/api/flowdrop');
 console.log(config); // EndpointConfig object
 ```
 
-If you see `Cannot find module '@d34dman/flowdrop'`, check:
+If you see `Cannot find module '@flowdrop/flowdrop'`, check:
 1. Install completed without errors
 2. Your bundler supports ES modules (Vite 5+, webpack 5+)
 3. You are not importing in a server-side context — see [Framework Integration](/guides/integration/)

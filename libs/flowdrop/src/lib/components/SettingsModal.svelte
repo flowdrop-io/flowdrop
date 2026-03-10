@@ -14,7 +14,7 @@
   @example
   ```svelte
   <script>
-    import { SettingsModal } from "@d34dman/flowdrop";
+    import { SettingsModal } from "@flowdrop/flowdrop";
     let open = $state(false);
   </script>
 

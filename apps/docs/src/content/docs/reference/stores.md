@@ -28,7 +28,7 @@ import {
   getWorkflowChanged,
   getWorkflowValidation,
   getConnectedHandles
-} from '@d34dman/flowdrop/editor';
+} from '@flowdrop/flowdrop/editor';
 ```
 
 | Function | Returns | Description |
@@ -48,7 +48,7 @@ import {
 ### Non-Reactive Utilities
 
 ```typescript
-import { getWorkflow, isDirty, markAsSaved } from '@d34dman/flowdrop/editor';
+import { getWorkflow, isDirty, markAsSaved } from '@flowdrop/flowdrop/editor';
 
 const workflow = getWorkflow();  // Snapshot, not reactive
 const dirty = isDirty();         // Snapshot
@@ -58,7 +58,7 @@ markAsSaved();                   // Clears dirty flag
 ### Workflow Actions
 
 ```typescript
-import { workflowActions } from '@d34dman/flowdrop/editor';
+import { workflowActions } from '@flowdrop/flowdrop/editor';
 ```
 
 | Method | Parameters | Description |
@@ -81,7 +81,7 @@ import { workflowActions } from '@d34dman/flowdrop/editor';
 ### Change Callbacks
 
 ```typescript
-import { setOnDirtyStateChange, setOnWorkflowChange } from '@d34dman/flowdrop/editor';
+import { setOnDirtyStateChange, setOnWorkflowChange } from '@flowdrop/flowdrop/editor';
 
 setOnDirtyStateChange((isDirty) => {
   console.log('Dirty state:', isDirty);
@@ -101,7 +101,7 @@ Manages undo/redo with snapshot-based history.
 ### Reactive Getters
 
 ```typescript
-import { getCanUndo, getCanRedo, getHistoryState } from '@d34dman/flowdrop/editor';
+import { getCanUndo, getCanRedo, getHistoryState } from '@flowdrop/flowdrop/editor';
 ```
 
 | Function | Returns | Description |
@@ -113,7 +113,7 @@ import { getCanUndo, getCanRedo, getHistoryState } from '@d34dman/flowdrop/edito
 ### History Actions
 
 ```typescript
-import { historyActions } from '@d34dman/flowdrop/editor';
+import { historyActions } from '@flowdrop/flowdrop/editor';
 ```
 
 | Method | Returns | Description |
@@ -167,7 +167,7 @@ import {
   getTheme,
   getResolvedTheme,
   getSyncStatus
-} from '@d34dman/flowdrop/settings';
+} from '@flowdrop/flowdrop/settings';
 ```
 
 | Function | Returns | Description |
@@ -185,7 +185,7 @@ import {
 ### Settings Updates
 
 ```typescript
-import { updateSettings, resetSettings } from '@d34dman/flowdrop/settings';
+import { updateSettings, resetSettings } from '@flowdrop/flowdrop/settings';
 
 updateSettings({ theme: { preference: 'dark' } });
 resetSettings(['theme', 'editor']);  // Reset specific categories
@@ -194,7 +194,7 @@ resetSettings(['theme', 'editor']);  // Reset specific categories
 ### Theme Functions
 
 ```typescript
-import { setTheme, toggleTheme, cycleTheme } from '@d34dman/flowdrop/settings';
+import { setTheme, toggleTheme, cycleTheme } from '@flowdrop/flowdrop/settings';
 
 setTheme('dark');    // Set explicit theme
 toggleTheme();       // Toggle light/dark
@@ -204,7 +204,7 @@ cycleTheme();        // Cycle light → dark → auto
 ### Change Listener
 
 ```typescript
-import { onSettingsChange } from '@d34dman/flowdrop/settings';
+import { onSettingsChange } from '@flowdrop/flowdrop/settings';
 
 const unsubscribe = onSettingsChange((newSettings, changedKeys) => {
   console.log('Settings changed:', changedKeys);
@@ -235,7 +235,7 @@ import {
   getInputFields,
   getSessionCount,
   getCurrentSessionId
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 ```
 
 | Function | Returns | Description |
@@ -256,7 +256,7 @@ import {
 ### Playground Actions
 
 ```typescript
-import { playgroundActions } from '@d34dman/flowdrop/playground';
+import { playgroundActions } from '@flowdrop/flowdrop/playground';
 ```
 
 | Method | Description |
@@ -290,7 +290,7 @@ import {
   getInterrupt,
   isInterruptPending,
   isInterruptSubmitting
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 ```
 
 | Function | Returns | Description |
@@ -306,7 +306,7 @@ import {
 ### Interrupt Actions
 
 ```typescript
-import { interruptActions } from '@d34dman/flowdrop/playground';
+import { interruptActions } from '@flowdrop/flowdrop/playground';
 ```
 
 | Method | Description |
@@ -347,7 +347,7 @@ import {
   getCategoryColor,
   getCategoryDefinition,
   initializeCategories
-} from '@d34dman/flowdrop/editor';
+} from '@flowdrop/flowdrop/editor';
 ```
 
 | Function | Returns | Description |

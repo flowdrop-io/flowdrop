@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Example: importing from the published FlowDrop library
-	import type { Workflow } from '@d34dman/flowdrop/core';
+	import type { Workflow } from '@flowdrop/flowdrop/core';
 </script>
 
 <h1>FlowDrop Examples</h1>

@@ -1,5 +1,5 @@
 {
-	"name": "@d34dman/flowdrop-example-client-svelte",
+	"name": "@flowdrop/flowdrop-example-client-svelte",
 	"description": "[PLACEHOLDER] Svelte/SvelteKit example client for FlowDrop — not yet ready for use",
 	"private": true,
 	"version": "0.0.1",
@@ -10,7 +10,7 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@d34dman/flowdrop": "^1.0.0",
+		"@flowdrop/flowdrop": "^1.0.0",
 		"@iconify/svelte": "^5.0.0"
 	},
 	"devDependencies": {

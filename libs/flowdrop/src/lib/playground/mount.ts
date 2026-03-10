@@ -224,7 +224,7 @@ interface MountedPlaygroundState {
  *
  * @example
  * ```typescript
- * import { mountPlayground, createEndpointConfig } from "@d34dman/flowdrop/playground";
+ * import { mountPlayground, createEndpointConfig } from "@flowdrop/flowdrop/playground";
  *
  * const app = await mountPlayground(
  *   document.getElementById("playground"),

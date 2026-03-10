@@ -11,7 +11,7 @@
  *   getAgentSpecNodeMetadata,
  *   validateForAgentSpecExport,
  *   validateAgentSpecFlow
- * } from '@d34dman/flowdrop/core';
+ * } from '@flowdrop/flowdrop/core';
  *
  * // Export a FlowDrop workflow as Agent Spec JSON
  * const adapter = new AgentSpecAdapter();

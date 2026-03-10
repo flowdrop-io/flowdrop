@@ -124,7 +124,7 @@ import {
   interruptActions,
   getPendingInterrupts,
   getInterrupt
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 
 // Read pending interrupts reactively
 const pending = $derived(getPendingInterrupts());
@@ -147,7 +147,7 @@ async function resolveInterrupt(interruptId: string, value: unknown) {
 
 ```svelte
 <script lang="ts">
-  import { ConfirmationPrompt } from '@d34dman/flowdrop/playground';
+  import { ConfirmationPrompt } from '@flowdrop/flowdrop/playground';
 </script>
 
 <ConfirmationPrompt

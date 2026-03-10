@@ -40,4 +40,4 @@ All commands are run from `apps/docs/`:
 - [Astro](https://astro.build) — Static site framework
 - [Starlight](https://starlight.astro.build/) — Documentation theme
 - [Svelte](https://svelte.dev) — For interactive components and FlowDrop embeds
-- [@d34dman/flowdrop](https://www.npmjs.com/package/@d34dman/flowdrop) — FlowDrop library (for live demos)
+- [@flowdrop/flowdrop](https://www.npmjs.com/package/@flowdrop/flowdrop) — FlowDrop library (for live demos)

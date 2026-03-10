@@ -11,15 +11,15 @@ Approximate gzip sizes by entry point:
 
 | Entry Point | Approx. gzip size | Notes |
 |-------------|-------------------|-------|
-| `@d34dman/flowdrop/core` | ~10 KB | Types and utilities only — no heavy deps |
-| `@d34dman/flowdrop/editor` | ~180 KB | Includes `@xyflow/svelte`, Svelte runtime |
-| `@d34dman/flowdrop/form` | ~25 KB | Form fields without CodeMirror |
-| `@d34dman/flowdrop/form/code` | ~350 KB | Includes CodeMirror and language packs |
-| `@d34dman/flowdrop/form/markdown` | ~300 KB | Includes CodeMirror markdown mode |
-| `@d34dman/flowdrop/playground` | ~200 KB | Editor + session management |
-| `@d34dman/flowdrop` | ~400 KB | Full bundle (avoid in production) |
+| `@flowdrop/flowdrop/core` | ~10 KB | Types and utilities only — no heavy deps |
+| `@flowdrop/flowdrop/editor` | ~180 KB | Includes `@xyflow/svelte`, Svelte runtime |
+| `@flowdrop/flowdrop/form` | ~25 KB | Form fields without CodeMirror |
+| `@flowdrop/flowdrop/form/code` | ~350 KB | Includes CodeMirror and language packs |
+| `@flowdrop/flowdrop/form/markdown` | ~300 KB | Includes CodeMirror markdown mode |
+| `@flowdrop/flowdrop/playground` | ~200 KB | Editor + session management |
+| `@flowdrop/flowdrop` | ~400 KB | Full bundle (avoid in production) |
 
-**Tip:** Use specific entry points rather than `@d34dman/flowdrop` to tree-shake unused modules.
+**Tip:** Use specific entry points rather than `@flowdrop/flowdrop` to tree-shake unused modules.
 
 ## Lazy Loading the Editor
 
@@ -29,10 +29,10 @@ The editor bundle is large. Load it only when the user navigates to the editor p
 // Vanilla JS — dynamic import
 async function mountEditor(container) {
   const [{ mountFlowDropApp }, { createEndpointConfig }] = await Promise.all([
-    import('@d34dman/flowdrop/editor'),
-    import('@d34dman/flowdrop/core'),
+    import('@flowdrop/flowdrop/editor'),
+    import('@flowdrop/flowdrop/core'),
   ]);
-  await import('@d34dman/flowdrop/styles');
+  await import('@flowdrop/flowdrop/styles');
 
   return mountFlowDropApp({
     container,
@@ -67,13 +67,13 @@ If you use code or markdown fields but not on every page, load them on demand:
 async function mountEditorWithCodeFields(container, endpoints) {
   // Load form fields that require CodeMirror only when needed
   const [{ mountFlowDropApp }, { createEndpointConfig }] = await Promise.all([
-    import('@d34dman/flowdrop/editor'),
-    import('@d34dman/flowdrop/core'),
+    import('@flowdrop/flowdrop/editor'),
+    import('@flowdrop/flowdrop/core'),
   ]);
 
   // This registers code/markdown fields into the global registry
-  await import('@d34dman/flowdrop/form/code');
-  await import('@d34dman/flowdrop/form/markdown');
+  await import('@flowdrop/flowdrop/form/code');
+  await import('@flowdrop/flowdrop/form/markdown');
 
   return mountFlowDropApp({ container, endpoints });
 }
@@ -92,7 +92,7 @@ import { onMount } from 'svelte';
 let app;
 onMount(async () => {
   if (!browser) return;
-  const { mountFlowDropApp } = await import('@d34dman/flowdrop/editor');
+  const { mountFlowDropApp } = await import('@flowdrop/flowdrop/editor');
   app = mountFlowDropApp({ container: document.getElementById('editor'), ... });
   return () => app?.destroy();
 });
@@ -128,7 +128,7 @@ If you see `Failed to resolve import` errors during development, exclude FlowDro
 // vite.config.ts
 export default defineConfig({
   optimizeDeps: {
-    exclude: ['@d34dman/flowdrop', '@xyflow/svelte']
+    exclude: ['@flowdrop/flowdrop', '@xyflow/svelte']
   }
 });
 ```
@@ -157,7 +157,7 @@ workflowActions.batchUpdate(() => {
 Group related changes into a single undo step:
 
 ```javascript
-import { historyActions } from '@d34dman/flowdrop/editor';
+import { historyActions } from '@flowdrop/flowdrop/editor';
 
 historyActions.startTransaction();
 // ... multiple changes

@@ -6,8 +6,8 @@
 	import { SvelteFlow } from '@xyflow/svelte';
 	import type { Node, ColorMode } from '@xyflow/svelte';
 	import '@xyflow/svelte/dist/style.css';
-	import { UniversalNode, registerBuiltinNodes } from '@d34dman/flowdrop/editor';
-	import '@d34dman/flowdrop/styles';
+	import { UniversalNode, registerBuiltinNodes } from '@flowdrop/flowdrop/editor';
+	import '@flowdrop/flowdrop/styles';
 
 	let {
 		data,

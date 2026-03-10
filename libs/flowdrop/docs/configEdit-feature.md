@@ -178,7 +178,7 @@ import {
 	hasConfigEditOptions,
 	shouldShowExternalEdit,
 	shouldUseDynamicSchema
-} from '@d34dman/flowdrop';
+} from '@flowdrop/flowdrop';
 ```
 
 ### `fetchDynamicSchema(endpoint, node, workflowId?)`
@@ -234,7 +234,7 @@ import type {
 	ExternalEditLink,
 	HttpMethod,
 	DynamicSchemaResult
-} from '@d34dman/flowdrop';
+} from '@flowdrop/flowdrop';
 ```
 
 ## Demo Nodes

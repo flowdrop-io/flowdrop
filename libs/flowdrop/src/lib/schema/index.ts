@@ -6,7 +6,7 @@
  *
  * @example
  * ```typescript
- * import { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '@d34dman/flowdrop/core';
+ * import { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '@flowdrop/flowdrop/core';
  *
  * // Use with any JSON Schema validator (e.g., Ajv)
  * import Ajv from 'ajv/dist/2020';

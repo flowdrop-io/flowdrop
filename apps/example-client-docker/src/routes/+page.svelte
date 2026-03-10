@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { App } from '@d34dman/flowdrop';
-	import { createEndpointConfig, createAgentSpecEndpointConfig } from '@d34dman/flowdrop/core';
-	import '@d34dman/flowdrop/styles/base.css';
+	import { App } from '@flowdrop/flowdrop';
+	import { createEndpointConfig, createAgentSpecEndpointConfig } from '@flowdrop/flowdrop/core';
+	import '@flowdrop/flowdrop/styles/base.css';
 	import { page } from '$app/stores';
 
 	let { data } = $props();

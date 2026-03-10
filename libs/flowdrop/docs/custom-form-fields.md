@@ -63,7 +63,7 @@ Registrations are **priority-ordered** — higher priority matchers are checked 
 **2. Register it:**
 
 ```typescript
-import { registerFieldComponent } from '@d34dman/flowdrop/form';
+import { registerFieldComponent } from '@flowdrop/flowdrop/form';
 import ColorPickerField from './ColorPickerField.svelte';
 
 registerFieldComponent(
@@ -188,7 +188,7 @@ The `minDate` and `maxDate` properties flow through to your component as props.
 The simplest way to register a custom field:
 
 ```typescript
-import { registerFieldComponent } from '@d34dman/flowdrop/form';
+import { registerFieldComponent } from '@flowdrop/flowdrop/form';
 
 registerFieldComponent(
 	'my-field', // unique identifier
@@ -214,7 +214,7 @@ function registerFieldComponent(
 For more control, use the singleton registry directly:
 
 ```typescript
-import { fieldComponentRegistry } from '@d34dman/flowdrop/form';
+import { fieldComponentRegistry } from '@flowdrop/flowdrop/form';
 
 fieldComponentRegistry.register('my-field', {
 	component: MyComponent,
@@ -315,7 +315,7 @@ const nodeMetadata = {
 
 ```svelte
 <script>
-	import { SchemaForm } from '@d34dman/flowdrop/form';
+	import { SchemaForm } from '@flowdrop/flowdrop/form';
 
 	const schema = {
 		type: 'object',
@@ -385,9 +385,9 @@ These require explicit registration (heavy dependencies):
 
 | Schema                               | Import path                       | Registration function           |
 | ------------------------------------ | --------------------------------- | ------------------------------- |
-| `format: "json"` or `format: "code"` | `@d34dman/flowdrop/form/code`     | `registerCodeEditorField()`     |
-| `format: "template"`                 | `@d34dman/flowdrop/form/code`     | `registerTemplateEditorField()` |
-| `format: "markdown"`                 | `@d34dman/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
+| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField()`     |
+| `format: "template"`                 | `@flowdrop/flowdrop/form/code`     | `registerTemplateEditorField()` |
+| `format: "markdown"`                 | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
 
 If a heavy editor format is used but not registered, `FormFieldLight` shows a helpful fallback message with the required import.
 
@@ -410,7 +410,7 @@ import {
 	selectOptionsMatcher, // has oneOf or options
 	arrayMatcher, // type: "array" + has items
 	autocompleteMatcher // format: "autocomplete" + has autocomplete.url
-} from '@d34dman/flowdrop/form';
+} from '@flowdrop/flowdrop/form';
 ```
 
 ---
@@ -424,7 +424,7 @@ import {
 	isFieldTypeRegistered,
 	clearFieldRegistry,
 	getFieldRegistrySize
-} from '@d34dman/flowdrop/form';
+} from '@flowdrop/flowdrop/form';
 
 // Remove a field registration
 unregisterFieldComponent('color-picker'); // returns true if it existed
@@ -513,7 +513,7 @@ interface FieldSchema {
 
 | Path                              | What it provides                                                                                              |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `@d34dman/flowdrop/form`          | `registerFieldComponent`, `fieldComponentRegistry`, matchers, `SchemaForm`, all light field components, types |
-| `@d34dman/flowdrop/form/code`     | `registerCodeEditorField`, `registerTemplateEditorField`, `FormCodeEditor`, `FormTemplateEditor`              |
-| `@d34dman/flowdrop/form/markdown` | `registerMarkdownEditorField`, `FormMarkdownEditor`                                                           |
-| `@d34dman/flowdrop/form/full`     | Full form module with all editors pre-bundled                                                                 |
+| `@flowdrop/flowdrop/form`          | `registerFieldComponent`, `fieldComponentRegistry`, matchers, `SchemaForm`, all light field components, types |
+| `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField`, `registerTemplateEditorField`, `FormCodeEditor`, `FormTemplateEditor`              |
+| `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField`, `FormMarkdownEditor`                                                           |
+| `@flowdrop/flowdrop/form/full`     | Full form module with all editors pre-bundled                                                                 |

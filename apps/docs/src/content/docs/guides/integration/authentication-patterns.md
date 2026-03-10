@@ -10,7 +10,7 @@ FlowDrop supports three authentication providers that control how API requests a
 For development and prototyping when your backend doesn't require auth:
 
 ```typescript
-import { NoAuthProvider } from '@d34dman/flowdrop/core';
+import { NoAuthProvider } from '@flowdrop/flowdrop/core';
 
 const app = await mountFlowDropApp(container, {
   authProvider: new NoAuthProvider()
@@ -24,7 +24,7 @@ const app = await mountFlowDropApp(container, {
 For simple deployments with a fixed token:
 
 ```typescript
-import { StaticAuthProvider } from '@d34dman/flowdrop/core';
+import { StaticAuthProvider } from '@flowdrop/flowdrop/core';
 ```
 
 ### Bearer Token
@@ -68,7 +68,7 @@ Static tokens cannot be refreshed. If the token expires, FlowDrop API calls will
 For enterprise integrations where your application manages auth:
 
 ```typescript
-import { CallbackAuthProvider } from '@d34dman/flowdrop/core';
+import { CallbackAuthProvider } from '@flowdrop/flowdrop/core';
 
 const authProvider = new CallbackAuthProvider({
   // Called before EVERY API request

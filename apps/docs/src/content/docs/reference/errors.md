@@ -13,7 +13,7 @@ This page covers all error conditions you may encounter when integrating FlowDro
 |---------------|-------|-----|
 | `Container element not found` | The selector or element passed to `container` does not exist in the DOM | Ensure the container element exists before calling `mountFlowDropApp()` |
 | `Container has no dimensions` | The container element has zero width or height | Apply `width` and `height` (or `min-height`) to the container via CSS before mounting |
-| `FlowDrop CSS not imported` | The base styles from `@d34dman/flowdrop/styles` were not loaded | Import `@d34dman/flowdrop/styles` before mounting |
+| `FlowDrop CSS not imported` | The base styles from `@flowdrop/flowdrop/styles` were not loaded | Import `@flowdrop/flowdrop/styles` before mounting |
 | `Cannot mount in server-side context` | `mountFlowDropApp()` was called during SSR (no `window` object) | Guard the call with `if (typeof window !== 'undefined')` — see [Framework Integration](/guides/integration/) |
 
 ```javascript

@@ -238,8 +238,8 @@ The `ChatPanel` component automatically detects and renders interrupts embedded 
 
 ```svelte
 <script lang="ts">
-	import { InterruptBubble } from '@d34dman/flowdrop/playground';
-	import { isInterruptMessageMetadata, metadataToInterrupt } from '@d34dman/flowdrop/playground';
+	import { InterruptBubble } from '@flowdrop/flowdrop/playground';
+	import { isInterruptMessageMetadata, metadataToInterrupt } from '@flowdrop/flowdrop/playground';
 </script>
 
 {#each messages as message}
@@ -267,7 +267,7 @@ import {
 	getPendingInterrupts,
 	getInterrupt,
 	isInterruptPending
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 
 // Read pending interrupts reactively (inside a component with $derived)
 const pending = $derived(getPendingInterrupts());
@@ -308,7 +308,7 @@ You can use prompt components directly:
 
 ```svelte
 <script lang="ts">
-	import { ConfirmationPrompt } from '@d34dman/flowdrop/playground';
+	import { ConfirmationPrompt } from '@flowdrop/flowdrop/playground';
 
 	let config = {
 		message: 'Do you approve this action?',
@@ -403,7 +403,7 @@ import {
 	getInterruptError,
 	getInterruptByMessageId,
 	interruptHasError
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 
 // Use inside components with $derived for reactivity
 const pending = $derived(getPendingInterrupts());
@@ -414,7 +414,7 @@ const submitting = $derived(getIsAnySubmitting());
 #### Actions
 
 ```typescript
-import { interruptActions } from '@d34dman/flowdrop/playground';
+import { interruptActions } from '@flowdrop/flowdrop/playground';
 
 // Add/remove interrupts
 interruptActions.addInterrupt(interrupt);
@@ -441,7 +441,7 @@ When an interrupt is resolved, the UI remains visible but disabled, showing the 
 
 ```svelte
 <script lang="ts">
-	import { getInterrupt } from '@d34dman/flowdrop/playground';
+	import { getInterrupt } from '@flowdrop/flowdrop/playground';
 
 	let { interruptId }: { interruptId: string } = $props();
 	const interrupt = $derived(getInterrupt(interruptId));
@@ -468,7 +468,7 @@ Interrupts are primarily detected through playground message metadata during reg
 For status updates on pending interrupts:
 
 ```typescript
-import { interruptService } from '@d34dman/flowdrop/playground';
+import { interruptService } from '@flowdrop/flowdrop/playground';
 
 // Start polling for a specific interrupt
 interruptService.startPolling(
@@ -606,14 +606,14 @@ import type {
 	InterruptState,
 	InterruptAction,
 	TransitionResult
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 
 // Type guards and converters
 import {
 	isInterruptMetadata,
 	extractInterruptMetadata,
 	metadataToInterrupt
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 
 // State machine utilities
 import {
@@ -626,7 +626,7 @@ import {
 	getErrorMessage,
 	getResolvedValue,
 	toLegacyStatus
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 ```
 
 ## Files Reference

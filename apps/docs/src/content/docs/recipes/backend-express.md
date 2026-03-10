@@ -379,8 +379,8 @@ app.get(`${API_BASE}/port-config`, (req, res) => {
 In your frontend, point FlowDrop to your backend:
 
 ```typescript
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
-import { createEndpointConfig } from '@d34dman/flowdrop/core';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
   endpointConfig: createEndpointConfig('http://localhost:3001/api/flowdrop'),
