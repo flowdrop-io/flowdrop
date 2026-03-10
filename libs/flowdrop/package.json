@@ -1,8 +1,13 @@
 {
 	"name": "@flowdrop/flowdrop",
+	"description": "A drop-in visual workflow editor for any web application. You own the backend. You own the data. You own the orchestration.",
 	"license": "MIT",
 	"private": false,
 	"version": "1.0.0",
+	"author": "Shibin Das (D34dMan)",
+	"bugs": {
+		"url": "https://github.com/flowdrop-io/flowdrop/issues"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pnpm run prepack",
@@ -260,17 +265,24 @@
 			"cookie": "0.7.2"
 		}
 	},
+	"engines": {
+		"node": ">=18"
+	},
 	"keywords": [
 		"svelte",
 		"svelte5",
 		"workflow",
+		"workflow-editor",
 		"editor",
 		"node-editor",
 		"graph-editor",
 		"visual-programming",
 		"xyflow",
 		"flowchart",
-		"dag"
+		"dag",
+		"agent",
+		"ai-workflow",
+		"embeddable"
 	],
 	"dependencies": {
 		"diff": "^8.0.3",
