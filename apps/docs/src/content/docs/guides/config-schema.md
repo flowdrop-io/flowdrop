@@ -302,7 +302,7 @@ You can render the `ConfigForm` component independently:
 
 ```svelte
 <script>
-  import { ConfigForm } from '@d34dman/flowdrop';
+  import { ConfigForm } from '@flowdrop/flowdrop';
 
   const schema = {
     type: 'object',

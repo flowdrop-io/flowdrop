@@ -29,7 +29,7 @@ import {
   getCanUndo,
   getCanRedo,
   historyActions
-} from '@d34dman/flowdrop/editor';
+} from '@flowdrop/flowdrop/editor';
 
 // Check availability
 const canUndo = getCanUndo(); // boolean (reactive in Svelte)
@@ -48,7 +48,7 @@ historyActions.clear(currentWorkflow);
 Group multiple changes into a single undo step:
 
 ```typescript
-import { historyActions, workflowActions } from '@d34dman/flowdrop/editor';
+import { historyActions, workflowActions } from '@flowdrop/flowdrop/editor';
 
 // Start a transaction
 historyActions.startTransaction(currentWorkflow, 'Rearrange layout');
@@ -68,7 +68,7 @@ historyActions.commitTransaction();
 ## Building Custom Undo/Redo Buttons
 
 ```typescript
-import { getCanUndo, getCanRedo, historyActions } from '@d34dman/flowdrop/editor';
+import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
 
 // Create buttons
 const undoBtn = document.getElementById('undo');
@@ -88,7 +88,7 @@ In Svelte, use reactivity instead of polling:
 
 ```svelte
 <script>
-  import { getCanUndo, getCanRedo, historyActions } from '@d34dman/flowdrop/editor';
+  import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
   const canUndo = $derived(getCanUndo());
   const canRedo = $derived(getCanRedo());
 </script>

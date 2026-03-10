@@ -180,7 +180,7 @@ This makes `{{ result.summary }}`, `{{ result.score }}`, and `{{ result.tags[0] 
 The template editor requires CodeMirror. Register it before mounting:
 
 ```typescript
-import { registerTemplateEditorField } from '@d34dman/flowdrop/form/code';
+import { registerTemplateEditorField } from '@flowdrop/flowdrop/form/code';
 registerTemplateEditorField();
 ```
 

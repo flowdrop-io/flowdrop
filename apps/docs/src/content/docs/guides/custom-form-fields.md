@@ -32,7 +32,7 @@ FlowDrop generates configuration forms automatically from JSON Schema. The field
 **2. Register it:**
 
 ```typescript
-import { registerFieldComponent } from '@d34dman/flowdrop/form';
+import { registerFieldComponent } from '@flowdrop/flowdrop/form';
 import ColorPickerField from './ColorPickerField.svelte';
 
 registerFieldComponent(
@@ -157,9 +157,9 @@ These require explicit registration (heavy dependencies):
 
 | Schema | Import path | Registration function |
 |--------|-------------|----------------------|
-| `format: "json"` or `format: "code"` | `@d34dman/flowdrop/form/code` | `registerCodeEditorField()` |
-| `format: "template"` | `@d34dman/flowdrop/form/code` | `registerTemplateEditorField()` |
-| `format: "markdown"` | `@d34dman/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
+| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code` | `registerCodeEditorField()` |
+| `format: "template"` | `@flowdrop/flowdrop/form/code` | `registerTemplateEditorField()` |
+| `format: "markdown"` | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
 
 ## Field Management
 
@@ -170,7 +170,7 @@ import {
   isFieldTypeRegistered,
   clearFieldRegistry,
   getFieldRegistrySize
-} from '@d34dman/flowdrop/form';
+} from '@flowdrop/flowdrop/form';
 
 unregisterFieldComponent('color-picker');
 getRegisteredFieldTypes(); // ["color-picker", ...]

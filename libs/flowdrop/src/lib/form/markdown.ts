@@ -8,8 +8,8 @@
  *
  * @example
  * ```typescript
- * import { SchemaForm } from "@d34dman/flowdrop/form";
- * import { registerMarkdownEditorField } from "@d34dman/flowdrop/form/markdown";
+ * import { SchemaForm } from "@flowdrop/flowdrop/form";
+ * import { registerMarkdownEditorField } from "@flowdrop/flowdrop/form/markdown";
  *
  * // Register markdown editor support (call once at app startup)
  * registerMarkdownEditorField();
@@ -63,7 +63,7 @@ fieldComponentRegistry.onClear(() => {
  * @example
  * ```typescript
  * // In your app's entry point:
- * import { registerMarkdownEditorField } from "@d34dman/flowdrop/form/markdown";
+ * import { registerMarkdownEditorField } from "@flowdrop/flowdrop/form/markdown";
  *
  * registerMarkdownEditorField();
  * ```
@@ -93,7 +93,7 @@ export function registerMarkdownEditorField(priority: number = 100): void {
  *
  * @example
  * ```typescript
- * import { registerMarkdownEditorFieldWithComponent, FormMarkdownEditor } from "@d34dman/flowdrop/form/markdown";
+ * import { registerMarkdownEditorFieldWithComponent, FormMarkdownEditor } from "@flowdrop/flowdrop/form/markdown";
  * registerMarkdownEditorFieldWithComponent(FormMarkdownEditor);
  * ```
  */

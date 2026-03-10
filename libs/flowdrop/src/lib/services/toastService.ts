@@ -10,7 +10,7 @@ import { TOAST_DURATION } from '../config/constants.js';
 /**
  * Default toast options themed with FlowDrop design tokens.
  * Use with <Toaster toastOptions={flowdropToastOptions} containerClassName="flowdrop-toaster" />
- * and import '@d34dman/flowdrop/styles/toast.css' (or app toast.css) so toast bar styles apply.
+ * and import '@flowdrop/flowdrop/styles/toast.css' (or app toast.css) so toast bar styles apply.
  */
 export const flowdropToastOptions: DefaultToastOptions = {
 	className: 'flowdrop-toast-bar',

@@ -29,7 +29,7 @@ FlowDrop's toolbar includes import/export options:
 ### Using the Adapter Directly
 
 ```typescript
-import { AgentSpecAdapter, WorkflowAdapter } from '@d34dman/flowdrop/core';
+import { AgentSpecAdapter, WorkflowAdapter } from '@flowdrop/flowdrop/core';
 
 const workflowAdapter = new WorkflowAdapter(nodeTypes);
 const agentSpecAdapter = new AgentSpecAdapter();
@@ -46,7 +46,7 @@ const agentSpecJson = agentSpecAdapter.exportJSON(standardWorkflow);
 ### Using the WorkflowOperationsHelper
 
 ```typescript
-import { WorkflowOperationsHelper } from '@d34dman/flowdrop/editor';
+import { WorkflowOperationsHelper } from '@flowdrop/flowdrop/editor';
 
 // Export current workflow as Agent Spec
 const result = WorkflowOperationsHelper.exportAsAgentSpec(workflow);
@@ -80,7 +80,7 @@ const workflow = app.getWorkflow();
 Validate a workflow before exporting to Agent Spec:
 
 ```typescript
-import { validateForAgentSpecExport } from '@d34dman/flowdrop/core';
+import { validateForAgentSpecExport } from '@flowdrop/flowdrop/core';
 
 const result = validateForAgentSpecExport(workflow);
 // { valid: boolean, errors: string[], warnings: string[] }

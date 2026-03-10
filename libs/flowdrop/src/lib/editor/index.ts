@@ -13,8 +13,8 @@
  *
  * @example Mounting a standalone workflow editor:
  * ```typescript
- * import { mountFlowDropApp, WorkflowEditor } from "@d34dman/flowdrop/editor";
- * import "@d34dman/flowdrop/styles";
+ * import { mountFlowDropApp, WorkflowEditor } from "@flowdrop/flowdrop/editor";
+ * import "@flowdrop/flowdrop/styles";
  *
  * const app = await mountFlowDropApp(document.getElementById("editor"), {
  *   workflow: myWorkflow,
@@ -25,7 +25,7 @@
  * @example Using WorkflowEditor in Svelte:
  * ```svelte
  * <script>
- *   import { WorkflowEditor } from "@d34dman/flowdrop/editor";
+ *   import { WorkflowEditor } from "@flowdrop/flowdrop/editor";
  * </script>
  *
  * <WorkflowEditor nodes={availableNodes} />

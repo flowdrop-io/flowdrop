@@ -211,8 +211,8 @@ to this runtime. Here's how to wire it up in your application:
 #### 1. Configure the Service
 
 ```typescript
-import { AgentSpecExecutionService } from '@d34dman/flowdrop';
-import { createAgentSpecEndpointConfig } from '@d34dman/flowdrop/core';
+import { AgentSpecExecutionService } from '@flowdrop/flowdrop';
+import { createAgentSpecEndpointConfig } from '@flowdrop/flowdrop/core';
 
 const service = AgentSpecExecutionService.getInstance();
 

@@ -7,7 +7,7 @@ FlowDrop is organized as tree-shakable sub-modules. Import only what you need to
 
 ## Module Structure
 
-### `@d34dman/flowdrop/core`
+### `@flowdrop/flowdrop/core`
 
 Types and utilities with zero heavy dependencies. Safe to import anywhere without pulling in Svelte components or CodeMirror.
 
@@ -24,7 +24,7 @@ Types and utilities with zero heavy dependencies. Safe to import anywhere withou
 - Theme: `theme`, `resolvedTheme`, `setTheme`, `toggleTheme`
 - Utilities: colors, icons, node types, connections, cycle detection
 
-### `@d34dman/flowdrop/editor`
+### `@flowdrop/flowdrop/editor`
 
 Visual workflow editor with `@xyflow/svelte`.
 
@@ -37,7 +37,7 @@ Visual workflow editor with `@xyflow/svelte`.
 - Services: API client, toast service, node execution
 - Registration: `registerCustomNode`, `registerFlowDropPlugin`, `createPlugin`
 
-### `@d34dman/flowdrop/form`
+### `@flowdrop/flowdrop/form`
 
 Dynamic form generation from JSON Schema.
 
@@ -47,7 +47,7 @@ Dynamic form generation from JSON Schema.
 - UISchema: `FormFieldset`, `FormUISchemaRenderer`
 - Registry: `registerFieldComponent`, `fieldComponentRegistry`, matchers
 
-### `@d34dman/flowdrop/form/code`
+### `@flowdrop/flowdrop/form/code`
 
 Code and JSON editor support (adds ~300KB, requires CodeMirror).
 
@@ -55,7 +55,7 @@ Code and JSON editor support (adds ~300KB, requires CodeMirror).
 - Components: `FormCodeEditor`, `FormTemplateEditor`
 - Registration: `registerCodeEditorField()`, `registerTemplateEditorField()`
 
-### `@d34dman/flowdrop/form/markdown`
+### `@flowdrop/flowdrop/form/markdown`
 
 Markdown editor support (requires CodeMirror + `@codemirror/lang-markdown`).
 
@@ -63,14 +63,14 @@ Markdown editor support (requires CodeMirror + `@codemirror/lang-markdown`).
 - Component: `FormMarkdownEditor`
 - Registration: `registerMarkdownEditorField()`
 
-### `@d34dman/flowdrop/display`
+### `@flowdrop/flowdrop/display`
 
 Content rendering components.
 
 **Key exports:**
 - `MarkdownDisplay` — renders markdown content using the `marked` library
 
-### `@d34dman/flowdrop/playground`
+### `@flowdrop/flowdrop/playground`
 
 Interactive workflow testing and human-in-the-loop.
 
@@ -82,7 +82,7 @@ Interactive workflow testing and human-in-the-loop.
 - Mount functions: `mountPlayground`, `unmountPlayground`
 - Types: `PlaygroundSession`, `PlaygroundMessage`, `Interrupt`, `InterruptType`
 
-### `@d34dman/flowdrop/settings`
+### `@flowdrop/flowdrop/settings`
 
 User preferences with hybrid persistence.
 
@@ -91,13 +91,13 @@ User preferences with hybrid persistence.
 - Store: settings state (theme, editor, UI, behavior, API categories)
 - Types: `FlowDropSettings`, `ThemeSettings`, `EditorSettings`, `UISettings`
 
-### `@d34dman/flowdrop/styles`
+### `@flowdrop/flowdrop/styles`
 
 CSS styling with design tokens.
 
 **Exports:** CSS files with `--fd-*` custom properties for theming.
 
-### `@d34dman/flowdrop`
+### `@flowdrop/flowdrop`
 
 Full bundle — re-exports from all sub-modules for convenience. Use this when bundle size is not a concern.
 

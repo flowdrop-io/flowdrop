@@ -12,7 +12,7 @@
  * @example
  * ```typescript
  * // Single import that sets up everything
- * import { SchemaForm, initializeAllFieldTypes } from "@d34dman/flowdrop/form/full";
+ * import { SchemaForm, initializeAllFieldTypes } from "@flowdrop/flowdrop/form/full";
  *
  * // Call once at app startup
  * initializeAllFieldTypes();
@@ -131,7 +131,7 @@ let allFieldTypesInitialized = false;
  *
  * @example
  * ```typescript
- * import { initializeAllFieldTypes } from "@d34dman/flowdrop/form/full";
+ * import { initializeAllFieldTypes } from "@flowdrop/flowdrop/form/full";
  *
  * // In your app's entry point
  * initializeAllFieldTypes();

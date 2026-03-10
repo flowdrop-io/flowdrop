@@ -11,7 +11,7 @@ Full-featured application wrapper with sidebar, editor, navbar, and config panel
 
 ```svelte
 <script>
-  import { App } from '@d34dman/flowdrop/editor';
+  import { App } from '@flowdrop/flowdrop/editor';
 </script>
 
 <App
@@ -49,7 +49,7 @@ Core canvas component using SvelteFlow. Renders nodes and edges with drag-and-dr
 
 ```svelte
 <script>
-  import { WorkflowEditor } from '@d34dman/flowdrop/editor';
+  import { WorkflowEditor } from '@flowdrop/flowdrop/editor';
 </script>
 
 <WorkflowEditor {nodes} {endpointConfig} />
@@ -72,7 +72,7 @@ Left sidebar displaying available node types organized by category.
 
 ```svelte
 <script>
-  import { NodeSidebar } from '@d34dman/flowdrop/editor';
+  import { NodeSidebar } from '@flowdrop/flowdrop/editor';
 </script>
 
 <NodeSidebar {nodes} />
@@ -112,7 +112,7 @@ Renders a form from JSON Schema definition.
 
 ```svelte
 <script>
-  import { SchemaForm } from '@d34dman/flowdrop/form';
+  import { SchemaForm } from '@flowdrop/flowdrop/form';
 </script>
 
 <SchemaForm
@@ -179,7 +179,7 @@ Renders markdown content using the `marked` library.
 
 ```svelte
 <script>
-  import { MarkdownDisplay } from '@d34dman/flowdrop/display';
+  import { MarkdownDisplay } from '@flowdrop/flowdrop/display';
 </script>
 
 <MarkdownDisplay content="**Hello** world" />
@@ -220,7 +220,7 @@ Button to cycle through light/dark/auto themes.
 
 ```svelte
 <script>
-  import { ThemeToggle } from '@d34dman/flowdrop/settings';
+  import { ThemeToggle } from '@flowdrop/flowdrop/settings';
 </script>
 
 <ThemeToggle />

@@ -11,12 +11,12 @@ Import from the most specific module to minimize bundle size:
 
 | Module | Added size (approx.) |
 |--------|---------------------|
-| `@d34dman/flowdrop/core` | ~15KB (types & utils only) |
-| `@d34dman/flowdrop/form` | ~40KB |
-| `@d34dman/flowdrop/editor` | ~200KB (includes @xyflow/svelte) |
-| `@d34dman/flowdrop/form/code` | ~300KB (CodeMirror) |
-| `@d34dman/flowdrop/playground` | ~250KB (editor + chat) |
-| `@d34dman/flowdrop` (full) | ~500KB+ |
+| `@flowdrop/flowdrop/core` | ~15KB (types & utils only) |
+| `@flowdrop/flowdrop/form` | ~40KB |
+| `@flowdrop/flowdrop/editor` | ~200KB (includes @xyflow/svelte) |
+| `@flowdrop/flowdrop/form/code` | ~300KB (CodeMirror) |
+| `@flowdrop/flowdrop/playground` | ~250KB (editor + chat) |
+| `@flowdrop/flowdrop` (full) | ~500KB+ |
 
 Only import `form/code` and `form/markdown` if you actually need code/template editing.
 
@@ -25,12 +25,12 @@ Only import `form/code` and `form/markdown` if you actually need code/template e
 Always import FlowDrop styles. Without this, the editor renders blank:
 
 ```typescript
-import '@d34dman/flowdrop/styles';
+import '@flowdrop/flowdrop/styles';
 ```
 
 Or in CSS:
 ```css
-@import '@d34dman/flowdrop/styles';
+@import '@flowdrop/flowdrop/styles';
 ```
 
 ## Svelte / SvelteKit
@@ -39,8 +39,8 @@ FlowDrop is a Svelte 5 library, so it integrates natively:
 
 ```svelte
 <script>
-  import { App } from '@d34dman/flowdrop/editor';
-  import '@d34dman/flowdrop/styles';
+  import { App } from '@flowdrop/flowdrop/editor';
+  import '@flowdrop/flowdrop/styles';
 </script>
 
 <App
@@ -66,8 +66,8 @@ For SvelteKit, ensure FlowDrop runs only on the client (it requires DOM):
 Use the [Mount API](/reference/mount-api/) to embed FlowDrop in any container:
 
 ```typescript
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
-import '@d34dman/flowdrop/styles';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import '@flowdrop/flowdrop/styles';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
   endpointConfig: createEndpointConfig('/api/flowdrop'),
@@ -81,8 +81,8 @@ app.destroy();
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
-import '@d34dman/flowdrop/styles';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import '@flowdrop/flowdrop/styles';
 
 function FlowDropEditor({ apiUrl }) {
   const containerRef = useRef(null);

@@ -8,7 +8,7 @@
  *
  * @example Using mountPlayground for vanilla JS / Drupal / IIFE:
  * ```typescript
- * import { mountPlayground, createEndpointConfig } from "@d34dman/flowdrop/playground";
+ * import { mountPlayground, createEndpointConfig } from "@flowdrop/flowdrop/playground";
  *
  * const app = await mountPlayground(
  *   document.getElementById("playground-container"),
@@ -55,7 +55,7 @@
  * @example In Svelte (Standalone mode):
  * ```svelte
  * <script>
- *   import { Playground } from "@d34dman/flowdrop/playground";
+ *   import { Playground } from "@flowdrop/flowdrop/playground";
  * </script>
  *
  * <Playground workflowId="wf-123" mode="standalone" />
@@ -64,7 +64,7 @@
  * @example In Svelte (Embedded mode):
  * ```svelte
  * <script>
- *   import { Playground } from "@d34dman/flowdrop/playground";
+ *   import { Playground } from "@flowdrop/flowdrop/playground";
  *   let showPlayground = false;
  * </script>
  *
@@ -81,7 +81,7 @@
  * @example In Svelte (Modal mode):
  * ```svelte
  * <script>
- *   import { PlaygroundModal } from "@d34dman/flowdrop/playground";
+ *   import { PlaygroundModal } from "@flowdrop/flowdrop/playground";
  *   let showPlayground = false;
  * </script>
  *
@@ -95,7 +95,7 @@
  *
  * @example Using mountPlayground with modal mode:
  * ```typescript
- * import { mountPlayground, createEndpointConfig } from "@d34dman/flowdrop/playground";
+ * import { mountPlayground, createEndpointConfig } from "@flowdrop/flowdrop/playground";
  *
  * const app = await mountPlayground(
  *   document.getElementById("playground-container"),

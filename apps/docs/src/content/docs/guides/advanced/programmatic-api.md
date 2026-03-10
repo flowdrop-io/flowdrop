@@ -10,7 +10,7 @@ While FlowDrop is primarily a visual editor, you may need to create or modify wo
 The `WorkflowAdapter` provides a high-level API for workflow manipulation using a `StandardWorkflow` format.
 
 ```typescript
-import { WorkflowAdapter } from '@d34dman/flowdrop/core';
+import { WorkflowAdapter } from '@flowdrop/flowdrop/core';
 
 // Initialize with your node type definitions
 const adapter = new WorkflowAdapter(nodeTypes);
@@ -126,7 +126,7 @@ FlowDrop's editor uses helper classes internally. These are available for advanc
 Determines edge visual styles based on port data types:
 
 ```typescript
-import { EdgeStylingHelper } from '@d34dman/flowdrop/editor';
+import { EdgeStylingHelper } from '@flowdrop/flowdrop/editor';
 
 // Get edge category from source port type
 const category = EdgeStylingHelper.getEdgeCategory('trigger'); // 'trigger'
@@ -150,7 +150,7 @@ Edge categories and their visual styles:
 Creates nodes from drag-and-drop data and loads node metadata:
 
 ```typescript
-import { NodeOperationsHelper } from '@d34dman/flowdrop/editor';
+import { NodeOperationsHelper } from '@flowdrop/flowdrop/editor';
 
 // Create a node from sidebar drop data
 const node = NodeOperationsHelper.createNodeFromDrop(
@@ -168,7 +168,7 @@ const nodes = await NodeOperationsHelper.loadNodesFromApi();
 Workflow-level operations including save, export, and validation:
 
 ```typescript
-import { WorkflowOperationsHelper } from '@d34dman/flowdrop/editor';
+import { WorkflowOperationsHelper } from '@flowdrop/flowdrop/editor';
 
 // Save to backend
 const saved = await WorkflowOperationsHelper.saveWorkflow(workflow);

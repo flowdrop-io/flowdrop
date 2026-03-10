@@ -8,8 +8,8 @@
  *
  * @example
  * ```typescript
- * import { SchemaForm } from "@d34dman/flowdrop/form";
- * import { registerCodeEditorField, registerTemplateEditorField } from "@d34dman/flowdrop/form/code";
+ * import { SchemaForm } from "@flowdrop/flowdrop/form";
+ * import { registerCodeEditorField, registerTemplateEditorField } from "@flowdrop/flowdrop/form/code";
  *
  * // Register code editor support (call once at app startup)
  * registerCodeEditorField();
@@ -85,7 +85,7 @@ fieldComponentRegistry.onClear(() => {
  * @example
  * ```typescript
  * // In your app's entry point:
- * import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
+ * import { registerCodeEditorField } from "@flowdrop/flowdrop/form/code";
  *
  * registerCodeEditorField();
  * ```
@@ -117,7 +117,7 @@ export function registerCodeEditorField(priority: number = 100): void {
  * @example
  * ```typescript
  * // In your app's entry point:
- * import { registerTemplateEditorField } from "@d34dman/flowdrop/form/code";
+ * import { registerTemplateEditorField } from "@flowdrop/flowdrop/form/code";
  *
  * registerTemplateEditorField();
  * ```
@@ -159,7 +159,7 @@ export function registerAllCodeEditors(priority: number = 100): void {
  *
  * @example
  * ```typescript
- * import { registerCodeEditorFieldWithComponent, FormCodeEditor } from "@d34dman/flowdrop/form/code";
+ * import { registerCodeEditorFieldWithComponent, FormCodeEditor } from "@flowdrop/flowdrop/form/code";
  * registerCodeEditorFieldWithComponent(FormCodeEditor);
  * ```
  */

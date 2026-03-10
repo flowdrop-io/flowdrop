@@ -11,9 +11,9 @@ Use FlowDrop components directly in Svelte:
 
 ```svelte
 <script>
-  import { App } from '@d34dman/flowdrop/editor';
-  import { createEndpointConfig } from '@d34dman/flowdrop/core';
-  import '@d34dman/flowdrop/styles';
+  import { App } from '@flowdrop/flowdrop/editor';
+  import { createEndpointConfig } from '@flowdrop/flowdrop/core';
+  import '@flowdrop/flowdrop/styles';
 
   const endpointConfig = createEndpointConfig('/api/flowdrop');
 </script>
@@ -32,7 +32,7 @@ For SvelteKit, ensure FlowDrop runs only on the client:
 ```svelte
 <script>
   import { browser } from '$app/environment';
-  import { App } from '@d34dman/flowdrop/editor';
+  import { App } from '@flowdrop/flowdrop/editor';
 </script>
 
 {#if browser}
@@ -45,9 +45,9 @@ For SvelteKit, ensure FlowDrop runs only on the client:
 Use the mount API to embed FlowDrop in any container element:
 
 ```javascript
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
-import { createEndpointConfig } from '@d34dman/flowdrop/core';
-import '@d34dman/flowdrop/styles';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
+import '@flowdrop/flowdrop/styles';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
   endpointConfig: createEndpointConfig('/api/flowdrop'),
@@ -71,7 +71,7 @@ See [Mount API](/reference/mount-api/) for the complete options and return value
 Connect to your backend by configuring endpoints:
 
 ```typescript
-import { createEndpointConfig } from '@d34dman/flowdrop/core';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
 
 // Simple: just a base URL (all endpoints use defaults)
 const config = createEndpointConfig('/api/flowdrop');
@@ -98,7 +98,7 @@ See [Backend Implementation](/guides/integration/backend-implementation/) for wh
 FlowDrop supports three auth providers. Quick examples:
 
 ```typescript
-import { NoAuthProvider, StaticAuthProvider, CallbackAuthProvider } from '@d34dman/flowdrop/core';
+import { NoAuthProvider, StaticAuthProvider, CallbackAuthProvider } from '@flowdrop/flowdrop/core';
 
 // No auth (development)
 authProvider: new NoAuthProvider()

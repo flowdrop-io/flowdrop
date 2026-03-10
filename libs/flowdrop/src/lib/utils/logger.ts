@@ -8,7 +8,7 @@
  *
  * @example
  * ```typescript
- * import { setLogLevel } from '@d34dman/flowdrop/core';
+ * import { setLogLevel } from '@flowdrop/flowdrop/core';
  *
  * // Enable debug logging during development
  * setLogLevel('debug');

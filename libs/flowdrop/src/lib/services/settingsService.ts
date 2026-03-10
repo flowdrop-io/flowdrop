@@ -190,8 +190,8 @@ export const settingsApi = {
  *
  * @example
  * ```typescript
- * import { SettingsService } from "@d34dman/flowdrop";
- * import { setSettingsService } from "@d34dman/flowdrop";
+ * import { SettingsService } from "@flowdrop/flowdrop";
+ * import { setSettingsService } from "@flowdrop/flowdrop";
  *
  * const service = new SettingsService(endpointConfig);
  * setSettingsService(service);

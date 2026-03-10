@@ -10,7 +10,7 @@ FlowDrop provides several testing layers: pure unit tests via `WorkflowAdapter` 
 `WorkflowAdapter` works in Node.js without a browser — ideal for testing your workflow logic in Vitest or Jest.
 
 ```typescript
-import { WorkflowAdapter } from '@d34dman/flowdrop/core';
+import { WorkflowAdapter } from '@flowdrop/flowdrop/core';
 import { describe, it, expect } from 'vitest';
 
 describe('WorkflowAdapter', () => {
@@ -121,8 +121,8 @@ afterAll(() => server.close());
 Test that FlowDrop mounts and loads correctly in JSDOM:
 
 ```typescript
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
-import { createEndpointConfig } from '@d34dman/flowdrop/core';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('FlowDrop mount', () => {
@@ -204,7 +204,7 @@ test('can drag a node onto the canvas', async ({ page }) => {
 Validate your node metadata structure using `WorkflowAdapter`:
 
 ```typescript
-import { WorkflowAdapter } from '@d34dman/flowdrop/core';
+import { WorkflowAdapter } from '@flowdrop/flowdrop/core';
 import { myCustomNode } from '../src/nodes/my-custom-node';
 
 describe('Custom node metadata', () => {

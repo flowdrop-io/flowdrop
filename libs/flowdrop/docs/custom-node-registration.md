@@ -41,7 +41,7 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 ```svelte
 <!-- CodeEditorNode.svelte -->
 <script lang="ts">
-	import type { NodeComponentProps } from '@d34dman/flowdrop/editor';
+	import type { NodeComponentProps } from '@flowdrop/flowdrop/editor';
 
 	let { data, selected = false }: NodeComponentProps = $props();
 </script>
@@ -68,7 +68,7 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 **2. Register it:**
 
 ```typescript
-import { registerCustomNode } from '@d34dman/flowdrop/editor';
+import { registerCustomNode } from '@flowdrop/flowdrop/editor';
 import CodeEditorNode from './CodeEditorNode.svelte';
 
 registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
@@ -81,8 +81,8 @@ registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
 **3. Mount the editor with node metadata:**
 
 ```typescript
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
-import '@d34dman/flowdrop/styles';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import '@flowdrop/flowdrop/styles';
 
 const app = await mountFlowDropApp(document.getElementById('editor')!, {
 	nodes: [
@@ -156,7 +156,7 @@ User-configured values are available under `data.config`. These correspond to th
 
 ```svelte
 <script lang="ts">
-	import type { NodeComponentProps } from '@d34dman/flowdrop/editor';
+	import type { NodeComponentProps } from '@flowdrop/flowdrop/editor';
 
 	let {
 		data,
@@ -195,7 +195,7 @@ If you want a button that opens the node's configuration panel:
 The simplest API. Registers one component with an explicit type string.
 
 ```typescript
-import { registerCustomNode } from '@d34dman/flowdrop/editor';
+import { registerCustomNode } from '@flowdrop/flowdrop/editor';
 import MyNode from './MyNode.svelte';
 
 registerCustomNode('myproject:special', 'Special Node', MyNode, {
@@ -228,7 +228,7 @@ function registerCustomNode(
 Registers multiple node types under a shared namespace. All type identifiers are automatically prefixed with the namespace (e.g., `"awesome"` + `"fancy"` becomes `"awesome:fancy"`).
 
 ```typescript
-import { registerFlowDropPlugin } from '@d34dman/flowdrop/editor';
+import { registerFlowDropPlugin } from '@flowdrop/flowdrop/editor';
 import FancyNode from './FancyNode.svelte';
 import GlowNode from './GlowNode.svelte';
 
@@ -269,7 +269,7 @@ const result = registerFlowDropPlugin({
 A chainable API that builds and registers a plugin in one expression:
 
 ```typescript
-import { createPlugin } from '@d34dman/flowdrop/editor';
+import { createPlugin } from '@flowdrop/flowdrop/editor';
 import FancyNode from './FancyNode.svelte';
 import GlowNode from './GlowNode.svelte';
 
@@ -393,7 +393,7 @@ import {
 	getRegisteredPlugins,
 	getPluginNodeCount,
 	isValidNamespace
-} from '@d34dman/flowdrop/editor';
+} from '@flowdrop/flowdrop/editor';
 
 // Remove all nodes from a plugin
 const removed = unregisterFlowDropPlugin('awesome');

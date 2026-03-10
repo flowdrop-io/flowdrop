@@ -15,8 +15,8 @@ Import the editor component directly in a Svelte 5 project:
 
 ```svelte
 <script lang="ts">
-  import { WorkflowEditor } from '@d34dman/flowdrop';
-  import '@d34dman/flowdrop/styles/base.css';
+  import { WorkflowEditor } from '@flowdrop/flowdrop';
+  import '@flowdrop/flowdrop/styles/base.css';
 </script>
 
 <WorkflowEditor />
@@ -30,8 +30,8 @@ For vanilla JS, React, Vue, Angular, or any framework — use the mount API:
 
 ```svelte
 <script lang="ts">
-  import '@d34dman/flowdrop/styles';
-  import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop';
+  import '@flowdrop/flowdrop/styles';
+  import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop';
   import { onMount } from 'svelte';
 
   let container: HTMLDivElement;
@@ -55,8 +55,8 @@ For vanilla JS, React, Vue, Angular, or any framework — use the mount API:
 ### Vanilla JS
 
 ```javascript
-import { mountFlowDropApp, createEndpointConfig } from '@d34dman/flowdrop';
-import '@d34dman/flowdrop/styles';
+import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop';
+import '@flowdrop/flowdrop/styles';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
   endpointConfig: createEndpointConfig('/api/flowdrop'),

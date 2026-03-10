@@ -10,8 +10,8 @@
  * @example
  * ```typescript
  * // Import types and utilities without heavy dependencies
- * import type { Workflow, WorkflowNode, NodeMetadata } from "@d34dman/flowdrop/core";
- * import { getStatusColor, createDefaultExecutionInfo } from "@d34dman/flowdrop/core";
+ * import type { Workflow, WorkflowNode, NodeMetadata } from "@flowdrop/flowdrop/core";
+ * import { getStatusColor, createDefaultExecutionInfo } from "@flowdrop/flowdrop/core";
  * ```
  */
 

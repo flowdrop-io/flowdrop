@@ -8,13 +8,13 @@
  *
  * @example
  * ```typescript
- * import { MarkdownDisplay } from "@d34dman/flowdrop/display";
+ * import { MarkdownDisplay } from "@flowdrop/flowdrop/display";
  * ```
  *
  * @example In Svelte:
  * ```svelte
  * <script>
- *   import { MarkdownDisplay } from "@d34dman/flowdrop/display";
+ *   import { MarkdownDisplay } from "@flowdrop/flowdrop/display";
  *
  *   const markdown = `
  *   # Hello World

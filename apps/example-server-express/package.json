@@ -1,5 +1,5 @@
 {
-	"name": "@d34dman/flowdrop-example-server-express",
+	"name": "@flowdrop/flowdrop-example-server-express",
 	"description": "[PLACEHOLDER] Example Express server for FlowDrop API — not yet ready for use",
 	"private": true,
 	"version": "0.0.1",

@@ -37,16 +37,16 @@ FlowDrop is tree-shakable. Each sub-module has different dependencies and bundle
 
 | Module | What it provides | Heavy deps |
 |--------|-----------------|------------|
-| `@d34dman/flowdrop/core` | Types, utilities, auth providers, config helpers | None |
-| `@d34dman/flowdrop/editor` | WorkflowEditor, mount functions, node components | @xyflow/svelte |
-| `@d34dman/flowdrop/form` | SchemaForm, field components | None |
-| `@d34dman/flowdrop/form/code` | Code & template editors | CodeMirror (~300KB) |
-| `@d34dman/flowdrop/form/markdown` | Markdown editor | CodeMirror |
-| `@d34dman/flowdrop/display` | MarkdownDisplay | marked |
-| `@d34dman/flowdrop/playground` | Playground, chat, interrupts | Editor + Form |
-| `@d34dman/flowdrop/settings` | Settings panel, theme toggle | Form |
-| `@d34dman/flowdrop/styles` | CSS design tokens | None |
-| `@d34dman/flowdrop` | Full bundle (everything) | All of the above |
+| `@flowdrop/flowdrop/core` | Types, utilities, auth providers, config helpers | None |
+| `@flowdrop/flowdrop/editor` | WorkflowEditor, mount functions, node components | @xyflow/svelte |
+| `@flowdrop/flowdrop/form` | SchemaForm, field components | None |
+| `@flowdrop/flowdrop/form/code` | Code & template editors | CodeMirror (~300KB) |
+| `@flowdrop/flowdrop/form/markdown` | Markdown editor | CodeMirror |
+| `@flowdrop/flowdrop/display` | MarkdownDisplay | marked |
+| `@flowdrop/flowdrop/playground` | Playground, chat, interrupts | Editor + Form |
+| `@flowdrop/flowdrop/settings` | Settings panel, theme toggle | Form |
+| `@flowdrop/flowdrop/styles` | CSS design tokens | None |
+| `@flowdrop/flowdrop` | Full bundle (everything) | All of the above |
 
 **Dependency chain:**
 ```mermaid
@@ -175,14 +175,14 @@ FlowDrop has two registries for extending the editor:
 ### Node Component Registry
 Register custom Svelte components for new node types:
 ```typescript
-import { registerCustomNode } from '@d34dman/flowdrop/editor';
+import { registerCustomNode } from '@flowdrop/flowdrop/editor';
 registerCustomNode('my-custom-node', MyNodeComponent);
 ```
 
 ### Field Component Registry
 Register custom form fields for config schemas:
 ```typescript
-import { registerFieldComponent } from '@d34dman/flowdrop/form';
+import { registerFieldComponent } from '@flowdrop/flowdrop/form';
 registerFieldComponent(matcher, MyFieldComponent, { priority: 10 });
 ```
 

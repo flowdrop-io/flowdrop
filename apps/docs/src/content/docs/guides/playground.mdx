@@ -18,8 +18,8 @@ Create sessions, send messages, and watch the simulated workflow execute in real
 ### Mount API
 
 ```typescript
-import { mountPlayground } from '@d34dman/flowdrop/playground';
-import '@d34dman/flowdrop/styles';
+import { mountPlayground } from '@flowdrop/flowdrop/playground';
+import '@flowdrop/flowdrop/styles';
 
 const playground = await mountPlayground(container, {
   workflowId: 'my-workflow-id',
@@ -38,7 +38,7 @@ playground.destroy();
 
 ```svelte
 <script lang="ts">
-  import { Playground } from '@d34dman/flowdrop/playground';
+  import { Playground } from '@flowdrop/flowdrop/playground';
 </script>
 
 <Playground workflowId="my-workflow-id" />
@@ -89,7 +89,7 @@ const playground = await mountPlayground(container, {
 import {
   defaultShouldStopPolling,
   defaultIsTerminalStatus
-} from '@d34dman/flowdrop/playground';
+} from '@flowdrop/flowdrop/playground';
 ```
 
 The `awaiting_input` status pauses polling automatically — call `playground.startPolling()` to resume after an interrupt is resolved.

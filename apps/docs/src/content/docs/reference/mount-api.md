@@ -10,7 +10,7 @@ The mount API lets you embed FlowDrop into any HTML container, regardless of fra
 Mounts the full FlowDrop application (sidebar, editor, config panel) into a container.
 
 ```typescript
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
 
 const app = await mountFlowDropApp(container: HTMLElement, options: FlowDropMountOptions);
 ```
@@ -130,7 +130,7 @@ interface MountedFlowDropApp {
 Mounts just the editor canvas — no navbar, no sidebar. Useful for embedding a minimal editor.
 
 ```typescript
-import { mountWorkflowEditor } from '@d34dman/flowdrop/editor';
+import { mountWorkflowEditor } from '@flowdrop/flowdrop/editor';
 
 const editor = await mountWorkflowEditor(container, {
   workflow: myWorkflow,
@@ -148,7 +148,7 @@ Returns the same `MountedFlowDropApp` interface as `mountFlowDropApp()`.
 Mounts the interactive playground for workflow testing.
 
 ```typescript
-import { mountPlayground } from '@d34dman/flowdrop/playground';
+import { mountPlayground } from '@flowdrop/flowdrop/playground';
 
 const playground = await mountPlayground(container, {
   workflowId: 'my-workflow-id',
@@ -199,7 +199,7 @@ interface MountedPlayground {
 Clean up a mounted instance. Equivalent to calling `.destroy()` on the returned object.
 
 ```typescript
-import { unmountFlowDropApp } from '@d34dman/flowdrop/editor';
+import { unmountFlowDropApp } from '@flowdrop/flowdrop/editor';
 
 unmountFlowDropApp(container);
 ```

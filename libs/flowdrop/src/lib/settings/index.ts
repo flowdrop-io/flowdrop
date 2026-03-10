@@ -5,15 +5,15 @@
  * preferences with hybrid persistence (localStorage + optional API sync).
  *
  * Theme stores and functions (theme, resolvedTheme, setTheme, toggleTheme,
- * cycleTheme, initializeTheme) are exported from `@d34dman/flowdrop/core`
+ * cycleTheme, initializeTheme) are exported from `@flowdrop/flowdrop/core`
  * (sourced from settingsStore).
  *
  * @module settings
  *
  * @example
  * ```typescript
- * import { settingsStore, updateSettings, SettingsPanel } from "@d34dman/flowdrop/settings";
- * import { theme, setTheme } from "@d34dman/flowdrop/core";
+ * import { settingsStore, updateSettings, SettingsPanel } from "@flowdrop/flowdrop/settings";
+ * import { theme, setTheme } from "@flowdrop/flowdrop/core";
  * ```
  */
 

@@ -242,8 +242,8 @@ onAgentSpecExecutionFailed: (executionId, error) => {
 Here's a full integration using all lifecycle events:
 
 ```typescript
-import { mountFlowDropApp } from '@d34dman/flowdrop/editor';
-import { createEndpointConfig } from '@d34dman/flowdrop/core';
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
   endpointConfig: createEndpointConfig('/api/flowdrop'),
