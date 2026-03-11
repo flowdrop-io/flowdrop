@@ -143,64 +143,86 @@
 
 	<div class="flowdrop-navbar__actions">
 		{#if primaryActions.length > 0}
-			<!-- Split button: first action + chevron dropdown for rest -->
-			{#if primaryActions[0]}
-				{@const primaryAction = primaryActions[0]}
-				<a
-					href={primaryAction.href}
-					class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant ||
-						'primary'}"
-					onclick={primaryAction.onclick}
-					target={primaryAction.external ? '_blank' : undefined}
-					rel={primaryAction.external ? 'noopener noreferrer' : undefined}
-				>
-					{#if primaryAction.icon}
-						<span class="flowdrop-navbar__action-icon">
-							<Icon icon={primaryAction.icon} class="w-4 h-4" />
-						</span>
-					{/if}
-					<span class="flowdrop-navbar__action-label">{primaryAction.label}</span>
-				</a>
-			{/if}
-
-			<!-- Dropdown for Additional Actions -->
-			{#if primaryActions.length > 1}
-				<div class="flowdrop-navbar__dropdown">
-					<button
-						class="flowdrop-navbar__dropdown-trigger"
-						onclick={() => (isDropdownOpen = !isDropdownOpen)}
-						aria-expanded={isDropdownOpen}
-						aria-haspopup="true"
+			<!-- Split mode: all actions as individual side-by-side buttons -->
+			<div class="flowdrop-navbar__split-actions">
+				{#each primaryActions as action (action.label)}
+					<a
+						href={action.href}
+						class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant || 'primary'}"
+						onclick={action.onclick}
+						target={action.external ? '_blank' : undefined}
+						rel={action.external ? 'noopener noreferrer' : undefined}
 					>
-						<Icon icon="heroicons:chevron-down" class="w-4 h-4" />
-					</button>
+						{#if action.icon}
+							<span class="flowdrop-navbar__action-icon">
+								<Icon icon={action.icon} class="w-4 h-4" />
+							</span>
+						{/if}
+						<span class="flowdrop-navbar__action-label">{action.label}</span>
+					</a>
+				{/each}
+			</div>
 
-					{#if isDropdownOpen}
-						<div class="flowdrop-navbar__dropdown-menu">
-							{#each primaryActions.slice(1) as action (action.label)}
-								<a
-									href={action.href}
-									class="flowdrop-navbar__dropdown-item"
-									onclick={(e) => {
-										action.onclick?.(e);
-										isDropdownOpen = false;
-									}}
-									target={action.external ? '_blank' : undefined}
-									rel={action.external ? 'noopener noreferrer' : undefined}
-								>
-									{#if action.icon}
-										<Icon icon={action.icon} class="w-4 h-4" />
-									{/if}
-									<span>{action.label}</span>
-									{#if action.external}
-										<Icon icon="mdi:open-in-new" class="w-3 h-3" />
-									{/if}
-								</a>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/if}
+			<!-- Dropdown mode: first action + chevron dropdown for rest -->
+			<div class="flowdrop-navbar__dropdown-mode">
+				{#if primaryActions[0]}
+					{@const primaryAction = primaryActions[0]}
+					<a
+						href={primaryAction.href}
+						class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant ||
+							'primary'}"
+						onclick={primaryAction.onclick}
+						target={primaryAction.external ? '_blank' : undefined}
+						rel={primaryAction.external ? 'noopener noreferrer' : undefined}
+					>
+						{#if primaryAction.icon}
+							<span class="flowdrop-navbar__action-icon">
+								<Icon icon={primaryAction.icon} class="w-4 h-4" />
+							</span>
+						{/if}
+						<span class="flowdrop-navbar__action-label">{primaryAction.label}</span>
+					</a>
+				{/if}
+
+				<!-- Dropdown for Additional Actions -->
+				{#if primaryActions.length > 1}
+					<div class="flowdrop-navbar__dropdown">
+						<button
+							class="flowdrop-navbar__dropdown-trigger"
+							onclick={() => (isDropdownOpen = !isDropdownOpen)}
+							aria-expanded={isDropdownOpen}
+							aria-haspopup="true"
+						>
+							<Icon icon="heroicons:chevron-down" class="w-4 h-4" />
+						</button>
+
+						{#if isDropdownOpen}
+							<div class="flowdrop-navbar__dropdown-menu">
+								{#each primaryActions.slice(1) as action (action.label)}
+									<a
+										href={action.href}
+										class="flowdrop-navbar__dropdown-item"
+										onclick={(e) => {
+											action.onclick?.(e);
+											isDropdownOpen = false;
+										}}
+										target={action.external ? '_blank' : undefined}
+										rel={action.external ? 'noopener noreferrer' : undefined}
+									>
+										{#if action.icon}
+											<Icon icon={action.icon} class="w-4 h-4" />
+										{/if}
+										<span>{action.label}</span>
+										{#if action.external}
+											<Icon icon="mdi:open-in-new" class="w-3 h-3" />
+										{/if}
+									</a>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		{/if}
 	</div>
 
@@ -420,6 +442,17 @@
 		gap: 0;
 		margin-left: auto;
 		position: relative;
+	}
+
+	.flowdrop-navbar__split-actions {
+		display: var(--fd-navbar-split-display, none);
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.flowdrop-navbar__dropdown-mode {
+		display: var(--fd-navbar-dropdown-display, flex);
+		align-items: center;
 	}
 
 	.flowdrop-navbar__primary-action {

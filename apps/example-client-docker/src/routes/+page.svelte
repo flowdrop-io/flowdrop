@@ -23,7 +23,7 @@
 </script>
 
 <div class="editor-container">
-	<App {endpointConfig} showNavbar={true} />
+	<App {endpointConfig} showNavbar={true} theme="minimal" />
 </div>
 
 <style>

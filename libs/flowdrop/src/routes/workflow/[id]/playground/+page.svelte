@@ -16,6 +16,7 @@
 	import type { Workflow } from '$lib/types/index.js';
 	import type { PlaygroundConfig } from '$lib/types/playground.js';
 
+
 	let { data } = $props();
 
 	/** API endpoint configuration */
@@ -207,7 +208,7 @@
 		height: 100%;
 		min-height: 0;
 		overflow: hidden; /* Prevent page-level scrolling - let chat panel handle it */
-		background-color: #f8fafc;
+		background-color: var(--fd-background);
 	}
 
 	/* Content - fills the available space without scrolling */
