@@ -7,8 +7,10 @@
 <script lang="ts">
 	import { Position, Handle } from '@xyflow/svelte';
 	import Icon from '@iconify/svelte';
-	import { getDataTypeColor } from '$lib/utils/colors';
+	import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors';
 	import type { NodeMetadata, NodePort } from '../../types/index.js';
+	import CogIcon from '../icons/CogIcon.svelte';
+	import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
 	interface ToolNodeParameter {
 		name: string;
@@ -164,9 +166,7 @@
 		type="target"
 		position={Position.Left}
 		id={`${props.data.nodeId}-input-${toolInputPort.id}`}
-		style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: {getDataTypeColor(
-			portDataType
-		)}; --fd-handle-border-color: var(--fd-handle-border);"
+		style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(portDataType)}); --fd-handle-border-color: var(--fd-handle-border);"
 	/>
 {/if}
 
@@ -186,10 +186,15 @@
 	<!-- Node Header -->
 	<div class="flowdrop-tool-node__header">
 		<div class="flowdrop-tool-node__header-content">
-			<!-- Tool Icon with Squircle Background -->
+			<!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
 			<div class="flowdrop-tool-node__icon-wrapper">
 				<Icon icon={toolIcon} class="flowdrop-tool-node__icon" />
 			</div>
+			<!-- Circle dot — visibility controlled by --fd-node-circle-display -->
+			<span
+				class="flowdrop-tool-node__color-dot"
+				style="background: {getCategoryColorToken(props.data.metadata?.category)}"
+			></span>
 
 			<!-- Tool Info -->
 			<div class="flowdrop-tool-node__info">
@@ -221,13 +226,13 @@
 	<!-- Error indicator -->
 	{#if props.isError}
 		<div class="flowdrop-tool-node__error">
-			<Icon icon="mdi:alert-circle" class="flowdrop-tool-node__error-icon" />
+			<AlertCircleIcon />
 		</div>
 	{/if}
 
 	<!-- Config button -->
 	<button class="flowdrop-tool-node__config-btn" onclick={openConfigSidebar} title="Configure tool">
-		<Icon icon="mdi:cog" />
+		<CogIcon />
 	</button>
 </div>
 
@@ -237,9 +242,7 @@
 		type="source"
 		position={Position.Right}
 		id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
-		style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: {getDataTypeColor(
-			portDataType
-		)}; --fd-handle-border-color: var(--fd-handle-border);"
+		style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(portDataType)}); --fd-handle-border-color: var(--fd-handle-border);"
 	/>
 {/if}
 
@@ -318,7 +321,7 @@
 
 	/* Squircle icon wrapper - Apple-style rounded square background */
 	.flowdrop-tool-node__icon-wrapper {
-		display: flex;
+		display: var(--fd-node-icon-display, flex);
 		align-items: center;
 		justify-content: center;
 		width: 2.5rem;
@@ -408,9 +411,14 @@
 		color: var(--fd-error);
 	}
 
-	:global(.flowdrop-tool-node__error-icon) {
+	.flowdrop-tool-node__error :global(svg) {
 		width: 12px;
 		height: 12px;
+	}
+
+	.flowdrop-tool-node__config-btn :global(svg) {
+		width: 14px;
+		height: 14px;
 	}
 
 	.flowdrop-tool-node__config-btn {
@@ -467,5 +475,14 @@
 	:global(.svelte-flow__node-tool .svelte-flow__handle:focus) {
 		outline: 2px solid var(--fd-tool-node-color) !important;
 		outline-offset: 2px !important;
+	}
+
+	/* Circle dot icon — shown in minimal skin via --fd-node-circle-display */
+	.flowdrop-tool-node__color-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		display: var(--fd-node-circle-display, none);
 	}
 </style>

@@ -43,6 +43,9 @@
 		return node.formats.includes(props.activeFormat);
 	}
 
+	/** Effective collapsed state — driven by persisted UI setting */
+	let isCollapsed = $derived(getUiSettings().sidebarCollapsed);
+
 	/** Nodes filtered by format compatibility */
 	let formatCompatibleNodes = $derived((props.nodes || []).filter(isNodeCompatibleWithFormat));
 
@@ -196,30 +199,30 @@
 <!-- Components Sidebar - Always Visible -->
 <aside
 	class="flowdrop-sidebar flowdrop-sidebar--container"
-	class:flowdrop-sidebar--collapsed={getUiSettings().sidebarCollapsed}
+	class:flowdrop-sidebar--collapsed={isCollapsed}
 	class:flowdrop-sidebar--compact={getUiSettings().compactMode}
-	style:width="{getUiSettings().sidebarCollapsed ? 48 : getUiSettings().sidebarWidth}px"
+	style:width="{isCollapsed ? 48 : getUiSettings().sidebarWidth}px"
 	aria-label="Components sidebar"
 >
-	<!-- Header -->
+	<!-- Header — visibility controlled by --fd-sidebar-header-display -->
 	<div class="flowdrop-sidebar__header">
 		<button
 			class="flowdrop-sidebar__toggle"
 			onclick={toggleSidebar}
-			aria-label={getUiSettings().sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-			title={getUiSettings().sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+			title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
 		>
-			<Icon icon={getUiSettings().sidebarCollapsed ? 'mdi:chevron-right' : 'mdi:chevron-left'} />
+			<Icon icon={isCollapsed ? 'mdi:chevron-right' : 'mdi:chevron-left'} />
 		</button>
-		{#if !getUiSettings().sidebarCollapsed}
+		{#if !isCollapsed}
 			<div class="flowdrop-sidebar__title">
 				<h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
 			</div>
 		{/if}
 	</div>
 
-	{#if !getUiSettings().sidebarCollapsed}
-		<!-- Search Section -->
+	{#if !isCollapsed}
+		<!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
 		<div class="flowdrop-sidebar__search">
 			<div class="flowdrop-join flowdrop-w--full">
 				<div class="flowdrop-join__item flowdrop-flex--1">
@@ -316,7 +319,38 @@
 						{#each categories as category (category)}
 							{@const categoryNodes = getFilteredNodesForCategory(category)}
 							{#if categoryNodes.length > 0}
-								<details class="flowdrop-details">
+								<!-- Flat style: label + dot+name rows (shown/hidden via CSS token) -->
+								<div class="fd-sidebar-flat-section">
+									<div class="fd-sidebar-flat-category">
+										{getCategoryDisplayName(category).toUpperCase()}
+									</div>
+									<div class="fd-sidebar-flat-list">
+										{#each categoryNodes as nodeType (nodeType.id)}
+											<div
+												class="fd-sidebar-flat-item"
+												draggable="true"
+												ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+												onclick={() => handleNodeClick(nodeType)}
+												role="button"
+												tabindex="0"
+												onkeydown={(e) => {
+													if (e.key === 'Enter' || e.key === ' ') {
+														e.preventDefault();
+														handleNodeClick(nodeType);
+													}
+												}}
+											>
+												<span
+													class="fd-sidebar-flat-dot"
+													style="background: {getCategoryColorToken(nodeType.category)}"
+												></span>
+												<span class="fd-sidebar-flat-name">{nodeType.name}</span>
+											</div>
+										{/each}
+									</div>
+								</div>
+								<!-- Card style: <details> accordion (shown/hidden via CSS token) -->
+								<details class="flowdrop-details fd-sidebar-card-section">
 									<summary class="flowdrop-details__summary">
 										<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
 											<span
@@ -376,7 +410,7 @@
 										</div>
 									</div>
 								</details>
-							{/if}
+						{/if}
 						{/each}
 					</div>
 				</div>
@@ -496,7 +530,7 @@
 		background: var(--fd-header);
 		border-bottom: 1px solid var(--fd-border);
 		padding: 0.75rem 1rem;
-		display: flex;
+		display: var(--fd-sidebar-header-display, flex);
 		align-items: center;
 		justify-content: space-between;
 		flex-shrink: 0;
@@ -518,6 +552,7 @@
 		padding: 0.75rem 1rem;
 		background-color: var(--fd-background);
 		border-bottom: 1px solid var(--fd-border);
+		display: var(--fd-sidebar-search-display, block);
 	}
 
 	.flowdrop-sidebar__content {
@@ -758,5 +793,65 @@
 
 	.flowdrop-flex--1 {
 		flex: 1;
+	}
+
+	/* Display-control token wiring for skin variants */
+	.fd-sidebar-flat-section {
+		display: var(--fd-sidebar-flat-display, none);
+	}
+
+	.fd-sidebar-card-section {
+		display: var(--fd-sidebar-card-display, block);
+	}
+
+	/* Flat sidebar node style (minimal skin) */
+	.fd-sidebar-flat-category {
+		font-size: var(--fd-text-xs);
+		font-weight: 600;
+		color: var(--fd-muted-foreground);
+		letter-spacing: 0.07em;
+		padding: 0.875rem 0.5rem 0.25rem 0.5rem;
+		text-transform: uppercase;
+	}
+
+	.fd-sidebar-flat-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		margin-bottom: 0.25rem;
+	}
+
+	.fd-sidebar-flat-item {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		padding: 0.3125rem 0.5rem;
+		border-radius: var(--fd-radius-sm);
+		cursor: grab;
+		transition: background-color var(--fd-transition-fast);
+	}
+
+	.fd-sidebar-flat-item:hover {
+		background-color: var(--fd-muted);
+	}
+
+	.fd-sidebar-flat-item:active {
+		cursor: grabbing;
+	}
+
+	.fd-sidebar-flat-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		display: inline-block;
+	}
+
+	.fd-sidebar-flat-name {
+		font-size: var(--fd-text-sm);
+		color: var(--fd-foreground);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 </style>

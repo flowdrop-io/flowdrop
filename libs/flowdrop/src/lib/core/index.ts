@@ -440,6 +440,17 @@ export type { AgentSpecExecutionHandle } from '../services/agentSpecExecutionSer
 export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schema/index.js';
 
 // ============================================================================
+// Skin System
+// ============================================================================
+
+export type {
+	FlowDropSkin,
+	FlowDropSkinName,
+	FlowDropSkinTokens
+} from '../types/skin.js';
+export { minimalSkin, defaultSkin } from '../skins/index.js';
+
+// ============================================================================
 // Theme System
 // ============================================================================
 

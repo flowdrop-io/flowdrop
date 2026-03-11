@@ -185,6 +185,16 @@
 					title: 'Compact Mode',
 					description: 'Use compact UI with smaller spacing',
 					default: false
+				},
+				skin: {
+					type: 'string',
+					title: 'UI Skin',
+					description: 'Visual style of the editor',
+					oneOf: [
+						{ const: 'default', title: 'Default' },
+						{ const: 'minimal', title: 'Minimal' }
+					],
+					default: 'default'
 				}
 			}
 		},

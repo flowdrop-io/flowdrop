@@ -72,6 +72,8 @@ export interface UISettings {
 	sidebarCollapsed: boolean;
 	/** Enable compact mode for denser UI */
 	compactMode: boolean;
+	/** Active skin name — overridden by the skin prop when explicitly provided */
+	skin: 'default' | 'minimal';
 }
 
 // =========================================================================
@@ -193,7 +195,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
 export const DEFAULT_UI_SETTINGS: UISettings = {
 	sidebarWidth: 280,
 	sidebarCollapsed: false,
-	compactMode: false
+	compactMode: false,
+	skin: 'default'
 };
 
 /**

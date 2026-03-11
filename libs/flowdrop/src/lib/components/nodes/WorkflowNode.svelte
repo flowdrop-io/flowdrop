@@ -14,6 +14,7 @@
 	import { dynamicPortToNodePort } from '../../types/index.js';
 	import Icon from '@iconify/svelte';
 	import { getNodeIcon } from '../../utils/icons.js';
+	import CogIcon from '../icons/CogIcon.svelte';
 	import {
 		getDataTypeColorToken,
 		getCategoryColorToken,
@@ -178,7 +179,7 @@
 	<!-- Default Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
 	<div class="flowdrop-workflow-node__header">
 		<div class="flowdrop-workflow-node__header-title">
-			<!-- Node Icon with Squircle Background -->
+			<!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
 			<div
 				class="flowdrop-workflow-node__icon-wrapper"
 				style="--_icon-color: {getCategoryColorToken(props.data.metadata.category)}"
@@ -188,6 +189,11 @@
 					class="flowdrop-workflow-node__icon"
 				/>
 			</div>
+			<!-- Circle dot — visibility controlled by --fd-node-circle-display -->
+			<span
+				class="flowdrop-workflow-node__color-dot"
+				style="background: {getCategoryColorToken(props.data.metadata.category)}"
+			></span>
 
 			<!-- Node Title - Icon and Title on same line -->
 			<h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
@@ -218,9 +224,7 @@
 							position={Position.Left}
 							id={`${props.data.nodeId}-input-${port.id}`}
 							class="flowdrop-workflow-node__handle"
-							style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
-								port.dataType
-							)}; --fd-handle-border-color: var(--fd-handle-border);"
+							style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border);"
 							role="button"
 							tabindex={0}
 							aria-label="Connect to {port.name} input port"
@@ -296,9 +300,7 @@
 							position={Position.Right}
 							id={`${props.data.nodeId}-output-${port.id}`}
 							class="flowdrop-workflow-node__handle"
-							style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
-								port.dataType
-							)}; --fd-handle-border-color: var(--fd-handle-border);"
+							style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border);"
 							role="button"
 							tabindex={0}
 							aria-label="Connect from {port.name} output port"
@@ -315,7 +317,7 @@
 		onclick={openConfigSidebar}
 		title="Configure node"
 	>
-		<Icon icon="mdi:cog" />
+		<CogIcon />
 	</button>
 </div>
 
@@ -396,7 +398,7 @@
 
 	/* Squircle icon wrapper - Apple-style rounded square background */
 	.flowdrop-workflow-node__icon-wrapper {
-		display: flex;
+		display: var(--fd-node-icon-display, flex);
 		align-items: center;
 		justify-content: center;
 		width: 2.25rem;
@@ -420,6 +422,15 @@
 		width: 1.25rem;
 		height: 1.25rem;
 		color: var(--fd-node-icon);
+	}
+
+	/* Circle dot icon — shown in minimal skin via --fd-node-circle-display */
+	.flowdrop-workflow-node__color-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		display: var(--fd-node-circle-display, none);
 	}
 
 	.flowdrop-workflow-node__header-title h3 {
@@ -536,6 +547,11 @@
 
 	.flowdrop-text--right {
 		text-align: right;
+	}
+
+	.flowdrop-workflow-node__config-btn :global(svg) {
+		width: 14px;
+		height: 14px;
 	}
 
 	.flowdrop-workflow-node__config-btn {
