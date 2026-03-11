@@ -28,4 +28,4 @@ export interface FlowDropSkin {
 	tokens?: FlowDropSkinTokens;
 }
 
-export type FlowDropSkinName = 'default' | 'minimal';
+export type FlowDropSkinName = 'default' | 'slate';
