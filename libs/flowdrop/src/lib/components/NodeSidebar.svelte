@@ -810,9 +810,9 @@
 	.fd-sidebar-flat-category {
 		font-size: var(--fd-text-xs);
 		font-weight: 600;
-		color: var(--fd-muted-foreground);
-		letter-spacing: 0.07em;
-		padding: 0.875rem 0.5rem 0.25rem 0.5rem;
+		color: var(--fd-sidebar-category-color, var(--fd-muted-foreground));
+		letter-spacing: 0.08em;
+		padding: 1.25rem 0.75rem 0.375rem 0.75rem;
 		text-transform: uppercase;
 	}
 
@@ -827,7 +827,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.625rem;
-		padding: 0.3125rem 0.5rem;
+		padding: 0.3125rem 0.75rem;
 		border-radius: var(--fd-radius-sm);
 		cursor: grab;
 		transition: background-color var(--fd-transition-fast);

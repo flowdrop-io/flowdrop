@@ -23,8 +23,13 @@
 	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
 	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
 	import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
+	import { resolveTheme } from '$lib/themes/index.js';
 
 	let { data, children } = $props();
+
+	const skinTokenStyle = Object.entries(resolveTheme('minimal').skin?.tokens ?? {})
+		.map(([k, v]) => `--fd-${k}: ${v}`)
+		.join('; ');
 
 	// API configuration from server-side loaded runtime config
 	// This is loaded on the server before any components render
@@ -444,6 +449,7 @@
 </script>
 
 <!-- Main Application Layout -->
+<div class="flowdrop-app-root" style={skinTokenStyle}>
 <MainLayout
 	showHeader={showNavbar}
 	showLeftSidebar={false}
@@ -478,3 +484,10 @@
 		toastOptions={flowdropToastOptions}
 	/>
 </div>
+</div>
+
+<style>
+	.flowdrop-app-root {
+		display: contents;
+	}
+</style>
