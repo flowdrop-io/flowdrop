@@ -342,6 +342,15 @@
 		#e0e7ff 50%,
 		#c7d2fe 100%
 	); /* @public */
+
+	/* ----- SKIN DISPLAY CONTROL TOKENS ----- */
+	/* @public — override these in a skin's tokens dict to toggle visual variants */
+	--fd-node-icon-display: flex; /* @public  show squircle icon wrapper */
+	--fd-node-circle-display: none; /* @public  hide circle dot */
+	--fd-sidebar-search-display: flex; /* @public  show sidebar search input */
+	--fd-sidebar-header-display: flex; /* @public  show sidebar "Components" header */
+	--fd-sidebar-card-display: block; /* @public  show accordion card node list */
+	--fd-sidebar-flat-display: none; /* @public  hide flat dot-name node list */
 }
 
 /* =========================================================================

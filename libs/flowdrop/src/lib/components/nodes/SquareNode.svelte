@@ -14,6 +14,8 @@
 	import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
 	import { getNodeIcon } from '../../utils/icons.js';
 	import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+	import CogIcon from '../icons/CogIcon.svelte';
+	import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
 	const props = $props<{
 		data: {
@@ -167,9 +169,7 @@
 	<Handle
 		type="target"
 		position={Position.Left}
-		style="--fd-handle-fill: {getDataTypeColor(
-			port.dataType
-		)}; --fd-handle-border-color: var(--fd-handle-border); top: {inputPorts.length > 1
+		style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border); top: {inputPorts.length > 1
 			? index === 0
 				? 20
 				: 60
@@ -192,9 +192,15 @@
 >
 	<!-- Square Layout: Always compact with centered icon in squircle wrapper -->
 	<div class="flowdrop-square-node__compact-content">
+		<!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
 		<div class="flowdrop-square-node__icon-wrapper" style="--_icon-color: {squareColor}">
 			<Icon icon={squareIcon} class="flowdrop-square-node__icon" />
 		</div>
+		<!-- Circle dot — visibility controlled by --fd-node-circle-display -->
+		<span
+			class="flowdrop-square-node__color-dot"
+			style="background: {getCategoryColorToken(props.data.metadata?.category)}"
+		></span>
 	</div>
 
 	<!-- Processing indicator -->
@@ -207,7 +213,7 @@
 	<!-- Error indicator -->
 	{#if props.isError}
 		<div class="flowdrop-square-node__error">
-			<Icon icon="mdi:alert-circle" class="flowdrop-square-node__error-icon" />
+			<AlertCircleIcon />
 		</div>
 	{/if}
 
@@ -217,7 +223,7 @@
 		onclick={openConfigSidebar}
 		title="Configure node"
 	>
-		<Icon icon="mdi:cog" />
+		<CogIcon />
 	</button>
 </div>
 
@@ -226,9 +232,7 @@
 	<Handle
 		type="source"
 		position={Position.Right}
-		style="--fd-handle-fill: {getDataTypeColor(
-			port.dataType
-		)}; --fd-handle-border-color: var(--fd-handle-border); top: {outputPorts.length > 1
+		style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border); top: {outputPorts.length > 1
 			? index === 0
 				? 20
 				: 60
@@ -305,7 +309,7 @@
 
 	/* Squircle icon wrapper - matching WorkflowNode style */
 	.flowdrop-square-node__icon-wrapper {
-		display: flex;
+		display: var(--fd-node-icon-display, flex);
 		align-items: center;
 		justify-content: center;
 		width: 3rem;
@@ -331,6 +335,15 @@
 		color: var(--fd-node-icon);
 	}
 
+	/* Circle dot icon — shown in minimal skin via --fd-node-circle-display */
+	.flowdrop-square-node__color-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		display: var(--fd-node-circle-display, none);
+	}
+
 	.flowdrop-square-node__processing {
 		position: absolute;
 		top: 4px;
@@ -353,9 +366,14 @@
 		color: var(--fd-error);
 	}
 
-	:global(.flowdrop-square-node__error-icon) {
+	.flowdrop-square-node__error :global(svg) {
 		width: 12px;
 		height: 12px;
+	}
+
+	.flowdrop-square-node__config-btn :global(svg) {
+		width: 14px;
+		height: 14px;
 	}
 
 	.flowdrop-square-node__config-btn {

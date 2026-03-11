@@ -143,7 +143,7 @@
 
 	<div class="flowdrop-navbar__actions">
 		{#if primaryActions.length > 0}
-			<!-- Primary Action Button -->
+			<!-- Split button: first action + chevron dropdown for rest -->
 			{#if primaryActions[0]}
 				{@const primaryAction = primaryActions[0]}
 				<a

@@ -27,6 +27,8 @@
 	import type { AuthProvider } from '$lib/types/auth.js';
 	import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 	import { mergeFeatures } from '$lib/types/events.js';
+	import type { FlowDropSkin, FlowDropSkinName } from '$lib/types/skin.js';
+	import { resolveSkin } from '$lib/skins/index.js';
 	import {
 		getWorkflowStore,
 		workflowActions,
@@ -90,6 +92,8 @@
 		eventHandlers?: FlowDropEventHandlers;
 		/** Feature configuration */
 		features?: FlowDropFeatures;
+		/** Visual skin — named built-in or custom skin object */
+		skin?: FlowDropSkin | FlowDropSkinName;
 	}
 
 	let {
@@ -110,11 +114,21 @@
 		endpointConfig: propEndpointConfig,
 		authProvider,
 		eventHandlers,
-		features: propFeatures
+		features: propFeatures,
+		skin: skinProp
 	}: Props = $props();
 
 	// svelte-ignore state_referenced_locally — feature flags don't change at runtime
 	const features = mergeFeatures(propFeatures);
+
+	// Skin system — resolve named skin or custom object, inject CSS tokens + propagate via context
+	// Explicit prop wins; falls back to user's persisted skin preference from settings
+	let resolvedSkin = $derived(resolveSkin(skinProp ?? getUiSettings().skin));
+	let skinTokenStyle = $derived(
+		Object.entries(resolvedSkin.tokens ?? {})
+			.map(([k, v]) => `--fd-${k}: ${v}`)
+			.join('; ')
+	);
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
 	let breadcrumbTitle = $derived(() => {
@@ -607,6 +621,7 @@
 />
 
 <!-- MainLayout wrapper for workflow editor -->
+<div class="flowdrop-root" style={skinTokenStyle}>
 <MainLayout
 	showHeader={showNavbar}
 	showLeftSidebar={!disableSidebar}
@@ -866,8 +881,12 @@
 		/>
 	</div>
 </MainLayout>
+</div>
 
 <style>
+	.flowdrop-root {
+		display: contents;
+	}
 	/* Status bar styles */
 	.flowdrop-status {
 		background-color: var(--fd-info-muted);
