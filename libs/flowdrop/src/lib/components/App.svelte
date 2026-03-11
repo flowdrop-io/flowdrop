@@ -124,12 +124,23 @@
 	// Theme system — resolve named theme or custom object, inject CSS tokens from skin
 	// Explicit prop wins; falls back to user's persisted theme preference from settings
 	let resolvedTheme = $derived(resolveTheme(themeProp ?? getUiSettings().theme));
-	let skinTokenStyle = $derived(
-		Object.entries(resolvedTheme.skin?.tokens ?? {})
-			.map(([k, v]) => `--fd-${k}: ${v}`)
-			.join('; ')
-	);
 	let themeConfig = $derived(resolvedTheme.config);
+
+	// Apply skin tokens directly on document.documentElement so they override both
+	// :root (light mode) and [data-theme='dark'] CSS rules regardless of system preference.
+	$effect(() => {
+		const tokens = resolvedTheme.skin?.tokens;
+		if (!tokens || typeof document === 'undefined') return;
+		const entries = Object.entries(tokens);
+		entries.forEach(([key, value]) => {
+			document.documentElement.style.setProperty(`--fd-${key}`, value);
+		});
+		return () => {
+			entries.forEach(([key]) => {
+				document.documentElement.style.removeProperty(`--fd-${key}`);
+			});
+		};
+	});
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
 	let breadcrumbTitle = $derived(() => {
@@ -622,7 +633,7 @@
 />
 
 <!-- MainLayout wrapper for workflow editor -->
-<div class="flowdrop-root" style={skinTokenStyle}>
+<div class="flowdrop-root">
 <MainLayout
 	showHeader={showNavbar}
 	showLeftSidebar={!disableSidebar}

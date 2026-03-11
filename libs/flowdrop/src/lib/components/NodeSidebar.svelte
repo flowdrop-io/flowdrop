@@ -827,7 +827,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.625rem;
-		padding: 0.3125rem 0.75rem;
+		padding: 0.5rem 0.75rem;
 		border-radius: var(--fd-radius-sm);
 		cursor: grab;
 		transition: background-color var(--fd-transition-fast);
@@ -851,7 +851,7 @@
 
 	.fd-sidebar-flat-name {
 		font-size: var(--fd-text-sm);
-		color: var(--fd-foreground);
+		color: var(--fd-sidebar-flat-item-color, var(--fd-foreground));
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;

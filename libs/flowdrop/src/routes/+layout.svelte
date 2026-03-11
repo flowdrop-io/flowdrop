@@ -27,10 +27,6 @@
 
 	let { data, children } = $props();
 
-	const skinTokenStyle = Object.entries(resolveTheme('minimal').skin?.tokens ?? {})
-		.map(([k, v]) => `--fd-${k}: ${v}`)
-		.join('; ');
-
 	// API configuration from server-side loaded runtime config
 	// This is loaded on the server before any components render
 	// svelte-ignore state_referenced_locally — page remounts on navigation
@@ -66,6 +62,13 @@
 	onMount(() => {
 		// Initialize settings system (loads from localStorage, applies theme to DOM)
 		initializeSettings();
+
+		// Apply slate skin tokens directly on document root so they beat both :root
+		// (light mode) and [data-theme='dark'] CSS rules regardless of system preference.
+		const skinTokens = resolveTheme('minimal').skin?.tokens ?? {};
+		Object.entries(skinTokens).forEach(([key, value]) => {
+			document.documentElement.style.setProperty(`--fd-${key}`, value);
+		});
 
 		// Initialize API service with runtime config from server
 		// Config is already loaded via +layout.server.ts
@@ -449,7 +452,7 @@
 </script>
 
 <!-- Main Application Layout -->
-<div class="flowdrop-app-root" style={skinTokenStyle}>
+<div class="flowdrop-app-root">
 <MainLayout
 	showHeader={showNavbar}
 	showLeftSidebar={false}

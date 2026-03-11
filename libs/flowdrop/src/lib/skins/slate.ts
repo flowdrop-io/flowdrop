@@ -4,7 +4,7 @@ export const slateSkin: FlowDropSkin = {
 	tokens: {
 		// --- Color palette (matching website dark theme) ---
 		background: '#13131a',
-		foreground: '#e8e8f0',
+		foreground: '#c0c0d8',
 		muted: '#1a1a28',
 		'muted-foreground': '#7a7a9a',
 		card: '#1a1a28',
@@ -36,8 +36,15 @@ export const slateSkin: FlowDropSkin = {
 		'sidebar-card-display': 'none',
 		'sidebar-flat-display': 'block',
 
+		// Node border and port ring: purplish-grey matching theme palette
+		'node-border': '#9898b8',
+		'node-border-hover': '#aeaed0',
+		'handle-border': '#9898b8',
+
 		// Category header: extremely dim
 		'sidebar-category-color': '#3a3a55',
+		// Flat item text: muted, not full-brightness white
+		'sidebar-flat-item-color': '#8888aa',
 
 		// Navbar: split buttons instead of dropdown
 		'navbar-split-display': 'flex',
