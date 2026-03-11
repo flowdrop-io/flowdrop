@@ -61,6 +61,61 @@ test.describe('Save Workflow', () => {
 		}
 	});
 
+	test('save uses PUT when workflow already has a UUID id (regression: issue #26)', async ({
+		page
+	}) => {
+		const backendUUID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+		let saveMethod: string | null = null;
+		let savePath: string | null = null;
+
+		// Intercept the initial workflow load and return one with a UUID id
+		await page.route('**/api/flowdrop/workflows/**', async (route) => {
+			const method = route.request().method();
+			if (method === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						data: {
+							id: backendUUID,
+							name: 'UUID Workflow',
+							description: '',
+							nodes: [],
+							edges: [],
+							metadata: { version: '1.0.0' }
+						}
+					})
+				});
+			} else if (method === 'PUT' || method === 'POST') {
+				saveMethod = method;
+				savePath = new URL(route.request().url()).pathname;
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						data: { id: backendUUID },
+						message: 'Workflow saved'
+					})
+				});
+			} else {
+				await route.continue();
+			}
+		});
+
+		await gotoEditor(page, 'simple');
+
+		const saveButton = page.locator('.flowdrop-navbar__primary-action', { hasText: 'Save' });
+		await expect(saveButton).toBeVisible({ timeout: 5000 });
+		await saveButton.click();
+		await page.waitForTimeout(2000);
+
+		// Must use PUT (update), not POST (create)
+		expect(saveMethod).toBe('PUT');
+		expect(savePath).toContain(backendUUID);
+	});
+
 	test('save button is visible in navbar', async ({ page }) => {
 		await gotoEditor(page, 'simple');
 

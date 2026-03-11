@@ -255,15 +255,17 @@ export const workflowApi = {
 	},
 
 	/**
-	 * Save workflow (create or update)
+	 * Save workflow (create or update).
+	 *
+	 * A workflow is considered existing when it already has an id (any format —
+	 * integer, UUID, slug). Only a missing/empty id means "truly new".
+	 *
+	 * Note: globalSave.ts bypasses this method and calls createWorkflow /
+	 * updateWorkflow directly so it can capture the new/existing decision before
+	 * the uuidv4() fallback. This method is kept for external callers.
 	 */
 	async saveWorkflow(workflow: Workflow): Promise<Workflow> {
-		// Check if this is an existing workflow by looking for a valid ID
-		// Valid IDs should not be a UUID (which indicates a new workflow)
-		const isExistingWorkflow =
-			workflow.id &&
-			workflow.id.length > 0 &&
-			!workflow.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+		const isExistingWorkflow = !!(workflow.id && workflow.id.length > 0);
 
 		if (isExistingWorkflow) {
 			// Update existing workflow
