@@ -445,11 +445,6 @@
 		overflow: hidden;
 	}
 
-	/* Dark mode override for layout background */
-	:global([data-theme='dark']) :global(.flowdrop-main-layout) {
-		background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
-	}
-
 	/* Disable text selection and pointer events during drag */
 	.flowdrop-main-layout--dragging {
 		user-select: none;

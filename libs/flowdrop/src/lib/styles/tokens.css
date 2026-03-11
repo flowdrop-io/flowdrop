@@ -352,6 +352,7 @@
 	--fd-sidebar-card-display: block; /* @public  show accordion card node list */
 	--fd-sidebar-flat-display: none; /* @public  hide flat dot-name node list */
 	--fd-sidebar-category-color: var(--fd-muted-foreground); /* @public  category header text color */
+	--fd-sidebar-flat-item-color: var(--fd-foreground); /* @public  flat list item text color */
 	--fd-navbar-split-display: none; /* @public  show all actions as separate buttons */
 	--fd-navbar-dropdown-display: flex; /* @public  show primary-action + dropdown chevron */
 }
