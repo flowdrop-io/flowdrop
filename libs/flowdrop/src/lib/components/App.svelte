@@ -27,8 +27,8 @@
 	import type { AuthProvider } from '$lib/types/auth.js';
 	import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 	import { mergeFeatures } from '$lib/types/events.js';
-	import type { FlowDropSkin, FlowDropSkinName } from '$lib/types/skin.js';
-	import { resolveSkin } from '$lib/skins/index.js';
+	import type { FlowDropTheme, FlowDropThemeName } from '$lib/types/theme.js';
+	import { resolveTheme } from '$lib/themes/index.js';
 	import {
 		getWorkflowStore,
 		workflowActions,
@@ -92,8 +92,8 @@
 		eventHandlers?: FlowDropEventHandlers;
 		/** Feature configuration */
 		features?: FlowDropFeatures;
-		/** Visual skin — named built-in or custom skin object */
-		skin?: FlowDropSkin | FlowDropSkinName;
+		/** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
+		theme?: FlowDropTheme | FlowDropThemeName;
 	}
 
 	let {
@@ -115,20 +115,21 @@
 		authProvider,
 		eventHandlers,
 		features: propFeatures,
-		skin: skinProp
+		theme: themeProp
 	}: Props = $props();
 
 	// svelte-ignore state_referenced_locally — feature flags don't change at runtime
 	const features = mergeFeatures(propFeatures);
 
-	// Skin system — resolve named skin or custom object, inject CSS tokens + propagate via context
-	// Explicit prop wins; falls back to user's persisted skin preference from settings
-	let resolvedSkin = $derived(resolveSkin(skinProp ?? getUiSettings().skin));
+	// Theme system — resolve named theme or custom object, inject CSS tokens from skin
+	// Explicit prop wins; falls back to user's persisted theme preference from settings
+	let resolvedTheme = $derived(resolveTheme(themeProp ?? getUiSettings().theme));
 	let skinTokenStyle = $derived(
-		Object.entries(resolvedSkin.tokens ?? {})
+		Object.entries(resolvedTheme.skin?.tokens ?? {})
 			.map(([k, v]) => `--fd-${k}: ${v}`)
 			.join('; ')
 	);
+	let themeConfig = $derived(resolvedTheme.config);
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
 	let breadcrumbTitle = $derived(() => {
@@ -694,7 +695,11 @@
 
 	<!-- Left Sidebar: Node Components -->
 	{#snippet leftSidebar()}
-		<NodeSidebar {nodes} activeFormat={getWorkflowFormat()} />
+		<NodeSidebar
+			{nodes}
+			activeFormat={getWorkflowFormat()}
+			categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+		/>
 	{/snippet}
 
 	<!-- Right Sidebar: Configuration or Workflow Settings -->

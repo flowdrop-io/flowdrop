@@ -18,6 +18,8 @@
 		nodes: NodeMetadata[];
 		selectedCategory?: NodeCategory;
 		activeFormat?: WorkflowFormat;
+		/** Whether category <details> accordions start open (card mode). Default: false */
+		categoriesDefaultOpen?: boolean;
 	}
 
 	let props: Props = $props();
@@ -350,7 +352,7 @@
 									</div>
 								</div>
 								<!-- Card style: <details> accordion (shown/hidden via CSS token) -->
-								<details class="flowdrop-details fd-sidebar-card-section">
+								<details class="flowdrop-details fd-sidebar-card-section" open={props.categoriesDefaultOpen || undefined}>
 									<summary class="flowdrop-details__summary">
 										<div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
 											<span
