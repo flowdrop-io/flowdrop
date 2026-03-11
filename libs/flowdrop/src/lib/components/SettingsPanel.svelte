@@ -186,10 +186,10 @@
 					description: 'Use compact UI with smaller spacing',
 					default: false
 				},
-				skin: {
+				theme: {
 					type: 'string',
-					title: 'UI Skin',
-					description: 'Visual style of the editor',
+					title: 'UI Theme',
+					description: 'Visual style and layout of the editor',
 					oneOf: [
 						{ const: 'default', title: 'Default' },
 						{ const: 'minimal', title: 'Minimal' }

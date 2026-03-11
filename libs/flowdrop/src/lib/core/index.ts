@@ -440,9 +440,17 @@ export type { AgentSpecExecutionHandle } from '../services/agentSpecExecutionSer
 export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schema/index.js';
 
 // ============================================================================
-// Skin System
+// Theme System (FlowDrop UI themes — skin + config bundles)
 // ============================================================================
 
+export type {
+	FlowDropTheme,
+	FlowDropThemeName,
+	FlowDropThemeConfig
+} from '../types/theme.js';
+export { defaultTheme, minimalTheme, resolveTheme } from '../themes/index.js';
+
+// Skin primitives — for custom theme authors who need to compose skins
 export type {
 	FlowDropSkin,
 	FlowDropSkinName,
@@ -451,7 +459,7 @@ export type {
 export { minimalSkin, defaultSkin } from '../skins/index.js';
 
 // ============================================================================
-// Theme System
+// Color Theme System (light/dark preference)
 // ============================================================================
 
 export type { ThemePreference, ResolvedTheme } from '../stores/settingsStore.svelte.js';

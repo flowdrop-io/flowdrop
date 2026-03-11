@@ -72,8 +72,8 @@ export interface UISettings {
 	sidebarCollapsed: boolean;
 	/** Enable compact mode for denser UI */
 	compactMode: boolean;
-	/** Active skin name — overridden by the skin prop when explicitly provided */
-	skin: 'default' | 'minimal';
+	/** Active theme name — overridden by the theme prop when explicitly provided */
+	theme: 'default' | 'minimal';
 }
 
 // =========================================================================
@@ -196,7 +196,7 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
 	sidebarWidth: 280,
 	sidebarCollapsed: false,
 	compactMode: false,
-	skin: 'default'
+	theme: 'default'
 };
 
 /**
