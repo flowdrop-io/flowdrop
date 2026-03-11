@@ -391,7 +391,10 @@ describe('API Service', () => {
 		});
 
 		describe('saveWorkflow', () => {
-			it('should create new workflow when id is UUID', async () => {
+			it('should update existing workflow when id is a UUID (regression: issue #26)', async () => {
+				// Previously a UUID regex caused UUID ids to be treated as new workflows,
+				// resulting in duplicate POSTs instead of PUTs. Any non-empty id is now
+				// treated as an existing workflow regardless of format.
 				const workflow = createTestWorkflow({
 					id: '550e8400-e29b-41d4-a716-446655440000'
 				});
@@ -401,16 +404,16 @@ describe('API Service', () => {
 				await workflowApi.saveWorkflow(workflow);
 
 				expect(global.fetch).toHaveBeenCalledWith(
-					'/api/flowdrop/workflows',
+					'/api/flowdrop/workflows/550e8400-e29b-41d4-a716-446655440000',
 					expect.objectContaining({
-						method: 'POST'
+						method: 'PUT'
 					})
 				);
 			});
 
 			it('should update existing workflow when id is not UUID', async () => {
 				const workflow = createTestWorkflow({
-					id: '123' // Non-UUID id indicates existing workflow
+					id: '123'
 				});
 
 				global.fetch = vi.fn(() => Promise.resolve(mockFetchResponse(workflow)));

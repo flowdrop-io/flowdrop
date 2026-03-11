@@ -172,6 +172,11 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
 
 		// Step 3 — Build the canonical workflow object.
 		// Preserve all existing metadata fields (format, tags, etc.) so nothing is dropped.
+		//
+		// Determine new vs existing BEFORE the uuidv4() fallback: if the store already
+		// has an id (any format — integer, UUID, slug), the workflow came from a backend
+		// and must be updated. Only a missing id means "truly new".
+		const isExistingWorkflow = !!currentWorkflow.id;
 		const workflowId = currentWorkflow.id || uuidv4();
 
 		const finalWorkflow: Workflow = {
@@ -193,11 +198,6 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
 		let savedWorkflow: Workflow;
 
 		if (apiClient) {
-			// Enhanced client path — detects existing workflows by non-UUID ID
-			const isExistingWorkflow =
-				finalWorkflow.id.length > 0 &&
-				!finalWorkflow.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-
 			if (isExistingWorkflow) {
 				savedWorkflow = await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow);
 			} else {
@@ -205,7 +205,12 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
 			}
 		} else {
 			// Legacy path
-			savedWorkflow = await workflowApi.saveWorkflow(finalWorkflow);
+			if (isExistingWorkflow) {
+				savedWorkflow = await workflowApi.updateWorkflow(finalWorkflow.id, finalWorkflow);
+			} else {
+				const { id: _id, ...workflowData } = finalWorkflow;
+				savedWorkflow = await workflowApi.createWorkflow(workflowData);
+			}
 		}
 
 		// Step 5 — If the server assigned a new ID, sync the store
