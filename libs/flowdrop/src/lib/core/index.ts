@@ -456,7 +456,7 @@ export type {
 	FlowDropSkinName,
 	FlowDropSkinTokens
 } from '../types/skin.js';
-export { minimalSkin, defaultSkin } from '../skins/index.js';
+export { slateSkin, defaultSkin } from '../skins/index.js';
 
 // ============================================================================
 // Color Theme System (light/dark preference)

@@ -1,6 +1,6 @@
 import type { FlowDropSkin } from '../types/skin';
 
-export const minimalSkin: FlowDropSkin = {
+export const slateSkin: FlowDropSkin = {
 	tokens: {
 		// --- Color palette (matching website dark theme) ---
 		background: '#13131a',
