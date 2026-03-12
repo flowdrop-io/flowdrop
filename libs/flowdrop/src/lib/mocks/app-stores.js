@@ -3,17 +3,17 @@
  * Provides minimal implementations for SvelteKit stores in library context
  */
 
-import { writable } from 'svelte/store';
+import { writable } from "svelte/store";
 
 // Mock page store
 export const page = writable({
-	url: new URL('http://localhost:3000'),
-	params: {},
-	route: { id: null },
-	status: 200,
-	error: null,
-	data: {},
-	form: null
+  url: new URL("http://localhost:3000"),
+  params: {},
+  route: { id: null },
+  status: 200,
+  error: null,
+  data: {},
+  form: null,
 });
 
 // Mock navigating store

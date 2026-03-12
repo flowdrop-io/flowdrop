@@ -22,17 +22,17 @@
  */
 
 /** Log severity levels. `'none'` disables all output. */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none';
+export type LogLevel = "debug" | "info" | "warn" | "error" | "none";
 
 const LOG_PRIORITY: Record<LogLevel, number> = {
-	debug: 0,
-	info: 1,
-	warn: 2,
-	error: 3,
-	none: 4
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+  none: 4,
 };
 
-let currentLevel: LogLevel = 'none';
+let currentLevel: LogLevel = "none";
 
 /**
  * Set the minimum log level for FlowDrop library output.
@@ -41,18 +41,18 @@ let currentLevel: LogLevel = 'none';
  * @param level - The minimum severity to display. Use `'none'` to disable all output.
  */
 export function setLogLevel(level: LogLevel): void {
-	currentLevel = level;
+  currentLevel = level;
 }
 
 /**
  * Get the current log level.
  */
 export function getLogLevel(): LogLevel {
-	return currentLevel;
+  return currentLevel;
 }
 
 function shouldLog(level: LogLevel): boolean {
-	return LOG_PRIORITY[level] >= LOG_PRIORITY[currentLevel];
+  return LOG_PRIORITY[level] >= LOG_PRIORITY[currentLevel];
 }
 
 /**
@@ -62,16 +62,16 @@ function shouldLog(level: LogLevel): boolean {
  * Enable output by calling `setLogLevel()`.
  */
 export const logger = {
-	debug(message: string, ...args: unknown[]): void {
-		if (shouldLog('debug')) console.debug(`[FlowDrop] ${message}`, ...args);
-	},
-	info(message: string, ...args: unknown[]): void {
-		if (shouldLog('info')) console.info(`[FlowDrop] ${message}`, ...args);
-	},
-	warn(message: string, ...args: unknown[]): void {
-		if (shouldLog('warn')) console.warn(`[FlowDrop] ${message}`, ...args);
-	},
-	error(message: string, ...args: unknown[]): void {
-		if (shouldLog('error')) console.error(`[FlowDrop] ${message}`, ...args);
-	}
+  debug(message: string, ...args: unknown[]): void {
+    if (shouldLog("debug")) console.debug(`[FlowDrop] ${message}`, ...args);
+  },
+  info(message: string, ...args: unknown[]): void {
+    if (shouldLog("info")) console.info(`[FlowDrop] ${message}`, ...args);
+  },
+  warn(message: string, ...args: unknown[]): void {
+    if (shouldLog("warn")) console.warn(`[FlowDrop] ${message}`, ...args);
+  },
+  error(message: string, ...args: unknown[]): void {
+    if (shouldLog("error")) console.error(`[FlowDrop] ${message}`, ...args);
+  },
 };

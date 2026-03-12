@@ -6,7 +6,10 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
-import type { AutocompleteConfig, TemplateVariablesConfig } from '$lib/types/index.js';
+import type {
+  AutocompleteConfig,
+  TemplateVariablesConfig,
+} from "$lib/types/index.js";
 
 /**
  * Supported field types for form rendering
@@ -16,7 +19,13 @@ import type { AutocompleteConfig, TemplateVariablesConfig } from '$lib/types/ind
  * - Use `enum` for simple value lists
  * - Use `oneOf` with `const`/`title` for labeled options
  */
-export type FieldType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
+export type FieldType =
+  | "string"
+  | "number"
+  | "integer"
+  | "boolean"
+  | "array"
+  | "object";
 
 /**
  * Field format for specialized rendering
@@ -30,15 +39,15 @@ export type FieldType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 
  * - autocomplete: Renders as text input with autocomplete suggestions from callback URL
  */
 export type FieldFormat =
-	| 'multiline'
-	| 'hidden'
-	| 'range'
-	| 'json'
-	| 'code'
-	| 'markdown'
-	| 'template'
-	| 'autocomplete'
-	| string;
+  | "multiline"
+  | "hidden"
+  | "range"
+  | "json"
+  | "code"
+  | "markdown"
+  | "template"
+  | "autocomplete"
+  | string;
 
 /**
  * Option type for select and checkbox group fields
@@ -58,10 +67,10 @@ export type FieldFormat =
  * ```
  */
 export interface FieldOption {
-	/** The value stored when this option is selected */
-	value: string;
-	/** The display label for this option */
-	label: string;
+  /** The value stored when this option is selected */
+  value: string;
+  /** The display label for this option */
+  label: string;
 }
 
 /**
@@ -80,32 +89,32 @@ export interface FieldOption {
  * ```
  */
 export interface OneOfItem {
-	/** The constant value for this option (JSON Schema `const` keyword) */
-	const: string | number | boolean;
-	/** Human-readable label for this option (JSON Schema `title` keyword) */
-	title?: string;
-	/** Optional description for this option */
-	description?: string;
+  /** The constant value for this option (JSON Schema `const` keyword) */
+  const: string | number | boolean;
+  /** Human-readable label for this option (JSON Schema `title` keyword) */
+  title?: string;
+  /** Optional description for this option */
+  description?: string;
 }
 
 /**
  * Base properties shared by all form fields
  */
 export interface BaseFieldProps<T = unknown> {
-	/** Unique identifier for the field (used for id and name attributes) */
-	id: string;
-	/** Current value of the field */
-	value: T;
-	/** Whether the field is required */
-	required?: boolean;
-	/** Whether the field is disabled */
-	disabled?: boolean;
-	/** Placeholder text for input fields */
-	placeholder?: string;
-	/** ARIA description ID for accessibility */
-	ariaDescribedBy?: string;
-	/** Callback when the field value changes */
-	onChange: (value: T) => void;
+  /** Unique identifier for the field (used for id and name attributes) */
+  id: string;
+  /** Current value of the field */
+  value: T;
+  /** Whether the field is required */
+  required?: boolean;
+  /** Whether the field is disabled */
+  disabled?: boolean;
+  /** Placeholder text for input fields */
+  placeholder?: string;
+  /** ARIA description ID for accessibility */
+  ariaDescribedBy?: string;
+  /** Callback when the field value changes */
+  onChange: (value: T) => void;
 }
 
 /**
@@ -117,133 +126,134 @@ export interface TextFieldProps extends BaseFieldProps<string> {}
  * Properties for multiline text fields (textarea)
  */
 export interface TextareaFieldProps extends BaseFieldProps<string> {
-	/** Number of visible rows */
-	rows?: number;
+  /** Number of visible rows */
+  rows?: number;
 }
 
 /**
  * Properties for number input fields
  */
 export interface NumberFieldProps extends BaseFieldProps<number | string> {
-	/** Minimum allowed value */
-	min?: number;
-	/** Maximum allowed value */
-	max?: number;
-	/** Step increment for the input */
-	step?: number;
+  /** Minimum allowed value */
+  min?: number;
+  /** Maximum allowed value */
+  max?: number;
+  /** Step increment for the input */
+  step?: number;
 }
 
 /**
  * Properties for boolean toggle fields
  */
 export interface ToggleFieldProps extends BaseFieldProps<boolean> {
-	/** Label shown when toggle is on */
-	onLabel?: string;
-	/** Label shown when toggle is off */
-	offLabel?: string;
+  /** Label shown when toggle is on */
+  onLabel?: string;
+  /** Label shown when toggle is off */
+  offLabel?: string;
 }
 
 /**
  * Properties for range slider fields
  */
 export interface RangeFieldProps extends BaseFieldProps<number | string> {
-	/** Minimum allowed value */
-	min?: number;
-	/** Maximum allowed value */
-	max?: number;
-	/** Step increment for the slider */
-	step?: number;
+  /** Minimum allowed value */
+  min?: number;
+  /** Maximum allowed value */
+  max?: number;
+  /** Step increment for the slider */
+  step?: number;
 }
 
 /**
  * Properties for select dropdown fields
  */
 export interface SelectFieldProps extends BaseFieldProps<string> {
-	/** Available options for selection */
-	options: FieldOption[] | string[];
+  /** Available options for selection */
+  options: FieldOption[] | string[];
 }
 
 /**
  * Properties for checkbox group fields (multiple selection)
  */
 export interface CheckboxGroupFieldProps extends BaseFieldProps<string[]> {
-	/** Available options for selection */
-	options: string[];
+  /** Available options for selection */
+  options: string[];
 }
 
 /**
  * Properties for array fields (dynamic lists)
  */
 export interface ArrayFieldProps extends BaseFieldProps<unknown[]> {
-	/** Schema for array items */
-	itemSchema: FieldSchema;
-	/** Minimum number of items required */
-	minItems?: number;
-	/** Maximum number of items allowed */
-	maxItems?: number;
-	/** Label for the add button */
-	addLabel?: string;
+  /** Schema for array items */
+  itemSchema: FieldSchema;
+  /** Minimum number of items required */
+  minItems?: number;
+  /** Maximum number of items allowed */
+  maxItems?: number;
+  /** Label for the add button */
+  addLabel?: string;
 }
 
 /**
  * Properties for code editor fields (CodeMirror-based)
  */
 export interface CodeEditorFieldProps extends BaseFieldProps<unknown> {
-	/** Whether to use dark theme */
-	darkTheme?: boolean;
-	/** Editor height in pixels or CSS value */
-	height?: string;
-	/** Whether to auto-format JSON on blur */
-	autoFormat?: boolean;
+  /** Whether to use dark theme */
+  darkTheme?: boolean;
+  /** Editor height in pixels or CSS value */
+  height?: string;
+  /** Whether to auto-format JSON on blur */
+  autoFormat?: boolean;
 }
 
 /**
  * Properties for markdown editor fields (CodeMirror 6-based)
  */
 export interface MarkdownEditorFieldProps extends BaseFieldProps<string> {
-	/** Editor height in pixels or CSS value */
-	height?: string;
-	/** Whether to show the toolbar */
-	showToolbar?: boolean;
-	/** Whether to show the status bar */
-	showStatusBar?: boolean;
-	/** Whether to enable spell checking */
-	spellChecker?: boolean;
+  /** Editor height in pixels or CSS value */
+  height?: string;
+  /** Whether to show the toolbar */
+  showToolbar?: boolean;
+  /** Whether to show the status bar */
+  showStatusBar?: boolean;
+  /** Whether to enable spell checking */
+  spellChecker?: boolean;
 }
 
 /**
  * Properties for template editor fields (CodeMirror with Twig/Liquid syntax)
  */
 export interface TemplateEditorFieldProps extends BaseFieldProps<string> {
-	/** Whether to use dark theme */
-	darkTheme?: boolean;
-	/** Editor height in pixels or CSS value */
-	height?: string;
-	/**
-	 * Configuration for template variable autocomplete.
-	 * Controls which variables are available and how they are displayed.
-	 */
-	variables?: TemplateVariablesConfig;
-	/** Placeholder variable example for the hint */
-	placeholderExample?: string;
+  /** Whether to use dark theme */
+  darkTheme?: boolean;
+  /** Editor height in pixels or CSS value */
+  height?: string;
+  /**
+   * Configuration for template variable autocomplete.
+   * Controls which variables are available and how they are displayed.
+   */
+  variables?: TemplateVariablesConfig;
+  /** Placeholder variable example for the hint */
+  placeholderExample?: string;
 }
 
 /**
  * Properties for autocomplete fields
  * Fetches suggestions from a callback URL with support for debouncing and keyboard navigation
  */
-export interface AutocompleteFieldProps extends BaseFieldProps<string | string[]> {
-	/** Autocomplete configuration from schema */
-	autocomplete: AutocompleteConfig;
-	/** Base URL for resolving relative callback URLs */
-	baseUrl?: string;
+export interface AutocompleteFieldProps
+  extends BaseFieldProps<string | string[]> {
+  /** Autocomplete configuration from schema */
+  autocomplete: AutocompleteConfig;
+  /** Base URL for resolving relative callback URLs */
+  baseUrl?: string;
 }
 
 /**
  * Autocomplete configuration imported from main types
  * Re-exported here for convenience
  */
-export type { AutocompleteConfig } from '$lib/types/index.js';
+export type { AutocompleteConfig } from "$lib/types/index.js";
 
 /**
  * Field schema definition derived from JSON Schema property
@@ -255,86 +265,86 @@ export type { AutocompleteConfig } from '$lib/types/index.js';
  * - `oneOf` with `const`/`title` for labeled options
  */
 export interface FieldSchema {
-	/** The field type from JSON Schema */
-	type: FieldType | string;
-	/** Display title for the field */
-	title?: string;
-	/** Description for help text */
-	description?: string;
-	/** Default value for the field */
-	default?: unknown;
-	/** Enum values for select/checkbox fields (simple values without labels) */
-	enum?: unknown[];
-	/**
-	 * JSON Schema oneOf for labeled options (standard approach)
-	 * Use this instead of the deprecated `options` property
-	 *
-	 * @example
-	 * ```json
-	 * {
-	 *   "type": "string",
-	 *   "oneOf": [
-	 *     { "const": "draft", "title": "Draft" },
-	 *     { "const": "published", "title": "Published" }
-	 *   ]
-	 * }
-	 * ```
-	 */
-	oneOf?: OneOfItem[];
-	/** Whether multiple values can be selected (for enum/oneOf) */
-	multiple?: boolean;
-	/** Format hint for specialized rendering */
-	format?: FieldFormat;
-	/** Placeholder text */
-	placeholder?: string;
-	/** Minimum value for numbers */
-	minimum?: number;
-	/** Maximum value for numbers */
-	maximum?: number;
-	/** Step increment for number/range inputs */
-	step?: number;
-	/** Minimum length for strings */
-	minLength?: number;
-	/** Maximum length for strings */
-	maxLength?: number;
-	/** Validation pattern for strings */
-	pattern?: string;
-	/** Item schema for array fields */
-	items?: FieldSchema;
-	/** Minimum number of items for array fields */
-	minItems?: number;
-	/** Maximum number of items for array fields */
-	maxItems?: number;
-	/** Property schemas for object fields (future use) */
-	properties?: Record<string, FieldSchema>;
-	/** Required properties for object fields (future use) */
-	required?: string[];
-	/** Autocomplete configuration for fetching suggestions from callback URL */
-	autocomplete?: AutocompleteConfig;
-	/**
-	 * Whether the field is read-only (JSON Schema readOnly keyword).
-	 * When true, the field is displayed but cannot be edited.
-	 */
-	readOnly?: boolean;
-	/**
-	 * Configuration for template variable autocomplete.
-	 * Controls which input ports provide variables and how they are displayed.
-	 *
-	 * @example
-	 * ```json
-	 * {
-	 *   "type": "string",
-	 *   "format": "template",
-	 *   "variables": {
-	 *     "ports": ["data", "context"],
-	 *     "showHints": true
-	 *   }
-	 * }
-	 * ```
-	 */
-	variables?: TemplateVariablesConfig;
-	/** Allow additional properties not defined by the schema */
-	[key: string]: unknown;
+  /** The field type from JSON Schema */
+  type: FieldType | string;
+  /** Display title for the field */
+  title?: string;
+  /** Description for help text */
+  description?: string;
+  /** Default value for the field */
+  default?: unknown;
+  /** Enum values for select/checkbox fields (simple values without labels) */
+  enum?: unknown[];
+  /**
+   * JSON Schema oneOf for labeled options (standard approach)
+   * Use this instead of the deprecated `options` property
+   *
+   * @example
+   * ```json
+   * {
+   *   "type": "string",
+   *   "oneOf": [
+   *     { "const": "draft", "title": "Draft" },
+   *     { "const": "published", "title": "Published" }
+   *   ]
+   * }
+   * ```
+   */
+  oneOf?: OneOfItem[];
+  /** Whether multiple values can be selected (for enum/oneOf) */
+  multiple?: boolean;
+  /** Format hint for specialized rendering */
+  format?: FieldFormat;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Minimum value for numbers */
+  minimum?: number;
+  /** Maximum value for numbers */
+  maximum?: number;
+  /** Step increment for number/range inputs */
+  step?: number;
+  /** Minimum length for strings */
+  minLength?: number;
+  /** Maximum length for strings */
+  maxLength?: number;
+  /** Validation pattern for strings */
+  pattern?: string;
+  /** Item schema for array fields */
+  items?: FieldSchema;
+  /** Minimum number of items for array fields */
+  minItems?: number;
+  /** Maximum number of items for array fields */
+  maxItems?: number;
+  /** Property schemas for object fields (future use) */
+  properties?: Record<string, FieldSchema>;
+  /** Required properties for object fields (future use) */
+  required?: string[];
+  /** Autocomplete configuration for fetching suggestions from callback URL */
+  autocomplete?: AutocompleteConfig;
+  /**
+   * Whether the field is read-only (JSON Schema readOnly keyword).
+   * When true, the field is displayed but cannot be edited.
+   */
+  readOnly?: boolean;
+  /**
+   * Configuration for template variable autocomplete.
+   * Controls which input ports provide variables and how they are displayed.
+   *
+   * @example
+   * ```json
+   * {
+   *   "type": "string",
+   *   "format": "template",
+   *   "variables": {
+   *     "ports": ["data", "context"],
+   *     "showHints": true
+   *   }
+   * }
+   * ```
+   */
+  variables?: TemplateVariablesConfig;
+  /** Allow additional properties not defined by the schema */
+  [key: string]: unknown;
 }
 
 /**
@@ -342,18 +352,18 @@ export interface FieldSchema {
  * Renders the appropriate field component based on schema
  */
 export interface FormFieldFactoryProps {
-	/** Unique key/id for the field */
-	fieldKey: string;
-	/** Field schema definition */
-	schema: FieldSchema;
-	/** Current field value */
-	value: unknown;
-	/** Whether the field is required */
-	required?: boolean;
-	/** Animation delay index for staggered animations */
-	animationIndex?: number;
-	/** Callback when the field value changes */
-	onChange: (value: unknown) => void;
+  /** Unique key/id for the field */
+  fieldKey: string;
+  /** Field schema definition */
+  schema: FieldSchema;
+  /** Current field value */
+  value: unknown;
+  /** Whether the field is required */
+  required?: boolean;
+  /** Animation delay index for staggered animations */
+  animationIndex?: number;
+  /** Callback when the field value changes */
+  onChange: (value: unknown) => void;
 }
 
 /**
@@ -361,32 +371,41 @@ export interface FormFieldFactoryProps {
  * Provides label, description, and layout for field content
  */
 export interface FormFieldWrapperProps {
-	/** Field identifier for label association */
-	id: string;
-	/** Display label text */
-	label: string;
-	/** Whether the field is required */
-	required?: boolean;
-	/** Description/help text for the field */
-	description?: string;
-	/** Animation delay in milliseconds */
-	animationDelay?: number;
+  /** Field identifier for label association */
+  id: string;
+  /** Display label text */
+  label: string;
+  /** Whether the field is required */
+  required?: boolean;
+  /** Description/help text for the field */
+  description?: string;
+  /** Animation delay in milliseconds */
+  animationDelay?: number;
 }
 
 /**
  * Type guard to check if options are FieldOption objects
  */
-export function isFieldOptionArray(options: FieldOption[] | string[]): options is FieldOption[] {
-	return options.length > 0 && typeof options[0] === 'object' && 'value' in options[0];
+export function isFieldOptionArray(
+  options: FieldOption[] | string[],
+): options is FieldOption[] {
+  return (
+    options.length > 0 &&
+    typeof options[0] === "object" &&
+    "value" in options[0]
+  );
 }
 
 /**
  * Type guard to check if items are OneOfItem objects (JSON Schema oneOf pattern)
  */
 export function isOneOfArray(items: unknown[]): items is OneOfItem[] {
-	return (
-		items.length > 0 && typeof items[0] === 'object' && items[0] !== null && 'const' in items[0]
-	);
+  return (
+    items.length > 0 &&
+    typeof items[0] === "object" &&
+    items[0] !== null &&
+    "const" in items[0]
+  );
 }
 
 /**
@@ -397,10 +416,10 @@ export function isOneOfArray(items: unknown[]): items is OneOfItem[] {
  * @returns Array of FieldOption objects
  */
 export function oneOfToOptions(oneOfItems: OneOfItem[]): FieldOption[] {
-	return oneOfItems.map((item) => ({
-		value: String(item.const),
-		label: item.title ?? String(item.const)
-	}));
+  return oneOfItems.map((item) => ({
+    value: String(item.const),
+    label: item.title ?? String(item.const),
+  }));
 }
 
 /**
@@ -414,27 +433,27 @@ export function oneOfToOptions(oneOfItems: OneOfItem[]): FieldOption[] {
  * @returns Normalized FieldOption array
  */
 export function normalizeOptions(
-	options: FieldOption[] | string[] | OneOfItem[] | unknown[]
+  options: FieldOption[] | string[] | OneOfItem[] | unknown[],
 ): FieldOption[] {
-	if (!options || options.length === 0) {
-		return [];
-	}
+  if (!options || options.length === 0) {
+    return [];
+  }
 
-	// Handle JSON Schema oneOf pattern (standard)
-	if (isOneOfArray(options)) {
-		return oneOfToOptions(options);
-	}
+  // Handle JSON Schema oneOf pattern (standard)
+  if (isOneOfArray(options)) {
+    return oneOfToOptions(options);
+  }
 
-	// Handle FieldOption array
-	if (isFieldOptionArray(options as FieldOption[] | string[])) {
-		return options as FieldOption[];
-	}
+  // Handle FieldOption array
+  if (isFieldOptionArray(options as FieldOption[] | string[])) {
+    return options as FieldOption[];
+  }
 
-	// Handle string array (simple enum values)
-	return (options as string[]).map((opt) => ({
-		value: String(opt),
-		label: String(opt)
-	}));
+  // Handle string array (simple enum values)
+  return (options as string[]).map((opt) => ({
+    value: String(opt),
+    label: String(opt),
+  }));
 }
 
 /**
@@ -445,11 +464,11 @@ export function normalizeOptions(
  * @returns Normalized FieldOption array
  */
 export function getSchemaOptions(schema: FieldSchema): FieldOption[] {
-	if (schema.oneOf && schema.oneOf.length > 0) {
-		return oneOfToOptions(schema.oneOf);
-	}
+  if (schema.oneOf && schema.oneOf.length > 0) {
+    return oneOfToOptions(schema.oneOf);
+  }
 
-	return [];
+  return [];
 }
 
 /**
@@ -477,96 +496,96 @@ export function getSchemaOptions(schema: FieldSchema): FieldOption[] {
  * ```
  */
 export interface SchemaFormProps {
-	/**
-	 * JSON Schema definition for the form.
-	 * Should follow JSON Schema draft-07 format with type: "object".
-	 * Properties define the form fields to render.
-	 */
-	schema: {
-		type: 'object';
-		properties: Record<string, FieldSchema>;
-		required?: string[];
-		additionalProperties?: boolean;
-	};
+  /**
+   * JSON Schema definition for the form.
+   * Should follow JSON Schema draft-07 format with type: "object".
+   * Properties define the form fields to render.
+   */
+  schema: {
+    type: "object";
+    properties: Record<string, FieldSchema>;
+    required?: string[];
+    additionalProperties?: boolean;
+  };
 
-	/**
-	 * Current form values as key-value pairs.
-	 * Keys should correspond to properties defined in the schema.
-	 * Missing values will use schema defaults if defined.
-	 */
-	values?: Record<string, unknown>;
+  /**
+   * Current form values as key-value pairs.
+   * Keys should correspond to properties defined in the schema.
+   * Missing values will use schema defaults if defined.
+   */
+  values?: Record<string, unknown>;
 
-	/**
-	 * Callback fired whenever any field value changes.
-	 * Receives the complete updated values object.
-	 * Use this for controlled form state management.
-	 * @param values - Updated form values
-	 */
-	onChange?: (values: Record<string, unknown>) => void;
+  /**
+   * Callback fired whenever any field value changes.
+   * Receives the complete updated values object.
+   * Use this for controlled form state management.
+   * @param values - Updated form values
+   */
+  onChange?: (values: Record<string, unknown>) => void;
 
-	/**
-	 * Whether to display Save and Cancel action buttons.
-	 * When false, the form operates in "inline" mode without buttons.
-	 * @default false
-	 */
-	showActions?: boolean;
+  /**
+   * Whether to display Save and Cancel action buttons.
+   * When false, the form operates in "inline" mode without buttons.
+   * @default false
+   */
+  showActions?: boolean;
 
-	/**
-	 * Label text for the save button.
-	 * Only used when showActions is true.
-	 * @default "Save"
-	 */
-	saveLabel?: string;
+  /**
+   * Label text for the save button.
+   * Only used when showActions is true.
+   * @default "Save"
+   */
+  saveLabel?: string;
 
-	/**
-	 * Label text for the cancel button.
-	 * Only used when showActions is true.
-	 * @default "Cancel"
-	 */
-	cancelLabel?: string;
+  /**
+   * Label text for the cancel button.
+   * Only used when showActions is true.
+   * @default "Cancel"
+   */
+  cancelLabel?: string;
 
-	/**
-	 * Callback fired when the Save button is clicked.
-	 * Receives the final form values after collecting from DOM.
-	 * @param values - Final form values
-	 */
-	onSave?: (values: Record<string, unknown>) => void;
+  /**
+   * Callback fired when the Save button is clicked.
+   * Receives the final form values after collecting from DOM.
+   * @param values - Final form values
+   */
+  onSave?: (values: Record<string, unknown>) => void;
 
-	/**
-	 * Callback fired when the Cancel button is clicked.
-	 * Use this to reset form state or close modals.
-	 */
-	onCancel?: () => void;
+  /**
+   * Callback fired when the Cancel button is clicked.
+   * Use this to reset form state or close modals.
+   */
+  onCancel?: () => void;
 
-	/**
-	 * Whether the form is in a loading state.
-	 * Disables all inputs and shows a loading spinner on the save button.
-	 * @default false
-	 */
-	loading?: boolean;
+  /**
+   * Whether the form is in a loading state.
+   * Disables all inputs and shows a loading spinner on the save button.
+   * @default false
+   */
+  loading?: boolean;
 
-	/**
-	 * Whether the form is disabled.
-	 * Prevents all interactions including save.
-	 * @default false
-	 */
-	disabled?: boolean;
+  /**
+   * Whether the form is disabled.
+   * Prevents all interactions including save.
+   * @default false
+   */
+  disabled?: boolean;
 
-	/**
-	 * Custom CSS class to apply to the form container.
-	 * Use for additional styling customization.
-	 */
-	class?: string;
+  /**
+   * Custom CSS class to apply to the form container.
+   * Use for additional styling customization.
+   */
+  class?: string;
 
-	/**
-	 * Authentication provider for autocomplete fields.
-	 * Used to add authentication headers when fetching suggestions from callback URLs.
-	 */
-	authProvider?: import('$lib/types/index.js').AuthProvider;
+  /**
+   * Authentication provider for autocomplete fields.
+   * Used to add authentication headers when fetching suggestions from callback URLs.
+   */
+  authProvider?: import("$lib/types/index.js").AuthProvider;
 
-	/**
-	 * Base URL for resolving relative autocomplete callback URLs.
-	 * @default ""
-	 */
-	baseUrl?: string;
+  /**
+   * Base URL for resolving relative autocomplete callback URLs.
+   * @default ""
+   */
+  baseUrl?: string;
 }

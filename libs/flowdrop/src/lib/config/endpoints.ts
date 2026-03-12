@@ -3,331 +3,336 @@
  * Provides configurable endpoints for all API actions
  */
 
-import type { AgentSpecEndpointConfig } from './agentSpecEndpoints.js';
+import type { AgentSpecEndpointConfig } from "./agentSpecEndpoints.js";
 
 export interface EndpointConfig {
-	/** Base URL for all endpoints */
-	baseUrl: string;
+  /** Base URL for all endpoints */
+  baseUrl: string;
 
-	/** Individual endpoint paths */
-	endpoints: {
-		// Node endpoints
-		nodes: {
-			list: string;
-			get: string;
-			byCategory: string;
-			metadata: string;
-		};
+  /** Individual endpoint paths */
+  endpoints: {
+    // Node endpoints
+    nodes: {
+      list: string;
+      get: string;
+      byCategory: string;
+      metadata: string;
+    };
 
-		// Port configuration endpoint
-		portConfig: string;
+    // Port configuration endpoint
+    portConfig: string;
 
-		// Categories configuration endpoint
-		categories: string;
+    // Categories configuration endpoint
+    categories: string;
 
-		// Workflow endpoints
-		workflows: {
-			list: string;
-			get: string;
-			create: string;
-			update: string;
-			delete: string;
-			validate: string;
-			export: string;
-			import: string;
-		};
+    // Workflow endpoints
+    workflows: {
+      list: string;
+      get: string;
+      create: string;
+      update: string;
+      delete: string;
+      validate: string;
+      export: string;
+      import: string;
+    };
 
-		// Execution endpoints
-		executions: {
-			execute: string;
-			status: string;
-			cancel: string;
-			logs: string;
-			history: string;
-		};
+    // Execution endpoints
+    executions: {
+      execute: string;
+      status: string;
+      cancel: string;
+      logs: string;
+      history: string;
+    };
 
-		// Pipeline endpoints
-		pipelines: {
-			list: string;
-			get: string;
-			create: string;
-			update: string;
-			delete: string;
-			status: string;
-			logs: string;
-			execute: string;
-			stop: string;
-		};
+    // Pipeline endpoints
+    pipelines: {
+      list: string;
+      get: string;
+      create: string;
+      update: string;
+      delete: string;
+      status: string;
+      logs: string;
+      execute: string;
+      stop: string;
+    };
 
-		// Playground endpoints
-		playground: {
-			/** List sessions for a workflow */
-			listSessions: string;
-			/** Create a new session */
-			createSession: string;
-			/** Get session details */
-			getSession: string;
-			/** Delete a session */
-			deleteSession: string;
-			/** Get messages from a session */
-			getMessages: string;
-			/** Send a message to a session */
-			sendMessage: string;
-			/** Stop execution in a session */
-			stopExecution: string;
-		};
+    // Playground endpoints
+    playground: {
+      /** List sessions for a workflow */
+      listSessions: string;
+      /** Create a new session */
+      createSession: string;
+      /** Get session details */
+      getSession: string;
+      /** Delete a session */
+      deleteSession: string;
+      /** Get messages from a session */
+      getMessages: string;
+      /** Send a message to a session */
+      sendMessage: string;
+      /** Stop execution in a session */
+      stopExecution: string;
+    };
 
-		// Interrupt endpoints (Human-in-the-Loop)
-		interrupts: {
-			/** Get interrupt details by ID */
-			get: string;
-			/** Resolve an interrupt with user response */
-			resolve: string;
-			/** Cancel a pending interrupt */
-			cancel: string;
-			/** List interrupts for a playground session */
-			listBySession: string;
-			/** List interrupts for a pipeline */
-			listByPipeline: string;
-		};
+    // Interrupt endpoints (Human-in-the-Loop)
+    interrupts: {
+      /** Get interrupt details by ID */
+      get: string;
+      /** Resolve an interrupt with user response */
+      resolve: string;
+      /** Cancel a pending interrupt */
+      cancel: string;
+      /** List interrupts for a playground session */
+      listBySession: string;
+      /** List interrupts for a pipeline */
+      listByPipeline: string;
+    };
 
-		// Template endpoints
-		templates: {
-			list: string;
-			get: string;
-			create: string;
-			update: string;
-			delete: string;
-		};
+    // Template endpoints
+    templates: {
+      list: string;
+      get: string;
+      create: string;
+      update: string;
+      delete: string;
+    };
 
-		// User endpoints
-		users: {
-			profile: string;
-			preferences: string;
-		};
+    // User endpoints
+    users: {
+      profile: string;
+      preferences: string;
+    };
 
-		// System endpoints
-		system: {
-			health: string;
-			config: string;
-			version: string;
-		};
-	};
+    // System endpoints
+    system: {
+      health: string;
+      config: string;
+      version: string;
+    };
+  };
 
-	/**
-	 * Optional Agent Spec runtime configuration.
-	 * When provided, enables Agent Spec execution features.
-	 */
-	agentSpec?: AgentSpecEndpointConfig;
+  /**
+   * Optional Agent Spec runtime configuration.
+   * When provided, enables Agent Spec execution features.
+   */
+  agentSpec?: AgentSpecEndpointConfig;
 
-	/** HTTP method overrides for specific endpoints */
-	methods?: {
-		[key: string]: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-	};
+  /** HTTP method overrides for specific endpoints */
+  methods?: {
+    [key: string]: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  };
 
-	/** Custom headers for specific endpoints */
-	headers?: {
-		[key: string]: Record<string, string>;
-	};
+  /** Custom headers for specific endpoints */
+  headers?: {
+    [key: string]: Record<string, string>;
+  };
 
-	/** Authentication configuration */
-	auth?: {
-		type: 'none' | 'bearer' | 'api_key' | 'custom';
-		token?: string;
-		apiKey?: string;
-		headers?: Record<string, string>;
-	};
+  /** Authentication configuration */
+  auth?: {
+    type: "none" | "bearer" | "api_key" | "custom";
+    token?: string;
+    apiKey?: string;
+    headers?: Record<string, string>;
+  };
 
-	/** Request timeout in milliseconds */
-	timeout?: number;
+  /** Request timeout in milliseconds */
+  timeout?: number;
 
-	/** Retry configuration */
-	retry?: {
-		enabled: boolean;
-		maxAttempts: number;
-		delay: number;
-		backoff?: 'linear' | 'exponential';
-	};
+  /** Retry configuration */
+  retry?: {
+    enabled: boolean;
+    maxAttempts: number;
+    delay: number;
+    backoff?: "linear" | "exponential";
+  };
 
-	/**
-	 * Optional transform applied to workflow objects before they are sent to the backend
-	 * (i.e., in create and update requests).
-	 *
-	 * Use this to adapt the generic FlowDrop `Workflow` shape to whatever your backend
-	 * expects. The function receives the workflow data and must return the body that will
-	 * be JSON-serialised and posted.
-	 *
-	 * Default: identity — the workflow is sent as-is.
-	 *
-	 * @example Drupal integration — Drupal expects `label` in addition to `name`:
-	 * ```ts
-	 * transformWorkflowPayload: (workflow) => ({
-	 *   ...workflow,
-	 *   label: workflow.name,
-	 * })
-	 * ```
-	 */
-	transformWorkflowPayload?: (workflow: Record<string, unknown>) => Record<string, unknown>;
+  /**
+   * Optional transform applied to workflow objects before they are sent to the backend
+   * (i.e., in create and update requests).
+   *
+   * Use this to adapt the generic FlowDrop `Workflow` shape to whatever your backend
+   * expects. The function receives the workflow data and must return the body that will
+   * be JSON-serialised and posted.
+   *
+   * Default: identity — the workflow is sent as-is.
+   *
+   * @example Drupal integration — Drupal expects `label` in addition to `name`:
+   * ```ts
+   * transformWorkflowPayload: (workflow) => ({
+   *   ...workflow,
+   *   label: workflow.name,
+   * })
+   * ```
+   */
+  transformWorkflowPayload?: (
+    workflow: Record<string, unknown>,
+  ) => Record<string, unknown>;
 }
 
 /**
  * Default endpoint configuration
  */
 export const defaultEndpointConfig: EndpointConfig = {
-	baseUrl: '/api/flowdrop',
-	endpoints: {
-		nodes: {
-			list: '/nodes',
-			get: '/nodes/{id}',
-			byCategory: '/nodes?category={category}',
-			metadata: '/nodes/{id}/metadata'
-		},
-		portConfig: '/port-config',
-		categories: '/categories',
-		workflows: {
-			list: '/workflows',
-			get: '/workflows/{id}',
-			create: '/workflows',
-			update: '/workflows/{id}',
-			delete: '/workflows/{id}',
-			validate: '/workflows/validate',
-			export: '/workflows/{id}/export',
-			import: '/workflows/import'
-		},
-		executions: {
-			execute: '/workflows/{id}/execute',
-			status: '/executions/{id}',
-			cancel: '/executions/{id}/cancel',
-			logs: '/executions/{id}/logs',
-			history: '/executions'
-		},
-		pipelines: {
-			list: '/workflow/{workflow_id}/pipelines',
-			get: '/pipeline/{id}',
-			create: '/pipeline',
-			update: '/pipeline/{id}',
-			delete: '/pipeline/{id}',
-			status: '/pipeline/{id}/status',
-			logs: '/pipeline/{id}/logs',
-			execute: '/pipeline/{id}/execute',
-			stop: '/pipeline/{id}/stop'
-		},
-		playground: {
-			listSessions: '/workflows/{id}/playground/sessions',
-			createSession: '/workflows/{id}/playground/sessions',
-			getSession: '/playground/sessions/{sessionId}',
-			deleteSession: '/playground/sessions/{sessionId}',
-			getMessages: '/playground/sessions/{sessionId}/messages',
-			sendMessage: '/playground/sessions/{sessionId}/messages',
-			stopExecution: '/playground/sessions/{sessionId}/stop'
-		},
-		interrupts: {
-			get: '/interrupts/{interruptId}',
-			resolve: '/interrupts/{interruptId}',
-			cancel: '/interrupts/{interruptId}/cancel',
-			listBySession: '/playground/sessions/{sessionId}/interrupts',
-			listByPipeline: '/pipelines/{pipelineId}/interrupts'
-		},
-		templates: {
-			list: '/templates',
-			get: '/templates/{id}',
-			create: '/templates',
-			update: '/templates/{id}',
-			delete: '/templates/{id}'
-		},
-		users: {
-			profile: '/users/profile',
-			preferences: '/users/preferences'
-		},
-		system: {
-			/** Health check at root level (industry standard for K8s, Docker, load balancers) */
-			health: '/health',
-			config: '/system/config',
-			version: '/system/version'
-		}
-	},
-	timeout: 30000,
-	retry: {
-		enabled: true,
-		maxAttempts: 3,
-		delay: 1000,
-		backoff: 'exponential'
-	}
+  baseUrl: "/api/flowdrop",
+  endpoints: {
+    nodes: {
+      list: "/nodes",
+      get: "/nodes/{id}",
+      byCategory: "/nodes?category={category}",
+      metadata: "/nodes/{id}/metadata",
+    },
+    portConfig: "/port-config",
+    categories: "/categories",
+    workflows: {
+      list: "/workflows",
+      get: "/workflows/{id}",
+      create: "/workflows",
+      update: "/workflows/{id}",
+      delete: "/workflows/{id}",
+      validate: "/workflows/validate",
+      export: "/workflows/{id}/export",
+      import: "/workflows/import",
+    },
+    executions: {
+      execute: "/workflows/{id}/execute",
+      status: "/executions/{id}",
+      cancel: "/executions/{id}/cancel",
+      logs: "/executions/{id}/logs",
+      history: "/executions",
+    },
+    pipelines: {
+      list: "/workflow/{workflow_id}/pipelines",
+      get: "/pipeline/{id}",
+      create: "/pipeline",
+      update: "/pipeline/{id}",
+      delete: "/pipeline/{id}",
+      status: "/pipeline/{id}/status",
+      logs: "/pipeline/{id}/logs",
+      execute: "/pipeline/{id}/execute",
+      stop: "/pipeline/{id}/stop",
+    },
+    playground: {
+      listSessions: "/workflows/{id}/playground/sessions",
+      createSession: "/workflows/{id}/playground/sessions",
+      getSession: "/playground/sessions/{sessionId}",
+      deleteSession: "/playground/sessions/{sessionId}",
+      getMessages: "/playground/sessions/{sessionId}/messages",
+      sendMessage: "/playground/sessions/{sessionId}/messages",
+      stopExecution: "/playground/sessions/{sessionId}/stop",
+    },
+    interrupts: {
+      get: "/interrupts/{interruptId}",
+      resolve: "/interrupts/{interruptId}",
+      cancel: "/interrupts/{interruptId}/cancel",
+      listBySession: "/playground/sessions/{sessionId}/interrupts",
+      listByPipeline: "/pipelines/{pipelineId}/interrupts",
+    },
+    templates: {
+      list: "/templates",
+      get: "/templates/{id}",
+      create: "/templates",
+      update: "/templates/{id}",
+      delete: "/templates/{id}",
+    },
+    users: {
+      profile: "/users/profile",
+      preferences: "/users/preferences",
+    },
+    system: {
+      /** Health check at root level (industry standard for K8s, Docker, load balancers) */
+      health: "/health",
+      config: "/system/config",
+      version: "/system/version",
+    },
+  },
+  timeout: 30000,
+  retry: {
+    enabled: true,
+    maxAttempts: 3,
+    delay: 1000,
+    backoff: "exponential",
+  },
 };
 
 /**
  * Create endpoint configuration with custom base URL
  */
 export function createEndpointConfig(
-	baseUrl: string,
-	overrides?: Partial<EndpointConfig>
+  baseUrl: string,
+  overrides?: Partial<EndpointConfig>,
 ): EndpointConfig {
-	const config = {
-		...defaultEndpointConfig,
-		baseUrl: baseUrl.replace(/\/$/, ''),
-		...overrides
-	};
+  const config = {
+    ...defaultEndpointConfig,
+    baseUrl: baseUrl.replace(/\/$/, ""),
+    ...overrides,
+  };
 
-	return config;
+  return config;
 }
 
 /**
  * Build full URL for an endpoint
  */
 export function buildEndpointUrl(
-	config: EndpointConfig,
-	endpointPath: string,
-	params?: Record<string, string>
+  config: EndpointConfig,
+  endpointPath: string,
+  params?: Record<string, string>,
 ): string {
-	let url = endpointPath;
+  let url = endpointPath;
 
-	// Replace path parameters
-	if (params) {
-		Object.entries(params).forEach(([key, value]) => {
-			url = url.replace(`{${key}}`, encodeURIComponent(value));
-		});
-	}
+  // Replace path parameters
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      url = url.replace(`{${key}}`, encodeURIComponent(value));
+    });
+  }
 
-	// Ensure URL starts with base URL
-	if (!url.startsWith('http') && !url.startsWith('//')) {
-		url = `${config.baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
-	}
+  // Ensure URL starts with base URL
+  if (!url.startsWith("http") && !url.startsWith("//")) {
+    url = `${config.baseUrl}${url.startsWith("/") ? url : `/${url}`}`;
+  }
 
-	return url;
+  return url;
 }
 
 /**
  * Get HTTP method for an endpoint
  */
-export function getEndpointMethod(config: EndpointConfig, endpointKey: string): string {
-	return config.methods?.[endpointKey] || 'GET';
+export function getEndpointMethod(
+  config: EndpointConfig,
+  endpointKey: string,
+): string {
+  return config.methods?.[endpointKey] || "GET";
 }
 
 /**
  * Get custom headers for an endpoint
  */
 export function getEndpointHeaders(
-	config: EndpointConfig,
-	endpointKey: string
+  config: EndpointConfig,
+  endpointKey: string,
 ): Record<string, string> {
-	const baseHeaders: Record<string, string> = {
-		'Content-Type': 'application/json'
-	};
+  const baseHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
 
-	// Add authentication headers
-	if (config.auth?.type === 'bearer' && config.auth.token) {
-		baseHeaders['Authorization'] = `Bearer ${config.auth.token}`;
-	} else if (config.auth?.type === 'api_key' && config.auth.apiKey) {
-		baseHeaders['X-API-Key'] = config.auth.apiKey;
-	} else if (config.auth?.type === 'custom' && config.auth.headers) {
-		Object.assign(baseHeaders, config.auth.headers);
-	}
+  // Add authentication headers
+  if (config.auth?.type === "bearer" && config.auth.token) {
+    baseHeaders["Authorization"] = `Bearer ${config.auth.token}`;
+  } else if (config.auth?.type === "api_key" && config.auth.apiKey) {
+    baseHeaders["X-API-Key"] = config.auth.apiKey;
+  } else if (config.auth?.type === "custom" && config.auth.headers) {
+    Object.assign(baseHeaders, config.auth.headers);
+  }
 
-	// Add endpoint-specific headers
-	const endpointHeaders = config.headers?.[endpointKey];
-	if (endpointHeaders) {
-		Object.assign(baseHeaders, endpointHeaders);
-	}
+  // Add endpoint-specific headers
+  const endpointHeaders = config.headers?.[endpointKey];
+  if (endpointHeaders) {
+    Object.assign(baseHeaders, endpointHeaders);
+  }
 
-	return baseHeaders;
+  return baseHeaders;
 }

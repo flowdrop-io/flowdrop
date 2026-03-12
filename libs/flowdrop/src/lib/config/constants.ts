@@ -30,17 +30,17 @@ export const ARROW_HALF_WIDTH_PX = 4;
 
 /** Edge marker arrow sizes by category */
 export const EDGE_MARKER_SIZES = {
-	loopback: { width: 14, height: 14 },
-	trigger: { width: 16, height: 16 },
-	tool: { width: 16, height: 16 },
-	data: { width: 16, height: 16 }
+  loopback: { width: 14, height: 14 },
+  trigger: { width: 16, height: 16 },
+  tool: { width: 16, height: 16 },
+  data: { width: 16, height: 16 },
 } as const;
 
 /** Toast notification durations in milliseconds */
 export const TOAST_DURATION = {
-	SUCCESS: 4_000,
-	ERROR: 6_000,
-	WARNING: 5_000,
-	INFO: 4_000,
-	CONFIRMATION: 5_000
+  SUCCESS: 4_000,
+  ERROR: 6_000,
+  WARNING: 5_000,
+  INFO: 4_000,
+  CONFIRMATION: 5_000,
 } as const;

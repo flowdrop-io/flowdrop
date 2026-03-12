@@ -24,96 +24,99 @@
 // Re-export everything from the light form module
 // Components
 export {
-	SchemaForm,
-	FormField,
-	FormFieldFull,
-	FormFieldWrapper,
-	FormTextField,
-	FormTextarea,
-	FormNumberField,
-	FormRangeField,
-	FormToggle,
-	FormSelect,
-	FormCheckboxGroup,
-	FormArray,
-	FormFieldset,
-	FormUISchemaRenderer
-} from './index.js';
+  SchemaForm,
+  FormField,
+  FormFieldFull,
+  FormFieldWrapper,
+  FormTextField,
+  FormTextarea,
+  FormNumberField,
+  FormRangeField,
+  FormToggle,
+  FormSelect,
+  FormCheckboxGroup,
+  FormArray,
+  FormFieldset,
+  FormUISchemaRenderer,
+} from "./index.js";
 
 // Types
 export type {
-	FieldSchema,
-	FieldType,
-	FieldFormat,
-	FieldOption,
-	OneOfItem,
-	SchemaFormProps,
-	BaseFieldProps,
-	TextFieldProps,
-	TextareaFieldProps,
-	NumberFieldProps,
-	ToggleFieldProps,
-	RangeFieldProps,
-	SelectFieldProps,
-	CheckboxGroupFieldProps,
-	ArrayFieldProps,
-	FormFieldFactoryProps,
-	FormFieldWrapperProps,
-	FieldComponentProps,
-	FieldMatcher,
-	FieldMatcherRegistration,
-	FieldComponent,
-	FieldComponentRegistration
-} from './index.js';
+  FieldSchema,
+  FieldType,
+  FieldFormat,
+  FieldOption,
+  OneOfItem,
+  SchemaFormProps,
+  BaseFieldProps,
+  TextFieldProps,
+  TextareaFieldProps,
+  NumberFieldProps,
+  ToggleFieldProps,
+  RangeFieldProps,
+  SelectFieldProps,
+  CheckboxGroupFieldProps,
+  ArrayFieldProps,
+  FormFieldFactoryProps,
+  FormFieldWrapperProps,
+  FieldComponentProps,
+  FieldMatcher,
+  FieldMatcherRegistration,
+  FieldComponent,
+  FieldComponentRegistration,
+} from "./index.js";
 
 // Utility functions
 export {
-	isFieldOptionArray,
-	isOneOfArray,
-	normalizeOptions,
-	oneOfToOptions,
-	getSchemaOptions
-} from './index.js';
+  isFieldOptionArray,
+  isOneOfArray,
+  normalizeOptions,
+  oneOfToOptions,
+  getSchemaOptions,
+} from "./index.js";
 
 // Field Registry
 export {
-	fieldComponentRegistry,
-	hiddenFieldMatcher,
-	checkboxGroupMatcher,
-	enumSelectMatcher,
-	textareaMatcher,
-	rangeMatcher,
-	textFieldMatcher,
-	numberFieldMatcher,
-	toggleMatcher,
-	selectOptionsMatcher,
-	arrayMatcher
-} from './index.js';
+  fieldComponentRegistry,
+  hiddenFieldMatcher,
+  checkboxGroupMatcher,
+  enumSelectMatcher,
+  textareaMatcher,
+  rangeMatcher,
+  textFieldMatcher,
+  numberFieldMatcher,
+  toggleMatcher,
+  selectOptionsMatcher,
+  arrayMatcher,
+} from "./index.js";
 
 // Import registration functions
-import { registerCodeEditorField, registerTemplateEditorField } from './code.js';
-import { registerMarkdownEditorField } from './markdown.js';
+import {
+  registerCodeEditorField,
+  registerTemplateEditorField,
+} from "./code.js";
+import { registerMarkdownEditorField } from "./markdown.js";
 
 // Re-export heavy editor components for direct access
-export { FormCodeEditor, FormTemplateEditor } from './code.js';
-export { FormMarkdownEditor } from './markdown.js';
+export { FormCodeEditor, FormTemplateEditor } from "./code.js";
+export { FormMarkdownEditor } from "./markdown.js";
 
 // Re-export registration functions
 export {
-	registerCodeEditorField,
-	registerTemplateEditorField,
-	registerAllCodeEditors,
-	isCodeEditorRegistered,
-	isTemplateEditorRegistered,
-	codeEditorFieldMatcher,
-	templateEditorFieldMatcher
-} from './code.js';
+  registerCodeEditorField,
+  registerTemplateEditorField,
+  registerAllCodeEditors,
+  isCodeEditorRegistered,
+  isTemplateEditorRegistered,
+  codeEditorFieldMatcher,
+  templateEditorFieldMatcher,
+} from "./code.js";
 
 export {
-	registerMarkdownEditorField,
-	isMarkdownEditorRegistered,
-	markdownEditorFieldMatcher
-} from './markdown.js';
+  registerMarkdownEditorField,
+  isMarkdownEditorRegistered,
+  markdownEditorFieldMatcher,
+} from "./markdown.js";
 
 /**
  * Track if all field types have been initialized
@@ -138,27 +141,27 @@ let allFieldTypesInitialized = false;
  * ```
  */
 export function initializeAllFieldTypes(): void {
-	if (allFieldTypesInitialized) {
-		return;
-	}
+  if (allFieldTypesInitialized) {
+    return;
+  }
 
-	registerCodeEditorField();
-	registerTemplateEditorField();
-	registerMarkdownEditorField();
+  registerCodeEditorField();
+  registerTemplateEditorField();
+  registerMarkdownEditorField();
 
-	allFieldTypesInitialized = true;
+  allFieldTypesInitialized = true;
 }
 
 /**
  * Check if all field types have been initialized
  */
 export function areAllFieldTypesInitialized(): boolean {
-	return allFieldTypesInitialized;
+  return allFieldTypesInitialized;
 }
 
 /**
  * Reset initialization state (useful for testing)
  */
 export function resetFieldTypeInitialization(): void {
-	allFieldTypesInitialized = false;
+  allFieldTypesInitialized = false;
 }

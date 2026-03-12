@@ -13,17 +13,19 @@
  * CSS positioning logic and stays automatically accurate.
  */
 
-import { SvelteMap } from 'svelte/reactivity';
+import { SvelteMap } from "svelte/reactivity";
 import type {
-	WorkflowNode as WorkflowNodeType,
-	PortCoordinate,
-	PortCoordinateMap
-} from '../types/index.js';
-import type { InternalNode } from '@xyflow/svelte';
-import { ProximityConnectHelper } from '../helpers/proximityConnect.js';
+  WorkflowNode as WorkflowNodeType,
+  PortCoordinate,
+  PortCoordinateMap,
+} from "../types/index.js";
+import type { InternalNode } from "@xyflow/svelte";
+import { ProximityConnectHelper } from "../helpers/proximityConnect.js";
 
 /** Reactive state holding all port absolute coordinates, keyed by handleId */
-let coordinates: PortCoordinateMap = $state(new SvelteMap<string, PortCoordinate>());
+let coordinates: PortCoordinateMap = $state(
+  new SvelteMap<string, PortCoordinate>(),
+);
 
 /**
  * Parse a handle ID to extract nodeId, direction, and portId.
@@ -33,20 +35,24 @@ let coordinates: PortCoordinateMap = $state(new SvelteMap<string, PortCoordinate
  * from the known suffixes (-input- or -output-).
  */
 function parseHandleId(handleId: string): {
-	nodeId: string;
-	direction: 'input' | 'output';
-	portId: string;
+  nodeId: string;
+  direction: "input" | "output";
+  portId: string;
 } | null {
-	// Match the last occurrence of -input- or -output- to handle nodeIds with hyphens
-	const inputMatch = handleId.match(/^(.+)-input-(.+)$/);
-	if (inputMatch) {
-		return { nodeId: inputMatch[1], direction: 'input', portId: inputMatch[2] };
-	}
-	const outputMatch = handleId.match(/^(.+)-output-(.+)$/);
-	if (outputMatch) {
-		return { nodeId: outputMatch[1], direction: 'output', portId: outputMatch[2] };
-	}
-	return null;
+  // Match the last occurrence of -input- or -output- to handle nodeIds with hyphens
+  const inputMatch = handleId.match(/^(.+)-input-(.+)$/);
+  if (inputMatch) {
+    return { nodeId: inputMatch[1], direction: "input", portId: inputMatch[2] };
+  }
+  const outputMatch = handleId.match(/^(.+)-output-(.+)$/);
+  if (outputMatch) {
+    return {
+      nodeId: outputMatch[1],
+      direction: "output",
+      portId: outputMatch[2],
+    };
+  }
+  return null;
 }
 
 /**
@@ -54,19 +60,19 @@ function parseHandleId(handleId: string): {
  * Maps portId -> dataType for quick lookup when processing handle bounds.
  */
 function buildPortDataTypeLookup(node: WorkflowNodeType): Map<string, string> {
-	const lookup = new Map<string, string>();
+  const lookup = new Map<string, string>();
 
-	const inputs = ProximityConnectHelper.getAllPorts(node, 'input');
-	for (const port of inputs) {
-		lookup.set(`input-${port.id}`, port.dataType);
-	}
+  const inputs = ProximityConnectHelper.getAllPorts(node, "input");
+  for (const port of inputs) {
+    lookup.set(`input-${port.id}`, port.dataType);
+  }
 
-	const outputs = ProximityConnectHelper.getAllPorts(node, 'output');
-	for (const port of outputs) {
-		lookup.set(`output-${port.id}`, port.dataType);
-	}
+  const outputs = ProximityConnectHelper.getAllPorts(node, "output");
+  for (const port of outputs) {
+    lookup.set(`output-${port.id}`, port.dataType);
+  }
 
-	return lookup;
+  return lookup;
 }
 
 /**
@@ -77,39 +83,42 @@ function buildPortDataTypeLookup(node: WorkflowNodeType): Map<string, string> {
  * @returns Array of PortCoordinate entries for this node
  */
 function computeNodePortCoordinates(
-	node: WorkflowNodeType,
-	internalNode: InternalNode
+  node: WorkflowNodeType,
+  internalNode: InternalNode,
 ): PortCoordinate[] {
-	const handleBounds = internalNode.internals.handleBounds;
-	if (!handleBounds) return [];
+  const handleBounds = internalNode.internals.handleBounds;
+  if (!handleBounds) return [];
 
-	const posAbs = internalNode.internals.positionAbsolute;
-	const dataTypeLookup = buildPortDataTypeLookup(node);
-	const result: PortCoordinate[] = [];
+  const posAbs = internalNode.internals.positionAbsolute;
+  const dataTypeLookup = buildPortDataTypeLookup(node);
+  const result: PortCoordinate[] = [];
 
-	const allHandles = [...(handleBounds.source ?? []), ...(handleBounds.target ?? [])];
+  const allHandles = [
+    ...(handleBounds.source ?? []),
+    ...(handleBounds.target ?? []),
+  ];
 
-	for (const handle of allHandles) {
-		if (!handle.id) continue;
+  for (const handle of allHandles) {
+    if (!handle.id) continue;
 
-		const parsed = parseHandleId(handle.id);
-		if (!parsed) continue;
+    const parsed = parseHandleId(handle.id);
+    if (!parsed) continue;
 
-		const lookupKey = `${parsed.direction}-${parsed.portId}`;
-		const dataType = dataTypeLookup.get(lookupKey);
-		if (!dataType) continue;
+    const lookupKey = `${parsed.direction}-${parsed.portId}`;
+    const dataType = dataTypeLookup.get(lookupKey);
+    if (!dataType) continue;
 
-		result.push({
-			x: posAbs.x + handle.x + handle.width / 2,
-			y: posAbs.y + handle.y + handle.height / 2,
-			handleId: handle.id,
-			nodeId: parsed.nodeId,
-			direction: parsed.direction,
-			dataType
-		});
-	}
+    result.push({
+      x: posAbs.x + handle.x + handle.width / 2,
+      y: posAbs.y + handle.y + handle.height / 2,
+      handleId: handle.id,
+      nodeId: parsed.nodeId,
+      direction: parsed.direction,
+      dataType,
+    });
+  }
 
-	return result;
+  return result;
 }
 
 /**
@@ -120,22 +129,22 @@ function computeNodePortCoordinates(
  * @param getInternalNode - SvelteFlow's getInternalNode function
  */
 export function rebuildAllPortCoordinates(
-	nodes: WorkflowNodeType[],
-	getInternalNode: (id: string) => InternalNode | undefined
+  nodes: WorkflowNodeType[],
+  getInternalNode: (id: string) => InternalNode | undefined,
 ): void {
-	const map = new SvelteMap<string, PortCoordinate>();
+  const map = new SvelteMap<string, PortCoordinate>();
 
-	for (const node of nodes) {
-		const internalNode = getInternalNode(node.id);
-		if (!internalNode) continue;
+  for (const node of nodes) {
+    const internalNode = getInternalNode(node.id);
+    if (!internalNode) continue;
 
-		const coords = computeNodePortCoordinates(node, internalNode);
-		for (const coord of coords) {
-			map.set(coord.handleId, coord);
-		}
-	}
+    const coords = computeNodePortCoordinates(node, internalNode);
+    for (const coord of coords) {
+      map.set(coord.handleId, coord);
+    }
+  }
 
-	coordinates = map;
+  coordinates = map;
 }
 
 /**
@@ -146,24 +155,24 @@ export function rebuildAllPortCoordinates(
  * @param getInternalNode - SvelteFlow's getInternalNode function
  */
 export function updateNodePortCoordinates(
-	node: WorkflowNodeType,
-	getInternalNode: (id: string) => InternalNode | undefined
+  node: WorkflowNodeType,
+  getInternalNode: (id: string) => InternalNode | undefined,
 ): void {
-	const internalNode = getInternalNode(node.id);
-	if (!internalNode) return;
+  const internalNode = getInternalNode(node.id);
+  if (!internalNode) return;
 
-	// Remove old entries for this node
-	for (const [key, coord] of coordinates) {
-		if (coord.nodeId === node.id) {
-			coordinates.delete(key);
-		}
-	}
+  // Remove old entries for this node
+  for (const [key, coord] of coordinates) {
+    if (coord.nodeId === node.id) {
+      coordinates.delete(key);
+    }
+  }
 
-	// Add new entries
-	const coords = computeNodePortCoordinates(node, internalNode);
-	for (const coord of coords) {
-		coordinates.set(coord.handleId, coord);
-	}
+  // Add new entries
+  const coords = computeNodePortCoordinates(node, internalNode);
+  for (const coord of coords) {
+    coordinates.set(coord.handleId, coord);
+  }
 }
 
 /**
@@ -172,11 +181,11 @@ export function updateNodePortCoordinates(
  * @param nodeId - ID of the node to remove
  */
 export function removeNodePortCoordinates(nodeId: string): void {
-	for (const [key, coord] of coordinates) {
-		if (coord.nodeId === nodeId) {
-			coordinates.delete(key);
-		}
-	}
+  for (const [key, coord] of coordinates) {
+    if (coord.nodeId === nodeId) {
+      coordinates.delete(key);
+    }
+  }
 }
 
 /**
@@ -185,8 +194,10 @@ export function removeNodePortCoordinates(nodeId: string): void {
  * @param handleId - The handle ID to look up
  * @returns The port coordinate or undefined if not found
  */
-export function getPortCoordinate(handleId: string): PortCoordinate | undefined {
-	return coordinates.get(handleId);
+export function getPortCoordinate(
+  handleId: string,
+): PortCoordinate | undefined {
+  return coordinates.get(handleId);
 }
 
 /**
@@ -196,13 +207,13 @@ export function getPortCoordinate(handleId: string): PortCoordinate | undefined 
  * @returns Array of port coordinates for the node
  */
 export function getNodePortCoordinates(nodeId: string): PortCoordinate[] {
-	const result: PortCoordinate[] = [];
-	for (const coord of coordinates.values()) {
-		if (coord.nodeId === nodeId) {
-			result.push(coord);
-		}
-	}
-	return result;
+  const result: PortCoordinate[] = [];
+  for (const coord of coordinates.values()) {
+    if (coord.nodeId === nodeId) {
+      result.push(coord);
+    }
+  }
+  return result;
 }
 
 /**
@@ -212,7 +223,7 @@ export function getNodePortCoordinates(nodeId: string): PortCoordinate[] {
  * @returns Current port coordinate map
  */
 export function getPortCoordinateSnapshot(): PortCoordinateMap {
-	return coordinates;
+  return coordinates;
 }
 
 /**
@@ -222,5 +233,5 @@ export function getPortCoordinateSnapshot(): PortCoordinateMap {
  * @returns The reactive port coordinate map
  */
 export function getPortCoordinates(): PortCoordinateMap {
-	return coordinates;
+  return coordinates;
 }

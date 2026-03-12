@@ -1,28 +1,28 @@
 /* Storybook-specific styles */
 /* Imports library styles without dev-global.css (which sets overflow: hidden) */
-@import '../src/lib/styles/base.css';
-@import '../src/lib/styles/toast.css';
+@import "../src/lib/styles/base.css";
+@import "../src/lib/styles/toast.css";
 
 body {
-	font-family:
-		system-ui,
-		-apple-system,
-		BlinkMacSystemFont,
-		'Segoe UI',
-		Roboto,
-		'Helvetica Neue',
-		Arial,
-		sans-serif;
-	background-color: var(--fd-background);
-	color: var(--fd-foreground);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  background-color: var(--fd-background);
+  color: var(--fd-foreground);
 }
 
 /* Theme-aware Docs page */
 #storybook-docs {
-	background-color: var(--fd-background);
-	color: var(--fd-foreground);
+  background-color: var(--fd-background);
+  color: var(--fd-foreground);
 }
 
 .docs-story {
-	background-color: var(--fd-background);
+  background-color: var(--fd-background);
 }

@@ -11,7 +11,7 @@
 
 /* Toaster container: use design token for offset from viewport edges */
 .flowdrop-toaster.flowdrop-toaster {
-	--default-offset: var(--fd-space-xl, 16px);
+  --default-offset: var(--fd-space-xl, 16px);
 }
 
 /*
@@ -19,17 +19,17 @@
  * Plain descendant selector (no :global - that's Svelte-only and invalid in plain CSS).
  */
 .flowdrop-toaster.flowdrop-toaster .flowdrop-toast-bar {
-	background: var(--fd-card) !important;
-	color: var(--fd-card-foreground) !important;
-	border: 1px solid var(--fd-border) !important;
-	border-radius: var(--fd-radius-lg) !important;
-	box-shadow: var(--fd-shadow-md) !important;
-	padding: var(--fd-space-xs) var(--fd-space-md) !important;
-	max-width: 350px;
-	font-size: var(--fd-text-sm);
-	line-height: 1.3;
-	transition:
-		background var(--fd-transition-fast),
-		border-color var(--fd-transition-fast),
-		box-shadow var(--fd-transition-fast);
+  background: var(--fd-card) !important;
+  color: var(--fd-card-foreground) !important;
+  border: 1px solid var(--fd-border) !important;
+  border-radius: var(--fd-radius-lg) !important;
+  box-shadow: var(--fd-shadow-md) !important;
+  padding: var(--fd-space-xs) var(--fd-space-md) !important;
+  max-width: 350px;
+  font-size: var(--fd-text-sm);
+  line-height: 1.3;
+  transition:
+    background var(--fd-transition-fast),
+    border-color var(--fd-transition-fast),
+    box-shadow var(--fd-transition-fast);
 }

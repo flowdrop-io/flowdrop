@@ -24,22 +24,22 @@
  * ```
  */
 
-import { fieldComponentRegistry } from './fieldRegistry.js';
-import type { FieldComponent } from './fieldRegistry.js';
-import type { FieldSchema } from '../components/form/types.js';
+import { fieldComponentRegistry } from "./fieldRegistry.js";
+import type { FieldComponent } from "./fieldRegistry.js";
+import type { FieldSchema } from "../components/form/types.js";
 
 // Re-export the component for direct usage if needed
-export { default as FormMarkdownEditor } from '../components/form/FormMarkdownEditor.svelte';
+export { default as FormMarkdownEditor } from "../components/form/FormMarkdownEditor.svelte";
 
 // Re-export types for markdown editor props
-export type { MarkdownEditorFieldProps } from '../components/form/types.js';
+export type { MarkdownEditorFieldProps } from "../components/form/types.js";
 
 /**
  * Matcher for markdown editor fields
  * Matches: format "markdown"
  */
 export function markdownEditorFieldMatcher(schema: FieldSchema): boolean {
-	return schema.format === 'markdown';
+  return schema.format === "markdown";
 }
 
 /**
@@ -49,7 +49,7 @@ let markdownEditorRegistered = false;
 
 // Sync registration flag with registry.clear() for test isolation
 fieldComponentRegistry.onClear(() => {
-	markdownEditorRegistered = false;
+  markdownEditorRegistered = false;
 });
 
 /**
@@ -69,19 +69,19 @@ fieldComponentRegistry.onClear(() => {
  * ```
  */
 export function registerMarkdownEditorField(priority: number = 100): void {
-	if (markdownEditorRegistered) {
-		return;
-	}
+  if (markdownEditorRegistered) {
+    return;
+  }
 
-	// Dynamic import to ensure proper code splitting
-	import('../components/form/FormMarkdownEditor.svelte').then((module) => {
-		fieldComponentRegistry.register('markdown-editor', {
-			component: module.default,
-			matcher: markdownEditorFieldMatcher,
-			priority
-		});
-		markdownEditorRegistered = true;
-	});
+  // Dynamic import to ensure proper code splitting
+  import("../components/form/FormMarkdownEditor.svelte").then((module) => {
+    fieldComponentRegistry.register("markdown-editor", {
+      component: module.default,
+      matcher: markdownEditorFieldMatcher,
+      priority,
+    });
+    markdownEditorRegistered = true;
+  });
 }
 
 /**
@@ -98,24 +98,24 @@ export function registerMarkdownEditorField(priority: number = 100): void {
  * ```
  */
 export function registerMarkdownEditorFieldWithComponent(
-	component: FieldComponent,
-	priority: number = 100
+  component: FieldComponent,
+  priority: number = 100,
 ): void {
-	if (markdownEditorRegistered) {
-		return;
-	}
+  if (markdownEditorRegistered) {
+    return;
+  }
 
-	fieldComponentRegistry.register('markdown-editor', {
-		component,
-		matcher: markdownEditorFieldMatcher,
-		priority
-	});
-	markdownEditorRegistered = true;
+  fieldComponentRegistry.register("markdown-editor", {
+    component,
+    matcher: markdownEditorFieldMatcher,
+    priority,
+  });
+  markdownEditorRegistered = true;
 }
 
 /**
  * Check if markdown editor field is registered
  */
 export function isMarkdownEditorRegistered(): boolean {
-	return markdownEditorRegistered;
+  return markdownEditorRegistered;
 }

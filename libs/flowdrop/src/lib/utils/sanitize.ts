@@ -7,7 +7,7 @@
  *
  * @module utils/sanitize
  */
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
 
 /**
  * Sanitize an HTML string to prevent XSS attacks.
@@ -28,5 +28,5 @@ import DOMPurify from 'dompurify';
  * ```
  */
 export function sanitizeHtml(dirty: string): string {
-	return DOMPurify.sanitize(dirty);
+  return DOMPurify.sanitize(dirty);
 }

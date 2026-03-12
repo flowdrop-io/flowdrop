@@ -115,183 +115,189 @@
 // Playground Components
 // ============================================================================
 
-export { default as Playground } from '../components/playground/Playground.svelte';
-export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
-export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
-export { default as SessionManager } from '../components/playground/SessionManager.svelte';
-export { default as InputCollector } from '../components/playground/InputCollector.svelte';
-export { default as ExecutionLogs } from '../components/playground/ExecutionLogs.svelte';
-export { default as MessageBubble } from '../components/playground/MessageBubble.svelte';
+export { default as Playground } from "../components/playground/Playground.svelte";
+export { default as PlaygroundModal } from "../components/playground/PlaygroundModal.svelte";
+export { default as ChatPanel } from "../components/playground/ChatPanel.svelte";
+export { default as SessionManager } from "../components/playground/SessionManager.svelte";
+export { default as InputCollector } from "../components/playground/InputCollector.svelte";
+export { default as ExecutionLogs } from "../components/playground/ExecutionLogs.svelte";
+export { default as MessageBubble } from "../components/playground/MessageBubble.svelte";
 
 // ============================================================================
 // Interrupt Components (Human-in-the-Loop)
 // ============================================================================
 
 export {
-	InterruptBubble,
-	ConfirmationPrompt,
-	ChoicePrompt,
-	TextInputPrompt,
-	FormPrompt
-} from '../components/interrupt/index.js';
+  InterruptBubble,
+  ConfirmationPrompt,
+  ChoicePrompt,
+  TextInputPrompt,
+  FormPrompt,
+} from "../components/interrupt/index.js";
 
 // ============================================================================
 // Playground Service
 // ============================================================================
 
-export { PlaygroundService, playgroundService } from '../services/playgroundService.js';
+export {
+  PlaygroundService,
+  playgroundService,
+} from "../services/playgroundService.js";
 
 // ============================================================================
 // Interrupt Service (Human-in-the-Loop)
 // ============================================================================
 
-export { InterruptService, interruptService } from '../services/interruptService.js';
+export {
+  InterruptService,
+  interruptService,
+} from "../services/interruptService.js";
 
 // ============================================================================
 // Playground Store
 // ============================================================================
 
 export {
-	// Core state getters
-	getCurrentSession,
-	getSessions,
-	getMessages,
-	getIsExecuting,
-	getIsLoading,
-	getError as getPlaygroundError,
-	getCurrentWorkflow,
-	getLastPollTimestamp,
-	// Derived getters
-	getSessionStatus,
-	getMessageCount,
-	getChatMessages,
-	getLogMessages,
-	getLatestMessage,
-	getInputFields,
-	getHasChatInput,
-	getSessionCount,
-	// Actions
-	playgroundActions,
-	// Polling callback factory
-	createPollingCallback,
-	// Subscription utility
-	subscribeToSessionStatus,
-	// Utilities
-	getCurrentSessionId,
-	isSessionSelected,
-	getMessagesSnapshot,
-	getLatestMessageTimestamp
-} from '../stores/playgroundStore.svelte.js';
+  // Core state getters
+  getCurrentSession,
+  getSessions,
+  getMessages,
+  getIsExecuting,
+  getIsLoading,
+  getError as getPlaygroundError,
+  getCurrentWorkflow,
+  getLastPollTimestamp,
+  // Derived getters
+  getSessionStatus,
+  getMessageCount,
+  getChatMessages,
+  getLogMessages,
+  getLatestMessage,
+  getInputFields,
+  getHasChatInput,
+  getSessionCount,
+  // Actions
+  playgroundActions,
+  // Polling callback factory
+  createPollingCallback,
+  // Subscription utility
+  subscribeToSessionStatus,
+  // Utilities
+  getCurrentSessionId,
+  isSessionSelected,
+  getMessagesSnapshot,
+  getLatestMessageTimestamp,
+} from "../stores/playgroundStore.svelte.js";
 
 // ============================================================================
 // Playground Types
 // ============================================================================
 
 export type {
-	PlaygroundSession,
-	PlaygroundMessage,
-	PlaygroundInputField,
-	PlaygroundMessageRequest,
-	PlaygroundMessagesResult,
-	PlaygroundConfig,
-	PlaygroundMode,
-	PlaygroundSessionStatus,
-	PlaygroundMessageRole,
-	PlaygroundMessageLevel,
-	PlaygroundMessageMetadata,
-	PlaygroundApiResponse,
-	PlaygroundSessionsResponse,
-	PlaygroundSessionResponse,
-	PlaygroundMessageResponse,
-	PlaygroundMessagesApiResponse
-} from '../types/playground.js';
+  PlaygroundSession,
+  PlaygroundMessage,
+  PlaygroundInputField,
+  PlaygroundMessageRequest,
+  PlaygroundMessagesResult,
+  PlaygroundConfig,
+  PlaygroundMode,
+  PlaygroundSessionStatus,
+  PlaygroundMessageRole,
+  PlaygroundMessageLevel,
+  PlaygroundMessageMetadata,
+  PlaygroundApiResponse,
+  PlaygroundSessionsResponse,
+  PlaygroundSessionResponse,
+  PlaygroundMessageResponse,
+  PlaygroundMessagesApiResponse,
+} from "../types/playground.js";
 
 export {
-	isChatInputNode,
-	CHAT_INPUT_PATTERNS,
-	defaultShouldStopPolling,
-	defaultIsTerminalStatus,
-	DEFAULT_STOP_POLLING_STATUSES,
-	DEFAULT_TERMINAL_STATUSES
-} from '../types/playground.js';
+  isChatInputNode,
+  CHAT_INPUT_PATTERNS,
+  defaultShouldStopPolling,
+  defaultIsTerminalStatus,
+  DEFAULT_STOP_POLLING_STATUSES,
+  DEFAULT_TERMINAL_STATUSES,
+} from "../types/playground.js";
 
 // ============================================================================
 // Interrupt Types (Human-in-the-Loop)
 // ============================================================================
 
 export type {
-	InterruptType,
-	InterruptStatus,
-	Interrupt,
-	InterruptChoice,
-	InterruptConfig,
-	ConfirmationConfig,
-	ChoiceConfig,
-	TextConfig,
-	FormConfig,
-	ReviewConfig,
-	ReviewChange,
-	ReviewFieldDecision,
-	ReviewResolution,
-	InterruptResolution,
-	InterruptApiResponse,
-	InterruptListResponse,
-	InterruptResponse,
-	InterruptMessageMetadata,
-	InterruptPollingConfig
-} from '../types/interrupt.js';
+  InterruptType,
+  InterruptStatus,
+  Interrupt,
+  InterruptChoice,
+  InterruptConfig,
+  ConfirmationConfig,
+  ChoiceConfig,
+  TextConfig,
+  FormConfig,
+  ReviewConfig,
+  ReviewChange,
+  ReviewFieldDecision,
+  ReviewResolution,
+  InterruptResolution,
+  InterruptApiResponse,
+  InterruptListResponse,
+  InterruptResponse,
+  InterruptMessageMetadata,
+  InterruptPollingConfig,
+} from "../types/interrupt.js";
 
 export {
-	isInterruptMetadata,
-	extractInterruptMetadata,
-	metadataToInterrupt,
-	defaultInterruptPollingConfig
-} from '../types/interrupt.js';
+  isInterruptMetadata,
+  extractInterruptMetadata,
+  metadataToInterrupt,
+  defaultInterruptPollingConfig,
+} from "../types/interrupt.js";
 
 // ============================================================================
 // Interrupt Store (Human-in-the-Loop)
 // ============================================================================
 
 export {
-	// Core state accessor
-	getInterruptsMap,
-	// Getter functions (replace derived stores)
-	getPendingInterruptIds,
-	getPendingInterrupts,
-	getPendingInterruptCount,
-	getResolvedInterrupts,
-	getIsAnySubmitting,
-	// Actions
-	interruptActions,
-	// Utilities
-	getInterrupt,
-	isInterruptPending,
-	isInterruptSubmitting,
-	getInterruptError,
-	getInterruptByMessageId,
-	interruptHasError
-} from '../stores/interruptStore.svelte.js';
+  // Core state accessor
+  getInterruptsMap,
+  // Getter functions (replace derived stores)
+  getPendingInterruptIds,
+  getPendingInterrupts,
+  getPendingInterruptCount,
+  getResolvedInterrupts,
+  getIsAnySubmitting,
+  // Actions
+  interruptActions,
+  // Utilities
+  getInterrupt,
+  isInterruptPending,
+  isInterruptSubmitting,
+  getInterruptError,
+  getInterruptByMessageId,
+  interruptHasError,
+} from "../stores/interruptStore.svelte.js";
 
-export type { InterruptWithState } from '../stores/interruptStore.svelte.js';
+export type { InterruptWithState } from "../stores/interruptStore.svelte.js";
 
 // ============================================================================
 // Playground Mount Functions (for vanilla JS / Drupal / IIFE integration)
 // ============================================================================
 
 export {
-	mountPlayground,
-	unmountPlayground,
-	type PlaygroundMountOptions,
-	type MountedPlayground
-} from './mount.js';
+  mountPlayground,
+  unmountPlayground,
+  type PlaygroundMountOptions,
+  type MountedPlayground,
+} from "./mount.js";
 
 // ============================================================================
 // Endpoint Configuration (re-exported for convenience)
 // ============================================================================
 
 export {
-	createEndpointConfig,
-	defaultEndpointConfig,
-	buildEndpointUrl,
-	type EndpointConfig
-} from '../config/endpoints.js';
+  createEndpointConfig,
+  defaultEndpointConfig,
+  buildEndpointUrl,
+  type EndpointConfig,
+} from "../config/endpoints.js";

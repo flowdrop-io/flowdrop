@@ -13,8 +13,8 @@
  * @returns Y coordinate in px for the handle center (use with transform: translateY(-50%))
  */
 export function getPortCenterY(portIndex: number): number {
-	const headerHeight = 60;
-	const sectionTitleHeight = 20;
-	const rowHeight = 20;
-	return headerHeight + sectionTitleHeight + (portIndex + 0.5) * rowHeight;
+  const headerHeight = 60;
+  const sectionTitleHeight = 20;
+  const rowHeight = 20;
+  return headerHeight + sectionTitleHeight + (portIndex + 0.5) * rowHeight;
 }

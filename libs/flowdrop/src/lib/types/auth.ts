@@ -22,43 +22,43 @@
  * ```
  */
 export interface AuthProvider {
-	/**
-	 * Get current authentication headers
-	 *
-	 * Called before every API request to retrieve current auth headers.
-	 * Should return fresh headers each time (e.g., after token refresh).
-	 *
-	 * @returns Promise resolving to a record of header name-value pairs
-	 */
-	getAuthHeaders(): Promise<Record<string, string>>;
+  /**
+   * Get current authentication headers
+   *
+   * Called before every API request to retrieve current auth headers.
+   * Should return fresh headers each time (e.g., after token refresh).
+   *
+   * @returns Promise resolving to a record of header name-value pairs
+   */
+  getAuthHeaders(): Promise<Record<string, string>>;
 
-	/**
-	 * Check if currently authenticated
-	 *
-	 * Used to determine if API requests should be attempted.
-	 * Should return synchronously for performance.
-	 *
-	 * @returns true if authenticated, false otherwise
-	 */
-	isAuthenticated(): boolean;
+  /**
+   * Check if currently authenticated
+   *
+   * Used to determine if API requests should be attempted.
+   * Should return synchronously for performance.
+   *
+   * @returns true if authenticated, false otherwise
+   */
+  isAuthenticated(): boolean;
 
-	/**
-	 * Called when API returns 401 Unauthorized
-	 *
-	 * Allows the provider to attempt token refresh or re-authentication.
-	 * If this returns true, the failed request will be retried with new headers.
-	 *
-	 * @returns Promise resolving to true if auth was refreshed and request should retry
-	 */
-	onUnauthorized?(): Promise<boolean>;
+  /**
+   * Called when API returns 401 Unauthorized
+   *
+   * Allows the provider to attempt token refresh or re-authentication.
+   * If this returns true, the failed request will be retried with new headers.
+   *
+   * @returns Promise resolving to true if auth was refreshed and request should retry
+   */
+  onUnauthorized?(): Promise<boolean>;
 
-	/**
-	 * Called when API returns 403 Forbidden
-	 *
-	 * Allows the provider to handle permission errors (e.g., show error UI).
-	 * Unlike 401, this typically means the user is authenticated but lacks permission.
-	 */
-	onForbidden?(): Promise<void>;
+  /**
+   * Called when API returns 403 Forbidden
+   *
+   * Allows the provider to handle permission errors (e.g., show error UI).
+   * Unlike 401, this typically means the user is authenticated but lacks permission.
+   */
+  onForbidden?(): Promise<void>;
 }
 
 /**
@@ -67,14 +67,14 @@ export interface AuthProvider {
  * Used to configure StaticAuthProvider with different auth types.
  */
 export interface StaticAuthConfig {
-	/** Authentication type */
-	type: 'none' | 'bearer' | 'api_key' | 'custom';
-	/** Bearer token (used when type is "bearer") */
-	token?: string;
-	/** API key (used when type is "api_key") */
-	apiKey?: string;
-	/** Custom headers (used when type is "custom") */
-	headers?: Record<string, string>;
+  /** Authentication type */
+  type: "none" | "bearer" | "api_key" | "custom";
+  /** Bearer token (used when type is "bearer") */
+  token?: string;
+  /** API key (used when type is "api_key") */
+  apiKey?: string;
+  /** Custom headers (used when type is "custom") */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -109,82 +109,82 @@ export interface StaticAuthConfig {
  * ```
  */
 export class StaticAuthProvider implements AuthProvider {
-	/** Cached authentication headers */
-	private headers: Record<string, string>;
+  /** Cached authentication headers */
+  private headers: Record<string, string>;
 
-	/**
-	 * Create a new StaticAuthProvider
-	 *
-	 * @param config - Static authentication configuration
-	 */
-	constructor(config: StaticAuthConfig) {
-		this.headers = {};
+  /**
+   * Create a new StaticAuthProvider
+   *
+   * @param config - Static authentication configuration
+   */
+  constructor(config: StaticAuthConfig) {
+    this.headers = {};
 
-		switch (config.type) {
-			case 'bearer':
-				if (config.token) {
-					this.headers['Authorization'] = `Bearer ${config.token}`;
-				}
-				break;
-			case 'api_key':
-				if (config.apiKey) {
-					this.headers['X-API-Key'] = config.apiKey;
-				}
-				break;
-			case 'custom':
-				if (config.headers) {
-					this.headers = { ...config.headers };
-				}
-				break;
-			case 'none':
-			default:
-				// No headers needed
-				break;
-		}
-	}
+    switch (config.type) {
+      case "bearer":
+        if (config.token) {
+          this.headers["Authorization"] = `Bearer ${config.token}`;
+        }
+        break;
+      case "api_key":
+        if (config.apiKey) {
+          this.headers["X-API-Key"] = config.apiKey;
+        }
+        break;
+      case "custom":
+        if (config.headers) {
+          this.headers = { ...config.headers };
+        }
+        break;
+      case "none":
+      default:
+        // No headers needed
+        break;
+    }
+  }
 
-	/**
-	 * Get authentication headers
-	 *
-	 * Returns the statically configured headers.
-	 *
-	 * @returns Promise resolving to authentication headers
-	 */
-	async getAuthHeaders(): Promise<Record<string, string>> {
-		return this.headers;
-	}
+  /**
+   * Get authentication headers
+   *
+   * Returns the statically configured headers.
+   *
+   * @returns Promise resolving to authentication headers
+   */
+  async getAuthHeaders(): Promise<Record<string, string>> {
+    return this.headers;
+  }
 
-	/**
-	 * Check if authenticated
-	 *
-	 * Returns true if any auth headers are configured.
-	 *
-	 * @returns true if headers are configured
-	 */
-	isAuthenticated(): boolean {
-		return Object.keys(this.headers).length > 0;
-	}
+  /**
+   * Check if authenticated
+   *
+   * Returns true if any auth headers are configured.
+   *
+   * @returns true if headers are configured
+   */
+  isAuthenticated(): boolean {
+    return Object.keys(this.headers).length > 0;
+  }
 
-	/**
-	 * Handle unauthorized response
-	 *
-	 * Static provider cannot refresh tokens, so always returns false.
-	 *
-	 * @returns Promise resolving to false (cannot refresh)
-	 */
-	async onUnauthorized(): Promise<boolean> {
-		// Static provider cannot refresh tokens
-		return false;
-	}
+  /**
+   * Handle unauthorized response
+   *
+   * Static provider cannot refresh tokens, so always returns false.
+   *
+   * @returns Promise resolving to false (cannot refresh)
+   */
+  async onUnauthorized(): Promise<boolean> {
+    // Static provider cannot refresh tokens
+    return false;
+  }
 
-	/**
-	 * Handle forbidden response
-	 *
-	 * Static provider has no special handling for 403.
-	 */
-	async onForbidden(): Promise<void> {
-		// No special handling for static provider
-	}
+  /**
+   * Handle forbidden response
+   *
+   * Static provider has no special handling for 403.
+   */
+  async onForbidden(): Promise<void> {
+    // No special handling for static provider
+  }
 }
 
 /**
@@ -193,29 +193,29 @@ export class StaticAuthProvider implements AuthProvider {
  * Used to configure CallbackAuthProvider with dynamic token retrieval.
  */
 export interface CallbackAuthConfig {
-	/**
-	 * Function to get the current access token
-	 *
-	 * Called before each API request to get a fresh token.
-	 * Should return null if not authenticated.
-	 */
-	getToken: () => Promise<string | null>;
+  /**
+   * Function to get the current access token
+   *
+   * Called before each API request to get a fresh token.
+   * Should return null if not authenticated.
+   */
+  getToken: () => Promise<string | null>;
 
-	/**
-	 * Optional callback when 401 Unauthorized is received
-	 *
-	 * Can be used to trigger token refresh.
-	 *
-	 * @returns Promise resolving to true if token was refreshed successfully
-	 */
-	onUnauthorized?: () => Promise<boolean>;
+  /**
+   * Optional callback when 401 Unauthorized is received
+   *
+   * Can be used to trigger token refresh.
+   *
+   * @returns Promise resolving to true if token was refreshed successfully
+   */
+  onUnauthorized?: () => Promise<boolean>;
 
-	/**
-	 * Optional callback when 403 Forbidden is received
-	 *
-	 * Can be used to show permission error UI.
-	 */
-	onForbidden?: () => Promise<void>;
+  /**
+   * Optional callback when 403 Forbidden is received
+   *
+   * Can be used to show permission error UI.
+   */
+  onForbidden?: () => Promise<void>;
 }
 
 /**
@@ -241,79 +241,79 @@ export interface CallbackAuthConfig {
  * ```
  */
 export class CallbackAuthProvider implements AuthProvider {
-	/** Function to get the current token */
-	private getToken: () => Promise<string | null>;
+  /** Function to get the current token */
+  private getToken: () => Promise<string | null>;
 
-	/** Optional unauthorized callback */
-	private onUnauthorizedCallback?: () => Promise<boolean>;
+  /** Optional unauthorized callback */
+  private onUnauthorizedCallback?: () => Promise<boolean>;
 
-	/** Optional forbidden callback */
-	private onForbiddenCallback?: () => Promise<void>;
+  /** Optional forbidden callback */
+  private onForbiddenCallback?: () => Promise<void>;
 
-	/**
-	 * Create a new CallbackAuthProvider
-	 *
-	 * @param config - Callback authentication configuration
-	 */
-	constructor(config: CallbackAuthConfig) {
-		this.getToken = config.getToken;
-		this.onUnauthorizedCallback = config.onUnauthorized;
-		this.onForbiddenCallback = config.onForbidden;
-	}
+  /**
+   * Create a new CallbackAuthProvider
+   *
+   * @param config - Callback authentication configuration
+   */
+  constructor(config: CallbackAuthConfig) {
+    this.getToken = config.getToken;
+    this.onUnauthorizedCallback = config.onUnauthorized;
+    this.onForbiddenCallback = config.onForbidden;
+  }
 
-	/**
-	 * Get authentication headers
-	 *
-	 * Calls the getToken callback to retrieve the current token.
-	 *
-	 * @returns Promise resolving to authentication headers
-	 */
-	async getAuthHeaders(): Promise<Record<string, string>> {
-		const token = await this.getToken();
-		if (token) {
-			return { Authorization: `Bearer ${token}` };
-		}
-		return {};
-	}
+  /**
+   * Get authentication headers
+   *
+   * Calls the getToken callback to retrieve the current token.
+   *
+   * @returns Promise resolving to authentication headers
+   */
+  async getAuthHeaders(): Promise<Record<string, string>> {
+    const token = await this.getToken();
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+    return {};
+  }
 
-	/**
-	 * Check if authenticated
-	 *
-	 * For callback-based auth, we assume authenticated if getToken exists.
-	 * The actual token validity is checked when making requests.
-	 *
-	 * @returns true (assumes authenticated, actual check happens on request)
-	 */
-	isAuthenticated(): boolean {
-		// For callback-based auth, we assume authenticated if getToken exists
-		// The actual token validity is checked when making requests
-		return true;
-	}
+  /**
+   * Check if authenticated
+   *
+   * For callback-based auth, we assume authenticated if getToken exists.
+   * The actual token validity is checked when making requests.
+   *
+   * @returns true (assumes authenticated, actual check happens on request)
+   */
+  isAuthenticated(): boolean {
+    // For callback-based auth, we assume authenticated if getToken exists
+    // The actual token validity is checked when making requests
+    return true;
+  }
 
-	/**
-	 * Handle unauthorized response
-	 *
-	 * Calls the onUnauthorized callback if provided.
-	 *
-	 * @returns Promise resolving to true if auth was refreshed
-	 */
-	async onUnauthorized(): Promise<boolean> {
-		if (this.onUnauthorizedCallback) {
-			return this.onUnauthorizedCallback();
-		}
-		return false;
-	}
+  /**
+   * Handle unauthorized response
+   *
+   * Calls the onUnauthorized callback if provided.
+   *
+   * @returns Promise resolving to true if auth was refreshed
+   */
+  async onUnauthorized(): Promise<boolean> {
+    if (this.onUnauthorizedCallback) {
+      return this.onUnauthorizedCallback();
+    }
+    return false;
+  }
 
-	/**
-	 * Handle forbidden response
-	 *
-	 * Calls the onForbidden callback if provided.
-	 */
-	async onForbidden(): Promise<void> {
-		if (this.onForbiddenCallback) {
-			await this.onForbiddenCallback();
-		}
-	}
+  /**
+   * Handle forbidden response
+   *
+   * Calls the onForbidden callback if provided.
+   */
+  async onForbidden(): Promise<void> {
+    if (this.onForbiddenCallback) {
+      await this.onForbiddenCallback();
+    }
+  }
 }
 
 /**
@@ -323,25 +323,25 @@ export class CallbackAuthProvider implements AuthProvider {
  * Provides empty headers and always returns not authenticated.
  */
 export class NoAuthProvider implements AuthProvider {
-	/**
-	 * Get authentication headers
-	 *
-	 * Returns empty headers (no auth).
-	 *
-	 * @returns Promise resolving to empty object
-	 */
-	async getAuthHeaders(): Promise<Record<string, string>> {
-		return {};
-	}
+  /**
+   * Get authentication headers
+   *
+   * Returns empty headers (no auth).
+   *
+   * @returns Promise resolving to empty object
+   */
+  async getAuthHeaders(): Promise<Record<string, string>> {
+    return {};
+  }
 
-	/**
-	 * Check if authenticated
-	 *
-	 * Always returns false (no auth configured).
-	 *
-	 * @returns false
-	 */
-	isAuthenticated(): boolean {
-		return false;
-	}
+  /**
+   * Check if authenticated
+   *
+   * Always returns false (no auth configured).
+   *
+   * @returns false
+   */
+  isAuthenticated(): boolean {
+    return false;
+  }
 }

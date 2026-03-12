@@ -8,10 +8,10 @@
  * @module services/settingsService
  */
 
-import type { FlowDropSettings, PartialSettings } from '$lib/types/settings.js';
-import type { EndpointConfig } from '$lib/config/endpoints.js';
-import type { ApiResponse } from '$lib/types/index.js';
-import { buildEndpointUrl, getEndpointHeaders } from '$lib/config/endpoints.js';
+import type { FlowDropSettings, PartialSettings } from "$lib/types/settings.js";
+import type { EndpointConfig } from "$lib/config/endpoints.js";
+import type { ApiResponse } from "$lib/types/index.js";
+import { buildEndpointUrl, getEndpointHeaders } from "$lib/config/endpoints.js";
 
 // =========================================================================
 // Configuration
@@ -28,7 +28,7 @@ let endpointConfig: EndpointConfig | null = null;
  * @param config - Endpoint configuration
  */
 export function setSettingsEndpointConfig(config: EndpointConfig): void {
-	endpointConfig = config;
+  endpointConfig = config;
 }
 
 /**
@@ -37,7 +37,7 @@ export function setSettingsEndpointConfig(config: EndpointConfig): void {
  * @returns Current endpoint configuration or null
  */
 export function getSettingsEndpointConfig(): EndpointConfig | null {
-	return endpointConfig;
+  return endpointConfig;
 }
 
 // =========================================================================
@@ -53,44 +53,49 @@ export function getSettingsEndpointConfig(): EndpointConfig | null {
  * @returns Parsed response data
  */
 async function settingsRequest<T>(
-	endpointKey: string,
-	endpointPath: string,
-	options: RequestInit = {}
+  endpointKey: string,
+  endpointPath: string,
+  options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
-	if (!endpointConfig) {
-		throw new Error('Endpoint configuration not set. Call setSettingsEndpointConfig() first.');
-	}
+  if (!endpointConfig) {
+    throw new Error(
+      "Endpoint configuration not set. Call setSettingsEndpointConfig() first.",
+    );
+  }
 
-	const url = buildEndpointUrl(endpointConfig, endpointPath);
-	const headers = getEndpointHeaders(endpointConfig, endpointKey);
+  const url = buildEndpointUrl(endpointConfig, endpointPath);
+  const headers = getEndpointHeaders(endpointConfig, endpointKey);
 
-	const response = await fetch(url, {
-		headers,
-		...options
-	});
+  const response = await fetch(url, {
+    headers,
+    ...options,
+  });
 
-	// Check if response is JSON
-	const contentType = response.headers.get('content-type');
-	const isJson = contentType?.includes('application/json');
+  // Check if response is JSON
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType?.includes("application/json");
 
-	if (!response.ok) {
-		let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+  if (!response.ok) {
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
 
-		if (isJson) {
-			try {
-				const data = (await response.json()) as { error?: string; message?: string };
-				errorMessage = data.error ?? data.message ?? errorMessage;
-			} catch {
-				// Failed to parse JSON, use default error message
-			}
-		}
+    if (isJson) {
+      try {
+        const data = (await response.json()) as {
+          error?: string;
+          message?: string;
+        };
+        errorMessage = data.error ?? data.message ?? errorMessage;
+      } catch {
+        // Failed to parse JSON, use default error message
+      }
+    }
 
-		throw new Error(errorMessage);
-	}
+    throw new Error(errorMessage);
+  }
 
-	// Parse successful response
-	const data = (await response.json()) as ApiResponse<T>;
-	return data;
+  // Parse successful response
+  const data = (await response.json()) as ApiResponse<T>;
+  return data;
 }
 
 // =========================================================================
@@ -101,84 +106,90 @@ async function settingsRequest<T>(
  * Settings API namespace
  */
 export const settingsApi = {
-	/**
-	 * Get user preferences from the backend
-	 *
-	 * @returns User's saved preferences
-	 */
-	async getPreferences(): Promise<FlowDropSettings> {
-		if (!endpointConfig) {
-			throw new Error('Endpoint configuration not set');
-		}
+  /**
+   * Get user preferences from the backend
+   *
+   * @returns User's saved preferences
+   */
+  async getPreferences(): Promise<FlowDropSettings> {
+    if (!endpointConfig) {
+      throw new Error("Endpoint configuration not set");
+    }
 
-		const response = await settingsRequest<FlowDropSettings>(
-			'users.preferences',
-			endpointConfig.endpoints.users.preferences,
-			{ method: 'GET' }
-		);
+    const response = await settingsRequest<FlowDropSettings>(
+      "users.preferences",
+      endpointConfig.endpoints.users.preferences,
+      { method: "GET" },
+    );
 
-		if (!response.success || !response.data) {
-			throw new Error(
-				typeof response.error === 'string' ? response.error : 'Failed to fetch user preferences'
-			);
-		}
+    if (!response.success || !response.data) {
+      throw new Error(
+        typeof response.error === "string"
+          ? response.error
+          : "Failed to fetch user preferences",
+      );
+    }
 
-		return response.data;
-	},
+    return response.data;
+  },
 
-	/**
-	 * Save user preferences to the backend
-	 *
-	 * @param settings - Complete settings to save
-	 */
-	async savePreferences(settings: FlowDropSettings): Promise<void> {
-		if (!endpointConfig) {
-			throw new Error('Endpoint configuration not set');
-		}
+  /**
+   * Save user preferences to the backend
+   *
+   * @param settings - Complete settings to save
+   */
+  async savePreferences(settings: FlowDropSettings): Promise<void> {
+    if (!endpointConfig) {
+      throw new Error("Endpoint configuration not set");
+    }
 
-		const response = await settingsRequest<void>(
-			'users.preferences',
-			endpointConfig.endpoints.users.preferences,
-			{
-				method: 'PUT',
-				body: JSON.stringify(settings)
-			}
-		);
+    const response = await settingsRequest<void>(
+      "users.preferences",
+      endpointConfig.endpoints.users.preferences,
+      {
+        method: "PUT",
+        body: JSON.stringify(settings),
+      },
+    );
 
-		if (!response.success) {
-			throw new Error(
-				typeof response.error === 'string' ? response.error : 'Failed to save user preferences'
-			);
-		}
-	},
+    if (!response.success) {
+      throw new Error(
+        typeof response.error === "string"
+          ? response.error
+          : "Failed to save user preferences",
+      );
+    }
+  },
 
-	/**
-	 * Partially update user preferences
-	 *
-	 * @param partial - Partial settings to merge
-	 */
-	async patchPreferences(partial: PartialSettings): Promise<FlowDropSettings> {
-		if (!endpointConfig) {
-			throw new Error('Endpoint configuration not set');
-		}
+  /**
+   * Partially update user preferences
+   *
+   * @param partial - Partial settings to merge
+   */
+  async patchPreferences(partial: PartialSettings): Promise<FlowDropSettings> {
+    if (!endpointConfig) {
+      throw new Error("Endpoint configuration not set");
+    }
 
-		const response = await settingsRequest<FlowDropSettings>(
-			'users.preferences',
-			endpointConfig.endpoints.users.preferences,
-			{
-				method: 'PATCH',
-				body: JSON.stringify(partial)
-			}
-		);
+    const response = await settingsRequest<FlowDropSettings>(
+      "users.preferences",
+      endpointConfig.endpoints.users.preferences,
+      {
+        method: "PATCH",
+        body: JSON.stringify(partial),
+      },
+    );
 
-		if (!response.success || !response.data) {
-			throw new Error(
-				typeof response.error === 'string' ? response.error : 'Failed to update user preferences'
-			);
-		}
+    if (!response.success || !response.data) {
+      throw new Error(
+        typeof response.error === "string"
+          ? response.error
+          : "Failed to update user preferences",
+      );
+    }
 
-		return response.data;
-	}
+    return response.data;
+  },
 };
 
 // =========================================================================
@@ -198,45 +209,45 @@ export const settingsApi = {
  * ```
  */
 export class SettingsService {
-	private config: EndpointConfig;
+  private config: EndpointConfig;
 
-	/**
-	 * Create a new settings service instance
-	 *
-	 * @param config - Endpoint configuration
-	 */
-	constructor(config: EndpointConfig) {
-		this.config = config;
-		// Also set the module-level config
-		setSettingsEndpointConfig(config);
-	}
+  /**
+   * Create a new settings service instance
+   *
+   * @param config - Endpoint configuration
+   */
+  constructor(config: EndpointConfig) {
+    this.config = config;
+    // Also set the module-level config
+    setSettingsEndpointConfig(config);
+  }
 
-	/**
-	 * Get user preferences from the backend
-	 *
-	 * @returns User's saved preferences
-	 */
-	async getPreferences(): Promise<FlowDropSettings> {
-		return settingsApi.getPreferences();
-	}
+  /**
+   * Get user preferences from the backend
+   *
+   * @returns User's saved preferences
+   */
+  async getPreferences(): Promise<FlowDropSettings> {
+    return settingsApi.getPreferences();
+  }
 
-	/**
-	 * Save user preferences to the backend
-	 *
-	 * @param settings - Complete settings to save
-	 */
-	async savePreferences(settings: FlowDropSettings): Promise<void> {
-		return settingsApi.savePreferences(settings);
-	}
+  /**
+   * Save user preferences to the backend
+   *
+   * @param settings - Complete settings to save
+   */
+  async savePreferences(settings: FlowDropSettings): Promise<void> {
+    return settingsApi.savePreferences(settings);
+  }
 
-	/**
-	 * Partially update user preferences
-	 *
-	 * @param partial - Partial settings to merge
-	 */
-	async patchPreferences(partial: PartialSettings): Promise<FlowDropSettings> {
-		return settingsApi.patchPreferences(partial);
-	}
+  /**
+   * Partially update user preferences
+   *
+   * @param partial - Partial settings to merge
+   */
+  async patchPreferences(partial: PartialSettings): Promise<FlowDropSettings> {
+    return settingsApi.patchPreferences(partial);
+  }
 }
 
 // =========================================================================
@@ -250,5 +261,5 @@ export class SettingsService {
  * @returns SettingsService instance
  */
 export function createSettingsService(config: EndpointConfig): SettingsService {
-	return new SettingsService(config);
+  return new SettingsService(config);
 }

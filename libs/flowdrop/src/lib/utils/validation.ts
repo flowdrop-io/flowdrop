@@ -11,9 +11,9 @@
  * Result of a workflow validation check.
  */
 export interface WorkflowValidationResult {
-	valid: boolean;
-	/** Human-readable description of the first validation failure, or undefined if valid. */
-	error?: string;
+  valid: boolean;
+  /** Human-readable description of the first validation failure, or undefined if valid. */
+  error?: string;
 }
 
 /**
@@ -29,27 +29,39 @@ export interface WorkflowValidationResult {
  * @returns A `WorkflowValidationResult` indicating whether the data is valid.
  */
 export function validateWorkflowData(data: unknown): WorkflowValidationResult {
-	if (data === null || typeof data !== 'object' || Array.isArray(data)) {
-		return { valid: false, error: 'Workflow must be a JSON object.' };
-	}
+  if (data === null || typeof data !== "object" || Array.isArray(data)) {
+    return { valid: false, error: "Workflow must be a JSON object." };
+  }
 
-	const obj = data as Record<string, unknown>;
+  const obj = data as Record<string, unknown>;
 
-	if (typeof obj.id !== 'string' || obj.id.trim() === '') {
-		return { valid: false, error: 'Workflow JSON must contain a non-empty string "id" field.' };
-	}
+  if (typeof obj.id !== "string" || obj.id.trim() === "") {
+    return {
+      valid: false,
+      error: 'Workflow JSON must contain a non-empty string "id" field.',
+    };
+  }
 
-	if (typeof obj.name !== 'string' || obj.name.trim() === '') {
-		return { valid: false, error: 'Workflow JSON must contain a non-empty string "name" field.' };
-	}
+  if (typeof obj.name !== "string" || obj.name.trim() === "") {
+    return {
+      valid: false,
+      error: 'Workflow JSON must contain a non-empty string "name" field.',
+    };
+  }
 
-	if (!Array.isArray(obj.nodes)) {
-		return { valid: false, error: 'Workflow JSON must contain a "nodes" array.' };
-	}
+  if (!Array.isArray(obj.nodes)) {
+    return {
+      valid: false,
+      error: 'Workflow JSON must contain a "nodes" array.',
+    };
+  }
 
-	if (!Array.isArray(obj.edges)) {
-		return { valid: false, error: 'Workflow JSON must contain an "edges" array.' };
-	}
+  if (!Array.isArray(obj.edges)) {
+    return {
+      valid: false,
+      error: 'Workflow JSON must contain an "edges" array.',
+    };
+  }
 
-	return { valid: true };
+  return { valid: true };
 }
