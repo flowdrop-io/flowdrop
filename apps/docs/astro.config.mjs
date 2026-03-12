@@ -38,7 +38,7 @@ export default defineConfig({
 					href: 'https://github.com/flowdrop-io/flowdrop'
 				},
 				{
-					icon: 'globe',
+					icon: 'external',
 					label: 'Website',
 					href: 'https://flowdrop.io'
 				}
