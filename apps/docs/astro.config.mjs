@@ -30,7 +30,7 @@ export default defineConfig({
 	},
 	integrations: [
 		starlight({
-			title: 'FlowDrop',
+			title: 'FlowDrop™',
 			social: [
 				{
 					icon: 'github',
@@ -38,9 +38,9 @@ export default defineConfig({
 					href: 'https://github.com/flowdrop-io/flowdrop'
 				},
 				{
-					icon: 'github',
-					label: 'Discussions',
-					href: 'https://github.com/flowdrop-io/flowdrop/discussions'
+					icon: 'globe',
+					label: 'Website',
+					href: 'https://flowdrop.io'
 				}
 			],
 			customCss: [
@@ -53,6 +53,7 @@ export default defineConfig({
 			components: {
 				ThemeProvider: './src/components/ThemeProvider.astro',
 				Head: './src/components/Head.astro',
+				Footer: './src/components/Footer.astro',
 			},
 			expressiveCode: {
 				styleOverrides: {

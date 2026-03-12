@@ -1,0 +1,95 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="fd-footer">
+	<div class="fd-footer-inner">
+		<div class="fd-footer-brand">
+			<a href="https://flowdrop.io" class="fd-logo">FlowDrop™</a>
+			<span class="fd-sep">—</span>
+			<span class="fd-tagline">The visual workflow editor</span>
+		</div>
+		<div class="fd-footer-links">
+			<a href="https://flowdrop.io">Website</a>
+			<a href="https://github.com/flowdrop-io/flowdrop">GitHub</a>
+			<a href="https://www.npmjs.com/package/@flowdrop/flowdrop">npm</a>
+			<a href="https://api.flowdrop.io">API Docs</a>
+		</div>
+	</div>
+	<div class="fd-footer-bottom">
+		<span>© {year} FlowDrop™. Released under the MIT License.</span>
+	</div>
+</footer>
+
+<style>
+	.fd-footer {
+		border-top: 1px solid var(--sl-color-gray-5);
+		padding: 2rem var(--sl-content-pad-x, 1rem) 1.5rem;
+		margin-top: 2rem;
+	}
+
+	.fd-footer-inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.fd-footer-brand {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9375rem;
+	}
+
+	.fd-logo {
+		font-weight: 700;
+		color: var(--sl-color-white);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.fd-logo:hover {
+		color: var(--sl-color-accent);
+	}
+
+	.fd-sep {
+		color: var(--sl-color-gray-3);
+	}
+
+	.fd-tagline {
+		color: var(--sl-color-gray-3);
+	}
+
+	.fd-footer-links {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		flex-wrap: wrap;
+	}
+
+	.fd-footer-links a {
+		font-size: 0.875rem;
+		color: var(--sl-color-gray-3);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.fd-footer-links a:hover {
+		color: var(--sl-color-white);
+	}
+
+	.fd-footer-bottom {
+		font-size: 0.8125rem;
+		color: var(--sl-color-gray-4);
+	}
+
+	@media (max-width: 600px) {
+		.fd-footer-inner {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+	}
+</style>
