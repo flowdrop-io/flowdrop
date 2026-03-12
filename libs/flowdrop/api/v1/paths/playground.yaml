@@ -36,16 +36,16 @@
           minimum: 0
           default: 0
     responses:
-      '200':
+      "200":
         description: List of playground sessions
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/playground.yaml#/PlaygroundSessionsResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/playground.yaml#/PlaygroundSessionsResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
   post:
     operationId: createPlaygroundSession
@@ -80,18 +80,18 @@
                 description: Optional metadata for the session
                 additionalProperties: true
     responses:
-      '201':
+      "201":
         description: Session created successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/playground.yaml#/PlaygroundSessionResponse'
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/playground.yaml#/PlaygroundSessionResponse"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /playground/sessions/{sessionId}:
   get:
@@ -111,16 +111,16 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Session details retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/playground.yaml#/PlaygroundSessionResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/playground.yaml#/PlaygroundSessionResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
   delete:
     operationId: deletePlaygroundSession
@@ -139,7 +139,7 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Session deleted successfully
         content:
           application/json:
@@ -152,10 +152,10 @@
                 message:
                   type: string
                   example: Session deleted successfully
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /playground/sessions/{sessionId}/messages:
   get:
@@ -193,16 +193,16 @@
           maximum: 500
           default: 100
     responses:
-      '200':
+      "200":
         description: Messages retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/playground.yaml#/PlaygroundMessagesResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/playground.yaml#/PlaygroundMessagesResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
   post:
     operationId: sendPlaygroundMessage
@@ -234,7 +234,7 @@
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/playground.yaml#/PlaygroundMessageRequest'
+            $ref: "../components/schemas/playground.yaml#/PlaygroundMessageRequest"
           examples:
             chatMessage:
               summary: Simple chat message
@@ -250,24 +250,24 @@
                     format: csv
                     headers: true
     responses:
-      '200':
+      "200":
         description: Message sent and workflow execution started
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/playground.yaml#/PlaygroundMessageResponse'
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '409':
+              $ref: "../components/schemas/playground.yaml#/PlaygroundMessageResponse"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "409":
         description: Session is already executing
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /playground/sessions/{sessionId}/messages/{messageId}:
   get:
@@ -294,16 +294,16 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Message retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/playground.yaml#/PlaygroundMessageResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/playground.yaml#/PlaygroundMessageResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /playground/sessions/{sessionId}/messages/{messageId}/status:
   get:
@@ -330,13 +330,13 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Message status retrieved successfully
         content:
           application/json:
             schema:
               allOf:
-                - $ref: '../components/schemas/common.yaml#/ApiResponse'
+                - $ref: "../components/schemas/common.yaml#/ApiResponse"
                 - type: object
                   properties:
                     data:
@@ -347,7 +347,7 @@
                           format: uuid
                           description: Message unique identifier
                         status:
-                          $ref: '../components/schemas/playground.yaml#/PlaygroundMessageStatus'
+                          $ref: "../components/schemas/playground.yaml#/PlaygroundMessageStatus"
                         sequenceNumber:
                           type: integer
                           description: Message sequence number
@@ -360,10 +360,10 @@
                         - status
                         - sequenceNumber
                         - timestamp
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /playground/sessions/{sessionId}/stop:
   post:
@@ -383,7 +383,7 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Execution stopped successfully
         content:
           application/json:
@@ -396,13 +396,13 @@
                 message:
                   type: string
                   example: Execution stopped
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '409':
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "409":
         description: No execution is running
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

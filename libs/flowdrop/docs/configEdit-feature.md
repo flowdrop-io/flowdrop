@@ -96,40 +96,40 @@ The dynamic schema endpoint should return a JSON response with a `ConfigSchema` 
 
 ```json
 {
-	"success": true,
-	"data": {
-		"type": "object",
-		"properties": {
-			"apiKey": {
-				"type": "string",
-				"title": "API Key",
-				"description": "Your API key for authentication",
-				"format": "password",
-				"required": true
-			},
-			"model": {
-				"type": "string",
-				"title": "Model",
-				"description": "Select the AI model to use",
-				"enum": ["gpt-4", "gpt-3.5-turbo", "claude-3"],
-				"default": "gpt-4"
-			},
-			"temperature": {
-				"type": "number",
-				"title": "Temperature",
-				"description": "Sampling temperature (0-2)",
-				"minimum": 0,
-				"maximum": 2,
-				"default": 0.7
-			},
-			"enableLogging": {
-				"type": "boolean",
-				"title": "Enable Logging",
-				"description": "Log all requests for debugging",
-				"default": false
-			}
-		}
-	}
+  "success": true,
+  "data": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "title": "API Key",
+        "description": "Your API key for authentication",
+        "format": "password",
+        "required": true
+      },
+      "model": {
+        "type": "string",
+        "title": "Model",
+        "description": "Select the AI model to use",
+        "enum": ["gpt-4", "gpt-3.5-turbo", "claude-3"],
+        "default": "gpt-4"
+      },
+      "temperature": {
+        "type": "number",
+        "title": "Temperature",
+        "description": "Sampling temperature (0-2)",
+        "minimum": 0,
+        "maximum": 2,
+        "default": 0.7
+      },
+      "enableLogging": {
+        "type": "boolean",
+        "title": "Enable Logging",
+        "description": "Log all requests for debugging",
+        "default": false
+      }
+    }
+  }
 }
 ```
 
@@ -170,15 +170,15 @@ FlowDrop exports these functions for working with configEdit:
 
 ```typescript
 import {
-	fetchDynamicSchema,
-	resolveExternalEditUrl,
-	getEffectiveConfigEditOptions,
-	clearSchemaCache,
-	invalidateSchemaCache,
-	hasConfigEditOptions,
-	shouldShowExternalEdit,
-	shouldUseDynamicSchema
-} from '@flowdrop/flowdrop';
+  fetchDynamicSchema,
+  resolveExternalEditUrl,
+  getEffectiveConfigEditOptions,
+  clearSchemaCache,
+  invalidateSchemaCache,
+  hasConfigEditOptions,
+  shouldShowExternalEdit,
+  shouldUseDynamicSchema,
+} from "@flowdrop/flowdrop";
 ```
 
 ### `fetchDynamicSchema(endpoint, node, workflowId?)`
@@ -187,16 +187,16 @@ Fetches a config schema from a REST endpoint with caching support.
 
 ```typescript
 const result = await fetchDynamicSchema(
-	node.data.metadata.configEdit.dynamicSchema,
-	node,
-	workflowId
+  node.data.metadata.configEdit.dynamicSchema,
+  node,
+  workflowId,
 );
 
 if (result.success) {
-	console.log('Schema:', result.schema);
-	console.log('From cache:', result.fromCache);
+  console.log("Schema:", result.schema);
+  console.log("From cache:", result.fromCache);
 } else {
-	console.error('Error:', result.error);
+  console.error("Error:", result.error);
 }
 ```
 
@@ -206,11 +206,11 @@ Resolves URL template variables for external edit links.
 
 ```typescript
 const url = resolveExternalEditUrl(
-	node.data.metadata.configEdit.externalEditLink,
-	node,
-	workflowId
+  node.data.metadata.configEdit.externalEditLink,
+  node,
+  workflowId,
 );
-window.open(url, '_blank');
+window.open(url, "_blank");
 ```
 
 ### `clearSchemaCache(pattern?)`
@@ -222,19 +222,19 @@ Clears cached schemas. Optionally filter by pattern.
 clearSchemaCache();
 
 // Clear schemas for a specific node type
-clearSchemaCache('my_node');
+clearSchemaCache("my_node");
 ```
 
 ## TypeScript Types
 
 ```typescript
 import type {
-	ConfigEditOptions,
-	DynamicSchemaEndpoint,
-	ExternalEditLink,
-	HttpMethod,
-	DynamicSchemaResult
-} from '@flowdrop/flowdrop';
+  ConfigEditOptions,
+  DynamicSchemaEndpoint,
+  ExternalEditLink,
+  HttpMethod,
+  DynamicSchemaResult,
+} from "@flowdrop/flowdrop";
 ```
 
 ## Demo Nodes

@@ -1,4 +1,4 @@
-openapi: '3.0.3'
+openapi: "3.0.3"
 info:
   title: FlowDrop API
   description: |
@@ -31,7 +31,7 @@ info:
 
     ## Error Handling
     All errors return a consistent format with success flag, error message, and optional details.
-  version: '1.0.0'
+  version: "1.0.0"
   contact:
     name: FlowDrop Support
     email: shibinkidd@gmail.com
@@ -78,368 +78,368 @@ tags:
 paths:
   # Health Check (root level - industry standard)
   /health:
-    $ref: './paths/health.yaml#/~1health'
+    $ref: "./paths/health.yaml#/~1health"
 
   # System Endpoints
   /system/config:
-    $ref: './paths/health.yaml#/~1system~1config'
+    $ref: "./paths/health.yaml#/~1system~1config"
   /system/version:
-    $ref: './paths/health.yaml#/~1system~1version'
+    $ref: "./paths/health.yaml#/~1system~1version"
 
   # Node Types
   /nodes:
-    $ref: './paths/nodes.yaml#/~1nodes'
+    $ref: "./paths/nodes.yaml#/~1nodes"
   /nodes/{id}:
-    $ref: './paths/nodes.yaml#/~1nodes~1{id}'
+    $ref: "./paths/nodes.yaml#/~1nodes~1{id}"
 
   # Port Configuration
   /port-config:
-    $ref: './paths/port-config.yaml#/~1port-config'
+    $ref: "./paths/port-config.yaml#/~1port-config"
 
   # Categories
   /categories:
-    $ref: './paths/categories.yaml#/~1categories'
+    $ref: "./paths/categories.yaml#/~1categories"
 
   # Workflows
   /workflows:
-    $ref: './paths/workflows.yaml#/~1workflows'
+    $ref: "./paths/workflows.yaml#/~1workflows"
   /workflows/{id}:
-    $ref: './paths/workflows.yaml#/~1workflows~1{id}'
+    $ref: "./paths/workflows.yaml#/~1workflows~1{id}"
   /workflows/validate:
-    $ref: './paths/workflows.yaml#/~1workflows~1validate'
+    $ref: "./paths/workflows.yaml#/~1workflows~1validate"
   /workflows/{id}/export:
-    $ref: './paths/workflows.yaml#/~1workflows~1{id}~1export'
+    $ref: "./paths/workflows.yaml#/~1workflows~1{id}~1export"
   /workflows/import:
-    $ref: './paths/workflows.yaml#/~1workflows~1import'
+    $ref: "./paths/workflows.yaml#/~1workflows~1import"
   /workflows/{id}/execute:
-    $ref: './paths/workflows.yaml#/~1workflows~1{id}~1execute'
+    $ref: "./paths/workflows.yaml#/~1workflows~1{id}~1execute"
 
   # Executions
   /executions:
-    $ref: './paths/executions.yaml#/~1executions'
+    $ref: "./paths/executions.yaml#/~1executions"
   /executions/{id}:
-    $ref: './paths/executions.yaml#/~1executions~1{id}'
+    $ref: "./paths/executions.yaml#/~1executions~1{id}"
   /executions/{id}/cancel:
-    $ref: './paths/executions.yaml#/~1executions~1{id}~1cancel'
+    $ref: "./paths/executions.yaml#/~1executions~1{id}~1cancel"
   /executions/{id}/logs:
-    $ref: './paths/executions.yaml#/~1executions~1{id}~1logs'
+    $ref: "./paths/executions.yaml#/~1executions~1{id}~1logs"
 
   # Pipelines
   /workflow/{workflow_id}/pipelines:
-    $ref: './paths/pipelines.yaml#/~1workflow~1{workflow_id}~1pipelines'
+    $ref: "./paths/pipelines.yaml#/~1workflow~1{workflow_id}~1pipelines"
   /pipeline/{id}:
-    $ref: './paths/pipelines.yaml#/~1pipeline~1{id}'
+    $ref: "./paths/pipelines.yaml#/~1pipeline~1{id}"
   /pipeline/{id}/status:
-    $ref: './paths/pipelines.yaml#/~1pipeline~1{id}~1status'
+    $ref: "./paths/pipelines.yaml#/~1pipeline~1{id}~1status"
   /pipeline/{id}/execute:
-    $ref: './paths/pipelines.yaml#/~1pipeline~1{id}~1execute'
+    $ref: "./paths/pipelines.yaml#/~1pipeline~1{id}~1execute"
   /pipeline/{id}/stop:
-    $ref: './paths/pipelines.yaml#/~1pipeline~1{id}~1stop'
+    $ref: "./paths/pipelines.yaml#/~1pipeline~1{id}~1stop"
   /pipeline/{id}/logs:
-    $ref: './paths/pipelines.yaml#/~1pipeline~1{id}~1logs'
+    $ref: "./paths/pipelines.yaml#/~1pipeline~1{id}~1logs"
 
   # Playground
   /workflows/{id}/playground/sessions:
-    $ref: './paths/playground.yaml#/~1workflows~1{id}~1playground~1sessions'
+    $ref: "./paths/playground.yaml#/~1workflows~1{id}~1playground~1sessions"
   /playground/sessions/{sessionId}:
-    $ref: './paths/playground.yaml#/~1playground~1sessions~1{sessionId}'
+    $ref: "./paths/playground.yaml#/~1playground~1sessions~1{sessionId}"
   /playground/sessions/{sessionId}/messages:
-    $ref: './paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages'
+    $ref: "./paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages"
   /playground/sessions/{sessionId}/messages/{messageId}:
-    $ref: './paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages~1{messageId}'
+    $ref: "./paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages~1{messageId}"
   /playground/sessions/{sessionId}/messages/{messageId}/status:
-    $ref: './paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages~1{messageId}~1status'
+    $ref: "./paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages~1{messageId}~1status"
   /playground/sessions/{sessionId}/stop:
-    $ref: './paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1stop'
+    $ref: "./paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1stop"
 
   # Interrupts
   /interrupts/{interruptId}:
-    $ref: './paths/interrupts.yaml#/~1interrupts~1{interruptId}'
+    $ref: "./paths/interrupts.yaml#/~1interrupts~1{interruptId}"
   /interrupts/{interruptId}/cancel:
-    $ref: './paths/interrupts.yaml#/~1interrupts~1{interruptId}~1cancel'
+    $ref: "./paths/interrupts.yaml#/~1interrupts~1{interruptId}~1cancel"
   /playground/sessions/{sessionId}/interrupts:
-    $ref: './paths/interrupts.yaml#/~1playground~1sessions~1{sessionId}~1interrupts'
+    $ref: "./paths/interrupts.yaml#/~1playground~1sessions~1{sessionId}~1interrupts"
   /pipelines/{pipelineId}/interrupts:
-    $ref: './paths/interrupts.yaml#/~1pipelines~1{pipelineId}~1interrupts'
+    $ref: "./paths/interrupts.yaml#/~1pipelines~1{pipelineId}~1interrupts"
 
   # Agent Spec Runtime
   /agentspec/flows/execute:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1flows~1execute'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1flows~1execute"
   /agentspec/executions/{id}:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1executions~1{id}"
   /agentspec/executions/{id}/cancel:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1cancel'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1cancel"
   /agentspec/executions/{id}/results:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1results'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1results"
   /agentspec/executions/{id}/stream:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1stream'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1executions~1{id}~1stream"
   /agentspec/flows/validate:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1flows~1validate'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1flows~1validate"
   /agentspec/agents:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1agents'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1agents"
   /agentspec/tools:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1tools'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1tools"
   /agentspec/health:
-    $ref: './paths/agentspec.yaml#/~1agentspec~1health'
+    $ref: "./paths/agentspec.yaml#/~1agentspec~1health"
 
   # Agent Spec Import/Export
   /workflows/{id}/export/agentspec:
-    $ref: './paths/agentspec.yaml#/~1workflows~1{id}~1export~1agentspec'
+    $ref: "./paths/agentspec.yaml#/~1workflows~1{id}~1export~1agentspec"
   /workflows/import/agentspec:
-    $ref: './paths/agentspec.yaml#/~1workflows~1import~1agentspec'
+    $ref: "./paths/agentspec.yaml#/~1workflows~1import~1agentspec"
   /workflows/{id}/validate/agentspec:
-    $ref: './paths/agentspec.yaml#/~1workflows~1{id}~1validate~1agentspec'
+    $ref: "./paths/agentspec.yaml#/~1workflows~1{id}~1validate~1agentspec"
 
 components:
   securitySchemes:
     BearerAuth:
-      $ref: './components/securitySchemes.yaml#/BearerAuth'
+      $ref: "./components/securitySchemes.yaml#/BearerAuth"
     SessionAuth:
-      $ref: './components/securitySchemes.yaml#/SessionAuth'
+      $ref: "./components/securitySchemes.yaml#/SessionAuth"
 
   schemas:
     # Common Types
     NodeCategory:
-      $ref: './components/schemas/common.yaml#/NodeCategory'
+      $ref: "./components/schemas/common.yaml#/NodeCategory"
     NodeDataType:
-      $ref: './components/schemas/common.yaml#/NodeDataType'
+      $ref: "./components/schemas/common.yaml#/NodeDataType"
     NodeType:
-      $ref: './components/schemas/common.yaml#/NodeType'
+      $ref: "./components/schemas/common.yaml#/NodeType"
     NodeExecutionStatus:
-      $ref: './components/schemas/common.yaml#/NodeExecutionStatus'
+      $ref: "./components/schemas/common.yaml#/NodeExecutionStatus"
     Position:
-      $ref: './components/schemas/common.yaml#/Position'
+      $ref: "./components/schemas/common.yaml#/Position"
     ApiResponse:
-      $ref: './components/schemas/common.yaml#/ApiResponse'
+      $ref: "./components/schemas/common.yaml#/ApiResponse"
     ErrorResponse:
-      $ref: './components/schemas/common.yaml#/ErrorResponse'
+      $ref: "./components/schemas/common.yaml#/ErrorResponse"
     CategoryDefinition:
-      $ref: './components/schemas/common.yaml#/CategoryDefinition'
+      $ref: "./components/schemas/common.yaml#/CategoryDefinition"
 
     # Configuration Types
     PortDataTypeConfig:
-      $ref: './components/schemas/config.yaml#/PortDataTypeConfig'
+      $ref: "./components/schemas/config.yaml#/PortDataTypeConfig"
     PortCompatibilityRule:
-      $ref: './components/schemas/config.yaml#/PortCompatibilityRule'
+      $ref: "./components/schemas/config.yaml#/PortCompatibilityRule"
     PortConfig:
-      $ref: './components/schemas/config.yaml#/PortConfig'
+      $ref: "./components/schemas/config.yaml#/PortConfig"
     OneOfItem:
-      $ref: './components/schemas/config.yaml#/OneOfItem'
+      $ref: "./components/schemas/config.yaml#/OneOfItem"
     ConfigProperty:
-      $ref: './components/schemas/config.yaml#/ConfigProperty'
+      $ref: "./components/schemas/config.yaml#/ConfigProperty"
     AutocompleteConfig:
-      $ref: './components/schemas/config.yaml#/AutocompleteConfig'
+      $ref: "./components/schemas/config.yaml#/AutocompleteConfig"
     ConfigSchema:
-      $ref: './components/schemas/config.yaml#/ConfigSchema'
+      $ref: "./components/schemas/config.yaml#/ConfigSchema"
 
     # Node Types
     NodePort:
-      $ref: './components/schemas/node.yaml#/NodePort'
+      $ref: "./components/schemas/node.yaml#/NodePort"
     DynamicPort:
-      $ref: './components/schemas/node.yaml#/DynamicPort'
+      $ref: "./components/schemas/node.yaml#/DynamicPort"
     Branch:
-      $ref: './components/schemas/node.yaml#/Branch'
+      $ref: "./components/schemas/node.yaml#/Branch"
     NodeUIExtensions:
-      $ref: './components/schemas/node.yaml#/NodeUIExtensions'
+      $ref: "./components/schemas/node.yaml#/NodeUIExtensions"
     NodeExtensions:
-      $ref: './components/schemas/node.yaml#/NodeExtensions'
+      $ref: "./components/schemas/node.yaml#/NodeExtensions"
     NodeMetadata:
-      $ref: './components/schemas/node.yaml#/NodeMetadata'
+      $ref: "./components/schemas/node.yaml#/NodeMetadata"
     NodeConfig:
-      $ref: './components/schemas/node.yaml#/NodeConfig'
+      $ref: "./components/schemas/node.yaml#/NodeConfig"
     NodeExecutionInfo:
-      $ref: './components/schemas/node.yaml#/NodeExecutionInfo'
+      $ref: "./components/schemas/node.yaml#/NodeExecutionInfo"
 
     # Workflow Types
     WorkflowNode:
-      $ref: './components/schemas/workflow.yaml#/WorkflowNode'
+      $ref: "./components/schemas/workflow.yaml#/WorkflowNode"
     WorkflowEdge:
-      $ref: './components/schemas/workflow.yaml#/WorkflowEdge'
+      $ref: "./components/schemas/workflow.yaml#/WorkflowEdge"
     WorkflowMetadata:
-      $ref: './components/schemas/workflow.yaml#/WorkflowMetadata'
+      $ref: "./components/schemas/workflow.yaml#/WorkflowMetadata"
     Workflow:
-      $ref: './components/schemas/workflow.yaml#/Workflow'
+      $ref: "./components/schemas/workflow.yaml#/Workflow"
     CreateWorkflowRequest:
-      $ref: './components/schemas/workflow.yaml#/CreateWorkflowRequest'
+      $ref: "./components/schemas/workflow.yaml#/CreateWorkflowRequest"
     UpdateWorkflowRequest:
-      $ref: './components/schemas/workflow.yaml#/UpdateWorkflowRequest'
+      $ref: "./components/schemas/workflow.yaml#/UpdateWorkflowRequest"
 
     # Pipeline Types
     JobStatus:
-      $ref: './components/schemas/pipeline.yaml#/JobStatus'
+      $ref: "./components/schemas/pipeline.yaml#/JobStatus"
     NodeStatus:
-      $ref: './components/schemas/pipeline.yaml#/NodeStatus'
+      $ref: "./components/schemas/pipeline.yaml#/NodeStatus"
     JobStatusSummary:
-      $ref: './components/schemas/pipeline.yaml#/JobStatusSummary'
+      $ref: "./components/schemas/pipeline.yaml#/JobStatusSummary"
     PipelineDetailResponse:
-      $ref: './components/schemas/pipeline.yaml#/PipelineDetailResponse'
+      $ref: "./components/schemas/pipeline.yaml#/PipelineDetailResponse"
     PipelineListResponse:
-      $ref: './components/schemas/pipeline.yaml#/PipelineListResponse'
+      $ref: "./components/schemas/pipeline.yaml#/PipelineListResponse"
     PipelineExecutionResponse:
-      $ref: './components/schemas/pipeline.yaml#/PipelineExecutionResponse'
+      $ref: "./components/schemas/pipeline.yaml#/PipelineExecutionResponse"
     LogEntry:
-      $ref: './components/schemas/pipeline.yaml#/LogEntry'
+      $ref: "./components/schemas/pipeline.yaml#/LogEntry"
 
     # Playground Types
     PlaygroundSessionStatus:
-      $ref: './components/schemas/playground.yaml#/PlaygroundSessionStatus'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundSessionStatus"
     PlaygroundMessageRole:
-      $ref: './components/schemas/playground.yaml#/PlaygroundMessageRole'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundMessageRole"
     PlaygroundMessageLevel:
-      $ref: './components/schemas/playground.yaml#/PlaygroundMessageLevel'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundMessageLevel"
     PlaygroundMessageStatus:
-      $ref: './components/schemas/playground.yaml#/PlaygroundMessageStatus'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundMessageStatus"
     PlaygroundSession:
-      $ref: './components/schemas/playground.yaml#/PlaygroundSession'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundSession"
     PlaygroundMessage:
-      $ref: './components/schemas/playground.yaml#/PlaygroundMessage'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundMessage"
     PlaygroundInputField:
-      $ref: './components/schemas/playground.yaml#/PlaygroundInputField'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundInputField"
     PlaygroundMessageRequest:
-      $ref: './components/schemas/playground.yaml#/PlaygroundMessageRequest'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundMessageRequest"
     PlaygroundSessionResponse:
-      $ref: './components/schemas/playground.yaml#/PlaygroundSessionResponse'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundSessionResponse"
     PlaygroundSessionsResponse:
-      $ref: './components/schemas/playground.yaml#/PlaygroundSessionsResponse'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundSessionsResponse"
     PlaygroundMessageResponse:
-      $ref: './components/schemas/playground.yaml#/PlaygroundMessageResponse'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundMessageResponse"
     PlaygroundMessagesResponse:
-      $ref: './components/schemas/playground.yaml#/PlaygroundMessagesResponse'
+      $ref: "./components/schemas/playground.yaml#/PlaygroundMessagesResponse"
 
     # Interrupt Types
     InterruptType:
-      $ref: './components/schemas/interrupt.yaml#/InterruptType'
+      $ref: "./components/schemas/interrupt.yaml#/InterruptType"
     InterruptStatus:
-      $ref: './components/schemas/interrupt.yaml#/InterruptStatus'
+      $ref: "./components/schemas/interrupt.yaml#/InterruptStatus"
     ChoiceOption:
-      $ref: './components/schemas/interrupt.yaml#/ChoiceOption'
+      $ref: "./components/schemas/interrupt.yaml#/ChoiceOption"
     ConfirmationInterruptConfig:
-      $ref: './components/schemas/interrupt.yaml#/ConfirmationInterruptConfig'
+      $ref: "./components/schemas/interrupt.yaml#/ConfirmationInterruptConfig"
     ChoiceInterruptConfig:
-      $ref: './components/schemas/interrupt.yaml#/ChoiceInterruptConfig'
+      $ref: "./components/schemas/interrupt.yaml#/ChoiceInterruptConfig"
     TextInterruptConfig:
-      $ref: './components/schemas/interrupt.yaml#/TextInterruptConfig'
+      $ref: "./components/schemas/interrupt.yaml#/TextInterruptConfig"
     FormInterruptConfig:
-      $ref: './components/schemas/interrupt.yaml#/FormInterruptConfig'
+      $ref: "./components/schemas/interrupt.yaml#/FormInterruptConfig"
     ReviewChange:
-      $ref: './components/schemas/interrupt.yaml#/ReviewChange'
+      $ref: "./components/schemas/interrupt.yaml#/ReviewChange"
     ReviewInterruptConfig:
-      $ref: './components/schemas/interrupt.yaml#/ReviewInterruptConfig'
+      $ref: "./components/schemas/interrupt.yaml#/ReviewInterruptConfig"
     ReviewFieldDecision:
-      $ref: './components/schemas/interrupt.yaml#/ReviewFieldDecision'
+      $ref: "./components/schemas/interrupt.yaml#/ReviewFieldDecision"
     ReviewResolution:
-      $ref: './components/schemas/interrupt.yaml#/ReviewResolution'
+      $ref: "./components/schemas/interrupt.yaml#/ReviewResolution"
     Interrupt:
-      $ref: './components/schemas/interrupt.yaml#/Interrupt'
+      $ref: "./components/schemas/interrupt.yaml#/Interrupt"
     InterruptMessageMetadata:
-      $ref: './components/schemas/interrupt.yaml#/InterruptMessageMetadata'
+      $ref: "./components/schemas/interrupt.yaml#/InterruptMessageMetadata"
     InterruptResolveRequest:
-      $ref: './components/schemas/interrupt.yaml#/InterruptResolveRequest'
+      $ref: "./components/schemas/interrupt.yaml#/InterruptResolveRequest"
     InterruptResponse:
-      $ref: './components/schemas/interrupt.yaml#/InterruptResponse'
+      $ref: "./components/schemas/interrupt.yaml#/InterruptResponse"
     InterruptListResponse:
-      $ref: './components/schemas/interrupt.yaml#/InterruptListResponse'
+      $ref: "./components/schemas/interrupt.yaml#/InterruptListResponse"
 
     # Agent Spec Types
     AgentSpecComponentType:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecComponentType'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecComponentType"
     AgentSpecNodeComponentType:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecNodeComponentType'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecNodeComponentType"
     AgentSpecToolComponentType:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecToolComponentType'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecToolComponentType"
     AgentSpecProperty:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecProperty'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecProperty"
     AgentSpecBranch:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecBranch'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecBranch"
     AgentSpecNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecNode"
     AgentSpecStartNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecStartNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecStartNode"
     AgentSpecEndNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecEndNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecEndNode"
     AgentSpecLLMNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecLLMNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecLLMNode"
     AgentSpecAPINode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecAPINode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecAPINode"
     AgentSpecAgentNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecAgentNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecAgentNode"
     AgentSpecFlowNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecFlowNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecFlowNode"
     AgentSpecMapNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecMapNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecMapNode"
     AgentSpecBranchingNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecBranchingNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecBranchingNode"
     AgentSpecToolNode:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecToolNode'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecToolNode"
     AgentSpecControlFlowEdge:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecControlFlowEdge'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecControlFlowEdge"
     AgentSpecDataFlowEdge:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecDataFlowEdge'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecDataFlowEdge"
     AgentSpecFlow:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecFlow'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecFlow"
     AgentSpecServerTool:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecServerTool'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecServerTool"
     AgentSpecClientTool:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecClientTool'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecClientTool"
     AgentSpecRemoteTool:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecRemoteTool'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecRemoteTool"
     AgentSpecTool:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecTool'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecTool"
     AgentSpecLLMConfig:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecLLMConfig'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecLLMConfig"
     AgentSpecAgent:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecAgent'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecAgent"
     AgentSpecDocument:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecDocument'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecDocument"
     AgentSpecValidationResult:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecValidationResult'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecValidationResult"
     AgentSpecExecutionRequest:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionRequest'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecExecutionRequest"
     AgentSpecExecutionResponse:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionResponse'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecExecutionResponse"
     AgentSpecExecutionStatus:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionStatus'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecExecutionStatus"
     AgentSpecNodeStatus:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecNodeStatus'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecNodeStatus"
     AgentSpecExecutionResults:
-      $ref: './components/schemas/agentspec.yaml#/AgentSpecExecutionResults'
+      $ref: "./components/schemas/agentspec.yaml#/AgentSpecExecutionResults"
 
     # Response Types
     NodesResponse:
-      $ref: './components/schemas/response.yaml#/NodesResponse'
+      $ref: "./components/schemas/response.yaml#/NodesResponse"
     NodeTypeResponse:
-      $ref: './components/schemas/response.yaml#/NodeTypeResponse'
+      $ref: "./components/schemas/response.yaml#/NodeTypeResponse"
     PortConfigResponse:
-      $ref: './components/schemas/response.yaml#/PortConfigResponse'
+      $ref: "./components/schemas/response.yaml#/PortConfigResponse"
     CategoriesResponse:
-      $ref: './components/schemas/response.yaml#/CategoriesResponse'
+      $ref: "./components/schemas/response.yaml#/CategoriesResponse"
     WorkflowsResponse:
-      $ref: './components/schemas/response.yaml#/WorkflowsResponse'
+      $ref: "./components/schemas/response.yaml#/WorkflowsResponse"
     WorkflowResponse:
-      $ref: './components/schemas/response.yaml#/WorkflowResponse'
+      $ref: "./components/schemas/response.yaml#/WorkflowResponse"
     ValidationResponse:
-      $ref: './components/schemas/response.yaml#/ValidationResponse'
+      $ref: "./components/schemas/response.yaml#/ValidationResponse"
     AgentSpecFlowResponse:
-      $ref: './components/schemas/response.yaml#/AgentSpecFlowResponse'
+      $ref: "./components/schemas/response.yaml#/AgentSpecFlowResponse"
     AgentSpecDocumentResponse:
-      $ref: './components/schemas/response.yaml#/AgentSpecDocumentResponse'
+      $ref: "./components/schemas/response.yaml#/AgentSpecDocumentResponse"
     AgentSpecValidationResponse:
-      $ref: './components/schemas/response.yaml#/AgentSpecValidationResponse'
+      $ref: "./components/schemas/response.yaml#/AgentSpecValidationResponse"
     AgentSpecExecutionStatusResponse:
-      $ref: './components/schemas/response.yaml#/AgentSpecExecutionStatusResponse'
+      $ref: "./components/schemas/response.yaml#/AgentSpecExecutionStatusResponse"
     AgentSpecAgentsResponse:
-      $ref: './components/schemas/response.yaml#/AgentSpecAgentsResponse'
+      $ref: "./components/schemas/response.yaml#/AgentSpecAgentsResponse"
     AgentSpecToolsResponse:
-      $ref: './components/schemas/response.yaml#/AgentSpecToolsResponse'
+      $ref: "./components/schemas/response.yaml#/AgentSpecToolsResponse"
 
   responses:
     BadRequest:
-      $ref: './components/responses.yaml#/BadRequest'
+      $ref: "./components/responses.yaml#/BadRequest"
     Unauthorized:
-      $ref: './components/responses.yaml#/Unauthorized'
+      $ref: "./components/responses.yaml#/Unauthorized"
     NotFound:
-      $ref: './components/responses.yaml#/NotFound'
+      $ref: "./components/responses.yaml#/NotFound"
     ValidationError:
-      $ref: './components/responses.yaml#/ValidationError'
+      $ref: "./components/responses.yaml#/ValidationError"
     InternalServerError:
-      $ref: './components/responses.yaml#/InternalServerError'
+      $ref: "./components/responses.yaml#/InternalServerError"

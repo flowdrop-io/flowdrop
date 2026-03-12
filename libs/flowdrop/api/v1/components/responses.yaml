@@ -6,7 +6,7 @@ BadRequest:
   content:
     application/json:
       schema:
-        $ref: './schemas/common.yaml#/ErrorResponse'
+        $ref: "./schemas/common.yaml#/ErrorResponse"
       example:
         success: false
         error: Invalid request parameters
@@ -20,7 +20,7 @@ Unauthorized:
   content:
     application/json:
       schema:
-        $ref: './schemas/common.yaml#/ErrorResponse'
+        $ref: "./schemas/common.yaml#/ErrorResponse"
       example:
         success: false
         error: Authentication required
@@ -31,7 +31,7 @@ NotFound:
   content:
     application/json:
       schema:
-        $ref: './schemas/common.yaml#/ErrorResponse'
+        $ref: "./schemas/common.yaml#/ErrorResponse"
       example:
         success: false
         error: Resource not found
@@ -42,7 +42,7 @@ ValidationError:
   content:
     application/json:
       schema:
-        $ref: './schemas/common.yaml#/ErrorResponse'
+        $ref: "./schemas/common.yaml#/ErrorResponse"
       example:
         success: false
         error: Validation failed
@@ -57,7 +57,7 @@ InternalServerError:
   content:
     application/json:
       schema:
-        $ref: './schemas/common.yaml#/ErrorResponse'
+        $ref: "./schemas/common.yaml#/ErrorResponse"
       example:
         success: false
         error: Internal server error

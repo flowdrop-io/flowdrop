@@ -12,22 +12,22 @@
     tags:
       - Configuration
     responses:
-      '200':
+      "200":
         description: Port configuration retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/response.yaml#/PortConfigResponse'
+              $ref: "../components/schemas/response.yaml#/PortConfigResponse"
             example:
               success: true
               data:
-                version: '1.0.0'
+                version: "1.0.0"
                 defaultDataType: mixed
                 dataTypes:
                   - id: string
                     name: String
                     description: Text data type
-                    color: '#3b82f6'
+                    color: "#3b82f6"
                     category: primitive
                     aliases:
                       - text
@@ -36,13 +36,13 @@
                   - id: number
                     name: Number
                     description: Numeric data type
-                    color: '#10b981'
+                    color: "#10b981"
                     category: primitive
                     enabled: true
                   - id: mixed
                     name: Mixed
                     description: Any data type
-                    color: '#6b7280'
+                    color: "#6b7280"
                     category: special
                     enabled: true
                 compatibilityRules:
@@ -56,7 +56,7 @@
                     to: string
                     description: Mixed can connect to string with conversion
               message: Port configuration loaded successfully
-      '401':
-        $ref: '../components/responses.yaml#/Unauthorized'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

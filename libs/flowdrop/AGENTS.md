@@ -121,10 +121,10 @@ npm run build-storybook  # Build Storybook
 ```typescript
 // ✅ Good
 const message = `Hello, ${name}!`;
-const path = ['api', 'flowdrop', endpoint].join('/');
+const path = ["api", "flowdrop", endpoint].join("/");
 
 // ❌ Bad
-const message = 'Hello, ' + name + '!';
+const message = "Hello, " + name + "!";
 ```
 
 ### Svelte 5 Patterns
@@ -133,24 +133,24 @@ FlowDrop uses **Svelte 5 Runes mode**. Key patterns:
 
 ```svelte
 <script lang="ts">
-	// Reactive state with $state
-	let count = $state(0);
-	let items = $state<string[]>([]);
+  // Reactive state with $state
+  let count = $state(0);
+  let items = $state<string[]>([]);
 
-	// Derived values with $derived
-	let doubled = $derived(count * 2);
-	let total = $derived(items.length);
+  // Derived values with $derived
+  let doubled = $derived(count * 2);
+  let total = $derived(items.length);
 
-	// Side effects with $effect
-	$effect(() => {
-		console.log(`Count changed to ${count}`);
-	});
+  // Side effects with $effect
+  $effect(() => {
+    console.log(`Count changed to ${count}`);
+  });
 
-	// Props with $props
-	let { label, onclick } = $props<{
-		label: string;
-		onclick?: () => void;
-	}>();
+  // Props with $props
+  let { label, onclick } = $props<{
+    label: string;
+    onclick?: () => void;
+  }>();
 </script>
 ```
 
@@ -158,20 +158,20 @@ FlowDrop uses **Svelte 5 Runes mode**. Key patterns:
 
 ```svelte
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+  import type { Snippet } from "svelte";
 
-	interface Props {
-		/** Required prop with description */
-		title: string;
-		/** Optional prop with default */
-		variant?: 'primary' | 'secondary';
-		/** Event handler */
-		onchange?: (value: string) => void;
-		/** Slot content */
-		children?: Snippet;
-	}
+  interface Props {
+    /** Required prop with description */
+    title: string;
+    /** Optional prop with default */
+    variant?: "primary" | "secondary";
+    /** Event handler */
+    onchange?: (value: string) => void;
+    /** Slot content */
+    children?: Snippet;
+  }
 
-	let { title, variant = 'primary', onchange, children }: Props = $props();
+  let { title, variant = "primary", onchange, children }: Props = $props();
 </script>
 ```
 
@@ -205,44 +205,44 @@ FlowDrop has 7 built-in visual node types:
 ```typescript
 // Core workflow types (src/lib/types/index.ts)
 interface WorkflowNode extends Node {
-	id: string;
-	type: string;
-	position: XYPosition;
-	data: {
-		label: string;
-		config: ConfigValues; // User-configured values
-		metadata: NodeMetadata; // Node type definition
-		extensions?: NodeExtensions;
-	};
+  id: string;
+  type: string;
+  position: XYPosition;
+  data: {
+    label: string;
+    config: ConfigValues; // User-configured values
+    metadata: NodeMetadata; // Node type definition
+    extensions?: NodeExtensions;
+  };
 }
 
 interface WorkflowEdge extends Edge {
-	id: string;
-	source: string;
-	target: string;
-	sourceHandle?: string;
-	targetHandle?: string;
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 }
 
 interface Workflow {
-	id: string;
-	name: string;
-	description?: string;
-	nodes: WorkflowNode[];
-	edges: WorkflowEdge[];
-	metadata?: WorkflowMetadata;
+  id: string;
+  name: string;
+  description?: string;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  metadata?: WorkflowMetadata;
 }
 
 interface NodeMetadata {
-	id: string;
-	name: string;
-	type?: NodeType;
-	description: string;
-	category: NodeCategory;
-	version: string;
-	inputs: NodePort[];
-	outputs: NodePort[];
-	configSchema?: ConfigSchema;
+  id: string;
+  name: string;
+  type?: NodeType;
+  description: string;
+  category: NodeCategory;
+  version: string;
+  inputs: NodePort[];
+  outputs: NodePort[];
+  configSchema?: ConfigSchema;
 }
 ```
 
@@ -311,25 +311,25 @@ See `docs/config-schema-special-properties.md` for full documentation.
 ### Test Structure
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-describe('ComponentOrFunction', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
+describe("ComponentOrFunction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-	describe('methodName', () => {
-		it('should do expected behavior', () => {
-			// Arrange
-			const input = createTestInput();
+  describe("methodName", () => {
+    it("should do expected behavior", () => {
+      // Arrange
+      const input = createTestInput();
 
-			// Act
-			const result = functionUnderTest(input);
+      // Act
+      const result = functionUnderTest(input);
 
-			// Assert
-			expect(result).toBe(expectedValue);
-		});
-	});
+      // Assert
+      expect(result).toBe(expectedValue);
+    });
+  });
 });
 ```
 
@@ -383,22 +383,22 @@ FlowDrop uses module exports for tree-shaking:
 
 ```typescript
 // Main entry - includes all components
-import { WorkflowEditor, NodeSidebar } from '@flowdrop/flowdrop';
+import { WorkflowEditor, NodeSidebar } from "@flowdrop/flowdrop";
 
 // Core - types and utilities only (zero heavy deps)
-import type { Workflow, WorkflowNode } from '@flowdrop/flowdrop/core';
+import type { Workflow, WorkflowNode } from "@flowdrop/flowdrop/core";
 
 // Editor - editor-specific exports
-import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import { mountFlowDropApp } from "@flowdrop/flowdrop/editor";
 
 // Form - form components
-import { SchemaForm, registerField } from '@flowdrop/flowdrop/form';
+import { SchemaForm, registerField } from "@flowdrop/flowdrop/form";
 
 // Display - read-only display components
-import { MarkdownDisplay } from '@flowdrop/flowdrop/display';
+import { MarkdownDisplay } from "@flowdrop/flowdrop/display";
 
 // Styles
-import '@flowdrop/flowdrop/styles/base.css';
+import "@flowdrop/flowdrop/styles/base.css";
 ```
 
 ---
@@ -409,8 +409,8 @@ import '@flowdrop/flowdrop/styles/base.css';
 
 ```typescript
 const config = createEndpointConfig({
-	baseUrl: 'https://api.example.com/flowdrop',
-	auth: { type: 'bearer', token: 'your-token' }
+  baseUrl: "https://api.example.com/flowdrop",
+  auth: { type: "bearer", token: "your-token" },
 });
 ```
 
@@ -419,14 +419,14 @@ const config = createEndpointConfig({
 ```typescript
 // Static authentication
 const authProvider = new StaticAuthProvider({
-	type: 'bearer',
-	token: 'your-token'
+  type: "bearer",
+  token: "your-token",
 });
 
 // Dynamic authentication with refresh
 const authProvider = new CallbackAuthProvider({
-	getToken: () => authService.getAccessToken(),
-	onUnauthorized: () => authService.refreshToken()
+  getToken: () => authService.getAccessToken(),
+  onUnauthorized: () => authService.refreshToken(),
 });
 ```
 

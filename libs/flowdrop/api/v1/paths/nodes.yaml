@@ -16,7 +16,7 @@
         description: Filter by node category
         required: false
         schema:
-          $ref: '../components/schemas/common.yaml#/NodeCategory'
+          $ref: "../components/schemas/common.yaml#/NodeCategory"
       - name: search
         in: query
         description: Search node types by name, description, or tags
@@ -42,7 +42,7 @@
           minimum: 0
           default: 0
     responses:
-      '200':
+      "200":
         description: List of node types retrieved successfully
         headers:
           X-Total-Count:
@@ -60,7 +60,7 @@
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/response.yaml#/NodesResponse'
+              $ref: "../components/schemas/response.yaml#/NodesResponse"
             examples:
               success:
                 value:
@@ -70,9 +70,9 @@
                       name: OpenAI Chat
                       description: Chat completion using OpenAI's GPT models
                       category: ai
-                      version: '1.0.0'
+                      version: "1.0.0"
                       icon: mdi:chat
-                      color: '#10a37f'
+                      color: "#10a37f"
                       type: default
                       supportedTypes:
                         - default
@@ -123,10 +123,10 @@
                         - chat
                         - ai
                   message: Found 1 node types
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /nodes/{id}:
   get:
@@ -144,13 +144,13 @@
           type: string
           example: calculator
     responses:
-      '200':
+      "200":
         description: Node type details retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/response.yaml#/NodeTypeResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/response.yaml#/NodeTypeResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

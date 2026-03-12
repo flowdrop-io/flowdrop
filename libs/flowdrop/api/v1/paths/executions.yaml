@@ -48,16 +48,16 @@
           minimum: 0
           default: 0
     responses:
-      '200':
+      "200":
         description: Execution history retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/pipeline.yaml#/PipelineListResponse'
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/pipeline.yaml#/PipelineListResponse"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /executions/{id}:
   get:
@@ -77,16 +77,16 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Execution status retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/pipeline.yaml#/PipelineDetailResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/pipeline.yaml#/PipelineDetailResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /executions/{id}/cancel:
   post:
@@ -106,7 +106,7 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Execution cancelled successfully
         content:
           application/json:
@@ -119,16 +119,16 @@
                 message:
                   type: string
                   example: Execution cancelled successfully
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '409':
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "409":
         description: Execution cannot be cancelled
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /executions/{id}/logs:
   get:
@@ -163,7 +163,7 @@
         schema:
           type: string
     responses:
-      '200':
+      "200":
         description: Execution logs retrieved successfully
         content:
           application/json:
@@ -175,10 +175,10 @@
                 data:
                   type: array
                   items:
-                    $ref: '../components/schemas/pipeline.yaml#/LogEntry'
+                    $ref: "../components/schemas/pipeline.yaml#/LogEntry"
                 message:
                   type: string
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

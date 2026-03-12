@@ -66,7 +66,7 @@ PlaygroundSession:
       description: Session display name
       example: Test Session 1
     status:
-      $ref: '#/PlaygroundSessionStatus'
+      $ref: "#/PlaygroundSessionStatus"
     createdAt:
       type: string
       format: date-time
@@ -102,7 +102,7 @@ PlaygroundMessage:
       format: uuid
       description: Parent session ID
     role:
-      $ref: '#/PlaygroundMessageRole'
+      $ref: "#/PlaygroundMessageRole"
     content:
       type: string
       description: Message content
@@ -111,7 +111,7 @@ PlaygroundMessage:
       format: date-time
       description: Message timestamp
     status:
-      $ref: '#/PlaygroundMessageStatus'
+      $ref: "#/PlaygroundMessageStatus"
     sequenceNumber:
       type: integer
       description: |
@@ -136,7 +136,7 @@ PlaygroundMessage:
       type: object
       properties:
         level:
-          $ref: '#/PlaygroundMessageLevel'
+          $ref: "#/PlaygroundMessageLevel"
         duration:
           type: integer
           description: Execution duration in milliseconds
@@ -162,7 +162,7 @@ PlaygroundMessage:
     sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
     role: user
     content: Hello. How are you?
-    timestamp: '2026-01-19T10:03:32+01:00'
+    timestamp: "2026-01-19T10:03:32+01:00"
     status: completed
     sequenceNumber: 1
     parentMessageId: null
@@ -193,7 +193,7 @@ PlaygroundInputField:
       type: boolean
       description: Whether the field is required
     schema:
-      $ref: './config.yaml#/ConfigProperty'
+      $ref: "./config.yaml#/ConfigProperty"
       description: JSON Schema for the field
   required:
     - nodeId
@@ -219,42 +219,42 @@ PlaygroundMessageRequest:
 
 PlaygroundSessionResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: '#/PlaygroundSession'
+          $ref: "#/PlaygroundSession"
 
 PlaygroundSessionsResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: '#/PlaygroundSession'
+            $ref: "#/PlaygroundSession"
 
 PlaygroundMessageResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: '#/PlaygroundMessage'
+          $ref: "#/PlaygroundMessage"
 
 PlaygroundMessagesResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: '#/PlaygroundMessage'
+            $ref: "#/PlaygroundMessage"
         hasMore:
           type: boolean
           description: Whether there are more messages to fetch
         sessionStatus:
-          $ref: '#/PlaygroundSessionStatus'
+          $ref: "#/PlaygroundSessionStatus"
           description: Current session status (useful for polling)

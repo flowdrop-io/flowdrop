@@ -19,16 +19,16 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Interrupt details retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/interrupt.yaml#/InterruptResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/interrupt.yaml#/InterruptResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
   post:
     operationId: resolveInterrupt
@@ -55,7 +55,7 @@
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/interrupt.yaml#/InterruptResolveRequest'
+            $ref: "../components/schemas/interrupt.yaml#/InterruptResolveRequest"
           examples:
             confirmation:
               summary: Confirmation response
@@ -64,41 +64,41 @@
             choice:
               summary: Choice selection
               value:
-                value: 'option1'
+                value: "option1"
             multipleChoice:
               summary: Multiple choice selection
               value:
-                value: ['option1', 'option3']
+                value: ["option1", "option3"]
             text:
               summary: Text input
               value:
-                value: 'User provided text response'
+                value: "User provided text response"
             form:
               summary: Form data
               value:
                 value:
-                  name: 'John Doe'
-                  email: 'john@example.com'
-                  priority: 'high'
+                  name: "John Doe"
+                  email: "john@example.com"
+                  priority: "high"
     responses:
-      '200':
+      "200":
         description: Interrupt resolved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/interrupt.yaml#/InterruptResponse'
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '409':
+              $ref: "../components/schemas/interrupt.yaml#/InterruptResponse"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "409":
         description: Interrupt already resolved or cancelled
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /interrupts/{interruptId}/cancel:
   post:
@@ -119,7 +119,7 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Interrupt cancelled successfully
         content:
           application/json:
@@ -132,22 +132,22 @@
                 message:
                   type: string
                   example: Interrupt cancelled
-      '400':
+      "400":
         description: Interrupt cannot be cancelled
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '409':
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "409":
         description: Interrupt already resolved or cancelled
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /playground/sessions/{sessionId}/interrupts:
   get:
@@ -194,16 +194,16 @@
           minimum: 0
           default: 0
     responses:
-      '200':
+      "200":
         description: List of interrupts retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/interrupt.yaml#/InterruptListResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/interrupt.yaml#/InterruptListResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /pipelines/{pipelineId}/interrupts:
   get:
@@ -250,13 +250,13 @@
           minimum: 0
           default: 0
     responses:
-      '200':
+      "200":
         description: List of interrupts retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/interrupt.yaml#/InterruptListResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/interrupt.yaml#/InterruptListResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

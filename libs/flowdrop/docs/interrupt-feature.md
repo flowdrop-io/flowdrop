@@ -56,9 +56,9 @@ Simple yes/no prompt for binary decisions.
 
 ```typescript
 interface ConfirmationInterruptConfig {
-	message: string;
-	confirm_label?: string; // Default: "Yes"
-	cancel_label?: string; // Default: "No"
+  message: string;
+  confirm_label?: string; // Default: "Yes"
+  cancel_label?: string; // Default: "No"
 }
 ```
 
@@ -76,17 +76,17 @@ Single or multiple selection from predefined options.
 
 ```typescript
 interface ChoiceOption {
-	value: string;
-	label: string;
-	description?: string;
+  value: string;
+  label: string;
+  description?: string;
 }
 
 interface ChoiceInterruptConfig {
-	message: string;
-	options: ChoiceOption[];
-	multiple?: boolean; // Default: false
-	min_selections?: number;
-	max_selections?: number;
+  message: string;
+  options: ChoiceOption[];
+  multiple?: boolean; // Default: false
+  min_selections?: number;
+  max_selections?: number;
 }
 ```
 
@@ -104,12 +104,12 @@ Free-form text input.
 
 ```typescript
 interface TextInterruptConfig {
-	message: string;
-	placeholder?: string;
-	multiline?: boolean; // Default: false
-	min_length?: number;
-	max_length?: number;
-	default_value?: string;
+  message: string;
+  placeholder?: string;
+  multiline?: boolean; // Default: false
+  min_length?: number;
+  max_length?: number;
+  default_value?: string;
 }
 ```
 
@@ -127,9 +127,9 @@ Complex data entry using JSON Schema.
 
 ```typescript
 interface FormInterruptConfig {
-	message: string;
-	schema: ConfigSchema; // JSON Schema
-	default_values?: Record<string, unknown>;
+  message: string;
+  schema: ConfigSchema; // JSON Schema
+  default_values?: Record<string, unknown>;
 }
 ```
 
@@ -147,22 +147,22 @@ Review proposed field changes with per-field accept/reject decisions. Displays a
 
 ```typescript
 interface ReviewChange {
-	/** Field identifier (machine key) */
-	field: string;
-	/** Human-readable field label */
-	label: string;
-	/** Original value before the proposed change */
-	original: unknown;
-	/** Proposed new value */
-	proposed: unknown;
+  /** Field identifier (machine key) */
+  field: string;
+  /** Human-readable field label */
+  label: string;
+  /** Original value before the proposed change */
+  original: unknown;
+  /** Proposed new value */
+  proposed: unknown;
 }
 
 interface ReviewConfig {
-	message: string;
-	changes: ReviewChange[];
-	acceptAllLabel?: string; // Default: "Accept All"
-	rejectAllLabel?: string; // Default: "Reject All"
-	submitLabel?: string; // Default: "Submit Review"
+  message: string;
+  changes: ReviewChange[];
+  acceptAllLabel?: string; // Default: "Accept All"
+  rejectAllLabel?: string; // Default: "Reject All"
+  submitLabel?: string; // Default: "Submit Review"
 }
 ```
 
@@ -170,21 +170,21 @@ interface ReviewConfig {
 
 ```typescript
 interface ReviewFieldDecision {
-	/** Whether the proposed change was accepted */
-	accepted: boolean;
-	/** The effective value (proposed if accepted, original if rejected) */
-	value: unknown;
+  /** Whether the proposed change was accepted */
+  accepted: boolean;
+  /** The effective value (proposed if accepted, original if rejected) */
+  value: unknown;
 }
 
 interface ReviewResolution {
-	/** Map of field identifier to the user's decision */
-	decisions: Record<string, ReviewFieldDecision>;
-	/** Summary counts */
-	summary: {
-		accepted: number;
-		rejected: number;
-		total: number;
-	};
+  /** Map of field identifier to the user's decision */
+  decisions: Record<string, ReviewFieldDecision>;
+  /** Summary counts */
+  summary: {
+    accepted: number;
+    rejected: number;
+    total: number;
+  };
 }
 ```
 
@@ -206,27 +206,27 @@ interface ReviewResolution {
 
 ```json
 {
-	"type": "interrupt_request",
-	"interrupt_id": "int-789",
-	"interrupt_type": "review",
-	"node_id": "content-review",
-	"execution_id": "exec-123",
-	"changes": [
-		{
-			"field": "title",
-			"label": "Page Title",
-			"original": "About Us",
-			"proposed": "About Our Company"
-		},
-		{
-			"field": "body",
-			"label": "Body Content",
-			"original": "<p>Welcome to our site.</p>",
-			"proposed": "<p>Welcome to our company website.</p>"
-		}
-	],
-	"accept_all_label": "Accept All Changes",
-	"submit_label": "Confirm Review"
+  "type": "interrupt_request",
+  "interrupt_id": "int-789",
+  "interrupt_type": "review",
+  "node_id": "content-review",
+  "execution_id": "exec-123",
+  "changes": [
+    {
+      "field": "title",
+      "label": "Page Title",
+      "original": "About Us",
+      "proposed": "About Our Company"
+    },
+    {
+      "field": "body",
+      "label": "Body Content",
+      "original": "<p>Welcome to our site.</p>",
+      "proposed": "<p>Welcome to our company website.</p>"
+    }
+  ],
+  "accept_all_label": "Accept All Changes",
+  "submit_label": "Confirm Review"
 }
 ```
 
@@ -238,21 +238,28 @@ The `ChatPanel` component automatically detects and renders interrupts embedded 
 
 ```svelte
 <script lang="ts">
-	import { InterruptBubble } from '@flowdrop/flowdrop/playground';
-	import { isInterruptMessageMetadata, metadataToInterrupt } from '@flowdrop/flowdrop/playground';
+  import { InterruptBubble } from "@flowdrop/flowdrop/playground";
+  import {
+    isInterruptMessageMetadata,
+    metadataToInterrupt,
+  } from "@flowdrop/flowdrop/playground";
 </script>
 
 {#each messages as message}
-	<MessageBubble {message} />
+  <MessageBubble {message} />
 
-	{#if isInterruptMessageMetadata(message.metadata)}
-		{@const interrupt = metadataToInterrupt(message.metadata, message.id, message.content)}
-		<InterruptBubble
-			{interrupt}
-			onResolve={(value) => handleResolve(interrupt.id, value)}
-			onCancel={() => handleCancel(interrupt.id)}
-		/>
-	{/if}
+  {#if isInterruptMessageMetadata(message.metadata)}
+    {@const interrupt = metadataToInterrupt(
+      message.metadata,
+      message.id,
+      message.content,
+    )}
+    <InterruptBubble
+      {interrupt}
+      onResolve={(value) => handleResolve(interrupt.id, value)}
+      onCancel={() => handleCancel(interrupt.id)}
+    />
+  {/if}
 {/each}
 ```
 
@@ -262,43 +269,43 @@ For custom implementations using the Svelte 5 rune-based store API:
 
 ```typescript
 import {
-	interruptService,
-	interruptActions,
-	getPendingInterrupts,
-	getInterrupt,
-	isInterruptPending
-} from '@flowdrop/flowdrop/playground';
+  interruptService,
+  interruptActions,
+  getPendingInterrupts,
+  getInterrupt,
+  isInterruptPending,
+} from "@flowdrop/flowdrop/playground";
 
 // Read pending interrupts reactively (inside a component with $derived)
 const pending = $derived(getPendingInterrupts());
 
 // Or read a specific interrupt
-const interrupt = $derived(getInterrupt('int-123'));
+const interrupt = $derived(getInterrupt("int-123"));
 
 // Resolve an interrupt (state machine handles transitions)
 async function resolveInterrupt(interruptId: string, value: unknown) {
-	const result = interruptActions.startSubmit(interruptId, value);
-	if (!result.valid) return;
+  const result = interruptActions.startSubmit(interruptId, value);
+  if (!result.valid) return;
 
-	try {
-		await interruptService.resolveInterrupt(interruptId, value);
-		interruptActions.submitSuccess(interruptId);
-	} catch (error) {
-		interruptActions.submitFailure(interruptId, String(error));
-	}
+  try {
+    await interruptService.resolveInterrupt(interruptId, value);
+    interruptActions.submitSuccess(interruptId);
+  } catch (error) {
+    interruptActions.submitFailure(interruptId, String(error));
+  }
 }
 
 // Cancel an interrupt
 async function cancelInterrupt(interruptId: string) {
-	const result = interruptActions.startCancel(interruptId);
-	if (!result.valid) return;
+  const result = interruptActions.startCancel(interruptId);
+  if (!result.valid) return;
 
-	try {
-		await interruptService.cancelInterrupt(interruptId);
-		interruptActions.submitSuccess(interruptId);
-	} catch (error) {
-		interruptActions.submitFailure(interruptId, String(error));
-	}
+  try {
+    await interruptService.cancelInterrupt(interruptId);
+    interruptActions.submitSuccess(interruptId);
+  } catch (error) {
+    interruptActions.submitFailure(interruptId, String(error));
+  }
 }
 ```
 
@@ -308,21 +315,21 @@ You can use prompt components directly:
 
 ```svelte
 <script lang="ts">
-	import { ConfirmationPrompt } from '@flowdrop/flowdrop/playground';
+  import { ConfirmationPrompt } from "@flowdrop/flowdrop/playground";
 
-	let config = {
-		message: 'Do you approve this action?',
-		confirm_label: 'Approve',
-		cancel_label: 'Reject'
-	};
+  let config = {
+    message: "Do you approve this action?",
+    confirm_label: "Approve",
+    cancel_label: "Reject",
+  };
 </script>
 
 <ConfirmationPrompt
-	{config}
-	status="pending"
-	allowCancel={true}
-	onConfirm={() => handleConfirm()}
-	onCancel={() => handleCancel()}
+  {config}
+  status="pending"
+  allowCancel={true}
+  onConfirm={() => handleConfirm()}
+  onCancel={() => handleCancel()}
 />
 ```
 
@@ -334,21 +341,21 @@ When a workflow requires user input, the backend sends a message with interrupt 
 
 ```json
 {
-	"id": "msg-123",
-	"role": "assistant",
-	"content": "I need your approval to proceed.",
-	"status": "completed",
-	"metadata": {
-		"type": "interrupt_request",
-		"interrupt_id": "int-456",
-		"interrupt_type": "confirmation",
-		"node_id": "approval-node",
-		"execution_id": "exec-789",
-		"message": "Do you approve this action?",
-		"confirm_label": "Approve",
-		"cancel_label": "Reject",
-		"allowCancel": true
-	}
+  "id": "msg-123",
+  "role": "assistant",
+  "content": "I need your approval to proceed.",
+  "status": "completed",
+  "metadata": {
+    "type": "interrupt_request",
+    "interrupt_id": "int-456",
+    "interrupt_type": "confirmation",
+    "node_id": "approval-node",
+    "execution_id": "exec-789",
+    "message": "Do you approve this action?",
+    "confirm_label": "Approve",
+    "cancel_label": "Reject",
+    "allowCancel": true
+  }
 }
 ```
 
@@ -368,17 +375,17 @@ The endpoints are configured in `EndpointConfig`:
 
 ```typescript
 const config = createEndpointConfig({
-	baseUrl: '/api/flowdrop',
-	endpoints: {
-		// ... other endpoints
-		interrupts: {
-			listSessionInterrupts: '/playground/sessions/{sessionId}/interrupts',
-			get: '/interrupts/{interruptId}',
-			resolve: '/interrupts/{interruptId}',
-			cancel: '/interrupts/{interruptId}/cancel',
-			listPipelineInterrupts: '/pipelines/{pipelineId}/interrupts'
-		}
-	}
+  baseUrl: "/api/flowdrop",
+  endpoints: {
+    // ... other endpoints
+    interrupts: {
+      listSessionInterrupts: "/playground/sessions/{sessionId}/interrupts",
+      get: "/interrupts/{interruptId}",
+      resolve: "/interrupts/{interruptId}",
+      cancel: "/interrupts/{interruptId}/cancel",
+      listPipelineInterrupts: "/pipelines/{pipelineId}/interrupts",
+    },
+  },
 });
 ```
 
@@ -392,18 +399,18 @@ The `interruptStore` uses Svelte 5 runes (`$state` / `$derived`) with a state ma
 
 ```typescript
 import {
-	getInterruptsMap,
-	getPendingInterrupts,
-	getPendingInterruptCount,
-	getResolvedInterrupts,
-	getIsAnySubmitting,
-	getInterrupt,
-	isInterruptPending,
-	isInterruptSubmitting,
-	getInterruptError,
-	getInterruptByMessageId,
-	interruptHasError
-} from '@flowdrop/flowdrop/playground';
+  getInterruptsMap,
+  getPendingInterrupts,
+  getPendingInterruptCount,
+  getResolvedInterrupts,
+  getIsAnySubmitting,
+  getInterrupt,
+  isInterruptPending,
+  isInterruptSubmitting,
+  getInterruptError,
+  getInterruptByMessageId,
+  interruptHasError,
+} from "@flowdrop/flowdrop/playground";
 
 // Use inside components with $derived for reactivity
 const pending = $derived(getPendingInterrupts());
@@ -414,7 +421,7 @@ const submitting = $derived(getIsAnySubmitting());
 #### Actions
 
 ```typescript
-import { interruptActions } from '@flowdrop/flowdrop/playground';
+import { interruptActions } from "@flowdrop/flowdrop/playground";
 
 // Add/remove interrupts
 interruptActions.addInterrupt(interrupt);
@@ -441,19 +448,19 @@ When an interrupt is resolved, the UI remains visible but disabled, showing the 
 
 ```svelte
 <script lang="ts">
-	import { getInterrupt } from '@flowdrop/flowdrop/playground';
+  import { getInterrupt } from "@flowdrop/flowdrop/playground";
 
-	let { interruptId }: { interruptId: string } = $props();
-	const interrupt = $derived(getInterrupt(interruptId));
+  let { interruptId }: { interruptId: string } = $props();
+  const interrupt = $derived(getInterrupt(interruptId));
 </script>
 
-{#if interrupt?.machineState.status === 'idle'}
-	<!-- Active form -->
-{:else if interrupt?.machineState.status === 'resolved'}
-	<!-- Disabled form showing response -->
-	<div class="resolved-overlay">
-		Resolved: {JSON.stringify(interrupt.responseValue)}
-	</div>
+{#if interrupt?.machineState.status === "idle"}
+  <!-- Active form -->
+{:else if interrupt?.machineState.status === "resolved"}
+  <!-- Disabled form showing response -->
+  <div class="resolved-overlay">
+    Resolved: {JSON.stringify(interrupt.responseValue)}
+  </div>
 {/if}
 ```
 
@@ -468,18 +475,18 @@ Interrupts are primarily detected through playground message metadata during reg
 For status updates on pending interrupts:
 
 ```typescript
-import { interruptService } from '@flowdrop/flowdrop/playground';
+import { interruptService } from "@flowdrop/flowdrop/playground";
 
 // Start polling for a specific interrupt
 interruptService.startPolling(
-	interruptId,
-	(interrupt) => {
-		// Handle updated interrupt
-		if (interrupt.status !== 'pending') {
-			console.log('Interrupt resolved externally');
-		}
-	},
-	1500 // Poll interval in ms
+  interruptId,
+  (interrupt) => {
+    // Handle updated interrupt
+    if (interrupt.status !== "pending") {
+      console.log("Interrupt resolved externally");
+    }
+  },
+  1500, // Poll interval in ms
 );
 
 // Stop polling
@@ -487,7 +494,7 @@ interruptService.stopPolling();
 
 // Check if polling is active
 if (interruptService.isPolling(interruptId)) {
-	// ...
+  // ...
 }
 ```
 
@@ -511,10 +518,10 @@ Write clear, actionable interrupt messages:
 
 ```typescript
 // ✅ Good
-'Do you approve sending this email to 150 recipients?';
+"Do you approve sending this email to 150 recipients?";
 
 // ❌ Bad
-'Proceed?';
+"Proceed?";
 ```
 
 ### 2. Meaningful Labels
@@ -523,12 +530,12 @@ Use descriptive button/option labels:
 
 ```typescript
 // ✅ Good
-confirm_label: 'Yes, send email';
-cancel_label: 'No, cancel';
+confirm_label: "Yes, send email";
+cancel_label: "No, cancel";
 
 // ❌ Bad
-confirm_label: 'Yes';
-cancel_label: 'No';
+confirm_label: "Yes";
+cancel_label: "No";
 ```
 
 ### 3. Default Values
@@ -567,10 +574,10 @@ Always handle interrupt resolution failures:
 
 ```typescript
 try {
-	await interruptService.resolveInterrupt(id, value);
+  await interruptService.resolveInterrupt(id, value);
 } catch (error) {
-	// Show error to user
-	// Optionally retry or allow re-submission
+  // Show error to user
+  // Optionally retry or allow re-submission
 }
 ```
 
@@ -580,53 +587,53 @@ All interrupt types are exported from the playground module:
 
 ```typescript
 import type {
-	// Core types
-	Interrupt,
-	InterruptType,
-	InterruptStatus,
-	InterruptConfig,
-	InterruptWithState,
-	InterruptMessageMetadata,
-	InterruptApiResponse,
-	InterruptListResponse,
-	InterruptResolution,
+  // Core types
+  Interrupt,
+  InterruptType,
+  InterruptStatus,
+  InterruptConfig,
+  InterruptWithState,
+  InterruptMessageMetadata,
+  InterruptApiResponse,
+  InterruptListResponse,
+  InterruptResolution,
 
-	// Config types (per interrupt type)
-	ConfirmationConfig,
-	ChoiceConfig,
-	InterruptChoice,
-	TextConfig,
-	FormConfig,
-	ReviewConfig,
-	ReviewChange,
-	ReviewFieldDecision,
-	ReviewResolution,
+  // Config types (per interrupt type)
+  ConfirmationConfig,
+  ChoiceConfig,
+  InterruptChoice,
+  TextConfig,
+  FormConfig,
+  ReviewConfig,
+  ReviewChange,
+  ReviewFieldDecision,
+  ReviewResolution,
 
-	// State machine types
-	InterruptState,
-	InterruptAction,
-	TransitionResult
-} from '@flowdrop/flowdrop/playground';
+  // State machine types
+  InterruptState,
+  InterruptAction,
+  TransitionResult,
+} from "@flowdrop/flowdrop/playground";
 
 // Type guards and converters
 import {
-	isInterruptMetadata,
-	extractInterruptMetadata,
-	metadataToInterrupt
-} from '@flowdrop/flowdrop/playground';
+  isInterruptMetadata,
+  extractInterruptMetadata,
+  metadataToInterrupt,
+} from "@flowdrop/flowdrop/playground";
 
 // State machine utilities
 import {
-	initialState,
-	transition,
-	isTerminalState,
-	isSubmitting,
-	hasError,
-	canSubmit,
-	getErrorMessage,
-	getResolvedValue,
-	toLegacyStatus
-} from '@flowdrop/flowdrop/playground';
+  initialState,
+  transition,
+  isTerminalState,
+  isSubmitting,
+  hasError,
+  canSubmit,
+  getErrorMessage,
+  getResolvedValue,
+  toLegacyStatus,
+} from "@flowdrop/flowdrop/playground";
 ```
 
 ## Files Reference

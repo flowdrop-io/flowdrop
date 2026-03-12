@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 First stable release of `@d34dman/flowdrop`. This marks the library as production-ready after extensive development during the 0.0.x series. See previous changelog entries for detailed history of features, fixes, and breaking changes.
 
-
 ## [0.0.65] - 2026-03-07
 
 ### Fixed
@@ -724,32 +723,38 @@ First stable release of `@d34dman/flowdrop`. This marks the library as productio
 
 ```svelte
 <script>
-	import { PlaygroundModal } from '@d34dman/flowdrop/playground';
-	let showPlayground = false;
+  import { PlaygroundModal } from "@d34dman/flowdrop/playground";
+  let showPlayground = false;
 </script>
 
 <button onclick={() => (showPlayground = true)}>Open Playground</button>
 
 <PlaygroundModal
-	isOpen={showPlayground}
-	workflowId="wf-123"
-	onClose={() => (showPlayground = false)}
+  isOpen={showPlayground}
+  workflowId="wf-123"
+  onClose={() => (showPlayground = false)}
 />
 ```
 
 **Modal Mode with mountPlayground:**
 
 ```typescript
-import { mountPlayground, createEndpointConfig } from '@d34dman/flowdrop/playground';
+import {
+  mountPlayground,
+  createEndpointConfig,
+} from "@d34dman/flowdrop/playground";
 
-const app = await mountPlayground(document.getElementById('playground-container'), {
-	workflowId: 'wf-123',
-	endpointConfig: createEndpointConfig('/api/flowdrop'),
-	mode: 'modal',
-	onClose: () => {
-		app.destroy();
-	}
-});
+const app = await mountPlayground(
+  document.getElementById("playground-container"),
+  {
+    workflowId: "wf-123",
+    endpointConfig: createEndpointConfig("/api/flowdrop"),
+    mode: "modal",
+    onClose: () => {
+      app.destroy();
+    },
+  },
+);
 ```
 
 ---
@@ -848,11 +853,11 @@ When importing from `@d34dman/flowdrop/form`, heavy editors (code, markdown, tem
 
 ```typescript
 // Before (0.0.28) - everything auto-included
-import { SchemaForm } from '@d34dman/flowdrop';
+import { SchemaForm } from "@d34dman/flowdrop";
 
 // After (0.0.29) - register heavy editors explicitly
-import { SchemaForm } from '@d34dman/flowdrop/form';
-import { registerCodeEditorField } from '@d34dman/flowdrop/form/code';
+import { SchemaForm } from "@d34dman/flowdrop/form";
+import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
 
 registerCodeEditorField(); // Call once at app startup
 ```
@@ -861,10 +866,10 @@ registerCodeEditorField(); // Call once at app startup
 
 ```typescript
 // New recommended path
-import '@d34dman/flowdrop/styles';
+import "@d34dman/flowdrop/styles";
 
 // Still works
-import '@d34dman/flowdrop/styles/base.css';
+import "@d34dman/flowdrop/styles/base.css";
 ```
 
 **3. Install Peer Dependency**
@@ -882,29 +887,29 @@ The main entry point (`@d34dman/flowdrop`) still exports everything for backward
 **Minimal Form (small bundle):**
 
 ```typescript
-import { SchemaForm } from '@d34dman/flowdrop/form';
-import '@d34dman/flowdrop/styles';
+import { SchemaForm } from "@d34dman/flowdrop/form";
+import "@d34dman/flowdrop/styles";
 ```
 
 **Form with Code Editor:**
 
 ```typescript
-import { SchemaForm } from '@d34dman/flowdrop/form';
-import { registerCodeEditorField } from '@d34dman/flowdrop/form/code';
+import { SchemaForm } from "@d34dman/flowdrop/form";
+import { registerCodeEditorField } from "@d34dman/flowdrop/form/code";
 registerCodeEditorField();
 ```
 
 **Workflow Editor Only:**
 
 ```typescript
-import { WorkflowEditor } from '@d34dman/flowdrop/editor';
-import '@d34dman/flowdrop/styles';
+import { WorkflowEditor } from "@d34dman/flowdrop/editor";
+import "@d34dman/flowdrop/styles";
 ```
 
 **Types Only (zero runtime):**
 
 ```typescript
-import type { Workflow, FieldSchema } from '@d34dman/flowdrop/core';
+import type { Workflow, FieldSchema } from "@d34dman/flowdrop/core";
 ```
 
 ---
@@ -937,25 +942,25 @@ A standalone form generator component that creates dynamic forms from JSON Schem
 
 ```svelte
 <script lang="ts">
-	import { SchemaForm } from '@d34dman/flowdrop';
-	import type { SchemaFormProps } from '@d34dman/flowdrop';
+  import { SchemaForm } from "@d34dman/flowdrop";
+  import type { SchemaFormProps } from "@d34dman/flowdrop";
 
-	const schema = {
-		type: 'object' as const,
-		properties: {
-			name: { type: 'string', title: 'Name', description: 'Enter your name' },
-			age: { type: 'number', title: 'Age', minimum: 0, maximum: 120 },
-			active: { type: 'boolean', title: 'Active', default: true },
-			role: { type: 'string', title: 'Role', enum: ['admin', 'user', 'guest'] }
-		},
-		required: ['name']
-	};
+  const schema = {
+    type: "object" as const,
+    properties: {
+      name: { type: "string", title: "Name", description: "Enter your name" },
+      age: { type: "number", title: "Age", minimum: 0, maximum: 120 },
+      active: { type: "boolean", title: "Active", default: true },
+      role: { type: "string", title: "Role", enum: ["admin", "user", "guest"] },
+    },
+    required: ["name"],
+  };
 
-	let values = $state({ name: '', age: 25, active: true });
+  let values = $state({ name: "", age: 25, active: true });
 
-	function handleChange(newValues: Record<string, unknown>) {
-		values = newValues;
-	}
+  function handleChange(newValues: Record<string, unknown>) {
+    values = newValues;
+  }
 </script>
 
 <!-- Inline mode (no buttons) -->
@@ -963,13 +968,13 @@ A standalone form generator component that creates dynamic forms from JSON Schem
 
 <!-- With action buttons -->
 <SchemaForm
-	{schema}
-	{values}
-	onChange={handleChange}
-	showActions={true}
-	saveLabel="Submit"
-	onSave={(v) => console.log('Saved:', v)}
-	onCancel={() => console.log('Cancelled')}
+  {schema}
+  {values}
+  onChange={handleChange}
+  showActions={true}
+  saveLabel="Submit"
+  onSave={(v) => console.log("Saved:", v)}
+  onCancel={() => console.log("Cancelled")}
 />
 ```
 
@@ -1213,25 +1218,37 @@ This release removes all deprecated code and backward compatibility support to c
 
 ```typescript
 // Before (0.0.18)
-import { getEndpointUrl, type ApiConfig, defaultApiConfig } from '@d34dman/flowdrop';
-const config: ApiConfig = { ...defaultApiConfig, baseUrl: '/api' };
-const url = getEndpointUrl(config, config.endpoints.workflows.get, { id: '123' });
+import {
+  getEndpointUrl,
+  type ApiConfig,
+  defaultApiConfig,
+} from "@d34dman/flowdrop";
+const config: ApiConfig = { ...defaultApiConfig, baseUrl: "/api" };
+const url = getEndpointUrl(config, config.endpoints.workflows.get, {
+  id: "123",
+});
 
 // After (0.0.19)
-import { buildEndpointUrl, type EndpointConfig, defaultEndpointConfig } from '@d34dman/flowdrop';
-const config: EndpointConfig = { ...defaultEndpointConfig, baseUrl: '/api' };
-const url = buildEndpointUrl(config, config.endpoints.workflows.get, { id: '123' });
+import {
+  buildEndpointUrl,
+  type EndpointConfig,
+  defaultEndpointConfig,
+} from "@d34dman/flowdrop";
+const config: EndpointConfig = { ...defaultEndpointConfig, baseUrl: "/api" };
+const url = buildEndpointUrl(config, config.endpoints.workflows.get, {
+  id: "123",
+});
 ```
 
 **2. App Unmount Migration**
 
 ```typescript
 // Before (0.0.18)
-import { unmountWorkflowEditor } from '@d34dman/flowdrop';
+import { unmountWorkflowEditor } from "@d34dman/flowdrop";
 unmountWorkflowEditor(app);
 
 // After (0.0.19)
-import { unmountFlowDropApp } from '@d34dman/flowdrop';
+import { unmountFlowDropApp } from "@d34dman/flowdrop";
 unmountFlowDropApp(app);
 ```
 
@@ -1239,10 +1256,10 @@ unmountFlowDropApp(app);
 
 ```typescript
 // Before (0.0.18)
-import type { NodeConfig } from '@d34dman/flowdrop';
+import type { NodeConfig } from "@d34dman/flowdrop";
 
 // After (0.0.19)
-import type { ConfigValues } from '@d34dman/flowdrop';
+import type { ConfigValues } from "@d34dman/flowdrop";
 ```
 
 **4. Auth Provider Migration**
@@ -1252,10 +1269,10 @@ import type { ConfigValues } from '@d34dman/flowdrop';
 const client = new EnhancedFlowDropApiClient(config);
 
 // After (0.0.19) - provide AuthProvider explicitly
-import { StaticAuthProvider } from '@d34dman/flowdrop';
+import { StaticAuthProvider } from "@d34dman/flowdrop";
 const client = new EnhancedFlowDropApiClient(
-	config,
-	new StaticAuthProvider({ type: 'bearer', token: 'xyz' })
+  config,
+  new StaticAuthProvider({ type: "bearer", token: "xyz" }),
 );
 ```
 
@@ -1263,13 +1280,13 @@ const client = new EnhancedFlowDropApiClient(
 
 ```typescript
 // Before (0.0.18)
-import { areDataTypesCompatible } from '@d34dman/flowdrop';
-const compatible = areDataTypesCompatible('string', 'text');
+import { areDataTypesCompatible } from "@d34dman/flowdrop";
+const compatible = areDataTypesCompatible("string", "text");
 
 // After (0.0.19)
-import { getPortCompatibilityChecker } from '@d34dman/flowdrop';
+import { getPortCompatibilityChecker } from "@d34dman/flowdrop";
 const checker = getPortCompatibilityChecker();
-const compatible = checker.areDataTypesCompatible('string', 'text');
+const compatible = checker.areDataTypesCompatible("string", "text");
 ```
 
 ## [0.0.18] - 2025-12-04
@@ -1319,12 +1336,12 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
 
 ```json
 {
-	"id": "workflow-start",
-	"name": "Start",
-	"type": "terminal",
-	"tags": ["start"],
-	"inputs": [],
-	"outputs": [{ "id": "trigger", "name": "Go", "dataType": "trigger" }]
+  "id": "workflow-start",
+  "name": "Start",
+  "type": "terminal",
+  "tags": ["start"],
+  "inputs": [],
+  "outputs": [{ "id": "trigger", "name": "Go", "dataType": "trigger" }]
 }
 ```
 
@@ -1332,12 +1349,12 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
 
 ```json
 {
-	"id": "workflow-end",
-	"name": "End",
-	"type": "terminal",
-	"tags": ["end"],
-	"inputs": [{ "id": "done", "name": "Done", "dataType": "trigger" }],
-	"outputs": []
+  "id": "workflow-end",
+  "name": "End",
+  "type": "terminal",
+  "tags": ["end"],
+  "inputs": [{ "id": "done", "name": "Done", "dataType": "trigger" }],
+  "outputs": []
 }
 ```
 
@@ -1345,11 +1362,11 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
 
 ```json
 {
-	"id": "checkpoint",
-	"name": "Checkpoint",
-	"type": "terminal",
-	"inputs": [{ "id": "in", "name": "In", "dataType": "trigger" }],
-	"outputs": [{ "id": "out", "name": "Out", "dataType": "trigger" }]
+  "id": "checkpoint",
+  "name": "Checkpoint",
+  "type": "terminal",
+  "inputs": [{ "id": "in", "name": "In", "dataType": "trigger" }],
+  "outputs": [{ "id": "out", "name": "Out", "dataType": "trigger" }]
 }
 ```
 
@@ -1357,11 +1374,11 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
 
 ```json
 {
-	"id": "milestone",
-	"name": "Milestone",
-	"type": "terminal",
-	"inputs": [],
-	"outputs": []
+  "id": "milestone",
+  "name": "Milestone",
+  "type": "terminal",
+  "inputs": [],
+  "outputs": []
 }
 ```
 
@@ -1422,22 +1439,22 @@ const compatible = checker.areDataTypesCompatible('string', 'text');
 
 ```css
 :root {
-	/* Override edge colors for dark theme */
-	--flowdrop-edge-trigger-color: #ffffff;
-	--flowdrop-edge-trigger-color-hover: #e5e5e5;
-	--flowdrop-edge-tool-color: #fbbf24;
-	--flowdrop-edge-data-color: #6b7280;
+  /* Override edge colors for dark theme */
+  --flowdrop-edge-trigger-color: #ffffff;
+  --flowdrop-edge-trigger-color-hover: #e5e5e5;
+  --flowdrop-edge-tool-color: #fbbf24;
+  --flowdrop-edge-data-color: #6b7280;
 }
 ```
 
 **Register Custom Node Component:**
 
 ```typescript
-import { registerNodeComponent } from '@d34dman/flowdrop';
-import MyCustomNode from './MyCustomNode.svelte';
+import { registerNodeComponent } from "@d34dman/flowdrop";
+import MyCustomNode from "./MyCustomNode.svelte";
 
 // Register before mounting
-registerNodeComponent('mylib:custom', MyCustomNode);
+registerNodeComponent("mylib:custom", MyCustomNode);
 
 // Now nodes with type: "mylib:custom" will use MyCustomNode
 ```
@@ -1533,35 +1550,35 @@ registerNodeComponent('mylib:custom', MyCustomNode);
 **Enterprise Integration:**
 
 ```typescript
-import { mountFlowDropApp, CallbackAuthProvider } from '@d34dman/flowdrop';
+import { mountFlowDropApp, CallbackAuthProvider } from "@d34dman/flowdrop";
 
 const app = await mountFlowDropApp(container, {
-	workflow: myWorkflow,
-	endpointConfig: createEndpointConfig('/api/projects/123/flowdrop'),
+  workflow: myWorkflow,
+  endpointConfig: createEndpointConfig("/api/projects/123/flowdrop"),
 
-	authProvider: new CallbackAuthProvider({
-		getToken: () => authService.getAccessToken(),
-		onUnauthorized: () => authService.refreshToken()
-	}),
+  authProvider: new CallbackAuthProvider({
+    getToken: () => authService.getAccessToken(),
+    onUnauthorized: () => authService.refreshToken(),
+  }),
 
-	eventHandlers: {
-		onDirtyStateChange: (isDirty) => updateSaveButton(isDirty),
-		onAfterSave: () => showSuccess('Saved!'),
-		onBeforeUnmount: (workflow, isDirty) => {
-			if (isDirty) saveDraft(workflow);
-		}
-	},
+  eventHandlers: {
+    onDirtyStateChange: (isDirty) => updateSaveButton(isDirty),
+    onAfterSave: () => showSuccess("Saved!"),
+    onBeforeUnmount: (workflow, isDirty) => {
+      if (isDirty) saveDraft(workflow);
+    },
+  },
 
-	features: {
-		autoSaveDraft: true,
-		autoSaveDraftInterval: 30000,
-		showToasts: true
-	}
+  features: {
+    autoSaveDraft: true,
+    autoSaveDraftInterval: 30000,
+    showToasts: true,
+  },
 });
 
 // Check dirty state
 if (app.isDirty()) {
-	await app.save();
+  await app.save();
 }
 
 // Cleanup
@@ -1572,9 +1589,9 @@ app.destroy();
 
 ```typescript
 const app = await mountFlowDropApp(container, {
-	features: {
-		autoSaveDraft: false // No localStorage drafts
-	}
+  features: {
+    autoSaveDraft: false, // No localStorage drafts
+  },
 });
 ```
 
@@ -1890,12 +1907,12 @@ node build
 ### Automatic (Recommended)
 
 ```javascript
-import { WorkflowEditor } from '@d34dman/flowdrop';
+import { WorkflowEditor } from "@d34dman/flowdrop";
 // Styles are automatically included
 ```
 
 ### Explicit CSS Import
 
 ```javascript
-import '@d34dman/flowdrop/styles/base.css';
+import "@d34dman/flowdrop/styles/base.css";
 ```

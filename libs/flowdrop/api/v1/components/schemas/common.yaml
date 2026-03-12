@@ -33,11 +33,11 @@ CategoryDefinition:
     icon:
       type: string
       description: Icon identifier (Iconify format)
-      example: 'mdi:brain'
+      example: "mdi:brain"
     color:
       type: string
       description: Color token or CSS value
-      example: 'var(--fd-node-purple)'
+      example: "var(--fd-node-purple)"
     description:
       type: string
       description: Category description
@@ -136,7 +136,7 @@ ApiResponse:
 
 ErrorResponse:
   allOf:
-    - $ref: '#/ApiResponse'
+    - $ref: "#/ApiResponse"
     - type: object
       properties:
         success:

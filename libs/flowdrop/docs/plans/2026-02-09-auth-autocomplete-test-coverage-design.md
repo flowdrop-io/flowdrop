@@ -25,17 +25,17 @@ Extract the header-building logic from `FormAutocomplete.svelte:194-206` into a 
 
 ```typescript
 export async function buildFetchHeaders(
-	authProvider?: AuthProvider
+  authProvider?: AuthProvider,
 ): Promise<Record<string, string>> {
-	const headers: Record<string, string> = {
-		Accept: 'application/json',
-		'Content-Type': 'application/json'
-	};
-	if (authProvider) {
-		const authHeaders = await authProvider.getAuthHeaders();
-		Object.assign(headers, authHeaders);
-	}
-	return headers;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  if (authProvider) {
+    const authHeaders = await authProvider.getAuthHeaders();
+    Object.assign(headers, authHeaders);
+  }
+  return headers;
 }
 ```
 

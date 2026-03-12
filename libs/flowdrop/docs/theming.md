@@ -8,12 +8,12 @@ Override the semantic tokens to customize FlowDrop:
 
 ```css
 :root {
-	/* Change the primary color */
-	--fd-primary: #8b5cf6;
-	--fd-primary-hover: #7c3aed;
+  /* Change the primary color */
+  --fd-primary: #8b5cf6;
+  --fd-primary-hover: #7c3aed;
 
-	/* Adjust border radius */
-	--fd-radius-md: 0.5rem;
+  /* Adjust border radius */
+  --fd-radius-md: 0.5rem;
 }
 ```
 
@@ -231,11 +231,11 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-	--fd-primary: #8b5cf6;
-	--fd-primary-hover: #7c3aed;
-	--fd-primary-muted: #f5f3ff;
-	--fd-accent: #8b5cf6;
-	--fd-ring: #8b5cf6;
+  --fd-primary: #8b5cf6;
+  --fd-primary-hover: #7c3aed;
+  --fd-primary-muted: #f5f3ff;
+  --fd-accent: #8b5cf6;
+  --fd-ring: #8b5cf6;
 }
 ```
 
@@ -243,10 +243,10 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-	--fd-radius-sm: 0.5rem;
-	--fd-radius-md: 0.75rem;
-	--fd-radius-lg: 1rem;
-	--fd-radius-xl: 1.5rem;
+  --fd-radius-sm: 0.5rem;
+  --fd-radius-md: 0.75rem;
+  --fd-radius-lg: 1rem;
+  --fd-radius-xl: 1.5rem;
 }
 ```
 
@@ -254,10 +254,10 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-	--fd-space-3xs: 0.125rem;
-	--fd-space-xs: 0.25rem;
-	--fd-space-md: 0.5rem;
-	--fd-space-xl: 0.75rem;
+  --fd-space-3xs: 0.125rem;
+  --fd-space-xs: 0.25rem;
+  --fd-space-md: 0.5rem;
+  --fd-space-xl: 0.75rem;
 }
 ```
 
@@ -265,16 +265,16 @@ In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overr
 
 ```css
 :root {
-	/* Override internal palette for a warmer gray */
-	--_gray-1: #fafaf9;
-	--_gray-2: #f5f5f4;
-	--_gray-3: #e7e5e4;
-	--_gray-4: #d6d3d1;
-	--_gray-5: #a8a29e;
-	--_gray-6: #78716c;
-	--_gray-7: #57534e;
-	--_gray-8: #292524;
-	--_gray-9: #1c1917;
+  /* Override internal palette for a warmer gray */
+  --_gray-1: #fafaf9;
+  --_gray-2: #f5f5f4;
+  --_gray-3: #e7e5e4;
+  --_gray-4: #d6d3d1;
+  --_gray-5: #a8a29e;
+  --_gray-6: #78716c;
+  --_gray-7: #57534e;
+  --_gray-8: #292524;
+  --_gray-9: #1c1917;
 }
 ```
 
@@ -289,7 +289,7 @@ The token system supports dark mode. Semantic color tokens (surfaces, primary, a
 Or via JavaScript:
 
 ```javascript
-document.documentElement.setAttribute('data-theme', 'dark');
+document.documentElement.setAttribute("data-theme", "dark");
 ```
 
 ## Best Practices

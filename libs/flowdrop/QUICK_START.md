@@ -90,12 +90,12 @@ You should see:
 
 ```json
 {
-	"apiBaseUrl": "http://your-backend:8080/api/flowdrop",
-	"theme": "auto",
-	"timeout": 30000,
-	"authType": "none",
-	"version": "1.0.0",
-	"environment": "production"
+  "apiBaseUrl": "http://your-backend:8080/api/flowdrop",
+  "theme": "auto",
+  "timeout": 30000,
+  "authType": "none",
+  "version": "1.0.0",
+  "environment": "production"
 }
 ```
 

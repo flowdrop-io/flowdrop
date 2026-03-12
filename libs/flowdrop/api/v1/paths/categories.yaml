@@ -15,33 +15,33 @@
     tags:
       - Configuration
     responses:
-      '200':
+      "200":
         description: Categories retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/response.yaml#/CategoriesResponse'
+              $ref: "../components/schemas/response.yaml#/CategoriesResponse"
             example:
               success: true
               data:
                 - name: triggers
                   label: Triggers
-                  icon: 'mdi:lightning-bolt'
-                  color: 'var(--fd-node-cyan)'
+                  icon: "mdi:lightning-bolt"
+                  color: "var(--fd-node-cyan)"
                   weight: 0
                 - name: inputs
                   label: Inputs
-                  icon: 'mdi:arrow-down-circle'
-                  color: 'var(--fd-node-emerald)'
+                  icon: "mdi:arrow-down-circle"
+                  color: "var(--fd-node-emerald)"
                   weight: 1
                 - name: ml
                   label: Machine Learning
-                  icon: 'mdi:brain'
-                  color: 'var(--fd-node-purple)'
+                  icon: "mdi:brain"
+                  color: "var(--fd-node-purple)"
                   description: Custom ML processing nodes
                   weight: 20
               message: Categories loaded successfully
-      '401':
-        $ref: '../components/responses.yaml#/Unauthorized'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

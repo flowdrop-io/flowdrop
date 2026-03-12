@@ -81,7 +81,7 @@ ChoiceInterruptConfig:
     options:
       type: array
       items:
-        $ref: '#/ChoiceOption'
+        $ref: "#/ChoiceOption"
       description: Available options to choose from
       minItems: 1
     multiple:
@@ -139,7 +139,7 @@ FormInterruptConfig:
       description: Prompt message to display above the form
       example: Please fill in the required information
     schema:
-      $ref: './config.yaml#/ConfigSchema'
+      $ref: "./config.yaml#/ConfigSchema"
       description: JSON Schema defining the form structure
     default_values:
       type: object
@@ -184,7 +184,7 @@ ReviewInterruptConfig:
     changes:
       type: array
       items:
-        $ref: '#/ReviewChange'
+        $ref: "#/ReviewChange"
       description: List of field changes to review
       minItems: 1
     accept_all_label:
@@ -223,7 +223,7 @@ ReviewResolution:
     decisions:
       type: object
       additionalProperties:
-        $ref: '#/ReviewFieldDecision'
+        $ref: "#/ReviewFieldDecision"
       description: Map of field identifier to the user's decision
     summary:
       type: object
@@ -272,9 +272,9 @@ Interrupt:
       format: uuid
       description: Associated playground message ID
     type:
-      $ref: '#/InterruptType'
+      $ref: "#/InterruptType"
     status:
-      $ref: '#/InterruptStatus'
+      $ref: "#/InterruptStatus"
     nodeId:
       type: string
       description: ID of the node that created the interrupt
@@ -283,11 +283,11 @@ Interrupt:
       description: Workflow execution ID
     config:
       oneOf:
-        - $ref: '#/ConfirmationInterruptConfig'
-        - $ref: '#/ChoiceInterruptConfig'
-        - $ref: '#/TextInterruptConfig'
-        - $ref: '#/FormInterruptConfig'
-        - $ref: '#/ReviewInterruptConfig'
+        - $ref: "#/ConfirmationInterruptConfig"
+        - $ref: "#/ChoiceInterruptConfig"
+        - $ref: "#/TextInterruptConfig"
+        - $ref: "#/FormInterruptConfig"
+        - $ref: "#/ReviewInterruptConfig"
       description: Type-specific configuration
     allowCancel:
       type: boolean
@@ -331,7 +331,7 @@ InterruptMessageMetadata:
       format: uuid
       description: Interrupt unique identifier
     interrupt_type:
-      $ref: '#/InterruptType'
+      $ref: "#/InterruptType"
     node_id:
       type: string
       description: ID of the node that created the interrupt
@@ -356,7 +356,7 @@ InterruptMessageMetadata:
     options:
       type: array
       items:
-        $ref: '#/ChoiceOption'
+        $ref: "#/ChoiceOption"
       description: Available options (choice type)
     multiple:
       type: boolean
@@ -384,7 +384,7 @@ InterruptMessageMetadata:
       description: Default value (text type)
     # Form-specific
     schema:
-      $ref: './config.yaml#/ConfigSchema'
+      $ref: "./config.yaml#/ConfigSchema"
       description: Form schema (form type)
     default_values:
       type: object
@@ -393,7 +393,7 @@ InterruptMessageMetadata:
     changes:
       type: array
       items:
-        $ref: '#/ReviewChange'
+        $ref: "#/ReviewChange"
       description: List of field changes to review (review type)
     accept_all_label:
       type: string
@@ -438,18 +438,18 @@ InterruptResolveRequest:
 
 InterruptResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: '#/Interrupt'
+          $ref: "#/Interrupt"
 
 InterruptListResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: '#/Interrupt'
+            $ref: "#/Interrupt"

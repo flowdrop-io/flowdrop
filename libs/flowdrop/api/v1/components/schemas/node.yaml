@@ -36,7 +36,7 @@ NodePort:
         - metadata
       description: Port direction (input receives data, output sends data)
     dataType:
-      $ref: './common.yaml#/NodeDataType'
+      $ref: "./common.yaml#/NodeDataType"
     required:
       type: boolean
       default: false
@@ -48,7 +48,7 @@ NodePort:
     defaultValue:
       description: Default value used when no connection provides data
     schema:
-      $ref: '#/PortDataSchema'
+      $ref: "#/PortDataSchema"
       description: |
         JSON Schema describing the structure of data on this output port.
 
@@ -177,10 +177,10 @@ PortDataSchema:
     properties:
       type: object
       additionalProperties:
-        $ref: '#/PortDataSchema'
+        $ref: "#/PortDataSchema"
       description: Property schemas for object types
     items:
-      $ref: '#/PortDataSchema'
+      $ref: "#/PortDataSchema"
       description: Item schema for array types
     required:
       type: array
@@ -267,10 +267,10 @@ TemplateVariable:
     properties:
       type: object
       additionalProperties:
-        $ref: '#/TemplateVariable'
+        $ref: "#/TemplateVariable"
       description: For objects - child properties accessible via dot notation
     items:
-      $ref: '#/TemplateVariable'
+      $ref: "#/TemplateVariable"
       description: For arrays - schema of array items accessible via index notation
     sourcePort:
       type: string
@@ -322,7 +322,7 @@ VariableSchema:
     variables:
       type: object
       additionalProperties:
-        $ref: '#/TemplateVariable'
+        $ref: "#/TemplateVariable"
       description: Map of available variables keyed by variable name
   required:
     - variables
@@ -377,7 +377,7 @@ DynamicPort:
       description: Description of what this port accepts/provides
       example: Additional input data for processing
     dataType:
-      $ref: './common.yaml#/NodeDataType'
+      $ref: "./common.yaml#/NodeDataType"
       description: Data type for the port (affects color and connection validation)
     required:
       type: boolean
@@ -419,7 +419,7 @@ Branch:
     condition:
       type: string
       description: Optional condition expression for this branch
-      example: 'value > 10'
+      example: "value > 10"
     isDefault:
       type: boolean
       default: false
@@ -478,8 +478,8 @@ NodeExtensions:
       Used for round-trip preservation during import/export.
   properties:
     ui:
-      $ref: '#/NodeUIExtensions'
-    'agentspec:component_type':
+      $ref: "#/NodeUIExtensions"
+    "agentspec:component_type":
       type: string
       description: |
         Agent Spec component type for round-trip preservation.
@@ -491,8 +491,8 @@ NodeExtensions:
       hideUnconnectedHandles: true
       style:
         opacity: 0.8
-    'agentspec:component_type': llm_node
-    'myapp:analytics':
+    "agentspec:component_type": llm_node
+    "myapp:analytics":
       trackUsage: true
       customField: value
 
@@ -523,22 +523,22 @@ NodeMetadata:
       description: Node type display name
       example: Calculator
     type:
-      $ref: './common.yaml#/NodeType'
+      $ref: "./common.yaml#/NodeType"
     supportedTypes:
       type: array
       items:
-        $ref: './common.yaml#/NodeType'
+        $ref: "./common.yaml#/NodeType"
       description: Array of supported rendering types
     description:
       type: string
       description: Node type description
       example: Perform mathematical operations on input data
     category:
-      $ref: './common.yaml#/NodeCategory'
+      $ref: "./common.yaml#/NodeCategory"
     version:
       type: string
       description: Node type version
-      example: '1.0.0'
+      example: "1.0.0"
     icon:
       type: string
       description: Icon identifier (Material Design Icons)
@@ -546,7 +546,7 @@ NodeMetadata:
     color:
       type: string
       description: Node color (CSS color value)
-      example: '#3b82f6'
+      example: "#3b82f6"
     badge:
       type: string
       description: |
@@ -564,20 +564,20 @@ NodeMetadata:
     inputs:
       type: array
       items:
-        $ref: '#/NodePort'
+        $ref: "#/NodePort"
       description: |
         Static input ports defined by the node type.
         Additional dynamic inputs can be added via config.dynamicInputs.
     outputs:
       type: array
       items:
-        $ref: '#/NodePort'
+        $ref: "#/NodePort"
       description: |
         Static output ports defined by the node type.
         Additional dynamic outputs can be added via config.dynamicOutputs.
         For gateway nodes, branches create additional output handles.
     configSchema:
-      $ref: './config.yaml#/ConfigSchema'
+      $ref: "./config.yaml#/ConfigSchema"
     tags:
       type: array
       items:
@@ -599,7 +599,7 @@ NodeMetadata:
       example:
         - agentspec
     extensions:
-      $ref: '#/NodeExtensions'
+      $ref: "#/NodeExtensions"
       description: |
         Default extension properties for all instances of this node type.
         Can be overridden at the instance level via WorkflowNode.data.extensions.
@@ -712,17 +712,17 @@ NodeConfig:
     dynamicInputs:
       type: array
       items:
-        $ref: '#/DynamicPort'
+        $ref: "#/DynamicPort"
       description: User-defined dynamic input ports that appear as additional input handles
     dynamicOutputs:
       type: array
       items:
-        $ref: '#/DynamicPort'
+        $ref: "#/DynamicPort"
       description: User-defined dynamic output ports that appear as additional output handles
     branches:
       type: array
       items:
-        $ref: '#/Branch'
+        $ref: "#/Branch"
       description: Gateway node branches that define conditional output paths
   additionalProperties: true
   example:
@@ -746,7 +746,7 @@ NodeConfig:
     branches:
       - name: success
         label: Success
-        condition: 'status === 200'
+        condition: "status === 200"
       - name: error
         label: Error
         isDefault: true
@@ -755,7 +755,7 @@ NodeExecutionInfo:
   type: object
   properties:
     status:
-      $ref: './common.yaml#/NodeExecutionStatus'
+      $ref: "./common.yaml#/NodeExecutionStatus"
     executionCount:
       type: integer
       description: Total number of times this node has been executed
