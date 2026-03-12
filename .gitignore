@@ -36,3 +36,4 @@ apps/api-docs/dist/
 
 # Website lives in its own repo (../flowdrop-website), symlinked here
 apps/website
+./*.png
