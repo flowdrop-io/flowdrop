@@ -36,4 +36,7 @@ apps/api-docs/dist/
 
 # Website lives in its own repo (../flowdrop-website), symlinked here
 apps/website
+
+# Hosting config lives in its own repo (../flowdrop-hosting-static-sites), symlinked here
+apps/hosting-static-sites
 ./*.png
