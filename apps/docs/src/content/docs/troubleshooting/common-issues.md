@@ -206,7 +206,6 @@ Yes, via the [Mount API](/reference/mount-api/). FlowDrop mounts into any HTML c
 If none of the above resolves your issue:
 
 - **[GitHub Issues](https://github.com/flowdrop-io/flowdrop/issues)** — Bug reports and reproducible problems
-- **[GitHub Discussions](https://github.com/flowdrop-io/flowdrop/discussions)** — Questions, ideas, and community support
 
 When reporting a bug, include:
 1. FlowDrop version (`npm list @flowdrop/flowdrop`)
