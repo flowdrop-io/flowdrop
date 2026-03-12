@@ -36,14 +36,14 @@
  * Supported UISchema element types.
  * Designed for future extension with HorizontalLayout, Categorization, etc.
  */
-export type UISchemaElementType = 'VerticalLayout' | 'Group' | 'Control';
+export type UISchemaElementType = "VerticalLayout" | "Group" | "Control";
 
 /**
  * Base interface for all UISchema elements.
  */
 export interface UISchemaElementBase {
-	/** Discriminator for the element type */
-	type: UISchemaElementType;
+  /** Discriminator for the element type */
+  type: UISchemaElementType;
 }
 
 /**
@@ -56,17 +56,17 @@ export interface UISchemaElementBase {
  * ```
  */
 export interface UISchemaControl extends UISchemaElementBase {
-	type: 'Control';
-	/**
-	 * JSON Pointer to the property in the data schema.
-	 * Must follow the format: #/properties/<fieldName>
-	 */
-	scope: string;
-	/**
-	 * Optional label override. If not provided, the field's
-	 * schema title or key is used.
-	 */
-	label?: string;
+  type: "Control";
+  /**
+   * JSON Pointer to the property in the data schema.
+   * Must follow the format: #/properties/<fieldName>
+   */
+  scope: string;
+  /**
+   * Optional label override. If not provided, the field's
+   * schema title or key is used.
+   */
+  label?: string;
 }
 
 /**
@@ -85,9 +85,9 @@ export interface UISchemaControl extends UISchemaElementBase {
  * ```
  */
 export interface UISchemaVerticalLayout extends UISchemaElementBase {
-	type: 'VerticalLayout';
-	/** Child elements to render vertically */
-	elements: UISchemaElement[];
+  type: "VerticalLayout";
+  /** Child elements to render vertically */
+  elements: UISchemaElement[];
 }
 
 /**
@@ -110,52 +110,59 @@ export interface UISchemaVerticalLayout extends UISchemaElementBase {
  * ```
  */
 export interface UISchemaGroup extends UISchemaElementBase {
-	type: 'Group';
-	/** Display label for the fieldset legend / summary */
-	label: string;
-	/** Child elements within the group */
-	elements: UISchemaElement[];
-	/** Optional description displayed below the label */
-	description?: string;
-	/**
-	 * Whether the group can be collapsed.
-	 * When true, renders as `<details>/<summary>`.
-	 * @default true
-	 */
-	collapsible?: boolean;
-	/**
-	 * Whether the group is initially open (expanded).
-	 * Only relevant when collapsible is true.
-	 * @default true
-	 */
-	defaultOpen?: boolean;
+  type: "Group";
+  /** Display label for the fieldset legend / summary */
+  label: string;
+  /** Child elements within the group */
+  elements: UISchemaElement[];
+  /** Optional description displayed below the label */
+  description?: string;
+  /**
+   * Whether the group can be collapsed.
+   * When true, renders as `<details>/<summary>`.
+   * @default true
+   */
+  collapsible?: boolean;
+  /**
+   * Whether the group is initially open (expanded).
+   * Only relevant when collapsible is true.
+   * @default true
+   */
+  defaultOpen?: boolean;
 }
 
 /**
  * Union type of all supported UISchema elements.
  * This is the recursive type used in elements arrays.
  */
-export type UISchemaElement = UISchemaControl | UISchemaVerticalLayout | UISchemaGroup;
+export type UISchemaElement =
+  | UISchemaControl
+  | UISchemaVerticalLayout
+  | UISchemaGroup;
 
 /**
  * Type guard: checks if element is a Control
  */
-export function isUISchemaControl(element: UISchemaElement): element is UISchemaControl {
-	return element.type === 'Control';
+export function isUISchemaControl(
+  element: UISchemaElement,
+): element is UISchemaControl {
+  return element.type === "Control";
 }
 
 /**
  * Type guard: checks if element is a VerticalLayout
  */
 export function isUISchemaVerticalLayout(
-	element: UISchemaElement
+  element: UISchemaElement,
 ): element is UISchemaVerticalLayout {
-	return element.type === 'VerticalLayout';
+  return element.type === "VerticalLayout";
 }
 
 /**
  * Type guard: checks if element is a Group
  */
-export function isUISchemaGroup(element: UISchemaElement): element is UISchemaGroup {
-	return element.type === 'Group';
+export function isUISchemaGroup(
+  element: UISchemaElement,
+): element is UISchemaGroup {
+  return element.type === "Group";
 }

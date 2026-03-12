@@ -7,157 +7,171 @@
  * @module svelte-app
  */
 
-import { mount, unmount } from 'svelte';
-import WorkflowEditor from './components/WorkflowEditor.svelte';
-import App from './components/App.svelte';
-import type { Workflow, NodeMetadata, PortConfig, CategoryDefinition } from './types/index.js';
-import type { EndpointConfig } from './config/endpoints.js';
-import type { AuthProvider } from './types/auth.js';
-import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
-import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
-import { workflowFormatRegistry } from './registry/workflowFormatRegistry.js';
-import './registry/builtinFormats.js';
-import { initializePortCompatibility } from './utils/connections.js';
-import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
-import { fetchPortConfig } from './services/portConfigApi.js';
-import { fetchCategories } from './services/categoriesApi.js';
-import { initializeCategories } from './stores/categoriesStore.svelte.js';
+import { mount, unmount } from "svelte";
+import WorkflowEditor from "./components/WorkflowEditor.svelte";
+import App from "./components/App.svelte";
+import type {
+  Workflow,
+  NodeMetadata,
+  PortConfig,
+  CategoryDefinition,
+} from "./types/index.js";
+import type { EndpointConfig } from "./config/endpoints.js";
+import type { AuthProvider } from "./types/auth.js";
+import type {
+  FlowDropEventHandlers,
+  FlowDropFeatures,
+} from "./types/events.js";
+import type { WorkflowFormatAdapter } from "./registry/workflowFormatRegistry.js";
+import { workflowFormatRegistry } from "./registry/workflowFormatRegistry.js";
+import "./registry/builtinFormats.js";
+import { initializePortCompatibility } from "./utils/connections.js";
+import { DEFAULT_PORT_CONFIG } from "./config/defaultPortConfig.js";
+import { fetchPortConfig } from "./services/portConfigApi.js";
+import { fetchCategories } from "./services/categoriesApi.js";
+import { initializeCategories } from "./stores/categoriesStore.svelte.js";
 import {
-	isDirty,
-	markAsSaved,
-	getWorkflow as getWorkflowFromStore,
-	setOnDirtyStateChange,
-	setOnWorkflowChange
-} from './stores/workflowStore.svelte.js';
-import { DraftAutoSaveManager, getDraftStorageKey } from './services/draftStorage.js';
-import { mergeFeatures } from './types/events.js';
-import type { PartialSettings } from './types/settings.js';
-import { initializeSettings } from './stores/settingsStore.svelte.js';
-import { logger } from './utils/logger.js';
-import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
+  isDirty,
+  markAsSaved,
+  getWorkflow as getWorkflowFromStore,
+  setOnDirtyStateChange,
+  setOnWorkflowChange,
+} from "./stores/workflowStore.svelte.js";
+import {
+  DraftAutoSaveManager,
+  getDraftStorageKey,
+} from "./services/draftStorage.js";
+import { mergeFeatures } from "./types/events.js";
+import type { PartialSettings } from "./types/settings.js";
+import { initializeSettings } from "./stores/settingsStore.svelte.js";
+import { logger } from "./utils/logger.js";
+import {
+  globalSaveWorkflow,
+  globalExportWorkflow,
+} from "./services/globalSave.js";
 
 /**
  * Navbar action configuration
  */
 export interface NavbarAction {
-	label: string;
-	href: string;
-	icon?: string;
-	variant?: 'primary' | 'secondary' | 'outline';
-	onclick?: (event: Event) => void;
+  label: string;
+  href: string;
+  icon?: string;
+  variant?: "primary" | "secondary" | "outline";
+  onclick?: (event: Event) => void;
 }
 
 /**
  * Mount options for FlowDrop App
  */
 export interface FlowDropMountOptions {
-	// Existing options
-	/** Initial workflow to load */
-	workflow?: Workflow;
-	/** Available node types */
-	nodes?: NodeMetadata[];
-	/** API endpoint configuration */
-	endpointConfig?: EndpointConfig;
-	/** Port configuration for connections */
-	portConfig?: PortConfig;
-	/** Category definitions for node categories */
-	categories?: CategoryDefinition[];
-	/** Editor height */
-	height?: string | number;
-	/** Editor width */
-	width?: string | number;
+  // Existing options
+  /** Initial workflow to load */
+  workflow?: Workflow;
+  /** Available node types */
+  nodes?: NodeMetadata[];
+  /** API endpoint configuration */
+  endpointConfig?: EndpointConfig;
+  /** Port configuration for connections */
+  portConfig?: PortConfig;
+  /** Category definitions for node categories */
+  categories?: CategoryDefinition[];
+  /** Editor height */
+  height?: string | number;
+  /** Editor width */
+  width?: string | number;
 
-	// UI options
-	/** Show the navbar */
-	showNavbar?: boolean;
-	/** Disable the node sidebar */
-	disableSidebar?: boolean;
-	/** Lock the workflow (prevent changes) */
-	lockWorkflow?: boolean;
-	/** Read-only mode */
-	readOnly?: boolean;
+  // UI options
+  /** Show the navbar */
+  showNavbar?: boolean;
+  /** Disable the node sidebar */
+  disableSidebar?: boolean;
+  /** Lock the workflow (prevent changes) */
+  lockWorkflow?: boolean;
+  /** Read-only mode */
+  readOnly?: boolean;
 
-	// Pipeline mode
-	/** Pipeline ID for status display */
-	pipelineId?: string;
-	/** Node execution statuses */
-	nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
+  // Pipeline mode
+  /** Pipeline ID for status display */
+  pipelineId?: string;
+  /** Node execution statuses */
+  nodeStatuses?: Record<string, "pending" | "running" | "completed" | "error">;
 
-	// Navbar customization
-	/** Custom navbar title */
-	navbarTitle?: string;
-	/** Custom navbar actions */
-	navbarActions?: NavbarAction[];
-	/** Show settings gear icon in navbar */
-	showSettings?: boolean;
+  // Navbar customization
+  /** Custom navbar title */
+  navbarTitle?: string;
+  /** Custom navbar actions */
+  navbarActions?: NavbarAction[];
+  /** Show settings gear icon in navbar */
+  showSettings?: boolean;
 
-	// NEW: Authentication provider
-	/** Authentication provider for API requests */
-	authProvider?: AuthProvider;
+  // NEW: Authentication provider
+  /** Authentication provider for API requests */
+  authProvider?: AuthProvider;
 
-	// NEW: Event handlers
-	/** Event handlers for workflow lifecycle */
-	eventHandlers?: FlowDropEventHandlers;
+  // NEW: Event handlers
+  /** Event handlers for workflow lifecycle */
+  eventHandlers?: FlowDropEventHandlers;
 
-	// NEW: Feature flags
-	/** Feature configuration */
-	features?: FlowDropFeatures;
+  // NEW: Feature flags
+  /** Feature configuration */
+  features?: FlowDropFeatures;
 
-	// NEW: Default settings overrides
-	/** Initial settings overrides (theme, behavior, editor, ui, api) */
-	settings?: PartialSettings;
+  // NEW: Default settings overrides
+  /** Initial settings overrides (theme, behavior, editor, ui, api) */
+  settings?: PartialSettings;
 
-	// NEW: Draft storage key
-	/** Custom storage key for localStorage drafts */
-	draftStorageKey?: string;
+  // NEW: Draft storage key
+  /** Custom storage key for localStorage drafts */
+  draftStorageKey?: string;
 
-	// NEW: Workflow format adapters
-	/** Custom workflow format adapters to register */
-	formatAdapters?: WorkflowFormatAdapter[];
+  // NEW: Workflow format adapters
+  /** Custom workflow format adapters to register */
+  formatAdapters?: WorkflowFormatAdapter[];
 }
 
 /**
  * Return type for mounted FlowDrop app
  */
 export interface MountedFlowDropApp {
-	/**
-	 * Destroy the app and clean up resources
-	 */
-	destroy: () => void;
+  /**
+   * Destroy the app and clean up resources
+   */
+  destroy: () => void;
 
-	/**
-	 * Check if there are unsaved changes
-	 */
-	isDirty: () => boolean;
+  /**
+   * Check if there are unsaved changes
+   */
+  isDirty: () => boolean;
 
-	/**
-	 * Mark the workflow as saved (clears dirty state)
-	 */
-	markAsSaved: () => void;
+  /**
+   * Mark the workflow as saved (clears dirty state)
+   */
+  markAsSaved: () => void;
 
-	/**
-	 * Get the current workflow data
-	 */
-	getWorkflow: () => Workflow | null;
+  /**
+   * Get the current workflow data
+   */
+  getWorkflow: () => Workflow | null;
 
-	/**
-	 * Trigger save operation
-	 */
-	save: () => Promise<void>;
+  /**
+   * Trigger save operation
+   */
+  save: () => Promise<void>;
 
-	/**
-	 * Trigger export operation (downloads JSON)
-	 */
-	export: () => void;
+  /**
+   * Trigger export operation (downloads JSON)
+   */
+  export: () => void;
 }
 
 /**
  * Internal state for a mounted FlowDrop instance
  */
 interface MountedAppState {
-	svelteApp: ReturnType<typeof mount>;
-	draftManager: DraftAutoSaveManager | null;
-	eventHandlers: FlowDropEventHandlers | null;
+  svelteApp: ReturnType<typeof mount>;
+  draftManager: DraftAutoSaveManager | null;
+  eventHandlers: FlowDropEventHandlers | null;
 }
 
 /**
@@ -185,205 +199,211 @@ interface MountedAppState {
  * ```
  */
 export async function mountFlowDropApp(
-	container: HTMLElement,
-	options: FlowDropMountOptions = {}
+  container: HTMLElement,
+  options: FlowDropMountOptions = {},
 ): Promise<MountedFlowDropApp> {
-	const {
-		workflow,
-		nodes,
-		endpointConfig,
-		portConfig,
-		categories,
-		height = '100vh',
-		width = '100%',
-		showNavbar = false,
-		disableSidebar,
-		lockWorkflow,
-		readOnly,
-		nodeStatuses,
-		pipelineId,
-		navbarTitle,
-		navbarActions,
-		showSettings,
-		authProvider,
-		eventHandlers,
-		features: userFeatures,
-		settings: initialSettings,
-		draftStorageKey: customDraftKey,
-		formatAdapters
-	} = options;
+  const {
+    workflow,
+    nodes,
+    endpointConfig,
+    portConfig,
+    categories,
+    height = "100vh",
+    width = "100%",
+    showNavbar = false,
+    disableSidebar,
+    lockWorkflow,
+    readOnly,
+    nodeStatuses,
+    pipelineId,
+    navbarTitle,
+    navbarActions,
+    showSettings,
+    authProvider,
+    eventHandlers,
+    features: userFeatures,
+    settings: initialSettings,
+    draftStorageKey: customDraftKey,
+    formatAdapters,
+  } = options;
 
-	// Register custom format adapters before mounting
-	if (formatAdapters) {
-		for (const adapter of formatAdapters) {
-			workflowFormatRegistry.register(adapter);
-		}
-	}
+  // Register custom format adapters before mounting
+  if (formatAdapters) {
+    for (const adapter of formatAdapters) {
+      workflowFormatRegistry.register(adapter);
+    }
+  }
 
-	// Merge features with defaults
-	const features = mergeFeatures(userFeatures);
+  // Merge features with defaults
+  const features = mergeFeatures(userFeatures);
 
-	// Apply initial settings overrides and initialize theme
-	await initializeSettings({
-		defaults: initialSettings
-	});
+  // Apply initial settings overrides and initialize theme
+  await initializeSettings({
+    defaults: initialSettings,
+  });
 
-	// Create endpoint configuration
-	let config: EndpointConfig | undefined;
+  // Create endpoint configuration
+  let config: EndpointConfig | undefined;
 
-	if (endpointConfig) {
-		// Merge with default configuration to ensure all required endpoints are present
-		const { defaultEndpointConfig } = await import('./config/endpoints.js');
-		config = {
-			...defaultEndpointConfig,
-			...endpointConfig,
-			endpoints: {
-				...defaultEndpointConfig.endpoints,
-				...endpointConfig.endpoints
-			}
-		};
-	} else {
-		// Use default configuration if none provided
-		const { defaultEndpointConfig } = await import('./config/endpoints.js');
-		config = defaultEndpointConfig;
-	}
+  if (endpointConfig) {
+    // Merge with default configuration to ensure all required endpoints are present
+    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    config = {
+      ...defaultEndpointConfig,
+      ...endpointConfig,
+      endpoints: {
+        ...defaultEndpointConfig.endpoints,
+        ...endpointConfig.endpoints,
+      },
+    };
+  } else {
+    // Use default configuration if none provided
+    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    config = defaultEndpointConfig;
+  }
 
-	// Initialize port configuration
-	let finalPortConfig = portConfig;
+  // Initialize port configuration
+  let finalPortConfig = portConfig;
 
-	if (!finalPortConfig && config) {
-		// Try to fetch port configuration from API
-		try {
-			finalPortConfig = await fetchPortConfig(config);
-		} catch (error) {
-			logger.warn('Failed to fetch port config from API, using default:', error);
-			finalPortConfig = DEFAULT_PORT_CONFIG;
-		}
-	} else if (!finalPortConfig) {
-		finalPortConfig = DEFAULT_PORT_CONFIG;
-	}
+  if (!finalPortConfig && config) {
+    // Try to fetch port configuration from API
+    try {
+      finalPortConfig = await fetchPortConfig(config);
+    } catch (error) {
+      logger.warn(
+        "Failed to fetch port config from API, using default:",
+        error,
+      );
+      finalPortConfig = DEFAULT_PORT_CONFIG;
+    }
+  } else if (!finalPortConfig) {
+    finalPortConfig = DEFAULT_PORT_CONFIG;
+  }
 
-	initializePortCompatibility(finalPortConfig);
+  initializePortCompatibility(finalPortConfig);
 
-	// Initialize categories
-	if (categories) {
-		initializeCategories(categories);
-	} else if (config) {
-		try {
-			const fetchedCategories = await fetchCategories(config);
-			initializeCategories(fetchedCategories);
-		} catch (error) {
-			logger.warn('Failed to fetch categories from API, using defaults:', error);
-		}
-	}
+  // Initialize categories
+  if (categories) {
+    initializeCategories(categories);
+  } else if (config) {
+    try {
+      const fetchedCategories = await fetchCategories(config);
+      initializeCategories(fetchedCategories);
+    } catch (error) {
+      logger.warn(
+        "Failed to fetch categories from API, using defaults:",
+        error,
+      );
+    }
+  }
 
-	// Set up event handler callbacks in the store
-	if (eventHandlers?.onDirtyStateChange) {
-		setOnDirtyStateChange(eventHandlers.onDirtyStateChange);
-	}
+  // Set up event handler callbacks in the store
+  if (eventHandlers?.onDirtyStateChange) {
+    setOnDirtyStateChange(eventHandlers.onDirtyStateChange);
+  }
 
-	if (eventHandlers?.onWorkflowChange) {
-		setOnWorkflowChange(eventHandlers.onWorkflowChange);
-	}
+  if (eventHandlers?.onWorkflowChange) {
+    setOnWorkflowChange(eventHandlers.onWorkflowChange);
+  }
 
-	// Create the Svelte App component with configuration
-	const svelteApp = mount(App, {
-		target: container,
-		props: {
-			workflow,
-			nodes,
-			height,
-			width,
-			showNavbar,
-			disableSidebar,
-			lockWorkflow,
-			readOnly,
-			nodeStatuses,
-			pipelineId,
-			navbarTitle,
-			navbarActions,
-			showSettings,
-			endpointConfig: config,
-			authProvider,
-			eventHandlers,
-			features
-		}
-	});
+  // Create the Svelte App component with configuration
+  const svelteApp = mount(App, {
+    target: container,
+    props: {
+      workflow,
+      nodes,
+      height,
+      width,
+      showNavbar,
+      disableSidebar,
+      lockWorkflow,
+      readOnly,
+      nodeStatuses,
+      pipelineId,
+      navbarTitle,
+      navbarActions,
+      showSettings,
+      endpointConfig: config,
+      authProvider,
+      eventHandlers,
+      features,
+    },
+  });
 
-	// Set up draft auto-save manager
-	let draftManager: DraftAutoSaveManager | null = null;
+  // Set up draft auto-save manager
+  let draftManager: DraftAutoSaveManager | null = null;
 
-	if (features.autoSaveDraft) {
-		const storageKey = getDraftStorageKey(workflow?.id, customDraftKey);
+  if (features.autoSaveDraft) {
+    const storageKey = getDraftStorageKey(workflow?.id, customDraftKey);
 
-		draftManager = new DraftAutoSaveManager({
-			storageKey,
-			interval: features.autoSaveDraftInterval,
-			enabled: features.autoSaveDraft,
-			getWorkflow: getWorkflowFromStore,
-			isDirty
-		});
+    draftManager = new DraftAutoSaveManager({
+      storageKey,
+      interval: features.autoSaveDraftInterval,
+      enabled: features.autoSaveDraft,
+      getWorkflow: getWorkflowFromStore,
+      isDirty,
+    });
 
-		draftManager.start();
-	}
+    draftManager.start();
+  }
 
-	// Store state for cleanup
-	const state: MountedAppState = {
-		svelteApp,
-		draftManager,
-		eventHandlers: eventHandlers ?? null
-	};
+  // Store state for cleanup
+  const state: MountedAppState = {
+    svelteApp,
+    draftManager,
+    eventHandlers: eventHandlers ?? null,
+  };
 
-	// Create the mounted app interface
-	const mountedApp: MountedFlowDropApp = {
-		destroy: () => {
-			// Call onBeforeUnmount if provided
-			if (state.eventHandlers?.onBeforeUnmount) {
-				const currentWorkflow = getWorkflowFromStore();
-				if (currentWorkflow) {
-					state.eventHandlers.onBeforeUnmount(currentWorkflow, isDirty());
-				}
-			}
+  // Create the mounted app interface
+  const mountedApp: MountedFlowDropApp = {
+    destroy: () => {
+      // Call onBeforeUnmount if provided
+      if (state.eventHandlers?.onBeforeUnmount) {
+        const currentWorkflow = getWorkflowFromStore();
+        if (currentWorkflow) {
+          state.eventHandlers.onBeforeUnmount(currentWorkflow, isDirty());
+        }
+      }
 
-			// Stop draft manager
-			if (state.draftManager) {
-				// Save one final draft if dirty
-				if (isDirty()) {
-					state.draftManager.forceSave();
-				}
-				state.draftManager.stop();
-			}
+      // Stop draft manager
+      if (state.draftManager) {
+        // Save one final draft if dirty
+        if (isDirty()) {
+          state.draftManager.forceSave();
+        }
+        state.draftManager.stop();
+      }
 
-			// Clear event callbacks
-			setOnDirtyStateChange(null);
-			setOnWorkflowChange(null);
+      // Clear event callbacks
+      setOnDirtyStateChange(null);
+      setOnWorkflowChange(null);
 
-			// Unmount Svelte app
-			unmount(state.svelteApp);
-		},
+      // Unmount Svelte app
+      unmount(state.svelteApp);
+    },
 
-		isDirty: () => isDirty(),
+    isDirty: () => isDirty(),
 
-		markAsSaved: () => {
-			markAsSaved();
-			// Also update draft manager
-			if (state.draftManager) {
-				state.draftManager.markAsSaved();
-			}
-		},
+    markAsSaved: () => {
+      markAsSaved();
+      // Also update draft manager
+      if (state.draftManager) {
+        state.draftManager.markAsSaved();
+      }
+    },
 
-		getWorkflow: () => getWorkflowFromStore(),
+    getWorkflow: () => getWorkflowFromStore(),
 
-		save: async () => {
-			await globalSaveWorkflow();
-		},
+    save: async () => {
+      await globalSaveWorkflow();
+    },
 
-		export: () => {
-			globalExportWorkflow();
-		}
-	};
+    export: () => {
+      globalExportWorkflow();
+    },
+  };
 
-	return mountedApp;
+  return mountedApp;
 }
 
 /**
@@ -396,97 +416,103 @@ export async function mountFlowDropApp(
  * @returns Promise resolving to a MountedFlowDropApp instance
  */
 export async function mountWorkflowEditor(
-	container: HTMLElement,
-	options: {
-		workflow?: Workflow;
-		nodes?: NodeMetadata[];
-		endpointConfig?: EndpointConfig;
-		portConfig?: PortConfig;
-		categories?: CategoryDefinition[];
-	} = {}
+  container: HTMLElement,
+  options: {
+    workflow?: Workflow;
+    nodes?: NodeMetadata[];
+    endpointConfig?: EndpointConfig;
+    portConfig?: PortConfig;
+    categories?: CategoryDefinition[];
+  } = {},
 ): Promise<MountedFlowDropApp> {
-	const { nodes = [], endpointConfig, portConfig, categories } = options;
+  const { nodes = [], endpointConfig, portConfig, categories } = options;
 
-	// Create endpoint configuration
-	let config: EndpointConfig | undefined;
+  // Create endpoint configuration
+  let config: EndpointConfig | undefined;
 
-	if (endpointConfig) {
-		// Merge with default configuration to ensure all required endpoints are present
-		const { defaultEndpointConfig } = await import('./config/endpoints.js');
-		config = {
-			...defaultEndpointConfig,
-			...endpointConfig,
-			endpoints: {
-				...defaultEndpointConfig.endpoints,
-				...endpointConfig.endpoints
-			}
-		};
-	} else {
-		// Use default configuration if none provided
-		const { defaultEndpointConfig } = await import('./config/endpoints.js');
-		config = defaultEndpointConfig;
-	}
+  if (endpointConfig) {
+    // Merge with default configuration to ensure all required endpoints are present
+    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    config = {
+      ...defaultEndpointConfig,
+      ...endpointConfig,
+      endpoints: {
+        ...defaultEndpointConfig.endpoints,
+        ...endpointConfig.endpoints,
+      },
+    };
+  } else {
+    // Use default configuration if none provided
+    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    config = defaultEndpointConfig;
+  }
 
-	// Initialize port configuration
-	let finalPortConfig = portConfig;
+  // Initialize port configuration
+  let finalPortConfig = portConfig;
 
-	if (!finalPortConfig && config) {
-		// Try to fetch port configuration from API
-		try {
-			finalPortConfig = await fetchPortConfig(config);
-		} catch (error) {
-			logger.warn('Failed to fetch port config from API, using default:', error);
-			finalPortConfig = DEFAULT_PORT_CONFIG;
-		}
-	} else if (!finalPortConfig) {
-		finalPortConfig = DEFAULT_PORT_CONFIG;
-	}
+  if (!finalPortConfig && config) {
+    // Try to fetch port configuration from API
+    try {
+      finalPortConfig = await fetchPortConfig(config);
+    } catch (error) {
+      logger.warn(
+        "Failed to fetch port config from API, using default:",
+        error,
+      );
+      finalPortConfig = DEFAULT_PORT_CONFIG;
+    }
+  } else if (!finalPortConfig) {
+    finalPortConfig = DEFAULT_PORT_CONFIG;
+  }
 
-	initializePortCompatibility(finalPortConfig);
+  initializePortCompatibility(finalPortConfig);
 
-	// Initialize categories
-	if (categories) {
-		initializeCategories(categories);
-	} else if (config) {
-		try {
-			const fetchedCategories = await fetchCategories(config);
-			initializeCategories(fetchedCategories);
-		} catch (error) {
-			logger.warn('Failed to fetch categories from API, using defaults:', error);
-		}
-	}
+  // Initialize categories
+  if (categories) {
+    initializeCategories(categories);
+  } else if (config) {
+    try {
+      const fetchedCategories = await fetchCategories(config);
+      initializeCategories(fetchedCategories);
+    } catch (error) {
+      logger.warn(
+        "Failed to fetch categories from API, using defaults:",
+        error,
+      );
+    }
+  }
 
-	// Create the Svelte component
-	const svelteApp = mount(WorkflowEditor, {
-		target: container,
-		props: {
-			nodes,
-			endpointConfig: config
-		}
-	});
+  // Create the Svelte component
+  const svelteApp = mount(WorkflowEditor, {
+    target: container,
+    props: {
+      nodes,
+      endpointConfig: config,
+    },
+  });
 
-	// Create the mounted app interface (simpler version)
-	const mountedApp: MountedFlowDropApp = {
-		destroy: () => {
-			unmount(svelteApp);
-		},
+  // Create the mounted app interface (simpler version)
+  const mountedApp: MountedFlowDropApp = {
+    destroy: () => {
+      unmount(svelteApp);
+    },
 
-		isDirty: () => isDirty(),
+    isDirty: () => isDirty(),
 
-		markAsSaved: () => markAsSaved(),
+    markAsSaved: () => markAsSaved(),
 
-		getWorkflow: () => getWorkflowFromStore(),
+    getWorkflow: () => getWorkflowFromStore(),
 
-		save: async () => {
-			await globalSaveWorkflow();
-		},
+    save: async () => {
+      await globalSaveWorkflow();
+    },
 
-		export: () => {
-			globalExportWorkflow();
-		}
-	};
+    export: () => {
+      globalExportWorkflow();
+    },
+  };
 
-	return mountedApp;
+  return mountedApp;
 }
 
 /**
@@ -495,7 +521,7 @@ export async function mountWorkflowEditor(
  * @param app - The mounted app to unmount
  */
 export function unmountFlowDropApp(app: MountedFlowDropApp): void {
-	if (app && typeof app.destroy === 'function') {
-		app.destroy();
-	}
+  if (app && typeof app.destroy === "function") {
+    app.destroy();
+  }
 }

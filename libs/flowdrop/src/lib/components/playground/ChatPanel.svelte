@@ -7,899 +7,955 @@
 -->
 
 <script lang="ts">
-	import Icon from '@iconify/svelte';
-	import { tick } from 'svelte';
-	import MessageBubble from './MessageBubble.svelte';
-	import { InterruptBubble } from '../interrupt/index.js';
-	import type { PlaygroundMessage } from '../../types/playground.js';
-	import { hasEnableRunFlag } from '../../types/playground.js';
-	import {
-		isInterruptMetadata,
-		extractInterruptMetadata,
-		metadataToInterrupt
-	} from '../../types/interrupt.js';
-	import {
-		getMessages,
-		getChatMessages,
-		getIsExecuting,
-		getSessionStatus,
-		getCurrentSession
-	} from '../../stores/playgroundStore.svelte.js';
-	import {
-		getInterruptsMap,
-		interruptActions,
-		getInterruptByMessageId
-	} from '../../stores/interruptStore.svelte.js';
+  import Icon from "@iconify/svelte";
+  import { tick } from "svelte";
+  import MessageBubble from "./MessageBubble.svelte";
+  import { InterruptBubble } from "../interrupt/index.js";
+  import type { PlaygroundMessage } from "../../types/playground.js";
+  import { hasEnableRunFlag } from "../../types/playground.js";
+  import {
+    isInterruptMetadata,
+    extractInterruptMetadata,
+    metadataToInterrupt,
+  } from "../../types/interrupt.js";
+  import {
+    getMessages,
+    getChatMessages,
+    getIsExecuting,
+    getSessionStatus,
+    getCurrentSession,
+  } from "../../stores/playgroundStore.svelte.js";
+  import {
+    getInterruptsMap,
+    interruptActions,
+    getInterruptByMessageId,
+  } from "../../stores/interruptStore.svelte.js";
 
-	/**
-	 * Component props
-	 */
-	interface Props {
-		/** Whether to show timestamps on messages */
-		showTimestamps?: boolean;
-		/** Whether to auto-scroll to bottom on new messages */
-		autoScroll?: boolean;
-		/** Placeholder text for the input */
-		placeholder?: string;
-		/** Callback when user sends a message */
-		onSendMessage?: (content: string) => void;
-		/** Callback when user requests to stop execution */
-		onStopExecution?: () => void;
-		/** Whether to show log messages inline (false = hide them) */
-		showLogsInline?: boolean;
-		/** Whether to enable markdown rendering in messages */
-		enableMarkdown?: boolean;
-		/** Callback when an interrupt is resolved (to refresh messages) */
-		onInterruptResolved?: () => void;
-		/**
-		 * Whether to show the chat text input (default: true)
-		 * When false, only the "Run" button is displayed.
-		 */
-		showChatInput?: boolean;
-		/**
-		 * Whether to show the "Run" button (default: true)
-		 * When false, the Run button is hidden.
-		 */
-		showRunButton?: boolean;
-		/**
-		 * Predefined message to send when "Run" button is clicked
-		 * Used when showChatInput is false.
-		 */
-		predefinedMessage?: string;
-		/**
-		 * Whether to display system messages in compact mode.
-		 * When true, system messages appear as minimal inline text
-		 * instead of full chat bubbles to reduce visual noise.
-		 * @default true
-		 */
-		compactSystemMessages?: boolean;
-	}
+  /**
+   * Component props
+   */
+  interface Props {
+    /** Whether to show timestamps on messages */
+    showTimestamps?: boolean;
+    /** Whether to auto-scroll to bottom on new messages */
+    autoScroll?: boolean;
+    /** Placeholder text for the input */
+    placeholder?: string;
+    /** Callback when user sends a message */
+    onSendMessage?: (content: string) => void;
+    /** Callback when user requests to stop execution */
+    onStopExecution?: () => void;
+    /** Whether to show log messages inline (false = hide them) */
+    showLogsInline?: boolean;
+    /** Whether to enable markdown rendering in messages */
+    enableMarkdown?: boolean;
+    /** Callback when an interrupt is resolved (to refresh messages) */
+    onInterruptResolved?: () => void;
+    /**
+     * Whether to show the chat text input (default: true)
+     * When false, only the "Run" button is displayed.
+     */
+    showChatInput?: boolean;
+    /**
+     * Whether to show the "Run" button (default: true)
+     * When false, the Run button is hidden.
+     */
+    showRunButton?: boolean;
+    /**
+     * Predefined message to send when "Run" button is clicked
+     * Used when showChatInput is false.
+     */
+    predefinedMessage?: string;
+    /**
+     * Whether to display system messages in compact mode.
+     * When true, system messages appear as minimal inline text
+     * instead of full chat bubbles to reduce visual noise.
+     * @default true
+     */
+    compactSystemMessages?: boolean;
+  }
 
-	let {
-		showTimestamps = true,
-		autoScroll = true,
-		placeholder = 'Type your message...',
-		onSendMessage,
-		onStopExecution,
-		showLogsInline = false,
-		enableMarkdown = true,
-		onInterruptResolved,
-		showChatInput = true,
-		showRunButton = true,
-		predefinedMessage = 'Run workflow',
-		compactSystemMessages = true
-	}: Props = $props();
+  let {
+    showTimestamps = true,
+    autoScroll = true,
+    placeholder = "Type your message...",
+    onSendMessage,
+    onStopExecution,
+    showLogsInline = false,
+    enableMarkdown = true,
+    onInterruptResolved,
+    showChatInput = true,
+    showRunButton = true,
+    predefinedMessage = "Run workflow",
+    compactSystemMessages = true,
+  }: Props = $props();
 
-	/**
-	 * Tracks whether the Run button is enabled.
-	 * Starts as true, becomes false after Run is clicked,
-	 * and is re-enabled when backend sends a message with enableRun: true metadata.
-	 */
-	let runEnabled = $state(true);
+  /**
+   * Tracks whether the Run button is enabled.
+   * Starts as true, becomes false after Run is clicked,
+   * and is re-enabled when backend sends a message with enableRun: true metadata.
+   */
+  let runEnabled = $state(true);
 
-	/**
-	 * Computed flag: true if both chat input and run button are hidden.
-	 * In this case, we show a helpful message to the user.
-	 */
-	const noInputsAvailable = $derived(!showChatInput && !showRunButton);
+  /**
+   * Computed flag: true if both chat input and run button are hidden.
+   * In this case, we show a helpful message to the user.
+   */
+  const noInputsAvailable = $derived(!showChatInput && !showRunButton);
 
-	/** Input field value */
-	let inputValue = $state('');
+  /** Input field value */
+  let inputValue = $state("");
 
-	/** Reference to the messages container for scrolling */
-	let messagesContainer = $state<HTMLDivElement>();
+  /** Reference to the messages container for scrolling */
+  let messagesContainer = $state<HTMLDivElement>();
 
-	/** Reference to the input field */
-	let inputField = $state<HTMLTextAreaElement>();
+  /** Reference to the input field */
+  let inputField = $state<HTMLTextAreaElement>();
 
-	/**
-	 * Filter messages based on showLogsInline setting
-	 */
-	const displayMessages = $derived(showLogsInline ? getMessages() : getChatMessages());
+  /**
+   * Filter messages based on showLogsInline setting
+   */
+  const displayMessages = $derived(
+    showLogsInline ? getMessages() : getChatMessages(),
+  );
 
-	/**
-	 * Track previous message count for detecting new messages.
-	 * We only want to auto-scroll when NEW messages are added,
-	 * not when existing messages are updated.
-	 */
-	let previousMessageCount = $state(0);
+  /**
+   * Track previous message count for detecting new messages.
+   * We only want to auto-scroll when NEW messages are added,
+   * not when existing messages are updated.
+   */
+  let previousMessageCount = $state(0);
 
-	/**
-	 * Check if user is near the bottom of the scroll container.
-	 * Used to determine if we should auto-scroll when new messages arrive.
-	 * If user has scrolled up to read previous messages, we don't interrupt them.
-	 *
-	 * @param threshold - Pixels from bottom to consider "near bottom"
-	 * @returns True if user is within threshold of the bottom
-	 */
-	function isNearBottom(threshold: number = 100): boolean {
-		if (!messagesContainer) return true;
-		const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
-		return scrollHeight - scrollTop - clientHeight <= threshold;
-	}
+  /**
+   * Check if user is near the bottom of the scroll container.
+   * Used to determine if we should auto-scroll when new messages arrive.
+   * If user has scrolled up to read previous messages, we don't interrupt them.
+   *
+   * @param threshold - Pixels from bottom to consider "near bottom"
+   * @returns True if user is within threshold of the bottom
+   */
+  function isNearBottom(threshold: number = 100): boolean {
+    if (!messagesContainer) return true;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
+    return scrollHeight - scrollTop - clientHeight <= threshold;
+  }
 
-	/**
-	 * Check if a form element inside the messages container has focus.
-	 * When user is interacting with a form (e.g., interrupt prompt),
-	 * we should not auto-scroll as it disrupts their input.
-	 */
-	function isFormFocused(): boolean {
-		if (!messagesContainer) return false;
-		const activeElement = document.activeElement;
-		if (!activeElement) return false;
-		// Check if active element is a form control inside the messages container
-		const isFormControl =
-			activeElement.tagName === 'INPUT' ||
-			activeElement.tagName === 'TEXTAREA' ||
-			activeElement.tagName === 'SELECT' ||
-			activeElement.tagName === 'BUTTON' ||
-			activeElement.getAttribute('contenteditable') === 'true';
-		return isFormControl && messagesContainer.contains(activeElement);
-	}
+  /**
+   * Check if a form element inside the messages container has focus.
+   * When user is interacting with a form (e.g., interrupt prompt),
+   * we should not auto-scroll as it disrupts their input.
+   */
+  function isFormFocused(): boolean {
+    if (!messagesContainer) return false;
+    const activeElement = document.activeElement;
+    if (!activeElement) return false;
+    // Check if active element is a form control inside the messages container
+    const isFormControl =
+      activeElement.tagName === "INPUT" ||
+      activeElement.tagName === "TEXTAREA" ||
+      activeElement.tagName === "SELECT" ||
+      activeElement.tagName === "BUTTON" ||
+      activeElement.getAttribute("contenteditable") === "true";
+    return isFormControl && messagesContainer.contains(activeElement);
+  }
 
-	/**
-	 * Check if a message is an interrupt request
-	 */
-	function isInterruptMessage(message: PlaygroundMessage): boolean {
-		return isInterruptMetadata(message.metadata as Record<string, unknown> | undefined);
-	}
+  /**
+   * Check if a message is an interrupt request
+   */
+  function isInterruptMessage(message: PlaygroundMessage): boolean {
+    return isInterruptMetadata(
+      message.metadata as Record<string, unknown> | undefined,
+    );
+  }
 
-	/**
-	 * Sync interrupt messages to the interrupt store.
-	 * This effect runs when messages change and adds any new interrupt messages
-	 * to the interrupt store. We do this in an effect rather than during render
-	 * to avoid Svelte 5's state_unsafe_mutation error.
-	 *
-	 * If a message has status 'completed', the interrupt is marked as resolved
-	 * to show the "Confirmation Submitted" header, disabled buttons, and
-	 * "Response submitted" indicator.
-	 */
-	$effect(() => {
-		// Get all messages that are interrupt requests
-		const interruptMessages = displayMessages.filter(isInterruptMessage);
+  /**
+   * Sync interrupt messages to the interrupt store.
+   * This effect runs when messages change and adds any new interrupt messages
+   * to the interrupt store. We do this in an effect rather than during render
+   * to avoid Svelte 5's state_unsafe_mutation error.
+   *
+   * If a message has status 'completed', the interrupt is marked as resolved
+   * to show the "Confirmation Submitted" header, disabled buttons, and
+   * "Response submitted" indicator.
+   */
+  $effect(() => {
+    // Get all messages that are interrupt requests
+    const interruptMessages = displayMessages.filter(isInterruptMessage);
 
-		for (const message of interruptMessages) {
-			// Check if we already have this interrupt in the store
-			const existing = getInterruptByMessageId(message.id);
-			if (!existing) {
-				// Extract and validate interrupt metadata
-				const metadata = extractInterruptMetadata(
-					message.metadata as Record<string, unknown> | undefined
-				);
-				if (metadata) {
-					const interrupt = metadataToInterrupt(metadata, message.id, message.content);
-					interruptActions.addInterrupt(interrupt);
+    for (const message of interruptMessages) {
+      // Check if we already have this interrupt in the store
+      const existing = getInterruptByMessageId(message.id);
+      if (!existing) {
+        // Extract and validate interrupt metadata
+        const metadata = extractInterruptMetadata(
+          message.metadata as Record<string, unknown> | undefined,
+        );
+        if (metadata) {
+          const interrupt = metadataToInterrupt(
+            metadata,
+            message.id,
+            message.content,
+          );
+          interruptActions.addInterrupt(interrupt);
 
-					// If the message status is 'completed', mark the interrupt as resolved
-					// This ensures completed interrupts show proper UI state:
-					// - "Confirmation Submitted" header
-					// - Disabled buttons
-					// - "Response submitted" indicator
-					if (message.status === 'completed') {
-						interruptActions.resolveInterrupt(interrupt.id, metadata.response_value);
-					}
-				}
-			}
-		}
-	});
+          // If the message status is 'completed', mark the interrupt as resolved
+          // This ensures completed interrupts show proper UI state:
+          // - "Confirmation Submitted" header
+          // - Disabled buttons
+          // - "Response submitted" indicator
+          if (message.status === "completed") {
+            interruptActions.resolveInterrupt(
+              interrupt.id,
+              metadata.response_value,
+            );
+          }
+        }
+      }
+    }
+  });
 
-	/**
-	 * Reactive map of message IDs to interrupts.
-	 * This ensures the component re-renders when interrupts are added to the store.
-	 */
-	const interruptsByMessageId = $derived(
-		new Map(
-			Array.from(getInterruptsMap().values())
-				.filter((i) => i.messageId)
-				.map((i) => [i.messageId, i])
-		)
-	);
+  /**
+   * Reactive map of message IDs to interrupts.
+   * This ensures the component re-renders when interrupts are added to the store.
+   */
+  const interruptsByMessageId = $derived(
+    new Map(
+      Array.from(getInterruptsMap().values())
+        .filter((i) => i.messageId)
+        .map((i) => [i.messageId, i]),
+    ),
+  );
 
-	/**
-	 * Get interrupt data for a message from the reactive map
-	 */
-	function getInterruptForMessage(message: PlaygroundMessage) {
-		return interruptsByMessageId.get(message.id);
-	}
+  /**
+   * Get interrupt data for a message from the reactive map
+   */
+  function getInterruptForMessage(message: PlaygroundMessage) {
+    return interruptsByMessageId.get(message.id);
+  }
 
-	/**
-	 * Check if we should show the welcome state
-	 */
-	const showWelcome = $derived(!getCurrentSession() && displayMessages.length === 0);
+  /**
+   * Check if we should show the welcome state
+   */
+  const showWelcome = $derived(
+    !getCurrentSession() && displayMessages.length === 0,
+  );
 
-	/**
-	 * Check if we should show the empty chat state (session exists but no messages)
-	 */
-	const showEmptyChat = $derived(getCurrentSession() && displayMessages.length === 0);
+  /**
+   * Check if we should show the empty chat state (session exists but no messages)
+   */
+  const showEmptyChat = $derived(
+    getCurrentSession() && displayMessages.length === 0,
+  );
 
-	/**
-	 * Handle sending a message
-	 */
-	function handleSend(): void {
-		const trimmedValue = inputValue.trim();
-		if (!trimmedValue || getIsExecuting()) {
-			return;
-		}
+  /**
+   * Handle sending a message
+   */
+  function handleSend(): void {
+    const trimmedValue = inputValue.trim();
+    if (!trimmedValue || getIsExecuting()) {
+      return;
+    }
 
-		onSendMessage?.(trimmedValue);
-		inputValue = '';
+    onSendMessage?.(trimmedValue);
+    inputValue = "";
 
-		// Reset textarea height
-		if (inputField) {
-			inputField.style.height = 'auto';
-		}
+    // Reset textarea height
+    if (inputField) {
+      inputField.style.height = "auto";
+    }
 
-		// Re-focus the input
-		tick().then(() => {
-			inputField?.focus();
-		});
-	}
+    // Re-focus the input
+    tick().then(() => {
+      inputField?.focus();
+    });
+  }
 
-	/**
-	 * Handle keyboard events in the input
-	 */
-	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Enter' && !event.shiftKey) {
-			event.preventDefault();
-			handleSend();
-		}
-	}
+  /**
+   * Handle keyboard events in the input
+   */
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
+    }
+  }
 
-	/**
-	 * Handle stop execution
-	 */
-	function handleStop(): void {
-		onStopExecution?.();
-	}
+  /**
+   * Handle stop execution
+   */
+  function handleStop(): void {
+    onStopExecution?.();
+  }
 
-	/**
-	 * Handle "Run" button click when chat input is hidden.
-	 * Sends the predefined message to execute the workflow.
-	 * Disables the Run button after clicking until backend re-enables it.
-	 */
-	function handleRun(): void {
-		if (getIsExecuting() || !runEnabled) {
-			return;
-		}
-		// Disable the Run button after clicking
-		runEnabled = false;
-		onSendMessage?.(predefinedMessage);
-	}
+  /**
+   * Handle "Run" button click when chat input is hidden.
+   * Sends the predefined message to execute the workflow.
+   * Disables the Run button after clicking until backend re-enables it.
+   */
+  function handleRun(): void {
+    if (getIsExecuting() || !runEnabled) {
+      return;
+    }
+    // Disable the Run button after clicking
+    runEnabled = false;
+    onSendMessage?.(predefinedMessage);
+  }
 
-	/**
-	 * Track processed message IDs for enableRun detection
-	 * to avoid re-processing the same messages.
-	 */
-	let processedEnableRunIds = $state(new Set<string>());
+  /**
+   * Track processed message IDs for enableRun detection
+   * to avoid re-processing the same messages.
+   */
+  let processedEnableRunIds = $state(new Set<string>());
 
-	/**
-	 * Watch for messages with enableRun: true metadata from the backend.
-	 * When detected, re-enable the Run button.
-	 */
-	$effect(() => {
-		// Check all messages for enableRun flag
-		for (const message of displayMessages) {
-			// Skip if already processed
-			if (processedEnableRunIds.has(message.id)) {
-				continue;
-			}
-			// Check if this message has the enableRun flag
-			if (hasEnableRunFlag(message.metadata)) {
-				// Mark as processed
-				processedEnableRunIds = new Set([...processedEnableRunIds, message.id]);
-				// Re-enable the Run button
-				runEnabled = true;
-			}
-		}
-	});
+  /**
+   * Watch for messages with enableRun: true metadata from the backend.
+   * When detected, re-enable the Run button.
+   */
+  $effect(() => {
+    // Check all messages for enableRun flag
+    for (const message of displayMessages) {
+      // Skip if already processed
+      if (processedEnableRunIds.has(message.id)) {
+        continue;
+      }
+      // Check if this message has the enableRun flag
+      if (hasEnableRunFlag(message.metadata)) {
+        // Mark as processed
+        processedEnableRunIds = new Set([...processedEnableRunIds, message.id]);
+        // Re-enable the Run button
+        runEnabled = true;
+      }
+    }
+  });
 
-	/**
-	 * Reset runEnabled state when session changes.
-	 * This ensures a fresh state for each session.
-	 */
-	$effect(() => {
-		const session = getCurrentSession();
-		if (session) {
-			// Reset to enabled state for new/changed sessions
-			runEnabled = true;
-			// Clear processed IDs for the new session
-			processedEnableRunIds = new Set();
-		}
-	});
+  /**
+   * Reset runEnabled state when session changes.
+   * This ensures a fresh state for each session.
+   */
+  $effect(() => {
+    const session = getCurrentSession();
+    if (session) {
+      // Reset to enabled state for new/changed sessions
+      runEnabled = true;
+      // Clear processed IDs for the new session
+      processedEnableRunIds = new Set();
+    }
+  });
 
-	/**
-	 * Smart auto-scroll to bottom when NEW messages are added.
-	 *
-	 * Only scrolls if:
-	 * 1. autoScroll prop is enabled
-	 * 2. New messages were actually added (not just updates)
-	 * 3. User is already near the bottom (hasn't scrolled up to read)
-	 * 4. User is not interacting with a form inside the chat
-	 *
-	 * This prevents disruptive scrolling when:
-	 * - User is reading previous messages
-	 * - User is filling out an interrupt form
-	 * - Messages are being updated (e.g., status changes)
-	 */
-	$effect(() => {
-		const currentCount = displayMessages.length;
+  /**
+   * Smart auto-scroll to bottom when NEW messages are added.
+   *
+   * Only scrolls if:
+   * 1. autoScroll prop is enabled
+   * 2. New messages were actually added (not just updates)
+   * 3. User is already near the bottom (hasn't scrolled up to read)
+   * 4. User is not interacting with a form inside the chat
+   *
+   * This prevents disruptive scrolling when:
+   * - User is reading previous messages
+   * - User is filling out an interrupt form
+   * - Messages are being updated (e.g., status changes)
+   */
+  $effect(() => {
+    const currentCount = displayMessages.length;
 
-		// Skip if auto-scroll is disabled or no container
-		if (!autoScroll || !messagesContainer) {
-			previousMessageCount = currentCount;
-			return;
-		}
+    // Skip if auto-scroll is disabled or no container
+    if (!autoScroll || !messagesContainer) {
+      previousMessageCount = currentCount;
+      return;
+    }
 
-		// Check if this is a NEW message (count increased)
-		const hasNewMessage = currentCount > previousMessageCount;
+    // Check if this is a NEW message (count increased)
+    const hasNewMessage = currentCount > previousMessageCount;
 
-		// Update the tracked count
-		previousMessageCount = currentCount;
+    // Update the tracked count
+    previousMessageCount = currentCount;
 
-		// Only scroll if there's a new message
-		if (!hasNewMessage) {
-			return;
-		}
+    // Only scroll if there's a new message
+    if (!hasNewMessage) {
+      return;
+    }
 
-		// Don't scroll if user has scrolled up to read previous messages
-		if (!isNearBottom()) {
-			return;
-		}
+    // Don't scroll if user has scrolled up to read previous messages
+    if (!isNearBottom()) {
+      return;
+    }
 
-		// Don't scroll if user is interacting with a form
-		if (isFormFocused()) {
-			return;
-		}
+    // Don't scroll if user is interacting with a form
+    if (isFormFocused()) {
+      return;
+    }
 
-		// Safe to scroll to bottom
-		tick().then(() => {
-			if (messagesContainer) {
-				messagesContainer.scrollTop = messagesContainer.scrollHeight;
-			}
-		});
-	});
+    // Safe to scroll to bottom
+    tick().then(() => {
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    });
+  });
 
-	/**
-	 * Track previous executing state to detect when execution completes
-	 */
-	let wasExecuting = $state(false);
+  /**
+   * Track previous executing state to detect when execution completes
+   */
+  let wasExecuting = $state(false);
 
-	/**
-	 * Auto-focus input when execution completes or session becomes ready
-	 */
-	$effect(() => {
-		const currentlyExecuting = getIsExecuting();
+  /**
+   * Auto-focus input when execution completes or session becomes ready
+   */
+  $effect(() => {
+    const currentlyExecuting = getIsExecuting();
 
-		// Focus input when execution completes (was executing, now not)
-		if (wasExecuting && !currentlyExecuting && inputField) {
-			tick().then(() => {
-				inputField?.focus();
-			});
-		}
+    // Focus input when execution completes (was executing, now not)
+    if (wasExecuting && !currentlyExecuting && inputField) {
+      tick().then(() => {
+        inputField?.focus();
+      });
+    }
 
-		// Update tracking state
-		wasExecuting = currentlyExecuting;
-	});
+    // Update tracking state
+    wasExecuting = currentlyExecuting;
+  });
 
-	/**
-	 * Focus input when session status changes to idle or completed
-	 */
-	$effect(() => {
-		const status = getSessionStatus();
-		if ((status === 'idle' || status === 'completed') && inputField && !getIsExecuting()) {
-			tick().then(() => {
-				inputField?.focus();
-			});
-		}
-	});
+  /**
+   * Focus input when session status changes to idle or completed
+   */
+  $effect(() => {
+    const status = getSessionStatus();
+    if (
+      (status === "idle" || status === "completed") &&
+      inputField &&
+      !getIsExecuting()
+    ) {
+      tick().then(() => {
+        inputField?.focus();
+      });
+    }
+  });
 
-	/**
-	 * Focus input when a new session is created/loaded
-	 */
-	$effect(() => {
-		const session = getCurrentSession();
-		if (session && inputField && !getIsExecuting()) {
-			tick().then(() => {
-				inputField?.focus();
-			});
-		}
-	});
+  /**
+   * Focus input when a new session is created/loaded
+   */
+  $effect(() => {
+    const session = getCurrentSession();
+    if (session && inputField && !getIsExecuting()) {
+      tick().then(() => {
+        inputField?.focus();
+      });
+    }
+  });
 
-	/**
-	 * Auto-resize textarea based on content
-	 */
-	function handleInput(): void {
-		if (inputField) {
-			inputField.style.height = 'auto';
-			inputField.style.height = `${Math.min(inputField.scrollHeight, 120)}px`;
-		}
-	}
+  /**
+   * Auto-resize textarea based on content
+   */
+  function handleInput(): void {
+    if (inputField) {
+      inputField.style.height = "auto";
+      inputField.style.height = `${Math.min(inputField.scrollHeight, 120)}px`;
+    }
+  }
 </script>
 
 <div class="chat-panel">
-	<!-- Messages Container -->
-	<div class="chat-panel__messages" bind:this={messagesContainer}>
-		{#if showWelcome}
-			<!-- Welcome State (no session) -->
-			<div class="chat-panel__welcome">
-				<div class="chat-panel__welcome-icon">
-					<svg
-						width="48"
-						height="48"
-						viewBox="0 0 48 48"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M8 16L24 8L40 16V32L24 40L8 32V16Z"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linejoin="round"
-						/>
-						<path
-							d="M8 16L24 24L40 16"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linejoin="round"
-						/>
-						<path d="M24 24V40" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-						<path d="M16 12L32 20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-						<path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-					</svg>
-				</div>
-				{#if noInputsAvailable}
-					<h2 class="chat-panel__welcome-title">View only</h2>
-					<p class="chat-panel__welcome-text">
-						This playground is in view-only mode. No inputs are available.
-					</p>
-				{:else if showChatInput}
-					<h2 class="chat-panel__welcome-title">New session</h2>
-					<p class="chat-panel__welcome-text">Test your flow with a prompt</p>
-				{:else}
-					<h2 class="chat-panel__welcome-title">Ready to run</h2>
-					<p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
-				{/if}
-			</div>
-		{:else if showEmptyChat}
-			<!-- Empty Chat State (session exists but no messages) -->
-			<div class="chat-panel__welcome">
-				<div class="chat-panel__welcome-icon">
-					<svg
-						width="48"
-						height="48"
-						viewBox="0 0 48 48"
-						fill="none"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							d="M8 16L24 8L40 16V32L24 40L8 32V16Z"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linejoin="round"
-						/>
-						<path
-							d="M8 16L24 24L40 16"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linejoin="round"
-						/>
-						<path d="M24 24V40" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-						<path d="M16 12L32 20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-						<path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-					</svg>
-				</div>
-				{#if noInputsAvailable}
-					<h2 class="chat-panel__welcome-title">View only</h2>
-					<p class="chat-panel__welcome-text">
-						This playground is in view-only mode. No inputs are available.
-					</p>
-				{:else if showChatInput}
-					<h2 class="chat-panel__welcome-title">New session</h2>
-					<p class="chat-panel__welcome-text">Test your flow with a prompt</p>
-				{:else}
-					<h2 class="chat-panel__welcome-title">Ready to run</h2>
-					<p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
-				{/if}
-			</div>
-		{:else}
-			<!-- Messages -->
-			{#each displayMessages as message, index (message.id)}
-				{#if isInterruptMessage(message)}
-					<!-- Render interrupt inline -->
-					{@const interrupt = getInterruptForMessage(message)}
-					{#if interrupt}
-						<InterruptBubble
-							{interrupt}
-							showTimestamp={showTimestamps}
-							onResolved={onInterruptResolved}
-						/>
-					{/if}
-				{:else}
-					<MessageBubble
-						{message}
-						showTimestamp={showTimestamps}
-						isLast={index === displayMessages.length - 1}
-						{enableMarkdown}
-						{compactSystemMessages}
-					/>
-				{/if}
-			{/each}
+  <!-- Messages Container -->
+  <div class="chat-panel__messages" bind:this={messagesContainer}>
+    {#if showWelcome}
+      <!-- Welcome State (no session) -->
+      <div class="chat-panel__welcome">
+        <div class="chat-panel__welcome-icon">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 48 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M8 16L24 8L40 16V32L24 40L8 32V16Z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M8 16L24 24L40 16"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M24 24V40"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M16 12L32 20"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M16 36L32 28"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        {#if noInputsAvailable}
+          <h2 class="chat-panel__welcome-title">View only</h2>
+          <p class="chat-panel__welcome-text">
+            This playground is in view-only mode. No inputs are available.
+          </p>
+        {:else if showChatInput}
+          <h2 class="chat-panel__welcome-title">New session</h2>
+          <p class="chat-panel__welcome-text">Test your flow with a prompt</p>
+        {:else}
+          <h2 class="chat-panel__welcome-title">Ready to run</h2>
+          <p class="chat-panel__welcome-text">
+            Click Run to execute your workflow
+          </p>
+        {/if}
+      </div>
+    {:else if showEmptyChat}
+      <!-- Empty Chat State (session exists but no messages) -->
+      <div class="chat-panel__welcome">
+        <div class="chat-panel__welcome-icon">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 48 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M8 16L24 8L40 16V32L24 40L8 32V16Z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M8 16L24 24L40 16"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M24 24V40"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M16 12L32 20"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M16 36L32 28"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        {#if noInputsAvailable}
+          <h2 class="chat-panel__welcome-title">View only</h2>
+          <p class="chat-panel__welcome-text">
+            This playground is in view-only mode. No inputs are available.
+          </p>
+        {:else if showChatInput}
+          <h2 class="chat-panel__welcome-title">New session</h2>
+          <p class="chat-panel__welcome-text">Test your flow with a prompt</p>
+        {:else}
+          <h2 class="chat-panel__welcome-title">Ready to run</h2>
+          <p class="chat-panel__welcome-text">
+            Click Run to execute your workflow
+          </p>
+        {/if}
+      </div>
+    {:else}
+      <!-- Messages -->
+      {#each displayMessages as message, index (message.id)}
+        {#if isInterruptMessage(message)}
+          <!-- Render interrupt inline -->
+          {@const interrupt = getInterruptForMessage(message)}
+          {#if interrupt}
+            <InterruptBubble
+              {interrupt}
+              showTimestamp={showTimestamps}
+              onResolved={onInterruptResolved}
+            />
+          {/if}
+        {:else}
+          <MessageBubble
+            {message}
+            showTimestamp={showTimestamps}
+            isLast={index === displayMessages.length - 1}
+            {enableMarkdown}
+            {compactSystemMessages}
+          />
+        {/if}
+      {/each}
 
-			{#if getIsExecuting()}
-				<div class="chat-panel__typing">
-					<div class="chat-panel__typing-indicator">
-						<span></span>
-						<span></span>
-						<span></span>
-					</div>
-					<span class="chat-panel__typing-text">Processing...</span>
-				</div>
-			{/if}
-		{/if}
-	</div>
+      {#if getIsExecuting()}
+        <div class="chat-panel__typing">
+          <div class="chat-panel__typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="chat-panel__typing-text">Processing...</span>
+        </div>
+      {/if}
+    {/if}
+  </div>
 
-	<!-- Input Area -->
-	<div class="chat-panel__input-area">
-		{#if noInputsAvailable}
-			<!-- No inputs available - show informational message -->
-			<div class="chat-panel__no-inputs">
-				<Icon icon="mdi:information-outline" />
-				<span>View-only mode. Workflow execution is controlled externally.</span>
-			</div>
-		{:else}
-			<div
-				class="chat-panel__input-container"
-				class:chat-panel__input-container--run-only={!showChatInput}
-			>
-				{#if showChatInput}
-					<div class="chat-panel__input-wrapper">
-						<textarea
-							bind:this={inputField}
-							bind:value={inputValue}
-							class="chat-panel__input"
-							{placeholder}
-							rows="1"
-							disabled={getIsExecuting()}
-							onkeydown={handleKeydown}
-							oninput={handleInput}
-						></textarea>
-					</div>
-				{/if}
+  <!-- Input Area -->
+  <div class="chat-panel__input-area">
+    {#if noInputsAvailable}
+      <!-- No inputs available - show informational message -->
+      <div class="chat-panel__no-inputs">
+        <Icon icon="mdi:information-outline" />
+        <span>View-only mode. Workflow execution is controlled externally.</span
+        >
+      </div>
+    {:else}
+      <div
+        class="chat-panel__input-container"
+        class:chat-panel__input-container--run-only={!showChatInput}
+      >
+        {#if showChatInput}
+          <div class="chat-panel__input-wrapper">
+            <textarea
+              bind:this={inputField}
+              bind:value={inputValue}
+              class="chat-panel__input"
+              {placeholder}
+              rows="1"
+              disabled={getIsExecuting()}
+              onkeydown={handleKeydown}
+              oninput={handleInput}
+            ></textarea>
+          </div>
+        {/if}
 
-				{#if getSessionStatus() === 'running' || getIsExecuting()}
-					<button
-						type="button"
-						class="chat-panel__stop-btn"
-						onclick={handleStop}
-						title="Stop execution"
-					>
-						<Icon icon="mdi:stop" />
-						Stop
-					</button>
-				{:else if showChatInput}
-					<button
-						type="button"
-						class="chat-panel__send-btn"
-						onclick={handleSend}
-						disabled={!inputValue.trim()}
-						title="Send message"
-					>
-						Send
-					</button>
-				{:else if showRunButton}
-					<button
-						type="button"
-						class="chat-panel__run-btn"
-						onclick={handleRun}
-						disabled={!runEnabled}
-						title={runEnabled ? 'Run workflow' : 'Waiting for workflow to be ready...'}
-					>
-						<Icon icon="mdi:play" />
-						Run
-					</button>
-				{/if}
-			</div>
-		{/if}
-	</div>
+        {#if getSessionStatus() === "running" || getIsExecuting()}
+          <button
+            type="button"
+            class="chat-panel__stop-btn"
+            onclick={handleStop}
+            title="Stop execution"
+          >
+            <Icon icon="mdi:stop" />
+            Stop
+          </button>
+        {:else if showChatInput}
+          <button
+            type="button"
+            class="chat-panel__send-btn"
+            onclick={handleSend}
+            disabled={!inputValue.trim()}
+            title="Send message"
+          >
+            Send
+          </button>
+        {:else if showRunButton}
+          <button
+            type="button"
+            class="chat-panel__run-btn"
+            onclick={handleRun}
+            disabled={!runEnabled}
+            title={runEnabled
+              ? "Run workflow"
+              : "Waiting for workflow to be ready..."}
+          >
+            <Icon icon="mdi:play" />
+            Run
+          </button>
+        {/if}
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style>
-	.chat-panel {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		min-height: 0; /* Critical: allows flexbox to shrink properly */
-		background-color: var(--fd-background);
-	}
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0; /* Critical: allows flexbox to shrink properly */
+    background-color: var(--fd-background);
+  }
 
-	/* Messages Container - Scrollable area that takes remaining space */
-	.chat-panel__messages {
-		flex: 1;
-		min-height: 0; /* Critical: allows overflow to work in flex container */
-		overflow-y: auto;
-		padding: var(--fd-space-3xl);
-		scroll-behavior: smooth;
-	}
+  /* Messages Container - Scrollable area that takes remaining space */
+  .chat-panel__messages {
+    flex: 1;
+    min-height: 0; /* Critical: allows overflow to work in flex container */
+    overflow-y: auto;
+    padding: var(--fd-space-3xl);
+    scroll-behavior: smooth;
+  }
 
-	/* Welcome State */
-	.chat-panel__welcome {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		height: 100%;
-		text-align: center;
-		padding: var(--fd-space-4xl);
-	}
+  /* Welcome State */
+  .chat-panel__welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: var(--fd-space-4xl);
+  }
 
-	.chat-panel__welcome-icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 80px;
-		height: 80px;
-		margin-bottom: var(--fd-space-3xl);
-		color: var(--fd-foreground);
-	}
+  .chat-panel__welcome-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    margin-bottom: var(--fd-space-3xl);
+    color: var(--fd-foreground);
+  }
 
-	.chat-panel__welcome-icon svg {
-		width: 100%;
-		height: 100%;
-	}
+  .chat-panel__welcome-icon svg {
+    width: 100%;
+    height: 100%;
+  }
 
-	.chat-panel__welcome-title {
-		font-size: var(--fd-text-2xl);
-		font-weight: 600;
-		color: var(--fd-foreground);
-		margin: 0 0 var(--fd-space-xs) 0;
-	}
+  .chat-panel__welcome-title {
+    font-size: var(--fd-text-2xl);
+    font-weight: 600;
+    color: var(--fd-foreground);
+    margin: 0 0 var(--fd-space-xs) 0;
+  }
 
-	.chat-panel__welcome-text {
-		font-size: var(--fd-text-base);
-		color: var(--fd-muted-foreground);
-		margin: 0;
-	}
+  .chat-panel__welcome-text {
+    font-size: var(--fd-text-base);
+    color: var(--fd-muted-foreground);
+    margin: 0;
+  }
 
-	/* Typing Indicator */
-	.chat-panel__typing {
-		display: flex;
-		align-items: center;
-		gap: var(--fd-space-xs);
-		padding: var(--fd-space-md) var(--fd-space-xl);
-		margin-top: var(--fd-space-xs);
-		background-color: var(--fd-muted);
-		border-radius: var(--fd-radius-2xl);
-		width: fit-content;
-	}
+  /* Typing Indicator */
+  .chat-panel__typing {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-md) var(--fd-space-xl);
+    margin-top: var(--fd-space-xs);
+    background-color: var(--fd-muted);
+    border-radius: var(--fd-radius-2xl);
+    width: fit-content;
+  }
 
-	.chat-panel__typing-indicator {
-		display: flex;
-		gap: var(--fd-space-3xs);
-	}
+  .chat-panel__typing-indicator {
+    display: flex;
+    gap: var(--fd-space-3xs);
+  }
 
-	.chat-panel__typing-indicator span {
-		width: var(--fd-space-2xs);
-		height: var(--fd-space-2xs);
-		background-color: var(--fd-muted-foreground);
-		border-radius: var(--fd-radius-full);
-		animation: bounce 1.4s ease-in-out infinite;
-	}
+  .chat-panel__typing-indicator span {
+    width: var(--fd-space-2xs);
+    height: var(--fd-space-2xs);
+    background-color: var(--fd-muted-foreground);
+    border-radius: var(--fd-radius-full);
+    animation: bounce 1.4s ease-in-out infinite;
+  }
 
-	.chat-panel__typing-indicator span:nth-child(1) {
-		animation-delay: 0s;
-	}
+  .chat-panel__typing-indicator span:nth-child(1) {
+    animation-delay: 0s;
+  }
 
-	.chat-panel__typing-indicator span:nth-child(2) {
-		animation-delay: 0.2s;
-	}
+  .chat-panel__typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
 
-	.chat-panel__typing-indicator span:nth-child(3) {
-		animation-delay: 0.4s;
-	}
+  .chat-panel__typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
 
-	@keyframes bounce {
-		0%,
-		60%,
-		100% {
-			transform: translateY(0);
-		}
-		30% {
-			transform: translateY(-0.25rem);
-		}
-	}
+  @keyframes bounce {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+    }
+    30% {
+      transform: translateY(-0.25rem);
+    }
+  }
 
-	.chat-panel__typing-text {
-		font-size: var(--fd-text-sm);
-		color: var(--fd-muted-foreground);
-	}
+  .chat-panel__typing-text {
+    font-size: var(--fd-text-sm);
+    color: var(--fd-muted-foreground);
+  }
 
-	/* Input Area - Always stays at bottom, never shrinks */
-	.chat-panel__input-area {
-		flex-shrink: 0;
-		padding: var(--fd-space-xl) var(--fd-space-3xl) var(--fd-space-3xl);
-		background-color: var(--fd-background);
-		border-top: 1px solid var(--fd-border-muted);
-	}
+  /* Input Area - Always stays at bottom, never shrinks */
+  .chat-panel__input-area {
+    flex-shrink: 0;
+    padding: var(--fd-space-xl) var(--fd-space-3xl) var(--fd-space-3xl);
+    background-color: var(--fd-background);
+    border-top: 1px solid var(--fd-border-muted);
+  }
 
-	.chat-panel__input-container {
-		display: flex;
-		align-items: flex-end;
-		gap: var(--fd-space-md);
-		max-width: 800px;
-		margin: 0 auto;
-	}
+  .chat-panel__input-container {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--fd-space-md);
+    max-width: 800px;
+    margin: 0 auto;
+  }
 
-	.chat-panel__input-wrapper {
-		flex: 1;
-		display: flex;
-		align-items: flex-end;
-		background-color: var(--fd-background);
-		border: 1px solid var(--fd-border);
-		border-radius: var(--fd-radius-xl);
-		padding: var(--fd-space-sm) var(--fd-space-md);
-		transition:
-			border-color var(--fd-transition-fast),
-			box-shadow var(--fd-transition-fast);
-	}
+  .chat-panel__input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    background-color: var(--fd-background);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-xl);
+    padding: var(--fd-space-sm) var(--fd-space-md);
+    transition:
+      border-color var(--fd-transition-fast),
+      box-shadow var(--fd-transition-fast);
+  }
 
-	.chat-panel__input-wrapper:focus-within {
-		border-color: var(--fd-primary);
-		box-shadow: 0 0 0 3px var(--fd-primary-muted);
-	}
+  .chat-panel__input-wrapper:focus-within {
+    border-color: var(--fd-primary);
+    box-shadow: 0 0 0 3px var(--fd-primary-muted);
+  }
 
-	.chat-panel__input {
-		flex: 1;
-		border: none;
-		outline: none;
-		resize: none;
-		font-family: inherit;
-		font-size: var(--fd-text-base);
-		line-height: var(--fd-leading-normal);
-		max-height: 120px;
-		background: transparent;
-		color: var(--fd-foreground);
-	}
+  .chat-panel__input {
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    font-size: var(--fd-text-base);
+    line-height: var(--fd-leading-normal);
+    max-height: 120px;
+    background: transparent;
+    color: var(--fd-foreground);
+  }
 
-	.chat-panel__input::placeholder {
-		color: var(--fd-muted-foreground);
-	}
+  .chat-panel__input::placeholder {
+    color: var(--fd-muted-foreground);
+  }
 
-	.chat-panel__input:disabled {
-		cursor: not-allowed;
-		opacity: 0.6;
-	}
+  .chat-panel__input:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 
-	.chat-panel__send-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--fd-space-sm) var(--fd-space-2xl);
-		border: none;
-		border-radius: var(--fd-radius-lg);
-		background-color: var(--fd-foreground);
-		color: var(--fd-background);
-		font-size: var(--fd-text-sm);
-		font-weight: 500;
-		cursor: pointer;
-		transition: all var(--fd-transition-fast);
-		flex-shrink: 0;
-	}
+  .chat-panel__send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--fd-space-sm) var(--fd-space-2xl);
+    border: none;
+    border-radius: var(--fd-radius-lg);
+    background-color: var(--fd-foreground);
+    color: var(--fd-background);
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--fd-transition-fast);
+    flex-shrink: 0;
+  }
 
-	.chat-panel__send-btn:hover:not(:disabled) {
-		opacity: 0.85;
-	}
+  .chat-panel__send-btn:hover:not(:disabled) {
+    opacity: 0.85;
+  }
 
-	.chat-panel__send-btn:disabled {
-		background-color: var(--fd-border);
-		color: var(--fd-muted-foreground);
-		cursor: not-allowed;
-	}
+  .chat-panel__send-btn:disabled {
+    background-color: var(--fd-border);
+    color: var(--fd-muted-foreground);
+    cursor: not-allowed;
+  }
 
-	.chat-panel__stop-btn {
-		display: flex;
-		align-items: center;
-		gap: var(--fd-space-3xs);
-		padding: var(--fd-space-sm) var(--fd-space-xl);
-		border: none;
-		border-radius: var(--fd-radius-lg);
-		background-color: var(--fd-error);
-		color: var(--fd-error-foreground);
-		font-size: var(--fd-text-sm);
-		font-weight: 500;
-		cursor: pointer;
-		transition: background-color var(--fd-transition-fast);
-		flex-shrink: 0;
-	}
+  .chat-panel__stop-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-3xs);
+    padding: var(--fd-space-sm) var(--fd-space-xl);
+    border: none;
+    border-radius: var(--fd-radius-lg);
+    background-color: var(--fd-error);
+    color: var(--fd-error-foreground);
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--fd-transition-fast);
+    flex-shrink: 0;
+  }
 
-	.chat-panel__stop-btn:hover {
-		background-color: var(--fd-error-hover);
-	}
+  .chat-panel__stop-btn:hover {
+    background-color: var(--fd-error-hover);
+  }
 
-	/* Run button (when chat input is hidden) */
-	.chat-panel__run-btn {
-		display: flex;
-		align-items: center;
-		gap: var(--fd-space-3xs);
-		padding: var(--fd-space-sm) var(--fd-space-2xl);
-		border: none;
-		border-radius: var(--fd-radius-lg);
-		background-color: var(--fd-success);
-		color: var(--fd-success-foreground);
-		font-size: var(--fd-text-sm);
-		font-weight: 500;
-		cursor: pointer;
-		transition: all var(--fd-transition-fast);
-		flex-shrink: 0;
-	}
+  /* Run button (when chat input is hidden) */
+  .chat-panel__run-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-3xs);
+    padding: var(--fd-space-sm) var(--fd-space-2xl);
+    border: none;
+    border-radius: var(--fd-radius-lg);
+    background-color: var(--fd-success);
+    color: var(--fd-success-foreground);
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--fd-transition-fast);
+    flex-shrink: 0;
+  }
 
-	.chat-panel__run-btn:hover:not(:disabled) {
-		background-color: var(--fd-success-hover);
-	}
+  .chat-panel__run-btn:hover:not(:disabled) {
+    background-color: var(--fd-success-hover);
+  }
 
-	.chat-panel__run-btn:disabled {
-		background-color: var(--fd-border);
-		color: var(--fd-muted-foreground);
-		cursor: not-allowed;
-	}
+  .chat-panel__run-btn:disabled {
+    background-color: var(--fd-border);
+    color: var(--fd-muted-foreground);
+    cursor: not-allowed;
+  }
 
-	/* Container modifier for run-only mode (no text input) */
-	.chat-panel__input-container--run-only {
-		justify-content: flex-end;
-	}
+  /* Container modifier for run-only mode (no text input) */
+  .chat-panel__input-container--run-only {
+    justify-content: flex-end;
+  }
 
-	/* No inputs available message (view-only mode) */
-	.chat-panel__no-inputs {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--fd-space-xs);
-		padding: var(--fd-space-md) var(--fd-space-xl);
-		background-color: var(--fd-muted);
-		border-radius: var(--fd-radius-lg);
-		color: var(--fd-muted-foreground);
-		font-size: var(--fd-text-sm);
-		max-width: 800px;
-		margin: 0 auto;
-	}
+  /* No inputs available message (view-only mode) */
+  .chat-panel__no-inputs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-md) var(--fd-space-xl);
+    background-color: var(--fd-muted);
+    border-radius: var(--fd-radius-lg);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-sm);
+    max-width: 800px;
+    margin: 0 auto;
+  }
 
-	/* Responsive */
-	@media (max-width: 640px) {
-		.chat-panel__messages {
-			padding: var(--fd-space-xl);
-		}
+  /* Responsive */
+  @media (max-width: 640px) {
+    .chat-panel__messages {
+      padding: var(--fd-space-xl);
+    }
 
-		.chat-panel__input-area {
-			padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-xl);
-		}
+    .chat-panel__input-area {
+      padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-xl);
+    }
 
-		.chat-panel__input-container {
-			gap: var(--fd-space-xs);
-		}
+    .chat-panel__input-container {
+      gap: var(--fd-space-xs);
+    }
 
-		.chat-panel__send-btn,
-		.chat-panel__stop-btn,
-		.chat-panel__run-btn {
-			padding: var(--fd-space-xs) var(--fd-space-xl);
-		}
-	}
+    .chat-panel__send-btn,
+    .chat-panel__stop-btn,
+    .chat-panel__run-btn {
+      padding: var(--fd-space-xs) var(--fd-space-xl);
+    }
+  }
 </style>

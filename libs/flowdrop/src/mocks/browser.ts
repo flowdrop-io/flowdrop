@@ -3,8 +3,8 @@
  * Initializes the service worker for browser-based API mocking
  */
 
-import { setupWorker } from 'msw/browser';
-import { handlers } from './handlers/index.js';
+import { setupWorker } from "msw/browser";
+import { handlers } from "./handlers/index.js";
 
 /**
  * Create the MSW browser service worker
@@ -29,16 +29,18 @@ export const worker = setupWorker(...handlers);
  * }
  * ```
  */
-export async function startMockServer(options?: Parameters<typeof worker.start>[0]) {
-	return worker.start({
-		// Default options - can be overridden
-		onUnhandledRequest: 'bypass', // Don't warn about requests we don't handle
-		serviceWorker: {
-			url: '/mockServiceWorker.js'
-		},
-		quiet: false, // Set to true to suppress console output
-		...options
-	});
+export async function startMockServer(
+  options?: Parameters<typeof worker.start>[0],
+) {
+  return worker.start({
+    // Default options - can be overridden
+    onUnhandledRequest: "bypass", // Don't warn about requests we don't handle
+    serviceWorker: {
+      url: "/mockServiceWorker.js",
+    },
+    quiet: false, // Set to true to suppress console output
+    ...options,
+  });
 }
 
 /**
@@ -46,7 +48,7 @@ export async function startMockServer(options?: Parameters<typeof worker.start>[
  * Call this to disable API mocking
  */
 export function stopMockServer() {
-	worker.stop();
+  worker.stop();
 }
 
 /**
@@ -54,7 +56,7 @@ export function stopMockServer() {
  * Useful for testing when you want to clear any runtime handler modifications
  */
 export function resetHandlers() {
-	worker.resetHandlers();
+  worker.resetHandlers();
 }
 
 /**
@@ -64,5 +66,5 @@ export function resetHandlers() {
  * @param newHandlers - Additional handlers to add
  */
 export function addHandlers(...newHandlers: Parameters<typeof worker.use>) {
-	worker.use(...newHandlers);
+  worker.use(...newHandlers);
 }

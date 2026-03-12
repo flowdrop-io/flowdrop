@@ -12,17 +12,17 @@
  * Extends BaseRegistry for shared mechanics (subscribe, onClear, etc.).
  */
 
-import type { StandardWorkflow } from '../adapters/WorkflowAdapter.js';
-import type { NodeMetadata, WorkflowFormat } from '../types/index.js';
-import { BaseRegistry } from './BaseRegistry.js';
+import type { StandardWorkflow } from "../adapters/WorkflowAdapter.js";
+import type { NodeMetadata, WorkflowFormat } from "../types/index.js";
+import { BaseRegistry } from "./BaseRegistry.js";
 
 /**
  * Validation result returned by format adapters.
  */
 export interface FormatValidationResult {
-	valid: boolean;
-	errors: string[];
-	warnings: string[];
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
 }
 
 /**
@@ -41,30 +41,30 @@ export interface FormatValidationResult {
  * ```
  */
 export interface WorkflowFormatAdapter {
-	/** Unique format identifier (e.g., 'agentspec', 'n8n') */
-	id: WorkflowFormat;
-	/** Display name for UI (e.g., 'Agent Spec (Oracle)') */
-	name: string;
-	/** Description */
-	description?: string;
-	/** Version */
-	version?: string;
+  /** Unique format identifier (e.g., 'agentspec', 'n8n') */
+  id: WorkflowFormat;
+  /** Display name for UI (e.g., 'Agent Spec (Oracle)') */
+  name: string;
+  /** Description */
+  description?: string;
+  /** Version */
+  version?: string;
 
-	/**
-	 * Optional node types specific to this format.
-	 * When provided, these nodes are merged into the sidebar
-	 * and automatically tagged with this format.
-	 */
-	nodes?: NodeMetadata[];
+  /**
+   * Optional node types specific to this format.
+   * When provided, these nodes are merged into the sidebar
+   * and automatically tagged with this format.
+   */
+  nodes?: NodeMetadata[];
 
-	/** Convert a StandardWorkflow to this format's JSON string */
-	export(workflow: StandardWorkflow): string;
+  /** Convert a StandardWorkflow to this format's JSON string */
+  export(workflow: StandardWorkflow): string;
 
-	/** Parse this format's input and convert to StandardWorkflow */
-	import(data: string): StandardWorkflow;
+  /** Parse this format's input and convert to StandardWorkflow */
+  import(data: string): StandardWorkflow;
 
-	/** Validate whether a workflow can be exported to this format */
-	validate?(workflow: StandardWorkflow): FormatValidationResult;
+  /** Validate whether a workflow can be exported to this format */
+  validate?(workflow: StandardWorkflow): FormatValidationResult;
 }
 
 /**
@@ -85,73 +85,76 @@ export interface WorkflowFormatAdapter {
  * const adapter = workflowFormatRegistry.get('n8n');
  * ```
  */
-class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter> {
-	/**
-	 * Register a workflow format adapter.
-	 *
-	 * @param adapter - The format adapter to register
-	 * @param overwrite - If true, allows overwriting existing registrations
-	 * @throws Error if format already registered and overwrite is false
-	 */
-	register(adapter: WorkflowFormatAdapter, overwrite = false): void {
-		if (this.items.has(adapter.id) && !overwrite) {
-			throw new Error(
-				`Workflow format "${adapter.id}" is already registered. ` +
-					`Use overwrite: true to replace it.`
-			);
-		}
-		this.items.set(adapter.id, adapter);
-		this.notifyListeners();
-	}
+class WorkflowFormatRegistry extends BaseRegistry<
+  string,
+  WorkflowFormatAdapter
+> {
+  /**
+   * Register a workflow format adapter.
+   *
+   * @param adapter - The format adapter to register
+   * @param overwrite - If true, allows overwriting existing registrations
+   * @throws Error if format already registered and overwrite is false
+   */
+  register(adapter: WorkflowFormatAdapter, overwrite = false): void {
+    if (this.items.has(adapter.id) && !overwrite) {
+      throw new Error(
+        `Workflow format "${adapter.id}" is already registered. ` +
+          `Use overwrite: true to replace it.`,
+      );
+    }
+    this.items.set(adapter.id, adapter);
+    this.notifyListeners();
+  }
 
-	/**
-	 * Get all registered format identifiers.
-	 *
-	 * @returns Array of format id strings
-	 */
-	getIds(): string[] {
-		return this.getKeys();
-	}
+  /**
+   * Get all registered format identifiers.
+   *
+   * @returns Array of format id strings
+   */
+  getIds(): string[] {
+    return this.getKeys();
+  }
 
-	/**
-	 * Get all node types provided by registered format adapters.
-	 * Collects `adapter.nodes` from all adapters that provide them.
-	 *
-	 * @returns Array of NodeMetadata from all format adapters
-	 */
-	getAllFormatNodes(): NodeMetadata[] {
-		const allNodes: NodeMetadata[] = [];
-		for (const adapter of this.items.values()) {
-			if (adapter.nodes && adapter.nodes.length > 0) {
-				allNodes.push(...adapter.nodes);
-			}
-		}
-		return allNodes;
-	}
+  /**
+   * Get all node types provided by registered format adapters.
+   * Collects `adapter.nodes` from all adapters that provide them.
+   *
+   * @returns Array of NodeMetadata from all format adapters
+   */
+  getAllFormatNodes(): NodeMetadata[] {
+    const allNodes: NodeMetadata[] = [];
+    for (const adapter of this.items.values()) {
+      if (adapter.nodes && adapter.nodes.length > 0) {
+        allNodes.push(...adapter.nodes);
+      }
+    }
+    return allNodes;
+  }
 
-	/**
-	 * Get node types for a specific format.
-	 *
-	 * @param formatId - The format identifier
-	 * @returns Array of NodeMetadata for the format, or empty array
-	 */
-	getFormatNodes(formatId: WorkflowFormat): NodeMetadata[] {
-		const adapter = this.items.get(formatId);
-		return adapter?.nodes ?? [];
-	}
+  /**
+   * Get node types for a specific format.
+   *
+   * @param formatId - The format identifier
+   * @returns Array of NodeMetadata for the format, or empty array
+   */
+  getFormatNodes(formatId: WorkflowFormat): NodeMetadata[] {
+    const adapter = this.items.get(formatId);
+    return adapter?.nodes ?? [];
+  }
 
-	/**
-	 * Get oneOf options for config forms.
-	 * Returns array suitable for JSON Schema oneOf with const/title.
-	 *
-	 * @returns Array of oneOf items
-	 */
-	getOneOfOptions(): Array<{ const: string; title: string }> {
-		return this.getAll().map((adapter) => ({
-			const: adapter.id,
-			title: adapter.name
-		}));
-	}
+  /**
+   * Get oneOf options for config forms.
+   * Returns array suitable for JSON Schema oneOf with const/title.
+   *
+   * @returns Array of oneOf items
+   */
+  getOneOfOptions(): Array<{ const: string; title: string }> {
+    return this.getAll().map((adapter) => ({
+      const: adapter.id,
+      title: adapter.name,
+    }));
+  }
 }
 
 /** Singleton instance of the workflow format registry */

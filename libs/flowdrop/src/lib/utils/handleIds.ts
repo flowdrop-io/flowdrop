@@ -16,11 +16,11 @@
  * @returns A composite handle ID string
  */
 export function buildHandleId(
-	nodeId: string,
-	direction: 'input' | 'output',
-	portId: string
+  nodeId: string,
+  direction: "input" | "output",
+  portId: string,
 ): string {
-	return `${nodeId}-${direction}-${portId}`;
+  return `${nodeId}-${direction}-${portId}`;
 }
 
 /**
@@ -34,20 +34,20 @@ export function buildHandleId(
  * @returns The port ID, or null if handleId is empty/undefined
  */
 export function extractPortId(handleId: string | undefined): string | null {
-	if (!handleId) return null;
+  if (!handleId) return null;
 
-	const outputMatch = handleId.lastIndexOf('-output-');
-	if (outputMatch !== -1) {
-		return handleId.substring(outputMatch + '-output-'.length);
-	}
+  const outputMatch = handleId.lastIndexOf("-output-");
+  if (outputMatch !== -1) {
+    return handleId.substring(outputMatch + "-output-".length);
+  }
 
-	const inputMatch = handleId.lastIndexOf('-input-');
-	if (inputMatch !== -1) {
-		return handleId.substring(inputMatch + '-input-'.length);
-	}
+  const inputMatch = handleId.lastIndexOf("-input-");
+  if (inputMatch !== -1) {
+    return handleId.substring(inputMatch + "-input-".length);
+  }
 
-	// Short format: the handleId IS the port ID
-	return handleId;
+  // Short format: the handleId IS the port ID
+  return handleId;
 }
 
 /**
@@ -56,11 +56,13 @@ export function extractPortId(handleId: string | undefined): string | null {
  * @param handleId - The handle ID string
  * @returns 'input', 'output', or null if not found
  */
-export function extractDirection(handleId: string | undefined): 'input' | 'output' | null {
-	if (!handleId) return null;
+export function extractDirection(
+  handleId: string | undefined,
+): "input" | "output" | null {
+  if (!handleId) return null;
 
-	if (handleId.includes('-output-')) return 'output';
-	if (handleId.includes('-input-')) return 'input';
+  if (handleId.includes("-output-")) return "output";
+  if (handleId.includes("-input-")) return "input";
 
-	return null;
+  return null;
 }

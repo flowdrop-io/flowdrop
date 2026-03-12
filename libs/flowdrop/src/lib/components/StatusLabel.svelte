@@ -4,30 +4,30 @@
 -->
 
 <script lang="ts">
-	interface Props {
-		label: string;
-		class?: string;
-	}
+  interface Props {
+    label: string;
+    class?: string;
+  }
 
-	let props: Props = $props();
+  let props: Props = $props();
 </script>
 
 <span class="status-label {props.class || ''}">
-	{props.label}
+  {props.label}
 </span>
 
 <style>
-	.status-label {
-		font-size: 16px;
-		font-weight: 600;
-		color: #000000;
-		white-space: nowrap;
-		line-height: 1.2;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
-		letter-spacing: 0.025em;
-		display: flex;
-		align-items: center;
-	}
+  .status-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000;
+    white-space: nowrap;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.025em;
+    display: flex;
+    align-items: center;
+  }
 </style>

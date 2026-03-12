@@ -4,7 +4,7 @@
  */
 
 // Mock browser check
-export const browser = typeof window !== 'undefined';
+export const browser = typeof window !== "undefined";
 
 // Mock dev check
 export const dev = false;
@@ -13,4 +13,4 @@ export const dev = false;
 export const building = false;
 
 // Mock version
-export const version = '1.0.0';
+export const version = "1.0.0";

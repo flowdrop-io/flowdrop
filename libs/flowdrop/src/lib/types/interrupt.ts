@@ -7,37 +7,37 @@
  * @module types/interrupt
  */
 
-import type { ConfigSchema } from './index.js';
+import type { ConfigSchema } from "./index.js";
 
 // Re-export state machine types for convenience
 export type {
-	InterruptState,
-	IdleState,
-	SubmittingState,
-	ResolvedState,
-	CancelledState,
-	ErrorState,
-	InterruptAction,
-	SubmitAction,
-	CancelAction,
-	SuccessAction,
-	FailureAction,
-	RetryAction,
-	ResetAction,
-	TransitionResult
-} from './interruptState.js';
+  InterruptState,
+  IdleState,
+  SubmittingState,
+  ResolvedState,
+  CancelledState,
+  ErrorState,
+  InterruptAction,
+  SubmitAction,
+  CancelAction,
+  SuccessAction,
+  FailureAction,
+  RetryAction,
+  ResetAction,
+  TransitionResult,
+} from "./interruptState.js";
 
 export {
-	initialState,
-	transition,
-	isTerminalState,
-	isSubmitting,
-	hasError,
-	canSubmit,
-	getErrorMessage,
-	getResolvedValue,
-	toLegacyStatus
-} from './interruptState.js';
+  initialState,
+  transition,
+  isTerminalState,
+  isSubmitting,
+  hasError,
+  canSubmit,
+  getErrorMessage,
+  getResolvedValue,
+  toLegacyStatus,
+} from "./interruptState.js";
 
 /**
  * Types of interrupts supported by the system
@@ -47,7 +47,12 @@ export {
  * - `text`: Free-form text input
  * - `form`: JSON Schema-based form
  */
-export type InterruptType = 'confirmation' | 'choice' | 'text' | 'form' | 'review';
+export type InterruptType =
+  | "confirmation"
+  | "choice"
+  | "text"
+  | "form"
+  | "review";
 
 /**
  * Status of an interrupt request
@@ -57,7 +62,7 @@ export type InterruptType = 'confirmation' | 'choice' | 'text' | 'form' | 'revie
  * - `cancelled`: User or system cancelled the interrupt
  * - `expired`: Interrupt timed out without response
  */
-export type InterruptStatus = 'pending' | 'resolved' | 'cancelled' | 'expired';
+export type InterruptStatus = "pending" | "resolved" | "cancelled" | "expired";
 
 /**
  * Choice option for choice-type interrupts
@@ -72,70 +77,70 @@ export type InterruptStatus = 'pending' | 'resolved' | 'cancelled' | 'expired';
  * ```
  */
 export interface InterruptChoice {
-	/** Unique value identifier for this option */
-	value: string;
-	/** Display label for the option */
-	label: string;
-	/** Optional description providing more context */
-	description?: string;
+  /** Unique value identifier for this option */
+  value: string;
+  /** Display label for the option */
+  label: string;
+  /** Optional description providing more context */
+  description?: string;
 }
 
 /**
  * Configuration for confirmation-type interrupts
  */
 export interface ConfirmationConfig {
-	/** The confirmation message/question to display */
-	message: string;
-	/** Label for the confirm/yes button */
-	confirmLabel?: string;
-	/** Label for the cancel/no button */
-	cancelLabel?: string;
+  /** The confirmation message/question to display */
+  message: string;
+  /** Label for the confirm/yes button */
+  confirmLabel?: string;
+  /** Label for the cancel/no button */
+  cancelLabel?: string;
 }
 
 /**
  * Configuration for choice-type interrupts
  */
 export interface ChoiceConfig {
-	/** The prompt message to display */
-	message: string;
-	/** Available options to choose from */
-	options: InterruptChoice[];
-	/** Whether multiple selections are allowed */
-	multiple?: boolean;
-	/** Minimum number of selections required (for multiple mode) */
-	minSelections?: number;
-	/** Maximum number of selections allowed (for multiple mode) */
-	maxSelections?: number;
+  /** The prompt message to display */
+  message: string;
+  /** Available options to choose from */
+  options: InterruptChoice[];
+  /** Whether multiple selections are allowed */
+  multiple?: boolean;
+  /** Minimum number of selections required (for multiple mode) */
+  minSelections?: number;
+  /** Maximum number of selections allowed (for multiple mode) */
+  maxSelections?: number;
 }
 
 /**
  * Configuration for text-type interrupts
  */
 export interface TextConfig {
-	/** The prompt message to display */
-	message: string;
-	/** Placeholder text for the input field */
-	placeholder?: string;
-	/** Whether to show a multiline text area */
-	multiline?: boolean;
-	/** Minimum text length required */
-	minLength?: number;
-	/** Maximum text length allowed */
-	maxLength?: number;
-	/** Default value to pre-fill */
-	defaultValue?: string;
+  /** The prompt message to display */
+  message: string;
+  /** Placeholder text for the input field */
+  placeholder?: string;
+  /** Whether to show a multiline text area */
+  multiline?: boolean;
+  /** Minimum text length required */
+  minLength?: number;
+  /** Maximum text length allowed */
+  maxLength?: number;
+  /** Default value to pre-fill */
+  defaultValue?: string;
 }
 
 /**
  * Configuration for form-type interrupts
  */
 export interface FormConfig {
-	/** The prompt message to display */
-	message: string;
-	/** JSON Schema defining the form fields */
-	schema: ConfigSchema;
-	/** Default values for form fields */
-	defaultValues?: Record<string, unknown>;
+  /** The prompt message to display */
+  message: string;
+  /** JSON Schema defining the form fields */
+  schema: ConfigSchema;
+  /** Default values for form fields */
+  defaultValues?: Record<string, unknown>;
 }
 
 /**
@@ -152,14 +157,14 @@ export interface FormConfig {
  * ```
  */
 export interface ReviewChange {
-	/** Field identifier (machine key) */
-	field: string;
-	/** Human-readable field label */
-	label: string;
-	/** Original value before the proposed change */
-	original: unknown;
-	/** Proposed new value */
-	proposed: unknown;
+  /** Field identifier (machine key) */
+  field: string;
+  /** Human-readable field label */
+  label: string;
+  /** Original value before the proposed change */
+  original: unknown;
+  /** Proposed new value */
+  proposed: unknown;
 }
 
 /**
@@ -169,26 +174,26 @@ export interface ReviewChange {
  * accept or reject individually before submitting.
  */
 export interface ReviewConfig {
-	/** The prompt message to display */
-	message: string;
-	/** List of field changes to review */
-	changes: ReviewChange[];
-	/** Label for the "Accept All" button */
-	acceptAllLabel?: string;
-	/** Label for the "Reject All" button */
-	rejectAllLabel?: string;
-	/** Label for the submit button */
-	submitLabel?: string;
+  /** The prompt message to display */
+  message: string;
+  /** List of field changes to review */
+  changes: ReviewChange[];
+  /** Label for the "Accept All" button */
+  acceptAllLabel?: string;
+  /** Label for the "Reject All" button */
+  rejectAllLabel?: string;
+  /** Label for the submit button */
+  submitLabel?: string;
 }
 
 /**
  * Per-field decision in a review resolution
  */
 export interface ReviewFieldDecision {
-	/** Whether the proposed change was accepted */
-	accepted: boolean;
-	/** The effective value (proposed if accepted, original if rejected) */
-	value: unknown;
+  /** Whether the proposed change was accepted */
+  accepted: boolean;
+  /** The effective value (proposed if accepted, original if rejected) */
+  value: unknown;
 }
 
 /**
@@ -208,25 +213,25 @@ export interface ReviewFieldDecision {
  * ```
  */
 export interface ReviewResolution {
-	/** Map of field identifier to the user's decision */
-	decisions: Record<string, ReviewFieldDecision>;
-	/** Summary counts of accepted/rejected fields */
-	summary: {
-		accepted: number;
-		rejected: number;
-		total: number;
-	};
+  /** Map of field identifier to the user's decision */
+  decisions: Record<string, ReviewFieldDecision>;
+  /** Summary counts of accepted/rejected fields */
+  summary: {
+    accepted: number;
+    rejected: number;
+    total: number;
+  };
 }
 
 /**
  * Union type for interrupt-specific configuration
  */
 export type InterruptConfig =
-	| ConfirmationConfig
-	| ChoiceConfig
-	| TextConfig
-	| FormConfig
-	| ReviewConfig;
+  | ConfirmationConfig
+  | ChoiceConfig
+  | TextConfig
+  | FormConfig
+  | ReviewConfig;
 
 /**
  * Core interrupt data structure
@@ -256,38 +261,38 @@ export type InterruptConfig =
  * ```
  */
 export interface Interrupt {
-	/** Unique identifier for the interrupt */
-	id: string;
-	/** Type of interrupt (confirmation, choice, text, form) */
-	type: InterruptType;
-	/** Current status of the interrupt */
-	status: InterruptStatus;
-	/** Primary message/prompt to display */
-	message: string;
-	/** ID of the node that triggered the interrupt */
-	nodeId?: string;
-	/** ID of the workflow execution */
-	executionId?: string;
-	/** ID of the playground session (if applicable) */
-	sessionId?: string;
-	/** ID of the pipeline (if applicable) */
-	pipelineId?: string;
-	/** ID of the associated message in the chat flow */
-	messageId?: string;
-	/** Timestamp when the interrupt was created (ISO 8601) */
-	createdAt: string;
-	/** Timestamp when the interrupt was resolved (ISO 8601) */
-	resolvedAt?: string;
-	/** Timestamp when the interrupt expires (ISO 8601) */
-	expiresAt?: string;
-	/** Whether the user can cancel/dismiss this interrupt */
-	allowCancel: boolean;
-	/** Type-specific configuration */
-	config: InterruptConfig;
-	/** The user's response value (when resolved) */
-	responseValue?: unknown;
-	/** Additional metadata from the backend */
-	metadata?: Record<string, unknown>;
+  /** Unique identifier for the interrupt */
+  id: string;
+  /** Type of interrupt (confirmation, choice, text, form) */
+  type: InterruptType;
+  /** Current status of the interrupt */
+  status: InterruptStatus;
+  /** Primary message/prompt to display */
+  message: string;
+  /** ID of the node that triggered the interrupt */
+  nodeId?: string;
+  /** ID of the workflow execution */
+  executionId?: string;
+  /** ID of the playground session (if applicable) */
+  sessionId?: string;
+  /** ID of the pipeline (if applicable) */
+  pipelineId?: string;
+  /** ID of the associated message in the chat flow */
+  messageId?: string;
+  /** Timestamp when the interrupt was created (ISO 8601) */
+  createdAt: string;
+  /** Timestamp when the interrupt was resolved (ISO 8601) */
+  resolvedAt?: string;
+  /** Timestamp when the interrupt expires (ISO 8601) */
+  expiresAt?: string;
+  /** Whether the user can cancel/dismiss this interrupt */
+  allowCancel: boolean;
+  /** Type-specific configuration */
+  config: InterruptConfig;
+  /** The user's response value (when resolved) */
+  responseValue?: unknown;
+  /** Additional metadata from the backend */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -322,22 +327,22 @@ export interface Interrupt {
  * ```
  */
 export interface InterruptResolution {
-	/** The user's response value */
-	value: unknown;
+  /** The user's response value */
+  value: unknown;
 }
 
 /**
  * API response for interrupt operations
  */
 export interface InterruptApiResponse<T = Interrupt> {
-	/** Whether the request was successful */
-	success: boolean;
-	/** Response data */
-	data?: T;
-	/** Error message if unsuccessful */
-	error?: string;
-	/** Human-readable message */
-	message?: string;
+  /** Whether the request was successful */
+  success: boolean;
+  /** Response data */
+  data?: T;
+  /** Error message if unsuccessful */
+  error?: string;
+  /** Human-readable message */
+  message?: string;
 }
 
 /**
@@ -357,50 +362,50 @@ export type InterruptResponse = InterruptApiResponse<Interrupt>;
  * an interrupt request that should be rendered inline.
  */
 export interface InterruptMessageMetadata {
-	/** Indicates this is an interrupt request */
-	type: 'interrupt_request';
-	/** The interrupt ID */
-	interrupt_id: string;
-	/** Type of interrupt */
-	interrupt_type: InterruptType;
-	/** JSON Schema for form-type interrupts */
-	schema?: ConfigSchema;
-	/** Options for choice-type interrupts */
-	options?: InterruptChoice[];
-	/** Default value for pre-filling */
-	default_value?: unknown;
-	/** Response value when interrupt has been resolved */
-	response_value?: unknown;
-	/** Node ID that triggered the interrupt */
-	node_id?: string;
-	/** Execution ID */
-	execution_id?: string;
-	/** Whether cancel is allowed */
-	allow_cancel?: boolean;
-	/** Labels for confirmation type */
-	confirm_label?: string;
-	cancel_label?: string;
-	/** Text input configuration */
-	placeholder?: string;
-	multiline?: boolean;
-	min_length?: number;
-	max_length?: number;
-	/** Choice configuration */
-	multiple?: boolean;
-	min_selections?: number;
-	max_selections?: number;
-	/** Username of the person who resolved the interrupt */
-	resolvedByUserName?: string;
-	/** User ID of the person who resolved the interrupt */
-	resolvedByUserId?: string;
-	/** Review: list of field changes to review */
-	changes?: ReviewChange[];
-	/** Review: label for the "Accept All" button */
-	accept_all_label?: string;
-	/** Review: label for the "Reject All" button */
-	reject_all_label?: string;
-	/** Review: label for the submit button */
-	submit_label?: string;
+  /** Indicates this is an interrupt request */
+  type: "interrupt_request";
+  /** The interrupt ID */
+  interrupt_id: string;
+  /** Type of interrupt */
+  interrupt_type: InterruptType;
+  /** JSON Schema for form-type interrupts */
+  schema?: ConfigSchema;
+  /** Options for choice-type interrupts */
+  options?: InterruptChoice[];
+  /** Default value for pre-filling */
+  default_value?: unknown;
+  /** Response value when interrupt has been resolved */
+  response_value?: unknown;
+  /** Node ID that triggered the interrupt */
+  node_id?: string;
+  /** Execution ID */
+  execution_id?: string;
+  /** Whether cancel is allowed */
+  allow_cancel?: boolean;
+  /** Labels for confirmation type */
+  confirm_label?: string;
+  cancel_label?: string;
+  /** Text input configuration */
+  placeholder?: string;
+  multiline?: boolean;
+  min_length?: number;
+  max_length?: number;
+  /** Choice configuration */
+  multiple?: boolean;
+  min_selections?: number;
+  max_selections?: number;
+  /** Username of the person who resolved the interrupt */
+  resolvedByUserName?: string;
+  /** User ID of the person who resolved the interrupt */
+  resolvedByUserId?: string;
+  /** Review: list of field changes to review */
+  changes?: ReviewChange[];
+  /** Review: label for the "Accept All" button */
+  accept_all_label?: string;
+  /** Review: label for the "Reject All" button */
+  reject_all_label?: string;
+  /** Review: label for the submit button */
+  submit_label?: string;
 }
 
 /**
@@ -410,13 +415,13 @@ export interface InterruptMessageMetadata {
  * @returns True if the metadata indicates an interrupt request
  */
 export function isInterruptMetadata(
-	metadata: Record<string, unknown> | undefined
+  metadata: Record<string, unknown> | undefined,
 ): metadata is Record<string, unknown> {
-	return (
-		metadata !== undefined &&
-		metadata.type === 'interrupt_request' &&
-		typeof metadata.interrupt_id === 'string'
-	);
+  return (
+    metadata !== undefined &&
+    metadata.type === "interrupt_request" &&
+    typeof metadata.interrupt_id === "string"
+  );
 }
 
 /**
@@ -426,40 +431,40 @@ export function isInterruptMetadata(
  * @returns The interrupt metadata if valid, or null
  */
 export function extractInterruptMetadata(
-	metadata: Record<string, unknown> | undefined
+  metadata: Record<string, unknown> | undefined,
 ): InterruptMessageMetadata | null {
-	if (!isInterruptMetadata(metadata)) {
-		return null;
-	}
+  if (!isInterruptMetadata(metadata)) {
+    return null;
+  }
 
-	// Manually construct the typed object from the validated metadata
-	return {
-		type: 'interrupt_request',
-		interrupt_id: metadata.interrupt_id as string,
-		interrupt_type: metadata.interrupt_type as InterruptType,
-		schema: metadata.schema as ConfigSchema | undefined,
-		options: metadata.options as InterruptChoice[] | undefined,
-		default_value: metadata.default_value,
-		response_value: metadata.response_value,
-		node_id: metadata.node_id as string | undefined,
-		execution_id: metadata.execution_id as string | undefined,
-		allow_cancel: metadata.allow_cancel as boolean | undefined,
-		confirm_label: metadata.confirm_label as string | undefined,
-		cancel_label: metadata.cancel_label as string | undefined,
-		placeholder: metadata.placeholder as string | undefined,
-		multiline: metadata.multiline as boolean | undefined,
-		min_length: metadata.min_length as number | undefined,
-		max_length: metadata.max_length as number | undefined,
-		multiple: metadata.multiple as boolean | undefined,
-		min_selections: metadata.min_selections as number | undefined,
-		max_selections: metadata.max_selections as number | undefined,
-		resolvedByUserName: metadata.resolvedByUserName as string | undefined,
-		resolvedByUserId: metadata.resolvedByUserId as string | undefined,
-		changes: metadata.changes as ReviewChange[] | undefined,
-		accept_all_label: metadata.accept_all_label as string | undefined,
-		reject_all_label: metadata.reject_all_label as string | undefined,
-		submit_label: metadata.submit_label as string | undefined
-	};
+  // Manually construct the typed object from the validated metadata
+  return {
+    type: "interrupt_request",
+    interrupt_id: metadata.interrupt_id as string,
+    interrupt_type: metadata.interrupt_type as InterruptType,
+    schema: metadata.schema as ConfigSchema | undefined,
+    options: metadata.options as InterruptChoice[] | undefined,
+    default_value: metadata.default_value,
+    response_value: metadata.response_value,
+    node_id: metadata.node_id as string | undefined,
+    execution_id: metadata.execution_id as string | undefined,
+    allow_cancel: metadata.allow_cancel as boolean | undefined,
+    confirm_label: metadata.confirm_label as string | undefined,
+    cancel_label: metadata.cancel_label as string | undefined,
+    placeholder: metadata.placeholder as string | undefined,
+    multiline: metadata.multiline as boolean | undefined,
+    min_length: metadata.min_length as number | undefined,
+    max_length: metadata.max_length as number | undefined,
+    multiple: metadata.multiple as boolean | undefined,
+    min_selections: metadata.min_selections as number | undefined,
+    max_selections: metadata.max_selections as number | undefined,
+    resolvedByUserName: metadata.resolvedByUserName as string | undefined,
+    resolvedByUserId: metadata.resolvedByUserId as string | undefined,
+    changes: metadata.changes as ReviewChange[] | undefined,
+    accept_all_label: metadata.accept_all_label as string | undefined,
+    reject_all_label: metadata.reject_all_label as string | undefined,
+    submit_label: metadata.submit_label as string | undefined,
+  };
 }
 
 /**
@@ -471,29 +476,29 @@ export function extractInterruptMetadata(
  * @returns A fully populated Interrupt object
  */
 export function metadataToInterrupt(
-	metadata: InterruptMessageMetadata,
-	messageId: string,
-	content: string
+  metadata: InterruptMessageMetadata,
+  messageId: string,
+  content: string,
 ): Interrupt {
-	const baseInterrupt: Interrupt = {
-		id: metadata.interrupt_id,
-		type: metadata.interrupt_type,
-		status: 'pending',
-		message: content,
-		nodeId: metadata.node_id,
-		executionId: metadata.execution_id,
-		messageId,
-		createdAt: new Date().toISOString(),
-		allowCancel: metadata.allow_cancel ?? true,
-		config: buildInterruptConfig(metadata, content),
-		// Include metadata for resolved-by info (passed through from message metadata)
-		metadata: {
-			resolvedByUserName: metadata.resolvedByUserName,
-			resolvedByUserId: metadata.resolvedByUserId
-		}
-	};
+  const baseInterrupt: Interrupt = {
+    id: metadata.interrupt_id,
+    type: metadata.interrupt_type,
+    status: "pending",
+    message: content,
+    nodeId: metadata.node_id,
+    executionId: metadata.execution_id,
+    messageId,
+    createdAt: new Date().toISOString(),
+    allowCancel: metadata.allow_cancel ?? true,
+    config: buildInterruptConfig(metadata, content),
+    // Include metadata for resolved-by info (passed through from message metadata)
+    metadata: {
+      resolvedByUserName: metadata.resolvedByUserName,
+      resolvedByUserId: metadata.resolvedByUserId,
+    },
+  };
 
-	return baseInterrupt;
+  return baseInterrupt;
 }
 
 /**
@@ -504,74 +509,76 @@ export function metadataToInterrupt(
  * @returns Type-specific interrupt configuration
  */
 function buildInterruptConfig(
-	metadata: InterruptMessageMetadata,
-	message: string
+  metadata: InterruptMessageMetadata,
+  message: string,
 ): InterruptConfig {
-	switch (metadata.interrupt_type) {
-		case 'confirmation':
-			return {
-				message,
-				confirmLabel: metadata.confirm_label ?? 'Yes',
-				cancelLabel: metadata.cancel_label ?? 'No'
-			} as ConfirmationConfig;
+  switch (metadata.interrupt_type) {
+    case "confirmation":
+      return {
+        message,
+        confirmLabel: metadata.confirm_label ?? "Yes",
+        cancelLabel: metadata.cancel_label ?? "No",
+      } as ConfirmationConfig;
 
-		case 'choice':
-			return {
-				message,
-				options: metadata.options ?? [],
-				multiple: metadata.multiple ?? false,
-				minSelections: metadata.min_selections,
-				maxSelections: metadata.max_selections
-			} as ChoiceConfig;
+    case "choice":
+      return {
+        message,
+        options: metadata.options ?? [],
+        multiple: metadata.multiple ?? false,
+        minSelections: metadata.min_selections,
+        maxSelections: metadata.max_selections,
+      } as ChoiceConfig;
 
-		case 'text':
-			return {
-				message,
-				placeholder: metadata.placeholder,
-				multiline: metadata.multiline ?? false,
-				minLength: metadata.min_length,
-				maxLength: metadata.max_length,
-				defaultValue: metadata.default_value as string | undefined
-			} as TextConfig;
+    case "text":
+      return {
+        message,
+        placeholder: metadata.placeholder,
+        multiline: metadata.multiline ?? false,
+        minLength: metadata.min_length,
+        maxLength: metadata.max_length,
+        defaultValue: metadata.default_value as string | undefined,
+      } as TextConfig;
 
-		case 'form':
-			return {
-				message,
-				schema: metadata.schema ?? { type: 'object', properties: {} },
-				defaultValues: metadata.default_value as Record<string, unknown> | undefined
-			} as FormConfig;
+    case "form":
+      return {
+        message,
+        schema: metadata.schema ?? { type: "object", properties: {} },
+        defaultValues: metadata.default_value as
+          | Record<string, unknown>
+          | undefined,
+      } as FormConfig;
 
-		case 'review':
-			return {
-				message,
-				changes: metadata.changes ?? [],
-				acceptAllLabel: metadata.accept_all_label,
-				rejectAllLabel: metadata.reject_all_label,
-				submitLabel: metadata.submit_label
-			} as ReviewConfig;
+    case "review":
+      return {
+        message,
+        changes: metadata.changes ?? [],
+        acceptAllLabel: metadata.accept_all_label,
+        rejectAllLabel: metadata.reject_all_label,
+        submitLabel: metadata.submit_label,
+      } as ReviewConfig;
 
-		default:
-			return { message } as ConfirmationConfig;
-	}
+    default:
+      return { message } as ConfirmationConfig;
+  }
 }
 
 /**
  * Configuration options for interrupt polling
  */
 export interface InterruptPollingConfig {
-	/** Whether to enable dedicated interrupt polling */
-	enabled: boolean;
-	/** Polling interval in milliseconds */
-	interval: number;
-	/** Maximum polling backoff interval in milliseconds */
-	maxBackoff: number;
+  /** Whether to enable dedicated interrupt polling */
+  enabled: boolean;
+  /** Polling interval in milliseconds */
+  interval: number;
+  /** Maximum polling backoff interval in milliseconds */
+  maxBackoff: number;
 }
 
 /**
  * Default interrupt polling configuration
  */
 export const defaultInterruptPollingConfig: InterruptPollingConfig = {
-	enabled: false,
-	interval: 2000,
-	maxBackoff: 10000
+  enabled: false,
+  interval: 2000,
+  maxBackoff: 10000,
 };

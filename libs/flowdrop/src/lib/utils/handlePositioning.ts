@@ -3,8 +3,8 @@
  */
 
 export interface HandlePosition {
-	left: number;
-	top: number;
+  left: number;
+  top: number;
 }
 
 /**
@@ -31,18 +31,19 @@ export interface HandlePosition {
  * getCircleHandlePosition(1, 2, 'left') // { left: ~4.8, top: ~54 }
  */
 export function getCircleHandlePosition(
-	index: number,
-	count: number,
-	side: 'left' | 'right',
-	radius: number = 40,
-	arcSpan: number = (Math.PI * 5) / 6
+  index: number,
+  count: number,
+  side: "left" | "right",
+  radius: number = 40,
+  arcSpan: number = (Math.PI * 5) / 6,
 ): HandlePosition {
-	const centerAngle = side === 'left' ? Math.PI : 0; // 180° for left, 0° for right
-	const angle = centerAngle - arcSpan / 2 + (arcSpan * (index + 1)) / (count + 1);
-	const centerOffset = radius; // center of the circle (assuming square bounding box)
+  const centerAngle = side === "left" ? Math.PI : 0; // 180° for left, 0° for right
+  const angle =
+    centerAngle - arcSpan / 2 + (arcSpan * (index + 1)) / (count + 1);
+  const centerOffset = radius; // center of the circle (assuming square bounding box)
 
-	return {
-		left: centerOffset + radius * Math.cos(angle),
-		top: centerOffset + radius * Math.sin(angle)
-	};
+  return {
+    left: centerOffset + radius * Math.cos(angle),
+    top: centerOffset + radius * Math.sin(angle),
+  };
 }

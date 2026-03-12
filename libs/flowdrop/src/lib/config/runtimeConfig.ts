@@ -6,23 +6,23 @@
  * time rather than build time.
  */
 
-import { logger } from '../utils/logger.js';
+import { logger } from "../utils/logger.js";
 
 export interface RuntimeConfig {
-	/** Base URL for the FlowDrop API */
-	apiBaseUrl: string;
-	/** Theme preference */
-	theme: 'light' | 'dark' | 'auto';
-	/** Request timeout in milliseconds */
-	timeout: number;
-	/** Authentication type */
-	authType: 'none' | 'bearer' | 'api_key' | 'custom';
-	/** Authentication token */
-	authToken?: string;
-	/** Application version */
-	version: string;
-	/** Environment name */
-	environment: string;
+  /** Base URL for the FlowDrop API */
+  apiBaseUrl: string;
+  /** Theme preference */
+  theme: "light" | "dark" | "auto";
+  /** Request timeout in milliseconds */
+  timeout: number;
+  /** Authentication type */
+  authType: "none" | "bearer" | "api_key" | "custom";
+  /** Authentication token */
+  authToken?: string;
+  /** Application version */
+  version: string;
+  /** Environment name */
+  environment: string;
 }
 
 /** Cached runtime configuration */
@@ -40,49 +40,51 @@ const CACHE_DURATION = 5 * 60 * 1000;
  * @param force - Force fetch even if cached
  * @returns Promise resolving to runtime configuration
  */
-export async function fetchRuntimeConfig(force = false): Promise<RuntimeConfig> {
-	const now = Date.now();
+export async function fetchRuntimeConfig(
+  force = false,
+): Promise<RuntimeConfig> {
+  const now = Date.now();
 
-	// Return cached config if available and not expired
-	if (!force && cachedConfig && now - cacheTimestamp < CACHE_DURATION) {
-		return cachedConfig;
-	}
+  // Return cached config if available and not expired
+  if (!force && cachedConfig && now - cacheTimestamp < CACHE_DURATION) {
+    return cachedConfig;
+  }
 
-	try {
-		const response = await fetch('/api/config');
+  try {
+    const response = await fetch("/api/config");
 
-		if (!response.ok) {
-			throw new Error(`Failed to fetch runtime config: ${response.statusText}`);
-		}
+    if (!response.ok) {
+      throw new Error(`Failed to fetch runtime config: ${response.statusText}`);
+    }
 
-		const config = (await response.json()) as RuntimeConfig;
+    const config = (await response.json()) as RuntimeConfig;
 
-		// Update cache
-		cachedConfig = config;
-		cacheTimestamp = now;
+    // Update cache
+    cachedConfig = config;
+    cacheTimestamp = now;
 
-		return config;
-	} catch (error) {
-		logger.error('Failed to fetch runtime configuration:', error);
+    return config;
+  } catch (error) {
+    logger.error("Failed to fetch runtime configuration:", error);
 
-		// Return default configuration if fetch fails
-		const defaultConfig: RuntimeConfig = {
-			apiBaseUrl: '/api/flowdrop',
-			theme: 'auto',
-			timeout: 30000,
-			authType: 'none',
-			version: '1.0.0',
-			environment: 'production'
-		};
+    // Return default configuration if fetch fails
+    const defaultConfig: RuntimeConfig = {
+      apiBaseUrl: "/api/flowdrop",
+      theme: "auto",
+      timeout: 30000,
+      authType: "none",
+      version: "1.0.0",
+      environment: "production",
+    };
 
-		// Cache the default config to avoid repeated failed requests
-		if (!cachedConfig) {
-			cachedConfig = defaultConfig;
-			cacheTimestamp = now;
-		}
+    // Cache the default config to avoid repeated failed requests
+    if (!cachedConfig) {
+      cachedConfig = defaultConfig;
+      cacheTimestamp = now;
+    }
 
-		return cachedConfig || defaultConfig;
-	}
+    return cachedConfig || defaultConfig;
+  }
 }
 
 /**
@@ -91,15 +93,15 @@ export async function fetchRuntimeConfig(force = false): Promise<RuntimeConfig> 
  * @returns Cached runtime configuration or null if not loaded
  */
 export function getRuntimeConfig(): RuntimeConfig | null {
-	return cachedConfig;
+  return cachedConfig;
 }
 
 /**
  * Clear the runtime configuration cache
  */
 export function clearRuntimeConfigCache(): void {
-	cachedConfig = null;
-	cacheTimestamp = 0;
+  cachedConfig = null;
+  cacheTimestamp = 0;
 }
 
 /**
@@ -109,5 +111,5 @@ export function clearRuntimeConfigCache(): void {
  * @returns Promise resolving to runtime configuration
  */
 export async function initRuntimeConfig(): Promise<RuntimeConfig> {
-	return fetchRuntimeConfig(true);
+  return fetchRuntimeConfig(true);
 }

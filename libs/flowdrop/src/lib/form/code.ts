@@ -21,33 +21,36 @@
  * ```
  */
 
-import { fieldComponentRegistry } from './fieldRegistry.js';
-import type { FieldComponent } from './fieldRegistry.js';
-import type { FieldSchema } from '../components/form/types.js';
+import { fieldComponentRegistry } from "./fieldRegistry.js";
+import type { FieldComponent } from "./fieldRegistry.js";
+import type { FieldSchema } from "../components/form/types.js";
 
 // Re-export the components for direct usage if needed
-export { default as FormCodeEditor } from '../components/form/FormCodeEditor.svelte';
-export { default as FormTemplateEditor } from '../components/form/FormTemplateEditor.svelte';
+export { default as FormCodeEditor } from "../components/form/FormCodeEditor.svelte";
+export { default as FormTemplateEditor } from "../components/form/FormTemplateEditor.svelte";
 
 // Re-export types for code editor props
-export type { CodeEditorFieldProps, TemplateEditorFieldProps } from '../components/form/types.js';
+export type {
+  CodeEditorFieldProps,
+  TemplateEditorFieldProps,
+} from "../components/form/types.js";
 
 /**
  * Matcher for code/JSON editor fields
  * Matches: format "json", "code", or type "object" without specific format
  */
 export function codeEditorFieldMatcher(schema: FieldSchema): boolean {
-	// JSON/code format
-	if (schema.format === 'json' || schema.format === 'code') {
-		return true;
-	}
+  // JSON/code format
+  if (schema.format === "json" || schema.format === "code") {
+    return true;
+  }
 
-	// Object type without specific format (render as JSON editor)
-	if (schema.type === 'object' && !schema.format) {
-		return true;
-	}
+  // Object type without specific format (render as JSON editor)
+  if (schema.type === "object" && !schema.format) {
+    return true;
+  }
 
-	return false;
+  return false;
 }
 
 /**
@@ -55,7 +58,7 @@ export function codeEditorFieldMatcher(schema: FieldSchema): boolean {
  * Matches: format "template" (Twig/Liquid-style templates)
  */
 export function templateEditorFieldMatcher(schema: FieldSchema): boolean {
-	return schema.format === 'template';
+  return schema.format === "template";
 }
 
 /**
@@ -70,8 +73,8 @@ let templateEditorRegistered = false;
 
 // Sync registration flags with registry.clear() for test isolation
 fieldComponentRegistry.onClear(() => {
-	codeEditorRegistered = false;
-	templateEditorRegistered = false;
+  codeEditorRegistered = false;
+  templateEditorRegistered = false;
 });
 
 /**
@@ -91,19 +94,19 @@ fieldComponentRegistry.onClear(() => {
  * ```
  */
 export function registerCodeEditorField(priority: number = 100): void {
-	if (codeEditorRegistered) {
-		return;
-	}
+  if (codeEditorRegistered) {
+    return;
+  }
 
-	// Dynamic import to ensure proper code splitting
-	import('../components/form/FormCodeEditor.svelte').then((module) => {
-		fieldComponentRegistry.register('code-editor', {
-			component: module.default,
-			matcher: codeEditorFieldMatcher,
-			priority
-		});
-		codeEditorRegistered = true;
-	});
+  // Dynamic import to ensure proper code splitting
+  import("../components/form/FormCodeEditor.svelte").then((module) => {
+    fieldComponentRegistry.register("code-editor", {
+      component: module.default,
+      matcher: codeEditorFieldMatcher,
+      priority,
+    });
+    codeEditorRegistered = true;
+  });
 }
 
 /**
@@ -123,19 +126,19 @@ export function registerCodeEditorField(priority: number = 100): void {
  * ```
  */
 export function registerTemplateEditorField(priority: number = 100): void {
-	if (templateEditorRegistered) {
-		return;
-	}
+  if (templateEditorRegistered) {
+    return;
+  }
 
-	// Dynamic import to ensure proper code splitting
-	import('../components/form/FormTemplateEditor.svelte').then((module) => {
-		fieldComponentRegistry.register('template-editor', {
-			component: module.default,
-			matcher: templateEditorFieldMatcher,
-			priority
-		});
-		templateEditorRegistered = true;
-	});
+  // Dynamic import to ensure proper code splitting
+  import("../components/form/FormTemplateEditor.svelte").then((module) => {
+    fieldComponentRegistry.register("template-editor", {
+      component: module.default,
+      matcher: templateEditorFieldMatcher,
+      priority,
+    });
+    templateEditorRegistered = true;
+  });
 }
 
 /**
@@ -146,8 +149,8 @@ export function registerTemplateEditorField(priority: number = 100): void {
  * @param priority - Priority for field matching (default: 100)
  */
 export function registerAllCodeEditors(priority: number = 100): void {
-	registerCodeEditorField(priority);
-	registerTemplateEditorField(priority);
+  registerCodeEditorField(priority);
+  registerTemplateEditorField(priority);
 }
 
 /**
@@ -164,31 +167,31 @@ export function registerAllCodeEditors(priority: number = 100): void {
  * ```
  */
 export function registerCodeEditorFieldWithComponent(
-	component: FieldComponent,
-	priority: number = 100
+  component: FieldComponent,
+  priority: number = 100,
 ): void {
-	if (codeEditorRegistered) {
-		return;
-	}
+  if (codeEditorRegistered) {
+    return;
+  }
 
-	fieldComponentRegistry.register('code-editor', {
-		component,
-		matcher: codeEditorFieldMatcher,
-		priority
-	});
-	codeEditorRegistered = true;
+  fieldComponentRegistry.register("code-editor", {
+    component,
+    matcher: codeEditorFieldMatcher,
+    priority,
+  });
+  codeEditorRegistered = true;
 }
 
 /**
  * Check if code editor field is registered
  */
 export function isCodeEditorRegistered(): boolean {
-	return codeEditorRegistered;
+  return codeEditorRegistered;
 }
 
 /**
  * Check if template editor field is registered
  */
 export function isTemplateEditorRegistered(): boolean {
-	return templateEditorRegistered;
+  return templateEditorRegistered;
 }

@@ -1,16 +1,16 @@
-import type { FlowDropSkin } from './skin.js';
+import type { FlowDropSkin } from "./skin.js";
 
 /**
  * Behavioral configuration bundled with a theme.
  * These are initial-state flags, not CSS — they control runtime defaults.
  */
 export interface FlowDropThemeConfig {
-	sidebar?: {
-		/** Whether the sidebar starts open. Defaults to true. */
-		defaultOpen?: boolean;
-		/** Whether category <details> accordion sections start open in card mode. Defaults to false. */
-		categoriesDefaultOpen?: boolean;
-	};
+  sidebar?: {
+    /** Whether the sidebar starts open. Defaults to true. */
+    defaultOpen?: boolean;
+    /** Whether category <details> accordion sections start open in card mode. Defaults to false. */
+    categoriesDefaultOpen?: boolean;
+  };
 }
 
 /**
@@ -27,12 +27,12 @@ export interface FlowDropThemeConfig {
  * <App theme={{ name: 'minimal', skin: { tokens: { primary: '#e11d48' } } }} />
  */
 export interface FlowDropTheme {
-	/** Optional built-in theme name used as a merge base */
-	name?: FlowDropThemeName | (string & {});
-	/** Visual skin — CSS token overrides */
-	skin?: FlowDropSkin;
-	/** Behavioral configuration defaults */
-	config?: FlowDropThemeConfig;
+  /** Optional built-in theme name used as a merge base */
+  name?: FlowDropThemeName | (string & {});
+  /** Visual skin — CSS token overrides */
+  skin?: FlowDropSkin;
+  /** Behavioral configuration defaults */
+  config?: FlowDropThemeConfig;
 }
 
-export type FlowDropThemeName = 'default' | 'minimal';
+export type FlowDropThemeName = "default" | "minimal";

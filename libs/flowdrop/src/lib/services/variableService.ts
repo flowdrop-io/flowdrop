@@ -7,19 +7,19 @@
  */
 
 import type {
-	WorkflowNode,
-	WorkflowEdge,
-	VariableSchema,
-	TemplateVariable,
-	TemplateVariableType,
-	NodePort,
-	OutputProperty,
-	InputProperty,
-	BaseProperty,
-	TemplateVariablesConfig,
-	AuthProvider
-} from '../types/index.js';
-import { logger } from '../utils/logger.js';
+  WorkflowNode,
+  WorkflowEdge,
+  VariableSchema,
+  TemplateVariable,
+  TemplateVariableType,
+  NodePort,
+  OutputProperty,
+  InputProperty,
+  BaseProperty,
+  TemplateVariablesConfig,
+  AuthProvider,
+} from "../types/index.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * Converts a JSON Schema property type to a TemplateVariableType.
@@ -27,25 +27,27 @@ import { logger } from '../utils/logger.js';
  * @param schemaType - The type from JSON Schema
  * @returns The corresponding TemplateVariableType
  */
-function toTemplateVariableType(schemaType: string | undefined): TemplateVariableType {
-	switch (schemaType) {
-		case 'string':
-			return 'string';
-		case 'number':
-			return 'number';
-		case 'integer':
-			return 'integer';
-		case 'boolean':
-			return 'boolean';
-		case 'array':
-			return 'array';
-		case 'object':
-			return 'object';
-		case 'float':
-			return 'float';
-		default:
-			return 'mixed';
-	}
+function toTemplateVariableType(
+  schemaType: string | undefined,
+): TemplateVariableType {
+  switch (schemaType) {
+    case "string":
+      return "string";
+    case "number":
+      return "number";
+    case "integer":
+      return "integer";
+    case "boolean":
+      return "boolean";
+    case "array":
+      return "array";
+    case "object":
+      return "object";
+    case "float":
+      return "float";
+    default:
+      return "mixed";
+  }
 }
 
 /**
@@ -59,44 +61,44 @@ function toTemplateVariableType(schemaType: string | undefined): TemplateVariabl
  * @returns A TemplateVariable representing the property
  */
 function propertyToTemplateVariable(
-	name: string,
-	property: BaseProperty | OutputProperty | InputProperty,
-	sourcePort?: string,
-	sourceNode?: string
+  name: string,
+  property: BaseProperty | OutputProperty | InputProperty,
+  sourcePort?: string,
+  sourceNode?: string,
 ): TemplateVariable {
-	const variable: TemplateVariable = {
-		name,
-		label: property.title ?? name,
-		description: property.description,
-		type: toTemplateVariableType(property.type),
-		sourcePort,
-		sourceNode
-	};
+  const variable: TemplateVariable = {
+    name,
+    label: property.title ?? name,
+    description: property.description,
+    type: toTemplateVariableType(property.type),
+    sourcePort,
+    sourceNode,
+  };
 
-	// Handle nested object properties
-	if (property.type === 'object' && property.properties) {
-		variable.properties = {};
-		for (const [propName, propValue] of Object.entries(property.properties)) {
-			variable.properties[propName] = propertyToTemplateVariable(
-				propName,
-				propValue as BaseProperty,
-				sourcePort,
-				sourceNode
-			);
-		}
-	}
+  // Handle nested object properties
+  if (property.type === "object" && property.properties) {
+    variable.properties = {};
+    for (const [propName, propValue] of Object.entries(property.properties)) {
+      variable.properties[propName] = propertyToTemplateVariable(
+        propName,
+        propValue as BaseProperty,
+        sourcePort,
+        sourceNode,
+      );
+    }
+  }
 
-	// Handle array items
-	if (property.type === 'array' && property.items) {
-		variable.items = propertyToTemplateVariable(
-			'item',
-			property.items as BaseProperty,
-			sourcePort,
-			sourceNode
-		);
-	}
+  // Handle array items
+  if (property.type === "array" && property.items) {
+    variable.items = propertyToTemplateVariable(
+      "item",
+      property.items as BaseProperty,
+      sourcePort,
+      sourceNode,
+    );
+  }
 
-	return variable;
+  return variable;
 }
 
 /**
@@ -107,54 +109,59 @@ function propertyToTemplateVariable(
  * @param sourceNode - The source node ID
  * @returns A TemplateVariable representing the port's data
  */
-function portToTemplateVariable(port: NodePort, sourceNode: string): TemplateVariable {
-	// If the port has a schema, use it to build a detailed variable
-	if (port.schema && port.schema.properties) {
-		const variable: TemplateVariable = {
-			name: port.id,
-			label: port.name,
-			description: port.description,
-			type: 'object',
-			sourcePort: port.id,
-			sourceNode,
-			properties: {}
-		};
+function portToTemplateVariable(
+  port: NodePort,
+  sourceNode: string,
+): TemplateVariable {
+  // If the port has a schema, use it to build a detailed variable
+  if (port.schema && port.schema.properties) {
+    const variable: TemplateVariable = {
+      name: port.id,
+      label: port.name,
+      description: port.description,
+      type: "object",
+      sourcePort: port.id,
+      sourceNode,
+      properties: {},
+    };
 
-		for (const [propName, propValue] of Object.entries(port.schema.properties)) {
-			variable.properties![propName] = propertyToTemplateVariable(
-				propName,
-				propValue as BaseProperty,
-				port.id,
-				sourceNode
-			);
-		}
+    for (const [propName, propValue] of Object.entries(
+      port.schema.properties,
+    )) {
+      variable.properties![propName] = propertyToTemplateVariable(
+        propName,
+        propValue as BaseProperty,
+        port.id,
+        sourceNode,
+      );
+    }
 
-		return variable;
-	}
+    return variable;
+  }
 
-	// Otherwise, create a basic variable based on dataType
-	return {
-		name: port.id,
-		label: port.name,
-		description: port.description,
-		type: toTemplateVariableType(port.dataType),
-		sourcePort: port.id,
-		sourceNode
-	};
+  // Otherwise, create a basic variable based on dataType
+  return {
+    name: port.id,
+    label: port.name,
+    description: port.description,
+    type: toTemplateVariableType(port.dataType),
+    sourcePort: port.id,
+    sourceNode,
+  };
 }
 
 /**
  * Information about an upstream connection to the current node.
  */
 interface UpstreamConnection {
-	/** The edge connecting the nodes */
-	edge: WorkflowEdge;
-	/** The source (upstream) node */
-	sourceNode: WorkflowNode;
-	/** The output port on the source node */
-	sourcePort: NodePort | undefined;
-	/** The input port on the target (current) node */
-	targetPort: NodePort | undefined;
+  /** The edge connecting the nodes */
+  edge: WorkflowEdge;
+  /** The source (upstream) node */
+  sourceNode: WorkflowNode;
+  /** The output port on the source node */
+  sourcePort: NodePort | undefined;
+  /** The input port on the target (current) node */
+  targetPort: NodePort | undefined;
 }
 
 /**
@@ -164,23 +171,25 @@ interface UpstreamConnection {
  * @param handleId - The handle ID (e.g., "http_request.1-output-json")
  * @returns The port ID (e.g., "json") or the original handleId if parsing fails
  */
-function extractPortIdFromHandle(handleId: string | undefined): string | undefined {
-	if (!handleId) return undefined;
+function extractPortIdFromHandle(
+  handleId: string | undefined,
+): string | undefined {
+  if (!handleId) return undefined;
 
-	// Handle format: {nodeId}-{input|output}-{portId}
-	// Example: "http_request.1-output-json" -> "json"
-	const outputMatch = handleId.match(/-output-(.+)$/);
-	if (outputMatch) {
-		return outputMatch[1];
-	}
+  // Handle format: {nodeId}-{input|output}-{portId}
+  // Example: "http_request.1-output-json" -> "json"
+  const outputMatch = handleId.match(/-output-(.+)$/);
+  if (outputMatch) {
+    return outputMatch[1];
+  }
 
-	const inputMatch = handleId.match(/-input-(.+)$/);
-	if (inputMatch) {
-		return inputMatch[1];
-	}
+  const inputMatch = handleId.match(/-input-(.+)$/);
+  if (inputMatch) {
+    return inputMatch[1];
+  }
 
-	// Fallback: return the handle ID as-is (might be a simple port ID)
-	return handleId;
+  // Fallback: return the handle ID as-is (might be a simple port ID)
+  return handleId;
 }
 
 /**
@@ -193,59 +202,63 @@ function extractPortIdFromHandle(handleId: string | undefined): string | undefin
  * @returns Array of upstream connection information
  */
 function findUpstreamConnections(
-	node: WorkflowNode,
-	nodes: WorkflowNode[],
-	edges: WorkflowEdge[]
+  node: WorkflowNode,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
 ): UpstreamConnection[] {
-	const connections: UpstreamConnection[] = [];
+  const connections: UpstreamConnection[] = [];
 
-	// Find all edges that target this node
-	const incomingEdges = edges.filter((edge) => edge.target === node.id);
+  // Find all edges that target this node
+  const incomingEdges = edges.filter((edge) => edge.target === node.id);
 
-	for (const edge of incomingEdges) {
-		// Find the source node
-		const sourceNode = nodes.find((n) => n.id === edge.source);
-		if (!sourceNode) continue;
+  for (const edge of incomingEdges) {
+    // Find the source node
+    const sourceNode = nodes.find((n) => n.id === edge.source);
+    if (!sourceNode) continue;
 
-		// Extract port IDs from handle IDs
-		// Handle format: {nodeId}-{input|output}-{portId}
-		const sourcePortId = extractPortIdFromHandle(edge.sourceHandle);
-		const targetPortId = extractPortIdFromHandle(edge.targetHandle);
+    // Extract port IDs from handle IDs
+    // Handle format: {nodeId}-{input|output}-{portId}
+    const sourcePortId = extractPortIdFromHandle(edge.sourceHandle);
+    const targetPortId = extractPortIdFromHandle(edge.targetHandle);
 
-		// Find the source output port
-		const sourcePort = sourceNode.data.metadata.outputs.find((p) => p.id === sourcePortId);
+    // Find the source output port
+    const sourcePort = sourceNode.data.metadata.outputs.find(
+      (p) => p.id === sourcePortId,
+    );
 
-		// Find the target input port
-		const targetPort = node.data.metadata.inputs.find((p) => p.id === targetPortId);
+    // Find the target input port
+    const targetPort = node.data.metadata.inputs.find(
+      (p) => p.id === targetPortId,
+    );
 
-		connections.push({
-			edge,
-			sourceNode,
-			sourcePort,
-			targetPort
-		});
-	}
+    connections.push({
+      edge,
+      sourceNode,
+      sourcePort,
+      targetPort,
+    });
+  }
 
-	return connections;
+  return connections;
 }
 
 /**
  * Options for deriving available variables.
  */
 export interface GetAvailableVariablesOptions {
-	/**
-	 * Filter to only include variables from specific input ports.
-	 * If not specified, all input ports with connections are used.
-	 * If specified as an empty array, no variables will be available.
-	 */
-	targetPortIds?: string[];
+  /**
+   * Filter to only include variables from specific input ports.
+   * If not specified, all input ports with connections are used.
+   * If specified as an empty array, no variables will be available.
+   */
+  targetPortIds?: string[];
 
-	/**
-	 * Whether to include the port name as a prefix for variables.
-	 * When true, variables are named like `data.user` instead of just `user`.
-	 * When false (default), schema properties are unpacked as top-level variables.
-	 */
-	includePortName?: boolean;
+  /**
+   * Whether to include the port name as a prefix for variables.
+   * When true, variables are named like `data.user` instead of just `user`.
+   * When false (default), schema properties are unpacked as top-level variables.
+   */
+  includePortName?: boolean;
 }
 
 /**
@@ -271,64 +284,66 @@ export interface GetAvailableVariablesOptions {
  * ```
  */
 export function getAvailableVariables(
-	node: WorkflowNode,
-	nodes: WorkflowNode[],
-	edges: WorkflowEdge[],
-	options?: GetAvailableVariablesOptions
+  node: WorkflowNode,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+  options?: GetAvailableVariablesOptions,
 ): VariableSchema {
-	const variables: Record<string, TemplateVariable> = {};
-	const { targetPortIds, includePortName } = options ?? {};
+  const variables: Record<string, TemplateVariable> = {};
+  const { targetPortIds, includePortName } = options ?? {};
 
-	// Find all upstream connections
-	const connections = findUpstreamConnections(node, nodes, edges);
+  // Find all upstream connections
+  const connections = findUpstreamConnections(node, nodes, edges);
 
-	for (const connection of connections) {
-		const { sourceNode, sourcePort, targetPort } = connection;
+  for (const connection of connections) {
+    const { sourceNode, sourcePort, targetPort } = connection;
 
-		// Skip trigger ports - they don't carry data
-		if (sourcePort?.dataType === 'trigger') continue;
-		if (targetPort?.dataType === 'trigger') continue;
+    // Skip trigger ports - they don't carry data
+    if (sourcePort?.dataType === "trigger") continue;
+    if (targetPort?.dataType === "trigger") continue;
 
-		// Get the target port ID for filtering
-		const targetPortId = targetPort?.id ?? sourcePort?.id ?? 'data';
+    // Get the target port ID for filtering
+    const targetPortId = targetPort?.id ?? sourcePort?.id ?? "data";
 
-		// Filter by target port IDs if specified
-		if (targetPortIds !== undefined) {
-			if (!targetPortIds.includes(targetPortId)) continue;
-		}
+    // Filter by target port IDs if specified
+    if (targetPortIds !== undefined) {
+      if (!targetPortIds.includes(targetPortId)) continue;
+    }
 
-		if (!sourcePort) continue;
+    if (!sourcePort) continue;
 
-		// If the source port has a schema with top-level properties,
-		// unpack them as top-level variables (unless includePortName is true)
-		if (sourcePort.schema?.properties && !includePortName) {
-			// Unpack schema properties as top-level variables
-			for (const [propName, propValue] of Object.entries(sourcePort.schema.properties)) {
-				// Skip if we already have a variable with this name
-				if (variables[propName]) continue;
+    // If the source port has a schema with top-level properties,
+    // unpack them as top-level variables (unless includePortName is true)
+    if (sourcePort.schema?.properties && !includePortName) {
+      // Unpack schema properties as top-level variables
+      for (const [propName, propValue] of Object.entries(
+        sourcePort.schema.properties,
+      )) {
+        // Skip if we already have a variable with this name
+        if (variables[propName]) continue;
 
-				variables[propName] = propertyToTemplateVariable(
-					propName,
-					propValue as BaseProperty,
-					sourcePort.id,
-					sourceNode.id
-				);
-			}
-		} else {
-			// No schema or includePortName is true - use port name as the variable
-			const variableName = includePortName ? targetPortId : targetPortId;
+        variables[propName] = propertyToTemplateVariable(
+          propName,
+          propValue as BaseProperty,
+          sourcePort.id,
+          sourceNode.id,
+        );
+      }
+    } else {
+      // No schema or includePortName is true - use port name as the variable
+      const variableName = includePortName ? targetPortId : targetPortId;
 
-			// Skip if we already have a variable with this name
-			if (variables[variableName]) continue;
+      // Skip if we already have a variable with this name
+      if (variables[variableName]) continue;
 
-			const variable = portToTemplateVariable(sourcePort, sourceNode.id);
-			variable.name = variableName;
-			variable.label = targetPort?.name ?? sourcePort.name;
-			variables[variableName] = variable;
-		}
-	}
+      const variable = portToTemplateVariable(sourcePort, sourceNode.id);
+      variable.name = variableName;
+      variable.label = targetPort?.name ?? sourcePort.name;
+      variables[variableName] = variable;
+    }
+  }
 
-	return { variables };
+  return { variables };
 }
 
 /**
@@ -350,46 +365,49 @@ export function getAvailableVariables(
  * // Returns: [{ name: "city", ... }, { name: "country", ... }]
  * ```
  */
-export function getChildVariables(schema: VariableSchema, path: string): TemplateVariable[] {
-	const parts = path.split('.');
-	let current: TemplateVariable | undefined;
+export function getChildVariables(
+  schema: VariableSchema,
+  path: string,
+): TemplateVariable[] {
+  const parts = path.split(".");
+  let current: TemplateVariable | undefined;
 
-	// Navigate to the target variable
-	for (let i = 0; i < parts.length; i++) {
-		const part = parts[i];
+  // Navigate to the target variable
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
 
-		// Handle array index access (e.g., "items[0]")
-		const arrayMatch = part.match(/^(\w+)\[(\d+|\*)\]$/);
-		if (arrayMatch) {
-			const [, varName] = arrayMatch;
-			if (i === 0) {
-				current = schema.variables[varName];
-			} else if (current?.properties) {
-				current = current.properties[varName];
-			}
-			// After array access, move to items schema
-			if (current?.items) {
-				current = current.items;
-			}
-			continue;
-		}
+    // Handle array index access (e.g., "items[0]")
+    const arrayMatch = part.match(/^(\w+)\[(\d+|\*)\]$/);
+    if (arrayMatch) {
+      const [, varName] = arrayMatch;
+      if (i === 0) {
+        current = schema.variables[varName];
+      } else if (current?.properties) {
+        current = current.properties[varName];
+      }
+      // After array access, move to items schema
+      if (current?.items) {
+        current = current.items;
+      }
+      continue;
+    }
 
-		// Regular property access
-		if (i === 0) {
-			current = schema.variables[part];
-		} else if (current?.properties) {
-			current = current.properties[part];
-		} else {
-			return [];
-		}
-	}
+    // Regular property access
+    if (i === 0) {
+      current = schema.variables[part];
+    } else if (current?.properties) {
+      current = current.properties[part];
+    } else {
+      return [];
+    }
+  }
 
-	// Return child properties if available
-	if (current?.properties) {
-		return Object.values(current.properties);
-	}
+  // Return child properties if available
+  if (current?.properties) {
+    return Object.values(current.properties);
+  }
 
-	return [];
+  return [];
 }
 
 /**
@@ -400,16 +418,16 @@ export function getChildVariables(schema: VariableSchema, path: string): Templat
  * @returns Array of index suggestion strings
  */
 export function getArrayIndexSuggestions(maxIndex: number = 2): string[] {
-	const suggestions: string[] = [];
+  const suggestions: string[] = [];
 
-	for (let i = 0; i <= maxIndex; i++) {
-		suggestions.push(`${i}]`);
-	}
+  for (let i = 0; i <= maxIndex; i++) {
+    suggestions.push(`${i}]`);
+  }
 
-	// Add wildcard for "all items"
-	suggestions.push('*]');
+  // Add wildcard for "all items"
+  suggestions.push("*]");
 
-	return suggestions;
+  return suggestions;
 }
 
 /**
@@ -420,37 +438,37 @@ export function getArrayIndexSuggestions(maxIndex: number = 2): string[] {
  * @returns True if the variable is an array type
  */
 export function isArrayVariable(schema: VariableSchema, path: string): boolean {
-	const parts = path.split('.');
-	let current: TemplateVariable | undefined;
+  const parts = path.split(".");
+  let current: TemplateVariable | undefined;
 
-	for (let i = 0; i < parts.length; i++) {
-		const part = parts[i];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
 
-		// Handle array index access
-		const arrayMatch = part.match(/^(\w+)\[(\d+|\*)\]$/);
-		if (arrayMatch) {
-			const [, varName] = arrayMatch;
-			if (i === 0) {
-				current = schema.variables[varName];
-			} else if (current?.properties) {
-				current = current.properties[varName];
-			}
-			if (current?.items) {
-				current = current.items;
-			}
-			continue;
-		}
+    // Handle array index access
+    const arrayMatch = part.match(/^(\w+)\[(\d+|\*)\]$/);
+    if (arrayMatch) {
+      const [, varName] = arrayMatch;
+      if (i === 0) {
+        current = schema.variables[varName];
+      } else if (current?.properties) {
+        current = current.properties[varName];
+      }
+      if (current?.items) {
+        current = current.items;
+      }
+      continue;
+    }
 
-		if (i === 0) {
-			current = schema.variables[part];
-		} else if (current?.properties) {
-			current = current.properties[part];
-		} else {
-			return false;
-		}
-	}
+    if (i === 0) {
+      current = schema.variables[part];
+    } else if (current?.properties) {
+      current = current.properties[part];
+    } else {
+      return false;
+    }
+  }
 
-	return current?.type === 'array';
+  return current?.type === "array";
 }
 
 /**
@@ -461,8 +479,8 @@ export function isArrayVariable(schema: VariableSchema, path: string): boolean {
  * @returns True if the variable has children that can be drilled into
  */
 export function hasChildren(schema: VariableSchema, path: string): boolean {
-	const children = getChildVariables(schema, path);
-	return children.length > 0;
+  const children = getChildVariables(schema, path);
+  return children.length > 0;
 }
 
 /**
@@ -482,18 +500,18 @@ export function hasChildren(schema: VariableSchema, path: string): boolean {
  * ```
  */
 export function mergeVariableSchemas(
-	primary: VariableSchema,
-	secondary: VariableSchema
+  primary: VariableSchema,
+  secondary: VariableSchema,
 ): VariableSchema {
-	// Create a shallow copy of secondary variables
-	const mergedVariables = { ...secondary.variables };
+  // Create a shallow copy of secondary variables
+  const mergedVariables = { ...secondary.variables };
 
-	// Overlay primary variables (they take precedence)
-	for (const [key, value] of Object.entries(primary.variables)) {
-		mergedVariables[key] = value;
-	}
+  // Overlay primary variables (they take precedence)
+  for (const [key, value] of Object.entries(primary.variables)) {
+    mergedVariables[key] = value;
+  }
 
-	return { variables: mergedVariables };
+  return { variables: mergedVariables };
 }
 
 /**
@@ -528,73 +546,78 @@ export function mergeVariableSchemas(
  * ```
  */
 export async function getVariableSchema(
-	node: WorkflowNode,
-	nodes: WorkflowNode[],
-	edges: WorkflowEdge[],
-	config: TemplateVariablesConfig,
-	workflowId?: string,
-	authProvider?: AuthProvider
+  node: WorkflowNode,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+  config: TemplateVariablesConfig,
+  workflowId?: string,
+  authProvider?: AuthProvider,
 ): Promise<VariableSchema> {
-	let resultSchema: VariableSchema = { variables: {} };
+  let resultSchema: VariableSchema = { variables: {} };
 
-	// Try API mode first (if configured)
-	if (config.api) {
-		try {
-			// Import API variable service dynamically to avoid circular dependencies
-			const { fetchVariableSchema } = await import('./apiVariableService.js');
+  // Try API mode first (if configured)
+  if (config.api) {
+    try {
+      // Import API variable service dynamically to avoid circular dependencies
+      const { fetchVariableSchema } = await import("./apiVariableService.js");
 
-			const apiResult = await fetchVariableSchema(workflowId, node.id, config.api, authProvider);
+      const apiResult = await fetchVariableSchema(
+        workflowId,
+        node.id,
+        config.api,
+        authProvider,
+      );
 
-			if (apiResult.success && apiResult.schema) {
-				resultSchema = apiResult.schema;
+      if (apiResult.success && apiResult.schema) {
+        resultSchema = apiResult.schema;
 
-				// Merge with static schema if configured
-				if (config.api.mergeWithSchema !== false && config.schema) {
-					resultSchema = mergeVariableSchemas(resultSchema, config.schema);
-				}
+        // Merge with static schema if configured
+        if (config.api.mergeWithSchema !== false && config.schema) {
+          resultSchema = mergeVariableSchemas(resultSchema, config.schema);
+        }
 
-				// Merge with port-derived variables if configured
-				if (config.api.mergeWithPorts) {
-					const portSchema = getAvailableVariables(node, nodes, edges, {
-						targetPortIds: config.ports,
-						includePortName: config.includePortName
-					});
-					resultSchema = mergeVariableSchemas(resultSchema, portSchema);
-				}
+        // Merge with port-derived variables if configured
+        if (config.api.mergeWithPorts) {
+          const portSchema = getAvailableVariables(node, nodes, edges, {
+            targetPortIds: config.ports,
+            includePortName: config.includePortName,
+          });
+          resultSchema = mergeVariableSchemas(resultSchema, portSchema);
+        }
 
-				return resultSchema;
-			} else if (!config.api.fallbackOnError) {
-				// API failed and fallback is disabled - return empty schema
-				logger.error('Failed to fetch variables from API:', apiResult.error);
-				return { variables: {} };
-			}
-			// If fallback is enabled (default), continue to schema-based mode below
-		} catch (error) {
-			logger.error('Error fetching variables from API:', error);
-			// If fallback is disabled, return empty schema
-			if (config.api.fallbackOnError === false) {
-				return { variables: {} };
-			}
-			// Otherwise, continue to schema-based mode below
-		}
-	}
+        return resultSchema;
+      } else if (!config.api.fallbackOnError) {
+        // API failed and fallback is disabled - return empty schema
+        logger.error("Failed to fetch variables from API:", apiResult.error);
+        return { variables: {} };
+      }
+      // If fallback is enabled (default), continue to schema-based mode below
+    } catch (error) {
+      logger.error("Error fetching variables from API:", error);
+      // If fallback is disabled, return empty schema
+      if (config.api.fallbackOnError === false) {
+        return { variables: {} };
+      }
+      // Otherwise, continue to schema-based mode below
+    }
+  }
 
-	// Schema-based mode (existing behavior)
-	// This is the fallback when API mode is not configured or fails
+  // Schema-based mode (existing behavior)
+  // This is the fallback when API mode is not configured or fails
 
-	// Start with port-derived variables (if ports are configured or no API mode)
-	if (config.ports !== undefined || !config.api) {
-		const portSchema = getAvailableVariables(node, nodes, edges, {
-			targetPortIds: config.ports,
-			includePortName: config.includePortName
-		});
-		resultSchema = portSchema;
-	}
+  // Start with port-derived variables (if ports are configured or no API mode)
+  if (config.ports !== undefined || !config.api) {
+    const portSchema = getAvailableVariables(node, nodes, edges, {
+      targetPortIds: config.ports,
+      includePortName: config.includePortName,
+    });
+    resultSchema = portSchema;
+  }
 
-	// Merge with static schema (if configured)
-	if (config.schema) {
-		resultSchema = mergeVariableSchemas(config.schema, resultSchema);
-	}
+  // Merge with static schema (if configured)
+  if (config.schema) {
+    resultSchema = mergeVariableSchemas(config.schema, resultSchema);
+  }
 
-	return resultSchema;
+  return resultSchema;
 }

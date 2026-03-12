@@ -1,920 +1,920 @@
 /* Base CSS with BEM syntax */
 
 /* Import design tokens */
-@import './tokens.css';
+@import "./tokens.css";
 
 /* Reset and base styles */
 * {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 /* Layout utilities */
 .flowdrop-layout {
-	display: flex;
-	height: 100vh;
-	width: 100%;
+  display: flex;
+  height: 100vh;
+  width: 100%;
 }
 
 .flowdrop-layout__main {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .flowdrop-layout__sidebar {
-	width: var(--fd-sidebar-width);
-	height: 100%;
-	display: flex;
-	flex-direction: column;
-	box-shadow: var(--fd-shadow-md);
+  width: var(--fd-sidebar-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--fd-shadow-md);
 }
 
 /* Flow node handles: 20px connection area, 12px visible circle (::before)
    Override xyflow's default background so port color (--fd-handle-fill from inline style) shows.
    Use `.svelte-flow` parent for higher specificity (0-2-0) to beat xyflow defaults (0-1-0). */
 .svelte-flow .svelte-flow__handle {
-	--fd-handle-fill: var(--fd-muted-foreground);
-	--fd-handle-border-color: var(--fd-handle-border);
-	width: var(--fd-handle-size);
-	height: var(--fd-handle-size);
-	background: transparent !important;
-	background-color: transparent !important;
-	border: none;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: transform var(--fd-transition-normal);
-	cursor: pointer;
+  --fd-handle-fill: var(--fd-muted-foreground);
+  --fd-handle-border-color: var(--fd-handle-border);
+  width: var(--fd-handle-size);
+  height: var(--fd-handle-size);
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--fd-transition-normal);
+  cursor: pointer;
 }
 
 .svelte-flow .svelte-flow__handle::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	margin: auto;
-	width: var(--fd-handle-visual-size);
-	height: var(--fd-handle-visual-size);
-	background-color: var(--fd-handle-fill) !important;
-	border: 2px solid var(--fd-handle-border-color);
-	border-radius: 50%;
-	pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: var(--fd-handle-visual-size);
+  height: var(--fd-handle-visual-size);
+  background-color: var(--fd-handle-fill) !important;
+  border: 2px solid var(--fd-handle-border-color);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .svelte-flow .svelte-flow__handle:hover::before {
-	background-color: var(--fd-primary);
+  background-color: var(--fd-primary);
 }
 
 .svelte-flow .svelte-flow__handle:focus {
-	outline: 2px solid var(--fd-ring);
-	outline-offset: 2px;
+  outline: 2px solid var(--fd-ring);
+  outline-offset: 2px;
 }
 
 /* Centralized handle edge positioning — offset derived from --fd-handle-size */
 .svelte-flow .svelte-flow__handle-left {
-	left: var(--fd-handle-offset);
+  left: var(--fd-handle-offset);
 }
 .svelte-flow .svelte-flow__handle-right {
-	right: var(--fd-handle-offset);
+  right: var(--fd-handle-offset);
 }
 .svelte-flow .svelte-flow__handle-top {
-	top: var(--fd-handle-offset);
+  top: var(--fd-handle-offset);
 }
 .svelte-flow .svelte-flow__handle-bottom {
-	bottom: var(--fd-handle-offset);
+  bottom: var(--fd-handle-offset);
 }
 
 /* Button styles */
 .flowdrop-btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: var(--fd-space-xs) var(--fd-space-xl);
-	border: 1px solid transparent;
-	border-radius: var(--fd-radius-md);
-	font-size: var(--fd-text-sm);
-	font-weight: 500;
-	text-decoration: none;
-	cursor: pointer;
-	transition: all var(--fd-transition-normal);
-	background-color: var(--fd-background);
-	color: var(--fd-foreground);
-	min-height: var(--fd-size-btn-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fd-space-xs) var(--fd-space-xl);
+  border: 1px solid transparent;
+  border-radius: var(--fd-radius-md);
+  font-size: var(--fd-text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--fd-transition-normal);
+  background-color: var(--fd-background);
+  color: var(--fd-foreground);
+  min-height: var(--fd-size-btn-min);
 }
 
 .flowdrop-btn:hover {
-	background-color: var(--fd-muted);
-	border-color: var(--fd-border);
+  background-color: var(--fd-muted);
+  border-color: var(--fd-border);
 }
 
 .flowdrop-btn:focus {
-	outline: 2px solid var(--fd-ring);
-	outline-offset: 2px;
+  outline: 2px solid var(--fd-ring);
+  outline-offset: 2px;
 }
 
 .flowdrop-btn--primary {
-	background-color: var(--fd-primary);
-	color: var(--fd-primary-foreground);
-	border-color: var(--fd-primary);
+  background-color: var(--fd-primary);
+  color: var(--fd-primary-foreground);
+  border-color: var(--fd-primary);
 }
 
 .flowdrop-btn--primary:hover {
-	background-color: var(--fd-primary-hover);
-	border-color: var(--fd-primary-hover);
+  background-color: var(--fd-primary-hover);
+  border-color: var(--fd-primary-hover);
 }
 
 .flowdrop-btn--secondary {
-	background-color: var(--fd-secondary);
-	color: var(--fd-secondary-foreground);
-	border-color: var(--fd-secondary);
+  background-color: var(--fd-secondary);
+  color: var(--fd-secondary-foreground);
+  border-color: var(--fd-secondary);
 }
 
 .flowdrop-btn--secondary:hover {
-	background-color: var(--fd-secondary-hover);
-	border-color: var(--fd-secondary-hover);
+  background-color: var(--fd-secondary-hover);
+  border-color: var(--fd-secondary-hover);
 }
 
 .flowdrop-btn--outline {
-	background-color: transparent;
-	color: var(--fd-foreground);
-	border-color: var(--fd-border);
+  background-color: transparent;
+  color: var(--fd-foreground);
+  border-color: var(--fd-border);
 }
 
 .flowdrop-btn--outline:hover {
-	background-color: var(--fd-muted);
-	border-color: var(--fd-border-strong);
+  background-color: var(--fd-muted);
+  border-color: var(--fd-border-strong);
 }
 
 .flowdrop-btn--ghost {
-	background-color: transparent;
-	color: var(--fd-foreground);
-	border-color: transparent;
+  background-color: transparent;
+  color: var(--fd-foreground);
+  border-color: transparent;
 }
 
 .flowdrop-btn--ghost:hover {
-	background-color: var(--fd-muted);
+  background-color: var(--fd-muted);
 }
 
 .flowdrop-btn--sm {
-	padding: var(--fd-space-2xs) var(--fd-space-md);
-	font-size: var(--fd-text-xs);
-	min-height: 2rem;
+  padding: var(--fd-space-2xs) var(--fd-space-md);
+  font-size: var(--fd-text-xs);
+  min-height: 2rem;
 }
 
 .flowdrop-btn--lg {
-	padding: var(--fd-space-md) var(--fd-space-3xl);
-	font-size: var(--fd-text-base);
-	min-height: var(--fd-space-6xl);
+  padding: var(--fd-space-md) var(--fd-space-3xl);
+  font-size: var(--fd-text-base);
+  min-height: var(--fd-space-6xl);
 }
 
 /* Input styles */
 .flowdrop-input {
-	display: block;
-	width: 100%;
-	padding: var(--fd-space-xs) var(--fd-space-md);
-	border: 1px solid var(--fd-border);
-	border-radius: var(--fd-radius-md);
-	font-size: var(--fd-text-sm);
-	line-height: 1.25rem;
-	color: var(--fd-foreground);
-	background-color: var(--fd-background);
-	transition:
-		border-color var(--fd-transition-normal),
-		box-shadow var(--fd-transition-normal);
+  display: block;
+  width: 100%;
+  padding: var(--fd-space-xs) var(--fd-space-md);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-md);
+  font-size: var(--fd-text-sm);
+  line-height: 1.25rem;
+  color: var(--fd-foreground);
+  background-color: var(--fd-background);
+  transition:
+    border-color var(--fd-transition-normal),
+    box-shadow var(--fd-transition-normal);
 }
 
 .flowdrop-input:focus {
-	outline: none;
-	border-color: var(--fd-primary);
-	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+  border-color: var(--fd-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .flowdrop-input--sm {
-	padding: var(--fd-space-2xs) var(--fd-space-xs);
-	font-size: var(--fd-text-xs);
+  padding: var(--fd-space-2xs) var(--fd-space-xs);
+  font-size: var(--fd-text-xs);
 }
 
 .flowdrop-input--lg {
-	padding: var(--fd-space-md) var(--fd-space-xl);
-	font-size: var(--fd-text-base);
+  padding: var(--fd-space-md) var(--fd-space-xl);
+  font-size: var(--fd-text-base);
 }
 
 /* Card styles */
 .flowdrop-card {
-	background-color: var(--fd-card);
-	border: 1px solid var(--fd-border);
-	border-radius: var(--fd-radius-lg);
-	box-shadow: var(--fd-shadow-sm);
-	overflow: hidden;
+  background-color: var(--fd-card);
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-lg);
+  box-shadow: var(--fd-shadow-sm);
+  overflow: hidden;
 }
 
 .flowdrop-card--compact {
-	padding: var(--fd-space-xs);
+  padding: var(--fd-space-xs);
 }
 
 .flowdrop-card__body {
-	padding: var(--fd-space-xl);
+  padding: var(--fd-space-xl);
 }
 
 .flowdrop-card__header {
-	padding: var(--fd-space-xl) var(--fd-space-xl) var(--fd-space-xs);
-	border-bottom: 1px solid var(--fd-border-muted);
+  padding: var(--fd-space-xl) var(--fd-space-xl) var(--fd-space-xs);
+  border-bottom: 1px solid var(--fd-border-muted);
 }
 
 .flowdrop-card__footer {
-	padding: var(--fd-space-xs) var(--fd-space-xl) var(--fd-space-xl);
-	border-top: 1px solid var(--fd-border-muted);
+  padding: var(--fd-space-xs) var(--fd-space-xl) var(--fd-space-xl);
+  border-top: 1px solid var(--fd-border-muted);
 }
 
 /* Badge styles */
 .flowdrop-badge {
-	display: inline-flex;
-	align-items: center;
-	padding: var(--fd-space-3xs) var(--fd-space-xs);
-	font-size: var(--fd-text-xs);
-	font-weight: 500;
-	border-radius: var(--fd-radius-md);
-	background-color: var(--fd-muted);
-	color: var(--fd-foreground);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--fd-space-3xs) var(--fd-space-xs);
+  font-size: var(--fd-text-xs);
+  font-weight: 500;
+  border-radius: var(--fd-radius-md);
+  background-color: var(--fd-muted);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-badge--primary {
-	background-color: var(--fd-primary-muted);
-	color: var(--fd-primary-hover);
+  background-color: var(--fd-primary-muted);
+  color: var(--fd-primary-hover);
 }
 
 .flowdrop-badge--secondary {
-	background-color: var(--fd-secondary);
-	color: var(--fd-secondary-foreground);
+  background-color: var(--fd-secondary);
+  color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-badge--success {
-	background-color: var(--fd-success-muted);
-	color: var(--fd-success-hover);
+  background-color: var(--fd-success-muted);
+  color: var(--fd-success-hover);
 }
 
 .flowdrop-badge--warning {
-	background-color: var(--fd-warning-muted);
-	color: var(--fd-warning-hover);
+  background-color: var(--fd-warning-muted);
+  color: var(--fd-warning-hover);
 }
 
 .flowdrop-badge--error {
-	background-color: var(--fd-error-muted);
-	color: var(--fd-error-hover);
+  background-color: var(--fd-error-muted);
+  color: var(--fd-error-hover);
 }
 
 /* Navbar styles */
 .flowdrop-navbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: var(--fd-space-md) var(--fd-space-xl);
-	background-color: var(--fd-background);
-	border-bottom: 1px solid var(--fd-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--fd-space-md) var(--fd-space-xl);
+  background-color: var(--fd-background);
+  border-bottom: 1px solid var(--fd-border);
 }
 
 .flowdrop-navbar__start {
-	display: flex;
-	align-items: center;
-	gap: var(--fd-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--fd-space-md);
 }
 
 .flowdrop-navbar__center {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
 }
 
 .flowdrop-navbar__end {
-	display: flex;
-	align-items: center;
-	gap: var(--fd-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--fd-space-md);
 }
 
 /* Join button group */
 .flowdrop-join {
-	display: inline-flex;
-	border-radius: var(--fd-radius-md);
-	overflow: hidden;
+  display: inline-flex;
+  border-radius: var(--fd-radius-md);
+  overflow: hidden;
 }
 
 .flowdrop-join__item {
-	border-radius: 0;
-	border-right: 1px solid var(--fd-border);
+  border-radius: 0;
+  border-right: 1px solid var(--fd-border);
 }
 
 .flowdrop-join__item:first-child {
-	border-top-left-radius: var(--fd-radius-md);
-	border-bottom-left-radius: var(--fd-radius-md);
+  border-top-left-radius: var(--fd-radius-md);
+  border-bottom-left-radius: var(--fd-radius-md);
 }
 
 .flowdrop-join__item:last-child {
-	border-top-right-radius: var(--fd-radius-md);
-	border-bottom-right-radius: var(--fd-radius-md);
-	border-right: none;
+  border-top-right-radius: var(--fd-radius-md);
+  border-bottom-right-radius: var(--fd-radius-md);
+  border-right: none;
 }
 
 /* Hero section */
 .flowdrop-hero {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 100%;
-	padding: var(--fd-space-4xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: var(--fd-space-4xl);
 }
 
 .flowdrop-hero__content {
-	text-align: center;
-	max-width: 28rem;
+  text-align: center;
+  max-width: 28rem;
 }
 
 .flowdrop-hero__icon {
-	font-size: 3.75rem;
-	margin-bottom: var(--fd-space-xl);
+  font-size: 3.75rem;
+  margin-bottom: var(--fd-space-xl);
 }
 
 .flowdrop-hero__title {
-	font-size: var(--fd-text-lg);
-	font-weight: 700;
-	margin-bottom: var(--fd-space-xs);
-	color: var(--fd-foreground);
+  font-size: var(--fd-text-lg);
+  font-weight: 700;
+  margin-bottom: var(--fd-space-xs);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-hero__description {
-	font-size: var(--fd-text-sm);
-	color: var(--fd-muted-foreground);
-	margin-bottom: var(--fd-space-xl);
+  font-size: var(--fd-text-sm);
+  color: var(--fd-muted-foreground);
+  margin-bottom: var(--fd-space-xl);
 }
 
 /* Divider */
 .flowdrop-divider {
-	display: flex;
-	align-items: center;
-	margin: var(--fd-space-xl) 0;
+  display: flex;
+  align-items: center;
+  margin: var(--fd-space-xl) 0;
 }
 
 .flowdrop-divider::before {
-	content: '';
-	flex: 1;
-	height: 1px;
-	background-color: var(--fd-border);
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--fd-border);
 }
 
 .flowdrop-divider__text {
-	padding: 0 var(--fd-space-md);
-	font-size: var(--fd-text-xs);
-	font-weight: 600;
-	color: var(--fd-muted-foreground);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
+  padding: 0 var(--fd-space-md);
+  font-size: var(--fd-text-xs);
+  font-weight: 600;
+  color: var(--fd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .flowdrop-divider::after {
-	content: '';
-	flex: 1;
-	height: 1px;
-	background-color: var(--fd-border);
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--fd-border);
 }
 
 /* Details/Summary - Modern accordion styling */
 .flowdrop-details {
-	background-color: var(--fd-card);
-	border-radius: var(--fd-radius-lg);
-	box-shadow: var(--fd-shadow-sm);
-	overflow: hidden;
-	border: 1px solid var(--fd-border-muted);
-	transition: all var(--fd-transition-fast);
+  background-color: var(--fd-card);
+  border-radius: var(--fd-radius-lg);
+  box-shadow: var(--fd-shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--fd-border-muted);
+  transition: all var(--fd-transition-fast);
 }
 
 .flowdrop-details:hover {
-	border-color: var(--fd-border);
+  border-color: var(--fd-border);
 }
 
 .flowdrop-details[open] {
-	box-shadow: var(--fd-shadow-md);
+  box-shadow: var(--fd-shadow-md);
 }
 
 .flowdrop-details__summary {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: var(--fd-space-md);
-	font-size: var(--fd-text-sm);
-	font-weight: 500;
-	color: var(--fd-foreground);
-	cursor: pointer;
-	transition: all var(--fd-transition-fast);
-	background: var(--fd-card);
-	border-radius: var(--fd-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--fd-space-md);
+  font-size: var(--fd-text-sm);
+  font-weight: 500;
+  color: var(--fd-foreground);
+  cursor: pointer;
+  transition: all var(--fd-transition-fast);
+  background: var(--fd-card);
+  border-radius: var(--fd-radius-md);
 }
 
 .flowdrop-details__summary:hover {
-	background-color: var(--fd-muted);
+  background-color: var(--fd-muted);
 }
 
 .flowdrop-details__summary::marker,
 .flowdrop-details__summary::-webkit-details-marker {
-	display: none;
+  display: none;
 }
 
 .flowdrop-details__content {
-	padding: var(--fd-space-md);
-	padding-top: 0;
-	background: var(--fd-card);
+  padding: var(--fd-space-md);
+  padding-top: 0;
+  background: var(--fd-card);
 }
 
 /* Loading spinner */
 .flowdrop-spinner {
-	display: inline-block;
-	width: var(--fd-size-spinner);
-	height: var(--fd-size-spinner);
-	border: 2px solid var(--fd-border);
-	border-top: 2px solid var(--fd-primary);
-	border-radius: 50%;
-	animation: flowdrop-spin 1s linear infinite;
+  display: inline-block;
+  width: var(--fd-size-spinner);
+  height: var(--fd-size-spinner);
+  border: 2px solid var(--fd-border);
+  border-top: 2px solid var(--fd-primary);
+  border-radius: 50%;
+  animation: flowdrop-spin 1s linear infinite;
 }
 
 .flowdrop-spinner--sm {
-	width: var(--fd-space-md);
-	height: var(--fd-space-md);
-	border-width: 1px;
+  width: var(--fd-space-md);
+  height: var(--fd-space-md);
+  border-width: 1px;
 }
 
 .flowdrop-spinner--lg {
-	width: var(--fd-space-3xl);
-	height: var(--fd-space-3xl);
-	border-width: 3px;
+  width: var(--fd-space-3xl);
+  height: var(--fd-space-3xl);
+  border-width: 3px;
 }
 
 @keyframes flowdrop-spin {
-	0% {
-		transform: rotate(0deg);
-	}
+  0% {
+    transform: rotate(0deg);
+  }
 
-	100% {
-		transform: rotate(360deg);
-	}
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Utility classes */
 .flowdrop-flex {
-	display: flex;
+  display: flex;
 }
 
 .flowdrop-flex--col {
-	flex-direction: column;
+  flex-direction: column;
 }
 
 .flowdrop-flex--center {
-	align-items: center;
-	justify-content: center;
+  align-items: center;
+  justify-content: center;
 }
 
 .flowdrop-flex--between {
-	justify-content: space-between;
+  justify-content: space-between;
 }
 
 .flowdrop-flex--1 {
-	flex: 1;
+  flex: 1;
 }
 
 .flowdrop-gap--1 {
-	gap: var(--fd-space-3xs);
+  gap: var(--fd-space-3xs);
 }
 
 .flowdrop-gap--2 {
-	gap: var(--fd-space-xs);
+  gap: var(--fd-space-xs);
 }
 
 .flowdrop-gap--3 {
-	gap: var(--fd-space-md);
+  gap: var(--fd-space-md);
 }
 
 .flowdrop-gap--4 {
-	gap: var(--fd-space-xl);
+  gap: var(--fd-space-xl);
 }
 
 .flowdrop-p--1 {
-	padding: var(--fd-space-3xs);
+  padding: var(--fd-space-3xs);
 }
 
 .flowdrop-p--2 {
-	padding: var(--fd-space-xs);
+  padding: var(--fd-space-xs);
 }
 
 .flowdrop-p--3 {
-	padding: var(--fd-space-md);
+  padding: var(--fd-space-md);
 }
 
 .flowdrop-p--4 {
-	padding: var(--fd-space-xl);
+  padding: var(--fd-space-xl);
 }
 
 .flowdrop-m--0 {
-	margin: 0;
+  margin: 0;
 }
 
 .flowdrop-mb--1 {
-	margin-bottom: var(--fd-space-3xs);
+  margin-bottom: var(--fd-space-3xs);
 }
 
 .flowdrop-mb--2 {
-	margin-bottom: var(--fd-space-xs);
+  margin-bottom: var(--fd-space-xs);
 }
 
 .flowdrop-mb--3 {
-	margin-bottom: var(--fd-space-md);
+  margin-bottom: var(--fd-space-md);
 }
 
 .flowdrop-mb--4 {
-	margin-bottom: var(--fd-space-xl);
+  margin-bottom: var(--fd-space-xl);
 }
 
 .flowdrop-text--xs {
-	font-size: var(--fd-text-xs);
+  font-size: var(--fd-text-xs);
 }
 
 .flowdrop-text--sm {
-	font-size: var(--fd-text-sm);
+  font-size: var(--fd-text-sm);
 }
 
 .flowdrop-text--lg {
-	font-size: var(--fd-text-lg);
+  font-size: var(--fd-text-lg);
 }
 
 .flowdrop-text--xl {
-	font-size: var(--fd-text-xl);
+  font-size: var(--fd-text-xl);
 }
 
 .flowdrop-font--bold {
-	font-weight: 700;
+  font-weight: 700;
 }
 
 .flowdrop-font--medium {
-	font-weight: 500;
+  font-weight: 500;
 }
 
 .flowdrop-text--center {
-	text-align: center;
+  text-align: center;
 }
 
 .flowdrop-text--gray {
-	color: var(--fd-muted-foreground);
+  color: var(--fd-muted-foreground);
 }
 
 .flowdrop-text--gray-dark {
-	color: var(--fd-foreground);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-bg--white {
-	background-color: var(--fd-background);
+  background-color: var(--fd-background);
 }
 
 .flowdrop-bg--gray {
-	background-color: var(--fd-muted);
+  background-color: var(--fd-muted);
 }
 
 .flowdrop-bg--gray-light {
-	background-color: var(--fd-subtle);
+  background-color: var(--fd-subtle);
 }
 
 .flowdrop-border {
-	border: 1px solid var(--fd-border);
+  border: 1px solid var(--fd-border);
 }
 
 .flowdrop-border--b {
-	border-bottom: 1px solid var(--fd-border);
+  border-bottom: 1px solid var(--fd-border);
 }
 
 .flowdrop-border--t {
-	border-top: 1px solid var(--fd-border);
+  border-top: 1px solid var(--fd-border);
 }
 
 .flowdrop-border--r {
-	border-right: 1px solid var(--fd-border);
+  border-right: 1px solid var(--fd-border);
 }
 
 .flowdrop-rounded {
-	border-radius: var(--fd-radius-md);
+  border-radius: var(--fd-radius-md);
 }
 
 .flowdrop-rounded--lg {
-	border-radius: var(--fd-radius-lg);
+  border-radius: var(--fd-radius-lg);
 }
 
 .flowdrop-shadow {
-	box-shadow: var(--fd-shadow-sm);
+  box-shadow: var(--fd-shadow-sm);
 }
 
 .flowdrop-shadow--lg {
-	box-shadow: var(--fd-shadow-md);
+  box-shadow: var(--fd-shadow-md);
 }
 
 .flowdrop-w--full {
-	width: 100%;
+  width: 100%;
 }
 
 .flowdrop-h--full {
-	height: 100%;
+  height: 100%;
 }
 
 .flowdrop-min-h--0 {
-	min-height: 0;
+  min-height: 0;
 }
 
 .flowdrop-overflow--hidden {
-	overflow: hidden;
+  overflow: hidden;
 }
 
 .flowdrop-overflow--auto {
-	overflow: auto;
+  overflow: auto;
 }
 
 .flowdrop-cursor--pointer {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 .flowdrop-cursor--grab {
-	cursor: grab;
+  cursor: grab;
 }
 
 .flowdrop-cursor--grabbing {
-	cursor: grabbing;
+  cursor: grabbing;
 }
 
 .flowdrop-transition {
-	transition: all var(--fd-transition-normal);
+  transition: all var(--fd-transition-normal);
 }
 
 .flowdrop-truncate {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .flowdrop-opacity--70 {
-	opacity: 0.7;
+  opacity: 0.7;
 }
 
 .flowdrop-opacity--60 {
-	opacity: 0.6;
+  opacity: 0.6;
 }
 
 /* Responsive utilities */
 @media (min-width: 640px) {
-	.flowdrop-sm\\:flex {
-		display: flex;
-	}
+  .flowdrop-sm\\:flex {
+    display: flex;
+  }
 
-	.flowdrop-sm\\:hidden {
-		display: none;
-	}
+  .flowdrop-sm\\:hidden {
+    display: none;
+  }
 }
 
 @media (min-width: 768px) {
-	.flowdrop-md\\:flex {
-		display: flex;
-	}
+  .flowdrop-md\\:flex {
+    display: flex;
+  }
 
-	.flowdrop-md\\:hidden {
-		display: none;
-	}
+  .flowdrop-md\\:hidden {
+    display: none;
+  }
 }
 
 @media (min-width: 1024px) {
-	.flowdrop-lg\\:flex {
-		display: flex;
-	}
+  .flowdrop-lg\\:flex {
+    display: flex;
+  }
 
-	.flowdrop-lg\\:hidden {
-		display: none;
-	}
+  .flowdrop-lg\\:hidden {
+    display: none;
+  }
 }
 
 /* Color system - Category colors */
 .flowdrop-color--primary {
-	background-color: var(--fd-primary);
-	color: var(--fd-primary-foreground);
+  background-color: var(--fd-primary);
+  color: var(--fd-primary-foreground);
 }
 
 .flowdrop-color--primary-light {
-	background-color: var(--fd-primary-muted);
-	color: var(--fd-primary-hover);
+  background-color: var(--fd-primary-muted);
+  color: var(--fd-primary-hover);
 }
 
 .flowdrop-color--primary-text {
-	color: var(--fd-primary);
+  color: var(--fd-primary);
 }
 
 .flowdrop-color--primary-border {
-	border-color: var(--fd-primary);
+  border-color: var(--fd-primary);
 }
 
 .flowdrop-color--secondary {
-	background-color: var(--fd-secondary);
-	color: var(--fd-secondary-foreground);
+  background-color: var(--fd-secondary);
+  color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-color--secondary-light {
-	background-color: var(--fd-secondary);
-	color: var(--fd-secondary-foreground);
+  background-color: var(--fd-secondary);
+  color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-color--secondary-text {
-	color: var(--fd-secondary-foreground);
+  color: var(--fd-secondary-foreground);
 }
 
 .flowdrop-color--secondary-border {
-	border-color: var(--fd-border);
+  border-color: var(--fd-border);
 }
 
 .flowdrop-color--success {
-	background-color: var(--fd-success);
-	color: var(--fd-success-foreground);
+  background-color: var(--fd-success);
+  color: var(--fd-success-foreground);
 }
 
 .flowdrop-color--success-light {
-	background-color: var(--fd-success-muted);
-	color: var(--fd-success-hover);
+  background-color: var(--fd-success-muted);
+  color: var(--fd-success-hover);
 }
 
 .flowdrop-color--success-text {
-	color: var(--fd-success);
+  color: var(--fd-success);
 }
 
 .flowdrop-color--success-border {
-	border-color: var(--fd-success);
+  border-color: var(--fd-success);
 }
 
 .flowdrop-color--warning {
-	background-color: var(--fd-warning);
-	color: var(--fd-warning-foreground);
+  background-color: var(--fd-warning);
+  color: var(--fd-warning-foreground);
 }
 
 .flowdrop-color--warning-light {
-	background-color: var(--fd-warning-muted);
-	color: var(--fd-warning-hover);
+  background-color: var(--fd-warning-muted);
+  color: var(--fd-warning-hover);
 }
 
 .flowdrop-color--warning-text {
-	color: var(--fd-warning);
+  color: var(--fd-warning);
 }
 
 .flowdrop-color--warning-border {
-	border-color: var(--fd-warning);
+  border-color: var(--fd-warning);
 }
 
 .flowdrop-color--error {
-	background-color: var(--fd-error);
-	color: var(--fd-error-foreground);
+  background-color: var(--fd-error);
+  color: var(--fd-error-foreground);
 }
 
 .flowdrop-color--error-light {
-	background-color: var(--fd-error-muted);
-	color: var(--fd-error-hover);
+  background-color: var(--fd-error-muted);
+  color: var(--fd-error-hover);
 }
 
 .flowdrop-color--error-text {
-	color: var(--fd-error);
+  color: var(--fd-error);
 }
 
 .flowdrop-color--error-border {
-	border-color: var(--fd-error);
+  border-color: var(--fd-error);
 }
 
 .flowdrop-color--info {
-	background-color: var(--fd-info);
-	color: var(--fd-info-foreground);
+  background-color: var(--fd-info);
+  color: var(--fd-info-foreground);
 }
 
 .flowdrop-color--info-light {
-	background-color: var(--fd-info-muted);
-	color: var(--fd-info);
+  background-color: var(--fd-info-muted);
+  color: var(--fd-info);
 }
 
 .flowdrop-color--info-text {
-	color: var(--fd-info);
+  color: var(--fd-info);
 }
 
 .flowdrop-color--info-border {
-	border-color: var(--fd-info);
+  border-color: var(--fd-info);
 }
 
 .flowdrop-color--accent {
-	background-color: var(--fd-accent);
-	color: var(--fd-accent-foreground);
+  background-color: var(--fd-accent);
+  color: var(--fd-accent-foreground);
 }
 
 .flowdrop-color--accent-light {
-	background-color: var(--fd-accent-muted);
-	color: var(--fd-accent-hover);
+  background-color: var(--fd-accent-muted);
+  color: var(--fd-accent-hover);
 }
 
 .flowdrop-color--accent-text {
-	color: var(--fd-accent);
+  color: var(--fd-accent);
 }
 
 .flowdrop-color--accent-border {
-	border-color: var(--fd-accent);
+  border-color: var(--fd-accent);
 }
 
 .flowdrop-color--neutral {
-	background-color: var(--fd-muted-foreground);
-	color: var(--fd-background);
+  background-color: var(--fd-muted-foreground);
+  color: var(--fd-background);
 }
 
 .flowdrop-color--neutral-light {
-	background-color: var(--fd-muted);
-	color: var(--fd-foreground);
+  background-color: var(--fd-muted);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-color--neutral-text {
-	color: var(--fd-foreground);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-color--neutral-border {
-	border-color: var(--fd-border);
+  border-color: var(--fd-border);
 }
 
 .flowdrop-color--base {
-	background-color: var(--fd-background);
-	color: var(--fd-foreground);
+  background-color: var(--fd-background);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-color--base-light {
-	background-color: var(--fd-muted);
-	color: var(--fd-foreground);
+  background-color: var(--fd-muted);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-color--base-text {
-	color: var(--fd-foreground);
+  color: var(--fd-foreground);
 }
 
 .flowdrop-color--base-border {
-	border-color: var(--fd-border);
+  border-color: var(--fd-border);
 }
 
 /* Data type colors for ports */
 .flowdrop-color--emerald {
-	background-color: var(--fd-node-emerald);
-	color: #ffffff;
+  background-color: var(--fd-node-emerald);
+  color: #ffffff;
 }
 
 .flowdrop-color--blue {
-	background-color: var(--fd-node-blue);
-	color: #ffffff;
+  background-color: var(--fd-node-blue);
+  color: #ffffff;
 }
 
 .flowdrop-color--purple {
-	background-color: var(--fd-node-purple);
-	color: #ffffff;
+  background-color: var(--fd-node-purple);
+  color: #ffffff;
 }
 
 .flowdrop-color--amber {
-	background-color: var(--fd-node-amber);
-	color: #ffffff;
+  background-color: var(--fd-node-amber);
+  color: #ffffff;
 }
 
 .flowdrop-color--orange {
-	background-color: var(--fd-node-orange);
-	color: #ffffff;
+  background-color: var(--fd-node-orange);
+  color: #ffffff;
 }
 
 .flowdrop-color--red {
-	background-color: var(--fd-node-red);
-	color: #ffffff;
+  background-color: var(--fd-node-red);
+  color: #ffffff;
 }
 
 .flowdrop-color--pink {
-	background-color: var(--fd-node-pink);
-	color: #ffffff;
+  background-color: var(--fd-node-pink);
+  color: #ffffff;
 }
 
 .flowdrop-color--indigo {
-	background-color: var(--fd-node-indigo);
-	color: #ffffff;
+  background-color: var(--fd-node-indigo);
+  color: #ffffff;
 }
 
 .flowdrop-color--teal {
-	background-color: var(--fd-node-teal);
-	color: #ffffff;
+  background-color: var(--fd-node-teal);
+  color: #ffffff;
 }
 
 .flowdrop-color--cyan {
-	background-color: var(--fd-node-cyan);
-	color: #ffffff;
+  background-color: var(--fd-node-cyan);
+  color: #ffffff;
 }
 
 .flowdrop-color--lime {
-	background-color: var(--fd-node-lime);
-	color: #ffffff;
+  background-color: var(--fd-node-lime);
+  color: #ffffff;
 }
 
 .flowdrop-color--slate {
-	background-color: var(--fd-node-slate);
-	color: #ffffff;
+  background-color: var(--fd-node-slate);
+  color: #ffffff;
 }
 
 /* =========================================================================
@@ -924,170 +924,174 @@
    ========================================================================= */
 
 :root {
-	/* =========================================================================
+  /* =========================================================================
 	   Interrupt Component Tokens
 	   ========================================================================= */
 
-	/* Interrupt state: Pending (awaiting user response) */
-	--fd-interrupt-pending-bg: linear-gradient(
-		135deg,
-		var(--fd-warning-muted) 0%,
-		var(--fd-warning-muted) 100%
-	);
-	--fd-interrupt-pending-border: var(--fd-warning);
-	--fd-interrupt-pending-shadow: rgba(245, 158, 11, 0.15);
-	--fd-interrupt-pending-avatar: var(--fd-warning);
-	--fd-interrupt-pending-text: var(--fd-warning-hover);
-	--fd-interrupt-pending-text-light: var(--fd-warning-hover);
+  /* Interrupt state: Pending (awaiting user response) */
+  --fd-interrupt-pending-bg: linear-gradient(
+    135deg,
+    var(--fd-warning-muted) 0%,
+    var(--fd-warning-muted) 100%
+  );
+  --fd-interrupt-pending-border: var(--fd-warning);
+  --fd-interrupt-pending-shadow: rgba(245, 158, 11, 0.15);
+  --fd-interrupt-pending-avatar: var(--fd-warning);
+  --fd-interrupt-pending-text: var(--fd-warning-hover);
+  --fd-interrupt-pending-text-light: var(--fd-warning-hover);
 
-	/* Interrupt state: Completed (response received - neutral) */
-	--fd-interrupt-completed-bg: linear-gradient(
-		135deg,
-		var(--fd-info-muted) 0%,
-		var(--fd-primary-muted) 100%
-	);
-	--fd-interrupt-completed-border: var(--fd-primary);
-	--fd-interrupt-completed-shadow: rgba(59, 130, 246, 0.15);
-	--fd-interrupt-completed-avatar: var(--fd-primary);
-	--fd-interrupt-completed-text: var(--fd-primary-hover);
-	--fd-interrupt-completed-text-light: var(--fd-primary);
+  /* Interrupt state: Completed (response received - neutral) */
+  --fd-interrupt-completed-bg: linear-gradient(
+    135deg,
+    var(--fd-info-muted) 0%,
+    var(--fd-primary-muted) 100%
+  );
+  --fd-interrupt-completed-border: var(--fd-primary);
+  --fd-interrupt-completed-shadow: rgba(59, 130, 246, 0.15);
+  --fd-interrupt-completed-avatar: var(--fd-primary);
+  --fd-interrupt-completed-text: var(--fd-primary-hover);
+  --fd-interrupt-completed-text-light: var(--fd-primary);
 
-	/* Interrupt state: Cancelled (dismissed without responding) */
-	--fd-interrupt-cancelled-bg: linear-gradient(135deg, var(--fd-muted) 0%, var(--fd-subtle) 100%);
-	--fd-interrupt-cancelled-border: var(--fd-muted-foreground);
-	--fd-interrupt-cancelled-shadow: rgba(107, 114, 128, 0.15);
-	--fd-interrupt-cancelled-avatar: var(--fd-muted-foreground);
-	--fd-interrupt-cancelled-text: var(--fd-muted-foreground);
-	--fd-interrupt-cancelled-text-light: var(--fd-muted-foreground);
+  /* Interrupt state: Cancelled (dismissed without responding) */
+  --fd-interrupt-cancelled-bg: linear-gradient(
+    135deg,
+    var(--fd-muted) 0%,
+    var(--fd-subtle) 100%
+  );
+  --fd-interrupt-cancelled-border: var(--fd-muted-foreground);
+  --fd-interrupt-cancelled-shadow: rgba(107, 114, 128, 0.15);
+  --fd-interrupt-cancelled-avatar: var(--fd-muted-foreground);
+  --fd-interrupt-cancelled-text: var(--fd-muted-foreground);
+  --fd-interrupt-cancelled-text-light: var(--fd-muted-foreground);
 
-	/* Interrupt state: Error */
-	--fd-interrupt-error-bg: linear-gradient(
-		135deg,
-		var(--fd-error-muted) 0%,
-		var(--fd-error-muted) 100%
-	);
-	--fd-interrupt-error-border: var(--fd-error);
-	--fd-interrupt-error-shadow: rgba(239, 68, 68, 0.15);
-	--fd-interrupt-error-avatar: var(--fd-error);
-	--fd-interrupt-error-text: var(--fd-error-hover);
-	--fd-interrupt-error-text-light: var(--fd-error);
+  /* Interrupt state: Error */
+  --fd-interrupt-error-bg: linear-gradient(
+    135deg,
+    var(--fd-error-muted) 0%,
+    var(--fd-error-muted) 100%
+  );
+  --fd-interrupt-error-border: var(--fd-error);
+  --fd-interrupt-error-shadow: rgba(239, 68, 68, 0.15);
+  --fd-interrupt-error-avatar: var(--fd-error);
+  --fd-interrupt-error-text: var(--fd-error-hover);
+  --fd-interrupt-error-text-light: var(--fd-error);
 
-	/* Interrupt prompt inner styling */
-	--fd-interrupt-prompt-bg: rgba(255, 255, 255, 0.85);
-	--fd-interrupt-prompt-border-pending: rgba(245, 158, 11, 0.2);
-	--fd-interrupt-prompt-border-completed: rgba(59, 130, 246, 0.2);
-	--fd-interrupt-prompt-border-cancelled: rgba(107, 114, 128, 0.2);
-	--fd-interrupt-prompt-border-error: rgba(239, 68, 68, 0.2);
+  /* Interrupt prompt inner styling */
+  --fd-interrupt-prompt-bg: rgba(255, 255, 255, 0.85);
+  --fd-interrupt-prompt-border-pending: rgba(245, 158, 11, 0.2);
+  --fd-interrupt-prompt-border-completed: rgba(59, 130, 246, 0.2);
+  --fd-interrupt-prompt-border-cancelled: rgba(107, 114, 128, 0.2);
+  --fd-interrupt-prompt-border-error: rgba(239, 68, 68, 0.2);
 
-	/* Interrupt button tokens */
-	--fd-interrupt-btn-primary-bg: linear-gradient(
-		135deg,
-		var(--fd-primary) 0%,
-		var(--fd-primary-hover) 100%
-	);
-	--fd-interrupt-btn-primary-bg-hover: linear-gradient(
-		135deg,
-		var(--fd-primary-hover) 0%,
-		var(--fd-primary-hover) 100%
-	);
-	--fd-interrupt-btn-primary-shadow: rgba(59, 130, 246, 0.3);
-	--fd-interrupt-btn-secondary-bg: var(--fd-muted);
-	--fd-interrupt-btn-secondary-border: var(--fd-border);
-	--fd-interrupt-btn-secondary-text: var(--fd-foreground);
+  /* Interrupt button tokens */
+  --fd-interrupt-btn-primary-bg: linear-gradient(
+    135deg,
+    var(--fd-primary) 0%,
+    var(--fd-primary-hover) 100%
+  );
+  --fd-interrupt-btn-primary-bg-hover: linear-gradient(
+    135deg,
+    var(--fd-primary-hover) 0%,
+    var(--fd-primary-hover) 100%
+  );
+  --fd-interrupt-btn-primary-shadow: rgba(59, 130, 246, 0.3);
+  --fd-interrupt-btn-secondary-bg: var(--fd-muted);
+  --fd-interrupt-btn-secondary-border: var(--fd-border);
+  --fd-interrupt-btn-secondary-text: var(--fd-foreground);
 
-	/* Interrupt selection tokens (for confirmation/choice) */
-	--fd-interrupt-selected-confirm-bg: var(--fd-interrupt-btn-primary-bg);
-	--fd-interrupt-selected-confirm-border: var(--fd-primary-hover);
-	--fd-interrupt-selected-confirm-glow: rgba(59, 130, 246, 0.3);
-	--fd-interrupt-selected-decline-bg: var(--fd-error-muted);
-	--fd-interrupt-selected-decline-border: var(--fd-error);
-	--fd-interrupt-selected-decline-text: var(--fd-error);
-	--fd-interrupt-selected-decline-glow: rgba(248, 113, 113, 0.2);
-	--fd-interrupt-not-selected-opacity: 0.4;
+  /* Interrupt selection tokens (for confirmation/choice) */
+  --fd-interrupt-selected-confirm-bg: var(--fd-interrupt-btn-primary-bg);
+  --fd-interrupt-selected-confirm-border: var(--fd-primary-hover);
+  --fd-interrupt-selected-confirm-glow: rgba(59, 130, 246, 0.3);
+  --fd-interrupt-selected-decline-bg: var(--fd-error-muted);
+  --fd-interrupt-selected-decline-border: var(--fd-error);
+  --fd-interrupt-selected-decline-text: var(--fd-error);
+  --fd-interrupt-selected-decline-glow: rgba(248, 113, 113, 0.2);
+  --fd-interrupt-not-selected-opacity: 0.4;
 
-	/* Interrupt badge tokens */
-	--fd-interrupt-badge-completed-bg: var(--fd-primary-muted);
-	--fd-interrupt-badge-completed-text: var(--fd-primary);
+  /* Interrupt badge tokens */
+  --fd-interrupt-badge-completed-bg: var(--fd-primary-muted);
+  --fd-interrupt-badge-completed-text: var(--fd-primary);
 
-	/* =========================================================================
+  /* =========================================================================
 	   Shared Interrupt Tokens
 	   Used across all interrupt prompt components
 	   ========================================================================= */
 
-	--fd-interrupt-font-message: var(--fd-text-md);
-	--fd-interrupt-font-error: var(--fd-text-xsm);
-	--fd-interrupt-line-height: var(--fd-leading-normal);
-	--fd-interrupt-btn-min-height: var(--fd-size-btn-min);
-	--fd-interrupt-spinner-size: var(--fd-size-spinner);
-	--fd-interrupt-avatar-size: var(--fd-size-avatar);
-	--fd-interrupt-font-mono: var(--fd-font-mono);
+  --fd-interrupt-font-message: var(--fd-text-md);
+  --fd-interrupt-font-error: var(--fd-text-xsm);
+  --fd-interrupt-line-height: var(--fd-leading-normal);
+  --fd-interrupt-btn-min-height: var(--fd-size-btn-min);
+  --fd-interrupt-spinner-size: var(--fd-size-spinner);
+  --fd-interrupt-avatar-size: var(--fd-size-avatar);
+  --fd-interrupt-font-mono: var(--fd-font-mono);
 
-	/* =========================================================================
+  /* =========================================================================
 	   Review Prompt Component Tokens
 	   ========================================================================= */
 
-	/* Typography */
-	--fd-review-font-size-message: var(--fd-interrupt-font-message);
-	--fd-review-font-size-error: var(--fd-interrupt-font-error);
-	--fd-review-font-size-html-toggle: var(--fd-text-2xs);
-	--fd-review-line-height: var(--fd-interrupt-line-height);
-	--fd-review-line-height-content: var(--fd-leading-relaxed);
-	--fd-review-font-mono: var(--fd-interrupt-font-mono);
+  /* Typography */
+  --fd-review-font-size-message: var(--fd-interrupt-font-message);
+  --fd-review-font-size-error: var(--fd-interrupt-font-error);
+  --fd-review-font-size-html-toggle: var(--fd-text-2xs);
+  --fd-review-line-height: var(--fd-interrupt-line-height);
+  --fd-review-line-height-content: var(--fd-leading-relaxed);
+  --fd-review-font-mono: var(--fd-interrupt-font-mono);
 
-	/* Spacing */
-	--fd-review-space-xs: 0.125rem;
-	--fd-review-space-sm: var(--fd-space-2xs);
-	--fd-review-space-md: var(--fd-space-sm);
-	--fd-review-space-lg: var(--fd-space-lg);
+  /* Spacing */
+  --fd-review-space-xs: 0.125rem;
+  --fd-review-space-sm: var(--fd-space-2xs);
+  --fd-review-space-md: var(--fd-space-sm);
+  --fd-review-space-lg: var(--fd-space-lg);
 
-	/* Sizes */
-	--fd-review-toggle-height: var(--fd-size-icon-btn);
-	--fd-review-diff-label-width: 5rem;
+  /* Sizes */
+  --fd-review-toggle-height: var(--fd-size-icon-btn);
+  --fd-review-diff-label-width: 5rem;
 
-	/* Diff token styling */
-	--fd-review-diff-token-padding: 0.0625rem 0.125rem;
+  /* Diff token styling */
+  --fd-review-diff-token-padding: 0.0625rem 0.125rem;
 
-	/* =========================================================================
+  /* =========================================================================
 	   Playground Component Tokens
 	   ========================================================================= */
 
-	--fd-playground-sidebar-width: 280px;
-	--fd-playground-header-height: 3.25rem;
-	--fd-playground-icon-btn-size: var(--fd-size-icon-btn);
+  --fd-playground-sidebar-width: 280px;
+  --fd-playground-header-height: 3.25rem;
+  --fd-playground-icon-btn-size: var(--fd-size-icon-btn);
 
-	/* =========================================================================
+  /* =========================================================================
 	   Notes Node Component Tokens
 	   Notes node now uses standard node styling (--fd-card, --fd-node-border)
 	   for a consistent look and to avoid confusion with selected state.
 	   ========================================================================= */
 
-	--fd-notes-node-width: 500px;
-	--fd-notes-node-min-width: 250px;
-	--fd-notes-node-max-width: 500px;
-	--fd-notes-node-backdrop-filter: blur(8px);
+  --fd-notes-node-width: 500px;
+  --fd-notes-node-min-width: 250px;
+  --fd-notes-node-max-width: 500px;
+  --fd-notes-node-backdrop-filter: blur(8px);
 }
 
 /* Dark mode overrides for interrupt component tokens */
-[data-theme='dark'] {
-	/* Interrupt prompt inner styling - dark background for dark mode */
-	--fd-interrupt-prompt-bg: rgba(30, 30, 35, 0.95);
-	--fd-interrupt-prompt-border-pending: rgba(251, 191, 36, 0.25);
-	--fd-interrupt-prompt-border-completed: rgba(96, 165, 250, 0.25);
-	--fd-interrupt-prompt-border-cancelled: rgba(156, 163, 175, 0.25);
-	--fd-interrupt-prompt-border-error: rgba(248, 113, 113, 0.25);
+[data-theme="dark"] {
+  /* Interrupt prompt inner styling - dark background for dark mode */
+  --fd-interrupt-prompt-bg: rgba(30, 30, 35, 0.95);
+  --fd-interrupt-prompt-border-pending: rgba(251, 191, 36, 0.25);
+  --fd-interrupt-prompt-border-completed: rgba(96, 165, 250, 0.25);
+  --fd-interrupt-prompt-border-cancelled: rgba(156, 163, 175, 0.25);
+  --fd-interrupt-prompt-border-error: rgba(248, 113, 113, 0.25);
 
-	/* Interrupt button tokens - adjusted for dark mode */
-	--fd-interrupt-btn-secondary-bg: var(--fd-secondary);
-	--fd-interrupt-btn-secondary-border: var(--fd-border);
-	--fd-interrupt-btn-secondary-text: var(--fd-foreground);
+  /* Interrupt button tokens - adjusted for dark mode */
+  --fd-interrupt-btn-secondary-bg: var(--fd-secondary);
+  --fd-interrupt-btn-secondary-border: var(--fd-border);
+  --fd-interrupt-btn-secondary-text: var(--fd-foreground);
 
-	/* Selection tokens - adjusted colors for dark mode visibility */
-	--fd-interrupt-selected-decline-bg: rgba(248, 113, 113, 0.15);
-	--fd-interrupt-selected-decline-glow: rgba(248, 113, 113, 0.25);
+  /* Selection tokens - adjusted colors for dark mode visibility */
+  --fd-interrupt-selected-decline-bg: rgba(248, 113, 113, 0.15);
+  --fd-interrupt-selected-decline-glow: rgba(248, 113, 113, 0.25);
 
-	/* Badge tokens - adjusted for dark mode */
-	--fd-interrupt-badge-completed-bg: var(--fd-primary-muted);
-	--fd-interrupt-badge-completed-text: var(--fd-primary);
+  /* Badge tokens - adjusted for dark mode */
+  --fd-interrupt-badge-completed-bg: var(--fd-primary-muted);
+  --fd-interrupt-badge-completed-text: var(--fd-primary);
 }
 
 /* Dark mode overrides for notes node tokens */
@@ -1098,8 +1102,8 @@
 
 /* Base markdown styling */
 .markdown-display {
-	line-height: var(--fd-leading-relaxed);
-	color: inherit;
+  line-height: var(--fd-leading-relaxed);
+  color: inherit;
 }
 
 /* Headings */
@@ -1109,192 +1113,192 @@
 .markdown-display h4,
 .markdown-display h5,
 .markdown-display h6 {
-	margin: 0.75rem 0 0.5rem 0;
-	font-weight: 600;
-	line-height: 1.25;
+  margin: 0.75rem 0 0.5rem 0;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .markdown-display h1 {
-	font-size: 1.5rem;
-	margin-top: 0;
+  font-size: 1.5rem;
+  margin-top: 0;
 }
 
 .markdown-display h2 {
-	font-size: 1.25rem;
+  font-size: 1.25rem;
 }
 
 .markdown-display h3 {
-	font-size: 1.125rem;
+  font-size: 1.125rem;
 }
 
 .markdown-display h4 {
-	font-size: 1rem;
+  font-size: 1rem;
 }
 
 .markdown-display h5 {
-	font-size: 0.875rem;
+  font-size: 0.875rem;
 }
 
 .markdown-display h6 {
-	font-size: 0.75rem;
+  font-size: 0.75rem;
 }
 
 /* Paragraphs and text */
 .markdown-display p {
-	margin: 0.5rem 0;
-	line-height: 1.6;
+  margin: 0.5rem 0;
+  line-height: 1.6;
 }
 
 .markdown-display p:first-child {
-	margin-top: 0;
+  margin-top: 0;
 }
 
 .markdown-display p:last-child {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 /* Lists */
 .markdown-display ul,
 .markdown-display ol {
-	margin: 0.5rem 0;
-	padding-left: 1.5rem;
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
 }
 
 .markdown-display li {
-	margin: 0.25rem 0;
-	line-height: 1.5;
+  margin: 0.25rem 0;
+  line-height: 1.5;
 }
 
 .markdown-display ul li {
-	list-style-type: disc;
+  list-style-type: disc;
 }
 
 .markdown-display ol li {
-	list-style-type: decimal;
+  list-style-type: decimal;
 }
 
 /* Code blocks and inline code */
 .markdown-display code {
-	background-color: rgba(0, 0, 0, 0.1);
-	padding: 0.125rem 0.25rem;
-	border-radius: 0.25rem;
-	font-size: 0.875em;
-	font-family: var(--fd-font-mono);
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: var(--fd-font-mono);
 }
 
 .markdown-display pre {
-	background-color: rgba(0, 0, 0, 0.1);
-	padding: var(--fd-space-md);
-	border-radius: var(--fd-radius-md);
-	overflow-x: auto;
-	margin: var(--fd-space-xs) 0;
-	font-family: var(--fd-font-mono);
-	font-size: 0.875em;
-	line-height: 1.4;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: var(--fd-space-md);
+  border-radius: var(--fd-radius-md);
+  overflow-x: auto;
+  margin: var(--fd-space-xs) 0;
+  font-family: var(--fd-font-mono);
+  font-size: 0.875em;
+  line-height: 1.4;
 }
 
 .markdown-display pre code {
-	background-color: transparent;
-	padding: 0;
-	border-radius: 0;
-	font-size: inherit;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
 }
 
 /* Blockquotes */
 .markdown-display blockquote {
-	border-left: 3px solid currentColor;
-	padding-left: 1rem;
-	margin: 0.5rem 0;
-	opacity: 0.8;
-	font-style: italic;
+  border-left: 3px solid currentColor;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  opacity: 0.8;
+  font-style: italic;
 }
 
 /* Links */
 .markdown-display a {
-	color: var(--fd-primary);
-	text-decoration: underline;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 2px;
+  color: var(--fd-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
 
 .markdown-display a:hover {
-	color: var(--fd-primary-hover);
-	text-decoration-thickness: 2px;
+  color: var(--fd-primary-hover);
+  text-decoration-thickness: 2px;
 }
 
 /* Emphasis */
 .markdown-display strong {
-	font-weight: 600;
+  font-weight: 600;
 }
 
 .markdown-display em {
-	font-style: italic;
+  font-style: italic;
 }
 
 /* Horizontal rules */
 .markdown-display hr {
-	border: none;
-	border-top: 1px solid rgba(0, 0, 0, 0.1);
-	margin: 1rem 0;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
 }
 
 /* Tables */
 .markdown-display table {
-	border-collapse: collapse;
-	width: 100%;
-	margin: 0.5rem 0;
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
 }
 
 .markdown-display th,
 .markdown-display td {
-	border: 1px solid rgba(0, 0, 0, 0.1);
-	padding: 0.5rem;
-	text-align: left;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  text-align: left;
 }
 
 .markdown-display th {
-	background-color: rgba(0, 0, 0, 0.05);
-	font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
 }
 
 /* Images */
 .markdown-display img {
-	max-width: 100%;
-	height: auto;
-	border-radius: 0.25rem;
-	margin: 0.5rem 0;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+  margin: 0.5rem 0;
 }
 
 /* Compact variant for smaller spaces */
 .markdown-display--compact {
-	font-size: 0.875em;
+  font-size: 0.875em;
 }
 
 .markdown-display--compact h1 {
-	font-size: 1.25rem;
+  font-size: 1.25rem;
 }
 
 .markdown-display--compact h2 {
-	font-size: 1.125rem;
+  font-size: 1.125rem;
 }
 
 .markdown-display--compact h3 {
-	font-size: 1rem;
+  font-size: 1rem;
 }
 
 /* Large variant for emphasis */
 .markdown-display--large {
-	font-size: 1.125em;
+  font-size: 1.125em;
 }
 
 .markdown-display--large h1 {
-	font-size: 1.75rem;
+  font-size: 1.75rem;
 }
 
 .markdown-display--large h2 {
-	font-size: 1.5rem;
+  font-size: 1.5rem;
 }
 
 .markdown-display--large h3 {
-	font-size: 1.25rem;
+  font-size: 1.25rem;
 }

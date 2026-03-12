@@ -5,79 +5,82 @@
 -->
 
 <script lang="ts">
-	import { useSvelteFlow } from '@xyflow/svelte';
-	import type { Snippet } from 'svelte';
+  import { useSvelteFlow } from "@xyflow/svelte";
+  import type { Snippet } from "svelte";
 
-	interface Props {
-		ondrop: (nodeTypeData: string, position: { x: number; y: number }) => void;
-		/** Optional callback invoked when a JSON file is dropped onto the canvas. */
-		onfiledrop?: (file: File) => void;
-		children: Snippet;
-	}
+  interface Props {
+    ondrop: (nodeTypeData: string, position: { x: number; y: number }) => void;
+    /** Optional callback invoked when a JSON file is dropped onto the canvas. */
+    onfiledrop?: (file: File) => void;
+    children: Snippet;
+  }
 
-	let props: Props = $props();
+  let props: Props = $props();
 
-	// Access SvelteFlow instance for coordinate transformation
-	const { screenToFlowPosition } = useSvelteFlow();
+  // Access SvelteFlow instance for coordinate transformation
+  const { screenToFlowPosition } = useSvelteFlow();
 
-	/**
-	 * Handle drag over event
-	 */
-	function handleDragOver(e: DragEvent): void {
-		e.preventDefault();
-		if (e.dataTransfer) {
-			e.dataTransfer.dropEffect = 'copy';
-		}
-	}
+  /**
+   * Handle drag over event
+   */
+  function handleDragOver(e: DragEvent): void {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  }
 
-	/**
-	 * Handle drop event with proper coordinate transformation.
-	 *
-	 * If the drag event carries a JSON file (e.g. a workflow file dragged from the OS),
-	 * the `onfiledrop` callback is invoked with the file.
-	 * Otherwise the node-type drop path is used as before.
-	 */
-	function handleDrop(e: DragEvent): void {
-		e.preventDefault();
+  /**
+   * Handle drop event with proper coordinate transformation.
+   *
+   * If the drag event carries a JSON file (e.g. a workflow file dragged from the OS),
+   * the `onfiledrop` callback is invoked with the file.
+   * Otherwise the node-type drop path is used as before.
+   */
+  function handleDrop(e: DragEvent): void {
+    e.preventDefault();
 
-		// Check if the drop contains files (e.g. a workflow JSON file from the OS)
-		const files = e.dataTransfer?.files;
-		if (files && files.length > 0) {
-			const file = files[0];
-			if (props.onfiledrop && (file.type === 'application/json' || file.name.endsWith('.json'))) {
-				props.onfiledrop(file);
-			}
-			return;
-		}
+    // Check if the drop contains files (e.g. a workflow JSON file from the OS)
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (
+        props.onfiledrop &&
+        (file.type === "application/json" || file.name.endsWith(".json"))
+      ) {
+        props.onfiledrop(file);
+      }
+      return;
+    }
 
-		// Get the data from the drag event (node type dropped from sidebar)
-		const nodeTypeData = e.dataTransfer?.getData('application/json');
-		if (nodeTypeData) {
-			// Convert screen coordinates to flow coordinates (accounts for zoom and pan)
-			const position = screenToFlowPosition({
-				x: e.clientX,
-				y: e.clientY
-			});
+    // Get the data from the drag event (node type dropped from sidebar)
+    const nodeTypeData = e.dataTransfer?.getData("application/json");
+    if (nodeTypeData) {
+      // Convert screen coordinates to flow coordinates (accounts for zoom and pan)
+      const position = screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      });
 
-			// Call the parent handler with the converted position
-			props.ondrop(nodeTypeData, position);
-		}
-	}
+      // Call the parent handler with the converted position
+      props.ondrop(nodeTypeData, position);
+    }
+  }
 </script>
 
 <div
-	class="flow-drop-zone"
-	role="application"
-	aria-label="Workflow canvas"
-	ondragover={handleDragOver}
-	ondrop={handleDrop}
+  class="flow-drop-zone"
+  role="application"
+  aria-label="Workflow canvas"
+  ondragover={handleDragOver}
+  ondrop={handleDrop}
 >
-	{@render props.children()}
+  {@render props.children()}
 </div>
 
 <style>
-	.flow-drop-zone {
-		width: 100%;
-		height: 100%;
-	}
+  .flow-drop-zone {
+    width: 100%;
+    height: 100%;
+  }
 </style>

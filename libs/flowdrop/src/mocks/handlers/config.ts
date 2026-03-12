@@ -3,10 +3,14 @@
  * Implements port configuration and health check
  */
 
-import { http, HttpResponse } from 'msw';
-import { DEFAULT_PORT_CONFIG } from '../../lib/config/defaultPortConfig.js';
-import { DEFAULT_CATEGORIES } from '../../lib/config/defaultCategories.js';
-import type { ApiResponse, PortConfig, CategoryDefinition } from '../../lib/types/index.js';
+import { http, HttpResponse } from "msw";
+import { DEFAULT_PORT_CONFIG } from "../../lib/config/defaultPortConfig.js";
+import { DEFAULT_CATEGORIES } from "../../lib/config/defaultCategories.js";
+import type {
+  ApiResponse,
+  PortConfig,
+  CategoryDefinition,
+} from "../../lib/types/index.js";
 
 /** Response type for port configuration */
 type PortConfigResponse = ApiResponse<PortConfig>;
@@ -15,7 +19,7 @@ type PortConfigResponse = ApiResponse<PortConfig>;
 type CategoriesResponse = ApiResponse<CategoryDefinition[]>;
 
 /** Base API path for flowdrop endpoints */
-const API_BASE = '/api/flowdrop';
+const API_BASE = "/api/flowdrop";
 
 /** Store the start time for uptime calculation */
 const startTime = Date.now();
@@ -24,15 +28,15 @@ const startTime = Date.now();
  * GET /api/config
  * Runtime configuration endpoint (replaces server-side route)
  */
-export const runtimeConfigHandler = http.get('/api/config', () => {
-	return HttpResponse.json({
-		apiBaseUrl: '/api/flowdrop',
-		theme: 'auto',
-		timeout: 30000,
-		authType: 'none',
-		version: '1.0.0',
-		environment: 'development'
-	});
+export const runtimeConfigHandler = http.get("/api/config", () => {
+  return HttpResponse.json({
+    apiBaseUrl: "/api/flowdrop",
+    theme: "auto",
+    timeout: 30000,
+    authType: "none",
+    version: "1.0.0",
+    environment: "development",
+  });
 });
 
 /**
@@ -40,14 +44,14 @@ export const runtimeConfigHandler = http.get('/api/config', () => {
  * API health check endpoint
  */
 export const healthCheckHandler = http.get(`${API_BASE}/health`, () => {
-	const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
-	return HttpResponse.json({
-		status: 'healthy',
-		timestamp: new Date().toISOString(),
-		version: '1.0.0',
-		service: 'FlowDrop Mock API',
-		uptime: uptimeSeconds
-	});
+  const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+  return HttpResponse.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
+    service: "FlowDrop Mock API",
+    uptime: uptimeSeconds,
+  });
 });
 
 /**
@@ -55,13 +59,13 @@ export const healthCheckHandler = http.get(`${API_BASE}/health`, () => {
  * Retrieve port configuration for node connections
  */
 export const getPortConfigHandler = http.get(`${API_BASE}/port-config`, () => {
-	const response: PortConfigResponse = {
-		success: true,
-		data: DEFAULT_PORT_CONFIG,
-		message: 'Port configuration loaded successfully'
-	};
+  const response: PortConfigResponse = {
+    success: true,
+    data: DEFAULT_PORT_CONFIG,
+    message: "Port configuration loaded successfully",
+  };
 
-	return HttpResponse.json(response);
+  return HttpResponse.json(response);
 });
 
 /**
@@ -69,63 +73,69 @@ export const getPortConfigHandler = http.get(`${API_BASE}/port-config`, () => {
  * Retrieve category definitions for node organization
  */
 export const getCategoriesHandler = http.get(`${API_BASE}/categories`, () => {
-	const response: CategoriesResponse = {
-		success: true,
-		data: DEFAULT_CATEGORIES,
-		message: 'Categories loaded successfully'
-	};
+  const response: CategoriesResponse = {
+    success: true,
+    data: DEFAULT_CATEGORIES,
+    message: "Categories loaded successfully",
+  };
 
-	return HttpResponse.json(response);
+  return HttpResponse.json(response);
 });
 
 /**
  * OPTIONS handlers for CORS preflight
  */
 export const healthOptionsHandler = http.options(`${API_BASE}/health`, () => {
-	return new HttpResponse(null, {
-		status: 204,
-		headers: {
-			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods': 'GET, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-		}
-	});
+  return new HttpResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 });
 
-export const portConfigOptionsHandler = http.options(`${API_BASE}/port-config`, () => {
-	return new HttpResponse(null, {
-		status: 204,
-		headers: {
-			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods': 'GET, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-		}
-	});
-});
+export const portConfigOptionsHandler = http.options(
+  `${API_BASE}/port-config`,
+  () => {
+    return new HttpResponse(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    });
+  },
+);
 
 /**
  * Export all config handlers
  */
-export const categoriesOptionsHandler = http.options(`${API_BASE}/categories`, () => {
-	return new HttpResponse(null, {
-		status: 204,
-		headers: {
-			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods': 'GET, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-		}
-	});
-});
+export const categoriesOptionsHandler = http.options(
+  `${API_BASE}/categories`,
+  () => {
+    return new HttpResponse(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    });
+  },
+);
 
 /**
  * Export all config handlers
  */
 export const configHandlers = [
-	runtimeConfigHandler,
-	healthCheckHandler,
-	getPortConfigHandler,
-	getCategoriesHandler,
-	healthOptionsHandler,
-	portConfigOptionsHandler,
-	categoriesOptionsHandler
+  runtimeConfigHandler,
+  healthCheckHandler,
+  getPortConfigHandler,
+  getCategoriesHandler,
+  healthOptionsHandler,
+  portConfigOptionsHandler,
+  categoriesOptionsHandler,
 ];

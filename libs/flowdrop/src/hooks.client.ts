@@ -6,8 +6,8 @@
  */
 
 // Initialize MSW mock server if enabled
-if (import.meta.env.VITE_MOCK_API === 'true') {
-	const { startMockServer } = await import('./mocks/index.js');
-	await startMockServer();
-	console.log('🔶 Mock API server started globally');
+if (import.meta.env.VITE_MOCK_API === "true") {
+  const { startMockServer } = await import("./mocks/index.js");
+  await startMockServer();
+  console.log("🔶 Mock API server started globally");
 }

@@ -29,29 +29,29 @@
  * ```
  */
 
-import type { Component } from 'svelte';
-import type { FieldSchema } from '../components/form/types.js';
-import { BaseRegistry } from '../registry/BaseRegistry.js';
+import type { Component } from "svelte";
+import type { FieldSchema } from "../components/form/types.js";
+import { BaseRegistry } from "../registry/BaseRegistry.js";
 
 /**
  * Base field component props that all registered field components should accept.
  * Components may have additional specific props.
  */
 export interface FieldComponentProps {
-	/** Field identifier */
-	id: string;
-	/** Current field value */
-	value: unknown;
-	/** Placeholder text */
-	placeholder?: string;
-	/** Whether field is required */
-	required?: boolean;
-	/** ARIA description ID */
-	ariaDescribedBy?: string;
-	/** Change callback */
-	onChange: (value: unknown) => void;
-	/** Additional schema-derived props */
-	[key: string]: unknown;
+  /** Field identifier */
+  id: string;
+  /** Current field value */
+  value: unknown;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Whether field is required */
+  required?: boolean;
+  /** ARIA description ID */
+  ariaDescribedBy?: string;
+  /** Change callback */
+  onChange: (value: unknown) => void;
+  /** Additional schema-derived props */
+  [key: string]: unknown;
 }
 
 /**
@@ -71,10 +71,10 @@ export type FieldComponent = Component<any, any, any>;
  * Contains the matching logic and priority without the component.
  */
 export interface FieldMatcherRegistration {
-	/** Function to determine if this registration should handle a given schema */
-	matcher: FieldMatcher;
-	/** Priority for matching (higher = checked first) */
-	priority: number;
+  /** Function to determine if this registration should handle a given schema */
+  matcher: FieldMatcher;
+  /** Priority for matching (higher = checked first) */
+  priority: number;
 }
 
 /**
@@ -82,81 +82,86 @@ export interface FieldMatcherRegistration {
  * Extends FieldMatcherRegistration with the Svelte component needed for rendering.
  */
 export interface FieldComponentRegistration extends FieldMatcherRegistration {
-	/** The Svelte component to render */
-	component: FieldComponent;
+  /** The Svelte component to render */
+  component: FieldComponent;
 }
 
 /**
  * Class-based field component registry.
  * Extends BaseRegistry with priority-based field resolution.
  */
-class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistration> {
-	/** Cached ordered keys by priority (highest first), invalidated on mutation */
-	private orderedKeys: string[] | null = null;
+class FieldComponentRegistry extends BaseRegistry<
+  string,
+  FieldComponentRegistration
+> {
+  /** Cached ordered keys by priority (highest first), invalidated on mutation */
+  private orderedKeys: string[] | null = null;
 
-	/**
-	 * Register a field component.
-	 * Silently overwrites existing registrations (preserves legacy behavior).
-	 *
-	 * @param type - Unique identifier for this field type
-	 * @param registration - The field component registration
-	 */
-	register(type: string, registration: FieldComponentRegistration): void {
-		this.items.set(type, registration);
-		this.orderedKeys = null;
-		this.notifyListeners();
-	}
+  /**
+   * Register a field component.
+   * Silently overwrites existing registrations (preserves legacy behavior).
+   *
+   * @param type - Unique identifier for this field type
+   * @param registration - The field component registration
+   */
+  register(type: string, registration: FieldComponentRegistration): void {
+    this.items.set(type, registration);
+    this.orderedKeys = null;
+    this.notifyListeners();
+  }
 
-	/**
-	 * Override unregister to invalidate the priority cache.
-	 */
-	override unregister(key: string): boolean {
-		const result = super.unregister(key);
-		if (result) {
-			this.orderedKeys = null;
-		}
-		return result;
-	}
+  /**
+   * Override unregister to invalidate the priority cache.
+   */
+  override unregister(key: string): boolean {
+    const result = super.unregister(key);
+    if (result) {
+      this.orderedKeys = null;
+    }
+    return result;
+  }
 
-	/**
-	 * Override clear to invalidate the priority cache.
-	 */
-	override clear(): void {
-		super.clear();
-		this.orderedKeys = null;
-	}
+  /**
+   * Override clear to invalidate the priority cache.
+   */
+  override clear(): void {
+    super.clear();
+    this.orderedKeys = null;
+  }
 
-	/**
-	 * Resolve which component should render a given field schema.
-	 * Checks registered matchers in priority order (highest first).
-	 *
-	 * @param schema - The field schema to resolve
-	 * @returns The matching registration or null if no match
-	 */
-	resolveFieldComponent(schema: FieldSchema): FieldComponentRegistration | null {
-		const keys = this.getOrderedKeys();
+  /**
+   * Resolve which component should render a given field schema.
+   * Checks registered matchers in priority order (highest first).
+   *
+   * @param schema - The field schema to resolve
+   * @returns The matching registration or null if no match
+   */
+  resolveFieldComponent(
+    schema: FieldSchema,
+  ): FieldComponentRegistration | null {
+    const keys = this.getOrderedKeys();
 
-		for (const key of keys) {
-			const registration = this.items.get(key);
-			if (registration && registration.matcher(schema)) {
-				return registration;
-			}
-		}
+    for (const key of keys) {
+      const registration = this.items.get(key);
+      if (registration && registration.matcher(schema)) {
+        return registration;
+      }
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	/**
-	 * Get keys ordered by priority (cached).
-	 */
-	private getOrderedKeys(): string[] {
-		if (this.orderedKeys === null) {
-			this.orderedKeys = Array.from(this.items.entries())
-				.sort((a, b) => b[1].priority - a[1].priority)
-				.map(([key]) => key);
-		}
-		return this.orderedKeys;
-	}
+  /**
+   * Get keys ordered by priority (cached).
+   */
+  private getOrderedKeys(): string[] {
+    if (this.orderedKeys === null) {
+      this.orderedKeys = Array.from(this.items.entries())
+        .sort((a, b) => b[1].priority - a[1].priority)
+        .map(([key]) => key);
+    }
+    return this.orderedKeys;
+  }
 }
 
 /** Singleton instance of the field component registry */
@@ -170,47 +175,52 @@ export const fieldComponentRegistry = new FieldComponentRegistry();
 /**
  * Matcher for hidden fields (should not render)
  */
-export const hiddenFieldMatcher: FieldMatcher = (schema) => schema.format === 'hidden';
+export const hiddenFieldMatcher: FieldMatcher = (schema) =>
+  schema.format === "hidden";
 
 /**
  * Matcher for checkbox group fields (enum with multiple)
  */
 export const checkboxGroupMatcher: FieldMatcher = (schema) =>
-	Boolean(schema.enum && schema.multiple);
+  Boolean(schema.enum && schema.multiple);
 
 /**
  * Matcher for enum select fields
  */
-export const enumSelectMatcher: FieldMatcher = (schema) => Boolean(schema.enum && !schema.multiple);
+export const enumSelectMatcher: FieldMatcher = (schema) =>
+  Boolean(schema.enum && !schema.multiple);
 
 /**
  * Matcher for multiline textarea fields
  */
 export const textareaMatcher: FieldMatcher = (schema) =>
-	schema.type === 'string' && schema.format === 'multiline';
+  schema.type === "string" && schema.format === "multiline";
 
 /**
  * Matcher for range slider fields
  */
 export const rangeMatcher: FieldMatcher = (schema) =>
-	(schema.type === 'number' || schema.type === 'integer') && schema.format === 'range';
+  (schema.type === "number" || schema.type === "integer") &&
+  schema.format === "range";
 
 /**
  * Matcher for string text fields
  */
 export const textFieldMatcher: FieldMatcher = (schema) =>
-	schema.type === 'string' && !schema.format;
+  schema.type === "string" && !schema.format;
 
 /**
  * Matcher for number fields
  */
 export const numberFieldMatcher: FieldMatcher = (schema) =>
-	(schema.type === 'number' || schema.type === 'integer') && schema.format !== 'range';
+  (schema.type === "number" || schema.type === "integer") &&
+  schema.format !== "range";
 
 /**
  * Matcher for boolean toggle fields
  */
-export const toggleMatcher: FieldMatcher = (schema) => schema.type === 'boolean';
+export const toggleMatcher: FieldMatcher = (schema) =>
+  schema.type === "boolean";
 
 /**
  * Matcher for select fields with labeled options (JSON Schema oneOf pattern)
@@ -221,17 +231,17 @@ export const toggleMatcher: FieldMatcher = (schema) => schema.type === 'boolean'
  * ```
  */
 export const selectOptionsMatcher: FieldMatcher = (schema) =>
-	Boolean(schema.oneOf && schema.oneOf.length > 0);
+  Boolean(schema.oneOf && schema.oneOf.length > 0);
 
 /**
  * Matcher for array fields
  */
 export const arrayMatcher: FieldMatcher = (schema) =>
-	schema.type === 'array' && Boolean(schema.items);
+  schema.type === "array" && Boolean(schema.items);
 
 /**
  * Matcher for autocomplete fields
  * Matches when format is "autocomplete" and autocomplete config with URL is provided
  */
 export const autocompleteMatcher: FieldMatcher = (schema) =>
-	schema.format === 'autocomplete' && Boolean(schema.autocomplete?.url);
+  schema.format === "autocomplete" && Boolean(schema.autocomplete?.url);
