@@ -23,7 +23,6 @@
 	import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
 	import type { RuntimeConfig } from '$lib/config/runtimeConfig';
 	import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
-	import { resolveTheme } from '$lib/themes/index.js';
 
 	let { data, children } = $props();
 
@@ -62,13 +61,6 @@
 	onMount(() => {
 		// Initialize settings system (loads from localStorage, applies theme to DOM)
 		initializeSettings();
-
-		// Apply slate skin tokens directly on document root so they beat both :root
-		// (light mode) and [data-theme='dark'] CSS rules regardless of system preference.
-		const skinTokens = resolveTheme('minimal').skin?.tokens ?? {};
-		Object.entries(skinTokens).forEach(([key, value]) => {
-			document.documentElement.style.setProperty(`--fd-${key}`, value);
-		});
 
 		// Initialize API service with runtime config from server
 		// Config is already loaded via +layout.server.ts

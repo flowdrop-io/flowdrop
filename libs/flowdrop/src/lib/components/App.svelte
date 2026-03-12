@@ -28,6 +28,7 @@
 	import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 	import { mergeFeatures } from '$lib/types/events.js';
 	import type { FlowDropTheme, FlowDropThemeName } from '$lib/types/theme.js';
+	import type { FlowDropSkinTokens } from '$lib/types/skin.js';
 	import { resolveTheme } from '$lib/themes/index.js';
 	import {
 		getWorkflowStore,
@@ -126,20 +127,31 @@
 	let resolvedTheme = $derived(resolveTheme(themeProp ?? getUiSettings().theme));
 	let themeConfig = $derived(resolvedTheme.config);
 
-	// Apply skin tokens directly on document.documentElement so they override both
-	// :root (light mode) and [data-theme='dark'] CSS rules regardless of system preference.
+	// Inject skin tokens as a <style> tag so light/dark palettes can coexist.
+	// tokens     → :root { ... }              (light mode / base)
+	// darkTokens → [data-theme='dark'] { ... } (dark mode override)
+	// The tag is appended after tokens.css so it wins via source order.
 	$effect(() => {
-		const tokens = resolvedTheme.skin?.tokens;
-		if (!tokens || typeof document === 'undefined') return;
-		const entries = Object.entries(tokens);
-		entries.forEach(([key, value]) => {
-			document.documentElement.style.setProperty(`--fd-${key}`, value);
-		});
-		return () => {
-			entries.forEach(([key]) => {
-				document.documentElement.style.removeProperty(`--fd-${key}`);
-			});
-		};
+		const skin = resolvedTheme.skin;
+		const tokens = skin?.tokens;
+		const darkTokens = skin?.darkTokens;
+		if ((!tokens && !darkTokens) || typeof document === 'undefined') return;
+
+		const toRules = (dict: FlowDropSkinTokens) =>
+			Object.entries(dict)
+				.map(([k, v]) => `  --fd-${k}: ${v};`)
+				.join('\n');
+
+		let css = '';
+		if (tokens) css += `:root {\n${toRules(tokens)}\n}\n`;
+		if (darkTokens) css += `[data-theme='dark'] {\n${toRules(darkTokens)}\n}\n`;
+
+		const style = document.createElement('style');
+		style.id = 'fd-skin-tokens';
+		document.head.appendChild(style);
+		style.textContent = css;
+
+		return () => style.remove();
 	});
 
 	// Create breadcrumb-style title - at top level to avoid store subscription issues
