@@ -137,8 +137,8 @@
     resolveTheme(themeProp ?? getUiSettings().theme),
   );
   let themeConfig = $derived(resolvedTheme.config);
-
-  // Inject skin tokens as a <style> tag so light/dark palettes can coexist.
+  
+  // Inject skin tokens as a style tag so light/dark palettes can coexist.
   // tokens     → :root { ... }              (light mode / base)
   // darkTokens → [data-theme='dark'] { ... } (dark mode override)
   // The tag is appended after tokens.css so it wins via source order.
