@@ -22,20 +22,20 @@
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionRequest'
+            $ref: "../components/schemas/agentspec.yaml#/AgentSpecExecutionRequest"
     responses:
-      '200':
+      "200":
         description: Flow execution started successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionResponse'
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '401':
-        $ref: '../components/responses.yaml#/Unauthorized'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecExecutionResponse"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 # ============================================================================
 # Execution Status & Results
@@ -58,16 +58,16 @@
         schema:
           type: string
     responses:
-      '200':
+      "200":
         description: Execution status retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionStatus'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecExecutionStatus"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /agentspec/executions/{id}/cancel:
   post:
@@ -86,7 +86,7 @@
         schema:
           type: string
     responses:
-      '200':
+      "200":
         description: Execution cancelled successfully
         content:
           application/json:
@@ -99,16 +99,16 @@
                 message:
                   type: string
                   example: Execution cancelled successfully
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '409':
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "409":
         description: Execution cannot be cancelled (already completed or failed)
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /agentspec/executions/{id}/results:
   get:
@@ -127,16 +127,16 @@
         schema:
           type: string
     responses:
-      '200':
+      "200":
         description: Execution results retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecExecutionResults'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecExecutionResults"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /agentspec/executions/{id}/stream:
   get:
@@ -162,12 +162,12 @@
         schema:
           type: string
     responses:
-      '200':
+      "200":
         description: WebSocket connection established (upgrade to ws://)
-      '101':
+      "101":
         description: WebSocket upgrade successful
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
 
 # ============================================================================
 # Flow Validation
@@ -188,18 +188,18 @@
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/agentspec.yaml#/AgentSpecFlow'
+            $ref: "../components/schemas/agentspec.yaml#/AgentSpecFlow"
     responses:
-      '200':
+      "200":
         description: Validation result
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeValidation'
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecRuntimeValidation"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 # ============================================================================
 # Runtime Discovery
@@ -215,18 +215,18 @@
     tags:
       - Agent Spec
     responses:
-      '200':
+      "200":
         description: List of available agents
         content:
           application/json:
             schema:
               type: array
               items:
-                $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeAgent'
-      '401':
-        $ref: '../components/responses.yaml#/Unauthorized'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+                $ref: "../components/schemas/agentspec.yaml#/AgentSpecRuntimeAgent"
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /agentspec/tools:
   get:
@@ -238,18 +238,18 @@
     tags:
       - Agent Spec
     responses:
-      '200':
+      "200":
         description: List of available tools
         content:
           application/json:
             schema:
               type: array
               items:
-                $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeTool'
-      '401':
-        $ref: '../components/responses.yaml#/Unauthorized'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+                $ref: "../components/schemas/agentspec.yaml#/AgentSpecRuntimeTool"
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /agentspec/health:
   get:
@@ -262,20 +262,20 @@
       - Agent Spec
     security: []
     responses:
-      '200':
+      "200":
         description: Runtime is healthy
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecRuntimeHealth'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '503':
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecRuntimeHealth"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "503":
         description: Runtime unavailable
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
 
 # ============================================================================
 # Workflow Import/Export as Agent Spec
@@ -315,24 +315,24 @@
             - document
           default: flow
     responses:
-      '200':
+      "200":
         description: Agent Spec JSON exported successfully
         content:
           application/json:
             schema:
               oneOf:
-                - $ref: '../components/schemas/agentspec.yaml#/AgentSpecFlow'
-                - $ref: '../components/schemas/agentspec.yaml#/AgentSpecDocument'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '422':
+                - $ref: "../components/schemas/agentspec.yaml#/AgentSpecFlow"
+                - $ref: "../components/schemas/agentspec.yaml#/AgentSpecDocument"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "422":
         description: Workflow cannot be exported as Agent Spec
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecValidationResult'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecValidationResult"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /workflows/import/agentspec:
   post:
@@ -355,25 +355,25 @@
         application/json:
           schema:
             oneOf:
-              - $ref: '../components/schemas/agentspec.yaml#/AgentSpecFlow'
-              - $ref: '../components/schemas/agentspec.yaml#/AgentSpecDocument'
+              - $ref: "../components/schemas/agentspec.yaml#/AgentSpecFlow"
+              - $ref: "../components/schemas/agentspec.yaml#/AgentSpecDocument"
     responses:
-      '200':
+      "200":
         description: Workflow imported successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/response.yaml#/WorkflowResponse'
-      '400':
-        $ref: '../components/responses.yaml#/BadRequest'
-      '422':
+              $ref: "../components/schemas/response.yaml#/WorkflowResponse"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "422":
         description: Invalid Agent Spec format
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecValidationResult'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecValidationResult"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /workflows/{id}/validate/agentspec:
   get:
@@ -400,13 +400,13 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Validation result
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/agentspec.yaml#/AgentSpecValidationResult'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/agentspec.yaml#/AgentSpecValidationResult"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

@@ -22,7 +22,7 @@ WorkflowNode:
       description: Node type ID (references NodeMetadata.id)
       example: calculator
     position:
-      $ref: './common.yaml#/Position'
+      $ref: "./common.yaml#/Position"
     deletable:
       type: boolean
       default: true
@@ -34,9 +34,9 @@ WorkflowNode:
           description: Node instance label
           example: Math Calculator
         config:
-          $ref: './node.yaml#/NodeConfig'
+          $ref: "./node.yaml#/NodeConfig"
         metadata:
-          $ref: './node.yaml#/NodeMetadata'
+          $ref: "./node.yaml#/NodeMetadata"
         isProcessing:
           type: boolean
           description: Whether the node is currently processing
@@ -47,9 +47,9 @@ WorkflowNode:
           type: string
           description: Alternative node ID
         executionInfo:
-          $ref: './node.yaml#/NodeExecutionInfo'
+          $ref: "./node.yaml#/NodeExecutionInfo"
         extensions:
-          $ref: './node.yaml#/NodeExtensions'
+          $ref: "./node.yaml#/NodeExtensions"
           description: |
             Per-instance extension properties for 3rd party integrations.
             Overrides or extends the node type extensions defined in metadata.extensions.
@@ -146,7 +146,7 @@ WorkflowMetadata:
     version:
       type: string
       description: Workflow version
-      example: '1.0.0'
+      example: "1.0.0"
     createdAt:
       type: string
       format: date-time
@@ -206,15 +206,15 @@ Workflow:
     nodes:
       type: array
       items:
-        $ref: '#/WorkflowNode'
+        $ref: "#/WorkflowNode"
       description: Workflow nodes
     edges:
       type: array
       items:
-        $ref: '#/WorkflowEdge'
+        $ref: "#/WorkflowEdge"
       description: Workflow edges
     metadata:
-      $ref: '#/WorkflowMetadata'
+      $ref: "#/WorkflowMetadata"
   required:
     - id
     - name
@@ -238,11 +238,11 @@ CreateWorkflowRequest:
     nodes:
       type: array
       items:
-        $ref: '#/WorkflowNode'
+        $ref: "#/WorkflowNode"
     edges:
       type: array
       items:
-        $ref: '#/WorkflowEdge'
+        $ref: "#/WorkflowEdge"
     tags:
       type: array
       items:
@@ -267,11 +267,11 @@ UpdateWorkflowRequest:
     nodes:
       type: array
       items:
-        $ref: '#/WorkflowNode'
+        $ref: "#/WorkflowNode"
     edges:
       type: array
       items:
-        $ref: '#/WorkflowEdge'
+        $ref: "#/WorkflowEdge"
     metadata:
       type: object
       properties:

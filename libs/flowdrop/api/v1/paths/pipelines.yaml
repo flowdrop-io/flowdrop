@@ -28,16 +28,16 @@
             - failed
             - cancelled
     responses:
-      '200':
+      "200":
         description: List of pipeline executions
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/pipeline.yaml#/PipelineListResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/pipeline.yaml#/PipelineListResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /pipeline/{id}:
   get:
@@ -60,12 +60,12 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Pipeline details retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/pipeline.yaml#/PipelineDetailResponse'
+              $ref: "../components/schemas/pipeline.yaml#/PipelineDetailResponse"
             example:
               status: running
               jobs:
@@ -73,22 +73,22 @@
                   node_id: node-1
                   status: completed
                   execution_count: 5
-                  started: '2024-01-20T10:00:00Z'
-                  completed: '2024-01-20T10:00:05Z'
+                  started: "2024-01-20T10:00:00Z"
+                  completed: "2024-01-20T10:00:05Z"
                   execution_time: 5000
                 - id: job-2
                   node_id: node-2
                   status: running
                   execution_count: 3
-                  started: '2024-01-20T10:00:05Z'
+                  started: "2024-01-20T10:00:05Z"
               node_statuses:
                 node-1:
                   status: completed
-                  last_executed: '2024-01-20T10:00:05Z'
+                  last_executed: "2024-01-20T10:00:05Z"
                   execution_time: 5000
                 node-2:
                   status: running
-                  last_executed: '2024-01-20T10:00:05Z'
+                  last_executed: "2024-01-20T10:00:05Z"
               job_status_summary:
                 total: 5
                 pending: 0
@@ -96,10 +96,10 @@
                 completed: 3
                 failed: 1
                 cancelled: 0
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /pipeline/{id}/status:
   get:
@@ -119,13 +119,13 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Pipeline status retrieved successfully
         content:
           application/json:
             schema:
               allOf:
-                - $ref: '../components/schemas/common.yaml#/ApiResponse'
+                - $ref: "../components/schemas/common.yaml#/ApiResponse"
                 - type: object
                   properties:
                     data:
@@ -150,10 +150,10 @@
                         updated:
                           type: string
                           format: date-time
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /pipeline/{id}/execute:
   post:
@@ -191,16 +191,16 @@
                     type: integer
                     description: Maximum number of execution steps
     responses:
-      '202':
+      "202":
         description: Pipeline execution started
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/pipeline.yaml#/PipelineExecutionResponse'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/pipeline.yaml#/PipelineExecutionResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /pipeline/{id}/stop:
   post:
@@ -218,7 +218,7 @@
           type: string
           format: uuid
     responses:
-      '200':
+      "200":
         description: Pipeline stopped successfully
         content:
           application/json:
@@ -229,16 +229,16 @@
                   type: boolean
                 message:
                   type: string
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '409':
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "409":
         description: Pipeline cannot be stopped
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/common.yaml#/ErrorResponse'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+              $ref: "../components/schemas/common.yaml#/ErrorResponse"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
 
 /pipeline/{id}/logs:
   get:
@@ -267,7 +267,7 @@
             - warning
             - error
     responses:
-      '200':
+      "200":
         description: Pipeline logs retrieved successfully
         content:
           application/json:
@@ -279,8 +279,8 @@
                 data:
                   type: array
                   items:
-                    $ref: '../components/schemas/pipeline.yaml#/LogEntry'
-      '404':
-        $ref: '../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../components/responses.yaml#/InternalServerError'
+                    $ref: "../components/schemas/pipeline.yaml#/LogEntry"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"

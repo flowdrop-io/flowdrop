@@ -3,61 +3,61 @@
 
 NodesResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: './node.yaml#/NodeMetadata'
+            $ref: "./node.yaml#/NodeMetadata"
 
 NodeTypeResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: './node.yaml#/NodeMetadata'
+          $ref: "./node.yaml#/NodeMetadata"
 
 PortConfigResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: './config.yaml#/PortConfig'
+          $ref: "./config.yaml#/PortConfig"
 
 CategoriesResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: './common.yaml#/CategoryDefinition'
+            $ref: "./common.yaml#/CategoryDefinition"
 
 WorkflowsResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: './workflow.yaml#/Workflow'
+            $ref: "./workflow.yaml#/Workflow"
 
 WorkflowResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: './workflow.yaml#/Workflow'
+          $ref: "./workflow.yaml#/Workflow"
 
 ValidationResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
@@ -86,52 +86,52 @@ ValidationResponse:
 
 AgentSpecFlowResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: './agentspec.yaml#/AgentSpecFlow'
+          $ref: "./agentspec.yaml#/AgentSpecFlow"
 
 AgentSpecDocumentResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: './agentspec.yaml#/AgentSpecDocument'
+          $ref: "./agentspec.yaml#/AgentSpecDocument"
 
 AgentSpecValidationResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: './agentspec.yaml#/AgentSpecValidationResult'
+          $ref: "./agentspec.yaml#/AgentSpecValidationResult"
 
 AgentSpecExecutionStatusResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
-          $ref: './agentspec.yaml#/AgentSpecExecutionStatus'
+          $ref: "./agentspec.yaml#/AgentSpecExecutionStatus"
 
 AgentSpecAgentsResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: './agentspec.yaml#/AgentSpecRuntimeAgent'
+            $ref: "./agentspec.yaml#/AgentSpecRuntimeAgent"
 
 AgentSpecToolsResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
           type: array
           items:
-            $ref: './agentspec.yaml#/AgentSpecRuntimeTool'
+            $ref: "./agentspec.yaml#/AgentSpecRuntimeTool"

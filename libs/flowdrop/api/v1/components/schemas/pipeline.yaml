@@ -11,7 +11,7 @@ JobStatus:
       type: string
       description: Node instance UUID
     status:
-      $ref: './common.yaml#/NodeExecutionStatus'
+      $ref: "./common.yaml#/NodeExecutionStatus"
     execution_count:
       type: integer
       description: Number of times executed
@@ -34,7 +34,7 @@ NodeStatus:
   type: object
   properties:
     status:
-      $ref: './common.yaml#/NodeExecutionStatus'
+      $ref: "./common.yaml#/NodeExecutionStatus"
     last_executed:
       type: string
       format: date-time
@@ -89,15 +89,15 @@ PipelineDetailResponse:
     jobs:
       type: array
       items:
-        $ref: '#/JobStatus'
+        $ref: "#/JobStatus"
       description: Individual job statuses
     node_statuses:
       type: object
       additionalProperties:
-        $ref: '#/NodeStatus'
+        $ref: "#/NodeStatus"
       description: Node execution statuses keyed by node ID
     job_status_summary:
-      $ref: '#/JobStatusSummary'
+      $ref: "#/JobStatusSummary"
   required:
     - status
     - jobs
@@ -106,7 +106,7 @@ PipelineDetailResponse:
 
 PipelineListResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:
@@ -130,7 +130,7 @@ PipelineListResponse:
 
 PipelineExecutionResponse:
   allOf:
-    - $ref: './common.yaml#/ApiResponse'
+    - $ref: "./common.yaml#/ApiResponse"
     - type: object
       properties:
         data:

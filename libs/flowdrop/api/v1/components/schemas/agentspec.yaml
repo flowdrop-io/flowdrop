@@ -101,12 +101,12 @@ AgentSpecProperty:
       items: {}
       description: Allowed values (JSON Schema enum)
     items:
-      $ref: '#/AgentSpecProperty'
+      $ref: "#/AgentSpecProperty"
       description: Array item schema (for type=array)
     properties:
       type: object
       additionalProperties:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
       description: Object property schemas (for type=object)
     required:
       type: array
@@ -148,7 +148,7 @@ AgentSpecNodeBase:
   description: Base properties shared by all Agent Spec nodes
   properties:
     component_type:
-      $ref: '#/AgentSpecNodeComponentType'
+      $ref: "#/AgentSpecNodeComponentType"
     name:
       type: string
       description: Node name (used as identifier in edges)
@@ -159,12 +159,12 @@ AgentSpecNodeBase:
     inputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
       description: Input properties
     outputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
       description: Output properties
     metadata:
       type: object
@@ -179,7 +179,7 @@ AgentSpecNodeBase:
 
 AgentSpecStartNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -189,7 +189,7 @@ AgentSpecStartNode:
 
 AgentSpecEndNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -199,7 +199,7 @@ AgentSpecEndNode:
 
 AgentSpecLLMNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -208,7 +208,7 @@ AgentSpecLLMNode:
         llm_config:
           description: LLM configuration (inline object or $component_ref string)
           oneOf:
-            - $ref: '#/AgentSpecLLMConfig'
+            - $ref: "#/AgentSpecLLMConfig"
             - type: string
               description: Component reference (e.g., "$component_ref:my_llm")
         system_prompt:
@@ -225,7 +225,7 @@ AgentSpecLLMNode:
 
 AgentSpecAPINode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -253,7 +253,7 @@ AgentSpecAPINode:
 
 AgentSpecAgentNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -262,13 +262,13 @@ AgentSpecAgentNode:
         agent:
           description: Agent reference ($component_ref or inline)
           oneOf:
-            - $ref: '#/AgentSpecAgent'
+            - $ref: "#/AgentSpecAgent"
             - type: string
       description: Multi-round agent conversation node
 
 AgentSpecFlowNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -277,13 +277,13 @@ AgentSpecFlowNode:
         flow:
           description: Flow reference ($component_ref or inline)
           oneOf:
-            - $ref: '#/AgentSpecFlow'
+            - $ref: "#/AgentSpecFlow"
             - type: string
       description: Nested flow execution node
 
 AgentSpecMapNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -298,13 +298,13 @@ AgentSpecMapNode:
         map_flow:
           description: Flow or node to execute per item ($component_ref or inline)
           oneOf:
-            - $ref: '#/AgentSpecFlow'
+            - $ref: "#/AgentSpecFlow"
             - type: string
       description: Map-reduce operation node
 
 AgentSpecBranchingNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -313,7 +313,7 @@ AgentSpecBranchingNode:
         branches:
           type: array
           items:
-            $ref: '#/AgentSpecBranch'
+            $ref: "#/AgentSpecBranch"
           description: Branch definitions with conditions
       required:
         - branches
@@ -321,7 +321,7 @@ AgentSpecBranchingNode:
 
 AgentSpecToolNode:
   allOf:
-    - $ref: '#/AgentSpecNodeBase'
+    - $ref: "#/AgentSpecNodeBase"
     - type: object
       properties:
         component_type:
@@ -330,9 +330,9 @@ AgentSpecToolNode:
         tool:
           description: Tool reference ($component_ref or inline)
           oneOf:
-            - $ref: '#/AgentSpecServerTool'
-            - $ref: '#/AgentSpecClientTool'
-            - $ref: '#/AgentSpecRemoteTool'
+            - $ref: "#/AgentSpecServerTool"
+            - $ref: "#/AgentSpecClientTool"
+            - $ref: "#/AgentSpecRemoteTool"
             - type: string
       description: Tool execution node
 
@@ -340,27 +340,27 @@ AgentSpecNode:
   description: |
     Union of all Agent Spec node types. Discriminated by `component_type`.
   oneOf:
-    - $ref: '#/AgentSpecStartNode'
-    - $ref: '#/AgentSpecEndNode'
-    - $ref: '#/AgentSpecLLMNode'
-    - $ref: '#/AgentSpecAPINode'
-    - $ref: '#/AgentSpecAgentNode'
-    - $ref: '#/AgentSpecFlowNode'
-    - $ref: '#/AgentSpecMapNode'
-    - $ref: '#/AgentSpecBranchingNode'
-    - $ref: '#/AgentSpecToolNode'
+    - $ref: "#/AgentSpecStartNode"
+    - $ref: "#/AgentSpecEndNode"
+    - $ref: "#/AgentSpecLLMNode"
+    - $ref: "#/AgentSpecAPINode"
+    - $ref: "#/AgentSpecAgentNode"
+    - $ref: "#/AgentSpecFlowNode"
+    - $ref: "#/AgentSpecMapNode"
+    - $ref: "#/AgentSpecBranchingNode"
+    - $ref: "#/AgentSpecToolNode"
   discriminator:
     propertyName: component_type
     mapping:
-      start_node: '#/AgentSpecStartNode'
-      end_node: '#/AgentSpecEndNode'
-      llm_node: '#/AgentSpecLLMNode'
-      api_node: '#/AgentSpecAPINode'
-      agent_node: '#/AgentSpecAgentNode'
-      flow_node: '#/AgentSpecFlowNode'
-      map_node: '#/AgentSpecMapNode'
-      branching_node: '#/AgentSpecBranchingNode'
-      tool_node: '#/AgentSpecToolNode'
+      start_node: "#/AgentSpecStartNode"
+      end_node: "#/AgentSpecEndNode"
+      llm_node: "#/AgentSpecLLMNode"
+      api_node: "#/AgentSpecAPINode"
+      agent_node: "#/AgentSpecAgentNode"
+      flow_node: "#/AgentSpecFlowNode"
+      map_node: "#/AgentSpecMapNode"
+      branching_node: "#/AgentSpecBranchingNode"
+      tool_node: "#/AgentSpecToolNode"
 
 # ============================================================================
 # Edges
@@ -456,18 +456,18 @@ AgentSpecFlow:
     nodes:
       type: array
       items:
-        $ref: '#/AgentSpecNode'
+        $ref: "#/AgentSpecNode"
       description: All nodes in the flow
     control_flow_connections:
       type: array
       items:
-        $ref: '#/AgentSpecControlFlowEdge'
+        $ref: "#/AgentSpecControlFlowEdge"
       description: Execution order edges
     data_flow_connections:
       type: array
       nullable: true
       items:
-        $ref: '#/AgentSpecDataFlowEdge'
+        $ref: "#/AgentSpecDataFlowEdge"
       description: |
         Data routing edges. When null, data flows by matching
         input/output property names across connected nodes.
@@ -503,11 +503,11 @@ AgentSpecServerTool:
     inputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     outputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     function_name:
       type: string
       description: Function name or module path
@@ -534,11 +534,11 @@ AgentSpecClientTool:
     inputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     outputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     metadata:
       type: object
       additionalProperties: true
@@ -561,11 +561,11 @@ AgentSpecRemoteTool:
     inputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     outputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     endpoint:
       type: string
       description: Remote endpoint URL
@@ -587,15 +587,15 @@ AgentSpecRemoteTool:
 AgentSpecTool:
   description: Union of all Agent Spec tool types
   oneOf:
-    - $ref: '#/AgentSpecServerTool'
-    - $ref: '#/AgentSpecClientTool'
-    - $ref: '#/AgentSpecRemoteTool'
+    - $ref: "#/AgentSpecServerTool"
+    - $ref: "#/AgentSpecClientTool"
+    - $ref: "#/AgentSpecRemoteTool"
   discriminator:
     propertyName: component_type
     mapping:
-      server_tool: '#/AgentSpecServerTool'
-      client_tool: '#/AgentSpecClientTool'
-      remote_tool: '#/AgentSpecRemoteTool'
+      server_tool: "#/AgentSpecServerTool"
+      client_tool: "#/AgentSpecClientTool"
+      remote_tool: "#/AgentSpecRemoteTool"
 
 # ============================================================================
 # LLM Configuration
@@ -662,23 +662,23 @@ AgentSpecAgent:
     inputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     outputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     tools:
       type: array
       items:
         oneOf:
-          - $ref: '#/AgentSpecTool'
+          - $ref: "#/AgentSpecTool"
           - type: string
             description: Component reference string
       description: Available tools (inline or $component_ref strings)
     llm_config:
       description: LLM configuration (inline or $component_ref string)
       oneOf:
-        - $ref: '#/AgentSpecLLMConfig'
+        - $ref: "#/AgentSpecLLMConfig"
         - type: string
     system_prompt:
       type: string
@@ -701,18 +701,18 @@ AgentSpecDocument:
     definition along with shared tool and LLM configuration declarations.
   properties:
     agent:
-      $ref: '#/AgentSpecAgent'
+      $ref: "#/AgentSpecAgent"
     flow:
-      $ref: '#/AgentSpecFlow'
+      $ref: "#/AgentSpecFlow"
     tools:
       type: array
       items:
-        $ref: '#/AgentSpecTool'
+        $ref: "#/AgentSpecTool"
       description: Shared tool declarations
     llm_configs:
       type: array
       items:
-        $ref: '#/AgentSpecLLMConfig'
+        $ref: "#/AgentSpecLLMConfig"
       description: Shared LLM configurations
     metadata:
       type: object
@@ -752,13 +752,13 @@ AgentSpecExecutionRequest:
   description: Request to execute an Agent Spec flow on a runtime
   properties:
     flow:
-      $ref: '#/AgentSpecFlow'
+      $ref: "#/AgentSpecFlow"
     inputs:
       type: object
       additionalProperties: true
       description: Initial input values for the flow
       example:
-        user_query: 'What is the weather today?'
+        user_query: "What is the weather today?"
   required:
     - flow
 
@@ -807,12 +807,12 @@ AgentSpecExecutionStatus:
     node_statuses:
       type: object
       additionalProperties:
-        $ref: '#/AgentSpecNodeStatus'
+        $ref: "#/AgentSpecNodeStatus"
       description: Per-node execution status (keyed by node name)
     nodes:
       type: object
       additionalProperties:
-        $ref: '#/AgentSpecNodeStatus'
+        $ref: "#/AgentSpecNodeStatus"
       description: Alternative per-node status field
     error:
       type: string
@@ -864,7 +864,7 @@ AgentSpecExecutionResults:
   description: Results from a completed Agent Spec execution
   additionalProperties: true
   example:
-    response: 'The weather today is sunny with a high of 72°F.'
+    response: "The weather today is sunny with a high of 72°F."
     confidence: 0.95
 
 AgentSpecRuntimeValidation:
@@ -891,7 +891,7 @@ AgentSpecRuntimeHealth:
       example: healthy
     version:
       type: string
-      example: '1.0.0'
+      example: "1.0.0"
     runtime:
       type: string
       description: Runtime name (e.g., "wayflow", "pyagentspec")
@@ -910,11 +910,11 @@ AgentSpecRuntimeAgent:
     inputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     outputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
 
 AgentSpecRuntimeTool:
   type: object
@@ -927,12 +927,12 @@ AgentSpecRuntimeTool:
       type: string
       description: Tool description
     component_type:
-      $ref: '#/AgentSpecToolComponentType'
+      $ref: "#/AgentSpecToolComponentType"
     inputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"
     outputs:
       type: array
       items:
-        $ref: '#/AgentSpecProperty'
+        $ref: "#/AgentSpecProperty"

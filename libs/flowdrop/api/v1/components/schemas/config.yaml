@@ -19,7 +19,7 @@ PortDataTypeConfig:
     color:
       type: string
       description: Color for the data type (CSS color value)
-      example: '#3b82f6'
+      example: "#3b82f6"
     category:
       type: string
       description: Category grouping for the data type
@@ -66,7 +66,7 @@ PortConfig:
     version:
       type: string
       description: Version of the port configuration
-      example: '1.0.0'
+      example: "1.0.0"
     defaultDataType:
       type: string
       description: Default data type to use when none specified
@@ -74,12 +74,12 @@ PortConfig:
     dataTypes:
       type: array
       items:
-        $ref: '#/PortDataTypeConfig'
+        $ref: "#/PortDataTypeConfig"
       description: Available data types
     compatibilityRules:
       type: array
       items:
-        $ref: '#/PortCompatibilityRule'
+        $ref: "#/PortCompatibilityRule"
       description: Compatibility rules between data types
   required:
     - dataTypes
@@ -154,7 +154,7 @@ ConfigProperty:
     oneOf:
       type: array
       items:
-        $ref: '#/OneOfItem'
+        $ref: "#/OneOfItem"
       description: |
         JSON Schema oneOf for labeled options (standard approach).
         Each item should have `const` (value) and optionally `title` (label).
@@ -241,7 +241,7 @@ ConfigProperty:
         - date
         - date-time
     variables:
-      $ref: '#/TemplateVariablesConfig'
+      $ref: "#/TemplateVariablesConfig"
       description: |
         Configuration for template variable autocomplete.
         Only applicable when `format: "template"`.
@@ -260,7 +260,7 @@ ConfigProperty:
         Fields without `x-display-order` are sorted after fields with explicit ordering.
       example: -2
     items:
-      $ref: '#/ConfigProperty'
+      $ref: "#/ConfigProperty"
       description: Schema for array items
     minItems:
       type: integer
@@ -271,10 +271,10 @@ ConfigProperty:
     properties:
       type: object
       additionalProperties:
-        $ref: '#/ConfigProperty'
+        $ref: "#/ConfigProperty"
       description: Property schemas for object fields
     autocomplete:
-      $ref: '#/AutocompleteConfig'
+      $ref: "#/AutocompleteConfig"
       description: Configuration for autocomplete fields (when format is "autocomplete")
   required:
     - type
@@ -342,7 +342,7 @@ ConfigSchema:
     properties:
       type: object
       additionalProperties:
-        $ref: '#/ConfigProperty'
+        $ref: "#/ConfigProperty"
       description: Configuration properties
     required:
       type: array
@@ -424,7 +424,7 @@ TemplateVariablesConfig:
         - data
         - context
     schema:
-      $ref: './node.yaml#/VariableSchema'
+      $ref: "./node.yaml#/VariableSchema"
       description: |
         Pre-defined variable schema to provide static variables or override derived ones.
 

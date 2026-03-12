@@ -41,30 +41,30 @@ Define `configSchema` on your node metadata. FlowDrop auto-renders the form:
 
 ```typescript
 const myNode: NodeMetadata = {
-	id: 'my-processor',
-	name: 'My Processor',
-	description: 'Processes data',
-	category: 'processing',
-	version: '1.0.0',
-	inputs: [{ id: 'in', name: 'Input', dataType: 'any' }],
-	outputs: [{ id: 'out', name: 'Output', dataType: 'any' }],
-	configSchema: {
-		type: 'object',
-		properties: {
-			name: {
-				type: 'string',
-				title: 'Name',
-				description: 'A friendly name for this processor'
-			},
-			enabled: {
-				type: 'boolean',
-				title: 'Enabled',
-				default: true
-			}
-		},
-		required: ['name']
-	},
-	config: { enabled: true }
+  id: "my-processor",
+  name: "My Processor",
+  description: "Processes data",
+  category: "processing",
+  version: "1.0.0",
+  inputs: [{ id: "in", name: "Input", dataType: "any" }],
+  outputs: [{ id: "out", name: "Output", dataType: "any" }],
+  configSchema: {
+    type: "object",
+    properties: {
+      name: {
+        type: "string",
+        title: "Name",
+        description: "A friendly name for this processor",
+      },
+      enabled: {
+        type: "boolean",
+        title: "Enabled",
+        default: true,
+      },
+    },
+    required: ["name"],
+  },
+  config: { enabled: true },
 };
 ```
 
@@ -104,38 +104,38 @@ Use `format` to change the rendering of a field:
 
 ```json
 {
-	"type": "object",
-	"properties": {
-		"prompt": {
-			"type": "string",
-			"title": "Prompt",
-			"format": "multiline",
-			"description": "Enter your prompt text"
-		},
-		"temperature": {
-			"type": "number",
-			"title": "Temperature",
-			"format": "range",
-			"minimum": 0,
-			"maximum": 2,
-			"default": 0.7
-		},
-		"systemMessage": {
-			"type": "string",
-			"title": "System Message",
-			"format": "template",
-			"description": "Use {{ variable }} for dynamic values"
-		},
-		"metadata": {
-			"type": "object",
-			"title": "Metadata",
-			"format": "json"
-		},
-		"internalId": {
-			"type": "string",
-			"format": "hidden"
-		}
-	}
+  "type": "object",
+  "properties": {
+    "prompt": {
+      "type": "string",
+      "title": "Prompt",
+      "format": "multiline",
+      "description": "Enter your prompt text"
+    },
+    "temperature": {
+      "type": "number",
+      "title": "Temperature",
+      "format": "range",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 0.7
+    },
+    "systemMessage": {
+      "type": "string",
+      "title": "System Message",
+      "format": "template",
+      "description": "Use {{ variable }} for dynamic values"
+    },
+    "metadata": {
+      "type": "object",
+      "title": "Metadata",
+      "format": "json"
+    },
+    "internalId": {
+      "type": "string",
+      "format": "hidden"
+    }
+  }
 }
 ```
 
@@ -143,24 +143,24 @@ Use `format` to change the rendering of a field:
 
 ```json
 {
-	"temperature": {
-		"type": "number",
-		"minimum": 0,
-		"maximum": 2,
-		"default": 0.7
-	},
-	"maxTokens": {
-		"type": "integer",
-		"minimum": 1,
-		"maximum": 4096,
-		"default": 1000
-	},
-	"apiKey": {
-		"type": "string",
-		"minLength": 10,
-		"maxLength": 100,
-		"pattern": "^sk-[a-zA-Z0-9]+$"
-	}
+  "temperature": {
+    "type": "number",
+    "minimum": 0,
+    "maximum": 2,
+    "default": 0.7
+  },
+  "maxTokens": {
+    "type": "integer",
+    "minimum": 1,
+    "maximum": 4096,
+    "default": 1000
+  },
+  "apiKey": {
+    "type": "string",
+    "minLength": 10,
+    "maxLength": 100,
+    "pattern": "^sk-[a-zA-Z0-9]+$"
+  }
 }
 ```
 
@@ -170,11 +170,11 @@ Add `"readOnly": true` to any property to display it but prevent editing:
 
 ```json
 {
-	"status": {
-		"type": "string",
-		"title": "Status",
-		"readOnly": true
-	}
+  "status": {
+    "type": "string",
+    "title": "Status",
+    "readOnly": true
+  }
 }
 ```
 
@@ -186,12 +186,12 @@ Add `"readOnly": true` to any property to display it but prevent editing:
 
 ```json
 {
-	"model": {
-		"type": "string",
-		"title": "Model",
-		"enum": ["gpt-4o", "gpt-4o-mini", "claude-3"],
-		"default": "gpt-4o-mini"
-	}
+  "model": {
+    "type": "string",
+    "title": "Model",
+    "enum": ["gpt-4o", "gpt-4o-mini", "claude-3"],
+    "default": "gpt-4o-mini"
+  }
 }
 ```
 
@@ -201,16 +201,16 @@ Use `oneOf` with `const`/`title` for human-readable labels:
 
 ```json
 {
-	"status": {
-		"type": "string",
-		"title": "Status",
-		"oneOf": [
-			{ "const": "pending", "title": "Pending" },
-			{ "const": "in_progress", "title": "In Progress" },
-			{ "const": "completed", "title": "Completed" }
-		],
-		"default": "pending"
-	}
+  "status": {
+    "type": "string",
+    "title": "Status",
+    "oneOf": [
+      { "const": "pending", "title": "Pending" },
+      { "const": "in_progress", "title": "In Progress" },
+      { "const": "completed", "title": "Completed" }
+    ],
+    "default": "pending"
+  }
 }
 ```
 
@@ -220,13 +220,13 @@ Add `"multiple": true` with an `enum` to render as checkboxes:
 
 ```json
 {
-	"tags": {
-		"type": "string",
-		"title": "Tags",
-		"enum": ["urgent", "review", "archive", "featured"],
-		"multiple": true,
-		"default": []
-	}
+  "tags": {
+    "type": "string",
+    "title": "Tags",
+    "enum": ["urgent", "review", "archive", "featured"],
+    "multiple": true,
+    "default": []
+  }
 }
 ```
 
@@ -238,21 +238,21 @@ Autocomplete fields fetch suggestions from a remote API as the user types.
 
 ```json
 {
-	"userId": {
-		"type": "string",
-		"title": "User",
-		"format": "autocomplete",
-		"autocomplete": {
-			"url": "/api/users/search",
-			"queryParam": "q",
-			"minChars": 2,
-			"debounceMs": 300,
-			"labelField": "name",
-			"valueField": "id",
-			"allowFreeText": false,
-			"fetchOnFocus": true
-		}
-	}
+  "userId": {
+    "type": "string",
+    "title": "User",
+    "format": "autocomplete",
+    "autocomplete": {
+      "url": "/api/users/search",
+      "queryParam": "q",
+      "minChars": 2,
+      "debounceMs": 300,
+      "labelField": "name",
+      "valueField": "id",
+      "allowFreeText": false,
+      "fetchOnFocus": true
+    }
+  }
 }
 ```
 
@@ -278,15 +278,15 @@ Template fields provide CodeMirror editing with `{{ variable }}` syntax highligh
 
 ```json
 {
-	"prompt": {
-		"type": "string",
-		"title": "Prompt Template",
-		"format": "template",
-		"variables": {
-			"ports": ["data", "context"],
-			"showHints": true
-		}
-	}
+  "prompt": {
+    "type": "string",
+    "title": "Prompt Template",
+    "format": "template",
+    "variables": {
+      "ports": ["data", "context"],
+      "showHints": true
+    }
+  }
 }
 ```
 
@@ -310,12 +310,12 @@ By default, fields render in property order. Use `uiSchema` to control layout, g
 
 ```json
 {
-	"type": "VerticalLayout",
-	"elements": [
-		{ "type": "Control", "scope": "#/properties/name" },
-		{ "type": "Control", "scope": "#/properties/model" },
-		{ "type": "Control", "scope": "#/properties/prompt" }
-	]
+  "type": "VerticalLayout",
+  "elements": [
+    { "type": "Control", "scope": "#/properties/name" },
+    { "type": "Control", "scope": "#/properties/model" },
+    { "type": "Control", "scope": "#/properties/prompt" }
+  ]
 }
 ```
 
@@ -323,22 +323,22 @@ By default, fields render in property order. Use `uiSchema` to control layout, g
 
 ```json
 {
-	"type": "VerticalLayout",
-	"elements": [
-		{ "type": "Control", "scope": "#/properties/name" },
-		{ "type": "Control", "scope": "#/properties/model" },
-		{
-			"type": "Group",
-			"label": "Advanced Settings",
-			"collapsible": true,
-			"defaultOpen": false,
-			"elements": [
-				{ "type": "Control", "scope": "#/properties/temperature" },
-				{ "type": "Control", "scope": "#/properties/maxTokens" },
-				{ "type": "Control", "scope": "#/properties/topP" }
-			]
-		}
-	]
+  "type": "VerticalLayout",
+  "elements": [
+    { "type": "Control", "scope": "#/properties/name" },
+    { "type": "Control", "scope": "#/properties/model" },
+    {
+      "type": "Group",
+      "label": "Advanced Settings",
+      "collapsible": true,
+      "defaultOpen": false,
+      "elements": [
+        { "type": "Control", "scope": "#/properties/temperature" },
+        { "type": "Control", "scope": "#/properties/maxTokens" },
+        { "type": "Control", "scope": "#/properties/topP" }
+      ]
+    }
+  ]
 }
 ```
 
@@ -387,17 +387,17 @@ Use `x-display-order` to control field position. Negative values appear first:
 
 ```json
 {
-	"instanceTitle": {
-		"type": "string",
-		"title": "Custom Title",
-		"x-display-order": -2
-	},
-	"instanceDescription": {
-		"type": "string",
-		"title": "Custom Description",
-		"format": "multiline",
-		"x-display-order": -1
-	}
+  "instanceTitle": {
+    "type": "string",
+    "title": "Custom Title",
+    "x-display-order": -2
+  },
+  "instanceDescription": {
+    "type": "string",
+    "title": "Custom Description",
+    "format": "multiline",
+    "x-display-order": -1
+  }
 }
 ```
 
@@ -411,30 +411,30 @@ Use `configEdit.dynamicSchema` to fetch config schemas from your backend at runt
 
 ```typescript
 const myNode: NodeMetadata = {
-	id: 'dynamic-processor',
-	name: 'Dynamic Processor',
-	// ...
-	configEdit: {
-		dynamicSchema: {
-			url: '/api/nodes/{nodeTypeId}/schema',
-			method: 'GET',
-			parameterMapping: {
-				nodeTypeId: 'metadata.id'
-			},
-			cacheSchema: true,
-			timeout: 10000
-		},
-		showRefreshButton: true,
-		loadingMessage: 'Loading configuration...',
-		errorMessage: 'Failed to load schema'
-	},
-	// Fallback static schema (used if API fails)
-	configSchema: {
-		type: 'object',
-		properties: {
-			apiKey: { type: 'string', title: 'API Key' }
-		}
-	}
+  id: "dynamic-processor",
+  name: "Dynamic Processor",
+  // ...
+  configEdit: {
+    dynamicSchema: {
+      url: "/api/nodes/{nodeTypeId}/schema",
+      method: "GET",
+      parameterMapping: {
+        nodeTypeId: "metadata.id",
+      },
+      cacheSchema: true,
+      timeout: 10000,
+    },
+    showRefreshButton: true,
+    loadingMessage: "Loading configuration...",
+    errorMessage: "Failed to load schema",
+  },
+  // Fallback static schema (used if API fails)
+  configSchema: {
+    type: "object",
+    properties: {
+      apiKey: { type: "string", title: "API Key" },
+    },
+  },
 };
 ```
 
@@ -485,20 +485,25 @@ You can optionally return a `uiSchema` alongside the config schema:
 
 ```json
 {
-	"configSchema": {
-		"type": "object",
-		"properties": {
-			"model": { "type": "string", "enum": ["gpt-4o", "claude-3"] },
-			"temperature": { "type": "number", "format": "range", "minimum": 0, "maximum": 2 }
-		}
-	},
-	"uiSchema": {
-		"type": "VerticalLayout",
-		"elements": [
-			{ "type": "Control", "scope": "#/properties/model" },
-			{ "type": "Control", "scope": "#/properties/temperature" }
-		]
-	}
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "model": { "type": "string", "enum": ["gpt-4o", "claude-3"] },
+      "temperature": {
+        "type": "number",
+        "format": "range",
+        "minimum": 0,
+        "maximum": 2
+      }
+    }
+  },
+  "uiSchema": {
+    "type": "VerticalLayout",
+    "elements": [
+      { "type": "Control", "scope": "#/properties/model" },
+      { "type": "Control", "scope": "#/properties/temperature" }
+    ]
+  }
 }
 ```
 
@@ -519,141 +524,141 @@ Dynamic schemas enable conditional form fields — where the available fields ch
 
 ```typescript
 const myNode: NodeMetadata = {
-	id: 'ai-model',
-	name: 'AI Model',
-	description: 'Configurable AI model node',
-	category: 'models',
-	version: '1.0.0',
-	inputs: [{ id: 'in', name: 'Input', dataType: 'string' }],
-	outputs: [{ id: 'out', name: 'Output', dataType: 'string' }],
-	configEdit: {
-		dynamicSchema: {
-			url: '/api/nodes/{nodeTypeId}/schema?provider={provider}',
-			method: 'GET',
-			parameterMapping: {
-				nodeTypeId: 'metadata.id',
-				provider: 'config.provider' // passes current selection
-			},
-			cacheSchema: true
-		},
-		showRefreshButton: true
-	},
-	// Minimal fallback schema
-	configSchema: {
-		type: 'object',
-		properties: {
-			provider: {
-				type: 'string',
-				title: 'Provider',
-				oneOf: [
-					{ const: 'openai', title: 'OpenAI' },
-					{ const: 'anthropic', title: 'Anthropic' },
-					{ const: 'local', title: 'Local (Ollama)' }
-				]
-			}
-		}
-	},
-	config: { provider: 'openai' }
+  id: "ai-model",
+  name: "AI Model",
+  description: "Configurable AI model node",
+  category: "models",
+  version: "1.0.0",
+  inputs: [{ id: "in", name: "Input", dataType: "string" }],
+  outputs: [{ id: "out", name: "Output", dataType: "string" }],
+  configEdit: {
+    dynamicSchema: {
+      url: "/api/nodes/{nodeTypeId}/schema?provider={provider}",
+      method: "GET",
+      parameterMapping: {
+        nodeTypeId: "metadata.id",
+        provider: "config.provider", // passes current selection
+      },
+      cacheSchema: true,
+    },
+    showRefreshButton: true,
+  },
+  // Minimal fallback schema
+  configSchema: {
+    type: "object",
+    properties: {
+      provider: {
+        type: "string",
+        title: "Provider",
+        oneOf: [
+          { const: "openai", title: "OpenAI" },
+          { const: "anthropic", title: "Anthropic" },
+          { const: "local", title: "Local (Ollama)" },
+        ],
+      },
+    },
+  },
+  config: { provider: "openai" },
 };
 ```
 
 ### Backend Example (Express)
 
 ```typescript
-app.get('/api/nodes/:nodeTypeId/schema', (req, res) => {
-	const { provider } = req.query;
+app.get("/api/nodes/:nodeTypeId/schema", (req, res) => {
+  const { provider } = req.query;
 
-	// Base fields always present
-	const properties: Record<string, any> = {
-		provider: {
-			type: 'string',
-			title: 'Provider',
-			oneOf: [
-				{ const: 'openai', title: 'OpenAI' },
-				{ const: 'anthropic', title: 'Anthropic' },
-				{ const: 'local', title: 'Local (Ollama)' }
-			]
-		}
-	};
+  // Base fields always present
+  const properties: Record<string, any> = {
+    provider: {
+      type: "string",
+      title: "Provider",
+      oneOf: [
+        { const: "openai", title: "OpenAI" },
+        { const: "anthropic", title: "Anthropic" },
+        { const: "local", title: "Local (Ollama)" },
+      ],
+    },
+  };
 
-	// Conditional fields based on provider selection
-	switch (provider) {
-		case 'openai':
-			properties.apiKey = {
-				type: 'string',
-				title: 'API Key',
-				description: 'Your OpenAI API key'
-			};
-			properties.model = {
-				type: 'string',
-				title: 'Model',
-				oneOf: [
-					{ const: 'gpt-4o', title: 'GPT-4o' },
-					{ const: 'gpt-4o-mini', title: 'GPT-4o Mini' },
-					{ const: 'o1', title: 'o1' }
-				],
-				default: 'gpt-4o'
-			};
-			properties.temperature = {
-				type: 'number',
-				title: 'Temperature',
-				format: 'range',
-				minimum: 0,
-				maximum: 2,
-				default: 0.7
-			};
-			break;
+  // Conditional fields based on provider selection
+  switch (provider) {
+    case "openai":
+      properties.apiKey = {
+        type: "string",
+        title: "API Key",
+        description: "Your OpenAI API key",
+      };
+      properties.model = {
+        type: "string",
+        title: "Model",
+        oneOf: [
+          { const: "gpt-4o", title: "GPT-4o" },
+          { const: "gpt-4o-mini", title: "GPT-4o Mini" },
+          { const: "o1", title: "o1" },
+        ],
+        default: "gpt-4o",
+      };
+      properties.temperature = {
+        type: "number",
+        title: "Temperature",
+        format: "range",
+        minimum: 0,
+        maximum: 2,
+        default: 0.7,
+      };
+      break;
 
-		case 'anthropic':
-			properties.apiKey = {
-				type: 'string',
-				title: 'API Key',
-				description: 'Your Anthropic API key'
-			};
-			properties.model = {
-				type: 'string',
-				title: 'Model',
-				oneOf: [
-					{ const: 'claude-opus-4-6', title: 'Claude Opus 4.6' },
-					{ const: 'claude-sonnet-4-6', title: 'Claude Sonnet 4.6' },
-					{ const: 'claude-haiku-4-5', title: 'Claude Haiku 4.5' }
-				],
-				default: 'claude-sonnet-4-6'
-			};
-			properties.maxTokens = {
-				type: 'integer',
-				title: 'Max Tokens',
-				minimum: 1,
-				maximum: 8192,
-				default: 1024
-			};
-			break;
+    case "anthropic":
+      properties.apiKey = {
+        type: "string",
+        title: "API Key",
+        description: "Your Anthropic API key",
+      };
+      properties.model = {
+        type: "string",
+        title: "Model",
+        oneOf: [
+          { const: "claude-opus-4-6", title: "Claude Opus 4.6" },
+          { const: "claude-sonnet-4-6", title: "Claude Sonnet 4.6" },
+          { const: "claude-haiku-4-5", title: "Claude Haiku 4.5" },
+        ],
+        default: "claude-sonnet-4-6",
+      };
+      properties.maxTokens = {
+        type: "integer",
+        title: "Max Tokens",
+        minimum: 1,
+        maximum: 8192,
+        default: 1024,
+      };
+      break;
 
-		case 'local':
-			properties.endpoint = {
-				type: 'string',
-				title: 'Ollama Endpoint',
-				default: 'http://localhost:11434'
-			};
-			properties.model = {
-				type: 'string',
-				title: 'Model',
-				format: 'autocomplete',
-				autocomplete: {
-					url: '/api/ollama/models',
-					labelField: 'name',
-					valueField: 'name',
-					fetchOnFocus: true
-				}
-			};
-			break;
-	}
+    case "local":
+      properties.endpoint = {
+        type: "string",
+        title: "Ollama Endpoint",
+        default: "http://localhost:11434",
+      };
+      properties.model = {
+        type: "string",
+        title: "Model",
+        format: "autocomplete",
+        autocomplete: {
+          url: "/api/ollama/models",
+          labelField: "name",
+          valueField: "name",
+          fetchOnFocus: true,
+        },
+      };
+      break;
+  }
 
-	res.json({
-		type: 'object',
-		properties,
-		required: ['provider']
-	});
+  res.json({
+    type: "object",
+    properties,
+    required: ["provider"],
+  });
 });
 ```
 
@@ -720,51 +725,51 @@ You can render the `ConfigForm` component directly, independent of the workflow 
 
 ```svelte
 <script>
-	import { ConfigForm } from '@flowdrop/flowdrop';
+  import { ConfigForm } from "@flowdrop/flowdrop";
 
-	const schema = {
-		type: 'object',
-		properties: {
-			name: { type: 'string', title: 'Name' },
-			email: { type: 'string', title: 'Email' },
-			role: {
-				type: 'string',
-				title: 'Role',
-				oneOf: [
-					{ const: 'admin', title: 'Admin' },
-					{ const: 'editor', title: 'Editor' },
-					{ const: 'viewer', title: 'Viewer' }
-				]
-			}
-		},
-		required: ['name', 'email']
-	};
+  const schema = {
+    type: "object",
+    properties: {
+      name: { type: "string", title: "Name" },
+      email: { type: "string", title: "Email" },
+      role: {
+        type: "string",
+        title: "Role",
+        oneOf: [
+          { const: "admin", title: "Admin" },
+          { const: "editor", title: "Editor" },
+          { const: "viewer", title: "Viewer" },
+        ],
+      },
+    },
+    required: ["name", "email"],
+  };
 
-	const uiSchema = {
-		type: 'VerticalLayout',
-		elements: [
-			{ type: 'Control', scope: '#/properties/name' },
-			{ type: 'Control', scope: '#/properties/email' },
-			{ type: 'Control', scope: '#/properties/role' }
-		]
-	};
+  const uiSchema = {
+    type: "VerticalLayout",
+    elements: [
+      { type: "Control", scope: "#/properties/name" },
+      { type: "Control", scope: "#/properties/email" },
+      { type: "Control", scope: "#/properties/role" },
+    ],
+  };
 
-	let values = $state({ role: 'viewer' });
+  let values = $state({ role: "viewer" });
 </script>
 
 <ConfigForm
-	{schema}
-	{uiSchema}
-	{values}
-	onChange={(config) => {
-		values = config;
-	}}
-	onSave={(config) => {
-		/* persist */
-	}}
-	onCancel={() => {
-		/* close */
-	}}
+  {schema}
+  {uiSchema}
+  {values}
+  onChange={(config) => {
+    values = config;
+  }}
+  onSave={(config) => {
+    /* persist */
+  }}
+  onCancel={() => {
+    /* close */
+  }}
 />
 ```
 
@@ -792,15 +797,15 @@ FlowDrop exports utility functions for working with dynamic schemas:
 
 ```typescript
 import {
-	fetchDynamicSchema,
-	resolveExternalEditUrl,
-	getEffectiveConfigEditOptions,
-	clearSchemaCache,
-	invalidateSchemaCache,
-	hasConfigEditOptions,
-	shouldShowExternalEdit,
-	shouldUseDynamicSchema
-} from '@flowdrop/flowdrop';
+  fetchDynamicSchema,
+  resolveExternalEditUrl,
+  getEffectiveConfigEditOptions,
+  clearSchemaCache,
+  invalidateSchemaCache,
+  hasConfigEditOptions,
+  shouldShowExternalEdit,
+  shouldUseDynamicSchema,
+} from "@flowdrop/flowdrop";
 ```
 
 ### `fetchDynamicSchema(endpoint, node, workflowId?)`
@@ -809,16 +814,16 @@ Fetches a config schema from a REST endpoint with caching.
 
 ```typescript
 const result = await fetchDynamicSchema(
-	node.data.metadata.configEdit.dynamicSchema,
-	node,
-	workflowId
+  node.data.metadata.configEdit.dynamicSchema,
+  node,
+  workflowId,
 );
 
 if (result.success) {
-	console.log('Schema:', result.schema);
-	console.log('From cache:', result.fromCache);
+  console.log("Schema:", result.schema);
+  console.log("From cache:", result.fromCache);
 } else {
-	console.error('Error:', result.error);
+  console.error("Error:", result.error);
 }
 ```
 
@@ -828,11 +833,11 @@ Resolves URL template variables for external edit links.
 
 ```typescript
 const url = resolveExternalEditUrl(
-	node.data.metadata.configEdit.externalEditLink,
-	node,
-	workflowId
+  node.data.metadata.configEdit.externalEditLink,
+  node,
+  workflowId,
 );
-window.open(url, '_blank');
+window.open(url, "_blank");
 ```
 
 ### `clearSchemaCache(pattern?)`
@@ -841,7 +846,7 @@ Clears cached schemas. Optionally filter by pattern.
 
 ```typescript
 clearSchemaCache(); // clear all
-clearSchemaCache('my_node'); // clear for a specific node type
+clearSchemaCache("my_node"); // clear for a specific node type
 ```
 
 ### `invalidateSchemaCache(node, endpoint)`
@@ -856,37 +861,37 @@ All types are available from the main package or the `core` export:
 
 ```typescript
 import type {
-	// Schema
-	ConfigSchema,
-	ConfigProperty,
-	FieldSchema,
-	FieldType,
-	FieldFormat,
+  // Schema
+  ConfigSchema,
+  ConfigProperty,
+  FieldSchema,
+  FieldType,
+  FieldFormat,
 
-	// UISchema
-	UISchemaElement,
-	UISchemaControl,
-	UISchemaVerticalLayout,
-	UISchemaGroup,
+  // UISchema
+  UISchemaElement,
+  UISchemaControl,
+  UISchemaVerticalLayout,
+  UISchemaGroup,
 
-	// Dynamic schema
-	ConfigEditOptions,
-	DynamicSchemaEndpoint,
-	DynamicSchemaResult,
-	ExternalEditLink,
-	HttpMethod,
+  // Dynamic schema
+  ConfigEditOptions,
+  DynamicSchemaEndpoint,
+  DynamicSchemaResult,
+  ExternalEditLink,
+  HttpMethod,
 
-	// Autocomplete
-	AutocompleteConfig,
+  // Autocomplete
+  AutocompleteConfig,
 
-	// Template variables
-	TemplateVariablesConfig,
-	TemplateVariable,
+  // Template variables
+  TemplateVariablesConfig,
+  TemplateVariable,
 
-	// Nodes
-	NodeMetadata,
-	WorkflowNode
-} from '@flowdrop/flowdrop';
+  // Nodes
+  NodeMetadata,
+  WorkflowNode,
+} from "@flowdrop/flowdrop";
 ```
 
 ---
@@ -897,96 +902,96 @@ A full node definition demonstrating multiple features:
 
 ```typescript
 const advancedNode: NodeMetadata = {
-	id: 'advanced-processor',
-	name: 'Advanced Processor',
-	type: 'default',
-	supportedTypes: ['default', 'simple'],
-	description: 'A fully-featured processor node',
-	category: 'processing',
-	version: '1.0.0',
-	inputs: [
-		{ id: 'data', name: 'Data', dataType: 'json' },
-		{ id: 'context', name: 'Context', dataType: 'string' }
-	],
-	outputs: [{ id: 'result', name: 'Result', dataType: 'json' }],
-	configSchema: {
-		type: 'object',
-		properties: {
-			instanceTitle: {
-				type: 'string',
-				title: 'Custom Title',
-				'x-display-order': -2
-			},
-			nodeType: {
-				type: 'string',
-				title: 'Node Style',
-				oneOf: [
-					{ const: 'default', title: 'Default' },
-					{ const: 'simple', title: 'Compact' }
-				],
-				default: 'default'
-			},
-			model: {
-				type: 'string',
-				title: 'Model',
-				enum: ['gpt-4o', 'gpt-4o-mini', 'claude-3'],
-				default: 'gpt-4o-mini'
-			},
-			temperature: {
-				type: 'number',
-				title: 'Temperature',
-				format: 'range',
-				minimum: 0,
-				maximum: 2,
-				default: 0.7
-			},
-			prompt: {
-				type: 'string',
-				title: 'Prompt Template',
-				format: 'template',
-				variables: {
-					ports: ['data', 'context'],
-					showHints: true
-				},
-				default: 'Process: {{ data }}'
-			},
-			tags: {
-				type: 'string',
-				title: 'Tags',
-				enum: ['urgent', 'review', 'archive'],
-				multiple: true
-			},
-			internalId: {
-				type: 'string',
-				format: 'hidden'
-			}
-		},
-		required: ['model']
-	},
-	uiSchema: {
-		type: 'VerticalLayout',
-		elements: [
-			{ type: 'Control', scope: '#/properties/instanceTitle' },
-			{ type: 'Control', scope: '#/properties/model' },
-			{ type: 'Control', scope: '#/properties/prompt' },
-			{
-				type: 'Group',
-				label: 'Advanced',
-				collapsible: true,
-				defaultOpen: false,
-				elements: [
-					{ type: 'Control', scope: '#/properties/nodeType' },
-					{ type: 'Control', scope: '#/properties/temperature' },
-					{ type: 'Control', scope: '#/properties/tags' }
-				]
-			}
-		]
-	},
-	config: {
-		nodeType: 'default',
-		model: 'gpt-4o-mini',
-		temperature: 0.7
-	}
+  id: "advanced-processor",
+  name: "Advanced Processor",
+  type: "default",
+  supportedTypes: ["default", "simple"],
+  description: "A fully-featured processor node",
+  category: "processing",
+  version: "1.0.0",
+  inputs: [
+    { id: "data", name: "Data", dataType: "json" },
+    { id: "context", name: "Context", dataType: "string" },
+  ],
+  outputs: [{ id: "result", name: "Result", dataType: "json" }],
+  configSchema: {
+    type: "object",
+    properties: {
+      instanceTitle: {
+        type: "string",
+        title: "Custom Title",
+        "x-display-order": -2,
+      },
+      nodeType: {
+        type: "string",
+        title: "Node Style",
+        oneOf: [
+          { const: "default", title: "Default" },
+          { const: "simple", title: "Compact" },
+        ],
+        default: "default",
+      },
+      model: {
+        type: "string",
+        title: "Model",
+        enum: ["gpt-4o", "gpt-4o-mini", "claude-3"],
+        default: "gpt-4o-mini",
+      },
+      temperature: {
+        type: "number",
+        title: "Temperature",
+        format: "range",
+        minimum: 0,
+        maximum: 2,
+        default: 0.7,
+      },
+      prompt: {
+        type: "string",
+        title: "Prompt Template",
+        format: "template",
+        variables: {
+          ports: ["data", "context"],
+          showHints: true,
+        },
+        default: "Process: {{ data }}",
+      },
+      tags: {
+        type: "string",
+        title: "Tags",
+        enum: ["urgent", "review", "archive"],
+        multiple: true,
+      },
+      internalId: {
+        type: "string",
+        format: "hidden",
+      },
+    },
+    required: ["model"],
+  },
+  uiSchema: {
+    type: "VerticalLayout",
+    elements: [
+      { type: "Control", scope: "#/properties/instanceTitle" },
+      { type: "Control", scope: "#/properties/model" },
+      { type: "Control", scope: "#/properties/prompt" },
+      {
+        type: "Group",
+        label: "Advanced",
+        collapsible: true,
+        defaultOpen: false,
+        elements: [
+          { type: "Control", scope: "#/properties/nodeType" },
+          { type: "Control", scope: "#/properties/temperature" },
+          { type: "Control", scope: "#/properties/tags" },
+        ],
+      },
+    ],
+  },
+  config: {
+    nodeType: "default",
+    model: "gpt-4o-mini",
+    temperature: 0.7,
+  },
 };
 ```
 
