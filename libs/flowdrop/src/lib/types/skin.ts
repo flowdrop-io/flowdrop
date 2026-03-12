@@ -24,8 +24,10 @@ export interface FlowDropSkin {
 	 * <App skin={{ name: 'minimal', tokens: { primary: '#e11d48' } }} />
 	 */
 	name?: FlowDropSkinName | (string & {});
-	/** CSS token overrides scoped to the FlowDrop instance root element */
+	/** CSS token overrides injected as :root rules — active in light mode (and as base) */
 	tokens?: FlowDropSkinTokens;
+	/** CSS token overrides injected as [data-theme='dark'] rules — active in dark mode only */
+	darkTokens?: FlowDropSkinTokens;
 }
 
 export type FlowDropSkinName = 'default' | 'slate';
