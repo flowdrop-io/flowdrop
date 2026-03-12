@@ -71,9 +71,9 @@
 					const { setupWorker } = await import('msw/browser');
 					const { handlers } = await import('../mocks/handlers');
 					const { playgroundHandlers } = await import('../mocks/playground-handlers');
-					const { mountPlayground } = await import('@d34dman/flowdrop/playground');
-					const { createEndpointConfig } = await import('@d34dman/flowdrop/core');
-					await import('@d34dman/flowdrop/styles');
+					const { mountPlayground } = await import('@flowdrop/flowdrop/playground');
+					const { createEndpointConfig } = await import('@flowdrop/flowdrop/core');
+					await import('@flowdrop/flowdrop/styles');
 
 					// Start MSW with both editor and playground handlers
 					const worker = setupWorker(...handlers, ...playgroundHandlers);

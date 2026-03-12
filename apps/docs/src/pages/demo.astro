@@ -83,9 +83,9 @@
 					let mountOptions;
 
 					const { setupWorker } = await import('msw/browser');
-					const { mountFlowDropApp } = await import('@d34dman/flowdrop/editor');
-					const { createEndpointConfig } = await import('@d34dman/flowdrop/core');
-					await import('@d34dman/flowdrop/styles');
+					const { mountFlowDropApp } = await import('@flowdrop/flowdrop/editor');
+					const { createEndpointConfig } = await import('@flowdrop/flowdrop/core');
+					await import('@flowdrop/flowdrop/styles');
 
 					if (config.step) {
 						// Tutorial mode: load step-specific config
