@@ -1,10 +1,6 @@
 ---
 title: Custom Nodes
 description: Register custom Svelte components as workflow node types.
-sidebar:
-  badge:
-    text: 'Intermediate'
-    variant: note
 ---
 
 FlowDrop ships with 7 built-in node types, but you can register your own custom node components to extend the editor.
