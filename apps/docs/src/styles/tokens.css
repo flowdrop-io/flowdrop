@@ -23,6 +23,6 @@
 	--fd-accent: hsl(var(--fd-accent-hue), var(--fd-accent-saturation), var(--fd-accent-lightness));
 	--fd-accent-high: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.7), 72%);
 
-	/* Gray base hue — cool blue-gray to complement purple */
-	--fd-gray-hue: 220;
+	/* Gray base hue — purple-gray to match website color temperature */
+	--fd-gray-hue: 240;
 }
