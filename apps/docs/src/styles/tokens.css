@@ -13,22 +13,16 @@
    ============================================================================= */
 
 :root {
-	/* Brand accent — the 3 knobs */
-	--fd-accent-hue: 17;
+	/* Brand accent — matches website #6c63ff (purple) */
+	--fd-accent-hue: 244;
 	--fd-accent-saturation: 100%;
-	--fd-accent-lightness: 34%;
+	--fd-accent-lightness: 65%;
 
 	/* Derived accent shades (dark mode) */
 	--fd-accent-low: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.5), 13%);
 	--fd-accent: hsl(var(--fd-accent-hue), var(--fd-accent-saturation), var(--fd-accent-lightness));
-	--fd-accent-high: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.7), 55%);
+	--fd-accent-high: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.7), 72%);
 
-	/* Gray base hue — shift to complement accent */
-	--fd-gray-hue: 210;
-}
-
-/* Light mode — reversed luminance for readability on white */
-:root[data-theme='light'] {
-	--fd-accent-low: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.6), 90%);
-	--fd-accent-high: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.8), 22%);
+	/* Gray base hue — cool blue-gray to complement purple */
+	--fd-gray-hue: 220;
 }

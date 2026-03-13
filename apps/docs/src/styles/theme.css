@@ -25,16 +25,6 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Accent Colors — Light Mode
-   --------------------------------------------------------------------------- */
-
-:root[data-theme='light'] {
-	--sl-color-accent-low: var(--fd-accent-low);
-	--sl-color-accent: var(--fd-accent);
-	--sl-color-accent-high: var(--fd-accent-high);
-}
-
-/* ---------------------------------------------------------------------------
    Gray Scale — Dark Mode
 
    Cool neutral grays derived from --fd-gray-hue token.
@@ -50,22 +40,6 @@
 	--sl-color-gray-5: hsl(var(--fd-gray-hue), 10%, 21%);
 	--sl-color-gray-6: hsl(var(--fd-gray-hue), 14%, 14%);
 	--sl-color-black: hsl(var(--fd-gray-hue), 15%, 8%);
-}
-
-/* ---------------------------------------------------------------------------
-   Gray Scale — Light Mode
-   --------------------------------------------------------------------------- */
-
-:root[data-theme='light'] {
-	--sl-color-white: hsl(var(--fd-gray-hue), 15%, 8%);
-	--sl-color-gray-1: hsl(var(--fd-gray-hue), 14%, 14%);
-	--sl-color-gray-2: hsl(var(--fd-gray-hue), 10%, 21%);
-	--sl-color-gray-3: hsl(var(--fd-gray-hue), 7%, 34%);
-	--sl-color-gray-4: hsl(var(--fd-gray-hue), 6%, 54%);
-	--sl-color-gray-5: hsl(var(--fd-gray-hue), 8%, 75%);
-	--sl-color-gray-6: hsl(var(--fd-gray-hue), 15%, 93%);
-	--sl-color-gray-7: hsl(var(--fd-gray-hue), 15%, 96%);
-	--sl-color-black: hsl(0, 0%, 100%);
 }
 
 /* ---------------------------------------------------------------------------
@@ -152,4 +126,22 @@
 :root {
 	scrollbar-color: var(--sl-color-gray-4) transparent;
 	scrollbar-width: thin;
+}
+
+/* ---------------------------------------------------------------------------
+   Header — Frosted Glass Scroll Effect
+   --------------------------------------------------------------------------- */
+
+header.header {
+	transition:
+		background-color 200ms ease,
+		border-color 200ms ease,
+		backdrop-filter 200ms ease;
+}
+
+header.header.fd-scrolled {
+	background-color: rgba(14, 14, 20, 0.85);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border-bottom-color: var(--sl-color-hairline);
 }
