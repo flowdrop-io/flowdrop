@@ -10,7 +10,7 @@
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,22 +18,57 @@
 		<style is:global>
 			*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 			html, body { width: 100%; height: 100%; overflow: hidden; }
-			body { font-family: system-ui, sans-serif; }
-			body.dark { background: #1a1a2e; color: #e0e0e0; }
-			body.light { background: #f8f9fa; color: #1a1a2e; }
+			body { font-family: system-ui, sans-serif; background: #0a0a0f; color: #c0c0d8; }
 			#preview { width: 100%; height: 100%; }
 			#loading {
 				display: flex;
 				align-items: center;
 				justify-content: center;
 				height: 100%;
-				color: #9ca3af;
+				color: #7a7a9a;
 				font-size: 0.875rem;
 			}
 			.hidden { display: none !important; }
+
+			/* Minimal (slate) skin tokens — applied in dark mode */
+			:root {
+				--fd-node-icon-display: none;
+				--fd-node-circle-display: flex;
+				--fd-sidebar-search-display: none;
+				--fd-sidebar-header-display: none;
+				--fd-sidebar-card-display: none;
+				--fd-sidebar-flat-display: block;
+				--fd-navbar-split-display: flex;
+				--fd-navbar-dropdown-display: none;
+			}
+			[data-theme='dark'] {
+				--fd-background: #13131a;
+				--fd-foreground: #c0c0d8;
+				--fd-muted: #1a1a28;
+				--fd-muted-foreground: #7a7a9a;
+				--fd-card: #1a1a28;
+				--fd-card-foreground: #e8e8f0;
+				--fd-border: #2a2a3a;
+				--fd-border-muted: #1e1e2a;
+				--fd-border-strong: #3a3a55;
+				--fd-header: #1a1a25;
+				--fd-layout-background: #0a0a0f;
+				--fd-primary: #6c63ff;
+				--fd-primary-hover: #7c74ff;
+				--fd-primary-foreground: #ffffff;
+				--fd-primary-muted: rgba(108, 99, 255, 0.15);
+				--fd-scrollbar-thumb: #2a2a3a;
+				--fd-scrollbar-track: #13131a;
+				--fd-backdrop: rgba(19, 19, 26, 0.9);
+				--fd-node-border: #9898b8;
+				--fd-node-border-hover: #aeaed0;
+				--fd-handle-border: #9898b8;
+				--fd-sidebar-category-color: #3a3a55;
+				--fd-sidebar-flat-item-color: #8888aa;
+			}
 		</style>
 	</head>
-	<body class="dark">
+	<body>
 		<div id="loading">Loading...</div>
 		<div id="preview" class="hidden"></div>
 
@@ -41,10 +76,7 @@
 			(async () => {
 				const params = new URLSearchParams(window.location.search);
 				const nodeType = params.get('type') || 'default';
-				const theme = params.get('theme') || 'dark';
-
-				document.body.classList.remove('dark', 'light');
-				document.body.classList.add(theme);
+				const theme = 'dark';
 
 				const loadingEl = document.getElementById('loading');
 				const previewEl = document.getElementById('preview');
@@ -68,16 +100,7 @@
 					loadingEl.textContent = 'Failed to load preview';
 				}
 
-				// Listen for theme changes from parent
-				window.addEventListener('message', (event) => {
-					if (event.data?.type === 'theme-change') {
-						// Reload with new theme
-						const url = new URL(window.location.href);
-						url.searchParams.set('theme', event.data.theme);
-						window.location.href = url.toString();
-					}
-				});
-			})();
+				})();
 		</script>
 	</body>
 </html>
