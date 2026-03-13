@@ -22,6 +22,7 @@ import type {
   FlowDropEventHandlers,
   FlowDropFeatures,
 } from "./types/events.js";
+import type { FlowDropTheme, FlowDropThemeName } from "./types/theme.js";
 import type { WorkflowFormatAdapter } from "./registry/workflowFormatRegistry.js";
 import { workflowFormatRegistry } from "./registry/workflowFormatRegistry.js";
 import "./registry/builtinFormats.js";
@@ -128,6 +129,10 @@ export interface FlowDropMountOptions {
   // NEW: Workflow format adapters
   /** Custom workflow format adapters to register */
   formatAdapters?: WorkflowFormatAdapter[];
+
+  // NEW: Visual theme
+  /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
+  theme?: FlowDropTheme | FlowDropThemeName;
 }
 
 /**
@@ -225,6 +230,7 @@ export async function mountFlowDropApp(
     settings: initialSettings,
     draftStorageKey: customDraftKey,
     formatAdapters,
+    theme,
   } = options;
 
   // Register custom format adapters before mounting
@@ -327,6 +333,7 @@ export async function mountFlowDropApp(
       authProvider,
       eventHandlers,
       features,
+      theme,
     },
   });
 
