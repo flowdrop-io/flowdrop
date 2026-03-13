@@ -966,6 +966,7 @@
     <div
       class="flowdrop-editor-main"
       class:pipeline-view={!!pipelineId}
+      style="--fd-canvas-left-offset: {!disableSidebar ? leftSidebarWidth + 'px' : '0px'}"
       onclick={handleCanvasClick}
       onkeydown={(e) => e.key === "Escape" && closeConfigSidebar()}
       role="region"
