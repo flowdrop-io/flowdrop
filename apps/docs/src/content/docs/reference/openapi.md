@@ -9,7 +9,7 @@ FlowDrop publishes an OpenAPI 3.0 specification that documents every REST endpoi
 
 The interactive API documentation is available at:
 
-**[flowdrop-io.github.io/flowdrop](https://flowdrop-io.github.io/flowdrop/)**
+**[api.flowdrop.io](https://api.flowdrop.io/)**
 
 This Redocly-powered site lets you browse all endpoints, see request/response schemas, and try example payloads.
 
