@@ -61,7 +61,7 @@ for (const version of versions) {
 }
 
 // Copy favicon to dist
-const faviconSrc = resolve(rootDir, "../../apps/website/static/favicon.svg");
+const faviconSrc = resolve(rootDir, "favicon.svg");
 cpSync(faviconSrc, resolve(distDir, "favicon.svg"));
 
 // Generate landing page
