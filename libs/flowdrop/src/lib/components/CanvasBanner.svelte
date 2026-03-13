@@ -35,6 +35,12 @@
     pointer-events: none;
   }
 
+  @media (max-width: 768px) {
+    .flowdrop-canvas-banner {
+      left: var(--fd-canvas-left-offset, 0px);
+    }
+  }
+
   .flowdrop-canvas-banner__icon {
     font-size: 3.75rem;
     margin-bottom: 1rem;
