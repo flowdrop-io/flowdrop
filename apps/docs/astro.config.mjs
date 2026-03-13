@@ -31,18 +31,6 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'FlowDrop™',
-			social: [
-				{
-					icon: 'github',
-					label: 'GitHub',
-					href: 'https://github.com/flowdrop-io/flowdrop'
-				},
-				{
-					icon: 'external',
-					label: 'Website',
-					href: 'https://flowdrop.io'
-				}
-			],
 			customCss: [
 				'@fontsource-variable/inter',
 				'./src/styles/tokens.css',
@@ -51,7 +39,10 @@ export default defineConfig({
 				'./src/styles/diagrams.css',
 			],
 			components: {
+				Header: './src/components/Header.astro',
 				ThemeProvider: './src/components/ThemeProvider.astro',
+				ThemeSelect: './src/components/ThemeSelect.astro',
+				SiteTitle: './src/components/SiteTitle.astro',
 				Head: './src/components/Head.astro',
 				Footer: './src/components/Footer.astro',
 			},

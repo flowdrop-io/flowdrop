@@ -1,0 +1,111 @@
+---
+import type { Props } from '@astrojs/starlight/props';
+import Search from '@astrojs/starlight/components/Search.astro';
+import SiteTitle from './SiteTitle.astro';
+---
+
+<div class="header sl-flex">
+	<div class="title-wrapper sl-flex">
+		<SiteTitle {...Astro.props} />
+	</div>
+	<div class="sl-flex print:hidden">
+		<Search {...Astro.props} />
+	</div>
+	<div class="sl-hidden md:sl-flex print:hidden right-group">
+		<nav class="fd-header-nav sl-flex" aria-label="Site navigation">
+			<a href="/" class="fd-header-link">Docs</a>
+			<a href="https://flowdrop.io/blog" class="fd-header-link" target="_blank" rel="noopener noreferrer">Blog</a>
+			<a href="https://github.com/flowdrop-io/flowdrop" class="fd-header-link" target="_blank" rel="noopener noreferrer">GitHub</a>
+		</nav>
+		<a href="https://docs.flowdrop.io/getting-started/quick-start" class="fd-header-cta">
+			Get started
+		</a>
+	</div>
+</div>
+
+<script>
+	const header = document.querySelector('header.header');
+	if (header) {
+		const update = () => header.classList.toggle('fd-scrolled', window.scrollY > 32);
+		window.addEventListener('scroll', update, { passive: true });
+		update();
+	}
+</script>
+
+<style>
+	.header {
+		gap: var(--sl-nav-gap);
+		justify-content: space-between;
+		align-items: center;
+		height: 100%;
+	}
+
+	.title-wrapper {
+		overflow: clip;
+		padding: 0.25rem;
+		margin: -0.25rem;
+		min-width: 0;
+	}
+
+	.right-group {
+		gap: 1rem;
+		align-items: center;
+	}
+
+	.fd-header-nav {
+		gap: 0.25rem;
+		align-items: center;
+		margin-inline-end: 0.25rem;
+	}
+
+	.fd-header-link {
+		font-size: 0.9375rem;
+		font-weight: 500;
+		color: var(--sl-color-gray-2);
+		padding: 0.375rem 0.625rem;
+		border-radius: 6px;
+		text-decoration: none;
+		transition: color 150ms ease, background-color 150ms ease;
+	}
+
+	.fd-header-link:hover {
+		color: var(--sl-color-white);
+		background-color: var(--sl-color-gray-5);
+	}
+
+	.fd-header-cta {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #fff;
+		background-color: #6c63ff;
+		padding: 0.4375rem 1rem;
+		border-radius: 9999px;
+		text-decoration: none;
+		white-space: nowrap;
+		box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.3), 0 4px 20px rgba(108, 99, 255, 0.3);
+		transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+	}
+
+	.fd-header-cta:hover {
+		background-color: #7c74ff;
+		box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.4), 0 8px 32px rgba(108, 99, 255, 0.4);
+		transform: translateY(-1px);
+	}
+
+	@media (min-width: 50rem) {
+		.header {
+			display: grid;
+			grid-template-columns:
+				minmax(
+					calc(
+						var(--sl-sidebar-width) +
+						max(0rem, var(--sl-content-pad-x) - var(--sl-nav-gap))
+					),
+					auto
+				)
+				1fr
+				auto;
+			align-content: center;
+		}
+	}
+</style>
