@@ -1,13 +1,13 @@
 <script lang="ts">
-  import Icon from "@iconify/svelte";
+  import type { Snippet } from "svelte";
   let {
     title,
     description,
-    iconName,
+    icon,
   }: {
     title: string;
     description: string;
-    iconName?: string;
+    icon?: Snippet;
   } = $props();
 </script>
 
@@ -15,8 +15,8 @@
   <div class="flowdrop-card">
     <div class="flowdrop-card__body flowdrop-text--center">
       <div class="flowdrop-canvas-banner__icon">
-        {#if iconName}
-          <Icon icon={iconName} class="flowdrop-canvas-banner__icon-svg" />
+        {#if icon}
+          {@render icon()}
         {/if}
       </div>
       <h3 class="flowdrop-canvas-banner__title">{title}</h3>

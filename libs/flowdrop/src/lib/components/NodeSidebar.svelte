@@ -275,7 +275,13 @@
                 <LoadingSpinner size="md" text="Loading from server..." />
               </div>
             {:else}
-              <div class="flowdrop-hero__icon">📦</div>
+              <div class="flowdrop-hero__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
               <h3 class="flowdrop-hero__title">No node types available</h3>
               <p class="flowdrop-hero__description">
                 Node type definitions will appear here
@@ -292,12 +298,17 @@
           {#if filteredNodes.length === 0}
             <div class="flowdrop-hero">
               <div class="flowdrop-hero__content">
-                <div class="flowdrop-hero__icon">🔍</div>
+                <div class="flowdrop-hero__icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                </div>
                 <h3 class="flowdrop-hero__title">No components found</h3>
                 <p class="flowdrop-hero__description">
                   Try adjusting your search
                 </p>
-                {#if props.nodes?.length === 0}
+                {#if props.loading}
                   <div class="flowdrop-mb--4">
                     <LoadingSpinner size="sm" text="Loading components..." />
                   </div>
@@ -477,7 +488,7 @@
     <div class="flowdrop-sidebar__footer">
       <div class="flowdrop-flex flowdrop-gap--4">
         <div class="flowdrop-flex flowdrop-gap--4">
-          {#if props.nodes?.length === 0}
+          {#if props.loading && props.nodes?.length === 0}
             <span class="flowdrop-text--xs flowdrop-text--gray"
               >Loading components...</span
             >
