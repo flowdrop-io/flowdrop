@@ -54,6 +54,7 @@ export default defineConfig({
 			sidebar: [
 				{
 					label: 'Concepts',
+					collapsed: true,
 					items: [
 						{ label: 'What is a Workflow?', slug: 'concepts/what-is-a-workflow' },
 						{ label: 'Architecture Overview', slug: 'concepts/architecture-overview' },
@@ -62,6 +63,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Getting Started',
+					collapsed: true,
 					items: [
 						{ label: 'Installation', slug: 'getting-started/installation' },
 						{ label: 'Quick Start', slug: 'getting-started/quick-start' }
@@ -69,6 +71,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Tutorial',
+					collapsed: true,
 					items: [
 						{ label: '1. Embedding the Editor', slug: 'tutorial/01-embedding-the-editor' },
 						{ label: '2. Configuring Endpoints', slug: 'tutorial/02-configuring-endpoints' },
@@ -79,9 +82,11 @@ export default defineConfig({
 				},
 				{
 					label: 'Guides',
+					collapsed: true,
 					items: [
 						{
 							label: 'Editor',
+							collapsed: true,
 							items: [
 								{ label: 'Creating Workflows', slug: 'guides/creating-workflows' },
 								{ label: 'Node Types', slug: 'guides/node-types' },
@@ -92,6 +97,7 @@ export default defineConfig({
 						},
 						{
 							label: 'Extending',
+							collapsed: true,
 							items: [
 								{ label: 'Custom Nodes', slug: 'guides/custom-nodes' },
 								{ label: 'Custom Form Fields', slug: 'guides/custom-form-fields' }
@@ -99,6 +105,7 @@ export default defineConfig({
 						},
 						{
 							label: 'Integration',
+							collapsed: true,
 							items: [
 								{ label: 'Framework Integration', slug: 'guides/integration' },
 								{ label: 'Backend Implementation', slug: 'guides/integration/backend-implementation' },
@@ -108,6 +115,7 @@ export default defineConfig({
 						},
 						{
 							label: 'Advanced',
+							collapsed: true,
 							items: [
 								{ label: 'Event System', slug: 'guides/advanced/event-system' },
 								{ label: 'Store System', slug: 'guides/advanced/store-system' },
@@ -120,6 +128,7 @@ export default defineConfig({
 						},
 						{
 							label: 'Data Model',
+							collapsed: true,
 							items: [
 								{ label: 'Workflow Structure', slug: 'guides/workflow-json' },
 								{ label: 'Node Structure', slug: 'guides/node-json' },
@@ -132,6 +141,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Recipes',
+					collapsed: true,
 					items: [
 						{ label: 'Backend: Express.js', slug: 'recipes/backend-express' },
 						{ label: 'AI Agent Workflow', slug: 'recipes/ai-agent-workflow' },
@@ -142,6 +152,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Reference',
+					collapsed: true,
 					items: [
 						{ label: 'API Overview', slug: 'reference/api-overview' },
 						{ label: 'Mount API', slug: 'reference/mount-api' },
@@ -158,6 +169,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Troubleshooting',
+					collapsed: true,
 					items: [
 						{ label: 'Common Issues & FAQ', slug: 'troubleshooting/common-issues' }
 					]
