@@ -20,11 +20,18 @@
 	);
 </script>
 
-<div class="fd-demo-inline" style:height={height}>
-	<iframe
-		src={demoUrl}
-		class="fd-demo-iframe"
-		title="FlowDrop Tutorial - Step {step}"
-		allow="clipboard-write"
-	></iframe>
+<div class="fd-demo-chrome">
+	<div class="fd-chrome-bar">
+		<div class="fd-chrome-dots"><span></span><span></span><span></span></div>
+		<div class="fd-chrome-title">FlowDrop Editor</div>
+		<div class="fd-chrome-spacer"></div>
+	</div>
+	<div class="fd-demo-inline" style:height={height}>
+		<iframe
+			src={demoUrl}
+			class="fd-demo-iframe"
+			title="FlowDrop Tutorial - Step {step}"
+			allow="clipboard-write"
+		></iframe>
+	</div>
 </div>
