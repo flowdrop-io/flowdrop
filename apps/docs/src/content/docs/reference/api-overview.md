@@ -137,4 +137,4 @@ FlowDrop expects a backend implementing these endpoint groups. Not all are requi
 | Settings | `/settings` | User preferences |
 | Agent Spec | `/agentspec` | Agent Spec import/export |
 
-See the [OpenAPI specification](https://flowdrop-io.github.io/flowdrop/) for full endpoint documentation, or follow the [Backend: Express.js](/recipes/backend-express/) recipe to get started quickly.
+See the [OpenAPI specification](https://api.flowdrop.io/) for full endpoint documentation, or follow the [Backend: Express.js](/recipes/backend-express/) recipe to get started quickly.
