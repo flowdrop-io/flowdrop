@@ -137,7 +137,7 @@
     resolveTheme(themeProp ?? getUiSettings().theme),
   );
   let themeConfig = $derived(resolvedTheme.config);
-  
+
   // Inject skin tokens as a style tag so light/dark palettes can coexist.
   // tokens     → :root { ... }              (light mode / base)
   // darkTokens → [data-theme='dark'] { ... } (dark mode override)
@@ -966,7 +966,9 @@
     <div
       class="flowdrop-editor-main"
       class:pipeline-view={!!pipelineId}
-      style="--fd-canvas-left-offset: {!disableSidebar ? leftSidebarWidth + 'px' : '0px'}"
+      style="--fd-canvas-left-offset: {!disableSidebar
+        ? leftSidebarWidth + 'px'
+        : '0px'}"
       onclick={handleCanvasClick}
       onkeydown={(e) => e.key === "Escape" && closeConfigSidebar()}
       role="region"
