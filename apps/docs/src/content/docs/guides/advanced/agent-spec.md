@@ -1,10 +1,6 @@
 ---
 title: Agent Spec Integration
 description: Import and export workflows using Agent Spec — an open standard for AI agent definitions, originally published by Oracle.
-sidebar:
-  badge:
-    text: 'Advanced'
-    variant: caution
 ---
 
 FlowDrop supports [Agent Spec](https://github.com/oracle/agent-spec) — an open standard for defining AI agent workflows, originally published by Oracle as a vendor-neutral specification. You can import Agent Spec documents into FlowDrop for visual editing and export FlowDrop workflows back to Agent Spec format.
