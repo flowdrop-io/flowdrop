@@ -23,6 +23,7 @@ RUN cd apps/api-docs && pnpm install --frozen-lockfile
 
 # Copy source files needed by the build script
 COPY apps/api-docs/scripts ./apps/api-docs/scripts
+COPY apps/api-docs/redocly.yaml ./apps/api-docs/redocly.yaml
 COPY libs/flowdrop/api ./libs/flowdrop/api
 
 ENV NODE_ENV=production
