@@ -180,6 +180,7 @@
   });
 
   let nodes = $state<NodeMetadata[]>([]);
+  let nodeTypesLoading = $state<boolean>(true);
   // Remove workflow prop - use global store directly
   // let workflow = $derived($workflowStore || initialWorkflow);
   let error = $state<string | null>(null);
@@ -259,6 +260,7 @@
         (n) => !existingIds.has(n.id),
       );
       nodes = [...propNodes, ...uniqueFormatNodes];
+      nodeTypesLoading = false;
       return;
     }
 
@@ -285,6 +287,7 @@
       );
       nodes = [...fetchedNodes, ...uniqueFormatNodes];
       error = null;
+      nodeTypesLoading = false;
 
       // Dismiss loading toast
       if (loadingToast) {
@@ -307,6 +310,7 @@
         if (suppressToast) {
           // Parent handled the error, keep nodes empty
           nodes = [];
+          nodeTypesLoading = false;
           return;
         }
       }
@@ -319,6 +323,7 @@
 
       // Set empty nodes array instead of fallback data
       nodes = [];
+      nodeTypesLoading = false;
     }
   }
 
@@ -765,6 +770,7 @@
     {#snippet leftSidebar()}
       <NodeSidebar
         {nodes}
+        loading={nodeTypesLoading}
         activeFormat={getWorkflowFormat()}
         categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ??
           false}
