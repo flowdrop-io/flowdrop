@@ -14,6 +14,7 @@
  */
 
 import { SvelteMap } from "svelte/reactivity";
+import { untrack } from "svelte";
 import type {
   WorkflowNode as WorkflowNodeType,
   PortCoordinate,
@@ -161,11 +162,21 @@ export function updateNodePortCoordinates(
   const internalNode = getInternalNode(node.id);
   if (!internalNode) return;
 
-  // Remove old entries for this node
-  for (const [key, coord] of coordinates) {
-    if (coord.nodeId === node.id) {
-      coordinates.delete(key);
+  // Remove old entries for this node.
+  // untrack prevents this read from creating a reactive dependency on `coordinates`
+  // inside any $effect that calls this function — otherwise the effect would re-run
+  // every time we mutate `coordinates`, creating an infinite reactive loop during drag.
+  const keysToDelete = untrack(() => {
+    const keys: string[] = [];
+    for (const [key, coord] of coordinates) {
+      if (coord.nodeId === node.id) {
+        keys.push(key);
+      }
     }
+    return keys;
+  });
+  for (const key of keysToDelete) {
+    coordinates.delete(key);
   }
 
   // Add new entries
