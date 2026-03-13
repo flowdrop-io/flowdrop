@@ -23,6 +23,8 @@
 
   interface Props {
     nodes: NodeMetadata[];
+    /** Whether node types are still being fetched. Default: false */
+    loading?: boolean;
     selectedCategory?: NodeCategory;
     activeFormat?: WorkflowFormat;
     /** Whether category <details> accordions start open (card mode). Default: false */
@@ -268,14 +270,17 @@
         <!-- No node types available -->
         <div class="flowdrop-hero">
           <div class="flowdrop-hero__content">
-            <div class="flowdrop-hero__icon">📦</div>
-            <h3 class="flowdrop-hero__title">No node types available</h3>
-            <p class="flowdrop-hero__description">
-              Node type definitions will appear here
-            </p>
-            <div class="flowdrop-mb--4">
-              <LoadingSpinner size="md" text="Loading from server..." />
-            </div>
+            {#if props.loading}
+              <div class="flowdrop-mb--4">
+                <LoadingSpinner size="md" text="Loading from server..." />
+              </div>
+            {:else}
+              <div class="flowdrop-hero__icon">📦</div>
+              <h3 class="flowdrop-hero__title">No node types available</h3>
+              <p class="flowdrop-hero__description">
+                Node type definitions will appear here
+              </p>
+            {/if}
           </div>
         </div>
       {:else if searchInput.trim()}
