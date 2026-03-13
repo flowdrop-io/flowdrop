@@ -11,7 +11,7 @@
 
 :root {
 	--sl-font: 'Inter Variable', sans-serif;
-	--sl-font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+	--sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 /* ---------------------------------------------------------------------------
@@ -33,13 +33,13 @@
 
 :root {
 	--sl-color-white: hsl(0, 0%, 100%);
-	--sl-color-gray-1: hsl(var(--fd-gray-hue), 15%, 93%);
-	--sl-color-gray-2: hsl(var(--fd-gray-hue), 8%, 75%);
-	--sl-color-gray-3: hsl(var(--fd-gray-hue), 6%, 54%);
-	--sl-color-gray-4: hsl(var(--fd-gray-hue), 7%, 34%);
-	--sl-color-gray-5: hsl(var(--fd-gray-hue), 10%, 21%);
-	--sl-color-gray-6: hsl(var(--fd-gray-hue), 14%, 14%);
-	--sl-color-black: hsl(var(--fd-gray-hue), 15%, 8%);
+	--sl-color-gray-1: hsl(var(--fd-gray-hue), 14%, 93%);  /* ≈ website #e8e8f0 --color-text */
+	--sl-color-gray-2: hsl(var(--fd-gray-hue), 19%, 67%);  /* ≈ website #9a9ab8 --color-text-muted */
+	--sl-color-gray-3: hsl(var(--fd-gray-hue), 14%, 47%);  /* between text-muted and text-faint */
+	--sl-color-gray-4: hsl(var(--fd-gray-hue), 15%, 38%);  /* ≈ website #52526e --color-border */
+	--sl-color-gray-5: hsl(var(--fd-gray-hue), 19%, 15%);  /* ≈ website #1f1f2d --color-surface-2 */
+	--sl-color-gray-6: hsl(var(--fd-gray-hue), 15%, 11%);  /* ≈ website #17171f --color-surface */
+	--sl-color-black: hsl(var(--fd-gray-hue), 20%, 5%);    /* ≈ website #0a0a0f --color-bg */
 }
 
 /* ---------------------------------------------------------------------------
@@ -154,10 +154,12 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Header — Frosted Glass Scroll Effect
+   Header — Transparent by default, frosted glass on scroll
    --------------------------------------------------------------------------- */
 
 header.header {
+	background-color: transparent !important;
+	border-bottom-color: transparent !important;
 	transition:
 		background-color 200ms ease,
 		border-color 200ms ease,
@@ -165,8 +167,8 @@ header.header {
 }
 
 header.header.fd-scrolled {
-	background-color: rgba(14, 14, 20, 0.85);
+	background-color: rgba(10, 10, 15, 0.85) !important;
 	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
-	border-bottom-color: var(--sl-color-hairline);
+	border-bottom-color: var(--sl-color-hairline) !important;
 }

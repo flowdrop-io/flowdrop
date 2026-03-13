@@ -38,26 +38,25 @@ pre.mermaid .cluster .cluster .cluster rect {
 	fill-opacity: 0.65;
 }
 
-/* Thicker, more visible arrows */
+/* Edge lines and node borders — 1px normal weight */
 pre.mermaid .edgePath path,
 pre.mermaid .flowchart-link {
-	stroke-width: 2px !important;
+	stroke-width: 1px !important;
 }
 pre.mermaid .arrowheadPath {
-	stroke-width: 2px !important;
+	stroke-width: 1px !important;
 }
 pre.mermaid marker path {
 	stroke-width: 1px !important;
 }
 
-/* Thicker node borders */
 pre.mermaid .node rect,
 pre.mermaid .node circle,
 pre.mermaid .node ellipse,
 pre.mermaid .node polygon,
 pre.mermaid .node path,
 pre.mermaid .cluster rect {
-	stroke-width: 2px !important;
+	stroke-width: 1px !important;
 }
 
 /* Multi-level cluster depth — progressively lighter/darker backgrounds */
