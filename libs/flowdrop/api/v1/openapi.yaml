@@ -1,6 +1,6 @@
 openapi: "3.0.3"
 info:
-  title: FlowDrop API
+  title: FlowDrop™ API
   description: |
     FlowDrop is a visual workflow editor for AI applications and data processing pipelines.
     This API provides comprehensive endpoints for managing workflows, node types, pipeline execution, and port configuration.

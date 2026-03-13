@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: FlowDrop API
+  title: FlowDrop™ API
   description: |
     FlowDrop is a visual workflow editor for AI applications and data processing pipelines.
     This API provides comprehensive endpoints for managing workflows, node types, pipeline execution, and port configuration.
@@ -84,7 +84,7 @@ paths:
         - System
       security: []
       responses:
-        "200":
+        '200':
           description: API is healthy
           content:
             application/json:
@@ -107,14 +107,14 @@ paths:
                     type: integer
                     description: Uptime in seconds
                     example: 3600
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Service unavailable
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
   /system/config:
     get:
       operationId: getSystemConfig
@@ -123,13 +123,13 @@ paths:
       tags:
         - System
       responses:
-        "200":
+        '200':
           description: System configuration retrieved successfully
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -150,10 +150,10 @@ paths:
                                 type: integer
                               maxConcurrentExecutions:
                                 type: integer
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /system/version:
     get:
       operationId: getSystemVersion
@@ -163,7 +163,7 @@ paths:
         - System
       security: []
       responses:
-        "200":
+        '200':
           description: Version information retrieved successfully
           content:
             application/json:
@@ -179,8 +179,8 @@ paths:
                   api_version:
                     type: string
                     example: v1
-        "404":
-          $ref: "#/components/responses/NotFound"
+        '404':
+          $ref: '#/components/responses/NotFound'
   /nodes:
     get:
       operationId: listNodeTypes
@@ -196,7 +196,7 @@ paths:
           description: Filter by node category
           required: false
           schema:
-            $ref: "#/components/schemas/NodeCategory"
+            $ref: '#/components/schemas/NodeCategory'
         - name: search
           in: query
           description: Search node types by name, description, or tags
@@ -222,7 +222,7 @@ paths:
             minimum: 0
             default: 0
       responses:
-        "200":
+        '200':
           description: List of node types retrieved successfully
           headers:
             X-Total-Count:
@@ -240,7 +240,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NodesResponse"
+                $ref: '#/components/schemas/NodesResponse'
               examples:
                 success:
                   value:
@@ -252,7 +252,7 @@ paths:
                         category: ai
                         version: 1.0.0
                         icon: mdi:chat
-                        color: "#10a37f"
+                        color: '#10a37f'
                         type: default
                         supportedTypes:
                           - default
@@ -303,10 +303,10 @@ paths:
                           - chat
                           - ai
                     message: Found 1 node types
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /nodes/{id}:
     get:
       operationId: getNodeType
@@ -323,16 +323,16 @@ paths:
             type: string
             example: calculator
       responses:
-        "200":
+        '200':
           description: Node type details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NodeTypeResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/NodeTypeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /port-config:
     get:
       operationId: getPortConfig
@@ -344,12 +344,12 @@ paths:
       tags:
         - Configuration
       responses:
-        "200":
+        '200':
           description: Port configuration retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PortConfigResponse"
+                $ref: '#/components/schemas/PortConfigResponse'
               example:
                 success: true
                 data:
@@ -359,7 +359,7 @@ paths:
                     - id: string
                       name: String
                       description: Text data type
-                      color: "#3b82f6"
+                      color: '#3b82f6'
                       category: primitive
                       aliases:
                         - text
@@ -368,13 +368,13 @@ paths:
                     - id: number
                       name: Number
                       description: Numeric data type
-                      color: "#10b981"
+                      color: '#10b981'
                       category: primitive
                       enabled: true
                     - id: mixed
                       name: Mixed
                       description: Any data type
-                      color: "#6b7280"
+                      color: '#6b7280'
                       category: special
                       enabled: true
                   compatibilityRules:
@@ -388,10 +388,10 @@ paths:
                       to: string
                       description: Mixed can connect to string with conversion
                 message: Port configuration loaded successfully
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /categories:
     get:
       operationId: getCategories
@@ -406,12 +406,12 @@ paths:
       tags:
         - Configuration
       responses:
-        "200":
+        '200':
           description: Categories retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CategoriesResponse"
+                $ref: '#/components/schemas/CategoriesResponse'
               example:
                 success: true
                 data:
@@ -432,10 +432,10 @@ paths:
                     description: Custom ML processing nodes
                     weight: 20
                 message: Categories loaded successfully
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows:
     get:
       operationId: listWorkflows
@@ -498,7 +498,7 @@ paths:
               - desc
             default: desc
       responses:
-        "200":
+        '200':
           description: List of workflows retrieved successfully
           headers:
             X-Total-Count:
@@ -516,11 +516,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowsResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: createWorkflow
       summary: Create a new workflow
@@ -534,7 +534,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateWorkflowRequest"
+              $ref: '#/components/schemas/CreateWorkflowRequest'
             examples:
               basic:
                 summary: Basic workflow creation
@@ -553,7 +553,7 @@ paths:
                       type: text_input
                       position:
                         x: 100
-                        "y": 100
+                        'y': 100
                       data:
                         label: User Input
                         config:
@@ -575,18 +575,18 @@ paths:
                     - ai
                     - chat
       responses:
-        "201":
+        '201':
           description: Workflow created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/{id}:
     get:
       operationId: getWorkflow
@@ -604,18 +604,18 @@ paths:
             format: uuid
             example: 123e4567-e89b-12d3-a456-426614174000
       responses:
-        "200":
+        '200':
           description: Workflow details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     put:
       operationId: updateWorkflow
       summary: Update workflow
@@ -637,22 +637,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateWorkflowRequest"
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
       responses:
-        "200":
+        '200':
           description: Workflow updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: deleteWorkflow
       summary: Delete workflow
@@ -668,7 +668,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Workflow deleted successfully
           content:
             application/json:
@@ -681,12 +681,12 @@ paths:
                   message:
                     type: string
                     example: Workflow deleted successfully
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/validate:
     post:
       operationId: validateWorkflow
@@ -705,18 +705,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: '#/components/schemas/Workflow'
       responses:
-        "200":
+        '200':
           description: Validation results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidationResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ValidationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/{id}/export:
     get:
       operationId: exportWorkflow
@@ -743,19 +743,19 @@ paths:
               - yaml
             default: json
       responses:
-        "200":
+        '200':
           description: Workflow exported successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Workflow"
+                $ref: '#/components/schemas/Workflow'
             application/x-yaml:
               schema:
                 type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/import:
     post:
       operationId: importWorkflow
@@ -768,20 +768,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: '#/components/schemas/Workflow'
       responses:
-        "201":
+        '201':
           description: Workflow imported successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/{id}/execute:
     post:
       operationId: executeWorkflow
@@ -821,13 +821,13 @@ paths:
                       type: integer
                       description: Maximum number of execution steps
       responses:
-        "202":
+        '202':
           description: Workflow execution started
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -849,12 +849,12 @@ paths:
                             type: string
                             format: date-time
                             description: Estimated completion time (if available)
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /executions:
     get:
       operationId: listExecutions
@@ -902,16 +902,16 @@ paths:
             minimum: 0
             default: 0
       responses:
-        "200":
+        '200':
           description: Execution history retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineListResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PipelineListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /executions/{id}:
     get:
       operationId: getExecution
@@ -930,16 +930,16 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Execution status retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineDetailResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PipelineDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /executions/{id}/cancel:
     post:
       operationId: cancelExecution
@@ -958,7 +958,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Execution cancelled successfully
           content:
             application/json:
@@ -971,16 +971,16 @@ paths:
                   message:
                     type: string
                     example: Execution cancelled successfully
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: Execution cannot be cancelled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /executions/{id}/logs:
     get:
       operationId: getExecutionLogs
@@ -1014,7 +1014,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Execution logs retrieved successfully
           content:
             application/json:
@@ -1026,13 +1026,13 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/LogEntry"
+                      $ref: '#/components/schemas/LogEntry'
                   message:
                     type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflow/{workflow_id}/pipelines:
     get:
       operationId: listWorkflowPipelines
@@ -1060,16 +1060,16 @@ paths:
               - failed
               - cancelled
       responses:
-        "200":
+        '200':
           description: List of pipeline executions
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineListResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PipelineListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /pipeline/{id}:
     get:
       operationId: getPipeline
@@ -1091,12 +1091,12 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Pipeline details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineDetailResponse"
+                $ref: '#/components/schemas/PipelineDetailResponse'
               example:
                 status: running
                 jobs:
@@ -1104,22 +1104,22 @@ paths:
                     node_id: node-1
                     status: completed
                     execution_count: 5
-                    started: "2024-01-20T10:00:00Z"
-                    completed: "2024-01-20T10:00:05Z"
+                    started: '2024-01-20T10:00:00Z'
+                    completed: '2024-01-20T10:00:05Z'
                     execution_time: 5000
                   - id: job-2
                     node_id: node-2
                     status: running
                     execution_count: 3
-                    started: "2024-01-20T10:00:05Z"
+                    started: '2024-01-20T10:00:05Z'
                 node_statuses:
                   node-1:
                     status: completed
-                    last_executed: "2024-01-20T10:00:05Z"
+                    last_executed: '2024-01-20T10:00:05Z'
                     execution_time: 5000
                   node-2:
                     status: running
-                    last_executed: "2024-01-20T10:00:05Z"
+                    last_executed: '2024-01-20T10:00:05Z'
                 job_status_summary:
                   total: 5
                   pending: 0
@@ -1127,10 +1127,10 @@ paths:
                   completed: 3
                   failed: 1
                   cancelled: 0
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /pipeline/{id}/status:
     get:
       operationId: getPipelineStatus
@@ -1149,13 +1149,13 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Pipeline status retrieved successfully
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1180,10 +1180,10 @@ paths:
                           updated:
                             type: string
                             format: date-time
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /pipeline/{id}/execute:
     post:
       operationId: executePipeline
@@ -1220,16 +1220,16 @@ paths:
                       type: integer
                       description: Maximum number of execution steps
       responses:
-        "202":
+        '202':
           description: Pipeline execution started
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineExecutionResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PipelineExecutionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /pipeline/{id}/stop:
     post:
       operationId: stopPipeline
@@ -1246,7 +1246,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Pipeline stopped successfully
           content:
             application/json:
@@ -1257,16 +1257,16 @@ paths:
                     type: boolean
                   message:
                     type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: Pipeline cannot be stopped
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /pipeline/{id}/logs:
     get:
       operationId: getPipelineLogs
@@ -1294,7 +1294,7 @@ paths:
               - warning
               - error
       responses:
-        "200":
+        '200':
           description: Pipeline logs retrieved successfully
           content:
             application/json:
@@ -1306,11 +1306,11 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/LogEntry"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                      $ref: '#/components/schemas/LogEntry'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/{id}/playground/sessions:
     get:
       operationId: listPlaygroundSessions
@@ -1346,16 +1346,16 @@ paths:
             minimum: 0
             default: 0
       responses:
-        "200":
+        '200':
           description: List of playground sessions
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlaygroundSessionsResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PlaygroundSessionsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: createPlaygroundSession
       summary: Create a new playground session
@@ -1389,18 +1389,18 @@ paths:
                   description: Optional metadata for the session
                   additionalProperties: true
       responses:
-        "201":
+        '201':
           description: Session created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlaygroundSessionResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PlaygroundSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /playground/sessions/{sessionId}:
     get:
       operationId: getPlaygroundSession
@@ -1419,16 +1419,16 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Session details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlaygroundSessionResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PlaygroundSessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: deletePlaygroundSession
       summary: Delete a playground session
@@ -1446,7 +1446,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Session deleted successfully
           content:
             application/json:
@@ -1459,10 +1459,10 @@ paths:
                   message:
                     type: string
                     example: Session deleted successfully
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /playground/sessions/{sessionId}/messages:
     get:
       operationId: listPlaygroundMessages
@@ -1499,16 +1499,16 @@ paths:
             maximum: 500
             default: 100
       responses:
-        "200":
+        '200':
           description: Messages retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlaygroundMessagesResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PlaygroundMessagesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: sendPlaygroundMessage
       summary: Send a message to the playground session
@@ -1539,7 +1539,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PlaygroundMessageRequest"
+              $ref: '#/components/schemas/PlaygroundMessageRequest'
             examples:
               chatMessage:
                 summary: Simple chat message
@@ -1555,24 +1555,24 @@ paths:
                       format: csv
                       headers: true
       responses:
-        "200":
+        '200':
           description: Message sent and workflow execution started
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlaygroundMessageResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+                $ref: '#/components/schemas/PlaygroundMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: Session is already executing
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /playground/sessions/{sessionId}/messages/{messageId}:
     get:
       operationId: getPlaygroundMessage
@@ -1598,16 +1598,16 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Message retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlaygroundMessageResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/PlaygroundMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /playground/sessions/{sessionId}/messages/{messageId}/status:
     get:
       operationId: getPlaygroundMessageStatus
@@ -1633,13 +1633,13 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Message status retrieved successfully
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -1650,7 +1650,7 @@ paths:
                             format: uuid
                             description: Message unique identifier
                           status:
-                            $ref: "#/components/schemas/PlaygroundMessageStatus"
+                            $ref: '#/components/schemas/PlaygroundMessageStatus'
                           sequenceNumber:
                             type: integer
                             description: Message sequence number
@@ -1663,10 +1663,10 @@ paths:
                           - status
                           - sequenceNumber
                           - timestamp
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /playground/sessions/{sessionId}/stop:
     post:
       operationId: stopPlaygroundExecution
@@ -1685,7 +1685,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Execution stopped successfully
           content:
             application/json:
@@ -1698,16 +1698,16 @@ paths:
                   message:
                     type: string
                     example: Execution stopped
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: No execution is running
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /interrupts/{interruptId}:
     get:
       operationId: getInterrupt
@@ -1726,16 +1726,16 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Interrupt details retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InterruptResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/InterruptResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       operationId: resolveInterrupt
       summary: Resolve interrupt
@@ -1761,7 +1761,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/InterruptResolveRequest"
+              $ref: '#/components/schemas/InterruptResolveRequest'
             examples:
               confirmation:
                 summary: Confirmation response
@@ -1789,24 +1789,24 @@ paths:
                     email: john@example.com
                     priority: high
       responses:
-        "200":
+        '200':
           description: Interrupt resolved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InterruptResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+                $ref: '#/components/schemas/InterruptResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: Interrupt already resolved or cancelled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /interrupts/{interruptId}/cancel:
     post:
       operationId: cancelInterrupt
@@ -1826,7 +1826,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Interrupt cancelled successfully
           content:
             application/json:
@@ -1839,22 +1839,22 @@ paths:
                   message:
                     type: string
                     example: Interrupt cancelled
-        "400":
+        '400':
           description: Interrupt cannot be cancelled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: Interrupt already resolved or cancelled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /playground/sessions/{sessionId}/interrupts:
     get:
       operationId: listSessionInterrupts
@@ -1900,16 +1900,16 @@ paths:
             minimum: 0
             default: 0
       responses:
-        "200":
+        '200':
           description: List of interrupts retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InterruptListResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/InterruptListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /pipelines/{pipelineId}/interrupts:
     get:
       operationId: listPipelineInterrupts
@@ -1955,16 +1955,16 @@ paths:
             minimum: 0
             default: 0
       responses:
-        "200":
+        '200':
           description: List of interrupts retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InterruptListResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/InterruptListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/flows/execute:
     post:
       operationId: agentSpecExecuteFlow
@@ -1982,20 +1982,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AgentSpecExecutionRequest"
+              $ref: '#/components/schemas/AgentSpecExecutionRequest'
       responses:
-        "200":
+        '200':
           description: Flow execution started successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecExecutionResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AgentSpecExecutionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/executions/{id}:
     get:
       operationId: agentSpecGetExecutionStatus
@@ -2013,16 +2013,16 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Execution status retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecExecutionStatus"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AgentSpecExecutionStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/executions/{id}/cancel:
     post:
       operationId: agentSpecCancelExecution
@@ -2040,7 +2040,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Execution cancelled successfully
           content:
             application/json:
@@ -2053,16 +2053,16 @@ paths:
                   message:
                     type: string
                     example: Execution cancelled successfully
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
           description: Execution cannot be cancelled (already completed or failed)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/executions/{id}/results:
     get:
       operationId: agentSpecGetExecutionResults
@@ -2080,16 +2080,16 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Execution results retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecExecutionResults"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AgentSpecExecutionResults'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/executions/{id}/stream:
     get:
       operationId: agentSpecStreamExecution
@@ -2114,12 +2114,12 @@ paths:
           schema:
             type: string
       responses:
-        "101":
+        '101':
           description: WebSocket upgrade successful
-        "200":
+        '200':
           description: WebSocket connection established (upgrade to ws://)
-        "404":
-          $ref: "#/components/responses/NotFound"
+        '404':
+          $ref: '#/components/responses/NotFound'
   /agentspec/flows/validate:
     post:
       operationId: agentSpecValidateFlow
@@ -2135,18 +2135,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AgentSpecFlow"
+              $ref: '#/components/schemas/AgentSpecFlow'
       responses:
-        "200":
+        '200':
           description: Validation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecRuntimeValidation"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AgentSpecRuntimeValidation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/agents:
     get:
       operationId: agentSpecListAgents
@@ -2157,18 +2157,18 @@ paths:
       tags:
         - Agent Spec
       responses:
-        "200":
+        '200':
           description: List of available agents
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AgentSpecRuntimeAgent"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/AgentSpecRuntimeAgent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/tools:
     get:
       operationId: agentSpecListTools
@@ -2179,18 +2179,18 @@ paths:
       tags:
         - Agent Spec
       responses:
-        "200":
+        '200':
           description: List of available tools
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AgentSpecRuntimeTool"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                  $ref: '#/components/schemas/AgentSpecRuntimeTool'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /agentspec/health:
     get:
       operationId: agentSpecHealthCheck
@@ -2202,20 +2202,20 @@ paths:
         - Agent Spec
       security: []
       responses:
-        "200":
+        '200':
           description: Runtime is healthy
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecRuntimeHealth"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+                $ref: '#/components/schemas/AgentSpecRuntimeHealth'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Runtime unavailable
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
   /workflows/{id}/export/agentspec:
     get:
       operationId: exportWorkflowAsAgentSpec
@@ -2250,24 +2250,24 @@ paths:
               - document
             default: flow
       responses:
-        "200":
+        '200':
           description: Agent Spec JSON exported successfully
           content:
             application/json:
               schema:
                 oneOf:
-                  - $ref: "#/components/schemas/AgentSpecFlow"
-                  - $ref: "#/components/schemas/AgentSpecDocument"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
+                  - $ref: '#/components/schemas/AgentSpecFlow'
+                  - $ref: '#/components/schemas/AgentSpecDocument'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
           description: Workflow cannot be exported as Agent Spec
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecValidationResult"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AgentSpecValidationResult'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/import/agentspec:
     post:
       operationId: importWorkflowFromAgentSpec
@@ -2289,25 +2289,25 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/AgentSpecFlow"
-                - $ref: "#/components/schemas/AgentSpecDocument"
+                - $ref: '#/components/schemas/AgentSpecFlow'
+                - $ref: '#/components/schemas/AgentSpecDocument'
       responses:
-        "200":
+        '200':
           description: Workflow imported successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "422":
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
           description: Invalid Agent Spec format
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecValidationResult"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AgentSpecValidationResult'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /workflows/{id}/validate/agentspec:
     get:
       operationId: validateWorkflowForAgentSpec
@@ -2333,16 +2333,16 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Validation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentSpecValidationResult"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+                $ref: '#/components/schemas/AgentSpecValidationResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   securitySchemes:
     BearerAuth:
@@ -2428,13 +2428,13 @@ components:
           type: number
           description: X coordinate
           example: 100
-        "y":
+        'y':
           type: number
           description: Y coordinate
           example: 200
       required:
         - x
-        - "y"
+        - 'y'
     ApiResponse:
       type: object
       properties:
@@ -2451,7 +2451,7 @@ components:
           description: Error message (if any)
     ErrorResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             success:
@@ -2517,7 +2517,7 @@ components:
         color:
           type: string
           description: Color for the data type (CSS color value)
-          example: "#3b82f6"
+          example: '#3b82f6'
         category:
           type: string
           description: Category grouping for the data type
@@ -2570,12 +2570,12 @@ components:
         dataTypes:
           type: array
           items:
-            $ref: "#/components/schemas/PortDataTypeConfig"
+            $ref: '#/components/schemas/PortDataTypeConfig'
           description: Available data types
         compatibilityRules:
           type: array
           items:
-            $ref: "#/components/schemas/PortCompatibilityRule"
+            $ref: '#/components/schemas/PortCompatibilityRule'
           description: Compatibility rules between data types
       required:
         - dataTypes
@@ -2648,7 +2648,7 @@ components:
         oneOf:
           type: array
           items:
-            $ref: "#/components/schemas/OneOfItem"
+            $ref: '#/components/schemas/OneOfItem'
           description: |
             JSON Schema oneOf for labeled options (standard approach).
             Each item should have `const` (value) and optionally `title` (label).
@@ -2735,7 +2735,7 @@ components:
             - date
             - date-time
         variables:
-          $ref: "#/components/schemas/TemplateVariablesConfig"
+          $ref: '#/components/schemas/TemplateVariablesConfig'
           description: |
             Configuration for template variable autocomplete.
             Only applicable when `format: "template"`.
@@ -2754,7 +2754,7 @@ components:
             Fields without `x-display-order` are sorted after fields with explicit ordering.
           example: -2
         items:
-          $ref: "#/components/schemas/ConfigProperty"
+          $ref: '#/components/schemas/ConfigProperty'
           description: Schema for array items
         minItems:
           type: integer
@@ -2765,10 +2765,10 @@ components:
         properties:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/ConfigProperty"
+            $ref: '#/components/schemas/ConfigProperty'
           description: Property schemas for object fields
         autocomplete:
-          $ref: "#/components/schemas/AutocompleteConfig"
+          $ref: '#/components/schemas/AutocompleteConfig'
           description: Configuration for autocomplete fields (when format is "autocomplete")
       required:
         - type
@@ -2834,7 +2834,7 @@ components:
         properties:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/ConfigProperty"
+            $ref: '#/components/schemas/ConfigProperty'
           description: Configuration properties
         required:
           type: array
@@ -2882,7 +2882,7 @@ components:
             - metadata
           description: Port direction (input receives data, output sends data)
         dataType:
-          $ref: "#/components/schemas/NodeDataType"
+          $ref: '#/components/schemas/NodeDataType'
         required:
           type: boolean
           default: false
@@ -2894,7 +2894,7 @@ components:
         defaultValue:
           description: Default value used when no connection provides data
         schema:
-          $ref: "#/components/schemas/PortDataSchema"
+          $ref: '#/components/schemas/PortDataSchema'
           description: |
             JSON Schema describing the structure of data on this output port.
 
@@ -2964,7 +2964,7 @@ components:
           description: Description of what this port accepts/provides
           example: Additional input data for processing
         dataType:
-          $ref: "#/components/schemas/NodeDataType"
+          $ref: '#/components/schemas/NodeDataType'
           description: Data type for the port (affects color and connection validation)
         required:
           type: boolean
@@ -3062,7 +3062,7 @@ components:
           Used for round-trip preservation during import/export.
       properties:
         ui:
-          $ref: "#/components/schemas/NodeUIExtensions"
+          $ref: '#/components/schemas/NodeUIExtensions'
         agentspec:component_type:
           type: string
           description: |
@@ -3106,18 +3106,18 @@ components:
           description: Node type display name
           example: Calculator
         type:
-          $ref: "#/components/schemas/NodeType"
+          $ref: '#/components/schemas/NodeType'
         supportedTypes:
           type: array
           items:
-            $ref: "#/components/schemas/NodeType"
+            $ref: '#/components/schemas/NodeType'
           description: Array of supported rendering types
         description:
           type: string
           description: Node type description
           example: Perform mathematical operations on input data
         category:
-          $ref: "#/components/schemas/NodeCategory"
+          $ref: '#/components/schemas/NodeCategory'
         version:
           type: string
           description: Node type version
@@ -3129,7 +3129,7 @@ components:
         color:
           type: string
           description: Node color (CSS color value)
-          example: "#3b82f6"
+          example: '#3b82f6'
         badge:
           type: string
           description: |
@@ -3147,20 +3147,20 @@ components:
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/NodePort"
+            $ref: '#/components/schemas/NodePort'
           description: |
             Static input ports defined by the node type.
             Additional dynamic inputs can be added via config.dynamicInputs.
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/NodePort"
+            $ref: '#/components/schemas/NodePort'
           description: |
             Static output ports defined by the node type.
             Additional dynamic outputs can be added via config.dynamicOutputs.
             For gateway nodes, branches create additional output handles.
         configSchema:
-          $ref: "#/components/schemas/ConfigSchema"
+          $ref: '#/components/schemas/ConfigSchema'
         tags:
           type: array
           items:
@@ -3182,7 +3182,7 @@ components:
           example:
             - agentspec
         extensions:
-          $ref: "#/components/schemas/NodeExtensions"
+          $ref: '#/components/schemas/NodeExtensions'
           description: |
             Default extension properties for all instances of this node type.
             Can be overridden at the instance level via WorkflowNode.data.extensions.
@@ -3294,17 +3294,17 @@ components:
         dynamicInputs:
           type: array
           items:
-            $ref: "#/components/schemas/DynamicPort"
+            $ref: '#/components/schemas/DynamicPort'
           description: User-defined dynamic input ports that appear as additional input handles
         dynamicOutputs:
           type: array
           items:
-            $ref: "#/components/schemas/DynamicPort"
+            $ref: '#/components/schemas/DynamicPort'
           description: User-defined dynamic output ports that appear as additional output handles
         branches:
           type: array
           items:
-            $ref: "#/components/schemas/Branch"
+            $ref: '#/components/schemas/Branch'
           description: Gateway node branches that define conditional output paths
       additionalProperties: true
       example:
@@ -3336,7 +3336,7 @@ components:
       type: object
       properties:
         status:
-          $ref: "#/components/schemas/NodeExecutionStatus"
+          $ref: '#/components/schemas/NodeExecutionStatus'
         executionCount:
           type: integer
           description: Total number of times this node has been executed
@@ -3380,7 +3380,7 @@ components:
           description: Node type ID (references NodeMetadata.id)
           example: calculator
         position:
-          $ref: "#/components/schemas/Position"
+          $ref: '#/components/schemas/Position'
         deletable:
           type: boolean
           default: true
@@ -3392,9 +3392,9 @@ components:
               description: Node instance label
               example: Math Calculator
             config:
-              $ref: "#/components/schemas/NodeConfig"
+              $ref: '#/components/schemas/NodeConfig'
             metadata:
-              $ref: "#/components/schemas/NodeMetadata"
+              $ref: '#/components/schemas/NodeMetadata'
             isProcessing:
               type: boolean
               description: Whether the node is currently processing
@@ -3405,9 +3405,9 @@ components:
               type: string
               description: Alternative node ID
             executionInfo:
-              $ref: "#/components/schemas/NodeExecutionInfo"
+              $ref: '#/components/schemas/NodeExecutionInfo'
             extensions:
-              $ref: "#/components/schemas/NodeExtensions"
+              $ref: '#/components/schemas/NodeExtensions'
               description: |
                 Per-instance extension properties for 3rd party integrations.
                 Overrides or extends the node type extensions defined in metadata.extensions.
@@ -3561,15 +3561,15 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowNode"
+            $ref: '#/components/schemas/WorkflowNode'
           description: Workflow nodes
         edges:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowEdge"
+            $ref: '#/components/schemas/WorkflowEdge'
           description: Workflow edges
         metadata:
-          $ref: "#/components/schemas/WorkflowMetadata"
+          $ref: '#/components/schemas/WorkflowMetadata'
       required:
         - id
         - name
@@ -3592,11 +3592,11 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowNode"
+            $ref: '#/components/schemas/WorkflowNode'
         edges:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowEdge"
+            $ref: '#/components/schemas/WorkflowEdge'
         tags:
           type: array
           items:
@@ -3620,11 +3620,11 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowNode"
+            $ref: '#/components/schemas/WorkflowNode'
         edges:
           type: array
           items:
-            $ref: "#/components/schemas/WorkflowEdge"
+            $ref: '#/components/schemas/WorkflowEdge'
         metadata:
           type: object
           properties:
@@ -3647,7 +3647,7 @@ components:
           type: string
           description: Node instance UUID
         status:
-          $ref: "#/components/schemas/NodeExecutionStatus"
+          $ref: '#/components/schemas/NodeExecutionStatus'
         execution_count:
           type: integer
           description: Number of times executed
@@ -3669,7 +3669,7 @@ components:
       type: object
       properties:
         status:
-          $ref: "#/components/schemas/NodeExecutionStatus"
+          $ref: '#/components/schemas/NodeExecutionStatus'
         last_executed:
           type: string
           format: date-time
@@ -3722,15 +3722,15 @@ components:
         jobs:
           type: array
           items:
-            $ref: "#/components/schemas/JobStatus"
+            $ref: '#/components/schemas/JobStatus'
           description: Individual job statuses
         node_statuses:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/NodeStatus"
+            $ref: '#/components/schemas/NodeStatus'
           description: Node execution statuses keyed by node ID
         job_status_summary:
-          $ref: "#/components/schemas/JobStatusSummary"
+          $ref: '#/components/schemas/JobStatusSummary'
       required:
         - status
         - jobs
@@ -3738,7 +3738,7 @@ components:
         - job_status_summary
     PipelineListResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
@@ -3761,7 +3761,7 @@ components:
                     format: date-time
     PipelineExecutionResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
@@ -3863,7 +3863,7 @@ components:
           description: Session display name
           example: Test Session 1
         status:
-          $ref: "#/components/schemas/PlaygroundSessionStatus"
+          $ref: '#/components/schemas/PlaygroundSessionStatus'
         createdAt:
           type: string
           format: date-time
@@ -3898,7 +3898,7 @@ components:
           format: uuid
           description: Parent session ID
         role:
-          $ref: "#/components/schemas/PlaygroundMessageRole"
+          $ref: '#/components/schemas/PlaygroundMessageRole'
         content:
           type: string
           description: Message content
@@ -3907,7 +3907,7 @@ components:
           format: date-time
           description: Message timestamp
         status:
-          $ref: "#/components/schemas/PlaygroundMessageStatus"
+          $ref: '#/components/schemas/PlaygroundMessageStatus'
         sequenceNumber:
           type: integer
           description: |
@@ -3932,7 +3932,7 @@ components:
           type: object
           properties:
             level:
-              $ref: "#/components/schemas/PlaygroundMessageLevel"
+              $ref: '#/components/schemas/PlaygroundMessageLevel'
             duration:
               type: integer
               description: Execution duration in milliseconds
@@ -3958,7 +3958,7 @@ components:
         sessionId: fe5304ea-f069-433f-b0bf-945975c0b806
         role: user
         content: Hello. How are you?
-        timestamp: "2026-01-19T10:03:32+01:00"
+        timestamp: '2026-01-19T10:03:32+01:00'
         status: completed
         sequenceNumber: 1
         parentMessageId: null
@@ -3988,7 +3988,7 @@ components:
           type: boolean
           description: Whether the field is required
         schema:
-          $ref: "#/components/schemas/ConfigProperty"
+          $ref: '#/components/schemas/ConfigProperty'
           description: JSON Schema for the field
       required:
         - nodeId
@@ -4012,41 +4012,41 @@ components:
         - content
     PlaygroundSessionResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/PlaygroundSession"
+              $ref: '#/components/schemas/PlaygroundSession'
     PlaygroundSessionsResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/PlaygroundSession"
+                $ref: '#/components/schemas/PlaygroundSession'
     PlaygroundMessageResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/PlaygroundMessage"
+              $ref: '#/components/schemas/PlaygroundMessage'
     PlaygroundMessagesResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/PlaygroundMessage"
+                $ref: '#/components/schemas/PlaygroundMessage'
             hasMore:
               type: boolean
               description: Whether there are more messages to fetch
             sessionStatus:
-              $ref: "#/components/schemas/PlaygroundSessionStatus"
+              $ref: '#/components/schemas/PlaygroundSessionStatus'
               description: Current session status (useful for polling)
     InterruptType:
       type: string
@@ -4104,12 +4104,12 @@ components:
         confirm_label:
           type: string
           description: Label for confirm button
-          default: "Yes"
+          default: 'Yes'
           example: Approve
         cancel_label:
           type: string
           description: Label for cancel/reject button
-          default: "No"
+          default: 'No'
           example: Reject
       required:
         - message
@@ -4124,7 +4124,7 @@ components:
         options:
           type: array
           items:
-            $ref: "#/components/schemas/ChoiceOption"
+            $ref: '#/components/schemas/ChoiceOption'
           description: Available options to choose from
           minItems: 1
         multiple:
@@ -4180,7 +4180,7 @@ components:
           description: Prompt message to display above the form
           example: Please fill in the required information
         schema:
-          $ref: "#/components/schemas/ConfigSchema"
+          $ref: '#/components/schemas/ConfigSchema'
           description: JSON Schema defining the form structure
         default_values:
           type: object
@@ -4223,7 +4223,7 @@ components:
         changes:
           type: array
           items:
-            $ref: "#/components/schemas/ReviewChange"
+            $ref: '#/components/schemas/ReviewChange'
           description: List of field changes to review
           minItems: 1
         accept_all_label:
@@ -4260,7 +4260,7 @@ components:
         decisions:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/ReviewFieldDecision"
+            $ref: '#/components/schemas/ReviewFieldDecision'
           description: Map of field identifier to the user's decision
         summary:
           type: object
@@ -4308,9 +4308,9 @@ components:
           format: uuid
           description: Associated playground message ID
         type:
-          $ref: "#/components/schemas/InterruptType"
+          $ref: '#/components/schemas/InterruptType'
         status:
-          $ref: "#/components/schemas/InterruptStatus"
+          $ref: '#/components/schemas/InterruptStatus'
         nodeId:
           type: string
           description: ID of the node that created the interrupt
@@ -4319,11 +4319,11 @@ components:
           description: Workflow execution ID
         config:
           oneOf:
-            - $ref: "#/components/schemas/ConfirmationInterruptConfig"
-            - $ref: "#/components/schemas/ChoiceInterruptConfig"
-            - $ref: "#/components/schemas/TextInterruptConfig"
-            - $ref: "#/components/schemas/FormInterruptConfig"
-            - $ref: "#/components/schemas/ReviewInterruptConfig"
+            - $ref: '#/components/schemas/ConfirmationInterruptConfig'
+            - $ref: '#/components/schemas/ChoiceInterruptConfig'
+            - $ref: '#/components/schemas/TextInterruptConfig'
+            - $ref: '#/components/schemas/FormInterruptConfig'
+            - $ref: '#/components/schemas/ReviewInterruptConfig'
           description: Type-specific configuration
         allowCancel:
           type: boolean
@@ -4366,7 +4366,7 @@ components:
           format: uuid
           description: Interrupt unique identifier
         interrupt_type:
-          $ref: "#/components/schemas/InterruptType"
+          $ref: '#/components/schemas/InterruptType'
         node_id:
           type: string
           description: ID of the node that created the interrupt
@@ -4389,7 +4389,7 @@ components:
         options:
           type: array
           items:
-            $ref: "#/components/schemas/ChoiceOption"
+            $ref: '#/components/schemas/ChoiceOption'
           description: Available options (choice type)
         multiple:
           type: boolean
@@ -4415,7 +4415,7 @@ components:
         default_value:
           description: Default value (text type)
         schema:
-          $ref: "#/components/schemas/ConfigSchema"
+          $ref: '#/components/schemas/ConfigSchema'
           description: Form schema (form type)
         default_values:
           type: object
@@ -4423,7 +4423,7 @@ components:
         changes:
           type: array
           items:
-            $ref: "#/components/schemas/ReviewChange"
+            $ref: '#/components/schemas/ReviewChange'
           description: List of field changes to review (review type)
         accept_all_label:
           type: string
@@ -4466,20 +4466,20 @@ components:
         - value
     InterruptResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/Interrupt"
+              $ref: '#/components/schemas/Interrupt'
     InterruptListResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/Interrupt"
+                $ref: '#/components/schemas/Interrupt'
     AgentSpecComponentType:
       type: string
       enum:
@@ -4568,12 +4568,12 @@ components:
           items: {}
           description: Allowed values (JSON Schema enum)
         items:
-          $ref: "#/components/schemas/AgentSpecProperty"
+          $ref: '#/components/schemas/AgentSpecProperty'
           description: Array item schema (for type=array)
         properties:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
           description: Object property schemas (for type=object)
         required:
           type: array
@@ -4604,30 +4604,30 @@ components:
       description: |
         Union of all Agent Spec node types. Discriminated by `component_type`.
       oneOf:
-        - $ref: "#/components/schemas/AgentSpecStartNode"
-        - $ref: "#/components/schemas/AgentSpecEndNode"
-        - $ref: "#/components/schemas/AgentSpecLLMNode"
-        - $ref: "#/components/schemas/AgentSpecAPINode"
-        - $ref: "#/components/schemas/AgentSpecAgentNode"
-        - $ref: "#/components/schemas/AgentSpecFlowNode"
-        - $ref: "#/components/schemas/AgentSpecMapNode"
-        - $ref: "#/components/schemas/AgentSpecBranchingNode"
-        - $ref: "#/components/schemas/AgentSpecToolNode"
+        - $ref: '#/components/schemas/AgentSpecStartNode'
+        - $ref: '#/components/schemas/AgentSpecEndNode'
+        - $ref: '#/components/schemas/AgentSpecLLMNode'
+        - $ref: '#/components/schemas/AgentSpecAPINode'
+        - $ref: '#/components/schemas/AgentSpecAgentNode'
+        - $ref: '#/components/schemas/AgentSpecFlowNode'
+        - $ref: '#/components/schemas/AgentSpecMapNode'
+        - $ref: '#/components/schemas/AgentSpecBranchingNode'
+        - $ref: '#/components/schemas/AgentSpecToolNode'
       discriminator:
         propertyName: component_type
         mapping:
-          start_node: "#/components/schemas/AgentSpecStartNode"
-          end_node: "#/components/schemas/AgentSpecEndNode"
-          llm_node: "#/components/schemas/AgentSpecLLMNode"
-          api_node: "#/components/schemas/AgentSpecAPINode"
-          agent_node: "#/components/schemas/AgentSpecAgentNode"
-          flow_node: "#/components/schemas/AgentSpecFlowNode"
-          map_node: "#/components/schemas/AgentSpecMapNode"
-          branching_node: "#/components/schemas/AgentSpecBranchingNode"
-          tool_node: "#/components/schemas/AgentSpecToolNode"
+          start_node: '#/components/schemas/AgentSpecStartNode'
+          end_node: '#/components/schemas/AgentSpecEndNode'
+          llm_node: '#/components/schemas/AgentSpecLLMNode'
+          api_node: '#/components/schemas/AgentSpecAPINode'
+          agent_node: '#/components/schemas/AgentSpecAgentNode'
+          flow_node: '#/components/schemas/AgentSpecFlowNode'
+          map_node: '#/components/schemas/AgentSpecMapNode'
+          branching_node: '#/components/schemas/AgentSpecBranchingNode'
+          tool_node: '#/components/schemas/AgentSpecToolNode'
     AgentSpecStartNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4637,7 +4637,7 @@ components:
           description: Graph entry point node
     AgentSpecEndNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4647,7 +4647,7 @@ components:
           description: Graph exit point node
     AgentSpecLLMNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4657,7 +4657,7 @@ components:
             llm_config:
               description: LLM configuration (inline object or $component_ref string)
               oneOf:
-                - $ref: "#/components/schemas/AgentSpecLLMConfig"
+                - $ref: '#/components/schemas/AgentSpecLLMConfig'
                 - type: string
                   description: Component reference (e.g., "$component_ref:my_llm")
             system_prompt:
@@ -4673,7 +4673,7 @@ components:
           description: LLM text generation node
     AgentSpecAPINode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4706,7 +4706,7 @@ components:
           description: HTTP API call node
     AgentSpecAgentNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4716,12 +4716,12 @@ components:
             agent:
               description: Agent reference ($component_ref or inline)
               oneOf:
-                - $ref: "#/components/schemas/AgentSpecAgent"
+                - $ref: '#/components/schemas/AgentSpecAgent'
                 - type: string
           description: Multi-round agent conversation node
     AgentSpecFlowNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4731,12 +4731,12 @@ components:
             flow:
               description: Flow reference ($component_ref or inline)
               oneOf:
-                - $ref: "#/components/schemas/AgentSpecFlow"
+                - $ref: '#/components/schemas/AgentSpecFlow'
                 - type: string
           description: Nested flow execution node
     AgentSpecMapNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4752,12 +4752,12 @@ components:
             map_flow:
               description: Flow or node to execute per item ($component_ref or inline)
               oneOf:
-                - $ref: "#/components/schemas/AgentSpecFlow"
+                - $ref: '#/components/schemas/AgentSpecFlow'
                 - type: string
           description: Map-reduce operation node
     AgentSpecBranchingNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4767,14 +4767,14 @@ components:
             branches:
               type: array
               items:
-                $ref: "#/components/schemas/AgentSpecBranch"
+                $ref: '#/components/schemas/AgentSpecBranch'
               description: Branch definitions with conditions
           required:
             - branches
           description: Conditional routing node
     AgentSpecToolNode:
       allOf:
-        - $ref: "#/components/schemas/AgentSpecNodeBase"
+        - $ref: '#/components/schemas/AgentSpecNodeBase'
         - type: object
           properties:
             component_type:
@@ -4784,9 +4784,9 @@ components:
             tool:
               description: Tool reference ($component_ref or inline)
               oneOf:
-                - $ref: "#/components/schemas/AgentSpecServerTool"
-                - $ref: "#/components/schemas/AgentSpecClientTool"
-                - $ref: "#/components/schemas/AgentSpecRemoteTool"
+                - $ref: '#/components/schemas/AgentSpecServerTool'
+                - $ref: '#/components/schemas/AgentSpecClientTool'
+                - $ref: '#/components/schemas/AgentSpecRemoteTool'
                 - type: string
           description: Tool execution node
     AgentSpecControlFlowEdge:
@@ -4874,18 +4874,18 @@ components:
         nodes:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecNode"
+            $ref: '#/components/schemas/AgentSpecNode'
           description: All nodes in the flow
         control_flow_connections:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecControlFlowEdge"
+            $ref: '#/components/schemas/AgentSpecControlFlowEdge'
           description: Execution order edges
         data_flow_connections:
           type: array
           nullable: true
           items:
-            $ref: "#/components/schemas/AgentSpecDataFlowEdge"
+            $ref: '#/components/schemas/AgentSpecDataFlowEdge'
           description: |
             Data routing edges. When null, data flows by matching
             input/output property names across connected nodes.
@@ -4917,11 +4917,11 @@ components:
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         function_name:
           type: string
           description: Function name or module path
@@ -4948,11 +4948,11 @@ components:
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         metadata:
           type: object
           additionalProperties: true
@@ -4975,11 +4975,11 @@ components:
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         endpoint:
           type: string
           description: Remote endpoint URL
@@ -5000,15 +5000,15 @@ components:
     AgentSpecTool:
       description: Union of all Agent Spec tool types
       oneOf:
-        - $ref: "#/components/schemas/AgentSpecServerTool"
-        - $ref: "#/components/schemas/AgentSpecClientTool"
-        - $ref: "#/components/schemas/AgentSpecRemoteTool"
+        - $ref: '#/components/schemas/AgentSpecServerTool'
+        - $ref: '#/components/schemas/AgentSpecClientTool'
+        - $ref: '#/components/schemas/AgentSpecRemoteTool'
       discriminator:
         propertyName: component_type
         mapping:
-          server_tool: "#/components/schemas/AgentSpecServerTool"
-          client_tool: "#/components/schemas/AgentSpecClientTool"
-          remote_tool: "#/components/schemas/AgentSpecRemoteTool"
+          server_tool: '#/components/schemas/AgentSpecServerTool'
+          client_tool: '#/components/schemas/AgentSpecClientTool'
+          remote_tool: '#/components/schemas/AgentSpecRemoteTool'
     AgentSpecLLMConfig:
       type: object
       description: LLM model configuration
@@ -5067,23 +5067,23 @@ components:
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         tools:
           type: array
           items:
             oneOf:
-              - $ref: "#/components/schemas/AgentSpecTool"
+              - $ref: '#/components/schemas/AgentSpecTool'
               - type: string
                 description: Component reference string
           description: Available tools (inline or $component_ref strings)
         llm_config:
           description: LLM configuration (inline or $component_ref string)
           oneOf:
-            - $ref: "#/components/schemas/AgentSpecLLMConfig"
+            - $ref: '#/components/schemas/AgentSpecLLMConfig'
             - type: string
         system_prompt:
           type: string
@@ -5101,18 +5101,18 @@ components:
         definition along with shared tool and LLM configuration declarations.
       properties:
         agent:
-          $ref: "#/components/schemas/AgentSpecAgent"
+          $ref: '#/components/schemas/AgentSpecAgent'
         flow:
-          $ref: "#/components/schemas/AgentSpecFlow"
+          $ref: '#/components/schemas/AgentSpecFlow'
         tools:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecTool"
+            $ref: '#/components/schemas/AgentSpecTool'
           description: Shared tool declarations
         llm_configs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecLLMConfig"
+            $ref: '#/components/schemas/AgentSpecLLMConfig'
           description: Shared LLM configurations
         metadata:
           type: object
@@ -5142,7 +5142,7 @@ components:
       description: Request to execute an Agent Spec flow on a runtime
       properties:
         flow:
-          $ref: "#/components/schemas/AgentSpecFlow"
+          $ref: '#/components/schemas/AgentSpecFlow'
         inputs:
           type: object
           additionalProperties: true
@@ -5195,12 +5195,12 @@ components:
         node_statuses:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/AgentSpecNodeStatus"
+            $ref: '#/components/schemas/AgentSpecNodeStatus'
           description: Per-node execution status (keyed by node name)
         nodes:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/AgentSpecNodeStatus"
+            $ref: '#/components/schemas/AgentSpecNodeStatus'
           description: Alternative per-node status field
         error:
           type: string
@@ -5254,55 +5254,55 @@ components:
         confidence: 0.95
     NodesResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/NodeMetadata"
+                $ref: '#/components/schemas/NodeMetadata'
     NodeTypeResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/NodeMetadata"
+              $ref: '#/components/schemas/NodeMetadata'
     PortConfigResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/PortConfig"
+              $ref: '#/components/schemas/PortConfig'
     CategoriesResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/CategoryDefinition"
+                $ref: '#/components/schemas/CategoryDefinition'
     WorkflowsResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/Workflow"
+                $ref: '#/components/schemas/Workflow'
     WorkflowResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/Workflow"
+              $ref: '#/components/schemas/Workflow'
     ValidationResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
@@ -5328,50 +5328,50 @@ components:
                   description: Improvement suggestions
     AgentSpecFlowResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/AgentSpecFlow"
+              $ref: '#/components/schemas/AgentSpecFlow'
     AgentSpecDocumentResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/AgentSpecDocument"
+              $ref: '#/components/schemas/AgentSpecDocument'
     AgentSpecValidationResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/AgentSpecValidationResult"
+              $ref: '#/components/schemas/AgentSpecValidationResult'
     AgentSpecExecutionStatusResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
-              $ref: "#/components/schemas/AgentSpecExecutionStatus"
+              $ref: '#/components/schemas/AgentSpecExecutionStatus'
     AgentSpecAgentsResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/AgentSpecRuntimeAgent"
+                $ref: '#/components/schemas/AgentSpecRuntimeAgent'
     AgentSpecToolsResponse:
       allOf:
-        - $ref: "#/components/schemas/ApiResponse"
+        - $ref: '#/components/schemas/ApiResponse'
         - type: object
           properties:
             data:
               type: array
               items:
-                $ref: "#/components/schemas/AgentSpecRuntimeTool"
+                $ref: '#/components/schemas/AgentSpecRuntimeTool'
     PortDataSchema:
       type: object
       description: |
@@ -5453,10 +5453,10 @@ components:
         properties:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/PortDataSchema"
+            $ref: '#/components/schemas/PortDataSchema'
           description: Property schemas for object types
         items:
-          $ref: "#/components/schemas/PortDataSchema"
+          $ref: '#/components/schemas/PortDataSchema'
           description: Item schema for array types
         required:
           type: array
@@ -5542,10 +5542,10 @@ components:
         properties:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/TemplateVariable"
+            $ref: '#/components/schemas/TemplateVariable'
           description: For objects - child properties accessible via dot notation
         items:
-          $ref: "#/components/schemas/TemplateVariable"
+          $ref: '#/components/schemas/TemplateVariable'
           description: For arrays - schema of array items accessible via index notation
         sourcePort:
           type: string
@@ -5596,7 +5596,7 @@ components:
         variables:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/TemplateVariable"
+            $ref: '#/components/schemas/TemplateVariable'
           description: Map of available variables keyed by variable name
       required:
         - variables
@@ -5694,7 +5694,7 @@ components:
             - data
             - context
         schema:
-          $ref: "#/components/schemas/VariableSchema"
+          $ref: '#/components/schemas/VariableSchema'
           description: |
             Pre-defined variable schema to provide static variables or override derived ones.
 
@@ -5748,7 +5748,7 @@ components:
       description: Base properties shared by all Agent Spec nodes
       properties:
         component_type:
-          $ref: "#/components/schemas/AgentSpecNodeComponentType"
+          $ref: '#/components/schemas/AgentSpecNodeComponentType'
         name:
           type: string
           description: Node name (used as identifier in edges)
@@ -5759,12 +5759,12 @@ components:
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
           description: Input properties
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
           description: Output properties
         metadata:
           type: object
@@ -5803,11 +5803,11 @@ components:
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
     AgentSpecRuntimeTool:
       type: object
       description: Tool available on the runtime
@@ -5819,15 +5819,15 @@ components:
           type: string
           description: Tool description
         component_type:
-          $ref: "#/components/schemas/AgentSpecToolComponentType"
+          $ref: '#/components/schemas/AgentSpecToolComponentType'
         inputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
         outputs:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSpecProperty"
+            $ref: '#/components/schemas/AgentSpecProperty'
     AgentSpecRuntimeHealth:
       type: object
       description: Health status of the Agent Spec runtime
@@ -5848,7 +5848,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Invalid request parameters
@@ -5861,7 +5861,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Authentication required
@@ -5871,7 +5871,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Resource not found
@@ -5881,7 +5881,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Validation failed
@@ -5895,7 +5895,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             success: false
             error: Internal server error
