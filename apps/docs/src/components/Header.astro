@@ -5,21 +5,23 @@ import SiteTitle from './SiteTitle.astro';
 ---
 
 <div class="header sl-flex">
-	<div class="title-wrapper sl-flex">
-		<SiteTitle {...Astro.props} />
-	</div>
-	<div class="sl-flex print:hidden">
-		<Search {...Astro.props} />
-	</div>
-	<div class="sl-hidden md:sl-flex print:hidden right-group">
-		<nav class="fd-header-nav sl-flex" aria-label="Site navigation">
+	<div class="header-inner sl-flex">
+		<div class="title-wrapper sl-flex">
+			<SiteTitle {...Astro.props} />
+		</div>
+		<nav class="fd-header-nav sl-hidden md:sl-flex print:hidden" aria-label="Site navigation">
 			<a href="/" class="fd-header-link">Docs</a>
 			<a href="https://flowdrop.io/blog" class="fd-header-link" target="_blank" rel="noopener noreferrer">Blog</a>
 			<a href="https://github.com/flowdrop-io/flowdrop" class="fd-header-link" target="_blank" rel="noopener noreferrer">GitHub</a>
 		</nav>
-		<a href="https://docs.flowdrop.io/getting-started/quick-start" class="fd-header-cta">
-			Get started
-		</a>
+		<div class="search-wrapper sl-flex print:hidden">
+			<Search {...Astro.props} />
+		</div>
+		<div class="sl-hidden md:sl-flex print:hidden right-group">
+			<a href="https://docs.flowdrop.io/getting-started/quick-start" class="fd-header-cta">
+				Get started
+			</a>
+		</div>
 	</div>
 </div>
 
@@ -34,9 +36,17 @@ import SiteTitle from './SiteTitle.astro';
 
 <style>
 	.header {
-		gap: var(--sl-nav-gap);
-		justify-content: space-between;
+		height: 100%;
+		width: 100%;
+		justify-content: center;
+	}
+
+	.header-inner {
+		width: 100%;
+		max-width: 1200px;
+		padding: 0 clamp(16px, 5vw, 48px);
 		align-items: center;
+		gap: 0.25rem;
 		height: 100%;
 	}
 
@@ -45,17 +55,14 @@ import SiteTitle from './SiteTitle.astro';
 		padding: 0.25rem;
 		margin: -0.25rem;
 		min-width: 0;
-	}
-
-	.right-group {
-		gap: 1rem;
-		align-items: center;
+		flex-shrink: 0;
+		margin-inline-end: 0.5rem;
 	}
 
 	.fd-header-nav {
 		gap: 0.25rem;
 		align-items: center;
-		margin-inline-end: 0.25rem;
+		flex: 1;
 	}
 
 	.fd-header-link {
@@ -71,6 +78,17 @@ import SiteTitle from './SiteTitle.astro';
 	.fd-header-link:hover {
 		color: var(--sl-color-white);
 		background-color: var(--sl-color-gray-5);
+	}
+
+	.search-wrapper {
+		flex: 1;
+		justify-content: flex-end;
+		margin-inline-end: 0.75rem;
+	}
+
+	.right-group {
+		align-items: center;
+		flex-shrink: 0;
 	}
 
 	.fd-header-cta {
@@ -90,22 +108,5 @@ import SiteTitle from './SiteTitle.astro';
 		background-color: #7c74ff;
 		box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.4), 0 8px 32px rgba(108, 99, 255, 0.4);
 		transform: translateY(-1px);
-	}
-
-	@media (min-width: 50rem) {
-		.header {
-			display: grid;
-			grid-template-columns:
-				minmax(
-					calc(
-						var(--sl-sidebar-width) +
-						max(0rem, var(--sl-content-pad-x) - var(--sl-nav-gap))
-					),
-					auto
-				)
-				1fr
-				auto;
-			align-content: center;
-		}
 	}
 </style>
