@@ -192,10 +192,17 @@ export function updateNodePortCoordinates(
  * @param nodeId - ID of the node to remove
  */
 export function removeNodePortCoordinates(nodeId: string): void {
-  for (const [key, coord] of coordinates) {
-    if (coord.nodeId === nodeId) {
-      coordinates.delete(key);
+  const keysToDelete = untrack(() => {
+    const keys: string[] = [];
+    for (const [key, coord] of coordinates) {
+      if (coord.nodeId === nodeId) {
+        keys.push(key);
+      }
     }
+    return keys;
+  });
+  for (const key of keysToDelete) {
+    coordinates.delete(key);
   }
 }
 
