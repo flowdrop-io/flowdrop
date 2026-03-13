@@ -47,7 +47,7 @@ const { head } = Astro.locals.starlightRoute;
 			primaryTextColor: fg,
 			secondaryTextColor: gray1,
 			tertiaryTextColor: gray3,
-			lineColor: gray4,
+			lineColor: gray2,
 
 			// Primary (accent — innermost nodes)
 			primaryColor: accentLow,
@@ -72,7 +72,7 @@ const { head } = Astro.locals.starlightRoute;
 			clusterBkg: isLight ? gray6 : gray5,
 			clusterBorder: isLight ? gray4 : gray3,
 			titleColor: fg,
-			edgeLabelBackground: bg,
+			edgeLabelBackground: 'transparent',
 
 			// Fonts
 			fontFamily: "'Inter Variable', sans-serif",
@@ -85,6 +85,10 @@ const { head } = Astro.locals.starlightRoute;
 			startOnLoad: false,
 			theme: 'base' as const,
 			themeVariables: getThemeVariables(),
+			flowchart: {
+				curve: 'basis',
+				diagramPadding: 24,
+			},
 		};
 	}
 

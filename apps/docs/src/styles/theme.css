@@ -66,11 +66,36 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Hero Button Glow
+   Hero Button — match website .btn-primary
    --------------------------------------------------------------------------- */
 
+.sl-link-button.primary {
+	background: var(--sl-color-accent) !important;
+	color: #fff !important;
+	border-radius: 9999px;
+	border: none;
+	box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.3), 0 4px 20px rgba(108, 99, 255, 0.3);
+	transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
 .sl-link-button.primary:hover {
-	box-shadow: 0 0 20px hsla(var(--fd-accent-hue), var(--fd-accent-saturation), var(--fd-accent-lightness), 0.3);
+	background: hsl(var(--fd-accent-hue), var(--fd-accent-saturation), 70%) !important;
+	box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.4), 0 8px 32px rgba(108, 99, 255, 0.4);
+	transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------------------------
+   Sidebar — Active item & badges
+   --------------------------------------------------------------------------- */
+
+/* White text on active sidebar link */
+.sidebar a[aria-current='page'] {
+	color: var(--sl-color-white) !important;
+}
+
+/* Hide sidebar item badges/tags */
+.sidebar .badge {
+	display: none;
 }
 
 /* ---------------------------------------------------------------------------
