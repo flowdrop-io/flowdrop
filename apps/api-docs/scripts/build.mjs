@@ -13,6 +13,7 @@ import { fileURLToPath } from "url";
 
 const FAVICON_LINK = '<link rel="icon" type="image/svg+xml" href="/favicon.svg">';
 const DARK_STYLE = '<style>body,#redoc-container{background:#0a0a0f!important}</style>';
+const UMAMI_SCRIPT = '<script defer src="https://umami.decasteljau.factorial.io/script.js" data-website-id="d93c0515-ea1e-497d-94ec-669b72d1ba0a"></script>';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, "..");
@@ -51,8 +52,10 @@ for (const version of versions) {
   cpSync(specFile, resolve(distDir, version.id, "openapi.yaml"));
 
   // Inject favicon and dark theme base style into Redocly-generated HTML
-  const html = readFileSync(outFile, "utf-8");
-  writeFileSync(outFile, html.replace("<head>", `<head>\n  ${FAVICON_LINK}\n  ${DARK_STYLE}`));
+  // Also strip Google Fonts link injected by Redocly by default
+  let html = readFileSync(outFile, "utf-8");
+  html = html.replace(/<link[^>]*fonts\.googleapis\.com[^>]*>/g, "");
+  writeFileSync(outFile, html.replace("<head>", `<head>\n  ${FAVICON_LINK}\n  ${DARK_STYLE}\n  ${UMAMI_SCRIPT}`));
 
   console.log(`  -> ${version.id}/index.html`);
 }
@@ -100,6 +103,7 @@ function generateLandingPage(versions, defaultVersion) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlowDrop™ API Documentation</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script defer src="https://umami.decasteljau.factorial.io/script.js" data-website-id="d93c0515-ea1e-497d-94ec-669b72d1ba0a"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
