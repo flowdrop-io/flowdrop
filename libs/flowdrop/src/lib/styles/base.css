@@ -333,6 +333,7 @@
 .flowdrop-hero__icon {
   font-size: 3.75rem;
   margin-bottom: var(--fd-space-xl);
+  color: var(--fd-muted-foreground);
 }
 
 .flowdrop-hero__title {

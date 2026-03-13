@@ -47,6 +47,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    color: var(--fd-muted-foreground);
   }
 
   .flowdrop-canvas-banner__title {
