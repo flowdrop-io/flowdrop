@@ -154,15 +154,25 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Background — Subtle ambient glow matching brand website orbs
+   --------------------------------------------------------------------------- */
+
+body {
+	background-image:
+		radial-gradient(ellipse 800px 600px at 75% -5%, rgba(108, 99, 255, 0.07) 0%, transparent 70%),
+		radial-gradient(ellipse 500px 400px at 5% 85%, rgba(0, 212, 170, 0.04) 0%, transparent 70%);
+	background-attachment: fixed;
+}
+
+/* ---------------------------------------------------------------------------
    Header — Transparent by default, frosted glass on scroll
    --------------------------------------------------------------------------- */
 
 header.header {
 	background-color: transparent !important;
-	border-bottom-color: transparent !important;
+	border-bottom: 1px solid var(--sl-color-hairline) !important;
 	transition:
 		background-color 200ms ease,
-		border-color 200ms ease,
 		backdrop-filter 200ms ease;
 }
 
@@ -170,5 +180,13 @@ header.header.fd-scrolled {
 	background-color: rgba(10, 10, 15, 0.85) !important;
 	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
-	border-bottom-color: var(--sl-color-hairline) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Sidebar — Match page background, thin right border
+   --------------------------------------------------------------------------- */
+
+.sidebar {
+	background-color: var(--sl-color-black) !important;
+	border-right: 1px solid var(--sl-color-hairline) !important;
 }
