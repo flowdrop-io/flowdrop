@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 320" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <style>
+      /* Colors from apps/website design tokens:
+         --color-bg:           #0a0a0f
+         --color-surface:      #17171f
+         --color-surface-2:    #1f1f2d
+         --color-border:       #52526e
+         --color-accent:       #6c63ff  (primary purple)
+         --color-accent-2:     #00d4aa  (secondary teal/green)
+         --color-text:         #e8e8f0
+         --color-text-muted:   #9a9ab8
+      */
+      .node-box      { fill: #1f1f2d; stroke: #6c63ff; stroke-width: 2; }
+      .node-title    { fill: #e8e8f0; font-size: 16px; font-weight: 600; }
+      .node-label    { fill: #9a9ab8; font-size: 12px; }
+      .config-key    { fill: #00d4aa; font-size: 11px; font-family: monospace; }
+      .config-val    { fill: #9a9ab8; font-size: 11px; font-family: monospace; }
+      .config-tpl    { fill: #e8e8f0; font-size: 11px; font-family: monospace; }
+      .tpl-var       { fill: #00d4aa; font-size: 11px; font-family: monospace; font-weight: 600; }
+      .port-circle   { stroke-width: 2; }
+      .port-output   { fill: #6c63ff; stroke: #00d4aa; }
+      .port-input    { fill: #6c63ff; stroke: #00d4aa; }
+      .port-label    { fill: #e8e8f0; font-size: 11px; }
+      .port-type     { fill: #9a9ab8; font-size: 10px; font-family: monospace; }
+      .edge-line     { fill: none; stroke: #6c63ff; stroke-width: 2; }
+      .edge-arrow    { fill: #6c63ff; }
+      .flow-label    { fill: #9a9ab8; font-size: 12px; font-style: italic; }
+      .section-label { fill: #9a9ab8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+      .workflow-box  { fill: none; stroke: #52526e; stroke-width: 1.5; stroke-dasharray: 8 4; }
+      .workflow-label{ fill: #e8e8f0; font-size: 13px; font-weight: 500; }
+      .schema-badge  { fill: #17171f; stroke: #52526e; stroke-width: 1; }
+      .schema-text   { fill: #00d4aa; font-size: 10px; font-family: monospace; }
+      .hint-box      { fill: #17171f; stroke: #52526e; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="780" height="320" rx="16" fill="#0a0a0f" />
+
+  <!-- Workflow container -->
+  <rect class="workflow-box" x="10" y="10" width="760" height="300" rx="16" />
+  <text class="workflow-label" x="30" y="35">Workflow</text>
+
+  <!-- Node A: Text Input -->
+  <rect class="node-box" x="50" y="55" width="250" height="210" rx="12" />
+  <text class="node-title" x="175" y="87" text-anchor="middle">Text Input</text>
+  <line x1="60" y1="100" x2="290" y2="100" stroke="#52526e" stroke-width="1" />
+
+  <!-- Node A config -->
+  <text class="section-label" x="70" y="122">Config</text>
+  <text class="config-key" x="70" y="144">value:</text>
+  <text class="config-val" x="116" y="144">"Hello, World!"</text>
+
+  <!-- Node A output port schema -->
+  <text class="section-label" x="70" y="174">Output Port Schema</text>
+  <rect class="schema-badge" x="70" y="182" width="185" height="38" rx="6" />
+  <text class="schema-text" x="82" y="198">output: { type: "string" }</text>
+  <text class="schema-text" x="82" y="212">resolves as  {{ output }}</text>
+
+  <!-- Node A output port -->
+  <circle class="port-circle port-output" cx="300" cy="210" r="8" />
+  <text class="port-label" x="282" y="239" text-anchor="end">output</text>
+  <text class="port-type" x="282" y="252" text-anchor="end">string</text>
+
+  <!-- Node B: Prompt Node -->
+  <rect class="node-box" x="480" y="55" width="270" height="210" rx="12" />
+  <text class="node-title" x="615" y="87" text-anchor="middle">Prompt Node</text>
+  <line x1="490" y1="100" x2="740" y2="100" stroke="#52526e" stroke-width="1" />
+
+  <!-- Node B config -->
+  <text class="section-label" x="500" y="122">Config  (format: "template")</text>
+  <text class="config-key" x="500" y="144">prompt:</text>
+  <text class="config-tpl" x="500" y="162">"Say </text>
+  <text class="tpl-var" x="531" y="162">{{ output }}</text>
+  <text class="config-tpl" x="617" y="162"> to user"</text>
+
+  <!-- Autocomplete hint -->
+  <rect class="hint-box" x="500" y="172" width="220" height="28" rx="5" />
+  <text class="port-type" x="510" y="183">autocomplete suggests:</text>
+  <text class="tpl-var" x="510" y="196">{{ output }}  𝑆  string</text>
+
+  <!-- Node B input port -->
+  <circle class="port-circle port-input" cx="480" cy="210" r="8" />
+  <text class="port-label" x="498" y="239">input</text>
+  <text class="port-type" x="498" y="252">string</text>
+
+  <!-- Edge -->
+  <path class="edge-line" d="M 308 210 C 370 210, 420 210, 468 210" />
+  <polygon class="edge-arrow" points="464,204 476,210 464,216" />
+
+  <!-- Edge label -->
+  <text class="flow-label" x="390" y="198" text-anchor="middle">data</text>
+  <text class="flow-label" x="390" y="228" text-anchor="middle">flow</text>
+</svg>
