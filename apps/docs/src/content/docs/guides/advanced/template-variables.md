@@ -12,15 +12,11 @@ Template variables let users reference data from upstream nodes using `{{ variab
 3. Output port schemas from those nodes become available as template variables
 4. Users type `{{` and get autocomplete suggestions
 
-```
-┌─────────────┐         ┌─────────────┐
-│ Text Input  │────────▸│ Prompt Node │
-│             │         │             │
-│ output:     │         │ Template:   │
-│  type: string        │ "Hello      │
-│             │         │  {{ output }}│
-└─────────────┘         └─────────────┘
-```
+![Diagram showing a Text Input node connected to a Prompt Node. The Text Input node exposes an output port with schema type string, which resolves as {{ output }}. The Prompt Node uses format: "template" and its prompt config field contains the expression {{ output }}, with autocomplete suggesting the variable.](../../../../assets/images/diagrams/template-variable-concept.svg)
+
+:::note
+The upstream node's **output port schema** defines which variables are available. Downstream nodes with `format: "template"` fields get autocomplete for those variables.
+:::
 
 ## Configuring Template Fields
 
