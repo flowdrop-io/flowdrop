@@ -88,9 +88,12 @@
    Sidebar — Active item & badges
    --------------------------------------------------------------------------- */
 
-/* White text on active sidebar link */
-.sidebar a[aria-current='page'] {
+.sidebar a[aria-current='page'],
+.sidebar a[aria-current='page']:hover,
+.sidebar a[aria-current='page']:focus {
 	color: var(--sl-color-white) !important;
+	background-color: var(--fd-teal-low) !important;
+	border-inline-start: 2px solid var(--fd-teal) !important;
 }
 
 /* Hide sidebar item badges/tags */
@@ -186,6 +189,11 @@ header.header.fd-scrolled {
    Sidebar — Match page background, thin right border
    --------------------------------------------------------------------------- */
 
+:root {
+	--sl-color-bg-sidebar: var(--sl-color-black);
+}
+
+.sidebar-pane,
 .sidebar {
 	background-color: var(--sl-color-black) !important;
 	border-right: 1px solid var(--sl-color-hairline) !important;

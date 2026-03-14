@@ -25,4 +25,9 @@
 
 	/* Gray base hue — purple-gray to match website color temperature */
 	--fd-gray-hue: 240;
+
+	/* Secondary teal — matches website ambient glow rgba(0, 212, 170) */
+	--fd-teal-hue: 168;
+	--fd-teal: hsl(var(--fd-teal-hue), 100%, 42%);
+	--fd-teal-low: hsl(var(--fd-teal-hue), 60%, 14%);
 }
