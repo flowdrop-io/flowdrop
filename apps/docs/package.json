@@ -12,6 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.1",
     "@astrojs/starlight": "^0.37.6",
     "@astrojs/svelte": "^7.2.5",
     "@flowdrop/flowdrop": "^1.2.1",
