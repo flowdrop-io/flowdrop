@@ -1,43 +1,38 @@
 <script lang="ts">
-	interface Props {
-		type: string;
-		height?: string;
-	}
+  interface Props {
+    type: string;
+    height?: string;
+  }
 
-	let {
-		type,
-		height = '280px'
-	}: Props = $props();
+  let { type, height = '280px' }: Props = $props();
 
-	// Detect the current Starlight theme and pass it to the preview iframe
-	let theme = $state('dark');
+  // Detect the current Starlight theme and pass it to the preview iframe
+  let theme = $state('dark');
 
-	$effect(() => {
-		const updateTheme = () => {
-			theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
-		};
+  $effect(() => {
+    const updateTheme = () => {
+      theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+    };
 
-		updateTheme();
+    updateTheme();
 
-		const observer = new MutationObserver(updateTheme);
-		observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ['data-theme']
-		});
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
 
-		return () => observer.disconnect();
-	});
+    return () => observer.disconnect();
+  });
 
-	const previewUrl = $derived(
-		`/node-preview/?type=${type}&theme=${theme}`
-	);
+  const previewUrl = $derived(`/node-preview/?type=${type}&theme=${theme}`);
 </script>
 
-<div class="fd-demo-inline fd-node-preview" style:height={height}>
-	<iframe
-		src={previewUrl}
-		class="fd-demo-iframe"
-		title="FlowDrop {type} node preview"
-		loading="lazy"
-	></iframe>
+<div class="fd-demo-inline fd-node-preview" style:height>
+  <iframe
+    src={previewUrl}
+    class="fd-demo-iframe"
+    title="FlowDrop {type} node preview"
+    loading="lazy"
+  ></iframe>
 </div>

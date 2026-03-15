@@ -30,26 +30,23 @@ FlowDrop provides a helper that generates a full endpoint configuration from a s
 import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop/editor';
 import '@flowdrop/flowdrop/styles';
 
-const app = await mountFlowDropApp(
-  document.getElementById('editor'),
-  {
-    endpointConfig: createEndpointConfig('/api/flowdrop'),
-    height: '600px',
-  }
-);
+const app = await mountFlowDropApp(document.getElementById('editor'), {
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  height: '600px'
+});
 ```
 
 The `createEndpointConfig('/api/flowdrop')` call sets up paths for all API operations under that base URL:
 
-| Operation | Endpoint |
-|-----------|----------|
-| List nodes | `GET /api/flowdrop/nodes` |
-| List categories | `GET /api/flowdrop/categories` |
-| Port config | `GET /api/flowdrop/port-config` |
-| Save workflow | `PUT /api/flowdrop/workflows/{id}` |
-| Create workflow | `POST /api/flowdrop/workflows` |
+| Operation        | Endpoint                                    |
+| ---------------- | ------------------------------------------- |
+| List nodes       | `GET /api/flowdrop/nodes`                   |
+| List categories  | `GET /api/flowdrop/categories`              |
+| Port config      | `GET /api/flowdrop/port-config`             |
+| Save workflow    | `PUT /api/flowdrop/workflows/{id}`          |
+| Create workflow  | `POST /api/flowdrop/workflows`              |
 | Execute workflow | `POST /api/flowdrop/workflows/{id}/execute` |
-| Health check | `GET /api/flowdrop/health` |
+| Health check     | `GET /api/flowdrop/health`                  |
 
 It also configures sensible defaults: a 30-second timeout and automatic retries with exponential backoff.
 

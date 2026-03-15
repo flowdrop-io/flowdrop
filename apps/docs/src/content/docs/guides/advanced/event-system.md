@@ -32,19 +32,20 @@ onWorkflowChange?: (workflow: Workflow, changeType: WorkflowChangeType) => void;
 
 The `changeType` parameter tells you exactly what changed:
 
-| Change Type | Triggered when |
-|------------|----------------|
-| `node_add` | A node is added to the canvas |
-| `node_remove` | A node is deleted |
-| `node_move` | A node is dragged to a new position |
+| Change Type   | Triggered when                       |
+| ------------- | ------------------------------------ |
+| `node_add`    | A node is added to the canvas        |
+| `node_remove` | A node is deleted                    |
+| `node_move`   | A node is dragged to a new position  |
 | `node_config` | A node's configuration values change |
-| `edge_add` | A connection is drawn between nodes |
-| `edge_remove` | A connection is deleted |
-| `metadata` | Workflow metadata changes |
-| `name` | The workflow name is edited |
-| `description` | The workflow description is edited |
+| `edge_add`    | A connection is drawn between nodes  |
+| `edge_remove` | A connection is deleted              |
+| `metadata`    | Workflow metadata changes            |
+| `name`        | The workflow name is edited          |
+| `description` | The workflow description is edited   |
 
 **Example: Track changes for analytics**
+
 ```typescript
 onWorkflowChange: (workflow, changeType) => {
   analytics.track('workflow_modified', {
@@ -53,7 +54,7 @@ onWorkflowChange: (workflow, changeType) => {
     nodeCount: workflow.nodes.length,
     edgeCount: workflow.edges.length
   });
-}
+};
 ```
 
 ### `onWorkflowLoad`
@@ -65,11 +66,12 @@ onWorkflowLoad?: (workflow: Workflow) => void;
 ```
 
 **Example: Set up external state**
+
 ```typescript
 onWorkflowLoad: (workflow) => {
   document.title = `${workflow.name} - Editor`;
   breadcrumb.update(workflow.name);
-}
+};
 ```
 
 ### `onDirtyStateChange`
@@ -81,11 +83,12 @@ onDirtyStateChange?: (isDirty: boolean) => void;
 ```
 
 **Example: Unsaved changes indicator**
+
 ```typescript
 onDirtyStateChange: (isDirty) => {
   saveButton.disabled = !isDirty;
   document.title = isDirty ? '● Unsaved - Editor' : 'Editor';
-}
+};
 ```
 
 ## Save Lifecycle Events
@@ -101,13 +104,14 @@ onBeforeSave?: (workflow: Workflow) => Promise<boolean | void>;
 ```
 
 **Example: Confirm before saving**
+
 ```typescript
 onBeforeSave: async (workflow) => {
   if (workflow.nodes.length === 0) {
     alert('Cannot save an empty workflow');
     return false; // cancels save
   }
-}
+};
 ```
 
 ### `onAfterSave`
@@ -119,10 +123,11 @@ onAfterSave?: (workflow: Workflow) => Promise<void>;
 ```
 
 **Example: Show success notification**
+
 ```typescript
 onAfterSave: async (workflow) => {
   showNotification(`Saved "${workflow.name}" successfully`);
-}
+};
 ```
 
 ### `onSaveError`
@@ -134,10 +139,11 @@ onSaveError?: (error: Error, workflow: Workflow) => Promise<void>;
 ```
 
 **Example: Report errors**
+
 ```typescript
 onSaveError: async (error, workflow) => {
   errorReporter.capture(error, { workflowId: workflow.id });
-}
+};
 ```
 
 ## Error & Cleanup Events
@@ -153,6 +159,7 @@ onApiError?: (error: Error, operation: string) => boolean | void;
 The `operation` parameter describes what failed: `"save"`, `"load"`, `"fetchNodes"`, `"fetchCategories"`, etc.
 
 **Example: Custom error handling**
+
 ```typescript
 onApiError: (error, operation) => {
   if (error.message.includes('401')) {
@@ -160,7 +167,7 @@ onApiError: (error, operation) => {
     return true; // suppress default toast
   }
   // return void to show default toast
-}
+};
 ```
 
 ### `onBeforeUnmount`
@@ -172,12 +179,13 @@ onBeforeUnmount?: (workflow: Workflow, isDirty: boolean) => void;
 ```
 
 **Example: Warn about unsaved changes**
+
 ```typescript
 onBeforeUnmount: (workflow, isDirty) => {
   if (isDirty) {
     console.warn('Unmounting with unsaved changes');
   }
-}
+};
 ```
 
 ## Agent Spec Execution Events
@@ -220,6 +228,7 @@ onAgentSpecNodeStatusUpdate?: (nodeId: string, status: NodeExecutionInfo) => voi
 ```
 
 **Example: Track execution progress**
+
 ```typescript
 onAgentSpecExecutionStarted: (executionId) => {
   progressBar.show();

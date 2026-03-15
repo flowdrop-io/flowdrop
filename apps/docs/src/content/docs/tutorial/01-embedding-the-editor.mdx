@@ -23,12 +23,9 @@ import '@flowdrop/flowdrop/styles';
 Then mount it into any container element:
 
 ```js
-const app = await mountFlowDropApp(
-  document.getElementById('editor'),
-  {
-    height: '600px',
-  }
-);
+const app = await mountFlowDropApp(document.getElementById('editor'), {
+  height: '600px'
+});
 ```
 
 That's it. The editor renders a pannable, zoomable canvas with a grid background.

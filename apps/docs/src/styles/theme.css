@@ -10,8 +10,8 @@
    --------------------------------------------------------------------------- */
 
 :root {
-	--sl-font: 'Inter Variable', sans-serif;
-	--sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --sl-font: 'Inter Variable', sans-serif;
+  --sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 /* ---------------------------------------------------------------------------
@@ -19,9 +19,9 @@
    --------------------------------------------------------------------------- */
 
 :root {
-	--sl-color-accent-low: var(--fd-accent-low);
-	--sl-color-accent: var(--fd-accent);
-	--sl-color-accent-high: var(--fd-accent-high);
+  --sl-color-accent-low: var(--fd-accent-low);
+  --sl-color-accent: var(--fd-accent);
+  --sl-color-accent-high: var(--fd-accent-high);
 }
 
 /* ---------------------------------------------------------------------------
@@ -32,14 +32,14 @@
    --------------------------------------------------------------------------- */
 
 :root {
-	--sl-color-white: hsl(0, 0%, 100%);
-	--sl-color-gray-1: hsl(var(--fd-gray-hue), 14%, 93%);  /* ≈ website #e8e8f0 --color-text */
-	--sl-color-gray-2: hsl(var(--fd-gray-hue), 19%, 67%);  /* ≈ website #9a9ab8 --color-text-muted */
-	--sl-color-gray-3: hsl(var(--fd-gray-hue), 14%, 47%);  /* between text-muted and text-faint */
-	--sl-color-gray-4: hsl(var(--fd-gray-hue), 15%, 38%);  /* ≈ website #52526e --color-border */
-	--sl-color-gray-5: hsl(var(--fd-gray-hue), 19%, 15%);  /* ≈ website #1f1f2d --color-surface-2 */
-	--sl-color-gray-6: hsl(var(--fd-gray-hue), 15%, 11%);  /* ≈ website #17171f --color-surface */
-	--sl-color-black: hsl(var(--fd-gray-hue), 20%, 5%);    /* ≈ website #0a0a0f --color-bg */
+  --sl-color-white: hsl(0, 0%, 100%);
+  --sl-color-gray-1: hsl(var(--fd-gray-hue), 14%, 93%); /* ≈ website #e8e8f0 --color-text */
+  --sl-color-gray-2: hsl(var(--fd-gray-hue), 19%, 67%); /* ≈ website #9a9ab8 --color-text-muted */
+  --sl-color-gray-3: hsl(var(--fd-gray-hue), 14%, 47%); /* between text-muted and text-faint */
+  --sl-color-gray-4: hsl(var(--fd-gray-hue), 15%, 38%); /* ≈ website #52526e --color-border */
+  --sl-color-gray-5: hsl(var(--fd-gray-hue), 19%, 15%); /* ≈ website #1f1f2d --color-surface-2 */
+  --sl-color-gray-6: hsl(var(--fd-gray-hue), 15%, 11%); /* ≈ website #17171f --color-surface */
+  --sl-color-black: hsl(var(--fd-gray-hue), 20%, 5%); /* ≈ website #0a0a0f --color-bg */
 }
 
 /* ---------------------------------------------------------------------------
@@ -47,22 +47,26 @@
    --------------------------------------------------------------------------- */
 
 .card {
-	border-radius: 0.75rem;
-	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 0.75rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card:hover {
-	border-color: var(--sl-color-accent);
-	box-shadow: 0 0 0 1px var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+  box-shadow: 0 0 0 1px var(--sl-color-accent);
 }
 
 .sl-link-card {
-	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .sl-link-card:hover {
-	border-color: var(--sl-color-accent);
-	box-shadow: 0 0 0 1px var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+  box-shadow: 0 0 0 1px var(--sl-color-accent);
 }
 
 /* ---------------------------------------------------------------------------
@@ -70,18 +74,25 @@
    --------------------------------------------------------------------------- */
 
 .sl-link-button.primary {
-	background: var(--sl-color-accent) !important;
-	color: #fff !important;
-	border-radius: 9999px;
-	border: none;
-	box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.3), 0 4px 20px rgba(108, 99, 255, 0.3);
-	transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  background: var(--sl-color-accent) !important;
+  color: #fff !important;
+  border-radius: 9999px;
+  border: none;
+  box-shadow:
+    0 0 0 1px rgba(108, 99, 255, 0.3),
+    0 4px 20px rgba(108, 99, 255, 0.3);
+  transition:
+    background 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
 }
 
 .sl-link-button.primary:hover {
-	background: hsl(var(--fd-accent-hue), var(--fd-accent-saturation), 70%) !important;
-	box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.4), 0 8px 32px rgba(108, 99, 255, 0.4);
-	transform: translateY(-1px);
+  background: hsl(var(--fd-accent-hue), var(--fd-accent-saturation), 70%) !important;
+  box-shadow:
+    0 0 0 1px rgba(108, 99, 255, 0.4),
+    0 8px 32px rgba(108, 99, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 /* ---------------------------------------------------------------------------
@@ -91,14 +102,14 @@
 .sidebar a[aria-current='page'],
 .sidebar a[aria-current='page']:hover,
 .sidebar a[aria-current='page']:focus {
-	color: var(--sl-color-white) !important;
-	background-color: var(--fd-teal-low) !important;
-	border-inline-start: 2px solid var(--fd-teal) !important;
+  color: var(--sl-color-white) !important;
+  background-color: var(--fd-teal-low) !important;
+  border-inline-start: 2px solid var(--fd-teal) !important;
 }
 
 /* Hide sidebar item badges/tags */
 .sidebar .badge {
-	display: none;
+  display: none;
 }
 
 /* ---------------------------------------------------------------------------
@@ -106,8 +117,8 @@
    --------------------------------------------------------------------------- */
 
 .sl-markdown-content pre:not(:where(.not-content *)) {
-	border-top: 2px solid var(--sl-color-accent);
-	border-radius: 0.5rem;
+  border-top: 2px solid var(--sl-color-accent);
+  border-radius: 0.5rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -115,7 +126,7 @@
    --------------------------------------------------------------------------- */
 
 .sl-markdown-content a:not(:where(.not-content *)) {
-	text-underline-offset: 0.2em;
+  text-underline-offset: 0.2em;
 }
 
 /* ---------------------------------------------------------------------------
@@ -123,7 +134,7 @@
    --------------------------------------------------------------------------- */
 
 .starlight-aside {
-	border-radius: 0 0.5rem 0.5rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -131,8 +142,8 @@
    --------------------------------------------------------------------------- */
 
 .sl-markdown-content th:not(:where(.not-content *)) {
-	border-bottom-color: var(--sl-color-accent);
-	border-bottom-width: 2px;
+  border-bottom-color: var(--sl-color-accent);
+  border-bottom-width: 2px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -140,11 +151,11 @@
    --------------------------------------------------------------------------- */
 
 .sl-markdown-content figcaption {
-	font-size: 0.875rem;
-	font-style: italic;
-	color: var(--sl-color-gray-3);
-	text-align: center;
-	margin-top: 0.5rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--sl-color-gray-3);
+  text-align: center;
+  margin-top: 0.5rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -152,8 +163,8 @@
    --------------------------------------------------------------------------- */
 
 :root {
-	scrollbar-color: var(--sl-color-gray-4) transparent;
-	scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-4) transparent;
+  scrollbar-width: thin;
 }
 
 /* ---------------------------------------------------------------------------
@@ -161,10 +172,10 @@
    --------------------------------------------------------------------------- */
 
 body {
-	background-image:
-		radial-gradient(ellipse 800px 600px at 75% -5%, rgba(108, 99, 255, 0.07) 0%, transparent 70%),
-		radial-gradient(ellipse 500px 400px at 5% 85%, rgba(0, 212, 170, 0.04) 0%, transparent 70%);
-	background-attachment: fixed;
+  background-image:
+    radial-gradient(ellipse 800px 600px at 75% -5%, rgba(108, 99, 255, 0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 400px at 5% 85%, rgba(0, 212, 170, 0.04) 0%, transparent 70%);
+  background-attachment: fixed;
 }
 
 /* ---------------------------------------------------------------------------
@@ -172,17 +183,17 @@ body {
    --------------------------------------------------------------------------- */
 
 header.header {
-	background-color: transparent !important;
-	border-bottom: 1px solid var(--sl-color-hairline) !important;
-	transition:
-		background-color 200ms ease,
-		backdrop-filter 200ms ease;
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--sl-color-hairline) !important;
+  transition:
+    background-color 200ms ease,
+    backdrop-filter 200ms ease;
 }
 
 header.header.fd-scrolled {
-	background-color: rgba(10, 10, 15, 0.85) !important;
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
+  background-color: rgba(10, 10, 15, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* ---------------------------------------------------------------------------
@@ -190,11 +201,11 @@ header.header.fd-scrolled {
    --------------------------------------------------------------------------- */
 
 :root {
-	--sl-color-bg-sidebar: var(--sl-color-black);
+  --sl-color-bg-sidebar: var(--sl-color-black);
 }
 
 .sidebar-pane,
 .sidebar {
-	background-color: var(--sl-color-black) !important;
-	border-right: 1px solid var(--sl-color-hairline) !important;
+  background-color: var(--sl-color-black) !important;
+  border-right: 1px solid var(--sl-color-hairline) !important;
 }

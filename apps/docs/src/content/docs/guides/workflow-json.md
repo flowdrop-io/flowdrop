@@ -18,27 +18,27 @@ interface Workflow {
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | `string` | Yes | Unique identifier for the workflow (typically a UUID). |
-| `name` | `string` | Yes | Human-readable name displayed in the editor navbar. |
-| `description` | `string` | No | Brief summary of the workflow's purpose. |
-| `nodes` | `WorkflowNode[]` | Yes | Array of node instances placed on the canvas. See [Node Structure](/guides/node-json/). |
-| `edges` | `WorkflowEdge[]` | Yes | Array of connections between nodes. See [Edge Structure](/guides/edge-json/). |
-| `metadata` | `object` | No | Version tracking and authoring information. |
+| Field         | Type             | Required | Description                                                                             |
+| ------------- | ---------------- | -------- | --------------------------------------------------------------------------------------- |
+| `id`          | `string`         | Yes      | Unique identifier for the workflow (typically a UUID).                                  |
+| `name`        | `string`         | Yes      | Human-readable name displayed in the editor navbar.                                     |
+| `description` | `string`         | No       | Brief summary of the workflow's purpose.                                                |
+| `nodes`       | `WorkflowNode[]` | Yes      | Array of node instances placed on the canvas. See [Node Structure](/guides/node-json/). |
+| `edges`       | `WorkflowEdge[]` | Yes      | Array of connections between nodes. See [Edge Structure](/guides/edge-json/).           |
+| `metadata`    | `object`         | No       | Version tracking and authoring information.                                             |
 
 ## Metadata
 
 ```typescript
 interface WorkflowMetadata {
   version: string;
-  createdAt: string;        // ISO 8601 timestamp
-  updatedAt: string;        // ISO 8601 timestamp
+  createdAt: string; // ISO 8601 timestamp
+  updatedAt: string; // ISO 8601 timestamp
   author?: string;
   tags?: string[];
-  versionId?: string;       // UUID for this specific version
-  updateNumber?: number;    // Incrementing revision counter
-  format?: WorkflowFormat;  // "flowdrop" | "agentspec" | custom string
+  versionId?: string; // UUID for this specific version
+  updateNumber?: number; // Incrementing revision counter
+  format?: WorkflowFormat; // "flowdrop" | "agentspec" | custom string
 }
 ```
 

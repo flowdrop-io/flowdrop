@@ -1,53 +1,53 @@
 /* Mermaid diagram styling */
 pre.mermaid {
-	background: var(--sl-color-black);
-	border: 1px solid var(--sl-color-gray-5);
-	border-radius: 0.75rem;
-	padding: 2rem 1.5rem;
-	overflow-x: auto;
+  background: var(--sl-color-black);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  padding: 2rem 1.5rem;
+  overflow-x: auto;
 }
 
 /* Responsive: allow horizontal scroll on small screens */
 pre.mermaid svg {
-	display: block;
-	margin: 0 auto;
-	max-width: 100%;
-	height: auto;
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Rounded node corners (SVG2 CSS geometry property) */
 pre.mermaid .node rect,
 pre.mermaid .node polygon {
-	rx: 8px;
-	ry: 8px;
+  rx: 8px;
+  ry: 8px;
 }
 
 /* Rounded cluster corners */
 pre.mermaid .cluster rect {
-	rx: 12px;
-	ry: 12px;
-	fill-opacity: 0.35;
+  rx: 12px;
+  ry: 12px;
+  fill-opacity: 0.35;
 }
 
 /* Nested clusters get progressively more opaque to show depth */
 pre.mermaid .cluster .cluster rect {
-	fill-opacity: 0.5;
+  fill-opacity: 0.5;
 }
 
 pre.mermaid .cluster .cluster .cluster rect {
-	fill-opacity: 0.65;
+  fill-opacity: 0.65;
 }
 
 /* Edge lines and node borders — 1px normal weight */
 pre.mermaid .edgePath path,
 pre.mermaid .flowchart-link {
-	stroke-width: 1px !important;
+  stroke-width: 1px !important;
 }
 pre.mermaid .arrowheadPath {
-	stroke-width: 1px !important;
+  stroke-width: 1px !important;
 }
 pre.mermaid marker path {
-	stroke-width: 1px !important;
+  stroke-width: 1px !important;
 }
 
 pre.mermaid .node rect,
@@ -56,26 +56,26 @@ pre.mermaid .node ellipse,
 pre.mermaid .node polygon,
 pre.mermaid .node path,
 pre.mermaid .cluster rect {
-	stroke-width: 1px !important;
+  stroke-width: 1px !important;
 }
 
 /* Multi-level cluster depth — progressively lighter/darker backgrounds */
 /* Level 1 (outermost cluster) */
 pre.mermaid .cluster .cluster rect {
-	fill: var(--sl-color-gray-5) !important;
-	stroke: var(--sl-color-gray-3) !important;
+  fill: var(--sl-color-gray-5) !important;
+  stroke: var(--sl-color-gray-3) !important;
 }
 :root[data-theme='light'] pre.mermaid .cluster .cluster rect {
-	fill: var(--sl-color-gray-5) !important;
-	stroke: var(--sl-color-gray-4) !important;
+  fill: var(--sl-color-gray-5) !important;
+  stroke: var(--sl-color-gray-4) !important;
 }
 
 /* Level 2 (nested cluster) */
 pre.mermaid .cluster .cluster .cluster rect {
-	fill: var(--sl-color-gray-4) !important;
-	stroke: var(--sl-color-gray-2) !important;
+  fill: var(--sl-color-gray-4) !important;
+  stroke: var(--sl-color-gray-2) !important;
 }
 :root[data-theme='light'] pre.mermaid .cluster .cluster .cluster rect {
-	fill: var(--sl-color-gray-4) !important;
-	stroke: var(--sl-color-gray-3) !important;
+  fill: var(--sl-color-gray-4) !important;
+  stroke: var(--sl-color-gray-3) !important;
 }

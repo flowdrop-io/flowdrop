@@ -18,8 +18,8 @@ FlowDrop automatically saves drafts of the current workflow to `localStorage`, p
 ```typescript
 const app = await mountFlowDropApp(container, {
   features: {
-    autoSaveDraft: true,           // default: true
-    autoSaveDraftInterval: 30000   // default: 30000ms (30 seconds)
+    autoSaveDraft: true, // default: true
+    autoSaveDraftInterval: 30000 // default: 30000ms (30 seconds)
   },
   // Optional: custom storage key prefix
   draftStorageKey: 'my-app-flowdrop-draft'
@@ -30,7 +30,7 @@ const app = await mountFlowDropApp(container, {
 
 ```typescript
 features: {
-  autoSaveDraft: false
+  autoSaveDraft: false;
 }
 ```
 
@@ -53,12 +53,9 @@ Use the `onBeforeUnmount` event to save a final draft when the editor is destroy
 eventHandlers: {
   onBeforeUnmount: (workflow, isDirty) => {
     if (isDirty) {
-      localStorage.setItem(
-        `flowdrop-draft-${workflow.id}`,
-        JSON.stringify(workflow)
-      );
+      localStorage.setItem(`flowdrop-draft-${workflow.id}`, JSON.stringify(workflow));
     }
-  }
+  };
 }
 ```
 
@@ -67,6 +64,7 @@ eventHandlers: {
 Browsers typically limit `localStorage` to **5-10MB**. Large workflows with many nodes and complex configurations could approach this limit.
 
 If storage is full:
+
 - The draft save fails silently
 - The editor continues working normally
 - No data is lost from the active session

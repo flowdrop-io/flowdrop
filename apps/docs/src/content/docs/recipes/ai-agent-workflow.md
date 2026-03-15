@@ -1,5 +1,5 @@
 ---
-title: "Build an AI Agent Workflow"
+title: 'Build an AI Agent Workflow'
 description: Create a complete AI agent workflow with branching, tools, and human-in-the-loop.
 ---
 
@@ -8,6 +8,7 @@ This recipe walks you through building a real-world AI agent workflow with four 
 ## What We're Building
 
 An AI content assistant that:
+
 1. Takes user input
 2. Sends it to an LLM
 3. Routes based on intent (question → answer directly, task → use tools)
@@ -32,9 +33,7 @@ const nodes = [
     category: 'inputs',
     icon: 'mdi:account-outline',
     inputs: [],
-    outputs: [
-      { id: 'message', name: 'Message', type: 'output', dataType: 'string' }
-    ],
+    outputs: [{ id: 'message', name: 'Message', type: 'output', dataType: 'string' }],
     configSchema: {
       type: 'object',
       properties: {
@@ -52,9 +51,7 @@ const nodes = [
     type: 'workflowNode',
     category: 'models',
     icon: 'mdi:robot-outline',
-    inputs: [
-      { id: 'prompt', name: 'Prompt', type: 'input', dataType: 'string' }
-    ],
+    inputs: [{ id: 'prompt', name: 'Prompt', type: 'input', dataType: 'string' }],
     outputs: [
       { id: 'response', name: 'Response', type: 'output', dataType: 'string' },
       { id: 'metadata', name: 'Metadata', type: 'output', dataType: 'json' }
@@ -76,7 +73,8 @@ const nodes = [
           type: 'string',
           title: 'System Prompt',
           format: 'template',
-          default: 'You are a helpful assistant. Classify the user message as either a "question" or a "task".',
+          default:
+            'You are a helpful assistant. Classify the user message as either a "question" or a "task".',
           variables: { ports: ['prompt'] }
         },
         temperature: {
@@ -99,9 +97,7 @@ const nodes = [
       { id: 'input', name: 'Input', type: 'input', dataType: 'string' },
       { id: 'metadata', name: 'Metadata', type: 'input', dataType: 'json' }
     ],
-    outputs: [
-      { id: 'default', name: 'Default', type: 'output', dataType: 'string' }
-    ],
+    outputs: [{ id: 'default', name: 'Default', type: 'output', dataType: 'string' }],
     configSchema: {
       type: 'object',
       properties: {
@@ -119,9 +115,7 @@ const nodes = [
     type: 'simple',
     category: 'outputs',
     icon: 'mdi:text',
-    inputs: [
-      { id: 'input', name: 'Text', type: 'input', dataType: 'string' }
-    ],
+    inputs: [{ id: 'input', name: 'Text', type: 'input', dataType: 'string' }],
     outputs: [],
     configSchema: {
       type: 'object',

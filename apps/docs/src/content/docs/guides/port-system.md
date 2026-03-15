@@ -22,16 +22,16 @@ interface NodePort {
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique port identifier within the node (e.g., `"text"`, `"trigger"`, `"tool"`). |
-| `name` | `string` | Display name shown next to the port handle. |
-| `type` | `string` | Port direction: `"input"`, `"output"`, or `"metadata"`. |
-| `dataType` | `string` | Data type ID — determines color and connection compatibility. |
-| `required` | `boolean` | Whether a connection to this port is required for execution. |
-| `description` | `string` | Tooltip text explaining the port's purpose. |
-| `defaultValue` | `unknown` | Default value when no connection is made. |
-| `schema` | `object` | Optional JSON Schema describing the data structure on this port. Used for template variable autocomplete. |
+| Field          | Type      | Description                                                                                               |
+| -------------- | --------- | --------------------------------------------------------------------------------------------------------- |
+| `id`           | `string`  | Unique port identifier within the node (e.g., `"text"`, `"trigger"`, `"tool"`).                           |
+| `name`         | `string`  | Display name shown next to the port handle.                                                               |
+| `type`         | `string`  | Port direction: `"input"`, `"output"`, or `"metadata"`.                                                   |
+| `dataType`     | `string`  | Data type ID — determines color and connection compatibility.                                             |
+| `required`     | `boolean` | Whether a connection to this port is required for execution.                                              |
+| `description`  | `string`  | Tooltip text explaining the port's purpose.                                                               |
+| `defaultValue` | `unknown` | Default value when no connection is made.                                                                 |
+| `schema`       | `object`  | Optional JSON Schema describing the data structure on this port. Used for template variable autocomplete. |
 
 ### Example
 
@@ -72,50 +72,50 @@ FlowDrop ships with 21 built-in data types, each with a distinct color on the ca
 
 ### Basic Types
 
-| ID | Name | Category | Description |
-|----|------|----------|-------------|
-| `trigger` | Trigger | basic | Control flow of the workflow |
-| `string` | String | basic | Text data |
-| `number` | Number | numeric | Numeric data |
-| `boolean` | Boolean | logical | True/false values |
+| ID        | Name    | Category | Description                  |
+| --------- | ------- | -------- | ---------------------------- |
+| `trigger` | Trigger | basic    | Control flow of the workflow |
+| `string`  | String  | basic    | Text data                    |
+| `number`  | Number  | numeric  | Numeric data                 |
+| `boolean` | Boolean | logical  | True/false values            |
 
 ### Collection Types
 
-| ID | Name | Description |
-|----|------|-------------|
-| `array` | Array | Ordered list of items |
-| `string[]` | String Array | Array of strings |
-| `number[]` | Number Array | Array of numbers |
+| ID          | Name          | Description                |
+| ----------- | ------------- | -------------------------- |
+| `array`     | Array         | Ordered list of items      |
+| `string[]`  | String Array  | Array of strings           |
+| `number[]`  | Number Array  | Array of numbers           |
 | `boolean[]` | Boolean Array | Array of true/false values |
-| `json[]` | JSON Array | Array of JSON objects |
-| `file[]` | File Array | Array of files |
-| `image[]` | Image Array | Array of images |
+| `json[]`    | JSON Array    | Array of JSON objects      |
+| `file[]`    | File Array    | Array of files             |
+| `image[]`   | Image Array   | Array of images            |
 
 ### Complex Types
 
-| ID | Name | Description |
-|----|------|-------------|
+| ID     | Name | Description          |
+| ------ | ---- | -------------------- |
 | `json` | JSON | JSON structured data |
 
 ### File & Media Types
 
-| ID | Name | Description |
-|----|------|-------------|
-| `file` | File | File data |
-| `image` | Image | Image data |
-| `audio` | Audio | Audio data |
-| `video` | Video | Video data |
+| ID      | Name  | Description |
+| ------- | ----- | ----------- |
+| `file`  | File  | File data   |
+| `image` | Image | Image data  |
+| `audio` | Audio | Audio data  |
+| `video` | Video | Video data  |
 
 ### Special Types
 
-| ID | Name | Description |
-|----|------|-------------|
-| `tool` | Tool | Tool interface for agent connections |
-| `url` | URL | Web address |
-| `email` | Email | Email address |
-| `date` | Date | Date value |
-| `datetime` | DateTime | Date and time value |
-| `time` | Time | Time value |
+| ID         | Name     | Description                          |
+| ---------- | -------- | ------------------------------------ |
+| `tool`     | Tool     | Tool interface for agent connections |
+| `url`      | URL      | Web address                          |
+| `email`    | Email    | Email address                        |
+| `date`     | Date     | Date value                           |
+| `datetime` | DateTime | Date and time value                  |
+| `time`     | Time     | Time value                           |
 
 Your backend can extend this list by returning additional data types from the `/port-config` API endpoint.
 
@@ -128,10 +128,10 @@ interface PortDataTypeConfig {
   id: string;
   name: string;
   description?: string;
-  color: string;          // CSS color value or CSS variable
-  category?: string;      // Grouping: "basic", "numeric", "collection", etc.
-  aliases?: string[];     // Alternative names for this data type
-  enabled?: boolean;      // Whether this type is active
+  color: string; // CSS color value or CSS variable
+  category?: string; // Grouping: "basic", "numeric", "collection", etc.
+  aliases?: string[]; // Alternative names for this data type
+  enabled?: boolean; // Whether this type is active
 }
 ```
 
@@ -143,8 +143,8 @@ You can add custom compatibility rules to allow cross-type connections:
 
 ```typescript
 interface PortCompatibilityRule {
-  from: string;     // Source data type ID
-  to: string;       // Target data type ID
+  from: string; // Source data type ID
+  to: string; // Target data type ID
   description?: string;
 }
 ```
@@ -171,10 +171,10 @@ Nodes can let users create additional ports at runtime through special config pr
 
 ```typescript
 interface DynamicPort {
-  name: string;        // Port identifier (used in handle IDs)
-  label: string;       // Display label
+  name: string; // Port identifier (used in handle IDs)
+  label: string; // Display label
   description?: string;
-  dataType: string;    // Data type for color and compatibility
+  dataType: string; // Data type for color and compatibility
   required?: boolean;
 }
 ```
@@ -212,12 +212,12 @@ Gateway nodes use `branches` in config to create conditional output paths. Each 
 
 ```typescript
 interface Branch {
-  name: string;          // Unique identifier (used as handle ID)
-  label?: string;        // Display label (defaults to name)
+  name: string; // Unique identifier (used as handle ID)
+  label?: string; // Display label (defaults to name)
   description?: string;
-  value?: string;        // Optional value for switch matching
-  condition?: string;    // Condition expression
-  isDefault?: boolean;   // Fallback branch
+  value?: string; // Optional value for switch matching
+  condition?: string; // Condition expression
+  isDefault?: boolean; // Fallback branch
 }
 ```
 
@@ -251,6 +251,7 @@ All port handles — static, dynamic, and branch — follow the same naming conv
 ```
 
 Examples:
+
 - `text_input.1-output-text` — static output port
 - `merger.1-input-extra_data` — dynamic input port
 - `router.1-output-success` — gateway branch output

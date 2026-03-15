@@ -9,11 +9,11 @@ FlowDrop automatically generates configuration forms from JSON Schema definition
 
 FlowDrop provides three ways to define configuration forms for nodes:
 
-| Approach | When to use |
-|----------|-------------|
-| **Static `configSchema`** | Fields are known ahead of time |
-| **Dynamic `configEdit.dynamicSchema`** | Fields depend on external data or user selections |
-| **External `configEdit.externalEditLink`** | Configuration is managed by a 3rd-party system |
+| Approach                                   | When to use                                       |
+| ------------------------------------------ | ------------------------------------------------- |
+| **Static `configSchema`**                  | Fields are known ahead of time                    |
+| **Dynamic `configEdit.dynamicSchema`**     | Fields depend on external data or user selections |
+| **External `configEdit.externalEditLink`** | Configuration is managed by a 3rd-party system    |
 
 All three approaches can be combined — FlowDrop tries the dynamic schema first, then falls back to the static schema if the fetch fails.
 
@@ -54,29 +54,29 @@ const myNode: NodeMetadata = {
 
 ### Basic Types
 
-| `type` | Renders as |
-|--------|------------|
-| `string` | Text input |
-| `number` | Number input |
-| `integer` | Integer input |
-| `boolean` | Toggle switch |
-| `array` | Repeatable field list |
-| `object` | Nested fieldset |
+| `type`    | Renders as            |
+| --------- | --------------------- |
+| `string`  | Text input            |
+| `number`  | Number input          |
+| `integer` | Integer input         |
+| `boolean` | Toggle switch         |
+| `array`   | Repeatable field list |
+| `object`  | Nested fieldset       |
 
 ### Format Overrides
 
 Use `format` to change how a field renders:
 
-| Format | Renders as | Notes |
-|--------|------------|-------|
-| `multiline` | Textarea | Multi-line text input |
-| `hidden` | Nothing | Stored in config but not shown in UI |
-| `range` | Slider | Requires `minimum` and `maximum` |
-| `json` | CodeMirror editor | JSON syntax highlighting and validation |
-| `code` | CodeMirror editor | Alias for `json` |
-| `markdown` | Markdown editor | Toolbar and preview |
-| `template` | CodeMirror editor | `{{ variable }}` autocomplete |
-| `autocomplete` | Text input + suggestions | Fetches options from API |
+| Format         | Renders as               | Notes                                   |
+| -------------- | ------------------------ | --------------------------------------- |
+| `multiline`    | Textarea                 | Multi-line text input                   |
+| `hidden`       | Nothing                  | Stored in config but not shown in UI    |
+| `range`        | Slider                   | Requires `minimum` and `maximum`        |
+| `json`         | CodeMirror editor        | JSON syntax highlighting and validation |
+| `code`         | CodeMirror editor        | Alias for `json`                        |
+| `markdown`     | Markdown editor          | Toolbar and preview                     |
+| `template`     | CodeMirror editor        | `{{ variable }}` autocomplete           |
+| `autocomplete` | Text input + suggestions | Fetches options from API                |
 
 ### Example
 
@@ -222,25 +222,25 @@ By default, fields render in property order. Use `uiSchema` to control layout an
 
 ### Element Types
 
-| Type | Description |
-|------|-------------|
-| `Control` | Renders a single form field. `scope` is a JSON Pointer to the property. |
-| `VerticalLayout` | Stacks child elements vertically. |
-| `Group` | Wraps elements in a collapsible fieldset with a label. |
+| Type             | Description                                                             |
+| ---------------- | ----------------------------------------------------------------------- |
+| `Control`        | Renders a single form field. `scope` is a JSON Pointer to the property. |
+| `VerticalLayout` | Stacks child elements vertically.                                       |
+| `Group`          | Wraps elements in a collapsible fieldset with a label.                  |
 
 ## Special Config Properties
 
 Certain property names trigger automatic behaviors:
 
-| Property | Type | Behavior |
-|----------|------|----------|
-| `instanceTitle` | `string` | Overrides the node's displayed title |
-| `instanceDescription` | `string` | Overrides the node's displayed description |
-| `instanceBadge` | `string` | Overrides the node's badge |
-| `nodeType` | `string` | Switches visual rendering type |
-| `dynamicInputs` | `DynamicPort[]` | Creates user-defined input handles |
-| `dynamicOutputs` | `DynamicPort[]` | Creates user-defined output handles |
-| `branches` | `Branch[]` | Creates conditional output paths (gateway nodes) |
+| Property              | Type            | Behavior                                         |
+| --------------------- | --------------- | ------------------------------------------------ |
+| `instanceTitle`       | `string`        | Overrides the node's displayed title             |
+| `instanceDescription` | `string`        | Overrides the node's displayed description       |
+| `instanceBadge`       | `string`        | Overrides the node's badge                       |
+| `nodeType`            | `string`        | Switches visual rendering type                   |
+| `dynamicInputs`       | `DynamicPort[]` | Creates user-defined input handles               |
+| `dynamicOutputs`      | `DynamicPort[]` | Creates user-defined output handles              |
+| `branches`            | `Branch[]`      | Creates conditional output paths (gateway nodes) |
 
 ## Dynamic Schema (Runtime)
 
@@ -319,7 +319,11 @@ You can render the `ConfigForm` component independently:
 <ConfigForm
   {schema}
   {values}
-  onChange={(config) => { values = config; }}
-  onSave={(config) => { /* persist */ }}
+  onChange={(config) => {
+    values = config;
+  }}
+  onSave={(config) => {
+    /* persist */
+  }}
 />
 ```

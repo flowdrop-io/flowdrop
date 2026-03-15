@@ -9,9 +9,11 @@ const noopExtension: never[] = [];
 
 // @codemirror/view
 export const EditorView = class {
-	constructor() {}
-	destroy() {}
-	static theme() { return noopExtension; }
+  constructor() {}
+  destroy() {}
+  static theme() {
+    return noopExtension;
+  }
 };
 export const lineNumbers = () => noopExtension;
 export const highlightActiveLineGutter = () => noopExtension;
@@ -22,13 +24,19 @@ export const highlightActiveLine = () => noopExtension;
 export const tooltips = () => noopExtension;
 export const Decoration = { set: noop, none: noopExtension, mark: () => ({}) };
 export const ViewPlugin = { fromClass: () => noopExtension, define: () => noopExtension };
-export const MatchDecorator = class { constructor() {} };
+export const MatchDecorator = class {
+  constructor() {}
+};
 
 // @codemirror/state
 export const EditorState = { create: () => ({}) };
 export const Compartment = class {
-	of() { return noopExtension; }
-	reconfigure() { return {}; }
+  of() {
+    return noopExtension;
+  }
+  reconfigure() {
+    return {};
+  }
 };
 
 // @codemirror/commands

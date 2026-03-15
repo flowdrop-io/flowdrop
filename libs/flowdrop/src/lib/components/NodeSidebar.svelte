@@ -212,38 +212,73 @@
   style:width="{isCollapsed ? 0 : getUiSettings().sidebarWidth}px"
   aria-label="Components sidebar"
 >
-    <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
-    <div class="flowdrop-sidebar__search">
-      <div class="flowdrop-join flowdrop-w--full">
-        <div class="flowdrop-join__item flowdrop-flex--1">
-          <input
-            type="text"
-            placeholder="Search components..."
-            class="flowdrop-input flowdrop-join__item flowdrop-w--full"
-            bind:value={searchInput}
-            oninput={handleSearchChange}
-          />
-        </div>
-        <button
-          class="flowdrop-btn flowdrop-join__item"
-          aria-label="Search components"
-        >
-          <Icon icon="mdi:magnify" class="flowdrop-icon" />
-        </button>
+  <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
+  <div class="flowdrop-sidebar__search">
+    <div class="flowdrop-join flowdrop-w--full">
+      <div class="flowdrop-join__item flowdrop-flex--1">
+        <input
+          type="text"
+          placeholder="Search components..."
+          class="flowdrop-input flowdrop-join__item flowdrop-w--full"
+          bind:value={searchInput}
+          oninput={handleSearchChange}
+        />
       </div>
+      <button
+        class="flowdrop-btn flowdrop-join__item"
+        aria-label="Search components"
+      >
+        <Icon icon="mdi:magnify" class="flowdrop-icon" />
+      </button>
     </div>
+  </div>
 
-    <!-- Node Types List -->
-    <div class="flowdrop-sidebar__content">
-      {#if props.nodes?.length === 0}
-        <!-- No node types available -->
-        <div class="flowdrop-hero">
-          <div class="flowdrop-hero__content">
-            {#if props.loading}
-              <div class="flowdrop-mb--4">
-                <LoadingSpinner size="md" text="Loading from server..." />
-              </div>
-            {:else}
+  <!-- Node Types List -->
+  <div class="flowdrop-sidebar__content">
+    {#if props.nodes?.length === 0}
+      <!-- No node types available -->
+      <div class="flowdrop-hero">
+        <div class="flowdrop-hero__content">
+          {#if props.loading}
+            <div class="flowdrop-mb--4">
+              <LoadingSpinner size="md" text="Loading from server..." />
+            </div>
+          {:else}
+            <div class="flowdrop-hero__icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+            </div>
+            <h3 class="flowdrop-hero__title">No node types available</h3>
+            <p class="flowdrop-hero__description">
+              Node type definitions will appear here
+            </p>
+          {/if}
+        </div>
+      </div>
+    {:else if searchInput.trim()}
+      <!-- Search Results -->
+      <div class="flowdrop-p--4">
+        <div class="flowdrop-divider">
+          <h3 class="flowdrop-divider__text">Search Results</h3>
+        </div>
+        {#if filteredNodes.length === 0}
+          <div class="flowdrop-hero">
+            <div class="flowdrop-hero__content">
               <div class="flowdrop-hero__icon">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -256,117 +291,131 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 >
-                  <path
-                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-                  />
-                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               </div>
-              <h3 class="flowdrop-hero__title">No node types available</h3>
+              <h3 class="flowdrop-hero__title">No components found</h3>
               <p class="flowdrop-hero__description">
-                Node type definitions will appear here
+                Try adjusting your search
               </p>
-            {/if}
-          </div>
-        </div>
-      {:else if searchInput.trim()}
-        <!-- Search Results -->
-        <div class="flowdrop-p--4">
-          <div class="flowdrop-divider">
-            <h3 class="flowdrop-divider__text">Search Results</h3>
-          </div>
-          {#if filteredNodes.length === 0}
-            <div class="flowdrop-hero">
-              <div class="flowdrop-hero__content">
-                <div class="flowdrop-hero__icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="1em"
-                    height="1em"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
+              {#if props.loading}
+                <div class="flowdrop-mb--4">
+                  <LoadingSpinner size="sm" text="Loading components..." />
                 </div>
-                <h3 class="flowdrop-hero__title">No components found</h3>
-                <p class="flowdrop-hero__description">
-                  Try adjusting your search
-                </p>
-                {#if props.loading}
-                  <div class="flowdrop-mb--4">
-                    <LoadingSpinner size="sm" text="Loading components..." />
-                  </div>
-                {/if}
-              </div>
+              {/if}
             </div>
-          {:else}
-            <div class="flowdrop-node-list">
-              {#each filteredNodes as nodeType (nodeType.id)}
-                <div
-                  class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
-                  draggable="true"
-                  ondragstart={(e) => handleNodeDragStart(e, nodeType)}
-                  role="button"
-                  tabindex="0"
-                >
-                  <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
-                    <div
-                      class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
+          </div>
+        {:else}
+          <div class="flowdrop-node-list">
+            {#each filteredNodes as nodeType (nodeType.id)}
+              <div
+                class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
+                draggable="true"
+                ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+                role="button"
+                tabindex="0"
+              >
+                <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
+                  <div
+                    class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
+                  >
+                    <!-- Node Type Icon with Squircle Background -->
+                    <span
+                      class="flowdrop-node-icon"
+                      style="--_icon-color: {getCategoryColorToken(
+                        nodeType.category,
+                      )}"
                     >
-                      <!-- Node Type Icon with Squircle Background -->
+                      <Icon
+                        icon={getNodeIcon(nodeType.icon, nodeType.category)}
+                      />
+                    </span>
+
+                    <!-- Node Type Info - Icon and Title only -->
+                    <h4
+                      class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
+                    >
+                      {nodeType.name}
+                    </h4>
+                  </div>
+                  <p
+                    class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
+                  >
+                    {nodeType.description}
+                  </p>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {:else}
+      <!-- Show categories with details when no search is active -->
+      <div class="flowdrop-p--4">
+        <!-- Category-specific details -->
+        <div class="flowdrop-category-list">
+          {#each categories as category (category)}
+            {@const categoryNodes = getFilteredNodesForCategory(category)}
+            {#if categoryNodes.length > 0}
+              <!-- Flat style: label + dot+name rows (shown/hidden via CSS token) -->
+              <div class="fd-sidebar-flat-section">
+                <div class="fd-sidebar-flat-category">
+                  {getCategoryDisplayName(category).toUpperCase()}
+                </div>
+                <div class="fd-sidebar-flat-list">
+                  {#each categoryNodes as nodeType (nodeType.id)}
+                    <div
+                      class="fd-sidebar-flat-item"
+                      draggable="true"
+                      ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+                      onclick={() => handleNodeClick(nodeType)}
+                      role="button"
+                      tabindex="0"
+                      onkeydown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleNodeClick(nodeType);
+                        }
+                      }}
+                    >
                       <span
-                        class="flowdrop-node-icon"
-                        style="--_icon-color: {getCategoryColorToken(
+                        class="fd-sidebar-flat-dot"
+                        style="background: {getCategoryColorToken(
                           nodeType.category,
                         )}"
-                      >
-                        <Icon
-                          icon={getNodeIcon(nodeType.icon, nodeType.category)}
-                        />
-                      </span>
-
-                      <!-- Node Type Info - Icon and Title only -->
-                      <h4
-                        class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
-                      >
-                        {nodeType.name}
-                      </h4>
+                      ></span>
+                      <span class="fd-sidebar-flat-name">{nodeType.name}</span>
                     </div>
-                    <p
-                      class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
-                    >
-                      {nodeType.description}
-                    </p>
-                  </div>
+                  {/each}
                 </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {:else}
-        <!-- Show categories with details when no search is active -->
-        <div class="flowdrop-p--4">
-          <!-- Category-specific details -->
-          <div class="flowdrop-category-list">
-            {#each categories as category (category)}
-              {@const categoryNodes = getFilteredNodesForCategory(category)}
-              {#if categoryNodes.length > 0}
-                <!-- Flat style: label + dot+name rows (shown/hidden via CSS token) -->
-                <div class="fd-sidebar-flat-section">
-                  <div class="fd-sidebar-flat-category">
-                    {getCategoryDisplayName(category).toUpperCase()}
+              </div>
+              <!-- Card style: <details> accordion (shown/hidden via CSS token) -->
+              <details
+                class="flowdrop-details fd-sidebar-card-section"
+                open={props.categoriesDefaultOpen || undefined}
+              >
+                <summary class="flowdrop-details__summary">
+                  <div
+                    class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
+                  >
+                    <span
+                      class="flowdrop-node-icon"
+                      style="--_icon-color: {getCategoryColorToken(category)}"
+                    >
+                      <Icon icon={getCategoryIcon(category)} />
+                    </span>
+                    <span>{getCategoryDisplayName(category)}</span>
                   </div>
-                  <div class="fd-sidebar-flat-list">
+                  <div class="flowdrop-badge flowdrop-badge--secondary">
+                    {categoryNodes.length}
+                  </div>
+                </summary>
+                <div class="flowdrop-details__content">
+                  <div class="flowdrop-node-list">
                     {#each categoryNodes as nodeType (nodeType.id)}
                       <div
-                        class="fd-sidebar-flat-item"
+                        class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
                         draggable="true"
                         ondragstart={(e) => handleNodeDragStart(e, nodeType)}
                         onclick={() => handleNodeClick(nodeType)}
@@ -379,121 +428,71 @@
                           }
                         }}
                       >
-                        <span
-                          class="fd-sidebar-flat-dot"
-                          style="background: {getCategoryColorToken(
-                            nodeType.category,
-                          )}"
-                        ></span>
-                        <span class="fd-sidebar-flat-name">{nodeType.name}</span
+                        <div
+                          class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1"
                         >
+                          <div
+                            class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
+                          >
+                            <!-- Node Type Icon with Squircle Background -->
+                            <span
+                              class="flowdrop-node-icon"
+                              style="--_icon-color: {getCategoryColorToken(
+                                nodeType.category,
+                              )}"
+                            >
+                              <Icon
+                                icon={getNodeIcon(
+                                  nodeType.icon,
+                                  nodeType.category,
+                                )}
+                              />
+                            </span>
+
+                            <!-- Node Type Info - Icon and Title only -->
+                            <h4
+                              class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
+                            >
+                              {nodeType.name}
+                            </h4>
+                          </div>
+                          <p
+                            class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
+                          >
+                            {nodeType.description}
+                          </p>
+                        </div>
                       </div>
                     {/each}
                   </div>
                 </div>
-                <!-- Card style: <details> accordion (shown/hidden via CSS token) -->
-                <details
-                  class="flowdrop-details fd-sidebar-card-section"
-                  open={props.categoriesDefaultOpen || undefined}
-                >
-                  <summary class="flowdrop-details__summary">
-                    <div
-                      class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
-                    >
-                      <span
-                        class="flowdrop-node-icon"
-                        style="--_icon-color: {getCategoryColorToken(category)}"
-                      >
-                        <Icon icon={getCategoryIcon(category)} />
-                      </span>
-                      <span>{getCategoryDisplayName(category)}</span>
-                    </div>
-                    <div class="flowdrop-badge flowdrop-badge--secondary">
-                      {categoryNodes.length}
-                    </div>
-                  </summary>
-                  <div class="flowdrop-details__content">
-                    <div class="flowdrop-node-list">
-                      {#each categoryNodes as nodeType (nodeType.id)}
-                        <div
-                          class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
-                          draggable="true"
-                          ondragstart={(e) => handleNodeDragStart(e, nodeType)}
-                          onclick={() => handleNodeClick(nodeType)}
-                          role="button"
-                          tabindex="0"
-                          onkeydown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              handleNodeClick(nodeType);
-                            }
-                          }}
-                        >
-                          <div
-                            class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1"
-                          >
-                            <div
-                              class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
-                            >
-                              <!-- Node Type Icon with Squircle Background -->
-                              <span
-                                class="flowdrop-node-icon"
-                                style="--_icon-color: {getCategoryColorToken(
-                                  nodeType.category,
-                                )}"
-                              >
-                                <Icon
-                                  icon={getNodeIcon(
-                                    nodeType.icon,
-                                    nodeType.category,
-                                  )}
-                                />
-                              </span>
-
-                              <!-- Node Type Info - Icon and Title only -->
-                              <h4
-                                class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
-                              >
-                                {nodeType.name}
-                              </h4>
-                            </div>
-                            <p
-                              class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate flowdrop-mt--1 flowdrop-ml--0"
-                            >
-                              {nodeType.description}
-                            </p>
-                          </div>
-                        </div>
-                      {/each}
-                    </div>
-                  </div>
-                </details>
-              {/if}
-            {/each}
-          </div>
-        </div>
-      {/if}
-    </div>
-
-    <!-- Footer -->
-    <div class="flowdrop-sidebar__footer">
-      <div class="flowdrop-flex flowdrop-gap--4">
-        <div class="flowdrop-flex flowdrop-gap--4">
-          {#if props.loading && props.nodes?.length === 0}
-            <span class="flowdrop-text--xs flowdrop-text--gray"
-              >Loading components...</span
-            >
-          {:else}
-            <span class="flowdrop-text--xs flowdrop-text--gray"
-              >Total: {props.nodes?.length || 0} components</span
-            >
-            <span class="flowdrop-text--xs flowdrop-text--gray"
-              >Showing: {filteredNodes.length}</span
-            >
-          {/if}
+              </details>
+            {/if}
+          {/each}
         </div>
       </div>
+    {/if}
+  </div>
+
+  <!-- Footer -->
+  <div class="flowdrop-sidebar__footer">
+    <div class="flowdrop-flex flowdrop-gap--4">
+      <div class="flowdrop-flex flowdrop-gap--4">
+        {#if props.loading && props.nodes?.length === 0}
+          <span class="flowdrop-text--xs flowdrop-text--gray"
+            >Loading components...</span
+          >
+        {:else}
+          <span class="flowdrop-text--xs flowdrop-text--gray"
+            >Total: {props.nodes?.length || 0} components</span
+          >
+          <span class="flowdrop-text--xs flowdrop-text--gray"
+            >Showing: {filteredNodes.length}</span
+          >
+        {/if}
+      </div>
     </div>
+  </div>
 </aside>
 
 <style>

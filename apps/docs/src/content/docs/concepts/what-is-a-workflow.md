@@ -16,6 +16,7 @@ Every workflow in FlowDrop is built from four core concepts:
 A **node** is a single step in the workflow. It represents an action, decision, or data transformation — for example, "Send an HTTP request", "Run an LLM prompt", or "Route based on condition".
 
 Each node has:
+
 - A **type** that determines its visual appearance (default, simple, square, tool, gateway, terminal, idea, note)
 - **Metadata** describing its name, icon, category, and capabilities
 - **Configuration** — user-editable settings defined by a JSON Schema
@@ -25,6 +26,7 @@ Each node has:
 An **edge** is a connection between two nodes. It defines the flow of data or control from one step to the next.
 
 Edges have **categories** that determine their visual style and semantic meaning:
+
 - **data** — standard data flow (default)
 - **trigger** — event-based activation
 - **tool** — tool invocation from an agent
@@ -73,7 +75,7 @@ Think of it this way:
 
 > **FlowDrop owns the UI. You own the logic.**
 
-FlowDrop gives users a beautiful way to *design* workflows. Your backend gives those workflows *meaning*.
+FlowDrop gives users a beautiful way to _design_ workflows. Your backend gives those workflows _meaning_.
 
 ## The Frontend–Backend Contract
 
@@ -91,7 +93,7 @@ flowchart TD
   end
   subgraph BE["Your Backend"]
     direction TB
-    BE1["Node 
+    BE1["Node
           definitions"]
     BE2["Storage"]
     BE3["Execution"]

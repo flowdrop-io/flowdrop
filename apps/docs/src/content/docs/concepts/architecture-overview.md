@@ -35,20 +35,21 @@ flowchart TD
 
 FlowDrop is tree-shakable. Each sub-module has different dependencies and bundle cost:
 
-| Module | What it provides | Heavy deps |
-|--------|-----------------|------------|
-| `@flowdrop/flowdrop/core` | Types, utilities, auth providers, config helpers | None |
-| `@flowdrop/flowdrop/editor` | WorkflowEditor, mount functions, node components | @xyflow/svelte |
-| `@flowdrop/flowdrop/form` | SchemaForm, field components | None |
-| `@flowdrop/flowdrop/form/code` | Code & template editors | CodeMirror (~300KB) |
-| `@flowdrop/flowdrop/form/markdown` | Markdown editor | CodeMirror |
-| `@flowdrop/flowdrop/display` | MarkdownDisplay | marked |
-| `@flowdrop/flowdrop/playground` | Playground, chat, interrupts | Editor + Form |
-| `@flowdrop/flowdrop/settings` | Settings panel, theme toggle | Form |
-| `@flowdrop/flowdrop/styles` | CSS design tokens | None |
-| `@flowdrop/flowdrop` | Full bundle (everything) | All of the above |
+| Module                             | What it provides                                 | Heavy deps          |
+| ---------------------------------- | ------------------------------------------------ | ------------------- |
+| `@flowdrop/flowdrop/core`          | Types, utilities, auth providers, config helpers | None                |
+| `@flowdrop/flowdrop/editor`        | WorkflowEditor, mount functions, node components | @xyflow/svelte      |
+| `@flowdrop/flowdrop/form`          | SchemaForm, field components                     | None                |
+| `@flowdrop/flowdrop/form/code`     | Code & template editors                          | CodeMirror (~300KB) |
+| `@flowdrop/flowdrop/form/markdown` | Markdown editor                                  | CodeMirror          |
+| `@flowdrop/flowdrop/display`       | MarkdownDisplay                                  | marked              |
+| `@flowdrop/flowdrop/playground`    | Playground, chat, interrupts                     | Editor + Form       |
+| `@flowdrop/flowdrop/settings`      | Settings panel, theme toggle                     | Form                |
+| `@flowdrop/flowdrop/styles`        | CSS design tokens                                | None                |
+| `@flowdrop/flowdrop`               | Full bundle (everything)                         | All of the above    |
 
 **Dependency chain:**
+
 ```mermaid
 flowchart LR
   core["core
@@ -96,15 +97,15 @@ App
 
 FlowDrop uses **Svelte 5 runes** for state management. Stores are module-level singletons:
 
-| Store | Purpose | Key state |
-|-------|---------|-----------|
-| **workflowStore** | Central workflow state | nodes, edges, metadata, isDirty |
-| **historyStore** | Undo/redo | past states, future states, canUndo/canRedo |
-| **settingsStore** | User preferences | theme, editor behavior, UI config |
-| **playgroundStore** | Playground sessions | sessions, messages, isExecuting |
-| **interruptStore** | Human-in-the-loop | pending/resolved interrupts |
-| **categoriesStore** | Node categories | category definitions, colors |
-| **portCoordinateStore** | Handle positions | port coordinates for edge rendering |
+| Store                   | Purpose                | Key state                                   |
+| ----------------------- | ---------------------- | ------------------------------------------- |
+| **workflowStore**       | Central workflow state | nodes, edges, metadata, isDirty             |
+| **historyStore**        | Undo/redo              | past states, future states, canUndo/canRedo |
+| **settingsStore**       | User preferences       | theme, editor behavior, UI config           |
+| **playgroundStore**     | Playground sessions    | sessions, messages, isExecuting             |
+| **interruptStore**      | Human-in-the-loop      | pending/resolved interrupts                 |
+| **categoriesStore**     | Node categories        | category definitions, colors                |
+| **portCoordinateStore** | Handle positions       | port coordinates for edge rendering         |
 
 :::caution[Single Instance]
 FlowDrop uses module-level singleton stores. Only **one FlowDrop editor** can exist per page. Mounting a second instance will share state with the first.
@@ -114,16 +115,16 @@ FlowDrop uses module-level singleton stores. Only **one FlowDrop editor** can ex
 
 Services handle communication and side effects:
 
-| Service | Purpose |
-|---------|---------|
-| **API client** | HTTP requests to your backend (nodes, workflows, execution) |
-| **Draft storage** | Auto-save to localStorage |
-| **Toast service** | Success/error/loading notifications |
-| **Dynamic schema** | Fetch config schemas from API at runtime |
-| **Playground service** | Manage sessions, poll for messages |
-| **Interrupt service** | Submit interrupt resolutions |
-| **History service** | Track and replay state changes |
-| **Settings service** | Load/save preferences (localStorage + API) |
+| Service                | Purpose                                                     |
+| ---------------------- | ----------------------------------------------------------- |
+| **API client**         | HTTP requests to your backend (nodes, workflows, execution) |
+| **Draft storage**      | Auto-save to localStorage                                   |
+| **Toast service**      | Success/error/loading notifications                         |
+| **Dynamic schema**     | Fetch config schemas from API at runtime                    |
+| **Playground service** | Manage sessions, poll for messages                          |
+| **Interrupt service**  | Submit interrupt resolutions                                |
+| **History service**    | Track and replay state changes                              |
+| **Settings service**   | Load/save preferences (localStorage + API)                  |
 
 ## Data Flow
 
@@ -135,10 +136,10 @@ flowchart TD
     (drag node, edit config, draw edge)"] --> B["Component event handler"]
   B --> C["workflowStore update
     (state mutation)"]
-  C --> D["historyStore 
+  C --> D["historyStore
     records snapshot
     (for undo)"]
-  C --> E["isDirty 
+  C --> E["isDirty
       flag set to true"]
   C --> F["UI re-renders
     (Svelte reactivity)"]
@@ -173,14 +174,18 @@ flowchart TD
 FlowDrop has two registries for extending the editor:
 
 ### Node Component Registry
+
 Register custom Svelte components for new node types:
+
 ```typescript
 import { registerCustomNode } from '@flowdrop/flowdrop/editor';
 registerCustomNode('my-custom-node', MyNodeComponent);
 ```
 
 ### Field Component Registry
+
 Register custom form fields for config schemas:
+
 ```typescript
 import { registerFieldComponent } from '@flowdrop/flowdrop/form';
 registerFieldComponent(matcher, MyFieldComponent, { priority: 10 });

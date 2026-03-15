@@ -32,19 +32,49 @@
 
 /* xyflow Controls & MiniMap: wire up to skin tokens so themes can restyle them */
 .svelte-flow {
-  --xy-controls-button-background-color: var(--fd-controls-button-bg, var(--fd-card));
-  --xy-controls-button-background-color-hover: var(--fd-controls-button-bg-hover, var(--fd-muted));
-  --xy-controls-button-color: var(--fd-controls-button-color, var(--fd-foreground));
-  --xy-controls-button-color-hover: var(--fd-controls-button-color-hover, var(--fd-foreground));
-  --xy-controls-button-border-color: var(--fd-controls-button-border, var(--fd-border));
-  --xy-controls-box-shadow: var(--fd-controls-box-shadow, 0 0 2px 1px rgba(0, 0, 0, 0.08));
+  --xy-controls-button-background-color: var(
+    --fd-controls-button-bg,
+    var(--fd-card)
+  );
+  --xy-controls-button-background-color-hover: var(
+    --fd-controls-button-bg-hover,
+    var(--fd-muted)
+  );
+  --xy-controls-button-color: var(
+    --fd-controls-button-color,
+    var(--fd-foreground)
+  );
+  --xy-controls-button-color-hover: var(
+    --fd-controls-button-color-hover,
+    var(--fd-foreground)
+  );
+  --xy-controls-button-border-color: var(
+    --fd-controls-button-border,
+    var(--fd-border)
+  );
+  --xy-controls-box-shadow: var(
+    --fd-controls-box-shadow,
+    0 0 2px 1px rgba(0, 0, 0, 0.08)
+  );
 
   --xy-minimap-background-color: var(--fd-minimap-bg, var(--fd-card));
-  --xy-minimap-mask-background-color: var(--fd-minimap-mask-bg, var(--fd-backdrop));
-  --xy-minimap-mask-stroke-color: var(--fd-minimap-mask-stroke, var(--fd-border));
+  --xy-minimap-mask-background-color: var(
+    --fd-minimap-mask-bg,
+    var(--fd-backdrop)
+  );
+  --xy-minimap-mask-stroke-color: var(
+    --fd-minimap-mask-stroke,
+    var(--fd-border)
+  );
   --xy-minimap-mask-stroke-width: var(--fd-minimap-mask-stroke-width, 1);
-  --xy-minimap-node-background-color: var(--fd-minimap-node-bg, var(--fd-muted));
-  --xy-minimap-node-stroke-color: var(--fd-minimap-node-stroke, var(--fd-border-muted));
+  --xy-minimap-node-background-color: var(
+    --fd-minimap-node-bg,
+    var(--fd-muted)
+  );
+  --xy-minimap-node-stroke-color: var(
+    --fd-minimap-node-stroke,
+    var(--fd-border-muted)
+  );
   --xy-minimap-node-stroke-width: var(--fd-minimap-node-stroke-width, 2);
 }
 

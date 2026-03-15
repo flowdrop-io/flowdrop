@@ -8,6 +8,7 @@ FlowDrop supports [Agent Spec](https://github.com/oracle/agent-spec) — an open
 ## What is Agent Spec?
 
 Agent Spec is a JSON format for describing agent workflows with:
+
 - **Nodes** (called "steps") with component types
 - **Control-flow edges** for execution order
 - **Data-flow edges** for data passing
@@ -83,6 +84,7 @@ const result = validateForAgentSpecExport(workflow);
 ```
 
 Common validation issues:
+
 - Disconnected nodes (no edges)
 - Missing required port connections
 - Unsupported node types
@@ -91,15 +93,15 @@ Common validation issues:
 
 ### What Maps Cleanly
 
-| FlowDrop | Agent Spec |
-|----------|-----------|
-| Node ID | Auto-generated stable name |
-| Node type | Component type |
-| Config values | Node attributes |
-| Trigger edges | Control-flow edges |
-| Data edges | Data-flow edges |
-| Gateway branches | `from_branch` mappings |
-| Node position | Preserved in metadata |
+| FlowDrop         | Agent Spec                 |
+| ---------------- | -------------------------- |
+| Node ID          | Auto-generated stable name |
+| Node type        | Component type             |
+| Config values    | Node attributes            |
+| Trigger edges    | Control-flow edges         |
+| Data edges       | Data-flow edges            |
+| Gateway branches | `from_branch` mappings     |
+| Node position    | Preserved in metadata      |
 
 ### Known Limitations
 

@@ -11,42 +11,34 @@ import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 - A build pipeline that can bundle ES modules (Vite, webpack, esbuild, Rollup, Next.js, Nuxt, SvelteKit, or similar)
 
 <Aside type="note" title="No Svelte required in your app">
-FlowDrop is built with Svelte 5 internally, but **you do not need to write Svelte** to use it.
-The [Mount API](/guides/integration/) works in React, Vue, Angular, vanilla JS, or any framework.
+  FlowDrop is built with Svelte 5 internally, but **you do not need to write Svelte** to use it. The
+  [Mount API](/guides/integration/) works in React, Vue, Angular, vanilla JS, or any framework.
 </Aside>
 
 ## Install
 
 <Tabs>
   <TabItem label="npm">
-  ```bash
-  npm install @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
-  ```
+    ```bash npm install @flowdrop/flowdrop @iconify/svelte @xyflow/svelte ```
   </TabItem>
   <TabItem label="pnpm">
-  ```bash
-  pnpm add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
-  ```
+    ```bash pnpm add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte ```
   </TabItem>
   <TabItem label="yarn">
-  ```bash
-  yarn add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
-  ```
+    ```bash yarn add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte ```
   </TabItem>
   <TabItem label="bun">
-  ```bash
-  bun add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte
-  ```
+    ```bash bun add @flowdrop/flowdrop @iconify/svelte @xyflow/svelte ```
   </TabItem>
 </Tabs>
 
 ## Peer Dependencies
 
-| Package | Version | Required |
-|---------|---------|----------|
-| `svelte` | `^5.0.0` | Yes (internal runtime) |
-| `@xyflow/svelte` | `^1.2` | Yes (for editor module) |
-| `@iconify/svelte` | `^5.0.0` | Yes (for icons) |
+| Package           | Version  | Required                |
+| ----------------- | -------- | ----------------------- |
+| `svelte`          | `^5.0.0` | Yes (internal runtime)  |
+| `@xyflow/svelte`  | `^1.2`   | Yes (for editor module) |
+| `@iconify/svelte` | `^5.0.0` | Yes (for icons)         |
 
 ### Optional: CodeMirror (for code/markdown editors)
 
@@ -60,24 +52,25 @@ npm install codemirror @codemirror/state @codemirror/view @codemirror/commands \
 
 ## Entry Points
 
-| Entry Point | Description |
-|-------------|-------------|
-| `@flowdrop/flowdrop` | Full bundle — re-exports everything |
-| `@flowdrop/flowdrop/core` | Types and utilities (zero heavy dependencies) |
-| `@flowdrop/flowdrop/editor` | Visual workflow editor components |
-| `@flowdrop/flowdrop/form` | Dynamic form field components |
-| `@flowdrop/flowdrop/form/code` | Code and JSON editor fields (requires CodeMirror) |
-| `@flowdrop/flowdrop/form/markdown` | Markdown editor field (requires CodeMirror) |
-| `@flowdrop/flowdrop/form/full` | All form components pre-bundled |
-| `@flowdrop/flowdrop/display` | Display-only components (MarkdownDisplay) |
-| `@flowdrop/flowdrop/playground` | Interactive workflow playground |
-| `@flowdrop/flowdrop/settings` | Settings UI components and stores |
-| `@flowdrop/flowdrop/styles` | Base CSS styles and design tokens |
+| Entry Point                        | Description                                       |
+| ---------------------------------- | ------------------------------------------------- |
+| `@flowdrop/flowdrop`               | Full bundle — re-exports everything               |
+| `@flowdrop/flowdrop/core`          | Types and utilities (zero heavy dependencies)     |
+| `@flowdrop/flowdrop/editor`        | Visual workflow editor components                 |
+| `@flowdrop/flowdrop/form`          | Dynamic form field components                     |
+| `@flowdrop/flowdrop/form/code`     | Code and JSON editor fields (requires CodeMirror) |
+| `@flowdrop/flowdrop/form/markdown` | Markdown editor field (requires CodeMirror)       |
+| `@flowdrop/flowdrop/form/full`     | All form components pre-bundled                   |
+| `@flowdrop/flowdrop/display`       | Display-only components (MarkdownDisplay)         |
+| `@flowdrop/flowdrop/playground`    | Interactive workflow playground                   |
+| `@flowdrop/flowdrop/settings`      | Settings UI components and stores                 |
+| `@flowdrop/flowdrop/styles`        | Base CSS styles and design tokens                 |
 
 ## Architecture Notes
 
 <Aside type="caution" title="Single Instance Per Page">
-FlowDrop uses module-level singleton stores. Only **one FlowDrop editor instance** can exist on a page at a time.
+  FlowDrop uses module-level singleton stores. Only **one FlowDrop editor instance** can exist on a
+  page at a time.
 </Aside>
 
 - **Svelte 5 required (internally).** FlowDrop uses Svelte 5 runes internally. Your app does not need to be written in Svelte.
@@ -92,8 +85,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@flowdrop/flowdrop', '@xyflow/svelte']
   }
-})
+});
 ```
+
 </Aside>
 
 ## Verify Your Installation
@@ -107,6 +101,7 @@ console.log(config); // EndpointConfig object
 ```
 
 If you see `Cannot find module '@flowdrop/flowdrop'`, check:
+
 1. Install completed without errors
 2. Your bundler supports ES modules (Vite 5+, webpack 5+)
 3. You are not importing in a server-side context — see [Framework Integration](/guides/integration/)

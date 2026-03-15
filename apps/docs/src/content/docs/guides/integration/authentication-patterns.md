@@ -163,13 +163,13 @@ const app = await mountFlowDropApp(container, {
 
 ## Choosing a Provider
 
-| Scenario | Provider | Why |
-|----------|----------|-----|
-| Local development | `NoAuthProvider` | No backend auth needed |
-| Simple deployment | `StaticAuthProvider` | Token set once at page load |
-| Single-page app with JWT | `CallbackAuthProvider` | Token refresh on expiry |
-| Enterprise SSO / OAuth2 | `CallbackAuthProvider` | Integrates with auth library |
-| Multi-tenant | `StaticAuthProvider` (custom) | Add tenant headers |
+| Scenario                 | Provider                      | Why                          |
+| ------------------------ | ----------------------------- | ---------------------------- |
+| Local development        | `NoAuthProvider`              | No backend auth needed       |
+| Simple deployment        | `StaticAuthProvider`          | Token set once at page load  |
+| Single-page app with JWT | `CallbackAuthProvider`        | Token refresh on expiry      |
+| Enterprise SSO / OAuth2  | `CallbackAuthProvider`        | Integrates with auth library |
+| Multi-tenant             | `StaticAuthProvider` (custom) | Add tenant headers           |
 
 ## Next Steps
 

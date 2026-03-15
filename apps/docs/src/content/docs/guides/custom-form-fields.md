@@ -104,12 +104,15 @@ When multiple registrations match, the highest priority wins:
 
 ```typescript
 // Priority 50 — general fallback
-registerFieldComponent('text-basic', BasicTextField,
-  (schema) => schema.type === 'string', 50);
+registerFieldComponent('text-basic', BasicTextField, (schema) => schema.type === 'string', 50);
 
 // Priority 100 — more specific, checked first
-registerFieldComponent('rich-text', RichTextField,
-  (schema) => schema.type === 'string' && schema.format === 'rich-text', 100);
+registerFieldComponent(
+  'rich-text',
+  RichTextField,
+  (schema) => schema.type === 'string' && schema.format === 'rich-text',
+  100
+);
 ```
 
 You can use this to **override built-in fields** by registering your own component with a higher priority.
@@ -140,26 +143,26 @@ export function registerMyHeavyField(priority = 100): void {
 
 These fields are always available without registration:
 
-| Schema | Renders as |
-|--------|------------|
-| `type: "string"` | Text input |
-| `type: "string", format: "multiline"` | Textarea |
-| `type: "number"` or `type: "integer"` | Number input |
-| `type: "number", format: "range"` | Range slider |
-| `type: "boolean"` | Toggle switch |
-| `type: "string", enum: [...]` | Select dropdown |
-| `type: "string", enum: [...], multiple: true` | Checkbox group |
-| `type: "string", oneOf: [{const, title}]` | Select with labeled options |
-| `type: "array", items: {...}` | Dynamic list |
-| `format: "hidden"` | Hidden (not rendered) |
+| Schema                                        | Renders as                  |
+| --------------------------------------------- | --------------------------- |
+| `type: "string"`                              | Text input                  |
+| `type: "string", format: "multiline"`         | Textarea                    |
+| `type: "number"` or `type: "integer"`         | Number input                |
+| `type: "number", format: "range"`             | Range slider                |
+| `type: "boolean"`                             | Toggle switch               |
+| `type: "string", enum: [...]`                 | Select dropdown             |
+| `type: "string", enum: [...], multiple: true` | Checkbox group              |
+| `type: "string", oneOf: [{const, title}]`     | Select with labeled options |
+| `type: "array", items: {...}`                 | Dynamic list                |
+| `format: "hidden"`                            | Hidden (not rendered)       |
 
 These require explicit registration (heavy dependencies):
 
-| Schema | Import path | Registration function |
-|--------|-------------|----------------------|
-| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code` | `registerCodeEditorField()` |
-| `format: "template"` | `@flowdrop/flowdrop/form/code` | `registerTemplateEditorField()` |
-| `format: "markdown"` | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
+| Schema                               | Import path                        | Registration function           |
+| ------------------------------------ | ---------------------------------- | ------------------------------- |
+| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField()`     |
+| `format: "template"`                 | `@flowdrop/flowdrop/form/code`     | `registerTemplateEditorField()` |
+| `format: "markdown"`                 | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
 
 ## Field Management
 

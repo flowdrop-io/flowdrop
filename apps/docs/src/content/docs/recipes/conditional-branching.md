@@ -8,6 +8,7 @@ Gateway nodes let you route workflow execution based on conditions — like if/e
 ## How Gateways Work
 
 A **gateway node** has:
+
 - Input ports that receive data
 - A **default** output port
 - **Branch** output ports that you define
@@ -27,9 +28,7 @@ Each branch has a label and maps to a separate output port. Your backend decides
     { "id": "input", "name": "Input", "type": "input", "dataType": "string" },
     { "id": "metadata", "name": "Metadata", "type": "input", "dataType": "json" }
   ],
-  "outputs": [
-    { "id": "default", "name": "Default", "type": "output", "dataType": "string" }
-  ],
+  "outputs": [{ "id": "default", "name": "Default", "type": "output", "dataType": "string" }],
   "configSchema": {
     "type": "object",
     "properties": {

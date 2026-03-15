@@ -28,19 +28,19 @@ interface WorkflowEdge {
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | `string` | Yes | Unique edge identifier (e.g., `"e-loader-analyzer"`). |
-| `source` | `string` | Yes | ID of the source node. |
-| `target` | `string` | Yes | ID of the target node. |
-| `sourceHandle` | `string` | No | ID of the specific output port. See [Handle IDs](#handle-ids). |
-| `targetHandle` | `string` | No | ID of the specific input port. See [Handle IDs](#handle-ids). |
-| `selectable` | `boolean` | No | Whether the edge can be selected in the editor. |
-| `deletable` | `boolean` | No | Whether the edge can be deleted by the user. |
-| `data.label` | `string` | No | Display label on the edge. |
-| `data.condition` | `string` | No | Condition expression (used with gateway branches). |
-| `data.metadata.edgeType` | `EdgeCategory` | No | Visual styling category. |
-| `data.metadata.sourcePortDataType` | `string` | No | Data type of the source output port. |
+| Field                              | Type           | Required | Description                                                    |
+| ---------------------------------- | -------------- | -------- | -------------------------------------------------------------- |
+| `id`                               | `string`       | Yes      | Unique edge identifier (e.g., `"e-loader-analyzer"`).          |
+| `source`                           | `string`       | Yes      | ID of the source node.                                         |
+| `target`                           | `string`       | Yes      | ID of the target node.                                         |
+| `sourceHandle`                     | `string`       | No       | ID of the specific output port. See [Handle IDs](#handle-ids). |
+| `targetHandle`                     | `string`       | No       | ID of the specific input port. See [Handle IDs](#handle-ids).  |
+| `selectable`                       | `boolean`      | No       | Whether the edge can be selected in the editor.                |
+| `deletable`                        | `boolean`      | No       | Whether the edge can be deleted by the user.                   |
+| `data.label`                       | `string`       | No       | Display label on the edge.                                     |
+| `data.condition`                   | `string`       | No       | Condition expression (used with gateway branches).             |
+| `data.metadata.edgeType`           | `EdgeCategory` | No       | Visual styling category.                                       |
+| `data.metadata.sourcePortDataType` | `string`       | No       | Data type of the source output port.                           |
 
 ## Handle IDs
 
@@ -51,6 +51,7 @@ Port handles follow a deterministic naming pattern:
 ```
 
 For example:
+
 - `content_loader.1-output-items` — the "items" output port on node `content_loader.1`
 - `analyzer.1-input-content` — the "content" input port on node `analyzer.1`
 - `router.1-output-high` — the "high" branch output on a gateway node
@@ -61,12 +62,12 @@ This format lets FlowDrop map edges back to specific ports during rendering and 
 
 The `edgeType` field controls the visual style of the edge on the canvas:
 
-| Category | Visual Style | When Used |
-|----------|-------------|-----------|
-| `data` | Solid gray line | Default — general data flow between nodes. |
-| `trigger` | Solid line with trigger color | Control flow connections (port `dataType: "trigger"`). |
-| `tool` | Dashed amber line | Tool interface connections (port `dataType: "tool"`). |
-| `loopback` | Dashed gray line | Loop iteration connections (targets a `loop_back` port). |
+| Category   | Visual Style                  | When Used                                                |
+| ---------- | ----------------------------- | -------------------------------------------------------- |
+| `data`     | Solid gray line               | Default — general data flow between nodes.               |
+| `trigger`  | Solid line with trigger color | Control flow connections (port `dataType: "trigger"`).   |
+| `tool`     | Dashed amber line             | Tool interface connections (port `dataType: "tool"`).    |
+| `loopback` | Dashed gray line              | Loop iteration connections (targets a `loop_back` port). |
 
 The editor sets `edgeType` automatically based on the source port's data type. You generally don't need to set it manually in JSON.
 

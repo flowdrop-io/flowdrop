@@ -5,11 +5,11 @@ const router = Router();
 
 /** GET /api/flowdrop/categories */
 router.get('/categories', (_req, res) => {
-	res.json({
-		success: true,
-		data: categories,
-		message: 'Categories loaded successfully'
-	});
+  res.json({
+    success: true,
+    data: categories,
+    message: 'Categories loaded successfully'
+  });
 });
 
 export default router;

@@ -1,5 +1,5 @@
 ---
-title: "Backend: Express.js"
+title: 'Backend: Express.js'
 description: Build a working FlowDrop backend with Express in 15 minutes.
 ---
 
@@ -24,6 +24,7 @@ npm install -D typescript tsx @types/express @types/cors
 ```
 
 Create `tsconfig.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -63,6 +64,7 @@ app.listen(PORT, () => {
 ```
 
 Run it:
+
 ```bash
 npx tsx --watch src/index.ts
 ```
@@ -107,9 +109,7 @@ export const nodes: NodeMetadata[] = [
     category: 'inputs',
     icon: 'mdi:text-box-outline',
     inputs: [],
-    outputs: [
-      { id: 'output', name: 'Text', type: 'output', dataType: 'string' }
-    ],
+    outputs: [{ id: 'output', name: 'Text', type: 'output', dataType: 'string' }],
     configSchema: {
       type: 'object',
       properties: {
@@ -133,12 +133,8 @@ export const nodes: NodeMetadata[] = [
     type: 'workflowNode',
     category: 'models',
     icon: 'mdi:robot-outline',
-    inputs: [
-      { id: 'prompt', name: 'Prompt', type: 'input', dataType: 'string' }
-    ],
-    outputs: [
-      { id: 'response', name: 'Response', type: 'output', dataType: 'string' }
-    ],
+    inputs: [{ id: 'prompt', name: 'Prompt', type: 'input', dataType: 'string' }],
+    outputs: [{ id: 'response', name: 'Response', type: 'output', dataType: 'string' }],
     configSchema: {
       type: 'object',
       properties: {
@@ -168,9 +164,7 @@ export const nodes: NodeMetadata[] = [
     type: 'simple',
     category: 'outputs',
     icon: 'mdi:text',
-    inputs: [
-      { id: 'input', name: 'Text', type: 'input', dataType: 'string' }
-    ],
+    inputs: [{ id: 'input', name: 'Text', type: 'input', dataType: 'string' }],
     outputs: [],
     configSchema: {
       type: 'object',
@@ -197,15 +191,14 @@ app.get(`${API_BASE}/nodes`, (req, res) => {
 
   // Filter by category
   if (req.query.category) {
-    result = result.filter(n => n.category === req.query.category);
+    result = result.filter((n) => n.category === req.query.category);
   }
 
   // Search
   if (req.query.search) {
     const q = (req.query.search as string).toLowerCase();
-    result = result.filter(n =>
-      n.name.toLowerCase().includes(q) ||
-      n.description?.toLowerCase().includes(q)
+    result = result.filter(
+      (n) => n.name.toLowerCase().includes(q) || n.description?.toLowerCase().includes(q)
     );
   }
 
@@ -213,7 +206,7 @@ app.get(`${API_BASE}/nodes`, (req, res) => {
 });
 
 app.get(`${API_BASE}/nodes/:id`, (req, res) => {
-  const node = nodes.find(n => n.id === req.params.id);
+  const node = nodes.find((n) => n.id === req.params.id);
   if (!node) {
     return res.status(404).json({ success: false, error: 'Node not found' });
   }
@@ -291,8 +284,11 @@ Add the workflow routes in `src/index.ts`:
 
 ```typescript
 import {
-  getAllWorkflows, getWorkflowById,
-  createWorkflow, updateWorkflow, deleteWorkflow
+  getAllWorkflows,
+  getWorkflowById,
+  createWorkflow,
+  updateWorkflow,
+  deleteWorkflow
 } from './workflows.js';
 
 app.get(`${API_BASE}/workflows`, (req, res) => {
@@ -338,11 +334,41 @@ app.get(`${API_BASE}/categories`, (req, res) => {
   res.json({
     success: true,
     data: [
-      { id: 'inputs', name: 'Inputs', icon: 'mdi:import', color: 'var(--fd-node-emerald)', weight: 10 },
-      { id: 'models', name: 'Models', icon: 'mdi:robot', color: 'var(--fd-node-purple)', weight: 20 },
-      { id: 'outputs', name: 'Outputs', icon: 'mdi:export', color: 'var(--fd-node-blue)', weight: 30 },
-      { id: 'processing', name: 'Processing', icon: 'mdi:cog', color: 'var(--fd-node-amber)', weight: 40 },
-      { id: 'logic', name: 'Logic', icon: 'mdi:sitemap', color: 'var(--fd-node-indigo)', weight: 50 }
+      {
+        id: 'inputs',
+        name: 'Inputs',
+        icon: 'mdi:import',
+        color: 'var(--fd-node-emerald)',
+        weight: 10
+      },
+      {
+        id: 'models',
+        name: 'Models',
+        icon: 'mdi:robot',
+        color: 'var(--fd-node-purple)',
+        weight: 20
+      },
+      {
+        id: 'outputs',
+        name: 'Outputs',
+        icon: 'mdi:export',
+        color: 'var(--fd-node-blue)',
+        weight: 30
+      },
+      {
+        id: 'processing',
+        name: 'Processing',
+        icon: 'mdi:cog',
+        color: 'var(--fd-node-amber)',
+        weight: 40
+      },
+      {
+        id: 'logic',
+        name: 'Logic',
+        icon: 'mdi:sitemap',
+        color: 'var(--fd-node-indigo)',
+        weight: 50
+      }
     ]
   });
 });

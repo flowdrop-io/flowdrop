@@ -86,10 +86,7 @@ const playground = await mountPlayground(container, {
 ### Configurable Lifecycle Hooks
 
 ```typescript
-import {
-  defaultShouldStopPolling,
-  defaultIsTerminalStatus
-} from '@flowdrop/flowdrop/playground';
+import { defaultShouldStopPolling, defaultIsTerminalStatus } from '@flowdrop/flowdrop/playground';
 ```
 
 The `awaiting_input` status pauses polling automatically — call `playground.startPolling()` to resume after an interrupt is resolved.
@@ -114,11 +111,11 @@ The playground integrates with FlowDrop's interrupt system. See the [Human-in-th
 
 The playground uses these backend endpoints:
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/playground/sessions` | POST | Create a new session |
-| `/playground/sessions` | GET | List sessions |
-| `/playground/sessions/{id}` | GET | Get session details |
-| `/playground/sessions/{id}` | DELETE | Delete session |
-| `/playground/sessions/{id}/execute` | POST | Execute workflow |
-| `/playground/sessions/{id}/messages` | GET | Poll for messages |
+| Endpoint                             | Method | Purpose              |
+| ------------------------------------ | ------ | -------------------- |
+| `/playground/sessions`               | POST   | Create a new session |
+| `/playground/sessions`               | GET    | List sessions        |
+| `/playground/sessions/{id}`          | GET    | Get session details  |
+| `/playground/sessions/{id}`          | DELETE | Delete session       |
+| `/playground/sessions/{id}/execute`  | POST   | Execute workflow     |
+| `/playground/sessions/{id}/messages` | GET    | Poll for messages    |

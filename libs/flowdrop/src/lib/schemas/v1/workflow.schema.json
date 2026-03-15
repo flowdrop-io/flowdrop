@@ -38,13 +38,7 @@
       "$ref": "#/$defs/WorkflowMetadata"
     }
   },
-  "required": [
-    "id",
-    "name",
-    "nodes",
-    "edges",
-    "metadata"
-  ],
+  "required": ["id", "name", "nodes", "edges", "metadata"],
   "$defs": {
     "AutocompleteConfig": {
       "type": "object",
@@ -95,9 +89,7 @@
           "description": "Whether to allow multiple selections.\nWhen true, users can select multiple values displayed as tags.\n"
         }
       },
-      "required": [
-        "url"
-      ]
+      "required": ["url"]
     },
     "Branch": {
       "type": "object",
@@ -125,10 +117,7 @@
           "description": "Whether this is the default/fallback branch"
         }
       },
-      "required": [
-        "name",
-        "label"
-      ]
+      "required": ["name", "label"]
     },
     "ConfigProperty": {
       "type": "object",
@@ -136,14 +125,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "string",
-            "number",
-            "boolean",
-            "array",
-            "object",
-            "integer"
-          ],
+          "enum": ["string", "number", "boolean", "array", "object", "integer"],
           "description": "JSON Schema type"
         },
         "title": {
@@ -269,18 +251,14 @@
           ]
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "ConfigSchema": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "object"
-          ]
+          "enum": ["object"]
         },
         "properties": {
           "type": "object",
@@ -301,10 +279,7 @@
           "default": false
         }
       },
-      "required": [
-        "type",
-        "properties"
-      ]
+      "required": ["type", "properties"]
     },
     "DynamicPort": {
       "type": "object",
@@ -338,11 +313,7 @@
           "description": "Whether this port is required for execution"
         }
       },
-      "required": [
-        "name",
-        "label",
-        "dataType"
-      ]
+      "required": ["name", "label", "dataType"]
     },
     "NodeCategory": {
       "type": "string",
@@ -433,11 +404,7 @@
           "description": "Whether the node is currently being executed"
         }
       },
-      "required": [
-        "status",
-        "executionCount",
-        "isExecuting"
-      ]
+      "required": ["status", "executionCount", "isExecuting"]
     },
     "NodeExecutionStatus": {
       "type": "string",
@@ -581,11 +548,7 @@
         },
         "type": {
           "type": "string",
-          "enum": [
-            "input",
-            "output",
-            "metadata"
-          ],
+          "enum": ["input", "output", "metadata"],
           "description": "Port direction (input receives data, output sends data)"
         },
         "dataType": {
@@ -614,12 +577,7 @@
           ]
         }
       },
-      "required": [
-        "id",
-        "name",
-        "type",
-        "dataType"
-      ]
+      "required": ["id", "name", "type", "dataType"]
     },
     "NodeType": {
       "type": "string",
@@ -677,9 +635,7 @@
           "description": "Optional description for this option"
         }
       },
-      "required": [
-        "const"
-      ]
+      "required": ["const"]
     },
     "PortDataSchema": {
       "type": "object",
@@ -687,14 +643,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "object",
-            "array",
-            "string",
-            "number",
-            "integer",
-            "boolean"
-          ],
+          "enum": ["object", "array", "string", "number", "integer", "boolean"],
           "description": "The JSON Schema type. Use `object` for nested properties,\n`array` for lists with `items` schema.\n"
         },
         "title": {
@@ -743,10 +692,7 @@
           "description": "Y coordinate"
         }
       },
-      "required": [
-        "x",
-        "y"
-      ]
+      "required": ["x", "y"]
     },
     "TemplateVariable": {
       "type": "object",
@@ -804,10 +750,7 @@
           "description": "Source node ID"
         }
       },
-      "required": [
-        "name",
-        "type"
-      ]
+      "required": ["name", "type"]
     },
     "TemplateVariablesConfig": {
       "type": "object",
@@ -854,9 +797,7 @@
           "description": "Map of available variables keyed by variable name"
         }
       },
-      "required": [
-        "variables"
-      ]
+      "required": ["variables"]
     },
     "WorkflowEdge": {
       "type": "object",
@@ -887,12 +828,7 @@
         "type": {
           "type": "string",
           "description": "Connection line type",
-          "enum": [
-            "default",
-            "straight",
-            "step",
-            "smoothstep"
-          ]
+          "enum": ["default", "straight", "step", "smoothstep"]
         },
         "selectable": {
           "type": "boolean",
@@ -919,11 +855,7 @@
               "properties": {
                 "edgeType": {
                   "type": "string",
-                  "enum": [
-                    "trigger",
-                    "tool",
-                    "data"
-                  ],
+                  "enum": ["trigger", "tool", "data"],
                   "description": "Edge type for visual styling"
                 },
                 "sourcePortDataType": {
@@ -947,11 +879,7 @@
           }
         }
       },
-      "required": [
-        "id",
-        "source",
-        "target"
-      ]
+      "required": ["id", "source", "target"]
     },
     "WorkflowMetadata": {
       "type": "object",
@@ -995,11 +923,7 @@
           "default": "flowdrop"
         }
       },
-      "required": [
-        "version",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["version", "createdAt", "updatedAt"]
     },
     "WorkflowNode": {
       "type": "object",
@@ -1060,19 +984,10 @@
               ]
             }
           },
-          "required": [
-            "label",
-            "config",
-            "metadata"
-          ]
+          "required": ["label", "config", "metadata"]
         }
       },
-      "required": [
-        "id",
-        "type",
-        "position",
-        "data"
-      ]
+      "required": ["id", "type", "position", "data"]
     }
   }
 }

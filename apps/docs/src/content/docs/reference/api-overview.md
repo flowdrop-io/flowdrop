@@ -12,6 +12,7 @@ FlowDrop is organized as tree-shakable sub-modules. Import only what you need to
 Types and utilities with zero heavy dependencies. Safe to import anywhere without pulling in Svelte components or CodeMirror.
 
 **Key exports:**
+
 - Core types: `Workflow`, `WorkflowNode`, `WorkflowEdge`, `NodeMetadata`, `NodePort`
 - Node types: `BuiltinNodeType`, `NodeCategory`
 - Auth providers: `AuthProvider`, `StaticAuthProvider`, `CallbackAuthProvider`, `NoAuthProvider`
@@ -29,6 +30,7 @@ Types and utilities with zero heavy dependencies. Safe to import anywhere withou
 Visual workflow editor with `@xyflow/svelte`.
 
 **Key exports:**
+
 - Components: `WorkflowEditor`, `App`, `NodeSidebar`, `ConfigForm`, `ConfigPanel`
 - Node components: `WorkflowNodeComponent`, `SimpleNode`, `ToolNode`, `NotesNode`, `GatewayNode`, `SquareNode`, `TerminalNode`, `UniversalNode`
 - Mount functions: `mountFlowDropApp`, `mountWorkflowEditor`, `unmountFlowDropApp`
@@ -42,6 +44,7 @@ Visual workflow editor with `@xyflow/svelte`.
 Dynamic form generation from JSON Schema.
 
 **Key exports:**
+
 - Components: `SchemaForm`, `FormField`, `FormFieldWrapper`
 - Field types: `FormTextField`, `FormTextarea`, `FormNumberField`, `FormToggle`, `FormSelect`, `FormArray`, `FormCheckboxGroup`, `FormRangeField`
 - UISchema: `FormFieldset`, `FormUISchemaRenderer`
@@ -52,6 +55,7 @@ Dynamic form generation from JSON Schema.
 Code and JSON editor support (adds ~300KB, requires CodeMirror).
 
 **Key exports:**
+
 - Components: `FormCodeEditor`, `FormTemplateEditor`
 - Registration: `registerCodeEditorField()`, `registerTemplateEditorField()`
 
@@ -60,6 +64,7 @@ Code and JSON editor support (adds ~300KB, requires CodeMirror).
 Markdown editor support (requires CodeMirror + `@codemirror/lang-markdown`).
 
 **Key exports:**
+
 - Component: `FormMarkdownEditor`
 - Registration: `registerMarkdownEditorField()`
 
@@ -68,6 +73,7 @@ Markdown editor support (requires CodeMirror + `@codemirror/lang-markdown`).
 Content rendering components.
 
 **Key exports:**
+
 - `MarkdownDisplay` — renders markdown content using the `marked` library
 
 ### `@flowdrop/flowdrop/playground`
@@ -75,6 +81,7 @@ Content rendering components.
 Interactive workflow testing and human-in-the-loop.
 
 **Key exports:**
+
 - Components: `Playground`, `PlaygroundModal`, `ChatPanel`, `SessionManager`, `ExecutionLogs`, `MessageBubble`
 - Interrupts: `InterruptBubble`, `ConfirmationPrompt`, `ChoicePrompt`, `TextInputPrompt`, `FormPrompt`, `ReviewPrompt`
 - Services: `PlaygroundService`, `InterruptService`
@@ -87,6 +94,7 @@ Interactive workflow testing and human-in-the-loop.
 User preferences with hybrid persistence.
 
 **Key exports:**
+
 - Components: `ThemeToggle`, `SettingsPanel`, `SettingsModal`
 - Store: settings state (theme, editor, UI, behavior, API categories)
 - Types: `FlowDropSettings`, `ThemeSettings`, `EditorSettings`, `UISettings`
@@ -107,34 +115,34 @@ FlowDrop expects a backend implementing these endpoint groups. Not all are requi
 
 ### Required (Tier 1 — Minimum Viable Backend)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/health` | Health check (called on mount) |
-| `GET` | `/nodes` | List available node types |
-| `GET` | `/workflows/:id` | Load a workflow |
-| `POST` | `/workflows` | Create a new workflow |
-| `PUT` | `/workflows/:id` | Update a workflow |
+| Method | Path             | Purpose                        |
+| ------ | ---------------- | ------------------------------ |
+| `GET`  | `/health`        | Health check (called on mount) |
+| `GET`  | `/nodes`         | List available node types      |
+| `GET`  | `/workflows/:id` | Load a workflow                |
+| `POST` | `/workflows`     | Create a new workflow          |
+| `PUT`  | `/workflows/:id` | Update a workflow              |
 
 ### Recommended (Tier 2 — Full Editor)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/categories` | Category definitions for sidebar groups |
-| `GET` | `/port-config` | Port data types and compatibility rules |
-| `GET` | `/nodes/:id` | Get single node metadata |
-| `GET` | `/workflows` | List all workflows |
-| `DELETE` | `/workflows/:id` | Delete a workflow |
-| `GET` | `/system/config` | Runtime configuration |
+| Method   | Path             | Purpose                                 |
+| -------- | ---------------- | --------------------------------------- |
+| `GET`    | `/categories`    | Category definitions for sidebar groups |
+| `GET`    | `/port-config`   | Port data types and compatibility rules |
+| `GET`    | `/nodes/:id`     | Get single node metadata                |
+| `GET`    | `/workflows`     | List all workflows                      |
+| `DELETE` | `/workflows/:id` | Delete a workflow                       |
+| `GET`    | `/system/config` | Runtime configuration                   |
 
 ### Optional (Tier 3 — Advanced Features)
 
-| Group | Paths | Purpose |
-|-------|-------|---------|
-| Execution | `/workflows/{id}/execute`, `/executions/{id}/status` | Workflow execution |
-| Pipelines | `/pipeline/{id}` | Pipeline status & logs |
-| Playground | `/playground/sessions`, `/playground/sessions/{id}/messages` | Interactive testing |
-| Interrupts | `/interrupts/{id}`, `/interrupts/{id}/resolve` | Human-in-the-loop |
-| Settings | `/settings` | User preferences |
-| Agent Spec | `/agentspec` | Agent Spec import/export |
+| Group      | Paths                                                        | Purpose                  |
+| ---------- | ------------------------------------------------------------ | ------------------------ |
+| Execution  | `/workflows/{id}/execute`, `/executions/{id}/status`         | Workflow execution       |
+| Pipelines  | `/pipeline/{id}`                                             | Pipeline status & logs   |
+| Playground | `/playground/sessions`, `/playground/sessions/{id}/messages` | Interactive testing      |
+| Interrupts | `/interrupts/{id}`, `/interrupts/{id}/resolve`               | Human-in-the-loop        |
+| Settings   | `/settings`                                                  | User preferences         |
+| Agent Spec | `/agentspec`                                                 | Agent Spec import/export |
 
 See the [OpenAPI specification](https://api.flowdrop.io/) for full endpoint documentation, or follow the [Backend: Express.js](/recipes/backend-express/) recipe to get started quickly.

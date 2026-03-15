@@ -1,6 +1,6 @@
 ---
 title: Mount API
-description: "Complete reference for mountFlowDropApp(), mountWorkflowEditor(), and mountPlayground() — all options, return values, and lifecycle."
+description: 'Complete reference for mountFlowDropApp(), mountWorkflowEditor(), and mountPlayground() — all options, return values, and lifecycle.'
 ---
 
 The mount API lets you embed FlowDrop into any HTML container, regardless of framework.
@@ -136,8 +136,8 @@ const editor = await mountWorkflowEditor(container, {
   workflow: myWorkflow,
   nodes: myNodes,
   endpointConfig: createEndpointConfig('/api/flowdrop'),
-  portConfig: myPortConfig,       // optional, overrides API
-  categories: myCategories,       // optional, overrides API
+  portConfig: myPortConfig, // optional, overrides API
+  categories: myCategories // optional, overrides API
 });
 ```
 
@@ -153,7 +153,7 @@ import { mountPlayground } from '@flowdrop/flowdrop/playground';
 const playground = await mountPlayground(container, {
   workflowId: 'my-workflow-id',
   endpointConfig: createEndpointConfig('/api/flowdrop'),
-  mode: 'standalone',              // 'standalone' | 'embedded' | 'modal'
+  mode: 'standalone', // 'standalone' | 'embedded' | 'modal'
   config: {
     pollingInterval: 1500,
     shouldStopPolling: (status) => ['completed', 'failed'].includes(status),
@@ -162,10 +162,10 @@ const playground = await mountPlayground(container, {
   onSessionStatusChange: (newStatus, previousStatus) => {
     console.log(`${previousStatus} -> ${newStatus}`);
   },
-  onClose: () => console.log('Playground closed'),  // required for embedded/modal
+  onClose: () => console.log('Playground closed'), // required for embedded/modal
   height: '600px',
   width: '100%',
-  initialSessionId: 'resume-session-id',  // optional
+  initialSessionId: 'resume-session-id' // optional
 });
 ```
 
