@@ -9,6 +9,7 @@
   import MainLayout from "$lib/components/layouts/MainLayout.svelte";
   import WorkflowEditor from "$lib/components/WorkflowEditor.svelte";
   import NodeSidebar from "$lib/components/NodeSidebar.svelte";
+  import Icon from "@iconify/svelte";
   import ConfigForm from "$lib/components/ConfigForm.svelte";
   import ConfigPanel from "$lib/components/ConfigPanel.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
@@ -46,7 +47,10 @@
   } from "$lib/services/globalSave.js";
   import { apiToasts, dismissToast } from "$lib/services/toastService.js";
   import { initAutoSave } from "$lib/services/autoSaveService.js";
-  import { getUiSettings } from "../stores/settingsStore.svelte.js";
+  import {
+    getUiSettings,
+    updateSettings,
+  } from "../stores/settingsStore.svelte.js";
   import { initializePortCompatibility } from "$lib/utils/connections.js";
   import { DEFAULT_PORT_CONFIG } from "$lib/config/defaultPortConfig.js";
   import { workflowFormatRegistry } from "../registry/workflowFormatRegistry.js";
@@ -667,11 +671,21 @@
 
   /**
    * Calculate left sidebar width based on collapsed state
-   * When collapsed, use 48px; otherwise use user-configured width
+   * When collapsed, use 0; otherwise use user-configured width
    */
   const leftSidebarWidth = $derived(
-    getUiSettings().sidebarCollapsed ? 48 : getUiSettings().sidebarWidth,
+    getUiSettings().sidebarCollapsed ? 0 : getUiSettings().sidebarWidth,
   );
+
+  /** Whether the sidebar is collapsed */
+  const isSidebarCollapsed = $derived(getUiSettings().sidebarCollapsed);
+
+  /** Toggle sidebar collapsed state */
+  function toggleSidebar(): void {
+    updateSettings({
+      ui: { sidebarCollapsed: !getUiSettings().sidebarCollapsed },
+    });
+  }
 
   // File input reference for workflow import
   let fileInputRef = $state<HTMLInputElement | null>(null);
@@ -705,8 +719,8 @@
     headerHeight={60}
     {leftSidebarWidth}
     rightSidebarWidth={400}
-    leftSidebarMinWidth={getUiSettings().sidebarCollapsed ? 48 : 280}
-    leftSidebarMaxWidth={getUiSettings().sidebarCollapsed ? 48 : 450}
+    leftSidebarMinWidth={getUiSettings().sidebarCollapsed ? 0 : 280}
+    leftSidebarMaxWidth={getUiSettings().sidebarCollapsed ? 0 : 450}
     rightSidebarMinWidth={320}
     rightSidebarMaxWidth={550}
     enableLeftSplitPane={false}
@@ -974,6 +988,18 @@
       role="region"
       aria-label="Workflow canvas"
     >
+      <!-- Floating sidebar toggle — always visible on the canvas top-left -->
+      {#if !disableSidebar}
+        <button
+          class="flowdrop-sidebar-fab"
+          onclick={toggleSidebar}
+          aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <Icon icon={isSidebarCollapsed ? "mdi:menu" : "mdi:menu-open"} />
+        </button>
+      {/if}
+
       <WorkflowEditor
         bind:this={workflowEditorRef}
         {nodes}
@@ -1096,6 +1122,40 @@
 
   .flowdrop-font--medium {
     font-weight: 500;
+  }
+
+  /* Floating sidebar toggle button */
+  .flowdrop-sidebar-fab {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background-color: var(--fd-background);
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    box-shadow: var(--fd-shadow-md);
+    transition:
+      color var(--fd-transition-fast),
+      background-color var(--fd-transition-fast),
+      box-shadow var(--fd-transition-fast);
+  }
+
+  .flowdrop-sidebar-fab:hover {
+    color: var(--fd-foreground);
+    background-color: var(--fd-subtle);
+    box-shadow: var(--fd-shadow-lg);
+  }
+
+  .flowdrop-sidebar-fab:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--fd-ring);
   }
 
   /* Main editor area */
