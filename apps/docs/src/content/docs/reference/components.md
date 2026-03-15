@@ -226,9 +226,95 @@ Button to cycle through light/dark/auto themes.
 <ThemeToggle />
 ```
 
-### `SettingsPanel` / `SettingsModal`
+### `SettingsPanel`
 
-UI for managing all user settings categories (theme, editor, UI, behavior, API).
+Tabbed settings interface for managing user preferences across categories (theme, editor, UI, behavior, API). Can be embedded anywhere in your layout.
+
+```svelte
+<script>
+  import { SettingsPanel } from '@flowdrop/flowdrop/settings';
+</script>
+
+<SettingsPanel
+  categories={["theme", "editor", "ui"]}
+  showSyncButton={false}
+  showResetButton={true}
+  onSettingsChange={(category, values) => { /* handle change */ }}
+  onClose={() => { /* handle close */ }}
+/>
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `categories` | `SettingsCategory[]` | All categories | Which tabs to display. Options: `"theme"`, `"editor"`, `"ui"`, `"behavior"`, `"api"` |
+| `showSyncButton` | `boolean` | `true` | Show the "Sync to Cloud" button in the footer |
+| `showResetButton` | `boolean` | `true` | Show the reset/reset-all buttons in the footer |
+| `onSettingsChange` | `function` | — | Called when any setting changes with `(category, values)` |
+| `onClose` | `function` | — | Close callback (also renders a "Close" button in the footer) |
+| `class` | `string` | — | Custom CSS class |
+
+### `SettingsModal`
+
+Modal dialog wrapper around `SettingsPanel`. Provides backdrop, close-on-escape, and open/close animations.
+
+```svelte
+<script>
+  import { SettingsModal } from '@flowdrop/flowdrop/settings';
+  let open = $state(false);
+</script>
+
+<button onclick={() => open = true}>Open Settings</button>
+<SettingsModal bind:open showSyncButton={false} />
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `open` | `boolean` | `false` | Whether the modal is open (bindable) |
+| `categories` | `SettingsCategory[]` | All categories | Which tabs to display |
+| `showSyncButton` | `boolean` | `true` | Show the "Sync to Cloud" button |
+| `showResetButton` | `boolean` | `true` | Show the reset buttons |
+| `onClose` | `function` | — | Called when the modal is closed |
+| `onSettingsChange` | `function` | — | Called when any setting changes |
+| `class` | `string` | — | Custom CSS class for the modal |
+
+#### Hiding features
+
+To hide the cloud sync button (e.g. for self-hosted deployments):
+
+```svelte
+<SettingsModal bind:open showSyncButton={false} />
+```
+
+To show only specific settings categories:
+
+```svelte
+<SettingsModal bind:open categories={["theme", "editor"]} />
+```
+
+#### Vanilla JS / `mountFlowDropApp`
+
+When using the vanilla JS mount API, pass settings modal options via `FlowDropMountOptions`:
+
+```javascript
+import { mountFlowDropApp, createEndpointConfig } from "@flowdrop/flowdrop";
+
+const app = await mountFlowDropApp(document.getElementById("editor"), {
+  endpointConfig: createEndpointConfig("/api/flowdrop"),
+  showSettings: true,
+
+  // Customize the settings modal
+  settingsCategories: ["theme", "editor", "ui"],  // hide Behavior & API tabs
+  showSettingsSyncButton: false,                   // hide "Sync to Cloud"
+  showSettingsResetButton: true,                   // show reset (default)
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `showSettings` | `boolean` | `true` | Show the settings gear icon in the navbar |
+| `settingsCategories` | `SettingsCategory[]` | All categories | Which tabs to display in the settings modal |
+| `showSettingsSyncButton` | `boolean` | `true` | Show the "Sync to Cloud" button |
+| `showSettingsResetButton` | `boolean` | `true` | Show the reset buttons |
 
 ## Status Components
 
