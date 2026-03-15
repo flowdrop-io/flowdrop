@@ -16,10 +16,7 @@
   import { getCategoryColorToken } from "../utils/colors.js";
   import { getCategoryLabel } from "../stores/categoriesStore.svelte.js";
   import { SvelteSet } from "svelte/reactivity";
-  import {
-    getUiSettings,
-    updateSettings,
-  } from "../stores/settingsStore.svelte.js";
+  import { getUiSettings } from "../stores/settingsStore.svelte.js";
 
   interface Props {
     nodes: NodeMetadata[];
@@ -35,16 +32,6 @@
   let searchInput = $state("");
   // svelte-ignore state_referenced_locally — initial default, user selects interactively
   let selectedCategory = $state(props.selectedCategory || "all");
-
-  /**
-   * Toggle the sidebar collapsed state
-   * Persists the new state to settings
-   */
-  function toggleSidebar(): void {
-    updateSettings({
-      ui: { sidebarCollapsed: !getUiSettings().sidebarCollapsed },
-    });
-  }
 
   /**
    * Check if a node is compatible with the active workflow format.
@@ -217,32 +204,21 @@
   }
 </script>
 
-<!-- Components Sidebar - Always Visible -->
+<!-- Components Sidebar -->
 <aside
   class="flowdrop-sidebar flowdrop-sidebar--container"
   class:flowdrop-sidebar--collapsed={isCollapsed}
   class:flowdrop-sidebar--compact={getUiSettings().compactMode}
-  style:width="{isCollapsed ? 48 : getUiSettings().sidebarWidth}px"
+  style:width="{isCollapsed ? 0 : getUiSettings().sidebarWidth}px"
   aria-label="Components sidebar"
 >
-  <!-- Header — visibility controlled by --fd-sidebar-header-display -->
+  <!-- Header -->
   <div class="flowdrop-sidebar__header">
-    <button
-      class="flowdrop-sidebar__toggle"
-      onclick={toggleSidebar}
-      aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-    >
-      <Icon icon={isCollapsed ? "mdi:chevron-right" : "mdi:chevron-left"} />
-    </button>
-    {#if !isCollapsed}
-      <div class="flowdrop-sidebar__title">
-        <h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
-      </div>
-    {/if}
+    <div class="flowdrop-sidebar__title">
+      <h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
+    </div>
   </div>
 
-  {#if !isCollapsed}
     <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
     <div class="flowdrop-sidebar__search">
       <div class="flowdrop-join flowdrop-w--full">
@@ -525,7 +501,6 @@
         </div>
       </div>
     </div>
-  {/if}
 </aside>
 
 <style>
@@ -549,14 +524,11 @@
     height: 100%;
   }
 
-  /* Collapsed state */
+  /* Collapsed state — fully hidden */
   .flowdrop-sidebar--collapsed {
     overflow: hidden;
-  }
-
-  .flowdrop-sidebar--collapsed .flowdrop-sidebar__header {
-    justify-content: center;
-    padding: 0.75rem 0.5rem;
+    border-right: none;
+    box-shadow: none;
   }
 
   /* Compact mode styles */
@@ -589,34 +561,6 @@
 
   .flowdrop-sidebar--compact .flowdrop-category-list {
     gap: 0.25rem;
-  }
-
-  /* Toggle button */
-  .flowdrop-sidebar__toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: none;
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    border-radius: var(--fd-radius-md);
-    cursor: pointer;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-    flex-shrink: 0;
-  }
-
-  .flowdrop-sidebar__toggle:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
-  }
-
-  .flowdrop-sidebar__toggle:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
   }
 
   .flowdrop-sidebar__header {
