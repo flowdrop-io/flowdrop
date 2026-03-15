@@ -54,6 +54,15 @@ export const slateSkin: FlowDropSkin = {
     "sidebar-category-color": "#c0c0d8",
     // Flat item text: dark for light bg readability
     "sidebar-flat-item-color": "#4a4a6a",
+
+    // Logo: monochrome purple-grey to match skin
+    "logo-bg": "#eeeef8",
+    "logo-stroke": "#5a5a7a",
+    "logo-line-fill": "#5a5a7a",
+    "logo-drop": "#009cde",
+    "logo-circle": "#f46351",
+    "logo-left": "#ccbaf4",
+    "logo-right": "#ffc423",
   },
 
   darkTokens: {
@@ -92,5 +101,14 @@ export const slateSkin: FlowDropSkin = {
     "sidebar-category-color": "#3a3a55",
     // Flat item text: muted, not full-brightness white
     "sidebar-flat-item-color": "#8888aa",
+
+    // Logo: monochrome purple-grey to match dark skin
+    "logo-bg": "none",
+    "logo-stroke": "#9898b8",
+    "logo-line-fill": "none",
+    "logo-drop": "none",
+    "logo-circle": "none",
+    "logo-left": "none",
+    "logo-right": "none",
   },
 };
