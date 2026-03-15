@@ -3,7 +3,7 @@
   "description": "A drop-in visual workflow editor for any web application. You own the backend. You own the data. You own the orchestration.",
   "license": "MIT",
   "private": false,
-  "version": "1.2.2",
+  "version": "1.3.0",
   "author": "Shibin Das (D34dMan)",
   "bugs": {
     "url": "https://github.com/flowdrop-io/flowdrop/issues"
@@ -202,7 +202,6 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.0.1",
-    "@xyflow/svelte": "^1.2",
     "@codemirror/autocomplete": "^6.20.0",
     "@codemirror/commands": "^6.10.2",
     "@codemirror/lang-json": "^6.0.2",
@@ -212,7 +211,6 @@
     "@codemirror/state": "^6.5.4",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.39.14",
-    "codemirror": "^6.0.2",
     "@eslint/compat": "^1.2.5",
     "@eslint/js": "^9.18.0",
     "@iconify/svelte": "^5.0.0",
@@ -234,6 +232,8 @@
     "@vitest/browser": "^3.2.3",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "@xyflow/svelte": "^1.2",
+    "codemirror": "^6.0.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-storybook": "^10.2.15",
@@ -293,7 +293,10 @@
   },
   "pnpm": {
     "overrides": {
-      "cookie@<0.7.0": "0.7.2"
+      "cookie@<0.7.0": "0.7.2",
+      "devalue@<5.6.4": ">=5.6.4",
+      "devalue@<=5.6.3": ">=5.6.4",
+      "flatted@<3.4.0": ">=3.4.0"
     }
   },
   "msw": {
