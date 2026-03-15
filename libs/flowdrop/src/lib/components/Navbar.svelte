@@ -10,6 +10,7 @@
   import Icon from "@iconify/svelte";
   import Logo from "./Logo.svelte";
   import SettingsModal from "./SettingsModal.svelte";
+  import type { SettingsCategory } from "$lib/types/settings.js";
 
   interface NavbarAction {
     label: string;
@@ -38,6 +39,12 @@
     breadcrumbs?: BreadcrumbItem[];
     /** Show settings gear icon */
     showSettings?: boolean;
+    /** Which settings tabs to show in the modal */
+    settingsCategories?: SettingsCategory[];
+    /** Show the "Sync to Cloud" button in the settings modal */
+    showSettingsSyncButton?: boolean;
+    /** Show the reset buttons in the settings modal */
+    showSettingsResetButton?: boolean;
   }
 
   let {
@@ -46,6 +53,9 @@
     title,
     breadcrumbs = [],
     showSettings = true,
+    settingsCategories,
+    showSettingsSyncButton,
+    showSettingsResetButton,
   }: Props = $props();
 
   // Dropdown state
@@ -263,7 +273,15 @@
 
 <!-- Settings Modal -->
 {#if showSettings}
-  <SettingsModal bind:open={isSettingsOpen} />
+  {@const settingsModalProps = {
+    ...(settingsCategories !== undefined && { categories: settingsCategories }),
+    ...(showSettingsSyncButton !== undefined && { showSyncButton: showSettingsSyncButton }),
+    ...(showSettingsResetButton !== undefined && { showResetButton: showSettingsResetButton }),
+  }}
+  <SettingsModal
+    bind:open={isSettingsOpen}
+    {...settingsModalProps}
+  />
 {/if}
 
 <style>

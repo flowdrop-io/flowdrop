@@ -56,6 +56,7 @@
   import { workflowFormatRegistry } from "../registry/workflowFormatRegistry.js";
   import { logger } from "../utils/logger.js";
   import { validateWorkflowData } from "../utils/validation.js";
+  import type { SettingsCategory } from "$lib/types/settings.js";
 
   /**
    * Configuration props for runtime customization
@@ -108,6 +109,12 @@
     features?: FlowDropFeatures;
     /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
     theme?: FlowDropTheme | FlowDropThemeName;
+    /** Which settings tabs to show in the modal */
+    settingsCategories?: SettingsCategory[];
+    /** Show the "Sync to Cloud" button in the settings modal */
+    showSettingsSyncButton?: boolean;
+    /** Show the reset buttons in the settings modal */
+    showSettingsResetButton?: boolean;
   }
 
   let {
@@ -130,6 +137,9 @@
     eventHandlers,
     features: propFeatures,
     theme: themeProp,
+    settingsCategories,
+    showSettingsSyncButton,
+    showSettingsResetButton,
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally — feature flags don't change at runtime
@@ -777,6 +787,9 @@
             ]}
         showStatus={true}
         {showSettings}
+        {settingsCategories}
+        showSettingsSyncButton={showSettingsSyncButton}
+        showSettingsResetButton={showSettingsResetButton}
       />
     {/snippet}
 
