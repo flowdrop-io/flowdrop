@@ -82,23 +82,23 @@
 
 <style>
   .flowdrop-logo {
-    --logo-bg: #f9f9f9;
-    --logo-stroke: #000000;
-    --logo-line-fill: #000000;
-    --logo-drop: #009cde;
-    --logo-circle: #f46351;
-    --logo-left: #ccbaf4;
-    --logo-right: #ffc423;
+    --logo-bg: var(--fd-logo-bg, #f9f9f9);
+    --logo-stroke: var(--fd-logo-stroke, #000000);
+    --logo-line-fill: var(--fd-logo-line-fill, #000000);
+    --logo-drop: var(--fd-logo-drop, #009cde);
+    --logo-circle: var(--fd-logo-circle, #f46351);
+    --logo-left: var(--fd-logo-left, #ccbaf4);
+    --logo-right: var(--fd-logo-right, #ffc423);
   }
 
   :global([data-theme="dark"]) .flowdrop-logo {
-    --logo-bg: none;
-    --logo-stroke: #ffffff;
-    --logo-line-fill: none;
-    --logo-drop: none;
-    --logo-circle: none;
-    --logo-left: none;
-    --logo-right: none;
+    --logo-bg: var(--fd-logo-bg, none);
+    --logo-stroke: var(--fd-logo-stroke, #ffffff);
+    --logo-line-fill: var(--fd-logo-line-fill, none);
+    --logo-drop: var(--fd-logo-drop, none);
+    --logo-circle: var(--fd-logo-circle, none);
+    --logo-left: var(--fd-logo-left, none);
+    --logo-right: var(--fd-logo-right, none);
   }
 
   .flowdrop-logo :global(svg) {
