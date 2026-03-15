@@ -2,9 +2,11 @@
   Square Node Component
   A simple square node with optional input and output ports
   Styled with BEM syntax
-  
+
   UI Extensions Support:
-  - hideUnconnectedHandles: Hides trigger ports that are not connected to reduce visual clutter
+  - hideUnconnectedHandles: Hides ports that are not connected to reduce visual clutter
+  - hiddenPorts: Manually hide individual ports (visual-only, no effect on execution)
+  - portOrder: Reorder ports by ID array (unspecified ports appear at end in original order)
 -->
 
 <script lang="ts">
@@ -22,6 +24,7 @@
   } from "$lib/utils/colors.js";
   import { getNodeIcon } from "../../utils/icons.js";
   import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
+  import { applyPortOrder, getPortTop, isPortVisible } from "../../utils/portUtils.js";
   import CogIcon from "../icons/CogIcon.svelte";
   import AlertCircleIcon from "../icons/AlertCircleIcon.svelte";
 
@@ -44,13 +47,24 @@
   }>();
 
   /**
-   * Get the hideUnconnectedHandles setting from extensions
-   * Merges node type defaults with instance overrides
+   * Get UI extension settings from extensions, merging node type defaults with instance overrides.
    */
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
     props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
     false,
+  );
+
+  const hiddenPorts = $derived(
+    props.data.extensions?.ui?.hiddenPorts ??
+    props.data.metadata?.extensions?.ui?.hiddenPorts ??
+    {},
+  );
+
+  const portOrder = $derived(
+    props.data.extensions?.ui?.portOrder ??
+    props.data.metadata?.extensions?.ui?.portOrder ??
+    {},
   );
 
   /**
@@ -100,110 +114,39 @@
     }
   }
   /**
-   * Check if a port is connected
-   * @param portId - The port ID to check
-   * @param type - Whether this is an 'input' or 'output' port
-   * @returns true if the port is connected
+   * All visible input ports in user-defined order.
    */
-  function isPortConnected(portId: string, type: "input" | "output"): boolean {
-    const handleId = `${props.data.nodeId}-${type}-${portId}`;
-    return getConnectedHandles().has(handleId);
-  }
+  const visibleInputPorts = $derived(
+    applyPortOrder(props.data.metadata?.inputs ?? [], portOrder.inputs)
+      .filter((p: NodePort) => isPortVisible(p, "input", hiddenPorts, hideUnconnectedHandles, getConnectedHandles(), props.data.nodeId)),
+  );
 
   /**
-   * Check if a trigger port should be visible
-   * Always shows if hideUnconnectedHandles is disabled or if port is connected
+   * All visible output ports in user-defined order.
    */
-  function shouldShowTriggerPort(
-    portId: string,
-    type: "input" | "output",
-  ): boolean {
-    if (!hideUnconnectedHandles) {
-      return true;
-    }
-    return isPortConnected(portId, type);
-  }
-
-  // Get first input/output ports for square node representation
-  // Special handling for trigger ports - they should always be shown if present
-  let triggerInputPort = $derived(
-    props.data.metadata?.inputs?.find(
-      (port: NodePort) => port.dataType === "trigger",
-    ),
-  );
-  let triggerOutputPort = $derived(
-    props.data.metadata?.outputs?.find(
-      (port: NodePort) => port.dataType === "trigger",
-    ),
+  const visibleOutputPorts = $derived(
+    applyPortOrder(props.data.metadata?.outputs ?? [], portOrder.outputs)
+      .filter((p: NodePort) => isPortVisible(p, "output", hiddenPorts, hideUnconnectedHandles, getConnectedHandles(), props.data.nodeId)),
   );
 
-  // Get first non-trigger ports for data connections
-  let firstConnectedDataInputPort = $derived(
-    props.data.metadata?.inputs?.find(
-      (port: NodePort) =>
-        port.dataType !== "trigger" && isPortConnected(port.id, "input"),
-    ),
+  /**
+   * Dynamic node size so handles never render outside the node body.
+   * Overrides the fixed CSS height/width when more than 2 ports are visible on either side.
+   */
+  const nodeSize = $derived(
+    (() => {
+      const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
+      return maxPorts <= 1 ? 80 : 20 + maxPorts * 40;
+    })(),
   );
-
-  let firstDataInputPort = $derived(
-    props.data.metadata?.inputs?.find(
-      (port: NodePort) => port.dataType !== "trigger",
-    ),
-  );
-
-  let firstConnectedDataOutputPort = $derived(
-    props.data.metadata?.outputs?.find(
-      (port: NodePort) =>
-        port.dataType !== "trigger" && isPortConnected(port.id, "output"),
-    ),
-  );
-  let firstDataOutputPort = $derived(
-    props.data.metadata?.outputs?.find(
-      (port: NodePort) => port.dataType !== "trigger",
-    ),
-  );
-
-  let inputPorts = $derived.by(() => {
-    return [
-      ...(firstConnectedDataInputPort
-        ? [firstConnectedDataInputPort]
-        : firstDataInputPort
-          ? [firstDataInputPort]
-          : []),
-      ...(triggerInputPort &&
-      shouldShowTriggerPort(triggerInputPort.id, "input")
-        ? [triggerInputPort]
-        : []),
-    ];
-  });
-  let outputPorts = $derived.by(() => {
-    return [
-      ...(firstConnectedDataOutputPort
-        ? [firstConnectedDataOutputPort]
-        : firstDataOutputPort
-          ? [firstDataOutputPort]
-          : []),
-      ...(triggerOutputPort &&
-      shouldShowTriggerPort(triggerOutputPort.id, "output")
-        ? [triggerOutputPort]
-        : []),
-    ];
-  });
 </script>
 
-<!-- Input Handles: center at 20/40/60px (multiple of 10), 20px connection area -->
-{#each inputPorts as port, index}
+<!-- Input Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
+{#each visibleInputPorts as port, index}
   <Handle
     type="target"
     position={Position.Left}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      port.dataType,
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {inputPorts.length >
-    1
-      ? index === 0
-        ? 20
-        : 60
-      : 40}px; transform: translateY(-50%); z-index: 30;"
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(index, visibleInputPorts.length)}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-input-${port.id}`}
   />
 {/each}
@@ -214,6 +157,7 @@
   class:flowdrop-square-node--selected={props.selected}
   class:flowdrop-square-node--processing={props.isProcessing}
   class:flowdrop-square-node--error={props.isError}
+  style="height: {nodeSize}px; width: {nodeSize}px"
   onclick={handleClick}
   ondblclick={handleDoubleClick}
   onkeydown={handleKeydown}
@@ -260,19 +204,12 @@
   </button>
 </div>
 
-<!-- Output Handles: center at 20/40/60px (multiple of 10), 20px connection area -->
-{#each outputPorts as port, index}
+<!-- Output Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
+{#each visibleOutputPorts as port, index}
   <Handle
     type="source"
     position={Position.Right}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      port.dataType,
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {outputPorts.length >
-    1
-      ? index === 0
-        ? 20
-        : 60
-      : 40}px; transform: translateY(-50%); z-index: 30;"
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(index, visibleOutputPorts.length)}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-output-${port.id}`}
   />
 {/each}
