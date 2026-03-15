@@ -5,6 +5,7 @@
   
   UI Extensions Support:
   - hideUnconnectedHandles: Hides trigger ports that are not connected to reduce visual clutter
+  - hiddenPorts: Manually hidden ports are excluded from port selection (portOrder not applied — SimpleNode uses first-available heuristic)
 -->
 
 <script lang="ts">
@@ -46,12 +47,41 @@
    * Get the hideUnconnectedHandles setting from extensions
    * Merges node type defaults with instance overrides
    */
-  const hideUnconnectedHandles = $derived(() => {
-    const typeDefault =
-      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ?? false;
-    const instanceOverride = props.data.extensions?.ui?.hideUnconnectedHandles;
-    return instanceOverride ?? typeDefault;
-  });
+  const hideUnconnectedHandles = $derived(
+    props.data.extensions?.ui?.hideUnconnectedHandles ??
+    props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
+    false,
+  );
+
+  /**
+   * Get the hiddenPorts setting from extensions (visual-only, no effect on execution)
+   * Merges node type defaults with instance overrides
+   * portOrder is intentionally not applied — SimpleNode uses a first-available heuristic
+   */
+  const hiddenPorts = $derived(
+    props.data.extensions?.ui?.hiddenPorts ??
+    props.data.metadata?.extensions?.ui?.hiddenPorts ??
+    {},
+  );
+
+  /**
+   * Input ports filtered by hiddenPorts — used as the source for all port selection below.
+   * If a port is manually hidden, it won't participate in SimpleNode's selection heuristic.
+   */
+  const visibleInputs = $derived(
+    (props.data.metadata?.inputs ?? []).filter(
+      (port: NodePort) => !hiddenPorts.inputs?.includes(port.id),
+    ),
+  );
+
+  /**
+   * Output ports filtered by hiddenPorts — used as the source for all port selection below.
+   */
+  const visibleOutputs = $derived(
+    (props.data.metadata?.outputs ?? []).filter(
+      (port: NodePort) => !hiddenPorts.outputs?.includes(port.id),
+    ),
+  );
 
   // Prioritize metadata icon over config icon for simple nodes (metadata is the node definition)
   let nodeIcon = $derived(
@@ -135,7 +165,7 @@
     portId: string,
     type: "input" | "output",
   ): boolean {
-    if (!hideUnconnectedHandles()) {
+    if (!hideUnconnectedHandles) {
       return true;
     }
     return isPortConnected(portId, type);
@@ -143,41 +173,34 @@
 
   // Get first input/output ports for simple node representation
   // Special handling for trigger ports - they should always be shown if present
+  // All finds use visibleInputs/visibleOutputs so manually hidden ports are excluded
   let triggerInputPort = $derived(
-    props.data.metadata?.inputs?.find(
-      (port: NodePort) => port.dataType === "trigger",
-    ),
+    visibleInputs.find((port: NodePort) => port.dataType === "trigger"),
   );
   let triggerOutputPort = $derived(
-    props.data.metadata?.outputs?.find(
-      (port: NodePort) => port.dataType === "trigger",
-    ),
+    visibleOutputs.find((port: NodePort) => port.dataType === "trigger"),
   );
 
   // Get first non-trigger ports for data connections
   let firstConnectedDataInputPort = $derived(
-    props.data.metadata?.inputs?.find(
+    visibleInputs.find(
       (port: NodePort) =>
         port.dataType !== "trigger" && isPortConnected(port.id, "input"),
     ),
   );
 
   let firstDataInputPort = $derived(
-    props.data.metadata?.inputs?.find(
-      (port: NodePort) => port.dataType !== "trigger",
-    ),
+    visibleInputs.find((port: NodePort) => port.dataType !== "trigger"),
   );
 
   let firstConnectedDataOutputPort = $derived(
-    props.data.metadata?.outputs?.find(
+    visibleOutputs.find(
       (port: NodePort) =>
         port.dataType !== "trigger" && isPortConnected(port.id, "output"),
     ),
   );
   let firstDataOutputPort = $derived(
-    props.data.metadata?.outputs?.find(
-      (port: NodePort) => port.dataType !== "trigger",
-    ),
+    visibleOutputs.find((port: NodePort) => port.dataType !== "trigger"),
   );
 
   let inputPorts = $derived.by(() => {
