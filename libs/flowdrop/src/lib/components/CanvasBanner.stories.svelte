@@ -2,6 +2,7 @@
   import { defineMeta } from "@storybook/addon-svelte-csf";
   import CanvasBanner from "./CanvasBanner.svelte";
   import CanvasDecorator from "../stories/CanvasDecorator.svelte";
+  import Icon from "@iconify/svelte";
 
   const { Story } = defineMeta({
     title: "Display/CanvasBanner",
@@ -17,8 +18,11 @@
     <CanvasBanner
       title="Empty Canvas"
       description="Drag nodes from the sidebar to get started"
-      iconName="heroicons:squares-plus"
-    />
+    >
+      {#snippet icon()}
+        <Icon icon="heroicons:squares-plus" />
+      {/snippet}
+    </CanvasBanner>
   </CanvasDecorator>
 </Story>
 
