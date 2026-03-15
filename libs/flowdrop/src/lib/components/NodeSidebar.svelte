@@ -212,13 +212,6 @@
   style:width="{isCollapsed ? 0 : getUiSettings().sidebarWidth}px"
   aria-label="Components sidebar"
 >
-  <!-- Header -->
-  <div class="flowdrop-sidebar__header">
-    <div class="flowdrop-sidebar__title">
-      <h2 class="flowdrop-text--lg flowdrop-font--bold">Components</h2>
-    </div>
-  </div>
-
     <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
     <div class="flowdrop-sidebar__search">
       <div class="flowdrop-join flowdrop-w--full">
@@ -532,10 +525,6 @@
   }
 
   /* Compact mode styles */
-  .flowdrop-sidebar--compact .flowdrop-sidebar__header {
-    padding: 0.5rem 0.75rem;
-  }
-
   .flowdrop-sidebar--compact .flowdrop-sidebar__search {
     padding: 0.5rem 0.75rem;
   }
@@ -561,28 +550,6 @@
 
   .flowdrop-sidebar--compact .flowdrop-category-list {
     gap: 0.25rem;
-  }
-
-  .flowdrop-sidebar__header {
-    background: var(--fd-header);
-    border-bottom: 1px solid var(--fd-border);
-    padding: 0.75rem 1rem;
-    display: var(--fd-sidebar-header-display, flex);
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-  }
-
-  .flowdrop-sidebar__title {
-    display: flex;
-    align-items: center;
-  }
-
-  .flowdrop-sidebar__title h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--fd-foreground);
   }
 
   .flowdrop-sidebar__search {
