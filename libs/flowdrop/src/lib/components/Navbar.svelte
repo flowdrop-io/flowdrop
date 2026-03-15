@@ -761,8 +761,22 @@
       min-width: 280px;
     }
 
-    .flowdrop-navbar__actions {
+    /* Force dropdown mode on small screens regardless of theme */
+    .flowdrop-navbar__split-actions {
       display: none;
+    }
+
+    .flowdrop-navbar__dropdown-mode {
+      display: flex;
+    }
+
+    .flowdrop-navbar__action-label {
+      display: none;
+    }
+
+    .flowdrop-navbar__primary-action {
+      padding: 0.5rem;
+      border-radius: var(--fd-radius-md) 0 0 var(--fd-radius-md);
     }
 
     .flowdrop-text--logo {
