@@ -44,7 +44,8 @@ export function isPortVisible(
   connectedHandles: Set<string>,
   nodeId: string | undefined,
 ): boolean {
-  const hiddenList = direction === "input" ? hiddenPorts.inputs : hiddenPorts.outputs;
+  const hiddenList =
+    direction === "input" ? hiddenPorts.inputs : hiddenPorts.outputs;
   if (hiddenList?.includes(port.id)) return false;
   if (hideUnconnectedHandles) {
     return connectedHandles.has(`${nodeId}-${direction}-${port.id}`);

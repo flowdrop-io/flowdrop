@@ -69,8 +69,8 @@
    */
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
-    props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-    false,
+      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
+      false,
   );
 
   /**
@@ -79,8 +79,8 @@
    */
   const portOrder = $derived(
     props.data.extensions?.ui?.portOrder ??
-    props.data.metadata?.extensions?.ui?.portOrder ??
-    {},
+      props.data.metadata?.extensions?.ui?.portOrder ??
+      {},
   );
 
   /**
@@ -89,8 +89,8 @@
    */
   const hiddenPorts = $derived(
     props.data.extensions?.ui?.hiddenPorts ??
-    props.data.metadata?.extensions?.ui?.hiddenPorts ??
-    {},
+      props.data.metadata?.extensions?.ui?.hiddenPorts ??
+      {},
   );
 
   /**

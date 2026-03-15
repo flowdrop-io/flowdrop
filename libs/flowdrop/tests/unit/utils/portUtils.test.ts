@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { applyPortOrder, getPortTop, isPortVisible } from "$lib/utils/portUtils.js";
+import {
+  applyPortOrder,
+  getPortTop,
+  isPortVisible,
+} from "$lib/utils/portUtils.js";
 import type { NodePort } from "$lib/types/index.js";
 
 // Minimal port factory — only the fields applyPortOrder cares about
@@ -174,27 +178,36 @@ describe("isPortVisible", () => {
   describe("manual hide (hiddenPorts)", () => {
     it("hides an input port listed in hiddenPorts.inputs", () => {
       const result = isPortVisible(
-        port, "input",
+        port,
+        "input",
         { inputs: ["data-1"] },
-        false, new Set(), nodeId,
+        false,
+        new Set(),
+        nodeId,
       );
       expect(result).toBe(false);
     });
 
     it("hides an output port listed in hiddenPorts.outputs", () => {
       const result = isPortVisible(
-        port, "output",
+        port,
+        "output",
         { outputs: ["data-1"] },
-        false, new Set(), nodeId,
+        false,
+        new Set(),
+        nodeId,
       );
       expect(result).toBe(false);
     });
 
     it("does not hide an input port listed only in hiddenPorts.outputs", () => {
       const result = isPortVisible(
-        port, "input",
+        port,
+        "input",
         { outputs: ["data-1"] },
-        false, new Set(), nodeId,
+        false,
+        new Set(),
+        nodeId,
       );
       expect(result).toBe(true);
     });
@@ -202,18 +215,24 @@ describe("isPortVisible", () => {
     it("manual hide wins even when the port is connected", () => {
       const connected = new Set([`${nodeId}-input-data-1`]);
       const result = isPortVisible(
-        port, "input",
+        port,
+        "input",
         { inputs: ["data-1"] },
-        false, connected, nodeId,
+        false,
+        connected,
+        nodeId,
       );
       expect(result).toBe(false);
     });
 
     it("shows port not listed in hiddenPorts", () => {
       const result = isPortVisible(
-        port, "input",
+        port,
+        "input",
         { inputs: ["other-port"] },
-        false, new Set(), nodeId,
+        false,
+        new Set(),
+        nodeId,
       );
       expect(result).toBe(true);
     });
@@ -226,19 +245,13 @@ describe("isPortVisible", () => {
 
   describe("hideUnconnectedHandles", () => {
     it("hides an unconnected port when hideUnconnectedHandles is true", () => {
-      const result = isPortVisible(
-        port, "input",
-        {}, true, new Set(), nodeId,
-      );
+      const result = isPortVisible(port, "input", {}, true, new Set(), nodeId);
       expect(result).toBe(false);
     });
 
     it("shows a connected port when hideUnconnectedHandles is true", () => {
       const connected = new Set([`${nodeId}-input-data-1`]);
-      const result = isPortVisible(
-        port, "input",
-        {}, true, connected, nodeId,
-      );
+      const result = isPortVisible(port, "input", {}, true, connected, nodeId);
       expect(result).toBe(true);
     });
 
@@ -246,8 +259,12 @@ describe("isPortVisible", () => {
       // Only the exact handle ID format should match
       const wrongFormat = new Set([`data-1`, `input-data-1`, `node-42-data-1`]);
       const result = isPortVisible(
-        port, "input",
-        {}, true, wrongFormat, nodeId,
+        port,
+        "input",
+        {},
+        true,
+        wrongFormat,
+        nodeId,
       );
       expect(result).toBe(false);
     });
@@ -255,18 +272,12 @@ describe("isPortVisible", () => {
     it("distinguishes input and output handle IDs", () => {
       // Port is connected as output but we're checking as input — should be hidden
       const connected = new Set([`${nodeId}-output-data-1`]);
-      const result = isPortVisible(
-        port, "input",
-        {}, true, connected, nodeId,
-      );
+      const result = isPortVisible(port, "input", {}, true, connected, nodeId);
       expect(result).toBe(false);
     });
 
     it("shows all ports when hideUnconnectedHandles is false regardless of connections", () => {
-      const result = isPortVisible(
-        port, "input",
-        {}, false, new Set(), nodeId,
-      );
+      const result = isPortVisible(port, "input", {}, false, new Set(), nodeId);
       expect(result).toBe(true);
     });
   });
@@ -274,16 +285,24 @@ describe("isPortVisible", () => {
   describe("default behaviour", () => {
     it("shows port when hiddenPorts is empty and hideUnconnectedHandles is false", () => {
       const result = isPortVisible(
-        triggerPort, "input",
-        {}, false, new Set(), nodeId,
+        triggerPort,
+        "input",
+        {},
+        false,
+        new Set(),
+        nodeId,
       );
       expect(result).toBe(true);
     });
 
     it("shows port when nodeId is undefined and neither hide flag applies", () => {
       const result = isPortVisible(
-        port, "output",
-        {}, false, new Set(), undefined,
+        port,
+        "output",
+        {},
+        false,
+        new Set(),
+        undefined,
       );
       expect(result).toBe(true);
     });
