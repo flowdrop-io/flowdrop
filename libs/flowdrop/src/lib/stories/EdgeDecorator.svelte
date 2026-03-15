@@ -46,7 +46,7 @@
   const SOURCE_ID = "source-node";
   const TARGET_ID = "target-node";
 
-  let nodes = $state<Node[]>([
+  let nodes = $derived<Node[]>([
     {
       id: SOURCE_ID,
       type: "universalNode",
@@ -62,7 +62,7 @@
   ]);
 
   // Handle IDs follow the format: {nodeId}-{input|output}-{portId}
-  let edges = $state<Edge[]>([
+  let edges = $derived<Edge[]>([
     {
       id: "edge-1",
       source: SOURCE_ID,
@@ -100,8 +100,8 @@
 
 <div class="edge-decorator-wrapper">
   <SvelteFlow
-    bind:nodes
-    bind:edges
+    {nodes}
+    {edges}
     {nodeTypes}
     {edgeTypes}
     fitView
