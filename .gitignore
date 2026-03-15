@@ -1,6 +1,7 @@
 node_modules
 test-results
 .playwright-mcp
+.claude
 
 # Output
 .output
