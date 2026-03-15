@@ -757,8 +757,28 @@
     }
 
     .flowdrop-navbar__start {
-      width: 280px;
-      min-width: 280px;
+      width: auto;
+      min-width: auto;
+      flex-shrink: 0;
+    }
+
+    .flowdrop-navbar__center {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .flowdrop-navbar__breadcrumb-list {
+      overflow: hidden;
+    }
+
+    /* Show only icons for non-current breadcrumb items */
+    .flowdrop-navbar__breadcrumb-link .flowdrop-navbar__breadcrumb-text {
+      display: none;
+    }
+
+    .flowdrop-navbar__breadcrumb-current .flowdrop-navbar__breadcrumb-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Force dropdown mode on small screens regardless of theme */
@@ -780,7 +800,7 @@
     }
 
     .flowdrop-text--logo {
-      font-size: 1rem;
+      display: none;
     }
 
     .flowdrop-text--tagline {
@@ -799,11 +819,6 @@
   }
 
   @media (max-width: 480px) {
-    .flowdrop-navbar__start {
-      width: 240px;
-      min-width: 240px;
-    }
-
     .flowdrop-navbar__title-text {
       font-size: 0.75rem;
       max-width: 200px;
