@@ -43,7 +43,7 @@ import {
   getDraftStorageKey,
 } from "./services/draftStorage.js";
 import { mergeFeatures } from "./types/events.js";
-import type { PartialSettings } from "./types/settings.js";
+import type { PartialSettings, SettingsCategory } from "./types/settings.js";
 import { initializeSettings } from "./stores/settingsStore.svelte.js";
 import { logger } from "./utils/logger.js";
 import {
@@ -133,6 +133,14 @@ export interface FlowDropMountOptions {
   // NEW: Visual theme
   /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
   theme?: FlowDropTheme | FlowDropThemeName;
+
+  // Settings modal customization
+  /** Which settings tabs to show in the modal (defaults to all) */
+  settingsCategories?: SettingsCategory[];
+  /** Show the "Sync to Cloud" button in the settings modal */
+  showSettingsSyncButton?: boolean;
+  /** Show the reset buttons in the settings modal */
+  showSettingsResetButton?: boolean;
 }
 
 /**
@@ -231,6 +239,9 @@ export async function mountFlowDropApp(
     draftStorageKey: customDraftKey,
     formatAdapters,
     theme,
+    settingsCategories,
+    showSettingsSyncButton,
+    showSettingsResetButton,
   } = options;
 
   // Register custom format adapters before mounting
@@ -334,6 +345,9 @@ export async function mountFlowDropApp(
       eventHandlers,
       features,
       theme,
+      settingsCategories,
+      showSettingsSyncButton,
+      showSettingsResetButton,
     },
   });
 
