@@ -574,6 +574,23 @@ export interface ConfigEditOptions {
 export interface NodeUIExtensions {
   /** Show/hide unconnected handles (ports) to reduce visual noise */
   hideUnconnectedHandles?: boolean;
+  /**
+   * Visual-only port display order (no effect on execution).
+   * Arrays of port IDs in the desired render order.
+   * Ports not listed appear at the end in metadata order.
+   */
+  portOrder?: {
+    inputs?: string[];
+    outputs?: string[];
+  };
+  /**
+   * Manually hidden ports (visual only, no effect on execution).
+   * Required ports cannot be added here — enforced in the UI.
+   */
+  hiddenPorts?: {
+    inputs?: string[];
+    outputs?: string[];
+  };
   /** Custom styles or theme overrides */
   style?: Record<string, unknown>;
   /** Any other UI-specific settings */

@@ -25,9 +25,12 @@
     WorkflowNode,
     WorkflowEdge,
     NodeUIExtensions,
+    NodePort,
+    DynamicPort,
     ConfigEditOptions,
     AuthProvider,
   } from "$lib/types/index.js";
+  import { dynamicPortToNodePort } from "$lib/types/index.js";
   import type { UISchemaElement } from "$lib/types/uischema.js";
   import {
     FormField,
@@ -46,6 +49,11 @@
   import { globalSaveWorkflow } from "$lib/services/globalSave.js";
   import { getAvailableVariables } from "$lib/services/variableService.js";
   import { logger } from "../utils/logger.js";
+  import {
+    getDataTypeColorToken,
+    getPortBackgroundColor,
+  } from "$lib/utils/colors.js";
+  import { applyPortOrder } from "$lib/utils/portUtils.js";
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -338,8 +346,117 @@
     uiExtensionValues = {
       hideUnconnectedHandles:
         initialUIExtensions.hideUnconnectedHandles ?? false,
+      portOrder: initialUIExtensions.portOrder
+        ? {
+            inputs: initialUIExtensions.portOrder.inputs
+              ? [...initialUIExtensions.portOrder.inputs]
+              : undefined,
+            outputs: initialUIExtensions.portOrder.outputs
+              ? [...initialUIExtensions.portOrder.outputs]
+              : undefined,
+          }
+        : undefined,
+      hiddenPorts: initialUIExtensions.hiddenPorts
+        ? {
+            inputs: initialUIExtensions.hiddenPorts.inputs
+              ? [...initialUIExtensions.hiddenPorts.inputs]
+              : undefined,
+            outputs: initialUIExtensions.hiddenPorts.outputs
+              ? [...initialUIExtensions.hiddenPorts.outputs]
+              : undefined,
+          }
+        : undefined,
     };
   });
+
+  /**
+   * All input ports in current display order for the port management UI.
+   * Combines static metadata inputs + dynamic config inputs, sorted by portOrder.
+   */
+  const allInputPortsForUI = $derived.by<NodePort[]>(() => {
+    if (!node) return [];
+    const staticInputs = node.data.metadata.inputs ?? [];
+    const dynInputs = ((node.data.config?.dynamicInputs as DynamicPort[]) || []).map(
+      (p) => dynamicPortToNodePort(p, "input"),
+    );
+    return applyPortOrder(
+      [...staticInputs, ...dynInputs],
+      uiExtensionValues.portOrder?.inputs,
+    );
+  });
+
+  /**
+   * All output ports in current display order for the port management UI.
+   * Combines static metadata outputs + dynamic config outputs, sorted by portOrder.
+   */
+  const allOutputPortsForUI = $derived.by<NodePort[]>(() => {
+    if (!node) return [];
+    const staticOutputs = node.data.metadata.outputs ?? [];
+    const dynOutputs = ((node.data.config?.dynamicOutputs as DynamicPort[]) || []).map(
+      (p) => dynamicPortToNodePort(p, "output"),
+    );
+    return applyPortOrder(
+      [...staticOutputs, ...dynOutputs],
+      uiExtensionValues.portOrder?.outputs,
+    );
+  });
+
+  /**
+   * Move a port one position up or down in the display order.
+   */
+  function movePort(
+    direction: "inputs" | "outputs",
+    portId: string,
+    delta: -1 | 1,
+  ): void {
+    const list =
+      direction === "inputs" ? allInputPortsForUI : allOutputPortsForUI;
+    const idx = list.findIndex((p) => p.id === portId);
+    if (idx === -1) return;
+    const newIdx = idx + delta;
+    if (newIdx < 0 || newIdx >= list.length) return;
+    const newOrder = list.map((p) => p.id);
+    [newOrder[idx], newOrder[newIdx]] = [newOrder[newIdx], newOrder[idx]];
+    uiExtensionValues.portOrder = {
+      ...uiExtensionValues.portOrder,
+      [direction]: newOrder,
+    };
+    handleFormBlur();
+  }
+
+  /**
+   * Toggle manual visibility of a port. Required ports cannot be hidden.
+   */
+  function togglePortHidden(
+    direction: "inputs" | "outputs",
+    portId: string,
+  ): void {
+    const current = uiExtensionValues.hiddenPorts?.[direction] ?? [];
+    const isHidden = current.includes(portId);
+    const next = isHidden
+      ? current.filter((id) => id !== portId)
+      : [...current, portId];
+    uiExtensionValues.hiddenPorts = {
+      ...uiExtensionValues.hiddenPorts,
+      [direction]: next.length > 0 ? next : undefined,
+    };
+    handleFormBlur();
+  }
+
+  /**
+   * Reset all port customizations (order + hidden) for a direction back to defaults.
+   */
+  function resetPortCustomizations(direction: "inputs" | "outputs"): void {
+    const order = { ...uiExtensionValues.portOrder };
+    const hidden = { ...uiExtensionValues.hiddenPorts };
+    delete order[direction];
+    delete hidden[direction];
+    uiExtensionValues.portOrder =
+      Object.keys(order).length > 0 ? order : undefined;
+    uiExtensionValues.hiddenPorts =
+      Object.keys(hidden).length > 0 ? hidden : undefined;
+    handleFormBlur();
+  }
 
   /**
    * Check if a field is required based on schema
@@ -708,6 +825,176 @@
               }}
             />
           </FormFieldWrapper>
+
+          <!-- Input Port Order & Visibility -->
+          {#if allInputPortsForUI.length > 0}
+            <div class="config-form__port-order">
+              <div class="config-form__port-order-header">
+                <span class="config-form__port-order-label">Input Ports</span>
+                {#if uiExtensionValues.portOrder?.inputs?.length || uiExtensionValues.hiddenPorts?.inputs?.length}
+                  <button
+                    type="button"
+                    class="config-form__port-order-reset"
+                    onclick={() => resetPortCustomizations("inputs")}
+                    title="Reset to default order and visibility"
+                  >
+                    <Icon icon="heroicons:arrow-uturn-left" />
+                    Reset
+                  </button>
+                {/if}
+              </div>
+              <ul class="config-form__port-order-list">
+                {#each allInputPortsForUI as port, i (port.id)}
+                  {@const isHidden =
+                    uiExtensionValues.hiddenPorts?.inputs?.includes(port.id) ??
+                    false}
+                  {@const isRequired = port.required ?? false}
+                  <li
+                    class="config-form__port-order-item"
+                    class:config-form__port-order-item--hidden={isHidden}
+                  >
+                    <span class="config-form__port-order-name">{port.name}</span
+                    >
+                    <span
+                      class="config-form__port-order-badge"
+                      style="background-color:{getPortBackgroundColor(
+                        port.dataType,
+                        15,
+                      )};color:{getDataTypeColorToken(
+                        port.dataType,
+                      )};border:1px solid {getPortBackgroundColor(
+                        port.dataType,
+                        30,
+                      )}"
+                    >
+                      {port.dataType}
+                    </span>
+                    <div class="config-form__port-order-actions">
+                      <button
+                        type="button"
+                        disabled={isRequired}
+                        title={isRequired
+                          ? "Required ports cannot be hidden"
+                          : isHidden
+                            ? "Show port"
+                            : "Hide port"}
+                        class:active={isHidden}
+                        onclick={() => togglePortHidden("inputs", port.id)}
+                      >
+                        <Icon
+                          icon={isHidden
+                            ? "heroicons:eye-slash"
+                            : "heroicons:eye"}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === 0 || allInputPortsForUI.length === 1}
+                        onclick={() => movePort("inputs", port.id, -1)}
+                        title="Move up"
+                      >
+                        <Icon icon="heroicons:chevron-up" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === allInputPortsForUI.length - 1 ||
+                          allInputPortsForUI.length === 1}
+                        onclick={() => movePort("inputs", port.id, 1)}
+                        title="Move down"
+                      >
+                        <Icon icon="heroicons:chevron-down" />
+                      </button>
+                    </div>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+
+          <!-- Output Port Order & Visibility -->
+          {#if allOutputPortsForUI.length > 0}
+            <div class="config-form__port-order">
+              <div class="config-form__port-order-header">
+                <span class="config-form__port-order-label">Output Ports</span>
+                {#if uiExtensionValues.portOrder?.outputs?.length || uiExtensionValues.hiddenPorts?.outputs?.length}
+                  <button
+                    type="button"
+                    class="config-form__port-order-reset"
+                    onclick={() => resetPortCustomizations("outputs")}
+                    title="Reset to default order and visibility"
+                  >
+                    <Icon icon="heroicons:arrow-uturn-left" />
+                    Reset
+                  </button>
+                {/if}
+              </div>
+              <ul class="config-form__port-order-list">
+                {#each allOutputPortsForUI as port, i (port.id)}
+                  {@const isHidden =
+                    uiExtensionValues.hiddenPorts?.outputs?.includes(port.id) ??
+                    false}
+                  {@const isRequired = port.required ?? false}
+                  <li
+                    class="config-form__port-order-item"
+                    class:config-form__port-order-item--hidden={isHidden}
+                  >
+                    <span class="config-form__port-order-name">{port.name}</span
+                    >
+                    <span
+                      class="config-form__port-order-badge"
+                      style="background-color:{getPortBackgroundColor(
+                        port.dataType,
+                        15,
+                      )};color:{getDataTypeColorToken(
+                        port.dataType,
+                      )};border:1px solid {getPortBackgroundColor(
+                        port.dataType,
+                        30,
+                      )}"
+                    >
+                      {port.dataType}
+                    </span>
+                    <div class="config-form__port-order-actions">
+                      <button
+                        type="button"
+                        disabled={isRequired}
+                        title={isRequired
+                          ? "Required ports cannot be hidden"
+                          : isHidden
+                            ? "Show port"
+                            : "Hide port"}
+                        class:active={isHidden}
+                        onclick={() => togglePortHidden("outputs", port.id)}
+                      >
+                        <Icon
+                          icon={isHidden
+                            ? "heroicons:eye-slash"
+                            : "heroicons:eye"}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === 0 || allOutputPortsForUI.length === 1}
+                        onclick={() => movePort("outputs", port.id, -1)}
+                        title="Move up"
+                      >
+                        <Icon icon="heroicons:chevron-up" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === allOutputPortsForUI.length - 1 ||
+                          allOutputPortsForUI.length === 1}
+                        onclick={() => movePort("outputs", port.id, 1)}
+                        title="Move down"
+                      >
+                        <Icon icon="heroicons:chevron-down" />
+                      </button>
+                    </div>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
         </div>
       </div>
     {/if}
@@ -926,6 +1213,140 @@
     display: flex;
     flex-direction: column;
     gap: var(--fd-space-xl);
+  }
+
+  /* ============================================
+     PORT ORDER & VISIBILITY
+     ============================================ */
+
+  .config-form__port-order {
+    border-top: 1px solid var(--fd-border-muted);
+    padding-top: var(--fd-space-md);
+    margin-top: calc(var(--fd-space-xl) * -0.25);
+  }
+
+  .config-form__port-order-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--fd-space-xs);
+  }
+
+  .config-form__port-order-label {
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    color: var(--fd-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .config-form__port-order-reset {
+    background: none;
+    border: none;
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-3xs);
+    padding: 0;
+    transition: color var(--fd-transition-fast);
+  }
+
+  .config-form__port-order-reset:hover {
+    color: var(--fd-foreground);
+  }
+
+  .config-form__port-order-reset :global(svg) {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .config-form__port-order-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-3xs);
+  }
+
+  .config-form__port-order-item {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-3xs) var(--fd-space-xs);
+    background: var(--fd-muted);
+    border-radius: var(--fd-radius-sm);
+    border: 1px solid var(--fd-border-muted);
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .config-form__port-order-item--hidden {
+    opacity: 0.4;
+  }
+
+  .config-form__port-order-name {
+    flex: 1;
+    font-size: var(--fd-text-xs);
+    font-weight: 500;
+    color: var(--fd-foreground);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .config-form__port-order-badge {
+    padding: 0.125rem var(--fd-space-3xs);
+    border-radius: var(--fd-radius-sm);
+    font-size: 0.625rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  .config-form__port-order-actions {
+    display: flex;
+    gap: var(--fd-space-3xs);
+    flex-shrink: 0;
+  }
+
+  .config-form__port-order-actions button {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--fd-card);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm);
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    padding: 0;
+    transition: all var(--fd-transition-fast);
+  }
+
+  .config-form__port-order-actions button:hover:not(:disabled) {
+    background: var(--fd-backdrop);
+    color: var(--fd-foreground);
+    border-color: var(--fd-border-strong);
+  }
+
+  .config-form__port-order-actions button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .config-form__port-order-actions button.active {
+    color: var(--fd-foreground);
+    border-color: var(--fd-border-strong);
+  }
+
+  .config-form__port-order-actions button :global(svg) {
+    width: 0.75rem;
+    height: 0.75rem;
   }
 
   /* ============================================

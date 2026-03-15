@@ -6,6 +6,8 @@
   
   UI Extensions Support:
   - hideUnconnectedHandles: Hides ports that are not connected to reduce visual clutter
+  - portOrder: Visual-only reordering of input/output ports (no effect on execution)
+  - hiddenPorts: Manually hidden ports per direction (required ports cannot be hidden)
 -->
 
 <script lang="ts">
@@ -25,6 +27,7 @@
     getPortBackgroundColor,
   } from "../../utils/colors.js";
   import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
+  import { applyPortOrder } from "../../utils/portUtils.js";
 
   interface Props {
     data: WorkflowNode["data"] & {
@@ -64,12 +67,31 @@
    * Get the hideUnconnectedHandles setting from extensions
    * Merges node type defaults with instance overrides
    */
-  const hideUnconnectedHandles = $derived(() => {
-    const typeDefault =
-      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ?? false;
-    const instanceOverride = props.data.extensions?.ui?.hideUnconnectedHandles;
-    return instanceOverride ?? typeDefault;
-  });
+  const hideUnconnectedHandles = $derived(
+    props.data.extensions?.ui?.hideUnconnectedHandles ??
+    props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
+    false,
+  );
+
+  /**
+   * Get the portOrder setting from extensions (visual-only, no effect on execution)
+   * Merges node type defaults with instance overrides
+   */
+  const portOrder = $derived(
+    props.data.extensions?.ui?.portOrder ??
+    props.data.metadata?.extensions?.ui?.portOrder ??
+    {},
+  );
+
+  /**
+   * Get the hiddenPorts setting from extensions (visual-only, no effect on execution)
+   * Merges node type defaults with instance overrides
+   */
+  const hiddenPorts = $derived(
+    props.data.extensions?.ui?.hiddenPorts ??
+    props.data.metadata?.extensions?.ui?.hiddenPorts ??
+    {},
+  );
 
   /**
    * Dynamic inputs from config - user-defined input ports
@@ -92,20 +114,26 @@
   );
 
   /**
-   * Combined input ports: static metadata inputs + dynamic config inputs
+   * Combined input ports: static metadata inputs + dynamic config inputs,
+   * sorted by portOrder if set (visual-only)
    */
-  const allInputPorts = $derived([
-    ...props.data.metadata.inputs,
-    ...dynamicInputs,
-  ]);
+  const allInputPorts = $derived(
+    applyPortOrder(
+      [...props.data.metadata.inputs, ...dynamicInputs],
+      portOrder.inputs,
+    ),
+  );
 
   /**
-   * Combined output ports: static metadata outputs + dynamic config outputs
+   * Combined output ports: static metadata outputs + dynamic config outputs,
+   * sorted by portOrder if set (visual-only)
    */
-  const allOutputPorts = $derived([
-    ...props.data.metadata.outputs,
-    ...dynamicOutputs,
-  ]);
+  const allOutputPorts = $derived(
+    applyPortOrder(
+      [...props.data.metadata.outputs, ...dynamicOutputs],
+      portOrder.outputs,
+    ),
+  );
 
   /**
    * Check if a port should be visible based on connection state and settings
@@ -114,8 +142,15 @@
    * @returns true if the port should be visible
    */
   function isPortVisible(port: NodePort, type: "input" | "output"): boolean {
+    // Manual hide takes precedence (required ports are prevented from being hidden in ConfigForm)
+    const manuallyHidden =
+      type === "input"
+        ? hiddenPorts.inputs?.includes(port.id)
+        : hiddenPorts.outputs?.includes(port.id);
+    if (manuallyHidden) return false;
+
     // Always show if hideUnconnectedHandles is disabled
-    if (!hideUnconnectedHandles()) {
+    if (!hideUnconnectedHandles) {
       return true;
     }
 
@@ -245,7 +280,7 @@
   {#if visibleInputPorts.length > 0}
     <div class="flowdrop-workflow-node__ports">
       <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleInputPorts as port, inputIndex (port.id)}
+        {#each visibleInputPorts as port (port.id)}
           <div class="flowdrop-workflow-node__port">
             <!-- Input Handle: centered in row, at node edge (ports have no padding) -->
             <Handle
@@ -308,7 +343,7 @@
   {#if visibleOutputPorts.length > 0}
     <div class="flowdrop-workflow-node__ports">
       <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleOutputPorts as port, outputIndex (port.id)}
+        {#each visibleOutputPorts as port (port.id)}
           <div class="flowdrop-workflow-node__port">
             <!-- Port Info: padding lives here so handle position is simple -->
             <div
