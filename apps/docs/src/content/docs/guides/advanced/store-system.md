@@ -26,11 +26,11 @@ import {
 } from '@flowdrop/flowdrop/editor';
 
 // Reactive getters (re-evaluate when state changes)
-const workflow = getWorkflowStore();    // Workflow | null
-const isDirty = getIsDirty();           // boolean
-const nodes = getWorkflowNodes();       // WorkflowNode[]
-const edges = getWorkflowEdges();       // WorkflowEdge[]
-const name = getWorkflowName();         // string
+const workflow = getWorkflowStore(); // Workflow | null
+const isDirty = getIsDirty(); // boolean
+const nodes = getWorkflowNodes(); // WorkflowNode[]
+const edges = getWorkflowEdges(); // WorkflowEdge[]
+const name = getWorkflowName(); // string
 const validation = getWorkflowValidation();
 // { hasNodes, hasEdges, nodeCount, edgeCount, isValid }
 ```
@@ -86,19 +86,15 @@ markAsSaved();
 Manages undo/redo with snapshot-based history.
 
 ```typescript
-import {
-  getCanUndo,
-  getCanRedo,
-  historyActions
-} from '@flowdrop/flowdrop/editor';
+import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
 
 // Check availability (reactive)
 const canUndo = getCanUndo(); // boolean
 const canRedo = getCanRedo(); // boolean
 
 // Perform undo/redo
-historyActions.undo();  // returns boolean (success)
-historyActions.redo();  // returns boolean (success)
+historyActions.undo(); // returns boolean (success)
+historyActions.redo(); // returns boolean (success)
 
 // Manual history management
 historyActions.pushState(workflow, { description: 'Bulk import' });
@@ -126,10 +122,10 @@ import {
 } from '@flowdrop/flowdrop/settings';
 
 // Read settings (reactive)
-const settings = getSettings();           // FlowDropSettings
-const theme = getThemeSettings();         // ThemeSettings
-const editor = getEditorSettings();       // EditorSettings
-const ui = getUiSettings();               // UISettings
+const settings = getSettings(); // FlowDropSettings
+const theme = getThemeSettings(); // ThemeSettings
+const editor = getEditorSettings(); // EditorSettings
+const ui = getUiSettings(); // UISettings
 
 // Update settings
 updateSettings({
@@ -159,11 +155,11 @@ import {
   cycleTheme
 } from '@flowdrop/flowdrop/core';
 
-getTheme();         // 'light' | 'dark' | 'auto'
+getTheme(); // 'light' | 'dark' | 'auto'
 getResolvedTheme(); // 'light' | 'dark' (actual applied theme)
 setTheme('dark');
-toggleTheme();      // light ↔ dark
-cycleTheme();       // light → dark → auto → light
+toggleTheme(); // light ↔ dark
+cycleTheme(); // light → dark → auto → light
 ```
 
 ## Playground Store
@@ -182,12 +178,12 @@ import {
 } from '@flowdrop/flowdrop/playground';
 
 // Read state (reactive)
-const session = getCurrentSession();   // PlaygroundSession | null
-const sessions = getSessions();        // PlaygroundSession[]
-const messages = getMessages();        // PlaygroundMessage[]
-const chatMsgs = getChatMessages();    // PlaygroundMessage[] (user/assistant only)
-const logMsgs = getLogMessages();      // PlaygroundMessage[] (system only)
-const isRunning = getIsExecuting();    // boolean
+const session = getCurrentSession(); // PlaygroundSession | null
+const sessions = getSessions(); // PlaygroundSession[]
+const messages = getMessages(); // PlaygroundMessage[]
+const chatMsgs = getChatMessages(); // PlaygroundMessage[] (user/assistant only)
+const logMsgs = getLogMessages(); // PlaygroundMessage[] (system only)
+const isRunning = getIsExecuting(); // boolean
 ```
 
 ## Interrupt Store
@@ -202,8 +198,8 @@ import {
 } from '@flowdrop/flowdrop/playground';
 
 // Read state (reactive)
-const pending = getPendingInterrupts();    // Interrupt[]
-const resolved = getResolvedInterrupts();  // Interrupt[]
+const pending = getPendingInterrupts(); // Interrupt[]
+const resolved = getResolvedInterrupts(); // Interrupt[]
 ```
 
 ## Using Stores in Svelte Components
@@ -218,8 +214,7 @@ Since stores use Svelte 5 runes, you can use them directly in `.svelte` files wi
   const isDirty = $derived(getIsDirty());
 </script>
 
-<p>Nodes: {nodes.length}</p>
-<p>Unsaved: {isDirty ? 'Yes' : 'No'}</p>
+<p>Nodes: {nodes.length}</p><p>Unsaved: {isDirty ? 'Yes' : 'No'}</p>
 ```
 
 ## Using Stores Outside Svelte

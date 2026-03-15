@@ -18,6 +18,7 @@ This Redocly-powered site lets you browse all endpoints, see request/response sc
 ### For Backend Development
 
 Use the OpenAPI spec to:
+
 - **Generate server stubs** with tools like [openapi-generator](https://openapi-generator.tech/) or [swagger-codegen](https://swagger.io/tools/swagger-codegen/)
 - **Validate your API** against the spec using tools like [Prism](https://stoplight.io/open-source/prism)
 - **Auto-generate documentation** for your specific backend implementation

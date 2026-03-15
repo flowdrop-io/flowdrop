@@ -9,14 +9,14 @@ FlowDrop is a frontend library — how you deploy depends on your application ar
 
 Import from the most specific module to minimize bundle size:
 
-| Module | Added size (approx.) |
-|--------|---------------------|
-| `@flowdrop/flowdrop/core` | ~15KB (types & utils only) |
-| `@flowdrop/flowdrop/form` | ~40KB |
-| `@flowdrop/flowdrop/editor` | ~200KB (includes @xyflow/svelte) |
-| `@flowdrop/flowdrop/form/code` | ~300KB (CodeMirror) |
-| `@flowdrop/flowdrop/playground` | ~250KB (editor + chat) |
-| `@flowdrop/flowdrop` (full) | ~500KB+ |
+| Module                          | Added size (approx.)             |
+| ------------------------------- | -------------------------------- |
+| `@flowdrop/flowdrop/core`       | ~15KB (types & utils only)       |
+| `@flowdrop/flowdrop/form`       | ~40KB                            |
+| `@flowdrop/flowdrop/editor`     | ~200KB (includes @xyflow/svelte) |
+| `@flowdrop/flowdrop/form/code`  | ~300KB (CodeMirror)              |
+| `@flowdrop/flowdrop/playground` | ~250KB (editor + chat)           |
+| `@flowdrop/flowdrop` (full)     | ~500KB+                          |
 
 Only import `form/code` and `form/markdown` if you actually need code/template editing.
 
@@ -29,6 +29,7 @@ import '@flowdrop/flowdrop/styles';
 ```
 
 Or in CSS:
+
 ```css
 @import '@flowdrop/flowdrop/styles';
 ```
@@ -43,10 +44,7 @@ FlowDrop is a Svelte 5 library, so it integrates natively:
   import '@flowdrop/flowdrop/styles';
 </script>
 
-<App
-  endpointConfig={createEndpointConfig('/api/flowdrop')}
-  showNavbar={true}
-/>
+<App endpointConfig={createEndpointConfig('/api/flowdrop')} showNavbar={true} />
 ```
 
 For SvelteKit, ensure FlowDrop runs only on the client (it requires DOM):
@@ -70,7 +68,7 @@ import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
 import '@flowdrop/flowdrop/styles';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
-  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  endpointConfig: createEndpointConfig('/api/flowdrop')
 });
 
 // Cleanup on page unmount
@@ -91,7 +89,9 @@ function FlowDropEditor({ apiUrl }) {
   useEffect(() => {
     mountFlowDropApp(containerRef.current, {
       endpointConfig: createEndpointConfig(apiUrl)
-    }).then(app => { appRef.current = app; });
+    }).then((app) => {
+      appRef.current = app;
+    });
 
     return () => appRef.current?.destroy();
   }, [apiUrl]);
@@ -138,26 +138,26 @@ If your frontend is a static SPA (Vite, SvelteKit adapter-static, etc.):
 
 ```typescript
 // Backend CORS configuration
-app.use(cors({
-  origin: ['https://your-app.vercel.app', 'http://localhost:5173'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: ['https://your-app.vercel.app', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
 ```
 
 ## Environment Variables
 
 Common configuration to externalize:
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `VITE_API_URL` | Backend API base URL | `/api/flowdrop` |
+| Variable          | Purpose                 | Example         |
+| ----------------- | ----------------------- | --------------- |
+| `VITE_API_URL`    | Backend API base URL    | `/api/flowdrop` |
 | `VITE_AUTH_TOKEN` | Static auth token (dev) | `dev-token-123` |
 
 ```typescript
-const endpointConfig = createEndpointConfig(
-  import.meta.env.VITE_API_URL || '/api/flowdrop'
-);
+const endpointConfig = createEndpointConfig(import.meta.env.VITE_API_URL || '/api/flowdrop');
 ```
 
 ## Next Steps

@@ -25,8 +25,8 @@ const workflow = adapter.createWorkflow('My Pipeline', 'Processes user input');
 // Add nodes
 const inputNode = adapter.addNode(
   workflow,
-  'text_input',                    // node type ID
-  { x: 100, y: 200 },             // position
+  'text_input', // node type ID
+  { x: 100, y: 200 }, // position
   { placeholder: 'Enter text...' } // initial config
 );
 
@@ -37,11 +37,7 @@ const modelNode = adapter.addNode(
   { model: 'gpt-4', temperature: 0.7 }
 );
 
-const outputNode = adapter.addNode(
-  workflow,
-  'text_output',
-  { x: 700, y: 200 }
-);
+const outputNode = adapter.addNode(workflow, 'text_output', { x: 700, y: 200 });
 
 // Connect nodes
 adapter.addEdge(workflow, inputNode.id, modelNode.id, 'output', 'prompt');
@@ -130,8 +126,8 @@ import { EdgeStylingHelper } from '@flowdrop/flowdrop/editor';
 
 // Get edge category from source port type
 const category = EdgeStylingHelper.getEdgeCategory('trigger'); // 'trigger'
-const category = EdgeStylingHelper.getEdgeCategory('string');  // 'data'
-const category = EdgeStylingHelper.getEdgeCategory('tool');    // 'tool'
+const category = EdgeStylingHelper.getEdgeCategory('string'); // 'data'
+const category = EdgeStylingHelper.getEdgeCategory('tool'); // 'tool'
 
 // Update all edge styles in a workflow
 const styledEdges = EdgeStylingHelper.updateEdgeStyles(edges, nodes);
@@ -154,9 +150,9 @@ import { NodeOperationsHelper } from '@flowdrop/flowdrop/editor';
 
 // Create a node from sidebar drop data
 const node = NodeOperationsHelper.createNodeFromDrop(
-  dropDataString,         // JSON string from drag event
-  { x: 300, y: 200 },    // canvas position
-  existingNodes           // for generating unique IDs
+  dropDataString, // JSON string from drag event
+  { x: 300, y: 200 }, // canvas position
+  existingNodes // for generating unique IDs
 );
 
 // Load node definitions from API
@@ -198,9 +194,14 @@ function createFromTemplate(template: string, params: Record<string, string>) {
 
   if (template === 'chat') {
     const input = adapter.addNode(workflow, 'text_input', { x: 100, y: 200 });
-    const model = adapter.addNode(workflow, 'chat_model', { x: 400, y: 200 }, {
-      model: params.model || 'gpt-4'
-    });
+    const model = adapter.addNode(
+      workflow,
+      'chat_model',
+      { x: 400, y: 200 },
+      {
+        model: params.model || 'gpt-4'
+      }
+    );
     const output = adapter.addNode(workflow, 'text_output', { x: 700, y: 200 });
     adapter.addEdge(workflow, input.id, model.id, 'output', 'prompt');
     adapter.addEdge(workflow, model.id, output.id, 'response', 'input');

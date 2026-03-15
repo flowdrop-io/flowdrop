@@ -7,10 +7,10 @@ FlowDrop provides built-in undo/redo that tracks every workflow change.
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl/Cmd + Z` | Undo |
-| `Ctrl/Cmd + Shift + Z` | Redo |
+| Shortcut               | Action |
+| ---------------------- | ------ |
+| `Ctrl/Cmd + Z`         | Undo   |
+| `Ctrl/Cmd + Shift + Z` | Redo   |
 
 These work automatically — no configuration needed.
 
@@ -25,19 +25,15 @@ FlowDrop's history store takes **snapshots** of the entire workflow state. Each 
 ## Programmatic Access
 
 ```typescript
-import {
-  getCanUndo,
-  getCanRedo,
-  historyActions
-} from '@flowdrop/flowdrop/editor';
+import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
 
 // Check availability
 const canUndo = getCanUndo(); // boolean (reactive in Svelte)
 const canRedo = getCanRedo(); // boolean
 
 // Perform undo/redo
-const undoSuccess = historyActions.undo();  // returns boolean
-const redoSuccess = historyActions.redo();  // returns boolean
+const undoSuccess = historyActions.undo(); // returns boolean
+const redoSuccess = historyActions.redo(); // returns boolean
 
 // Clear history
 historyActions.clear(currentWorkflow);

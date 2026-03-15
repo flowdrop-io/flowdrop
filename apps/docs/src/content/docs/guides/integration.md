@@ -101,16 +101,16 @@ FlowDrop supports three auth providers. Quick examples:
 import { NoAuthProvider, StaticAuthProvider, CallbackAuthProvider } from '@flowdrop/flowdrop/core';
 
 // No auth (development)
-authProvider: new NoAuthProvider()
+authProvider: new NoAuthProvider();
 
 // Static bearer token
-authProvider: new StaticAuthProvider({ type: 'bearer', token: 'your-jwt' })
+authProvider: new StaticAuthProvider({ type: 'bearer', token: 'your-jwt' });
 
 // Dynamic token with refresh (enterprise)
 authProvider: new CallbackAuthProvider({
   getToken: async () => authService.getAccessToken(),
   onUnauthorized: async () => authService.refreshToken()
-})
+});
 ```
 
 For full details on each provider, token refresh patterns, and OAuth2 integration, see [Authentication Patterns](/guides/integration/authentication-patterns/).
@@ -153,9 +153,9 @@ Enable optional editor features:
 ```typescript
 const app = await mountFlowDropApp(container, {
   features: {
-    autoSaveDraft: true,           // default: true
-    autoSaveDraftInterval: 30000,  // default: 30 seconds
-    showToasts: true               // default: true
+    autoSaveDraft: true, // default: true
+    autoSaveDraftInterval: 30000, // default: 30 seconds
+    showToasts: true // default: true
   }
 });
 ```

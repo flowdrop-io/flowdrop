@@ -2,103 +2,111 @@
 
 /* Browser chrome container */
 .fd-demo-chrome {
-	width: 100%;
-	border-radius: 24px;
-	overflow: hidden;
-	border: 1px solid #2a2a3a;
-	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(108, 99, 255, 0.08);
-	margin: 1.5rem 0;
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid #2a2a3a;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(108, 99, 255, 0.08);
+  margin: 1.5rem 0;
 }
 
 .fd-chrome-bar {
-	display: flex;
-	align-items: center;
-	height: 36px;
-	padding: 0 16px;
-	background: #1a1a28;
-	border-bottom: 1px solid #2a2a3a;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  background: #1a1a28;
+  border-bottom: 1px solid #2a2a3a;
 }
 
 .fd-chrome-dots {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .fd-chrome-dots span {
-	display: block;
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-	flex-shrink: 0;
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.fd-chrome-dots span:nth-child(1) { background: #ff5f57; }
-.fd-chrome-dots span:nth-child(2) { background: #febc2e; }
-.fd-chrome-dots span:nth-child(3) { background: #28c840; }
+.fd-chrome-dots span:nth-child(1) {
+  background: #ff5f57;
+}
+.fd-chrome-dots span:nth-child(2) {
+  background: #febc2e;
+}
+.fd-chrome-dots span:nth-child(3) {
+  background: #28c840;
+}
 
 .fd-chrome-title {
-	flex: 1;
-	font-size: 0.8125rem;
-	font-weight: 500;
-	color: #7a7a9a;
-	text-align: center;
-	line-height: 36px;
-	margin: 0;
-	padding: 0;
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #7a7a9a;
+  text-align: center;
+  line-height: 36px;
+  margin: 0;
+  padding: 0;
 }
 
 .fd-chrome-spacer {
-	width: 46px;
-	flex-shrink: 0;
+  width: 46px;
+  flex-shrink: 0;
 }
 
 .fd-demo-chrome .fd-demo-inline {
-	border: none;
-	border-radius: 0;
-	margin: 0;
+  border: none;
+  border-radius: 0;
+  margin: 0;
 }
 
 .fd-demo-inline {
-	width: 100%;
-	border-radius: 0.5rem;
-	overflow: hidden;
-	border: 1px solid var(--sl-color-gray-5, #374151);
-	margin: 1.5rem 0;
+  width: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--sl-color-gray-5, #374151);
+  margin: 1.5rem 0;
 }
 
 .fd-demo-iframe {
-	width: 100%;
-	height: 100%;
-	border: none;
-	display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
 }
 
 /* Hide demo on small screens — workflow editor needs space */
 @media (max-width: 768px) {
-	.fd-demo-inline,
-	.fd-demo-chrome {
-		display: none;
-	}
+  .fd-demo-inline,
+  .fd-demo-chrome {
+    display: none;
+  }
 }
 
 /* Screenshot fallback shown on mobile when interactive demo is hidden */
 .fd-demo-screenshot {
-	display: none;
-	margin: 1.5rem 0;
-	border-radius: 0.5rem;
-	overflow: hidden;
-	border: 1px solid var(--sl-color-gray-5, #374151);
+  display: none;
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--sl-color-gray-5, #374151);
 }
 
 .fd-demo-screenshot img {
-	width: 100%;
-	display: block;
+  width: 100%;
+  display: block;
 }
 
 @media (max-width: 768px) {
-	.fd-demo-screenshot {
-		display: block;
-	}
+  .fd-demo-screenshot {
+    display: block;
+  }
 }

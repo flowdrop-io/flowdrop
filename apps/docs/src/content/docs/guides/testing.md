@@ -15,9 +15,20 @@ import { describe, it, expect } from 'vitest';
 
 describe('WorkflowAdapter', () => {
   const nodeTypes = [
-    { id: 'text_input', name: 'Text Input', ports: { outputs: [{ id: 'output', type: 'string' }] } },
-    { id: 'chat_model', name: 'Chat Model', ports: { inputs: [{ id: 'prompt', type: 'string' }], outputs: [{ id: 'response', type: 'string' }] } },
-    { id: 'text_output', name: 'Text Output', ports: { inputs: [{ id: 'input', type: 'string' }] } },
+    {
+      id: 'text_input',
+      name: 'Text Input',
+      ports: { outputs: [{ id: 'output', type: 'string' }] }
+    },
+    {
+      id: 'chat_model',
+      name: 'Chat Model',
+      ports: {
+        inputs: [{ id: 'prompt', type: 'string' }],
+        outputs: [{ id: 'response', type: 'string' }]
+      }
+    },
+    { id: 'text_output', name: 'Text Output', ports: { inputs: [{ id: 'input', type: 'string' }] } }
   ];
 
   it('creates a valid workflow', () => {
@@ -98,7 +109,7 @@ export const handlers = [
   http.put('/api/flowdrop/workflows/:id', async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json(body);
-  }),
+  })
 ];
 ```
 
@@ -147,7 +158,7 @@ describe('FlowDrop mount', () => {
       endpoints: createEndpointConfig('/api/flowdrop'),
       features: {
         autoSaveDraft: false, // avoid localStorage side effects in tests
-        showToasts: false,    // suppress toast notifications
+        showToasts: false // suppress toast notifications
       }
     });
 
@@ -222,7 +233,7 @@ describe('Custom node metadata', () => {
     // All port IDs must be unique within a node
     const allPorts = [
       ...(myCustomNode.ports?.inputs ?? []),
-      ...(myCustomNode.ports?.outputs ?? []),
+      ...(myCustomNode.ports?.outputs ?? [])
     ];
     const ids = allPorts.map((p) => p.id);
     expect(new Set(ids).size).toBe(ids.length);

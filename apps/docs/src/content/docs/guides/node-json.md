@@ -26,21 +26,21 @@ interface WorkflowNode {
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique instance ID, typically `"{metadataId}.{n}"` (e.g., `"text_input.1"`). |
-| `type` | `string` | Internal renderer type. Always `"universalNode"` — the visual appearance is controlled by `data.metadata.type`. |
-| `position` | `{x, y}` | Canvas coordinates in pixels. |
-| `deletable` | `boolean` | Whether the user can delete this node. Defaults to `true`. |
-| `data.label` | `string` | Display name shown in the node header. |
-| `data.config` | `ConfigValues` | User-configured settings for this instance. |
-| `data.metadata` | `NodeMetadata` | The node type definition — inputs, outputs, config schema, etc. |
-| `data.nodeId` | `string` | Alternative identifier, usually same as `id`. |
-| `data.extensions` | `object` | Per-instance extension data for plugins. |
+| Field             | Type           | Description                                                                                                     |
+| ----------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `id`              | `string`       | Unique instance ID, typically `"{metadataId}.{n}"` (e.g., `"text_input.1"`).                                    |
+| `type`            | `string`       | Internal renderer type. Always `"universalNode"` — the visual appearance is controlled by `data.metadata.type`. |
+| `position`        | `{x, y}`       | Canvas coordinates in pixels.                                                                                   |
+| `deletable`       | `boolean`      | Whether the user can delete this node. Defaults to `true`.                                                      |
+| `data.label`      | `string`       | Display name shown in the node header.                                                                          |
+| `data.config`     | `ConfigValues` | User-configured settings for this instance.                                                                     |
+| `data.metadata`   | `NodeMetadata` | The node type definition — inputs, outputs, config schema, etc.                                                 |
+| `data.nodeId`     | `string`       | Alternative identifier, usually same as `id`.                                                                   |
+| `data.extensions` | `object`       | Per-instance extension data for plugins.                                                                        |
 
 ## NodeMetadata
 
-The `metadata` object defines what the node *is* — its capabilities, ports, and configuration schema. This is the same structure your backend returns from the `/nodes` API.
+The `metadata` object defines what the node _is_ — its capabilities, ports, and configuration schema. This is the same structure your backend returns from the `/nodes` API.
 
 ```typescript
 interface NodeMetadata {
@@ -69,36 +69,36 @@ interface NodeMetadata {
 
 ### Key Fields
 
-| Field | Description |
-|-------|-------------|
-| `id` | Machine name (e.g., `"content_loader"`, `"ai_analyzer"`). |
-| `type` | Visual rendering style — see [Node Types](#node-types) below. |
-| `supportedTypes` | Alternative visual types the user can switch between (e.g., `["tool", "default"]`). |
-| `category` | Sidebar grouping — see [Categories](#categories) below. |
-| `icon` | [Iconify](https://icon-sets.iconify.design/) icon name (e.g., `"mdi:brain"`, `"mdi:text"`). See [Icons reference](/reference/icons/). |
-| `color` | CSS color for the node accent (e.g., `"#9C27B0"`). |
-| `badge` | Short label badge in the header (e.g., `"TOOL"`, `"API"`, `"LLM"`). |
-| `portDataType` | Default port data type for tool nodes. Defaults to `"tool"`. |
-| `inputs` / `outputs` | Port definitions — see [Port System & Data Types](/guides/port-system/). |
-| `configSchema` | JSON Schema driving the config form — see [Configuration Schema](/guides/config-schema/). |
-| `uiSchema` | Layout hints for form rendering (groups, ordering). |
-| `config` | Default values for the configuration form. |
-| `formats` | Which workflow formats this node is compatible with. Omit for universal nodes. |
-| `configEdit` | Dynamic schema endpoint or external edit link for advanced configuration. |
+| Field                | Description                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                 | Machine name (e.g., `"content_loader"`, `"ai_analyzer"`).                                                                             |
+| `type`               | Visual rendering style — see [Node Types](#node-types) below.                                                                         |
+| `supportedTypes`     | Alternative visual types the user can switch between (e.g., `["tool", "default"]`).                                                   |
+| `category`           | Sidebar grouping — see [Categories](#categories) below.                                                                               |
+| `icon`               | [Iconify](https://icon-sets.iconify.design/) icon name (e.g., `"mdi:brain"`, `"mdi:text"`). See [Icons reference](/reference/icons/). |
+| `color`              | CSS color for the node accent (e.g., `"#9C27B0"`).                                                                                    |
+| `badge`              | Short label badge in the header (e.g., `"TOOL"`, `"API"`, `"LLM"`).                                                                   |
+| `portDataType`       | Default port data type for tool nodes. Defaults to `"tool"`.                                                                          |
+| `inputs` / `outputs` | Port definitions — see [Port System & Data Types](/guides/port-system/).                                                              |
+| `configSchema`       | JSON Schema driving the config form — see [Configuration Schema](/guides/config-schema/).                                             |
+| `uiSchema`           | Layout hints for form rendering (groups, ordering).                                                                                   |
+| `config`             | Default values for the configuration form.                                                                                            |
+| `formats`            | Which workflow formats this node is compatible with. Omit for universal nodes.                                                        |
+| `configEdit`         | Dynamic schema endpoint or external edit link for advanced configuration.                                                             |
 
 ## Node Types
 
 The `type` field controls how the node renders on the canvas:
 
-| Type | Purpose |
-|------|---------|
-| `default` | Full-featured — input/output port lists, icon, label, description |
-| `simple` | Compact — header with icon and description |
-| `square` | Icon-only — minimal design for simple operations |
-| `tool` | AI agent tools — tool metadata with badge label |
-| `gateway` | Branching logic — conditional output paths |
-| `terminal` | Start/end — circular nodes for workflow entry and exit |
-| `note` | Documentation — markdown sticky notes (no execution) |
+| Type       | Purpose                                                           |
+| ---------- | ----------------------------------------------------------------- |
+| `default`  | Full-featured — input/output port lists, icon, label, description |
+| `simple`   | Compact — header with icon and description                        |
+| `square`   | Icon-only — minimal design for simple operations                  |
+| `tool`     | AI agent tools — tool metadata with badge label                   |
+| `gateway`  | Branching logic — conditional output paths                        |
+| `terminal` | Start/end — circular nodes for workflow entry and exit            |
+| `note`     | Documentation — markdown sticky notes (no execution)              |
 
 Custom node types can also be registered. See the [Custom Nodes](/guides/custom-nodes/) guide.
 
@@ -129,11 +129,11 @@ interface ConfigValues {
 
 Most fields come from the node's `configSchema`. Three special properties trigger editor behavior:
 
-| Property | Effect |
-|----------|--------|
-| `dynamicInputs` | Creates additional input port handles at runtime. |
-| `dynamicOutputs` | Creates additional output port handles at runtime. |
-| `branches` | Creates conditional output paths for gateway nodes. |
+| Property         | Effect                                              |
+| ---------------- | --------------------------------------------------- |
+| `dynamicInputs`  | Creates additional input port handles at runtime.   |
+| `dynamicOutputs` | Creates additional output port handles at runtime.  |
+| `branches`       | Creates conditional output paths for gateway nodes. |
 
 Per-instance overrides are also supported via `instanceTitle`, `instanceDescription`, and `instanceBadge` — these override the metadata values for display.
 

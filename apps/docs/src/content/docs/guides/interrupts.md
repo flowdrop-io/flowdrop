@@ -187,12 +187,12 @@ When a workflow requires input, the backend sends a message with interrupt metad
 
 ### API Endpoints
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/interrupts/{id}` | GET | Get interrupt details |
-| `/interrupts/{id}` | POST | Resolve interrupt |
-| `/interrupts/{id}/cancel` | POST | Cancel interrupt |
-| `/playground/sessions/{id}/interrupts` | GET | List session interrupts |
+| Endpoint                               | Method | Purpose                 |
+| -------------------------------------- | ------ | ----------------------- |
+| `/interrupts/{id}`                     | GET    | Get interrupt details   |
+| `/interrupts/{id}`                     | POST   | Resolve interrupt       |
+| `/interrupts/{id}/cancel`              | POST   | Cancel interrupt        |
+| `/playground/sessions/{id}/interrupts` | GET    | List session interrupts |
 
 ## State Management
 

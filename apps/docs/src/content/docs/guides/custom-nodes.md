@@ -9,11 +9,11 @@ FlowDrop ships with 7 built-in node types, but you can register your own custom 
 
 There are three registration methods:
 
-| Approach | When to use |
-|----------|-------------|
-| **`registerCustomNode()`** | One-off project-specific nodes |
-| **`registerFlowDropPlugin()`** | Libraries providing multiple node types |
-| **`createPlugin()`** | Same as above, with a chainable builder API |
+| Approach                       | When to use                                 |
+| ------------------------------ | ------------------------------------------- |
+| **`registerCustomNode()`**     | One-off project-specific nodes              |
+| **`registerFlowDropPlugin()`** | Libraries providing multiple node types     |
+| **`createPlugin()`**           | Same as above, with a chainable builder API |
 
 Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent conflicts.
 
@@ -65,15 +65,17 @@ registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
 
 ```typescript
 const app = await mountFlowDropApp(container, {
-  nodes: [{
-    id: 'myapp:code-editor',
-    name: 'Code Editor',
-    type: 'myapp:code-editor', // Must match registered type
-    description: 'Write and edit code',
-    category: 'processing',
-    inputs: [{ id: 'input', name: 'Input', type: 'input', dataType: 'string' }],
-    outputs: [{ id: 'output', name: 'Output', type: 'output', dataType: 'string' }]
-  }]
+  nodes: [
+    {
+      id: 'myapp:code-editor',
+      name: 'Code Editor',
+      type: 'myapp:code-editor', // Must match registered type
+      description: 'Write and edit code',
+      category: 'processing',
+      inputs: [{ id: 'input', name: 'Input', type: 'input', dataType: 'string' }],
+      outputs: [{ id: 'output', name: 'Output', type: 'output', dataType: 'string' }]
+    }
+  ]
 });
 ```
 
@@ -149,10 +151,10 @@ import {
   isValidNamespace
 } from '@flowdrop/flowdrop/editor';
 
-unregisterFlowDropPlugin('awesome');  // Remove all nodes from a plugin
-getRegisteredPlugins();               // List registered namespaces
-getPluginNodeCount('awesome');        // Count nodes in a plugin
-isValidNamespace('my-lib');           // Validate namespace format
+unregisterFlowDropPlugin('awesome'); // Remove all nodes from a plugin
+getRegisteredPlugins(); // List registered namespaces
+getPluginNodeCount('awesome'); // Count nodes in a plugin
+isValidNamespace('my-lib'); // Validate namespace format
 ```
 
 Namespace rules: Must match `/^[a-z][a-z0-9-]*$/` — lowercase letters, digits, and hyphens, starting with a letter.
@@ -161,14 +163,14 @@ Namespace rules: Must match `/^[a-z][a-z0-9-]*$/` — lowercase letters, digits,
 
 If no custom component is registered for a `type`, FlowDrop falls back to built-in types:
 
-| Type | Description |
-|------|-------------|
+| Type           | Description                            |
+| -------------- | -------------------------------------- |
 | `workflowNode` | Full-featured node with inputs/outputs |
-| `simple` | Compact layout |
-| `square` | Minimal icon-only design |
-| `tool` | Agent tool nodes |
-| `gateway` | Branching control flow |
-| `note` | Markdown sticky notes |
-| `terminal` | Circular start/end nodes |
+| `simple`       | Compact layout                         |
+| `square`       | Minimal icon-only design               |
+| `tool`         | Agent tool nodes                       |
+| `gateway`      | Branching control flow                 |
+| `note`         | Markdown sticky notes                  |
+| `terminal`     | Circular start/end nodes               |
 
 Use `supportedTypes` on `NodeMetadata` to let users switch between visual types at runtime.

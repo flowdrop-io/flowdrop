@@ -26,13 +26,13 @@ A node is a plain object describing its identity, appearance, and ports:
 const textInput = {
   id: 'text_input',
   name: 'Text Input',
-  type: 'simple',              // Visual style: simple, tool, gateway, terminal
+  type: 'simple', // Visual style: simple, tool, gateway, terminal
   description: 'Simple text input for user data',
-  category: 'inputs',          // Must match a category id
-  icon: 'mdi:text',            // Any Iconify icon
+  category: 'inputs', // Must match a category id
+  icon: 'mdi:text', // Any Iconify icon
   color: '#22c55e',
   version: '1.0.0',
-  inputs: [],                  // No input ports
+  inputs: [], // No input ports
   outputs: [
     {
       id: 'text',
@@ -42,7 +42,8 @@ const textInput = {
       description: 'The input text value'
     }
   ],
-  configSchema: {               // JSON Schema for the config form
+  configSchema: {
+    // JSON Schema for the config form
     type: 'object',
     properties: {
       placeholder: {
@@ -57,22 +58,22 @@ const textInput = {
 
 Key fields:
 
-| Field | Purpose |
-|-------|---------|
-| `type` | Controls the visual style of the node on the canvas |
-| `category` | Determines which sidebar group the node appears in |
-| `inputs` / `outputs` | Define the connection ports on the node |
-| `configSchema` | JSON Schema that generates the configuration form |
+| Field                | Purpose                                             |
+| -------------------- | --------------------------------------------------- |
+| `type`               | Controls the visual style of the node on the canvas |
+| `category`           | Determines which sidebar group the node appears in  |
+| `inputs` / `outputs` | Define the connection ports on the node             |
+| `configSchema`       | JSON Schema that generates the configuration form   |
 
 ### Icons
 
 The `icon` field accepts any [Iconify](https://iconify.design/) icon identifier in `set:name` format. FlowDrop uses [`@iconify/svelte`](https://iconify.design/docs/icon-components/svelte/) to render icons, which loads them on demand from the Iconify API — so you have access to **200,000+ icons** from 150+ open-source icon sets without bundling anything extra.
 
 ```js
-icon: 'mdi:text'          // Material Design Icons
-icon: 'heroicons:sparkles' // Heroicons
-icon: 'lucide:bot'         // Lucide
-icon: 'ph:brain'           // Phosphor Icons
+icon: 'mdi:text'; // Material Design Icons
+icon: 'heroicons:sparkles'; // Heroicons
+icon: 'lucide:bot'; // Lucide
+icon: 'ph:brain'; // Phosphor Icons
 ```
 
 Browse all available icons at [icon-sets.iconify.design](https://icon-sets.iconify.design/).
@@ -102,15 +103,15 @@ In the example above, the schema defines a single `placeholder` property of type
 
 This produces a text input labeled "Placeholder" with a default value. You can use any standard JSON Schema features to build richer forms:
 
-| JSON Schema feature | What it generates |
-|---------------------|-------------------|
-| `type: "string"` | Text input |
-| `type: "number"` | Number input |
-| `type: "boolean"` | Toggle / checkbox |
-| `type: "string"` + `enum` | Dropdown select |
-| `title` | Field label |
-| `description` | Help text below the field |
-| `default` | Pre-filled value |
+| JSON Schema feature       | What it generates         |
+| ------------------------- | ------------------------- |
+| `type: "string"`          | Text input                |
+| `type: "number"`          | Number input              |
+| `type: "boolean"`         | Toggle / checkbox         |
+| `type: "string"` + `enum` | Dropdown select           |
+| `title`                   | Field label               |
+| `description`             | Help text below the field |
+| `default`                 | Pre-filled value          |
 
 :::tip[Learn more about JSON Schema]
 The full specification is at [json-schema.org](https://json-schema.org/). The [Understanding JSON Schema](https://json-schema.org/understanding-json-schema/) guide is an excellent starting point if you're new to it.
@@ -139,16 +140,13 @@ Pass the `nodes` and `categories` arrays when mounting, along with the `endpoint
 import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop/editor';
 import '@flowdrop/flowdrop/styles';
 
-const app = await mountFlowDropApp(
-  document.getElementById('editor'),
-  {
-    nodes: [textInput],
-    categories: [inputsCategory],
-    endpointConfig: createEndpointConfig('/api/flowdrop'),
-    height: '600px',
-    showNavbar: true,
-  }
-);
+const app = await mountFlowDropApp(document.getElementById('editor'), {
+  nodes: [textInput],
+  categories: [inputsCategory],
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  height: '600px',
+  showNavbar: true
+});
 ```
 
 ## Try it

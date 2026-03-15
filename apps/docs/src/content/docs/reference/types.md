@@ -136,7 +136,7 @@ type UISchemaElement = UISchemaControl | UISchemaVerticalLayout | UISchemaGroup;
 
 interface UISchemaControl {
   type: 'Control';
-  scope: string;  // JSON Pointer: "#/properties/fieldName"
+  scope: string; // JSON Pointer: "#/properties/fieldName"
   label?: string;
   hidden?: boolean;
 }
@@ -197,9 +197,7 @@ interface EndpointConfig {
   auth?: { type: 'bearer'; token: string };
 }
 
-function createEndpointConfig(
-  baseUrlOrConfig: string | Partial<EndpointConfig>
-): EndpointConfig;
+function createEndpointConfig(baseUrlOrConfig: string | Partial<EndpointConfig>): EndpointConfig;
 ```
 
 ## WorkflowChangeType

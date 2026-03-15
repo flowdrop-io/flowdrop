@@ -24,7 +24,7 @@ const nodes = [
     type: 'simple',
     category: 'inputs',
     icon: 'mdi:text',
-    color: '#22c55e',
+    color: '#22c55e'
     // ...ports and config
   },
   // Outputs
@@ -34,7 +34,7 @@ const nodes = [
     type: 'simple',
     category: 'outputs',
     icon: 'mdi:text-box',
-    color: '#ef4444',
+    color: '#ef4444'
     // ...ports and config
   },
   // AI & ML
@@ -44,7 +44,7 @@ const nodes = [
     type: 'tool',
     category: 'ai',
     icon: 'mdi:brain',
-    color: '#9C27B0',
+    color: '#9C27B0'
     // ...ports and config
   },
   // Processing
@@ -52,7 +52,7 @@ const nodes = [
     id: 'json_transformer',
     name: 'JSON Transformer',
     type: 'tool',
-    category: 'processing',
+    category: 'processing'
     // ...
   },
   // Logic
@@ -60,7 +60,7 @@ const nodes = [
     id: 'gateway',
     name: 'Gateway',
     type: 'gateway',
-    category: 'logic',
+    category: 'logic'
     // ...
   },
   // Helpers
@@ -68,18 +68,18 @@ const nodes = [
     id: 'notes',
     name: 'Notes',
     type: 'idea',
-    category: 'helpers',
+    category: 'helpers'
     // ...
   }
 ];
 
 const categories = [
-  { id: 'inputs',     name: 'Inputs',     icon: 'mdi:import',        color: '#22c55e' },
-  { id: 'outputs',    name: 'Outputs',    icon: 'mdi:export',        color: '#ef4444' },
-  { id: 'ai',         name: 'AI & ML',    icon: 'mdi:brain',         color: '#9C27B0' },
-  { id: 'processing', name: 'Processing', icon: 'mdi:cog',           color: '#3b82f6' },
-  { id: 'logic',      name: 'Logic',      icon: 'mdi:source-branch', color: '#f59e0b' },
-  { id: 'helpers',    name: 'Helpers',    icon: 'mdi:wrench',        color: '#fbbf24' },
+  { id: 'inputs', name: 'Inputs', icon: 'mdi:import', color: '#22c55e' },
+  { id: 'outputs', name: 'Outputs', icon: 'mdi:export', color: '#ef4444' },
+  { id: 'ai', name: 'AI & ML', icon: 'mdi:brain', color: '#9C27B0' },
+  { id: 'processing', name: 'Processing', icon: 'mdi:cog', color: '#3b82f6' },
+  { id: 'logic', name: 'Logic', icon: 'mdi:source-branch', color: '#f59e0b' },
+  { id: 'helpers', name: 'Helpers', icon: 'mdi:wrench', color: '#fbbf24' }
 ];
 ```
 
@@ -87,14 +87,14 @@ const categories = [
 
 The `type` field controls how the node renders on the canvas:
 
-| Type | Appearance | Use case |
-|------|-----------|----------|
-| `simple` | Compact rounded rectangle | Inputs, outputs, basic operations |
-| `tool` | Rectangle with tool badge and extra ports | API calls, integrations, processing |
-| `gateway` | Diamond shape | Conditional branching and routing |
-| `terminal` | Rounded end-cap shape | Start/end points of a workflow |
-| `idea` | Sticky-note style | Documentation and comments |
-| `default` | Standard rectangle | General-purpose nodes |
+| Type       | Appearance                                | Use case                            |
+| ---------- | ----------------------------------------- | ----------------------------------- |
+| `simple`   | Compact rounded rectangle                 | Inputs, outputs, basic operations   |
+| `tool`     | Rectangle with tool badge and extra ports | API calls, integrations, processing |
+| `gateway`  | Diamond shape                             | Conditional branching and routing   |
+| `terminal` | Rounded end-cap shape                     | Start/end points of a workflow      |
+| `idea`     | Sticky-note style                         | Documentation and comments          |
+| `default`  | Standard rectangle                        | General-purpose nodes               |
 
 A node can support multiple types via `supportedTypes`, letting users switch between visual styles from the config panel.
 
@@ -107,15 +107,15 @@ Nodes connect through **ports** — the small circles on the edges of each node:
 
 To create a connection, drag from an output port to a compatible input port. Compatibility is determined by the `dataType` field:
 
-| Data Type | Compatible With |
-|-----------|----------------|
-| `string` | string, mixed |
-| `number` | number, mixed |
-| `json` | json, mixed, string |
-| `array` | array, mixed |
-| `mixed` | all data types |
-| `tool` | tool only |
-| `trigger` | trigger only |
+| Data Type | Compatible With     |
+| --------- | ------------------- |
+| `string`  | string, mixed       |
+| `number`  | number, mixed       |
+| `json`    | json, mixed, string |
+| `array`   | array, mixed        |
+| `mixed`   | all data types      |
+| `tool`    | tool only           |
+| `trigger` | trigger only        |
 
 FlowDrop validates connections in real-time and only allows compatible port types to connect.
 

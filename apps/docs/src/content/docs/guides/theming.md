@@ -24,11 +24,11 @@ Override semantic tokens to customize FlowDrop:
 
 FlowDrop's token system has three tiers:
 
-| Tier | Prefix | Description |
-|------|--------|-------------|
-| **Internal Palette** | `--_*` | Raw color values — not for direct use |
-| **Semantic Tokens** | `--fd-*` | The public API — what you customize |
-| **Component Tokens** | (varies) | Use semantic tokens in components |
+| Tier                 | Prefix   | Description                           |
+| -------------------- | -------- | ------------------------------------- |
+| **Internal Palette** | `--_*`   | Raw color values — not for direct use |
+| **Semantic Tokens**  | `--fd-*` | The public API — what you customize   |
+| **Component Tokens** | (varies) | Use semantic tokens in components     |
 
 **Key principle**: Override `--fd-*` tokens. Components automatically use these tokens, so your theme cascades everywhere.
 
@@ -36,34 +36,34 @@ FlowDrop's token system has three tiers:
 
 ### Surfaces
 
-| Token | Description |
-|-------|-------------|
-| `--fd-background` | Main background color |
-| `--fd-foreground` | Main text color |
-| `--fd-muted` | Muted background (cards, inputs) |
-| `--fd-muted-foreground` | Muted text |
-| `--fd-card` | Card background |
-| `--fd-card-foreground` | Card text color |
+| Token                   | Description                      |
+| ----------------------- | -------------------------------- |
+| `--fd-background`       | Main background color            |
+| `--fd-foreground`       | Main text color                  |
+| `--fd-muted`            | Muted background (cards, inputs) |
+| `--fd-muted-foreground` | Muted text                       |
+| `--fd-card`             | Card background                  |
+| `--fd-card-foreground`  | Card text color                  |
 
 ### Borders
 
-| Token | Description |
-|-------|-------------|
-| `--fd-border` | Default border color |
-| `--fd-border-muted` | Muted border |
-| `--fd-border-strong` | Strong border |
-| `--fd-ring` | Focus ring color |
+| Token                | Description          |
+| -------------------- | -------------------- |
+| `--fd-border`        | Default border color |
+| `--fd-border-muted`  | Muted border         |
+| `--fd-border-strong` | Strong border        |
+| `--fd-ring`          | Focus ring color     |
 
 ### Primary and Accent
 
-| Token | Description |
-|-------|-------------|
-| `--fd-primary` | Primary action color |
-| `--fd-primary-hover` | Primary hover state |
-| `--fd-primary-foreground` | Text on primary |
-| `--fd-primary-muted` | Light primary background |
-| `--fd-accent` | Accent color |
-| `--fd-accent-hover` | Accent hover |
+| Token                     | Description              |
+| ------------------------- | ------------------------ |
+| `--fd-primary`            | Primary action color     |
+| `--fd-primary-hover`      | Primary hover state      |
+| `--fd-primary-foreground` | Text on primary          |
+| `--fd-primary-muted`      | Light primary background |
+| `--fd-accent`             | Accent color             |
+| `--fd-accent-hover`       | Accent hover             |
 
 ### Status Colors
 
@@ -76,58 +76,58 @@ Each status color has `-hover`, `-foreground`, and `-muted` variants:
 
 ### Spacing
 
-| Token | Value |
-|-------|-------|
-| `--fd-space-3xs` | 4px |
-| `--fd-space-2xs` | 6px |
-| `--fd-space-xs` | 8px |
-| `--fd-space-sm` | 10px |
-| `--fd-space-md` | 12px |
-| `--fd-space-lg` | 14px |
-| `--fd-space-xl` | 16px |
-| `--fd-space-2xl` | 20px |
-| `--fd-space-3xl` | 24px |
+| Token            | Value |
+| ---------------- | ----- |
+| `--fd-space-3xs` | 4px   |
+| `--fd-space-2xs` | 6px   |
+| `--fd-space-xs`  | 8px   |
+| `--fd-space-sm`  | 10px  |
+| `--fd-space-md`  | 12px  |
+| `--fd-space-lg`  | 14px  |
+| `--fd-space-xl`  | 16px  |
+| `--fd-space-2xl` | 20px  |
+| `--fd-space-3xl` | 24px  |
 
 ### Border Radius
 
-| Token | Value |
-|-------|-------|
-| `--fd-radius-sm` | 4px |
-| `--fd-radius-md` | 6px |
-| `--fd-radius-lg` | 8px |
-| `--fd-radius-xl` | 12px |
+| Token              | Value      |
+| ------------------ | ---------- |
+| `--fd-radius-sm`   | 4px        |
+| `--fd-radius-md`   | 6px        |
+| `--fd-radius-lg`   | 8px        |
+| `--fd-radius-xl`   | 12px       |
 | `--fd-radius-full` | Pill shape |
 
 ### Typography
 
-| Token | Value |
-|-------|-------|
-| `--fd-text-xs` | 12px |
-| `--fd-text-sm` | 14px |
-| `--fd-text-base` | 16px |
-| `--fd-text-lg` | 18px |
-| `--fd-text-xl` | 20px |
+| Token            | Value |
+| ---------------- | ----- |
+| `--fd-text-xs`   | 12px  |
+| `--fd-text-sm`   | 14px  |
+| `--fd-text-base` | 16px  |
+| `--fd-text-lg`   | 18px  |
+| `--fd-text-xl`   | 20px  |
 
 ### Layout
 
-| Token | Default |
-|-------|---------|
-| `--fd-sidebar-width` | 320px |
-| `--fd-navbar-height` | 60px |
-| `--fd-toolbar-height` | 40px |
+| Token                 | Default |
+| --------------------- | ------- |
+| `--fd-sidebar-width`  | 320px   |
+| `--fd-navbar-height`  | 60px    |
+| `--fd-toolbar-height` | 40px    |
 
 ### Node Layout
 
 Node dimensions use a **10px grid** for alignment with the editor snap grid:
 
-| Token | Default |
-|-------|---------|
-| `--fd-node-default-width` | 290px |
-| `--fd-node-header-height` | 60px |
-| `--fd-node-terminal-size` | 80px |
-| `--fd-node-square-size` | 80px |
-| `--fd-handle-size` | 20px |
-| `--fd-handle-visual-size` | 12px |
+| Token                     | Default |
+| ------------------------- | ------- |
+| `--fd-node-default-width` | 290px   |
+| `--fd-node-header-height` | 60px    |
+| `--fd-node-terminal-size` | 80px    |
+| `--fd-node-square-size`   | 80px    |
+| `--fd-handle-size`        | 20px    |
+| `--fd-handle-visual-size` | 12px    |
 
 ## Theming Examples
 
@@ -170,7 +170,7 @@ Node dimensions use a **10px grid** for alignment with the editor snap grid:
 FlowDrop supports dark mode. Enable it with:
 
 ```html
-<html data-theme="dark">
+<html data-theme="dark"></html>
 ```
 
 Or via JavaScript:
@@ -184,8 +184,8 @@ Or use the built-in theme toggle:
 ```typescript
 import { toggleTheme, setTheme } from '@flowdrop/flowdrop/core';
 
-toggleTheme();         // Cycles through light/dark/auto
-setTheme('dark');      // Set explicitly
+toggleTheme(); // Cycles through light/dark/auto
+setTheme('dark'); // Set explicitly
 ```
 
 All semantic tokens have dark-mode equivalents that activate automatically.

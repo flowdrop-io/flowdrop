@@ -13,21 +13,21 @@
    ============================================================================= */
 
 :root {
-	/* Brand accent — matches website #6c63ff (purple) */
-	--fd-accent-hue: 244;
-	--fd-accent-saturation: 100%;
-	--fd-accent-lightness: 65%;
+  /* Brand accent — matches website #6c63ff (purple) */
+  --fd-accent-hue: 244;
+  --fd-accent-saturation: 100%;
+  --fd-accent-lightness: 65%;
 
-	/* Derived accent shades (dark mode) */
-	--fd-accent-low: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.5), 13%);
-	--fd-accent: hsl(var(--fd-accent-hue), var(--fd-accent-saturation), var(--fd-accent-lightness));
-	--fd-accent-high: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.7), 72%);
+  /* Derived accent shades (dark mode) */
+  --fd-accent-low: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.5), 13%);
+  --fd-accent: hsl(var(--fd-accent-hue), var(--fd-accent-saturation), var(--fd-accent-lightness));
+  --fd-accent-high: hsl(var(--fd-accent-hue), calc(var(--fd-accent-saturation) * 0.7), 72%);
 
-	/* Gray base hue — purple-gray to match website color temperature */
-	--fd-gray-hue: 240;
+  /* Gray base hue — purple-gray to match website color temperature */
+  --fd-gray-hue: 240;
 
-	/* Secondary teal — matches website ambient glow rgba(0, 212, 170) */
-	--fd-teal-hue: 168;
-	--fd-teal: hsl(var(--fd-teal-hue), 100%, 42%);
-	--fd-teal-low: hsl(var(--fd-teal-hue), 60%, 14%);
+  /* Secondary teal — matches website ambient glow rgba(0, 212, 170) */
+  --fd-teal-hue: 168;
+  --fd-teal: hsl(var(--fd-teal-hue), 100%, 42%);
+  --fd-teal-low: hsl(var(--fd-teal-hue), 60%, 14%);
 }

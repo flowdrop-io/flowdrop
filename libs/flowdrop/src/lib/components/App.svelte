@@ -788,8 +788,8 @@
         showStatus={true}
         {showSettings}
         {settingsCategories}
-        showSettingsSyncButton={showSettingsSyncButton}
-        showSettingsResetButton={showSettingsResetButton}
+        {showSettingsSyncButton}
+        {showSettingsResetButton}
       />
     {/snippet}
 
@@ -1006,7 +1006,9 @@
         <button
           class="flowdrop-sidebar-fab"
           onclick={toggleSidebar}
-          aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={isSidebarCollapsed
+            ? "Expand sidebar"
+            : "Collapse sidebar"}
           title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <Icon icon={isSidebarCollapsed ? "mdi:menu" : "mdi:menu-open"} />

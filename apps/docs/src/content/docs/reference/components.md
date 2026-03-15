@@ -23,25 +23,25 @@ Full-featured application wrapper with sidebar, editor, navbar, and config panel
 />
 ```
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `workflow` | `Workflow` | — | Initial workflow to load |
-| `nodes` | `NodeMetadata[]` | — | Available node types (overrides API fetch) |
-| `endpointConfig` | `EndpointConfig` | — | API endpoint configuration |
-| `authProvider` | `AuthProvider` | — | Authentication provider |
-| `height` | `string \| number` | — | Editor height |
-| `width` | `string \| number` | — | Editor width |
-| `showNavbar` | `boolean` | `true` | Show the top navbar |
-| `disableSidebar` | `boolean` | `false` | Hide the node sidebar |
-| `readOnly` | `boolean` | `false` | Disable all editing |
-| `lockWorkflow` | `boolean` | `false` | Prevent structural changes (add/remove nodes/edges) |
-| `showSettings` | `boolean` | `false` | Show settings gear in navbar |
-| `navbarTitle` | `string` | — | Custom title in navbar |
-| `navbarActions` | `NavbarAction[]` | — | Custom action buttons in navbar |
-| `pipelineId` | `string` | — | Pipeline ID for execution status display |
-| `nodeStatuses` | `Record<string, string>` | — | Node execution statuses for overlay |
-| `eventHandlers` | `FlowDropEventHandlers` | — | Lifecycle event handlers |
-| `features` | `FlowDropFeatures` | — | Feature flags |
+| Prop             | Type                     | Default | Description                                         |
+| ---------------- | ------------------------ | ------- | --------------------------------------------------- |
+| `workflow`       | `Workflow`               | —       | Initial workflow to load                            |
+| `nodes`          | `NodeMetadata[]`         | —       | Available node types (overrides API fetch)          |
+| `endpointConfig` | `EndpointConfig`         | —       | API endpoint configuration                          |
+| `authProvider`   | `AuthProvider`           | —       | Authentication provider                             |
+| `height`         | `string \| number`       | —       | Editor height                                       |
+| `width`          | `string \| number`       | —       | Editor width                                        |
+| `showNavbar`     | `boolean`                | `true`  | Show the top navbar                                 |
+| `disableSidebar` | `boolean`                | `false` | Hide the node sidebar                               |
+| `readOnly`       | `boolean`                | `false` | Disable all editing                                 |
+| `lockWorkflow`   | `boolean`                | `false` | Prevent structural changes (add/remove nodes/edges) |
+| `showSettings`   | `boolean`                | `false` | Show settings gear in navbar                        |
+| `navbarTitle`    | `string`                 | —       | Custom title in navbar                              |
+| `navbarActions`  | `NavbarAction[]`         | —       | Custom action buttons in navbar                     |
+| `pipelineId`     | `string`                 | —       | Pipeline ID for execution status display            |
+| `nodeStatuses`   | `Record<string, string>` | —       | Node execution statuses for overlay                 |
+| `eventHandlers`  | `FlowDropEventHandlers`  | —       | Lifecycle event handlers                            |
+| `features`       | `FlowDropFeatures`       | —       | Feature flags                                       |
 
 ### `WorkflowEditor`
 
@@ -55,16 +55,16 @@ Core canvas component using SvelteFlow. Renders nodes and edges with drag-and-dr
 <WorkflowEditor {nodes} {endpointConfig} />
 ```
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `nodes` | `NodeMetadata[]` | — | Node type definitions |
-| `endpointConfig` | `EndpointConfig` | — | API configuration |
-| `height` | `string \| number` | — | Canvas height |
-| `width` | `string \| number` | — | Canvas width |
-| `readOnly` | `boolean` | `false` | Disable editing |
-| `lockWorkflow` | `boolean` | `false` | Prevent structural changes |
-| `nodeStatuses` | `Record<string, string>` | — | Execution status overlay |
-| `pipelineId` | `string` | — | Pipeline ID for status |
+| Prop             | Type                     | Default | Description                |
+| ---------------- | ------------------------ | ------- | -------------------------- |
+| `nodes`          | `NodeMetadata[]`         | —       | Node type definitions      |
+| `endpointConfig` | `EndpointConfig`         | —       | API configuration          |
+| `height`         | `string \| number`       | —       | Canvas height              |
+| `width`          | `string \| number`       | —       | Canvas width               |
+| `readOnly`       | `boolean`                | `false` | Disable editing            |
+| `lockWorkflow`   | `boolean`                | `false` | Prevent structural changes |
+| `nodeStatuses`   | `Record<string, string>` | —       | Execution status overlay   |
+| `pipelineId`     | `string`                 | —       | Pipeline ID for status     |
 
 ### `NodeSidebar`
 
@@ -78,11 +78,11 @@ Left sidebar displaying available node types organized by category.
 <NodeSidebar {nodes} />
 ```
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `nodes` | `NodeMetadata[]` | `[]` | Node types to display |
-| `selectedCategory` | `NodeCategory` | — | Pre-select a category filter |
-| `activeFormat` | `WorkflowFormat` | — | Filter nodes by workflow format compatibility |
+| Prop               | Type             | Default | Description                                   |
+| ------------------ | ---------------- | ------- | --------------------------------------------- |
+| `nodes`            | `NodeMetadata[]` | `[]`    | Node types to display                         |
+| `selectedCategory` | `NodeCategory`   | —       | Pre-select a category filter                  |
+| `activeFormat`     | `WorkflowFormat` | —       | Filter nodes by workflow format compatibility |
 
 ### `UniversalNode`
 
@@ -92,15 +92,15 @@ Dynamic node wrapper that resolves and renders the correct node component based 
 
 All node components accept `NodeComponentProps` from the registry:
 
-| Component | Type | Description |
-|-----------|------|-------------|
-| `WorkflowNodeComponent` | `workflowNode` | Full-featured node with input/output port lists |
-| `SimpleNode` | `simple` | Compact layout with header, icon, description |
-| `SquareNode` | `square` | Minimal icon-only square design |
-| `ToolNode` | `tool` | Agent tool node with badge indicator |
-| `GatewayNode` | `gateway` | Conditional branching with multiple output ports |
-| `TerminalNode` | `terminal` | Circular start/end node |
-| `NotesNode` | `note` | Sticky note with markdown content |
+| Component               | Type           | Description                                      |
+| ----------------------- | -------------- | ------------------------------------------------ |
+| `WorkflowNodeComponent` | `workflowNode` | Full-featured node with input/output port lists  |
+| `SimpleNode`            | `simple`       | Compact layout with header, icon, description    |
+| `SquareNode`            | `square`       | Minimal icon-only square design                  |
+| `ToolNode`              | `tool`         | Agent tool node with badge indicator             |
+| `GatewayNode`           | `gateway`      | Conditional branching with multiple output ports |
+| `TerminalNode`          | `terminal`     | Circular start/end node                          |
+| `NotesNode`             | `note`         | Sticky note with markdown content                |
 
 See [Node Types](/guides/node-types/) for visual examples.
 
@@ -118,7 +118,9 @@ Renders a form from JSON Schema definition.
 <SchemaForm
   schema={jsonSchema}
   values={formValues}
-  onChange={(values) => { /* handle change */ }}
+  onChange={(values) => {
+    /* handle change */
+  }}
 />
 ```
 
@@ -126,50 +128,50 @@ Renders a form from JSON Schema definition.
 
 Configuration form with support for dynamic schemas, template variables, and external edit links.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `node` | `WorkflowNode` | — | Node to configure (derives schema/values) |
-| `schema` | `ConfigSchema` | — | Direct JSON Schema (alternative to `node`) |
-| `uiSchema` | `UISchemaElement` | — | Layout definition for the form |
-| `values` | `Record<string, unknown>` | — | Configuration values |
-| `showUIExtensions` | `boolean` | `false` | Show UI extension fields |
-| `workflowId` | `string` | — | For dynamic schema and variable API requests |
-| `workflowNodes` | `WorkflowNode[]` | — | All nodes (for template variable resolution) |
-| `workflowEdges` | `WorkflowEdge[]` | — | All edges (for template variable resolution) |
-| `authProvider` | `AuthProvider` | — | Auth for API requests |
-| `onChange` | `function` | — | Called on any field change |
-| `onSave` | `function` | — | Called when form is saved |
-| `onCancel` | `function` | — | Called when form is cancelled |
+| Prop               | Type                      | Default | Description                                  |
+| ------------------ | ------------------------- | ------- | -------------------------------------------- |
+| `node`             | `WorkflowNode`            | —       | Node to configure (derives schema/values)    |
+| `schema`           | `ConfigSchema`            | —       | Direct JSON Schema (alternative to `node`)   |
+| `uiSchema`         | `UISchemaElement`         | —       | Layout definition for the form               |
+| `values`           | `Record<string, unknown>` | —       | Configuration values                         |
+| `showUIExtensions` | `boolean`                 | `false` | Show UI extension fields                     |
+| `workflowId`       | `string`                  | —       | For dynamic schema and variable API requests |
+| `workflowNodes`    | `WorkflowNode[]`          | —       | All nodes (for template variable resolution) |
+| `workflowEdges`    | `WorkflowEdge[]`          | —       | All edges (for template variable resolution) |
+| `authProvider`     | `AuthProvider`            | —       | Auth for API requests                        |
+| `onChange`         | `function`                | —       | Called on any field change                   |
+| `onSave`           | `function`                | —       | Called when form is saved                    |
+| `onCancel`         | `function`                | —       | Called when form is cancelled                |
 
 ### `ConfigPanel`
 
 Generic panel wrapper for displaying details and a configuration form.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `title` | `string` | — | Panel title |
-| `id` | `string` | — | Entity identifier |
-| `description` | `string` | — | Description text |
-| `details` | `DetailItem[]` | — | Key-value detail rows |
-| `configTitle` | `string` | — | Config section title |
-| `onClose` | `function` | — | Close callback |
-| `children` | `Snippet` | — | Slot for form content |
+| Prop          | Type           | Default | Description           |
+| ------------- | -------------- | ------- | --------------------- |
+| `title`       | `string`       | —       | Panel title           |
+| `id`          | `string`       | —       | Entity identifier     |
+| `description` | `string`       | —       | Description text      |
+| `details`     | `DetailItem[]` | —       | Key-value detail rows |
+| `configTitle` | `string`       | —       | Config section title  |
+| `onClose`     | `function`     | —       | Close callback        |
+| `children`    | `Snippet`      | —       | Slot for form content |
 
 ### Field Components
 
-| Component | Schema Match | Description |
-|-----------|-------------|-------------|
-| `FormTextField` | `type: "string"` | Text input |
-| `FormTextarea` | `format: "multiline"` | Multi-line text |
-| `FormNumberField` | `type: "number"` / `"integer"` | Number input |
-| `FormToggle` | `type: "boolean"` | Toggle switch |
-| `FormSelect` | `enum` or `oneOf` | Select dropdown |
-| `FormCheckboxGroup` | `enum` + `multiple: true` | Checkbox group |
-| `FormRangeField` | `format: "range"` | Range slider |
-| `FormArray` | `type: "array"` | Dynamic array editor |
-| `FormCodeEditor` | `format: "json"` | JSON/code editor (requires `form/code`) |
-| `FormTemplateEditor` | `format: "template"` | Template editor with variables (requires `form/code`) |
-| `FormMarkdownEditor` | `format: "markdown"` | Markdown editor (requires `form/markdown`) |
+| Component            | Schema Match                   | Description                                           |
+| -------------------- | ------------------------------ | ----------------------------------------------------- |
+| `FormTextField`      | `type: "string"`               | Text input                                            |
+| `FormTextarea`       | `format: "multiline"`          | Multi-line text                                       |
+| `FormNumberField`    | `type: "number"` / `"integer"` | Number input                                          |
+| `FormToggle`         | `type: "boolean"`              | Toggle switch                                         |
+| `FormSelect`         | `enum` or `oneOf`              | Select dropdown                                       |
+| `FormCheckboxGroup`  | `enum` + `multiple: true`      | Checkbox group                                        |
+| `FormRangeField`     | `format: "range"`              | Range slider                                          |
+| `FormArray`          | `type: "array"`                | Dynamic array editor                                  |
+| `FormCodeEditor`     | `format: "json"`               | JSON/code editor (requires `form/code`)               |
+| `FormTemplateEditor` | `format: "template"`           | Template editor with variables (requires `form/code`) |
+| `FormMarkdownEditor` | `format: "markdown"`           | Markdown editor (requires `form/markdown`)            |
 
 ## Display Components
 
@@ -191,26 +193,26 @@ Renders markdown content using the `marked` library.
 
 Full interactive playground with chat interface and session management.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `workflowId` | `string` | — | Workflow to test (required) |
-| `workflow` | `Workflow` | — | Pre-loaded workflow data |
-| `mode` | `PlaygroundMode` | `'standalone'` | `'standalone'` or `'embedded'` |
-| `initialSessionId` | `string` | — | Resume a previous session |
-| `endpointConfig` | `EndpointConfig` | — | API configuration |
-| `config` | `PlaygroundConfig` | — | Playground options |
-| `onClose` | `function` | — | Close callback (for embedded mode) |
+| Prop               | Type               | Default        | Description                        |
+| ------------------ | ------------------ | -------------- | ---------------------------------- |
+| `workflowId`       | `string`           | —              | Workflow to test (required)        |
+| `workflow`         | `Workflow`         | —              | Pre-loaded workflow data           |
+| `mode`             | `PlaygroundMode`   | `'standalone'` | `'standalone'` or `'embedded'`     |
+| `initialSessionId` | `string`           | —              | Resume a previous session          |
+| `endpointConfig`   | `EndpointConfig`   | —              | API configuration                  |
+| `config`           | `PlaygroundConfig` | —              | Playground options                 |
+| `onClose`          | `function`         | —              | Close callback (for embedded mode) |
 
 ### Interrupt Components
 
-| Component | Interrupt Type | Description |
-|-----------|---------------|-------------|
-| `InterruptBubble` | All | Container that renders the correct prompt |
-| `ConfirmationPrompt` | `confirmation` | Yes/No approval |
-| `ChoicePrompt` | `choice` | Selection from options |
-| `TextInputPrompt` | `text_input` | Text entry |
-| `FormPrompt` | `form` | JSON Schema form |
-| `ReviewPrompt` | `review` | Field change review with diffs |
+| Component            | Interrupt Type | Description                               |
+| -------------------- | -------------- | ----------------------------------------- |
+| `InterruptBubble`    | All            | Container that renders the correct prompt |
+| `ConfirmationPrompt` | `confirmation` | Yes/No approval                           |
+| `ChoicePrompt`       | `choice`       | Selection from options                    |
+| `TextInputPrompt`    | `text_input`   | Text entry                                |
+| `FormPrompt`         | `form`         | JSON Schema form                          |
+| `ReviewPrompt`       | `review`       | Field change review with diffs            |
 
 ## Settings Components
 
@@ -236,22 +238,26 @@ Tabbed settings interface for managing user preferences across categories (theme
 </script>
 
 <SettingsPanel
-  categories={["theme", "editor", "ui"]}
+  categories={['theme', 'editor', 'ui']}
   showSyncButton={false}
   showResetButton={true}
-  onSettingsChange={(category, values) => { /* handle change */ }}
-  onClose={() => { /* handle close */ }}
+  onSettingsChange={(category, values) => {
+    /* handle change */
+  }}
+  onClose={() => {
+    /* handle close */
+  }}
 />
 ```
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `categories` | `SettingsCategory[]` | All categories | Which tabs to display. Options: `"theme"`, `"editor"`, `"ui"`, `"behavior"`, `"api"` |
-| `showSyncButton` | `boolean` | `true` | Show the "Sync to Cloud" button in the footer |
-| `showResetButton` | `boolean` | `true` | Show the reset/reset-all buttons in the footer |
-| `onSettingsChange` | `function` | — | Called when any setting changes with `(category, values)` |
-| `onClose` | `function` | — | Close callback (also renders a "Close" button in the footer) |
-| `class` | `string` | — | Custom CSS class |
+| Prop               | Type                 | Default        | Description                                                                          |
+| ------------------ | -------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| `categories`       | `SettingsCategory[]` | All categories | Which tabs to display. Options: `"theme"`, `"editor"`, `"ui"`, `"behavior"`, `"api"` |
+| `showSyncButton`   | `boolean`            | `true`         | Show the "Sync to Cloud" button in the footer                                        |
+| `showResetButton`  | `boolean`            | `true`         | Show the reset/reset-all buttons in the footer                                       |
+| `onSettingsChange` | `function`           | —              | Called when any setting changes with `(category, values)`                            |
+| `onClose`          | `function`           | —              | Close callback (also renders a "Close" button in the footer)                         |
+| `class`            | `string`             | —              | Custom CSS class                                                                     |
 
 ### `SettingsModal`
 
@@ -263,19 +269,19 @@ Modal dialog wrapper around `SettingsPanel`. Provides backdrop, close-on-escape,
   let open = $state(false);
 </script>
 
-<button onclick={() => open = true}>Open Settings</button>
+<button onclick={() => (open = true)}>Open Settings</button>
 <SettingsModal bind:open showSyncButton={false} />
 ```
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `open` | `boolean` | `false` | Whether the modal is open (bindable) |
-| `categories` | `SettingsCategory[]` | All categories | Which tabs to display |
-| `showSyncButton` | `boolean` | `true` | Show the "Sync to Cloud" button |
-| `showResetButton` | `boolean` | `true` | Show the reset buttons |
-| `onClose` | `function` | — | Called when the modal is closed |
-| `onSettingsChange` | `function` | — | Called when any setting changes |
-| `class` | `string` | — | Custom CSS class for the modal |
+| Prop               | Type                 | Default        | Description                          |
+| ------------------ | -------------------- | -------------- | ------------------------------------ |
+| `open`             | `boolean`            | `false`        | Whether the modal is open (bindable) |
+| `categories`       | `SettingsCategory[]` | All categories | Which tabs to display                |
+| `showSyncButton`   | `boolean`            | `true`         | Show the "Sync to Cloud" button      |
+| `showResetButton`  | `boolean`            | `true`         | Show the reset buttons               |
+| `onClose`          | `function`           | —              | Called when the modal is closed      |
+| `onSettingsChange` | `function`           | —              | Called when any setting changes      |
+| `class`            | `string`             | —              | Custom CSS class for the modal       |
 
 #### Hiding features
 
@@ -288,7 +294,7 @@ To hide the cloud sync button (e.g. for self-hosted deployments):
 To show only specific settings categories:
 
 ```svelte
-<SettingsModal bind:open categories={["theme", "editor"]} />
+<SettingsModal bind:open categories={['theme', 'editor']} />
 ```
 
 #### Vanilla JS / `mountFlowDropApp`
@@ -296,33 +302,33 @@ To show only specific settings categories:
 When using the vanilla JS mount API, pass settings modal options via `FlowDropMountOptions`:
 
 ```javascript
-import { mountFlowDropApp, createEndpointConfig } from "@flowdrop/flowdrop";
+import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop';
 
-const app = await mountFlowDropApp(document.getElementById("editor"), {
-  endpointConfig: createEndpointConfig("/api/flowdrop"),
+const app = await mountFlowDropApp(document.getElementById('editor'), {
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
   showSettings: true,
 
   // Customize the settings modal
-  settingsCategories: ["theme", "editor", "ui"],  // hide Behavior & API tabs
-  showSettingsSyncButton: false,                   // hide "Sync to Cloud"
-  showSettingsResetButton: true,                   // show reset (default)
+  settingsCategories: ['theme', 'editor', 'ui'], // hide Behavior & API tabs
+  showSettingsSyncButton: false, // hide "Sync to Cloud"
+  showSettingsResetButton: true // show reset (default)
 });
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `showSettings` | `boolean` | `true` | Show the settings gear icon in the navbar |
-| `settingsCategories` | `SettingsCategory[]` | All categories | Which tabs to display in the settings modal |
-| `showSettingsSyncButton` | `boolean` | `true` | Show the "Sync to Cloud" button |
-| `showSettingsResetButton` | `boolean` | `true` | Show the reset buttons |
+| Option                    | Type                 | Default        | Description                                 |
+| ------------------------- | -------------------- | -------------- | ------------------------------------------- |
+| `showSettings`            | `boolean`            | `true`         | Show the settings gear icon in the navbar   |
+| `settingsCategories`      | `SettingsCategory[]` | All categories | Which tabs to display in the settings modal |
+| `showSettingsSyncButton`  | `boolean`            | `true`         | Show the "Sync to Cloud" button             |
+| `showSettingsResetButton` | `boolean`            | `true`         | Show the reset buttons                      |
 
 ## Status Components
 
-| Component | Description |
-|-----------|-------------|
+| Component           | Description                                                             |
+| ------------------- | ----------------------------------------------------------------------- |
 | `NodeStatusOverlay` | Displays execution status on nodes (pending, running, completed, error) |
-| `StatusIcon` | Color-coded status icon |
-| `PipelineStatus` | Full pipeline execution view with logs sidebar |
+| `StatusIcon`        | Color-coded status icon                                                 |
+| `PipelineStatus`    | Full pipeline execution view with logs sidebar                          |
 
 ## Component Hierarchy
 

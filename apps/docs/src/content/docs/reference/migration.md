@@ -1,5 +1,5 @@
 ---
-title: "Changelog & Migration"
+title: 'Changelog & Migration'
 description: "What's new in 1.0.0 and how to upgrade from 0.0.x."
 ---
 
@@ -32,11 +32,13 @@ This guide covers all breaking changes when upgrading from `@flowdrop/flowdrop` 
 The deprecated `variableSchema` prop on `FormTemplateEditor` has been removed.
 
 **Before:**
+
 ```svelte
 <FormTemplateEditor variableSchema={schema} />
 ```
 
 **After:**
+
 ```svelte
 <FormTemplateEditor variables={{ schema }} />
 ```
@@ -46,6 +48,7 @@ The deprecated `variableSchema` prop on `FormTemplateEditor` has been removed.
 The deprecated `options` property on field schemas has been removed. Use JSON Schema standard `oneOf` instead.
 
 **Before:**
+
 ```json
 {
   "status": {
@@ -59,6 +62,7 @@ The deprecated `options` property on field schemas has been removed. Use JSON Sc
 ```
 
 **After:**
+
 ```json
 {
   "status": {
@@ -96,6 +100,7 @@ npm install @xyflow/svelte
 All stores migrated from Svelte 4 `writable` to Svelte 5 runes (`$state`/`$derived`).
 
 **Before (Svelte 4):**
+
 ```typescript
 import { get } from 'svelte/store';
 const value = get(someStore);
@@ -104,6 +109,7 @@ $: reactiveValue = $someStore;
 ```
 
 **After (Svelte 5):**
+
 ```typescript
 // Use $derived in components
 const value = $derived(getStoreValue());
@@ -114,11 +120,13 @@ const value = $derived(getStoreValue());
 `window.flowdrop` and similar globals have been removed. Use the explicit API:
 
 **Before:**
+
 ```javascript
 window.flowdrop.save();
 ```
 
 **After:**
+
 ```javascript
 const app = await mountFlowDropApp(container, options);
 app.save();
@@ -132,13 +140,13 @@ If you were relying on SvelteKit as a transitive dependency from FlowDrop, add i
 
 Old numbered spacing aliases have been replaced with named tokens:
 
-| Old | New |
-|-----|-----|
+| Old            | New              |
+| -------------- | ---------------- |
 | `--fd-space-1` | `--fd-space-3xs` |
-| `--fd-space-2` | `--fd-space-xs` |
-| `--fd-space-3` | `--fd-space-sm` |
-| `--fd-space-4` | `--fd-space-md` |
-| (etc.) | (etc.) |
+| `--fd-space-2` | `--fd-space-xs`  |
+| `--fd-space-3` | `--fd-space-sm`  |
+| `--fd-space-4` | `--fd-space-md`  |
+| (etc.)         | (etc.)           |
 
 ### Node component naming normalized
 
@@ -167,4 +175,4 @@ All source files now compile under `strict: true`. This may surface type errors 
 6. Update CSS custom property names from numbered to named tokens.
 
 7. Run your TypeScript build to catch any strict-mode type errors.
-</Steps>
+   </Steps>

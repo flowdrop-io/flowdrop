@@ -275,13 +275,14 @@
 {#if showSettings}
   {@const settingsModalProps = {
     ...(settingsCategories !== undefined && { categories: settingsCategories }),
-    ...(showSettingsSyncButton !== undefined && { showSyncButton: showSettingsSyncButton }),
-    ...(showSettingsResetButton !== undefined && { showResetButton: showSettingsResetButton }),
+    ...(showSettingsSyncButton !== undefined && {
+      showSyncButton: showSettingsSyncButton,
+    }),
+    ...(showSettingsResetButton !== undefined && {
+      showResetButton: showSettingsResetButton,
+    }),
   }}
-  <SettingsModal
-    bind:open={isSettingsOpen}
-    {...settingsModalProps}
-  />
+  <SettingsModal bind:open={isSettingsOpen} {...settingsModalProps} />
 {/if}
 
 <style>

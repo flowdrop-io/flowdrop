@@ -1,10 +1,10 @@
 {
-	"private": true,
-	"description": "FlowDrop monorepo",
-	"scripts": {
-		"prepare": "husky"
-	},
-	"devDependencies": {
-		"husky": "^9.1.7"
-	}
+  "private": true,
+  "description": "FlowDrop monorepo",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
 }

@@ -13,42 +13,42 @@ Not all endpoints are required. Here they are organized by priority:
 
 These 5 endpoints are the **bare minimum** to get FlowDrop working:
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/health` | Health check (FlowDrop checks this on mount) |
-| `GET` | `/nodes` | List available node types |
-| `GET` | `/workflows/:id` | Load a workflow |
-| `POST` | `/workflows` | Create a new workflow |
-| `PUT` | `/workflows/:id` | Update an existing workflow |
+| Method | Path             | Purpose                                      |
+| ------ | ---------------- | -------------------------------------------- |
+| `GET`  | `/health`        | Health check (FlowDrop checks this on mount) |
+| `GET`  | `/nodes`         | List available node types                    |
+| `GET`  | `/workflows/:id` | Load a workflow                              |
+| `POST` | `/workflows`     | Create a new workflow                        |
+| `PUT`  | `/workflows/:id` | Update an existing workflow                  |
 
 ### Tier 2: Full Editor Experience
 
 These endpoints enable the complete sidebar, categories, and port validation:
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/categories` | Node category definitions (sidebar groups) |
-| `GET` | `/port-config` | Port data types and compatibility rules |
-| `GET` | `/nodes/:id` | Get a single node's metadata |
-| `GET` | `/workflows` | List all workflows |
-| `DELETE` | `/workflows/:id` | Delete a workflow |
+| Method   | Path             | Purpose                                    |
+| -------- | ---------------- | ------------------------------------------ |
+| `GET`    | `/categories`    | Node category definitions (sidebar groups) |
+| `GET`    | `/port-config`   | Port data types and compatibility rules    |
+| `GET`    | `/nodes/:id`     | Get a single node's metadata               |
+| `GET`    | `/workflows`     | List all workflows                         |
+| `DELETE` | `/workflows/:id` | Delete a workflow                          |
 
 ### Tier 3: Advanced Features
 
 These enable playground, execution, interrupts, and settings:
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/workflows/:id/execute` | Execute a workflow |
-| `GET` | `/workflows/:id/executions/:eid/status` | Execution status |
-| `POST` | `/playground/sessions` | Create playground session |
-| `GET` | `/playground/sessions/:sid/messages` | Poll for messages |
-| `POST` | `/playground/sessions/:sid/messages` | Send user message |
-| `GET` | `/interrupts/:id` | Get pending interrupt |
-| `POST` | `/interrupts/:id/resolve` | Resolve an interrupt |
-| `GET` | `/system/config` | Runtime configuration |
-| `GET` | `/settings` | User settings |
-| `PUT` | `/settings` | Update user settings |
+| Method | Path                                    | Purpose                   |
+| ------ | --------------------------------------- | ------------------------- |
+| `POST` | `/workflows/:id/execute`                | Execute a workflow        |
+| `GET`  | `/workflows/:id/executions/:eid/status` | Execution status          |
+| `POST` | `/playground/sessions`                  | Create playground session |
+| `GET`  | `/playground/sessions/:sid/messages`    | Poll for messages         |
+| `POST` | `/playground/sessions/:sid/messages`    | Send user message         |
+| `GET`  | `/interrupts/:id`                       | Get pending interrupt     |
+| `POST` | `/interrupts/:id/resolve`               | Resolve an interrupt      |
+| `GET`  | `/system/config`                        | Runtime configuration     |
+| `GET`  | `/settings`                             | User settings             |
+| `PUT`  | `/settings`                             | Update user settings      |
 
 ## Base URL Configuration
 
@@ -68,6 +68,7 @@ const endpointConfig = createEndpointConfig('/api/flowdrop');
 FlowDrop calls this to verify the backend is reachable.
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -80,12 +81,14 @@ FlowDrop calls this to verify the backend is reachable.
 Returns all available node types. FlowDrop uses this to populate the sidebar.
 
 **Query parameters:**
+
 - `category` (optional) — filter by category
 - `search` (optional) — search name/description
 - `limit` (optional, default: 100)
 - `offset` (optional, default: 0)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -122,6 +125,7 @@ Returns all available node types. FlowDrop uses this to populate the sidebar.
 ```
 
 **Key fields in `NodeMetadata`:**
+
 - `id` (required) — unique identifier
 - `name` (required) — display name
 - `type` — node visual type: `workflowNode`, `simple`, `square`, `tool`, `gateway`, `terminal`, `idea`, `note`
@@ -135,6 +139,7 @@ Returns all available node types. FlowDrop uses this to populate the sidebar.
 Creates a new workflow. FlowDrop sends the full workflow JSON.
 
 **Request body:**
+
 ```json
 {
   "name": "My Workflow",
@@ -147,7 +152,7 @@ Creates a new workflow. FlowDrop sends the full workflow JSON.
       "data": {
         "label": "Text Input",
         "config": { "placeholder": "Enter text..." },
-        "metadata": { "id": "text_input", "name": "Text Input", "..." : "..." }
+        "metadata": { "id": "text_input", "name": "Text Input", "...": "..." }
       }
     }
   ],
@@ -164,6 +169,7 @@ Creates a new workflow. FlowDrop sends the full workflow JSON.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -193,6 +199,7 @@ Returns a single workflow by ID. Same response format as `POST` response.
 Returns category definitions for the node sidebar.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -222,6 +229,7 @@ Returns category definitions for the node sidebar.
 Returns data type definitions and compatibility rules for port connections.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -259,11 +267,13 @@ FlowDrop runs in the browser, so your backend must allow cross-origin requests i
 ```typescript
 // Express example
 import cors from 'cors';
-app.use(cors({
-  origin: 'http://localhost:5173', // your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: 'http://localhost:5173', // your frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
 ```
 
 ## Error Response Format
@@ -280,6 +290,7 @@ When an operation fails, return a consistent error format:
 ```
 
 FlowDrop's API client expects standard HTTP status codes:
+
 - `200` — success
 - `201` — created
 - `400` — bad request (validation error)
@@ -307,9 +318,12 @@ For dynamic use cases, load from a database:
 
 ```typescript
 app.get('/api/flowdrop/nodes', async (req, res) => {
-  const nodes = await db.collection('nodes').find({
-    ...(req.query.category && { category: req.query.category })
-  }).toArray();
+  const nodes = await db
+    .collection('nodes')
+    .find({
+      ...(req.query.category && { category: req.query.category })
+    })
+    .toArray();
   res.json({ success: true, data: nodes });
 });
 ```

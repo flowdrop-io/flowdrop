@@ -20,6 +20,6 @@ app.use(API_BASE, categoryRoutes);
 app.use(API_BASE, portConfigRoutes);
 
 app.listen(PORT, () => {
-	console.log(`FlowDrop Example Server running at http://localhost:${PORT}`);
-	console.log(`API base: http://localhost:${PORT}${API_BASE}`);
+  console.log(`FlowDrop Example Server running at http://localhost:${PORT}`);
+  console.log(`API base: http://localhost:${PORT}${API_BASE}`);
 });

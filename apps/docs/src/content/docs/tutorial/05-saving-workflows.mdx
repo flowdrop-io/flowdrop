@@ -139,35 +139,32 @@ import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop/edito
 import '@flowdrop/flowdrop/styles';
 
 const nodes = [
-  { id: 'text_input', name: 'Text Input', type: 'simple', category: 'inputs', /* ... */ },
-  { id: 'text_output', name: 'Text Output', type: 'simple', category: 'outputs', /* ... */ },
-  { id: 'ai_analyzer', name: 'AI Analyzer', type: 'tool', category: 'ai', /* ... */ },
+  { id: 'text_input', name: 'Text Input', type: 'simple', category: 'inputs' /* ... */ },
+  { id: 'text_output', name: 'Text Output', type: 'simple', category: 'outputs' /* ... */ },
+  { id: 'ai_analyzer', name: 'AI Analyzer', type: 'tool', category: 'ai' /* ... */ }
   // ...more nodes
 ];
 
 const categories = [
   { id: 'inputs', name: 'Inputs', icon: 'mdi:import', color: '#22c55e' },
   { id: 'outputs', name: 'Outputs', icon: 'mdi:export', color: '#ef4444' },
-  { id: 'ai', name: 'AI & ML', icon: 'mdi:brain', color: '#9C27B0' },
+  { id: 'ai', name: 'AI & ML', icon: 'mdi:brain', color: '#9C27B0' }
   // ...more categories
 ];
 
-const app = await mountFlowDropApp(
-  document.getElementById('editor'),
-  {
-    nodes,
-    categories,
-    endpointConfig: createEndpointConfig('/api/flowdrop'),
-    height: '100vh',
-    showNavbar: true,
-    eventHandlers: {
-      onAfterSave: async (wf) => console.log('Saved:', wf.id),
-      onDirtyStateChange: (dirty) => {
-        document.title = dirty ? '* Editor' : 'Editor';
-      }
+const app = await mountFlowDropApp(document.getElementById('editor'), {
+  nodes,
+  categories,
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  height: '100vh',
+  showNavbar: true,
+  eventHandlers: {
+    onAfterSave: async (wf) => console.log('Saved:', wf.id),
+    onDirtyStateChange: (dirty) => {
+      document.title = dirty ? '* Editor' : 'Editor';
     }
   }
-);
+});
 ```
 
 ## What's next
