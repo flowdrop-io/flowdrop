@@ -57,12 +57,11 @@
    * Get the hideUnconnectedHandles setting from extensions
    * Merges node type defaults with instance overrides
    */
-  const hideUnconnectedHandles = $derived(() => {
-    const typeDefault =
-      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ?? false;
-    const instanceOverride = props.data.extensions?.ui?.hideUnconnectedHandles;
-    return instanceOverride ?? typeDefault;
-  });
+  const hideUnconnectedHandles = $derived(
+    props.data.extensions?.ui?.hideUnconnectedHandles ??
+    props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
+    false,
+  );
 
   /**
    * Check if a port should be visible based on connection state and settings
@@ -72,7 +71,7 @@
    */
   function isPortVisible(port: NodePort, type: "input" | "output"): boolean {
     // Always show if hideUnconnectedHandles is disabled
-    if (!hideUnconnectedHandles()) {
+    if (!hideUnconnectedHandles) {
       return true;
     }
 
@@ -100,7 +99,7 @@
    */
   function isBranchVisible(branchName: string): boolean {
     // Always show if hideUnconnectedHandles is disabled
-    if (!hideUnconnectedHandles()) {
+    if (!hideUnconnectedHandles) {
       return true;
     }
 
@@ -211,7 +210,7 @@
   {#if visibleInputPorts.length > 0}
     <div class="flowdrop-workflow-node__ports">
       <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleInputPorts as port, inputIndex (port.id)}
+        {#each visibleInputPorts as port (port.id)}
           <div class="flowdrop-workflow-node__port">
             <!-- Input Handle: centered in row, at node edge (ports have no padding) -->
             <Handle
