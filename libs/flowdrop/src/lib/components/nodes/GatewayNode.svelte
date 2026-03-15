@@ -59,8 +59,8 @@
    */
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
-    props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-    false,
+      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
+      false,
   );
 
   /**

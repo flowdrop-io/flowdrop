@@ -23,7 +23,11 @@
     getCategoryColorToken,
   } from "$lib/utils/colors.js";
   import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
-  import { applyPortOrder, getPortTop, isPortVisible } from "../../utils/portUtils.js";
+  import {
+    applyPortOrder,
+    getPortTop,
+    isPortVisible,
+  } from "../../utils/portUtils.js";
   import CogIcon from "../icons/CogIcon.svelte";
   import AlertCircleIcon from "../icons/AlertCircleIcon.svelte";
 
@@ -50,20 +54,20 @@
    */
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
-    props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-    false,
+      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
+      false,
   );
 
   const hiddenPorts = $derived(
     props.data.extensions?.ui?.hiddenPorts ??
-    props.data.metadata?.extensions?.ui?.hiddenPorts ??
-    {},
+      props.data.metadata?.extensions?.ui?.hiddenPorts ??
+      {},
   );
 
   const portOrder = $derived(
     props.data.extensions?.ui?.portOrder ??
-    props.data.metadata?.extensions?.ui?.portOrder ??
-    {},
+      props.data.metadata?.extensions?.ui?.portOrder ??
+      {},
   );
 
   // Prioritize metadata icon over config icon for simple nodes (metadata is the node definition)
@@ -133,16 +137,36 @@
    * All visible input ports in user-defined order.
    */
   const visibleInputPorts = $derived(
-    applyPortOrder(props.data.metadata?.inputs ?? [], portOrder.inputs)
-      .filter((p: NodePort) => isPortVisible(p, "input", hiddenPorts, hideUnconnectedHandles, getConnectedHandles(), props.data.nodeId)),
+    applyPortOrder(props.data.metadata?.inputs ?? [], portOrder.inputs).filter(
+      (p: NodePort) =>
+        isPortVisible(
+          p,
+          "input",
+          hiddenPorts,
+          hideUnconnectedHandles,
+          getConnectedHandles(),
+          props.data.nodeId,
+        ),
+    ),
   );
 
   /**
    * All visible output ports in user-defined order.
    */
   const visibleOutputPorts = $derived(
-    applyPortOrder(props.data.metadata?.outputs ?? [], portOrder.outputs)
-      .filter((p: NodePort) => isPortVisible(p, "output", hiddenPorts, hideUnconnectedHandles, getConnectedHandles(), props.data.nodeId)),
+    applyPortOrder(
+      props.data.metadata?.outputs ?? [],
+      portOrder.outputs,
+    ).filter((p: NodePort) =>
+      isPortVisible(
+        p,
+        "output",
+        hiddenPorts,
+        hideUnconnectedHandles,
+        getConnectedHandles(),
+        props.data.nodeId,
+      ),
+    ),
   );
 
   /**
@@ -150,7 +174,11 @@
    */
   const nodeMinHeight = $derived(
     (() => {
-      const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
+      const maxPorts = Math.max(
+        visibleInputPorts.length,
+        visibleOutputPorts.length,
+        1,
+      );
       return maxPorts <= 1 ? 80 : 20 + maxPorts * 40;
     })(),
   );
@@ -161,7 +189,12 @@
   <Handle
     type="target"
     position={Position.Left}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(index, visibleInputPorts.length)}px; transform: translateY(-50%); z-index: 30;"
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      port.dataType,
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
+      index,
+      visibleInputPorts.length,
+    )}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-input-${port.id}`}
   />
 {/each}
@@ -237,7 +270,12 @@
   <Handle
     type="source"
     position={Position.Right}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(port.dataType)}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(index, visibleOutputPorts.length)}px; transform: translateY(-50%); z-index: 30;"
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      port.dataType,
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
+      index,
+      visibleOutputPorts.length,
+    )}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-output-${port.id}`}
   />
 {/each}

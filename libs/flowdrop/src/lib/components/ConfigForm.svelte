@@ -376,9 +376,9 @@
   const allInputPortsForUI = $derived.by<NodePort[]>(() => {
     if (!node) return [];
     const staticInputs = node.data.metadata.inputs ?? [];
-    const dynInputs = ((node.data.config?.dynamicInputs as DynamicPort[]) || []).map(
-      (p) => dynamicPortToNodePort(p, "input"),
-    );
+    const dynInputs = (
+      (node.data.config?.dynamicInputs as DynamicPort[]) || []
+    ).map((p) => dynamicPortToNodePort(p, "input"));
     return applyPortOrder(
       [...staticInputs, ...dynInputs],
       uiExtensionValues.portOrder?.inputs,
@@ -392,9 +392,9 @@
   const allOutputPortsForUI = $derived.by<NodePort[]>(() => {
     if (!node) return [];
     const staticOutputs = node.data.metadata.outputs ?? [];
-    const dynOutputs = ((node.data.config?.dynamicOutputs as DynamicPort[]) || []).map(
-      (p) => dynamicPortToNodePort(p, "output"),
-    );
+    const dynOutputs = (
+      (node.data.config?.dynamicOutputs as DynamicPort[]) || []
+    ).map((p) => dynamicPortToNodePort(p, "output"));
     return applyPortOrder(
       [...staticOutputs, ...dynOutputs],
       uiExtensionValues.portOrder?.outputs,
