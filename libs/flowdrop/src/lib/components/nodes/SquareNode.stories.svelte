@@ -80,3 +80,33 @@
     selected={true}
   />
 </Story>
+
+<Story name="Dynamic Ports">
+  <NodeDecorator
+    data={createSampleNodeData({
+      label: "Data Mapper",
+      config: {
+        dynamicInputs: [
+          { name: "source", label: "Source Data", dataType: "json", required: true },
+        ],
+        dynamicOutputs: [
+          { name: "mapped", label: "Mapped Output", dataType: "json", required: false },
+          { name: "errors", label: "Errors", dataType: "string", required: false },
+        ],
+      },
+      metadata: {
+        id: "data_mapper",
+        name: "Data Mapper",
+        description: "Map data between formats",
+        category: "processing",
+        version: "1.0.0",
+        type: "square",
+        supportedTypes: ["square"],
+        icon: "mdi:swap-horizontal",
+        color: "#0ea5e9",
+        inputs: [],
+        outputs: [],
+      },
+    })}
+  />
+</Story>
