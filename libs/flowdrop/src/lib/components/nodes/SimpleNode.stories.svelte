@@ -158,3 +158,37 @@
     })}
   />
 </Story>
+
+<Story name="Dynamic Ports">
+  <NodeDecorator
+    data={createSampleNodeData({
+      label: "Custom Function",
+      config: {
+        dynamicInputs: [
+          { name: "param_a", label: "Parameter A", description: "First parameter", dataType: "string", required: true },
+          { name: "param_b", label: "Parameter B", description: "Second parameter", dataType: "number", required: false },
+        ],
+        dynamicOutputs: [
+          { name: "result", label: "Result", description: "Function result", dataType: "json", required: false },
+        ],
+      },
+      metadata: {
+        id: "custom_function",
+        name: "Custom Function",
+        description: "A node with dynamic input and output ports",
+        category: "processing",
+        version: "1.0.0",
+        type: "simple",
+        supportedTypes: ["simple", "square", "default"],
+        icon: "mdi:function-variant",
+        color: "#8b5cf6",
+        inputs: [
+          { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false },
+        ],
+        outputs: [
+          { id: "done", name: "Done", type: "output", dataType: "trigger", required: false },
+        ],
+      },
+    })}
+  />
+</Story>

@@ -16,7 +16,9 @@
     NodeMetadata,
     NodeExtensions,
     NodePort,
+    DynamicPort,
   } from "../../types/index.js";
+  import { dynamicPortToNodePort } from "../../types/index.js";
   import Icon from "@iconify/svelte";
   import {
     getDataTypeColor,
@@ -117,11 +119,23 @@
       openConfigSidebar();
     }
   }
+  const dynamicInputs = $derived(
+    ((props.data.config?.dynamicInputs as DynamicPort[]) || []).map((port) =>
+      dynamicPortToNodePort(port, "input"),
+    ),
+  );
+
+  const dynamicOutputs = $derived(
+    ((props.data.config?.dynamicOutputs as DynamicPort[]) || []).map((port) =>
+      dynamicPortToNodePort(port, "output"),
+    ),
+  );
+
   /**
    * All visible input ports in user-defined order.
    */
   const visibleInputPorts = $derived(
-    applyPortOrder(props.data.metadata?.inputs ?? [], portOrder.inputs).filter(
+    applyPortOrder([...(props.data.metadata?.inputs ?? []), ...dynamicInputs], portOrder.inputs).filter(
       (p: NodePort) =>
         isPortVisible(
           p,
@@ -139,7 +153,7 @@
    */
   const visibleOutputPorts = $derived(
     applyPortOrder(
-      props.data.metadata?.outputs ?? [],
+      [...(props.data.metadata?.outputs ?? []), ...dynamicOutputs],
       portOrder.outputs,
     ).filter((p: NodePort) =>
       isPortVisible(
