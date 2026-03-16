@@ -6,7 +6,7 @@
   Approach:
   1. Compute the full bezier path (xyflow's getBezierPath)
   2. Parse the SVG path to extract the cubic bezier control points
-  3. Evaluate the curve near the end to get the true visual tangent
+  3. Compute exact tangent at endpoint via bezier derivative P'(1) = 3(P3-P2)
   4. Shorten the path along that tangent and draw the arrowhead at the target
 -->
 
@@ -43,32 +43,6 @@
   });
 
   /**
-   * Evaluate a cubic bezier at parameter t.
-   * P(t) = (1-t)^3 * P0 + 3(1-t)^2 * t * P1 + 3(1-t) * t^2 * P2 + t^3 * P3
-   */
-  function bezierAt(
-    p0x: number,
-    p0y: number,
-    p1x: number,
-    p1y: number,
-    p2x: number,
-    p2y: number,
-    p3x: number,
-    p3y: number,
-    t: number,
-  ): { x: number; y: number } {
-    const u = 1 - t;
-    const uu = u * u;
-    const uuu = uu * u;
-    const tt = t * t;
-    const ttt = tt * t;
-    return {
-      x: uuu * p0x + 3 * uu * t * p1x + 3 * u * tt * p2x + ttt * p3x,
-      y: uuu * p0y + 3 * uu * t * p1y + 3 * u * tt * p2y + ttt * p3y,
-    };
-  }
-
-  /**
    * Parse the SVG cubic bezier path "M x0,y0 C x1,y1 x2,y2 x3,y3"
    * into the four control points.
    */
@@ -86,9 +60,6 @@
       p3y: nums[7],
     };
   }
-
-  // Parameter near the end of the curve for tangent sampling
-  const T_SAMPLE = 0.9;
 
   let computed = $derived.by(() => {
     // 1. Get the full bezier path from xyflow
@@ -108,30 +79,18 @@
       return { path: fullPath, labelX: lx, labelY: ly, angleDeg: 0 };
     }
 
-    // 3. Evaluate the curve at T_SAMPLE to get a reference point
-    const ref = bezierAt(
-      cp.p0x,
-      cp.p0y,
-      cp.p1x,
-      cp.p1y,
-      cp.p2x,
-      cp.p2y,
-      cp.p3x,
-      cp.p3y,
-      T_SAMPLE,
-    );
-
-    // 4. Tangent direction: from reference point to the target
-    const dx = targetX - ref.x;
-    const dy = targetY - ref.y;
+    // 3. Compute exact tangent at curve endpoint using bezier derivative:
+    //    P'(1) = 3 * (P3 - P2), giving the true arrival direction
+    const dx = cp.p3x - cp.p2x;
+    const dy = cp.p3y - cp.p2y;
     const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
     const angleRad = Math.atan2(dy, dx);
 
-    // 5. Shorten: move the endpoint back along the tangent
+    // 4. Shorten: move the endpoint back along the tangent
     const adjX = targetX - Math.cos(angleRad) * ARROW_LENGTH_PX;
     const adjY = targetY - Math.sin(angleRad) * ARROW_LENGTH_PX;
 
-    // 6. Recompute the bezier path with the shortened target
+    // 5. Recompute the bezier path with the shortened target
     const [shortenedPath] = getBezierPath({
       sourceX,
       sourceY,
