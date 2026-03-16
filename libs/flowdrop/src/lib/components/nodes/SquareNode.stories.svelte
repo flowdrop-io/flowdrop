@@ -87,11 +87,26 @@
       label: "Data Mapper",
       config: {
         dynamicInputs: [
-          { name: "source", label: "Source Data", dataType: "json", required: true },
+          {
+            name: "source",
+            label: "Source Data",
+            dataType: "json",
+            required: true,
+          },
         ],
         dynamicOutputs: [
-          { name: "mapped", label: "Mapped Output", dataType: "json", required: false },
-          { name: "errors", label: "Errors", dataType: "string", required: false },
+          {
+            name: "mapped",
+            label: "Mapped Output",
+            dataType: "json",
+            required: false,
+          },
+          {
+            name: "errors",
+            label: "Errors",
+            dataType: "string",
+            required: false,
+          },
         ],
       },
       metadata: {
