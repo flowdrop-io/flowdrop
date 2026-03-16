@@ -165,11 +165,29 @@
       label: "Custom Function",
       config: {
         dynamicInputs: [
-          { name: "param_a", label: "Parameter A", description: "First parameter", dataType: "string", required: true },
-          { name: "param_b", label: "Parameter B", description: "Second parameter", dataType: "number", required: false },
+          {
+            name: "param_a",
+            label: "Parameter A",
+            description: "First parameter",
+            dataType: "string",
+            required: true,
+          },
+          {
+            name: "param_b",
+            label: "Parameter B",
+            description: "Second parameter",
+            dataType: "number",
+            required: false,
+          },
         ],
         dynamicOutputs: [
-          { name: "result", label: "Result", description: "Function result", dataType: "json", required: false },
+          {
+            name: "result",
+            label: "Result",
+            description: "Function result",
+            dataType: "json",
+            required: false,
+          },
         ],
       },
       metadata: {
@@ -183,10 +201,22 @@
         icon: "mdi:function-variant",
         color: "#8b5cf6",
         inputs: [
-          { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false },
+          {
+            id: "trigger",
+            name: "Trigger",
+            type: "input",
+            dataType: "trigger",
+            required: false,
+          },
         ],
         outputs: [
-          { id: "done", name: "Done", type: "output", dataType: "trigger", required: false },
+          {
+            id: "done",
+            name: "Done",
+            type: "output",
+            dataType: "trigger",
+            required: false,
+          },
         ],
       },
     })}

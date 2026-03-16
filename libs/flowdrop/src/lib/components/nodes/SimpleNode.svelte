@@ -151,16 +151,18 @@
    * All visible input ports in user-defined order.
    */
   const visibleInputPorts = $derived(
-    applyPortOrder([...(props.data.metadata?.inputs ?? []), ...dynamicInputs], portOrder.inputs).filter(
-      (p: NodePort) =>
-        isPortVisible(
-          p,
-          "input",
-          hiddenPorts,
-          hideUnconnectedHandles,
-          getConnectedHandles(),
-          props.data.nodeId,
-        ),
+    applyPortOrder(
+      [...(props.data.metadata?.inputs ?? []), ...dynamicInputs],
+      portOrder.inputs,
+    ).filter((p: NodePort) =>
+      isPortVisible(
+        p,
+        "input",
+        hiddenPorts,
+        hideUnconnectedHandles,
+        getConnectedHandles(),
+        props.data.nodeId,
+      ),
     ),
   );
 

@@ -84,26 +84,57 @@
       label: "Custom Function",
       config: {
         dynamicInputs: [
-          { name: "input_1", label: "First Input", description: "The first input parameter", dataType: "string", required: true },
-          { name: "input_2", label: "Second Input", description: "The second input parameter", dataType: "number", required: false },
+          {
+            name: "input_1",
+            label: "First Input",
+            description: "The first input parameter",
+            dataType: "string",
+            required: true,
+          },
+          {
+            name: "input_2",
+            label: "Second Input",
+            description: "The second input parameter",
+            dataType: "number",
+            required: false,
+          },
         ],
         dynamicOutputs: [
-          { name: "output_1", label: "Primary Output", description: "The main output value", dataType: "string", required: false },
+          {
+            name: "output_1",
+            label: "Primary Output",
+            description: "The main output value",
+            dataType: "string",
+            required: false,
+          },
         ],
       },
       metadata: {
         id: "custom-function",
         name: "Custom Function",
-        description: "Execute a custom function with dynamic inputs and outputs",
+        description:
+          "Execute a custom function with dynamic inputs and outputs",
         category: "processing",
         version: "1.0.0",
         type: "workflow",
         icon: "mdi:function-variant",
         inputs: [
-          { id: "trigger", name: "Trigger", type: "input", dataType: "trigger", required: false },
+          {
+            id: "trigger",
+            name: "Trigger",
+            type: "input",
+            dataType: "trigger",
+            required: false,
+          },
         ],
         outputs: [
-          { id: "done", name: "Done", type: "output", dataType: "trigger", required: false },
+          {
+            id: "done",
+            name: "Done",
+            type: "output",
+            dataType: "trigger",
+            required: false,
+          },
         ],
       },
     })}
