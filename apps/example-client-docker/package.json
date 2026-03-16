@@ -19,7 +19,7 @@
     "@codemirror/state": "^6.5.4",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.39.14",
-    "@flowdrop/flowdrop": "^1.0.0",
+    "@flowdrop/flowdrop": "^1.4.0",
     "@iconify/svelte": "^5.0.0",
     "@xyflow/svelte": "^1.2",
     "codemirror": "^6.0.2"
