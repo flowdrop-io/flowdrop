@@ -3,6 +3,8 @@ title: Human-in-the-Loop
 description: Pause workflows for human approval, input, or review.
 ---
 
+import InterruptPreview from '../../../components/InterruptPreview.svelte';
+
 FlowDrop's interrupt system enables workflows to pause execution and request user input before continuing. This is essential for approval workflows, data collection, decision points, and quality control.
 
 ## Interrupt Types
@@ -10,6 +12,8 @@ FlowDrop's interrupt system enables workflows to pause execution and request use
 ### Confirmation
 
 Simple yes/no prompt for binary decisions:
+
+<InterruptPreview type="confirmation" height="200px" client:only="svelte" />
 
 ```json
 {
@@ -25,6 +29,8 @@ Simple yes/no prompt for binary decisions:
 ### Choice
 
 Single or multiple selection from predefined options:
+
+<InterruptPreview type="choice" height="360px" client:only="svelte" />
 
 ```json
 {
@@ -44,6 +50,8 @@ Single or multiple selection from predefined options:
 
 Free-form text entry:
 
+<InterruptPreview type="text_input" height="340px" client:only="svelte" />
+
 ```json
 {
   "interrupt_type": "text_input",
@@ -59,6 +67,8 @@ Free-form text entry:
 ### Form
 
 Complex data entry using JSON Schema:
+
+<InterruptPreview type="form" height="520px" client:only="svelte" />
 
 ```json
 {
@@ -106,12 +116,19 @@ Review proposed field changes with per-field accept/reject decisions and visual 
 
 ## Architecture
 
-```
-Workflow Execution -> Backend (creates interrupt) -> Frontend (renders prompt)
-                                                          |
-                                                     User Response
-                                                          |
-                                                   Backend (resumes) -> Workflow continues
+```mermaid
+sequenceDiagram
+    participant W as Workflow Execution
+    participant B as Backend
+    participant F as Frontend
+    participant U as User
+
+    W->>B: Pause & create interrupt
+    B->>F: Send interrupt request
+    F->>U: Render prompt
+    U->>F: Submit response
+    F->>B: Resolve interrupt
+    B->>W: Resume workflow
 ```
 
 ## Frontend Integration

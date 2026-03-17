@@ -15,3 +15,4 @@ export { default as ConfirmationPrompt } from "./ConfirmationPrompt.svelte";
 export { default as ChoicePrompt } from "./ChoicePrompt.svelte";
 export { default as TextInputPrompt } from "./TextInputPrompt.svelte";
 export { default as FormPrompt } from "./FormPrompt.svelte";
+export { default as ReviewPrompt } from "./ReviewPrompt.svelte";
