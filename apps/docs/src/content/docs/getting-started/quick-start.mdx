@@ -52,23 +52,107 @@ For vanilla JS, React, Vue, Angular, or any framework — use the mount API:
 <div bind:this={container} style="width: 100%; height: 600px;" />
 ```
 
-### Vanilla JS
+### Vanilla JS (with Vite)
+
+FlowDrop works in any project that bundles ES modules. Here's a complete setup with Vite:
+
+**1. Scaffold a project**
+
+```bash
+npm create vite@latest my-flowdrop-app -- --template vanilla
+cd my-flowdrop-app
+npm install @flowdrop/flowdrop @iconify/svelte @xyflow/svelte svelte
+```
+
+**2. Configure Vite**
 
 ```javascript
-import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop';
+// vite.config.js
+import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+
+export default defineConfig({
+  plugins: [svelte()],
+  optimizeDeps: {
+    exclude: ['@flowdrop/flowdrop', '@xyflow/svelte']
+  }
+});
+```
+
+You'll also need a minimal Svelte config:
+
+```javascript
+// svelte.config.js
+export default {};
+```
+
+**3. Create the editor page**
+
+```html
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Workflow Editor</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; }
+      #editor { width: 100vw; height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <div id="editor"></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
+```
+
+```javascript
+// main.js
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import { createEndpointConfig } from '@flowdrop/flowdrop/core';
 import '@flowdrop/flowdrop/styles';
 
 const app = await mountFlowDropApp(document.getElementById('editor'), {
   endpointConfig: createEndpointConfig('/api/flowdrop'),
   eventHandlers: {
+    onDirtyStateChange: (isDirty) => {
+      document.title = isDirty ? '● Unsaved Changes' : 'My Workflow Editor';
+    },
     onAfterSave: (workflow) => console.log('Saved!', workflow)
   }
 });
+```
 
-// Full control over the editor
+**4. Run it**
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:5173` — you have a full workflow editor.
+
+**5. Programmatic control**
+
+The mount function returns an API object you can use from anywhere in your code:
+
+```javascript
+// Check for unsaved changes
+if (app.isDirty()) {
+  const confirmed = confirm('You have unsaved changes. Save now?');
+  if (confirmed) await app.save();
+}
+
+// Read the current workflow as JSON
 const workflow = app.getWorkflow();
-await app.save();
-app.destroy();
+console.log(JSON.stringify(workflow, null, 2));
+
+// Export the workflow as a downloadable JSON file
+app.export();
+
+// Clean up when navigating away
+window.addEventListener('beforeunload', () => app.destroy());
 ```
 
 ## What's Next?
