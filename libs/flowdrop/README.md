@@ -2,14 +2,16 @@
   <img src="https://raw.githubusercontent.com/flowdrop-io/flowdrop/main/libs/flowdrop/static/logo.svg" alt="FlowDrop" width="120" />
 </p>
 
-<h1 align="center">FlowDrop</h1>
+<h1 align="center">FlowDrop™</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/github/actions/workflow/status/flowdrop-io/flowdrop/docker-publish.yml?style=flat-square&label=Build" alt="GitHub pages build status" />
+  <img src="https://img.shields.io/github/actions/workflow/status/flowdrop-io/flowdrop/docker-publish.yml?style=flat-square&label=Build" alt="GitHub build status" />
   <a href="https://www.npmjs.com/package/@flowdrop/flowdrop"><img src="https://img.shields.io/npm/v/@flowdrop/flowdrop?style=flat-square" alt="npm" /></a>
   <img src="https://img.shields.io/npm/unpacked-size/%40flowdrop%2Fflowdrop?style=flat-square" alt="NPM Unpacked Size" />
   <img src="https://img.shields.io/npm/types/@flowdrop/flowdrop?style=flat-square" alt="npm type definitions" />
-  <a href="http://npmjs.com/package/@flowdrop/flowdrop"><img src="https://img.shields.io/npm/dt/@flowdrop/flowdrop.svg?maxAge=2592000&style=flat-square" alt="npm downloads" /></a>
+  <a href="http://npmjs.com/package/@flowdrop/flowdrop"><img alt="NPM Downloads" src="https://img.shields.io/npm/d18m/%40flowdrop%2Fflowdrop"></a>
+  
+
 </p>
 
 <p align="center">
@@ -22,10 +24,10 @@
 </p>
 
 <p align="center">
-  <a href="#quickstart">Quickstart</a> •
+  <a href="https://docs.flowdrop.io/getting-started/installation">Quickstart</a> •
   <a href="#features">Features</a> •
   <a href="#integration">Integration</a> •
-  <a href="#documentation">Docs</a>
+  <a href="https://docs.flowdrop.io">Docs</a>
 </p>
 
 <p align="center">
@@ -70,12 +72,12 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 |                              |                                                                           |
 | ---------------------------- | ------------------------------------------------------------------------- |
-| 🎨 **Visual Editor Only**    | Pure UI component. No hidden backend, no external dependencies            |
-| 🔐 **You Own Everything**    | Your data, your servers, your orchestration logic, your security policies |
-| 🔌 **Backend Agnostic**      | Connect to any API: Drupal, Laravel, Express, FastAPI, or your own        |
-| 🧩 **7 Built-in Node Types** | From simple icons to complex gateway logic                                |
-| 🎭 **Framework Flexible**    | Use as Svelte component or mount into React, Vue, Angular, or vanilla JS  |
-| 🐳 **Deploy Anywhere**       | Runtime config means build once, deploy everywhere                        |
+| **Visual Editor Only**    | Pure UI component. No hidden backend, no external dependencies            |
+| **You Own Everything**    | Your data, your servers, your orchestration logic, your security policies |
+| **Backend Agnostic**      | Connect to any API: Drupal, Laravel, Express, FastAPI, or your own        |
+| **8 Built-in Node Types** | From simple icons to complex gateway logic                                |
+| **Framework Flexible**    | Use as Svelte component or mount into React, Vue, Angular, or vanilla JS  |
+| **Deploy Anywhere**       | Runtime config means build once, deploy everywhere                        |
 
 ## Architecture Notes
 
@@ -85,7 +87,7 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ## Node Types
 
-FlowDrop ships with 7 beautifully designed node types:
+FlowDrop ships with 8 beautifully designed node types:
 
 | Type       | Purpose                                 |
 | ---------- | --------------------------------------- |
@@ -96,6 +98,7 @@ FlowDrop ships with 7 beautifully designed node types:
 | `gateway`  | Conditional branching logic             |
 | `terminal` | Start/end workflow points               |
 | `note`     | Markdown documentation blocks           |
+| `idea`     | Conceptual BPMN-like flow nodes         |
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/flowdrop-io/flowdrop/main/libs/flowdrop/static/Node-Types.jpg" alt="FlowDrop Node Types" width="800" />
@@ -103,6 +106,49 @@ FlowDrop ships with 7 beautifully designed node types:
 <p align="center">
   <em>From simple triggers to complex branching logic, each node type is designed for specific workflow patterns.</em>
 </p>
+
+## Themes
+
+FlowDrop includes a theme system with built-in light/dark support:
+
+```svelte
+<script lang="ts">
+  import { WorkflowEditor } from "@flowdrop/flowdrop";
+  import "@flowdrop/flowdrop/styles";
+</script>
+
+<!-- Built-in themes: 'default' or 'minimal' -->
+<WorkflowEditor theme="minimal" />
+```
+
+Themes bundle a visual skin (CSS token palette) with behavioral UI defaults. You can also pass a custom theme object with your own skin tokens for full control over the light and dark palettes.
+
+```javascript
+// Via the mount API
+const app = await mountFlowDropApp(container, {
+  theme: "minimal",
+  // or a custom theme object:
+  // theme: { name: 'minimal', skin: { tokens: { primary: '#e11d48' } } }
+});
+```
+
+## Sub-Module Exports
+
+FlowDrop provides tree-shakeable sub-module exports so you can import only what you need:
+
+| Export Path | Contents |
+| --- | --- |
+| `@flowdrop/flowdrop` | Full library (components, stores, services, types) |
+| `@flowdrop/flowdrop/core` | Types and utilities only (no heavy dependencies) |
+| `@flowdrop/flowdrop/editor` | WorkflowEditor, stores, services |
+| `@flowdrop/flowdrop/form` | SchemaForm, form fields, registry |
+| `@flowdrop/flowdrop/form/code` | Code editor field (CodeMirror) |
+| `@flowdrop/flowdrop/form/markdown` | Markdown editor field |
+| `@flowdrop/flowdrop/display` | MarkdownDisplay component |
+| `@flowdrop/flowdrop/playground` | Playground components and services |
+| `@flowdrop/flowdrop/settings` | SettingsPanel, stores, services |
+| `@flowdrop/flowdrop/styles` | Base CSS stylesheet |
+| `@flowdrop/flowdrop/schema` | Workflow JSON schema |
 
 ## Integration
 
@@ -173,8 +219,7 @@ Connect to any backend in seconds:
 ```typescript
 import { createEndpointConfig } from "@flowdrop/flowdrop";
 
-const config = createEndpointConfig({
-  baseUrl: "https://api.example.com",
+const config = createEndpointConfig("https://api.example.com", {
   endpoints: {
     nodes: { list: "/nodes", get: "/nodes/{id}" },
     workflows: {
@@ -185,20 +230,19 @@ const config = createEndpointConfig({
       execute: "/workflows/{id}/execute",
     },
   },
-  auth: { type: "bearer", token: "your-token" },
 });
 ```
 
 ## Customization
 
-Make it yours with CSS custom properties:
+The recommended way to customize FlowDrop's appearance is through the [theme system](#themes). For fine-grained control, you can also override individual CSS custom properties:
 
 ```css
 :root {
-  --flowdrop-background-color: #0a0a0a;
-  --flowdrop-primary-color: #6366f1;
-  --flowdrop-border-color: #27272a;
-  --flowdrop-text-color: #fafafa;
+  --fd-background: #0a0a0a;
+  --fd-primary: #6366f1;
+  --fd-border: #27272a;
+  --fd-foreground: #fafafa;
 }
 ```
 
@@ -225,9 +269,8 @@ Runtime configuration means you build once and deploy to staging, production, or
 
 | Resource                                                     | Description              |
 | ------------------------------------------------------------ | ------------------------ |
-| [API Documentation](https://flowdrop-io.github.io/flowdrop/) | REST API specification   |
-| [Docker Guide](../../apps/example-client-docker/README.md)   | Docker deployment guide  |
-| [QUICK_START.md](./QUICK_START.md)                           | Get running in 5 minutes |
+| [QUICK_START.md](https://docs.flowdrop.io/getting-started/installation/)                           | Get running in 5 minutes |
+| [API Documentation](https://api.flowdrop.io/v1/) | REST API specification   |
 | [CHANGELOG.md](./CHANGELOG.md)                               | Version history          |
 
 ## Development
@@ -237,6 +280,7 @@ pnpm install         # Install dependencies
 pnpm dev             # Start dev server
 pnpm build           # Build library
 pnpm test            # Run all tests
+pnpm storybook       # Launch Storybook
 ```
 
 ## Contributing
