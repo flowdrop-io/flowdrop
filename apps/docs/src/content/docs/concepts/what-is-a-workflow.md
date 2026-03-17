@@ -34,22 +34,41 @@ Edges have **categories** that determine their visual style and semantic meaning
 
 ### Ports
 
-A **port** is a typed connection point on a node. Nodes have **input ports** (receiving data) and **output ports** (sending data).
+A **port** is a typed connection point on a node. Nodes have **input ports** (receiving data) and **output ports** (sending data). Ports represent the **runtime data** that flows between nodes during execution — the actual payloads that one node passes to the next.
 
 Each port has a **data type** (e.g., `string`, `json`, `file`, `trigger`). FlowDrop enforces **type-safe connections** — you can only connect ports with compatible data types.
 
+For example, an LLM node might have:
+- An input port of type `string` that receives the user's prompt
+- An output port of type `json` that emits the model's response
+
+Ports are **unique to each connection** — every edge carries its own data between a specific pair of nodes.
+
 ### Config
 
-Each node's behavior is controlled by its **configuration** — a set of key-value pairs defined by a [JSON Schema](/guides/config-schema/). For example, an HTTP request node might have config fields for URL, method, headers, and body.
+**Configuration** is different from ports. While ports carry runtime data that varies with each execution, config holds **shared settings** that apply consistently across all runs of the workflow.
 
-The configuration schema also controls the **form UI** that appears when users click on a node.
+Config values are defined by a [JSON Schema](/guides/config-schema/) and edited through a form UI when users click on a node. They control _how_ a node behaves rather than _what_ data it processes.
+
+For example, the same LLM node might have config fields for:
+- **Model name** — which LLM to use (e.g., `claude-sonnet-4-20250514`)
+- **Temperature** — how creative the responses should be
+- **Max tokens** — the response length limit
+
+These values don't change from request to request — they're decisions the workflow author makes once, and every execution of the workflow uses them.
+
+:::tip[Ports vs. Config — a quick rule of thumb]
+**Ports** = "What data flows through at runtime?" (dynamic, per-execution)
+
+**Config** = "How is this node set up?" (static, set once by the workflow author)
+:::
 
 ## How It All Fits Together
 
 ![Workflow diagram showing Node A connected to Node B via an edge, with labeled input/output ports and configuration fields](../../../assets/images/diagrams/node-port-concept.svg)
 
 :::note
-Each node has typed **ports** (input/output connection points) and **config** (user-editable settings). An **edge** connects an output port to an input port, defining data flow.
+Each node has typed **ports** for runtime data and **config** for workflow-level settings. An **edge** connects an output port to an input port, defining data flow. Config values stay the same across executions; port data changes every time.
 :::
 
 A workflow is a **graph**: nodes are the vertices, edges are the connections, ports define where connections attach, and config controls what each node does.
