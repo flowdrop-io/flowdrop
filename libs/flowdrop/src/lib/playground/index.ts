@@ -133,6 +133,7 @@ export {
   ChoicePrompt,
   TextInputPrompt,
   FormPrompt,
+  ReviewPrompt,
 } from "../components/interrupt/index.js";
 
 // ============================================================================

@@ -1,0 +1,97 @@
+---
+/**
+ * Standalone interrupt prompt preview page.
+ * Renders a single FlowDrop interrupt prompt component.
+ * Loaded in an iframe from the docs site for style isolation.
+ * Query params (parsed client-side):
+ *   ?type=confirmation  — interrupt type (confirmation|choice|text_input|form|review)
+ *   ?theme=dark         — color theme (dark|light)
+ */
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Interrupt Preview</title>
+		<style is:global>
+			*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+			html, body { width: 100%; height: 100%; overflow: auto; }
+			body { font-family: system-ui, sans-serif; background: #0a0a0f; color: #c0c0d8; }
+			#preview { width: 100%; }
+			#loading {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100%;
+				color: #7a7a9a;
+				font-size: 0.875rem;
+			}
+			.hidden { display: none !important; }
+
+			/* Skin tokens for dark mode */
+			[data-theme='dark'] {
+				--fd-background: #13131a;
+				--fd-foreground: #c0c0d8;
+				--fd-muted: #1a1a28;
+				--fd-muted-foreground: #7a7a9a;
+				--fd-card: #1a1a28;
+				--fd-card-foreground: #e8e8f0;
+				--fd-border: #2a2a3a;
+				--fd-border-muted: #1e1e2a;
+				--fd-border-strong: #3a3a55;
+				--fd-header: #1a1a25;
+				--fd-layout-background: #0a0a0f;
+				--fd-primary: #6c63ff;
+				--fd-primary-hover: #7c74ff;
+				--fd-primary-foreground: #ffffff;
+				--fd-primary-muted: rgba(108, 99, 255, 0.15);
+				--fd-subtle: rgba(108, 99, 255, 0.08);
+				--fd-scrollbar-thumb: #2a2a3a;
+				--fd-scrollbar-track: #13131a;
+				--fd-backdrop: rgba(19, 19, 26, 0.9);
+				--fd-success: #22c55e;
+				--fd-success-muted: rgba(34, 197, 94, 0.12);
+				--fd-success-foreground: #ffffff;
+				--fd-error: #ef4444;
+				--fd-error-muted: rgba(239, 68, 68, 0.12);
+				--fd-error-foreground: #ffffff;
+				--fd-warning: #f59e0b;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="loading">Loading...</div>
+		<div id="preview" class="hidden"></div>
+
+		<script>
+			(async () => {
+				const params = new URLSearchParams(window.location.search);
+				const interruptType = params.get('type') || 'confirmation';
+
+				const loadingEl = document.getElementById('loading');
+				const previewEl = document.getElementById('preview');
+
+				try {
+					const { mount } = await import('svelte');
+					const { default: InterruptPreviewRenderer } = await import('../components/InterruptPreviewRenderer.svelte');
+					const { interruptPreviewData } = await import('../mocks/interrupt-preview-data');
+
+					const data = interruptPreviewData[interruptType] || interruptPreviewData['confirmation'];
+
+					loadingEl.classList.add('hidden');
+					previewEl.classList.remove('hidden');
+
+					mount(InterruptPreviewRenderer, {
+						target: previewEl,
+						props: { type: interruptType, data }
+					});
+				} catch (err) {
+					console.error('Interrupt preview failed:', err);
+					loadingEl.textContent = 'Failed to load preview';
+				}
+			})();
+		</script>
+	</body>
+</html>
