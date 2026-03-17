@@ -271,7 +271,7 @@ Runtime configuration means you build once and deploy to staging, production, or
 | ------------------------------------------------------------ | ------------------------ |
 | [QUICK_START.md](https://docs.flowdrop.io/getting-started/installation/)                           | Get running in 5 minutes |
 | [API Documentation](https://api.flowdrop.io/v1/) | REST API specification   |
-| [CHANGELOG.md](./CHANGELOG.md)                               | Version history          |
+| [CHANGELOG.md](https://github.com/flowdrop-io/flowdrop/blob/main/libs/flowdrop/CHANGELOG.md) | Version history          |
 
 ## Development
 
