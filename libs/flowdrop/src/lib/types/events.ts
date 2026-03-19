@@ -7,7 +7,8 @@
  * @module types/events
  */
 
-import type { Workflow, NodeExecutionInfo } from "./index.js";
+import type { Workflow, NodeExecutionInfo, WorkflowNode } from "./index.js";
+import type { SwapEventContext, SwapResult } from "../utils/nodeSwap.js";
 
 /**
  * Types of workflow changes
@@ -19,6 +20,7 @@ export type WorkflowChangeType =
   | "node_remove"
   | "node_move"
   | "node_config"
+  | "node_swap"
   | "edge_add"
   | "edge_remove"
   | "metadata"
@@ -137,6 +139,34 @@ export interface FlowDropEventHandlers {
   onApiError?: (error: Error, operation: string) => boolean | void;
 
   // ========================================================================
+  // Node Swap Events
+  // ========================================================================
+
+  /**
+   * Called before a node swap is executed.
+   * Return false to cancel the swap.
+   *
+   * @param context - Data-only swap context (oldNode, newMetadata, preview, overrides)
+   * @returns false to cancel, true/void to proceed
+   */
+  onBeforeSwap?: (
+    context: SwapEventContext,
+  ) => boolean | void | Promise<boolean | void>;
+
+  /**
+   * Called after a node swap is successfully executed.
+   *
+   * @param result - The swap result with updated nodes/edges
+   * @param oldNode - The node that was replaced
+   * @param newNodeId - The ID of the newly created node
+   */
+  onAfterSwap?: (
+    result: SwapResult,
+    oldNode: WorkflowNode,
+    newNodeId: string,
+  ) => void;
+
+  // ========================================================================
   // Agent Spec Runtime Events
   // ========================================================================
 
@@ -213,6 +243,16 @@ export interface FlowDropFeatures {
    * @default true
    */
   showToasts?: boolean;
+
+  /**
+   * Enable node swap functionality
+   *
+   * When enabled, users can swap a node for a different type
+   * while preserving compatible connections and configuration.
+   *
+   * @default true
+   */
+  enableNodeSwap?: boolean;
 }
 
 /**
@@ -224,6 +264,7 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
   autoSaveDraft: true,
   autoSaveDraftInterval: 30000,
   showToasts: true,
+  enableNodeSwap: true,
 };
 
 /**

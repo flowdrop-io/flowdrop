@@ -513,3 +513,32 @@ export { sanitizeHtml } from "../utils/sanitize.js";
 
 export { logger, setLogLevel, getLogLevel } from "../utils/logger.js";
 export type { LogLevel } from "../utils/logger.js";
+
+// ============================================================================
+// Node Swap
+// ============================================================================
+
+export {
+  computeSwapPreview,
+  computeSwapPreviewWithOptions,
+  executeSwap,
+  mapConfig,
+  getVersionUpgrade,
+  compareSemver,
+  performSwap,
+  validateSwapResult,
+  SwapValidationError,
+} from "../utils/nodeSwap.js";
+export type {
+  SwapPreview,
+  SwapResult,
+  PortMapping,
+  DroppedEdge,
+  MatchQuality,
+  PortMappingOverride,
+  ConfigMappingOverride,
+  SwapOptions,
+  SwapStrategy,
+  SwapStrategyContext,
+  SwapEventContext,
+} from "../utils/nodeSwap.js";
