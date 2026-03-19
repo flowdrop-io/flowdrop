@@ -114,7 +114,7 @@
   /**
    * Filter logs by selected node
    */
-  let filteredLogs = $derived(() => {
+  let filteredLogs = $derived.by(() => {
     if (props.selectedNode) {
       return props.logs.filter((log) => log.nodeId === props.selectedNode?.id);
     }
@@ -132,7 +132,7 @@
    * Export logs
    */
   function exportLogs(): void {
-    const logText = filteredLogs()
+    const logText = filteredLogs
       .map(
         (log) =>
           `[${formatTimestamp(log.timestamp)}] ${log.level.toUpperCase()}: ${log.message}${log.nodeId ? ` (Node: ${log.nodeId})` : ""}`,
@@ -198,9 +198,9 @@
   <!-- Content -->
   <div class="logs-sidebar__content">
     <!-- Logs List -->
-    {#if filteredLogs().length > 0}
+    {#if filteredLogs.length > 0}
       <div class="logs-sidebar__logs" bind:this={logsContainer}>
-        {#each filteredLogs() as log, index (index)}
+        {#each filteredLogs as log, index (index)}
           <div
             class="logs-sidebar__log-entry"
             class:logs-sidebar__log-entry--error={log.level === "error"}
@@ -276,7 +276,7 @@
 
     {#if props.logs.length > 0}
       <p class="logs-sidebar__info-text">
-        {filteredLogs().length} of {props.logs.length} log entries
+        {filteredLogs.length} of {props.logs.length} log entries
       </p>
     {/if}
   </div>
