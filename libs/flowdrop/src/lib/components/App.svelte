@@ -5,13 +5,15 @@
 -->
 
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import MainLayout from "$lib/components/layouts/MainLayout.svelte";
   import WorkflowEditor from "$lib/components/WorkflowEditor.svelte";
   import NodeSidebar from "$lib/components/NodeSidebar.svelte";
   import Icon from "@iconify/svelte";
   import ConfigForm from "$lib/components/ConfigForm.svelte";
   import ConfigPanel from "$lib/components/ConfigPanel.svelte";
+  import NodeSwapPicker from "$lib/components/NodeSwapPicker.svelte";
+  import SwapMappingEditor from "$lib/components/SwapMappingEditor.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
   import { api, setEndpointConfig } from "$lib/services/api.js";
   import { EnhancedFlowDropApiClient } from "$lib/api/enhanced-client.js";
@@ -22,6 +24,14 @@
     ConfigSchema,
     NodeUIExtensions,
   } from "$lib/types/index.js";
+  import type { InteractiveSwapState, SwapEventContext } from "$lib/utils/nodeSwap.js";
+  import {
+    computeInteractiveState,
+    buildSwapPreviewFromState,
+    executeSwap,
+    validateSwapResult,
+  } from "$lib/utils/nodeSwap.js";
+  import type { SwapStrategy } from "$lib/utils/nodeSwap.js";
   import { DEFAULT_WORKFLOW_FORMAT } from "$lib/types/index.js";
   import { createEndpointConfig } from "$lib/config/endpoints.js";
   import type { EndpointConfig } from "$lib/config/endpoints.js";
@@ -51,7 +61,7 @@
     getUiSettings,
     updateSettings,
   } from "../stores/settingsStore.svelte.js";
-  import { initializePortCompatibility } from "$lib/utils/connections.js";
+  import { initializePortCompatibility, getPortCompatibilityChecker } from "$lib/utils/connections.js";
   import { DEFAULT_PORT_CONFIG } from "$lib/config/defaultPortConfig.js";
   import { workflowFormatRegistry } from "../registry/workflowFormatRegistry.js";
   import { logger } from "../utils/logger.js";
@@ -115,6 +125,8 @@
     showSettingsSyncButton?: boolean;
     /** Show the reset buttons in the settings modal */
     showSettingsResetButton?: boolean;
+    /** Pluggable swap strategies — instance-scoped, checked in order */
+    swapStrategies?: SwapStrategy[];
   }
 
   let {
@@ -140,6 +152,7 @@
     settingsCategories,
     showSettingsSyncButton,
     showSettingsResetButton,
+    swapStrategies,
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally — feature flags don't change at runtime
@@ -180,7 +193,7 @@
   });
 
   // Create breadcrumb-style title - at top level to avoid store subscription issues
-  let breadcrumbTitle = $derived(() => {
+  let breadcrumbTitle = $derived.by(() => {
     // Use custom navbar title if provided
     if (navbarTitle) {
       return navbarTitle;
@@ -212,6 +225,11 @@
 
   // Workflow settings sidebar state
   let isWorkflowSettingsOpen = $state(false);
+
+  // Node swap state
+  let swapMode = $state<"idle" | "picking" | "mapping">("idle");
+  let swapTargetMetadata = $state<NodeMetadata | null>(null);
+  let swapInteractiveState = $state<InteractiveSwapState | null>(null);
 
   // Workflow configuration schema (derived to pick up dynamic format options)
   let workflowConfigSchema: ConfigSchema = $derived({
@@ -249,7 +267,7 @@
   });
 
   // Get the current node from the workflow store
-  let selectedNodeForConfig = $derived(() => {
+  let selectedNodeForConfig = $derived.by(() => {
     const wf = getWorkflowStore();
     if (!selectedNodeId || !wf) return null;
     return wf.nodes.find((node) => node.id === selectedNodeId) || null;
@@ -444,11 +462,19 @@
     }
     selectedNodeId = node.id;
     isConfigSidebarOpen = true;
+    // Reset swap state when switching nodes
+    swapMode = "idle";
+    swapTargetMetadata = null;
+    swapInteractiveState = null;
   }
 
   function closeConfigSidebar(): void {
     isConfigSidebarOpen = false;
     selectedNodeId = null;
+    // Reset swap state when closing
+    swapMode = "idle";
+    swapTargetMetadata = null;
+    swapInteractiveState = null;
   }
 
   /**
@@ -460,6 +486,144 @@
     if (isWorkflowSettingsOpen) {
       closeConfigSidebar();
     }
+  }
+
+  /**
+   * Start swap mode — transitions the right sidebar to the node picker
+   */
+  function startSwap(): void {
+    swapMode = "picking";
+    swapTargetMetadata = null;
+    swapInteractiveState = null;
+  }
+
+  /**
+   * Handle selection of a target node type for swap
+   */
+  function handleSwapSelect(metadata: NodeMetadata): void {
+    const node = selectedNodeForConfig;
+    if (!node) return;
+
+    const wf = getWorkflowStore();
+    if (!wf) return;
+
+    // Format compatibility guard — defence-in-depth behind picker's own filter
+    const currentFormat = getWorkflowFormat();
+    if (metadata.formats?.length && !metadata.formats.includes(currentFormat)) {
+      return;
+    }
+
+    // Get port compatibility checker (may be null if not initialized)
+    let checker: import("$lib/utils/connections.js").PortCompatibilityChecker | null = null;
+    try {
+      checker = getPortCompatibilityChecker();
+    } catch {
+      // Checker not initialized — computeSwapPreview will use exact dataType matching
+    }
+
+    const interactive = computeInteractiveState(
+      node,
+      metadata,
+      wf.edges,
+      wf.nodes,
+      { checker, strategies: swapStrategies },
+    );
+
+    swapTargetMetadata = metadata;
+    swapInteractiveState = interactive;
+    swapMode = "mapping";
+  }
+
+  /**
+   * Execute the confirmed node swap
+   */
+  async function executeNodeSwap(finalState?: InteractiveSwapState): Promise<void> {
+    const state = finalState ?? swapInteractiveState;
+    if (!state) return;
+
+    const wf = getWorkflowStore();
+    if (!wf) return;
+
+    const oldLabel = state.oldNode.data.label;
+    const newLabel = state.newMetadata.name;
+
+    // Convert interactive state to swap preview
+    const preview = buildSwapPreviewFromState(state, wf.edges);
+
+    // Execute the swap
+    const result = executeSwap(
+      state.oldNode,
+      state.newMetadata,
+      preview,
+      wf.nodes,
+      wf.edges,
+    );
+
+    // Post-swap validation
+    const validation = validateSwapResult(result);
+    if (!validation.valid) {
+      logger.error("Swap validation failed:", validation.error);
+      return;
+    }
+
+    // onBeforeSwap hook — abort if returns false
+    if (eventHandlers?.onBeforeSwap) {
+      const swapEventCtx: SwapEventContext = {
+        oldNode: state.oldNode,
+        newMetadata: state.newMetadata,
+        preview,
+        portOverrides: [],
+        configOverrides: [],
+      };
+      const shouldProceed = await eventHandlers.onBeforeSwap(swapEventCtx);
+      if (shouldProceed === false) return;
+    }
+
+    // Apply as a single atomic swap with descriptive history entry
+    workflowActions.swapNode({
+      nodes: result.updatedNodes,
+      edges: result.updatedEdges,
+      description: `Swap node: ${oldLabel} → ${newLabel}`,
+    });
+
+    // onAfterSwap hook (fire-and-forget — swap is already applied)
+    if (eventHandlers?.onAfterSwap) {
+      try {
+        eventHandlers.onAfterSwap(result, state.oldNode, state.newNodeId);
+      } catch (err) {
+        logger.error("onAfterSwap hook error:", err);
+      }
+    }
+
+    // Select the new node in the sidebar
+    const newNodeId = state.newNodeId;
+    selectedNodeId = newNodeId;
+
+    // Reset swap state
+    swapMode = "idle";
+    swapTargetMetadata = null;
+    swapInteractiveState = null;
+
+    // Wait for SvelteFlow to process the new node before updating visual state
+    await tick();
+
+    // Refresh the editor visual state
+    if (workflowEditorRef) {
+      const newNode = result.updatedNodes.find((n) => n.id === newNodeId);
+      if (newNode) {
+        workflowEditorRef.updateNodeData(newNodeId, newNode.data);
+        await workflowEditorRef.refreshEdgePositions(newNodeId);
+      }
+    }
+  }
+
+  /**
+   * Cancel swap and return to normal config view
+   */
+  function cancelSwap(): void {
+    swapMode = "idle";
+    swapTargetMetadata = null;
+    swapInteractiveState = null;
   }
 
   /**
@@ -675,7 +839,9 @@
    * Config panel always appears on the right side
    */
   const hasConfigPanelOpen = $derived(
-    isWorkflowSettingsOpen || !!selectedNodeForConfig(),
+    isWorkflowSettingsOpen ||
+      !!selectedNodeForConfig ||
+      swapMode !== "idle",
   );
   const showRightPanel = $derived(!disableSidebar && hasConfigPanelOpen);
 
@@ -740,7 +906,7 @@
     <!-- Header: Navbar -->
     {#snippet header()}
       <Navbar
-        title={breadcrumbTitle()}
+        title={breadcrumbTitle}
         primaryActions={navbarActions.length > 0
           ? navbarActions
           : [
@@ -804,9 +970,26 @@
       />
     {/snippet}
 
-    <!-- Right Sidebar: Configuration or Workflow Settings -->
+    <!-- Right Sidebar: Configuration, Swap, or Workflow Settings -->
     {#snippet rightSidebar()}
-      {#if isWorkflowSettingsOpen}
+      {#if swapMode === "mapping" && swapInteractiveState && selectedNodeForConfig}
+        {@const swapChecker = (() => { try { return getPortCompatibilityChecker(); } catch { return null; } })()}
+        <SwapMappingEditor
+          interactiveState={swapInteractiveState}
+          checker={swapChecker}
+          onConfirm={executeNodeSwap}
+          onCancel={cancelSwap}
+          onBack={() => { swapMode = "picking"; swapInteractiveState = null; }}
+        />
+      {:else if swapMode === "picking" && selectedNodeForConfig}
+        <NodeSwapPicker
+          currentNode={selectedNodeForConfig}
+          availableNodes={nodes}
+          activeFormat={getWorkflowFormat()}
+          onSelect={handleSwapSelect}
+          onCancel={cancelSwap}
+        />
+      {:else if isWorkflowSettingsOpen}
         <ConfigPanel
           title="Workflow Settings"
           id={getWorkflowStore()?.id}
@@ -867,8 +1050,8 @@
             }}
           />
         </ConfigPanel>
-      {:else if selectedNodeForConfig()}
-        {@const currentNode = selectedNodeForConfig()!}
+      {:else if selectedNodeForConfig}
+        {@const currentNode = selectedNodeForConfig}
         <ConfigPanel
           title={currentNode.data.label}
           id={currentNode.id}
@@ -885,6 +1068,7 @@
             },
           ]}
           onClose={closeConfigSidebar}
+          onSwap={!readOnly && !lockWorkflow && features.enableNodeSwap ? startSwap : undefined}
         >
           <ConfigForm
             {authProvider}
@@ -1022,7 +1206,7 @@
         {width}
         endpointConfig={endpointConfig ?? undefined}
         {isConfigSidebarOpen}
-        selectedNodeForConfig={selectedNodeForConfig()}
+        selectedNodeForConfig={selectedNodeForConfig}
         {openConfigSidebar}
         {closeConfigSidebar}
         {lockWorkflow}
