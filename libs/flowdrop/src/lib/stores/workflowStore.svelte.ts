@@ -747,6 +747,28 @@ export const workflowActions = {
   },
 
   /**
+   * Swap a node — atomically replaces nodes and edges with a descriptive history entry.
+   *
+   * Unlike batchUpdate, this uses `"node_swap"` as the change type and
+   * records a meaningful description for the undo history.
+   */
+  swapNode: (updates: {
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
+    description?: string;
+  }) => {
+    pushToHistory(updates.description ?? "Swap node");
+    if (!workflowState) return;
+    workflowState = {
+      ...workflowState,
+      nodes: updates.nodes,
+      edges: updates.edges,
+      metadata: buildMetadata(workflowState.metadata),
+    };
+    notifyWorkflowChange("node_swap");
+  },
+
+  /**
    * Push current state to history manually
    *
    * Use this before operations that modify the workflow through other means
