@@ -8,6 +8,7 @@
 
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import Icon from "@iconify/svelte";
   import ReadOnlyDetails from "./ReadOnlyDetails.svelte";
   import { getUiSettings } from "../stores/settingsStore.svelte.js";
 
@@ -37,6 +38,8 @@
     configTitle?: string;
     /** Callback function when the panel is closed */
     onClose: () => void;
+    /** Optional callback to initiate node swap — when provided, shows swap button */
+    onSwap?: () => void;
     /** Slot content for the configuration form */
     children?: Snippet;
   }
@@ -48,6 +51,7 @@
     details = [],
     configTitle = "Configuration",
     onClose,
+    onSwap,
     children,
   }: Props = $props();
 
@@ -66,13 +70,25 @@
   <!-- Header -->
   <div class="config-panel__header">
     <h2 class="config-panel__title">{title}</h2>
-    <button
-      class="config-panel__close"
-      onclick={onClose}
-      aria-label="Close panel"
-    >
-      ×
-    </button>
+    <div class="config-panel__actions">
+      {#if onSwap}
+        <button
+          class="config-panel__action-btn"
+          onclick={onSwap}
+          aria-label="Swap node"
+          title="Swap node type"
+        >
+          <Icon icon="heroicons:arrows-right-left" />
+        </button>
+      {/if}
+      <button
+        class="config-panel__close"
+        onclick={onClose}
+        aria-label="Close panel"
+      >
+        ×
+      </button>
+    </div>
   </div>
 
   <!-- Details Section (between header and content) -->
@@ -116,6 +132,34 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--fd-foreground);
+  }
+
+  .config-panel__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .config-panel__action-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--fd-muted-foreground);
+    padding: 0.25rem;
+    border-radius: var(--fd-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      color var(--fd-transition-fast),
+      background-color var(--fd-transition-fast);
+  }
+
+  .config-panel__action-btn:hover {
+    color: var(--fd-primary);
+    background-color: var(--fd-subtle);
   }
 
   .config-panel__close {
@@ -176,6 +220,11 @@
 
   .config-panel--compact .config-panel__close {
     font-size: 1rem;
+    padding: 0.125rem;
+  }
+
+  .config-panel--compact .config-panel__action-btn {
+    font-size: 0.875rem;
     padding: 0.125rem;
   }
 
