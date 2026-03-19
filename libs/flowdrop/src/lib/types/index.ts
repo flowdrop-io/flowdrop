@@ -627,6 +627,12 @@ export interface NodeExtensions {
    */
   configEdit?: ConfigEditOptions;
   /**
+   * Set when this node was created by swapping another node.
+   * Stores the immediate predecessor only — not a full chain.
+   * Sequential swaps (A→B→C) each store only their direct predecessor.
+   */
+  swap?: { previousNodeId: string };
+  /**
    * Namespaced extension data from 3rd party integrations
    * Use your package/organization name as the key (e.g., "myapp", "acme:analyzer")
    */

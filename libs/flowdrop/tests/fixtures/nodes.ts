@@ -289,6 +289,206 @@ export const dynamicNode: NodeMetadata = {
   tags: ["dynamic", "flexible", "processing"],
 };
 
+// =========================================================================
+// Swap-specific test fixtures
+// =========================================================================
+
+/**
+ * Advanced calculator — overlapping ports/config with calculatorNode (for swap testing)
+ */
+export const advancedCalculatorNode: NodeMetadata = {
+  id: "advanced_calculator",
+  name: "Advanced Calculator",
+  description: "Perform advanced mathematical operations",
+  category: "processing",
+  version: "2.0.0",
+  type: "default",
+  icon: "mdi:calculator-variant",
+  color: "#10b981",
+  inputs: [
+    {
+      id: "a",
+      name: "Number A",
+      type: "input",
+      dataType: "number",
+      required: true,
+    },
+    {
+      id: "b",
+      name: "Number B",
+      type: "input",
+      dataType: "number",
+      required: true,
+    },
+    {
+      id: "c",
+      name: "Number C",
+      type: "input",
+      dataType: "number",
+    },
+  ],
+  outputs: [
+    {
+      id: "result",
+      name: "Result",
+      type: "output",
+      dataType: "number",
+    },
+    {
+      id: "remainder",
+      name: "Remainder",
+      type: "output",
+      dataType: "number",
+    },
+  ],
+  configSchema: {
+    type: "object",
+    properties: {
+      operation: {
+        type: "string",
+        title: "Operation",
+        enum: ["add", "subtract", "multiply", "divide", "modulo"],
+        default: "add",
+      },
+      precision: {
+        type: "number",
+        title: "Precision",
+        default: 2,
+      },
+    },
+  },
+  tags: ["math", "calculator", "advanced"],
+};
+
+/**
+ * Version upgrade of calculator (same id, higher version)
+ */
+export const calculatorNodeV2: NodeMetadata = {
+  ...calculatorNode,
+  version: "2.0.0",
+  configSchema: {
+    type: "object",
+    properties: {
+      operation: {
+        type: "string",
+        title: "Operation",
+        enum: ["add", "subtract", "multiply", "divide", "power"],
+        default: "add",
+      },
+      precision: {
+        type: "number",
+        title: "Precision",
+        default: 2,
+      },
+    },
+    required: ["operation"],
+  },
+};
+
+/**
+ * Node with completely different ports (for data loss testing)
+ */
+export const textFormatterNode: NodeMetadata = {
+  id: "text_formatter",
+  name: "Text Formatter",
+  description: "Format text strings",
+  category: "processing",
+  version: "1.0.0",
+  type: "default",
+  icon: "mdi:format-text",
+  color: "#f59e0b",
+  inputs: [
+    {
+      id: "text",
+      name: "Text",
+      type: "input",
+      dataType: "string",
+      required: true,
+    },
+  ],
+  outputs: [
+    {
+      id: "formatted",
+      name: "Formatted",
+      type: "output",
+      dataType: "string",
+    },
+  ],
+  configSchema: {
+    type: "object",
+    properties: {
+      format: {
+        type: "string",
+        title: "Format",
+        default: "uppercase",
+      },
+    },
+  },
+  tags: ["text", "formatting"],
+};
+
+/**
+ * Node with ports that match by name but not ID (for name-based matching tests)
+ */
+export const mathProcessorNode: NodeMetadata = {
+  id: "math_processor",
+  name: "Math Processor",
+  description: "Process mathematical expressions",
+  category: "processing",
+  version: "1.0.0",
+  type: "default",
+  icon: "mdi:function-variant",
+  color: "#8b5cf6",
+  inputs: [
+    {
+      id: "num_a",
+      name: "Number A",
+      type: "input",
+      dataType: "number",
+    },
+    {
+      id: "num_b",
+      name: "Number B",
+      type: "input",
+      dataType: "number",
+    },
+  ],
+  outputs: [
+    {
+      id: "answer",
+      name: "Result",
+      type: "output",
+      dataType: "number",
+    },
+  ],
+  configSchema: {
+    type: "object",
+    properties: {},
+  },
+  tags: ["math", "processing"],
+};
+
+/**
+ * Node with no ports at all (for edge case testing)
+ */
+export const isolatedNode: NodeMetadata = {
+  id: "isolated",
+  name: "Isolated Node",
+  description: "A node with no ports",
+  category: "helpers",
+  version: "1.0.0",
+  type: "default",
+  icon: "mdi:circle-outline",
+  color: "#6b7280",
+  inputs: [],
+  outputs: [],
+  configSchema: {
+    type: "object",
+    properties: {},
+  },
+  tags: ["isolated"],
+};
+
 /**
  * Collection of all test nodes
  */
@@ -299,6 +499,11 @@ export const testNodes = {
   terminal: terminalNode,
   note: noteNode,
   dynamic: dynamicNode,
+  advancedCalculator: advancedCalculatorNode,
+  calculatorV2: calculatorNodeV2,
+  textFormatter: textFormatterNode,
+  mathProcessor: mathProcessorNode,
+  isolated: isolatedNode,
 };
 
 /**
