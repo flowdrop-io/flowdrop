@@ -595,11 +595,13 @@
   });
 
   /**
-   * Check if workflow has cycles
+   * Cached cycle check — skips DFS during drag/connect via FSM suppressEffect guard.
+   * $derived deduplicates the boolean result so the template only re-renders on change.
    */
-  function checkWorkflowCycles(): boolean {
+  let hasCycles = $derived.by(() => {
+    if (machine.permissions.suppressEffect) return false;
     return WorkflowOperationsHelper.checkWorkflowCycles(flowNodes, flowEdges);
-  }
+  });
 
   /**
    * Handle drop event and add new node to canvas
@@ -894,7 +896,7 @@
               >{flowEdges.length} connections</span
             >
 
-            {#if checkWorkflowCycles()}
+            {#if hasCycles}
               <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
               <span
                 class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error"
