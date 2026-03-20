@@ -343,9 +343,17 @@ export class ProximityConnectHelper {
       }
     };
 
+    // Cache compatible types per dataType to avoid redundant lookups
+    const compatCache = new Map<string, string[]>();
+    for (const srcPort of draggedOutputs) {
+      if (!compatCache.has(srcPort.dataType)) {
+        compatCache.set(srcPort.dataType, checker.getCompatibleTypes(srcPort.dataType));
+      }
+    }
+
     // Direction A: dragged outputs → other inputs (only compatible types)
     for (const srcPort of draggedOutputs) {
-      const compatibleTypes = checker.getCompatibleTypes(srcPort.dataType);
+      const compatibleTypes = compatCache.get(srcPort.dataType)!;
       for (const targetType of compatibleTypes) {
         const targets = otherInputsByType.get(targetType);
         if (!targets) continue;
