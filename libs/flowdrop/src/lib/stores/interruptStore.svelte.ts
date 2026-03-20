@@ -91,7 +91,11 @@ export function getPendingInterrupts(): InterruptWithState[] {
  * Get count of pending interrupts
  */
 export function getPendingInterruptCount(): number {
-  return getPendingInterruptIds().length;
+  let count = 0;
+  for (const interrupt of interrupts.values()) {
+    if (!isTerminalState(interrupt.machineState)) count++;
+  }
+  return count;
 }
 
 /**
