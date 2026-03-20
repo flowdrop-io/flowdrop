@@ -155,10 +155,11 @@ export {
   getWorkflowValidation,
   getWorkflowMetadataChanged,
   getConnectedHandles,
-  // Dirty state tracking
+  // Dirty state tracking & version counter
   getIsDirty,
   isDirty,
   markAsSaved,
+  getEditVersion,
   getWorkflow as getWorkflowFromStore,
   setOnDirtyStateChange,
   setOnWorkflowChange,

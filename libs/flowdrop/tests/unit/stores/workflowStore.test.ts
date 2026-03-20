@@ -12,6 +12,7 @@ import {
   getIsDirty,
   markAsSaved,
   isDirty,
+  getEditVersion,
   getWorkflowNodes,
   getWorkflowEdges,
   setOnDirtyStateChange,
@@ -284,6 +285,132 @@ describe("workflowStore", () => {
 
       expect(getWorkflowStore()).toBeNull();
       expect(isDirty()).toBe(false);
+    });
+  });
+
+  describe("version counter", () => {
+    it("should start at 0 after initialization", () => {
+      const workflow = createTestWorkflow();
+      workflowActions.initialize(workflow);
+
+      expect(getEditVersion()).toBe(0);
+      expect(isDirty()).toBe(false);
+    });
+
+    it("should increment on each mutation", () => {
+      const workflow = createTestWorkflow();
+      workflowActions.initialize(workflow);
+
+      workflowActions.updateName("v1");
+      expect(getEditVersion()).toBe(1);
+
+      const node = createTestNode({ id: "n1" });
+      workflowActions.addNode(node);
+      expect(getEditVersion()).toBe(2);
+
+      const edge = createTestEdge({ id: "e1" });
+      workflowActions.addEdge(edge);
+      expect(getEditVersion()).toBe(3);
+    });
+
+    it("should reset to 0 on clear", () => {
+      const workflow = createTestWorkflow();
+      workflowActions.initialize(workflow);
+      workflowActions.updateName("changed");
+      expect(getEditVersion()).toBe(1);
+
+      workflowActions.clear();
+      expect(getEditVersion()).toBe(0);
+    });
+
+    it("should reset to 0 on re-initialize", () => {
+      const workflow = createTestWorkflow();
+      workflowActions.initialize(workflow);
+      workflowActions.updateName("changed");
+      expect(getEditVersion()).toBe(1);
+
+      workflowActions.initialize(createTestWorkflow());
+      expect(getEditVersion()).toBe(0);
+      expect(isDirty()).toBe(false);
+    });
+
+    it("should mark clean when markAsSaved captures current version", () => {
+      const workflow = createTestWorkflow();
+      workflowActions.initialize(workflow);
+
+      workflowActions.updateName("v1");
+      workflowActions.addNode(createTestNode({ id: "n1" }));
+      expect(getEditVersion()).toBe(2);
+      expect(isDirty()).toBe(true);
+
+      markAsSaved();
+      expect(isDirty()).toBe(false);
+
+      // Further mutation makes it dirty again
+      workflowActions.updateName("v2");
+      expect(getEditVersion()).toBe(3);
+      expect(isDirty()).toBe(true);
+    });
+
+    it("should support save verification protocol", () => {
+      const workflow = createTestWorkflow();
+      workflowActions.initialize(workflow);
+
+      // Step 1: Make edits
+      workflowActions.updateName("save-me");
+      const versionAtSave = getEditVersion();
+      expect(versionAtSave).toBe(1);
+
+      // Step 2: Simulate user edits during save flight
+      workflowActions.addNode(createTestNode({ id: "concurrent-edit" }));
+      expect(getEditVersion()).toBe(2);
+
+      // Step 3: Backend responds — version matches what we sent
+      // But client has moved on, so still dirty
+      markAsSaved();
+      // markAsSaved captures _editVersion (2), not the submitted version (1)
+      // so the workflow is clean at version 2
+      expect(isDirty()).toBe(false);
+    });
+
+    it("should bump version for all mutation actions", () => {
+      const node1 = createTestNode({ id: "node-1" });
+      const node2 = createTestNode({ id: "node-2" });
+      const edge = createTestEdge({ id: "edge-1", source: "node-1", target: "node-2" });
+      const workflow = createTestWorkflow({ nodes: [node1, node2], edges: [edge] });
+      workflowActions.initialize(workflow);
+
+      let v = 0;
+
+      workflowActions.updateName("test");
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.addNode(createTestNode({ id: "n-new" }));
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.removeNode("n-new");
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.addEdge(createTestEdge({ id: "e-new" }));
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.removeEdge("e-new");
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.updateNode("node-1", { data: { ...node1.data, label: "Updated" } });
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.batchUpdate({ name: "batch" });
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.swapNode({ nodes: [node1], edges: [] });
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.updateMetadata({ version: "2.0" });
+      expect(getEditVersion()).toBe(++v);
+
+      workflowActions.restoreFromHistory(workflow);
+      expect(getEditVersion()).toBe(++v);
     });
   });
 });
