@@ -388,14 +388,24 @@ export class HistoryService {
   /**
    * Create a deep clone of a workflow
    *
-   * Uses JSON parse/stringify to properly strip non-serializable values
-   * like functions (e.g., onConfigOpen callbacks) that are added to nodes
-   * at runtime but shouldn't be persisted in history.
+   * Strips non-serializable values (e.g., onConfigOpen callbacks) before cloning
+   * so structuredClone doesn't throw on function references.
+   * Falls back to JSON round-trip if structuredClone still fails (e.g., Svelte proxies).
    */
   private cloneWorkflow(workflow: Workflow): Workflow {
-    // Always use JSON parse/stringify to strip functions and other non-serializable values
-    // structuredClone would fail on workflows containing callback functions
-    return JSON.parse(JSON.stringify(workflow));
+    const cleaned = {
+      ...workflow,
+      nodes: workflow.nodes.map((n) => ({
+        ...n,
+        data: { ...n.data, onConfigOpen: undefined },
+      })),
+    };
+    try {
+      return structuredClone(cleaned);
+    } catch {
+      // Fallback for environments where structuredClone can't handle proxied objects
+      return JSON.parse(JSON.stringify(cleaned));
+    }
   }
 
   /**
