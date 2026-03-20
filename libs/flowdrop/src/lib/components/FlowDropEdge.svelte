@@ -90,16 +90,8 @@
     const adjX = targetX - Math.cos(angleRad) * ARROW_LENGTH_PX;
     const adjY = targetY - Math.sin(angleRad) * ARROW_LENGTH_PX;
 
-    // 5. Recompute the bezier path with the shortened target
-    const [shortenedPath] = getBezierPath({
-      sourceX,
-      sourceY,
-      targetX: adjX,
-      targetY: adjY,
-      sourcePosition,
-      targetPosition,
-      curvature: pathOptions?.curvature,
-    });
+    // 5. Build shortened path from existing control points — no second getBezierPath() call
+    const shortenedPath = `M ${cp.p0x},${cp.p0y} C ${cp.p1x},${cp.p1y} ${cp.p2x},${cp.p2y} ${adjX},${adjY}`;
 
     return { path: shortenedPath, labelX: lx, labelY: ly, angleDeg };
   });
