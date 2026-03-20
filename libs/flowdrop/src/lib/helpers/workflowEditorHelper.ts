@@ -292,10 +292,11 @@ export class EdgeStylingHelper {
     edges: WorkflowEdge[],
     nodes: WorkflowNodeType[],
   ): WorkflowEdge[] {
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     return edges.map((edge) => {
-      // Find source and target nodes
-      const sourceNode = nodes.find((node) => node.id === edge.source);
-      const targetNode = nodes.find((node) => node.id === edge.target);
+      // Find source and target nodes via O(1) Map lookup
+      const sourceNode = nodeMap.get(edge.source);
+      const targetNode = nodeMap.get(edge.target);
 
       // Create a copy of the edge
       const updatedEdge = { ...edge };
