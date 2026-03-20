@@ -392,12 +392,19 @@ export const playgroundActions = {
 
   /**
    * Add a message to the current session
-   * Messages are automatically sorted chronologically after adding
+   * Uses binary search insertion for O(log n) instead of full sort.
    *
    * @param message - The message to add
    */
   addMessage: (message: PlaygroundMessage): void => {
-    _messages = sortMessagesChronologically([..._messages, message]);
+    const seq = message.sequenceNumber ?? 0;
+    let lo = 0, hi = _messages.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if ((_messages[mid].sequenceNumber ?? 0) <= seq) lo = mid + 1;
+      else hi = mid;
+    }
+    _messages = [..._messages.slice(0, lo), message, ..._messages.slice(lo)];
   },
 
   /**
