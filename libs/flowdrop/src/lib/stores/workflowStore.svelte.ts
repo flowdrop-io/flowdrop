@@ -46,23 +46,25 @@ function buildMetadata(
 let workflowState = $state<Workflow | null>(null);
 
 // =========================================================================
-// Dirty State Tracking
+// Dirty State Tracking (Version Counter)
 // =========================================================================
 
 /**
- * State for tracking if there are unsaved changes
+ * Monotonic edit version — bumps on every mutation action.
  *
- * This is set to true whenever the workflow changes after initialization.
- * It can be reset to false by calling markAsSaved().
+ * Used for two purposes:
+ * 1. O(1) dirty detection: isDirty = _editVersion !== _savedVersion
+ * 2. Save verification protocol: include the version in the save request,
+ *    backend echoes it back. If the echoed version doesn't match, the save
+ *    didn't persist the version the client submitted.
  */
-let isDirtyState = $state<boolean>(false);
+let _editVersion = $state<number>(0);
 
 /**
- * Snapshot of the workflow when it was last saved
- *
- * Used to compare current state with saved state.
+ * Edit version captured at the last successful save.
+ * When _editVersion === _savedVersion, the workflow is clean.
  */
-let savedSnapshot: string | null = null;
+let _savedVersion = $state<number>(0);
 
 /**
  * Callback for dirty state changes
@@ -110,10 +112,14 @@ export function getWorkflowStore(): Workflow | null {
 /**
  * Get the current dirty state reactively
  *
+ * Reads both _editVersion and _savedVersion, so Svelte tracks them
+ * as reactive dependencies — any component using this will re-render
+ * when dirty state changes.
+ *
  * @returns true if there are unsaved changes
  */
 export function getIsDirty(): boolean {
-  return isDirtyState;
+  return _editVersion !== _savedVersion;
 }
 
 /**
@@ -301,57 +307,22 @@ export function setOnWorkflowChange(
 // =========================================================================
 
 /**
- * Create a snapshot of the workflow for comparison
- *
- * @param workflow - The workflow to snapshot
- * @returns A JSON string representation for comparison
+ * Bump the edit version and notify dirty state change if needed.
+ * Called by every mutation action.
  */
-function createSnapshot(workflow: Workflow | null): string | null {
-  if (!workflow) return null;
-
-  // Only include the parts that matter for "dirty" detection
-  const toSnapshot = {
-    name: workflow.name,
-    description: workflow.description,
-    nodes: workflow.nodes.map((n) => ({
-      id: n.id,
-      position: n.position,
-      data: {
-        label: n.data.label,
-        config: n.data.config,
-      },
-    })),
-    edges: workflow.edges.map((e) => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      sourceHandle: e.sourceHandle,
-      targetHandle: e.targetHandle,
-    })),
-  };
-
-  return JSON.stringify(toSnapshot);
-}
-
-/**
- * Update dirty state based on current workflow
- *
- * Compares current workflow with saved snapshot.
- */
-function updateDirtyState(): void {
-  const currentSnapshot = createSnapshot(workflowState);
-  const newIsDirty = currentSnapshot !== savedSnapshot;
-
-  if (newIsDirty !== isDirtyState) {
-    isDirtyState = newIsDirty;
+function bumpVersion(): void {
+  _editVersion++;
+  // Dirty state just flipped from clean → dirty
+  if (_editVersion - 1 === _savedVersion) {
     if (onDirtyStateChangeCallback) {
-      onDirtyStateChangeCallback(newIsDirty);
+      onDirtyStateChangeCallback(true);
     }
   }
 }
 
 /**
- * Mark the workflow change and update dirty state
+ * Notify external listeners of a workflow change.
+ * Does NOT bump the version — callers that mutate must call bumpVersion() explicitly.
  *
  * @param changeType - The type of change that occurred
  */
@@ -359,18 +330,18 @@ function notifyWorkflowChange(changeType: WorkflowChangeType): void {
   if (workflowState && onWorkflowChangeCallback) {
     onWorkflowChangeCallback(workflowState, changeType);
   }
-  updateDirtyState();
 }
 
 /**
- * Mark the current workflow state as saved
+ * Mark the current workflow state as saved.
  *
- * Clears the dirty state by updating the saved snapshot.
+ * Captures the current edit version so isDirty becomes false.
+ * Call this after a successful backend save.
  */
 export function markAsSaved(): void {
-  savedSnapshot = createSnapshot(workflowState);
-  isDirtyState = false;
-  if (onDirtyStateChangeCallback) {
+  const wasDirty = _editVersion !== _savedVersion;
+  _savedVersion = _editVersion;
+  if (wasDirty && onDirtyStateChangeCallback) {
     onDirtyStateChangeCallback(false);
   }
 }
@@ -381,7 +352,23 @@ export function markAsSaved(): void {
  * @returns true if there are unsaved changes
  */
 export function isDirty(): boolean {
-  return isDirtyState;
+  return _editVersion !== _savedVersion;
+}
+
+/**
+ * Get the current edit version.
+ *
+ * Use this for the save verification protocol:
+ * 1. Before save: `const v = getEditVersion()`
+ * 2. Include `v` in the save request payload
+ * 3. Backend echoes `v` in the response
+ * 4. If echoed version matches: `markAsSaved()`
+ * 5. If not: the save didn't persist the version you submitted — reset from backend response
+ *
+ * @returns The current monotonic edit version
+ */
+export function getEditVersion(): number {
+  return _editVersion;
 }
 
 /**
@@ -471,8 +458,7 @@ function hasWorkflowDataChanged(
       currentNode.position.y !== newNode.position.y
     )
       return true;
-    if (JSON.stringify(currentNode.data) !== JSON.stringify(newNode.data))
-      return true;
+    if (currentNode.data !== newNode.data) return true;
   }
 
   // Check if edges have changed
@@ -512,9 +498,9 @@ export const workflowActions = {
    */
   initialize: (workflow: Workflow) => {
     workflowState = workflow;
-    // Set the saved snapshot - workflow is "clean" after initialization
-    savedSnapshot = createSnapshot(workflow);
-    isDirtyState = false;
+    // Reset version counters — workflow is "clean" after initialization
+    _editVersion = 0;
+    _savedVersion = 0;
     if (onDirtyStateChangeCallback) {
       onDirtyStateChangeCallback(false);
     }
@@ -530,6 +516,7 @@ export const workflowActions = {
    */
   updateWorkflow: (workflow: Workflow) => {
     workflowState = workflow;
+    bumpVersion();
     notifyWorkflowChange("metadata");
   },
 
@@ -541,6 +528,7 @@ export const workflowActions = {
   restoreFromHistory: (workflow: Workflow) => {
     isRestoringFromHistory = true;
     workflowState = workflow;
+    bumpVersion();
     notifyWorkflowChange("metadata");
     isRestoringFromHistory = false;
   },
@@ -567,6 +555,7 @@ export const workflowActions = {
         updateNumber: (workflowState.metadata?.updateNumber ?? 0) + 1,
       }),
     };
+    bumpVersion();
     notifyWorkflowChange("node_move");
   },
 
@@ -592,6 +581,7 @@ export const workflowActions = {
         updateNumber: (workflowState.metadata?.updateNumber ?? 0) + 1,
       }),
     };
+    bumpVersion();
     notifyWorkflowChange("edge_add");
   },
 
@@ -605,6 +595,7 @@ export const workflowActions = {
       name,
       metadata: buildMetadata(workflowState.metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("name");
   },
 
@@ -619,6 +610,7 @@ export const workflowActions = {
       nodes: [...workflowState.nodes, node],
       metadata: buildMetadata(workflowState.metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("node_add");
   },
 
@@ -639,6 +631,7 @@ export const workflowActions = {
       ),
       metadata: buildMetadata(workflowState.metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("node_remove");
   },
 
@@ -653,6 +646,7 @@ export const workflowActions = {
       edges: [...workflowState.edges, edge],
       metadata: buildMetadata(workflowState.metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("edge_add");
   },
 
@@ -667,6 +661,7 @@ export const workflowActions = {
       edges: workflowState.edges.filter((edge) => edge.id !== edgeId),
       metadata: buildMetadata(workflowState.metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("edge_remove");
   },
 
@@ -685,6 +680,7 @@ export const workflowActions = {
       ),
       metadata: buildMetadata(workflowState.metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("node_config");
   },
 
@@ -695,8 +691,8 @@ export const workflowActions = {
    */
   clear: () => {
     workflowState = null;
-    savedSnapshot = null;
-    isDirtyState = false;
+    _editVersion = 0;
+    _savedVersion = 0;
     historyService.clear();
     if (onDirtyStateChangeCallback) {
       onDirtyStateChangeCallback(false);
@@ -712,6 +708,7 @@ export const workflowActions = {
       ...workflowState,
       metadata: buildMetadata(workflowState.metadata, metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("metadata");
   },
 
@@ -743,6 +740,7 @@ export const workflowActions = {
         updates.metadata ?? undefined,
       ),
     };
+    bumpVersion();
     notifyWorkflowChange("metadata");
   },
 
@@ -765,6 +763,7 @@ export const workflowActions = {
       edges: updates.edges,
       metadata: buildMetadata(workflowState.metadata),
     };
+    bumpVersion();
     notifyWorkflowChange("node_swap");
   },
 
