@@ -162,28 +162,18 @@ export function updateNodePortCoordinates(
   const internalNode = getInternalNode(node.id);
   if (!internalNode) return;
 
-  // Remove old entries for this node.
-  // untrack prevents this read from creating a reactive dependency on `coordinates`
-  // inside any $effect that calls this function — otherwise the effect would re-run
-  // every time we mutate `coordinates`, creating an infinite reactive loop during drag.
-  const keysToDelete = untrack(() => {
-    const keys: string[] = [];
+  // Build a new map with all entries except this node's, then add recomputed entries.
+  // Single assignment fires one reactive notification instead of N deletes + M sets.
+  const newMap = new SvelteMap<string, PortCoordinate>();
+  untrack(() => {
     for (const [key, coord] of coordinates) {
-      if (coord.nodeId === node.id) {
-        keys.push(key);
-      }
+      if (coord.nodeId !== node.id) newMap.set(key, coord);
     }
-    return keys;
   });
-  for (const key of keysToDelete) {
-    coordinates.delete(key);
+  for (const coord of computeNodePortCoordinates(node, internalNode)) {
+    newMap.set(coord.handleId, coord);
   }
-
-  // Add new entries
-  const coords = computeNodePortCoordinates(node, internalNode);
-  for (const coord of coords) {
-    coordinates.set(coord.handleId, coord);
-  }
+  coordinates = newMap;
 }
 
 /**
@@ -192,18 +182,20 @@ export function updateNodePortCoordinates(
  * @param nodeId - ID of the node to remove
  */
 export function removeNodePortCoordinates(nodeId: string): void {
-  const keysToDelete = untrack(() => {
-    const keys: string[] = [];
+  const newMap = new SvelteMap<string, PortCoordinate>();
+  untrack(() => {
     for (const [key, coord] of coordinates) {
-      if (coord.nodeId === nodeId) {
-        keys.push(key);
-      }
+      if (coord.nodeId !== nodeId) newMap.set(key, coord);
     }
-    return keys;
   });
-  for (const key of keysToDelete) {
-    coordinates.delete(key);
-  }
+  coordinates = newMap;
+}
+
+/**
+ * Clear all port coordinates (lifecycle cleanup).
+ */
+export function clearPortCoordinates(): void {
+  coordinates = new SvelteMap();
 }
 
 /**
