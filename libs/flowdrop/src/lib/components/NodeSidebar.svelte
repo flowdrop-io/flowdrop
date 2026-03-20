@@ -15,7 +15,6 @@
   import { getNodeIcon, getCategoryIcon } from "../utils/icons.js";
   import { getCategoryColorToken } from "../utils/colors.js";
   import { getCategoryLabel } from "../stores/categoriesStore.svelte.js";
-  import { SvelteSet } from "svelte/reactivity";
   import { getUiSettings } from "../stores/settingsStore.svelte.js";
 
   interface Props {
@@ -54,6 +53,17 @@
   let filteredNodes = $derived(getFilteredNodes());
   let categories = $derived(getCategories());
 
+  /** Group already-filtered results by category in a single pass */
+  let filteredNodesByCategory = $derived.by(() => {
+    const map = new Map<string, NodeMetadata[]>();
+    for (const node of filteredNodes) {
+      let list = map.get(node.category);
+      if (!list) { list = []; map.set(node.category, list); }
+      list.push(node);
+    }
+    return map;
+  });
+
   /**
    * Get all unique categories from node types, preserving API order
    * Categories appear in the order their first node appears in the API response
@@ -61,7 +71,7 @@
   function getCategories(): NodeCategory[] {
     if (formatCompatibleNodes.length === 0) return [];
     // Use a Set to track uniqueness while preserving insertion order
-    const seen = new SvelteSet<NodeCategory>();
+    const seen = new Set<NodeCategory>();
     const orderedCategories: NodeCategory[] = [];
     for (const node of formatCompatibleNodes) {
       if (!seen.has(node.category)) {
@@ -175,33 +185,6 @@
     return getCategoryLabel(category);
   }
 
-  /**
-   * Get node types for category
-   * Preserves the API order - no client-side sorting applied
-   */
-  function getNodesForCategory(category: NodeCategory): NodeMetadata[] {
-    return formatCompatibleNodes.filter((node) => node.category === category);
-  }
-
-  /**
-   * Get filtered nodes for category
-   */
-  function getFilteredNodesForCategory(category: NodeCategory): NodeMetadata[] {
-    let nodes = getNodesForCategory(category);
-
-    // Filter by search query
-    if (searchInput.trim()) {
-      const query = searchInput.toLowerCase();
-      nodes = nodes.filter(
-        (node) =>
-          node.name.toLowerCase().includes(query) ||
-          node.description.toLowerCase().includes(query) ||
-          node.tags?.some((tag) => tag.toLowerCase().includes(query)),
-      );
-    }
-
-    return nodes;
-  }
 </script>
 
 <!-- Components Sidebar -->
@@ -356,7 +339,7 @@
         <!-- Category-specific details -->
         <div class="flowdrop-category-list">
           {#each categories as category (category)}
-            {@const categoryNodes = getFilteredNodesForCategory(category)}
+            {@const categoryNodes = filteredNodesByCategory.get(category) ?? []}
             {#if categoryNodes.length > 0}
               <!-- Flat style: label + dot+name rows (shown/hidden via CSS token) -->
               <div class="fd-sidebar-flat-section">
