@@ -332,14 +332,18 @@ const app = await mountFlowDropApp(document.getElementById('editor'), {
 
 ## Component Hierarchy
 
-```
-App
-├── Navbar (Logo, workflow name, save/export, custom actions)
-├── NodeSidebar (search, category groups, draggable node cards)
-├── WorkflowEditor (SvelteFlow canvas)
-│   └── UniversalNode
-│       ├── NodeStatusOverlay
-│       └── [Node Component] (WorkflowNode, SimpleNode, etc.)
-└── ConfigSidebar
-    └── ConfigForm (JSON Schema form with template variables)
-```
+import { FileTree } from '@astrojs/starlight/components';
+
+<FileTree>
+
+- App
+  - Navbar (Logo, workflow name, save/export, custom actions)
+  - NodeSidebar (search, category groups, draggable node cards)
+  - WorkflowEditor (SvelteFlow canvas)
+    - UniversalNode
+      - NodeStatusOverlay
+      - [Node Component] (WorkflowNode, SimpleNode, etc.)
+  - ConfigSidebar
+    - ConfigForm (JSON Schema form with template variables)
+
+</FileTree>
