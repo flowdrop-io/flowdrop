@@ -1533,6 +1533,120 @@ describe("buildSwapPreviewFromState", () => {
     expect(newEdgeForB).toBeDefined();
     expect(newEdgeForB!.newEdge.targetHandle).toContain("-input-c");
   });
+
+  it("should preserve connections when port is remapped to different ID (text → message)", () => {
+    // Simulate the user's bug: old node has port "text", new node has port "message"
+    const chatbotNode: NodeMetadata = {
+      id: "chatbot",
+      name: "Chatbot",
+      description: "Simple chatbot",
+      category: "processing",
+      version: "1.0.0",
+      type: "default",
+      icon: "mdi:chat",
+      color: "#3b82f6",
+      inputs: [
+        { id: "text", name: "Text", type: "input", dataType: "string", required: true },
+      ],
+      outputs: [
+        { id: "response", name: "Response", type: "output", dataType: "string" },
+      ],
+      configSchema: { type: "object", properties: {} },
+      tags: [],
+    };
+
+    const llmAgentNode: NodeMetadata = {
+      id: "llm_agent",
+      name: "LLM Agent",
+      description: "Advanced LLM agent",
+      category: "processing",
+      version: "1.0.0",
+      type: "default",
+      icon: "mdi:robot",
+      color: "#8b5cf6",
+      inputs: [
+        { id: "message", name: "Message", type: "input", dataType: "string", required: true },
+        { id: "context", name: "Context", type: "input", dataType: "string" },
+      ],
+      outputs: [
+        { id: "reply", name: "Reply", type: "output", dataType: "string" },
+      ],
+      configSchema: { type: "object", properties: {} },
+      tags: [],
+    };
+
+    const oldNode = makeNode("chatbot.1", chatbotNode);
+    const srcNode = makeNode("src.1", textInputNode);
+    const destNode = makeNode("dest.1", textInputNode);
+
+    const edges: WorkflowEdge[] = [
+      makeEdge("e1", "src.1", "value", "chatbot.1", "text"),
+      makeEdge("e2", "chatbot.1", "response", "dest.1", "value"),
+    ];
+
+    const allNodes = [srcNode, oldNode, destNode];
+
+    // Step 1: Compute interactive state
+    const state = computeInteractiveState(oldNode, llmAgentNode, edges, allNodes);
+
+    // The auto-matching should find "message" for "text" (type-compatible string→string)
+    const textMapping = state.portMappings.find((m) => m.oldPort.id === "text");
+    expect(textMapping).toBeDefined();
+
+    // Step 2: Manually map text → message (simulating user's dropdown selection)
+    if (textMapping) {
+      textMapping.selectedNewPortId = "message";
+      textMapping.matchQuality = "manual";
+      textMapping.isOverridden = true;
+    }
+
+    // Also remap output: response → reply
+    const responseMapping = state.portMappings.find((m) => m.oldPort.id === "response");
+    if (responseMapping) {
+      responseMapping.selectedNewPortId = "reply";
+      responseMapping.matchQuality = "manual";
+      responseMapping.isOverridden = true;
+    }
+
+    // Step 3: Build preview from interactive state
+    const preview = buildSwapPreviewFromState(state, edges);
+
+    expect(preview.keptEdges).toHaveLength(2);
+    expect(preview.droppedEdges).toHaveLength(0);
+
+    // Step 4: Execute the swap
+    const result = executeSwap(oldNode, llmAgentNode, preview, allNodes, edges);
+
+    // Verify the new node exists
+    const newNode = result.updatedNodes.find((n) => n.id === state.newNodeId);
+    expect(newNode).toBeDefined();
+    expect(newNode!.data.metadata.id).toBe("llm_agent");
+
+    // Verify edges reference the new node with correct handle IDs
+    expect(result.updatedEdges).toHaveLength(2);
+
+    // Edge e1: src → chatbot.1 (input text) should now be src → llm_agent.1 (input message)
+    const edge1 = result.updatedEdges.find((e) => e.id === "e1");
+    expect(edge1).toBeDefined();
+    expect(edge1!.source).toBe("src.1"); // source unchanged
+    expect(edge1!.target).toBe(state.newNodeId); // target is new node
+    expect(edge1!.targetHandle).toBe(
+      buildHandleId(state.newNodeId, "input", "message"),
+    );
+
+    // Edge e2: chatbot.1 (output response) → dest should now be llm_agent.1 (output reply) → dest
+    const edge2 = result.updatedEdges.find((e) => e.id === "e2");
+    expect(edge2).toBeDefined();
+    expect(edge2!.source).toBe(state.newNodeId); // source is new node
+    expect(edge2!.target).toBe("dest.1"); // target unchanged
+    expect(edge2!.sourceHandle).toBe(
+      buildHandleId(state.newNodeId, "output", "reply"),
+    );
+
+    // Validate the result
+    const validation = validateSwapResult(result);
+    expect(validation.valid).toBe(true);
+  });
 });
 
 // =========================================================================
