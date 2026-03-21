@@ -99,8 +99,22 @@ const { head } = Astro.locals.starlightRoute;
 		diagramSources.set(el, el.textContent ?? '');
 	});
 
-	mermaid.initialize(getMermaidConfig());
-	await mermaid.run({ querySelector: 'pre.mermaid' });
+	/** Render each diagram individually so one failure doesn't block the rest. */
+	async function renderDiagrams() {
+		mermaid.initialize(getMermaidConfig());
+		for (const [el, source] of diagramSources) {
+			try {
+				const id = `mermaid-${Math.random().toString(36).slice(2, 10)}`;
+				const { svg } = await mermaid.render(id, source);
+				el.innerHTML = svg;
+				el.setAttribute('data-processed', 'true');
+			} catch (e) {
+				console.warn('[mermaid] Failed to render diagram:', e);
+			}
+		}
+	}
+
+	await renderDiagrams();
 
 	// Re-render diagrams when user toggles theme
 	const observer = new MutationObserver(async () => {
@@ -109,8 +123,7 @@ const { head } = Astro.locals.starlightRoute;
 			el.removeAttribute('data-processed');
 			el.innerHTML = source;
 		});
-		mermaid.initialize(getMermaidConfig());
-		await mermaid.run({ querySelector: 'pre.mermaid' });
+		await renderDiagrams();
 	});
 
 	observer.observe(document.documentElement, {
