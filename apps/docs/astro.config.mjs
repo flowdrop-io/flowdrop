@@ -8,11 +8,58 @@ import rehypeMermaid from 'rehype-mermaid';
 // Stub module path for optional CodeMirror peer deps (not needed in docs demos)
 const cmStub = new URL('./src/stubs/codemirror.ts', import.meta.url).pathname;
 
+// Mermaid theme — matches FlowDrop dark palette from tokens.css / theme.css
+// Colors are resolved from the HSL tokens to hex for build-time rendering.
+const mermaidConfig = /** @type {Record<string, unknown>} */ ({
+	theme: 'base',
+	themeVariables: {
+		// Background & text
+		background: '#0d0d14',        // --sl-color-black
+		primaryTextColor: '#ecedf2',  // --sl-color-gray-1
+		secondaryTextColor: '#9a9abc',// --sl-color-gray-2
+		tertiaryTextColor: '#676788', // --sl-color-gray-3
+		lineColor: '#9a9abc',         // --sl-color-gray-2
+
+		// Nodes — accent purple
+		primaryColor: '#10102f',      // --sl-color-accent-low
+		primaryBorderColor: '#6c63ff',// --sl-color-accent
+		mainBkg: '#10102f',           // --sl-color-accent-low
+		nodeBorder: '#6c63ff',        // --sl-color-accent
+
+		// Clusters / subgraphs
+		secondaryColor: '#1f1f2d',    // --sl-color-gray-5
+		secondaryBorderColor: '#676788',// --sl-color-gray-3
+		tertiaryColor: '#181822',     // --sl-color-gray-6
+		tertiaryBorderColor: '#9a9abc',// --sl-color-gray-2
+		clusterBkg: '#1f1f2d',        // --sl-color-gray-5
+		clusterBorder: '#525270',     // --sl-color-gray-4
+
+		// Notes & labels
+		noteBkgColor: '#10102f',
+		noteTextColor: '#ecedf2',
+		noteBorderColor: '#6c63ff',
+		titleColor: '#ecedf2',
+		edgeLabelBackground: 'transparent',
+
+		// Fonts — arial for reliable build-time width calculation in headless Chromium
+		fontFamily: 'arial, sans-serif',
+		fontSize: '14px',
+	},
+	flowchart: {
+		curve: 'basis',
+		diagramPadding: 24,
+		useMaxWidth: false,
+		wrappingWidth: 300,
+		nodeSpacing: 30,
+		rankSpacing: 50,
+	},
+});
+
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://docs.flowdrop.io',
 	markdown: {
-		rehypePlugins: [[rehypeMermaid, { strategy: 'inline-svg' }]],
+		rehypePlugins: [[rehypeMermaid, { strategy: 'inline-svg', mermaidConfig }]],
 	},
 	vite: {
 		resolve: {
