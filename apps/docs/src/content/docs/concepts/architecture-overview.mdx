@@ -67,29 +67,33 @@ Import from the most specific module possible to minimize bundle size.
 
 When you mount `mountFlowDropApp()`, this is the component tree:
 
-```
-App
-├── Navbar
-│   ├── Logo
-│   ├── WorkflowName (editable)
-│   ├── Save / Export buttons
-│   ├── Custom NavbarActions
-│   └── ThemeToggle / Settings
-├── NodeSidebar
-│   ├── Search
-│   └── CategoryGroups
-│       └── NodeCards (draggable)
-├── WorkflowEditor (@xyflow/svelte canvas)
-│   ├── Nodes (WorkflowNode, SimpleNode, GatewayNode, etc.)
-│   │   └── Ports (input/output handles)
-│   ├── Edges (styled by category)
-│   └── ConnectionLine
-├── ConfigPanel (right side, on node click)
-│   ├── NodeHeader (name, type, icon)
-│   └── SchemaForm (generated from configSchema)
-│       └── FormFields (text, select, code, template, etc.)
-└── ToastContainer
-```
+import { FileTree } from '@astrojs/starlight/components';
+
+<FileTree>
+
+- App
+  - Navbar
+    - Logo
+    - WorkflowName (editable)
+    - Save / Export buttons
+    - Custom NavbarActions
+    - ThemeToggle / Settings
+  - NodeSidebar
+    - Search
+    - CategoryGroups
+      - NodeCards (draggable)
+  - WorkflowEditor (@xyflow/svelte canvas)
+    - Nodes (WorkflowNode, SimpleNode, GatewayNode, etc.)
+      - Ports (input/output handles)
+    - Edges (styled by category)
+    - ConnectionLine
+  - ConfigPanel (right side, on node click)
+    - NodeHeader (name, type, icon)
+    - SchemaForm (generated from configSchema)
+      - FormFields (text, select, code, template, etc.)
+  - ToastContainer
+
+</FileTree>
 
 `mountWorkflowEditor()` mounts just the canvas — no navbar, no sidebar.
 
