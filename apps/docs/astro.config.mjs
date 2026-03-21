@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import svelte from '@astrojs/svelte';
 import sitemap from '@astrojs/sitemap';
-import { remarkMermaid } from './src/plugins/remark-mermaid.mjs';
+import rehypeMermaid from 'rehype-mermaid';
 
 // Stub module path for optional CodeMirror peer deps (not needed in docs demos)
 const cmStub = new URL('./src/stubs/codemirror.ts', import.meta.url).pathname;
@@ -12,7 +12,7 @@ const cmStub = new URL('./src/stubs/codemirror.ts', import.meta.url).pathname;
 export default defineConfig({
 	site: 'https://docs.flowdrop.io',
 	markdown: {
-		remarkPlugins: [remarkMermaid],
+		rehypePlugins: [[rehypeMermaid, { strategy: 'inline-svg' }]],
 	},
 	vite: {
 		resolve: {

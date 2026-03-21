@@ -20,12 +20,12 @@
     "@iconify/svelte": "^5.0.0",
     "@xyflow/svelte": "^1.2.0",
     "astro": "^5.6.1",
-    "mermaid": "^11.12.3",
     "msw": "^2.7.0",
+    "playwright": "^1.58.2",
+    "rehype-mermaid": "^3.0.0",
     "sharp": "^0.34.2",
     "starlight-openapi": "^0.22.0",
     "svelte": "^5.53.0",
-    "typescript": "^5.9.3",
-    "unist-util-visit": "^5.1.0"
+    "typescript": "^5.9.3"
   }
 }
