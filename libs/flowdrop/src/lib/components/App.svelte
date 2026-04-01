@@ -13,6 +13,7 @@
   import ConfigForm from "$lib/components/ConfigForm.svelte";
   import ConfigPanel from "$lib/components/ConfigPanel.svelte";
   import CommandConsole from "$lib/components/console/CommandConsole.svelte";
+  import type { UIAction } from "$lib/commands/index.js";
   import NodeSwapPicker from "$lib/components/NodeSwapPicker.svelte";
   import SwapMappingEditor from "$lib/components/SwapMappingEditor.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
@@ -890,6 +891,18 @@
     toggleConsole();
   }
 
+  function handleConsoleUIAction(action: UIAction): void {
+    const wf = getWorkflowStore();
+    if (!wf) return;
+
+    if (action.type === "open_config") {
+      const node = wf.nodes.find((n) => n.id === action.nodeId);
+      if (node) openConfigSidebar(node);
+    } else if (action.type === "select_node") {
+      selectedNodeId = action.nodeId;
+    }
+  }
+
   function toggleConsole(): void {
     const currentOpen = getUiSettings().consoleOpen;
     updateSettings({ ui: { consoleOpen: !currentOpen } });
@@ -1162,7 +1175,7 @@
 
     <!-- Bottom Panel: Command Console -->
     {#snippet bottomPanel()}
-      <CommandConsole nodeTypes={nodes} />
+      <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
     {/snippet}
 
     <!-- Main Content: Workflow Editor with Error Status -->

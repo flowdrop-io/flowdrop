@@ -6,6 +6,13 @@
 
 <script lang="ts">
   import type { NodeMetadata } from "$lib/types/index.js";
+  import {
+    parseCommand,
+    executeCommand,
+    type UIAction,
+    type CommandContext,
+  } from "../../commands/index.js";
+  import { createStoreCommandContext } from "../../commands/storeIntegration.svelte.js";
   import { updateSettings, getUiSettings } from "../../stores/settingsStore.svelte.js";
   import ConsoleInput from "./ConsoleInput.svelte";
   import ConsoleOutput, { type ConsoleEntry } from "./ConsoleOutput.svelte";
@@ -13,20 +20,57 @@
   interface Props {
     /** Available node types for command execution */
     nodeTypes: NodeMetadata[];
+    /** Callback for UI actions (open config, select node) */
+    onUIAction?: (action: UIAction) => void;
   }
 
-  let { nodeTypes }: Props = $props();
+  let { nodeTypes, onUIAction }: Props = $props();
 
   let outputEntries: ConsoleEntry[] = $state([]);
+  let commandContext: CommandContext | null = $state(null);
+
+  // Recreate context when nodeTypes changes
+  $effect(() => {
+    commandContext = createStoreCommandContext(nodeTypes, onUIAction);
+  });
 
   function closeConsole() {
     updateSettings({ ui: { consoleOpen: false } });
   }
 
   function handleCommandSubmit(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
     // Add the input entry to the output
-    outputEntries.push({ type: "input", text: value });
-    // Command execution will be added in US-007
+    outputEntries.push({ type: "input", text: trimmed });
+
+    // Handle clear command
+    if (trimmed.toLowerCase() === "clear") {
+      outputEntries = [];
+      return;
+    }
+
+    // Parse the command
+    const parseResult = parseCommand(trimmed);
+    if (!parseResult.ok) {
+      outputEntries.push({ type: "error", text: parseResult.error });
+      return;
+    }
+
+    // Ensure we have a command context
+    if (!commandContext) {
+      outputEntries.push({ type: "error", text: "No workflow loaded" });
+      return;
+    }
+
+    // Execute the command
+    const result = executeCommand(parseResult.command, commandContext);
+    if (result.ok) {
+      outputEntries.push({ type: "success", text: result.message });
+    } else {
+      outputEntries.push({ type: "error", text: result.error });
+    }
   }
 </script>
 
