@@ -1050,7 +1050,21 @@ function executeAutoLayout(
     })),
   };
 
-  const positions = computeAutoLayout(flow);
+  // Collect measured node dimensions when available
+  const nodeDimensions = new Map<string, { width: number; height: number }>();
+  for (const n of workflow.nodes) {
+    const w = n.measured?.width ?? (n as { width?: number }).width;
+    const h = n.measured?.height ?? (n as { height?: number }).height;
+    if (w != null && h != null) {
+      nodeDimensions.set(n.id, { width: w, height: h });
+    }
+  }
+
+  const positions = computeAutoLayout(
+    flow,
+    {},
+    nodeDimensions.size > 0 ? nodeDimensions : undefined,
+  );
 
   // Apply positions — swap x/y for vertical layout
   const updatedNodes = workflow.nodes.map((n) => {
