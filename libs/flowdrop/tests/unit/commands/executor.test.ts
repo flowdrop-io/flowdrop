@@ -2,12 +2,15 @@ import { describe, it, expect, vi } from "vitest";
 import {
   executeCommand,
   toShortId,
+  toShortTypeId,
   resolveNode,
 } from "../../../src/lib/commands/executor.js";
 import type {
   CommandContext,
   CommandDispatch,
   AddNodeResultData,
+  GetConfigResultData,
+  InfoResultData,
 } from "../../../src/lib/commands/types.js";
 import type {
   WorkflowNode,
@@ -409,6 +412,420 @@ describe("executeCommand — delete_node", () => {
 
     const result = executeCommand(
       { type: "delete_node", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// toShortTypeId
+// ============================================================================
+
+describe("toShortTypeId", () => {
+  it("strips namespace from type ID", () => {
+    expect(toShortTypeId("agentspec.llm_node")).toBe("llm_node");
+  });
+
+  it("returns unchanged for non-namespaced type ID", () => {
+    expect(toShortTypeId("llm_node")).toBe("llm_node");
+  });
+});
+
+// ============================================================================
+// rename_node
+// ============================================================================
+
+describe("executeCommand — rename_node", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const nodeTypes = [llmMetadata];
+
+  it("renames a node", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "rename_node", nodeId: "llm_node.1", label: "My Custom LLM" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("My Custom LLM");
+    expect(dispatch.updateNode).toHaveBeenCalledWith(
+      "agentspec.llm_node.1",
+      expect.objectContaining({
+        data: expect.objectContaining({ label: "My Custom LLM" }),
+      }),
+    );
+  });
+
+  it("preserves other data fields when renaming", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    executeCommand(
+      { type: "rename_node", nodeId: "llm_node.1", label: "New Name" },
+      context,
+    );
+
+    const updateCall = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0];
+    const updatedData = updateCall[1].data;
+    expect(updatedData.config).toEqual({ model: "gpt-4", temperature: 0.7 });
+    expect(updatedData.metadata).toBe(llmMetadata);
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const context = createMockContext(createMockWorkflow(), nodeTypes);
+
+    const result = executeCommand(
+      { type: "rename_node", nodeId: "llm_node.99", label: "Test" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "rename_node", nodeId: "llm_node.1", label: "Test" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// set_config
+// ============================================================================
+
+describe("executeCommand — set_config", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const nodeTypes = [llmMetadata];
+
+  it("sets a string config value", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "model", value: "gpt-4o" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    const updateCall = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0];
+    const updatedConfig = updateCall[1].data.config;
+    expect(updatedConfig.model).toBe("gpt-4o");
+    expect(updatedConfig.temperature).toBe(0.7); // preserved
+  });
+
+  it("parses number values", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "temperature", value: "0.9" },
+      context,
+    );
+
+    const updatedConfig = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0][1].data.config;
+    expect(updatedConfig.temperature).toBe(0.9);
+    expect(typeof updatedConfig.temperature).toBe("number");
+  });
+
+  it("parses boolean values", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "streaming", value: "true" },
+      context,
+    );
+
+    const updatedConfig = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0][1].data.config;
+    expect(updatedConfig.streaming).toBe(true);
+  });
+
+  it("preserves quoted strings as strings", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "name", value: '"42"' },
+      context,
+    );
+
+    const updatedConfig = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0][1].data.config;
+    expect(updatedConfig.name).toBe("42");
+    expect(typeof updatedConfig.name).toBe("string");
+  });
+
+  it("parses JSON array values", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "tags", value: '["a","b"]' },
+      context,
+    );
+
+    const updatedConfig = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0][1].data.config;
+    expect(updatedConfig.tags).toEqual(["a", "b"]);
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const context = createMockContext(createMockWorkflow(), nodeTypes);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.99", key: "model", value: "gpt-4" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "model", value: "gpt-4" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// get_config
+// ============================================================================
+
+describe("executeCommand — get_config", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const nodeTypes = [llmMetadata];
+
+  it("returns config value for existing key", () => {
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand(
+      { type: "get_config", nodeId: "llm_node.1", key: "model" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as GetConfigResultData;
+    expect(data.nodeId).toBe("llm_node.1");
+    expect(data.key).toBe("model");
+    expect(data.value).toBe("gpt-4");
+  });
+
+  it("returns CONFIG_KEY_NOT_FOUND for missing key", () => {
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand(
+      { type: "get_config", nodeId: "llm_node.1", key: "nonexistent" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("CONFIG_KEY_NOT_FOUND");
+    expect(result.error).toContain("nonexistent");
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const context = createMockContext(createMockWorkflow(), nodeTypes);
+
+    const result = executeCommand(
+      { type: "get_config", nodeId: "llm_node.99", key: "model" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "get_config", nodeId: "llm_node.1", key: "model" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// info
+// ============================================================================
+
+describe("executeCommand — info", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node", {
+    inputs: [
+      { id: "prompt", name: "Prompt", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "llm_output", name: "LLM Output", type: "output", dataType: "string" },
+    ],
+  });
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node", {
+    inputs: [
+      { id: "body", name: "Body", type: "input", dataType: "string" },
+    ],
+    outputs: [],
+  });
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("returns full node info with ports", () => {
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      position: { x: 200, y: 300 },
+    });
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand(
+      { type: "info", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as InfoResultData;
+    expect(data.nodeId).toBe("llm_node.1");
+    expect(data.label).toBe("LLM Node");
+    expect(data.type).toBe("llm_node");
+    expect(data.position).toEqual({ x: 200, y: 300 });
+    expect(data.config).toEqual({ model: "gpt-4", temperature: 0.7 });
+    expect(data.inputs).toEqual([
+      { portId: "prompt", name: "Prompt", dataType: "string" },
+    ]);
+    expect(data.outputs).toEqual([
+      { portId: "llm_output", name: "LLM Output", dataType: "string" },
+    ]);
+  });
+
+  it("includes connected edges", () => {
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const edge = {
+      id: "edge-1",
+      source: "agentspec.llm_node.1",
+      target: "agentspec.api_node.1",
+      sourceHandle: "agentspec.llm_node.1-output-llm_output",
+      targetHandle: "agentspec.api_node.1-input-body",
+    };
+    const workflow = createMockWorkflow([llmNode, apiNode], [edge as any]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    // Info on source node
+    const result = executeCommand(
+      { type: "info", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as InfoResultData;
+    expect(data.connectedEdges).toHaveLength(1);
+    expect(data.connectedEdges[0]).toEqual({
+      edgeId: "edge-1",
+      direction: "outgoing",
+      remoteNodeId: "api_node.1",
+      remotePort: "body",
+      localPort: "llm_output",
+    });
+
+    // Info on target node — should show incoming
+    const result2 = executeCommand(
+      { type: "info", nodeId: "api_node.1" },
+      context,
+    );
+
+    expect(result2.ok).toBe(true);
+    if (!result2.ok) return;
+    const data2 = result2.data as InfoResultData;
+    expect(data2.connectedEdges).toHaveLength(1);
+    expect(data2.connectedEdges[0]).toEqual({
+      edgeId: "edge-1",
+      direction: "incoming",
+      remoteNodeId: "llm_node.1",
+      remotePort: "llm_output",
+      localPort: "body",
+    });
+  });
+
+  it("returns empty connectedEdges for isolated node", () => {
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand(
+      { type: "info", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as InfoResultData;
+    expect(data.connectedEdges).toEqual([]);
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const context = createMockContext(createMockWorkflow(), nodeTypes);
+
+    const result = executeCommand(
+      { type: "info", nodeId: "llm_node.99" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "info", nodeId: "llm_node.1" },
       context,
     );
 
