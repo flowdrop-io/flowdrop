@@ -139,20 +139,16 @@ function assignLayers(
   const layers = new Map<string, number>();
   layers.set(startNode, 0);
 
-  // Use BFS but take the maximum layer for each node
-  // (longest path ensures proper branching layout)
+  // Longest-path BFS: re-queue neighbors whenever their layer increases.
+  // This ensures convergence nodes (reached via multiple branches) are
+  // placed at the depth of the longest path, not the shortest.
   const queue: string[] = [startNode];
-  const visited = new Set<string>();
   let iterations = 0;
   const maxIterations = nodeCount * nodeCount + 100; // Safety limit for cycles
 
   while (queue.length > 0 && iterations < maxIterations) {
     iterations++;
     const current = queue.shift()!;
-
-    if (visited.has(current)) continue;
-    visited.add(current);
-
     const currentLayer = layers.get(current) || 0;
     const neighbors = adjacency.get(current) || [];
 
@@ -160,12 +156,9 @@ function assignLayers(
       const existingLayer = layers.get(neighbor);
       const newLayer = currentLayer + 1;
 
-      // Take the max layer (longest path)
+      // Only update and re-queue when we find a longer path
       if (existingLayer === undefined || newLayer > existingLayer) {
         layers.set(neighbor, newLayer);
-      }
-
-      if (!visited.has(neighbor)) {
         queue.push(neighbor);
       }
     }
