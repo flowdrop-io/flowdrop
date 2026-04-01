@@ -20,7 +20,7 @@ import type {
 import type { WorkflowValidationResult } from "./validation.js";
 import { buildHandleId, extractPortId, extractDirection } from "./handleIds.js";
 import type { PortCompatibilityChecker } from "./connections.js";
-import { generateNodeId } from "../helpers/workflowEditorHelper.js";
+import { generateNodeId } from "./nodeIds.js";
 
 // =========================================================================
 // Types
