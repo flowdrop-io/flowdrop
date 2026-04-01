@@ -12,6 +12,7 @@
   import Icon from "@iconify/svelte";
   import ConfigForm from "$lib/components/ConfigForm.svelte";
   import ConfigPanel from "$lib/components/ConfigPanel.svelte";
+  import CommandConsole from "$lib/components/console/CommandConsole.svelte";
   import NodeSwapPicker from "$lib/components/NodeSwapPicker.svelte";
   import SwapMappingEditor from "$lib/components/SwapMappingEditor.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
@@ -890,7 +891,8 @@
     showHeader={showNavbar}
     showLeftSidebar={!disableSidebar}
     showRightSidebar={showRightPanel}
-    showBottomPanel={false}
+    showBottomPanel={getUiSettings().consoleOpen && !readOnly && !lockWorkflow}
+    bottomPanelHeight={getUiSettings().consoleHeight}
     showFooter={false}
     headerHeight={60}
     {leftSidebarWidth}
@@ -1111,6 +1113,11 @@
           />
         </ConfigPanel>
       {/if}
+    {/snippet}
+
+    <!-- Bottom Panel: Command Console -->
+    {#snippet bottomPanel()}
+      <CommandConsole nodeTypes={nodes} />
     {/snippet}
 
     <!-- Main Content: Workflow Editor with Error Status -->
