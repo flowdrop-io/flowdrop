@@ -1029,8 +1029,21 @@ function executeAutoLayout(
 
   const isVertical = command.direction === "vertical";
 
-  // Convert workflow to minimal AgentSpecFlow for computeAutoLayout
+  // Filter out loopback edges (loop_back port) — they go backwards and
+  // would reverse the layout direction if included.
+  const layoutEdges = workflow.edges.filter(
+    (e) => !(e.targetHandle ?? "").includes("-input-loop_back"),
+  );
+
+  // Determine start node via in-degree: a node with no incoming edges
+  // (from non-loopback edges) is a root. Fall back to leftmost position.
+  const inDegree = new Map<string, number>();
+  for (const n of workflow.nodes) inDegree.set(n.id, 0);
+  for (const e of layoutEdges) {
+    inDegree.set(e.target, (inDegree.get(e.target) ?? 0) + 1);
+  }
   const startNode =
+    workflow.nodes.find((n) => (inDegree.get(n.id) ?? 0) === 0)?.id ??
     workflow.nodes.reduce((leftmost, n) =>
       n.position.x < leftmost.position.x ? n : leftmost,
     ).id;
@@ -1043,7 +1056,7 @@ function executeAutoLayout(
       component_type: "start_node" as const,
       name: n.id,
     })),
-    control_flow_connections: workflow.edges.map((e) => ({
+    control_flow_connections: layoutEdges.map((e) => ({
       name: e.id,
       from_node: e.source,
       to_node: e.target,
