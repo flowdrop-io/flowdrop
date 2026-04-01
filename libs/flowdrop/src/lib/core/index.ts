@@ -354,7 +354,7 @@ export {
 // Shared Utilities
 // ============================================================================
 
-export { generateNodeId } from "../utils/nodeIds.js";
+export { generateNodeId, extractConfigDefaults } from "../utils/nodeIds.js";
 
 // ============================================================================
 // Adapters

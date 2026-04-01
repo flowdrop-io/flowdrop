@@ -1,8 +1,10 @@
 /**
- * Shared node ID generation utility.
+ * Shared node ID generation and config defaults utilities.
  * Used by both the visual editor and the workflow adapter to ensure
- * consistent ID generation across all code paths.
+ * consistent behavior across all code paths.
  */
+
+import type { ConfigSchema } from "../types/index.js";
 
 /**
  * Minimal node shape required for ID generation.
@@ -40,4 +42,24 @@ export function generateNodeId(
     existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
 
   return `${nodeTypeId}.${nextNumber}`;
+}
+
+/**
+ * Extract default config values from a node's configSchema.
+ * Iterates configSchema.properties and returns an object with each property's
+ * default value (if defined).
+ */
+export function extractConfigDefaults(
+  configSchema?: ConfigSchema,
+): Record<string, unknown> {
+  const config: Record<string, unknown> = {};
+  if (!configSchema?.properties) return config;
+
+  for (const [key, prop] of Object.entries(configSchema.properties)) {
+    if (prop && typeof prop === "object" && "default" in prop) {
+      config[key] = prop.default;
+    }
+  }
+
+  return config;
 }
