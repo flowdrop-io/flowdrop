@@ -892,14 +892,25 @@
   }
 
   function handleConsoleUIAction(action: UIAction): void {
-    const wf = getWorkflowStore();
-    if (!wf) return;
-
     if (action.type === "open_config") {
+      const wf = getWorkflowStore();
+      if (!wf) return;
       const node = wf.nodes.find((n) => n.id === action.nodeId);
       if (node) openConfigSidebar(node);
     } else if (action.type === "select_node") {
       selectedNodeId = action.nodeId;
+    } else if (action.type === "canvas_fit_view") {
+      workflowEditorRef?.canvasFitView();
+    } else if (action.type === "canvas_zoom_in") {
+      workflowEditorRef?.canvasZoomIn();
+    } else if (action.type === "canvas_zoom_out") {
+      workflowEditorRef?.canvasZoomOut();
+    } else if (action.type === "canvas_zoom_to") {
+      workflowEditorRef?.canvasZoomTo(action.level);
+    } else if (action.type === "canvas_pan_to") {
+      workflowEditorRef?.canvasPanTo(action.position.x, action.position.y);
+    } else if (action.type === "canvas_reset_view") {
+      workflowEditorRef?.canvasResetView();
     }
   }
 

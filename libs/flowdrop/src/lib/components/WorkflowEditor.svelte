@@ -28,6 +28,7 @@
     WorkflowEdge,
   } from "../types/index.js";
   import CanvasBanner from "./CanvasBanner.svelte";
+  import CanvasController from "./CanvasController.svelte";
   import FlowDropZone from "./FlowDropZone.svelte";
   import EdgeRefresher from "./EdgeRefresher.svelte";
   import { tick, untrack } from "svelte";
@@ -694,6 +695,9 @@
    */
   let nodeIdToRefresh = $state<string | null>(null);
 
+  // Canvas viewport controller ref (rendered inside SvelteFlowProvider)
+  let canvasControllerRef: CanvasController | undefined = $state();
+
   /**
    * Update a node's data in the local editor state.
    * Called by App.svelte AFTER it has already updated the global store via
@@ -737,6 +741,32 @@
 
     // Trigger the EdgeRefresher component to call updateNodeInternals
     nodeIdToRefresh = nodeId;
+  }
+
+  // Canvas viewport methods (forwarded to CanvasController inside SvelteFlowProvider)
+
+  export function canvasFitView(): void {
+    canvasControllerRef?.canvasFitView();
+  }
+
+  export function canvasZoomIn(): void {
+    canvasControllerRef?.canvasZoomIn();
+  }
+
+  export function canvasZoomOut(): void {
+    canvasControllerRef?.canvasZoomOut();
+  }
+
+  export function canvasZoomTo(level: number): void {
+    canvasControllerRef?.canvasZoomTo(level);
+  }
+
+  export function canvasPanTo(x: number, y: number): void {
+    canvasControllerRef?.canvasPanTo(x, y);
+  }
+
+  export function canvasResetView(): void {
+    canvasControllerRef?.canvasResetView();
   }
 
   /**
@@ -791,6 +821,9 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <SvelteFlowProvider>
+  <!-- Canvas viewport controller - provides fitView, zoom, pan methods -->
+  <CanvasController bind:this={canvasControllerRef} />
+
   <!-- EdgeRefresher component - handles updateNodeInternals calls -->
   <EdgeRefresher
     {nodeIdToRefresh}
