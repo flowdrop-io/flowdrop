@@ -866,7 +866,49 @@
 
   // File input reference for workflow import
   let fileInputRef = $state<HTMLInputElement | null>(null);
+
+  /**
+   * Handle global keyboard shortcut for console toggle.
+   * Backtick (`) toggles the console open/closed unless user is typing in an input.
+   */
+  function handleGlobalKeydown(event: KeyboardEvent): void {
+    // Dead key on international keyboards — do not intercept
+    if (event.key === "Dead") return;
+
+    if (event.key !== "`") return;
+
+    // Don't intercept when user is typing in an input, textarea, or contenteditable
+    const target = event.target as HTMLElement;
+    const isInputElement =
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable;
+
+    if (isInputElement) return;
+
+    event.preventDefault();
+
+    const currentOpen = getUiSettings().consoleOpen;
+    updateSettings({ ui: { consoleOpen: !currentOpen } });
+
+    // Focus management after DOM update
+    tick().then(() => {
+      if (currentOpen) {
+        // Console was open, now closing — focus the canvas
+        const canvas = document.querySelector<HTMLElement>(".flowdrop-editor-main");
+        canvas?.focus();
+      } else {
+        // Console was closed, now opening — focus first focusable element inside console
+        const consoleEl = document.querySelector<HTMLElement>(".command-console");
+        const focusTarget =
+          consoleEl?.querySelector<HTMLElement>("input, button, [tabindex]");
+        focusTarget?.focus();
+      }
+    });
+  }
 </script>
+
+<svelte:window onkeydown={handleGlobalKeydown} />
 
 <svelte:head>
   <title>FlowDrop - Visual Workflow Manager</title>
