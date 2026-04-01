@@ -357,6 +357,63 @@ export {
 export { generateNodeId, extractConfigDefaults } from "../utils/nodeIds.js";
 
 // ============================================================================
+// Command DSL
+// ============================================================================
+
+export type {
+  AddNodeCommand,
+  DeleteNodeCommand,
+  RenameNodeCommand,
+  SetConfigCommand,
+  GetConfigCommand,
+  ConnectCommand,
+  DisconnectPortsCommand,
+  DisconnectNodeCommand,
+  ListNodesCommand,
+  ListEdgesCommand,
+  ListTypesCommand,
+  InfoCommand,
+  UndoCommand,
+  RedoCommand,
+  ConfigOpenCommand,
+  SelectNodeCommand,
+  HelpCommand,
+  ClearCommand,
+  SwapNodeCommand,
+  MoveNodeCommand,
+  AutoLayoutCommand,
+  Command,
+  ParseResult,
+  CommandErrorCode,
+  AddNodeResultData,
+  ListNodesResultData,
+  ListEdgesResultData,
+  ListTypesResultData,
+  InfoResultData,
+  GetConfigResultData,
+  HelpResultData,
+  CommandResultData,
+  CommandResultOk,
+  CommandResultError,
+  CommandResult,
+  BatchResult,
+  UIAction,
+  CommandDispatch,
+  CommandContext,
+} from "../commands/index.js";
+
+export {
+  buildTypeMap,
+  parseCommand,
+  executeCommand,
+  toShortId,
+  toShortTypeId,
+  resolveNode,
+  executeBatch,
+  computeAutoPosition,
+} from "../commands/index.js";
+
+// ============================================================================
 // Adapters
 // ============================================================================
 
