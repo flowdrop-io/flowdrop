@@ -80,6 +80,9 @@ export { default as PipelineStatus } from "../components/PipelineStatus.svelte";
 export { default as Navbar } from "../components/Navbar.svelte";
 export { default as Logo } from "../components/Logo.svelte";
 
+// Console Components
+export { default as CommandConsole } from "../components/console/CommandConsole.svelte";
+
 // Playground Components
 export { default as Playground } from "../components/playground/Playground.svelte";
 export { default as PlaygroundModal } from "../components/playground/PlaygroundModal.svelte";
@@ -385,6 +388,8 @@ export type {
 } from "../types/events.js";
 
 export type { EndpointConfig } from "../config/endpoints.js";
+
+export type { UIAction } from "../commands/types.js";
 
 export type {
   FlowDropMountOptions,
