@@ -285,6 +285,296 @@ describe("parseCommand", () => {
   });
 
   // ==========================================================================
+  // connect
+  // ==========================================================================
+  describe("connect", () => {
+    it("parses connect <nid>:<port> to <nid>:<port>", () => {
+      const result = parseCommand("connect llm_node.1:llm_output to api_node.1:body");
+      expect(result).toEqual({
+        ok: true,
+        command: {
+          type: "connect",
+          sourceNodeId: "llm_node.1",
+          sourcePort: "llm_output",
+          targetNodeId: "api_node.1",
+          targetPort: "body",
+        },
+      });
+    });
+
+    it("is case-insensitive for verb", () => {
+      const result = parseCommand("CONNECT llm_node.1:out to api_node.1:in");
+      expect(result).toEqual({
+        ok: true,
+        command: {
+          type: "connect",
+          sourceNodeId: "llm_node.1",
+          sourcePort: "out",
+          targetNodeId: "api_node.1",
+          targetPort: "in",
+        },
+      });
+    });
+
+    it("preserves case of identifiers", () => {
+      const result = parseCommand("connect LLM_Node.1:Output to API_Node.1:Input");
+      expect(result).toEqual({
+        ok: true,
+        command: {
+          type: "connect",
+          sourceNodeId: "LLM_Node.1",
+          sourcePort: "Output",
+          targetNodeId: "API_Node.1",
+          targetPort: "Input",
+        },
+      });
+    });
+
+    it("returns error for connect with missing target", () => {
+      const result = parseCommand("connect llm_node.1:out");
+      expect(result).toEqual({
+        ok: false,
+        error: "Invalid syntax for 'connect' command",
+        input: "connect llm_node.1:out",
+      });
+    });
+
+    it("returns error for connect without port specification", () => {
+      const result = parseCommand("connect llm_node.1 to api_node.1");
+      expect(result).toEqual({
+        ok: false,
+        error: "Invalid syntax for 'connect' command",
+        input: "connect llm_node.1 to api_node.1",
+      });
+    });
+  });
+
+  // ==========================================================================
+  // disconnect_ports
+  // ==========================================================================
+  describe("disconnect (port-specific)", () => {
+    it("parses disconnect <nid>:<port> from <nid>:<port>", () => {
+      const result = parseCommand("disconnect llm_node.1:llm_output from api_node.1:body");
+      expect(result).toEqual({
+        ok: true,
+        command: {
+          type: "disconnect_ports",
+          sourceNodeId: "llm_node.1",
+          sourcePort: "llm_output",
+          targetNodeId: "api_node.1",
+          targetPort: "body",
+        },
+      });
+    });
+
+    it("is case-insensitive for verb", () => {
+      const result = parseCommand("DISCONNECT llm_node.1:out from api_node.1:in");
+      expect(result).toEqual({
+        ok: true,
+        command: {
+          type: "disconnect_ports",
+          sourceNodeId: "llm_node.1",
+          sourcePort: "out",
+          targetNodeId: "api_node.1",
+          targetPort: "in",
+        },
+      });
+    });
+  });
+
+  // ==========================================================================
+  // disconnect_node
+  // ==========================================================================
+  describe("disconnect (all edges)", () => {
+    it("parses disconnect <nodeId>", () => {
+      const result = parseCommand("disconnect llm_node.1");
+      expect(result).toEqual({
+        ok: true,
+        command: { type: "disconnect_node", nodeId: "llm_node.1" },
+      });
+    });
+
+    it("is case-insensitive for verb", () => {
+      const result = parseCommand("DISCONNECT api_node.2");
+      expect(result).toEqual({
+        ok: true,
+        command: { type: "disconnect_node", nodeId: "api_node.2" },
+      });
+    });
+  });
+
+  // ==========================================================================
+  // list_nodes
+  // ==========================================================================
+  describe("list nodes", () => {
+    it("parses list nodes", () => {
+      const result = parseCommand("list nodes");
+      expect(result).toEqual({
+        ok: true,
+        command: { type: "list_nodes" },
+      });
+    });
+
+    it("is case-insensitive", () => {
+      expect(parseCommand("LIST NODES")).toEqual({
+        ok: true,
+        command: { type: "list_nodes" },
+      });
+      expect(parseCommand("List Nodes")).toEqual({
+        ok: true,
+        command: { type: "list_nodes" },
+      });
+    });
+  });
+
+  // ==========================================================================
+  // list_edges
+  // ==========================================================================
+  describe("list edges", () => {
+    it("parses list edges", () => {
+      const result = parseCommand("list edges");
+      expect(result).toEqual({
+        ok: true,
+        command: { type: "list_edges" },
+      });
+    });
+
+    it("is case-insensitive", () => {
+      expect(parseCommand("LIST EDGES")).toEqual({
+        ok: true,
+        command: { type: "list_edges" },
+      });
+    });
+  });
+
+  // ==========================================================================
+  // list_types
+  // ==========================================================================
+  describe("list types", () => {
+    it("parses list types", () => {
+      const result = parseCommand("list types");
+      expect(result).toEqual({
+        ok: true,
+        command: { type: "list_types" },
+      });
+    });
+
+    it("is case-insensitive", () => {
+      expect(parseCommand("LIST TYPES")).toEqual({
+        ok: true,
+        command: { type: "list_types" },
+      });
+    });
+
+    it("returns error for list with unknown subcommand", () => {
+      const result = parseCommand("list connections");
+      expect(result).toEqual({
+        ok: false,
+        error: "Invalid syntax for 'list' command",
+        input: "list connections",
+      });
+    });
+  });
+
+  // ==========================================================================
+  // undo
+  // ==========================================================================
+  describe("undo", () => {
+    it("parses undo", () => {
+      expect(parseCommand("undo")).toEqual({
+        ok: true,
+        command: { type: "undo" },
+      });
+    });
+
+    it("is case-insensitive", () => {
+      expect(parseCommand("UNDO")).toEqual({
+        ok: true,
+        command: { type: "undo" },
+      });
+    });
+  });
+
+  // ==========================================================================
+  // redo
+  // ==========================================================================
+  describe("redo", () => {
+    it("parses redo", () => {
+      expect(parseCommand("redo")).toEqual({
+        ok: true,
+        command: { type: "redo" },
+      });
+    });
+
+    it("is case-insensitive", () => {
+      expect(parseCommand("REDO")).toEqual({
+        ok: true,
+        command: { type: "redo" },
+      });
+    });
+  });
+
+  // ==========================================================================
+  // help
+  // ==========================================================================
+  describe("help", () => {
+    it("parses help with no args", () => {
+      expect(parseCommand("help")).toEqual({
+        ok: true,
+        command: { type: "help" },
+      });
+    });
+
+    it("parses help <command>", () => {
+      expect(parseCommand("help connect")).toEqual({
+        ok: true,
+        command: { type: "help", command: "connect" },
+      });
+    });
+
+    it("parses help with different commands", () => {
+      expect(parseCommand("help add")).toEqual({
+        ok: true,
+        command: { type: "help", command: "add" },
+      });
+      expect(parseCommand("help delete")).toEqual({
+        ok: true,
+        command: { type: "help", command: "delete" },
+      });
+    });
+
+    it("is case-insensitive for verb", () => {
+      expect(parseCommand("HELP")).toEqual({
+        ok: true,
+        command: { type: "help" },
+      });
+      expect(parseCommand("HELP connect")).toEqual({
+        ok: true,
+        command: { type: "help", command: "connect" },
+      });
+    });
+  });
+
+  // ==========================================================================
+  // clear
+  // ==========================================================================
+  describe("clear", () => {
+    it("parses clear", () => {
+      expect(parseCommand("clear")).toEqual({
+        ok: true,
+        command: { type: "clear" },
+      });
+    });
+
+    it("is case-insensitive", () => {
+      expect(parseCommand("CLEAR")).toEqual({
+        ok: true,
+        command: { type: "clear" },
+      });
+    });
+  });
+
+  // ==========================================================================
   // Error cases
   // ==========================================================================
   describe("error handling", () => {
