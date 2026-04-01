@@ -906,6 +906,34 @@ function executeSwapNode(
   };
 }
 
+function executeMoveNode(
+  command: Extract<Command, { type: "move_node" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.nodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  context.dispatch.updateNode(node.id, {
+    position: command.position,
+  });
+
+  return {
+    ok: true,
+    message: `Moved ${toShortId(node.id)} to (${command.position.x}, ${command.position.y})`,
+  };
+}
+
 // ============================================================================
 // Public API
 // ============================================================================
@@ -956,6 +984,8 @@ export function executeCommand(
       return executeSelectNode(command, context);
     case "swap_node":
       return executeSwapNode(command, context);
+    case "move_node":
+      return executeMoveNode(command, context);
     default:
       return {
         ok: false,
