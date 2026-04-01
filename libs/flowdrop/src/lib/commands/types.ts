@@ -40,6 +40,8 @@ export interface SetConfigCommand {
   nodeId: string;
   key: string;
   value: string;
+  /** When true, validation errors reject the command instead of warning */
+  strict?: boolean;
 }
 
 export interface GetConfigCommand {
@@ -258,6 +260,21 @@ export interface HelpResultData {
   }>;
 }
 
+/** Result data for set_config command — includes validation warnings */
+export interface SetConfigResultData {
+  nodeId: string;
+  key: string;
+  value: unknown;
+  /** Validation warnings (non-blocking unless strict mode) */
+  warnings?: Array<{
+    type: "enum" | "type_mismatch";
+    message: string;
+    allowedValues?: unknown[];
+    expectedType?: string;
+    actualType?: string;
+  }>;
+}
+
 /** Result data for swap_node command */
 export interface SwapNodeResultData {
   oldNodeId: string;
@@ -278,6 +295,7 @@ export type CommandResultData =
   | ListTypesResultData
   | InfoResultData
   | GetConfigResultData
+  | SetConfigResultData
   | HelpResultData
   | SwapNodeResultData;
 

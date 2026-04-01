@@ -391,6 +391,7 @@ export type {
   ListTypesResultData,
   InfoResultData,
   GetConfigResultData,
+  SetConfigResultData,
   HelpResultData,
   CommandResultData,
   CommandResultOk,

@@ -39,6 +39,7 @@ export type {
   ListTypesResultData,
   InfoResultData,
   GetConfigResultData,
+  SetConfigResultData,
   HelpResultData,
   SwapNodeResultData,
   CommandResultData,

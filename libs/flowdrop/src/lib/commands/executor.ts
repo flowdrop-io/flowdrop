@@ -13,6 +13,7 @@ import type {
   CommandResult,
   AddNodeResultData,
   GetConfigResultData,
+  SetConfigResultData,
   InfoResultData,
   ListNodesResultData,
   ListEdgesResultData,
@@ -20,6 +21,7 @@ import type {
   HelpResultData,
   SwapNodeResultData,
 } from "./types.js";
+import type { ConfigProperty } from "../types/index.js";
 import type { WorkflowNode, WorkflowEdge } from "../types/index.js";
 import { generateNodeId } from "../utils/nodeIds.js";
 import { extractConfigDefaults } from "../utils/nodeIds.js";
@@ -228,6 +230,53 @@ function parseConfigValue(raw: string): unknown {
   return raw;
 }
 
+/**
+ * Validate a parsed config value against a ConfigProperty schema.
+ * Returns an array of validation warnings (empty if valid or no schema).
+ */
+function validateConfigValue(
+  key: string,
+  value: unknown,
+  property: ConfigProperty | undefined,
+): SetConfigResultData["warnings"] {
+  if (!property) return [];
+
+  const warnings: NonNullable<SetConfigResultData["warnings"]> = [];
+
+  // Enum validation
+  if (property.enum && property.enum.length > 0) {
+    if (!property.enum.includes(value)) {
+      warnings.push({
+        type: "enum",
+        message: `Value ${JSON.stringify(value)} is not in allowed values: ${property.enum.map((v) => JSON.stringify(v)).join(", ")}`,
+        allowedValues: property.enum,
+      });
+    }
+  }
+
+  // Type validation
+  if (property.type) {
+    const actualType = Array.isArray(value) ? "array" : typeof value;
+    const expectedType = property.type === "integer" ? "number" : property.type;
+
+    // Only warn if there's a genuine mismatch (null/object handled specially)
+    if (
+      value !== null &&
+      actualType !== expectedType &&
+      !(expectedType === "object" && actualType === "object")
+    ) {
+      warnings.push({
+        type: "type_mismatch",
+        message: `Expected type '${property.type}' but got '${actualType}'`,
+        expectedType: property.type,
+        actualType,
+      });
+    }
+  }
+
+  return warnings;
+}
+
 function executeSetConfig(
   command: Extract<Command, { type: "set_config" }>,
   context: CommandContext,
@@ -247,15 +296,45 @@ function executeSetConfig(
   }
 
   const parsedValue = parseConfigValue(command.value);
+
+  // Validate against configSchema if present
+  const metadata = node.data.metadata;
+  const configSchema = metadata?.configSchema;
+  const property = configSchema?.properties?.[command.key];
+  const warnings = validateConfigValue(command.key, parsedValue, property);
+
+  // In strict mode, validation warnings become errors
+  if (command.strict && warnings && warnings.length > 0) {
+    const messages = warnings.map((w) => w.message).join("; ");
+    return {
+      ok: false,
+      error: `Config validation failed for ${toShortId(node.id)}:${command.key}: ${messages}`,
+      code: "CONFIG_VALIDATION_ERROR",
+    };
+  }
+
   const updatedConfig = { ...node.data.config, [command.key]: parsedValue };
 
   context.dispatch.updateNode(node.id, {
     data: { ...node.data, config: updatedConfig },
   });
 
+  const resultData: SetConfigResultData = {
+    nodeId: toShortId(node.id),
+    key: command.key,
+    value: parsedValue,
+    ...(warnings && warnings.length > 0 ? { warnings } : {}),
+  };
+
+  const warningMsg =
+    warnings && warnings.length > 0
+      ? ` (warning: ${warnings.map((w) => w.message).join("; ")})`
+      : "";
+
   return {
     ok: true,
-    message: `Set ${toShortId(node.id)}:${command.key} = ${JSON.stringify(parsedValue)}`,
+    message: `Set ${toShortId(node.id)}:${command.key} = ${JSON.stringify(parsedValue)}${warningMsg}`,
+    data: resultData,
   };
 }
 

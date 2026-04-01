@@ -658,6 +658,229 @@ describe("executeCommand — set_config", () => {
 });
 
 // ============================================================================
+// set_config — ConfigSchema validation (US-017)
+// ============================================================================
+
+describe("executeCommand — set_config validation", () => {
+  const enumMetadata = createMockMetadata("agentspec.llm_node", "LLM Node", {
+    configSchema: {
+      type: "object",
+      properties: {
+        model: {
+          type: "string",
+          default: "gpt-4",
+          enum: ["gpt-4", "gpt-4o", "claude-3"],
+        },
+        temperature: {
+          type: "number",
+          default: 0.7,
+        },
+        stream: {
+          type: "boolean",
+          default: false,
+        },
+      },
+    },
+  });
+  const nodeTypes = [enumMetadata];
+
+  function makeNode() {
+    return createMockNode("agentspec.llm_node.1", enumMetadata, {
+      data: {
+        label: "LLM Node",
+        config: { model: "gpt-4", temperature: 0.7, stream: false },
+        metadata: enumMetadata,
+        nodeId: "agentspec.llm_node.1",
+      },
+    });
+  }
+
+  it("succeeds with warning for enum violation (advisory mode)", () => {
+    const dispatch = createMockDispatch();
+    const node = makeNode();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "model", value: "gpt-5" },
+      context,
+    );
+
+    // Advisory: command succeeds
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // But has warnings
+    const data = result.data as import("../../../src/lib/commands/types.js").SetConfigResultData;
+    expect(data.warnings).toBeDefined();
+    expect(data.warnings!.length).toBe(1);
+    expect(data.warnings![0].type).toBe("enum");
+    expect(data.warnings![0].allowedValues).toEqual(["gpt-4", "gpt-4o", "claude-3"]);
+
+    // Value was still applied
+    const updatedConfig = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0][1].data.config;
+    expect(updatedConfig.model).toBe("gpt-5");
+  });
+
+  it("rejects enum violation in strict mode", () => {
+    const dispatch = createMockDispatch();
+    const node = makeNode();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "model", value: "gpt-5", strict: true },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("CONFIG_VALIDATION_ERROR");
+    expect(result.error).toContain("gpt-4");
+    expect(result.error).toContain("gpt-4o");
+    expect(result.error).toContain("claude-3");
+
+    // Value was NOT applied
+    expect((dispatch.updateNode as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+  });
+
+  it("succeeds with warning for type mismatch (advisory mode)", () => {
+    const dispatch = createMockDispatch();
+    const node = makeNode();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    // Setting a number field with a string value (not parseable as number)
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "temperature", value: "hot" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const data = result.data as import("../../../src/lib/commands/types.js").SetConfigResultData;
+    expect(data.warnings).toBeDefined();
+    expect(data.warnings!.length).toBe(1);
+    expect(data.warnings![0].type).toBe("type_mismatch");
+    expect(data.warnings![0].expectedType).toBe("number");
+    expect(data.warnings![0].actualType).toBe("string");
+
+    // Value was still applied
+    const updatedConfig = (dispatch.updateNode as ReturnType<typeof vi.fn>).mock.calls[0][1].data.config;
+    expect(updatedConfig.temperature).toBe("hot");
+  });
+
+  it("rejects type mismatch in strict mode", () => {
+    const dispatch = createMockDispatch();
+    const node = makeNode();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "temperature", value: "hot", strict: true },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("CONFIG_VALIDATION_ERROR");
+    expect(result.error).toContain("number");
+    expect(result.error).toContain("string");
+    expect((dispatch.updateNode as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+  });
+
+  it("no validation when configSchema is missing", () => {
+    const noSchemaMetadata = createMockMetadata("agentspec.basic_node", "Basic Node", {
+      configSchema: undefined,
+    });
+    const node = createMockNode("agentspec.basic_node.1", noSchemaMetadata, {
+      data: {
+        label: "Basic Node",
+        config: {},
+        metadata: noSchemaMetadata,
+        nodeId: "agentspec.basic_node.1",
+      },
+    });
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, [noSchemaMetadata], dispatch);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "basic_node.1", key: "anything", value: "whatever" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // No warnings when no schema
+    const data = result.data as import("../../../src/lib/commands/types.js").SetConfigResultData;
+    expect(data.warnings).toBeUndefined();
+
+    // Value applied
+    expect((dispatch.updateNode as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
+  });
+
+  it("no validation warning when value matches schema", () => {
+    const dispatch = createMockDispatch();
+    const node = makeNode();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "model", value: "gpt-4o" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const data = result.data as import("../../../src/lib/commands/types.js").SetConfigResultData;
+    expect(data.warnings).toBeUndefined();
+  });
+
+  it("no validation when key is not in schema properties", () => {
+    const dispatch = createMockDispatch();
+    const node = makeNode();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "custom_field", value: "anything" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const data = result.data as import("../../../src/lib/commands/types.js").SetConfigResultData;
+    expect(data.warnings).toBeUndefined();
+  });
+
+  it("warns on boolean type mismatch", () => {
+    const dispatch = createMockDispatch();
+    const node = makeNode();
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    // "yes" is a string, not a boolean
+    const result = executeCommand(
+      { type: "set_config", nodeId: "llm_node.1", key: "stream", value: "yes" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const data = result.data as import("../../../src/lib/commands/types.js").SetConfigResultData;
+    expect(data.warnings).toBeDefined();
+    expect(data.warnings![0].type).toBe("type_mismatch");
+    expect(data.warnings![0].expectedType).toBe("boolean");
+  });
+});
+
+// ============================================================================
 // get_config
 // ============================================================================
 
