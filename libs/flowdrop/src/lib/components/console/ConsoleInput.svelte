@@ -202,6 +202,19 @@
       .slice(0, 50);
   }
 
+  /** Sub-commands for verbs that have them */
+  const SUBCOMMAND_MAP: Record<string, Array<{ value: string; detail?: string }>> = {
+    layout: [
+      { value: "auto", detail: "Re-arrange all nodes from scratch" },
+      { value: "beautify", detail: "Normalize spacing, preserve arrangement" },
+    ],
+    list: [
+      { value: "nodes", detail: "List all workflow nodes" },
+      { value: "edges", detail: "List all connections" },
+      { value: "types", detail: "List available node types" },
+    ],
+  };
+
   function computeSuggestions(value: string): Suggestion[] {
     if (!value) return [];
 
@@ -215,6 +228,15 @@
         : portConfigCtx.type === "inputPort" ? "input"
         : "all";
       return getPortSuggestions(portConfigCtx.nodeId, portConfigCtx.partial, filter);
+    }
+
+    // Check if we're at a sub-command position (e.g. "layout <partial>")
+    const subCmdContext = getSubcommandContext(value);
+    if (subCmdContext !== null) {
+      const prefix = subCmdContext.partial.toLowerCase();
+      return subCmdContext.options
+        .filter((opt) => opt.value.toLowerCase().startsWith(prefix))
+        .map((opt) => ({ value: opt.value, label: opt.value, detail: opt.detail }));
     }
 
     // Check if we're in a position where node type IDs should be suggested
@@ -246,6 +268,22 @@
     }
 
     return [];
+  }
+
+  /**
+   * Detect if cursor is at a sub-command position (e.g. "layout <partial>").
+   * Returns the verb's sub-command options and the partial typed so far, or null.
+   */
+  function getSubcommandContext(value: string): { partial: string; options: Array<{ value: string; detail?: string }> } | null {
+    const match = value.match(/^(\w+)\s+(.*)$/i);
+    if (!match) return null;
+    const verb = match[1].toLowerCase();
+    const partial = match[2];
+    const options = SUBCOMMAND_MAP[verb];
+    if (!options) return null;
+    // Only suggest if the partial has no further spaces (still on sub-command)
+    if (partial.includes(" ")) return null;
+    return { partial, options };
   }
 
   /**
@@ -294,20 +332,27 @@
       return;
     }
 
-    const nodeTypeContext = getNodeTypeContext(inputValue);
-    if (nodeTypeContext !== null) {
-      // Replace the partial after the command prefix (node type context)
-      const prefixEnd = inputValue.length - nodeTypeContext.length;
+    const subCmdContext = getSubcommandContext(inputValue);
+    if (subCmdContext !== null) {
+      // Replace the partial after the verb
+      const prefixEnd = inputValue.length - subCmdContext.partial.length;
       inputValue = inputValue.slice(0, prefixEnd) + suggestion.value;
     } else {
-      const nodeIdContext = getNodeIdContext(inputValue);
-      if (nodeIdContext !== null) {
-        // Replace the partial after the command prefix (node ID context)
-        const prefixEnd = inputValue.length - nodeIdContext.partial.length;
+      const nodeTypeContext = getNodeTypeContext(inputValue);
+      if (nodeTypeContext !== null) {
+        // Replace the partial after the command prefix (node type context)
+        const prefixEnd = inputValue.length - nodeTypeContext.length;
         inputValue = inputValue.slice(0, prefixEnd) + suggestion.value;
       } else {
-        // Replace the whole input (verb position)
-        inputValue = suggestion.value;
+        const nodeIdContext = getNodeIdContext(inputValue);
+        if (nodeIdContext !== null) {
+          // Replace the partial after the command prefix (node ID context)
+          const prefixEnd = inputValue.length - nodeIdContext.partial.length;
+          inputValue = inputValue.slice(0, prefixEnd) + suggestion.value;
+        } else {
+          // Replace the whole input (verb position)
+          inputValue = suggestion.value;
+        }
       }
     }
     dismissAutocomplete();
@@ -370,10 +415,21 @@
           : 0;
         return;
       }
-      if (event.key === "Tab" || event.key === "Enter") {
+      if (event.key === "Tab") {
         event.preventDefault();
         acceptSuggestion(acSuggestions[acSelectedIndex]);
         return;
+      }
+      if (event.key === "Enter") {
+        const selected = acSuggestions[acSelectedIndex];
+        // If accepting the suggestion wouldn't change the input, execute directly
+        const before = inputValue;
+        acceptSuggestion(selected);
+        if (inputValue !== before) {
+          event.preventDefault();
+          return;
+        }
+        // Input unchanged — fall through to submit handler below
       }
       if (event.key === "Escape") {
         event.preventDefault();
