@@ -9,6 +9,7 @@
   import {
     parseCommand,
     executeCommand,
+    executeBatch,
     type UIAction,
     type CommandContext,
   } from "../../commands/index.js";
@@ -72,6 +73,67 @@
       outputEntries.push({ type: "error", text: result.error });
     }
   }
+
+  function handleBatchSubmit(lines: string[]) {
+    if (!commandContext) {
+      outputEntries.push({ type: "error", text: "No workflow loaded" });
+      return;
+    }
+
+    const totalCount = lines.length;
+
+    // Parse all commands first
+    const parsed: { line: string; command?: import("../../commands/index.js").Command; error?: string }[] = [];
+    for (const line of lines) {
+      outputEntries.push({ type: "input", text: line });
+
+      if (line.toLowerCase() === "clear") {
+        outputEntries = [];
+        parsed.length = 0;
+        continue;
+      }
+
+      const parseResult = parseCommand(line);
+      if (!parseResult.ok) {
+        outputEntries.push({ type: "error", text: parseResult.error });
+        const succeeded = parsed.length;
+        outputEntries.push({
+          type: "error",
+          text: `Batch failed at command ${succeeded + 1}/${totalCount}: parse error`,
+        });
+        return;
+      }
+      parsed.push({ line, command: parseResult.command });
+    }
+
+    if (parsed.length === 0) return;
+
+    const commands = parsed.map((p) => p.command!);
+    const batchResult = executeBatch(commands, commandContext);
+
+    // Show individual results
+    for (let i = 0; i < batchResult.results.length; i++) {
+      const result = batchResult.results[i];
+      if (result.ok) {
+        outputEntries.push({ type: "success", text: result.message });
+      } else {
+        outputEntries.push({ type: "error", text: result.error });
+      }
+    }
+
+    // Show summary
+    if (batchResult.ok) {
+      outputEntries.push({
+        type: "success",
+        text: `Batch: ${batchResult.completedCount}/${batchResult.totalCount} commands succeeded`,
+      });
+    } else {
+      outputEntries.push({
+        type: "error",
+        text: `Batch failed at command ${batchResult.completedCount + 1}/${batchResult.totalCount}: ${batchResult.error}`,
+      });
+    }
+  }
 </script>
 
 <div class="command-console">
@@ -92,6 +154,7 @@
   <ConsoleInput
     open={getUiSettings().consoleOpen}
     onSubmit={handleCommandSubmit}
+    onBatchSubmit={handleBatchSubmit}
     onClose={closeConsole}
   />
 </div>

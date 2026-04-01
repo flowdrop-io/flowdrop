@@ -10,11 +10,13 @@
     open: boolean;
     /** Called when user submits a command (Enter key) */
     onSubmit: (value: string) => void;
+    /** Called when user pastes multiple lines */
+    onBatchSubmit?: (lines: string[]) => void;
     /** Called when user presses Escape to close the console */
     onClose: () => void;
   }
 
-  let { open, onSubmit, onClose }: Props = $props();
+  let { open, onSubmit, onBatchSubmit, onClose }: Props = $props();
 
   let inputValue = $state("");
   let inputElement: HTMLInputElement | undefined = $state();
@@ -41,6 +43,32 @@
     if (history.length > MAX_HISTORY) {
       history.shift();
     }
+  }
+
+  function handlePaste(event: ClipboardEvent) {
+    const text = event.clipboardData?.getData("text/plain");
+    if (!text || !text.includes("\n")) return;
+
+    // Multi-line paste: prevent default and batch-submit
+    event.preventDefault();
+    const lines = text
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    if (lines.length <= 1) return;
+
+    // Add each line to history
+    for (const line of lines) {
+      addToHistory(line);
+    }
+
+    if (onBatchSubmit) {
+      onBatchSubmit(lines);
+    }
+
+    inputValue = "";
+    historyIndex = -1;
+    savedInput = "";
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -100,6 +128,7 @@
     autocomplete="off"
     onkeydown={handleKeydown}
     oninput={handleInput}
+    onpaste={handlePaste}
   />
 </div>
 
