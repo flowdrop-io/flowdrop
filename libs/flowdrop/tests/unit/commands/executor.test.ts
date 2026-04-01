@@ -2261,3 +2261,133 @@ describe("move_node", () => {
     );
   });
 });
+
+// ============================================================================
+// auto_layout
+// ============================================================================
+
+describe("executeCommand — auto_layout", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node");
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("applies horizontal layout to nodes", () => {
+    const dispatch = createMockDispatch();
+    const node1 = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      position: { x: 500, y: 200 },
+    });
+    const node2 = createMockNode("agentspec.api_node.1", apiMetadata, {
+      position: { x: 600, y: 300 },
+    });
+    const edge = {
+      id: "e1",
+      source: "agentspec.llm_node.1",
+      target: "agentspec.api_node.1",
+    } as WorkflowEdge;
+    const workflow = createMockWorkflow([node1, node2], [edge]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "auto_layout" }, context);
+
+    expect(result.ok).toBe(true);
+    expect(result.message).toContain("2 nodes");
+    expect(result.message).toContain("horizontal");
+    expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+
+    const updatedNodes = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock
+      .calls[0][0].nodes as WorkflowNode[];
+    expect(updatedNodes).toHaveLength(2);
+    // Nodes should have different x positions (layered)
+    const positions = updatedNodes.map((n) => n.position);
+    expect(positions[0].x).not.toBe(positions[1].x);
+  });
+
+  it("applies vertical layout (swaps x/y)", () => {
+    const dispatch = createMockDispatch();
+    const node1 = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      position: { x: 0, y: 0 },
+    });
+    const node2 = createMockNode("agentspec.api_node.1", apiMetadata, {
+      position: { x: 100, y: 0 },
+    });
+    const edge = {
+      id: "e1",
+      source: "agentspec.llm_node.1",
+      target: "agentspec.api_node.1",
+    } as WorkflowEdge;
+    const workflow = createMockWorkflow([node1, node2], [edge]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "auto_layout", direction: "vertical" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.message).toContain("vertical");
+    expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+
+    const updatedNodes = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock
+      .calls[0][0].nodes as WorkflowNode[];
+    // In vertical layout, layers stack vertically (different y, possibly same x)
+    const positions = updatedNodes.map((n) => n.position);
+    expect(positions[0].y).not.toBe(positions[1].y);
+  });
+
+  it("handles empty workflow", () => {
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow([], []);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "auto_layout" }, context);
+
+    expect(result.ok).toBe(true);
+    expect(result.message).toContain("No nodes");
+    expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand({ type: "auto_layout" }, context);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+
+  it("handles disconnected nodes", () => {
+    const dispatch = createMockDispatch();
+    const node1 = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      position: { x: 0, y: 0 },
+    });
+    const node2 = createMockNode("agentspec.api_node.1", apiMetadata, {
+      position: { x: 100, y: 0 },
+    });
+    // No edges — nodes are disconnected
+    const workflow = createMockWorkflow([node1, node2], []);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "auto_layout" }, context);
+
+    expect(result.ok).toBe(true);
+    expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+
+    const updatedNodes = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock
+      .calls[0][0].nodes as WorkflowNode[];
+    expect(updatedNodes).toHaveLength(2);
+  });
+
+  it("uses batchUpdate for single undo", () => {
+    const dispatch = createMockDispatch();
+    const node1 = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node1]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    executeCommand({ type: "auto_layout" }, context);
+
+    // Should use batchUpdate (not individual updateNode calls) for single undo
+    expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+    expect(dispatch.updateNode).not.toHaveBeenCalled();
+  });
+});
