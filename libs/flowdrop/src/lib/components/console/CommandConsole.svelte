@@ -199,6 +199,7 @@
   </div>
   <ConsoleInput
     open={getUiSettings().consoleOpen}
+    {nodeTypes}
     onSubmit={handleCommandSubmit}
     onBatchSubmit={handleBatchSubmit}
     onClose={closeConsole}
