@@ -258,6 +258,18 @@ export interface HelpResultData {
   }>;
 }
 
+/** Result data for swap_node command */
+export interface SwapNodeResultData {
+  oldNodeId: string;
+  newNodeId: string;
+  newType: string;
+  keptEdges: number;
+  droppedEdges: number;
+  hasDataLoss: boolean;
+  configCarriedOver: string[];
+  configReset: string[];
+}
+
 /** Result data types union for typed access */
 export type CommandResultData =
   | AddNodeResultData
@@ -266,7 +278,8 @@ export type CommandResultData =
   | ListTypesResultData
   | InfoResultData
   | GetConfigResultData
-  | HelpResultData;
+  | HelpResultData
+  | SwapNodeResultData;
 
 /** Successful command result */
 export interface CommandResultOk {
