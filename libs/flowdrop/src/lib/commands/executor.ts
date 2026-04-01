@@ -15,11 +15,13 @@ import type {
   GetConfigResultData,
   InfoResultData,
 } from "./types.js";
-import type { WorkflowNode } from "../types/index.js";
+import type { WorkflowNode, WorkflowEdge } from "../types/index.js";
 import { generateNodeId } from "../utils/nodeIds.js";
 import { extractConfigDefaults } from "../utils/nodeIds.js";
 import { computeAutoPosition } from "./positioner.js";
-import { extractPortId } from "../utils/handleIds.js";
+import { buildHandleId, extractPortId } from "../utils/handleIds.js";
+import { validateConnection } from "../utils/connections.js";
+import { applyConnectionStyling } from "../utils/edgeStyling.js";
 
 // ============================================================================
 // Internal Helpers
@@ -364,6 +366,233 @@ function executeInfo(
 }
 
 // ============================================================================
+// Connection Operations
+// ============================================================================
+
+/**
+ * Find a port in a node's metadata by port ID, checking both inputs and outputs.
+ * Returns the port and its direction.
+ */
+function findPort(
+  node: WorkflowNode,
+  portId: string,
+): { port: { id: string; name: string; dataType: string }; direction: "input" | "output" } | null {
+  const metadata = node.data?.metadata;
+  if (!metadata) return null;
+
+  const outputPort = metadata.outputs?.find((p) => p.id === portId);
+  if (outputPort) return { port: outputPort, direction: "output" };
+
+  const inputPort = metadata.inputs?.find((p) => p.id === portId);
+  if (inputPort) return { port: inputPort, direction: "input" };
+
+  return null;
+}
+
+function executeConnect(
+  command: Extract<Command, { type: "connect" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  // Resolve both nodes
+  const sourceNode = resolveNode(command.sourceNodeId, workflow.nodes);
+  if (!sourceNode) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.sourceNodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  const targetNode = resolveNode(command.targetNodeId, workflow.nodes);
+  if (!targetNode) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.targetNodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  // Look up ports in metadata to determine direction
+  const sourcePortInfo = findPort(sourceNode, command.sourcePort);
+  if (!sourcePortInfo) {
+    return {
+      ok: false,
+      error: `Port '${command.sourcePort}' not found on node ${toShortId(sourceNode.id)}`,
+      code: "PORT_NOT_FOUND",
+    };
+  }
+
+  const targetPortInfo = findPort(targetNode, command.targetPort);
+  if (!targetPortInfo) {
+    return {
+      ok: false,
+      error: `Port '${command.targetPort}' not found on node ${toShortId(targetNode.id)}`,
+      code: "PORT_NOT_FOUND",
+    };
+  }
+
+  // Validate directions: source port must be output, target port must be input
+  if (sourcePortInfo.direction !== "output" || targetPortInfo.direction !== "input") {
+    // Check if they're reversed
+    if (sourcePortInfo.direction === "input" && targetPortInfo.direction === "output") {
+      return {
+        ok: false,
+        error: `Connection direction reversed: '${command.sourcePort}' is an input on ${toShortId(sourceNode.id)} and '${command.targetPort}' is an output on ${toShortId(targetNode.id)}. Swap source and target.`,
+        code: "INVALID_CONNECTION",
+      };
+    }
+    // One of them is the wrong direction
+    if (sourcePortInfo.direction !== "output") {
+      return {
+        ok: false,
+        error: `Port '${command.sourcePort}' on ${toShortId(sourceNode.id)} is an input, not an output (per node metadata)`,
+        code: "INVALID_CONNECTION",
+      };
+    }
+    return {
+      ok: false,
+      error: `Port '${command.targetPort}' on ${toShortId(targetNode.id)} is an output, not an input (per node metadata)`,
+      code: "INVALID_CONNECTION",
+    };
+  }
+
+  // Validate type compatibility using validateConnection
+  const validation = validateConnection(
+    sourceNode.id,
+    command.sourcePort,
+    targetNode.id,
+    command.targetPort,
+    workflow.nodes,
+    context.nodeTypes,
+  );
+
+  if (!validation.valid) {
+    return {
+      ok: false,
+      error: validation.error ?? "Invalid connection",
+      code: "INVALID_CONNECTION",
+    };
+  }
+
+  // Build handle IDs
+  const sourceHandle = buildHandleId(sourceNode.id, "output", command.sourcePort);
+  const targetHandle = buildHandleId(targetNode.id, "input", command.targetPort);
+
+  // Generate edge ID
+  const edgeId = `${sourceNode.id}-${sourceHandle}-${targetNode.id}-${targetHandle}`;
+
+  // Build edge
+  const edge: WorkflowEdge = {
+    id: edgeId,
+    source: sourceNode.id,
+    target: targetNode.id,
+    sourceHandle,
+    targetHandle,
+  };
+
+  // Apply styling
+  applyConnectionStyling(edge, sourceNode, targetNode);
+
+  // Dispatch
+  context.dispatch.addEdge(edge);
+
+  return {
+    ok: true,
+    message: `Connected ${toShortId(sourceNode.id)}:${command.sourcePort} → ${toShortId(targetNode.id)}:${command.targetPort}`,
+  };
+}
+
+function executeDisconnectPorts(
+  command: Extract<Command, { type: "disconnect_ports" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  // Resolve both nodes
+  const sourceNode = resolveNode(command.sourceNodeId, workflow.nodes);
+  if (!sourceNode) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.sourceNodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  const targetNode = resolveNode(command.targetNodeId, workflow.nodes);
+  if (!targetNode) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.targetNodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  // Find the matching edge by checking source/target node IDs and port IDs
+  const edge = workflow.edges.find((e) => {
+    if (e.source !== sourceNode.id || e.target !== targetNode.id) return false;
+    const sourcePort = extractPortId(e.sourceHandle);
+    const targetPort = extractPortId(e.targetHandle);
+    return sourcePort === command.sourcePort && targetPort === command.targetPort;
+  });
+
+  if (!edge) {
+    return {
+      ok: false,
+      error: `No edge found from ${toShortId(sourceNode.id)}:${command.sourcePort} to ${toShortId(targetNode.id)}:${command.targetPort}`,
+      code: "EDGE_NOT_FOUND",
+    };
+  }
+
+  context.dispatch.removeEdge(edge.id);
+
+  return {
+    ok: true,
+    message: `Disconnected ${toShortId(sourceNode.id)}:${command.sourcePort} from ${toShortId(targetNode.id)}:${command.targetPort}`,
+  };
+}
+
+function executeDisconnectNode(
+  command: Extract<Command, { type: "disconnect_node" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.nodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  // Find all edges connected to this node
+  const connectedEdges = workflow.edges.filter(
+    (e) => e.source === node.id || e.target === node.id,
+  );
+
+  for (const edge of connectedEdges) {
+    context.dispatch.removeEdge(edge.id);
+  }
+
+  return {
+    ok: true,
+    message: `Disconnected ${connectedEdges.length} edge(s) from ${toShortId(node.id)}`,
+  };
+}
+
+// ============================================================================
 // Public API
 // ============================================================================
 
@@ -387,6 +616,12 @@ export function executeCommand(
       return executeGetConfig(command, context);
     case "info":
       return executeInfo(command, context);
+    case "connect":
+      return executeConnect(command, context);
+    case "disconnect_ports":
+      return executeDisconnectPorts(command, context);
+    case "disconnect_node":
+      return executeDisconnectNode(command, context);
     default:
       return {
         ok: false,

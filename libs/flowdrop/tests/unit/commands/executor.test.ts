@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import {
   executeCommand,
   toShortId,
@@ -14,10 +14,39 @@ import type {
 } from "../../../src/lib/commands/types.js";
 import type {
   WorkflowNode,
+  WorkflowEdge,
   Workflow,
   NodeMetadata,
+  PortConfig,
 } from "../../../src/lib/types/index.js";
 import { buildTypeMap } from "../../../src/lib/commands/types.js";
+import { initializePortCompatibility } from "../../../src/lib/utils/connections.js";
+
+// ============================================================================
+// Port Compatibility Setup (needed for connect tests)
+// ============================================================================
+
+const mockPortConfig: PortConfig = {
+  version: "1.0.0",
+  defaultDataType: "string",
+  dataTypes: [
+    { id: "trigger", name: "Trigger", description: "Control flow", color: "#8b5cf6", category: "basic", enabled: true },
+    { id: "string", name: "String", description: "Text data", color: "#10b981", category: "basic", enabled: true },
+    { id: "number", name: "Number", description: "Numeric data", color: "#3b82f6", category: "numeric", enabled: true },
+    { id: "tool", name: "Tool", description: "Tool call", color: "#f59e0b", category: "basic", enabled: true },
+  ],
+  compatibilityRules: [
+    { from: "string", to: "string" },
+    { from: "number", to: "number" },
+    { from: "trigger", to: "trigger" },
+    { from: "tool", to: "tool" },
+  ],
+};
+
+// Initialize once for all tests that use validateConnection
+beforeAll(() => {
+  initializePortCompatibility(mockPortConfig);
+});
 
 // ============================================================================
 // Test Fixtures
@@ -826,6 +855,508 @@ describe("executeCommand — info", () => {
 
     const result = executeCommand(
       { type: "info", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// connect
+// ============================================================================
+
+describe("executeCommand — connect", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node", {
+    inputs: [
+      { id: "prompt", name: "Prompt", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "llm_output", name: "LLM Output", type: "output", dataType: "string" },
+    ],
+  });
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node", {
+    inputs: [
+      { id: "body", name: "Body", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "response", name: "Response", type: "output", dataType: "string" },
+    ],
+  });
+  const triggerMetadata = createMockMetadata("agentspec.trigger_node", "Trigger Node", {
+    inputs: [],
+    outputs: [
+      { id: "trigger_out", name: "Trigger Out", type: "output", dataType: "trigger" },
+    ],
+  });
+  const nodeTypes = [llmMetadata, apiMetadata, triggerMetadata];
+
+  it("creates a valid connection between compatible ports", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("llm_node.1");
+    expect(result.message).toContain("api_node.1");
+
+    // Verify dispatch.addEdge was called
+    expect(dispatch.addEdge).toHaveBeenCalledOnce();
+    const edge = (dispatch.addEdge as ReturnType<typeof vi.fn>).mock.calls[0][0] as WorkflowEdge;
+
+    // Edge structure
+    expect(edge.source).toBe("agentspec.llm_node.1");
+    expect(edge.target).toBe("agentspec.api_node.1");
+    expect(edge.sourceHandle).toBe("agentspec.llm_node.1-output-llm_output");
+    expect(edge.targetHandle).toBe("agentspec.api_node.1-input-body");
+
+    // Edge ID format
+    expect(edge.id).toBe(
+      "agentspec.llm_node.1-agentspec.llm_node.1-output-llm_output-agentspec.api_node.1-agentspec.api_node.1-input-body",
+    );
+
+    // Styling was applied (edge should have style, class, markerEnd)
+    expect(edge.style).toBeDefined();
+    expect(edge.class).toBeDefined();
+    expect(edge.data?.metadata?.edgeType).toBeDefined();
+  });
+
+  it("returns error when source port direction is reversed", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    // Attempt to connect input→output (reversed)
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "api_node.1",
+        sourcePort: "body",       // body is an input
+        targetNodeId: "llm_node.1",
+        targetPort: "llm_output", // llm_output is an output
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("INVALID_CONNECTION");
+    expect(result.error).toContain("reversed");
+    expect(dispatch.addEdge).not.toHaveBeenCalled();
+  });
+
+  it("returns PORT_NOT_FOUND for missing source port", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "nonexistent_port",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("PORT_NOT_FOUND");
+    expect(result.error).toContain("nonexistent_port");
+  });
+
+  it("returns PORT_NOT_FOUND for missing target port", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "nonexistent_port",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("PORT_NOT_FOUND");
+    expect(result.error).toContain("nonexistent_port");
+  });
+
+  it("returns INVALID_CONNECTION for incompatible data types", () => {
+    const dispatch = createMockDispatch();
+    const triggerNode = createMockNode("agentspec.trigger_node.1", triggerMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([triggerNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    // trigger_out (trigger type) → body (string type) — incompatible
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "trigger_node.1",
+        sourcePort: "trigger_out",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("INVALID_CONNECTION");
+    expect(result.error).toContain("Incompatible");
+    expect(dispatch.addEdge).not.toHaveBeenCalled();
+  });
+
+  it("returns NODE_NOT_FOUND for missing source node", () => {
+    const dispatch = createMockDispatch();
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "llm_node.99",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NODE_NOT_FOUND for missing target node", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([llmNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.99",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+
+  it("returns error when source port is input (not output)", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "connect",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "prompt",       // input port, not output
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("INVALID_CONNECTION");
+    expect(result.error).toContain("input");
+    expect(result.error).toContain("not an output");
+  });
+});
+
+// ============================================================================
+// disconnect_ports
+// ============================================================================
+
+describe("executeCommand — disconnect_ports", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node", {
+    inputs: [
+      { id: "prompt", name: "Prompt", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "llm_output", name: "LLM Output", type: "output", dataType: "string" },
+    ],
+  });
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node", {
+    inputs: [
+      { id: "body", name: "Body", type: "input", dataType: "string" },
+    ],
+    outputs: [],
+  });
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("disconnects a specific edge between two ports", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const edge = {
+      id: "edge-1",
+      source: "agentspec.llm_node.1",
+      target: "agentspec.api_node.1",
+      sourceHandle: "agentspec.llm_node.1-output-llm_output",
+      targetHandle: "agentspec.api_node.1-input-body",
+    } as WorkflowEdge;
+    const workflow = createMockWorkflow([llmNode, apiNode], [edge]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "disconnect_ports",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("Disconnected");
+    expect(dispatch.removeEdge).toHaveBeenCalledWith("edge-1");
+  });
+
+  it("returns EDGE_NOT_FOUND when no matching edge exists", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([llmNode, apiNode]); // no edges
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "disconnect_ports",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("EDGE_NOT_FOUND");
+  });
+
+  it("returns NODE_NOT_FOUND for missing source node", () => {
+    const dispatch = createMockDispatch();
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const workflow = createMockWorkflow([apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "disconnect_ports",
+        sourceNodeId: "llm_node.99",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NODE_NOT_FOUND for missing target node", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([llmNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: "disconnect_ports",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.99",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      {
+        type: "disconnect_ports",
+        sourceNodeId: "llm_node.1",
+        sourcePort: "llm_output",
+        targetNodeId: "api_node.1",
+        targetPort: "body",
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// disconnect_node
+// ============================================================================
+
+describe("executeCommand — disconnect_node", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node", {
+    inputs: [
+      { id: "prompt", name: "Prompt", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "llm_output", name: "LLM Output", type: "output", dataType: "string" },
+    ],
+  });
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node", {
+    inputs: [
+      { id: "body", name: "Body", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "response", name: "Response", type: "output", dataType: "string" },
+    ],
+  });
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("removes all edges connected to a node", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const edge1 = {
+      id: "edge-1",
+      source: "agentspec.llm_node.1",
+      target: "agentspec.api_node.1",
+      sourceHandle: "agentspec.llm_node.1-output-llm_output",
+      targetHandle: "agentspec.api_node.1-input-body",
+    } as WorkflowEdge;
+    const edge2 = {
+      id: "edge-2",
+      source: "agentspec.api_node.1",
+      target: "agentspec.llm_node.1",
+      sourceHandle: "agentspec.api_node.1-output-response",
+      targetHandle: "agentspec.llm_node.1-input-prompt",
+    } as WorkflowEdge;
+    const workflow = createMockWorkflow([llmNode, apiNode], [edge1, edge2]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "disconnect_node", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("2 edge(s)");
+    expect(dispatch.removeEdge).toHaveBeenCalledTimes(2);
+    expect(dispatch.removeEdge).toHaveBeenCalledWith("edge-1");
+    expect(dispatch.removeEdge).toHaveBeenCalledWith("edge-2");
+  });
+
+  it("succeeds with 0 edges when node is isolated", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([llmNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "disconnect_node", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("0 edge(s)");
+    expect(dispatch.removeEdge).not.toHaveBeenCalled();
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const context = createMockContext(createMockWorkflow(), nodeTypes);
+
+    const result = executeCommand(
+      { type: "disconnect_node", nodeId: "llm_node.99" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "disconnect_node", nodeId: "llm_node.1" },
       context,
     );
 
