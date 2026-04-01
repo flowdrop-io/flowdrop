@@ -7,6 +7,8 @@
 
 <script lang="ts">
   import type { NodeMetadata } from "$lib/types/index.js";
+  import { getWorkflowStore } from "../../stores/workflowStore.svelte.js";
+  import { toShortId } from "../../commands/index.js";
   import ConsoleAutocomplete, { type Suggestion } from "./ConsoleAutocomplete.svelte";
 
   interface Props {
@@ -44,11 +46,70 @@
     "swap", "move", "layout",
   ];
 
+  /** Verbs that take a nodeId as their first argument */
+  const NODE_ID_VERBS = [
+    "delete", "rename", "info", "config", "select", "set", "get",
+    "disconnect", "swap", "move",
+  ];
+
   $effect(() => {
     if (open && inputElement) {
       inputElement.focus();
     }
   });
+
+  /**
+   * Get node suggestions from the live workflow store.
+   * Returns suggestions with short IDs and labels.
+   */
+  function getWorkflowNodeSuggestions(prefix: string): Suggestion[] {
+    const workflow = getWorkflowStore();
+    if (!workflow) return [];
+
+    const lowerPrefix = prefix.toLowerCase();
+    return workflow.nodes
+      .map((node) => {
+        const shortId = toShortId(node.id);
+        return {
+          value: shortId,
+          label: shortId,
+          detail: node.data.label,
+        };
+      })
+      .filter((s) => s.value.toLowerCase().startsWith(lowerPrefix))
+      .slice(0, 50);
+  }
+
+  /**
+   * Detect if cursor is at a position expecting a node ID.
+   * Returns the partial text typed so far, or null if not at a nodeId position.
+   */
+  function getNodeIdContext(value: string): { partial: string; type: "nodeId" | "connectSource" | "connectTarget" } | null {
+    // "connect <source> to <partial>" — target node ID
+    const connectToMatch = value.match(/^connect\s+\S+\s+to\s+(.*)$/i);
+    if (connectToMatch) return { partial: connectToMatch[1], type: "connectTarget" };
+
+    // "connect <partial>" — source node ID (only if no "to" keyword yet)
+    const connectMatch = value.match(/^connect\s+(?!.*\bto\b)(.*)$/i);
+    if (connectMatch) return { partial: connectMatch[1], type: "connectSource" };
+
+    // Verbs that take nodeId as first arg: "verb <partial>"
+    for (const verb of NODE_ID_VERBS) {
+      const regex = new RegExp(`^${verb}\\s+(.*)$`, "i");
+      const match = value.match(regex);
+      if (match) {
+        // Only suggest if the partial doesn't already contain a space
+        // (user has moved past the nodeId arg to further args)
+        const partial = match[1];
+        if (!partial.includes(" ")) {
+          return { partial, type: "nodeId" };
+        }
+        return null;
+      }
+    }
+
+    return null;
+  }
 
   function computeSuggestions(value: string): Suggestion[] {
     if (!value) return [];
@@ -65,6 +126,12 @@
           detail: `${nt.name} (${nt.category})`,
         }))
         .slice(0, 50);
+    }
+
+    // Check if we're at a position expecting a node ID from the workflow
+    const nodeIdContext = getNodeIdContext(value);
+    if (nodeIdContext !== null) {
+      return getWorkflowNodeSuggestions(nodeIdContext.partial);
     }
 
     // Check if we're at verb position (no space in input yet)
@@ -111,12 +178,19 @@
     // Replace the relevant part of input with the suggestion value
     const nodeTypeContext = getNodeTypeContext(inputValue);
     if (nodeTypeContext !== null) {
-      // Replace the partial after the command prefix
+      // Replace the partial after the command prefix (node type context)
       const prefixEnd = inputValue.length - nodeTypeContext.length;
       inputValue = inputValue.slice(0, prefixEnd) + suggestion.value;
     } else {
-      // Replace the whole input (verb position)
-      inputValue = suggestion.value;
+      const nodeIdContext = getNodeIdContext(inputValue);
+      if (nodeIdContext !== null) {
+        // Replace the partial after the command prefix (node ID context)
+        const prefixEnd = inputValue.length - nodeIdContext.partial.length;
+        inputValue = inputValue.slice(0, prefixEnd) + suggestion.value;
+      } else {
+        // Replace the whole input (verb position)
+        inputValue = suggestion.value;
+      }
     }
     dismissAutocomplete();
     inputElement?.focus();
