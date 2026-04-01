@@ -30,6 +30,7 @@ export type {
   SwapNodeCommand,
   MoveNodeCommand,
   AutoLayoutCommand,
+  BeautifyLayoutCommand,
   Command,
   ParseResult,
   CommandErrorCode,

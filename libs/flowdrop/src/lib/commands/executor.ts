@@ -30,7 +30,7 @@ import { buildHandleId, extractPortId } from "../utils/handleIds.js";
 import { validateConnection } from "../utils/connections.js";
 import { applyConnectionStyling } from "../utils/edgeStyling.js";
 import { computeSwapPreview, executeSwap } from "../utils/nodeSwap.js";
-import { computeAutoLayout } from "../adapters/agentspec/autoLayout.js";
+import { computeAutoLayout, computeBeautifyLayout } from "../adapters/agentspec/autoLayout.js";
 
 // ============================================================================
 // Internal Helpers
@@ -763,6 +763,7 @@ const COMMAND_HELP: Array<{ name: string; syntax: string; description: string }>
   { name: "swap", syntax: "swap <nodeId> with <type>", description: "Replace a node's type, preserving connections" },
   { name: "move", syntax: "move <nodeId> to <x>,<y>", description: "Move a node to a position" },
   { name: "layout", syntax: "layout auto [--direction horizontal|vertical]", description: "Auto-arrange all nodes" },
+  { name: "layout", syntax: "layout beautify", description: "Normalize spacing while preserving node arrangement" },
   { name: "undo", syntax: "undo", description: "Undo the last action" },
   { name: "redo", syntax: "redo", description: "Redo the last undone action" },
   { name: "help", syntax: "help [<command>]", description: "Show help for all or a specific command" },
@@ -1098,6 +1099,56 @@ function executeAutoLayout(
   };
 }
 
+function executeBeautifyLayout(
+  _command: Extract<Command, { type: "beautify_layout" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  if (workflow.nodes.length === 0) {
+    return { ok: true, message: "No nodes to beautify" };
+  }
+
+  // Collect current positions
+  const currentPositions = new Map<string, { x: number; y: number }>();
+  for (const n of workflow.nodes) {
+    currentPositions.set(n.id, { x: n.position.x, y: n.position.y });
+  }
+
+  // Collect measured node dimensions when available
+  const nodeDimensions = new Map<string, { width: number; height: number }>();
+  for (const n of workflow.nodes) {
+    const w = n.measured?.width ?? (n as { width?: number }).width;
+    const h = n.measured?.height ?? (n as { height?: number }).height;
+    if (w != null && h != null) {
+      nodeDimensions.set(n.id, { width: w, height: h });
+    }
+  }
+
+  const positions = computeBeautifyLayout(
+    currentPositions,
+    {},
+    nodeDimensions.size > 0 ? nodeDimensions : undefined,
+  );
+
+  // Apply positions
+  const updatedNodes = workflow.nodes.map((n) => {
+    const pos = positions.get(n.id);
+    if (!pos) return n;
+    return { ...n, position: pos };
+  });
+
+  context.dispatch.batchUpdate({ nodes: updatedNodes });
+
+  return {
+    ok: true,
+    message: `Beautified layout for ${workflow.nodes.length} nodes`,
+  };
+}
+
 // ============================================================================
 // Public API
 // ============================================================================
@@ -1152,6 +1203,8 @@ export function executeCommand(
       return executeMoveNode(command, context);
     case "auto_layout":
       return executeAutoLayout(command, context);
+    case "beautify_layout":
+      return executeBeautifyLayout(command, context);
     default: {
       const _exhaustive: never = command;
       return {

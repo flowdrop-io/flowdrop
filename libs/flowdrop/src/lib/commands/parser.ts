@@ -207,6 +207,11 @@ const rules: ParserRule[] = [
     pattern: /^layout\s+auto$/i,
     parse: () => ({ type: "auto_layout" }),
   },
+  // layout beautify — preserve relative positions, normalize spacing
+  {
+    pattern: /^layout\s+beautify$/i,
+    parse: () => ({ type: "beautify_layout" }),
+  },
 ];
 
 // ============================================================================
