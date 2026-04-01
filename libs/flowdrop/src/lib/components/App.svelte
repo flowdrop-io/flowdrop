@@ -887,7 +887,10 @@
     if (isInputElement) return;
 
     event.preventDefault();
+    toggleConsole();
+  }
 
+  function toggleConsole(): void {
     const currentOpen = getUiSettings().consoleOpen;
     updateSettings({ ui: { consoleOpen: !currentOpen } });
 
@@ -1262,6 +1265,8 @@
         {readOnly}
         {nodeStatuses}
         {pipelineId}
+        consoleOpen={getUiSettings().consoleOpen}
+        onToggleConsole={toggleConsole}
       />
     </div>
   </MainLayout>
