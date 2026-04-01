@@ -16,6 +16,7 @@
   import { getCategoryColorToken } from "../utils/colors.js";
   import { getCategoryLabel } from "../stores/categoriesStore.svelte.js";
   import { getUiSettings } from "../stores/settingsStore.svelte.js";
+  import { extractConfigDefaults } from "../utils/nodeIds.js";
 
   interface Props {
     nodes: NodeMetadata[];
@@ -116,31 +117,13 @@
   function handleNodeDragStart(event: DragEvent, nodeType: NodeMetadata): void {
     if (!event.dataTransfer) return;
 
-    // Extract initial config from configSchema with proper null checks
-    let initialConfig: Record<string, unknown> = {};
-    if (
-      nodeType.configSchema &&
-      typeof nodeType.configSchema === "object" &&
-      nodeType.configSchema.properties &&
-      typeof nodeType.configSchema.properties === "object"
-    ) {
-      // JSON Schema format - extract defaults
-      Object.entries(nodeType.configSchema.properties).forEach(
-        ([key, prop]) => {
-          if (prop && typeof prop === "object" && "default" in prop) {
-            initialConfig[key] = prop.default;
-          }
-        },
-      );
-    }
-
     // Create a new node instance from the node type
     const newNodeData = {
       type: "node",
       nodeType: nodeType.id,
       nodeData: {
         label: nodeType.name,
-        config: initialConfig,
+        config: extractConfigDefaults(nodeType.configSchema),
         metadata: nodeType,
       },
     };

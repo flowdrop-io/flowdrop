@@ -27,9 +27,9 @@ import { validateForAgentSpecExport } from "../adapters/agentspec/validator.js";
 import { extractPortId } from "../utils/handleIds.js";
 import { EDGE_MARKER_SIZES } from "../config/constants.js";
 import { logger } from "../utils/logger.js";
-import { generateNodeId } from "../utils/nodeIds.js";
+import { generateNodeId, extractConfigDefaults } from "../utils/nodeIds.js";
 
-export { generateNodeId } from "../utils/nodeIds.js";
+export { generateNodeId, extractConfigDefaults } from "../utils/nodeIds.js";
 
 /**
  * Edge category type for styling purposes
@@ -401,31 +401,9 @@ export class NodeOperationsHelper {
         // New format (direct NodeMetadata)
         nodeType = parsedData;
 
-        // Extract initial config from configSchema
-        let initialConfig: Record<string, unknown> = {};
-        if (
-          nodeType.configSchema &&
-          typeof nodeType.configSchema === "object"
-        ) {
-          // If configSchema is a JSON Schema, extract default values
-          if (nodeType.configSchema.properties) {
-            // JSON Schema format - extract defaults
-            Object.entries(nodeType.configSchema.properties).forEach(
-              ([key, prop]) => {
-                if (prop && typeof prop === "object" && "default" in prop) {
-                  initialConfig[key] = prop.default;
-                }
-              },
-            );
-          } else {
-            // Simple object format - use as is
-            initialConfig = { ...nodeType.configSchema };
-          }
-        }
-
         nodeData = {
           label: nodeType.name,
-          config: initialConfig,
+          config: extractConfigDefaults(nodeType.configSchema),
           metadata: nodeType,
         };
       }
