@@ -8,6 +8,7 @@
   import type { NodeMetadata } from "$lib/types/index.js";
   import { updateSettings, getUiSettings } from "../../stores/settingsStore.svelte.js";
   import ConsoleInput from "./ConsoleInput.svelte";
+  import ConsoleOutput, { type ConsoleEntry } from "./ConsoleOutput.svelte";
 
   interface Props {
     /** Available node types for command execution */
@@ -16,11 +17,15 @@
 
   let { nodeTypes }: Props = $props();
 
+  let outputEntries: ConsoleEntry[] = $state([]);
+
   function closeConsole() {
     updateSettings({ ui: { consoleOpen: false } });
   }
 
   function handleCommandSubmit(value: string) {
+    // Add the input entry to the output
+    outputEntries.push({ type: "input", text: value });
     // Command execution will be added in US-007
   }
 </script>
@@ -38,7 +43,7 @@
     </button>
   </div>
   <div class="command-console__content">
-    <!-- Console output will be added in US-006 -->
+    <ConsoleOutput entries={outputEntries} />
   </div>
   <ConsoleInput
     open={getUiSettings().consoleOpen}
@@ -93,6 +98,8 @@
 
   .command-console__content {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 </style>
