@@ -6,7 +6,8 @@
 
 <script lang="ts">
   import type { NodeMetadata } from "$lib/types/index.js";
-  import { updateSettings } from "../../stores/settingsStore.svelte.js";
+  import { updateSettings, getUiSettings } from "../../stores/settingsStore.svelte.js";
+  import ConsoleInput from "./ConsoleInput.svelte";
 
   interface Props {
     /** Available node types for command execution */
@@ -17,6 +18,10 @@
 
   function closeConsole() {
     updateSettings({ ui: { consoleOpen: false } });
+  }
+
+  function handleCommandSubmit(value: string) {
+    // Command execution will be added in US-007
   }
 </script>
 
@@ -33,8 +38,13 @@
     </button>
   </div>
   <div class="command-console__content">
-    <!-- Console output and input will be added in later stories -->
+    <!-- Console output will be added in US-006 -->
   </div>
+  <ConsoleInput
+    open={getUiSettings().consoleOpen}
+    onSubmit={handleCommandSubmit}
+    onClose={closeConsole}
+  />
 </div>
 
 <style>
