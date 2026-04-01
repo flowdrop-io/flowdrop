@@ -182,7 +182,7 @@
   }
 </script>
 
-<div class="command-console">
+<div class="command-console" role="region" aria-label="Command Console">
   <div class="command-console__header">
     <h2 class="command-console__title">Console</h2>
     <button
