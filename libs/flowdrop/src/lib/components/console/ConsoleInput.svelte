@@ -8,7 +8,7 @@
 <script lang="ts">
   import type { NodeMetadata } from "$lib/types/index.js";
   import { getWorkflowStore } from "../../stores/workflowStore.svelte.js";
-  import { toShortId } from "../../commands/index.js";
+  import { toShortId, resolveNode } from "../../commands/index.js";
   import ConsoleAutocomplete, { type Suggestion } from "./ConsoleAutocomplete.svelte";
 
   interface Props {
@@ -101,7 +101,7 @@
         // Only suggest if the partial doesn't already contain a space
         // (user has moved past the nodeId arg to further args)
         const partial = match[1];
-        if (!partial.includes(" ")) {
+        if (!partial.includes(" ") && !partial.includes(":")) {
           return { partial, type: "nodeId" };
         }
         return null;
@@ -111,8 +111,111 @@
     return null;
   }
 
+  /**
+   * Detect if cursor is after a "<nodeId>:" pattern, indicating port or config key position.
+   * Returns the nodeId, partial text after colon, and context type.
+   */
+  function getPortOrConfigContext(value: string): { nodeId: string; partial: string; type: "outputPort" | "inputPort" | "configKey" | "port" } | null {
+    // "connect <nodeId>:<partial>" — output ports (source position, no "to" yet)
+    const connectSourcePort = value.match(/^connect\s+(\S+?):(\S*)$/i);
+    if (connectSourcePort && !/\bto\b/i.test(value)) {
+      return { nodeId: connectSourcePort[1], partial: connectSourcePort[2], type: "outputPort" };
+    }
+
+    // "connect <source> to <nodeId>:<partial>" — input ports (target position)
+    const connectTargetPort = value.match(/^connect\s+\S+\s+to\s+(\S+?):(\S*)$/i);
+    if (connectTargetPort) {
+      return { nodeId: connectTargetPort[1], partial: connectTargetPort[2], type: "inputPort" };
+    }
+
+    // "set <nodeId>:<partial>" — config keys
+    const setMatch = value.match(/^set\s+(\S+?):(\S*)$/i);
+    if (setMatch) {
+      return { nodeId: setMatch[1], partial: setMatch[2], type: "configKey" };
+    }
+
+    // "get <nodeId>:<partial>" — config keys
+    const getMatch = value.match(/^get\s+(\S+?):(\S*)$/i);
+    if (getMatch) {
+      return { nodeId: getMatch[1], partial: getMatch[2], type: "configKey" };
+    }
+
+    // "disconnect <nodeId>:<partial>" — all ports
+    const disconnectMatch = value.match(/^disconnect\s+(\S+?):(\S*)$/i);
+    if (disconnectMatch) {
+      return { nodeId: disconnectMatch[1], partial: disconnectMatch[2], type: "port" };
+    }
+
+    return null;
+  }
+
+  /**
+   * Get port suggestions for a resolved node, filtered by direction and prefix.
+   */
+  function getPortSuggestions(nodeId: string, partial: string, filter: "input" | "output" | "all"): Suggestion[] {
+    const workflow = getWorkflowStore();
+    if (!workflow) return [];
+
+    const node = resolveNode(nodeId, workflow.nodes);
+    if (!node) return [];
+
+    const metadata = node.data.metadata;
+    if (!metadata) return [];
+
+    const lowerPartial = partial.toLowerCase();
+    const ports = [
+      ...(filter === "input" || filter === "all" ? metadata.inputs : []),
+      ...(filter === "output" || filter === "all" ? metadata.outputs : []),
+    ];
+
+    return ports
+      .filter((p) => p.id.toLowerCase().startsWith(lowerPartial))
+      .map((p) => ({
+        value: p.id,
+        label: p.id,
+        detail: `${p.name} (${p.dataType})`,
+      }))
+      .slice(0, 50);
+  }
+
+  /**
+   * Get config key suggestions for a resolved node, filtered by prefix.
+   */
+  function getConfigKeySuggestions(nodeId: string, partial: string): Suggestion[] {
+    const workflow = getWorkflowStore();
+    if (!workflow) return [];
+
+    const node = resolveNode(nodeId, workflow.nodes);
+    if (!node) return [];
+
+    const metadata = node.data.metadata;
+    if (!metadata?.configSchema?.properties) return [];
+
+    const lowerPartial = partial.toLowerCase();
+    return Object.entries(metadata.configSchema.properties)
+      .filter(([key]) => key.toLowerCase().startsWith(lowerPartial))
+      .map(([key, prop]) => ({
+        value: key,
+        label: key,
+        detail: typeof prop === "object" && "type" in prop ? String(prop.type) : undefined,
+      }))
+      .slice(0, 50);
+  }
+
   function computeSuggestions(value: string): Suggestion[] {
     if (!value) return [];
+
+    // Check if we're after "<nodeId>:" — port names or config keys
+    const portConfigCtx = getPortOrConfigContext(value);
+    if (portConfigCtx !== null) {
+      if (portConfigCtx.type === "configKey") {
+        return getConfigKeySuggestions(portConfigCtx.nodeId, portConfigCtx.partial);
+      }
+      const filter = portConfigCtx.type === "outputPort" ? "output"
+        : portConfigCtx.type === "inputPort" ? "input"
+        : "all";
+      return getPortSuggestions(portConfigCtx.nodeId, portConfigCtx.partial, filter);
+    }
 
     // Check if we're in a position where node type IDs should be suggested
     const nodeTypeContext = getNodeTypeContext(value);
@@ -161,11 +264,16 @@
     return null;
   }
 
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
   function updateAutocomplete() {
-    const suggestions = computeSuggestions(inputValue);
-    acSuggestions = suggestions;
-    acSelectedIndex = 0;
-    acVisible = suggestions.length > 0;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const suggestions = computeSuggestions(inputValue);
+      acSuggestions = suggestions;
+      acSelectedIndex = 0;
+      acVisible = suggestions.length > 0;
+    }, 100);
   }
 
   function dismissAutocomplete() {
@@ -176,6 +284,16 @@
 
   function acceptSuggestion(suggestion: Suggestion) {
     // Replace the relevant part of input with the suggestion value
+    const portConfigCtx = getPortOrConfigContext(inputValue);
+    if (portConfigCtx !== null) {
+      // Replace the partial after the colon
+      const prefixEnd = inputValue.length - portConfigCtx.partial.length;
+      inputValue = inputValue.slice(0, prefixEnd) + suggestion.value;
+      dismissAutocomplete();
+      inputElement?.focus();
+      return;
+    }
+
     const nodeTypeContext = getNodeTypeContext(inputValue);
     if (nodeTypeContext !== null) {
       // Replace the partial after the command prefix (node type context)
