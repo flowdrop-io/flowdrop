@@ -28,6 +28,7 @@ import { buildHandleId, extractPortId } from "../utils/handleIds.js";
 import { validateConnection } from "../utils/connections.js";
 import { applyConnectionStyling } from "../utils/edgeStyling.js";
 import { computeSwapPreview, executeSwap } from "../utils/nodeSwap.js";
+import { computeAutoLayout } from "../adapters/agentspec/autoLayout.js";
 
 // ============================================================================
 // Internal Helpers
@@ -934,6 +935,63 @@ function executeMoveNode(
   };
 }
 
+function executeAutoLayout(
+  command: Extract<Command, { type: "auto_layout" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  if (workflow.nodes.length === 0) {
+    return { ok: true, message: "No nodes to layout" };
+  }
+
+  const isVertical = command.direction === "vertical";
+
+  // Convert workflow to minimal AgentSpecFlow for computeAutoLayout
+  const startNode =
+    workflow.nodes.reduce((leftmost, n) =>
+      n.position.x < leftmost.position.x ? n : leftmost,
+    ).id;
+
+  const flow = {
+    component_type: "flow" as const,
+    name: "layout",
+    start_node: startNode,
+    nodes: workflow.nodes.map((n) => ({
+      component_type: "start_node" as const,
+      name: n.id,
+    })),
+    control_flow_connections: workflow.edges.map((e) => ({
+      name: e.id,
+      from_node: e.source,
+      to_node: e.target,
+    })),
+  };
+
+  const positions = computeAutoLayout(flow);
+
+  // Apply positions — swap x/y for vertical layout
+  const updatedNodes = workflow.nodes.map((n) => {
+    const pos = positions.get(n.id);
+    if (!pos) return n;
+    return {
+      ...n,
+      position: isVertical ? { x: pos.y, y: pos.x } : pos,
+    };
+  });
+
+  context.dispatch.batchUpdate({ nodes: updatedNodes });
+
+  const direction = command.direction ?? "horizontal";
+  return {
+    ok: true,
+    message: `Auto-layout applied to ${workflow.nodes.length} nodes (${direction})`,
+  };
+}
+
 // ============================================================================
 // Public API
 // ============================================================================
@@ -986,11 +1044,15 @@ export function executeCommand(
       return executeSwapNode(command, context);
     case "move_node":
       return executeMoveNode(command, context);
-    default:
+    case "auto_layout":
+      return executeAutoLayout(command, context);
+    default: {
+      const _exhaustive: never = command;
       return {
         ok: false,
-        error: `Command not yet implemented: ${command.type}`,
+        error: `Command not yet implemented: ${(_exhaustive as Command).type}`,
         code: "UNKNOWN_COMMAND",
       };
+    }
   }
 }
