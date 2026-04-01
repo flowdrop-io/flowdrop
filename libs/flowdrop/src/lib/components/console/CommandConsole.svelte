@@ -12,11 +12,24 @@
     executeBatch,
     type UIAction,
     type CommandContext,
+    type CommandResultOk,
+    type ListNodesResultData,
+    type ListEdgesResultData,
+    type ListTypesResultData,
+    type InfoResultData,
+    type HelpResultData,
   } from "../../commands/index.js";
   import { createStoreCommandContext } from "../../commands/storeIntegration.svelte.js";
   import { updateSettings, getUiSettings } from "../../stores/settingsStore.svelte.js";
   import ConsoleInput from "./ConsoleInput.svelte";
   import ConsoleOutput, { type ConsoleEntry } from "./ConsoleOutput.svelte";
+  import {
+    formatListNodes,
+    formatListEdges,
+    formatListTypes,
+    formatInfo,
+    formatHelp,
+  } from "./formatters.js";
 
   interface Props {
     /** Available node types for command execution */
@@ -34,6 +47,29 @@
   $effect(() => {
     commandContext = createStoreCommandContext(nodeTypes, onUIAction);
   });
+
+  /**
+   * Attempts to format CommandResult data into a rich display string.
+   * Returns null if the result has no formattable data.
+   */
+  function formatResultData(commandType: string, result: CommandResultOk): string | null {
+    if (!result.data) return null;
+
+    switch (commandType) {
+      case "list_nodes":
+        return formatListNodes(result.data as ListNodesResultData);
+      case "list_edges":
+        return formatListEdges(result.data as ListEdgesResultData);
+      case "list_types":
+        return formatListTypes(result.data as ListTypesResultData);
+      case "info":
+        return formatInfo(result.data as InfoResultData);
+      case "help":
+        return formatHelp(result.data as HelpResultData);
+      default:
+        return null;
+    }
+  }
 
   function closeConsole() {
     updateSettings({ ui: { consoleOpen: false } });
@@ -68,7 +104,12 @@
     // Execute the command
     const result = executeCommand(parseResult.command, commandContext);
     if (result.ok) {
-      outputEntries.push({ type: "success", text: result.message });
+      const formatted = formatResultData(parseResult.command.type, result);
+      if (formatted) {
+        outputEntries.push({ type: "formatted", text: formatted });
+      } else {
+        outputEntries.push({ type: "success", text: result.message });
+      }
     } else {
       outputEntries.push({ type: "error", text: result.error });
     }
@@ -115,7 +156,12 @@
     for (let i = 0; i < batchResult.results.length; i++) {
       const result = batchResult.results[i];
       if (result.ok) {
-        outputEntries.push({ type: "success", text: result.message });
+        const formatted = formatResultData(commands[i].type, result);
+        if (formatted) {
+          outputEntries.push({ type: "formatted", text: formatted });
+        } else {
+          outputEntries.push({ type: "success", text: result.message });
+        }
       } else {
         outputEntries.push({ type: "error", text: result.error });
       }

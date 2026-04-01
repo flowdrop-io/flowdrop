@@ -8,7 +8,7 @@
   import { tick } from "svelte";
 
   export interface ConsoleEntry {
-    type: "input" | "success" | "error";
+    type: "input" | "success" | "error" | "formatted";
     text: string;
   }
 
@@ -42,8 +42,12 @@
     <div class="console-output__entry console-output__entry--{entry.type}">
       {#if entry.type === "input"}
         <span class="console-output__prefix">&gt;</span>
+        <span class="console-output__text">{entry.text}</span>
+      {:else if entry.type === "formatted"}
+        <pre class="console-output__pre">{entry.text}</pre>
+      {:else}
+        <span class="console-output__text">{entry.text}</span>
       {/if}
-      <span class="console-output__text">{entry.text}</span>
     </div>
   {/each}
 </div>
@@ -95,6 +99,19 @@
 
   .console-output__entry--error {
     color: var(--fd-error);
+  }
+
+  .console-output__entry--formatted {
+    color: var(--fd-foreground);
+  }
+
+  .console-output__pre {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: pre;
+    overflow-x: auto;
   }
 
   .console-output__prefix {
