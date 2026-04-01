@@ -11,6 +11,10 @@ import type {
   AddNodeResultData,
   GetConfigResultData,
   InfoResultData,
+  ListNodesResultData,
+  ListEdgesResultData,
+  ListTypesResultData,
+  HelpResultData,
 } from "../../../src/lib/commands/types.js";
 import type {
   WorkflowNode,
@@ -1363,5 +1367,267 @@ describe("executeCommand — disconnect_node", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// List Nodes
+// ============================================================================
+
+describe("executeCommand — list_nodes", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node");
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("returns all nodes with short IDs, labels, and types", () => {
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata, {
+      data: { ...createMockNode("agentspec.api_node.1", apiMetadata).data, label: "My API" },
+    });
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "list_nodes" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as ListNodesResultData;
+    expect(data.nodes).toHaveLength(2);
+    expect(data.nodes[0]).toEqual({
+      nodeId: "llm_node.1",
+      label: "LLM Node",
+      type: "llm_node",
+    });
+    expect(data.nodes[1]).toEqual({
+      nodeId: "api_node.1",
+      label: "My API",
+      type: "api_node",
+    });
+  });
+
+  it("returns empty list for empty workflow", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "list_nodes" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as ListNodesResultData;
+    expect(data.nodes).toHaveLength(0);
+    expect(result.message).toContain("No nodes");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand({ type: "list_nodes" }, context);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// List Edges
+// ============================================================================
+
+describe("executeCommand — list_edges", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node", {
+    outputs: [{ id: "llm_output", name: "LLM Output", dataType: "string" }],
+  });
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node", {
+    inputs: [{ id: "body", name: "Body", dataType: "string" }],
+  });
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("returns all edges with short IDs and port names", () => {
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const edge: WorkflowEdge = {
+      id: "edge-1",
+      source: "agentspec.llm_node.1",
+      target: "agentspec.api_node.1",
+      sourceHandle: "agentspec.llm_node.1-output-llm_output",
+      targetHandle: "agentspec.api_node.1-input-body",
+    };
+    const workflow = createMockWorkflow([llmNode, apiNode], [edge]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "list_edges" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as ListEdgesResultData;
+    expect(data.edges).toHaveLength(1);
+    expect(data.edges[0]).toEqual({
+      edgeId: "edge-1",
+      sourceNodeId: "llm_node.1",
+      sourcePort: "llm_output",
+      targetNodeId: "api_node.1",
+      targetPort: "body",
+    });
+  });
+
+  it("returns empty list when no edges", () => {
+    const workflow = createMockWorkflow([createMockNode("agentspec.llm_node.1", llmMetadata)]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "list_edges" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as ListEdgesResultData;
+    expect(data.edges).toHaveLength(0);
+    expect(result.message).toContain("No edges");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand({ type: "list_edges" }, context);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// List Types
+// ============================================================================
+
+describe("executeCommand — list_types", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node", {
+    category: "integration",
+  });
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("returns all types with short IDs, names, and categories", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "list_types" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as ListTypesResultData;
+    expect(data.types).toHaveLength(2);
+    expect(data.types[0]).toEqual({
+      typeId: "llm_node",
+      name: "LLM Node",
+      category: "ai",
+    });
+    expect(data.types[1]).toEqual({
+      typeId: "api_node",
+      name: "API Node",
+      category: "integration",
+    });
+  });
+
+  it("returns short type IDs that match what add command accepts", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "list_types" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as ListTypesResultData;
+    // Each typeId should be resolvable via typeMap
+    for (const t of data.types) {
+      expect(context.typeMap.has(t.typeId)).toBe(true);
+    }
+  });
+
+  it("does not require a workflow (context.nodeTypes is sufficient)", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand({ type: "list_types" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as ListTypesResultData;
+    expect(data.types).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// Help
+// ============================================================================
+
+describe("executeCommand — help", () => {
+  const nodeTypes: NodeMetadata[] = [];
+
+  it("returns all commands when no argument given", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "help" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as HelpResultData;
+    expect(data.commands.length).toBeGreaterThan(10);
+    expect(result.message).toContain("Available commands");
+    // Verify structure
+    for (const cmd of data.commands) {
+      expect(cmd).toHaveProperty("name");
+      expect(cmd).toHaveProperty("syntax");
+      expect(cmd).toHaveProperty("description");
+    }
+  });
+
+  it("returns specific command help when argument given", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "help", command: "add" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as HelpResultData;
+    expect(data.commands.length).toBe(1);
+    expect(data.commands[0].name).toBe("add");
+    expect(data.commands[0].syntax).toContain("add");
+    expect(result.message).toContain("Help for 'add'");
+  });
+
+  it("returns multiple entries for commands with variants (disconnect)", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "help", command: "disconnect" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as HelpResultData;
+    expect(data.commands.length).toBe(2);
+    expect(data.commands.every((c) => c.name === "disconnect")).toBe(true);
+  });
+
+  it("returns all commands for unknown command name", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand({ type: "help", command: "nonexistent" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as HelpResultData;
+    expect(data.commands.length).toBeGreaterThan(10);
+  });
+
+  it("does not require a workflow", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand({ type: "help" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as HelpResultData;
+    expect(data.commands.length).toBeGreaterThan(0);
   });
 });
