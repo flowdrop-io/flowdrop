@@ -717,6 +717,117 @@ function executeHelp(
 }
 
 // ============================================================================
+// Undo, Redo, Clear, Config, Select
+// ============================================================================
+
+function executeUndo(context: CommandContext): CommandResult {
+  const success = context.dispatch.undo();
+  if (!success) {
+    return {
+      ok: false,
+      error: "Nothing to undo",
+      code: "UNDO_UNAVAILABLE",
+    };
+  }
+  return { ok: true, message: "Undone" };
+}
+
+function executeRedo(context: CommandContext): CommandResult {
+  const success = context.dispatch.redo();
+  if (!success) {
+    return {
+      ok: false,
+      error: "Nothing to redo",
+      code: "REDO_UNAVAILABLE",
+    };
+  }
+  return { ok: true, message: "Redone" };
+}
+
+function executeClear(context: CommandContext): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const nodeCount = workflow.nodes.length;
+  const edgeCount = workflow.edges.length;
+
+  context.dispatch.batchUpdate({ nodes: [], edges: [] });
+
+  return {
+    ok: true,
+    message: `Cleared ${nodeCount} node(s) and ${edgeCount} edge(s)`,
+  };
+}
+
+function executeConfigOpen(
+  command: Extract<Command, { type: "config_open" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.nodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  if (context.dispatch.emitUIAction) {
+    context.dispatch.emitUIAction({ type: "open_config", nodeId: node.id });
+    return {
+      ok: true,
+      message: `Opened config for ${toShortId(node.id)}`,
+    };
+  }
+
+  return {
+    ok: true,
+    message: `Config open requested for ${toShortId(node.id)} (no UI handler)`,
+    uiActionPending: true,
+  };
+}
+
+function executeSelectNode(
+  command: Extract<Command, { type: "select_node" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.nodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  if (context.dispatch.emitUIAction) {
+    context.dispatch.emitUIAction({ type: "select_node", nodeId: node.id });
+    return {
+      ok: true,
+      message: `Selected ${toShortId(node.id)}`,
+    };
+  }
+
+  return {
+    ok: true,
+    message: `Select requested for ${toShortId(node.id)} (no UI handler)`,
+    uiActionPending: true,
+  };
+}
+
+// ============================================================================
 // Public API
 // ============================================================================
 
@@ -754,6 +865,16 @@ export function executeCommand(
       return executeListTypes(context);
     case "help":
       return executeHelp(command);
+    case "undo":
+      return executeUndo(context);
+    case "redo":
+      return executeRedo(context);
+    case "clear":
+      return executeClear(context);
+    case "config_open":
+      return executeConfigOpen(command, context);
+    case "select_node":
+      return executeSelectNode(command, context);
     default:
       return {
         ok: false,

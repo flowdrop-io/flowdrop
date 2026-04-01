@@ -1631,3 +1631,296 @@ describe("executeCommand — help", () => {
     expect(data.commands.length).toBeGreaterThan(0);
   });
 });
+
+// ============================================================================
+// undo
+// ============================================================================
+
+describe("executeCommand — undo", () => {
+  const nodeTypes: NodeMetadata[] = [];
+
+  it("calls dispatch.undo() and returns success", () => {
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "undo" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toBe("Undone");
+    expect(dispatch.undo).toHaveBeenCalledOnce();
+  });
+
+  it("returns UNDO_UNAVAILABLE when dispatch.undo() returns false", () => {
+    const dispatch = createMockDispatch();
+    (dispatch.undo as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "undo" }, context);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("UNDO_UNAVAILABLE");
+    expect(result.error).toContain("Nothing to undo");
+  });
+
+  it("does not require a workflow", () => {
+    const dispatch = createMockDispatch();
+    const context = createMockContext(null, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "undo" }, context);
+
+    expect(result.ok).toBe(true);
+  });
+});
+
+// ============================================================================
+// redo
+// ============================================================================
+
+describe("executeCommand — redo", () => {
+  const nodeTypes: NodeMetadata[] = [];
+
+  it("calls dispatch.redo() and returns success", () => {
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "redo" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toBe("Redone");
+    expect(dispatch.redo).toHaveBeenCalledOnce();
+  });
+
+  it("returns REDO_UNAVAILABLE when dispatch.redo() returns false", () => {
+    const dispatch = createMockDispatch();
+    (dispatch.redo as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "redo" }, context);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("REDO_UNAVAILABLE");
+    expect(result.error).toContain("Nothing to redo");
+  });
+
+  it("does not require a workflow", () => {
+    const dispatch = createMockDispatch();
+    const context = createMockContext(null, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "redo" }, context);
+
+    expect(result.ok).toBe(true);
+  });
+});
+
+// ============================================================================
+// clear
+// ============================================================================
+
+describe("executeCommand — clear", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node");
+  const nodeTypes = [llmMetadata, apiMetadata];
+
+  it("removes all nodes and edges via batchUpdate", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    const edge = {
+      id: "edge-1",
+      source: "agentspec.llm_node.1",
+      target: "agentspec.api_node.1",
+    } as WorkflowEdge;
+    const workflow = createMockWorkflow([llmNode, apiNode], [edge]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "clear" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("2 node(s)");
+    expect(result.message).toContain("1 edge(s)");
+    expect(dispatch.batchUpdate).toHaveBeenCalledWith({ nodes: [], edges: [] });
+  });
+
+  it("succeeds on empty workflow", () => {
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand({ type: "clear" }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("0 node(s)");
+    expect(result.message).toContain("0 edge(s)");
+    expect(dispatch.batchUpdate).toHaveBeenCalledWith({ nodes: [], edges: [] });
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand({ type: "clear" }, context);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// config_open
+// ============================================================================
+
+describe("executeCommand — config_open", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const nodeTypes = [llmMetadata];
+
+  it("calls emitUIAction with open_config when handler provided", () => {
+    const dispatch = createMockDispatch();
+    const emitUIAction = vi.fn();
+    dispatch.emitUIAction = emitUIAction;
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([llmNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "config_open", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("Opened config");
+    expect(emitUIAction).toHaveBeenCalledWith({
+      type: "open_config",
+      nodeId: "agentspec.llm_node.1",
+    });
+    expect(result.uiActionPending).toBeUndefined();
+  });
+
+  it("returns uiActionPending when emitUIAction not provided", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([llmNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "config_open", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.uiActionPending).toBe(true);
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand(
+      { type: "config_open", nodeId: "llm_node.99" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "config_open", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
+
+// ============================================================================
+// select_node
+// ============================================================================
+
+describe("executeCommand — select_node", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const nodeTypes = [llmMetadata];
+
+  it("calls emitUIAction with select_node when handler provided", () => {
+    const dispatch = createMockDispatch();
+    const emitUIAction = vi.fn();
+    dispatch.emitUIAction = emitUIAction;
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([llmNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "select_node", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("Selected");
+    expect(emitUIAction).toHaveBeenCalledWith({
+      type: "select_node",
+      nodeId: "agentspec.llm_node.1",
+    });
+    expect(result.uiActionPending).toBeUndefined();
+  });
+
+  it("returns uiActionPending when emitUIAction not provided", () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([llmNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "select_node", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.uiActionPending).toBe(true);
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand(
+      { type: "select_node", nodeId: "llm_node.99" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "select_node", nodeId: "llm_node.1" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+});
