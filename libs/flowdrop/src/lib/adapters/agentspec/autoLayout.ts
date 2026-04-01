@@ -160,6 +160,135 @@ export function computeAutoLayout(
   return positions;
 }
 
+// ============================================================================
+// Beautify Layout
+// ============================================================================
+
+/** Input position for beautify: existing node placement */
+export interface NodePosition {
+  x: number;
+  y: number;
+}
+
+/** Beautify configuration */
+export interface BeautifyLayoutConfig {
+  /** Minimum horizontal gap between the right edge of one column and the left edge of the next (px) */
+  horizontalGap: number;
+  /** Minimum vertical gap between the bottom edge of one node and the top edge of the next in the same column (px) */
+  verticalGap: number;
+  /** Fallback node width when measured dimensions are unavailable */
+  defaultNodeWidth: number;
+  /** Fallback node height when measured dimensions are unavailable */
+  defaultNodeHeight: number;
+}
+
+const DEFAULT_BEAUTIFY_CONFIG: BeautifyLayoutConfig = {
+  horizontalGap: 120,
+  verticalGap: 40,
+  defaultNodeWidth: 220,
+  defaultNodeHeight: 150,
+};
+
+/**
+ * Beautify existing node positions: preserve relative column/row ordering
+ * but apply uniform spacing based on actual node dimensions.
+ *
+ * Algorithm:
+ * 1. Cluster nodes into columns by X proximity (gap threshold = median width)
+ * 2. Sort columns left-to-right by their median X
+ * 3. Within each column, sort nodes top-to-bottom by their original Y
+ * 4. Re-position with uniform horizontal and vertical gaps
+ *
+ * @param positions - Current node positions (keyed by node id)
+ * @param config - Optional spacing configuration
+ * @param nodeDimensions - Optional map of node id to measured {width, height}
+ * @returns Map of node id to new {x, y} position
+ */
+export function computeBeautifyLayout(
+  positions: Map<string, NodePosition>,
+  config: Partial<BeautifyLayoutConfig> = {},
+  nodeDimensions?: Map<string, NodeDimensions>,
+): Map<string, { x: number; y: number }> {
+  const cfg = { ...DEFAULT_BEAUTIFY_CONFIG, ...config };
+  const result = new Map<string, { x: number; y: number }>();
+
+  if (positions.size === 0) return result;
+
+  const getDims = (id: string): NodeDimensions =>
+    nodeDimensions?.get(id) ?? {
+      width: cfg.defaultNodeWidth,
+      height: cfg.defaultNodeHeight,
+    };
+
+  // Collect all nodes sorted by X
+  const entries = Array.from(positions.entries()).map(([id, pos]) => ({
+    id,
+    x: pos.x,
+    y: pos.y,
+  }));
+  entries.sort((a, b) => a.x - b.x);
+
+  // Determine clustering threshold: half the median node width
+  const widths = entries.map((e) => getDims(e.id).width);
+  const sortedWidths = [...widths].sort((a, b) => a - b);
+  const medianWidth = sortedWidths[Math.floor(sortedWidths.length / 2)];
+  const clusterThreshold = medianWidth * 0.75;
+
+  // Cluster into columns by X proximity
+  const columns: Array<typeof entries> = [];
+  let currentColumn: typeof entries = [entries[0]];
+
+  for (let i = 1; i < entries.length; i++) {
+    const prevX = currentColumn[currentColumn.length - 1].x;
+    if (entries[i].x - prevX > clusterThreshold) {
+      columns.push(currentColumn);
+      currentColumn = [entries[i]];
+    } else {
+      currentColumn.push(entries[i]);
+    }
+  }
+  columns.push(currentColumn);
+
+  // Sort each column's nodes top-to-bottom by original Y
+  for (const col of columns) {
+    col.sort((a, b) => a.y - b.y);
+  }
+
+  // Compute the global vertical center from the original positions
+  const allYs = entries.map((e) => e.y);
+  const globalCenterY = (Math.min(...allYs) + Math.max(...allYs)) / 2;
+
+  // Assign new positions column by column
+  let currentX = entries[0].x; // Start from the leftmost original X
+
+  for (const col of columns) {
+    // Find the widest node in this column
+    const maxWidth = Math.max(...col.map((e) => getDims(e.id).width));
+
+    // Calculate total height of this column
+    const heights = col.map((e) => getDims(e.id).height);
+    const totalHeight =
+      heights.reduce((sum, h) => sum + h, 0) +
+      (col.length - 1) * cfg.verticalGap;
+
+    // Center column vertically around the global center
+    let y = globalCenterY - totalHeight / 2;
+
+    for (let i = 0; i < col.length; i++) {
+      result.set(col[i].id, { x: currentX, y });
+      y += heights[i] + cfg.verticalGap;
+    }
+
+    currentX += maxWidth + cfg.horizontalGap;
+  }
+
+  return result;
+}
+
+// ============================================================================
+// Layer Assignment (for auto-layout)
+// ============================================================================
+
 /**
  * Assign layers using longest path from the start node (modified BFS).
  * This ensures branching nodes fan out properly and convergence points

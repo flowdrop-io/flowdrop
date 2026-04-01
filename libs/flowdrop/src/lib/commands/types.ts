@@ -134,6 +134,10 @@ export interface AutoLayoutCommand {
   direction?: "horizontal" | "vertical";
 }
 
+export interface BeautifyLayoutCommand {
+  type: "beautify_layout";
+}
+
 /** Discriminated union of all commands */
 export type Command =
   | AddNodeCommand
@@ -156,7 +160,8 @@ export type Command =
   | ClearCommand
   | SwapNodeCommand
   | MoveNodeCommand
-  | AutoLayoutCommand;
+  | AutoLayoutCommand
+  | BeautifyLayoutCommand;
 
 // ============================================================================
 // Parse Result
