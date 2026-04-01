@@ -10,10 +10,7 @@
  * 4. Fan out branches vertically from BranchingNode
  */
 
-import type {
-  AgentSpecFlow,
-  AgentSpecControlFlowEdge,
-} from "../../types/agentspec.js";
+import type { AgentSpecFlow } from "../../types/agentspec.js";
 
 /** Measured dimensions for a node */
 export interface NodeDimensions {
@@ -73,11 +70,9 @@ export function computeAutoLayout(
 
   // Build adjacency list from control-flow edges
   const adjacency = new Map<string, string[]>();
-  const inDegree = new Map<string, number>();
 
   for (const node of flow.nodes) {
     adjacency.set(node.name, []);
-    inDegree.set(node.name, 0);
   }
 
   for (const edge of flow.control_flow_connections) {
@@ -85,7 +80,6 @@ export function computeAutoLayout(
     if (neighbors) {
       neighbors.push(edge.to_node);
     }
-    inDegree.set(edge.to_node, (inDegree.get(edge.to_node) || 0) + 1);
   }
 
   // Also consider data-flow edges for connectivity (but don't affect layering priority)
