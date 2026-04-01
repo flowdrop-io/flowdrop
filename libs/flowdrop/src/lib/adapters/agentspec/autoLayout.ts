@@ -35,7 +35,7 @@ export interface AutoLayoutConfig {
 }
 
 const DEFAULT_CONFIG: AutoLayoutConfig = {
-  horizontalGap: 80,
+  horizontalGap: 120,
   verticalGap: 40,
   startX: 100,
   startY: 100,
