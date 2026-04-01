@@ -138,6 +138,34 @@ export interface BeautifyLayoutCommand {
   type: "beautify_layout";
 }
 
+/** Canvas viewport commands */
+
+export interface CanvasFitViewCommand {
+  type: "canvas_fit_view";
+}
+
+export interface CanvasZoomInCommand {
+  type: "canvas_zoom_in";
+}
+
+export interface CanvasZoomOutCommand {
+  type: "canvas_zoom_out";
+}
+
+export interface CanvasZoomToCommand {
+  type: "canvas_zoom_to";
+  level: number;
+}
+
+export interface CanvasPanToCommand {
+  type: "canvas_pan_to";
+  position: { x: number; y: number };
+}
+
+export interface CanvasResetViewCommand {
+  type: "canvas_reset_view";
+}
+
 /** Discriminated union of all commands */
 export type Command =
   | AddNodeCommand
@@ -161,7 +189,13 @@ export type Command =
   | SwapNodeCommand
   | MoveNodeCommand
   | AutoLayoutCommand
-  | BeautifyLayoutCommand;
+  | BeautifyLayoutCommand
+  | CanvasFitViewCommand
+  | CanvasZoomInCommand
+  | CanvasZoomOutCommand
+  | CanvasZoomToCommand
+  | CanvasPanToCommand
+  | CanvasResetViewCommand;
 
 // ============================================================================
 // Parse Result
@@ -341,7 +375,13 @@ export interface BatchResult {
 
 export type UIAction =
   | { type: "open_config"; nodeId: string }
-  | { type: "select_node"; nodeId: string };
+  | { type: "select_node"; nodeId: string }
+  | { type: "canvas_fit_view" }
+  | { type: "canvas_zoom_in" }
+  | { type: "canvas_zoom_out" }
+  | { type: "canvas_zoom_to"; level: number }
+  | { type: "canvas_pan_to"; position: { x: number; y: number } }
+  | { type: "canvas_reset_view" };
 
 // ============================================================================
 // Command Dispatch Interface

@@ -768,6 +768,12 @@ const COMMAND_HELP: Array<{ name: string; syntax: string; description: string }>
   { name: "redo", syntax: "redo", description: "Redo the last undone action" },
   { name: "help", syntax: "help [<command>]", description: "Show help for all or a specific command" },
   { name: "clear", syntax: "clear", description: "Remove all nodes and edges" },
+  { name: "canvas", syntax: "canvas fitview", description: "Fit all nodes into the viewport" },
+  { name: "canvas", syntax: "canvas zoom in", description: "Zoom in on the canvas" },
+  { name: "canvas", syntax: "canvas zoom out", description: "Zoom out on the canvas" },
+  { name: "canvas", syntax: "canvas zoom <level>", description: "Set zoom to a specific level (e.g. 1.5)" },
+  { name: "canvas", syntax: "canvas pan <x>,<y>", description: "Pan the canvas to center on a position" },
+  { name: "canvas", syntax: "canvas reset", description: "Reset viewport to default position and zoom" },
 ];
 
 function executeHelp(
@@ -1150,6 +1156,64 @@ function executeBeautifyLayout(
 }
 
 // ============================================================================
+// Canvas Viewport Commands
+// ============================================================================
+
+function emitCanvasAction(
+  context: CommandContext,
+  action: Parameters<NonNullable<typeof context.dispatch.emitUIAction>>[0],
+  successMessage: string,
+): CommandResult {
+  if (context.dispatch.emitUIAction) {
+    context.dispatch.emitUIAction(action);
+    return { ok: true, message: successMessage };
+  }
+  return {
+    ok: true,
+    message: `${successMessage} (no UI handler)`,
+    uiActionPending: true,
+  };
+}
+
+function executeCanvasFitView(context: CommandContext): CommandResult {
+  return emitCanvasAction(context, { type: "canvas_fit_view" }, "Fit view applied");
+}
+
+function executeCanvasZoomIn(context: CommandContext): CommandResult {
+  return emitCanvasAction(context, { type: "canvas_zoom_in" }, "Zoomed in");
+}
+
+function executeCanvasZoomOut(context: CommandContext): CommandResult {
+  return emitCanvasAction(context, { type: "canvas_zoom_out" }, "Zoomed out");
+}
+
+function executeCanvasZoomTo(
+  command: Extract<Command, { type: "canvas_zoom_to" }>,
+  context: CommandContext,
+): CommandResult {
+  return emitCanvasAction(
+    context,
+    { type: "canvas_zoom_to", level: command.level },
+    `Zoom set to ${command.level}`,
+  );
+}
+
+function executeCanvasPanTo(
+  command: Extract<Command, { type: "canvas_pan_to" }>,
+  context: CommandContext,
+): CommandResult {
+  return emitCanvasAction(
+    context,
+    { type: "canvas_pan_to", position: command.position },
+    `Panned to (${command.position.x}, ${command.position.y})`,
+  );
+}
+
+function executeCanvasResetView(context: CommandContext): CommandResult {
+  return emitCanvasAction(context, { type: "canvas_reset_view" }, "Viewport reset");
+}
+
+// ============================================================================
 // Public API
 // ============================================================================
 
@@ -1205,6 +1269,18 @@ export function executeCommand(
       return executeAutoLayout(command, context);
     case "beautify_layout":
       return executeBeautifyLayout(command, context);
+    case "canvas_fit_view":
+      return executeCanvasFitView(context);
+    case "canvas_zoom_in":
+      return executeCanvasZoomIn(context);
+    case "canvas_zoom_out":
+      return executeCanvasZoomOut(context);
+    case "canvas_zoom_to":
+      return executeCanvasZoomTo(command, context);
+    case "canvas_pan_to":
+      return executeCanvasPanTo(command, context);
+    case "canvas_reset_view":
+      return executeCanvasResetView(context);
     default: {
       const _exhaustive: never = command;
       return {

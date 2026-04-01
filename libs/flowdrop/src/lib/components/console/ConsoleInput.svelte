@@ -43,7 +43,7 @@
   const COMMAND_VERBS = [
     "add", "delete", "rename", "set", "get", "info", "config", "select",
     "connect", "disconnect", "list", "undo", "redo", "help", "clear",
-    "swap", "move", "layout",
+    "swap", "move", "layout", "canvas",
   ];
 
   /** Verbs that take a nodeId as their first argument */
@@ -212,6 +212,14 @@
       { value: "nodes", detail: "List all workflow nodes" },
       { value: "edges", detail: "List all connections" },
       { value: "types", detail: "List available node types" },
+    ],
+    canvas: [
+      { value: "fitview", detail: "Fit all nodes into the viewport" },
+      { value: "zoom in", detail: "Zoom in on the canvas" },
+      { value: "zoom out", detail: "Zoom out on the canvas" },
+      { value: "zoom", detail: "Set zoom level (e.g. canvas zoom 1.5)" },
+      { value: "pan", detail: "Pan to position (e.g. canvas pan 100,200)" },
+      { value: "reset", detail: "Reset viewport to default" },
     ],
   };
 

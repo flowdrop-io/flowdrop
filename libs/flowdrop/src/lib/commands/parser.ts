@@ -212,6 +212,39 @@ const rules: ParserRule[] = [
     pattern: /^layout\s+beautify$/i,
     parse: () => ({ type: "beautify_layout" }),
   },
+  // canvas fitview | canvas fit
+  {
+    pattern: /^canvas\s+fit(?:\s*view)?$/i,
+    parse: () => ({ type: "canvas_fit_view" }),
+  },
+  // canvas zoom in
+  {
+    pattern: /^canvas\s+zoom\s+in$/i,
+    parse: () => ({ type: "canvas_zoom_in" }),
+  },
+  // canvas zoom out
+  {
+    pattern: /^canvas\s+zoom\s+out$/i,
+    parse: () => ({ type: "canvas_zoom_out" }),
+  },
+  // canvas zoom <level>
+  {
+    pattern: /^canvas\s+zoom\s+(\d+(?:\.\d+)?)$/i,
+    parse: (m) => ({ type: "canvas_zoom_to", level: Number(m[1]) }),
+  },
+  // canvas pan <x>,<y>
+  {
+    pattern: /^canvas\s+pan\s+(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/i,
+    parse: (m) => ({
+      type: "canvas_pan_to",
+      position: parseCoords(m[1], m[2]),
+    }),
+  },
+  // canvas reset
+  {
+    pattern: /^canvas\s+reset$/i,
+    parse: () => ({ type: "canvas_reset_view" }),
+  },
 ];
 
 // ============================================================================
@@ -243,7 +276,7 @@ export function parseCommand(input: string): ParseResult {
   const knownVerbs = [
     "add", "delete", "rename", "set", "get", "info", "config",
     "select", "connect", "disconnect", "list", "undo", "redo",
-    "help", "clear", "swap", "move", "layout",
+    "help", "clear", "swap", "move", "layout", "canvas",
   ];
 
   if (knownVerbs.includes(verb)) {
