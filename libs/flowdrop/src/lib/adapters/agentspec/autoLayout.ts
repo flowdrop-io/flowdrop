@@ -15,40 +15,61 @@ import type {
   AgentSpecControlFlowEdge,
 } from "../../types/agentspec.js";
 
+/** Measured dimensions for a node */
+export interface NodeDimensions {
+  width: number;
+  height: number;
+}
+
 /** Layout configuration */
 export interface AutoLayoutConfig {
-  /** Horizontal spacing between layers (px) */
-  horizontalSpacing: number;
-  /** Vertical spacing between nodes in the same layer (px) */
-  verticalSpacing: number;
+  /** Minimum horizontal gap between the right edge of one layer and the left edge of the next (px) */
+  horizontalGap: number;
+  /** Minimum vertical gap between the bottom edge of one node and the top edge of the next in the same layer (px) */
+  verticalGap: number;
   /** Starting X position */
   startX: number;
   /** Starting Y position */
   startY: number;
+  /** Fallback node width when measured dimensions are unavailable */
+  defaultNodeWidth: number;
+  /** Fallback node height when measured dimensions are unavailable */
+  defaultNodeHeight: number;
 }
 
 const DEFAULT_CONFIG: AutoLayoutConfig = {
-  horizontalSpacing: 300,
-  verticalSpacing: 150,
+  horizontalGap: 80,
+  verticalGap: 40,
   startX: 100,
   startY: 100,
+  defaultNodeWidth: 220,
+  defaultNodeHeight: 150,
 };
 
 /**
  * Compute node positions for an Agent Spec flow using layered layout.
+ * Takes actual node dimensions into account to prevent overlap.
  *
  * @param flow - The Agent Spec flow to layout
  * @param config - Optional layout configuration
+ * @param nodeDimensions - Optional map of node name to measured {width, height}
  * @returns Map of node name to {x, y} position
  */
 export function computeAutoLayout(
   flow: AgentSpecFlow,
   config: Partial<AutoLayoutConfig> = {},
+  nodeDimensions?: Map<string, NodeDimensions>,
 ): Map<string, { x: number; y: number }> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const positions = new Map<string, { x: number; y: number }>();
 
   if (flow.nodes.length === 0) return positions;
+
+  const getDims = (name: string): NodeDimensions =>
+    nodeDimensions?.get(name) ?? {
+      width: cfg.defaultNodeWidth,
+      height: cfg.defaultNodeHeight,
+    };
 
   // Build adjacency list from control-flow edges
   const adjacency = new Map<string, string[]>();
@@ -107,19 +128,38 @@ export function computeAutoLayout(
   // Sort layers and assign positions
   const sortedLayers = Array.from(layerGroups.keys()).sort((a, b) => a - b);
 
+  // Compute X positions layer by layer, using the widest node in each layer
+  const layerXPositions = new Map<number, number>();
+  let currentX = cfg.startX;
+
+  for (const layerIndex of sortedLayers) {
+    layerXPositions.set(layerIndex, currentX);
+
+    // Advance X by the widest node in this layer + horizontal gap
+    const nodesInLayer = layerGroups.get(layerIndex)!;
+    const maxWidth = Math.max(
+      ...nodesInLayer.map((name) => getDims(name).width),
+    );
+    currentX += maxWidth + cfg.horizontalGap;
+  }
+
+  // Compute Y positions within each layer, using actual node heights
   for (const layerIndex of sortedLayers) {
     const nodesInLayer = layerGroups.get(layerIndex)!;
-    const x = cfg.startX + layerIndex * cfg.horizontalSpacing;
+    const x = layerXPositions.get(layerIndex)!;
 
-    // Center nodes vertically
-    const totalHeight = (nodesInLayer.length - 1) * cfg.verticalSpacing;
-    const startY = cfg.startY - totalHeight / 2;
+    // Calculate total height of this column (sum of node heights + gaps)
+    const heights = nodesInLayer.map((name) => getDims(name).height);
+    const totalHeight =
+      heights.reduce((sum, h) => sum + h, 0) +
+      (nodesInLayer.length - 1) * cfg.verticalGap;
+
+    // Center the column vertically around startY
+    let y = cfg.startY - totalHeight / 2;
 
     for (let i = 0; i < nodesInLayer.length; i++) {
-      positions.set(nodesInLayer[i], {
-        x,
-        y: startY + i * cfg.verticalSpacing,
-      });
+      positions.set(nodesInLayer[i], { x, y });
+      y += heights[i] + cfg.verticalGap;
     }
   }
 

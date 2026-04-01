@@ -2514,7 +2514,6 @@ describe("executeCommand — auto_layout", () => {
 
     expect(result.ok).toBe(true);
     expect(result.message).toContain("2 nodes");
-    expect(result.message).toContain("horizontal");
     expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
 
     const updatedNodes = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock
@@ -2525,7 +2524,7 @@ describe("executeCommand — auto_layout", () => {
     expect(positions[0].x).not.toBe(positions[1].x);
   });
 
-  it("applies vertical layout (swaps x/y)", () => {
+  it("uses measured dimensions for size-aware layout", () => {
     const dispatch = createMockDispatch();
     const node1 = createMockNode("agentspec.llm_node.1", llmMetadata, {
       position: { x: 0, y: 0 },
@@ -2533,6 +2532,15 @@ describe("executeCommand — auto_layout", () => {
     const node2 = createMockNode("agentspec.api_node.1", apiMetadata, {
       position: { x: 100, y: 0 },
     });
+    // Simulate measured dimensions (set by @xyflow/svelte after render)
+    (node1 as { measured?: { width: number; height: number } }).measured = {
+      width: 280,
+      height: 200,
+    };
+    (node2 as { measured?: { width: number; height: number } }).measured = {
+      width: 220,
+      height: 150,
+    };
     const edge = {
       id: "e1",
       source: "agentspec.llm_node.1",
@@ -2541,20 +2549,16 @@ describe("executeCommand — auto_layout", () => {
     const workflow = createMockWorkflow([node1, node2], [edge]);
     const context = createMockContext(workflow, nodeTypes, dispatch);
 
-    const result = executeCommand(
-      { type: "auto_layout", direction: "vertical" },
-      context,
-    );
+    const result = executeCommand({ type: "auto_layout" }, context);
 
     expect(result.ok).toBe(true);
-    expect(result.message).toContain("vertical");
     expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
 
     const updatedNodes = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock
       .calls[0][0].nodes as WorkflowNode[];
-    // In vertical layout, layers stack vertically (different y, possibly same x)
     const positions = updatedNodes.map((n) => n.position);
-    expect(positions[0].y).not.toBe(positions[1].y);
+    // With node1 width=280 and gap=80, node2 x should be >= 360
+    expect(positions[1].x - positions[0].x).toBeGreaterThanOrEqual(280 + 80);
   });
 
   it("handles empty workflow", () => {
