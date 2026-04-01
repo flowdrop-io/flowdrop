@@ -2167,3 +2167,97 @@ describe("executeCommand — swap_node", () => {
     expect(data.hasDataLoss).toBe(false);
   });
 });
+
+// ============================================================================
+// move_node
+// ============================================================================
+
+describe("move_node", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node");
+  const nodeTypes = [llmMetadata];
+
+  it("moves node to specified position", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "move_node", nodeId: "llm_node.1", position: { x: 500, y: 300 } },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("Moved");
+    expect(result.message).toContain("500");
+    expect(result.message).toContain("300");
+    expect(dispatch.updateNode).toHaveBeenCalledWith(
+      "agentspec.llm_node.1",
+      { position: { x: 500, y: 300 } },
+    );
+  });
+
+  it("supports negative coordinates", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "move_node", nodeId: "llm_node.1", position: { x: -100, y: -200 } },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(dispatch.updateNode).toHaveBeenCalledWith(
+      "agentspec.llm_node.1",
+      { position: { x: -100, y: -200 } },
+    );
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const workflow = createMockWorkflow([]);
+    const context = createMockContext(workflow, nodeTypes);
+
+    const result = executeCommand(
+      { type: "move_node", nodeId: "llm_node.99", position: { x: 0, y: 0 } },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "move_node", nodeId: "llm_node.1", position: { x: 0, y: 0 } },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+
+  it("resolves short ID to namespaced internal ID", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    executeCommand(
+      { type: "move_node", nodeId: "llm_node.1", position: { x: 200, y: 400 } },
+      context,
+    );
+
+    // Should resolve short ID "llm_node.1" to full "agentspec.llm_node.1"
+    expect(dispatch.updateNode).toHaveBeenCalledWith(
+      "agentspec.llm_node.1",
+      expect.anything(),
+    );
+  });
+});
