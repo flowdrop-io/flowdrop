@@ -19,24 +19,72 @@
   let inputValue = $state("");
   let inputElement: HTMLInputElement | undefined = $state();
 
+  // Command history state
+  const MAX_HISTORY = 100;
+  let history: string[] = $state([]);
+  let historyIndex = $state(-1);
+  let savedInput = $state("");
+
   $effect(() => {
     if (open && inputElement) {
       inputElement.focus();
     }
   });
 
+  function addToHistory(command: string) {
+    // Don't store duplicate consecutive commands
+    if (history.length > 0 && history[history.length - 1] === command) {
+      return;
+    }
+    history.push(command);
+    // Drop oldest when full
+    if (history.length > MAX_HISTORY) {
+      history.shift();
+    }
+  }
+
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       const value = inputValue.trim();
       if (value) {
+        addToHistory(value);
         onSubmit(value);
         inputValue = "";
+        historyIndex = -1;
+        savedInput = "";
       }
     } else if (event.key === "Escape") {
       event.preventDefault();
       onClose();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (history.length === 0) return;
+      if (historyIndex === -1) {
+        // Save current input before navigating history
+        savedInput = inputValue;
+        historyIndex = history.length - 1;
+      } else if (historyIndex > 0) {
+        historyIndex--;
+      }
+      inputValue = history[historyIndex];
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (historyIndex === -1) return;
+      if (historyIndex < history.length - 1) {
+        historyIndex++;
+        inputValue = history[historyIndex];
+      } else {
+        // Past newest entry — return to saved input
+        historyIndex = -1;
+        inputValue = savedInput;
+      }
     }
+  }
+
+  function handleInput() {
+    // Typing resets history navigation
+    historyIndex = -1;
   }
 </script>
 
@@ -51,6 +99,7 @@
     spellcheck="false"
     autocomplete="off"
     onkeydown={handleKeydown}
+    oninput={handleInput}
   />
 </div>
 
