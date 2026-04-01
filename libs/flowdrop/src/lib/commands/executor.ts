@@ -18,6 +18,7 @@ import type {
   ListEdgesResultData,
   ListTypesResultData,
   HelpResultData,
+  SwapNodeResultData,
 } from "./types.js";
 import type { WorkflowNode, WorkflowEdge } from "../types/index.js";
 import { generateNodeId } from "../utils/nodeIds.js";
@@ -26,6 +27,7 @@ import { computeAutoPosition } from "./positioner.js";
 import { buildHandleId, extractPortId } from "../utils/handleIds.js";
 import { validateConnection } from "../utils/connections.js";
 import { applyConnectionStyling } from "../utils/edgeStyling.js";
+import { computeSwapPreview, executeSwap } from "../utils/nodeSwap.js";
 
 // ============================================================================
 // Internal Helpers
@@ -827,6 +829,83 @@ function executeSelectNode(
   };
 }
 
+function executeSwapNode(
+  command: Extract<Command, { type: "swap_node" }>,
+  context: CommandContext,
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: `Node not found: ${command.nodeId}`,
+      code: "NODE_NOT_FOUND",
+    };
+  }
+
+  const newMetadata = context.typeMap.get(command.newTypeId);
+  if (!newMetadata) {
+    return {
+      ok: false,
+      error: `Unknown node type: ${command.newTypeId}`,
+      code: "NODE_TYPE_NOT_FOUND",
+    };
+  }
+
+  const preview = computeSwapPreview(
+    node,
+    newMetadata,
+    workflow.edges,
+    workflow.nodes,
+  );
+
+  const swapResult = executeSwap(
+    node,
+    newMetadata,
+    preview,
+    workflow.nodes,
+    workflow.edges,
+  );
+
+  if (context.dispatch.swapNode) {
+    context.dispatch.swapNode({
+      nodes: swapResult.updatedNodes,
+      edges: swapResult.updatedEdges,
+    });
+  } else {
+    context.dispatch.batchUpdate({
+      nodes: swapResult.updatedNodes,
+      edges: swapResult.updatedEdges,
+    });
+  }
+
+  const resultData: SwapNodeResultData = {
+    oldNodeId: toShortId(node.id),
+    newNodeId: toShortId(preview.newNodeId),
+    newType: command.newTypeId,
+    keptEdges: preview.keptEdges.length,
+    droppedEdges: preview.droppedEdges.length,
+    hasDataLoss: preview.hasDataLoss,
+    configCarriedOver: preview.configCarriedOver,
+    configReset: preview.configReset,
+  };
+
+  const droppedMsg =
+    preview.droppedEdges.length > 0
+      ? ` (${preview.droppedEdges.length} edge(s) dropped)`
+      : "";
+
+  return {
+    ok: true,
+    message: `Swapped ${toShortId(node.id)} → ${toShortId(preview.newNodeId)} (${command.newTypeId})${droppedMsg}`,
+    data: resultData,
+  };
+}
+
 // ============================================================================
 // Public API
 // ============================================================================
@@ -875,6 +954,8 @@ export function executeCommand(
       return executeConfigOpen(command, context);
     case "select_node":
       return executeSelectNode(command, context);
+    case "swap_node":
+      return executeSwapNode(command, context);
     default:
       return {
         ok: false,

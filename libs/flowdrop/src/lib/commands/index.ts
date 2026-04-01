@@ -40,6 +40,7 @@ export type {
   InfoResultData,
   GetConfigResultData,
   HelpResultData,
+  SwapNodeResultData,
   CommandResultData,
   CommandResultOk,
   CommandResultError,

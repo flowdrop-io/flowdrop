@@ -1924,3 +1924,246 @@ describe("executeCommand — select_node", () => {
     expect(result.code).toBe("NO_WORKFLOW");
   });
 });
+
+// ============================================================================
+// swap_node
+// ============================================================================
+
+describe("executeCommand — swap_node", () => {
+  const llmMetadata = createMockMetadata("agentspec.llm_node", "LLM Node", {
+    inputs: [
+      { id: "prompt", name: "Prompt", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "llm_output", name: "LLM Output", type: "output", dataType: "string" },
+    ],
+    configSchema: {
+      type: "object",
+      properties: {
+        model: { type: "string", default: "gpt-4" },
+        temperature: { type: "number", default: 0.7 },
+      },
+    },
+  });
+
+  const apiMetadata = createMockMetadata("agentspec.api_node", "API Node", {
+    inputs: [
+      { id: "body", name: "Body", type: "input", dataType: "string" },
+    ],
+    outputs: [
+      { id: "response", name: "Response", type: "output", dataType: "string" },
+    ],
+    configSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", default: "https://example.com" },
+        model: { type: "string", default: "default-model" },
+      },
+    },
+  });
+
+  // A type with different ports (number ports won't match string ports)
+  const calcMetadata = createMockMetadata("agentspec.calculator", "Calculator", {
+    inputs: [
+      { id: "a", name: "A", type: "input", dataType: "number" },
+      { id: "b", name: "B", type: "input", dataType: "number" },
+    ],
+    outputs: [
+      { id: "result", name: "Result", type: "output", dataType: "number" },
+    ],
+    configSchema: {
+      type: "object",
+      properties: {
+        operation: { type: "string", default: "add" },
+      },
+    },
+  });
+
+  const nodeTypes = [llmMetadata, apiMetadata, calcMetadata];
+
+  it("swaps a node type and dispatches via batchUpdate", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      data: {
+        label: "LLM Node",
+        config: { model: "gpt-4", temperature: 0.7 },
+        metadata: llmMetadata,
+        nodeId: "agentspec.llm_node.1",
+      },
+    });
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.1", newTypeId: "api_node" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain("Swapped");
+    expect(result.message).toContain("llm_node.1");
+    expect(result.message).toContain("api_node");
+
+    const data = result.data as import("../../../src/lib/commands/types.js").SwapNodeResultData;
+    expect(data.oldNodeId).toBe("llm_node.1");
+    expect(data.newType).toBe("api_node");
+    expect(dispatch.batchUpdate).toHaveBeenCalled();
+  });
+
+  it("uses dispatch.swapNode when available", () => {
+    const dispatch = createMockDispatch();
+    dispatch.swapNode = vi.fn();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      data: {
+        label: "LLM Node",
+        config: { model: "gpt-4", temperature: 0.7 },
+        metadata: llmMetadata,
+        nodeId: "agentspec.llm_node.1",
+      },
+    });
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.1", newTypeId: "api_node" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(dispatch.swapNode).toHaveBeenCalled();
+    expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+  });
+
+  it("reports dropped edges when ports are incompatible", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      data: {
+        label: "LLM Node",
+        config: { model: "gpt-4", temperature: 0.7 },
+        metadata: llmMetadata,
+        nodeId: "agentspec.llm_node.1",
+      },
+    });
+    const otherNode = createMockNode("agentspec.api_node.1", apiMetadata);
+    // Edge into llm_node.1's prompt port (string→string) — calculator only has number inputs
+    const edge: WorkflowEdge = {
+      id: "edge-1",
+      source: "agentspec.api_node.1",
+      target: "agentspec.llm_node.1",
+      sourceHandle: "agentspec.api_node.1-output-response",
+      targetHandle: "agentspec.llm_node.1-input-prompt",
+    } as WorkflowEdge;
+    const workflow = createMockWorkflow([node, otherNode], [edge]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.1", newTypeId: "calculator" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as import("../../../src/lib/commands/types.js").SwapNodeResultData;
+    expect(data.droppedEdges).toBeGreaterThan(0);
+    expect(data.hasDataLoss).toBe(true);
+    expect(result.message).toContain("dropped");
+  });
+
+  it("reports config carried over and reset", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      data: {
+        label: "LLM Node",
+        config: { model: "gpt-4", temperature: 0.7 },
+        metadata: llmMetadata,
+        nodeId: "agentspec.llm_node.1",
+      },
+    });
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.1", newTypeId: "api_node" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as import("../../../src/lib/commands/types.js").SwapNodeResultData;
+    // "model" exists in both llm_node and api_node — should be carried over
+    expect(data.configCarriedOver).toContain("model");
+    // "url" is only in api_node — should be reset
+    expect(data.configReset).toContain("url");
+  });
+
+  it("returns NODE_NOT_FOUND for missing node", () => {
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow();
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.99", newTypeId: "api_node" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_NOT_FOUND");
+  });
+
+  it("returns NODE_TYPE_NOT_FOUND for unknown new type", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata);
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.1", newTypeId: "nonexistent_type" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NODE_TYPE_NOT_FOUND");
+  });
+
+  it("returns NO_WORKFLOW when no workflow loaded", () => {
+    const context = createMockContext(null, nodeTypes);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.1", newTypeId: "api_node" },
+      context,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("NO_WORKFLOW");
+  });
+
+  it("swaps node with no edges (isolated node)", () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode("agentspec.llm_node.1", llmMetadata, {
+      data: {
+        label: "LLM Node",
+        config: { model: "gpt-4", temperature: 0.7 },
+        metadata: llmMetadata,
+        nodeId: "agentspec.llm_node.1",
+      },
+    });
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: "swap_node", nodeId: "llm_node.1", newTypeId: "api_node" },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as import("../../../src/lib/commands/types.js").SwapNodeResultData;
+    expect(data.keptEdges).toBe(0);
+    expect(data.droppedEdges).toBe(0);
+    expect(data.hasDataLoss).toBe(false);
+  });
+});
