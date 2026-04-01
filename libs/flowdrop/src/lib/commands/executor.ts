@@ -14,6 +14,10 @@ import type {
   AddNodeResultData,
   GetConfigResultData,
   InfoResultData,
+  ListNodesResultData,
+  ListEdgesResultData,
+  ListTypesResultData,
+  HelpResultData,
 } from "./types.js";
 import type { WorkflowNode, WorkflowEdge } from "../types/index.js";
 import { generateNodeId } from "../utils/nodeIds.js";
@@ -593,6 +597,126 @@ function executeDisconnectNode(
 }
 
 // ============================================================================
+// List & Help Operations
+// ============================================================================
+
+function executeListNodes(context: CommandContext): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const nodes = workflow.nodes.map((n) => ({
+    nodeId: toShortId(n.id),
+    label: n.data.label ?? n.data.metadata?.name ?? "",
+    type: n.data.metadata?.id ? toShortTypeId(n.data.metadata.id) : "",
+  }));
+
+  const resultData: ListNodesResultData = { nodes };
+
+  return {
+    ok: true,
+    message: nodes.length === 0
+      ? "No nodes in workflow"
+      : `${nodes.length} node(s): ${nodes.map((n) => n.nodeId).join(", ")}`,
+    data: resultData,
+  };
+}
+
+function executeListEdges(context: CommandContext): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) {
+    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+  }
+
+  const edges = workflow.edges.map((e) => ({
+    edgeId: e.id,
+    sourceNodeId: toShortId(e.source),
+    sourcePort: extractPortId(e.sourceHandle) ?? "",
+    targetNodeId: toShortId(e.target),
+    targetPort: extractPortId(e.targetHandle) ?? "",
+  }));
+
+  const resultData: ListEdgesResultData = { edges };
+
+  return {
+    ok: true,
+    message: edges.length === 0
+      ? "No edges in workflow"
+      : `${edges.length} edge(s)`,
+    data: resultData,
+  };
+}
+
+function executeListTypes(context: CommandContext): CommandResult {
+  const types = context.nodeTypes.map((m) => ({
+    typeId: toShortTypeId(m.id),
+    name: m.name,
+    category: m.category,
+  }));
+
+  const resultData: ListTypesResultData = { types };
+
+  return {
+    ok: true,
+    message: `${types.length} type(s) available`,
+    data: resultData,
+  };
+}
+
+/** All command help entries */
+const COMMAND_HELP: Array<{ name: string; syntax: string; description: string }> = [
+  { name: "add", syntax: "add <type> [at <x>,<y>]", description: "Add a new node of the specified type" },
+  { name: "delete", syntax: "delete <nodeId>", description: "Delete a node and its connections" },
+  { name: "rename", syntax: "rename <nodeId> <label>", description: "Rename a node's display label" },
+  { name: "set", syntax: "set <nodeId>:<key> <value>", description: "Set a config value on a node" },
+  { name: "get", syntax: "get <nodeId>:<key>", description: "Get a config value from a node" },
+  { name: "connect", syntax: "connect <nid>:<port> to <nid>:<port>", description: "Connect two node ports" },
+  { name: "disconnect", syntax: "disconnect <nid>:<port> from <nid>:<port>", description: "Disconnect two node ports" },
+  { name: "disconnect", syntax: "disconnect <nodeId>", description: "Disconnect all edges from a node" },
+  { name: "list", syntax: "list nodes|edges|types", description: "List workflow nodes, edges, or available types" },
+  { name: "info", syntax: "info <nodeId>", description: "Show detailed info about a node" },
+  { name: "config", syntax: "config <nodeId>", description: "Open the config panel for a node" },
+  { name: "select", syntax: "select <nodeId>", description: "Select a node on the canvas" },
+  { name: "swap", syntax: "swap <nodeId> with <type>", description: "Replace a node's type, preserving connections" },
+  { name: "move", syntax: "move <nodeId> to <x>,<y>", description: "Move a node to a position" },
+  { name: "layout", syntax: "layout auto [--direction horizontal|vertical]", description: "Auto-arrange all nodes" },
+  { name: "undo", syntax: "undo", description: "Undo the last action" },
+  { name: "redo", syntax: "redo", description: "Redo the last undone action" },
+  { name: "help", syntax: "help [<command>]", description: "Show help for all or a specific command" },
+  { name: "clear", syntax: "clear", description: "Remove all nodes and edges" },
+];
+
+function executeHelp(
+  command: Extract<Command, { type: "help" }>,
+): CommandResult {
+  let commands: HelpResultData["commands"];
+
+  if (command.command) {
+    commands = COMMAND_HELP.filter((h) => h.name === command.command);
+    if (commands.length === 0) {
+      commands = COMMAND_HELP; // Unknown command name — show all
+    }
+  } else {
+    commands = COMMAND_HELP;
+  }
+
+  const resultData: HelpResultData = { commands };
+
+  const message = commands
+    .map((c) => `  ${c.syntax} — ${c.description}`)
+    .join("\n");
+
+  return {
+    ok: true,
+    message: command.command
+      ? `Help for '${command.command}':\n${message}`
+      : `Available commands:\n${message}`,
+    data: resultData,
+  };
+}
+
+// ============================================================================
 // Public API
 // ============================================================================
 
@@ -622,6 +746,14 @@ export function executeCommand(
       return executeDisconnectPorts(command, context);
     case "disconnect_node":
       return executeDisconnectNode(command, context);
+    case "list_nodes":
+      return executeListNodes(context);
+    case "list_edges":
+      return executeListEdges(context);
+    case "list_types":
+      return executeListTypes(context);
+    case "help":
+      return executeHelp(command);
     default:
       return {
         ok: false,
