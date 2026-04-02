@@ -1184,9 +1184,34 @@
       {/if}
     {/snippet}
 
-    <!-- Bottom Panel: Command Console -->
+    <!-- Bottom Panel: Tabbed Console / AI Chat -->
     {#snippet bottomPanel()}
-      <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
+      <div class="bottom-panel-tabs">
+        <div class="bottom-panel-tabs__bar">
+          <button
+            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'console' ? 'bottom-panel-tabs__tab--active' : ''}"
+            onclick={() => updateSettings({ ui: { bottomPanelTab: 'console' } })}
+          >
+            Console
+          </button>
+          <button
+            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'chat' ? 'bottom-panel-tabs__tab--active' : ''}"
+            onclick={() => updateSettings({ ui: { bottomPanelTab: 'chat' } })}
+          >
+            AI Chat
+          </button>
+        </div>
+        <div class="bottom-panel-tabs__content">
+          <div class="bottom-panel-tabs__panel" style:display={getUiSettings().bottomPanelTab === 'console' ? 'contents' : 'none'}>
+            <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
+          </div>
+          <div class="bottom-panel-tabs__panel" style:display={getUiSettings().bottomPanelTab === 'chat' ? 'flex' : 'none'}>
+            <div class="bottom-panel-tabs__placeholder">
+              AI Chat panel coming soon
+            </div>
+          </div>
+        </div>
+      </div>
     {/snippet}
 
     <!-- Main Content: Workflow Editor with Error Status -->
@@ -1443,5 +1468,66 @@
     height: 100%;
     overflow: hidden;
     background: var(--fd-layout-background);
+  }
+
+  /* Bottom panel tab system */
+  .bottom-panel-tabs {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .bottom-panel-tabs__bar {
+    display: flex;
+    gap: 0;
+    background: var(--fd-muted);
+    border-bottom: 1px solid var(--fd-border);
+    flex-shrink: 0;
+  }
+
+  .bottom-panel-tabs__tab {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    transition: all var(--fd-transition-fast);
+  }
+
+  .bottom-panel-tabs__tab:hover {
+    color: var(--fd-foreground);
+    background: var(--fd-background);
+  }
+
+  .bottom-panel-tabs__tab--active {
+    color: var(--fd-foreground);
+    border-bottom-color: var(--fd-primary);
+    background: var(--fd-background);
+  }
+
+  .bottom-panel-tabs__content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bottom-panel-tabs__panel {
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+  }
+
+  .bottom-panel-tabs__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--fd-muted-foreground);
+    font-size: 0.875rem;
   }
 </style>
