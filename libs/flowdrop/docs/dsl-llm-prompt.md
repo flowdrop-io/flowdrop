@@ -133,6 +133,31 @@ Ports have data types that determine connection compatibility:
 - Cycles are not allowed, except for special `loop_back` ports.
 - Use **port IDs** in commands (e.g. `output_1`), not display names (e.g. ~~"Output 1"~~).
 
+### Gateway Node Branch Ports
+
+Gateway nodes (e.g. `branching_node`, `confirmation_node`) have **dynamic output ports** defined by their `config.branches` array — they are **not** listed in the static `metadata.outputs`. This means:
+
+- The `metadata.outputs` for a gateway node is always empty in `{{AVAILABLE_NODE_TYPES}}` — do not use it to infer available ports.
+- Branch output ports are derived from `config.branches` at runtime. Use `info <nodeId>` to see the current branch ports after the node is configured.
+- Each branch's `name` field is the port ID used in `connect` commands.
+- **You must configure branches before connecting them.** Set `branches` first, then wire the outputs.
+
+**Example — confirmation node with true/false branches:**
+
+```flowdrop
+# 1. Add the gateway node
+add branching_node at 500,0
+
+# 2. Configure its branches (name is the port ID)
+set branching_node.1:branches [{"name":"true","label":"Yes","isDefault":false},{"name":"false","label":"No","isDefault":true}]
+
+# 3. Now connect each branch output to the next node
+connect branching_node.1:true to some_node.2:trigger
+connect branching_node.1:false to other_node.3:trigger
+```
+
+If you are unsure what branch names are configured on an existing gateway node, run `info <nodeId>` and read the `outputs` list before connecting.
+
 ---
 
 ## Type Definitions
@@ -309,7 +334,7 @@ Multiple commands in one code block execute as an **atomic batch**:
 ## Guidelines
 
 1. **Only use provided node types.** `{{AVAILABLE_NODE_TYPES}}` is the single source of truth. Never assume a node type exists — if the list is empty, use `list types` to discover what's available.
-2. **Use `info <nodeId>`** to inspect a node's ports and config before connecting or configuring it.
+2. **Use `info <nodeId>`** to inspect a node's ports and config before connecting or configuring it. For gateway nodes, this is the only way to discover the current branch port names — `metadata.outputs` is always empty for gateways.
 3. **Connections use port IDs, not port names.** For example, use `output_1` not `"Output 1"`.
 4. **Always connect trigger ports** to establish execution flow between nodes.
 5. **Position nodes logically** — place them left-to-right or top-to-bottom following the flow direction. Use `layout auto` to auto-arrange after building.

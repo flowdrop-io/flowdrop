@@ -135,6 +135,31 @@ Values are auto-parsed in this priority order:
 - General cycles are **not allowed**, except for special `loop_back` ports.
 - Use **port IDs** in commands (e.g. `llm_output`), not display names (e.g. ~~"LLM Output"~~).
 
+### Gateway Node Branch Ports
+
+Gateway nodes (e.g. `branching_node`, `confirmation_node`) have **dynamic output ports** defined by their `config.branches` array — they are **not** listed in the static `metadata.outputs`. This means:
+
+- The `metadata.outputs` for a gateway node is always empty in `{{AVAILABLE_NODE_TYPES}}` — do not use it to infer available ports.
+- Branch output ports are derived from `config.branches` at runtime. Use `info <nodeId>` to see the current branch ports after the node is configured.
+- Each branch's `name` field is the port ID used in `connect` commands.
+- **You must configure branches before connecting them.** Set `branches` first, then wire the outputs.
+
+**Example — confirmation node with true/false branches:**
+
+```flowdrop
+# 1. Add the gateway node
+add branching_node at 500,0
+
+# 2. Configure its branches (name is the port ID)
+set branching_node.1:branches [{"name":"true","label":"Yes","isDefault":false},{"name":"false","label":"No","isDefault":true}]
+
+# 3. Now connect each branch output to the next node
+connect branching_node.1:true to some_node.2:trigger
+connect branching_node.1:false to other_node.3:trigger
+```
+
+If you are unsure what branch names are configured on an existing gateway node, run `info <nodeId>` and read the `outputs` list before connecting.
+
 ---
 
 ## Type Definitions
@@ -304,7 +329,7 @@ type CommandErrorCode =
 
 ## Guidelines
 
-1. **Inspect before modifying.** If `{{WORKFLOW_STATE}}` has existing nodes, reference their actual IDs. Don't guess — use `info <nodeId>` or `list nodes` if you need to discover ports or config.
+1. **Inspect before modifying.** If `{{WORKFLOW_STATE}}` has existing nodes, reference their actual IDs. Don't guess — use `info <nodeId>` or `list nodes` if you need to discover ports or config. For gateway nodes, always run `info` to see the current branch ports before connecting.
 
 2. **Always wire trigger ports.** Trigger connections define execution order. Every node in the main flow path should have trigger-to-trigger connections forming a chain from start to end.
 

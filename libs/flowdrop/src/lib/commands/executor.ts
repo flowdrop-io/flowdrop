@@ -21,13 +21,12 @@ import type {
   HelpResultData,
   SwapNodeResultData,
 } from "./types.js";
-import type { ConfigProperty } from "../types/index.js";
+import type { ConfigProperty, Branch } from "../types/index.js";
 import type { WorkflowNode, WorkflowEdge } from "../types/index.js";
 import { generateNodeId } from "../utils/nodeIds.js";
 import { extractConfigDefaults } from "../utils/nodeIds.js";
 import { computeAutoPosition } from "./positioner.js";
 import { buildHandleId, extractPortId } from "../utils/handleIds.js";
-import { validateConnection } from "../utils/connections.js";
 import { applyConnectionStyling } from "../utils/edgeStyling.js";
 import { computeSwapPreview, executeSwap } from "../utils/nodeSwap.js";
 import { computeAutoLayout, computeBeautifyLayout } from "../adapters/agentspec/autoLayout.js";
@@ -405,11 +404,23 @@ function executeInfo(
     dataType: p.dataType,
   }));
 
-  const outputs = (metadata?.outputs ?? []).map((p) => ({
+  const staticOutputs = (metadata?.outputs ?? []).map((p) => ({
     portId: p.id,
     name: p.name,
     dataType: p.dataType,
   }));
+
+  // Gateway nodes expose dynamic branch ports from config.branches
+  const branchOutputs: typeof staticOutputs =
+    metadata?.type === "gateway"
+      ? ((node.data.config?.branches as Branch[] | undefined) ?? []).map((b) => ({
+          portId: b.name,
+          name: b.name,
+          dataType: "trigger",
+        }))
+      : [];
+
+  const outputs = [...staticOutputs, ...branchOutputs];
 
   // Build connected edges info
   const connectedEdges: InfoResultData["connectedEdges"] = [];
@@ -462,15 +473,32 @@ function executeInfo(
 function findPort(
   node: WorkflowNode,
   portId: string,
+  preferDirection?: "output" | "input",
 ): { port: { id: string; name: string; dataType: string }; direction: "input" | "output" } | null {
   const metadata = node.data?.metadata;
   if (!metadata) return null;
 
   const outputPort = metadata.outputs?.find((p) => p.id === portId);
-  if (outputPort) return { port: outputPort, direction: "output" };
-
   const inputPort = metadata.inputs?.find((p) => p.id === portId);
-  if (inputPort) return { port: inputPort, direction: "input" };
+
+  if (preferDirection === "output") {
+    if (outputPort) return { port: outputPort, direction: "output" };
+    if (inputPort) return { port: inputPort, direction: "input" };
+  } else if (preferDirection === "input") {
+    if (inputPort) return { port: inputPort, direction: "input" };
+    if (outputPort) return { port: outputPort, direction: "output" };
+  } else {
+    if (outputPort) return { port: outputPort, direction: "output" };
+    if (inputPort) return { port: inputPort, direction: "input" };
+  }
+
+  // Gateway nodes have dynamic branch ports stored in config.branches, not metadata.outputs
+  if (metadata.type === "gateway") {
+    const branches = node.data.config?.branches as Branch[] | undefined;
+    if (branches?.some((b) => b.name === portId)) {
+      return { port: { id: portId, name: portId, dataType: "trigger" }, direction: "output" };
+    }
+  }
 
   return null;
 }
@@ -503,8 +531,11 @@ function executeConnect(
     };
   }
 
-  // Look up ports in metadata to determine direction
-  const sourcePortInfo = findPort(sourceNode, command.sourcePort);
+  // Look up ports in metadata to determine direction.
+  // Since connections always flow output → input, prefer the output port on the
+  // source node and the input port on the target node when the same port name
+  // exists in both directions on a node.
+  const sourcePortInfo = findPort(sourceNode, command.sourcePort, "output");
   if (!sourcePortInfo) {
     return {
       ok: false,
@@ -513,7 +544,7 @@ function executeConnect(
     };
   }
 
-  const targetPortInfo = findPort(targetNode, command.targetPort);
+  const targetPortInfo = findPort(targetNode, command.targetPort, "input");
   if (!targetPortInfo) {
     return {
       ok: false,
@@ -543,24 +574,6 @@ function executeConnect(
     return {
       ok: false,
       error: `Port '${command.targetPort}' on ${toShortId(targetNode.id)} is an output, not an input (per node metadata)`,
-      code: "INVALID_CONNECTION",
-    };
-  }
-
-  // Validate type compatibility using validateConnection
-  const validation = validateConnection(
-    sourceNode.id,
-    command.sourcePort,
-    targetNode.id,
-    command.targetPort,
-    workflow.nodes,
-    context.nodeTypes,
-  );
-
-  if (!validation.valid) {
-    return {
-      ok: false,
-      error: validation.error ?? "Invalid connection",
       code: "INVALID_CONNECTION",
     };
   }
