@@ -42,7 +42,7 @@
 
   const COMMAND_VERBS = [
     "add", "delete", "rename", "set", "get", "info", "config", "select",
-    "connect", "disconnect", "list", "undo", "redo", "help", "clear",
+    "connect", "disconnect", "list", "undo", "redo", "help", "clear", "cls",
     "swap", "move", "layout", "canvas",
   ];
 
@@ -168,14 +168,32 @@
       ...(filter === "output" || filter === "all" ? metadata.outputs : []),
     ];
 
-    return ports
+    const staticSuggestions = ports
       .filter((p) => p.id.toLowerCase().startsWith(lowerPartial))
       .map((p) => ({
         value: p.id,
         label: p.id,
         detail: `${p.name} (${p.dataType})`,
-      }))
-      .slice(0, 50);
+      }));
+
+    // Gateway nodes (e.g. if_else) have dynamic branch outputs stored in config, not metadata
+    const branchSuggestions: Suggestion[] = [];
+    if ((filter === "output" || filter === "all") && metadata.type === "gateway") {
+      const branches = node.data.config?.branches as Array<{ name: string; label?: string }> | undefined;
+      if (branches) {
+        for (const branch of branches) {
+          if (branch.name.toLowerCase().startsWith(lowerPartial)) {
+            branchSuggestions.push({
+              value: branch.name,
+              label: branch.name,
+              detail: branch.label ? `branch: ${branch.label}` : "branch",
+            });
+          }
+        }
+      }
+    }
+
+    return [...staticSuggestions, ...branchSuggestions].slice(0, 50);
   }
 
   /**
