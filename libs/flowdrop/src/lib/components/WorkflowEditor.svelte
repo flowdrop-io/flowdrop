@@ -28,6 +28,7 @@
     WorkflowEdge,
   } from "../types/index.js";
   import CanvasBanner from "./CanvasBanner.svelte";
+  import CanvasController from "./CanvasController.svelte";
   import FlowDropZone from "./FlowDropZone.svelte";
   import EdgeRefresher from "./EdgeRefresher.svelte";
   import { tick, untrack } from "svelte";
@@ -65,6 +66,7 @@
   import { logger } from "../utils/logger.js";
   import { validateWorkflowData } from "../utils/validation.js";
   import { createEditorStateMachine } from "../stores/editorStateMachine.svelte.js";
+  import Icon from "@iconify/svelte";
 
   interface Props {
     nodes?: NodeMetadata[];
@@ -84,6 +86,9 @@
     >;
     // Pipeline ID for fetching node execution info from jobs
     pipelineId?: string;
+    // Console toggle
+    consoleOpen?: boolean;
+    onToggleConsole?: () => void;
   }
 
   let props: Props = $props();
@@ -690,6 +695,9 @@
    */
   let nodeIdToRefresh = $state<string | null>(null);
 
+  // Canvas viewport controller ref (rendered inside SvelteFlowProvider)
+  let canvasControllerRef: CanvasController | undefined = $state();
+
   /**
    * Update a node's data in the local editor state.
    * Called by App.svelte AFTER it has already updated the global store via
@@ -733,6 +741,32 @@
 
     // Trigger the EdgeRefresher component to call updateNodeInternals
     nodeIdToRefresh = nodeId;
+  }
+
+  // Canvas viewport methods (forwarded to CanvasController inside SvelteFlowProvider)
+
+  export function canvasFitView(): void {
+    canvasControllerRef?.canvasFitView();
+  }
+
+  export function canvasZoomIn(): void {
+    canvasControllerRef?.canvasZoomIn();
+  }
+
+  export function canvasZoomOut(): void {
+    canvasControllerRef?.canvasZoomOut();
+  }
+
+  export function canvasZoomTo(level: number): void {
+    canvasControllerRef?.canvasZoomTo(level);
+  }
+
+  export function canvasPanTo(x: number, y: number): void {
+    canvasControllerRef?.canvasPanTo(x, y);
+  }
+
+  export function canvasResetView(): void {
+    canvasControllerRef?.canvasResetView();
   }
 
   /**
@@ -787,6 +821,9 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <SvelteFlowProvider>
+  <!-- Canvas viewport controller - provides fitView, zoom, pan methods -->
+  <CanvasController bind:this={canvasControllerRef} />
+
   <!-- EdgeRefresher component - handles updateNodeInternals calls -->
   <EdgeRefresher
     {nodeIdToRefresh}
@@ -840,6 +877,18 @@
               fitView={getEditorSettings().fitViewOnLoad}
             >
               <Controls />
+              {#if !props.readOnly && !props.lockWorkflow && props.onToggleConsole}
+                <button
+                  class="flowdrop-console-toggle"
+                  class:flowdrop-console-toggle--active={props.consoleOpen}
+                  onclick={props.onToggleConsole}
+                  aria-label="Command Console (`)"
+                  title="Command Console (`)"
+                  type="button"
+                >
+                  <Icon icon="heroicons:command-line" width="18" height="18" />
+                </button>
+              {/if}
               <!-- Always render Background for consistent bg color in dark/light mode -->
               <Background
                 gap={getEditorSettings().gridSize}
@@ -964,6 +1013,50 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .flowdrop-console-toggle {
+    position: absolute;
+    bottom: 140px;
+    left: 12px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background-color: var(--fd-background);
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    box-shadow: var(--fd-shadow-sm);
+    transition:
+      color var(--fd-transition-fast),
+      background-color var(--fd-transition-fast),
+      box-shadow var(--fd-transition-fast);
+  }
+
+  .flowdrop-console-toggle:hover {
+    color: var(--fd-foreground);
+    background-color: var(--fd-subtle);
+    box-shadow: var(--fd-shadow-md);
+  }
+
+  .flowdrop-console-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--fd-ring);
+  }
+
+  .flowdrop-console-toggle--active {
+    color: var(--fd-primary);
+    background-color: var(--fd-primary-muted);
+    border-color: var(--fd-primary);
+  }
+
+  .flowdrop-console-toggle--active:hover {
+    color: var(--fd-primary);
+    background-color: var(--fd-primary-muted);
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__node:hover) {

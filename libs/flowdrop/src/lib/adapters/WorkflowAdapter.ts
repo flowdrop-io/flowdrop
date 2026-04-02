@@ -16,35 +16,7 @@
 
 import type { Workflow, NodeMetadata, WorkflowFormat } from "../types/index.js";
 import { v4 as uuidv4 } from "uuid";
-
-/**
- * Generate a unique node ID based on node type and existing nodes
- * Format: <node_type>.<number>
- * Example: boolean_gateway.1, calculator.2
- */
-function generateStandardNodeId(
-  nodeTypeId: string,
-  existingNodes: StandardNode[],
-): string {
-  // Count how many nodes of this type already exist
-  const existingNodeIds = existingNodes
-    .filter((node) => node.data?.metadata?.id === nodeTypeId)
-    .map((node) => node.id);
-
-  // Extract the numbers from existing IDs with the same prefix
-  const existingNumbers = existingNodeIds
-    .map((id) => {
-      const match = id.match(new RegExp(`^${nodeTypeId}\\.(\\d+)$`));
-      return match ? parseInt(match[1], 10) : 0;
-    })
-    .filter((num) => num > 0);
-
-  // Find the next available number (highest + 1)
-  const nextNumber =
-    existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
-
-  return `${nodeTypeId}.${nextNumber}`;
-}
+import { generateNodeId } from "../utils/nodeIds.js";
 
 /**
  * Standard workflow node interface (SvelteFlow-agnostic)
@@ -154,7 +126,7 @@ export class WorkflowAdapter {
     }
 
     // Generate node ID based on node type and existing nodes
-    const nodeId = generateStandardNodeId(nodeType, workflow.nodes);
+    const nodeId = generateNodeId(nodeType, workflow.nodes);
 
     const node: StandardNode = {
       id: nodeId,

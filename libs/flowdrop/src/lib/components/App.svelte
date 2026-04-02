@@ -12,6 +12,8 @@
   import Icon from "@iconify/svelte";
   import ConfigForm from "$lib/components/ConfigForm.svelte";
   import ConfigPanel from "$lib/components/ConfigPanel.svelte";
+  import CommandConsole from "$lib/components/console/CommandConsole.svelte";
+  import type { UIAction } from "$lib/commands/index.js";
   import NodeSwapPicker from "$lib/components/NodeSwapPicker.svelte";
   import SwapMappingEditor from "$lib/components/SwapMappingEditor.svelte";
   import Navbar from "$lib/components/Navbar.svelte";
@@ -865,7 +867,75 @@
 
   // File input reference for workflow import
   let fileInputRef = $state<HTMLInputElement | null>(null);
+
+  /**
+   * Handle global keyboard shortcut for console toggle.
+   * Backtick (`) toggles the console open/closed unless user is typing in an input.
+   */
+  function handleGlobalKeydown(event: KeyboardEvent): void {
+    // Dead key on international keyboards — do not intercept
+    if (event.key === "Dead") return;
+
+    if (event.key !== "`") return;
+
+    // Don't intercept when user is typing in an input, textarea, or contenteditable
+    const target = event.target as HTMLElement;
+    const isInputElement =
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable;
+
+    if (isInputElement) return;
+
+    event.preventDefault();
+    toggleConsole();
+  }
+
+  function handleConsoleUIAction(action: UIAction): void {
+    if (action.type === "open_config") {
+      const wf = getWorkflowStore();
+      if (!wf) return;
+      const node = wf.nodes.find((n) => n.id === action.nodeId);
+      if (node) openConfigSidebar(node);
+    } else if (action.type === "select_node") {
+      selectedNodeId = action.nodeId;
+    } else if (action.type === "canvas_fit_view") {
+      workflowEditorRef?.canvasFitView();
+    } else if (action.type === "canvas_zoom_in") {
+      workflowEditorRef?.canvasZoomIn();
+    } else if (action.type === "canvas_zoom_out") {
+      workflowEditorRef?.canvasZoomOut();
+    } else if (action.type === "canvas_zoom_to") {
+      workflowEditorRef?.canvasZoomTo(action.level);
+    } else if (action.type === "canvas_pan_to") {
+      workflowEditorRef?.canvasPanTo(action.position.x, action.position.y);
+    } else if (action.type === "canvas_reset_view") {
+      workflowEditorRef?.canvasResetView();
+    }
+  }
+
+  function toggleConsole(): void {
+    const currentOpen = getUiSettings().consoleOpen;
+    updateSettings({ ui: { consoleOpen: !currentOpen } });
+
+    // Focus management after DOM update
+    tick().then(() => {
+      if (currentOpen) {
+        // Console was open, now closing — focus the canvas
+        const canvas = document.querySelector<HTMLElement>(".flowdrop-editor-main");
+        canvas?.focus();
+      } else {
+        // Console was closed, now opening — focus first focusable element inside console
+        const consoleEl = document.querySelector<HTMLElement>(".command-console");
+        const focusTarget =
+          consoleEl?.querySelector<HTMLElement>("input, button, [tabindex]");
+        focusTarget?.focus();
+      }
+    });
+  }
 </script>
+
+<svelte:window onkeydown={handleGlobalKeydown} />
 
 <svelte:head>
   <title>FlowDrop - Visual Workflow Manager</title>
@@ -890,7 +960,8 @@
     showHeader={showNavbar}
     showLeftSidebar={!disableSidebar}
     showRightSidebar={showRightPanel}
-    showBottomPanel={false}
+    showBottomPanel={getUiSettings().consoleOpen && !readOnly && !lockWorkflow}
+    bottomPanelHeight={getUiSettings().consoleHeight}
     showFooter={false}
     headerHeight={60}
     {leftSidebarWidth}
@@ -1113,6 +1184,11 @@
       {/if}
     {/snippet}
 
+    <!-- Bottom Panel: Command Console -->
+    {#snippet bottomPanel()}
+      <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
+    {/snippet}
+
     <!-- Main Content: Workflow Editor with Error Status -->
     <!-- Status Display: aria-live announces API errors dynamically without requiring focus -->
     {#if error}
@@ -1213,6 +1289,8 @@
         {readOnly}
         {nodeStatuses}
         {pipelineId}
+        consoleOpen={getUiSettings().consoleOpen}
+        onToggleConsole={toggleConsole}
       />
     </div>
   </MainLayout>

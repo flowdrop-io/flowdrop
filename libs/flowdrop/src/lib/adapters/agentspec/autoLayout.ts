@@ -10,53 +10,69 @@
  * 4. Fan out branches vertically from BranchingNode
  */
 
-import type {
-  AgentSpecFlow,
-  AgentSpecControlFlowEdge,
-} from "../../types/agentspec.js";
+import type { AgentSpecFlow } from "../../types/agentspec.js";
+
+/** Measured dimensions for a node */
+export interface NodeDimensions {
+  width: number;
+  height: number;
+}
 
 /** Layout configuration */
 export interface AutoLayoutConfig {
-  /** Horizontal spacing between layers (px) */
-  horizontalSpacing: number;
-  /** Vertical spacing between nodes in the same layer (px) */
-  verticalSpacing: number;
+  /** Minimum horizontal gap between the right edge of one layer and the left edge of the next (px) */
+  horizontalGap: number;
+  /** Minimum vertical gap between the bottom edge of one node and the top edge of the next in the same layer (px) */
+  verticalGap: number;
   /** Starting X position */
   startX: number;
   /** Starting Y position */
   startY: number;
+  /** Fallback node width when measured dimensions are unavailable */
+  defaultNodeWidth: number;
+  /** Fallback node height when measured dimensions are unavailable */
+  defaultNodeHeight: number;
 }
 
 const DEFAULT_CONFIG: AutoLayoutConfig = {
-  horizontalSpacing: 300,
-  verticalSpacing: 150,
+  horizontalGap: 120,
+  verticalGap: 40,
   startX: 100,
   startY: 100,
+  defaultNodeWidth: 220,
+  defaultNodeHeight: 150,
 };
 
 /**
  * Compute node positions for an Agent Spec flow using layered layout.
+ * Takes actual node dimensions into account to prevent overlap.
  *
  * @param flow - The Agent Spec flow to layout
  * @param config - Optional layout configuration
+ * @param nodeDimensions - Optional map of node name to measured {width, height}
  * @returns Map of node name to {x, y} position
  */
 export function computeAutoLayout(
   flow: AgentSpecFlow,
   config: Partial<AutoLayoutConfig> = {},
+  nodeDimensions?: Map<string, NodeDimensions>,
 ): Map<string, { x: number; y: number }> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const positions = new Map<string, { x: number; y: number }>();
 
   if (flow.nodes.length === 0) return positions;
 
+  const getDims = (name: string): NodeDimensions =>
+    nodeDimensions?.get(name) ?? {
+      width: cfg.defaultNodeWidth,
+      height: cfg.defaultNodeHeight,
+    };
+
   // Build adjacency list from control-flow edges
   const adjacency = new Map<string, string[]>();
-  const inDegree = new Map<string, number>();
 
   for (const node of flow.nodes) {
     adjacency.set(node.name, []);
-    inDegree.set(node.name, 0);
   }
 
   for (const edge of flow.control_flow_connections) {
@@ -64,7 +80,6 @@ export function computeAutoLayout(
     if (neighbors) {
       neighbors.push(edge.to_node);
     }
-    inDegree.set(edge.to_node, (inDegree.get(edge.to_node) || 0) + 1);
   }
 
   // Also consider data-flow edges for connectivity (but don't affect layering priority)
@@ -107,24 +122,172 @@ export function computeAutoLayout(
   // Sort layers and assign positions
   const sortedLayers = Array.from(layerGroups.keys()).sort((a, b) => a - b);
 
+  // Compute X positions layer by layer, using the widest node in each layer
+  const layerXPositions = new Map<number, number>();
+  let currentX = cfg.startX;
+
+  for (const layerIndex of sortedLayers) {
+    layerXPositions.set(layerIndex, currentX);
+
+    // Advance X by the widest node in this layer + horizontal gap
+    const nodesInLayer = layerGroups.get(layerIndex)!;
+    const maxWidth = Math.max(
+      ...nodesInLayer.map((name) => getDims(name).width),
+    );
+    currentX += maxWidth + cfg.horizontalGap;
+  }
+
+  // Compute Y positions within each layer, using actual node heights
   for (const layerIndex of sortedLayers) {
     const nodesInLayer = layerGroups.get(layerIndex)!;
-    const x = cfg.startX + layerIndex * cfg.horizontalSpacing;
+    const x = layerXPositions.get(layerIndex)!;
 
-    // Center nodes vertically
-    const totalHeight = (nodesInLayer.length - 1) * cfg.verticalSpacing;
-    const startY = cfg.startY - totalHeight / 2;
+    // Calculate total height of this column (sum of node heights + gaps)
+    const heights = nodesInLayer.map((name) => getDims(name).height);
+    const totalHeight =
+      heights.reduce((sum, h) => sum + h, 0) +
+      (nodesInLayer.length - 1) * cfg.verticalGap;
+
+    // Center the column vertically around startY
+    let y = cfg.startY - totalHeight / 2;
 
     for (let i = 0; i < nodesInLayer.length; i++) {
-      positions.set(nodesInLayer[i], {
-        x,
-        y: startY + i * cfg.verticalSpacing,
-      });
+      positions.set(nodesInLayer[i], { x, y });
+      y += heights[i] + cfg.verticalGap;
     }
   }
 
   return positions;
 }
+
+// ============================================================================
+// Beautify Layout
+// ============================================================================
+
+/** Input position for beautify: existing node placement */
+export interface NodePosition {
+  x: number;
+  y: number;
+}
+
+/** Beautify configuration */
+export interface BeautifyLayoutConfig {
+  /** Minimum horizontal gap between the right edge of one column and the left edge of the next (px) */
+  horizontalGap: number;
+  /** Minimum vertical gap between the bottom edge of one node and the top edge of the next in the same column (px) */
+  verticalGap: number;
+  /** Fallback node width when measured dimensions are unavailable */
+  defaultNodeWidth: number;
+  /** Fallback node height when measured dimensions are unavailable */
+  defaultNodeHeight: number;
+}
+
+const DEFAULT_BEAUTIFY_CONFIG: BeautifyLayoutConfig = {
+  horizontalGap: 120,
+  verticalGap: 40,
+  defaultNodeWidth: 220,
+  defaultNodeHeight: 150,
+};
+
+/**
+ * Beautify existing node positions: preserve relative column/row ordering
+ * but apply uniform spacing based on actual node dimensions.
+ *
+ * Algorithm:
+ * 1. Cluster nodes into columns by X proximity (gap threshold = median width)
+ * 2. Sort columns left-to-right by their median X
+ * 3. Within each column, sort nodes top-to-bottom by their original Y
+ * 4. Re-position with uniform horizontal and vertical gaps
+ *
+ * @param positions - Current node positions (keyed by node id)
+ * @param config - Optional spacing configuration
+ * @param nodeDimensions - Optional map of node id to measured {width, height}
+ * @returns Map of node id to new {x, y} position
+ */
+export function computeBeautifyLayout(
+  positions: Map<string, NodePosition>,
+  config: Partial<BeautifyLayoutConfig> = {},
+  nodeDimensions?: Map<string, NodeDimensions>,
+): Map<string, { x: number; y: number }> {
+  const cfg = { ...DEFAULT_BEAUTIFY_CONFIG, ...config };
+  const result = new Map<string, { x: number; y: number }>();
+
+  if (positions.size === 0) return result;
+
+  const getDims = (id: string): NodeDimensions =>
+    nodeDimensions?.get(id) ?? {
+      width: cfg.defaultNodeWidth,
+      height: cfg.defaultNodeHeight,
+    };
+
+  // Collect all nodes sorted by X
+  const entries = Array.from(positions.entries()).map(([id, pos]) => ({
+    id,
+    x: pos.x,
+    y: pos.y,
+  }));
+  entries.sort((a, b) => a.x - b.x);
+
+  // Determine clustering threshold: half the median node width
+  const widths = entries.map((e) => getDims(e.id).width);
+  const sortedWidths = [...widths].sort((a, b) => a - b);
+  const medianWidth = sortedWidths[Math.floor(sortedWidths.length / 2)];
+  const clusterThreshold = medianWidth * 0.75;
+
+  // Cluster into columns by X proximity
+  const columns: Array<typeof entries> = [];
+  let currentColumn: typeof entries = [entries[0]];
+
+  for (let i = 1; i < entries.length; i++) {
+    const prevX = currentColumn[currentColumn.length - 1].x;
+    if (entries[i].x - prevX > clusterThreshold) {
+      columns.push(currentColumn);
+      currentColumn = [entries[i]];
+    } else {
+      currentColumn.push(entries[i]);
+    }
+  }
+  columns.push(currentColumn);
+
+  // Sort each column's nodes top-to-bottom by original Y
+  for (const col of columns) {
+    col.sort((a, b) => a.y - b.y);
+  }
+
+  // Compute the global vertical center from the original positions
+  const allYs = entries.map((e) => e.y);
+  const globalCenterY = (Math.min(...allYs) + Math.max(...allYs)) / 2;
+
+  // Assign new positions column by column
+  let currentX = entries[0].x; // Start from the leftmost original X
+
+  for (const col of columns) {
+    // Find the widest node in this column
+    const maxWidth = Math.max(...col.map((e) => getDims(e.id).width));
+
+    // Calculate total height of this column
+    const heights = col.map((e) => getDims(e.id).height);
+    const totalHeight =
+      heights.reduce((sum, h) => sum + h, 0) +
+      (col.length - 1) * cfg.verticalGap;
+
+    // Center column vertically around the global center
+    let y = globalCenterY - totalHeight / 2;
+
+    for (let i = 0; i < col.length; i++) {
+      result.set(col[i].id, { x: currentX, y });
+      y += heights[i] + cfg.verticalGap;
+    }
+
+    currentX += maxWidth + cfg.horizontalGap;
+  }
+
+  return result;
+}
+
+// ============================================================================
+// Layer Assignment (for auto-layout)
+// ============================================================================
 
 /**
  * Assign layers using longest path from the start node (modified BFS).
@@ -139,20 +302,16 @@ function assignLayers(
   const layers = new Map<string, number>();
   layers.set(startNode, 0);
 
-  // Use BFS but take the maximum layer for each node
-  // (longest path ensures proper branching layout)
+  // Longest-path BFS: re-queue neighbors whenever their layer increases.
+  // This ensures convergence nodes (reached via multiple branches) are
+  // placed at the depth of the longest path, not the shortest.
   const queue: string[] = [startNode];
-  const visited = new Set<string>();
   let iterations = 0;
   const maxIterations = nodeCount * nodeCount + 100; // Safety limit for cycles
 
   while (queue.length > 0 && iterations < maxIterations) {
     iterations++;
     const current = queue.shift()!;
-
-    if (visited.has(current)) continue;
-    visited.add(current);
-
     const currentLayer = layers.get(current) || 0;
     const neighbors = adjacency.get(current) || [];
 
@@ -160,12 +319,9 @@ function assignLayers(
       const existingLayer = layers.get(neighbor);
       const newLayer = currentLayer + 1;
 
-      // Take the max layer (longest path)
+      // Only update and re-queue when we find a longer path
       if (existingLayer === undefined || newLayer > existingLayer) {
         layers.set(neighbor, newLayer);
-      }
-
-      if (!visited.has(neighbor)) {
         queue.push(neighbor);
       }
     }
