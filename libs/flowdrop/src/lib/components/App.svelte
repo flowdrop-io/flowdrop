@@ -13,6 +13,7 @@
   import ConfigForm from "$lib/components/ConfigForm.svelte";
   import ConfigPanel from "$lib/components/ConfigPanel.svelte";
   import CommandConsole from "$lib/components/console/CommandConsole.svelte";
+  import AIChatPanel from "$lib/components/chat/AIChatPanel.svelte";
   import type { UIAction } from "$lib/commands/index.js";
   import NodeSwapPicker from "$lib/components/NodeSwapPicker.svelte";
   import SwapMappingEditor from "$lib/components/SwapMappingEditor.svelte";
@@ -1206,9 +1207,7 @@
             <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
           </div>
           <div class="bottom-panel-tabs__panel" style:display={getUiSettings().bottomPanelTab === 'chat' ? 'flex' : 'none'}>
-            <div class="bottom-panel-tabs__placeholder">
-              AI Chat panel coming soon
-            </div>
+            <AIChatPanel nodeTypes={nodes} workflowId={getWorkflowStore()?.id} onUIAction={handleConsoleUIAction} />
           </div>
         </div>
       </div>
