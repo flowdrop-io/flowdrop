@@ -78,6 +78,8 @@ export interface UISettings {
   consoleOpen: boolean;
   /** Height of the command console panel in pixels */
   consoleHeight: number;
+  /** Active tab in the bottom panel */
+  bottomPanelTab: "console" | "chat";
 }
 
 // =========================================================================
@@ -209,6 +211,7 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
   theme: "default",
   consoleOpen: false,
   consoleHeight: 300,
+  bottomPanelTab: "console",
 };
 
 /**
