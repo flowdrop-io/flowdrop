@@ -12,6 +12,7 @@ import { playgroundHandlers } from "./playground.js";
 import { interruptHandlers } from "./interrupts.js";
 import { autocompleteHandlers } from "./autocomplete.js";
 import { variableSuggestionsHandlers } from "./variableSuggestions.js";
+import { chatHandlers } from "./chat.js";
 
 /**
  * All MSW request handlers for the FlowDrop API
@@ -27,6 +28,7 @@ export const handlers = [
   ...interruptHandlers,
   ...autocompleteHandlers,
   ...variableSuggestionsHandlers,
+  ...chatHandlers,
 ];
 
 // Re-export individual handler groups for selective use
@@ -39,3 +41,4 @@ export { playgroundHandlers } from "./playground.js";
 export { interruptHandlers } from "./interrupts.js";
 export { autocompleteHandlers } from "./autocomplete.js";
 export { variableSuggestionsHandlers } from "./variableSuggestions.js";
+export { chatHandlers } from "./chat.js";
