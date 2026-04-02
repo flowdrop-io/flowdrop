@@ -68,6 +68,10 @@ tags:
     description: Workflow validation
   - name: Import/Export
     description: Workflow import and export operations
+  - name: Chat
+    description: |
+      LLM Chat Interface for natural language workflow building.
+      Translates user intent into DSL commands via a backend LLM integration.
   - name: Agent Spec
     description: |
       Oracle Open Agent Spec integration endpoints.
@@ -151,6 +155,10 @@ paths:
     $ref: "./paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages~1{messageId}~1status"
   /playground/sessions/{sessionId}/stop:
     $ref: "./paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1stop"
+
+  # Chat (LLM Integration)
+  /workflows/{id}/chat/messages:
+    $ref: "./paths/chat.yaml#/~1workflows~1{id}~1chat~1messages"
 
   # Interrupts
   /interrupts/{interruptId}:
@@ -305,6 +313,20 @@ components:
       $ref: "./components/schemas/playground.yaml#/PlaygroundMessageResponse"
     PlaygroundMessagesResponse:
       $ref: "./components/schemas/playground.yaml#/PlaygroundMessagesResponse"
+
+    # Chat Types
+    ChatMessageRole:
+      $ref: "./components/schemas/chat.yaml#/ChatMessageRole"
+    ChatHistoryMessage:
+      $ref: "./components/schemas/chat.yaml#/ChatHistoryMessage"
+    ChatRequest:
+      $ref: "./components/schemas/chat.yaml#/ChatRequest"
+    ChatResponse:
+      $ref: "./components/schemas/chat.yaml#/ChatResponse"
+    ChatMessagesResponse:
+      $ref: "./components/schemas/chat.yaml#/ChatMessagesResponse"
+    ChatHistoryResponse:
+      $ref: "./components/schemas/chat.yaml#/ChatHistoryResponse"
 
     # Interrupt Types
     InterruptType:

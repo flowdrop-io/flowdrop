@@ -65,6 +65,10 @@ tags:
     description: Workflow validation
   - name: Import/Export
     description: Workflow import and export operations
+  - name: Chat
+    description: |
+      LLM Chat Interface for natural language workflow building.
+      Translates user intent into DSL commands via a backend LLM integration.
   - name: Agent Spec
     description: |
       Oracle Open Agent Spec integration endpoints.
@@ -1706,6 +1710,118 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /workflows/{id}/chat/messages:
+    post:
+      operationId: sendChatMessage
+      summary: Send a chat message
+      description: |
+        Send a natural language message to the LLM chat backend for a specific workflow.
+        The request includes the current workflow state and optional conversation history
+        so the LLM can generate contextually relevant responses.
+
+        The LLM response may contain plain text explanations and/or DSL commands
+        in ```flowdrop fenced code blocks. The frontend extracts and previews
+        these commands before execution.
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              simpleMessage:
+                summary: Simple chat message
+                value:
+                  message: Add a processing node called "transform"
+                  workflowState:
+                    nodes: []
+                    edges: []
+              withHistory:
+                summary: Message with conversation history
+                value:
+                  message: Now connect it to the start node
+                  workflowState:
+                    nodes:
+                      - id: node-1
+                        type: start
+                      - id: node-2
+                        type: processing
+                    edges: []
+                  history:
+                    - role: user
+                      content: Add a processing node called "transform"
+                    - role: assistant
+                      content: Done! I've added a processing node named "transform".
+      responses:
+        '200':
+          description: Chat response with LLM-generated content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessagesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      operationId: getChatHistory
+      summary: Get chat conversation history
+      description: |
+        Retrieve the conversation history for a workflow's chat session.
+        Returns an array of messages with role (user/assistant) and content.
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversation history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatHistoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: clearChatHistory
+      summary: Clear chat conversation history
+      description: |
+        Clear the conversation history for a workflow's chat session.
+        This resets the chat context, starting a fresh conversation.
+      tags:
+        - Chat
+      parameters:
+        - name: id
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Conversation history cleared successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /interrupts/{interruptId}:
@@ -4048,6 +4164,93 @@ components:
             sessionStatus:
               $ref: '#/components/schemas/PlaygroundSessionStatus'
               description: Current session status (useful for polling)
+    ChatMessageRole:
+      type: string
+      description: Role of the message sender
+      enum:
+        - user
+        - assistant
+      example: user
+    ChatHistoryMessage:
+      type: object
+      description: A single message in the chat conversation history
+      required:
+        - role
+        - content
+      properties:
+        role:
+          $ref: '#/components/schemas/ChatMessageRole'
+        content:
+          type: string
+          description: The message text content
+          example: Add a new processing node called "transform"
+    ChatRequest:
+      type: object
+      description: Request payload for sending a chat message
+      required:
+        - message
+        - workflowState
+      properties:
+        message:
+          type: string
+          description: The user's natural language message
+          example: Add a node called "transform" and connect it to the start node
+        workflowState:
+          type: object
+          description: |
+            Serialized current workflow state including nodes and edges.
+            This gives the LLM context about the current workflow being edited.
+          additionalProperties: true
+        history:
+          type: array
+          description: Optional conversation history for multi-turn context
+          items:
+            $ref: '#/components/schemas/ChatHistoryMessage'
+    ChatResponse:
+      type: object
+      description: |
+        Response from the chat endpoint containing the LLM's reply.
+        The content may include markdown formatting and fenced code blocks
+        with DSL commands (```flowdrop blocks).
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: |
+            The LLM's response content. May contain markdown and
+            ```flowdrop fenced code blocks with DSL commands.
+          example: |
+            I'll add a processing node and connect it to your start node.
+
+            ```flowdrop
+            add transform processing
+            connect start:output transform:input
+            ```
+        conversationId:
+          type: string
+          description: Optional conversation ID for backend session tracking
+          example: conv-abc123
+    ChatMessagesResponse:
+      type: object
+      description: Wrapped response for chat message send
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/ChatResponse'
+    ChatHistoryResponse:
+      type: object
+      description: Wrapped response for chat history retrieval
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatHistoryMessage'
     InterruptType:
       type: string
       enum:
