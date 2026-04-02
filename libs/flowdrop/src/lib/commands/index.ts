@@ -70,6 +70,7 @@ export {
   toShortId,
   toShortTypeId,
   resolveNode,
+  COMMAND_HELP,
 } from "./executor.js";
 
 // Batch executor

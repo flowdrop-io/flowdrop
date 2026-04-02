@@ -747,7 +747,7 @@ function executeListTypes(context: CommandContext): CommandResult {
 }
 
 /** All command help entries */
-const COMMAND_HELP: Array<{ name: string; syntax: string; description: string }> = [
+export const COMMAND_HELP: Array<{ name: string; syntax: string; description: string }> = [
   { name: "add", syntax: "add <type> [at <x>,<y>]", description: "Add a new node of the specified type" },
   { name: "delete", syntax: "delete <nodeId>", description: "Delete a node and its connections" },
   { name: "rename", syntax: "rename <nodeId> <label>", description: "Rename a node's display label" },
