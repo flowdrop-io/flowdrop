@@ -142,6 +142,11 @@
     "./schema": {
       "default": "./dist/schemas/v1/workflow.schema.json"
     },
+    "./chat": {
+      "types": "./dist/chat/index.d.ts",
+      "svelte": "./dist/chat/index.js",
+      "default": "./dist/chat/index.js"
+    },
     "./schema/v1": {
       "default": "./dist/schemas/v1/workflow.schema.json"
     }
