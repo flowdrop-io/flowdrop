@@ -1,0 +1,95 @@
+# Chat Schemas
+# Types for the LLM Chat Interface
+
+ChatMessageRole:
+  type: string
+  description: Role of the message sender
+  enum:
+    - user
+    - assistant
+  example: user
+
+ChatHistoryMessage:
+  type: object
+  description: A single message in the chat conversation history
+  required:
+    - role
+    - content
+  properties:
+    role:
+      $ref: "#/ChatMessageRole"
+    content:
+      type: string
+      description: The message text content
+      example: Add a new processing node called "transform"
+
+ChatRequest:
+  type: object
+  description: Request payload for sending a chat message
+  required:
+    - message
+    - workflowState
+  properties:
+    message:
+      type: string
+      description: The user's natural language message
+      example: Add a node called "transform" and connect it to the start node
+    workflowState:
+      type: object
+      description: |
+        Serialized current workflow state including nodes and edges.
+        This gives the LLM context about the current workflow being edited.
+      additionalProperties: true
+    history:
+      type: array
+      description: Optional conversation history for multi-turn context
+      items:
+        $ref: "#/ChatHistoryMessage"
+
+ChatResponse:
+  type: object
+  description: |
+    Response from the chat endpoint containing the LLM's reply.
+    The content may include markdown formatting and fenced code blocks
+    with DSL commands (```flowdrop blocks).
+  required:
+    - content
+  properties:
+    content:
+      type: string
+      description: |
+        The LLM's response content. May contain markdown and
+        ```flowdrop fenced code blocks with DSL commands.
+      example: |
+        I'll add a processing node and connect it to your start node.
+
+        ```flowdrop
+        add transform processing
+        connect start:output transform:input
+        ```
+    conversationId:
+      type: string
+      description: Optional conversation ID for backend session tracking
+      example: conv-abc123
+
+ChatMessagesResponse:
+  type: object
+  description: Wrapped response for chat message send
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: "#/ChatResponse"
+
+ChatHistoryResponse:
+  type: object
+  description: Wrapped response for chat history retrieval
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: "#/ChatHistoryMessage"

@@ -1,0 +1,117 @@
+# Chat Endpoints
+# LLM Chat Interface for natural language workflow building
+
+/workflows/{id}/chat/messages:
+  post:
+    operationId: sendChatMessage
+    summary: Send a chat message
+    description: |
+      Send a natural language message to the LLM chat backend for a specific workflow.
+      The request includes the current workflow state and optional conversation history
+      so the LLM can generate contextually relevant responses.
+
+      The LLM response may contain plain text explanations and/or DSL commands
+      in ```flowdrop fenced code blocks. The frontend extracts and previews
+      these commands before execution.
+    tags:
+      - Chat
+    parameters:
+      - name: id
+        in: path
+        description: Workflow ID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/chat.yaml#/ChatRequest"
+          examples:
+            simpleMessage:
+              summary: Simple chat message
+              value:
+                message: Add a processing node called "transform"
+                workflowState:
+                  nodes: []
+                  edges: []
+            withHistory:
+              summary: Message with conversation history
+              value:
+                message: Now connect it to the start node
+                workflowState:
+                  nodes:
+                    - id: "node-1"
+                      type: start
+                    - id: "node-2"
+                      type: processing
+                  edges: []
+                history:
+                  - role: user
+                    content: Add a processing node called "transform"
+                  - role: assistant
+                    content: "Done! I've added a processing node named \"transform\"."
+    responses:
+      "200":
+        description: Chat response with LLM-generated content
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/chat.yaml#/ChatMessagesResponse"
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
+
+  get:
+    operationId: getChatHistory
+    summary: Get chat conversation history
+    description: |
+      Retrieve the conversation history for a workflow's chat session.
+      Returns an array of messages with role (user/assistant) and content.
+    tags:
+      - Chat
+    parameters:
+      - name: id
+        in: path
+        description: Workflow ID
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Conversation history retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/chat.yaml#/ChatHistoryResponse"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
+
+  delete:
+    operationId: clearChatHistory
+    summary: Clear chat conversation history
+    description: |
+      Clear the conversation history for a workflow's chat session.
+      This resets the chat context, starting a fresh conversation.
+    tags:
+      - Chat
+    parameters:
+      - name: id
+        in: path
+        description: Workflow ID
+        required: true
+        schema:
+          type: string
+    responses:
+      "204":
+        description: Conversation history cleared successfully
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+      "500":
+        $ref: "../components/responses.yaml#/InternalServerError"
