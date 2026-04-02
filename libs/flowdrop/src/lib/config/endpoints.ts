@@ -91,6 +91,16 @@ export interface EndpointConfig {
       listByPipeline: string;
     };
 
+    // Chat endpoints (LLM integration)
+    chat: {
+      /** Send a message to the chat */
+      sendMessage: string;
+      /** Get conversation history */
+      getHistory: string;
+      /** Clear conversation history */
+      clearHistory: string;
+    };
+
     // Template endpoints
     templates: {
       list: string;
@@ -229,6 +239,11 @@ export const defaultEndpointConfig: EndpointConfig = {
       cancel: "/interrupts/{interruptId}/cancel",
       listBySession: "/playground/sessions/{sessionId}/interrupts",
       listByPipeline: "/pipelines/{pipelineId}/interrupts",
+    },
+    chat: {
+      sendMessage: "/workflows/{id}/chat/messages",
+      getHistory: "/workflows/{id}/chat/messages",
+      clearHistory: "/workflows/{id}/chat/messages",
     },
     templates: {
       list: "/templates",
