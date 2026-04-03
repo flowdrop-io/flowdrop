@@ -6,6 +6,7 @@
 -->
 
 <script lang="ts">
+  import { untrack } from "svelte";
   import type { InteractiveSwapState } from "../utils/nodeSwap.js";
   import type { PortCompatibilityChecker } from "../utils/connections.js";
   import Icon from "@iconify/svelte";
@@ -28,7 +29,7 @@
   // Local mutable copy of the interactive state
   // JSON round-trip is intentional: structuredClone fails on Svelte 5 proxies
   let localState = $state<InteractiveSwapState>(
-    JSON.parse(JSON.stringify(interactiveState)),
+    untrack(() => JSON.parse(JSON.stringify(interactiveState))),
   );
 
   // Reinit when interactiveState changes
