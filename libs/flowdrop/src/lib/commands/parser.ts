@@ -60,6 +60,17 @@ const rules: ParserRule[] = [
       label: m[2].trim(),
     }),
   },
+  // set <nodeId>:<key> """<multiline value>"""
+  {
+    pattern: /^set\s+(\S+?):(\S+)\s+"""([\s\S]*)"""$/,
+    parse: (m) => ({
+      type: "set_config",
+      nodeId: m[1],
+      key: m[2],
+      // trim one leading/trailing newline added by the textarea wrapper
+      value: m[3].replace(/^\n/, "").replace(/\n$/, ""),
+    }),
+  },
   // set <nodeId>:<key> <value...>
   {
     pattern: /^set\s+(\S+?):(\S+)\s+(.+)$/i,

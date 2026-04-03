@@ -6,8 +6,8 @@
   } from "../../types/chat.js";
   import type { NodeMetadata } from "../../types/index.js";
   import type { UIAction } from "../../commands/types.js";
+  import type { EndpointConfig } from "../../config/endpoints.js";
   import { chatService } from "../../services/chatService.js";
-  import { getEndpointConfig } from "../../services/api.js";
   import { getWorkflowStore } from "../../stores/workflowStore.svelte.js";
   import { extractCommands } from "../../chat/responseParser.js";
   import { isMutatingCommand } from "../../chat/commandClassifier.js";
@@ -36,9 +36,10 @@
     workflowId?: string;
     onUIAction?: (action: UIAction) => void;
     placeholder?: string;
+    endpointConfig?: EndpointConfig | null;
   }
 
-  let { nodeTypes, workflowId, onUIAction, placeholder }: Props = $props();
+  let { nodeTypes, workflowId, onUIAction, placeholder, endpointConfig }: Props = $props();
 
   // =========================================================================
   // State
@@ -56,7 +57,7 @@
 
   const isDisabled = $derived(!workflowId);
   const isChatConfigured = $derived(
-    getEndpointConfig()?.endpoints?.chat !== undefined,
+    endpointConfig?.endpoints?.chat !== undefined,
   );
   const canSend = $derived(
     inputValue.trim().length > 0 &&

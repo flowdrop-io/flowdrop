@@ -82,8 +82,8 @@
     // Add the input entry to the output
     outputEntries.push({ type: "input", text: trimmed });
 
-    // Handle clear command
-    if (trimmed.toLowerCase() === "clear") {
+    // Handle cls command (clear console output; use 'clear' to clear the canvas)
+    if (trimmed.toLowerCase() === "cls") {
       outputEntries = [];
       return;
     }
@@ -128,7 +128,7 @@
     for (const line of lines) {
       outputEntries.push({ type: "input", text: line });
 
-      if (line.toLowerCase() === "clear") {
+      if (line.toLowerCase() === "cls") {
         outputEntries = [];
         parsed.length = 0;
         continue;

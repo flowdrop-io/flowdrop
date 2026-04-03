@@ -1207,7 +1207,7 @@
             <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
           </div>
           <div class="bottom-panel-tabs__panel" style:display={getUiSettings().bottomPanelTab === 'chat' ? 'flex' : 'none'}>
-            <AIChatPanel nodeTypes={nodes} workflowId={getWorkflowStore()?.id} onUIAction={handleConsoleUIAction} />
+            <AIChatPanel nodeTypes={nodes} workflowId={getWorkflowStore()?.id} onUIAction={handleConsoleUIAction} endpointConfig={endpointConfig} />
           </div>
         </div>
       </div>

@@ -29,6 +29,12 @@
   let inputValue = $state("");
   let inputElement: HTMLInputElement | undefined = $state();
 
+  // Multiline value entry state
+  let multilineMode = $state(false);
+  let multilinePrefix = $state(""); // e.g. "set node1:prompt"
+  let textareaValue = $state("");
+  let textareaElement: HTMLTextAreaElement | undefined = $state();
+
   // Command history state
   const MAX_HISTORY = 100;
   let history: string[] = $state([]);
@@ -397,9 +403,59 @@
     }
   }
 
+  /**
+   * Enter multiline textarea mode for the given set-command prefix.
+   * prefixText: e.g. "set node1:prompt", initialValue: partial value already typed
+   */
+  function enterMultilineMode(prefixText: string, initialValue: string) {
+    multilinePrefix = prefixText;
+    textareaValue = initialValue;
+    multilineMode = true;
+    inputValue = "";
+    dismissAutocomplete();
+    setTimeout(() => textareaElement?.focus(), 0);
+  }
+
+  function exitMultilineMode() {
+    multilineMode = false;
+    multilinePrefix = "";
+    textareaValue = "";
+    setTimeout(() => inputElement?.focus(), 0);
+  }
+
+  function submitMultilineValue() {
+    const value = textareaValue;
+    const prefix = multilinePrefix; // capture before exitMultilineMode clears it
+    exitMultilineMode();
+    if (!value.trim()) return;
+    const command = `${prefix} """\n${value}\n"""`;
+    addToHistory(command);
+    onSubmit(command);
+  }
+
+  function handleTextareaKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      submitMultilineValue();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      exitMultilineMode();
+    }
+  }
+
   function handlePaste(event: ClipboardEvent) {
     const text = event.clipboardData?.getData("text/plain");
     if (!text || !text.includes("\n")) return;
+
+    // If already typing a set command, treat multiline paste as the value
+    const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
+    if (setMatch) {
+      event.preventDefault();
+      enterMultilineMode(setMatch[1], (setMatch[2] ? setMatch[2] + "\n" : "") + text);
+      historyIndex = -1;
+      savedInput = "";
+      return;
+    }
 
     // Multi-line paste: prevent default and batch-submit
     event.preventDefault();
@@ -464,6 +520,16 @@
       }
     }
 
+    if (event.key === "Enter" && event.shiftKey) {
+      // Shift+Enter on a set command → expand to multiline textarea
+      const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
+      if (setMatch) {
+        event.preventDefault();
+        enterMultilineMode(setMatch[1], setMatch[2]);
+        return;
+      }
+    }
+
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       const value = inputValue.trim();
@@ -512,32 +578,47 @@
   }
 </script>
 
-<div class="console-input">
+<div class="console-input" class:console-input--multiline={multilineMode}>
   <span class="console-input__prompt">&gt;</span>
   <div class="console-input__wrapper">
-    <ConsoleAutocomplete
-      suggestions={acSuggestions}
-      visible={acVisible}
-      selectedIndex={acSelectedIndex}
-      onAccept={acceptSuggestion}
-    />
-    <input
-      bind:this={inputElement}
-      bind:value={inputValue}
-      class="console-input__field"
-      type="text"
-      placeholder="Type a command..."
-      spellcheck="false"
-      autocomplete="off"
-      role="combobox"
-      aria-expanded={acVisible}
-      aria-controls="console-autocomplete-listbox"
-      aria-activedescendant={acVisible && acSuggestions.length > 0 ? `console-autocomplete-option-${acSelectedIndex}` : undefined}
-      onkeydown={handleKeydown}
-      oninput={handleInput}
-      onpaste={handlePaste}
-      onblur={() => dismissAutocomplete()}
-    />
+    {#if multilineMode}
+      <div class="console-input__multiline-header">
+        <span class="console-input__multiline-label">{multilinePrefix}</span>
+        <span class="console-input__multiline-hint">Ctrl+Enter to submit · Esc to cancel</span>
+      </div>
+      <textarea
+        bind:this={textareaElement}
+        bind:value={textareaValue}
+        class="console-input__textarea"
+        rows={5}
+        spellcheck={false}
+        onkeydown={handleTextareaKeydown}
+      ></textarea>
+    {:else}
+      <ConsoleAutocomplete
+        suggestions={acSuggestions}
+        visible={acVisible}
+        selectedIndex={acSelectedIndex}
+        onAccept={acceptSuggestion}
+      />
+      <input
+        bind:this={inputElement}
+        bind:value={inputValue}
+        class="console-input__field"
+        type="text"
+        placeholder="Type a command... (set node:key + Shift+Enter for multiline)"
+        spellcheck="false"
+        autocomplete="off"
+        role="combobox"
+        aria-expanded={acVisible}
+        aria-controls="console-autocomplete-listbox"
+        aria-activedescendant={acVisible && acSuggestions.length > 0 ? `console-autocomplete-option-${acSelectedIndex}` : undefined}
+        onkeydown={handleKeydown}
+        oninput={handleInput}
+        onpaste={handlePaste}
+        onblur={() => dismissAutocomplete()}
+      />
+    {/if}
   </div>
 </div>
 
@@ -579,5 +660,53 @@
   .console-input__field::placeholder {
     color: var(--fd-muted-foreground);
     opacity: 0.6;
+  }
+
+  .console-input--multiline {
+    align-items: flex-start;
+  }
+
+  .console-input--multiline .console-input__prompt {
+    margin-top: 0.125rem;
+  }
+
+  .console-input__multiline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.25rem;
+  }
+
+  .console-input__multiline-label {
+    font-family: monospace;
+    font-size: 0.875rem;
+    color: var(--fd-foreground);
+    font-weight: 500;
+  }
+
+  .console-input__multiline-hint {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--fd-muted-foreground);
+    opacity: 0.7;
+  }
+
+  .console-input__textarea {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--fd-border-muted);
+    border-radius: var(--fd-radius-sm);
+    outline: none;
+    font-family: monospace;
+    font-size: 0.875rem;
+    color: var(--fd-foreground);
+    padding: 0.375rem 0.5rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 5rem;
+  }
+
+  .console-input__textarea:focus {
+    border-color: var(--fd-border);
   }
 </style>

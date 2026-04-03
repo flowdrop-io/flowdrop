@@ -28,6 +28,7 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
   let inCodeBlock = false;
   let isFlowdropBlock = false;
   let currentExplanation: string[] = [];
+  let multilineBuffer: string[] | null = null;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -57,6 +58,28 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
       if (trimmed === "" || trimmed.startsWith("#") || trimmed.startsWith("//")) {
         continue;
       }
+
+      // Detect opening triple-quote without a closing one on the same line —
+      // start accumulating a multiline value block
+      if (multilineBuffer !== null) {
+        // We're inside a triple-quoted value; check for closing """
+        if (trimmed === '"""' || trimmed.endsWith('"""')) {
+          multilineBuffer.push(line);
+          commands.push(multilineBuffer.join("\n"));
+          multilineBuffer = null;
+        } else {
+          multilineBuffer.push(line); // preserve raw indentation inside value
+        }
+        continue;
+      }
+
+      const tripleOpen = trimmed.indexOf('"""');
+      if (tripleOpen !== -1 && trimmed.indexOf('"""', tripleOpen + 3) === -1) {
+        // Opening triple-quote with no closing on this line — start buffer
+        multilineBuffer = [trimmed];
+        continue;
+      }
+
       commands.push(trimmed);
     } else if (!inCodeBlock) {
       currentExplanation.push(line);

@@ -82,7 +82,12 @@ export class ChatService {
         `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(errorMessage);
     }
-    return response.json();
+    const json = await response.json();
+    // Unwrap the { success, data } envelope used by the Drupal backend.
+    if (json && typeof json === "object" && "data" in json) {
+      return json.data as T;
+    }
+    return json as T;
   }
 
   // =========================================================================

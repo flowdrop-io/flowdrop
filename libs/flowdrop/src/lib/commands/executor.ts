@@ -199,11 +199,17 @@ function executeRenameNode(
  * Priority: quoted string (preserved) > JSON > number > boolean > raw string
  */
 function parseConfigValue(raw: string): unknown {
-  // Quoted string — preserve as string (strip quotes)
-  if (
-    (raw.startsWith('"') && raw.endsWith('"')) ||
-    (raw.startsWith("'") && raw.endsWith("'"))
-  ) {
+  // Double-quoted string — JSON-unescape so \n, \t, \\ etc. work
+  if (raw.startsWith('"') && raw.endsWith('"')) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw.slice(1, -1);
+    }
+  }
+
+  // Single-quoted string — strip quotes (no escape processing)
+  if (raw.startsWith("'") && raw.endsWith("'")) {
     return raw.slice(1, -1);
   }
 
