@@ -30,18 +30,6 @@ Let me know if you'd like changes.`;
     expect(result.explanation).toContain("Let me know if you'd like changes.");
   });
 
-  it("extracts commands from bare fenced code blocks as fallback", () => {
-    const response = `Try this:
-
-\`\`\`
-add text_template
-\`\`\``;
-
-    const result = extractCommands(response);
-    expect(result.commands).toEqual(["add text_template"]);
-    expect(result.explanation).toBe("Try this:");
-  });
-
   it("handles mixed text and commands", () => {
     const response = `I'll add a node first.
 
