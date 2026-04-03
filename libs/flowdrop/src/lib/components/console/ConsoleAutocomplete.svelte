@@ -55,6 +55,7 @@
         class:console-autocomplete__item--selected={i === selectedIndex}
         role="option"
         id="console-autocomplete-option-{i}"
+        tabindex="-1"
         aria-selected={i === selectedIndex}
         onmousedown={(e: MouseEvent) => { e.preventDefault(); onAccept(suggestion); }}
       >
