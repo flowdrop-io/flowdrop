@@ -39,7 +39,7 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
         // Opening fence
         inCodeBlock = true;
         const lang = trimmed.slice(3).trim().toLowerCase();
-        isFlowdropBlock = lang === "flowdrop" || lang === "";
+        isFlowdropBlock = lang === "flowdrop";
         // Flush accumulated explanation text
         if (currentExplanation.length > 0) {
           explanationParts.push(currentExplanation.join("\n"));
