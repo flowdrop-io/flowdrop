@@ -1521,12 +1521,4 @@
     flex-direction: column;
   }
 
-  .bottom-panel-tabs__placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--fd-muted-foreground);
-    font-size: 0.875rem;
-  }
 </style>
