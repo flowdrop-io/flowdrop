@@ -78,12 +78,18 @@ list types                         — List all available node types.
 help [<command>]                   — Show help for all or a specific command.
 ```
 
+### Console
+
+```
+cls                                — Clear the console output (does not affect the canvas).
+```
+
 ### History & Canvas
 
 ```
 undo                               — Undo last action.
 redo                               — Redo last undone action.
-clear                              — Remove all nodes and edges.
+clear                              — Remove all nodes and edges from the canvas.
 select <nodeId>                    — Select a node on the canvas.
 layout auto [--direction horizontal|vertical]  — Auto-arrange nodes. Default: horizontal.
 layout beautify                    — Normalize spacing, preserve arrangement.
@@ -101,13 +107,29 @@ Values are auto-parsed in this priority order:
 
 | Input | Parsed As | Example |
 |-------|-----------|---------|
-| `"text"` or `'text'` | String (quotes stripped) | `set n.1:name "My Node"` |
+| `"""..."""` | Multiline string (triple-quote) | see below |
+| `"text"` | String — JSON-unescaped (`\n`, `\t`, `\\` work) | `set n.1:name "Line1\nLine2"` |
+| `'text'` | String (quotes stripped, no escape processing) | `set n.1:name 'My Node'` |
 | `[1,2,3]` | JSON array | `set n.1:items [1,2,3]` |
 | `{"k":"v"}` | JSON object | `set n.1:meta {"key":"val"}` |
 | `null` | null | `set n.1:ref null` |
 | `123` or `0.7` | Number | `set n.1:temperature 0.7` |
 | `true` / `false` | Boolean | `set n.1:enabled true` |
 | `anything else` | String (fallback) | `set n.1:model gpt-4` |
+
+### Multiline values (triple-quote syntax)
+
+Use `"""..."""` to set a value that spans multiple lines:
+
+```
+set <nodeId>:<key> """
+line one
+line two
+line three
+"""
+```
+
+This is the preferred way to set prompts, instructions, or any other long-form text. The leading and trailing newlines added by the wrapper are automatically trimmed.
 
 ---
 

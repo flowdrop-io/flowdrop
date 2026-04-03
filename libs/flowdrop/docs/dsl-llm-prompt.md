@@ -77,13 +77,19 @@ Every node has an ID in the format `<type>.<number>`, e.g., `my_node.1`, `my_nod
 | **list types** | `list types` | List all available node types. |
 | **help** | `help [<command>]` | Show help for all or a specific command. |
 
+### Console
+
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| **cls** | `cls` | Clear the console output (does not affect the canvas). |
+
 ### History & Canvas
 
 | Command | Syntax | Description |
 |---------|--------|-------------|
 | **undo** | `undo` | Undo the last action. |
 | **redo** | `redo` | Redo the last undone action. |
-| **clear** | `clear` | Remove all nodes and edges. |
+| **clear** | `clear` | Remove all nodes and edges from the canvas. |
 | **select** | `select <nodeId>` | Select a node on the canvas. |
 | **layout auto** | `layout auto [--direction horizontal\|vertical]` | Auto-arrange all nodes. Default: horizontal. |
 | **layout beautify** | `layout beautify` | Normalize spacing while preserving arrangement. |
@@ -100,13 +106,29 @@ When you use `set <nodeId>:<key> <value>`, the value is auto-parsed:
 
 | Input | Parsed As | Example |
 |-------|-----------|---------|
-| `"hello"` or `'hello'` | String (quotes stripped) | `set n.1:name "My Node"` |
+| `"""..."""` | Multiline string (triple-quote) | see below |
+| `"hello"` | String — JSON-unescaped (`\n`, `\t`, `\\` work) | `set n.1:name "Line1\nLine2"` |
+| `'hello'` | String (quotes stripped, no escape processing) | `set n.1:name 'My Node'` |
 | `[1,2,3]` | JSON array | `set n.1:items [1,2,3]` |
 | `{"k":"v"}` | JSON object | `set n.1:meta {"key":"val"}` |
 | `null` | null | `set n.1:ref null` |
 | `123` or `0.7` | Number | `set n.1:temperature 0.7` |
 | `true` / `false` | Boolean | `set n.1:enabled true` |
 | `hello` | String (fallback) | `set n.1:model gpt-4` |
+
+### Multiline values (triple-quote syntax)
+
+Use `"""..."""` to set a value that spans multiple lines. This is the recommended way to set prompts, instructions, or any long-form text:
+
+```flowdrop
+set llm_node.1:system_prompt """
+You are a helpful assistant.
+Answer concisely and accurately.
+Do not make up information.
+"""
+```
+
+The leading and trailing newlines are automatically trimmed, so the stored value starts at `You are...` and ends at `...information.`
 
 ---
 
