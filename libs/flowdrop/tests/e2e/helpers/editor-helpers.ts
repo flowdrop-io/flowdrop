@@ -35,7 +35,7 @@ export async function waitForSidebar(page: Page): Promise<void> {
  */
 export async function gotoEditor(
   page: Page,
-  variant: "simple" | "empty" | "complex" | "disconnected" = "simple",
+  variant: "simple" | "empty" | "complex" | "disconnected" | "uuid" = "simple",
 ): Promise<void> {
   const url =
     variant === "simple" ? "/test/editor" : `/test/editor?workflow=${variant}`;

@@ -320,6 +320,51 @@
     },
   };
 
+  // Workflow with a UUID id (simulates a backend-saved workflow for save/PUT regression tests)
+  const uuidWorkflow: Workflow = {
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    name: "UUID Test Workflow",
+    description: "Workflow with a backend UUID id for save regression testing",
+    nodes: [
+      {
+        id: "node-input",
+        type: "universalNode",
+        position: { x: 200, y: 200 },
+        data: {
+          nodeId: "node-input",
+          label: "Text Input",
+          config: { defaultValue: "hello", placeholder: "Enter text..." },
+          metadata: testNodeTypes[0],
+        },
+      },
+      {
+        id: "node-output",
+        type: "universalNode",
+        position: { x: 600, y: 200 },
+        data: {
+          nodeId: "node-output",
+          label: "Text Output",
+          config: {},
+          metadata: testNodeTypes[1],
+        },
+      },
+    ],
+    edges: [
+      {
+        id: "edge-1",
+        source: "node-input",
+        target: "node-output",
+        sourceHandle: "value",
+        targetHandle: "value",
+      },
+    ],
+    metadata: {
+      version: "1.0.0",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    },
+  };
+
   // Workflow with 2 disconnected nodes (for connection testing)
   const disconnectedWorkflow: Workflow = {
     id: "test-workflow-disconnected",
@@ -362,6 +407,7 @@
     empty: emptyWorkflow,
     complex: complexWorkflow,
     disconnected: disconnectedWorkflow,
+    uuid: uuidWorkflow,
   };
 
   let selectedWorkflow = $derived(workflows[workflowVariant] ?? simpleWorkflow);
