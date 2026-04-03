@@ -69,7 +69,12 @@ export function createStoreCommandContext(
     },
 
     commitTransaction: () => historyService.commitTransaction(),
-    cancelTransaction: () => historyService.cancelTransaction(),
+    cancelTransaction: () => {
+      const snapshot = historyService.cancelTransaction();
+      if (snapshot) {
+        workflowActions.restoreFromHistory(snapshot);
+      }
+    },
 
     emitUIAction: onUIAction,
 

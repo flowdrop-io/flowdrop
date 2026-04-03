@@ -262,11 +262,15 @@ export class HistoryService {
    * Cancel the current transaction without committing
    *
    * Discards the transaction without adding to history.
+   * Returns the snapshot captured at transaction start so the caller
+   * can restore the store to its pre-transaction state.
    */
-  cancelTransaction(): void {
+  cancelTransaction(): Workflow | null {
+    const snapshot = this.transactionSnapshot;
     this.inTransaction = false;
     this.transactionSnapshot = null;
     this.transactionDescription = null;
+    return snapshot;
   }
 
   /**

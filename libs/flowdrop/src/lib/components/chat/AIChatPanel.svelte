@@ -219,7 +219,20 @@
     const commands = parsedCommands.map(
       (p) => p.command,
     ) as import("../../commands/types.js").Command[];
-    const batchResult = executeBatch(commands, context);
+
+    let batchResult: ReturnType<typeof executeBatch>;
+    try {
+      batchResult = executeBatch(commands, context);
+    } catch (err) {
+      // Unexpected error — reset all items to pending so the UI isn't stuck
+      for (const { item } of parsedCommands) {
+        item.status = "pending";
+      }
+      appendErrorToHistory(
+        `Unexpected execution error: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
+    }
 
     // Update status for each command
     for (let i = 0; i < parsedCommands.length; i++) {
