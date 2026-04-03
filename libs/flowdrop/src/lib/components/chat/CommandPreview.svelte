@@ -20,7 +20,7 @@
       <div class="command-preview__item command-preview__item--{command.status}">
         <span class="command-preview__status">
           {#if command.status === "pending"}
-            <Icon icon="mdi:circle-outline" />
+            <Icon icon="mdi:chevron-right" />
           {:else if command.status === "executing"}
             <Icon icon="mdi:loading" />
           {:else if command.status === "success"}
@@ -29,7 +29,7 @@
             <Icon icon="mdi:alert-circle" />
           {/if}
         </span>
-        <code class="command-preview__command">{command.raw}</code>
+        <pre class="command-preview__command">{command.raw}</pre>
         {#if command.status === "error" && command.result}
           <span class="command-preview__error">{command.result}</span>
         {/if}
@@ -74,7 +74,7 @@
   .command-preview__item {
     display: flex;
     align-items: flex-start;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-2xs);
     padding: var(--fd-space-3xs) var(--fd-space-xs);
     border-radius: var(--fd-radius-sm);
   }
@@ -83,8 +83,10 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    font-size: var(--fd-text-sm);
-    line-height: 1.4;
+    font-size: var(--fd-text-xs);
+    /* align icon with the first line of the pre block */
+    margin-top: 1px;
+    line-height: 1.5;
   }
 
   .command-preview__item--pending .command-preview__status {
@@ -116,9 +118,11 @@
   .command-preview__command {
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-xs);
-    line-height: 1.4;
+    line-height: 1.5;
     color: var(--fd-foreground);
-    word-break: break-all;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
   }
 
   .command-preview__item--error .command-preview__command {

@@ -169,6 +169,55 @@ list edges
 help
 \`\`\``,
   },
+  // Multiline set: prompt / system prompt / template / description
+  {
+    pattern: /\b(set|update|change)\b.*(prompt|system.?prompt|instruction)/i,
+    response: `I'll set that as a multiline prompt using triple-quote syntax.
+
+\`\`\`flowdrop
+set llm_node.1:system_prompt """
+You are a helpful assistant.
+Answer clearly and concisely.
+If unsure, say so.
+"""
+\`\`\``,
+  },
+  {
+    pattern: /\b(set|update|change)\b.*(template|body|text)\b/i,
+    response: `Here's how to set a multiline template value.
+
+\`\`\`flowdrop
+set text_node.1:template """
+Hello, {{ name }}!
+
+Your order {{ order_id }} is ready.
+Thank you for your patience.
+"""
+\`\`\``,
+  },
+  {
+    pattern: /\b(set|update|change)\b.*(description|notes?)\b/i,
+    response: `I'll update the description using multiline syntax.
+
+\`\`\`flowdrop
+set start_node.1:description """
+This workflow processes incoming requests,
+validates the input data,
+and routes to the appropriate handler.
+"""
+\`\`\``,
+  },
+  // Escape sequences in double-quoted values
+  {
+    pattern: /\b(tab|newline|escape|special.char)/i,
+    response: `You can use escape sequences inside double-quoted values.
+
+\`\`\`flowdrop
+set text_node.1:separator "\\t"
+set text_node.1:line_break "\\n"
+set text_node.1:template "Line 1\\nLine 2\\nLine 3"
+\`\`\``,
+  },
 ];
 
 /**
@@ -179,6 +228,7 @@ const DEFAULT_RESPONSE = `I can help you build and modify workflows. Here are so
 - **Add nodes**: "Add a start_node" or "Add an llm_node"
 - **Connect nodes**: "Connect node_a to node_b"
 - **Configure nodes**: "Set the temperature to 0.7"
+- **Multiline values**: "Set the prompt" or "Update the template"
 - **Query workflow**: "List all nodes" or "Show connections"
 - **Layout**: "Auto-arrange the nodes"
 - **Undo/Redo**: "Undo the last change"
