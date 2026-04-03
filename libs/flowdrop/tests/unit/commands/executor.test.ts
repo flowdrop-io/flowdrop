@@ -1238,14 +1238,15 @@ describe("executeCommand — connect", () => {
     expect(result.error).toContain("nonexistent_port");
   });
 
-  it("returns INVALID_CONNECTION for incompatible data types", () => {
+  it("allows connecting ports of different data types (matches canvas behavior)", () => {
     const dispatch = createMockDispatch();
     const triggerNode = createMockNode("agentspec.trigger_node.1", triggerMetadata);
     const apiNode = createMockNode("agentspec.api_node.1", apiMetadata);
     const workflow = createMockWorkflow([triggerNode, apiNode]);
     const context = createMockContext(workflow, nodeTypes, dispatch);
 
-    // trigger_out (trigger type) → body (string type) — incompatible
+    // trigger_out (trigger type) → body (string type)
+    // The canvas editor allows cross-type connections freely; DSL executor matches this behavior.
     const result = executeCommand(
       {
         type: "connect",
@@ -1257,11 +1258,8 @@ describe("executeCommand — connect", () => {
       context,
     );
 
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.code).toBe("INVALID_CONNECTION");
-    expect(result.error).toContain("Incompatible");
-    expect(dispatch.addEdge).not.toHaveBeenCalled();
+    expect(result.ok).toBe(true);
+    expect(dispatch.addEdge).toHaveBeenCalled();
   });
 
   it("returns NODE_NOT_FOUND for missing source node", () => {
