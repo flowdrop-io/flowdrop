@@ -2,7 +2,8 @@
  * Response Parser for LLM Chat Interface
  *
  * Extracts DSL commands from LLM markdown responses by parsing
- * fenced code blocks (```flowdrop or bare ```).
+ * fenced code blocks labeled ```flowdrop. All other fenced blocks
+ * (bare ```, ```python, etc.) are treated as explanation text.
  *
  * @module chat/responseParser
  */
@@ -12,10 +13,9 @@ import type { ExtractedCommands } from "../types/chat.js";
 /**
  * Extract DSL commands from an LLM response string.
  *
- * Parses fenced code blocks labeled `flowdrop` (preferred) or bare
- * fenced code blocks (fallback). Text outside code blocks becomes
- * the explanation. Empty lines and comment lines inside code blocks
- * are skipped.
+ * Only fenced code blocks labeled `flowdrop` are parsed for commands.
+ * All other fenced blocks are passed through as explanation text.
+ * Empty lines and comment lines inside flowdrop blocks are skipped.
  *
  * @param llmResponse - The raw LLM response text (may contain markdown)
  * @returns Extracted commands and explanation text
@@ -32,6 +32,22 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
 
   for (const line of lines) {
     const trimmed = line.trim();
+
+    // Handle multiline buffer FIRST — prevents code fences inside """...""" from
+    // closing the outer flowdrop block or being misinterpreted as control lines.
+    if (multilineBuffer !== null) {
+      // Closing """ must be a standalone line (exact match after trimming).
+      // This prevents content lines that end with """ from prematurely closing
+      // the block (e.g. `Use Python """docstrings"""` or JSON ending with """).
+      if (trimmed === '"""') {
+        multilineBuffer.push(line);
+        commands.push(multilineBuffer.join("\n"));
+        multilineBuffer = null;
+      } else {
+        multilineBuffer.push(line); // preserve raw indentation inside value
+      }
+      continue;
+    }
 
     // Check for code block fence opening/closing
     if (trimmed.startsWith("```")) {
@@ -61,18 +77,6 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
 
       // Detect opening triple-quote without a closing one on the same line —
       // start accumulating a multiline value block
-      if (multilineBuffer !== null) {
-        // We're inside a triple-quoted value; check for closing """
-        if (trimmed === '"""' || trimmed.endsWith('"""')) {
-          multilineBuffer.push(line);
-          commands.push(multilineBuffer.join("\n"));
-          multilineBuffer = null;
-        } else {
-          multilineBuffer.push(line); // preserve raw indentation inside value
-        }
-        continue;
-      }
-
       const tripleOpen = trimmed.indexOf('"""');
       if (tripleOpen !== -1 && trimmed.indexOf('"""', tripleOpen + 3) === -1) {
         // Opening triple-quote with no closing on this line — start buffer

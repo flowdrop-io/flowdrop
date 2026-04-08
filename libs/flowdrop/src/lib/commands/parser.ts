@@ -67,8 +67,11 @@ const rules: ParserRule[] = [
       type: "set_config",
       nodeId: m[1],
       key: m[2],
-      // trim one leading/trailing newline added by the textarea wrapper
-      value: m[3].replace(/^\n/, "").replace(/\n$/, ""),
+      // trim one leading/trailing newline added by the textarea wrapper,
+      // then unescape \""" → """ (escape sequence for literal triple-quotes in content)
+      value: m[3]
+        .replace(/^\n|\n$/g, "")
+        .replace(/\\"""/g, '"""'),
     }),
   },
   // set <nodeId>:<key> <value...>

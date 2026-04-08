@@ -217,6 +217,79 @@ describe("parseCommand", () => {
         input: "set llm_node.1:model",
       });
     });
+
+    // -------------------------------------------------------------------------
+    // triple-quote multiline values
+    // -------------------------------------------------------------------------
+    describe("triple-quote multiline values", () => {
+      it("parses a multiline triple-quote value", () => {
+        const input =
+          'set llm_node.1:system_prompt """\nYou are helpful.\nAnswer concisely.\n"""';
+        expect(parseCommand(input)).toEqual({
+          ok: true,
+          command: {
+            type: "set_config",
+            nodeId: "llm_node.1",
+            key: "system_prompt",
+            value: "You are helpful.\nAnswer concisely.",
+          },
+        });
+      });
+
+      it("trims exactly one leading and one trailing newline", () => {
+        // Extra leading/trailing newlines beyond the first are preserved
+        const input = 'set note.1:content """\n\nTwo leading newlines.\n\n"""';
+        expect(parseCommand(input)).toEqual({
+          ok: true,
+          command: {
+            type: "set_config",
+            nodeId: "note.1",
+            key: "content",
+            value: "\nTwo leading newlines.\n",
+          },
+        });
+      });
+
+      it("parses a triple-quote value containing embedded triple-quotes in content", () => {
+        const input =
+          'set note.1:content """\nUse Python """docstrings""" for docs.\n"""';
+        expect(parseCommand(input)).toEqual({
+          ok: true,
+          command: {
+            type: "set_config",
+            nodeId: "note.1",
+            key: "content",
+            value: 'Use Python """docstrings""" for docs.',
+          },
+        });
+      });
+
+      it('unescapes \\""" to """ in the value', () => {
+        const input =
+          'set note.1:content """\nThe delimiter is \\""" in DSL.\n"""';
+        expect(parseCommand(input)).toEqual({
+          ok: true,
+          command: {
+            type: "set_config",
+            nodeId: "note.1",
+            key: "content",
+            value: 'The delimiter is """ in DSL.',
+          },
+        });
+      });
+
+      it("parses an empty triple-quote value (inline)", () => {
+        expect(parseCommand('set note.1:content """"""')).toEqual({
+          ok: true,
+          command: {
+            type: "set_config",
+            nodeId: "note.1",
+            key: "content",
+            value: "",
+          },
+        });
+      });
+    });
   });
 
   // ==========================================================================
