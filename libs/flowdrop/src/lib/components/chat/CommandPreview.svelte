@@ -12,6 +12,18 @@
 
   const hasPending = $derived(commands.some((c) => c.status === "pending"));
   const isExecuting = $derived(commands.some((c) => c.status === "executing"));
+
+  let resolvedAction: "applied" | "cancelled" | null = $state(null);
+
+  function handleApprove() {
+    resolvedAction = "applied";
+    onApprove();
+  }
+
+  function handleCancel() {
+    resolvedAction = "cancelled";
+    onCancel();
+  }
 </script>
 
 <div class="command-preview" role="region" aria-label="Command preview">
@@ -38,21 +50,38 @@
   </div>
 
   <div class="command-preview__actions">
-    <button
-      class="command-preview__btn command-preview__btn--approve"
-      onclick={onApprove}
-      disabled={!hasPending || isExecuting}
-    >
-      <Icon icon="mdi:check-all" />
-      Apply All
-    </button>
-    <button
-      class="command-preview__btn command-preview__btn--cancel"
-      onclick={onCancel}
-      disabled={isExecuting}
-    >
-      Cancel
-    </button>
+    {#if resolvedAction === "applied"}
+      <span class="command-preview__resolved command-preview__resolved--applied">
+        {#if isExecuting}
+          <Icon icon="mdi:loading" />
+          Applying…
+        {:else}
+          <Icon icon="mdi:check-all" />
+          Applied
+        {/if}
+      </span>
+    {:else if resolvedAction === "cancelled"}
+      <span class="command-preview__resolved command-preview__resolved--cancelled">
+        <Icon icon="mdi:close" />
+        Dismissed
+      </span>
+    {:else}
+      <button
+        class="command-preview__btn command-preview__btn--approve"
+        onclick={handleApprove}
+        disabled={!hasPending || isExecuting}
+      >
+        <Icon icon="mdi:check-all" />
+        Apply All
+      </button>
+      <button
+        class="command-preview__btn command-preview__btn--cancel"
+        onclick={handleCancel}
+        disabled={isExecuting}
+      >
+        Cancel
+      </button>
+    {/if}
   </div>
 </div>
 
@@ -180,5 +209,26 @@
 
   .command-preview__btn--cancel:hover:not(:disabled) {
     background: var(--fd-secondary-hover);
+  }
+
+  .command-preview__resolved {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-3xs);
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    padding: var(--fd-space-3xs) var(--fd-space-xs);
+  }
+
+  .command-preview__resolved--applied {
+    color: var(--fd-success);
+  }
+
+  .command-preview__resolved--applied :global(svg.iconify[data-icon="mdi:loading"]) {
+    animation: spin 1s linear infinite;
+  }
+
+  .command-preview__resolved--cancelled {
+    color: var(--fd-muted-foreground);
   }
 </style>

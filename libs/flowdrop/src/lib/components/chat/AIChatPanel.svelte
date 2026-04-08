@@ -272,12 +272,9 @@
     }
   }
 
-  /** Dismiss a command preview without executing */
-  function handleCancelCommands(messageIndex: number) {
-    const msg = displayMessages[messageIndex];
-    if (!msg?.commandPreview) return;
-    // Remove the command preview entirely
-    msg.commandPreview = undefined;
+  /** Dismiss a command preview without executing — CommandPreview shows its own cancelled state */
+  function handleCancelCommands(_messageIndex: number) {
+    // Intentionally empty: CommandPreview owns the "Dismissed" display via resolvedAction state
   }
 
   /** Append an error message to conversation history so the LLM can self-correct */
