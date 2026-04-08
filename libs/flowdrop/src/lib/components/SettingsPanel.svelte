@@ -233,6 +233,12 @@
           description: "Show confirmation before deleting nodes",
           default: true,
         },
+        chatAutoRetry: {
+          type: "boolean",
+          title: "AI Chat Auto-retry",
+          description: "Automatically ask the AI to self-correct when commands fail",
+          default: true,
+        },
       },
     },
     api: {

@@ -98,6 +98,8 @@ export interface BehaviorSettings {
   undoHistoryLimit: number;
   /** Show confirmation dialog before deleting nodes */
   confirmDelete: boolean;
+  /** Automatically re-submit batch failures to the AI for self-correction */
+  chatAutoRetry: boolean;
 }
 
 // =========================================================================
@@ -222,6 +224,7 @@ export const DEFAULT_BEHAVIOR_SETTINGS: BehaviorSettings = {
   autoSaveInterval: 30000,
   undoHistoryLimit: 50,
   confirmDelete: false,
+  chatAutoRetry: true,
 };
 
 /**

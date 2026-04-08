@@ -9,6 +9,7 @@
   import type { EndpointConfig } from "../../config/endpoints.js";
   import { chatService } from "../../services/chatService.js";
   import { getWorkflowStore } from "../../stores/workflowStore.svelte.js";
+  import { getBehaviorSettings } from "../../stores/settingsStore.svelte.js";
   import { extractCommands } from "../../chat/responseParser.js";
   import { isMutatingCommand } from "../../chat/commandClassifier.js";
   import { parseCommand } from "../../commands/parser.js";
@@ -25,6 +26,8 @@
   interface DisplayMessage {
     role: "user" | "assistant";
     content: string;
+    /** Set on auto-retry messages — renders as a muted notice, not a user bubble */
+    retryAttempt?: number;
     /** Mutating commands awaiting approval */
     commandPreview?: CommandPreviewItem[];
     /** Results from auto-executed read-only commands */
@@ -45,11 +48,14 @@
   // State
   // =========================================================================
 
+  const MAX_AUTO_RETRIES = 3;
+
   let displayMessages: DisplayMessage[] = $state([]);
   let inputValue: string = $state("");
   let isLoading: boolean = $state(false);
   let inputElement: HTMLTextAreaElement | undefined = $state();
   let messagesElement: HTMLDivElement | undefined = $state();
+  let autoRetryCount = 0;
 
   // =========================================================================
   // Derived State
@@ -71,8 +77,8 @@
   // =========================================================================
 
   $effect(() => {
-    const _count = displayMessages.length;
-    const _loading = isLoading;
+    displayMessages.length;
+    isLoading;
     tick().then(() => {
       if (messagesElement) {
         messagesElement.scrollTop = messagesElement.scrollHeight;
@@ -174,7 +180,7 @@
   }
 
   /** Execute all pending mutating commands in a CommandPreview via executeBatch */
-  function handleApproveCommands(messageIndex: number) {
+  async function handleApproveCommands(messageIndex: number) {
     const msg = displayMessages[messageIndex];
     if (!msg?.commandPreview) return;
 
@@ -253,9 +259,15 @@
     }
 
     if (!batchResult.ok) {
-      appendErrorToHistory(
-        `Command execution failed at command ${batchResult.completedCount + 1}/${batchResult.totalCount}: ${batchResult.error}`,
-      );
+      if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
+        autoRetryCount++;
+        const errorText = buildBatchErrorMessage(batchResult, pendingItems);
+        await sendMessageInternal(errorText, autoRetryCount);
+      } else {
+        appendErrorToHistory(
+          `Command execution failed at command ${batchResult.completedCount + 1}/${batchResult.totalCount}: ${batchResult.error}`,
+        );
+      }
     }
   }
 
@@ -275,17 +287,43 @@
     });
   }
 
+  /** Build a structured error report from a failed batch for the LLM */
+  function buildBatchErrorMessage(
+    result: import("../../commands/types.js").BatchResult,
+    items: CommandPreviewItem[],
+  ): string {
+    const lines: string[] = [
+      `Batch execution failed at command ${result.completedCount + 1}/${result.totalCount}: ${result.error}`,
+    ];
+
+    if (result.completedCount > 0) {
+      lines.push("\nCommands that succeeded (rolled back):");
+      for (let i = 0; i < result.completedCount; i++) {
+        lines.push(`  ${i + 1}. ${items[i].raw}`);
+      }
+    }
+
+    lines.push("\nFailed command:");
+    lines.push(`  ${items[result.completedCount]?.raw ?? "(unknown)"}`);
+
+    const remaining = result.totalCount - result.completedCount - 1;
+    if (remaining > 0) {
+      lines.push(`\n${remaining} command(s) were skipped.`);
+    }
+
+    lines.push("\nPlease provide corrected commands to achieve the same goal.");
+    return lines.join("\n");
+  }
+
   // =========================================================================
   // Message Handling
   // =========================================================================
 
-  async function sendMessage() {
-    const text = inputValue.trim();
+  /** Core send logic — shared by manual sends and auto-retry */
+  async function sendMessageInternal(text: string, retryAttempt?: number) {
     if (!text || isLoading || !workflowId) return;
 
-    // Add user message
-    displayMessages.push({ role: "user", content: text });
-    inputValue = "";
+    displayMessages.push({ role: "user", content: text, retryAttempt });
     isLoading = true;
 
     try {
@@ -293,12 +331,10 @@
       const request: ChatRequest = {
         message: text,
         workflowState: getWorkflowState(),
-        history: history.slice(0, -1), // all except current message (already sent as `message`)
+        history: history.slice(0, -1), // all except current message
       };
 
       const response = await chatService.sendMessage(workflowId, request);
-
-      // Process response: extract commands, auto-execute read-only, queue mutating
       const displayMsg = processResponse(response.content);
       displayMessages.push(displayMsg);
     } catch (err) {
@@ -312,6 +348,14 @@
       isLoading = false;
       tick().then(() => inputElement?.focus());
     }
+  }
+
+  async function sendMessage() {
+    const text = inputValue.trim();
+    if (!text || isLoading || !workflowId) return;
+    inputValue = "";
+    autoRetryCount = 0;
+    await sendMessageInternal(text);
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -350,25 +394,35 @@
         </div>
       {/if}
       {#each displayMessages as message, msgIndex}
-        <div class="ai-chat-panel__bubble ai-chat-panel__bubble--{message.role}">
-          <div class="ai-chat-panel__bubble-content">{message.content}</div>
-          {#if message.readOnlyResults && message.readOnlyResults.length > 0}
-            <div class="ai-chat-panel__readonly-results">
-              {#each message.readOnlyResults as result}
-                <pre class="ai-chat-panel__readonly-result">{result}</pre>
-              {/each}
-            </div>
-          {/if}
-          {#if message.commandPreview && message.commandPreview.length > 0}
-            <div class="ai-chat-panel__command-preview">
-              <CommandPreview
-                commands={message.commandPreview}
-                onApprove={() => handleApproveCommands(msgIndex)}
-                onCancel={() => handleCancelCommands(msgIndex)}
-              />
-            </div>
-          {/if}
-        </div>
+        {#if message.retryAttempt !== undefined}
+          <div
+            class="ai-chat-panel__retry-notice"
+            class:ai-chat-panel__retry-notice--active={isLoading && msgIndex === displayMessages.length - 1}
+          >
+            <Icon icon="mdi:autorenew" />
+            <span>Auto-retrying (attempt {message.retryAttempt}/{MAX_AUTO_RETRIES})…</span>
+          </div>
+        {:else}
+          <div class="ai-chat-panel__bubble ai-chat-panel__bubble--{message.role}">
+            <div class="ai-chat-panel__bubble-content">{message.content}</div>
+            {#if message.readOnlyResults && message.readOnlyResults.length > 0}
+              <div class="ai-chat-panel__readonly-results">
+                {#each message.readOnlyResults as result}
+                  <pre class="ai-chat-panel__readonly-result">{result}</pre>
+                {/each}
+              </div>
+            {/if}
+            {#if message.commandPreview && message.commandPreview.length > 0}
+              <div class="ai-chat-panel__command-preview">
+                <CommandPreview
+                  commands={message.commandPreview}
+                  onApprove={() => handleApproveCommands(msgIndex)}
+                  onCancel={() => handleCancelCommands(msgIndex)}
+                />
+              </div>
+            {/if}
+          </div>
+        {/if}
       {/each}
       {#if isLoading}
         <div class="ai-chat-panel__bubble ai-chat-panel__bubble--assistant">
@@ -480,6 +534,23 @@
     font-size: 1.5rem;
   }
 
+  /* Auto-retry notice */
+  .ai-chat-panel__retry-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fd-space-xs);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+    opacity: 0.7;
+    padding: var(--fd-space-3xs) 0;
+    animation: fadeIn 0.15s ease-out;
+  }
+
+  .ai-chat-panel__retry-notice--active :global(svg) {
+    animation: spin 1s linear infinite;
+  }
+
   /* Message bubbles */
   .ai-chat-panel__bubble {
     max-width: 80%;
@@ -578,6 +649,11 @@
 
   .ai-chat-panel__dot:nth-child(3) {
     animation-delay: 0.4s;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
   }
 
   @keyframes bounce {
