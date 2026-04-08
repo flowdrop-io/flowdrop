@@ -17,11 +17,15 @@ import { executeCommand } from "./executor.js";
  * - Re-reads workflow via context.getWorkflow() before each command
  * - On success of all: calls dispatch.commitTransaction()
  * - On first error: calls dispatch.cancelTransaction() and stops
+ * - Optional delayBetweenMs inserts a pause between commands so callers can
+ *   show progressive canvas updates (e.g. AI chat apply flow)
  */
-export function executeBatch(
+export async function executeBatch(
   commands: Command[],
   context: CommandContext,
-): BatchResult {
+  options?: { delayBetweenMs?: number },
+): Promise<BatchResult> {
+  const delayBetweenMs = options?.delayBetweenMs ?? 0;
   const totalCount = commands.length;
 
   if (totalCount === 0) {
@@ -57,6 +61,12 @@ export function executeBatch(
         totalCount,
         error: result.error,
       };
+    }
+
+    // Pause between commands (not after the last one) so the canvas can
+    // visibly update before the next command runs
+    if (delayBetweenMs > 0 && i < commands.length - 1) {
+      await new Promise<void>((resolve) => setTimeout(resolve, delayBetweenMs));
     }
   }
 

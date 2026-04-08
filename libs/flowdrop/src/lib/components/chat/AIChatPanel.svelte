@@ -227,9 +227,9 @@
       (p) => p.command,
     ) as import("../../commands/types.js").Command[];
 
-    let batchResult: ReturnType<typeof executeBatch>;
+    let batchResult: Awaited<ReturnType<typeof executeBatch>>;
     try {
-      batchResult = executeBatch(commands, context);
+      batchResult = await executeBatch(commands, context, { delayBetweenMs: 100 });
     } catch (err) {
       // Unexpected error — reset all items to pending so the UI isn't stuck
       for (const { item } of parsedCommands) {

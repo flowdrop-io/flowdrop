@@ -115,7 +115,7 @@
     }
   }
 
-  function handleBatchSubmit(lines: string[]) {
+  async function handleBatchSubmit(lines: string[]) {
     if (!commandContext) {
       outputEntries.push({ type: "error", text: "No workflow loaded" });
       return;
@@ -150,7 +150,7 @@
     if (parsed.length === 0) return;
 
     const commands = parsed.map((p) => p.command!);
-    const batchResult = executeBatch(commands, commandContext);
+    const batchResult = await executeBatch(commands, commandContext);
 
     // Show individual results
     for (let i = 0; i < batchResult.results.length; i++) {
