@@ -13,7 +13,7 @@
   import { extractCommands } from "../../chat/responseParser.js";
   import { isMutatingCommand } from "../../chat/commandClassifier.js";
   import { parseCommand } from "../../commands/parser.js";
-  import { executeCommand, executeBatch } from "../../commands/index.js";
+  import { executeCommand } from "../../commands/index.js";
   import { createStoreCommandContext } from "../../commands/storeIntegration.svelte.js";
   import CommandPreview from "./CommandPreview.svelte";
   import MarkdownDisplay from "../MarkdownDisplay.svelte";
@@ -180,14 +180,13 @@
     return msg;
   }
 
-  /** Execute all pending mutating commands in a CommandPreview via executeBatch */
+  /** Execute all pending mutating commands one by one with progressive UI feedback */
   async function handleApproveCommands(messageIndex: number) {
     const msg = displayMessages[messageIndex];
     if (!msg?.commandPreview) return;
 
     const context = getCommandContext();
     if (!context) {
-      // Mark all as error
       for (const cmd of msg.commandPreview) {
         if (cmd.status === "pending") {
           cmd.status = "error";
@@ -198,22 +197,20 @@
       return;
     }
 
-    // Parse all pending commands
+    // Parse all pending commands first, before touching any status
     const pendingItems = msg.commandPreview.filter(
       (c) => c.status === "pending",
     );
-    const parsedCommands: { item: CommandPreviewItem; command: unknown }[] = [];
+    const parsedCommands: {
+      item: CommandPreviewItem;
+      command: import("../../commands/types.js").Command;
+    }[] = [];
 
     for (const item of pendingItems) {
-      item.status = "executing";
       const parsed = parseCommand(item.raw);
       if (!parsed.ok) {
         item.status = "error";
         item.result = parsed.error;
-        // Revert other executing items back to pending
-        for (const other of pendingItems) {
-          if (other.status === "executing") other.status = "pending";
-        }
         appendErrorToHistory(
           `Command parse error for "${item.raw}": ${parsed.error}`,
         );
@@ -222,18 +219,46 @@
       parsedCommands.push({ item, command: parsed.command });
     }
 
-    // Execute atomically via executeBatch
-    const commands = parsedCommands.map(
-      (p) => p.command,
-    ) as import("../../commands/types.js").Command[];
+    // Execute commands one by one inside a single transaction.
+    // A 100ms pause between commands lets the canvas visibly update at each step.
+    const totalCount = parsedCommands.length;
+    context.dispatch.startTransaction(
+      totalCount === 1 ? "batch: 1 command" : `batch: ${totalCount} commands`,
+    );
 
-    let batchResult: Awaited<ReturnType<typeof executeBatch>>;
+    const results: import("../../commands/types.js").BatchResult["results"] = [];
+    let completedCount = 0;
+    let batchError: string | undefined;
+
     try {
-      batchResult = await executeBatch(commands, context, { delayBetweenMs: 100 });
+      for (let i = 0; i < parsedCommands.length; i++) {
+        const { item, command } = parsedCommands[i];
+        item.status = "executing";
+
+        const result = executeCommand(command, context);
+        results.push(result);
+
+        if (!result.ok) {
+          item.status = "error";
+          item.result = result.error;
+          batchError = result.error;
+          context.dispatch.cancelTransaction();
+          break;
+        }
+
+        item.status = "success";
+        item.result = result.message;
+        completedCount++;
+
+        // Pause between commands so canvas updates are visibly distinct
+        if (i < parsedCommands.length - 1) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 100));
+        }
+      }
     } catch (err) {
-      // Unexpected error — reset all items to pending so the UI isn't stuck
+      context.dispatch.cancelTransaction();
       for (const { item } of parsedCommands) {
-        item.status = "pending";
+        if (item.status === "executing") item.status = "pending";
       }
       appendErrorToHistory(
         `Unexpected execution error: ${err instanceof Error ? err.message : String(err)}`,
@@ -241,34 +266,21 @@
       return;
     }
 
-    // Update status for each command
-    for (let i = 0; i < parsedCommands.length; i++) {
-      const { item } = parsedCommands[i];
-      const result = batchResult.results[i];
-      if (result) {
-        if (result.ok) {
-          item.status = "success";
-          item.result = result.message;
-        } else {
-          item.status = "error";
-          item.result = result.error;
-        }
-      } else {
-        // Commands after the failed one weren't executed
-        item.status = "pending";
-      }
+    if (!batchError) {
+      context.dispatch.commitTransaction();
+      return;
     }
 
-    if (!batchResult.ok) {
-      if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
-        autoRetryCount++;
-        const errorText = buildBatchErrorMessage(batchResult, pendingItems);
-        await sendMessageInternal(errorText, autoRetryCount);
-      } else {
-        appendErrorToHistory(
-          `Command execution failed at command ${batchResult.completedCount + 1}/${batchResult.totalCount}: ${batchResult.error}`,
-        );
-      }
+    const batchResult = { ok: false as const, results, completedCount, totalCount, error: batchError };
+
+    if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
+      autoRetryCount++;
+      const errorText = buildBatchErrorMessage(batchResult, pendingItems);
+      await sendMessageInternal(errorText, autoRetryCount);
+    } else {
+      appendErrorToHistory(
+        `Command execution failed at command ${completedCount + 1}/${totalCount}: ${batchError}`,
+      );
     }
   }
 

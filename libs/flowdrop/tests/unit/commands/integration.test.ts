@@ -405,7 +405,7 @@ describe("Integration: parse → execute round-trip", () => {
   // Batch: all success
   // --------------------------------------------------------------------------
 
-  it("batch of [add, add, connect] → transaction used, getWorkflow called per command", async () => {
+  it("batch of [add, add, connect] → transaction used, getWorkflow called per command", () => {
     const dispatch = createMockDispatch();
 
     // Simulate evolving workflow state across batch commands
@@ -442,7 +442,7 @@ describe("Integration: parse → execute round-trip", () => {
       },
     ];
 
-    const result = await executeBatch(commands, context);
+    const result = executeBatch(commands, context);
 
     expect(result.ok).toBe(true);
     expect(result.completedCount).toBe(3);
@@ -465,7 +465,7 @@ describe("Integration: parse → execute round-trip", () => {
   // Batch: error at step 3
   // --------------------------------------------------------------------------
 
-  it("batch with error at step 3 → cancelTransaction called, partial results returned", async () => {
+  it("batch with error at step 3 → cancelTransaction called, partial results returned", () => {
     const dispatch = createMockDispatch();
     const llmNode = createMockNode("agentspec.llm_node.1", llmMeta);
 
@@ -489,7 +489,7 @@ describe("Integration: parse → execute round-trip", () => {
       { type: "delete_node", nodeId: "nonexistent.99" }, // will fail
     ];
 
-    const result = await executeBatch(commands, context);
+    const result = executeBatch(commands, context);
 
     expect(result.ok).toBe(false);
     expect(result.completedCount).toBe(2);
