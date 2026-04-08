@@ -16,6 +16,7 @@
   import { executeCommand, executeBatch } from "../../commands/index.js";
   import { createStoreCommandContext } from "../../commands/storeIntegration.svelte.js";
   import CommandPreview from "./CommandPreview.svelte";
+  import MarkdownDisplay from "../MarkdownDisplay.svelte";
   import { tick } from "svelte";
   import Icon from "@iconify/svelte";
 
@@ -404,7 +405,13 @@
           </div>
         {:else}
           <div class="ai-chat-panel__bubble ai-chat-panel__bubble--{message.role}">
-            <div class="ai-chat-panel__bubble-content">{message.content}</div>
+            {#if message.role === "user"}
+              <div class="ai-chat-panel__bubble-content">{message.content}</div>
+            {:else}
+              <div class="ai-chat-panel__bubble-content">
+                <MarkdownDisplay content={message.content} />
+              </div>
+            {/if}
             {#if message.readOnlyResults && message.readOnlyResults.length > 0}
               <div class="ai-chat-panel__readonly-results">
                 {#each message.readOnlyResults as result}
@@ -570,7 +577,6 @@
     border-radius: var(--fd-radius-md);
     font-size: var(--fd-text-sm);
     line-height: 1.5;
-    white-space: pre-wrap;
     word-break: break-word;
   }
 
@@ -578,12 +584,71 @@
     background: var(--fd-primary);
     color: var(--fd-primary-foreground);
     border-bottom-right-radius: var(--fd-radius-xs);
+    white-space: pre-wrap;
   }
 
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content {
     background: var(--fd-muted);
     color: var(--fd-foreground);
     border-bottom-left-radius: var(--fd-radius-xs);
+  }
+
+  /* Markdown typography inside assistant bubbles */
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(.markdown-display) {
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(p) {
+    margin: 0 0 0.5em;
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(p:last-child),
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(ul:last-child),
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(ol:last-child) {
+    margin-bottom: 0;
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(ul),
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(ol) {
+    margin: 0 0 0.5em;
+    padding-left: 1.25em;
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(li) {
+    margin-bottom: 0.2em;
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(code) {
+    font-family: var(--fd-font-mono);
+    font-size: 0.875em;
+    background: var(--fd-background);
+    padding: 0.1em 0.3em;
+    border-radius: var(--fd-radius-xs);
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(pre) {
+    background: var(--fd-background);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm);
+    padding: var(--fd-space-xs) var(--fd-space-sm);
+    overflow-x: auto;
+    margin: 0.5em 0;
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(pre code) {
+    background: none;
+    padding: 0;
+    font-size: var(--fd-text-xs);
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(strong) {
+    font-weight: 600;
+  }
+
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(em) {
+    font-style: italic;
   }
 
   /* Read-only command results */
