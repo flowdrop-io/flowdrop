@@ -68,6 +68,15 @@ export function clearHistory(workflowId: string): void {
   conversationIds.delete(workflowId);
 }
 
+/**
+ * Reset all in-memory state. Call in afterEach when using MSW in tests.
+ */
+export function resetConversations(): void {
+  conversations.clear();
+  conversationIds.clear();
+  conversationIdCounter = 1;
+}
+
 // ============================================================================
 // Mock LLM Response Generation
 // ============================================================================
@@ -77,6 +86,16 @@ export function clearHistory(workflowId: string): void {
  * Each response simulates what an LLM trained on the FlowDrop DSL would return.
  */
 const RESPONSE_PATTERNS: { pattern: RegExp; response: string }[] = [
+  // Auto-retry error report — must be first so it takes priority over other patterns
+  {
+    pattern: /^Batch execution failed at command \d+\/\d+:/,
+    response: `I see the previous command failed. Let me check the current state and try a corrected approach.
+
+\`\`\`flowdrop
+list nodes
+list types
+\`\`\``,
+  },
   {
     pattern: /\b(list|show|what).*(node|workflow)/i,
     response: `Here's what's currently in your workflow.

@@ -102,3 +102,32 @@ export const chatHandlers = [
   getHistoryHandler,
   clearHistoryHandler,
 ];
+
+/**
+ * Create a stateful handler that returns `responses` in sequence.
+ * Designed for testing the auto-retry flow: provide the initial response
+ * (with commands that will fail) followed by a corrected response.
+ *
+ * Usage in tests:
+ * ```ts
+ * server.use(createRetryScenarioHandler([
+ *   // First call — commands that executeBatch will fail on
+ *   "I'll add that.\n```flowdrop\nadd bad_type\n```",
+ *   // Retry call — corrected commands after the error report
+ *   "Let me fix that.\n```flowdrop\nadd http_node\n```",
+ * ]));
+ * ```
+ *
+ * Once all responses are consumed the last one repeats.
+ */
+export function createRetryScenarioHandler(responses: string[]) {
+  if (responses.length === 0) throw new Error("responses must not be empty");
+  let callIndex = 0;
+  return http.post(
+    `${API_BASE}/workflows/:id/chat/messages`,
+    async () => {
+      const content = responses[Math.min(callIndex++, responses.length - 1)];
+      return HttpResponse.json({ content, conversationId: "test-retry-conv" });
+    },
+  );
+}
