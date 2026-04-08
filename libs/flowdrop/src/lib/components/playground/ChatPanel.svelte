@@ -7,29 +7,29 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import { tick } from "svelte";
-  import MessageBubble from "./MessageBubble.svelte";
-  import { InterruptBubble } from "../interrupt/index.js";
-  import type { PlaygroundMessage } from "../../types/playground.js";
-  import { hasEnableRunFlag } from "../../types/playground.js";
+  import Icon from '@iconify/svelte';
+  import { tick } from 'svelte';
+  import MessageBubble from './MessageBubble.svelte';
+  import { InterruptBubble } from '../interrupt/index.js';
+  import type { PlaygroundMessage } from '../../types/playground.js';
+  import { hasEnableRunFlag } from '../../types/playground.js';
   import {
     isInterruptMetadata,
     extractInterruptMetadata,
-    metadataToInterrupt,
-  } from "../../types/interrupt.js";
+    metadataToInterrupt
+  } from '../../types/interrupt.js';
   import {
     getMessages,
     getChatMessages,
     getIsExecuting,
     getSessionStatus,
-    getCurrentSession,
-  } from "../../stores/playgroundStore.svelte.js";
+    getCurrentSession
+  } from '../../stores/playgroundStore.svelte.js';
   import {
     getInterruptsMap,
     interruptActions,
-    getInterruptByMessageId,
-  } from "../../stores/interruptStore.svelte.js";
+    getInterruptByMessageId
+  } from '../../stores/interruptStore.svelte.js';
 
   /**
    * Component props
@@ -78,7 +78,7 @@
   let {
     showTimestamps = true,
     autoScroll = true,
-    placeholder = "Type your message...",
+    placeholder = 'Type your message...',
     onSendMessage,
     onStopExecution,
     showLogsInline = false,
@@ -86,8 +86,8 @@
     onInterruptResolved,
     showChatInput = true,
     showRunButton = true,
-    predefinedMessage = "Run workflow",
-    compactSystemMessages = true,
+    predefinedMessage = 'Run workflow',
+    compactSystemMessages = true
   }: Props = $props();
 
   /**
@@ -104,7 +104,7 @@
   const noInputsAvailable = $derived(!showChatInput && !showRunButton);
 
   /** Input field value */
-  let inputValue = $state("");
+  let inputValue = $state('');
 
   /** Reference to the messages container for scrolling */
   let messagesContainer = $state<HTMLDivElement>();
@@ -115,9 +115,7 @@
   /**
    * Filter messages based on showLogsInline setting
    */
-  const displayMessages = $derived(
-    showLogsInline ? getMessages() : getChatMessages(),
-  );
+  const displayMessages = $derived(showLogsInline ? getMessages() : getChatMessages());
 
   /**
    * Track previous message count for detecting new messages.
@@ -151,11 +149,11 @@
     if (!activeElement) return false;
     // Check if active element is a form control inside the messages container
     const isFormControl =
-      activeElement.tagName === "INPUT" ||
-      activeElement.tagName === "TEXTAREA" ||
-      activeElement.tagName === "SELECT" ||
-      activeElement.tagName === "BUTTON" ||
-      activeElement.getAttribute("contenteditable") === "true";
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.tagName === 'SELECT' ||
+      activeElement.tagName === 'BUTTON' ||
+      activeElement.getAttribute('contenteditable') === 'true';
     return isFormControl && messagesContainer.contains(activeElement);
   }
 
@@ -163,9 +161,7 @@
    * Check if a message is an interrupt request
    */
   function isInterruptMessage(message: PlaygroundMessage): boolean {
-    return isInterruptMetadata(
-      message.metadata as Record<string, unknown> | undefined,
-    );
+    return isInterruptMetadata(message.metadata as Record<string, unknown> | undefined);
   }
 
   /**
@@ -188,14 +184,10 @@
       if (!existing) {
         // Extract and validate interrupt metadata
         const metadata = extractInterruptMetadata(
-          message.metadata as Record<string, unknown> | undefined,
+          message.metadata as Record<string, unknown> | undefined
         );
         if (metadata) {
-          const interrupt = metadataToInterrupt(
-            metadata,
-            message.id,
-            message.content,
-          );
+          const interrupt = metadataToInterrupt(metadata, message.id, message.content);
           interruptActions.addInterrupt(interrupt);
 
           // If the message status is 'completed', mark the interrupt as resolved
@@ -203,11 +195,8 @@
           // - "Confirmation Submitted" header
           // - Disabled buttons
           // - "Response submitted" indicator
-          if (message.status === "completed") {
-            interruptActions.resolveInterrupt(
-              interrupt.id,
-              metadata.response_value,
-            );
+          if (message.status === 'completed') {
+            interruptActions.resolveInterrupt(interrupt.id, metadata.response_value);
           }
         }
       }
@@ -222,8 +211,8 @@
     new Map(
       Array.from(getInterruptsMap().values())
         .filter((i) => i.messageId)
-        .map((i) => [i.messageId, i]),
-    ),
+        .map((i) => [i.messageId, i])
+    )
   );
 
   /**
@@ -236,16 +225,12 @@
   /**
    * Check if we should show the welcome state
    */
-  const showWelcome = $derived(
-    !getCurrentSession() && displayMessages.length === 0,
-  );
+  const showWelcome = $derived(!getCurrentSession() && displayMessages.length === 0);
 
   /**
    * Check if we should show the empty chat state (session exists but no messages)
    */
-  const showEmptyChat = $derived(
-    getCurrentSession() && displayMessages.length === 0,
-  );
+  const showEmptyChat = $derived(getCurrentSession() && displayMessages.length === 0);
 
   /**
    * Handle sending a message
@@ -257,11 +242,11 @@
     }
 
     onSendMessage?.(trimmedValue);
-    inputValue = "";
+    inputValue = '';
 
     // Reset textarea height
     if (inputField) {
-      inputField.style.height = "auto";
+      inputField.style.height = 'auto';
     }
 
     // Re-focus the input
@@ -274,7 +259,7 @@
    * Handle keyboard events in the input
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       handleSend();
     }
@@ -421,11 +406,7 @@
    */
   $effect(() => {
     const status = getSessionStatus();
-    if (
-      (status === "idle" || status === "completed") &&
-      inputField &&
-      !getIsExecuting()
-    ) {
+    if ((status === 'idle' || status === 'completed') && inputField && !getIsExecuting()) {
       tick().then(() => {
         inputField?.focus();
       });
@@ -449,7 +430,7 @@
    */
   function handleInput(): void {
     if (inputField) {
-      inputField.style.height = "auto";
+      inputField.style.height = 'auto';
       inputField.style.height = `${Math.min(inputField.scrollHeight, 120)}px`;
     }
   }
@@ -481,24 +462,9 @@
               stroke-width="2"
               stroke-linejoin="round"
             />
-            <path
-              d="M24 24V40"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M16 12L32 20"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M16 36L32 28"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
+            <path d="M24 24V40" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path d="M16 12L32 20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
           </svg>
         </div>
         {#if noInputsAvailable}
@@ -511,9 +477,7 @@
           <p class="chat-panel__welcome-text">Test your flow with a prompt</p>
         {:else}
           <h2 class="chat-panel__welcome-title">Ready to run</h2>
-          <p class="chat-panel__welcome-text">
-            Click Run to execute your workflow
-          </p>
+          <p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
         {/if}
       </div>
     {:else if showEmptyChat}
@@ -539,24 +503,9 @@
               stroke-width="2"
               stroke-linejoin="round"
             />
-            <path
-              d="M24 24V40"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M16 12L32 20"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M16 36L32 28"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
+            <path d="M24 24V40" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path d="M16 12L32 20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
           </svg>
         </div>
         {#if noInputsAvailable}
@@ -569,9 +518,7 @@
           <p class="chat-panel__welcome-text">Test your flow with a prompt</p>
         {:else}
           <h2 class="chat-panel__welcome-title">Ready to run</h2>
-          <p class="chat-panel__welcome-text">
-            Click Run to execute your workflow
-          </p>
+          <p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
         {/if}
       </div>
     {:else}
@@ -617,8 +564,7 @@
       <!-- No inputs available - show informational message -->
       <div class="chat-panel__no-inputs">
         <Icon icon="mdi:information-outline" />
-        <span>View-only mode. Workflow execution is controlled externally.</span
-        >
+        <span>View-only mode. Workflow execution is controlled externally.</span>
       </div>
     {:else}
       <div
@@ -640,7 +586,7 @@
           </div>
         {/if}
 
-        {#if getSessionStatus() === "running" || getIsExecuting()}
+        {#if getSessionStatus() === 'running' || getIsExecuting()}
           <button
             type="button"
             class="chat-panel__stop-btn"
@@ -666,9 +612,7 @@
             class="chat-panel__run-btn"
             onclick={handleRun}
             disabled={!runEnabled}
-            title={runEnabled
-              ? "Run workflow"
-              : "Waiting for workflow to be ready..."}
+            title={runEnabled ? 'Run workflow' : 'Waiting for workflow to be ready...'}
           >
             <Icon icon="mdi:play" />
             Run

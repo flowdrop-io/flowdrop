@@ -9,22 +9,22 @@
 import {
   nodeComponentRegistry,
   type NodeComponentRegistration,
-  type NodeComponentProps,
-} from "./nodeComponentRegistry.js";
-import type { Component } from "svelte";
-import WorkflowNode from "../components/nodes/WorkflowNode.svelte";
-import SimpleNode from "../components/nodes/SimpleNode.svelte";
-import SquareNode from "../components/nodes/SquareNode.svelte";
-import ToolNode from "../components/nodes/ToolNode.svelte";
-import GatewayNode from "../components/nodes/GatewayNode.svelte";
-import NotesNode from "../components/nodes/NotesNode.svelte";
-import TerminalNode from "../components/nodes/TerminalNode.svelte";
-import IdeaNode from "../components/nodes/IdeaNode.svelte";
+  type NodeComponentProps
+} from './nodeComponentRegistry.js';
+import type { Component } from 'svelte';
+import WorkflowNode from '../components/nodes/WorkflowNode.svelte';
+import SimpleNode from '../components/nodes/SimpleNode.svelte';
+import SquareNode from '../components/nodes/SquareNode.svelte';
+import ToolNode from '../components/nodes/ToolNode.svelte';
+import GatewayNode from '../components/nodes/GatewayNode.svelte';
+import NotesNode from '../components/nodes/NotesNode.svelte';
+import TerminalNode from '../components/nodes/TerminalNode.svelte';
+import IdeaNode from '../components/nodes/IdeaNode.svelte';
 
 /**
  * Source identifier for built-in FlowDrop components
  */
-export const FLOWDROP_SOURCE = "flowdrop";
+export const FLOWDROP_SOURCE = 'flowdrop';
 
 /**
  * Built-in FlowDrop node component registrations.
@@ -32,94 +32,93 @@ export const FLOWDROP_SOURCE = "flowdrop";
  */
 export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
   {
-    type: "workflowNode",
-    displayName: "Default (Standard Workflow Node)",
-    description: "Full-featured workflow node with inputs/outputs display",
+    type: 'workflowNode',
+    displayName: 'Default (Standard Workflow Node)',
+    description: 'Full-featured workflow node with inputs/outputs display',
     component: WorkflowNode,
-    icon: "mdi:vector-square",
-    category: "visual",
+    icon: 'mdi:vector-square',
+    category: 'visual',
     source: FLOWDROP_SOURCE,
-    statusPosition: "top-right",
-    statusSize: "md",
+    statusPosition: 'top-right',
+    statusSize: 'md'
   },
   {
-    type: "simple",
-    displayName: "Simple (Compact Layout)",
-    description: "Compact node with header, icon, and description",
+    type: 'simple',
+    displayName: 'Simple (Compact Layout)',
+    description: 'Compact node with header, icon, and description',
     component: SimpleNode,
-    icon: "mdi:card-outline",
-    category: "visual",
+    icon: 'mdi:card-outline',
+    category: 'visual',
     source: FLOWDROP_SOURCE,
-    statusPosition: "top-right",
-    statusSize: "md",
+    statusPosition: 'top-right',
+    statusSize: 'md'
   },
   {
-    type: "square",
-    displayName: "Square (Minimal Icon)",
-    description: "Minimal square node showing only an icon",
+    type: 'square',
+    displayName: 'Square (Minimal Icon)',
+    description: 'Minimal square node showing only an icon',
     component: SquareNode,
-    icon: "mdi:square",
-    category: "visual",
+    icon: 'mdi:square',
+    category: 'visual',
     source: FLOWDROP_SOURCE,
-    statusPosition: "top-right",
-    statusSize: "sm",
+    statusPosition: 'top-right',
+    statusSize: 'sm'
   },
   {
-    type: "tool",
-    displayName: "Tool (Agent Tool)",
-    description: "Specialized node for agent tools with tool metadata",
+    type: 'tool',
+    displayName: 'Tool (Agent Tool)',
+    description: 'Specialized node for agent tools with tool metadata',
     component: ToolNode as Component<NodeComponentProps>,
-    icon: "mdi:tools",
-    category: "functional",
+    icon: 'mdi:tools',
+    category: 'functional',
     source: FLOWDROP_SOURCE,
-    statusPosition: "top-left",
-    statusSize: "sm",
+    statusPosition: 'top-left',
+    statusSize: 'sm'
   },
   {
-    type: "gateway",
-    displayName: "Gateway (Branching)",
-    description: "Branching control flow node with multiple output branches",
+    type: 'gateway',
+    displayName: 'Gateway (Branching)',
+    description: 'Branching control flow node with multiple output branches',
     component: GatewayNode,
-    icon: "mdi:source-branch",
-    category: "functional",
+    icon: 'mdi:source-branch',
+    category: 'functional',
     source: FLOWDROP_SOURCE,
-    statusPosition: "top-right",
-    statusSize: "md",
+    statusPosition: 'top-right',
+    statusSize: 'md'
   },
   {
-    type: "note",
-    displayName: "Note (Sticky Note)",
-    description: "Documentation note with markdown support",
+    type: 'note',
+    displayName: 'Note (Sticky Note)',
+    description: 'Documentation note with markdown support',
     component: NotesNode,
-    icon: "mdi:note-text",
-    category: "layout",
+    icon: 'mdi:note-text',
+    category: 'layout',
     source: FLOWDROP_SOURCE,
-    statusPosition: "bottom-right",
-    statusSize: "sm",
+    statusPosition: 'bottom-right',
+    statusSize: 'sm'
   },
   {
-    type: "terminal",
-    displayName: "Terminal (Start/End/Exit)",
-    description:
-      "Circular terminal node for workflow start, end, or exit points",
+    type: 'terminal',
+    displayName: 'Terminal (Start/End/Exit)',
+    description: 'Circular terminal node for workflow start, end, or exit points',
     component: TerminalNode,
-    icon: "mdi:circle-double",
-    category: "functional",
+    icon: 'mdi:circle-double',
+    category: 'functional',
     source: FLOWDROP_SOURCE,
-    statusPosition: "top-right",
-    statusSize: "sm",
+    statusPosition: 'top-right',
+    statusSize: 'sm'
   },
   {
-    type: "idea",
-    displayName: "Idea (Conceptual Flow)",
-    description: "Conceptual idea node for BPMN-like flow diagrams",
+    type: 'idea',
+    displayName: 'Idea (Conceptual Flow)',
+    description: 'Conceptual idea node for BPMN-like flow diagrams',
     component: IdeaNode,
-    icon: "mdi:lightbulb-outline",
-    category: "layout",
+    icon: 'mdi:lightbulb-outline',
+    category: 'layout',
     source: FLOWDROP_SOURCE,
-    statusPosition: "top-right",
-    statusSize: "sm",
-  },
+    statusPosition: 'top-right',
+    statusSize: 'sm'
+  }
 ];
 
 /**
@@ -127,7 +126,7 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
  * Maps alternative type names to their canonical registration.
  */
 export const BUILTIN_TYPE_ALIASES: Record<string, string> = {
-  default: "workflowNode",
+  default: 'workflowNode'
 };
 
 /**
@@ -158,7 +157,7 @@ export function registerBuiltinNodes(): void {
   nodeComponentRegistry.registerAll(BUILTIN_NODE_COMPONENTS, true);
 
   // Set the default type
-  nodeComponentRegistry.setDefaultType("workflowNode");
+  nodeComponentRegistry.setDefaultType('workflowNode');
 
   builtinsRegistered = true;
 }
@@ -216,27 +215,27 @@ export function getBuiltinTypes(): string[] {
  * Use this when you specifically need a built-in type.
  */
 export type BuiltinNodeType =
-  | "workflowNode"
-  | "simple"
-  | "square"
-  | "tool"
-  | "gateway"
-  | "note"
-  | "terminal"
-  | "idea";
+  | 'workflowNode'
+  | 'simple'
+  | 'square'
+  | 'tool'
+  | 'gateway'
+  | 'note'
+  | 'terminal'
+  | 'idea';
 
 /**
  * Array of built-in type strings for runtime validation.
  */
 export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
-  "workflowNode",
-  "simple",
-  "square",
-  "tool",
-  "gateway",
-  "note",
-  "terminal",
-  "idea",
+  'workflowNode',
+  'simple',
+  'square',
+  'tool',
+  'gateway',
+  'note',
+  'terminal',
+  'idea'
 ];
 
 // Sync registration flag with registry.clear() for test isolation

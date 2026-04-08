@@ -37,8 +37,8 @@ export {
   FormCheckboxGroup,
   FormArray,
   FormFieldset,
-  FormUISchemaRenderer,
-} from "./index.js";
+  FormUISchemaRenderer
+} from './index.js';
 
 // Types
 export type {
@@ -63,8 +63,8 @@ export type {
   FieldMatcher,
   FieldMatcherRegistration,
   FieldComponent,
-  FieldComponentRegistration,
-} from "./index.js";
+  FieldComponentRegistration
+} from './index.js';
 
 // Utility functions
 export {
@@ -72,8 +72,8 @@ export {
   isOneOfArray,
   normalizeOptions,
   oneOfToOptions,
-  getSchemaOptions,
-} from "./index.js";
+  getSchemaOptions
+} from './index.js';
 
 // Field Registry
 export {
@@ -87,19 +87,16 @@ export {
   numberFieldMatcher,
   toggleMatcher,
   selectOptionsMatcher,
-  arrayMatcher,
-} from "./index.js";
+  arrayMatcher
+} from './index.js';
 
 // Import registration functions
-import {
-  registerCodeEditorField,
-  registerTemplateEditorField,
-} from "./code.js";
-import { registerMarkdownEditorField } from "./markdown.js";
+import { registerCodeEditorField, registerTemplateEditorField } from './code.js';
+import { registerMarkdownEditorField } from './markdown.js';
 
 // Re-export heavy editor components for direct access
-export { FormCodeEditor, FormTemplateEditor } from "./code.js";
-export { FormMarkdownEditor } from "./markdown.js";
+export { FormCodeEditor, FormTemplateEditor } from './code.js';
+export { FormMarkdownEditor } from './markdown.js';
 
 // Re-export registration functions
 export {
@@ -109,14 +106,14 @@ export {
   isCodeEditorRegistered,
   isTemplateEditorRegistered,
   codeEditorFieldMatcher,
-  templateEditorFieldMatcher,
-} from "./code.js";
+  templateEditorFieldMatcher
+} from './code.js';
 
 export {
   registerMarkdownEditorField,
   isMarkdownEditorRegistered,
-  markdownEditorFieldMatcher,
-} from "./markdown.js";
+  markdownEditorFieldMatcher
+} from './markdown.js';
 
 /**
  * Track if all field types have been initialized

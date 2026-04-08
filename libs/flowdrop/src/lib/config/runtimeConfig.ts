@@ -6,17 +6,17 @@
  * time rather than build time.
  */
 
-import { logger } from "../utils/logger.js";
+import { logger } from '../utils/logger.js';
 
 export interface RuntimeConfig {
   /** Base URL for the FlowDrop API */
   apiBaseUrl: string;
   /** Theme preference */
-  theme: "light" | "dark" | "auto";
+  theme: 'light' | 'dark' | 'auto';
   /** Request timeout in milliseconds */
   timeout: number;
   /** Authentication type */
-  authType: "none" | "bearer" | "api_key" | "custom";
+  authType: 'none' | 'bearer' | 'api_key' | 'custom';
   /** Authentication token */
   authToken?: string;
   /** Application version */
@@ -40,9 +40,7 @@ const CACHE_DURATION = 5 * 60 * 1000;
  * @param force - Force fetch even if cached
  * @returns Promise resolving to runtime configuration
  */
-export async function fetchRuntimeConfig(
-  force = false,
-): Promise<RuntimeConfig> {
+export async function fetchRuntimeConfig(force = false): Promise<RuntimeConfig> {
   const now = Date.now();
 
   // Return cached config if available and not expired
@@ -51,7 +49,7 @@ export async function fetchRuntimeConfig(
   }
 
   try {
-    const response = await fetch("/api/config");
+    const response = await fetch('/api/config');
 
     if (!response.ok) {
       throw new Error(`Failed to fetch runtime config: ${response.statusText}`);
@@ -65,16 +63,16 @@ export async function fetchRuntimeConfig(
 
     return config;
   } catch (error) {
-    logger.error("Failed to fetch runtime configuration:", error);
+    logger.error('Failed to fetch runtime configuration:', error);
 
     // Return default configuration if fetch fails
     const defaultConfig: RuntimeConfig = {
-      apiBaseUrl: "/api/flowdrop",
-      theme: "auto",
+      apiBaseUrl: '/api/flowdrop',
+      theme: 'auto',
       timeout: 30000,
-      authType: "none",
-      version: "1.0.0",
-      environment: "production",
+      authType: 'none',
+      version: '1.0.0',
+      environment: 'production'
     };
 
     // Cache the default config to avoid repeated failed requests

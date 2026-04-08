@@ -7,8 +7,8 @@
  * @module stores/interruptStore
  */
 
-import { SvelteMap } from "svelte/reactivity";
-import type { Interrupt } from "../types/interrupt.js";
+import { SvelteMap } from 'svelte/reactivity';
+import type { Interrupt } from '../types/interrupt.js';
 import {
   type InterruptState,
   type InterruptAction,
@@ -20,9 +20,9 @@ import {
   hasError as checkHasError,
   getErrorMessage,
   getResolvedValue,
-  toLegacyStatus,
-} from "../types/interruptState.js";
-import { logger } from "../utils/logger.js";
+  toLegacyStatus
+} from '../types/interruptState.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Types
@@ -46,7 +46,7 @@ export interface InterruptWithState extends Interrupt {
  * Key: interrupt ID, Value: Interrupt object with state
  */
 let interrupts: SvelteMap<string, InterruptWithState> = $state(
-  new SvelteMap<string, InterruptWithState>(),
+  new SvelteMap<string, InterruptWithState>()
 );
 
 // =========================================================================
@@ -104,7 +104,7 @@ export function getPendingInterruptCount(): number {
 export function getResolvedInterrupts(): InterruptWithState[] {
   const resolved: InterruptWithState[] = [];
   interrupts.forEach((interrupt) => {
-    if (interrupt.machineState.status === "resolved") {
+    if (interrupt.machineState.status === 'resolved') {
       resolved.push(interrupt);
     }
   });
@@ -134,17 +134,14 @@ export function getIsAnySubmitting(): boolean {
  * @param action - The action to apply
  * @returns Transition result with validity and any errors
  */
-function applyAction(
-  interruptId: string,
-  action: InterruptAction,
-): TransitionResult {
+function applyAction(interruptId: string, action: InterruptAction): TransitionResult {
   const interrupt = interrupts.get(interruptId);
 
   if (!interrupt) {
     return {
       state: initialState,
       valid: false,
-      error: `Interrupt not found: ${interruptId}`,
+      error: `Interrupt not found: ${interruptId}`
     };
   }
 
@@ -160,11 +157,11 @@ function applyAction(
         status: toLegacyStatus(result.state),
         responseValue: getResolvedValue(result.state) ?? current.responseValue,
         resolvedAt:
-          result.state.status === "resolved"
+          result.state.status === 'resolved'
             ? (result.state as { resolvedAt: string }).resolvedAt
-            : result.state.status === "cancelled"
+            : result.state.status === 'cancelled'
               ? (result.state as { cancelledAt: string }).cancelledAt
-              : current.resolvedAt,
+              : current.resolvedAt
       };
       interrupts.set(interruptId, newInterrupt);
     }
@@ -196,7 +193,7 @@ export const interruptActions = {
 
     const interruptWithState: InterruptWithState = {
       ...interrupt,
-      machineState,
+      machineState
     };
 
     interrupts.set(interrupt.id, interruptWithState);
@@ -216,7 +213,7 @@ export const interruptActions = {
 
       const interruptWithState: InterruptWithState = {
         ...interrupt,
-        machineState,
+        machineState
       };
 
       interrupts.set(interrupt.id, interruptWithState);
@@ -231,7 +228,7 @@ export const interruptActions = {
    * @returns Transition result
    */
   startSubmit: (interruptId: string, value: unknown): TransitionResult => {
-    return applyAction(interruptId, { type: "SUBMIT", value });
+    return applyAction(interruptId, { type: 'SUBMIT', value });
   },
 
   /**
@@ -241,7 +238,7 @@ export const interruptActions = {
    * @returns Transition result
    */
   startCancel: (interruptId: string): TransitionResult => {
-    return applyAction(interruptId, { type: "CANCEL" });
+    return applyAction(interruptId, { type: 'CANCEL' });
   },
 
   /**
@@ -251,7 +248,7 @@ export const interruptActions = {
    * @returns Transition result
    */
   submitSuccess: (interruptId: string): TransitionResult => {
-    return applyAction(interruptId, { type: "SUCCESS" });
+    return applyAction(interruptId, { type: 'SUCCESS' });
   },
 
   /**
@@ -262,7 +259,7 @@ export const interruptActions = {
    * @returns Transition result
    */
   submitFailure: (interruptId: string, error: string): TransitionResult => {
-    return applyAction(interruptId, { type: "FAILURE", error });
+    return applyAction(interruptId, { type: 'FAILURE', error });
   },
 
   /**
@@ -272,7 +269,7 @@ export const interruptActions = {
    * @returns Transition result
    */
   retry: (interruptId: string): TransitionResult => {
-    return applyAction(interruptId, { type: "RETRY" });
+    return applyAction(interruptId, { type: 'RETRY' });
   },
 
   /**
@@ -282,7 +279,7 @@ export const interruptActions = {
    * @returns Transition result
    */
   resetInterrupt: (interruptId: string): TransitionResult => {
-    return applyAction(interruptId, { type: "RESET" });
+    return applyAction(interruptId, { type: 'RESET' });
   },
 
   /**
@@ -292,9 +289,9 @@ export const interruptActions = {
    * @param value - The resolved value
    */
   resolveInterrupt: (interruptId: string, value: unknown): void => {
-    const submitResult = applyAction(interruptId, { type: "SUBMIT", value });
+    const submitResult = applyAction(interruptId, { type: 'SUBMIT', value });
     if (submitResult.valid) {
-      applyAction(interruptId, { type: "SUCCESS" });
+      applyAction(interruptId, { type: 'SUCCESS' });
     }
   },
 
@@ -304,9 +301,9 @@ export const interruptActions = {
    * @param interruptId - The interrupt ID
    */
   cancelInterrupt: (interruptId: string): void => {
-    const cancelResult = applyAction(interruptId, { type: "CANCEL" });
+    const cancelResult = applyAction(interruptId, { type: 'CANCEL' });
     if (cancelResult.valid) {
-      applyAction(interruptId, { type: "SUCCESS" });
+      applyAction(interruptId, { type: 'SUCCESS' });
     }
   },
 
@@ -346,7 +343,7 @@ export const interruptActions = {
    */
   reset: (): void => {
     interrupts.clear();
-  },
+  }
 };
 
 // =========================================================================
@@ -359,9 +356,7 @@ export const interruptActions = {
  * @param interruptId - The interrupt ID
  * @returns The interrupt or undefined
  */
-export function getInterrupt(
-  interruptId: string,
-): InterruptWithState | undefined {
+export function getInterrupt(interruptId: string): InterruptWithState | undefined {
   return interrupts.get(interruptId);
 }
 
@@ -404,9 +399,7 @@ export function getInterruptError(interruptId: string): string | undefined {
  * @param messageId - The message ID
  * @returns The interrupt or undefined
  */
-export function getInterruptByMessageId(
-  messageId: string,
-): InterruptWithState | undefined {
+export function getInterruptByMessageId(messageId: string): InterruptWithState | undefined {
   for (const interrupt of interrupts.values()) {
     if (interrupt.messageId === messageId) {
       return interrupt;

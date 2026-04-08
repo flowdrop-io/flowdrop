@@ -10,7 +10,7 @@
  * 4. Fan out branches vertically from BranchingNode
  */
 
-import type { AgentSpecFlow } from "../../types/agentspec.js";
+import type { AgentSpecFlow } from '../../types/agentspec.js';
 
 /** Measured dimensions for a node */
 export interface NodeDimensions {
@@ -40,7 +40,7 @@ const DEFAULT_CONFIG: AutoLayoutConfig = {
   startX: 100,
   startY: 100,
   defaultNodeWidth: 220,
-  defaultNodeHeight: 150,
+  defaultNodeHeight: 150
 };
 
 /**
@@ -55,7 +55,7 @@ const DEFAULT_CONFIG: AutoLayoutConfig = {
 export function computeAutoLayout(
   flow: AgentSpecFlow,
   config: Partial<AutoLayoutConfig> = {},
-  nodeDimensions?: Map<string, NodeDimensions>,
+  nodeDimensions?: Map<string, NodeDimensions>
 ): Map<string, { x: number; y: number }> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const positions = new Map<string, { x: number; y: number }>();
@@ -65,7 +65,7 @@ export function computeAutoLayout(
   const getDims = (name: string): NodeDimensions =>
     nodeDimensions?.get(name) ?? {
       width: cfg.defaultNodeWidth,
-      height: cfg.defaultNodeHeight,
+      height: cfg.defaultNodeHeight
     };
 
   // Build adjacency list from control-flow edges
@@ -114,8 +114,7 @@ export function computeAutoLayout(
 
   // Place disconnected nodes in a final layer
   if (disconnected.length > 0) {
-    const maxLayer =
-      layerGroups.size > 0 ? Math.max(...layerGroups.keys()) + 1 : 0;
+    const maxLayer = layerGroups.size > 0 ? Math.max(...layerGroups.keys()) + 1 : 0;
     layerGroups.set(maxLayer, disconnected);
   }
 
@@ -131,9 +130,7 @@ export function computeAutoLayout(
 
     // Advance X by the widest node in this layer + horizontal gap
     const nodesInLayer = layerGroups.get(layerIndex)!;
-    const maxWidth = Math.max(
-      ...nodesInLayer.map((name) => getDims(name).width),
-    );
+    const maxWidth = Math.max(...nodesInLayer.map((name) => getDims(name).width));
     currentX += maxWidth + cfg.horizontalGap;
   }
 
@@ -145,8 +142,7 @@ export function computeAutoLayout(
     // Calculate total height of this column (sum of node heights + gaps)
     const heights = nodesInLayer.map((name) => getDims(name).height);
     const totalHeight =
-      heights.reduce((sum, h) => sum + h, 0) +
-      (nodesInLayer.length - 1) * cfg.verticalGap;
+      heights.reduce((sum, h) => sum + h, 0) + (nodesInLayer.length - 1) * cfg.verticalGap;
 
     // Center the column vertically around startY
     let y = cfg.startY - totalHeight / 2;
@@ -186,7 +182,7 @@ const DEFAULT_BEAUTIFY_CONFIG: BeautifyLayoutConfig = {
   horizontalGap: 120,
   verticalGap: 40,
   defaultNodeWidth: 220,
-  defaultNodeHeight: 150,
+  defaultNodeHeight: 150
 };
 
 /**
@@ -207,7 +203,7 @@ const DEFAULT_BEAUTIFY_CONFIG: BeautifyLayoutConfig = {
 export function computeBeautifyLayout(
   positions: Map<string, NodePosition>,
   config: Partial<BeautifyLayoutConfig> = {},
-  nodeDimensions?: Map<string, NodeDimensions>,
+  nodeDimensions?: Map<string, NodeDimensions>
 ): Map<string, { x: number; y: number }> {
   const cfg = { ...DEFAULT_BEAUTIFY_CONFIG, ...config };
   const result = new Map<string, { x: number; y: number }>();
@@ -217,14 +213,14 @@ export function computeBeautifyLayout(
   const getDims = (id: string): NodeDimensions =>
     nodeDimensions?.get(id) ?? {
       width: cfg.defaultNodeWidth,
-      height: cfg.defaultNodeHeight,
+      height: cfg.defaultNodeHeight
     };
 
   // Collect all nodes sorted by X
   const entries = Array.from(positions.entries()).map(([id, pos]) => ({
     id,
     x: pos.x,
-    y: pos.y,
+    y: pos.y
   }));
   entries.sort((a, b) => a.x - b.x);
 
@@ -267,9 +263,7 @@ export function computeBeautifyLayout(
 
     // Calculate total height of this column
     const heights = col.map((e) => getDims(e.id).height);
-    const totalHeight =
-      heights.reduce((sum, h) => sum + h, 0) +
-      (col.length - 1) * cfg.verticalGap;
+    const totalHeight = heights.reduce((sum, h) => sum + h, 0) + (col.length - 1) * cfg.verticalGap;
 
     // Center column vertically around the global center
     let y = globalCenterY - totalHeight / 2;
@@ -297,7 +291,7 @@ export function computeBeautifyLayout(
 function assignLayers(
   startNode: string,
   adjacency: Map<string, string[]>,
-  nodeCount: number,
+  nodeCount: number
 ): Map<string, number> {
   const layers = new Map<string, number>();
   layers.set(startNode, 0);

@@ -1,4 +1,4 @@
-import type { FlowDropSkin } from "./skin.js";
+import type { FlowDropSkin } from './skin.js';
 
 /**
  * Behavioral configuration bundled with a theme.
@@ -35,4 +35,4 @@ export interface FlowDropTheme {
   config?: FlowDropThemeConfig;
 }
 
-export type FlowDropThemeName = "default" | "minimal";
+export type FlowDropThemeName = 'default' | 'minimal';

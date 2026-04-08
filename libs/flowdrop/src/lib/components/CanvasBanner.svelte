@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import type { Snippet } from 'svelte';
   let {
     title,
     description,
-    icon,
+    icon
   }: {
     title: string;
     description: string;

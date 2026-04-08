@@ -54,13 +54,13 @@
 -->
 
 <script lang="ts">
-  import { setContext } from "svelte";
-  import Icon from "@iconify/svelte";
-  import type { ConfigSchema, AuthProvider } from "$lib/types/index.js";
-  import type { UISchemaElement } from "$lib/types/uischema.js";
-  import { FormField } from "$lib/components/form/index.js";
-  import FormUISchemaRenderer from "$lib/components/form/FormUISchemaRenderer.svelte";
-  import type { FieldSchema } from "$lib/components/form/index.js";
+  import { setContext } from 'svelte';
+  import Icon from '@iconify/svelte';
+  import type { ConfigSchema, AuthProvider } from '$lib/types/index.js';
+  import type { UISchemaElement } from '$lib/types/uischema.js';
+  import { FormField } from '$lib/components/form/index.js';
+  import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
+  import type { FieldSchema } from '$lib/components/form/index.js';
 
   /**
    * Props interface for SchemaForm component
@@ -160,25 +160,22 @@
     values = {},
     onChange,
     showActions = false,
-    saveLabel = "Save",
-    cancelLabel = "Cancel",
+    saveLabel = 'Save',
+    cancelLabel = 'Cancel',
     onSave,
     onCancel,
     loading = false,
     disabled = false,
-    class: className = "",
+    class: className = '',
     authProvider,
-    baseUrl = "",
+    baseUrl = ''
   }: Props = $props();
 
   // Set context for child components (e.g., FormAutocomplete)
   // Use getter functions to ensure child components always get the current prop value,
   // even if the prop changes after initial mount
-  setContext<() => AuthProvider | undefined>(
-    "flowdrop:getAuthProvider",
-    () => authProvider,
-  );
-  setContext<() => string>("flowdrop:getBaseUrl", () => baseUrl);
+  setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
+  setContext<() => string>('flowdrop:getBaseUrl', () => baseUrl);
 
   /**
    * Reference to this component's form element
@@ -200,8 +197,7 @@
       Object.entries(schema.properties).forEach(([key, field]) => {
         const fieldConfig = field as Record<string, unknown>;
         // Use provided value if available, otherwise use schema default
-        mergedValues[key] =
-          values[key] !== undefined ? values[key] : fieldConfig.default;
+        mergedValues[key] = values[key] !== undefined ? values[key] : fieldConfig.default;
       });
       formValues = mergedValues;
     }
@@ -247,29 +243,18 @@
     const updatedValues: Record<string, unknown> = { ...formValues };
 
     if (formRef) {
-      const inputs = formRef.querySelectorAll("input, select, textarea");
+      const inputs = formRef.querySelectorAll('input, select, textarea');
       inputs.forEach((input: Element) => {
-        const inputEl = input as
-          | HTMLInputElement
-          | HTMLSelectElement
-          | HTMLTextAreaElement;
+        const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
         if (inputEl.id) {
-          if (
-            inputEl instanceof HTMLInputElement &&
-            inputEl.type === "checkbox"
-          ) {
+          if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
             updatedValues[inputEl.id] = inputEl.checked;
           } else if (
             inputEl instanceof HTMLInputElement &&
-            (inputEl.type === "number" || inputEl.type === "range")
+            (inputEl.type === 'number' || inputEl.type === 'range')
           ) {
-            updatedValues[inputEl.id] = inputEl.value
-              ? Number(inputEl.value)
-              : inputEl.value;
-          } else if (
-            inputEl instanceof HTMLInputElement &&
-            inputEl.type === "hidden"
-          ) {
+            updatedValues[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
+          } else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
             // Parse hidden field values that might be JSON
             try {
               const parsed = JSON.parse(inputEl.value);
@@ -289,14 +274,10 @@
     if (values && schema?.properties) {
       Object.entries(schema.properties).forEach(
         ([key, property]: [string, Record<string, unknown>]) => {
-          if (
-            property.format === "hidden" &&
-            !(key in updatedValues) &&
-            key in values
-          ) {
+          if (property.format === 'hidden' && !(key in updatedValues) && key in values) {
             updatedValues[key] = values[key];
           }
-        },
+        }
       );
     }
 
@@ -479,11 +460,7 @@
   }
 
   .schema-form__button--primary {
-    background: linear-gradient(
-      135deg,
-      var(--fd-primary) 0%,
-      var(--fd-primary-hover) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
     color: var(--fd-primary-foreground);
     box-shadow:
       0 1px 3px rgba(59, 130, 246, 0.3),
@@ -491,11 +468,7 @@
   }
 
   .schema-form__button--primary:hover:not(:disabled) {
-    background: linear-gradient(
-      135deg,
-      var(--fd-primary-hover) 0%,
-      var(--fd-primary-hover) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
     box-shadow:
       0 4px 12px rgba(59, 130, 246, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);

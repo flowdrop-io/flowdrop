@@ -8,45 +8,45 @@
  * @module stores/editorStateMachine
  */
 
-import { logger } from "../utils/logger.js";
+import { logger } from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export type EditorState =
-  | "uninitialized"
-  | "loading"
-  | "idle"
-  | "dragging"
-  | "connecting"
-  | "dropping"
-  | "restoring"
-  | "deleting"
-  | "updating_node";
+  | 'uninitialized'
+  | 'loading'
+  | 'idle'
+  | 'dragging'
+  | 'connecting'
+  | 'dropping'
+  | 'restoring'
+  | 'deleting'
+  | 'updating_node';
 
 export type EditorEvent =
-  | "WORKFLOW_LOADED"
-  | "LOAD_COMPLETE"
-  | "START_DRAG"
-  | "STOP_DRAG"
-  | "START_CONNECT"
-  | "CONNECTION_MADE"
-  | "CONNECTION_CANCELLED"
-  | "START_DROP"
-  | "DROP_COMPLETE"
-  | "DROP_CANCELLED"
-  | "START_RESTORE"
-  | "RESTORE_COMPLETE"
-  | "EXTERNAL_STORE_CHANGE"
-  | "SYNC_COMPLETE"
-  | "START_DELETE"
-  | "DELETE_COMPLETE"
-  | "START_NODE_UPDATE"
-  | "UPDATE_COMPLETE"
-  | "WORKFLOW_SWITCHED"
-  | "WORKFLOW_CLEARED"
-  | "RESET";
+  | 'WORKFLOW_LOADED'
+  | 'LOAD_COMPLETE'
+  | 'START_DRAG'
+  | 'STOP_DRAG'
+  | 'START_CONNECT'
+  | 'CONNECTION_MADE'
+  | 'CONNECTION_CANCELLED'
+  | 'START_DROP'
+  | 'DROP_COMPLETE'
+  | 'DROP_CANCELLED'
+  | 'START_RESTORE'
+  | 'RESTORE_COMPLETE'
+  | 'EXTERNAL_STORE_CHANGE'
+  | 'SYNC_COMPLETE'
+  | 'START_DELETE'
+  | 'DELETE_COMPLETE'
+  | 'START_NODE_UPDATE'
+  | 'UPDATE_COMPLETE'
+  | 'WORKFLOW_SWITCHED'
+  | 'WORKFLOW_CLEARED'
+  | 'RESET';
 
 /** What operations are permitted in the current state */
 export interface StatePermissions {
@@ -66,48 +66,48 @@ type TransitionMap = Partial<Record<EditorEvent, EditorState>>;
 
 const transitions: Record<EditorState, TransitionMap> = {
   uninitialized: {
-    WORKFLOW_LOADED: "loading",
+    WORKFLOW_LOADED: 'loading'
   },
   loading: {
-    LOAD_COMPLETE: "idle",
+    LOAD_COMPLETE: 'idle'
   },
   idle: {
-    START_DRAG: "dragging",
-    START_CONNECT: "connecting",
-    START_DROP: "dropping",
-    START_RESTORE: "restoring",
-    EXTERNAL_STORE_CHANGE: "loading",
-    START_DELETE: "deleting",
-    START_NODE_UPDATE: "updating_node",
-    WORKFLOW_SWITCHED: "loading",
-    WORKFLOW_CLEARED: "uninitialized",
+    START_DRAG: 'dragging',
+    START_CONNECT: 'connecting',
+    START_DROP: 'dropping',
+    START_RESTORE: 'restoring',
+    EXTERNAL_STORE_CHANGE: 'loading',
+    START_DELETE: 'deleting',
+    START_NODE_UPDATE: 'updating_node',
+    WORKFLOW_SWITCHED: 'loading',
+    WORKFLOW_CLEARED: 'uninitialized'
   },
   dragging: {
-    STOP_DRAG: "idle",
+    STOP_DRAG: 'idle'
   },
   connecting: {
-    CONNECTION_MADE: "idle",
-    CONNECTION_CANCELLED: "idle",
+    CONNECTION_MADE: 'idle',
+    CONNECTION_CANCELLED: 'idle'
   },
   dropping: {
-    DROP_COMPLETE: "idle",
-    DROP_CANCELLED: "idle",
+    DROP_COMPLETE: 'idle',
+    DROP_CANCELLED: 'idle'
   },
   restoring: {
-    RESTORE_COMPLETE: "idle",
+    RESTORE_COMPLETE: 'idle'
   },
   deleting: {
-    DELETE_COMPLETE: "idle",
+    DELETE_COMPLETE: 'idle'
   },
   updating_node: {
-    UPDATE_COMPLETE: "idle",
-  },
+    UPDATE_COMPLETE: 'idle'
+  }
 };
 
 /** Global transitions valid from any state */
 const globalTransitions: Partial<Record<EditorEvent, EditorState>> = {
-  RESET: "uninitialized",
-  WORKFLOW_CLEARED: "uninitialized",
+  RESET: 'uninitialized',
+  WORKFLOW_CLEARED: 'uninitialized'
 };
 
 // ---------------------------------------------------------------------------
@@ -118,44 +118,44 @@ const permissions: Record<EditorState, StatePermissions> = {
   uninitialized: {
     canWriteToStore: false,
     canPushHistory: false,
-    suppressEffect: false,
+    suppressEffect: false
   },
   loading: {
     canWriteToStore: false,
     canPushHistory: false,
-    suppressEffect: false,
+    suppressEffect: false
   },
   idle: { canWriteToStore: true, canPushHistory: true, suppressEffect: false },
   dragging: {
     canWriteToStore: true,
     canPushHistory: false,
-    suppressEffect: true,
+    suppressEffect: true
   },
   connecting: {
     canWriteToStore: true,
     canPushHistory: false,
-    suppressEffect: true,
+    suppressEffect: true
   },
   dropping: {
     canWriteToStore: true,
     canPushHistory: false,
-    suppressEffect: true,
+    suppressEffect: true
   },
   restoring: {
     canWriteToStore: true,
     canPushHistory: false,
-    suppressEffect: true,
+    suppressEffect: true
   },
   deleting: {
     canWriteToStore: true,
     canPushHistory: false,
-    suppressEffect: true,
+    suppressEffect: true
   },
   updating_node: {
     canWriteToStore: true,
     canPushHistory: false,
-    suppressEffect: true,
-  },
+    suppressEffect: true
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -173,7 +173,7 @@ export interface EditorStateMachine {
   canSend(event: EditorEvent): boolean;
   /** Subscribe to state changes (for debugging/logging). Returns unsubscribe function. */
   onTransition(
-    callback: (from: EditorState, event: EditorEvent, to: EditorState) => void,
+    callback: (from: EditorState, event: EditorEvent, to: EditorState) => void
   ): () => void;
 }
 
@@ -191,13 +191,11 @@ export interface EditorStateMachine {
  * Each WorkflowEditor component instance should create its own machine.
  */
 export function createEditorStateMachine(
-  initialState: EditorState = "uninitialized",
+  initialState: EditorState = 'uninitialized'
 ): EditorStateMachine {
   let _current = $state<EditorState>(initialState);
   let _permissions = $state<StatePermissions>(permissions[initialState]);
-  const _listeners = new Set<
-    (from: EditorState, event: EditorEvent, to: EditorState) => void
-  >();
+  const _listeners = new Set<(from: EditorState, event: EditorEvent, to: EditorState) => void>();
 
   function send(event: EditorEvent): boolean {
     // Check global transitions first (valid from any state)
@@ -231,7 +229,7 @@ export function createEditorStateMachine(
   }
 
   function onTransition(
-    callback: (from: EditorState, event: EditorEvent, to: EditorState) => void,
+    callback: (from: EditorState, event: EditorEvent, to: EditorState) => void
   ): () => void {
     _listeners.add(callback);
     return () => {
@@ -248,6 +246,6 @@ export function createEditorStateMachine(
     },
     send,
     canSend,
-    onTransition,
+    onTransition
   };
 }

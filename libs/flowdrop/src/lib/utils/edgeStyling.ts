@@ -6,32 +6,27 @@
  * Used by both the visual editor and the command DSL system.
  */
 
-import { MarkerType } from "@xyflow/svelte";
+import { MarkerType } from '@xyflow/svelte';
 import type {
   WorkflowNode as WorkflowNodeType,
   WorkflowEdge,
-  EdgeCategory,
-} from "../types/index.js";
-import { extractPortId } from "../utils/handleIds.js";
-import { isLoopbackEdge } from "../utils/connections.js";
-import { EDGE_MARKER_SIZES } from "../config/constants.js";
+  EdgeCategory
+} from '../types/index.js';
+import { extractPortId } from '../utils/handleIds.js';
+import { isLoopbackEdge } from '../utils/connections.js';
+import { EDGE_MARKER_SIZES } from '../config/constants.js';
 
 /**
  * Check if a port ID matches a dynamic branch in a Gateway node.
  * Gateway nodes store branches in config.branches array.
  */
-export function isGatewayBranch(
-  node: WorkflowNodeType,
-  portId: string,
-): boolean {
+export function isGatewayBranch(node: WorkflowNodeType, portId: string): boolean {
   const nodeType = node.data?.metadata?.type || node.type;
-  if (nodeType !== "gateway") {
+  if (nodeType !== 'gateway') {
     return false;
   }
 
-  const branches = node.data?.config?.branches as
-    | Array<{ name: string }>
-    | undefined;
+  const branches = node.data?.config?.branches as Array<{ name: string }> | undefined;
   if (!branches || !Array.isArray(branches)) {
     return false;
   }
@@ -46,13 +41,10 @@ export function isGatewayBranch(
 export function getPortDataType(
   node: WorkflowNodeType,
   portId: string,
-  portType: "input" | "output",
+  portType: 'input' | 'output'
 ): string | null {
   // First, check static ports in metadata
-  const ports =
-    portType === "output"
-      ? node.data?.metadata?.outputs
-      : node.data?.metadata?.inputs;
+  const ports = portType === 'output' ? node.data?.metadata?.outputs : node.data?.metadata?.inputs;
 
   if (ports && Array.isArray(ports)) {
     const port = ports.find((p) => p.id === portId);
@@ -62,8 +54,7 @@ export function getPortDataType(
   }
 
   // Check dynamic ports from config (dynamicInputs/dynamicOutputs)
-  const dynamicKey =
-    portType === "output" ? "dynamicOutputs" : "dynamicInputs";
+  const dynamicKey = portType === 'output' ? 'dynamicOutputs' : 'dynamicInputs';
   const dynamicPorts = node.data?.config?.[dynamicKey] as
     | Array<{ name: string; dataType: string }>
     | undefined;
@@ -76,8 +67,8 @@ export function getPortDataType(
 
   // For output ports, also check dynamic Gateway branches
   // Gateway branches are always trigger type (control flow)
-  if (portType === "output" && isGatewayBranch(node, portId)) {
-    return "trigger";
+  if (portType === 'output' && isGatewayBranch(node, portId)) {
+    return 'trigger';
   }
 
   return null;
@@ -87,18 +78,16 @@ export function getPortDataType(
  * Determine the edge category based on source port data type.
  * Note: This does not check for loopback edges — use getEdgeCategoryWithLoopback() for that.
  */
-export function getEdgeCategory(
-  sourcePortDataType: string | null,
-): EdgeCategory {
-  if (sourcePortDataType === "trigger") {
-    return "trigger";
+export function getEdgeCategory(sourcePortDataType: string | null): EdgeCategory {
+  if (sourcePortDataType === 'trigger') {
+    return 'trigger';
   }
 
-  if (sourcePortDataType === "tool") {
-    return "tool";
+  if (sourcePortDataType === 'tool') {
+    return 'tool';
   }
 
-  return "data";
+  return 'data';
 }
 
 /**
@@ -107,10 +96,10 @@ export function getEdgeCategory(
  */
 export function getEdgeCategoryWithLoopback(
   edge: WorkflowEdge,
-  sourcePortDataType: string | null,
+  sourcePortDataType: string | null
 ): EdgeCategory {
   if (isLoopbackEdge(edge)) {
-    return "loopback";
+    return 'loopback';
   }
 
   return getEdgeCategory(sourcePortDataType);
@@ -127,14 +116,14 @@ export function getEdgeCategoryWithLoopback(
 export function applyConnectionStyling(
   edge: WorkflowEdge,
   sourceNode: WorkflowNodeType,
-  targetNode: WorkflowNodeType,
+  targetNode: WorkflowNodeType
 ): void {
   // Extract port ID from sourceHandle
   const sourcePortId = extractPortId(edge.sourceHandle);
 
   // Get the source port's data type
   const sourcePortDataType = sourcePortId
-    ? getPortDataType(sourceNode, sourcePortId, "output")
+    ? getPortDataType(sourceNode, sourcePortId, 'output')
     : null;
 
   // Determine edge category (loopback takes precedence)
@@ -143,46 +132,45 @@ export function applyConnectionStyling(
   // Apply styling based on edge category
   // Marker colors use CSS custom properties so they respond to theme changes automatically
   switch (edgeCategory) {
-    case "loopback":
+    case 'loopback':
       edge.style =
-        "stroke: var(--fd-edge-loopback); stroke-dasharray: var(--fd-edge-loopback-dasharray); stroke-width: var(--fd-edge-loopback-width); opacity: var(--fd-edge-loopback-opacity);";
-      edge.class = "flowdrop--edge--loopback";
+        'stroke: var(--fd-edge-loopback); stroke-dasharray: var(--fd-edge-loopback-dasharray); stroke-width: var(--fd-edge-loopback-width); opacity: var(--fd-edge-loopback-opacity);';
+      edge.class = 'flowdrop--edge--loopback';
       edge.markerEnd = {
         type: MarkerType.ArrowClosed,
         ...EDGE_MARKER_SIZES.loopback,
-        color: "var(--fd-edge-loopback)",
+        color: 'var(--fd-edge-loopback)'
       };
       break;
 
-    case "trigger":
-      edge.style =
-        "stroke: var(--fd-edge-trigger); stroke-width: var(--fd-edge-trigger-width);";
-      edge.class = "flowdrop--edge--trigger";
+    case 'trigger':
+      edge.style = 'stroke: var(--fd-edge-trigger); stroke-width: var(--fd-edge-trigger-width);';
+      edge.class = 'flowdrop--edge--trigger';
       edge.markerEnd = {
         type: MarkerType.ArrowClosed,
         ...EDGE_MARKER_SIZES.trigger,
-        color: "var(--fd-edge-trigger)",
+        color: 'var(--fd-edge-trigger)'
       };
       break;
 
-    case "tool":
-      edge.style = "stroke: var(--fd-edge-tool); stroke-dasharray: 5 3;";
-      edge.class = "flowdrop--edge--tool";
+    case 'tool':
+      edge.style = 'stroke: var(--fd-edge-tool); stroke-dasharray: 5 3;';
+      edge.class = 'flowdrop--edge--tool';
       edge.markerEnd = {
         type: MarkerType.ArrowClosed,
         ...EDGE_MARKER_SIZES.tool,
-        color: "var(--fd-edge-tool)",
+        color: 'var(--fd-edge-tool)'
       };
       break;
 
-    case "data":
+    case 'data':
     default:
-      edge.style = "stroke: var(--fd-edge-data);";
-      edge.class = "flowdrop--edge--data";
+      edge.style = 'stroke: var(--fd-edge-data);';
+      edge.class = 'flowdrop--edge--data';
       edge.markerEnd = {
         type: MarkerType.ArrowClosed,
         ...EDGE_MARKER_SIZES.data,
-        color: "var(--fd-edge-data)",
+        color: 'var(--fd-edge-data)'
       };
       break;
   }
@@ -193,10 +181,10 @@ export function applyConnectionStyling(
     metadata: {
       ...((edge.data?.metadata as Record<string, unknown>) || {}),
       edgeType: edgeCategory,
-      sourcePortDataType: sourcePortDataType ?? undefined,
+      sourcePortDataType: sourcePortDataType ?? undefined
     },
     targetNodeType: targetNode.type,
-    targetCategory: targetNode.data.metadata.category,
+    targetCategory: targetNode.data.metadata.category
   };
 }
 
@@ -204,10 +192,7 @@ export function applyConnectionStyling(
  * Update existing edges with custom styling rules.
  * Batch operation that applies styling to all edges using a node map for O(1) lookup.
  */
-export function updateEdgeStyles(
-  edges: WorkflowEdge[],
-  nodes: WorkflowNodeType[],
-): WorkflowEdge[] {
+export function updateEdgeStyles(edges: WorkflowEdge[], nodes: WorkflowNodeType[]): WorkflowEdge[] {
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   return edges.map((edge) => {
     const sourceNode = nodeMap.get(edge.source);
@@ -220,8 +205,8 @@ export function updateEdgeStyles(
         ...updatedEdge.data,
         metadata: {
           ...((updatedEdge.data?.metadata as Record<string, unknown>) || {}),
-          edgeType: "data" as EdgeCategory,
-        },
+          edgeType: 'data' as EdgeCategory
+        }
       };
       return updatedEdge;
     }

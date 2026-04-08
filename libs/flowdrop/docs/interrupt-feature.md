@@ -238,22 +238,15 @@ The `ChatPanel` component automatically detects and renders interrupts embedded 
 
 ```svelte
 <script lang="ts">
-  import { InterruptBubble } from "@flowdrop/flowdrop/playground";
-  import {
-    isInterruptMessageMetadata,
-    metadataToInterrupt,
-  } from "@flowdrop/flowdrop/playground";
+  import { InterruptBubble } from '@flowdrop/flowdrop/playground';
+  import { isInterruptMessageMetadata, metadataToInterrupt } from '@flowdrop/flowdrop/playground';
 </script>
 
 {#each messages as message}
   <MessageBubble {message} />
 
   {#if isInterruptMessageMetadata(message.metadata)}
-    {@const interrupt = metadataToInterrupt(
-      message.metadata,
-      message.id,
-      message.content,
-    )}
+    {@const interrupt = metadataToInterrupt(message.metadata, message.id, message.content)}
     <InterruptBubble
       {interrupt}
       onResolve={(value) => handleResolve(interrupt.id, value)}
@@ -273,14 +266,14 @@ import {
   interruptActions,
   getPendingInterrupts,
   getInterrupt,
-  isInterruptPending,
-} from "@flowdrop/flowdrop/playground";
+  isInterruptPending
+} from '@flowdrop/flowdrop/playground';
 
 // Read pending interrupts reactively (inside a component with $derived)
 const pending = $derived(getPendingInterrupts());
 
 // Or read a specific interrupt
-const interrupt = $derived(getInterrupt("int-123"));
+const interrupt = $derived(getInterrupt('int-123'));
 
 // Resolve an interrupt (state machine handles transitions)
 async function resolveInterrupt(interruptId: string, value: unknown) {
@@ -315,12 +308,12 @@ You can use prompt components directly:
 
 ```svelte
 <script lang="ts">
-  import { ConfirmationPrompt } from "@flowdrop/flowdrop/playground";
+  import { ConfirmationPrompt } from '@flowdrop/flowdrop/playground';
 
   let config = {
-    message: "Do you approve this action?",
-    confirm_label: "Approve",
-    cancel_label: "Reject",
+    message: 'Do you approve this action?',
+    confirm_label: 'Approve',
+    cancel_label: 'Reject'
   };
 </script>
 
@@ -375,17 +368,17 @@ The endpoints are configured in `EndpointConfig`:
 
 ```typescript
 const config = createEndpointConfig({
-  baseUrl: "/api/flowdrop",
+  baseUrl: '/api/flowdrop',
   endpoints: {
     // ... other endpoints
     interrupts: {
-      listSessionInterrupts: "/playground/sessions/{sessionId}/interrupts",
-      get: "/interrupts/{interruptId}",
-      resolve: "/interrupts/{interruptId}",
-      cancel: "/interrupts/{interruptId}/cancel",
-      listPipelineInterrupts: "/pipelines/{pipelineId}/interrupts",
-    },
-  },
+      listSessionInterrupts: '/playground/sessions/{sessionId}/interrupts',
+      get: '/interrupts/{interruptId}',
+      resolve: '/interrupts/{interruptId}',
+      cancel: '/interrupts/{interruptId}/cancel',
+      listPipelineInterrupts: '/pipelines/{pipelineId}/interrupts'
+    }
+  }
 });
 ```
 
@@ -409,8 +402,8 @@ import {
   isInterruptSubmitting,
   getInterruptError,
   getInterruptByMessageId,
-  interruptHasError,
-} from "@flowdrop/flowdrop/playground";
+  interruptHasError
+} from '@flowdrop/flowdrop/playground';
 
 // Use inside components with $derived for reactivity
 const pending = $derived(getPendingInterrupts());
@@ -421,7 +414,7 @@ const submitting = $derived(getIsAnySubmitting());
 #### Actions
 
 ```typescript
-import { interruptActions } from "@flowdrop/flowdrop/playground";
+import { interruptActions } from '@flowdrop/flowdrop/playground';
 
 // Add/remove interrupts
 interruptActions.addInterrupt(interrupt);
@@ -448,15 +441,15 @@ When an interrupt is resolved, the UI remains visible but disabled, showing the 
 
 ```svelte
 <script lang="ts">
-  import { getInterrupt } from "@flowdrop/flowdrop/playground";
+  import { getInterrupt } from '@flowdrop/flowdrop/playground';
 
   let { interruptId }: { interruptId: string } = $props();
   const interrupt = $derived(getInterrupt(interruptId));
 </script>
 
-{#if interrupt?.machineState.status === "idle"}
+{#if interrupt?.machineState.status === 'idle'}
   <!-- Active form -->
-{:else if interrupt?.machineState.status === "resolved"}
+{:else if interrupt?.machineState.status === 'resolved'}
   <!-- Disabled form showing response -->
   <div class="resolved-overlay">
     Resolved: {JSON.stringify(interrupt.responseValue)}
@@ -475,18 +468,18 @@ Interrupts are primarily detected through playground message metadata during reg
 For status updates on pending interrupts:
 
 ```typescript
-import { interruptService } from "@flowdrop/flowdrop/playground";
+import { interruptService } from '@flowdrop/flowdrop/playground';
 
 // Start polling for a specific interrupt
 interruptService.startPolling(
   interruptId,
   (interrupt) => {
     // Handle updated interrupt
-    if (interrupt.status !== "pending") {
-      console.log("Interrupt resolved externally");
+    if (interrupt.status !== 'pending') {
+      console.log('Interrupt resolved externally');
     }
   },
-  1500, // Poll interval in ms
+  1500 // Poll interval in ms
 );
 
 // Stop polling
@@ -518,10 +511,10 @@ Write clear, actionable interrupt messages:
 
 ```typescript
 // ✅ Good
-"Do you approve sending this email to 150 recipients?";
+'Do you approve sending this email to 150 recipients?';
 
 // ❌ Bad
-"Proceed?";
+'Proceed?';
 ```
 
 ### 2. Meaningful Labels
@@ -530,12 +523,12 @@ Use descriptive button/option labels:
 
 ```typescript
 // ✅ Good
-confirm_label: "Yes, send email";
-cancel_label: "No, cancel";
+confirm_label: 'Yes, send email';
+cancel_label: 'No, cancel';
 
 // ❌ Bad
-confirm_label: "Yes";
-cancel_label: "No";
+confirm_label: 'Yes';
+cancel_label: 'No';
 ```
 
 ### 3. Default Values
@@ -612,15 +605,15 @@ import type {
   // State machine types
   InterruptState,
   InterruptAction,
-  TransitionResult,
-} from "@flowdrop/flowdrop/playground";
+  TransitionResult
+} from '@flowdrop/flowdrop/playground';
 
 // Type guards and converters
 import {
   isInterruptMetadata,
   extractInterruptMetadata,
-  metadataToInterrupt,
-} from "@flowdrop/flowdrop/playground";
+  metadataToInterrupt
+} from '@flowdrop/flowdrop/playground';
 
 // State machine utilities
 import {
@@ -632,8 +625,8 @@ import {
   canSubmit,
   getErrorMessage,
   getResolvedValue,
-  toLegacyStatus,
-} from "@flowdrop/flowdrop/playground";
+  toLegacyStatus
+} from '@flowdrop/flowdrop/playground';
 ```
 
 ## Files Reference

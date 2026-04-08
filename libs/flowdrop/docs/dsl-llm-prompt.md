@@ -43,60 +43,60 @@ Every node has an ID in the format `<type>.<number>`, e.g., `my_node.1`, `my_nod
 
 ### Node Management
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| **add** | `add <type> [at <x>,<y>]` | Add a node. Position is optional (auto-placed if omitted). |
-| **delete** | `delete <nodeId>` | Delete a node and all its connections. |
-| **rename** | `rename <nodeId> <label>` | Change a node's display label. Label can contain spaces. |
-| **swap** | `swap <nodeId> with <type>` | Replace a node's type. Compatible connections are preserved; incompatible ones are dropped. |
-| **move** | `move <nodeId> to <x>,<y>` | Move a node to an absolute canvas position. |
+| Command    | Syntax                      | Description                                                                                 |
+| ---------- | --------------------------- | ------------------------------------------------------------------------------------------- |
+| **add**    | `add <type> [at <x>,<y>]`   | Add a node. Position is optional (auto-placed if omitted).                                  |
+| **delete** | `delete <nodeId>`           | Delete a node and all its connections.                                                      |
+| **rename** | `rename <nodeId> <label>`   | Change a node's display label. Label can contain spaces.                                    |
+| **swap**   | `swap <nodeId> with <type>` | Replace a node's type. Compatible connections are preserved; incompatible ones are dropped. |
+| **move**   | `move <nodeId> to <x>,<y>`  | Move a node to an absolute canvas position.                                                 |
 
 ### Configuration
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| **set** | `set <nodeId>:<key> <value>` | Set a configuration value on a node. |
-| **get** | `get <nodeId>:<key>` | Read a configuration value from a node. |
-| **config** | `config <nodeId>` | Open the node's config panel in the UI. |
-| **info** | `info <nodeId>` | Get detailed node info (ports, config, connections). |
+| Command    | Syntax                       | Description                                          |
+| ---------- | ---------------------------- | ---------------------------------------------------- |
+| **set**    | `set <nodeId>:<key> <value>` | Set a configuration value on a node.                 |
+| **get**    | `get <nodeId>:<key>`         | Read a configuration value from a node.              |
+| **config** | `config <nodeId>`            | Open the node's config panel in the UI.              |
+| **info**   | `info <nodeId>`              | Get detailed node info (ports, config, connections). |
 
 ### Connections
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| **connect** | `connect <nodeId>:<port> to <nodeId>:<port>` | Connect an output port to an input port. |
-| **disconnect** | `disconnect <nodeId>:<port> from <nodeId>:<port>` | Remove a specific connection. |
-| **disconnect** | `disconnect <nodeId>` | Remove all connections from a node. |
+| Command        | Syntax                                            | Description                              |
+| -------------- | ------------------------------------------------- | ---------------------------------------- |
+| **connect**    | `connect <nodeId>:<port> to <nodeId>:<port>`      | Connect an output port to an input port. |
+| **disconnect** | `disconnect <nodeId>:<port> from <nodeId>:<port>` | Remove a specific connection.            |
+| **disconnect** | `disconnect <nodeId>`                             | Remove all connections from a node.      |
 
 ### Query
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| **list nodes** | `list nodes` | List all nodes with their IDs, labels, and types. |
-| **list edges** | `list edges` | List all connections. |
-| **list types** | `list types` | List all available node types. |
-| **help** | `help [<command>]` | Show help for all or a specific command. |
+| Command        | Syntax             | Description                                       |
+| -------------- | ------------------ | ------------------------------------------------- |
+| **list nodes** | `list nodes`       | List all nodes with their IDs, labels, and types. |
+| **list edges** | `list edges`       | List all connections.                             |
+| **list types** | `list types`       | List all available node types.                    |
+| **help**       | `help [<command>]` | Show help for all or a specific command.          |
 
 ### Console
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| **cls** | `cls` | Clear the console output (does not affect the canvas). |
+| Command | Syntax | Description                                            |
+| ------- | ------ | ------------------------------------------------------ |
+| **cls** | `cls`  | Clear the console output (does not affect the canvas). |
 
 ### History & Canvas
 
-| Command | Syntax | Description |
-|---------|--------|-------------|
-| **undo** | `undo` | Undo the last action. |
-| **redo** | `redo` | Redo the last undone action. |
-| **clear** | `clear` | Remove all nodes and edges from the canvas. |
-| **select** | `select <nodeId>` | Select a node on the canvas. |
-| **layout auto** | `layout auto [--direction horizontal\|vertical]` | Auto-arrange all nodes. Default: horizontal. |
-| **layout beautify** | `layout beautify` | Normalize spacing while preserving arrangement. |
-| **canvas fitview** | `canvas fitview` | Fit all nodes into viewport. Also accepts `canvas fit`. |
-| **canvas zoom** | `canvas zoom in\|out\|<level>` | Zoom in, out, or to a specific level (e.g., `1.5` = 150%). |
-| **canvas pan** | `canvas pan <x>,<y>` | Pan the canvas to center on a position. |
-| **canvas reset** | `canvas reset` | Reset viewport to default position and zoom. |
+| Command             | Syntax                                           | Description                                                |
+| ------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
+| **undo**            | `undo`                                           | Undo the last action.                                      |
+| **redo**            | `redo`                                           | Redo the last undone action.                               |
+| **clear**           | `clear`                                          | Remove all nodes and edges from the canvas.                |
+| **select**          | `select <nodeId>`                                | Select a node on the canvas.                               |
+| **layout auto**     | `layout auto [--direction horizontal\|vertical]` | Auto-arrange all nodes. Default: horizontal.               |
+| **layout beautify** | `layout beautify`                                | Normalize spacing while preserving arrangement.            |
+| **canvas fitview**  | `canvas fitview`                                 | Fit all nodes into viewport. Also accepts `canvas fit`.    |
+| **canvas zoom**     | `canvas zoom in\|out\|<level>`                   | Zoom in, out, or to a specific level (e.g., `1.5` = 150%). |
+| **canvas pan**      | `canvas pan <x>,<y>`                             | Pan the canvas to center on a position.                    |
+| **canvas reset**    | `canvas reset`                                   | Reset viewport to default position and zoom.               |
 
 ---
 
@@ -104,17 +104,17 @@ Every node has an ID in the format `<type>.<number>`, e.g., `my_node.1`, `my_nod
 
 When you use `set <nodeId>:<key> <value>`, the value is auto-parsed:
 
-| Input | Parsed As | Example |
-|-------|-----------|---------|
-| `"""..."""` | Multiline string (triple-quote) | see below |
-| `"hello"` | String — JSON-unescaped (`\n`, `\t`, `\\` work) | `set n.1:name "Line1\nLine2"` |
-| `'hello'` | String (quotes stripped, no escape processing) | `set n.1:name 'My Node'` |
-| `[1,2,3]` | JSON array | `set n.1:items [1,2,3]` |
-| `{"k":"v"}` | JSON object | `set n.1:meta {"key":"val"}` |
-| `null` | null | `set n.1:ref null` |
-| `123` or `0.7` | Number | `set n.1:temperature 0.7` |
-| `true` / `false` | Boolean | `set n.1:enabled true` |
-| `hello` | String (fallback) | `set n.1:model gpt-4` |
+| Input            | Parsed As                                       | Example                       |
+| ---------------- | ----------------------------------------------- | ----------------------------- |
+| `"""..."""`      | Multiline string (triple-quote)                 | see below                     |
+| `"hello"`        | String — JSON-unescaped (`\n`, `\t`, `\\` work) | `set n.1:name "Line1\nLine2"` |
+| `'hello'`        | String (quotes stripped, no escape processing)  | `set n.1:name 'My Node'`      |
+| `[1,2,3]`        | JSON array                                      | `set n.1:items [1,2,3]`       |
+| `{"k":"v"}`      | JSON object                                     | `set n.1:meta {"key":"val"}`  |
+| `null`           | null                                            | `set n.1:ref null`            |
+| `123` or `0.7`   | Number                                          | `set n.1:temperature 0.7`     |
+| `true` / `false` | Boolean                                         | `set n.1:enabled true`        |
+| `hello`          | String (fallback)                               | `set n.1:model gpt-4`         |
 
 ### Multiline values (triple-quote syntax)
 
@@ -136,19 +136,20 @@ The leading and trailing newlines are automatically trimmed, so the stored value
 
 Ports have data types that determine connection compatibility:
 
-| Data Type | Description |
-|-----------|-------------|
-| `string` | Text data |
-| `number` | Numeric values |
-| `boolean` | True/false |
-| `array` | Arrays/lists |
-| `object` | Structured objects |
-| `json` | JSON data |
-| `mixed` | Accepts any compatible type |
-| `tool` | Tool invocations |
-| `trigger` | Execution flow signal |
+| Data Type | Description                 |
+| --------- | --------------------------- |
+| `string`  | Text data                   |
+| `number`  | Numeric values              |
+| `boolean` | True/false                  |
+| `array`   | Arrays/lists                |
+| `object`  | Structured objects          |
+| `json`    | JSON data                   |
+| `mixed`   | Accepts any compatible type |
+| `tool`    | Tool invocations            |
+| `trigger` | Execution flow signal       |
 
 **Connection rules:**
+
 - Source must be an **output** port, target must be an **input** port.
 - Data types must be compatible (e.g., `string` → `string`, anything → `mixed`).
 - A node **cannot** connect to itself.
@@ -212,7 +213,7 @@ interface NodePort {
   /** Display name */
   name: string;
   /** Direction: "input" | "output" */
-  type: "input" | "output";
+  type: 'input' | 'output';
   /** Data type for compatibility checking */
   dataType: string;
   /** Whether this port must be connected */
@@ -222,13 +223,13 @@ interface NodePort {
 }
 
 interface ConfigSchema {
-  type: "object";
+  type: 'object';
   properties: Record<string, ConfigProperty>;
   required?: string[];
 }
 
 interface ConfigProperty {
-  type: "string" | "number" | "boolean" | "array" | "object" | "integer";
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer';
   title?: string;
   description?: string;
   default?: unknown;
@@ -242,7 +243,7 @@ interface ConfigProperty {
   maxLength?: number;
   pattern?: string;
   /** "multiline" for textarea, "hidden" to hide field */
-  format?: "multiline" | "hidden" | string;
+  format?: 'multiline' | 'hidden' | string;
   /** For array type — schema of each item */
   items?: ConfigProperty;
   /** For object type — nested properties */
@@ -291,22 +292,22 @@ interface WorkflowEdge {
 ```typescript
 type CommandResult =
   | { ok: true; message: string; data?: object }
-  | { ok: false; error: string; code: CommandErrorCode }
+  | { ok: false; error: string; code: CommandErrorCode };
 
 type CommandErrorCode =
-  | "NODE_NOT_FOUND"
-  | "NODE_TYPE_NOT_FOUND"
-  | "PORT_NOT_FOUND"
-  | "EDGE_NOT_FOUND"
-  | "INVALID_CONNECTION"
-  | "CYCLE_DETECTED"
-  | "NO_WORKFLOW"
-  | "PARSE_ERROR"
-  | "UNKNOWN_COMMAND"
-  | "CONFIG_KEY_NOT_FOUND"
-  | "CONFIG_VALIDATION_ERROR"
-  | "UNDO_UNAVAILABLE"
-  | "REDO_UNAVAILABLE"
+  | 'NODE_NOT_FOUND'
+  | 'NODE_TYPE_NOT_FOUND'
+  | 'PORT_NOT_FOUND'
+  | 'EDGE_NOT_FOUND'
+  | 'INVALID_CONNECTION'
+  | 'CYCLE_DETECTED'
+  | 'NO_WORKFLOW'
+  | 'PARSE_ERROR'
+  | 'UNKNOWN_COMMAND'
+  | 'CONFIG_KEY_NOT_FOUND'
+  | 'CONFIG_VALIDATION_ERROR'
+  | 'UNDO_UNAVAILABLE'
+  | 'REDO_UNAVAILABLE';
 ```
 
 ---
@@ -348,6 +349,7 @@ type CommandErrorCode =
 ## Batch Execution
 
 Multiple commands in one code block execute as an **atomic batch**:
+
 - If any command fails, all preceding commands in the batch are rolled back.
 - The entire batch counts as a single undo point.
 

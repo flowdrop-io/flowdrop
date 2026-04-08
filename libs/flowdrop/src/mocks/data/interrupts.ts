@@ -10,8 +10,8 @@ import type {
   ChoiceConfig,
   TextConfig,
   FormConfig,
-  ReviewConfig,
-} from "../../lib/types/interrupt.js";
+  ReviewConfig
+} from '../../lib/types/interrupt.js';
 
 /**
  * Mock interrupts storage (interruptId -> interrupt)
@@ -49,20 +49,20 @@ export function createConfirmationInterrupt(
   nodeId: string,
   executionId: string,
   config: ConfirmationConfig,
-  allowCancel: boolean = true,
+  allowCancel: boolean = true
 ): Interrupt {
   const interrupt: Interrupt = {
     id: generateInterruptId(),
     messageId,
-    type: "confirmation",
+    type: 'confirmation',
     config,
     nodeId,
     executionId,
     sessionId,
-    status: "pending",
+    status: 'pending',
     allowCancel,
     createdAt: new Date().toISOString(),
-    message: config.message,
+    message: config.message
   };
 
   mockInterrupts.set(interrupt.id, interrupt);
@@ -80,20 +80,20 @@ export function createChoiceInterrupt(
   nodeId: string,
   executionId: string,
   config: ChoiceConfig,
-  allowCancel: boolean = true,
+  allowCancel: boolean = true
 ): Interrupt {
   const interrupt: Interrupt = {
     id: generateInterruptId(),
     messageId,
-    type: "choice",
+    type: 'choice',
     config,
     nodeId,
     executionId,
     sessionId,
-    status: "pending",
+    status: 'pending',
     allowCancel,
     createdAt: new Date().toISOString(),
-    message: config.message,
+    message: config.message
   };
 
   mockInterrupts.set(interrupt.id, interrupt);
@@ -111,20 +111,20 @@ export function createTextInterrupt(
   nodeId: string,
   executionId: string,
   config: TextConfig,
-  allowCancel: boolean = true,
+  allowCancel: boolean = true
 ): Interrupt {
   const interrupt: Interrupt = {
     id: generateInterruptId(),
     messageId,
-    type: "text",
+    type: 'text',
     config,
     nodeId,
     executionId,
     sessionId,
-    status: "pending",
+    status: 'pending',
     allowCancel,
     createdAt: new Date().toISOString(),
-    message: config.message,
+    message: config.message
   };
 
   mockInterrupts.set(interrupt.id, interrupt);
@@ -142,20 +142,20 @@ export function createFormInterrupt(
   nodeId: string,
   executionId: string,
   config: FormConfig,
-  allowCancel: boolean = true,
+  allowCancel: boolean = true
 ): Interrupt {
   const interrupt: Interrupt = {
     id: generateInterruptId(),
     messageId,
-    type: "form",
+    type: 'form',
     config,
     nodeId,
     executionId,
     sessionId,
-    status: "pending",
+    status: 'pending',
     allowCancel,
     createdAt: new Date().toISOString(),
-    message: config.message,
+    message: config.message
   };
 
   mockInterrupts.set(interrupt.id, interrupt);
@@ -173,20 +173,20 @@ export function createReviewInterrupt(
   nodeId: string,
   executionId: string,
   config: ReviewConfig,
-  allowCancel: boolean = true,
+  allowCancel: boolean = true
 ): Interrupt {
   const interrupt: Interrupt = {
     id: generateInterruptId(),
     messageId,
-    type: "review",
+    type: 'review',
     config,
     nodeId,
     executionId,
     sessionId,
-    status: "pending",
+    status: 'pending',
     allowCancel,
     createdAt: new Date().toISOString(),
-    message: config.message,
+    message: config.message
   };
 
   mockInterrupts.set(interrupt.id, interrupt);
@@ -207,10 +207,7 @@ function addInterruptToSession(sessionId: string, interruptId: string): void {
 /**
  * Add an interrupt to a pipeline's list
  */
-export function addInterruptToPipeline(
-  pipelineId: string,
-  interruptId: string,
-): void {
+export function addInterruptToPipeline(pipelineId: string, interruptId: string): void {
   const interrupts = pipelineInterrupts.get(pipelineId) || [];
   interrupts.push(interruptId);
   pipelineInterrupts.set(pipelineId, interrupts);
@@ -226,20 +223,17 @@ export function getInterruptById(interruptId: string): Interrupt | undefined {
 /**
  * Resolve an interrupt
  */
-export function resolveInterrupt(
-  interruptId: string,
-  value: unknown,
-): Interrupt | undefined {
+export function resolveInterrupt(interruptId: string, value: unknown): Interrupt | undefined {
   const interrupt = mockInterrupts.get(interruptId);
   if (!interrupt) {
     return undefined;
   }
 
-  if (interrupt.status !== "pending") {
+  if (interrupt.status !== 'pending') {
     return undefined;
   }
 
-  interrupt.status = "resolved";
+  interrupt.status = 'resolved';
   interrupt.responseValue = value;
   interrupt.resolvedAt = new Date().toISOString();
 
@@ -256,7 +250,7 @@ export function cancelInterrupt(interruptId: string): boolean {
     return false;
   }
 
-  if (interrupt.status !== "pending") {
+  if (interrupt.status !== 'pending') {
     return false;
   }
 
@@ -264,7 +258,7 @@ export function cancelInterrupt(interruptId: string): boolean {
     return false;
   }
 
-  interrupt.status = "cancelled";
+  interrupt.status = 'cancelled';
   interrupt.resolvedAt = new Date().toISOString();
 
   mockInterrupts.set(interruptId, interrupt);
@@ -276,9 +270,9 @@ export function cancelInterrupt(interruptId: string): boolean {
  */
 export function getSessionInterrupts(
   sessionId: string,
-  status?: "pending" | "resolved" | "cancelled",
+  status?: 'pending' | 'resolved' | 'cancelled',
   limit: number = 50,
-  offset: number = 0,
+  offset: number = 0
 ): Interrupt[] {
   const interruptIds = sessionInterrupts.get(sessionId) || [];
   let interrupts = interruptIds
@@ -297,9 +291,9 @@ export function getSessionInterrupts(
  */
 export function getPipelineInterrupts(
   pipelineId: string,
-  status?: "pending" | "resolved" | "cancelled",
+  status?: 'pending' | 'resolved' | 'cancelled',
   limit: number = 50,
-  offset: number = 0,
+  offset: number = 0
 ): Interrupt[] {
   const interruptIds = pipelineInterrupts.get(pipelineId) || [];
   let interrupts = interruptIds
@@ -328,150 +322,149 @@ export function resetInterruptData(): void {
  */
 export const sampleInterruptConfigs = {
   confirmation: {
-    message: "Do you approve sending this email to 150 recipients?",
-    confirmLabel: "Yes, send email",
-    cancelLabel: "No, cancel",
+    message: 'Do you approve sending this email to 150 recipients?',
+    confirmLabel: 'Yes, send email',
+    cancelLabel: 'No, cancel'
   } as ConfirmationConfig,
 
   choice: {
-    message: "Select the output format for the generated report:",
+    message: 'Select the output format for the generated report:',
     options: [
       {
-        value: "pdf",
-        label: "PDF Document",
-        description: "Best for printing and sharing",
+        value: 'pdf',
+        label: 'PDF Document',
+        description: 'Best for printing and sharing'
       },
       {
-        value: "xlsx",
-        label: "Excel Spreadsheet",
-        description: "Best for data analysis",
+        value: 'xlsx',
+        label: 'Excel Spreadsheet',
+        description: 'Best for data analysis'
       },
       {
-        value: "csv",
-        label: "CSV File",
-        description: "Best for importing into other tools",
+        value: 'csv',
+        label: 'CSV File',
+        description: 'Best for importing into other tools'
       },
       {
-        value: "json",
-        label: "JSON",
-        description: "Best for programmatic access",
-      },
+        value: 'json',
+        label: 'JSON',
+        description: 'Best for programmatic access'
+      }
     ],
-    multiple: false,
+    multiple: false
   } as ChoiceConfig,
 
   multipleChoice: {
-    message: "Select which notifications to enable:",
+    message: 'Select which notifications to enable:',
     options: [
       {
-        value: "email",
-        label: "Email",
-        description: "Receive email notifications",
+        value: 'email',
+        label: 'Email',
+        description: 'Receive email notifications'
       },
-      { value: "sms", label: "SMS", description: "Receive text messages" },
+      { value: 'sms', label: 'SMS', description: 'Receive text messages' },
       {
-        value: "push",
-        label: "Push Notifications",
-        description: "Receive browser notifications",
+        value: 'push',
+        label: 'Push Notifications',
+        description: 'Receive browser notifications'
       },
-      { value: "slack", label: "Slack", description: "Receive Slack messages" },
+      { value: 'slack', label: 'Slack', description: 'Receive Slack messages' }
     ],
     multiple: true,
     minSelections: 1,
-    maxSelections: 3,
+    maxSelections: 3
   } as ChoiceConfig,
 
   text: {
-    message: "Please provide additional context for the AI to consider:",
-    placeholder: "Enter any relevant details...",
+    message: 'Please provide additional context for the AI to consider:',
+    placeholder: 'Enter any relevant details...',
     multiline: true,
     minLength: 10,
-    maxLength: 500,
+    maxLength: 500
   } as TextConfig,
 
   form: {
-    message: "Please provide the required information to proceed:",
+    message: 'Please provide the required information to proceed:',
     schema: {
-      type: "object" as const,
+      type: 'object' as const,
       properties: {
         name: {
-          type: "string" as const,
-          title: "Full Name",
-          description: "Enter your full name",
+          type: 'string' as const,
+          title: 'Full Name',
+          description: 'Enter your full name'
         },
         email: {
-          type: "string" as const,
-          title: "Email Address",
-          format: "email" as const,
+          type: 'string' as const,
+          title: 'Email Address',
+          format: 'email' as const
         },
         priority: {
-          type: "string" as const,
-          title: "Priority Level",
-          enum: ["low", "medium", "high", "critical"],
+          type: 'string' as const,
+          title: 'Priority Level',
+          enum: ['low', 'medium', 'high', 'critical']
         },
         notes: {
-          type: "string" as const,
-          title: "Additional Notes",
-          format: "multiline" as const,
-        },
+          type: 'string' as const,
+          title: 'Additional Notes',
+          format: 'multiline' as const
+        }
       },
-      required: ["name", "email", "priority"],
+      required: ['name', 'email', 'priority']
     },
     defaultValues: {
-      priority: "medium",
-    },
+      priority: 'medium'
+    }
   } as FormConfig,
 
   review: {
-    message: "Review proposed changes to Page: About Us",
+    message: 'Review proposed changes to Page: About Us',
     changes: [
       {
-        field: "title",
-        label: "Page Title",
-        original: "About Us",
-        proposed: "About Our Company",
+        field: 'title',
+        label: 'Page Title',
+        original: 'About Us',
+        proposed: 'About Our Company'
       },
       {
-        field: "meta_description",
-        label: "Meta Description",
-        original: "Learn about us",
-        proposed:
-          "Discover our mission, values, and the team behind the product",
+        field: 'meta_description',
+        label: 'Meta Description',
+        original: 'Learn about us',
+        proposed: 'Discover our mission, values, and the team behind the product'
       },
       {
-        field: "hero_heading",
-        label: "Hero Heading",
-        original: "Welcome to Our Page",
-        proposed: "Building the Future Together",
+        field: 'hero_heading',
+        label: 'Hero Heading',
+        original: 'Welcome to Our Page',
+        proposed: 'Building the Future Together'
       },
       {
-        field: "tags",
-        label: "Tags",
-        original: ["about", "company"],
-        proposed: ["about", "company", "mission", "team"],
+        field: 'tags',
+        label: 'Tags',
+        original: ['about', 'company'],
+        proposed: ['about', 'company', 'mission', 'team']
       },
       {
-        field: "seo_settings",
-        label: "SEO Settings",
-        original: { indexable: true, follow: false, canonical: "/about" },
+        field: 'seo_settings',
+        label: 'SEO Settings',
+        original: { indexable: true, follow: false, canonical: '/about' },
         proposed: {
           indexable: true,
           follow: true,
-          canonical: "/about-us",
-          sitemap_priority: 0.8,
-        },
+          canonical: '/about-us',
+          sitemap_priority: 0.8
+        }
       },
       {
-        field: "body",
-        label: "Page Body",
+        field: 'body',
+        label: 'Page Body',
         original:
-          "<p>We are a small team dedicated to <strong>building great products</strong>.</p><p>Contact us for more info.</p>",
+          '<p>We are a small team dedicated to <strong>building great products</strong>.</p><p>Contact us for more info.</p>',
         proposed:
-          "<p>We are a growing company dedicated to <strong>building innovative solutions</strong> for our customers.</p><ul><li>Award-winning team</li><li>Global presence</li></ul>",
-      },
+          '<p>We are a growing company dedicated to <strong>building innovative solutions</strong> for our customers.</p><ul><li>Award-winning team</li><li>Global presence</li></ul>'
+      }
     ],
-    acceptAllLabel: "Accept All",
-    rejectAllLabel: "Reject All",
-    submitLabel: "Submit Review",
-  } as ReviewConfig,
+    acceptAllLabel: 'Accept All',
+    rejectAllLabel: 'Reject All',
+    submitLabel: 'Submit Review'
+  } as ReviewConfig
 };

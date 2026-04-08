@@ -8,10 +8,10 @@
  * ensuring built-in formats are available without user action.
  */
 
-import { workflowFormatRegistry } from "./workflowFormatRegistry.js";
-import type { WorkflowFormatAdapter } from "./workflowFormatRegistry.js";
-import { AgentSpecAdapter } from "../adapters/agentspec/AgentSpecAdapter.js";
-import { validateForAgentSpecExport } from "../adapters/agentspec/validator.js";
+import { workflowFormatRegistry } from './workflowFormatRegistry.js';
+import type { WorkflowFormatAdapter } from './workflowFormatRegistry.js';
+import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
+import { validateForAgentSpecExport } from '../adapters/agentspec/validator.js';
 
 /**
  * Track whether built-in formats have been registered.
@@ -28,13 +28,13 @@ export function registerBuiltinFormats(): void {
 
   // FlowDrop native — passthrough (StandardWorkflow ↔ JSON)
   const flowdropAdapter: WorkflowFormatAdapter = {
-    id: "flowdrop",
-    name: "FlowDrop",
-    description: "FlowDrop native workflow format",
-    version: "1.0.0",
+    id: 'flowdrop',
+    name: 'FlowDrop',
+    description: 'FlowDrop native workflow format',
+    version: '1.0.0',
     // No nodes — FlowDrop nodes are universal (no formats restriction)
     export: (workflow) => JSON.stringify(workflow, null, 2),
-    import: (data) => JSON.parse(data),
+    import: (data) => JSON.parse(data)
   };
 
   workflowFormatRegistry.register(flowdropAdapter);
@@ -44,13 +44,13 @@ export function registerBuiltinFormats(): void {
   // getDefaultAgentSpecNodeTypes() or custom definitions passed to mountFlowDropApp()
   const agentSpecAdapter = new AgentSpecAdapter();
   const agentSpecFormatAdapter: WorkflowFormatAdapter = {
-    id: "agentspec",
-    name: "Agent Spec (Oracle)",
-    description: "Oracle Open Agent Spec format",
-    version: "1.0.0",
+    id: 'agentspec',
+    name: 'Agent Spec (Oracle)',
+    description: 'Oracle Open Agent Spec format',
+    version: '1.0.0',
     export: (workflow) => agentSpecAdapter.exportJSON(workflow),
     import: (data) => agentSpecAdapter.importJSON(data),
-    validate: (workflow) => validateForAgentSpecExport(workflow),
+    validate: (workflow) => validateForAgentSpecExport(workflow)
   };
 
   workflowFormatRegistry.register(agentSpecFormatAdapter);

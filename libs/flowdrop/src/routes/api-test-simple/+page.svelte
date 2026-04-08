@@ -4,57 +4,53 @@
 -->
 
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { api, setEndpointConfig } from "$lib/services/api.js";
-  import { createEndpointConfig } from "$lib/config/endpoints.js";
-  import { getDevConfig, getDevConfigSync } from "../devConfig";
-  import type { NodeMetadata } from "$lib/types/index.js";
+  import { onMount } from 'svelte';
+  import { api, setEndpointConfig } from '$lib/services/api.js';
+  import { createEndpointConfig } from '$lib/config/endpoints.js';
+  import { getDevConfig, getDevConfigSync } from '../devConfig';
+  import type { NodeMetadata } from '$lib/types/index.js';
 
   // Initialize API service with development config
   const devConfig = getDevConfigSync();
   const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
     auth: { type: devConfig.authType, token: devConfig.authToken },
-    timeout: devConfig.timeout,
+    timeout: devConfig.timeout
   });
   setEndpointConfig(endpointConfig);
 
   let nodes = $state<NodeMetadata[]>([]);
   let loading = $state(true);
-  let error = $state("");
+  let error = $state('');
   let testResults = $state<string[]>([]);
 
   async function testNodeApi(): Promise<void> {
     try {
       loading = true;
-      error = "";
+      error = '';
       testResults = [];
 
-      testResults.push("Testing Node API...");
+      testResults.push('Testing Node API...');
 
       // Test basic fetch
       const allNodes = await api.nodes.getNodes();
       testResults.push(`✅ Fetched ${allNodes.length} nodes`);
 
       // Test category filter
-      const llmNodes = await api.nodes.getNodes({ category: "llm" });
+      const llmNodes = await api.nodes.getNodes({ category: 'llm' });
       testResults.push(`✅ Found ${llmNodes.length} LLM nodes`);
 
       // Test search
-      const searchNodes = await api.nodes.getNodes({ search: "openai" });
-      testResults.push(
-        `✅ Found ${searchNodes.length} nodes matching "openai"`,
-      );
+      const searchNodes = await api.nodes.getNodes({ search: 'openai' });
+      testResults.push(`✅ Found ${searchNodes.length} nodes matching "openai"`);
 
       // Test pagination
       const paginatedNodes = await api.nodes.getNodes({ limit: 2, offset: 0 });
-      testResults.push(
-        `✅ Pagination: ${paginatedNodes.length} nodes (limit: 2)`,
-      );
+      testResults.push(`✅ Pagination: ${paginatedNodes.length} nodes (limit: 2)`);
 
       nodes = allNodes;
-      testResults.push("🎉 All tests passed!");
+      testResults.push('🎉 All tests passed!');
     } catch (err) {
-      error = err instanceof Error ? err.message : "Unknown error";
+      error = err instanceof Error ? err.message : 'Unknown error';
       testResults.push(`❌ Error: ${error}`);
     } finally {
       loading = false;
@@ -114,12 +110,8 @@
         </div>
 
         <!-- Retry Button -->
-        <button
-          class="btn btn-primary"
-          onclick={testNodeApi}
-          disabled={loading}
-        >
-          {loading ? "Testing..." : "Run Tests Again"}
+        <button class="btn btn-primary" onclick={testNodeApi} disabled={loading}>
+          {loading ? 'Testing...' : 'Run Tests Again'}
         </button>
       </div>
     </div>

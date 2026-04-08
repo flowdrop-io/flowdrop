@@ -11,32 +11,24 @@
 -->
 
 <script lang="ts">
-  import { Position, Handle } from "@xyflow/svelte";
-  import type {
-    WorkflowNode,
-    NodePort,
-    DynamicPort,
-  } from "../../types/index.js";
-  import { dynamicPortToNodePort } from "../../types/index.js";
-  import Icon from "@iconify/svelte";
-  import { getNodeIcon } from "../../utils/icons.js";
-  import CogIcon from "../icons/CogIcon.svelte";
+  import { Position, Handle } from '@xyflow/svelte';
+  import type { WorkflowNode, NodePort, DynamicPort } from '../../types/index.js';
+  import { dynamicPortToNodePort } from '../../types/index.js';
+  import Icon from '@iconify/svelte';
+  import { getNodeIcon } from '../../utils/icons.js';
+  import CogIcon from '../icons/CogIcon.svelte';
   import {
     getDataTypeColorToken,
     getCategoryColorToken,
-    getPortBackgroundColor,
-  } from "../../utils/colors.js";
-  import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
-  import { applyPortOrder } from "../../utils/portUtils.js";
+    getPortBackgroundColor
+  } from '../../utils/colors.js';
+  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { applyPortOrder } from '../../utils/portUtils.js';
 
   interface Props {
-    data: WorkflowNode["data"] & {
+    data: WorkflowNode['data'] & {
       nodeId?: string;
-      onConfigOpen?: (node: {
-        id: string;
-        type: string;
-        data: WorkflowNode["data"];
-      }) => void;
+      onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
     selected?: boolean;
   }
@@ -49,9 +41,7 @@
    * Falls back to the original label if not set.
    * This allows users to customize the node title per-instance via config.
    */
-  const displayTitle = $derived(
-    (props.data.config?.instanceTitle as string) || props.data.label,
-  );
+  const displayTitle = $derived((props.data.config?.instanceTitle as string) || props.data.label);
 
   /**
    * Instance-specific description override from config.
@@ -59,8 +49,7 @@
    * This allows users to customize the node description per-instance via config.
    */
   const displayDescription = $derived(
-    (props.data.config?.instanceDescription as string) ||
-      props.data.metadata.description,
+    (props.data.config?.instanceDescription as string) || props.data.metadata.description
   );
 
   /**
@@ -70,7 +59,7 @@
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
       props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false,
+      false
   );
 
   /**
@@ -78,9 +67,7 @@
    * Merges node type defaults with instance overrides
    */
   const portOrder = $derived(
-    props.data.extensions?.ui?.portOrder ??
-      props.data.metadata?.extensions?.ui?.portOrder ??
-      {},
+    props.data.extensions?.ui?.portOrder ?? props.data.metadata?.extensions?.ui?.portOrder ?? {}
   );
 
   /**
@@ -88,9 +75,7 @@
    * Merges node type defaults with instance overrides
    */
   const hiddenPorts = $derived(
-    props.data.extensions?.ui?.hiddenPorts ??
-      props.data.metadata?.extensions?.ui?.hiddenPorts ??
-      {},
+    props.data.extensions?.ui?.hiddenPorts ?? props.data.metadata?.extensions?.ui?.hiddenPorts ?? {}
   );
 
   /**
@@ -99,8 +84,8 @@
    */
   const dynamicInputs = $derived(
     ((props.data.config?.dynamicInputs as DynamicPort[]) || []).map((port) =>
-      dynamicPortToNodePort(port, "input"),
-    ),
+      dynamicPortToNodePort(port, 'input')
+    )
   );
 
   /**
@@ -109,8 +94,8 @@
    */
   const dynamicOutputs = $derived(
     ((props.data.config?.dynamicOutputs as DynamicPort[]) || []).map((port) =>
-      dynamicPortToNodePort(port, "output"),
-    ),
+      dynamicPortToNodePort(port, 'output')
+    )
   );
 
   /**
@@ -118,10 +103,7 @@
    * sorted by portOrder if set (visual-only)
    */
   const allInputPorts = $derived(
-    applyPortOrder(
-      [...props.data.metadata.inputs, ...dynamicInputs],
-      portOrder.inputs,
-    ),
+    applyPortOrder([...props.data.metadata.inputs, ...dynamicInputs], portOrder.inputs)
   );
 
   /**
@@ -129,10 +111,7 @@
    * sorted by portOrder if set (visual-only)
    */
   const allOutputPorts = $derived(
-    applyPortOrder(
-      [...props.data.metadata.outputs, ...dynamicOutputs],
-      portOrder.outputs,
-    ),
+    applyPortOrder([...props.data.metadata.outputs, ...dynamicOutputs], portOrder.outputs)
   );
 
   /**
@@ -141,10 +120,10 @@
    * @param type - Whether this is an 'input' or 'output' port
    * @returns true if the port should be visible
    */
-  function isPortVisible(port: NodePort, type: "input" | "output"): boolean {
+  function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
     // Manual hide takes precedence (required ports are prevented from being hidden in ConfigForm)
     const manuallyHidden =
-      type === "input"
+      type === 'input'
         ? hiddenPorts.inputs?.includes(port.id)
         : hiddenPorts.outputs?.includes(port.id);
     if (manuallyHidden) return false;
@@ -168,16 +147,14 @@
    * Derived list of visible input ports based on hideUnconnectedHandles setting
    * Now includes both static and dynamic inputs
    */
-  const visibleInputPorts = $derived(
-    allInputPorts.filter((port) => isPortVisible(port, "input")),
-  );
+  const visibleInputPorts = $derived(allInputPorts.filter((port) => isPortVisible(port, 'input')));
 
   /**
    * Derived list of visible output ports based on hideUnconnectedHandles setting
    * Now includes both static and dynamic outputs
    */
   const visibleOutputPorts = $derived(
-    allOutputPorts.filter((port) => isPortVisible(port, "output")),
+    allOutputPorts.filter((port) => isPortVisible(port, 'output'))
   );
 
   /**
@@ -201,9 +178,9 @@
     if (props.data.onConfigOpen) {
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
-        id: props.data.nodeId || "unknown",
-        type: "workflowNode",
-        data: props.data,
+        id: props.data.nodeId || 'unknown',
+        type: 'workflowNode',
+        data: props.data
       };
       props.data.onConfigOpen(nodeForConfig);
     }
@@ -223,7 +200,7 @@
   role="button"
   tabindex="0"
   onkeydown={(e) => {
-    if (e.key === "Enter" || e.key === " ") {
+    if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleDoubleClick();
     }
@@ -237,30 +214,21 @@
       <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
       <div
         class="flowdrop-workflow-node__icon-wrapper"
-        style="--_icon-color: {getCategoryColorToken(
-          props.data.metadata.category,
-        )}"
+        style="--_icon-color: {getCategoryColorToken(props.data.metadata.category)}"
       >
         <Icon
-          icon={getNodeIcon(
-            props.data.metadata.icon,
-            props.data.metadata.category,
-          )}
+          icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)}
           class="flowdrop-workflow-node__icon"
         />
       </div>
       <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
       <span
         class="flowdrop-workflow-node__color-dot"
-        style="background: {getCategoryColorToken(
-          props.data.metadata.category,
-        )}"
+        style="background: {getCategoryColorToken(props.data.metadata.category)}"
       ></span>
 
       <!-- Node Title - Icon and Title on same line -->
-      <h3
-        class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
-      >
+      <h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
         {displayTitle}
       </h3>
 
@@ -289,7 +257,7 @@
               id={`${props.data.nodeId}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
-                port.dataType,
+                port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
@@ -297,38 +265,28 @@
             />
 
             <!-- Port Info: padding lives here so handle position is simple -->
-            <div
-              class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0"
-            >
+            <div class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0">
               <div class="flowdrop-flex flowdrop-gap--2">
-                <span class="flowdrop-text--xs flowdrop-font--medium"
-                  >{port.name}</span
-                >
+                <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
                     port.dataType,
-                    15,
+                    15
                   )}; color: {getDataTypeColorToken(
-                    port.dataType,
-                  )}; border: 1px solid {getPortBackgroundColor(
-                    port.dataType,
-                    30,
-                  )};"
+                    port.dataType
+                  )}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
                 >
                   {port.dataType}
                 </span>
                 {#if port.required}
-                  <span
-                    class="flowdrop-badge flowdrop-badge--error flowdrop-badge--sm"
+                  <span class="flowdrop-badge flowdrop-badge--error flowdrop-badge--sm"
                     >Required</span
                   >
                 {/if}
               </div>
               {#if port.description}
-                <p
-                  class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate"
-                >
+                <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
                   {port.description}
                 </p>
               {/if}
@@ -350,28 +308,21 @@
               class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right"
             >
               <div class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end">
-                <span class="flowdrop-text--xs flowdrop-font--medium"
-                  >{port.name}</span
-                >
+                <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
                     port.dataType,
-                    15,
+                    15
                   )}; color: {getDataTypeColorToken(
-                    port.dataType,
-                  )}; border: 1px solid {getPortBackgroundColor(
-                    port.dataType,
-                    30,
-                  )};"
+                    port.dataType
+                  )}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
                 >
                   {port.dataType}
                 </span>
               </div>
               {#if port.description}
-                <p
-                  class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate"
-                >
+                <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
                   {port.description}
                 </p>
               {/if}
@@ -384,7 +335,7 @@
               id={`${props.data.nodeId}-output-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
-                port.dataType,
+                port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
@@ -489,11 +440,7 @@
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 0.5rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }

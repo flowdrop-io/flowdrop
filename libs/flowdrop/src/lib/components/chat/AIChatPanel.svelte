@@ -1,31 +1,27 @@
 <script lang="ts">
-  import type {
-    ChatHistoryMessage,
-    ChatRequest,
-    CommandPreviewItem,
-  } from "../../types/chat.js";
-  import type { NodeMetadata } from "../../types/index.js";
-  import type { UIAction } from "../../commands/types.js";
-  import type { EndpointConfig } from "../../config/endpoints.js";
-  import { chatService } from "../../services/chatService.js";
-  import { getWorkflowStore } from "../../stores/workflowStore.svelte.js";
-  import { getBehaviorSettings } from "../../stores/settingsStore.svelte.js";
-  import { extractCommands } from "../../chat/responseParser.js";
-  import { isMutatingCommand } from "../../chat/commandClassifier.js";
-  import { parseCommand } from "../../commands/parser.js";
-  import { executeCommand } from "../../commands/index.js";
-  import { createStoreCommandContext } from "../../commands/storeIntegration.svelte.js";
-  import CommandPreview from "./CommandPreview.svelte";
-  import MarkdownDisplay from "../MarkdownDisplay.svelte";
-  import { tick } from "svelte";
-  import Icon from "@iconify/svelte";
+  import type { ChatHistoryMessage, ChatRequest, CommandPreviewItem } from '../../types/chat.js';
+  import type { NodeMetadata } from '../../types/index.js';
+  import type { UIAction } from '../../commands/types.js';
+  import type { EndpointConfig } from '../../config/endpoints.js';
+  import { chatService } from '../../services/chatService.js';
+  import { getWorkflowStore } from '../../stores/workflowStore.svelte.js';
+  import { getBehaviorSettings } from '../../stores/settingsStore.svelte.js';
+  import { extractCommands } from '../../chat/responseParser.js';
+  import { isMutatingCommand } from '../../chat/commandClassifier.js';
+  import { parseCommand } from '../../commands/parser.js';
+  import { executeCommand } from '../../commands/index.js';
+  import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
+  import CommandPreview from './CommandPreview.svelte';
+  import MarkdownDisplay from '../MarkdownDisplay.svelte';
+  import { tick } from 'svelte';
+  import Icon from '@iconify/svelte';
 
   // =========================================================================
   // Internal Display Message Type
   // =========================================================================
 
   interface DisplayMessage {
-    role: "user" | "assistant";
+    role: 'user' | 'assistant';
     content: string;
     /** Set on auto-retry messages — renders as a muted notice, not a user bubble */
     retryAttempt?: number;
@@ -52,7 +48,7 @@
   const MAX_AUTO_RETRIES = 3;
 
   let displayMessages: DisplayMessage[] = $state([]);
-  let inputValue: string = $state("");
+  let inputValue: string = $state('');
   let isLoading: boolean = $state(false);
   let inputElement: HTMLTextAreaElement | undefined = $state();
   let messagesElement: HTMLDivElement | undefined = $state();
@@ -63,14 +59,9 @@
   // =========================================================================
 
   const isDisabled = $derived(!workflowId);
-  const isChatConfigured = $derived(
-    endpointConfig?.endpoints?.chat !== undefined,
-  );
+  const isChatConfigured = $derived(endpointConfig?.endpoints?.chat !== undefined);
   const canSend = $derived(
-    inputValue.trim().length > 0 &&
-      !isLoading &&
-      !isDisabled &&
-      isChatConfigured,
+    inputValue.trim().length > 0 && !isLoading && !isDisabled && isChatConfigured
   );
 
   // =========================================================================
@@ -104,15 +95,15 @@
         id: n.id,
         type: n.type,
         data: n.data,
-        position: n.position,
+        position: n.position
       })),
       edges: workflow.edges.map((e) => ({
         id: e.id,
         source: e.source,
         sourceHandle: e.sourceHandle,
         target: e.target,
-        targetHandle: e.targetHandle,
-      })),
+        targetHandle: e.targetHandle
+      }))
     };
   }
 
@@ -133,7 +124,7 @@
 
     // No commands — pure chat message
     if (commands.length === 0) {
-      return { role: "assistant", content: explanation || responseContent };
+      return { role: 'assistant', content: explanation || responseContent };
     }
 
     const context = getCommandContext();
@@ -144,7 +135,7 @@
       const parsed = parseCommand(raw);
       if (!parsed.ok) {
         // Treat parse errors as mutating (show in preview as error)
-        mutatingCommands.push({ raw, status: "error", result: parsed.error });
+        mutatingCommands.push({ raw, status: 'error', result: parsed.error });
         continue;
       }
 
@@ -161,13 +152,13 @@
           readOnlyResults.push(`> ${raw}\nError: No workflow loaded`);
         }
       } else {
-        mutatingCommands.push({ raw, status: "pending" });
+        mutatingCommands.push({ raw, status: 'pending' });
       }
     }
 
     const msg: DisplayMessage = {
-      role: "assistant",
-      content: explanation || responseContent,
+      role: 'assistant',
+      content: explanation || responseContent
     };
 
     if (readOnlyResults.length > 0) {
@@ -188,32 +179,28 @@
     const context = getCommandContext();
     if (!context) {
       for (const cmd of msg.commandPreview) {
-        if (cmd.status === "pending") {
-          cmd.status = "error";
-          cmd.result = "No workflow loaded";
+        if (cmd.status === 'pending') {
+          cmd.status = 'error';
+          cmd.result = 'No workflow loaded';
         }
       }
-      appendErrorToHistory("Command execution failed: No workflow loaded");
+      appendErrorToHistory('Command execution failed: No workflow loaded');
       return;
     }
 
     // Parse all pending commands first, before touching any status
-    const pendingItems = msg.commandPreview.filter(
-      (c) => c.status === "pending",
-    );
+    const pendingItems = msg.commandPreview.filter((c) => c.status === 'pending');
     const parsedCommands: {
       item: CommandPreviewItem;
-      command: import("../../commands/types.js").Command;
+      command: import('../../commands/types.js').Command;
     }[] = [];
 
     for (const item of pendingItems) {
       const parsed = parseCommand(item.raw);
       if (!parsed.ok) {
-        item.status = "error";
+        item.status = 'error';
         item.result = parsed.error;
-        appendErrorToHistory(
-          `Command parse error for "${item.raw}": ${parsed.error}`,
-        );
+        appendErrorToHistory(`Command parse error for "${item.raw}": ${parsed.error}`);
         return;
       }
       parsedCommands.push({ item, command: parsed.command });
@@ -223,7 +210,7 @@
     // A 100ms pause between commands lets the canvas visibly update at each step.
     const totalCount = parsedCommands.length;
     context.dispatch.startTransaction(
-      totalCount === 1 ? "batch: 1 command" : `batch: ${totalCount} commands`,
+      totalCount === 1 ? 'batch: 1 command' : `batch: ${totalCount} commands`
     );
 
     let completedCount = 0;
@@ -232,19 +219,19 @@
     try {
       for (let i = 0; i < parsedCommands.length; i++) {
         const { item, command } = parsedCommands[i];
-        item.status = "executing";
+        item.status = 'executing';
 
         const result = executeCommand(command, context);
 
         if (!result.ok) {
-          item.status = "error";
+          item.status = 'error';
           item.result = result.error;
           batchError = result.error;
           context.dispatch.cancelTransaction();
           break;
         }
 
-        item.status = "success";
+        item.status = 'success';
         item.result = result.message;
         completedCount++;
 
@@ -256,10 +243,10 @@
     } catch (err) {
       context.dispatch.cancelTransaction();
       for (const { item } of parsedCommands) {
-        if (item.status === "executing") item.status = "pending";
+        if (item.status === 'executing') item.status = 'pending';
       }
       appendErrorToHistory(
-        `Unexpected execution error: ${err instanceof Error ? err.message : String(err)}`,
+        `Unexpected execution error: ${err instanceof Error ? err.message : String(err)}`
       );
       return;
     }
@@ -271,11 +258,16 @@
 
     if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
       autoRetryCount++;
-      const errorText = buildBatchErrorMessage(completedCount, totalCount, batchError, pendingItems);
+      const errorText = buildBatchErrorMessage(
+        completedCount,
+        totalCount,
+        batchError,
+        pendingItems
+      );
       await sendMessageInternal(errorText, autoRetryCount);
     } else {
       appendErrorToHistory(
-        `Command execution failed at command ${completedCount + 1}/${totalCount}: ${batchError}`,
+        `Command execution failed at command ${completedCount + 1}/${totalCount}: ${batchError}`
       );
     }
   }
@@ -288,8 +280,8 @@
   /** Append an error message to conversation history so the LLM can self-correct */
   function appendErrorToHistory(errorMessage: string) {
     displayMessages.push({
-      role: "assistant",
-      content: `Error: ${errorMessage}`,
+      role: 'assistant',
+      content: `Error: ${errorMessage}`
     });
   }
 
@@ -298,29 +290,29 @@
     completedCount: number,
     totalCount: number,
     error: string,
-    items: CommandPreviewItem[],
+    items: CommandPreviewItem[]
   ): string {
     const lines: string[] = [
-      `Batch execution failed at command ${completedCount + 1}/${totalCount}: ${error}`,
+      `Batch execution failed at command ${completedCount + 1}/${totalCount}: ${error}`
     ];
 
     if (completedCount > 0) {
-      lines.push("\nCommands that succeeded (rolled back):");
+      lines.push('\nCommands that succeeded (rolled back):');
       for (let i = 0; i < completedCount; i++) {
         lines.push(`  ${i + 1}. ${items[i].raw}`);
       }
     }
 
-    lines.push("\nFailed command:");
-    lines.push(`  ${items[completedCount]?.raw ?? "(unknown)"}`);
+    lines.push('\nFailed command:');
+    lines.push(`  ${items[completedCount]?.raw ?? '(unknown)'}`);
 
     const remaining = totalCount - completedCount - 1;
     if (remaining > 0) {
       lines.push(`\n${remaining} command(s) were skipped.`);
     }
 
-    lines.push("\nPlease provide corrected commands to achieve the same goal.");
-    return lines.join("\n");
+    lines.push('\nPlease provide corrected commands to achieve the same goal.');
+    return lines.join('\n');
   }
 
   // =========================================================================
@@ -331,7 +323,7 @@
   async function sendMessageInternal(text: string, retryAttempt?: number) {
     if (!text || isLoading || !workflowId) return;
 
-    displayMessages.push({ role: "user", content: text, retryAttempt });
+    displayMessages.push({ role: 'user', content: text, retryAttempt });
     isLoading = true;
 
     try {
@@ -339,18 +331,17 @@
       const request: ChatRequest = {
         message: text,
         workflowState: getWorkflowState(),
-        history: history.slice(0, -1), // all except current message
+        history: history.slice(0, -1) // all except current message
       };
 
       const response = await chatService.sendMessage(workflowId, request);
       const displayMsg = processResponse(response.content);
       displayMessages.push(displayMsg);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to send message";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       displayMessages.push({
-        role: "assistant",
-        content: `Error: ${errorMessage}`,
+        role: 'assistant',
+        content: `Error: ${errorMessage}`
       });
     } finally {
       isLoading = false;
@@ -361,13 +352,13 @@
   async function sendMessage() {
     const text = inputValue.trim();
     if (!text || isLoading || !workflowId) return;
-    inputValue = "";
+    inputValue = '';
     autoRetryCount = 0;
     await sendMessageInternal(text);
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       sendMessage();
     }
@@ -389,12 +380,7 @@
     </div>
   {:else}
     <!-- Messages area -->
-    <div
-      class="ai-chat-panel__messages"
-      bind:this={messagesElement}
-      role="log"
-      aria-live="polite"
-    >
+    <div class="ai-chat-panel__messages" bind:this={messagesElement} role="log" aria-live="polite">
       {#if displayMessages.length === 0}
         <div class="ai-chat-panel__empty">
           <Icon icon="mdi:chat-outline" />
@@ -405,14 +391,15 @@
         {#if message.retryAttempt !== undefined}
           <div
             class="ai-chat-panel__retry-notice"
-            class:ai-chat-panel__retry-notice--active={isLoading && msgIndex === displayMessages.length - 1}
+            class:ai-chat-panel__retry-notice--active={isLoading &&
+              msgIndex === displayMessages.length - 1}
           >
             <Icon icon="mdi:autorenew" />
             <span>Auto-retrying (attempt {message.retryAttempt}/{MAX_AUTO_RETRIES})…</span>
           </div>
         {:else}
           <div class="ai-chat-panel__bubble ai-chat-panel__bubble--{message.role}">
-            {#if message.role === "user"}
+            {#if message.role === 'user'}
               <div class="ai-chat-panel__bubble-content">{message.content}</div>
             {:else}
               <div class="ai-chat-panel__bubble-content">
@@ -456,7 +443,7 @@
         bind:value={inputValue}
         onkeydown={handleKeydown}
         class="ai-chat-panel__input"
-        placeholder={placeholder ?? "Describe what you want to build..."}
+        placeholder={placeholder ?? 'Describe what you want to build...'}
         rows="1"
         disabled={isLoading}
       ></textarea>
@@ -724,8 +711,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   @keyframes bounce {

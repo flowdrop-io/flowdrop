@@ -1,4 +1,4 @@
-import type { PageServerLoad } from "./$types";
+import type { PageServerLoad } from './$types';
 
 /**
  * Server-side page load function
@@ -9,6 +9,6 @@ export const load: PageServerLoad = async ({ parent }) => {
   const { runtimeConfig } = await parent();
 
   return {
-    runtimeConfig,
+    runtimeConfig
   };
 };

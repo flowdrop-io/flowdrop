@@ -1,17 +1,17 @@
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
-  import SchemaForm from "./SchemaForm.svelte";
-  import { fn } from "storybook/test";
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import SchemaForm from './SchemaForm.svelte';
+  import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: "Form/SchemaForm",
+    title: 'Form/SchemaForm',
     component: SchemaForm,
-    tags: ["autodocs"],
+    tags: ['autodocs'],
     args: {
       onChange: fn(),
       onSave: fn(),
-      onCancel: fn(),
-    },
+      onCancel: fn()
+    }
   });
 </script>
 
@@ -19,19 +19,19 @@
   name="Simple Form"
   args={{
     schema: {
-      type: "object",
+      type: 'object',
       properties: {
         name: {
-          type: "string",
-          title: "Name",
-          description: "Enter your full name",
+          type: 'string',
+          title: 'Name',
+          description: 'Enter your full name'
         },
-        age: { type: "number", title: "Age", minimum: 0, maximum: 120 },
-        active: { type: "boolean", title: "Active", default: true },
+        age: { type: 'number', title: 'Age', minimum: 0, maximum: 120 },
+        active: { type: 'boolean', title: 'Active', default: true }
       },
-      required: ["name"],
+      required: ['name']
     },
-    values: { name: "Alice", age: 30, active: true },
+    values: { name: 'Alice', age: 30, active: true }
   }}
 />
 
@@ -39,39 +39,39 @@
   name="Select Fields"
   args={{
     schema: {
-      type: "object",
+      type: 'object',
       properties: {
         model: {
-          type: "string",
-          title: "AI Model",
+          type: 'string',
+          title: 'AI Model',
           oneOf: [
-            { const: "gpt-4", title: "GPT-4" },
-            { const: "gpt-3.5", title: "GPT-3.5 Turbo" },
-            { const: "claude-3", title: "Claude 3" },
-          ],
+            { const: 'gpt-4', title: 'GPT-4' },
+            { const: 'gpt-3.5', title: 'GPT-3.5 Turbo' },
+            { const: 'claude-3', title: 'Claude 3' }
+          ]
         },
         temperature: {
-          type: "number",
-          title: "Temperature",
-          format: "range",
+          type: 'number',
+          title: 'Temperature',
+          format: 'range',
           minimum: 0,
           maximum: 2,
           step: 0.1,
-          default: 0.7,
+          default: 0.7
         },
         prompt: {
-          type: "string",
-          title: "System Prompt",
-          format: "multiline",
-          description: "The system prompt for the AI model",
-        },
-      },
+          type: 'string',
+          title: 'System Prompt',
+          format: 'multiline',
+          description: 'The system prompt for the AI model'
+        }
+      }
     },
     values: {
-      model: "gpt-4",
+      model: 'gpt-4',
       temperature: 0.7,
-      prompt: "You are a helpful assistant.",
-    },
+      prompt: 'You are a helpful assistant.'
+    }
   }}
 />
 
@@ -79,17 +79,17 @@
   name="With Actions"
   args={{
     schema: {
-      type: "object",
+      type: 'object',
       properties: {
-        email: { type: "string", title: "Email" },
-        notifications: { type: "boolean", title: "Enable Notifications" },
+        email: { type: 'string', title: 'Email' },
+        notifications: { type: 'boolean', title: 'Enable Notifications' }
       },
-      required: ["email"],
+      required: ['email']
     },
-    values: { email: "", notifications: true },
+    values: { email: '', notifications: true },
     showActions: true,
-    saveLabel: "Save Settings",
-    cancelLabel: "Reset",
+    saveLabel: 'Save Settings',
+    cancelLabel: 'Reset'
   }}
 />
 
@@ -97,14 +97,14 @@
   name="Loading"
   args={{
     schema: {
-      type: "object",
+      type: 'object',
       properties: {
-        name: { type: "string", title: "Name" },
-      },
+        name: { type: 'string', title: 'Name' }
+      }
     },
-    values: { name: "Test" },
+    values: { name: 'Test' },
     showActions: true,
-    loading: true,
+    loading: true
   }}
 />
 
@@ -112,13 +112,13 @@
   name="Disabled"
   args={{
     schema: {
-      type: "object",
+      type: 'object',
       properties: {
-        name: { type: "string", title: "Name" },
-        role: { type: "string", title: "Role" },
-      },
+        name: { type: 'string', title: 'Name' },
+        role: { type: 'string', title: 'Role' }
+      }
     },
-    values: { name: "Admin", role: "Super User" },
-    disabled: true,
+    values: { name: 'Admin', role: 'Super User' },
+    disabled: true
   }}
 />

@@ -17,12 +17,12 @@
  * - 'dark': Force dark theme
  * - 'auto': Follow system preference
  */
-export type ThemePreference = "light" | "dark" | "auto";
+export type ThemePreference = 'light' | 'dark' | 'auto';
 
 /**
  * Resolved theme (actual applied theme, never 'auto')
  */
-export type ResolvedTheme = "light" | "dark";
+export type ResolvedTheme = 'light' | 'dark';
 
 /**
  * Theme-related settings
@@ -73,13 +73,13 @@ export interface UISettings {
   /** Enable compact mode for denser UI */
   compactMode: boolean;
   /** Active theme name — overridden by the theme prop when explicitly provided */
-  theme: "default" | "minimal";
+  theme: 'default' | 'minimal';
   /** Whether the command console panel is open */
   consoleOpen: boolean;
   /** Height of the command console panel in pixels */
   consoleHeight: number;
   /** Active tab in the bottom panel */
-  bottomPanelTab: "console" | "chat";
+  bottomPanelTab: 'console' | 'chat';
 }
 
 // =========================================================================
@@ -148,34 +148,28 @@ export type SettingsCategory = keyof FlowDropSettings;
 /**
  * All available settings categories
  */
-export const SETTINGS_CATEGORIES: SettingsCategory[] = [
-  "theme",
-  "editor",
-  "ui",
-  "behavior",
-  "api",
-];
+export const SETTINGS_CATEGORIES: SettingsCategory[] = ['theme', 'editor', 'ui', 'behavior', 'api'];
 
 /**
  * Human-readable labels for settings categories
  */
 export const SETTINGS_CATEGORY_LABELS: Record<SettingsCategory, string> = {
-  theme: "Theme",
-  editor: "Editor",
-  ui: "UI",
-  behavior: "Behavior",
-  api: "API",
+  theme: 'Theme',
+  editor: 'Editor',
+  ui: 'UI',
+  behavior: 'Behavior',
+  api: 'API'
 };
 
 /**
  * Icons for settings categories (Iconify icon names)
  */
 export const SETTINGS_CATEGORY_ICONS: Record<SettingsCategory, string> = {
-  theme: "mdi:palette",
-  editor: "mdi:grid",
-  ui: "mdi:view-dashboard",
-  behavior: "mdi:cog-play",
-  api: "mdi:api",
+  theme: 'mdi:palette',
+  editor: 'mdi:grid',
+  ui: 'mdi:view-dashboard',
+  behavior: 'mdi:cog-play',
+  api: 'mdi:api'
 };
 
 // =========================================================================
@@ -186,7 +180,7 @@ export const SETTINGS_CATEGORY_ICONS: Record<SettingsCategory, string> = {
  * Default theme settings
  */
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
-  preference: "dark",
+  preference: 'dark'
 };
 
 /**
@@ -200,7 +194,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   defaultZoom: 1,
   fitViewOnLoad: true,
   proximityConnect: false,
-  proximityConnectDistance: 150,
+  proximityConnectDistance: 150
 };
 
 /**
@@ -210,10 +204,10 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
   sidebarWidth: 280,
   sidebarCollapsed: false,
   compactMode: false,
-  theme: "default",
+  theme: 'default',
   consoleOpen: false,
   consoleHeight: 300,
-  bottomPanelTab: "console",
+  bottomPanelTab: 'console'
 };
 
 /**
@@ -224,7 +218,7 @@ export const DEFAULT_BEHAVIOR_SETTINGS: BehaviorSettings = {
   autoSaveInterval: 30000,
   undoHistoryLimit: 50,
   confirmDelete: false,
-  chatAutoRetry: true,
+  chatAutoRetry: true
 };
 
 /**
@@ -234,7 +228,7 @@ export const DEFAULT_API_SETTINGS: ApiSettings = {
   timeout: 30000,
   retryEnabled: true,
   retryAttempts: 3,
-  cacheEnabled: false,
+  cacheEnabled: false
 };
 
 /**
@@ -245,7 +239,7 @@ export const DEFAULT_SETTINGS: FlowDropSettings = {
   editor: DEFAULT_EDITOR_SETTINGS,
   ui: DEFAULT_UI_SETTINGS,
   behavior: DEFAULT_BEHAVIOR_SETTINGS,
-  api: DEFAULT_API_SETTINGS,
+  api: DEFAULT_API_SETTINGS
 };
 
 // =========================================================================
@@ -294,12 +288,12 @@ export type SettingsChangeCallback = (event: SettingsChangeEvent) => void;
 /**
  * localStorage key for persisting settings
  */
-export const SETTINGS_STORAGE_KEY = "flowdrop-settings";
+export const SETTINGS_STORAGE_KEY = 'flowdrop-settings';
 
 /**
  * API sync status
  */
-export type SyncStatus = "idle" | "syncing" | "synced" | "error";
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
 /**
  * Settings store state including sync metadata

@@ -24,31 +24,23 @@ import type {
   AgentSpecAgentNode,
   AgentSpecFlowNode,
   AgentSpecMapNode,
-  AgentSpecToolNode,
-} from "../../types/agentspec.js";
+  AgentSpecToolNode
+} from '../../types/agentspec.js';
 
-import type {
-  StandardWorkflow,
-  StandardNode,
-  StandardEdge,
-} from "../WorkflowAdapter.js";
-import type { NodePort, NodeMetadata, Branch } from "../../types/index.js";
+import type { StandardWorkflow, StandardNode, StandardEdge } from '../WorkflowAdapter.js';
+import type { NodePort, NodeMetadata, Branch } from '../../types/index.js';
 
 import {
   getComponentTypeDefaults,
   extractComponentType,
-  AGENTSPEC_NAMESPACE,
-} from "./componentTypeDefaults.js";
+  AGENTSPEC_NAMESPACE
+} from './componentTypeDefaults.js';
 
-import { computeAutoLayout } from "./autoLayout.js";
-import { v4 as uuidv4 } from "uuid";
-import { logger } from "../../utils/logger.js";
+import { computeAutoLayout } from './autoLayout.js';
+import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../../utils/logger.js';
 
-import {
-  buildHandleId,
-  extractPortId,
-  extractDirection,
-} from "../../utils/handleIds.js";
+import { buildHandleId, extractPortId, extractDirection } from '../../utils/handleIds.js';
 
 // ============================================================================
 // Property ↔ Port Conversion
@@ -59,32 +51,32 @@ import {
  */
 function agentSpecPropertyToNodePort(
   prop: AgentSpecProperty,
-  portType: "input" | "output",
+  portType: 'input' | 'output'
 ): NodePort {
   // Map JSON Schema types to FlowDrop data types
   let dataType: string;
   switch (prop.type) {
-    case "string":
-      dataType = "string";
+    case 'string':
+      dataType = 'string';
       break;
-    case "number":
-    case "float":
-      dataType = "number";
+    case 'number':
+    case 'float':
+      dataType = 'number';
       break;
-    case "integer":
-      dataType = "number";
+    case 'integer':
+      dataType = 'number';
       break;
-    case "boolean":
-      dataType = "boolean";
+    case 'boolean':
+      dataType = 'boolean';
       break;
-    case "array":
-      dataType = "array";
+    case 'array':
+      dataType = 'array';
       break;
-    case "object":
-      dataType = "json";
+    case 'object':
+      dataType = 'json';
       break;
     default:
-      dataType = "mixed";
+      dataType = 'mixed';
   }
 
   return {
@@ -93,7 +85,7 @@ function agentSpecPropertyToNodePort(
     type: portType,
     dataType,
     required: false,
-    description: prop.description,
+    description: prop.description
   };
 }
 
@@ -104,33 +96,33 @@ function nodePortToAgentSpecProperty(port: NodePort): AgentSpecProperty {
   // Map FlowDrop data types to JSON Schema types
   let type: string;
   switch (port.dataType) {
-    case "string":
-      type = "string";
+    case 'string':
+      type = 'string';
       break;
-    case "number":
-    case "float":
-      type = "number";
+    case 'number':
+    case 'float':
+      type = 'number';
       break;
-    case "integer":
-      type = "integer";
+    case 'integer':
+      type = 'integer';
       break;
-    case "boolean":
-      type = "boolean";
+    case 'boolean':
+      type = 'boolean';
       break;
-    case "array":
-      type = "array";
+    case 'array':
+      type = 'array';
       break;
-    case "json":
-    case "object":
-      type = "object";
+    case 'json':
+    case 'object':
+      type = 'object';
       break;
     default:
-      type = "string";
+      type = 'string';
   }
 
   const prop: AgentSpecProperty = {
     title: port.id,
-    type,
+    type
   };
 
   if (port.description) prop.description = port.description;
@@ -168,7 +160,7 @@ export class AgentSpecAdapter {
 
     // Convert nodes
     const agentSpecNodes: AgentSpecNode[] = workflow.nodes.map((node) =>
-      this.convertNodeToAgentSpec(node, nodeIdToName),
+      this.convertNodeToAgentSpec(node, nodeIdToName)
     );
 
     // Split edges into control-flow and data-flow
@@ -180,15 +172,10 @@ export class AgentSpecAdapter {
       if (!sourceNode) continue;
 
       const sourcePortId = extractPortId(edge.sourceHandle);
-      const sourcePortDataType = this.getSourcePortDataType(
-        sourceNode,
-        sourcePortId,
-      );
+      const sourcePortDataType = this.getSourcePortDataType(sourceNode, sourcePortId);
 
-      if (sourcePortDataType === "trigger") {
-        controlFlowEdges.push(
-          this.convertToControlFlowEdge(edge, sourceNode, nodeIdToName),
-        );
+      if (sourcePortDataType === 'trigger') {
+        controlFlowEdges.push(this.convertToControlFlowEdge(edge, sourceNode, nodeIdToName));
       } else {
         dataFlowEdges.push(this.convertToDataFlowEdge(edge, nodeIdToName));
       }
@@ -198,7 +185,7 @@ export class AgentSpecAdapter {
     const startNodeName = this.findStartNodeName(agentSpecNodes, nodeIdToName);
 
     return {
-      component_type: "flow",
+      component_type: 'flow',
       name: workflow.name,
       description: workflow.description,
       start_node: startNodeName,
@@ -206,15 +193,11 @@ export class AgentSpecAdapter {
       control_flow_connections: controlFlowEdges,
       data_flow_connections: dataFlowEdges.length > 0 ? dataFlowEdges : null,
       metadata: {
-        "flowdrop:workflow_id": workflow.id,
-        "flowdrop:version": workflow.metadata?.version,
-        ...(workflow.metadata?.author
-          ? { "flowdrop:author": workflow.metadata.author }
-          : {}),
-        ...(workflow.metadata?.tags
-          ? { "flowdrop:tags": workflow.metadata.tags }
-          : {}),
-      },
+        'flowdrop:workflow_id': workflow.id,
+        'flowdrop:version': workflow.metadata?.version,
+        ...(workflow.metadata?.author ? { 'flowdrop:author': workflow.metadata.author } : {}),
+        ...(workflow.metadata?.tags ? { 'flowdrop:tags': workflow.metadata.tags } : {})
+      }
     };
   }
 
@@ -279,23 +262,18 @@ export class AgentSpecAdapter {
     }
 
     return {
-      id:
-        (agentSpecFlow.metadata?.["flowdrop:workflow_id"] as string) ||
-        uuidv4(),
+      id: (agentSpecFlow.metadata?.['flowdrop:workflow_id'] as string) || uuidv4(),
       name: agentSpecFlow.name,
       description: agentSpecFlow.description,
       nodes,
       edges,
       metadata: {
-        version:
-          (agentSpecFlow.metadata?.["flowdrop:version"] as string) || "1.0.0",
+        version: (agentSpecFlow.metadata?.['flowdrop:version'] as string) || '1.0.0',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        author: agentSpecFlow.metadata?.["flowdrop:author"] as
-          | string
-          | undefined,
-        tags: agentSpecFlow.metadata?.["flowdrop:tags"] as string[] | undefined,
-      },
+        author: agentSpecFlow.metadata?.['flowdrop:author'] as string | undefined,
+        tags: agentSpecFlow.metadata?.['flowdrop:tags'] as string[] | undefined
+      }
     };
   }
 
@@ -326,18 +304,18 @@ export class AgentSpecAdapter {
    */
   private convertNodeToAgentSpec(
     node: StandardNode,
-    nodeIdToName: Map<string, string>,
+    nodeIdToName: Map<string, string>
   ): AgentSpecNode {
     const componentType = this.resolveComponentType(node);
     const name = nodeIdToName.get(node.id) || node.id;
 
     // Convert data ports (skip trigger/tool ports — those are handled as edges)
     const dataInputs = node.data.metadata.inputs
-      .filter((p) => p.dataType !== "trigger" && p.dataType !== "tool")
+      .filter((p) => p.dataType !== 'trigger' && p.dataType !== 'tool')
       .map((p) => nodePortToAgentSpecProperty(p));
 
     const dataOutputs = node.data.metadata.outputs
-      .filter((p) => p.dataType !== "trigger" && p.dataType !== "tool")
+      .filter((p) => p.dataType !== 'trigger' && p.dataType !== 'tool')
       .map((p) => nodePortToAgentSpecProperty(p));
 
     // Build base node
@@ -348,10 +326,10 @@ export class AgentSpecAdapter {
       inputs: dataInputs.length > 0 ? dataInputs : undefined,
       outputs: dataOutputs.length > 0 ? dataOutputs : undefined,
       metadata: {
-        "flowdrop:position": node.position,
-        "flowdrop:node_id": node.id,
-        "flowdrop:node_type_id": node.data.metadata.id,
-      },
+        'flowdrop:position': node.position,
+        'flowdrop:node_id': node.id,
+        'flowdrop:node_type_id': node.data.metadata.id
+      }
     } as AgentSpecNode;
 
     // Add type-specific attributes from config
@@ -361,73 +339,65 @@ export class AgentSpecAdapter {
   /**
    * Add Agent Spec type-specific attributes from FlowDrop config.
    */
-  private addNodeSpecificAttributes(
-    asNode: AgentSpecNode,
-    fdNode: StandardNode,
-  ): AgentSpecNode {
+  private addNodeSpecificAttributes(asNode: AgentSpecNode, fdNode: StandardNode): AgentSpecNode {
     const config = fdNode.data.config || {};
 
     switch (asNode.component_type) {
-      case "llm_node": {
+      case 'llm_node': {
         const llmNode = asNode as AgentSpecLLMNode;
-        if (config.prompt_template)
-          llmNode.prompt_template = config.prompt_template as string;
-        if (config.system_prompt)
-          llmNode.system_prompt = config.system_prompt as string;
-        if (config.llm_config_ref)
-          llmNode.llm_config = config.llm_config_ref as string;
+        if (config.prompt_template) llmNode.prompt_template = config.prompt_template as string;
+        if (config.system_prompt) llmNode.system_prompt = config.system_prompt as string;
+        if (config.llm_config_ref) llmNode.llm_config = config.llm_config_ref as string;
         return llmNode;
       }
-      case "branching_node": {
+      case 'branching_node': {
         const branchNode = asNode as AgentSpecBranchingNode;
         const branches = config.branches as Branch[] | undefined;
         branchNode.branches = branches
           ? branches.map((b) => ({
               name: b.name,
               condition: b.condition || undefined,
-              description: b.description || undefined,
+              description: b.description || undefined
             }))
           : [];
         return branchNode;
       }
-      case "api_node": {
+      case 'api_node': {
         const apiNode = asNode as AgentSpecAPINode;
         if (config.endpoint) apiNode.endpoint = config.endpoint as string;
         if (config.method) apiNode.method = config.method as string;
         if (config.headers) {
           try {
             apiNode.headers =
-              typeof config.headers === "string"
+              typeof config.headers === 'string'
                 ? JSON.parse(config.headers)
                 : (config.headers as Record<string, string>);
           } catch (error) {
             // Ignore parse errors
-            logger.warn("Failed to parse header JSON", error);
+            logger.warn('Failed to parse header JSON', error);
           }
         }
         return apiNode;
       }
-      case "agent_node": {
+      case 'agent_node': {
         const agentNode = asNode as AgentSpecAgentNode;
         if (config.agent_ref) agentNode.agent = config.agent_ref as string;
         return agentNode;
       }
-      case "flow_node": {
+      case 'flow_node': {
         const flowNode = asNode as AgentSpecFlowNode;
         if (config.flow_ref) flowNode.flow = config.flow_ref as string;
         return flowNode;
       }
-      case "map_node": {
+      case 'map_node': {
         const mapNode = asNode as AgentSpecMapNode;
-        if (config.input_collection)
-          mapNode.input_collection = config.input_collection as string;
+        if (config.input_collection) mapNode.input_collection = config.input_collection as string;
         if (config.output_collection)
           mapNode.output_collection = config.output_collection as string;
-        if (config.map_flow_ref)
-          mapNode.map_flow = config.map_flow_ref as string;
+        if (config.map_flow_ref) mapNode.map_flow = config.map_flow_ref as string;
         return mapNode;
       }
-      case "tool_node": {
+      case 'tool_node': {
         const toolNode = asNode as AgentSpecToolNode;
         if (config.tool_ref) toolNode.tool = config.tool_ref as string;
         return toolNode;
@@ -442,8 +412,8 @@ export class AgentSpecAdapter {
    */
   private resolveComponentType(node: StandardNode): AgentSpecNodeComponentType {
     // Check extensions first (round-trip preservation)
-    const ext = node.data.metadata.extensions?.["agentspec:component_type"];
-    if (ext && typeof ext === "string") {
+    const ext = node.data.metadata.extensions?.['agentspec:component_type'];
+    if (ext && typeof ext === 'string') {
       return ext as AgentSpecNodeComponentType;
     }
 
@@ -455,16 +425,16 @@ export class AgentSpecAdapter {
     const nodeType = node.data.metadata.type;
     const category = node.data.metadata.category;
 
-    if (nodeType === "terminal" && category === "triggers") return "start_node";
-    if (nodeType === "terminal" && category === "outputs") return "end_node";
-    if (nodeType === "gateway") return "branching_node";
-    if (nodeType === "tool") return "tool_node";
-    if (category === "ai" || category === "models") return "llm_node";
-    if (category === "agents") return "agent_node";
-    if (category === "data") return "api_node";
+    if (nodeType === 'terminal' && category === 'triggers') return 'start_node';
+    if (nodeType === 'terminal' && category === 'outputs') return 'end_node';
+    if (nodeType === 'gateway') return 'branching_node';
+    if (nodeType === 'tool') return 'tool_node';
+    if (category === 'ai' || category === 'models') return 'llm_node';
+    if (category === 'agents') return 'agent_node';
+    if (category === 'data') return 'api_node';
 
     // Default fallback
-    return "llm_node";
+    return 'llm_node';
   }
 
   /**
@@ -477,26 +447,26 @@ export class AgentSpecAdapter {
   private convertNodeFromAgentSpec(
     asNode: AgentSpecNode,
     nodeId: string,
-    position: { x: number; y: number },
+    position: { x: number; y: number }
   ): StandardNode {
     // Restore position from metadata if available (round-trip)
-    const savedPosition = asNode.metadata?.["flowdrop:position"] as
+    const savedPosition = asNode.metadata?.['flowdrop:position'] as
       | { x: number; y: number }
       | undefined;
     const finalPosition = savedPosition || position;
 
     // Convert inputs/outputs to FlowDrop ports
     const dataInputs: NodePort[] = (asNode.inputs || []).map((p) =>
-      agentSpecPropertyToNodePort(p, "input"),
+      agentSpecPropertyToNodePort(p, 'input')
     );
     const dataOutputs: NodePort[] = (asNode.outputs || []).map((p) =>
-      agentSpecPropertyToNodePort(p, "output"),
+      agentSpecPropertyToNodePort(p, 'output')
     );
 
     // Use lightweight adapter defaults (never throws on unknown types)
     const defaults = getComponentTypeDefaults(asNode.component_type);
     const nodeTypeId =
-      (asNode.metadata?.["flowdrop:node_type_id"] as string) ||
+      (asNode.metadata?.['flowdrop:node_type_id'] as string) ||
       `${AGENTSPEC_NAMESPACE}.${asNode.component_type}`;
 
     const metadata: NodeMetadata = {
@@ -504,19 +474,19 @@ export class AgentSpecAdapter {
       name: defaults.defaultName,
       type: defaults.visualType,
       description: asNode.description || defaults.defaultDescription,
-      category: defaults.category as NodeMetadata["category"],
-      version: "1.0.0",
+      category: defaults.category as NodeMetadata['category'],
+      version: '1.0.0',
       icon: defaults.icon,
       color: defaults.color,
       badge: defaults.badge,
       inputs: [...defaults.triggerInputs, ...dataInputs],
       outputs: [...defaults.triggerOutputs, ...dataOutputs],
-      configSchema: { type: "object", properties: {} },
-      formats: ["agentspec"],
+      configSchema: { type: 'object', properties: {} },
+      formats: ['agentspec'],
       extensions: {
-        "agentspec:component_type": asNode.component_type,
-        "agentspec:original_name": asNode.name,
-      },
+        'agentspec:component_type': asNode.component_type,
+        'agentspec:original_name': asNode.name
+      }
     };
 
     // Build config from Agent Spec node-specific attributes
@@ -529,85 +499,75 @@ export class AgentSpecAdapter {
       data: {
         label: asNode.name,
         config,
-        metadata,
-      },
+        metadata
+      }
     };
   }
 
   /**
    * Extract FlowDrop config values from Agent Spec node-specific attributes.
    */
-  private extractConfigFromAgentSpec(
-    asNode: AgentSpecNode,
-  ): Record<string, unknown> {
+  private extractConfigFromAgentSpec(asNode: AgentSpecNode): Record<string, unknown> {
     const config: Record<string, unknown> = {};
 
     switch (asNode.component_type) {
-      case "llm_node": {
+      case 'llm_node': {
         const llm = asNode as AgentSpecLLMNode;
         if (llm.prompt_template) config.prompt_template = llm.prompt_template;
         if (llm.system_prompt) config.system_prompt = llm.system_prompt;
         if (llm.llm_config) {
           config.llm_config_ref =
-            typeof llm.llm_config === "string"
-              ? llm.llm_config
-              : llm.llm_config.name;
+            typeof llm.llm_config === 'string' ? llm.llm_config : llm.llm_config.name;
         }
         break;
       }
-      case "branching_node": {
+      case 'branching_node': {
         const branch = asNode as AgentSpecBranchingNode;
         config.branches = branch.branches.map(
           (b: AgentSpecBranch) =>
             ({
               name: b.name,
               label: b.name,
-              condition: b.condition || "",
-              isDefault: !b.condition,
-            }) satisfies Branch,
+              condition: b.condition || '',
+              isDefault: !b.condition
+            }) satisfies Branch
         );
         break;
       }
-      case "api_node": {
+      case 'api_node': {
         const api = asNode as AgentSpecAPINode;
         if (api.endpoint) config.endpoint = api.endpoint;
         if (api.method) config.method = api.method;
         if (api.headers) config.headers = JSON.stringify(api.headers, null, 2);
         break;
       }
-      case "agent_node": {
+      case 'agent_node': {
         const agent = asNode as AgentSpecAgentNode;
         if (agent.agent) {
-          config.agent_ref =
-            typeof agent.agent === "string" ? agent.agent : agent.agent.name;
+          config.agent_ref = typeof agent.agent === 'string' ? agent.agent : agent.agent.name;
         }
         break;
       }
-      case "flow_node": {
+      case 'flow_node': {
         const flow = asNode as AgentSpecFlowNode;
         if (flow.flow) {
-          config.flow_ref =
-            typeof flow.flow === "string" ? flow.flow : flow.flow.name;
+          config.flow_ref = typeof flow.flow === 'string' ? flow.flow : flow.flow.name;
         }
         break;
       }
-      case "map_node": {
+      case 'map_node': {
         const map = asNode as AgentSpecMapNode;
-        if (map.input_collection)
-          config.input_collection = map.input_collection;
-        if (map.output_collection)
-          config.output_collection = map.output_collection;
+        if (map.input_collection) config.input_collection = map.input_collection;
+        if (map.output_collection) config.output_collection = map.output_collection;
         if (map.map_flow) {
-          config.map_flow_ref =
-            typeof map.map_flow === "string" ? map.map_flow : map.map_flow.name;
+          config.map_flow_ref = typeof map.map_flow === 'string' ? map.map_flow : map.map_flow.name;
         }
         break;
       }
-      case "tool_node": {
+      case 'tool_node': {
         const tool = asNode as AgentSpecToolNode;
         if (tool.tool) {
-          config.tool_ref =
-            typeof tool.tool === "string" ? tool.tool : tool.tool.name;
+          config.tool_ref = typeof tool.tool === 'string' ? tool.tool : tool.tool.name;
         }
         break;
       }
@@ -623,10 +583,7 @@ export class AgentSpecAdapter {
   /**
    * Get the data type of a source port from a FlowDrop node.
    */
-  private getSourcePortDataType(
-    node: StandardNode,
-    portId: string | null,
-  ): string | null {
+  private getSourcePortDataType(node: StandardNode, portId: string | null): string | null {
     if (!portId) return null;
 
     // Check static output ports
@@ -634,10 +591,10 @@ export class AgentSpecAdapter {
     if (port) return port.dataType;
 
     // Check if it's a gateway branch (always trigger)
-    if (node.data.metadata.type === "gateway") {
+    if (node.data.metadata.type === 'gateway') {
       const branches = node.data.config?.branches as Branch[] | undefined;
       if (branches?.some((b) => b.name === portId)) {
-        return "trigger";
+        return 'trigger';
       }
     }
 
@@ -659,7 +616,7 @@ export class AgentSpecAdapter {
   private convertToControlFlowEdge(
     edge: StandardEdge,
     sourceNode: StandardNode,
-    nodeIdToName: Map<string, string>,
+    nodeIdToName: Map<string, string>
   ): AgentSpecControlFlowEdge {
     const fromNode = nodeIdToName.get(edge.source) || edge.source;
     const toNode = nodeIdToName.get(edge.target) || edge.target;
@@ -667,7 +624,7 @@ export class AgentSpecAdapter {
 
     // Determine from_branch for gateway nodes
     let fromBranch: string | undefined;
-    if (sourceNode.data.metadata.type === "gateway" && sourcePortId) {
+    if (sourceNode.data.metadata.type === 'gateway' && sourcePortId) {
       const branches = sourceNode.data.config?.branches as Branch[] | undefined;
       if (branches?.some((b) => b.name === sourcePortId)) {
         fromBranch = sourcePortId;
@@ -675,10 +632,10 @@ export class AgentSpecAdapter {
     }
 
     return {
-      name: `${fromNode}_to_${toNode}${fromBranch ? `_${fromBranch}` : ""}`,
+      name: `${fromNode}_to_${toNode}${fromBranch ? `_${fromBranch}` : ''}`,
       from_node: fromNode,
       to_node: toNode,
-      from_branch: fromBranch,
+      from_branch: fromBranch
     };
   }
 
@@ -687,19 +644,19 @@ export class AgentSpecAdapter {
    */
   private convertToDataFlowEdge(
     edge: StandardEdge,
-    nodeIdToName: Map<string, string>,
+    nodeIdToName: Map<string, string>
   ): AgentSpecDataFlowEdge {
     const sourceNode = nodeIdToName.get(edge.source) || edge.source;
     const destNode = nodeIdToName.get(edge.target) || edge.target;
-    const sourceOutput = extractPortId(edge.sourceHandle) || "output";
-    const destInput = extractPortId(edge.targetHandle) || "input";
+    const sourceOutput = extractPortId(edge.sourceHandle) || 'output';
+    const destInput = extractPortId(edge.targetHandle) || 'input';
 
     return {
       name: `${sourceNode}_${sourceOutput}_to_${destNode}_${destInput}`,
       source_node: sourceNode,
       source_output: sourceOutput,
       destination_node: destNode,
-      destination_input: destInput,
+      destination_input: destInput
     };
   }
 
@@ -709,14 +666,14 @@ export class AgentSpecAdapter {
   private convertFromControlFlowEdge(
     cfEdge: AgentSpecControlFlowEdge,
     nameToNodeId: Map<string, string>,
-    nodes: StandardNode[],
+    nodes: StandardNode[]
   ): StandardEdge | null {
     const sourceId = nameToNodeId.get(cfEdge.from_node);
     const targetId = nameToNodeId.get(cfEdge.to_node);
     if (!sourceId || !targetId) return null;
 
     // Determine source handle
-    let sourcePortId = "trigger"; // default for non-branch control flow
+    let sourcePortId = 'trigger'; // default for non-branch control flow
     if (cfEdge.from_branch) {
       sourcePortId = cfEdge.from_branch;
     }
@@ -725,8 +682,8 @@ export class AgentSpecAdapter {
       id: uuidv4(),
       source: sourceId,
       target: targetId,
-      sourceHandle: buildHandleId(sourceId, "output", sourcePortId),
-      targetHandle: buildHandleId(targetId, "input", "trigger"),
+      sourceHandle: buildHandleId(sourceId, 'output', sourcePortId),
+      targetHandle: buildHandleId(targetId, 'input', 'trigger')
     };
   }
 
@@ -735,7 +692,7 @@ export class AgentSpecAdapter {
    */
   private convertFromDataFlowEdge(
     dfEdge: AgentSpecDataFlowEdge,
-    nameToNodeId: Map<string, string>,
+    nameToNodeId: Map<string, string>
   ): StandardEdge | null {
     const sourceId = nameToNodeId.get(dfEdge.source_node);
     const targetId = nameToNodeId.get(dfEdge.destination_node);
@@ -745,23 +702,20 @@ export class AgentSpecAdapter {
       id: uuidv4(),
       source: sourceId,
       target: targetId,
-      sourceHandle: buildHandleId(sourceId, "output", dfEdge.source_output),
-      targetHandle: buildHandleId(targetId, "input", dfEdge.destination_input),
+      sourceHandle: buildHandleId(sourceId, 'output', dfEdge.source_output),
+      targetHandle: buildHandleId(targetId, 'input', dfEdge.destination_input)
     };
   }
 
   /**
    * Find the start node name from converted Agent Spec nodes.
    */
-  private findStartNodeName(
-    nodes: AgentSpecNode[],
-    nodeIdToName: Map<string, string>,
-  ): string {
+  private findStartNodeName(nodes: AgentSpecNode[], nodeIdToName: Map<string, string>): string {
     // Look for an explicit start_node
-    const startNode = nodes.find((n) => n.component_type === "start_node");
+    const startNode = nodes.find((n) => n.component_type === 'start_node');
     if (startNode) return startNode.name;
 
     // Fall back to the first node
-    return nodes.length > 0 ? nodes[0].name : "start";
+    return nodes.length > 0 ? nodes[0].name : 'start';
   }
 }

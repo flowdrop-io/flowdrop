@@ -12,18 +12,13 @@
 -->
 
 <script lang="ts">
-  import type { UISchemaElement } from "$lib/types/uischema.js";
-  import type {
-    ConfigSchema,
-    WorkflowNode,
-    WorkflowEdge,
-    AuthProvider,
-  } from "$lib/types/index.js";
-  import type { FieldSchema } from "./types.js";
-  import { resolveScopeToKey } from "$lib/utils/uischema.js";
-  import FormField from "./FormField.svelte";
-  import FormFieldset from "./FormFieldset.svelte";
-  import Self from "./FormUISchemaRenderer.svelte";
+  import type { UISchemaElement } from '$lib/types/uischema.js';
+  import type { ConfigSchema, WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
+  import type { FieldSchema } from './types.js';
+  import { resolveScopeToKey } from '$lib/utils/uischema.js';
+  import FormField from './FormField.svelte';
+  import FormFieldset from './FormFieldset.svelte';
+  import Self from './FormUISchemaRenderer.svelte';
 
   interface Props {
     /** The UISchema element to render */
@@ -64,7 +59,7 @@
     nodes,
     edges,
     workflowId,
-    authProvider,
+    authProvider
   }: Props = $props();
 
   function isRequired(key: string): boolean {
@@ -72,12 +67,10 @@
   }
 </script>
 
-{#if element.type === "Control"}
+{#if element.type === 'Control'}
   {@const key = resolveScopeToKey(element.scope)}
   {#if key && schema.properties[key]}
-    {@const fieldSchema = toFieldSchema(
-      schema.properties[key] as Record<string, unknown>,
-    )}
+    {@const fieldSchema = toFieldSchema(schema.properties[key] as Record<string, unknown>)}
     <FormField
       fieldKey={key}
       schema={fieldSchema}
@@ -92,7 +85,7 @@
       onChange={(val) => onFieldChange(key, val)}
     />
   {/if}
-{:else if element.type === "VerticalLayout"}
+{:else if element.type === 'VerticalLayout'}
   <div class="form-uischema-layout form-uischema-layout--vertical">
     {#each element.elements as child, idx (idx)}
       <Self
@@ -111,7 +104,7 @@
       />
     {/each}
   </div>
-{:else if element.type === "Group"}
+{:else if element.type === 'Group'}
   <FormFieldset group={element}>
     <div class="form-uischema-layout form-uischema-layout--vertical">
       {#each element.elements as child, idx (idx)}

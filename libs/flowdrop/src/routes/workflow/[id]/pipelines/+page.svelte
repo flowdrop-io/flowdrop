@@ -5,19 +5,19 @@
 -->
 
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import Icon from "@iconify/svelte";
-  import StatusIcon from "$lib/components/StatusIcon.svelte";
-  import StatusLabel from "$lib/components/StatusLabel.svelte";
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import Icon from '@iconify/svelte';
+  import StatusIcon from '$lib/components/StatusIcon.svelte';
+  import StatusLabel from '$lib/components/StatusLabel.svelte';
   import {
     buildEndpointUrl,
     defaultEndpointConfig,
-    type EndpointConfig,
-  } from "$lib/config/endpoints.js";
-  import { apiToasts } from "$lib/services/toastService.js";
-  import type { NodeExecutionStatus } from "$lib/types/index.js";
+    type EndpointConfig
+  } from '$lib/config/endpoints.js';
+  import { apiToasts } from '$lib/services/toastService.js';
+  import type { NodeExecutionStatus } from '$lib/types/index.js';
 
   let { data } = $props();
 
@@ -25,7 +25,7 @@
   // svelte-ignore state_referenced_locally — page remounts on navigation
   let endpointConfig = $state<EndpointConfig>({
     ...defaultEndpointConfig,
-    baseUrl: data.runtimeConfig.apiBaseUrl,
+    baseUrl: data.runtimeConfig.apiBaseUrl
   });
 
   /**
@@ -46,28 +46,23 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let workflowId = $derived($page.params.id);
-  let workflowName = $state<string>("Workflow");
+  let workflowName = $state<string>('Workflow');
 
-  let searchQuery = $state("");
+  let searchQuery = $state('');
   let filteredPipelines = $derived(
     (Array.isArray(pipelines) ? pipelines : [])
       .filter(
         (pipeline) =>
           pipeline.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          pipeline.description
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()),
+          pipeline.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      ),
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   );
 
   // Fetch pipelines from API
   async function fetchPipelines() {
     if (!workflowId) {
-      error = "No workflow ID provided";
+      error = 'No workflow ID provided';
       loading = false;
       return;
     }
@@ -76,18 +71,14 @@
       loading = true;
       error = null;
 
-      const apiUrl = buildEndpointUrl(
-        endpointConfig,
-        "/workflow/{workflow_id}/pipelines",
-        {
-          workflow_id: workflowId,
-        },
-      );
+      const apiUrl = buildEndpointUrl(endpointConfig, '/workflow/{workflow_id}/pipelines', {
+        workflow_id: workflowId
+      });
       const response = await fetch(apiUrl, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
@@ -97,11 +88,8 @@
       const data = await response.json();
       pipelines = data.pipelines || [];
     } catch (err) {
-      apiToasts.error(
-        "Load pipelines",
-        err instanceof Error ? err.message : "Unknown error",
-      );
-      error = err instanceof Error ? err.message : "Failed to fetch pipelines";
+      apiToasts.error('Load pipelines', err instanceof Error ? err.message : 'Unknown error');
+      error = err instanceof Error ? err.message : 'Failed to fetch pipelines';
       pipelines = [];
     } finally {
       loading = false;
@@ -113,42 +101,42 @@
     if (!workflowId) return;
 
     try {
-      const apiUrl = buildEndpointUrl(endpointConfig, "/workflows/{id}", {
-        id: workflowId,
+      const apiUrl = buildEndpointUrl(endpointConfig, '/workflows/{id}', {
+        id: workflowId
       });
       const response = await fetch(apiUrl, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
-        workflowName = data.data?.name || data.data?.title || "Workflow";
+        workflowName = data.data?.name || data.data?.title || 'Workflow';
 
         // Dispatch custom event to update breadcrumbs
         window.dispatchEvent(
-          new CustomEvent("page-breadcrumbs-update", {
+          new CustomEvent('page-breadcrumbs-update', {
             detail: {
               breadcrumbs: [
                 {
-                  label: "Workflows",
-                  href: "/",
-                  icon: "mdi:view-list",
+                  label: 'Workflows',
+                  href: '/',
+                  icon: 'mdi:view-list'
                 },
                 {
                   label: workflowName,
                   href: `/workflow/${workflowId}/edit`,
-                  icon: "mdi:workflow",
+                  icon: 'mdi:workflow'
                 },
                 {
-                  label: "Pipelines",
-                  icon: "mdi:source-branch",
-                },
-              ],
-            },
-          }),
+                  label: 'Pipelines',
+                  icon: 'mdi:source-branch'
+                }
+              ]
+            }
+          })
         );
       }
     } catch {
@@ -177,9 +165,7 @@
     <div class="pipelines-header__content">
       <div class="pipelines-header__title-section">
         <h1 class="pipelines-header__title">Pipeline Monitoring</h1>
-        <p class="pipelines-header__subtitle">
-          Select a pipeline to monitor its execution status
-        </p>
+        <p class="pipelines-header__subtitle">Select a pipeline to monitor its execution status</p>
       </div>
     </div>
   </div>
@@ -209,10 +195,7 @@
       <div class="pipelines-error">
         <Icon icon="mdi:alert-circle" class="pipelines-error__icon" />
         <p class="pipelines-error__text">{error}</p>
-        <button
-          class="pipelines-btn pipelines-btn--outline"
-          onclick={fetchPipelines}
-        >
+        <button class="pipelines-btn pipelines-btn--outline" onclick={fetchPipelines}>
           <Icon icon="mdi:refresh" />
           Retry
         </button>
@@ -238,7 +221,7 @@
             role="button"
             tabindex="0"
             onkeydown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 handlePipelineSelect(pipeline.id);
               }
@@ -261,9 +244,7 @@
                 </div>
                 <div class="pipelines-list-item__timestamp">
                   <Icon icon="mdi:calendar-outline" />
-                  <span
-                    >{new Date(pipeline.createdAt).toLocaleDateString()}</span
-                  >
+                  <span>{new Date(pipeline.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>

@@ -9,7 +9,7 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
+  import Icon from '@iconify/svelte';
 
   interface Props {
     /** Field identifier (used for ARIA) */
@@ -32,7 +32,7 @@
     options = [],
     disabled = false,
     ariaDescribedBy,
-    onChange,
+    onChange
   }: Props = $props();
 
   /**

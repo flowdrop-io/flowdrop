@@ -1,13 +1,13 @@
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
-  import NodeStatusOverlay from "./NodeStatusOverlay.svelte";
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import NodeStatusOverlay from './NodeStatusOverlay.svelte';
 
   const { Story } = defineMeta({
-    title: "Editor/NodeStatusOverlay",
-    tags: ["autodocs"],
+    title: 'Editor/NodeStatusOverlay',
+    tags: ['autodocs'],
     parameters: {
-      layout: "centered",
-    },
+      layout: 'centered'
+    }
   });
 </script>
 
@@ -17,16 +17,14 @@
   >
     <NodeStatusOverlay
       executionInfo={{
-        status: "idle",
+        status: 'idle',
         executionCount: 3,
         isExecuting: false,
-        lastExecuted: new Date().toISOString(),
+        lastExecuted: new Date().toISOString()
       }}
       showDetails
     />
-    <div
-      style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);"
-    >
+    <div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">
       Node Content
     </div>
   </div>
@@ -38,14 +36,12 @@
   >
     <NodeStatusOverlay
       executionInfo={{
-        status: "running",
+        status: 'running',
         executionCount: 1,
-        isExecuting: true,
+        isExecuting: true
       }}
     />
-    <div
-      style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);"
-    >
+    <div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">
       Processing...
     </div>
   </div>
@@ -57,19 +53,15 @@
   >
     <NodeStatusOverlay
       executionInfo={{
-        status: "completed",
+        status: 'completed',
         executionCount: 5,
         isExecuting: false,
         lastExecuted: new Date().toISOString(),
-        lastExecutionDuration: 1250,
+        lastExecutionDuration: 1250
       }}
       showDetails
     />
-    <div
-      style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);"
-    >
-      Done!
-    </div>
+    <div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">Done!</div>
   </div>
 </Story>
 
@@ -79,19 +71,15 @@
   >
     <NodeStatusOverlay
       executionInfo={{
-        status: "failed",
+        status: 'failed',
         executionCount: 2,
         isExecuting: false,
-        lastError: "Connection timeout",
+        lastError: 'Connection timeout',
         lastExecuted: new Date().toISOString(),
-        lastExecutionDuration: 30000,
+        lastExecutionDuration: 30000
       }}
       showDetails
     />
-    <div
-      style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);"
-    >
-      Error
-    </div>
+    <div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">Error</div>
   </div>
 </Story>

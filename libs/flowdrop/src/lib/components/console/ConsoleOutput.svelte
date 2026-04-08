@@ -5,10 +5,10 @@
 -->
 
 <script lang="ts">
-  import { tick } from "svelte";
+  import { tick } from 'svelte';
 
   export interface ConsoleEntry {
-    type: "input" | "success" | "error" | "formatted";
+    type: 'input' | 'success' | 'error' | 'formatted';
     text: string;
   }
 
@@ -32,18 +32,13 @@
   });
 </script>
 
-<div
-  class="console-output"
-  bind:this={outputElement}
-  role="log"
-  aria-live="polite"
->
+<div class="console-output" bind:this={outputElement} role="log" aria-live="polite">
   {#each entries as entry}
     <div class="console-output__entry console-output__entry--{entry.type}">
-      {#if entry.type === "input"}
+      {#if entry.type === 'input'}
         <span class="console-output__prefix">&gt;</span>
         <span class="console-output__text">{entry.text}</span>
-      {:else if entry.type === "formatted"}
+      {:else if entry.type === 'formatted'}
         <pre class="console-output__pre">{entry.text}</pre>
       {:else}
         <span class="console-output__text">{entry.text}</span>

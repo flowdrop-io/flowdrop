@@ -3,25 +3,20 @@
  * Handles fetching port configuration from the backend
  */
 
-import type { PortConfig } from "../types/index.js";
-import type { EndpointConfig } from "../config/endpoints.js";
-import { buildEndpointUrl } from "../config/endpoints.js";
-import { DEFAULT_PORT_CONFIG } from "../config/defaultPortConfig.js";
-import { logger } from "../utils/logger.js";
+import type { PortConfig } from '../types/index.js';
+import type { EndpointConfig } from '../config/endpoints.js';
+import { buildEndpointUrl } from '../config/endpoints.js';
+import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Fetch port configuration from API
  */
-export async function fetchPortConfig(
-  endpointConfig: EndpointConfig,
-): Promise<PortConfig> {
+export async function fetchPortConfig(endpointConfig: EndpointConfig): Promise<PortConfig> {
   try {
-    const url = buildEndpointUrl(
-      endpointConfig,
-      endpointConfig.endpoints.portConfig,
-    );
+    const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.portConfig);
     const response = await fetch(url, {
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {
@@ -33,13 +28,13 @@ export async function fetchPortConfig(
 
     // Validate the configuration has required fields
     if (!portConfig.dataTypes || !Array.isArray(portConfig.dataTypes)) {
-      logger.warn("Invalid port config received from API, using default");
+      logger.warn('Invalid port config received from API, using default');
       return DEFAULT_PORT_CONFIG;
     }
 
     return portConfig;
   } catch (error) {
-    logger.error("Error fetching port configuration:", error);
+    logger.error('Error fetching port configuration:', error);
     return DEFAULT_PORT_CONFIG;
   }
 }
@@ -48,7 +43,7 @@ export async function fetchPortConfig(
  * Validate port configuration structure
  */
 export function validatePortConfig(config: PortConfig): boolean {
-  if (!config || typeof config !== "object") {
+  if (!config || typeof config !== 'object') {
     return false;
   }
 
@@ -56,7 +51,7 @@ export function validatePortConfig(config: PortConfig): boolean {
     return false;
   }
 
-  if (!config.defaultDataType || typeof config.defaultDataType !== "string") {
+  if (!config.defaultDataType || typeof config.defaultDataType !== 'string') {
     return false;
   }
 

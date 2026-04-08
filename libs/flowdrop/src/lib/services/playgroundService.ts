@@ -14,13 +14,13 @@ import type {
   PlaygroundMessagesApiResponse,
   PlaygroundSessionResponse,
   PlaygroundSessionsResponse,
-  PlaygroundSessionStatus,
-} from "../types/playground.js";
-import { defaultShouldStopPolling } from "../types/playground.js";
-import type { EndpointConfig } from "../config/endpoints.js";
-import { buildEndpointUrl, getEndpointHeaders } from "../config/endpoints.js";
-import { getEndpointConfig } from "./api.js";
-import { logger } from "../utils/logger.js";
+  PlaygroundSessionStatus
+} from '../types/playground.js';
+import { defaultShouldStopPolling } from '../types/playground.js';
+import type { EndpointConfig } from '../config/endpoints.js';
+import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
+import { getEndpointConfig } from './api.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Default polling interval in milliseconds
@@ -68,9 +68,7 @@ export class PlaygroundService {
   private getConfig(): EndpointConfig {
     const config = getEndpointConfig();
     if (!config) {
-      throw new Error(
-        "Endpoint configuration not set. Call setEndpointConfig() first.",
-      );
+      throw new Error('Endpoint configuration not set. Call setEndpointConfig() first.');
     }
     return config;
   }
@@ -84,13 +82,13 @@ export class PlaygroundService {
    */
   private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
     const config = this.getConfig();
-    const headers = getEndpointHeaders(config, "playground");
+    const headers = getEndpointHeaders(config, 'playground');
     const response = await fetch(url, {
       ...options,
       headers: {
         ...headers,
-        ...options.headers,
-      },
+        ...options.headers
+      }
     });
 
     if (!response.ok) {
@@ -117,23 +115,19 @@ export class PlaygroundService {
    */
   async listSessions(
     workflowId: string,
-    options?: { limit?: number; offset?: number },
+    options?: { limit?: number; offset?: number }
   ): Promise<PlaygroundSession[]> {
     const config = this.getConfig();
-    let url = buildEndpointUrl(
-      config,
-      config.endpoints.playground.listSessions,
-      {
-        id: workflowId,
-      },
-    );
+    let url = buildEndpointUrl(config, config.endpoints.playground.listSessions, {
+      id: workflowId
+    });
     // Add query parameters
     const params = new URLSearchParams();
     if (options?.limit !== undefined) {
-      params.append("limit", options.limit.toString());
+      params.append('limit', options.limit.toString());
     }
     if (options?.offset !== undefined) {
-      params.append("offset", options.offset.toString());
+      params.append('offset', options.offset.toString());
     }
     const queryString = params.toString();
     if (queryString) {
@@ -155,24 +149,20 @@ export class PlaygroundService {
   async createSession(
     workflowId: string,
     name?: string,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<PlaygroundSession> {
     const config = this.getConfig();
-    const url = buildEndpointUrl(
-      config,
-      config.endpoints.playground.createSession,
-      {
-        id: workflowId,
-      },
-    );
+    const url = buildEndpointUrl(config, config.endpoints.playground.createSession, {
+      id: workflowId
+    });
 
     const response = await this.request<PlaygroundSessionResponse>(url, {
-      method: "POST",
-      body: JSON.stringify({ name, metadata }),
+      method: 'POST',
+      body: JSON.stringify({ name, metadata })
     });
 
     if (!response.data) {
-      throw new Error("Failed to create session: No data returned");
+      throw new Error('Failed to create session: No data returned');
     }
 
     return response.data;
@@ -186,18 +176,14 @@ export class PlaygroundService {
    */
   async getSession(sessionId: string): Promise<PlaygroundSession> {
     const config = this.getConfig();
-    const url = buildEndpointUrl(
-      config,
-      config.endpoints.playground.getSession,
-      {
-        sessionId,
-      },
-    );
+    const url = buildEndpointUrl(config, config.endpoints.playground.getSession, {
+      sessionId
+    });
 
     const response = await this.request<PlaygroundSessionResponse>(url);
 
     if (!response.data) {
-      throw new Error("Session not found");
+      throw new Error('Session not found');
     }
 
     return response.data;
@@ -210,16 +196,12 @@ export class PlaygroundService {
    */
   async deleteSession(sessionId: string): Promise<void> {
     const config = this.getConfig();
-    const url = buildEndpointUrl(
-      config,
-      config.endpoints.playground.deleteSession,
-      {
-        sessionId,
-      },
-    );
+    const url = buildEndpointUrl(config, config.endpoints.playground.deleteSession, {
+      sessionId
+    });
 
     await this.request<{ success: boolean }>(url, {
-      method: "DELETE",
+      method: 'DELETE'
     });
   }
 
@@ -238,24 +220,20 @@ export class PlaygroundService {
   async getMessages(
     sessionId: string,
     since?: string,
-    limit?: number,
+    limit?: number
   ): Promise<PlaygroundMessagesApiResponse> {
     const config = this.getConfig();
-    let url = buildEndpointUrl(
-      config,
-      config.endpoints.playground.getMessages,
-      {
-        sessionId,
-      },
-    );
+    let url = buildEndpointUrl(config, config.endpoints.playground.getMessages, {
+      sessionId
+    });
 
     // Add query parameters
     const params = new URLSearchParams();
     if (since) {
-      params.append("since", since);
+      params.append('since', since);
     }
     if (limit !== undefined) {
-      params.append("limit", limit.toString());
+      params.append('limit', limit.toString());
     }
     const queryString = params.toString();
     if (queryString) {
@@ -276,16 +254,12 @@ export class PlaygroundService {
   async sendMessage(
     sessionId: string,
     content: string,
-    inputs?: Record<string, unknown>,
+    inputs?: Record<string, unknown>
   ): Promise<PlaygroundMessage> {
     const config = this.getConfig();
-    const url = buildEndpointUrl(
-      config,
-      config.endpoints.playground.sendMessage,
-      {
-        sessionId,
-      },
-    );
+    const url = buildEndpointUrl(config, config.endpoints.playground.sendMessage, {
+      sessionId
+    });
 
     const requestBody: PlaygroundMessageRequest = { content };
     if (inputs) {
@@ -296,12 +270,12 @@ export class PlaygroundService {
       success: boolean;
       data?: PlaygroundMessage;
     }>(url, {
-      method: "POST",
-      body: JSON.stringify(requestBody),
+      method: 'POST',
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.data) {
-      throw new Error("Failed to send message: No data returned");
+      throw new Error('Failed to send message: No data returned');
     }
 
     return response.data;
@@ -314,16 +288,12 @@ export class PlaygroundService {
    */
   async stopExecution(sessionId: string): Promise<void> {
     const config = this.getConfig();
-    const url = buildEndpointUrl(
-      config,
-      config.endpoints.playground.stopExecution,
-      {
-        sessionId,
-      },
-    );
+    const url = buildEndpointUrl(config, config.endpoints.playground.stopExecution, {
+      sessionId
+    });
 
     await this.request<{ success: boolean }>(url, {
-      method: "POST",
+      method: 'POST'
     });
   }
 
@@ -343,7 +313,7 @@ export class PlaygroundService {
     sessionId: string,
     callback: (response: PlaygroundMessagesApiResponse) => void,
     interval: number = DEFAULT_POLLING_INTERVAL,
-    shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean,
+    shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean
   ): void {
     // Stop any existing polling
     this.stopPolling();
@@ -360,10 +330,7 @@ export class PlaygroundService {
       }
 
       try {
-        const response = await this.getMessages(
-          sessionId,
-          this.lastMessageTimestamp ?? undefined,
-        );
+        const response = await this.getMessages(sessionId, this.lastMessageTimestamp ?? undefined);
 
         // Update last message timestamp
         if (response.data && response.data.length > 0) {
@@ -383,13 +350,10 @@ export class PlaygroundService {
           return;
         }
       } catch (error) {
-        logger.error("Polling error:", error);
+        logger.error('Polling error:', error);
 
         // Exponential backoff on error
-        this.currentBackoff = Math.min(
-          this.currentBackoff * 2,
-          MAX_POLLING_BACKOFF,
-        );
+        this.currentBackoff = Math.min(this.currentBackoff * 2, MAX_POLLING_BACKOFF);
       }
 
       // Schedule next poll

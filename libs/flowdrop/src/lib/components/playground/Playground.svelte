@@ -8,18 +8,15 @@
 -->
 
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-  import Icon from "@iconify/svelte";
-  import ChatPanel from "./ChatPanel.svelte";
-  import type { Workflow } from "../../types/index.js";
-  import type { EndpointConfig } from "../../config/endpoints.js";
-  import type {
-    PlaygroundMode,
-    PlaygroundConfig,
-  } from "../../types/playground.js";
-  import { playgroundService } from "../../services/playgroundService.js";
-  import { interruptService } from "../../services/interruptService.js";
-  import { setEndpointConfig } from "../../services/api.js";
+  import { onMount, onDestroy } from 'svelte';
+  import Icon from '@iconify/svelte';
+  import ChatPanel from './ChatPanel.svelte';
+  import type { Workflow } from '../../types/index.js';
+  import type { EndpointConfig } from '../../config/endpoints.js';
+  import type { PlaygroundMode, PlaygroundConfig } from '../../types/playground.js';
+  import { playgroundService } from '../../services/playgroundService.js';
+  import { interruptService } from '../../services/interruptService.js';
+  import { setEndpointConfig } from '../../services/api.js';
   import {
     getCurrentSession,
     getSessions,
@@ -28,10 +25,10 @@
     getError,
     playgroundActions,
     getInputFields,
-    createPollingCallback,
-  } from "../../stores/playgroundStore.svelte.js";
-  import { interruptActions } from "../../stores/interruptStore.svelte.js";
-  import { logger } from "../../utils/logger.js";
+    createPollingCallback
+  } from '../../stores/playgroundStore.svelte.js';
+  import { interruptActions } from '../../stores/interruptStore.svelte.js';
+  import { logger } from '../../utils/logger.js';
 
   /**
    * Component props
@@ -56,11 +53,11 @@
   let {
     workflowId,
     workflow,
-    mode = "standalone",
+    mode = 'standalone',
     initialSessionId,
     endpointConfig,
     config = {},
-    onClose,
+    onClose
   }: Props = $props();
 
   /** Current input values from InputCollector */
@@ -109,15 +106,12 @@
         // Handle auto-run after initialization is complete
         if (config.autoRun && !autoRunTriggered) {
           autoRunTriggered = true;
-          const predefinedMessage = config.predefinedMessage ?? "Run workflow";
-          logger.debug(
-            "[Playground] Auto-run triggered with message:",
-            predefinedMessage,
-          );
+          const predefinedMessage = config.predefinedMessage ?? 'Run workflow';
+          logger.debug('[Playground] Auto-run triggered with message:', predefinedMessage);
           await handleSendMessage(predefinedMessage);
         }
       } catch (err) {
-        logger.error("[Playground] Initialization error:", err);
+        logger.error('[Playground] Initialization error:', err);
       }
     };
 
@@ -165,7 +159,7 @@
     if (!sessionExists) {
       logger.warn(
         `[Playground] Initial session "${sessionId}" not found in available sessions. ` +
-          `Available sessions: ${sessionList.map((s) => s.id).join(", ") || "none"}`,
+          `Available sessions: ${sessionList.map((s) => s.id).join(', ') || 'none'}`
       );
       // Don't set error - just log warning and let user pick a session
       initialSessionLoaded = true;
@@ -178,7 +172,7 @@
       initialSessionLoaded = true;
       loadedInitialSessionId = sessionId;
     } catch (err) {
-      logger.error("[Playground] Failed to load initial session:", err);
+      logger.error('[Playground] Failed to load initial session:', err);
       // Mark as attempted to prevent retry loops
       initialSessionLoaded = true;
       loadedInitialSessionId = sessionId;
@@ -205,8 +199,8 @@
       openMenuId = null;
     }
 
-    document.addEventListener("click", onDocumentClick);
-    return () => document.removeEventListener("click", onDocumentClick);
+    document.addEventListener('click', onDocumentClick);
+    return () => document.removeEventListener('click', onDocumentClick);
   });
 
   /**
@@ -220,10 +214,9 @@
       const sessionList = await playgroundService.listSessions(workflowId);
       playgroundActions.setSessions(sessionList);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load sessions";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
       playgroundActions.setError(errorMessage);
-      logger.error("Failed to load sessions:", err);
+      logger.error('Failed to load sessions:', err);
     } finally {
       playgroundActions.setLoading(false);
     }
@@ -246,14 +239,13 @@
       playgroundActions.setMessages(response.data ?? []);
 
       // Start polling if session is running
-      if (session.status === "running") {
+      if (session.status === 'running') {
         startPolling(sessionId);
       }
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load session";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load session';
       playgroundActions.setError(errorMessage);
-      logger.error("Failed to load session:", err);
+      logger.error('Failed to load session:', err);
     } finally {
       playgroundActions.setLoading(false);
     }
@@ -268,18 +260,14 @@
 
     try {
       const sessionName = `Session ${getSessions().length + 1}`;
-      const session = await playgroundService.createSession(
-        workflowId,
-        sessionName,
-      );
+      const session = await playgroundService.createSession(workflowId, sessionName);
       playgroundActions.addSession(session);
       playgroundActions.setCurrentSession(session);
       playgroundActions.clearMessages();
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to create session";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create session';
       playgroundActions.setError(errorMessage);
-      logger.error("Failed to create session:", err);
+      logger.error('Failed to create session:', err);
     } finally {
       playgroundActions.setLoading(false);
     }
@@ -313,10 +301,9 @@
         playgroundService.stopPolling();
       }
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to delete session";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete session';
       playgroundActions.setError(errorMessage);
-      logger.error("Failed to delete session:", err);
+      logger.error('Failed to delete session:', err);
     }
   }
 
@@ -386,30 +373,24 @@
           if (!inputs[field.nodeId]) {
             inputs[field.nodeId] = {};
           }
-          (inputs[field.nodeId] as Record<string, unknown>)[field.fieldId] =
-            inputValues[key];
+          (inputs[field.nodeId] as Record<string, unknown>)[field.fieldId] = inputValues[key];
         }
       });
 
       // Send message
-      const message = await playgroundService.sendMessage(
-        sessionId,
-        content,
-        inputs,
-      );
+      const message = await playgroundService.sendMessage(sessionId, content, inputs);
       playgroundActions.addMessage(message);
 
       // Update session status
-      playgroundActions.updateSessionStatus("running");
+      playgroundActions.updateSessionStatus('running');
 
       // Start polling for responses
       startPolling(sessionId);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to send message";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       playgroundActions.setError(errorMessage);
       playgroundActions.setExecuting(false);
-      logger.error("Failed to send message:", err);
+      logger.error('Failed to send message:', err);
     }
   }
 
@@ -426,12 +407,11 @@
       await playgroundService.stopExecution(sessionId);
       playgroundService.stopPolling();
       playgroundActions.setExecuting(false);
-      playgroundActions.updateSessionStatus("idle");
+      playgroundActions.updateSessionStatus('idle');
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to stop execution";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to stop execution';
       playgroundActions.setError(errorMessage);
-      logger.error("Failed to stop execution:", err);
+      logger.error('Failed to stop execution:', err);
     }
   }
 
@@ -449,7 +429,7 @@
       sessionId,
       pollingCallback,
       pollingInterval,
-      config.shouldStopPolling,
+      config.shouldStopPolling
     );
   }
 
@@ -465,10 +445,7 @@
       const response = await playgroundService.getMessages(sessionId);
       pollingCallback(response);
     } catch (err) {
-      logger.error(
-        "[Playground] Failed to refresh messages after interrupt:",
-        err,
-      );
+      logger.error('[Playground] Failed to refresh messages after interrupt:', err);
     }
   }
 
@@ -484,7 +461,7 @@
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) {
-      return "Just now";
+      return 'Just now';
     }
     if (diffMins < 60) {
       return `${diffMins}m ago`;
@@ -495,18 +472,18 @@
     if (diffDays < 7) {
       return `${diffDays}d ago`;
     }
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
     });
   }
 </script>
 
 <div
   class="playground"
-  class:playground--embedded={mode === "embedded"}
-  class:playground--standalone={mode === "standalone"}
-  class:playground--modal={mode === "modal"}
+  class:playground--embedded={mode === 'embedded'}
+  class:playground--standalone={mode === 'standalone'}
+  class:playground--modal={mode === 'modal'}
   class:playground--no-sidebar={config.showSidebar === false}
 >
   <div class="playground__container">
@@ -514,23 +491,21 @@
     {#if config.showSidebar !== false}
       <aside
         class="playground__sidebar"
-        style={config.sidebarWidth
-          ? `--fd-playground-sidebar-width: ${config.sidebarWidth}`
-          : ""}
+        style={config.sidebarWidth ? `--fd-playground-sidebar-width: ${config.sidebarWidth}` : ''}
       >
         <!-- Sidebar Header -->
         <div class="playground__sidebar-header">
           <div class="playground__sidebar-title">
             <span>Playground</span>
           </div>
-          {#if (mode === "embedded" || mode === "modal") && onClose}
+          {#if (mode === 'embedded' || mode === 'modal') && onClose}
             <button
               type="button"
               class="playground__sidebar-close"
               onclick={onClose}
               title="Close playground"
             >
-              {#if mode === "modal"}
+              {#if mode === 'modal'}
                 <Icon icon="mdi:close" />
               {:else}
                 <Icon icon="mdi:dock-right" />
@@ -555,9 +530,7 @@
           <!-- Sessions List - click a session to load it -->
           <div class="playground__sessions-wrap">
             {#if getSessions().length > 0}
-              <p class="playground__sessions-hint">
-                Click a session to load it
-              </p>
+              <p class="playground__sessions-hint">Click a session to load it</p>
             {/if}
             <div class="playground__sessions">
               {#if getSessions().length === 0 && !getIsLoading()}
@@ -568,15 +541,13 @@
                 {#each getSessions() as session (session.id)}
                   <div
                     class="playground__session"
-                    class:playground__session--active={getCurrentSession()
-                      ?.id === session.id}
+                    class:playground__session--active={getCurrentSession()?.id === session.id}
                     role="button"
                     tabindex="0"
                     title="Click to load this session"
                     aria-label="Load session: {session.name}"
                     onclick={() => handleSelectSession(session.id)}
-                    onkeydown={(e) =>
-                      e.key === "Enter" && handleSelectSession(session.id)}
+                    onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
                   >
                     <span class="playground__session-name" title={session.name}>
                       {session.name}
@@ -585,8 +556,7 @@
                       <button
                         type="button"
                         class="playground__session-menu"
-                        class:playground__session-menu--open={openMenuId ===
-                          session.id}
+                        class:playground__session-menu--open={openMenuId === session.id}
                         onclick={(e) => handleMenuToggle(e, session.id)}
                         title="Session options"
                       >
@@ -657,11 +627,11 @@
           <ChatPanel
             showTimestamps={config.showTimestamps ?? true}
             autoScroll={config.autoScroll ?? true}
-            showLogsInline={config.logDisplayMode === "inline"}
+            showLogsInline={config.logDisplayMode === 'inline'}
             enableMarkdown={config.enableMarkdown ?? true}
             showChatInput={config.showChatInput ?? true}
             showRunButton={config.showRunButton ?? true}
-            predefinedMessage={config.predefinedMessage ?? "Run workflow"}
+            predefinedMessage={config.predefinedMessage ?? 'Run workflow'}
             onSendMessage={handleSendMessage}
             onStopExecution={handleStopExecution}
             onInterruptResolved={handleInterruptResolved}
@@ -680,8 +650,7 @@
     overflow: hidden; /* Prevent playground-level scrolling */
     background-color: var(--fd-muted);
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-      Arial, sans-serif;
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
   .playground--embedded {
@@ -695,7 +664,7 @@
   }
 
   /* Dark mode override for standalone */
-  :global([data-theme="dark"]) .playground--standalone {
+  :global([data-theme='dark']) .playground--standalone {
     background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
   }
 

@@ -41,7 +41,7 @@
     required = false,
     disabled = false,
     ariaDescribedBy,
-    onChange,
+    onChange
   }: Props = $props();
 
   /**
@@ -49,7 +49,7 @@
    * Handles string values and defaults
    */
   const numericValue = $derived.by((): number => {
-    if (typeof value === "number") {
+    if (typeof value === 'number') {
       return value;
     }
     const parsed = Number(value);
@@ -147,11 +147,7 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      var(--fd-background) 0%,
-      var(--fd-muted) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-background) 0%, var(--fd-muted) 100%);
     border: 2px solid var(--fd-primary);
     box-shadow:
       0 2px 6px rgba(59, 130, 246, 0.25),
@@ -192,11 +188,7 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      var(--fd-background) 0%,
-      var(--fd-muted) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-background) 0%, var(--fd-muted) 100%);
     border: 2px solid var(--fd-primary);
     box-shadow:
       0 2px 6px rgba(59, 130, 246, 0.25),

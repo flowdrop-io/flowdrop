@@ -129,7 +129,7 @@
 
   .readonly-details__id {
     font-size: 0.75rem;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
     color: var(--fd-muted-foreground);
     background-color: var(--fd-subtle);
     padding: 0.125rem 0.375rem;

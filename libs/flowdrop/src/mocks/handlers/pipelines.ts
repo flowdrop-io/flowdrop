@@ -3,18 +3,18 @@
  * Implements pipeline execution, status, and logging
  */
 
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse } from 'msw';
 import {
   getPipelinesForWorkflow,
   getPipelineById,
   getPipelineLogs,
   createPipeline,
-  updatePipelineStatus,
-} from "../data/index.js";
-import type { Pipeline, PipelineStatus, LogEntry } from "../data/pipelines.js";
+  updatePipelineStatus
+} from '../data/index.js';
+import type { Pipeline, PipelineStatus, LogEntry } from '../data/pipelines.js';
 
 /** Base API path for flowdrop endpoints */
-const API_BASE = "/api/flowdrop";
+const API_BASE = '/api/flowdrop';
 
 /**
  * Response type for pipeline list
@@ -38,9 +38,9 @@ interface PipelineListResponse {
 interface PipelineDetailResponse {
   success?: boolean;
   status: PipelineStatus;
-  jobs: Pipeline["jobs"];
-  node_statuses: Pipeline["node_statuses"];
-  job_status_summary: Pipeline["job_status_summary"];
+  jobs: Pipeline['jobs'];
+  node_statuses: Pipeline['node_statuses'];
+  job_status_summary: Pipeline['job_status_summary'];
   error?: string;
 }
 
@@ -52,24 +52,20 @@ export const getWorkflowPipelinesHandler = http.get(
   `${API_BASE}/workflow/:workflow_id/pipelines`,
   ({ params, request }) => {
     const { workflow_id } = params;
-    const workflowId = Array.isArray(workflow_id)
-      ? workflow_id[0]
-      : workflow_id;
+    const workflowId = Array.isArray(workflow_id) ? workflow_id[0] : workflow_id;
     const url = new URL(request.url);
-    const statusFilter = url.searchParams.get(
-      "status",
-    ) as PipelineStatus | null;
+    const statusFilter = url.searchParams.get('status') as PipelineStatus | null;
 
     let pipelines = getPipelinesForWorkflow(workflowId);
 
     // Filter by status if specified
     if (statusFilter) {
       const validStatuses: PipelineStatus[] = [
-        "pending",
-        "running",
-        "completed",
-        "failed",
-        "cancelled",
+        'pending',
+        'running',
+        'completed',
+        'failed',
+        'cancelled'
       ];
       if (validStatuses.includes(statusFilter)) {
         pipelines = pipelines.filter((p) => p.status === statusFilter);
@@ -82,52 +78,49 @@ export const getWorkflowPipelinesHandler = http.get(
       workflow_id: p.workflow_id,
       status: p.status,
       created: p.created,
-      updated: p.updated,
+      updated: p.updated
     }));
 
     const response: PipelineListResponse = {
       success: true,
       data: pipelineSummaries,
-      message: `Found ${pipelineSummaries.length} pipeline executions`,
+      message: `Found ${pipelineSummaries.length} pipeline executions`
     };
 
     return HttpResponse.json(response);
-  },
+  }
 );
 
 /**
  * GET /api/flowdrop/pipeline/:id
  * Get detailed pipeline execution information
  */
-export const getPipelineHandler = http.get(
-  `${API_BASE}/pipeline/:id`,
-  ({ params }) => {
-    const { id } = params;
-    const pipelineId = Array.isArray(id) ? id[0] : id;
+export const getPipelineHandler = http.get(`${API_BASE}/pipeline/:id`, ({ params }) => {
+  const { id } = params;
+  const pipelineId = Array.isArray(id) ? id[0] : id;
 
-    const pipeline = getPipelineById(pipelineId);
+  const pipeline = getPipelineById(pipelineId);
 
-    if (!pipeline) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "Pipeline not found",
-          code: "NOT_FOUND",
-        },
-        { status: 404 },
-      );
-    }
+  if (!pipeline) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: 'Pipeline not found',
+        code: 'NOT_FOUND'
+      },
+      { status: 404 }
+    );
+  }
 
-    const response: PipelineDetailResponse = {
-      status: pipeline.status,
-      jobs: pipeline.jobs,
-      node_statuses: pipeline.node_statuses,
-      job_status_summary: pipeline.job_status_summary,
-    };
+  const response: PipelineDetailResponse = {
+    status: pipeline.status,
+    jobs: pipeline.jobs,
+    node_statuses: pipeline.node_statuses,
+    job_status_summary: pipeline.job_status_summary
+  };
 
-    return HttpResponse.json(response);
-  },
-);
+  return HttpResponse.json(response);
+});
 
 /**
  * POST /api/flowdrop/pipeline/:id/execute
@@ -146,10 +139,10 @@ export const executePipelineHandler = http.post(
       return HttpResponse.json(
         {
           success: false,
-          error: "Pipeline not found",
-          code: "NOT_FOUND",
+          error: 'Pipeline not found',
+          code: 'NOT_FOUND'
         },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -169,16 +162,16 @@ export const executePipelineHandler = http.post(
     }
 
     // Update pipeline status to running
-    const updated = updatePipelineStatus(pipelineId, "running");
+    const updated = updatePipelineStatus(pipelineId, 'running');
 
     if (!updated) {
       return HttpResponse.json(
         {
           success: false,
-          error: "Failed to start pipeline",
-          code: "INTERNAL_ERROR",
+          error: 'Failed to start pipeline',
+          code: 'INTERNAL_ERROR'
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -187,71 +180,68 @@ export const executePipelineHandler = http.post(
         success: true,
         data: {
           pipeline_id: pipelineId,
-          status: "running",
-          message: "Pipeline execution started",
+          status: 'running',
+          message: 'Pipeline execution started'
         },
-        message: "Pipeline execution started",
+        message: 'Pipeline execution started'
       },
-      { status: 202 },
+      { status: 202 }
     );
-  },
+  }
 );
 
 /**
  * POST /api/flowdrop/pipeline/:id/stop
  * Stop a running pipeline execution
  */
-export const stopPipelineHandler = http.post(
-  `${API_BASE}/pipeline/:id/stop`,
-  ({ params }) => {
-    const { id } = params;
-    const pipelineId = Array.isArray(id) ? id[0] : id;
+export const stopPipelineHandler = http.post(`${API_BASE}/pipeline/:id/stop`, ({ params }) => {
+  const { id } = params;
+  const pipelineId = Array.isArray(id) ? id[0] : id;
 
-    const pipeline = getPipelineById(pipelineId);
+  const pipeline = getPipelineById(pipelineId);
 
-    if (!pipeline) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "Pipeline not found",
-          code: "NOT_FOUND",
-        },
-        { status: 404 },
-      );
-    }
+  if (!pipeline) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: 'Pipeline not found',
+        code: 'NOT_FOUND'
+      },
+      { status: 404 }
+    );
+  }
 
-    // Only running pipelines can be stopped
-    if (pipeline.status !== "running" && pipeline.status !== "pending") {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: `Pipeline cannot be stopped: current status is "${pipeline.status}"`,
-          code: "CONFLICT",
-        },
-        { status: 409 },
-      );
-    }
+  // Only running pipelines can be stopped
+  if (pipeline.status !== 'running' && pipeline.status !== 'pending') {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: `Pipeline cannot be stopped: current status is "${pipeline.status}"`,
+        code: 'CONFLICT'
+      },
+      { status: 409 }
+    );
+  }
 
-    // Update pipeline status to cancelled
-    const updated = updatePipelineStatus(pipelineId, "cancelled");
+  // Update pipeline status to cancelled
+  const updated = updatePipelineStatus(pipelineId, 'cancelled');
 
-    if (!updated) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "Failed to stop pipeline",
-          code: "INTERNAL_ERROR",
-        },
-        { status: 500 },
-      );
-    }
+  if (!updated) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: 'Failed to stop pipeline',
+        code: 'INTERNAL_ERROR'
+      },
+      { status: 500 }
+    );
+  }
 
-    return HttpResponse.json({
-      success: true,
-      message: "Pipeline stopped successfully",
-    });
-  },
-);
+  return HttpResponse.json({
+    success: true,
+    message: 'Pipeline stopped successfully'
+  });
+});
 
 /**
  * GET /api/flowdrop/pipeline/:id/logs
@@ -263,12 +253,7 @@ export const getPipelineLogsHandler = http.get(
     const { id } = params;
     const pipelineId = Array.isArray(id) ? id[0] : id;
     const url = new URL(request.url);
-    const level = url.searchParams.get("level") as
-      | "debug"
-      | "info"
-      | "warning"
-      | "error"
-      | null;
+    const level = url.searchParams.get('level') as 'debug' | 'info' | 'warning' | 'error' | null;
 
     const pipeline = getPipelineById(pipelineId);
 
@@ -276,10 +261,10 @@ export const getPipelineLogsHandler = http.get(
       return HttpResponse.json(
         {
           success: false,
-          error: "Pipeline not found",
-          code: "NOT_FOUND",
+          error: 'Pipeline not found',
+          code: 'NOT_FOUND'
         },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -293,9 +278,9 @@ export const getPipelineLogsHandler = http.get(
     return HttpResponse.json({
       success: true,
       data: logs,
-      message: `Retrieved ${logs.length} log entries`,
+      message: `Retrieved ${logs.length} log entries`
     });
-  },
+  }
 );
 
 /**
@@ -313,22 +298,22 @@ export const executeWorkflowHandler = http.post(
     const pipeline = createPipeline(workflowId);
 
     // Start execution
-    updatePipelineStatus(pipeline.id, "running");
+    updatePipelineStatus(pipeline.id, 'running');
 
     return HttpResponse.json(
       {
         success: true,
         data: {
           execution_id: pipeline.id,
-          status: "running",
+          status: 'running',
           started_at: new Date().toISOString(),
-          estimated_completion: new Date(Date.now() + 30000).toISOString(),
+          estimated_completion: new Date(Date.now() + 30000).toISOString()
         },
-        message: "Workflow execution started",
+        message: 'Workflow execution started'
       },
-      { status: 202 },
+      { status: 202 }
     );
-  },
+  }
 );
 
 /**
@@ -340,5 +325,5 @@ export const pipelineHandlers = [
   executePipelineHandler,
   stopPipelineHandler,
   getPipelineLogsHandler,
-  executeWorkflowHandler,
+  executeWorkflowHandler
 ];

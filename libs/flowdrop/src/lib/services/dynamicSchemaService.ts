@@ -11,10 +11,10 @@ import type {
   DynamicSchemaEndpoint,
   ExternalEditLink,
   ConfigEditOptions,
-  WorkflowNode,
-} from "../types/index.js";
-import { getEndpointConfig } from "./api.js";
-import { DEFAULT_CACHE_TTL_MS } from "../config/constants.js";
+  WorkflowNode
+} from '../types/index.js';
+import { getEndpointConfig } from './api.js';
+import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -25,11 +25,11 @@ interface NodeContext {
   /** Node type from xyflow */
   type: string;
   /** Node metadata (id, name, type, category, etc.) */
-  metadata: WorkflowNode["data"]["metadata"];
+  metadata: WorkflowNode['data']['metadata'];
   /** Node configuration values */
   config: Record<string, unknown>;
   /** Node extensions */
-  extensions?: WorkflowNode["data"]["extensions"];
+  extensions?: WorkflowNode['data']['extensions'];
   /** Current workflow ID (if available) */
   workflowId?: string;
 }
@@ -84,18 +84,15 @@ const DEFAULT_CACHE_TTL = DEFAULT_CACHE_TTL_MS;
  * resolveVariablePath(context, "id"); // Returns "node-1"
  * ```
  */
-function resolveVariablePath(
-  context: NodeContext,
-  path: string,
-): string | undefined {
-  const parts = path.split(".");
+function resolveVariablePath(context: NodeContext, path: string): string | undefined {
+  const parts = path.split('.');
   let current: unknown = context;
 
   for (const part of parts) {
     if (current === null || current === undefined) {
       return undefined;
     }
-    if (typeof current === "object" && part in current) {
+    if (typeof current === 'object' && part in current) {
       current = (current as Record<string, unknown>)[part];
     } else {
       return undefined;
@@ -130,7 +127,7 @@ function resolveVariablePath(
 function resolveTemplate(
   template: string,
   parameterMapping: Record<string, string> | undefined,
-  context: NodeContext,
+  context: NodeContext
 ): string {
   if (!parameterMapping) {
     return template;
@@ -143,7 +140,7 @@ function resolveTemplate(
     const value = resolveVariablePath(context, contextPath);
     if (value !== undefined) {
       // Use global regex to replace all occurrences
-      const regex = new RegExp(`\\{${variableName}\\}`, "g");
+      const regex = new RegExp(`\\{${variableName}\\}`, 'g');
       resolved = resolved.replace(regex, encodeURIComponent(value));
     }
   }
@@ -170,10 +167,7 @@ function resolveTemplate(
  * @param context - The node context
  * @returns A unique cache key string
  */
-function generateCacheKey(
-  endpoint: DynamicSchemaEndpoint,
-  context: NodeContext,
-): string {
+function generateCacheKey(endpoint: DynamicSchemaEndpoint, context: NodeContext): string {
   const url = resolveTemplate(endpoint.url, endpoint.parameterMapping, context);
   return `schema:${url}`;
 }
@@ -185,10 +179,7 @@ function generateCacheKey(
  * @param ttl - Time-to-live in milliseconds
  * @returns True if the cache entry is still valid
  */
-function isCacheValid(
-  entry: SchemaCacheEntry,
-  ttl: number = DEFAULT_CACHE_TTL,
-): boolean {
+function isCacheValid(entry: SchemaCacheEntry, ttl: number = DEFAULT_CACHE_TTL): boolean {
   return Date.now() - entry.cachedAt < ttl;
 }
 
@@ -217,7 +208,7 @@ function isCacheValid(
 export async function fetchDynamicSchema(
   endpoint: DynamicSchemaEndpoint,
   node: WorkflowNode,
-  workflowId?: string,
+  workflowId?: string
 ): Promise<DynamicSchemaResult> {
   // Build the context from the node
   const context: NodeContext = {
@@ -226,7 +217,7 @@ export async function fetchDynamicSchema(
     metadata: node.data.metadata,
     config: node.data.config,
     extensions: node.data.extensions,
-    workflowId,
+    workflowId
   };
 
   // Generate cache key
@@ -239,7 +230,7 @@ export async function fetchDynamicSchema(
       return {
         success: true,
         schema: cached.schema,
-        fromCache: true,
+        fromCache: true
       };
     }
   }
@@ -248,39 +239,33 @@ export async function fetchDynamicSchema(
   let url = resolveTemplate(endpoint.url, endpoint.parameterMapping, context);
 
   // If URL is relative, try to prepend base URL from endpoint config
-  if (url.startsWith("/")) {
+  if (url.startsWith('/')) {
     const currentConfig = getEndpointConfig();
     if (currentConfig?.baseUrl) {
       // Remove trailing slash from base URL and leading slash from relative URL
-      const baseUrl = currentConfig.baseUrl.replace(/\/$/, "");
+      const baseUrl = currentConfig.baseUrl.replace(/\/$/, '');
       url = `${baseUrl}${url}`;
     }
   }
 
   // Prepare request options
-  const method = endpoint.method ?? "GET";
+  const method = endpoint.method ?? 'GET';
   const timeout = endpoint.timeout ?? 10000;
 
   const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    ...endpoint.headers,
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    ...endpoint.headers
   };
 
   // Add auth headers from endpoint config if available
   const currentConfig = getEndpointConfig();
   if (currentConfig?.auth) {
-    if (currentConfig.auth.type === "bearer" && currentConfig.auth.token) {
-      headers["Authorization"] = `Bearer ${currentConfig.auth.token}`;
-    } else if (
-      currentConfig.auth.type === "api_key" &&
-      currentConfig.auth.apiKey
-    ) {
-      headers["X-API-Key"] = currentConfig.auth.apiKey;
-    } else if (
-      currentConfig.auth.type === "custom" &&
-      currentConfig.auth.headers
-    ) {
+    if (currentConfig.auth.type === 'bearer' && currentConfig.auth.token) {
+      headers['Authorization'] = `Bearer ${currentConfig.auth.token}`;
+    } else if (currentConfig.auth.type === 'api_key' && currentConfig.auth.apiKey) {
+      headers['X-API-Key'] = currentConfig.auth.apiKey;
+    } else if (currentConfig.auth.type === 'custom' && currentConfig.auth.headers) {
       Object.assign(headers, currentConfig.auth.headers);
     }
   }
@@ -289,20 +274,16 @@ export async function fetchDynamicSchema(
   const fetchOptions: RequestInit = {
     method,
     headers,
-    signal: AbortSignal.timeout(timeout),
+    signal: AbortSignal.timeout(timeout)
   };
 
   // Add body for non-GET requests
-  if (method !== "GET" && endpoint.body) {
+  if (method !== 'GET' && endpoint.body) {
     // Resolve any template variables in the body
     const resolvedBody: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(endpoint.body)) {
-      if (typeof value === "string") {
-        resolvedBody[key] = resolveTemplate(
-          value,
-          endpoint.parameterMapping,
-          context,
-        );
+      if (typeof value === 'string') {
+        resolvedBody[key] = resolveTemplate(value, endpoint.parameterMapping, context);
       } else {
         resolvedBody[key] = value;
       }
@@ -317,7 +298,7 @@ export async function fetchDynamicSchema(
       const errorText = await response.text();
       return {
         success: false,
-        error: `HTTP ${response.status}: ${errorText || response.statusText}`,
+        error: `HTTP ${response.status}: ${errorText || response.statusText}`
       };
     }
 
@@ -329,16 +310,16 @@ export async function fetchDynamicSchema(
     // 3. Wrapped in { success: true, data: ConfigSchema }
     let schema: ConfigSchema | undefined;
 
-    if (data.type === "object" && data.properties) {
+    if (data.type === 'object' && data.properties) {
       // Direct ConfigSchema
       schema = data as ConfigSchema;
-    } else if (data.data?.type === "object" && data.data?.properties) {
+    } else if (data.data?.type === 'object' && data.data?.properties) {
       // Wrapped in { data: ... }
       schema = data.data as ConfigSchema;
-    } else if (data.schema?.type === "object" && data.schema?.properties) {
+    } else if (data.schema?.type === 'object' && data.schema?.properties) {
       // Wrapped in { schema: ... }
       schema = data.schema as ConfigSchema;
-    } else if (data.success && data.data?.type === "object") {
+    } else if (data.success && data.data?.type === 'object') {
       // Wrapped in { success: true, data: ... }
       schema = data.data as ConfigSchema;
     }
@@ -346,7 +327,7 @@ export async function fetchDynamicSchema(
     if (!schema) {
       return {
         success: false,
-        error: "Invalid schema format received from endpoint",
+        error: 'Invalid schema format received from endpoint'
       };
     }
 
@@ -355,32 +336,32 @@ export async function fetchDynamicSchema(
       schemaCache.set(cacheKey, {
         schema,
         cachedAt: Date.now(),
-        cacheKey,
+        cacheKey
       });
     }
 
     return {
       success: true,
       schema,
-      fromCache: false,
+      fromCache: false
     };
   } catch (error) {
     // Handle specific error types
     if (error instanceof Error) {
-      if (error.name === "AbortError" || error.name === "TimeoutError") {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         return {
           success: false,
-          error: `Request timed out after ${timeout}ms`,
+          error: `Request timed out after ${timeout}ms`
         };
       }
       return {
         success: false,
-        error: error.message,
+        error: error.message
       };
     }
     return {
       success: false,
-      error: "Unknown error occurred while fetching schema",
+      error: 'Unknown error occurred while fetching schema'
     };
   }
 }
@@ -409,7 +390,7 @@ export function resolveExternalEditUrl(
   link: ExternalEditLink,
   node: WorkflowNode,
   workflowId?: string,
-  callbackUrl?: string,
+  callbackUrl?: string
 ): string {
   // Build the context from the node
   const context: NodeContext = {
@@ -418,7 +399,7 @@ export function resolveExternalEditUrl(
     metadata: node.data.metadata,
     config: node.data.config,
     extensions: node.data.extensions,
-    workflowId,
+    workflowId
   };
 
   // Resolve the URL with template variables
@@ -426,7 +407,7 @@ export function resolveExternalEditUrl(
 
   // Append callback URL if configured
   if (callbackUrl && link.callbackUrlParam) {
-    const separator = url.includes("?") ? "&" : "?";
+    const separator = url.includes('?') ? '&' : '?';
     url = `${url}${separator}${link.callbackUrlParam}=${encodeURIComponent(callbackUrl)}`;
   }
 
@@ -440,13 +421,9 @@ export function resolveExternalEditUrl(
  * @param node - The workflow node instance
  * @returns The merged config edit options, or undefined if not configured
  */
-export function getEffectiveConfigEditOptions(
-  node: WorkflowNode,
-): ConfigEditOptions | undefined {
+export function getEffectiveConfigEditOptions(node: WorkflowNode): ConfigEditOptions | undefined {
   const typeConfig = node.data.metadata?.configEdit;
-  const instanceConfig = node.data.extensions?.configEdit as
-    | ConfigEditOptions
-    | undefined;
+  const instanceConfig = node.data.extensions?.configEdit as ConfigEditOptions | undefined;
 
   // If neither is defined, return undefined
   if (!typeConfig && !instanceConfig) {
@@ -470,7 +447,7 @@ export function getEffectiveConfigEditOptions(
       (instanceConfig.externalEditLink ?? typeConfig.externalEditLink)
         ? ({
             ...(typeConfig.externalEditLink ?? {}),
-            ...(instanceConfig.externalEditLink ?? {}),
+            ...(instanceConfig.externalEditLink ?? {})
           } as NonNullable<typeof typeConfig.externalEditLink>)
         : undefined,
     // Deep merge dynamic schema
@@ -478,9 +455,9 @@ export function getEffectiveConfigEditOptions(
       (instanceConfig.dynamicSchema ?? typeConfig.dynamicSchema)
         ? ({
             ...(typeConfig.dynamicSchema ?? {}),
-            ...(instanceConfig.dynamicSchema ?? {}),
+            ...(instanceConfig.dynamicSchema ?? {})
           } as NonNullable<typeof typeConfig.dynamicSchema>)
-        : undefined,
+        : undefined
   };
 }
 
@@ -510,16 +487,13 @@ export function clearSchemaCache(pattern?: string): void {
  * @param node - The workflow node to invalidate cache for
  * @param endpoint - The dynamic schema endpoint configuration
  */
-export function invalidateSchemaCache(
-  node: WorkflowNode,
-  endpoint: DynamicSchemaEndpoint,
-): void {
+export function invalidateSchemaCache(node: WorkflowNode, endpoint: DynamicSchemaEndpoint): void {
   const context: NodeContext = {
     id: node.id,
     type: node.type,
     metadata: node.data.metadata,
     config: node.data.config,
-    extensions: node.data.extensions,
+    extensions: node.data.extensions
   };
 
   const cacheKey = generateCacheKey(endpoint, context);

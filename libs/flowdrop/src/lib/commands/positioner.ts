@@ -6,7 +6,7 @@
  * @module commands/positioner
  */
 
-import type { WorkflowNode } from "../types/index.js";
+import type { WorkflowNode } from '../types/index.js';
 
 /** Default starting position for the first node on an empty canvas. */
 const DEFAULT_START = { x: 100, y: 100 };
@@ -21,9 +21,10 @@ const HORIZONTAL_GAP = 250;
  * - Non-empty canvas: places new node 250px to the right of the rightmost node,
  *   at the same y as the rightmost node.
  */
-export function computeAutoPosition(
-  existingNodes: Pick<WorkflowNode, "position">[],
-): { x: number; y: number } {
+export function computeAutoPosition(existingNodes: Pick<WorkflowNode, 'position'>[]): {
+  x: number;
+  y: number;
+} {
   if (existingNodes.length === 0) {
     return { ...DEFAULT_START };
   }
@@ -37,6 +38,6 @@ export function computeAutoPosition(
 
   return {
     x: rightmost.position.x + HORIZONTAL_GAP,
-    y: rightmost.position.y,
+    y: rightmost.position.y
   };
 }

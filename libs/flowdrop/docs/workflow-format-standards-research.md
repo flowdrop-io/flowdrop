@@ -101,22 +101,17 @@ FlowDrop's custom format is well-designed and covers more than any existing stan
   nodes:
     classify:
       component_type: llm_node
-      inputs: [{ title: "input", type: "string" }]
-      outputs: [{ title: "category", type: "string" }]
+      inputs: [{ title: 'input', type: 'string' }]
+      outputs: [{ title: 'category', type: 'string' }]
     branch:
       component_type: branching_node
       branches:
-        - name: "technical"
+        - name: 'technical'
           condition: "category == 'technical'"
   control_flow_edges:
-    - { from_node: "start", to_node: "classify" }
+    - { from_node: 'start', to_node: 'classify' }
   data_flow_edges:
-    - {
-        from_node: "classify",
-        from_output: "category",
-        to_node: "branch",
-        to_input: "category",
-      }
+    - { from_node: 'classify', from_output: 'category', to_node: 'branch', to_input: 'category' }
   ```
 - **Strengths**: Typed ports with JSON Schema, branching with conditions, separate control-flow and data-flow edges, JSON Schema configs, AI-agent focus, named port connections
 - **Weaknesses**: No visual layout, no dynamic ports, no extension system, emerging (not yet widely adopted)

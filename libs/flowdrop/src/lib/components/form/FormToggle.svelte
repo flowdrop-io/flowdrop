@@ -29,11 +29,11 @@
   let {
     id,
     value = false,
-    onLabel = "Enabled",
-    offLabel = "Disabled",
+    onLabel = 'Enabled',
+    offLabel = 'Disabled',
     disabled = false,
     ariaDescribedBy,
-    onChange,
+    onChange
   }: Props = $props();
 
   /**

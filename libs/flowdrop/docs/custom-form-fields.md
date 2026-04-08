@@ -55,7 +55,7 @@ Registrations are **priority-ordered** — higher priority matchers are checked 
 <input
   {id}
   type="color"
-  value={String(value ?? "#000000")}
+  value={String(value ?? '#000000')}
   oninput={(e) => onChange(e.currentTarget.value)}
 />
 ```
@@ -63,14 +63,14 @@ Registrations are **priority-ordered** — higher priority matchers are checked 
 **2. Register it:**
 
 ```typescript
-import { registerFieldComponent } from "@flowdrop/flowdrop/form";
-import ColorPickerField from "./ColorPickerField.svelte";
+import { registerFieldComponent } from '@flowdrop/flowdrop/form';
+import ColorPickerField from './ColorPickerField.svelte';
 
 registerFieldComponent(
-  "color-picker",
+  'color-picker',
   ColorPickerField,
-  (schema) => schema.format === "color",
-  100,
+  (schema) => schema.format === 'color',
+  100
 );
 ```
 
@@ -145,20 +145,13 @@ You can also access **any custom property** you add to the schema, since `FieldS
     onChange: (value: unknown) => void;
   }
 
-  let {
-    id,
-    value,
-    required = false,
-    minDate,
-    maxDate,
-    onChange,
-  }: Props = $props();
+  let { id, value, required = false, minDate, maxDate, onChange }: Props = $props();
 </script>
 
 <input
   {id}
   type="date"
-  value={String(value ?? "")}
+  value={String(value ?? '')}
   {required}
   min={minDate}
   max={maxDate}
@@ -167,12 +160,7 @@ You can also access **any custom property** you add to the schema, since `FieldS
 ```
 
 ```typescript
-registerFieldComponent(
-  "date-picker",
-  DatePickerField,
-  (schema) => schema.format === "date",
-  100,
-);
+registerFieldComponent('date-picker', DatePickerField, (schema) => schema.format === 'date', 100);
 ```
 
 Schema usage with custom props:
@@ -200,13 +188,13 @@ The `minDate` and `maxDate` properties flow through to your component as props.
 The simplest way to register a custom field:
 
 ```typescript
-import { registerFieldComponent } from "@flowdrop/flowdrop/form";
+import { registerFieldComponent } from '@flowdrop/flowdrop/form';
 
 registerFieldComponent(
-  "my-field", // unique identifier
+  'my-field', // unique identifier
   MyComponent, // Svelte component
   matcherFn, // (schema) => boolean
-  100, // priority (default: 0)
+  100 // priority (default: 0)
 );
 ```
 
@@ -217,7 +205,7 @@ function registerFieldComponent(
   type: string,
   component: FieldComponent,
   matcher: FieldMatcher,
-  priority?: number, // default: 0, higher = checked first
+  priority?: number // default: 0, higher = checked first
 ): void;
 ```
 
@@ -226,12 +214,12 @@ function registerFieldComponent(
 For more control, use the singleton registry directly:
 
 ```typescript
-import { fieldComponentRegistry } from "@flowdrop/flowdrop/form";
+import { fieldComponentRegistry } from '@flowdrop/flowdrop/form';
 
-fieldComponentRegistry.register("my-field", {
+fieldComponentRegistry.register('my-field', {
   component: MyComponent,
-  matcher: (schema) => schema.format === "my-format",
-  priority: 100,
+  matcher: (schema) => schema.format === 'my-format',
+  priority: 100
 });
 
 // Look up which component handles a schema
@@ -275,19 +263,14 @@ When multiple registrations match the same schema, the one with the **highest pr
 
 ```typescript
 // Priority 50 — general fallback
-registerFieldComponent(
-  "text-basic",
-  BasicTextField,
-  (schema) => schema.type === "string",
-  50,
-);
+registerFieldComponent('text-basic', BasicTextField, (schema) => schema.type === 'string', 50);
 
 // Priority 100 — more specific, checked first
 registerFieldComponent(
-  "rich-text",
+  'rich-text',
   RichTextField,
-  (schema) => schema.type === "string" && schema.format === "rich-text",
-  100,
+  (schema) => schema.type === 'string' && schema.format === 'rich-text',
+  100
 );
 ```
 
@@ -305,26 +288,26 @@ Custom fields work anywhere a `configSchema` is used — in node configuration p
 
 ```typescript
 const nodeMetadata = {
-  id: "myapp:styled-box",
-  name: "Styled Box",
+  id: 'myapp:styled-box',
+  name: 'Styled Box',
   // ...
   configSchema: {
-    type: "object",
+    type: 'object',
     properties: {
       backgroundColor: {
-        type: "string",
-        format: "color",
-        title: "Background Color",
-        default: "#ffffff",
+        type: 'string',
+        format: 'color',
+        title: 'Background Color',
+        default: '#ffffff'
       },
       borderColor: {
-        type: "string",
-        format: "color",
-        title: "Border Color",
-        default: "#e5e7eb",
-      },
-    },
-  },
+        type: 'string',
+        format: 'color',
+        title: 'Border Color',
+        default: '#e5e7eb'
+      }
+    }
+  }
 };
 ```
 
@@ -332,17 +315,17 @@ const nodeMetadata = {
 
 ```svelte
 <script>
-  import { SchemaForm } from "@flowdrop/flowdrop/form";
+  import { SchemaForm } from '@flowdrop/flowdrop/form';
 
   const schema = {
-    type: "object",
+    type: 'object',
     properties: {
-      color: { type: "string", format: "color", title: "Pick a Color" },
-    },
+      color: { type: 'string', format: 'color', title: 'Pick a Color' }
+    }
   };
 </script>
 
-<SchemaForm {schema} values={{ color: "#3b82f6" }} onChange={console.log} />
+<SchemaForm {schema} values={{ color: '#3b82f6' }} onChange={console.log} />
 ```
 
 ---
@@ -357,12 +340,12 @@ let registered = false;
 export function registerMyHeavyField(priority = 100): void {
   if (registered) return;
 
-  import("./MyHeavyField.svelte").then((module) => {
+  import('./MyHeavyField.svelte').then((module) => {
     registerFieldComponent(
-      "my-heavy-field",
+      'my-heavy-field',
       module.default,
-      (schema) => schema.format === "heavy",
-      priority,
+      (schema) => schema.format === 'heavy',
+      priority
     );
     registered = true;
   });
@@ -374,9 +357,9 @@ Call this once at app startup. The dynamic import ensures the component is only 
 For synchronous registration when you've already imported the component:
 
 ```typescript
-import MyField from "./MyField.svelte";
+import MyField from './MyField.svelte';
 
-registerFieldComponent("my-field", MyField, matcher, 100);
+registerFieldComponent('my-field', MyField, matcher, 100);
 ```
 
 ---
@@ -426,8 +409,8 @@ import {
   checkboxGroupMatcher, // has enum + multiple: true
   selectOptionsMatcher, // has oneOf or options
   arrayMatcher, // type: "array" + has items
-  autocompleteMatcher, // format: "autocomplete" + has autocomplete.url
-} from "@flowdrop/flowdrop/form";
+  autocompleteMatcher // format: "autocomplete" + has autocomplete.url
+} from '@flowdrop/flowdrop/form';
 ```
 
 ---
@@ -440,17 +423,17 @@ import {
   getRegisteredFieldTypes,
   isFieldTypeRegistered,
   clearFieldRegistry,
-  getFieldRegistrySize,
-} from "@flowdrop/flowdrop/form";
+  getFieldRegistrySize
+} from '@flowdrop/flowdrop/form';
 
 // Remove a field registration
-unregisterFieldComponent("color-picker"); // returns true if it existed
+unregisterFieldComponent('color-picker'); // returns true if it existed
 
 // List all registered field type IDs
 getRegisteredFieldTypes(); // ["color-picker", "date-picker", ...]
 
 // Check if a specific type is registered
-isFieldTypeRegistered("color-picker"); // true or false
+isFieldTypeRegistered('color-picker'); // true or false
 
 // Get total number of registrations
 getFieldRegistrySize(); // 2

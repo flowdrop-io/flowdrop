@@ -7,36 +7,31 @@
  * @module commands/types
  */
 
-import type {
-  NodeMetadata,
-  Workflow,
-  WorkflowNode,
-  WorkflowEdge,
-} from "../types/index.js";
+import type { NodeMetadata, Workflow, WorkflowNode, WorkflowEdge } from '../types/index.js';
 
 // ============================================================================
 // Command Types (Discriminated Union)
 // ============================================================================
 
 export interface AddNodeCommand {
-  type: "add_node";
+  type: 'add_node';
   nodeTypeId: string;
   position?: { x: number; y: number };
 }
 
 export interface DeleteNodeCommand {
-  type: "delete_node";
+  type: 'delete_node';
   nodeId: string;
 }
 
 export interface RenameNodeCommand {
-  type: "rename_node";
+  type: 'rename_node';
   nodeId: string;
   label: string;
 }
 
 export interface SetConfigCommand {
-  type: "set_config";
+  type: 'set_config';
   nodeId: string;
   key: string;
   value: string;
@@ -45,13 +40,13 @@ export interface SetConfigCommand {
 }
 
 export interface GetConfigCommand {
-  type: "get_config";
+  type: 'get_config';
   nodeId: string;
   key: string;
 }
 
 export interface ConnectCommand {
-  type: "connect";
+  type: 'connect';
   sourceNodeId: string;
   sourcePort: string;
   targetNodeId: string;
@@ -59,7 +54,7 @@ export interface ConnectCommand {
 }
 
 export interface DisconnectPortsCommand {
-  type: "disconnect_ports";
+  type: 'disconnect_ports';
   sourceNodeId: string;
   sourcePort: string;
   targetNodeId: string;
@@ -67,103 +62,103 @@ export interface DisconnectPortsCommand {
 }
 
 export interface DisconnectNodeCommand {
-  type: "disconnect_node";
+  type: 'disconnect_node';
   nodeId: string;
 }
 
 export interface ListNodesCommand {
-  type: "list_nodes";
+  type: 'list_nodes';
 }
 
 export interface ListEdgesCommand {
-  type: "list_edges";
+  type: 'list_edges';
 }
 
 export interface ListTypesCommand {
-  type: "list_types";
+  type: 'list_types';
 }
 
 export interface InfoCommand {
-  type: "info";
+  type: 'info';
   nodeId: string;
 }
 
 export interface UndoCommand {
-  type: "undo";
+  type: 'undo';
 }
 
 export interface RedoCommand {
-  type: "redo";
+  type: 'redo';
 }
 
 export interface ConfigOpenCommand {
-  type: "config_open";
+  type: 'config_open';
   nodeId: string;
 }
 
 export interface SelectNodeCommand {
-  type: "select_node";
+  type: 'select_node';
   nodeId: string;
 }
 
 export interface HelpCommand {
-  type: "help";
+  type: 'help';
   command?: string;
 }
 
 export interface ClearCommand {
-  type: "clear";
+  type: 'clear';
 }
 
 /** Phase 2 commands */
 
 export interface SwapNodeCommand {
-  type: "swap_node";
+  type: 'swap_node';
   nodeId: string;
   newTypeId: string;
 }
 
 export interface MoveNodeCommand {
-  type: "move_node";
+  type: 'move_node';
   nodeId: string;
   position: { x: number; y: number };
 }
 
 export interface AutoLayoutCommand {
-  type: "auto_layout";
-  direction?: "horizontal" | "vertical";
+  type: 'auto_layout';
+  direction?: 'horizontal' | 'vertical';
 }
 
 export interface BeautifyLayoutCommand {
-  type: "beautify_layout";
+  type: 'beautify_layout';
 }
 
 /** Canvas viewport commands */
 
 export interface CanvasFitViewCommand {
-  type: "canvas_fit_view";
+  type: 'canvas_fit_view';
 }
 
 export interface CanvasZoomInCommand {
-  type: "canvas_zoom_in";
+  type: 'canvas_zoom_in';
 }
 
 export interface CanvasZoomOutCommand {
-  type: "canvas_zoom_out";
+  type: 'canvas_zoom_out';
 }
 
 export interface CanvasZoomToCommand {
-  type: "canvas_zoom_to";
+  type: 'canvas_zoom_to';
   level: number;
 }
 
 export interface CanvasPanToCommand {
-  type: "canvas_pan_to";
+  type: 'canvas_pan_to';
   position: { x: number; y: number };
 }
 
 export interface CanvasResetViewCommand {
-  type: "canvas_reset_view";
+  type: 'canvas_reset_view';
 }
 
 /** Discriminated union of all commands */
@@ -210,19 +205,19 @@ export type ParseResult =
 // ============================================================================
 
 export type CommandErrorCode =
-  | "NODE_NOT_FOUND"
-  | "NODE_TYPE_NOT_FOUND"
-  | "PORT_NOT_FOUND"
-  | "EDGE_NOT_FOUND"
-  | "INVALID_CONNECTION"
-  | "CYCLE_DETECTED"
-  | "NO_WORKFLOW"
-  | "PARSE_ERROR"
-  | "UNKNOWN_COMMAND"
-  | "CONFIG_KEY_NOT_FOUND"
-  | "CONFIG_VALIDATION_ERROR"
-  | "UNDO_UNAVAILABLE"
-  | "REDO_UNAVAILABLE";
+  | 'NODE_NOT_FOUND'
+  | 'NODE_TYPE_NOT_FOUND'
+  | 'PORT_NOT_FOUND'
+  | 'EDGE_NOT_FOUND'
+  | 'INVALID_CONNECTION'
+  | 'CYCLE_DETECTED'
+  | 'NO_WORKFLOW'
+  | 'PARSE_ERROR'
+  | 'UNKNOWN_COMMAND'
+  | 'CONFIG_KEY_NOT_FOUND'
+  | 'CONFIG_VALIDATION_ERROR'
+  | 'UNDO_UNAVAILABLE'
+  | 'REDO_UNAVAILABLE';
 
 // ============================================================================
 // Command Result Types
@@ -276,7 +271,7 @@ export interface InfoResultData {
   outputs: Array<{ portId: string; name: string; dataType: string }>;
   connectedEdges: Array<{
     edgeId: string;
-    direction: "incoming" | "outgoing";
+    direction: 'incoming' | 'outgoing';
     remoteNodeId: string;
     remotePort: string;
     localPort: string;
@@ -306,7 +301,7 @@ export interface SetConfigResultData {
   value: unknown;
   /** Validation warnings (non-blocking unless strict mode) */
   warnings?: Array<{
-    type: "enum" | "type_mismatch";
+    type: 'enum' | 'type_mismatch';
     message: string;
     allowedValues?: unknown[];
     expectedType?: string;
@@ -374,14 +369,14 @@ export interface BatchResult {
 // ============================================================================
 
 export type UIAction =
-  | { type: "open_config"; nodeId: string }
-  | { type: "select_node"; nodeId: string }
-  | { type: "canvas_fit_view" }
-  | { type: "canvas_zoom_in" }
-  | { type: "canvas_zoom_out" }
-  | { type: "canvas_zoom_to"; level: number }
-  | { type: "canvas_pan_to"; position: { x: number; y: number } }
-  | { type: "canvas_reset_view" };
+  | { type: 'open_config'; nodeId: string }
+  | { type: 'select_node'; nodeId: string }
+  | { type: 'canvas_fit_view' }
+  | { type: 'canvas_zoom_in' }
+  | { type: 'canvas_zoom_out' }
+  | { type: 'canvas_zoom_to'; level: number }
+  | { type: 'canvas_pan_to'; position: { x: number; y: number } }
+  | { type: 'canvas_reset_view' };
 
 // ============================================================================
 // Command Dispatch Interface
@@ -390,16 +385,10 @@ export type UIAction =
 export interface CommandDispatch {
   addNode(node: WorkflowNode): void;
   removeNode(nodeId: string): void;
-  updateNode(
-    nodeId: string,
-    updates: Partial<Pick<WorkflowNode, "data" | "position">>,
-  ): void;
+  updateNode(nodeId: string, updates: Partial<Pick<WorkflowNode, 'data' | 'position'>>): void;
   addEdge(edge: WorkflowEdge): void;
   removeEdge(edgeId: string): void;
-  batchUpdate(updates: {
-    nodes?: WorkflowNode[];
-    edges?: WorkflowEdge[];
-  }): void;
+  batchUpdate(updates: { nodes?: WorkflowNode[]; edges?: WorkflowEdge[] }): void;
   undo(): boolean;
   redo(): boolean;
   startTransaction(description: string): void;
@@ -408,10 +397,7 @@ export interface CommandDispatch {
   /** Optional callback for UI-side actions (open config panel, select node) */
   emitUIAction?: (action: UIAction) => void;
   /** Optional swap operation for swap command */
-  swapNode?: (updates: {
-    nodes: WorkflowNode[];
-    edges: WorkflowEdge[];
-  }) => void;
+  swapNode?: (updates: { nodes: WorkflowNode[]; edges: WorkflowEdge[] }) => void;
 }
 
 // ============================================================================
@@ -443,9 +429,7 @@ export interface CommandContext {
  * Short IDs take precedence only if unique. If multiple namespaces define
  * the same short ID, only the full namespaced ID is usable.
  */
-export function buildTypeMap(
-  nodeTypes: NodeMetadata[],
-): Map<string, NodeMetadata> {
+export function buildTypeMap(nodeTypes: NodeMetadata[]): Map<string, NodeMetadata> {
   const map = new Map<string, NodeMetadata>();
   const shortIdCounts = new Map<string, number>();
 
@@ -453,7 +437,7 @@ export function buildTypeMap(
   for (const metadata of nodeTypes) {
     map.set(metadata.id, metadata);
 
-    const dotIndex = metadata.id.indexOf(".");
+    const dotIndex = metadata.id.indexOf('.');
     if (dotIndex !== -1) {
       const shortId = metadata.id.substring(dotIndex + 1);
       shortIdCounts.set(shortId, (shortIdCounts.get(shortId) ?? 0) + 1);
@@ -462,7 +446,7 @@ export function buildTypeMap(
 
   // Second pass: register unique short IDs
   for (const metadata of nodeTypes) {
-    const dotIndex = metadata.id.indexOf(".");
+    const dotIndex = metadata.id.indexOf('.');
     if (dotIndex !== -1) {
       const shortId = metadata.id.substring(dotIndex + 1);
       if (shortIdCounts.get(shortId) === 1) {

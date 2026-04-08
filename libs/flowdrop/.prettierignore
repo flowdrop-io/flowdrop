@@ -7,6 +7,15 @@ bun.lockb
 
 # Generated files
 api/**/bundled.yaml
+.svelte-kit/
+src/lib/schemas/
+
+# Build outputs
+build/
+dist/
+storybook-static/
+playwright-report/
+test-results/
 
 # Miscellaneous
 static/

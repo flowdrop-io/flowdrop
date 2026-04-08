@@ -10,24 +10,21 @@
  * Works with both built-in types and custom registered types.
  */
 
-import type { NodeType, NodeMetadata } from "../types/index.js";
-import { nodeComponentRegistry } from "../registry/nodeComponentRegistry.js";
-import {
-  resolveBuiltinAlias,
-  isBuiltinType,
-} from "../registry/builtinNodes.js";
+import type { NodeType, NodeMetadata } from '../types/index.js';
+import { nodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
+import { resolveBuiltinAlias, isBuiltinType } from '../registry/builtinNodes.js';
 
 /**
  * Display names for built-in node types.
  */
 const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
-  note: "Note (sticky note style)",
-  simple: "Simple (compact layout)",
-  square: "Square (geometric layout)",
-  tool: "Tool (specialized for agent tools)",
-  gateway: "Gateway (branching control flow)",
-  terminal: "Terminal (start/end/exit)",
-  default: "Default (standard workflow node)",
+  note: 'Note (sticky note style)',
+  simple: 'Simple (compact layout)',
+  square: 'Square (geometric layout)',
+  tool: 'Tool (specialized for agent tools)',
+  gateway: 'Gateway (branching control flow)',
+  terminal: 'Terminal (start/end/exit)',
+  default: 'Default (standard workflow node)'
 };
 
 /**
@@ -37,9 +34,7 @@ const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
  * @param nodeType - The node type identifier
  * @returns The component name to use
  */
-export function getComponentNameForNodeType(
-  nodeType: NodeType | string,
-): string {
+export function getComponentNameForNodeType(nodeType: NodeType | string): string {
   // Resolve aliases first (e.g., "default" -> "workflowNode")
   const resolvedType = resolveBuiltinAlias(nodeType);
 
@@ -49,7 +44,7 @@ export function getComponentNameForNodeType(
   }
 
   // Unknown type - return workflowNode as default
-  return "workflowNode";
+  return 'workflowNode';
 }
 
 /**
@@ -59,9 +54,7 @@ export function getComponentNameForNodeType(
  * @param metadata - The node metadata
  * @returns Array of available node type identifiers
  */
-export function getAvailableNodeTypes(
-  metadata: NodeMetadata,
-): (NodeType | string)[] {
+export function getAvailableNodeTypes(metadata: NodeMetadata): (NodeType | string)[] {
   if (metadata.supportedTypes && metadata.supportedTypes.length > 0) {
     return metadata.supportedTypes;
   }
@@ -70,7 +63,7 @@ export function getAvailableNodeTypes(
     return [metadata.type];
   }
 
-  return ["default"];
+  return ['default'];
 }
 
 /**
@@ -100,7 +93,7 @@ export function getPrimaryNodeType(metadata: NodeMetadata): NodeType | string {
  */
 export function resolveNodeType(
   metadata: NodeMetadata,
-  configNodeType?: string,
+  configNodeType?: string
 ): NodeType | string {
   const availableTypes = getAvailableNodeTypes(metadata);
 
@@ -118,10 +111,7 @@ export function resolveNodeType(
     }
 
     // Check if it's a registered custom type
-    if (
-      nodeComponentRegistry.has(configNodeType) ||
-      nodeComponentRegistry.has(resolvedConfig)
-    ) {
+    if (nodeComponentRegistry.has(configNodeType) || nodeComponentRegistry.has(resolvedConfig)) {
       return configNodeType;
     }
   }
@@ -138,10 +128,7 @@ export function resolveNodeType(
  * @param configNodeType - Optional type from user config
  * @returns The component name to use
  */
-export function resolveComponentName(
-  metadata: NodeMetadata,
-  configNodeType?: string,
-): string {
+export function resolveComponentName(metadata: NodeMetadata, configNodeType?: string): string {
   const nodeType = resolveNodeType(metadata, configNodeType);
   return getComponentNameForNodeType(nodeType);
 }
@@ -153,10 +140,7 @@ export function resolveComponentName(
  * @param nodeType - The type to check
  * @returns true if the type is supported
  */
-export function isNodeTypeSupported(
-  metadata: NodeMetadata,
-  nodeType: NodeType | string,
-): boolean {
+export function isNodeTypeSupported(metadata: NodeMetadata, nodeType: NodeType | string): boolean {
   const availableTypes = getAvailableNodeTypes(metadata);
 
   // Check direct match
@@ -172,9 +156,7 @@ export function isNodeTypeSupported(
 
   // Check if it's a registered custom type that's in the available list
   if (nodeComponentRegistry.has(nodeType)) {
-    return availableTypes.some(
-      (t) => t === nodeType || resolveBuiltinAlias(t) === nodeType,
-    );
+    return availableTypes.some((t) => t === nodeType || resolveBuiltinAlias(t) === nodeType);
   }
 
   return false;
@@ -194,7 +176,7 @@ export function isNodeTypeSupported(
  */
 export function getNodeTypeOneOfOptions(
   metadata: NodeMetadata,
-  includeCustomTypes = false,
+  includeCustomTypes = false
 ): Array<{ const: string; title: string }> {
   const availableTypes = getAvailableNodeTypes(metadata);
   const options: Array<{ const: string; title: string }> = [];
@@ -221,8 +203,7 @@ export function getNodeTypeOneOfOptions(
   // Optionally include all registered custom types
   if (includeCustomTypes) {
     const registrations = nodeComponentRegistry.filter({
-      predicate: (reg) =>
-        !isBuiltinType(reg.type) && !includedTypes.has(reg.type),
+      predicate: (reg) => !isBuiltinType(reg.type) && !includedTypes.has(reg.type)
     });
 
     for (const reg of registrations) {
@@ -246,17 +227,17 @@ export function getNodeTypeOneOfOptions(
  */
 export function createNodeTypeConfigProperty(
   metadata: NodeMetadata,
-  defaultType?: NodeType | string,
+  defaultType?: NodeType | string
 ) {
   const oneOf = getNodeTypeOneOfOptions(metadata);
   const primaryType = defaultType ?? getPrimaryNodeType(metadata);
 
   return {
-    type: "string" as const,
-    title: "Node Type",
-    description: "Choose the visual representation for this node",
+    type: 'string' as const,
+    title: 'Node Type',
+    description: 'Choose the visual representation for this node',
     default: primaryType,
-    oneOf,
+    oneOf
   };
 }
 
@@ -287,13 +268,13 @@ export function getAllNodeTypes(): string[] {
  */
 function formatTypeName(type: string): string {
   // Handle namespaced types (e.g., "mylib:fancy" -> "Mylib: Fancy")
-  if (type.includes(":")) {
-    const [namespace, name] = type.split(":");
+  if (type.includes(':')) {
+    const [namespace, name] = type.split(':');
     return `${capitalize(namespace)}: ${capitalize(name)}`;
   }
 
   // Capitalize and add spaces for camelCase
-  return capitalize(type.replace(/([A-Z])/g, " $1").trim());
+  return capitalize(type.replace(/([A-Z])/g, ' $1').trim());
 }
 
 /**

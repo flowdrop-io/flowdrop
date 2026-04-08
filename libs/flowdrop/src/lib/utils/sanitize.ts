@@ -7,7 +7,7 @@
  *
  * @module utils/sanitize
  */
-import DOMPurify from "dompurify";
+import DOMPurify from 'dompurify';
 
 /**
  * Sanitize an HTML string to prevent XSS attacks.

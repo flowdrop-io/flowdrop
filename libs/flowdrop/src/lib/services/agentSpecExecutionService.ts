@@ -7,20 +7,17 @@
  * Follows the same singleton pattern as NodeExecutionService.
  */
 
-import type { NodeExecutionInfo, NodeExecutionStatus } from "../types/index.js";
-import type { StandardWorkflow } from "../adapters/WorkflowAdapter.js";
-import type { AgentSpecEndpointConfig } from "../config/agentSpecEndpoints.js";
-import {
-  buildAgentSpecUrl,
-  getAgentSpecAuthHeaders,
-} from "../config/agentSpecEndpoints.js";
-import { AgentSpecAdapter } from "../adapters/agentspec/AgentSpecAdapter.js";
-import { logger } from "../utils/logger.js";
+import type { NodeExecutionInfo, NodeExecutionStatus } from '../types/index.js';
+import type { StandardWorkflow } from '../adapters/WorkflowAdapter.js';
+import type { AgentSpecEndpointConfig } from '../config/agentSpecEndpoints.js';
+import { buildAgentSpecUrl, getAgentSpecAuthHeaders } from '../config/agentSpecEndpoints.js';
+import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
+import { logger } from '../utils/logger.js';
 
 /** Execution state tracked per active execution */
 interface ExecutionState {
   id: string;
-  status: "running" | "completed" | "failed" | "cancelled";
+  status: 'running' | 'completed' | 'failed' | 'cancelled';
   startedAt: string;
   nodeStatuses: Record<string, NodeExecutionInfo>;
   pollingInterval?: ReturnType<typeof setInterval>;
@@ -97,7 +94,7 @@ export class AgentSpecExecutionService {
       const url = buildAgentSpecUrl(this.config, this.config.endpoints.health);
       const response = await fetch(url, {
         headers: getAgentSpecAuthHeaders(this.config),
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(5000)
       });
       return response.ok;
     } catch {
@@ -121,7 +118,7 @@ export class AgentSpecExecutionService {
       onComplete?: (results: Record<string, unknown>) => void;
       onError?: (error: Error) => void;
     },
-    pollingIntervalMs = 2000,
+    pollingIntervalMs = 2000
   ): Promise<AgentSpecExecutionHandle> {
     this.ensureConfigured();
 
@@ -129,40 +126,35 @@ export class AgentSpecExecutionService {
     const agentSpecFlow = this.adapter.toAgentSpec(workflow);
 
     // POST to runtime
-    const url = buildAgentSpecUrl(
-      this.getConfig(),
-      this.getConfig().endpoints.execute,
-    );
+    const url = buildAgentSpecUrl(this.getConfig(), this.getConfig().endpoints.execute);
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: getAgentSpecAuthHeaders(this.getConfig()),
       body: JSON.stringify({
         flow: agentSpecFlow,
-        inputs: inputs || {},
+        inputs: inputs || {}
       }),
-      signal: AbortSignal.timeout(this.getConfig().timeout || 60000),
+      signal: AbortSignal.timeout(this.getConfig().timeout || 60000)
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      throw new Error(
-        `Agent Spec runtime error (${response.status}): ${errorText}`,
-      );
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`Agent Spec runtime error (${response.status}): ${errorText}`);
     }
 
     const result = await response.json();
     const executionId = result.execution_id || result.id;
 
     if (!executionId) {
-      throw new Error("Runtime did not return an execution ID");
+      throw new Error('Runtime did not return an execution ID');
     }
 
     // Track execution
     const state: ExecutionState = {
       id: executionId,
-      status: "running",
+      status: 'running',
       startedAt: new Date().toISOString(),
-      nodeStatuses: {},
+      nodeStatuses: {}
     };
     this.activeExecutions.set(executionId, state);
 
@@ -183,7 +175,7 @@ export class AgentSpecExecutionService {
         callbacks.onNodeUpdate,
         callbacks.onComplete,
         callbacks.onError,
-        pollingIntervalMs,
+        pollingIntervalMs
       );
     }
 
@@ -193,21 +185,15 @@ export class AgentSpecExecutionService {
   /**
    * Get current execution status.
    */
-  async getExecutionStatus(
-    executionId: string,
-  ): Promise<Record<string, NodeExecutionInfo> | null> {
+  async getExecutionStatus(executionId: string): Promise<Record<string, NodeExecutionInfo> | null> {
     this.ensureConfigured();
 
     try {
-      const url = buildAgentSpecUrl(
-        this.getConfig(),
-        this.getConfig().endpoints.status,
-        {
-          id: executionId,
-        },
-      );
+      const url = buildAgentSpecUrl(this.getConfig(), this.getConfig().endpoints.status, {
+        id: executionId
+      });
       const response = await fetch(url, {
-        headers: getAgentSpecAuthHeaders(this.getConfig()),
+        headers: getAgentSpecAuthHeaders(this.getConfig())
       });
 
       if (!response.ok) return null;
@@ -227,43 +213,33 @@ export class AgentSpecExecutionService {
 
     this.stopPolling(executionId);
 
-    const url = buildAgentSpecUrl(
-      this.getConfig(),
-      this.getConfig().endpoints.cancel,
-      {
-        id: executionId,
-      },
-    );
+    const url = buildAgentSpecUrl(this.getConfig(), this.getConfig().endpoints.cancel, {
+      id: executionId
+    });
 
     await fetch(url, {
-      method: "POST",
-      headers: getAgentSpecAuthHeaders(this.getConfig()),
+      method: 'POST',
+      headers: getAgentSpecAuthHeaders(this.getConfig())
     });
 
     const state = this.activeExecutions.get(executionId);
     if (state) {
-      state.status = "cancelled";
+      state.status = 'cancelled';
     }
   }
 
   /**
    * Get execution results.
    */
-  async getResults(
-    executionId: string,
-  ): Promise<Record<string, unknown> | null> {
+  async getResults(executionId: string): Promise<Record<string, unknown> | null> {
     this.ensureConfigured();
 
     try {
-      const url = buildAgentSpecUrl(
-        this.getConfig(),
-        this.getConfig().endpoints.results,
-        {
-          id: executionId,
-        },
-      );
+      const url = buildAgentSpecUrl(this.getConfig(), this.getConfig().endpoints.results, {
+        id: executionId
+      });
       const response = await fetch(url, {
-        headers: getAgentSpecAuthHeaders(this.getConfig()),
+        headers: getAgentSpecAuthHeaders(this.getConfig())
       });
 
       if (!response.ok) return null;
@@ -283,21 +259,18 @@ export class AgentSpecExecutionService {
     this.ensureConfigured();
 
     const agentSpecFlow = this.adapter.toAgentSpec(workflow);
-    const url = buildAgentSpecUrl(
-      this.getConfig(),
-      this.getConfig().endpoints.validate,
-    );
+    const url = buildAgentSpecUrl(this.getConfig(), this.getConfig().endpoints.validate);
 
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: getAgentSpecAuthHeaders(this.getConfig()),
-      body: JSON.stringify(agentSpecFlow),
+      body: JSON.stringify(agentSpecFlow)
     });
 
     if (!response.ok) {
       return {
         valid: false,
-        errors: [`Runtime validation failed: ${response.status}`],
+        errors: [`Runtime validation failed: ${response.status}`]
       };
     }
 
@@ -321,7 +294,7 @@ export class AgentSpecExecutionService {
   private ensureConfigured(): void {
     if (!this.config) {
       throw new Error(
-        "AgentSpecExecutionService not configured. Call configure() with runtime endpoint config first.",
+        'AgentSpecExecutionService not configured. Call configure() with runtime endpoint config first.'
       );
     }
   }
@@ -339,22 +312,18 @@ export class AgentSpecExecutionService {
     onNodeUpdate?: (nodeId: string, info: NodeExecutionInfo) => void,
     onComplete?: (results: Record<string, unknown>) => void,
     onError?: (error: Error) => void,
-    intervalMs = 2000,
+    intervalMs = 2000
   ): void {
     const state = this.activeExecutions.get(executionId);
     if (!state) return;
 
     const poll = async () => {
       try {
-        const url = buildAgentSpecUrl(
-          this.getConfig(),
-          this.getConfig().endpoints.status,
-          {
-            id: executionId,
-          },
-        );
+        const url = buildAgentSpecUrl(this.getConfig(), this.getConfig().endpoints.status, {
+          id: executionId
+        });
         const response = await fetch(url, {
-          headers: getAgentSpecAuthHeaders(this.getConfig()),
+          headers: getAgentSpecAuthHeaders(this.getConfig())
         });
 
         if (!response.ok) {
@@ -368,36 +337,31 @@ export class AgentSpecExecutionService {
         const nodeStatuses = data.node_statuses || data.nodes || {};
         for (const [nodeName, status] of Object.entries(nodeStatuses)) {
           const nodeId = nameToNodeId.get(nodeName) || nodeName;
-          const info = this.mapSingleNodeStatus(
-            status as Record<string, unknown>,
-          );
+          const info = this.mapSingleNodeStatus(status as Record<string, unknown>);
           state.nodeStatuses[nodeId] = info;
           onNodeUpdate?.(nodeId, info);
         }
 
         // Check if execution is done
-        if (executionStatus === "completed" || executionStatus === "success") {
-          state.status = "completed";
+        if (executionStatus === 'completed' || executionStatus === 'success') {
+          state.status = 'completed';
           this.stopPolling(executionId);
 
           const results = await this.getResults(executionId);
           onComplete?.(results || {});
-        } else if (
-          executionStatus === "failed" ||
-          executionStatus === "error"
-        ) {
-          state.status = "failed";
+        } else if (executionStatus === 'failed' || executionStatus === 'error') {
+          state.status = 'failed';
           this.stopPolling(executionId);
 
-          const errorMsg = data.error || data.message || "Execution failed";
+          const errorMsg = data.error || data.message || 'Execution failed';
           onError?.(new Error(errorMsg));
-        } else if (executionStatus === "cancelled") {
-          state.status = "cancelled";
+        } else if (executionStatus === 'cancelled') {
+          state.status = 'cancelled';
           this.stopPolling(executionId);
         }
       } catch (error) {
         // Don't stop polling on transient errors — let it retry
-        logger.error("[AgentSpecExecution] Polling error:", error);
+        logger.error('[AgentSpecExecution] Polling error:', error);
       }
     };
 
@@ -415,7 +379,7 @@ export class AgentSpecExecutionService {
   }
 
   private mapRuntimeStatusToNodeInfo(
-    data: Record<string, unknown>,
+    data: Record<string, unknown>
   ): Record<string, NodeExecutionInfo> {
     const result: Record<string, NodeExecutionInfo> = {};
     const nodeStatuses = (data.node_statuses || data.nodes || {}) as Record<
@@ -430,47 +394,44 @@ export class AgentSpecExecutionService {
     return result;
   }
 
-  private mapSingleNodeStatus(
-    status: Record<string, unknown>,
-  ): NodeExecutionInfo {
-    const runtimeStatus = (status.status || status.state || "idle") as string;
+  private mapSingleNodeStatus(status: Record<string, unknown>): NodeExecutionInfo {
+    const runtimeStatus = (status.status || status.state || 'idle') as string;
 
     return {
       status: this.mapToFlowDropStatus(runtimeStatus),
       executionCount: (status.execution_count as number) || 0,
-      isExecuting: runtimeStatus === "running" || runtimeStatus === "executing",
+      isExecuting: runtimeStatus === 'running' || runtimeStatus === 'executing',
       lastExecuted: status.started_at as string | undefined,
       lastExecutionDuration: status.duration_ms as number | undefined,
-      lastError: status.error as string | undefined,
+      lastError: status.error as string | undefined
     };
   }
 
   private mapToFlowDropStatus(runtimeStatus: string): NodeExecutionStatus {
     switch (runtimeStatus) {
-      case "running":
-      case "executing":
-        return "running";
-      case "completed":
-      case "success":
-      case "done":
-        return "completed";
-      case "failed":
-      case "error":
-        return "failed";
-      case "cancelled":
-      case "canceled":
-        return "cancelled";
-      case "pending":
-      case "queued":
-        return "pending";
-      case "skipped":
-        return "skipped";
+      case 'running':
+      case 'executing':
+        return 'running';
+      case 'completed':
+      case 'success':
+      case 'done':
+        return 'completed';
+      case 'failed':
+      case 'error':
+        return 'failed';
+      case 'cancelled':
+      case 'canceled':
+        return 'cancelled';
+      case 'pending':
+      case 'queued':
+        return 'pending';
+      case 'skipped':
+        return 'skipped';
       default:
-        return "idle";
+        return 'idle';
     }
   }
 }
 
 /** Singleton instance */
-export const agentSpecExecutionService =
-  AgentSpecExecutionService.getInstance();
+export const agentSpecExecutionService = AgentSpecExecutionService.getInstance();

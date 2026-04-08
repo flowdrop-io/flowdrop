@@ -9,14 +9,14 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import { marked } from "marked";
-  import { sanitizeHtml } from "../../utils/sanitize.js";
+  import Icon from '@iconify/svelte';
+  import { marked } from 'marked';
+  import { sanitizeHtml } from '../../utils/sanitize.js';
   import type {
     PlaygroundMessage,
     PlaygroundMessageMetadata,
-    PlaygroundMessageRole,
-  } from "../../types/playground.js";
+    PlaygroundMessageRole
+  } from '../../types/playground.js';
 
   /**
    * Component props
@@ -44,24 +44,22 @@
     showTimestamp = true,
     isLast = false,
     enableMarkdown = true,
-    compactSystemMessages = true,
+    compactSystemMessages = true
   }: Props = $props();
 
   /**
    * Determine if this message should render in compact mode.
    * Only system messages use compact mode when enabled.
    */
-  const useCompactMode = $derived(
-    message.role === "system" && compactSystemMessages,
-  );
+  const useCompactMode = $derived(message.role === 'system' && compactSystemMessages);
 
   /**
    * Render content as markdown or plain text
    */
   const renderedContent = $derived(
-    enableMarkdown && message.role !== "log"
-      ? sanitizeHtml(marked.parse(message.content || "") as string)
-      : message.content,
+    enableMarkdown && message.role !== 'log'
+      ? sanitizeHtml(marked.parse(message.content || '') as string)
+      : message.content
   );
 
   /**
@@ -72,16 +70,16 @@
    */
   function getRoleIcon(role: PlaygroundMessageRole): string {
     switch (role) {
-      case "user":
-        return "mdi:account";
-      case "assistant":
-        return "mdi:robot";
-      case "system":
-        return "mdi:cog";
-      case "log":
-        return "mdi:console";
+      case 'user':
+        return 'mdi:account';
+      case 'assistant':
+        return 'mdi:robot';
+      case 'system':
+        return 'mdi:cog';
+      case 'log':
+        return 'mdi:console';
       default:
-        return "mdi:message";
+        return 'mdi:message';
     }
   }
 
@@ -92,21 +90,18 @@
    * @param metadata - Optional message metadata containing userName for user messages
    * @returns Display label
    */
-  function getRoleLabel(
-    role: PlaygroundMessageRole,
-    metadata?: PlaygroundMessageMetadata,
-  ): string {
+  function getRoleLabel(role: PlaygroundMessageRole, metadata?: PlaygroundMessageMetadata): string {
     switch (role) {
-      case "user":
-        return metadata?.userName ?? "You";
-      case "assistant":
-        return "Assistant";
-      case "system":
-        return "System";
-      case "log":
-        return metadata?.nodeLabel ?? "Log";
+      case 'user':
+        return metadata?.userName ?? 'You';
+      case 'assistant':
+        return 'Assistant';
+      case 'system':
+        return 'System';
+      case 'log':
+        return metadata?.nodeLabel ?? 'Log';
       default:
-        return "Message";
+        return 'Message';
     }
   }
 
@@ -118,11 +113,11 @@
    */
   function formatTimestamp(timestamp: string): string {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString('en-US', {
       hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
   }
 
@@ -132,14 +127,14 @@
   function getLogLevelIcon(): string {
     const level = message.metadata?.level;
     switch (level) {
-      case "error":
-        return "mdi:alert-circle";
-      case "warning":
-        return "mdi:alert";
-      case "debug":
-        return "mdi:bug";
+      case 'error':
+        return 'mdi:alert-circle';
+      case 'warning':
+        return 'mdi:alert';
+      case 'debug':
+        return 'mdi:bug';
       default:
-        return "mdi:information";
+        return 'mdi:information';
     }
   }
 
@@ -160,22 +155,19 @@
     <Icon icon="mdi:information-outline" class="system-notice__icon" />
     <span class="system-notice__text">{message.content}</span>
     {#if showTimestamp}
-      <span class="system-notice__timestamp"
-        >{formatTimestamp(message.timestamp)}</span
-      >
+      <span class="system-notice__timestamp">{formatTimestamp(message.timestamp)}</span>
     {/if}
   </div>
 {:else}
   <div
     class="message-bubble"
-    class:message-bubble--user={message.role === "user"}
-    class:message-bubble--assistant={message.role === "assistant"}
-    class:message-bubble--system={message.role === "system"}
-    class:message-bubble--log={message.role === "log"}
-    class:message-bubble--log-error={message.role === "log" &&
-      message.metadata?.level === "error"}
-    class:message-bubble--log-warning={message.role === "log" &&
-      message.metadata?.level === "warning"}
+    class:message-bubble--user={message.role === 'user'}
+    class:message-bubble--assistant={message.role === 'assistant'}
+    class:message-bubble--system={message.role === 'system'}
+    class:message-bubble--log={message.role === 'log'}
+    class:message-bubble--log-error={message.role === 'log' && message.metadata?.level === 'error'}
+    class:message-bubble--log-warning={message.role === 'log' &&
+      message.metadata?.level === 'warning'}
     class:message-bubble--last={isLast}
   >
     <!-- Avatar / Icon -->
@@ -187,28 +179,23 @@
     <div class="message-bubble__content">
       <!-- Header -->
       <div class="message-bubble__header">
-        <span class="message-bubble__role"
-          >{getRoleLabel(message.role, message.metadata)}</span
-        >
-        {#if message.role === "log" && message.metadata?.level}
+        <span class="message-bubble__role">{getRoleLabel(message.role, message.metadata)}</span>
+        {#if message.role === 'log' && message.metadata?.level}
           <span
-            class="message-bubble__log-level message-bubble__log-level--{message
-              .metadata.level}"
+            class="message-bubble__log-level message-bubble__log-level--{message.metadata.level}"
           >
             <Icon icon={getLogLevelIcon()} />
             {message.metadata.level.toUpperCase()}
           </span>
         {/if}
         {#if showTimestamp}
-          <span class="message-bubble__timestamp"
-            >{formatTimestamp(message.timestamp)}</span
-          >
+          <span class="message-bubble__timestamp">{formatTimestamp(message.timestamp)}</span>
         {/if}
       </div>
 
       <!-- Message Text -->
       <div class="message-bubble__text">
-        {#if enableMarkdown && message.role !== "log"}
+        {#if enableMarkdown && message.role !== 'log'}
           <!-- Markdown content - sanitized with DOMPurify to prevent XSS -->
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html renderedContent}
@@ -221,10 +208,7 @@
       {#if message.metadata?.duration !== undefined || message.nodeId}
         <div class="message-bubble__footer">
           {#if message.nodeId}
-            <span
-              class="message-bubble__node"
-              title="Node ID: {message.nodeId}"
-            >
+            <span class="message-bubble__node" title="Node ID: {message.nodeId}">
               <Icon icon="mdi:graph" />
               {message.metadata?.nodeLabel ?? message.nodeId}
             </span>

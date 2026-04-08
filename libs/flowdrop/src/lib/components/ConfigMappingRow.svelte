@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-  import type { EditableConfigMapping } from "../utils/nodeSwap.js";
+  import type { EditableConfigMapping } from '../utils/nodeSwap.js';
 
   interface Props {
     mapping: EditableConfigMapping;
@@ -15,10 +15,10 @@
   const { mapping, onToggle }: Props = $props();
 
   function formatValue(value: unknown): string {
-    if (value === null || value === undefined) return "—";
-    if (typeof value === "string") return value || '""';
-    if (typeof value === "boolean") return value ? "true" : "false";
-    if (typeof value === "number") return String(value);
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'string') return value || '""';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (typeof value === 'number') return String(value);
     return JSON.stringify(value);
   }
 </script>
@@ -29,9 +29,7 @@
   </div>
 
   {#if !mapping.isFlat}
-    <div class="config-mapping-row__complex">
-      Complex value — will use default
-    </div>
+    <div class="config-mapping-row__complex">Complex value — will use default</div>
   {:else}
     <div class="config-mapping-row__values">
       {#if mapping.carryOver}
@@ -51,7 +49,7 @@
       onclick={() => onToggle(mapping.key)}
       type="button"
     >
-      {mapping.carryOver ? "Carry over" : "Use default"}
+      {mapping.carryOver ? 'Carry over' : 'Use default'}
     </button>
   {/if}
 </div>

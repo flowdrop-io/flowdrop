@@ -6,31 +6,23 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import {
-    getTheme,
-    getResolvedTheme,
-    cycleTheme,
-  } from "../stores/settingsStore.svelte.js";
-  import type { ThemePreference } from "../types/settings.js";
+  import Icon from '@iconify/svelte';
+  import { getTheme, getResolvedTheme, cycleTheme } from '../stores/settingsStore.svelte.js';
+  import type { ThemePreference } from '../types/settings.js';
 
   /**
    * Props interface for ThemeToggle component
    */
   interface Props {
     /** Size variant of the toggle button */
-    size?: "sm" | "md" | "lg";
+    size?: 'sm' | 'md' | 'lg';
     /** Whether to show the theme label text */
     showLabel?: boolean;
     /** Custom class name for styling */
     class?: string;
   }
 
-  const {
-    size = "md",
-    showLabel = false,
-    class: className = "",
-  }: Props = $props();
+  const { size = 'md', showLabel = false, class: className = '' }: Props = $props();
 
   /**
    * Get the icon for the current theme
@@ -45,12 +37,12 @@
    */
   function getThemeIcon(currentTheme: ThemePreference): string {
     switch (currentTheme) {
-      case "light":
-        return "mdi:white-balance-sunny";
-      case "dark":
-        return "mdi:moon-waning-crescent";
-      case "auto":
-        return "mdi:desktop-mac";
+      case 'light':
+        return 'mdi:white-balance-sunny';
+      case 'dark':
+        return 'mdi:moon-waning-crescent';
+      case 'auto':
+        return 'mdi:desktop-mac';
     }
   }
 
@@ -64,12 +56,12 @@
    */
   function getThemeLabel(currentTheme: ThemePreference): string {
     switch (currentTheme) {
-      case "light":
-        return "Light";
-      case "dark":
-        return "Dark";
-      case "auto":
-        return "Auto";
+      case 'light':
+        return 'Light';
+      case 'dark':
+        return 'Dark';
+      case 'auto':
+        return 'Auto';
     }
   }
 
@@ -81,15 +73,12 @@
   /**
    * Get tooltip text based on theme preference
    */
-  function getTooltipText(
-    currentTheme: ThemePreference,
-    resolved: "light" | "dark",
-  ): string {
-    if (currentTheme === "auto") {
+  function getTooltipText(currentTheme: ThemePreference, resolved: 'light' | 'dark'): string {
+    if (currentTheme === 'auto') {
       return `Theme: Auto (${resolved}). Click to switch to Light`;
     }
-    const next = currentTheme === "light" ? "Dark" : "Auto";
-    return `Theme: ${currentTheme === "light" ? "Light" : "Dark"}. Click to switch to ${next}`;
+    const next = currentTheme === 'light' ? 'Dark' : 'Auto';
+    return `Theme: ${currentTheme === 'light' ? 'Light' : 'Dark'}. Click to switch to ${next}`;
   }
 
   /**
@@ -103,7 +92,7 @@
    * Handle keyboard events for accessibility
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       cycleTheme();
     }

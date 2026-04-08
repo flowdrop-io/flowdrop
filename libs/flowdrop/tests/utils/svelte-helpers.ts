@@ -18,12 +18,9 @@
  *
  * TODO: Uncomment when dependencies are installed
  */
-export function renderWithUser<T>(
-  component: T,
-  props?: Record<string, unknown>,
-): unknown {
+export function renderWithUser<T>(component: T, props?: Record<string, unknown>): unknown {
   throw new Error(
-    "Install @testing-library/svelte and @testing-library/user-event to use renderWithUser",
+    'Install @testing-library/svelte and @testing-library/user-event to use renderWithUser'
   );
 }
 
@@ -51,15 +48,11 @@ export function getComponentState<T>(result: unknown): T {
 /**
  * Trigger a custom event on an element
  */
-export function fireCustomEvent(
-  element: HTMLElement,
-  eventName: string,
-  detail?: unknown,
-): void {
+export function fireCustomEvent(element: HTMLElement, eventName: string, detail?: unknown): void {
   const event = new CustomEvent(eventName, {
     detail,
     bubbles: true,
-    cancelable: true,
+    cancelable: true
   });
   element.dispatchEvent(event);
 }
@@ -67,15 +60,12 @@ export function fireCustomEvent(
 /**
  * Wait for an element to be removed
  */
-export async function waitForRemoval(
-  element: HTMLElement,
-  timeout = 1000,
-): Promise<void> {
+export async function waitForRemoval(element: HTMLElement, timeout = 1000): Promise<void> {
   const startTime = Date.now();
 
   while (document.body.contains(element)) {
     if (Date.now() - startTime > timeout) {
-      throw new Error("Element was not removed within timeout");
+      throw new Error('Element was not removed within timeout');
     }
     await tick();
   }
@@ -104,7 +94,7 @@ export function createMockStore<T>(initialValue: T) {
     },
     get() {
       return value;
-    },
+    }
   };
 }
 
@@ -128,6 +118,6 @@ export function createTestStore<T>(initialValue: T) {
       history.length = 0;
       history.push(initialValue);
       store.set(initialValue);
-    },
+    }
   };
 }

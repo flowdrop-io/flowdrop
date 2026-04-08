@@ -6,14 +6,14 @@
 -->
 
 <script lang="ts">
-  import { untrack } from "svelte";
-  import type { InteractiveSwapState } from "../utils/nodeSwap.js";
-  import type { PortCompatibilityChecker } from "../utils/connections.js";
-  import Icon from "@iconify/svelte";
-  import { getNodeIcon } from "../utils/icons.js";
-  import { getCategoryColorToken } from "../utils/colors.js";
-  import PortMappingRow from "./PortMappingRow.svelte";
-  import ConfigMappingRow from "./ConfigMappingRow.svelte";
+  import { untrack } from 'svelte';
+  import type { InteractiveSwapState } from '../utils/nodeSwap.js';
+  import type { PortCompatibilityChecker } from '../utils/connections.js';
+  import Icon from '@iconify/svelte';
+  import { getNodeIcon } from '../utils/icons.js';
+  import { getCategoryColorToken } from '../utils/colors.js';
+  import PortMappingRow from './PortMappingRow.svelte';
+  import ConfigMappingRow from './ConfigMappingRow.svelte';
 
   interface Props {
     interactiveState: InteractiveSwapState;
@@ -23,13 +23,12 @@
     onBack: () => void;
   }
 
-  const { interactiveState, checker, onConfirm, onCancel, onBack }: Props =
-    $props();
+  const { interactiveState, checker, onConfirm, onCancel, onBack }: Props = $props();
 
   // Local mutable copy of the interactive state
   // JSON round-trip is intentional: structuredClone fails on Svelte 5 proxies
   let localState = $state<InteractiveSwapState>(
-    untrack(() => JSON.parse(JSON.stringify(interactiveState))),
+    untrack(() => JSON.parse(JSON.stringify(interactiveState)))
   );
 
   // Reinit when interactiveState changes
@@ -38,15 +37,9 @@
   });
 
   // Derived counts
-  let inputMappings = $derived(
-    localState.portMappings.filter((m) => m.direction === "input"),
-  );
-  let outputMappings = $derived(
-    localState.portMappings.filter((m) => m.direction === "output"),
-  );
-  let droppedCount = $derived(
-    localState.portMappings.filter((m) => !m.selectedNewPortId).length,
-  );
+  let inputMappings = $derived(localState.portMappings.filter((m) => m.direction === 'input'));
+  let outputMappings = $derived(localState.portMappings.filter((m) => m.direction === 'output'));
+  let droppedCount = $derived(localState.portMappings.filter((m) => !m.selectedNewPortId).length);
   let connectionCount = $derived(localState.portMappings.length);
   let hasDataLoss = $derived(droppedCount > 0);
 
@@ -54,7 +47,7 @@
   let usedInputPortIds = $derived.by(() => {
     const set = new Set<string>();
     for (const m of localState.portMappings) {
-      if (m.direction === "input" && m.selectedNewPortId) {
+      if (m.direction === 'input' && m.selectedNewPortId) {
         set.add(m.selectedNewPortId);
       }
     }
@@ -64,7 +57,7 @@
   let usedOutputPortIds = $derived.by(() => {
     const set = new Set<string>();
     for (const m of localState.portMappings) {
-      if (m.direction === "output" && m.selectedNewPortId) {
+      if (m.direction === 'output' && m.selectedNewPortId) {
         set.add(m.selectedNewPortId);
       }
     }
@@ -72,25 +65,23 @@
   });
 
   // Trivial swap: no connections and no config
-  let isTrivial = $derived(
-    connectionCount === 0 && localState.configMappings.length === 0,
-  );
+  let isTrivial = $derived(connectionCount === 0 && localState.configMappings.length === 0);
 
   function handlePortUpdate(index: number, newPortId: string | null): void {
     const mapping = localState.portMappings[index];
     if (!mapping) return;
 
     // For input ports: if this port is already used by another mapping, unmap the other
-    if (newPortId && mapping.direction === "input") {
+    if (newPortId && mapping.direction === 'input') {
       for (let i = 0; i < localState.portMappings.length; i++) {
         if (i === index) continue;
         const other = localState.portMappings[i];
-        if (other.direction === "input" && other.selectedNewPortId === newPortId) {
+        if (other.direction === 'input' && other.selectedNewPortId === newPortId) {
           localState.portMappings[i] = {
             ...other,
             selectedNewPortId: null,
-            matchQuality: "unmapped",
-            isOverridden: true,
+            matchQuality: 'unmapped',
+            isOverridden: true
           };
         }
       }
@@ -99,8 +90,8 @@
     localState.portMappings[index] = {
       ...mapping,
       selectedNewPortId: newPortId,
-      matchQuality: newPortId ? "manual" : "unmapped",
-      isOverridden: true,
+      matchQuality: newPortId ? 'manual' : 'unmapped',
+      isOverridden: true
     };
   }
 
@@ -112,9 +103,9 @@
       ...mapping,
       selectedNewPortId: mapping.autoSuggestedPortId,
       matchQuality: mapping.autoSuggestedPortId
-        ? (interactiveState.portMappings[index]?.matchQuality ?? "type")
-        : "unmapped",
-      isOverridden: false,
+        ? (interactiveState.portMappings[index]?.matchQuality ?? 'type')
+        : 'unmapped',
+      isOverridden: false
     };
   }
 
@@ -126,7 +117,7 @@
 
     localState.configMappings[idx] = {
       ...mapping,
-      carryOver: !mapping.carryOver,
+      carryOver: !mapping.carryOver
     };
   }
 
@@ -138,11 +129,7 @@
 <div class="swap-editor">
   <!-- Header -->
   <div class="swap-editor__header">
-    <button
-      class="swap-editor__back"
-      onclick={onBack}
-      aria-label="Back to node selection"
-    >
+    <button class="swap-editor__back" onclick={onBack} aria-label="Back to node selection">
       <Icon icon="heroicons:arrow-left" />
     </button>
     <h2 class="swap-editor__title">Swap Mapping</h2>
@@ -230,9 +217,7 @@
         {/each}
 
         {#if localState.configMappings.some((m) => !m.isFlat)}
-          <div class="swap-editor__info-row">
-            Dynamic port config will not be carried over.
-          </div>
+          <div class="swap-editor__info-row">Dynamic port config will not be carried over.</div>
         {/if}
       {/if}
     </div>
@@ -242,7 +227,7 @@
   {#if hasDataLoss}
     <div class="swap-editor__warning" role="alert">
       <Icon icon="heroicons:exclamation-triangle" />
-      <span>{droppedCount} connection{droppedCount !== 1 ? "s" : ""} will be lost</span>
+      <span>{droppedCount} connection{droppedCount !== 1 ? 's' : ''} will be lost</span>
     </div>
   {/if}
 
@@ -256,9 +241,11 @@
       class:swap-editor__btn--danger={hasDataLoss}
       onclick={handleConfirm}
       type="button"
-      aria-label={hasDataLoss ? `Swap anyway — ${droppedCount} connections will be lost` : "Confirm swap"}
+      aria-label={hasDataLoss
+        ? `Swap anyway — ${droppedCount} connections will be lost`
+        : 'Confirm swap'}
     >
-      {hasDataLoss ? "Swap Anyway" : "Confirm Swap"}
+      {hasDataLoss ? 'Swap Anyway' : 'Confirm Swap'}
     </button>
   </div>
 </div>
@@ -498,11 +485,7 @@
   }
 
   .swap-editor__btn--confirm {
-    background: linear-gradient(
-      135deg,
-      var(--fd-primary) 0%,
-      var(--fd-primary-hover) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
     color: var(--fd-primary-foreground);
     box-shadow:
       0 2px 8px rgba(59, 130, 246, 0.25),
@@ -510,11 +493,7 @@
   }
 
   .swap-editor__btn--confirm:hover {
-    background: linear-gradient(
-      135deg,
-      var(--fd-primary-hover) 0%,
-      var(--fd-primary) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary) 100%);
     box-shadow:
       0 4px 12px rgba(59, 130, 246, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.15);

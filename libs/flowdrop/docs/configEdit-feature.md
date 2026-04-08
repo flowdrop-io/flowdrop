@@ -177,8 +177,8 @@ import {
   invalidateSchemaCache,
   hasConfigEditOptions,
   shouldShowExternalEdit,
-  shouldUseDynamicSchema,
-} from "@flowdrop/flowdrop";
+  shouldUseDynamicSchema
+} from '@flowdrop/flowdrop';
 ```
 
 ### `fetchDynamicSchema(endpoint, node, workflowId?)`
@@ -189,14 +189,14 @@ Fetches a config schema from a REST endpoint with caching support.
 const result = await fetchDynamicSchema(
   node.data.metadata.configEdit.dynamicSchema,
   node,
-  workflowId,
+  workflowId
 );
 
 if (result.success) {
-  console.log("Schema:", result.schema);
-  console.log("From cache:", result.fromCache);
+  console.log('Schema:', result.schema);
+  console.log('From cache:', result.fromCache);
 } else {
-  console.error("Error:", result.error);
+  console.error('Error:', result.error);
 }
 ```
 
@@ -208,9 +208,9 @@ Resolves URL template variables for external edit links.
 const url = resolveExternalEditUrl(
   node.data.metadata.configEdit.externalEditLink,
   node,
-  workflowId,
+  workflowId
 );
-window.open(url, "_blank");
+window.open(url, '_blank');
 ```
 
 ### `clearSchemaCache(pattern?)`
@@ -222,7 +222,7 @@ Clears cached schemas. Optionally filter by pattern.
 clearSchemaCache();
 
 // Clear schemas for a specific node type
-clearSchemaCache("my_node");
+clearSchemaCache('my_node');
 ```
 
 ## TypeScript Types
@@ -233,8 +233,8 @@ import type {
   DynamicSchemaEndpoint,
   ExternalEditLink,
   HttpMethod,
-  DynamicSchemaResult,
-} from "@flowdrop/flowdrop";
+  DynamicSchemaResult
+} from '@flowdrop/flowdrop';
 ```
 
 ## Demo Nodes

@@ -7,9 +7,9 @@
  * @module services/historyService
  */
 
-import type { Workflow } from "../types/index.js";
-import { DEFAULT_BEHAVIOR_SETTINGS } from "../types/settings.js";
-import { logger } from "../utils/logger.js";
+import type { Workflow } from '../types/index.js';
+import { DEFAULT_BEHAVIOR_SETTINGS } from '../types/settings.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Types
@@ -133,7 +133,7 @@ export class HistoryService {
     this.undoStack.push({
       snapshot: this.cloneWorkflow(workflow),
       timestamp: Date.now(),
-      description: "Initial state",
+      description: 'Initial state'
     });
 
     this.notifyChange();
@@ -222,9 +222,7 @@ export class HistoryService {
    */
   startTransaction(workflow: Workflow, description?: string): void {
     if (this.inTransaction) {
-      logger.warn(
-        "HistoryService: Transaction already in progress, ignoring startTransaction",
-      );
+      logger.warn('HistoryService: Transaction already in progress, ignoring startTransaction');
       return;
     }
 
@@ -240,17 +238,12 @@ export class HistoryService {
    */
   commitTransaction(): void {
     if (!this.inTransaction || !this.transactionSnapshot) {
-      logger.warn(
-        "HistoryService: No transaction in progress, ignoring commitTransaction",
-      );
+      logger.warn('HistoryService: No transaction in progress, ignoring commitTransaction');
       return;
     }
 
     // Push the snapshot captured at transaction start
-    this.pushInternal(
-      this.transactionSnapshot,
-      this.transactionDescription ?? undefined,
-    );
+    this.pushInternal(this.transactionSnapshot, this.transactionDescription ?? undefined);
 
     // Clear transaction state
     this.inTransaction = false;
@@ -291,7 +284,7 @@ export class HistoryService {
       this.undoStack.push({
         snapshot: this.cloneWorkflow(currentWorkflow),
         timestamp: Date.now(),
-        description: "Initial state",
+        description: 'Initial state'
       });
     }
 
@@ -309,7 +302,7 @@ export class HistoryService {
       canRedo: this.redoStack.length > 0,
       currentIndex: this.undoStack.length - 1,
       historyLength: this.undoStack.length + this.redoStack.length,
-      isInTransaction: this.inTransaction,
+      isInTransaction: this.inTransaction
     };
   }
 
@@ -369,7 +362,7 @@ export class HistoryService {
     this.undoStack.push({
       snapshot: this.cloneWorkflow(workflow),
       timestamp: Date.now(),
-      description,
+      description
     });
 
     // Trim history if over limit
@@ -401,8 +394,8 @@ export class HistoryService {
       ...workflow,
       nodes: workflow.nodes.map((n) => ({
         ...n,
-        data: { ...n.data, onConfigOpen: undefined },
-      })),
+        data: { ...n.data, onConfigOpen: undefined }
+      }))
     };
     try {
       return structuredClone(cleaned);

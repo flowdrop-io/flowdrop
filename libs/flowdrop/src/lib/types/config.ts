@@ -5,8 +5,8 @@
  * For core workflow types (WorkflowNode, WorkflowEdge, etc.), see ./index.ts
  */
 
-import type { EndpointConfig } from "../config/endpoints.js";
-import type { PortConfig, NodeMetadata } from "./index.js";
+import type { EndpointConfig } from '../config/endpoints.js';
+import type { PortConfig, NodeMetadata } from './index.js';
 
 /**
  * Re-export core types from index.ts for convenience
@@ -17,8 +17,8 @@ export type {
   WorkflowEdge,
   NodePort,
   ExecutionResult,
-  NodeMetadata,
-} from "./index.js";
+  NodeMetadata
+} from './index.js';
 
 export interface WorkflowEditorConfig {
   /** API configuration with endpoints */
@@ -31,7 +31,7 @@ export interface WorkflowEditorConfig {
   ports: PortConfig;
 
   /** Theme configuration */
-  theme: "light" | "dark" | "auto";
+  theme: 'light' | 'dark' | 'auto';
 
   /** Editor features configuration */
   features: EditorFeatures;
@@ -151,7 +151,7 @@ export interface APIConfig {
 
   /** Authentication configuration */
   auth: {
-    type: "none" | "bearer" | "api_key" | "custom";
+    type: 'none' | 'bearer' | 'api_key' | 'custom';
     token?: string;
     apiKey?: string;
     headers?: Record<string, string>;
@@ -186,7 +186,7 @@ export interface ExecutionConfig {
 
 export interface StorageConfig {
   /** Storage type */
-  type: "api" | "local" | "session" | "custom";
+  type: 'api' | 'local' | 'session' | 'custom';
 
   /** Auto-save interval in milliseconds */
   autoSaveInterval: number;

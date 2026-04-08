@@ -7,11 +7,11 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import Playground from "./Playground.svelte";
-  import type { Workflow } from "../../types/index.js";
-  import type { EndpointConfig } from "../../config/endpoints.js";
-  import type { PlaygroundConfig } from "../../types/playground.js";
+  import Icon from '@iconify/svelte';
+  import Playground from './Playground.svelte';
+  import type { Workflow } from '../../types/index.js';
+  import type { EndpointConfig } from '../../config/endpoints.js';
+  import type { PlaygroundConfig } from '../../types/playground.js';
 
   /**
    * Component props
@@ -40,14 +40,14 @@
     initialSessionId,
     endpointConfig,
     config = {},
-    onClose,
+    onClose
   }: Props = $props();
 
   /**
    * Close modal on Escape key
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       onClose();
     }
   }
@@ -75,11 +75,7 @@
   >
     <!-- Modal Container -->
     <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events — role="presentation" container stops backdrop click propagation -->
-    <div
-      class="playground-modal"
-      onclick={(e) => e.stopPropagation()}
-      role="presentation"
-    >
+    <div class="playground-modal" onclick={(e) => e.stopPropagation()} role="presentation">
       <!-- Modal Header -->
       <div class="playground-modal__header">
         <div class="playground-modal__title" id="playground-modal-title">

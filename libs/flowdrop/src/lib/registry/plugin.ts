@@ -15,9 +15,9 @@ import {
   type NodeComponentProps,
   type NodeComponentCategory,
   type StatusPosition,
-  type StatusSize,
-} from "./nodeComponentRegistry.js";
-import type { Component } from "svelte";
+  type StatusSize
+} from './nodeComponentRegistry.js';
+import type { Component } from 'svelte';
 
 /**
  * Plugin configuration for external libraries.
@@ -137,14 +137,12 @@ export interface PluginRegistrationResult {
  * // }
  * ```
  */
-export function registerFlowDropPlugin(
-  config: FlowDropPluginConfig,
-): PluginRegistrationResult {
+export function registerFlowDropPlugin(config: FlowDropPluginConfig): PluginRegistrationResult {
   const result: PluginRegistrationResult = {
     success: true,
     namespace: config.namespace,
     registeredTypes: [],
-    errors: [],
+    errors: []
   };
 
   // Validate namespace
@@ -152,7 +150,7 @@ export function registerFlowDropPlugin(
     result.success = false;
     result.errors.push(
       `Invalid namespace "${config.namespace}". ` +
-        `Namespace must be lowercase alphanumeric with optional hyphens.`,
+        `Namespace must be lowercase alphanumeric with optional hyphens.`
     );
     return result;
   }
@@ -160,10 +158,7 @@ export function registerFlowDropPlugin(
   // Register each node
   for (const nodeDef of config.nodes) {
     try {
-      const namespacedType = createNamespacedType(
-        config.namespace,
-        nodeDef.type,
-      );
+      const namespacedType = createNamespacedType(config.namespace, nodeDef.type);
 
       const registration: NodeComponentRegistration = {
         type: namespacedType,
@@ -171,21 +166,18 @@ export function registerFlowDropPlugin(
         description: nodeDef.description,
         component: nodeDef.component,
         icon: nodeDef.icon,
-        category: nodeDef.category ?? "custom",
+        category: nodeDef.category ?? 'custom',
         source: config.namespace,
         statusPosition: nodeDef.statusPosition,
-        statusSize: nodeDef.statusSize,
+        statusSize: nodeDef.statusSize
       };
 
       nodeComponentRegistry.register(registration);
       result.registeredTypes.push(namespacedType);
     } catch (error) {
       result.success = false;
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      result.errors.push(
-        `Failed to register ${config.namespace}:${nodeDef.type}: ${errorMessage}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      result.errors.push(`Failed to register ${config.namespace}:${nodeDef.type}: ${errorMessage}`);
     }
   }
 
@@ -240,7 +232,7 @@ export function getRegisteredPlugins(): string[] {
   const registrations = nodeComponentRegistry.getAll();
 
   for (const reg of registrations) {
-    if (reg.source && reg.source !== "flowdrop") {
+    if (reg.source && reg.source !== 'flowdrop') {
       sources.add(reg.source);
     }
   }
@@ -289,7 +281,7 @@ export function registerCustomNode(
     source?: string;
     statusPosition?: StatusPosition;
     statusSize?: StatusSize;
-  } = {},
+  } = {}
 ): void {
   nodeComponentRegistry.register({
     type,
@@ -297,10 +289,10 @@ export function registerCustomNode(
     component,
     description: options.description,
     icon: options.icon,
-    category: options.category ?? "custom",
-    source: options.source ?? "custom",
+    category: options.category ?? 'custom',
+    source: options.source ?? 'custom',
     statusPosition: options.statusPosition,
-    statusSize: options.statusSize,
+    statusSize: options.statusSize
   });
 }
 
@@ -326,7 +318,7 @@ export function createPlugin(namespace: string, name: string) {
   const config: FlowDropPluginConfig = {
     namespace,
     name,
-    nodes: [],
+    nodes: []
   };
 
   const builder = {
@@ -353,15 +345,13 @@ export function createPlugin(namespace: string, name: string) {
       type: string,
       displayName: string,
       component: Component<NodeComponentProps>,
-      options: Partial<
-        Omit<PluginNodeDefinition, "type" | "displayName" | "component">
-      > = {},
+      options: Partial<Omit<PluginNodeDefinition, 'type' | 'displayName' | 'component'>> = {}
     ) {
       config.nodes.push({
         type,
         displayName,
         component,
-        ...options,
+        ...options
       });
       return builder;
     },
@@ -378,7 +368,7 @@ export function createPlugin(namespace: string, name: string) {
      */
     getConfig(): FlowDropPluginConfig {
       return { ...config };
-    },
+    }
   };
 
   return builder;

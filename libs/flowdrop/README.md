@@ -10,7 +10,6 @@
   <img src="https://img.shields.io/npm/unpacked-size/%40flowdrop%2Fflowdrop?style=flat-square" alt="NPM Unpacked Size" />
   <img src="https://img.shields.io/npm/types/@flowdrop/flowdrop?style=flat-square" alt="npm type definitions" />
   <a href="http://npmjs.com/package/@flowdrop/flowdrop"><img alt="NPM Downloads" src="https://img.shields.io/npm/d18m/%40flowdrop%2Fflowdrop"></a>
-  
 
 </p>
 
@@ -59,8 +58,8 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ```svelte
 <script lang="ts">
-  import { WorkflowEditor } from "@flowdrop/flowdrop";
-  import "@flowdrop/flowdrop/styles/base.css";
+  import { WorkflowEditor } from '@flowdrop/flowdrop';
+  import '@flowdrop/flowdrop/styles/base.css';
 </script>
 
 <WorkflowEditor />
@@ -70,8 +69,8 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ## Features
 
-|                              |                                                                           |
-| ---------------------------- | ------------------------------------------------------------------------- |
+|                           |                                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
 | **Visual Editor Only**    | Pure UI component. No hidden backend, no external dependencies            |
 | **You Own Everything**    | Your data, your servers, your orchestration logic, your security policies |
 | **Backend Agnostic**      | Connect to any API: Drupal, Laravel, Express, FastAPI, or your own        |
@@ -113,8 +112,8 @@ FlowDrop includes a theme system with built-in light/dark support:
 
 ```svelte
 <script lang="ts">
-  import { WorkflowEditor } from "@flowdrop/flowdrop";
-  import "@flowdrop/flowdrop/styles";
+  import { WorkflowEditor } from '@flowdrop/flowdrop';
+  import '@flowdrop/flowdrop/styles';
 </script>
 
 <!-- Built-in themes: 'default' or 'minimal' -->
@@ -126,7 +125,7 @@ Themes bundle a visual skin (CSS token palette) with behavioral UI defaults. You
 ```javascript
 // Via the mount API
 const app = await mountFlowDropApp(container, {
-  theme: "minimal",
+  theme: 'minimal'
   // or a custom theme object:
   // theme: { name: 'minimal', skin: { tokens: { primary: '#e11d48' } } }
 });
@@ -136,19 +135,19 @@ const app = await mountFlowDropApp(container, {
 
 FlowDrop provides tree-shakeable sub-module exports so you can import only what you need:
 
-| Export Path | Contents |
-| --- | --- |
-| `@flowdrop/flowdrop` | Full library (components, stores, services, types) |
-| `@flowdrop/flowdrop/core` | Types and utilities only (no heavy dependencies) |
-| `@flowdrop/flowdrop/editor` | WorkflowEditor, stores, services |
-| `@flowdrop/flowdrop/form` | SchemaForm, form fields, registry |
-| `@flowdrop/flowdrop/form/code` | Code editor field (CodeMirror) |
-| `@flowdrop/flowdrop/form/markdown` | Markdown editor field |
-| `@flowdrop/flowdrop/display` | MarkdownDisplay component |
-| `@flowdrop/flowdrop/playground` | Playground components and services |
-| `@flowdrop/flowdrop/settings` | SettingsPanel, stores, services |
-| `@flowdrop/flowdrop/styles` | Base CSS stylesheet |
-| `@flowdrop/flowdrop/schema` | Workflow JSON schema |
+| Export Path                        | Contents                                           |
+| ---------------------------------- | -------------------------------------------------- |
+| `@flowdrop/flowdrop`               | Full library (components, stores, services, types) |
+| `@flowdrop/flowdrop/core`          | Types and utilities only (no heavy dependencies)   |
+| `@flowdrop/flowdrop/editor`        | WorkflowEditor, stores, services                   |
+| `@flowdrop/flowdrop/form`          | SchemaForm, form fields, registry                  |
+| `@flowdrop/flowdrop/form/code`     | Code editor field (CodeMirror)                     |
+| `@flowdrop/flowdrop/form/markdown` | Markdown editor field                              |
+| `@flowdrop/flowdrop/display`       | MarkdownDisplay component                          |
+| `@flowdrop/flowdrop/playground`    | Playground components and services                 |
+| `@flowdrop/flowdrop/settings`      | SettingsPanel, stores, services                    |
+| `@flowdrop/flowdrop/styles`        | Base CSS stylesheet                                |
+| `@flowdrop/flowdrop/schema`        | Workflow JSON schema                               |
 
 ## Integration
 
@@ -156,7 +155,7 @@ FlowDrop provides tree-shakeable sub-module exports so you can import only what 
 
 ```svelte
 <script>
-  import { WorkflowEditor, NodeSidebar } from "@flowdrop/flowdrop";
+  import { WorkflowEditor, NodeSidebar } from '@flowdrop/flowdrop';
 </script>
 
 <div class="flex h-screen">
@@ -168,15 +167,15 @@ FlowDrop provides tree-shakeable sub-module exports so you can import only what 
 ### Vanilla JS / React / Vue / Angular
 
 ```javascript
-import { mountFlowDropApp, createEndpointConfig } from "@flowdrop/flowdrop";
+import { mountFlowDropApp, createEndpointConfig } from '@flowdrop/flowdrop';
 
-const app = await mountFlowDropApp(document.getElementById("editor"), {
+const app = await mountFlowDropApp(document.getElementById('editor'), {
   workflow: myWorkflow,
-  endpointConfig: createEndpointConfig("/api/flowdrop"),
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
   eventHandlers: {
-    onDirtyStateChange: (isDirty) => console.log("Unsaved changes:", isDirty),
-    onAfterSave: (workflow) => console.log("Saved!", workflow),
-  },
+    onDirtyStateChange: (isDirty) => console.log('Unsaved changes:', isDirty),
+    onAfterSave: (workflow) => console.log('Saved!', workflow)
+  }
 });
 
 // Full control over the editor
@@ -188,27 +187,27 @@ app.destroy();
 ### Enterprise Integration
 
 ```javascript
-import { mountFlowDropApp, CallbackAuthProvider } from "@flowdrop/flowdrop";
+import { mountFlowDropApp, CallbackAuthProvider } from '@flowdrop/flowdrop';
 
 const app = await mountFlowDropApp(container, {
   // Dynamic token refresh
   authProvider: new CallbackAuthProvider({
     getToken: () => authService.getAccessToken(),
-    onUnauthorized: () => authService.refreshToken(),
+    onUnauthorized: () => authService.refreshToken()
   }),
 
   // Lifecycle hooks
   eventHandlers: {
     onBeforeUnmount: (workflow, isDirty) => {
       if (isDirty) saveDraft(workflow);
-    },
+    }
   },
 
   // Auto-save, toasts, and more
   features: {
     autoSaveDraft: true,
-    autoSaveDraftInterval: 30000,
-  },
+    autoSaveDraftInterval: 30000
+  }
 });
 ```
 
@@ -217,19 +216,19 @@ const app = await mountFlowDropApp(container, {
 Connect to any backend in seconds:
 
 ```typescript
-import { createEndpointConfig } from "@flowdrop/flowdrop";
+import { createEndpointConfig } from '@flowdrop/flowdrop';
 
-const config = createEndpointConfig("https://api.example.com", {
+const config = createEndpointConfig('https://api.example.com', {
   endpoints: {
-    nodes: { list: "/nodes", get: "/nodes/{id}" },
+    nodes: { list: '/nodes', get: '/nodes/{id}' },
     workflows: {
-      list: "/workflows",
-      get: "/workflows/{id}",
-      create: "/workflows",
-      update: "/workflows/{id}",
-      execute: "/workflows/{id}/execute",
-    },
-  },
+      list: '/workflows',
+      get: '/workflows/{id}',
+      create: '/workflows',
+      update: '/workflows/{id}',
+      execute: '/workflows/{id}/execute'
+    }
+  }
 });
 ```
 
@@ -267,10 +266,10 @@ Runtime configuration means you build once and deploy to staging, production, or
 
 ## Documentation
 
-| Resource                                                     | Description              |
-| ------------------------------------------------------------ | ------------------------ |
-| [QUICK_START.md](https://docs.flowdrop.io/getting-started/installation/)                           | Get running in 5 minutes |
-| [API Documentation](https://api.flowdrop.io/v1/) | REST API specification   |
+| Resource                                                                                     | Description              |
+| -------------------------------------------------------------------------------------------- | ------------------------ |
+| [QUICK_START.md](https://docs.flowdrop.io/getting-started/installation/)                     | Get running in 5 minutes |
+| [API Documentation](https://api.flowdrop.io/v1/)                                             | REST API specification   |
 | [CHANGELOG.md](https://github.com/flowdrop-io/flowdrop/blob/main/libs/flowdrop/CHANGELOG.md) | Version history          |
 
 ## Development

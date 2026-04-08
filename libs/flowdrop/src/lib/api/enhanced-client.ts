@@ -13,19 +13,15 @@ import type {
   ApiResponse,
   NodesResponse,
   WorkflowResponse,
-  WorkflowsResponse,
-} from "../types/index.js";
-import type { EndpointConfig } from "../config/endpoints.js";
-import {
-  buildEndpointUrl,
-  getEndpointMethod,
-  getEndpointHeaders,
-} from "../config/endpoints.js";
-import type { AuthProvider } from "../types/auth.js";
-import { NoAuthProvider } from "../types/auth.js";
-import { getApiSettings } from "../stores/settingsStore.svelte.js";
-import { logger } from "../utils/logger.js";
-import { DEFAULT_API_TIMEOUT_MS } from "../config/constants.js";
+  WorkflowsResponse
+} from '../types/index.js';
+import type { EndpointConfig } from '../config/endpoints.js';
+import { buildEndpointUrl, getEndpointMethod, getEndpointHeaders } from '../config/endpoints.js';
+import type { AuthProvider } from '../types/auth.js';
+import { NoAuthProvider } from '../types/auth.js';
+import { getApiSettings } from '../stores/settingsStore.svelte.js';
+import { logger } from '../utils/logger.js';
+import { DEFAULT_API_TIMEOUT_MS } from '../config/constants.js';
 
 /**
  * API error with additional context
@@ -42,10 +38,10 @@ export class ApiError extends Error {
     message: string,
     status: number,
     operation: string,
-    errorData: Record<string, unknown> = {},
+    errorData: Record<string, unknown> = {}
   ) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
     this.status = status;
     this.operation = operation;
     this.errorData = errorData;
@@ -99,11 +95,10 @@ export class EnhancedFlowDropApiClient {
     endpointPath: string,
     params?: Record<string, string>,
     options: RequestInit = {},
-    operation: string = "API request",
+    operation: string = 'API request'
   ): Promise<T> {
     const url = buildEndpointUrl(this.config, endpointPath, params);
-    const method =
-      options.method ?? getEndpointMethod(this.config, endpointKey);
+    const method = options.method ?? getEndpointMethod(this.config, endpointKey);
     const configHeaders = getEndpointHeaders(this.config, endpointKey);
 
     // Get user settings for timeout and retry
@@ -116,27 +111,25 @@ export class EnhancedFlowDropApiClient {
     const headers: Record<string, string> = {
       ...configHeaders,
       ...authHeaders,
-      ...(options.headers as Record<string, string>),
+      ...(options.headers as Record<string, string>)
     };
 
     // Create AbortController for timeout
     const controller = new AbortController();
-    const timeoutMs =
-      userApiSettings.timeout ?? this.config.timeout ?? DEFAULT_API_TIMEOUT_MS;
+    const timeoutMs = userApiSettings.timeout ?? this.config.timeout ?? DEFAULT_API_TIMEOUT_MS;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const fetchConfig: RequestInit = {
       method,
       headers,
       signal: controller.signal,
-      ...options,
+      ...options
     };
 
     let lastError: Error | null = null;
 
     // Determine retry settings: user settings override config
-    const retryEnabled =
-      userApiSettings.retryEnabled ?? this.config.retry?.enabled ?? false;
+    const retryEnabled = userApiSettings.retryEnabled ?? this.config.retry?.enabled ?? false;
     const maxAttempts = retryEnabled
       ? (userApiSettings.retryAttempts ?? this.config.retry?.maxAttempts ?? 3)
       : 1;
@@ -158,12 +151,12 @@ export class EnhancedFlowDropApiClient {
               fetchConfig.headers = {
                 ...configHeaders,
                 ...newAuthHeaders,
-                ...(options.headers as Record<string, string>),
+                ...(options.headers as Record<string, string>)
               };
               continue; // Retry with new headers
             }
           }
-          throw new ApiError("Unauthorized", 401, operation, {});
+          throw new ApiError('Unauthorized', 401, operation, {});
         }
 
         // Handle 403 Forbidden
@@ -171,18 +164,17 @@ export class EnhancedFlowDropApiClient {
           if (this.authProvider.onForbidden) {
             await this.authProvider.onForbidden();
           }
-          throw new ApiError("Forbidden", 403, operation, {});
+          throw new ApiError('Forbidden', 403, operation, {});
         }
 
         // Handle other errors
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new ApiError(
-            errorData.error ??
-              `HTTP ${response.status}: ${response.statusText}`,
+            errorData.error ?? `HTTP ${response.status}: ${response.statusText}`,
             response.status,
             operation,
-            errorData,
+            errorData
           );
         }
 
@@ -193,20 +185,12 @@ export class EnhancedFlowDropApiClient {
         clearTimeout(timeoutId);
 
         // Handle abort (timeout)
-        if (error instanceof Error && error.name === "AbortError") {
-          lastError = new ApiError(
-            `Request timeout after ${timeoutMs}ms`,
-            0,
-            operation,
-            {
-              timeout: true,
-            },
-          );
+        if (error instanceof Error && error.name === 'AbortError') {
+          lastError = new ApiError(`Request timeout after ${timeoutMs}ms`, 0, operation, {
+            timeout: true
+          });
           // Don't retry on timeout - it's a client-side timeout
-          logger.error(
-            `API request timed out after ${timeoutMs}ms:`,
-            lastError,
-          );
+          logger.error(`API request timed out after ${timeoutMs}ms:`, lastError);
           throw lastError;
         }
 
@@ -223,17 +207,14 @@ export class EnhancedFlowDropApiClient {
             (lastError.status === 401 || lastError.status === 403)) ||
           attempt === maxAttempts
         ) {
-          logger.error(
-            `API request failed after ${attempt} attempts:`,
-            lastError,
-          );
+          logger.error(`API request failed after ${attempt} attempts:`, lastError);
           throw lastError;
         }
 
         // Wait before retry with exponential backoff
         const baseDelay = this.config.retry?.delay ?? 1000;
         const backoffDelay =
-          this.config.retry?.backoff === "exponential"
+          this.config.retry?.backoff === 'exponential'
             ? baseDelay * Math.pow(2, attempt - 1)
             : baseDelay;
 
@@ -275,15 +256,15 @@ export class EnhancedFlowDropApiClient {
    */
   async getAvailableNodes(): Promise<NodeMetadata[]> {
     const response = await this.request<NodesResponse>(
-      "nodes.list",
+      'nodes.list',
       this.config.endpoints.nodes.list,
       undefined,
       {},
-      "fetch available nodes",
+      'fetch available nodes'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to fetch available nodes");
+      throw new Error(response.error ?? 'Failed to fetch available nodes');
     }
 
     return response.data;
@@ -294,15 +275,15 @@ export class EnhancedFlowDropApiClient {
    */
   async getNodesByCategory(category: string): Promise<NodeMetadata[]> {
     const response = await this.request<NodesResponse>(
-      "nodes.byCategory",
+      'nodes.byCategory',
       this.config.endpoints.nodes.byCategory,
       { category },
       {},
-      "fetch nodes by category",
+      'fetch nodes by category'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to fetch nodes by category");
+      throw new Error(response.error ?? 'Failed to fetch nodes by category');
     }
 
     return response.data;
@@ -313,15 +294,15 @@ export class EnhancedFlowDropApiClient {
    */
   async getNodeMetadata(nodeId: string): Promise<NodeMetadata> {
     const response = await this.request<ApiResponse<NodeMetadata>>(
-      "nodes.metadata",
+      'nodes.metadata',
       this.config.endpoints.nodes.metadata,
       { id: nodeId },
       {},
-      "fetch node metadata",
+      'fetch node metadata'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to fetch node metadata");
+      throw new Error(response.error ?? 'Failed to fetch node metadata');
     }
 
     return response.data;
@@ -336,18 +317,18 @@ export class EnhancedFlowDropApiClient {
    */
   async saveWorkflow(workflow: Workflow): Promise<Workflow> {
     const response = await this.request<WorkflowResponse>(
-      "workflows.create",
+      'workflows.create',
       this.config.endpoints.workflows.create,
       undefined,
       {
-        method: "POST",
-        body: JSON.stringify(workflow),
+        method: 'POST',
+        body: JSON.stringify(workflow)
       },
-      "save workflow",
+      'save workflow'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to save workflow");
+      throw new Error(response.error ?? 'Failed to save workflow');
     }
 
     return response.data;
@@ -356,23 +337,20 @@ export class EnhancedFlowDropApiClient {
   /**
    * Update an existing workflow
    */
-  async updateWorkflow(
-    workflowId: string,
-    workflow: Partial<Workflow>,
-  ): Promise<Workflow> {
+  async updateWorkflow(workflowId: string, workflow: Partial<Workflow>): Promise<Workflow> {
     const response = await this.request<WorkflowResponse>(
-      "workflows.update",
+      'workflows.update',
       this.config.endpoints.workflows.update,
       { id: workflowId },
       {
-        method: "PUT",
-        body: JSON.stringify(workflow),
+        method: 'PUT',
+        body: JSON.stringify(workflow)
       },
-      "update workflow",
+      'update workflow'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to update workflow");
+      throw new Error(response.error ?? 'Failed to update workflow');
     }
 
     return response.data;
@@ -383,15 +361,15 @@ export class EnhancedFlowDropApiClient {
    */
   async loadWorkflow(workflowId: string): Promise<Workflow> {
     const response = await this.request<WorkflowResponse>(
-      "workflows.get",
+      'workflows.get',
       this.config.endpoints.workflows.get,
       { id: workflowId },
       {},
-      "load workflow",
+      'load workflow'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to load workflow");
+      throw new Error(response.error ?? 'Failed to load workflow');
     }
 
     return response.data;
@@ -402,15 +380,15 @@ export class EnhancedFlowDropApiClient {
    */
   async listWorkflows(): Promise<Workflow[]> {
     const response = await this.request<WorkflowsResponse>(
-      "workflows.list",
+      'workflows.list',
       this.config.endpoints.workflows.list,
       undefined,
       {},
-      "list workflows",
+      'list workflows'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to list workflows");
+      throw new Error(response.error ?? 'Failed to list workflows');
     }
 
     return response.data;
@@ -421,39 +399,35 @@ export class EnhancedFlowDropApiClient {
    */
   async deleteWorkflow(workflowId: string): Promise<void> {
     const response = await this.request<ApiResponse<void>>(
-      "workflows.delete",
+      'workflows.delete',
       this.config.endpoints.workflows.delete,
       { id: workflowId },
-      { method: "DELETE" },
-      "delete workflow",
+      { method: 'DELETE' },
+      'delete workflow'
     );
 
     if (!response.success) {
-      throw new Error(response.error ?? "Failed to delete workflow");
+      throw new Error(response.error ?? 'Failed to delete workflow');
     }
   }
 
   /**
    * Validate a workflow
    */
-  async validateWorkflow(
-    workflow: Workflow,
-  ): Promise<{ valid: boolean; errors: string[] }> {
-    const response = await this.request<
-      ApiResponse<{ valid: boolean; errors: string[] }>
-    >(
-      "workflows.validate",
+  async validateWorkflow(workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
+    const response = await this.request<ApiResponse<{ valid: boolean; errors: string[] }>>(
+      'workflows.validate',
       this.config.endpoints.workflows.validate,
       undefined,
       {
-        method: "POST",
-        body: JSON.stringify(workflow),
+        method: 'POST',
+        body: JSON.stringify(workflow)
       },
-      "validate workflow",
+      'validate workflow'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to validate workflow");
+      throw new Error(response.error ?? 'Failed to validate workflow');
     }
 
     return response.data;
@@ -464,15 +438,15 @@ export class EnhancedFlowDropApiClient {
    */
   async exportWorkflow(workflowId: string): Promise<string> {
     const response = await this.request<ApiResponse<string>>(
-      "workflows.export",
+      'workflows.export',
       this.config.endpoints.workflows.export,
       { id: workflowId },
       {},
-      "export workflow",
+      'export workflow'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to export workflow");
+      throw new Error(response.error ?? 'Failed to export workflow');
     }
 
     return response.data;
@@ -483,18 +457,18 @@ export class EnhancedFlowDropApiClient {
    */
   async importWorkflow(workflowJson: string): Promise<Workflow> {
     const response = await this.request<WorkflowResponse>(
-      "workflows.import",
+      'workflows.import',
       this.config.endpoints.workflows.import,
       undefined,
       {
-        method: "POST",
-        body: JSON.stringify({ workflow: workflowJson }),
+        method: 'POST',
+        body: JSON.stringify({ workflow: workflowJson })
       },
-      "import workflow",
+      'import workflow'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to import workflow");
+      throw new Error(response.error ?? 'Failed to import workflow');
     }
 
     return response.data;
@@ -509,21 +483,21 @@ export class EnhancedFlowDropApiClient {
    */
   async executeWorkflow(
     workflowId: string,
-    inputs?: Record<string, unknown>,
+    inputs?: Record<string, unknown>
   ): Promise<ExecutionResult> {
     const response = await this.request<ApiResponse<ExecutionResult>>(
-      "executions.execute",
+      'executions.execute',
       this.config.endpoints.executions.execute,
       { id: workflowId },
       {
-        method: "POST",
-        body: JSON.stringify({ inputs }),
+        method: 'POST',
+        body: JSON.stringify({ inputs })
       },
-      "execute workflow",
+      'execute workflow'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to execute workflow");
+      throw new Error(response.error ?? 'Failed to execute workflow');
     }
 
     return response.data;
@@ -534,15 +508,15 @@ export class EnhancedFlowDropApiClient {
    */
   async getExecutionStatus(executionId: string): Promise<ExecutionResult> {
     const response = await this.request<ApiResponse<ExecutionResult>>(
-      "executions.status",
+      'executions.status',
       this.config.endpoints.executions.status,
       { id: executionId },
       {},
-      "get execution status",
+      'get execution status'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to get execution status");
+      throw new Error(response.error ?? 'Failed to get execution status');
     }
 
     return response.data;
@@ -553,15 +527,15 @@ export class EnhancedFlowDropApiClient {
    */
   async cancelExecution(executionId: string): Promise<void> {
     const response = await this.request<ApiResponse<void>>(
-      "executions.cancel",
+      'executions.cancel',
       this.config.endpoints.executions.cancel,
       { id: executionId },
-      { method: "POST" },
-      "cancel execution",
+      { method: 'POST' },
+      'cancel execution'
     );
 
     if (!response.success) {
-      throw new Error(response.error ?? "Failed to cancel execution");
+      throw new Error(response.error ?? 'Failed to cancel execution');
     }
   }
 
@@ -570,15 +544,15 @@ export class EnhancedFlowDropApiClient {
    */
   async getExecutionLogs(executionId: string): Promise<string[]> {
     const response = await this.request<ApiResponse<string[]>>(
-      "executions.logs",
+      'executions.logs',
       this.config.endpoints.executions.logs,
       { id: executionId },
       {},
-      "get execution logs",
+      'get execution logs'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to get execution logs");
+      throw new Error(response.error ?? 'Failed to get execution logs');
     }
 
     return response.data;
@@ -593,15 +567,15 @@ export class EnhancedFlowDropApiClient {
    */
   async listTemplates(): Promise<Workflow[]> {
     const response = await this.request<WorkflowsResponse>(
-      "templates.list",
+      'templates.list',
       this.config.endpoints.templates.list,
       undefined,
       {},
-      "list templates",
+      'list templates'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to list templates");
+      throw new Error(response.error ?? 'Failed to list templates');
     }
 
     return response.data;
@@ -612,15 +586,15 @@ export class EnhancedFlowDropApiClient {
    */
   async getTemplate(templateId: string): Promise<Workflow> {
     const response = await this.request<WorkflowResponse>(
-      "templates.get",
+      'templates.get',
       this.config.endpoints.templates.get,
       { id: templateId },
       {},
-      "get template",
+      'get template'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to get template");
+      throw new Error(response.error ?? 'Failed to get template');
     }
 
     return response.data;
@@ -634,18 +608,16 @@ export class EnhancedFlowDropApiClient {
    * Get system health status
    */
   async getSystemHealth(): Promise<{ status: string; timestamp: number }> {
-    const response = await this.request<
-      ApiResponse<{ status: string; timestamp: number }>
-    >(
-      "system.health",
+    const response = await this.request<ApiResponse<{ status: string; timestamp: number }>>(
+      'system.health',
       this.config.endpoints.system.health,
       undefined,
       {},
-      "get system health",
+      'get system health'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to get system health");
+      throw new Error(response.error ?? 'Failed to get system health');
     }
 
     return response.data;
@@ -656,15 +628,15 @@ export class EnhancedFlowDropApiClient {
    */
   async getSystemConfig(): Promise<Record<string, unknown>> {
     const response = await this.request<ApiResponse<Record<string, unknown>>>(
-      "system.config",
+      'system.config',
       this.config.endpoints.system.config,
       undefined,
       {},
-      "get system config",
+      'get system config'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to get system config");
+      throw new Error(response.error ?? 'Failed to get system config');
     }
 
     return response.data;
@@ -674,18 +646,16 @@ export class EnhancedFlowDropApiClient {
    * Get system version information
    */
   async getSystemVersion(): Promise<{ version: string; build: string }> {
-    const response = await this.request<
-      ApiResponse<{ version: string; build: string }>
-    >(
-      "system.version",
+    const response = await this.request<ApiResponse<{ version: string; build: string }>>(
+      'system.version',
       this.config.endpoints.system.version,
       undefined,
       {},
-      "get system version",
+      'get system version'
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error ?? "Failed to get system version");
+      throw new Error(response.error ?? 'Failed to get system version');
     }
 
     return response.data;
@@ -712,11 +682,11 @@ export class EnhancedFlowDropApiClient {
     };
   }> {
     return this.request(
-      "pipelines.get",
+      'pipelines.get',
       this.config.endpoints.pipelines.get,
       { id: pipelineId },
       {},
-      "get pipeline data",
+      'get pipeline data'
     );
   }
 }

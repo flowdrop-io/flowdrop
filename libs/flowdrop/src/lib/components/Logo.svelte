@@ -19,10 +19,7 @@
         ry="20"
         id="rect15-5-0-8-9-7"
       />
-      <g
-        id="g6893-4-9-5-2"
-        transform="matrix(1.2053353,0,0,1.2053353,-1246.7763,-599.46548)"
-      >
+      <g id="g6893-4-9-5-2" transform="matrix(1.2053353,0,0,1.2053353,-1246.7763,-599.46548)">
         <path
           style="fill:var(--logo-line-fill);stroke:var(--logo-stroke);stroke-width:10;stroke-dasharray:none;stroke-opacity:1"
           d="M 849.61489,153.69711 850,298.31429 Z"
@@ -73,10 +70,7 @@
         />
       </g>
     </g>
-    <g
-      id="g6663-4"
-      transform="matrix(0.87890795,0,0,0.87890795,3770.6486,2734.4692)"
-    />
+    <g id="g6663-4" transform="matrix(0.87890795,0,0,0.87890795,3770.6486,2734.4692)" />
   </svg>
 </div>
 
@@ -91,7 +85,7 @@
     --logo-right: var(--fd-logo-right, #ffc423);
   }
 
-  :global([data-theme="dark"]) .flowdrop-logo {
+  :global([data-theme='dark']) .flowdrop-logo {
     --logo-bg: var(--fd-logo-bg, none);
     --logo-stroke: var(--fd-logo-stroke, #ffffff);
     --logo-line-fill: var(--fd-logo-line-fill, none);

@@ -8,7 +8,7 @@
  * @module chat/responseParser
  */
 
-import type { ExtractedCommands } from "../types/chat.js";
+import type { ExtractedCommands } from '../types/chat.js';
 
 /**
  * Extract DSL commands from an LLM response string.
@@ -24,7 +24,7 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
   const commands: string[] = [];
   const explanationParts: string[] = [];
 
-  const lines = llmResponse.split("\n");
+  const lines = llmResponse.split('\n');
   let inCodeBlock = false;
   let isFlowdropBlock = false;
   let currentExplanation: string[] = [];
@@ -41,7 +41,7 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
       // the block (e.g. `Use Python """docstrings"""` or JSON ending with """).
       if (trimmed === '"""') {
         multilineBuffer.push(line);
-        commands.push(multilineBuffer.join("\n"));
+        commands.push(multilineBuffer.join('\n'));
         multilineBuffer = null;
       } else {
         multilineBuffer.push(line); // preserve raw indentation inside value
@@ -50,15 +50,15 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
     }
 
     // Check for code block fence opening/closing
-    if (trimmed.startsWith("```")) {
+    if (trimmed.startsWith('```')) {
       if (!inCodeBlock) {
         // Opening fence
         inCodeBlock = true;
         const lang = trimmed.slice(3).trim().toLowerCase();
-        isFlowdropBlock = lang === "flowdrop";
+        isFlowdropBlock = lang === 'flowdrop';
         // Flush accumulated explanation text
         if (currentExplanation.length > 0) {
-          explanationParts.push(currentExplanation.join("\n"));
+          explanationParts.push(currentExplanation.join('\n'));
           currentExplanation = [];
         }
       } else {
@@ -71,7 +71,7 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
 
     if (inCodeBlock && isFlowdropBlock) {
       // Skip empty lines and comment lines inside code blocks
-      if (trimmed === "" || trimmed.startsWith("#") || trimmed.startsWith("//")) {
+      if (trimmed === '' || trimmed.startsWith('#') || trimmed.startsWith('//')) {
         continue;
       }
 
@@ -92,10 +92,10 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
 
   // Flush remaining explanation text
   if (currentExplanation.length > 0) {
-    explanationParts.push(currentExplanation.join("\n"));
+    explanationParts.push(currentExplanation.join('\n'));
   }
 
-  const explanation = explanationParts.join("\n").trim();
+  const explanation = explanationParts.join('\n').trim();
 
   return { explanation, commands };
 }

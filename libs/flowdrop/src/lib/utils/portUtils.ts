@@ -1,13 +1,10 @@
-import type { NodePort } from "$lib/types/index.js";
+import type { NodePort } from '$lib/types/index.js';
 
 /**
  * Sort ports by an ordered array of port IDs.
  * Ports not listed appear at the end in their original order.
  */
-export function applyPortOrder(
-  ports: NodePort[],
-  orderedIds: string[] | undefined,
-): NodePort[] {
+export function applyPortOrder(ports: NodePort[], orderedIds: string[] | undefined): NodePort[] {
   if (!orderedIds || orderedIds.length === 0) return ports;
   const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
   return [...ports].sort((a, b) => {
@@ -38,14 +35,13 @@ export function getPortTop(index: number, count: number): number {
  */
 export function isPortVisible(
   port: NodePort,
-  direction: "input" | "output",
+  direction: 'input' | 'output',
   hiddenPorts: { inputs?: string[]; outputs?: string[] },
   hideUnconnectedHandles: boolean,
   connectedHandles: Set<string>,
-  nodeId: string | undefined,
+  nodeId: string | undefined
 ): boolean {
-  const hiddenList =
-    direction === "input" ? hiddenPorts.inputs : hiddenPorts.outputs;
+  const hiddenList = direction === 'input' ? hiddenPorts.inputs : hiddenPorts.outputs;
   if (hiddenList?.includes(port.id)) return false;
   if (hideUnconnectedHandles) {
     return connectedHandles.has(`${nodeId}-${direction}-${port.id}`);

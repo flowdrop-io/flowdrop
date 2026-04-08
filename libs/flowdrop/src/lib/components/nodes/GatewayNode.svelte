@@ -9,25 +9,21 @@
 -->
 
 <script lang="ts">
-  import { Position, Handle } from "@xyflow/svelte";
-  import type { WorkflowNode, NodePort, Branch } from "../../types/index.js";
-  import Icon from "@iconify/svelte";
-  import { getNodeIcon } from "../../utils/icons.js";
+  import { Position, Handle } from '@xyflow/svelte';
+  import type { WorkflowNode, NodePort, Branch } from '../../types/index.js';
+  import Icon from '@iconify/svelte';
+  import { getNodeIcon } from '../../utils/icons.js';
   import {
     getDataTypeColorToken,
     getCategoryColorToken,
-    getPortBackgroundColor,
-  } from "../../utils/colors.js";
-  import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
+    getPortBackgroundColor
+  } from '../../utils/colors.js';
+  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
 
   interface Props {
-    data: WorkflowNode["data"] & {
+    data: WorkflowNode['data'] & {
       nodeId?: string;
-      onConfigOpen?: (node: {
-        id: string;
-        type: string;
-        data: WorkflowNode["data"];
-      }) => void;
+      onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
     selected?: boolean;
   }
@@ -39,9 +35,7 @@
    * Falls back to the original label if not set.
    * This allows users to customize the node title per-instance via config.
    */
-  const displayTitle = $derived(
-    (props.data.config?.instanceTitle as string) || props.data.label,
-  );
+  const displayTitle = $derived((props.data.config?.instanceTitle as string) || props.data.label);
 
   /**
    * Instance-specific description override from config.
@@ -49,8 +43,7 @@
    * This allows users to customize the node description per-instance via config.
    */
   const displayDescription = $derived(
-    (props.data.config?.instanceDescription as string) ||
-      props.data.metadata.description,
+    (props.data.config?.instanceDescription as string) || props.data.metadata.description
   );
 
   /**
@@ -60,7 +53,7 @@
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
       props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false,
+      false
   );
 
   /**
@@ -69,7 +62,7 @@
    * @param type - Whether this is an 'input' or 'output' port
    * @returns true if the port should be visible
    */
-  function isPortVisible(port: NodePort, type: "input" | "output"): boolean {
+  function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
     // Always show if hideUnconnectedHandles is disabled
     if (!hideUnconnectedHandles) {
       return true;
@@ -89,7 +82,7 @@
    * Derived list of visible input ports based on hideUnconnectedHandles setting
    */
   const visibleInputPorts = $derived(
-    props.data.metadata.inputs.filter((port) => isPortVisible(port, "input")),
+    props.data.metadata.inputs.filter((port) => isPortVisible(port, 'input'))
   );
 
   /**
@@ -111,15 +104,13 @@
   // Gateway-specific data - branches are calculated at runtime from config
   let branches = $derived((props.data.config?.branches as Branch[]) || []);
   let activeBranches = $derived(
-    (props.data.executionInfo?.output?.active_branches as string[]) || [],
+    (props.data.executionInfo?.output?.active_branches as string[]) || []
   );
 
   /**
    * Derived list of visible branches based on hideUnconnectedHandles setting
    */
-  const visibleBranches = $derived(
-    branches.filter((branch) => isBranchVisible(branch.name)),
-  );
+  const visibleBranches = $derived(branches.filter((branch) => isBranchVisible(branch.name)));
 
   /**
    * Handle node click - only handle selection, no config opening
@@ -134,9 +125,9 @@
   function handleNodeDoubleClick(): void {
     if (props.data.onConfigOpen) {
       props.data.onConfigOpen({
-        id: props.data.nodeId || "",
-        type: "gateway",
-        data: props.data,
+        id: props.data.nodeId || '',
+        type: 'gateway',
+        data: props.data
       });
     }
   }
@@ -145,7 +136,7 @@
    * Handle keyboard events for accessibility
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleNodeClick();
     }
@@ -177,23 +168,16 @@
       <!-- Node Icon with Squircle Background -->
       <div
         class="flowdrop-workflow-node__icon-wrapper"
-        style="--_icon-color: {getCategoryColorToken(
-          props.data.metadata.category,
-        )}"
+        style="--_icon-color: {getCategoryColorToken(props.data.metadata.category)}"
       >
         <Icon
-          icon={getNodeIcon(
-            props.data.metadata.icon,
-            props.data.metadata.category,
-          )}
+          icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)}
           class="flowdrop-workflow-node__icon"
         />
       </div>
 
       <!-- Node Title - uses instanceTitle override if set -->
-      <h3
-        class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1"
-      >
+      <h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
         {displayTitle}
       </h3>
     </div>
@@ -219,7 +203,7 @@
               id={`${props.data.nodeId}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
-                port.dataType,
+                port.dataType
               )}; --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
@@ -227,38 +211,28 @@
             />
 
             <!-- Port Info: padding lives here so handle position is simple -->
-            <div
-              class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0"
-            >
+            <div class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0">
               <div class="flowdrop-flex flowdrop-gap--2">
-                <span class="flowdrop-text--xs flowdrop-font--medium"
-                  >{port.name}</span
-                >
+                <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
                     port.dataType,
-                    15,
+                    15
                   )}; color: {getDataTypeColorToken(
-                    port.dataType,
-                  )}; border: 1px solid {getPortBackgroundColor(
-                    port.dataType,
-                    30,
-                  )};"
+                    port.dataType
+                  )}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
                 >
                   {port.dataType}
                 </span>
                 {#if port.required}
-                  <span
-                    class="flowdrop-badge flowdrop-badge--error flowdrop-badge--sm"
+                  <span class="flowdrop-badge flowdrop-badge--error flowdrop-badge--sm"
                     >Required</span
                   >
                 {/if}
               </div>
               {#if port.description}
-                <p
-                  class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate"
-                >
+                <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
                   {port.description}
                 </p>
               {/if}
@@ -298,13 +272,10 @@
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
                     'trigger',
-                    15,
+                    15
                   )}; color: {getDataTypeColorToken(
-                    'trigger',
-                  )}; border: 1px solid {getPortBackgroundColor(
-                    'trigger',
-                    30,
-                  )};"
+                    'trigger'
+                  )}; border: 1px solid {getPortBackgroundColor('trigger', 30)};"
                 >
                   trigger
                 </span>
@@ -316,11 +287,11 @@
               type="source"
               position={Position.Right}
               id={`${props.data.nodeId}-output-${branch.name}`}
-              class={`flowdrop-workflow-node__handle ${isActive ? "flowdrop-workflow-node__handle--active" : ""}`}
+              class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {isActive
                 ? getDataTypeColorToken('trigger')
                 : getDataTypeColorToken(
-                    'trigger',
+                    'trigger'
                   )}; --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
@@ -438,11 +409,7 @@
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 0.5rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }

@@ -8,12 +8,12 @@
 -->
 
 <script lang="ts">
-  import { useSvelteFlow, type InternalNode } from "@xyflow/svelte";
-  import type { WorkflowNode as WorkflowNodeType } from "../types/index.js";
+  import { useSvelteFlow, type InternalNode } from '@xyflow/svelte';
+  import type { WorkflowNode as WorkflowNodeType } from '../types/index.js';
   import {
     rebuildAllPortCoordinates,
-    updateNodePortCoordinates,
-  } from "../stores/portCoordinateStore.svelte.js";
+    updateNodePortCoordinates
+  } from '../stores/portCoordinateStore.svelte.js';
 
   interface Props {
     /** Node to update coordinates for (e.g., during drag). Set to null when not dragging. */
@@ -29,9 +29,7 @@
   const { getInternalNode } = useSvelteFlow();
 
   // Cast the getInternalNode function for our use
-  const getInternal = getInternalNode as (
-    id: string,
-  ) => InternalNode | undefined;
+  const getInternal = getInternalNode as (id: string) => InternalNode | undefined;
 
   /**
    * Rebuild all port coordinates when rebuildTrigger changes.

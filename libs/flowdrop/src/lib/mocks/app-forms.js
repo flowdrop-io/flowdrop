@@ -10,7 +10,7 @@ export const enhance = (form, options = {}) => {
     event.preventDefault();
     // Basic form handling for library context
     if (options.onResult) {
-      options.onResult({ type: "success" });
+      options.onResult({ type: 'success' });
     }
   };
 };

@@ -9,14 +9,14 @@ import type {
   WorkflowNode,
   WorkflowEdge,
   PortConfig,
-  PortDataTypeConfig,
-} from "../types/index.js";
+  PortDataTypeConfig
+} from '../types/index.js';
 
 /**
  * Loopback port name constant
  * This is the standard input port name used for loop iteration triggers
  */
-const LOOPBACK_PORT_NAME = "loop_back";
+const LOOPBACK_PORT_NAME = 'loop_back';
 
 /**
  * Determines if an edge is a loopback edge.
@@ -33,7 +33,7 @@ const LOOPBACK_PORT_NAME = "loop_back";
  * ```
  */
 export function isLoopbackEdge(edge: WorkflowEdge): boolean {
-  const targetHandle = edge.targetHandle ?? "";
+  const targetHandle = edge.targetHandle ?? '';
   return targetHandle.includes(`-input-${LOOPBACK_PORT_NAME}`);
 }
 
@@ -103,10 +103,7 @@ export class PortCompatibilityChecker {
   /**
    * Check if two data types are compatible for connection
    */
-  public areDataTypesCompatible(
-    outputType: NodeDataType,
-    inputType: NodeDataType,
-  ): boolean {
+  public areDataTypesCompatible(outputType: NodeDataType, inputType: NodeDataType): boolean {
     const compatibleTypes = this.compatibilityMap.get(outputType);
     return compatibleTypes ? compatibleTypes.has(inputType) : false;
   }
@@ -124,7 +121,7 @@ export class PortCompatibilityChecker {
    */
   public getDataTypeConfig(dataTypeId: string): PortDataTypeConfig | undefined {
     return this.portConfig.dataTypes.find(
-      (dt) => dt.id === dataTypeId || dt.aliases?.includes(dataTypeId),
+      (dt) => dt.id === dataTypeId || dt.aliases?.includes(dataTypeId)
     );
   }
 
@@ -152,7 +149,7 @@ export function initializePortCompatibility(portConfig: PortConfig): void {
 export function getPortCompatibilityChecker(): PortCompatibilityChecker {
   if (!globalCompatibilityChecker) {
     throw new Error(
-      "Port compatibility checker not initialized. Call initializePortCompatibility() first.",
+      'Port compatibility checker not initialized. Call initializePortCompatibility() first.'
     );
   }
   return globalCompatibilityChecker;
@@ -164,7 +161,7 @@ export function getPortCompatibilityChecker(): PortCompatibilityChecker {
 export function getPossibleConnections(
   sourceNode: WorkflowNode,
   targetNodes: WorkflowNode[],
-  nodeTypes: NodeMetadata[],
+  nodeTypes: NodeMetadata[]
 ): Array<{
   sourceNodeId: string;
   sourcePortId: string;
@@ -174,9 +171,7 @@ export function getPossibleConnections(
   targetPort: NodePort;
   compatible: boolean;
 }> {
-  const sourceMetadata = nodeTypes.find(
-    (nt) => nt.id === sourceNode.data.metadata.id,
-  );
+  const sourceMetadata = nodeTypes.find((nt) => nt.id === sourceNode.data.metadata.id);
   if (!sourceMetadata) return [];
 
   const possibleConnections: Array<{
@@ -199,9 +194,7 @@ export function getPossibleConnections(
   for (const targetNode of targetNodes) {
     if (targetNode.id === sourceNode.id) continue; // Skip self-connection
 
-    const targetMetadata = nodeTypes.find(
-      (nt) => nt.id === targetNode.data.metadata.id,
-    );
+    const targetMetadata = nodeTypes.find((nt) => nt.id === targetNode.data.metadata.id);
     if (!targetMetadata) continue;
 
     // Get all input ports from target node
@@ -210,10 +203,7 @@ export function getPossibleConnections(
     // Check each output-input combination
     for (const sourcePort of sourceOutputs) {
       for (const targetPort of targetInputs) {
-        const compatible = checker.areDataTypesCompatible(
-          sourcePort.dataType,
-          targetPort.dataType,
-        );
+        const compatible = checker.areDataTypesCompatible(sourcePort.dataType, targetPort.dataType);
 
         possibleConnections.push({
           sourceNodeId: sourceNode.id,
@@ -222,7 +212,7 @@ export function getPossibleConnections(
           targetNodeId: targetNode.id,
           targetPortId: targetPort.id,
           targetPort,
-          compatible,
+          compatible
         });
       }
     }
@@ -240,35 +230,31 @@ export function validateConnection(
   targetNodeId: string,
   targetPortId: string,
   nodes: WorkflowNode[],
-  nodeTypes: NodeMetadata[],
+  nodeTypes: NodeMetadata[]
 ): { valid: boolean; error?: string } {
   // Check if nodes exist
   const sourceNode = nodes.find((n) => n.id === sourceNodeId);
   const targetNode = nodes.find((n) => n.id === targetNodeId);
 
   if (!sourceNode) {
-    return { valid: false, error: "Source node not found" };
+    return { valid: false, error: 'Source node not found' };
   }
 
   if (!targetNode) {
-    return { valid: false, error: "Target node not found" };
+    return { valid: false, error: 'Target node not found' };
   }
 
   // Check for self-connection
   if (sourceNodeId === targetNodeId) {
-    return { valid: false, error: "Cannot connect node to itself" };
+    return { valid: false, error: 'Cannot connect node to itself' };
   }
 
   // Get node metadata
-  const sourceMetadata = nodeTypes.find(
-    (nt) => nt.id === sourceNode.data.metadata.id,
-  );
-  const targetMetadata = nodeTypes.find(
-    (nt) => nt.id === targetNode.data.metadata.id,
-  );
+  const sourceMetadata = nodeTypes.find((nt) => nt.id === sourceNode.data.metadata.id);
+  const targetMetadata = nodeTypes.find((nt) => nt.id === targetNode.data.metadata.id);
 
   if (!sourceMetadata || !targetMetadata) {
-    return { valid: false, error: "Node metadata not found" };
+    return { valid: false, error: 'Node metadata not found' };
   }
 
   // Find ports
@@ -276,21 +262,19 @@ export function validateConnection(
   const targetPort = targetMetadata.inputs.find((p) => p.id === targetPortId);
 
   if (!sourcePort) {
-    return { valid: false, error: "Source port not found" };
+    return { valid: false, error: 'Source port not found' };
   }
 
   if (!targetPort) {
-    return { valid: false, error: "Target port not found" };
+    return { valid: false, error: 'Target port not found' };
   }
 
   // Check data type compatibility using the global checker
   const checker = getPortCompatibilityChecker();
-  if (
-    !checker.areDataTypesCompatible(sourcePort.dataType, targetPort.dataType)
-  ) {
+  if (!checker.areDataTypesCompatible(sourcePort.dataType, targetPort.dataType)) {
     return {
       valid: false,
-      error: `Incompatible data types: ${sourcePort.dataType} cannot connect to ${targetPort.dataType}`,
+      error: `Incompatible data types: ${sourcePort.dataType} cannot connect to ${targetPort.dataType}`
     };
   }
 
@@ -303,13 +287,13 @@ export function validateConnection(
 export function getConnectionSuggestions(
   nodeId: string,
   nodes: WorkflowNode[],
-  nodeTypes: NodeMetadata[],
+  nodeTypes: NodeMetadata[]
 ): Array<{
   nodeId: string;
   nodeName: string;
   portId: string;
   portName: string;
-  portType: "input" | "output";
+  portType: 'input' | 'output';
   dataType: NodeDataType;
   compatible: boolean;
 }> {
@@ -324,7 +308,7 @@ export function getConnectionSuggestions(
     nodeName: string;
     portId: string;
     portName: string;
-    portType: "input" | "output";
+    portType: 'input' | 'output';
     dataType: NodeDataType;
     compatible: boolean;
   }> = [];
@@ -336,26 +320,21 @@ export function getConnectionSuggestions(
   const checker = getPortCompatibilityChecker();
 
   for (const otherNode of otherNodes) {
-    const otherMetadata = nodeTypes.find(
-      (nt) => nt.id === otherNode.data.metadata.id,
-    );
+    const otherMetadata = nodeTypes.find((nt) => nt.id === otherNode.data.metadata.id);
     if (!otherMetadata) continue;
 
     // Check outputs from other nodes to inputs of current node
     for (const output of otherMetadata.outputs) {
       for (const input of metadata.inputs) {
-        const compatible = checker.areDataTypesCompatible(
-          output.dataType,
-          input.dataType,
-        );
+        const compatible = checker.areDataTypesCompatible(output.dataType, input.dataType);
         suggestions.push({
           nodeId: otherNode.id,
           nodeName: otherNode.data.label,
           portId: output.id,
           portName: output.name,
-          portType: "output",
+          portType: 'output',
           dataType: output.dataType,
-          compatible,
+          compatible
         });
       }
     }
@@ -363,18 +342,15 @@ export function getConnectionSuggestions(
     // Check outputs from current node to inputs of other nodes
     for (const output of metadata.outputs) {
       for (const input of otherMetadata.inputs) {
-        const compatible = checker.areDataTypesCompatible(
-          output.dataType,
-          input.dataType,
-        );
+        const compatible = checker.areDataTypesCompatible(output.dataType, input.dataType);
         suggestions.push({
           nodeId: otherNode.id,
           nodeName: otherNode.data.label,
           portId: input.id,
           portName: input.name,
-          portType: "input",
+          portType: 'input',
           dataType: input.dataType,
-          compatible,
+          compatible
         });
       }
     }
@@ -392,10 +368,7 @@ export function getConnectionSuggestions(
  * @param edges - Array of workflow edges
  * @returns True if any cycle exists in the workflow
  */
-export function hasCycles(
-  nodes: WorkflowNode[],
-  edges: WorkflowEdge[],
-): boolean {
+export function hasCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): boolean {
   // Build adjacency map once (O(E)) so the DFS inner loop is O(1) per lookup
   // instead of scanning all edges on every recursive call (which was O(V*E)).
   const adjacencyMap = new Map<string, string[]>();
@@ -456,10 +429,7 @@ export function hasCycles(
  * const hasInvalid = hasInvalidCycles(nodes, edges);
  * ```
  */
-export function hasInvalidCycles(
-  nodes: WorkflowNode[],
-  edges: WorkflowEdge[],
-): boolean {
+export function hasInvalidCycles(nodes: WorkflowNode[], edges: WorkflowEdge[]): boolean {
   // Filter out loopback edges - these create valid cycles for loop iteration
   const nonLoopbackEdges = edges.filter((edge) => !isLoopbackEdge(edge));
 
@@ -517,10 +487,7 @@ export function hasInvalidCycles(
 /**
  * Get the execution order for a workflow (topological sort)
  */
-export function getExecutionOrder(
-  nodes: WorkflowNode[],
-  edges: WorkflowEdge[],
-): string[] {
+export function getExecutionOrder(nodes: WorkflowNode[], edges: WorkflowEdge[]): string[] {
   const inDegree = new Map<string, number>();
   const graph = new Map<string, string[]>();
 

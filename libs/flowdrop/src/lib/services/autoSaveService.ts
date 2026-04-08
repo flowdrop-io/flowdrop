@@ -7,12 +7,9 @@
  * @module services/autoSaveService
  */
 
-import {
-  getBehaviorSettings,
-  onSettingsChange,
-} from "../stores/settingsStore.svelte.js";
-import { isDirty } from "../stores/workflowStore.svelte.js";
-import { logger } from "../utils/logger.js";
+import { getBehaviorSettings, onSettingsChange } from '../stores/settingsStore.svelte.js';
+import { isDirty } from '../stores/workflowStore.svelte.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Auto-save configuration options
@@ -84,7 +81,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
     intervalId: null,
     isSaving: false,
     settingsUnsubscriber: null,
-    dirtyUnsubscriber: null,
+    dirtyUnsubscriber: null
   };
 
   /**
@@ -103,7 +100,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
       onSuccess?.();
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error("Auto-save failed:", err);
+      logger.error('Auto-save failed:', err);
       onError?.(err);
     } finally {
       state.isSaving = false;
@@ -132,7 +129,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
 
   // Listen for settings changes to react to auto-save toggle/interval changes
   state.settingsUnsubscriber = onSettingsChange((event) => {
-    if (event.category === "behavior") {
+    if (event.category === 'behavior') {
       updateAutoSaveInterval();
     }
   });
@@ -199,7 +196,7 @@ export class AutoSaveManager {
     }
 
     this.settingsUnsubscriber = onSettingsChange((event) => {
-      if (event.category === "behavior") {
+      if (event.category === 'behavior') {
         this.updateInterval();
       }
     });
@@ -280,7 +277,7 @@ export class AutoSaveManager {
       this.onSuccess?.();
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      logger.error("Auto-save failed:", err);
+      logger.error('Auto-save failed:', err);
       this.onError?.(err);
     } finally {
       this.isSaving = false;

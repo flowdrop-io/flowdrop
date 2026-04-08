@@ -5,13 +5,13 @@
 -->
 
 <script lang="ts">
-  import type { NodeExecutionStatus } from "../types/index.js";
-  import Icon from "@iconify/svelte";
-  import { getStatusColor, getStatusIcon } from "../utils/nodeStatus.js";
+  import type { NodeExecutionStatus } from '../types/index.js';
+  import Icon from '@iconify/svelte';
+  import { getStatusColor, getStatusIcon } from '../utils/nodeStatus.js';
 
   interface Props {
     status: NodeExecutionStatus;
-    size?: "sm" | "md" | "lg" | "xl";
+    size?: 'sm' | 'md' | 'lg' | 'xl';
     showBackground?: boolean;
     class?: string;
   }
@@ -21,28 +21,28 @@
   // Size configurations
   const sizeConfig = {
     sm: {
-      iconSize: "12px",
-      backgroundSize: "20px",
-      backgroundRadius: "0.25rem",
+      iconSize: '12px',
+      backgroundSize: '20px',
+      backgroundRadius: '0.25rem'
     },
     md: {
-      iconSize: "16px",
-      backgroundSize: "24px",
-      backgroundRadius: "0.375rem",
+      iconSize: '16px',
+      backgroundSize: '24px',
+      backgroundRadius: '0.375rem'
     },
     lg: {
-      iconSize: "24px",
-      backgroundSize: "48px",
-      backgroundRadius: "0.5rem",
+      iconSize: '24px',
+      backgroundSize: '48px',
+      backgroundRadius: '0.5rem'
     },
     xl: {
-      iconSize: "28px",
-      backgroundSize: "56px",
-      backgroundRadius: "0.75rem",
-    },
+      iconSize: '28px',
+      backgroundSize: '56px',
+      backgroundRadius: '0.75rem'
+    }
   };
 
-  const config = $derived(sizeConfig[props.size || "md"]);
+  const config = $derived(sizeConfig[props.size || 'md']);
   const statusColor = $derived(getStatusColor(props.status));
   const statusIcon = $derived(getStatusIcon(props.status));
 </script>
@@ -103,7 +103,7 @@
   }
 
   /* Animation for running status */
-  .status-icon--with-background[title="running"] {
+  .status-icon--with-background[title='running'] {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 

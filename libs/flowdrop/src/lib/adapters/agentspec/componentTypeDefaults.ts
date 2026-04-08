@@ -9,14 +9,14 @@
  * or custom node arrays passed to mountFlowDropApp().
  */
 
-import type { NodePort } from "../../types/index.js";
+import type { NodePort } from '../../types/index.js';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 /** Namespace prefix for Agent Spec node type IDs */
-export const AGENTSPEC_NAMESPACE = "agentspec";
+export const AGENTSPEC_NAMESPACE = 'agentspec';
 
 // ============================================================================
 // Standard ports (adapter infrastructure)
@@ -24,41 +24,41 @@ export const AGENTSPEC_NAMESPACE = "agentspec";
 
 /** Standard trigger input port — control flow into a node */
 export const TRIGGER_INPUT: NodePort = {
-  id: "trigger",
-  name: "Trigger",
-  type: "input",
-  dataType: "trigger",
+  id: 'trigger',
+  name: 'Trigger',
+  type: 'input',
+  dataType: 'trigger',
   required: false,
-  description: "Control flow input",
+  description: 'Control flow input'
 };
 
 /** Standard trigger output port — control flow out of a node */
 export const TRIGGER_OUTPUT: NodePort = {
-  id: "trigger",
-  name: "Trigger",
-  type: "output",
-  dataType: "trigger",
+  id: 'trigger',
+  name: 'Trigger',
+  type: 'output',
+  dataType: 'trigger',
   required: false,
-  description: "Control flow output",
+  description: 'Control flow output'
 };
 
 /** Tool input port for tool_node */
 const TOOL_INPUT: NodePort = {
-  id: "tool",
-  name: "Tool",
-  type: "input",
-  dataType: "tool",
+  id: 'tool',
+  name: 'Tool',
+  type: 'input',
+  dataType: 'tool',
   required: false,
-  description: "Tool connection",
+  description: 'Tool connection'
 };
 
 /** Tool output port for tool_node */
 const TOOL_OUTPUT: NodePort = {
-  id: "tool",
-  name: "Tool",
-  type: "output",
-  dataType: "tool",
-  description: "Tool passthrough",
+  id: 'tool',
+  name: 'Tool',
+  type: 'output',
+  dataType: 'tool',
+  description: 'Tool passthrough'
 };
 
 // ============================================================================
@@ -98,153 +98,144 @@ export interface ComponentTypeDefaults {
 
 const COMPONENT_TYPE_DEFAULTS = new Map<string, ComponentTypeDefaults>([
   [
-    "start_node",
+    'start_node',
     {
-      visualType: "terminal",
-      category: "triggers",
-      color: "#22c55e",
-      icon: "mdi:play-circle",
-      badge: "START",
-      defaultName: "Start",
-      defaultDescription:
-        "Flow entry point. Defines the initial inputs for the flow.",
+      visualType: 'terminal',
+      category: 'triggers',
+      color: '#22c55e',
+      icon: 'mdi:play-circle',
+      badge: 'START',
+      defaultName: 'Start',
+      defaultDescription: 'Flow entry point. Defines the initial inputs for the flow.',
       triggerInputs: [],
-      triggerOutputs: [TRIGGER_OUTPUT],
-    },
+      triggerOutputs: [TRIGGER_OUTPUT]
+    }
   ],
   [
-    "end_node",
+    'end_node',
     {
-      visualType: "terminal",
-      category: "outputs",
-      color: "#ef4444",
-      icon: "mdi:stop-circle",
-      badge: "END",
-      defaultName: "End",
-      defaultDescription:
-        "Flow exit point. Defines the final outputs of the flow.",
+      visualType: 'terminal',
+      category: 'outputs',
+      color: '#ef4444',
+      icon: 'mdi:stop-circle',
+      badge: 'END',
+      defaultName: 'End',
+      defaultDescription: 'Flow exit point. Defines the final outputs of the flow.',
       triggerInputs: [TRIGGER_INPUT],
-      triggerOutputs: [],
-    },
+      triggerOutputs: []
+    }
   ],
   [
-    "llm_node",
+    'llm_node',
     {
-      visualType: "default",
-      category: "ai",
-      color: "#8b5cf6",
-      icon: "mdi:brain",
-      badge: "LLM",
-      defaultName: "LLM",
-      defaultDescription:
-        "Generate text using a large language model with configurable prompts.",
+      visualType: 'default',
+      category: 'ai',
+      color: '#8b5cf6',
+      icon: 'mdi:brain',
+      badge: 'LLM',
+      defaultName: 'LLM',
+      defaultDescription: 'Generate text using a large language model with configurable prompts.',
       triggerInputs: [TRIGGER_INPUT],
-      triggerOutputs: [TRIGGER_OUTPUT],
-    },
+      triggerOutputs: [TRIGGER_OUTPUT]
+    }
   ],
   [
-    "branching_node",
+    'branching_node',
     {
-      visualType: "gateway",
-      category: "logic",
-      color: "#f59e0b",
-      icon: "mdi:source-branch",
-      badge: "BRANCH",
-      defaultName: "Branch",
-      defaultDescription:
-        "Route execution to different paths based on conditions.",
+      visualType: 'gateway',
+      category: 'logic',
+      color: '#f59e0b',
+      icon: 'mdi:source-branch',
+      badge: 'BRANCH',
+      defaultName: 'Branch',
+      defaultDescription: 'Route execution to different paths based on conditions.',
       triggerInputs: [TRIGGER_INPUT],
-      triggerOutputs: [],
-    },
+      triggerOutputs: []
+    }
   ],
   [
-    "tool_node",
+    'tool_node',
     {
-      visualType: "tool",
-      category: "tools",
-      color: "#06b6d4",
-      icon: "mdi:wrench",
-      badge: "TOOL",
-      defaultName: "Tool",
-      defaultDescription:
-        "Execute a tool function with inputs and receive outputs.",
+      visualType: 'tool',
+      category: 'tools',
+      color: '#06b6d4',
+      icon: 'mdi:wrench',
+      badge: 'TOOL',
+      defaultName: 'Tool',
+      defaultDescription: 'Execute a tool function with inputs and receive outputs.',
       triggerInputs: [TRIGGER_INPUT, TOOL_INPUT],
-      triggerOutputs: [TRIGGER_OUTPUT, TOOL_OUTPUT],
-    },
+      triggerOutputs: [TRIGGER_OUTPUT, TOOL_OUTPUT]
+    }
   ],
   [
-    "api_node",
+    'api_node',
     {
-      visualType: "default",
-      category: "data",
-      color: "#3b82f6",
-      icon: "mdi:api",
-      badge: "API",
-      defaultName: "API Call",
-      defaultDescription:
-        "Make an HTTP API call with configurable endpoint, method, and headers.",
+      visualType: 'default',
+      category: 'data',
+      color: '#3b82f6',
+      icon: 'mdi:api',
+      badge: 'API',
+      defaultName: 'API Call',
+      defaultDescription: 'Make an HTTP API call with configurable endpoint, method, and headers.',
       triggerInputs: [TRIGGER_INPUT],
-      triggerOutputs: [TRIGGER_OUTPUT],
-    },
+      triggerOutputs: [TRIGGER_OUTPUT]
+    }
   ],
   [
-    "agent_node",
+    'agent_node',
     {
-      visualType: "default",
-      category: "agents",
-      color: "#ec4899",
-      icon: "mdi:robot",
-      badge: "AGENT",
-      defaultName: "Agent",
-      defaultDescription:
-        "Run a multi-round agent conversation within the flow.",
+      visualType: 'default',
+      category: 'agents',
+      color: '#ec4899',
+      icon: 'mdi:robot',
+      badge: 'AGENT',
+      defaultName: 'Agent',
+      defaultDescription: 'Run a multi-round agent conversation within the flow.',
       triggerInputs: [TRIGGER_INPUT],
-      triggerOutputs: [TRIGGER_OUTPUT],
-    },
+      triggerOutputs: [TRIGGER_OUTPUT]
+    }
   ],
   [
-    "flow_node",
+    'flow_node',
     {
-      visualType: "simple",
-      category: "processing",
-      color: "#14b8a6",
-      icon: "mdi:sitemap",
-      badge: "FLOW",
-      defaultName: "Sub-Flow",
-      defaultDescription:
-        "Execute another flow as a sub-routine within this flow.",
+      visualType: 'simple',
+      category: 'processing',
+      color: '#14b8a6',
+      icon: 'mdi:sitemap',
+      badge: 'FLOW',
+      defaultName: 'Sub-Flow',
+      defaultDescription: 'Execute another flow as a sub-routine within this flow.',
       triggerInputs: [TRIGGER_INPUT],
-      triggerOutputs: [TRIGGER_OUTPUT],
-    },
+      triggerOutputs: [TRIGGER_OUTPUT]
+    }
   ],
   [
-    "map_node",
+    'map_node',
     {
-      visualType: "default",
-      category: "processing",
-      color: "#f97316",
-      icon: "mdi:map-marker-path",
-      badge: "MAP",
-      defaultName: "Map",
-      defaultDescription:
-        "Apply a flow or operation to each item in a collection (map-reduce).",
+      visualType: 'default',
+      category: 'processing',
+      color: '#f97316',
+      icon: 'mdi:map-marker-path',
+      badge: 'MAP',
+      defaultName: 'Map',
+      defaultDescription: 'Apply a flow or operation to each item in a collection (map-reduce).',
       triggerInputs: [TRIGGER_INPUT],
-      triggerOutputs: [TRIGGER_OUTPUT],
-    },
-  ],
+      triggerOutputs: [TRIGGER_OUTPUT]
+    }
+  ]
 ]);
 
 /** Fallback defaults for unrecognized component types */
 const UNKNOWN_DEFAULTS: ComponentTypeDefaults = {
-  visualType: "default",
-  category: "processing",
-  color: "#6b7280",
-  icon: "mdi:puzzle",
-  badge: "",
-  defaultName: "Unknown",
-  defaultDescription: "Agent Spec node",
+  visualType: 'default',
+  category: 'processing',
+  color: '#6b7280',
+  icon: 'mdi:puzzle',
+  badge: '',
+  defaultName: 'Unknown',
+  defaultDescription: 'Agent Spec node',
   triggerInputs: [TRIGGER_INPUT],
-  triggerOutputs: [TRIGGER_OUTPUT],
+  triggerOutputs: [TRIGGER_OUTPUT]
 };
 
 // ============================================================================
@@ -258,9 +249,7 @@ const UNKNOWN_DEFAULTS: ComponentTypeDefaults = {
  * @param componentType - The Agent Spec component_type value
  * @returns ComponentTypeDefaults for the type, or fallback for unknown types
  */
-export function getComponentTypeDefaults(
-  componentType: string,
-): ComponentTypeDefaults {
+export function getComponentTypeDefaults(componentType: string): ComponentTypeDefaults {
   return COMPONENT_TYPE_DEFAULTS.get(componentType) ?? UNKNOWN_DEFAULTS;
 }
 

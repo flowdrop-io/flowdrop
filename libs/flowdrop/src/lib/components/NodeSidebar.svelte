@@ -5,18 +5,14 @@
 -->
 
 <script lang="ts">
-  import type {
-    NodeMetadata,
-    NodeCategory,
-    WorkflowFormat,
-  } from "../types/index.js";
-  import LoadingSpinner from "./LoadingSpinner.svelte";
-  import Icon from "@iconify/svelte";
-  import { getNodeIcon, getCategoryIcon } from "../utils/icons.js";
-  import { getCategoryColorToken } from "../utils/colors.js";
-  import { getCategoryLabel } from "../stores/categoriesStore.svelte.js";
-  import { getUiSettings } from "../stores/settingsStore.svelte.js";
-  import { extractConfigDefaults } from "../utils/nodeIds.js";
+  import type { NodeMetadata, NodeCategory, WorkflowFormat } from '../types/index.js';
+  import LoadingSpinner from './LoadingSpinner.svelte';
+  import Icon from '@iconify/svelte';
+  import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
+  import { getCategoryColorToken } from '../utils/colors.js';
+  import { getCategoryLabel } from '../stores/categoriesStore.svelte.js';
+  import { getUiSettings } from '../stores/settingsStore.svelte.js';
+  import { extractConfigDefaults } from '../utils/nodeIds.js';
 
   interface Props {
     nodes: NodeMetadata[];
@@ -29,9 +25,9 @@
   }
 
   let props: Props = $props();
-  let searchInput = $state("");
+  let searchInput = $state('');
   // svelte-ignore state_referenced_locally — initial default, user selects interactively
-  let selectedCategory = $state(props.selectedCategory || "all");
+  let selectedCategory = $state(props.selectedCategory || 'all');
 
   /**
    * Check if a node is compatible with the active workflow format.
@@ -47,9 +43,7 @@
   let isCollapsed = $derived(getUiSettings().sidebarCollapsed);
 
   /** Nodes filtered by format compatibility */
-  let formatCompatibleNodes = $derived(
-    (props.nodes || []).filter(isNodeCompatibleWithFormat),
-  );
+  let formatCompatibleNodes = $derived((props.nodes || []).filter(isNodeCompatibleWithFormat));
 
   let filteredNodes = $derived(getFilteredNodes());
   let categories = $derived(getCategories());
@@ -59,7 +53,10 @@
     const map = new Map<string, NodeMetadata[]>();
     for (const node of filteredNodes) {
       let list = map.get(node.category);
-      if (!list) { list = []; map.set(node.category, list); }
+      if (!list) {
+        list = [];
+        map.set(node.category, list);
+      }
       list.push(node);
     }
     return map;
@@ -92,7 +89,7 @@
     let filtered = formatCompatibleNodes;
 
     // Filter by category
-    if (selectedCategory !== "all") {
+    if (selectedCategory !== 'all') {
       filtered = filtered.filter((node) => node.category === selectedCategory);
     }
 
@@ -103,7 +100,7 @@
         (node) =>
           node.name.toLowerCase().includes(query) ||
           node.description.toLowerCase().includes(query) ||
-          node.tags?.some((tag) => tag.toLowerCase().includes(query)),
+          node.tags?.some((tag) => tag.toLowerCase().includes(query))
       );
     }
 
@@ -119,30 +116,26 @@
 
     // Create a new node instance from the node type
     const newNodeData = {
-      type: "node",
+      type: 'node',
       nodeType: nodeType.id,
       nodeData: {
         label: nodeType.name,
         config: extractConfigDefaults(nodeType.configSchema),
-        metadata: nodeType,
-      },
+        metadata: nodeType
+      }
     };
 
     const jsonData = JSON.stringify(newNodeData);
 
     // Set the data that SvelteFlow will receive
-    event.dataTransfer.setData("application/json", jsonData);
-    event.dataTransfer.setData("text/plain", nodeType.name);
-    event.dataTransfer.effectAllowed = "copy";
+    event.dataTransfer.setData('application/json', jsonData);
+    event.dataTransfer.setData('text/plain', nodeType.name);
+    event.dataTransfer.effectAllowed = 'copy';
 
     // Set drag image
     if (event.target) {
       const rect = (event.target as HTMLElement).getBoundingClientRect();
-      event.dataTransfer.setDragImage(
-        event.target as HTMLElement,
-        rect.width / 2,
-        rect.height / 2,
-      );
+      event.dataTransfer.setDragImage(event.target as HTMLElement, rect.width / 2, rect.height / 2);
     }
   }
 
@@ -167,7 +160,6 @@
   function getCategoryDisplayName(category: NodeCategory): string {
     return getCategoryLabel(category);
   }
-
 </script>
 
 <!-- Components Sidebar -->
@@ -190,10 +182,7 @@
           oninput={handleSearchChange}
         />
       </div>
-      <button
-        class="flowdrop-btn flowdrop-join__item"
-        aria-label="Search components"
-      >
+      <button class="flowdrop-btn flowdrop-join__item" aria-label="Search components">
         <Icon icon="mdi:magnify" class="flowdrop-icon" />
       </button>
     </div>
@@ -230,9 +219,7 @@
               </svg>
             </div>
             <h3 class="flowdrop-hero__title">No node types available</h3>
-            <p class="flowdrop-hero__description">
-              Node type definitions will appear here
-            </p>
+            <p class="flowdrop-hero__description">Node type definitions will appear here</p>
           {/if}
         </div>
       </div>
@@ -262,9 +249,7 @@
                 </svg>
               </div>
               <h3 class="flowdrop-hero__title">No components found</h3>
-              <p class="flowdrop-hero__description">
-                Try adjusting your search
-              </p>
+              <p class="flowdrop-hero__description">Try adjusting your search</p>
               {#if props.loading}
                 <div class="flowdrop-mb--4">
                   <LoadingSpinner size="sm" text="Loading components..." />
@@ -283,19 +268,13 @@
                 tabindex="0"
               >
                 <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
-                  <div
-                    class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
-                  >
+                  <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
                     <!-- Node Type Icon with Squircle Background -->
                     <span
                       class="flowdrop-node-icon"
-                      style="--_icon-color: {getCategoryColorToken(
-                        nodeType.category,
-                      )}"
+                      style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
                     >
-                      <Icon
-                        icon={getNodeIcon(nodeType.icon, nodeType.category)}
-                      />
+                      <Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
                     </span>
 
                     <!-- Node Type Info - Icon and Title only -->
@@ -339,7 +318,7 @@
                       role="button"
                       tabindex="0"
                       onkeydown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                        if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           handleNodeClick(nodeType);
                         }
@@ -347,9 +326,7 @@
                     >
                       <span
                         class="fd-sidebar-flat-dot"
-                        style="background: {getCategoryColorToken(
-                          nodeType.category,
-                        )}"
+                        style="background: {getCategoryColorToken(nodeType.category)}"
                       ></span>
                       <span class="fd-sidebar-flat-name">{nodeType.name}</span>
                     </div>
@@ -362,9 +339,7 @@
                 open={props.categoriesDefaultOpen || undefined}
               >
                 <summary class="flowdrop-details__summary">
-                  <div
-                    class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
-                  >
+                  <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
                     <span
                       class="flowdrop-node-icon"
                       style="--_icon-color: {getCategoryColorToken(category)}"
@@ -388,31 +363,20 @@
                         role="button"
                         tabindex="0"
                         onkeydown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
+                          if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             handleNodeClick(nodeType);
                           }
                         }}
                       >
-                        <div
-                          class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1"
-                        >
-                          <div
-                            class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"
-                          >
+                        <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
+                          <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
                             <!-- Node Type Icon with Squircle Background -->
                             <span
                               class="flowdrop-node-icon"
-                              style="--_icon-color: {getCategoryColorToken(
-                                nodeType.category,
-                              )}"
+                              style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
                             >
-                              <Icon
-                                icon={getNodeIcon(
-                                  nodeType.icon,
-                                  nodeType.category,
-                                )}
-                              />
+                              <Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
                             </span>
 
                             <!-- Node Type Info - Icon and Title only -->
@@ -445,16 +409,12 @@
     <div class="flowdrop-flex flowdrop-gap--4">
       <div class="flowdrop-flex flowdrop-gap--4">
         {#if props.loading && props.nodes?.length === 0}
-          <span class="flowdrop-text--xs flowdrop-text--gray"
-            >Loading components...</span
-          >
+          <span class="flowdrop-text--xs flowdrop-text--gray">Loading components...</span>
         {:else}
           <span class="flowdrop-text--xs flowdrop-text--gray"
             >Total: {props.nodes?.length || 0} components</span
           >
-          <span class="flowdrop-text--xs flowdrop-text--gray"
-            >Showing: {filteredNodes.length}</span
-          >
+          <span class="flowdrop-text--xs flowdrop-text--gray">Showing: {filteredNodes.length}</span>
         {/if}
       </div>
     </div>
@@ -464,9 +424,7 @@
 <style>
   /* Components Sidebar - Always Visible */
   .flowdrop-sidebar {
-    height: calc(
-      100vh - var(--fd-navbar-height)
-    ); /* Account for navbar height */
+    height: calc(100vh - var(--fd-navbar-height)); /* Account for navbar height */
     background-color: var(--fd-background);
     border-right: 1px solid var(--fd-border);
     display: flex;
@@ -597,11 +555,7 @@
     width: 2rem;
     height: 2rem;
     border-radius: 0.5rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     color: var(--fd-node-icon);
     font-size: var(--fd-text-sm);
     display: flex;

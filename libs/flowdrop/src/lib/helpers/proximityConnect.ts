@@ -12,11 +12,11 @@ import type {
   NodePort,
   DynamicPort,
   PortCoordinate,
-  PortCoordinateMap,
-} from "../types/index.js";
-import { dynamicPortToNodePort } from "../types/index.js";
-import { getPortCompatibilityChecker } from "../utils/connections.js";
-import { v4 as uuidv4 } from "uuid";
+  PortCoordinateMap
+} from '../types/index.js';
+import { dynamicPortToNodePort } from '../types/index.js';
+import { getPortCompatibilityChecker } from '../utils/connections.js';
+import { v4 as uuidv4 } from 'uuid';
 
 /** A candidate proximity edge before it is finalized */
 export interface ProximityEdgeCandidate {
@@ -30,45 +30,36 @@ export interface ProximityEdgeCandidate {
 }
 
 /** CSS class applied to proximity preview edges */
-const PROXIMITY_EDGE_CLASS = "flowdrop--edge--proximity-preview";
+const PROXIMITY_EDGE_CLASS = 'flowdrop--edge--proximity-preview';
 
 export class ProximityConnectHelper {
   /**
    * Get ALL ports (static + dynamic + gateway branches) for a node.
    */
-  static getAllPorts(
-    node: WorkflowNodeType,
-    direction: "input" | "output",
-  ): NodePort[] {
+  static getAllPorts(node: WorkflowNodeType, direction: 'input' | 'output'): NodePort[] {
     // Static ports from metadata
     const staticPorts: NodePort[] =
-      direction === "output"
+      direction === 'output'
         ? (node.data?.metadata?.outputs ?? [])
         : (node.data?.metadata?.inputs ?? []);
 
     // Dynamic ports from config
-    const dynamicKey =
-      direction === "output" ? "dynamicOutputs" : "dynamicInputs";
-    const rawDynamic =
-      (node.data?.config?.[dynamicKey] as DynamicPort[] | undefined) ?? [];
-    const dynamicPorts: NodePort[] = rawDynamic.map((p) =>
-      dynamicPortToNodePort(p, direction),
-    );
+    const dynamicKey = direction === 'output' ? 'dynamicOutputs' : 'dynamicInputs';
+    const rawDynamic = (node.data?.config?.[dynamicKey] as DynamicPort[] | undefined) ?? [];
+    const dynamicPorts: NodePort[] = rawDynamic.map((p) => dynamicPortToNodePort(p, direction));
 
     // Gateway branches (output only, dataType = 'trigger')
-    if (direction === "output") {
-      const branches = node.data?.config?.branches as
-        | Array<{ name: string }>
-        | undefined;
+    if (direction === 'output') {
+      const branches = node.data?.config?.branches as Array<{ name: string }> | undefined;
       const nodeType = node.data?.metadata?.type || node.type;
-      if (nodeType === "gateway" && branches?.length) {
+      if (nodeType === 'gateway' && branches?.length) {
         const branchPorts: NodePort[] = branches
           .filter((b) => !staticPorts.some((sp) => sp.id === b.name))
           .map((b) => ({
             id: b.name,
             name: b.name,
-            type: "output" as const,
-            dataType: "trigger",
+            type: 'output' as const,
+            dataType: 'trigger'
           }));
         return [...staticPorts, ...dynamicPorts, ...branchPorts];
       }
@@ -80,11 +71,7 @@ export class ProximityConnectHelper {
   /**
    * Build handle ID in the standard format.
    */
-  static buildHandleId(
-    nodeId: string,
-    direction: "input" | "output",
-    portId: string,
-  ): string {
+  static buildHandleId(nodeId: string, direction: 'input' | 'output', portId: string): string {
     return `${nodeId}-${direction}-${portId}`;
   }
 
@@ -99,7 +86,7 @@ export class ProximityConnectHelper {
     nodeB: {
       position: { x: number; y: number };
       measured?: { width?: number; height?: number };
-    },
+    }
   ): number {
     const aCenterX = nodeA.position.x + (nodeA.measured?.width ?? 0) / 2;
     const aCenterY = nodeA.position.y + (nodeA.measured?.height ?? 0) / 2;
@@ -127,15 +114,13 @@ export class ProximityConnectHelper {
     draggedNode: WorkflowNodeType,
     allNodes: WorkflowNodeType[],
     existingEdges: WorkflowEdge[],
-    minDistance: number,
+    minDistance: number
   ): ProximityEdgeCandidate[] {
     const checker = getPortCompatibilityChecker();
 
     // Build lookup set for O(1) duplicate checks
     const existingEdgeSet = new Set(
-      existingEdges.map(
-        (e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`,
-      ),
+      existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)
     );
 
     // Find the closest node within distance
@@ -153,10 +138,10 @@ export class ProximityConnectHelper {
 
     if (!closestNode) return [];
 
-    const draggedOutputs = this.getAllPorts(draggedNode, "output");
-    const draggedInputs = this.getAllPorts(draggedNode, "input");
-    const nearbyInputs = this.getAllPorts(closestNode, "input");
-    const nearbyOutputs = this.getAllPorts(closestNode, "output");
+    const draggedOutputs = this.getAllPorts(draggedNode, 'output');
+    const draggedInputs = this.getAllPorts(draggedNode, 'input');
+    const nearbyInputs = this.getAllPorts(closestNode, 'input');
+    const nearbyOutputs = this.getAllPorts(closestNode, 'output');
 
     // Collect all compatible pairs, then pick the best one
     let exactMatch: ProximityEdgeCandidate | null = null;
@@ -165,19 +150,10 @@ export class ProximityConnectHelper {
     // Direction A: dragged (source) -> nearby (target)
     for (const outPort of draggedOutputs) {
       for (const inPort of nearbyInputs) {
-        if (!checker.areDataTypesCompatible(outPort.dataType, inPort.dataType))
-          continue;
+        if (!checker.areDataTypesCompatible(outPort.dataType, inPort.dataType)) continue;
 
-        const sourceHandle = this.buildHandleId(
-          draggedNode.id,
-          "output",
-          outPort.id,
-        );
-        const targetHandle = this.buildHandleId(
-          closestNode.id,
-          "input",
-          inPort.id,
-        );
+        const sourceHandle = this.buildHandleId(draggedNode.id, 'output', outPort.id);
+        const targetHandle = this.buildHandleId(closestNode.id, 'input', inPort.id);
         const edgeKey = `${draggedNode.id}:${sourceHandle}->${closestNode.id}:${targetHandle}`;
         if (existingEdgeSet.has(edgeKey)) continue;
 
@@ -188,7 +164,7 @@ export class ProximityConnectHelper {
           sourceHandle,
           targetHandle,
           sourcePortDataType: outPort.dataType,
-          targetPortDataType: inPort.dataType,
+          targetPortDataType: inPort.dataType
         };
 
         if (outPort.dataType === inPort.dataType) {
@@ -207,21 +183,10 @@ export class ProximityConnectHelper {
     if (!exactMatch) {
       for (const outPort of nearbyOutputs) {
         for (const inPort of draggedInputs) {
-          if (
-            !checker.areDataTypesCompatible(outPort.dataType, inPort.dataType)
-          )
-            continue;
+          if (!checker.areDataTypesCompatible(outPort.dataType, inPort.dataType)) continue;
 
-          const sourceHandle = this.buildHandleId(
-            closestNode.id,
-            "output",
-            outPort.id,
-          );
-          const targetHandle = this.buildHandleId(
-            draggedNode.id,
-            "input",
-            inPort.id,
-          );
+          const sourceHandle = this.buildHandleId(closestNode.id, 'output', outPort.id);
+          const targetHandle = this.buildHandleId(draggedNode.id, 'input', inPort.id);
           const edgeKey = `${closestNode.id}:${sourceHandle}->${draggedNode.id}:${targetHandle}`;
           if (existingEdgeSet.has(edgeKey)) continue;
 
@@ -232,7 +197,7 @@ export class ProximityConnectHelper {
             sourceHandle,
             targetHandle,
             sourcePortDataType: outPort.dataType,
-            targetPortDataType: inPort.dataType,
+            targetPortDataType: inPort.dataType
           };
 
           if (outPort.dataType === inPort.dataType) {
@@ -270,15 +235,13 @@ export class ProximityConnectHelper {
     draggedNodeId: string,
     portCoordinates: PortCoordinateMap,
     existingEdges: WorkflowEdge[],
-    maxDistance: number,
+    maxDistance: number
   ): ProximityEdgeCandidate[] {
     const checker = getPortCompatibilityChecker();
 
     // Build lookup set for O(1) duplicate checks
     const existingEdgeSet = new Set(
-      existingEdges.map(
-        (e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`,
-      ),
+      existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)
     );
 
     // Partition ports by owner and direction, group other-node ports by dataType
@@ -289,11 +252,10 @@ export class ProximityConnectHelper {
 
     for (const coord of portCoordinates.values()) {
       if (coord.nodeId === draggedNodeId) {
-        if (coord.direction === "output") draggedOutputs.push(coord);
+        if (coord.direction === 'output') draggedOutputs.push(coord);
         else draggedInputs.push(coord);
       } else {
-        const groupMap =
-          coord.direction === "input" ? otherInputsByType : otherOutputsByType;
+        const groupMap = coord.direction === 'input' ? otherInputsByType : otherOutputsByType;
         let group = groupMap.get(coord.dataType);
         if (!group) {
           group = [];
@@ -307,10 +269,7 @@ export class ProximityConnectHelper {
     let bestDistance = Infinity;
     let bestIsExact = false;
 
-    const evaluatePair = (
-      sourceCoord: PortCoordinate,
-      targetCoord: PortCoordinate,
-    ) => {
+    const evaluatePair = (sourceCoord: PortCoordinate, targetCoord: PortCoordinate) => {
       // Check for existing edge
       const edgeKey = `${sourceCoord.nodeId}:${sourceCoord.handleId}->${targetCoord.nodeId}:${targetCoord.handleId}`;
       if (existingEdgeSet.has(edgeKey)) return;
@@ -325,10 +284,7 @@ export class ProximityConnectHelper {
       const isExact = sourceCoord.dataType === targetCoord.dataType;
 
       // Prefer exact match, then closest distance
-      if (
-        (isExact && !bestIsExact) ||
-        (isExact === bestIsExact && dist < bestDistance)
-      ) {
+      if ((isExact && !bestIsExact) || (isExact === bestIsExact && dist < bestDistance)) {
         bestCandidate = {
           id: `proximity-${uuidv4()}`,
           source: sourceCoord.nodeId,
@@ -336,7 +292,7 @@ export class ProximityConnectHelper {
           sourceHandle: sourceCoord.handleId,
           targetHandle: targetCoord.handleId,
           sourcePortDataType: sourceCoord.dataType,
-          targetPortDataType: targetCoord.dataType,
+          targetPortDataType: targetCoord.dataType
         };
         bestDistance = dist;
         bestIsExact = isExact;
@@ -366,8 +322,7 @@ export class ProximityConnectHelper {
     // Direction B: other outputs → dragged inputs (only compatible types)
     for (const tgtPort of draggedInputs) {
       for (const [srcType, sources] of otherOutputsByType) {
-        if (!checker.areDataTypesCompatible(srcType, tgtPort.dataType))
-          continue;
+        if (!checker.areDataTypesCompatible(srcType, tgtPort.dataType)) continue;
         for (const srcPort of sources) {
           evaluatePair(srcPort, tgtPort);
         }
@@ -380,9 +335,7 @@ export class ProximityConnectHelper {
   /**
    * Convert candidates to temporary (preview) WorkflowEdge objects with dashed styling.
    */
-  static createPreviewEdges(
-    candidates: ProximityEdgeCandidate[],
-  ): WorkflowEdge[] {
+  static createPreviewEdges(candidates: ProximityEdgeCandidate[]): WorkflowEdge[] {
     return candidates.map((c) => ({
       id: c.id,
       source: c.source,
@@ -390,32 +343,30 @@ export class ProximityConnectHelper {
       sourceHandle: c.sourceHandle,
       targetHandle: c.targetHandle,
       class: PROXIMITY_EDGE_CLASS,
-      style: "stroke-dasharray: 5 5; opacity: 0.6;",
+      style: 'stroke-dasharray: 5 5; opacity: 0.6;',
       animated: true,
       selectable: false,
       deletable: false,
       data: {
         metadata: {
-          edgeType: "data" as const,
+          edgeType: 'data' as const,
           sourcePortDataType: c.sourcePortDataType,
-          isProximityPreview: true,
-        },
-      },
+          isProximityPreview: true
+        }
+      }
     }));
   }
 
   /**
    * Convert candidates to permanent WorkflowEdge objects.
    */
-  static createPermanentEdges(
-    candidates: ProximityEdgeCandidate[],
-  ): WorkflowEdge[] {
+  static createPermanentEdges(candidates: ProximityEdgeCandidate[]): WorkflowEdge[] {
     return candidates.map((c) => ({
       id: uuidv4(),
       source: c.source,
       target: c.target,
       sourceHandle: c.sourceHandle,
-      targetHandle: c.targetHandle,
+      targetHandle: c.targetHandle
     }));
   }
 
@@ -424,9 +375,8 @@ export class ProximityConnectHelper {
    */
   static isProximityPreviewEdge(edge: WorkflowEdge): boolean {
     return (
-      edge.id.startsWith("proximity-") ||
-      (edge.data?.metadata as Record<string, unknown>)?.isProximityPreview ===
-        true
+      edge.id.startsWith('proximity-') ||
+      (edge.data?.metadata as Record<string, unknown>)?.isProximityPreview === true
     );
   }
 

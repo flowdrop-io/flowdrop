@@ -1,38 +1,34 @@
 /**
  * Tests for Auto-Save Service
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  initAutoSave,
-  AutoSaveManager,
-} from "$lib/services/autoSaveService.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { initAutoSave, AutoSaveManager } from '$lib/services/autoSaveService.js';
 
 // Mock dependencies
 const mockGetBehaviorSettings = vi.fn();
 const mockIsDirty = vi.fn();
 const mockOnSettingsChange = vi.fn();
 
-vi.mock("$lib/stores/settingsStore.svelte.js", () => ({
+vi.mock('$lib/stores/settingsStore.svelte.js', () => ({
   getBehaviorSettings: (...args: unknown[]) => mockGetBehaviorSettings(...args),
-  onSettingsChange: (...args: unknown[]) => mockOnSettingsChange(...args),
+  onSettingsChange: (...args: unknown[]) => mockOnSettingsChange(...args)
 }));
 
-vi.mock("$lib/stores/workflowStore.svelte.js", () => ({
-  isDirty: () => mockIsDirty(),
+vi.mock('$lib/stores/workflowStore.svelte.js', () => ({
+  isDirty: () => mockIsDirty()
 }));
 
-vi.mock("$lib/utils/logger.js", () => ({
+vi.mock('$lib/utils/logger.js', () => ({
   logger: {
     error: vi.fn(),
     warn: vi.fn(),
     info: vi.fn(),
-    debug: vi.fn(),
-  },
+    debug: vi.fn()
+  }
 }));
 
-describe("initAutoSave", () => {
-  let settingsChangeCallback: ((event: { category: string }) => void) | null =
-    null;
+describe('initAutoSave', () => {
+  let settingsChangeCallback: ((event: { category: string }) => void) | null = null;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -40,32 +36,30 @@ describe("initAutoSave", () => {
 
     mockGetBehaviorSettings.mockReturnValue({
       autoSave: true,
-      autoSaveInterval: 5000,
+      autoSaveInterval: 5000
     });
     mockIsDirty.mockReturnValue(false);
-    mockOnSettingsChange.mockImplementation(
-      (cb: (event: { category: string }) => void) => {
-        settingsChangeCallback = cb;
-        return () => {
-          settingsChangeCallback = null;
-        };
-      },
-    );
+    mockOnSettingsChange.mockImplementation((cb: (event: { category: string }) => void) => {
+      settingsChangeCallback = cb;
+      return () => {
+        settingsChangeCallback = null;
+      };
+    });
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("should return a cleanup function", () => {
+  it('should return a cleanup function', () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     const cleanup = initAutoSave({ onSave });
 
-    expect(typeof cleanup).toBe("function");
+    expect(typeof cleanup).toBe('function');
     cleanup();
   });
 
-  it("should call onSave when dirty and interval fires", async () => {
+  it('should call onSave when dirty and interval fires', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     mockIsDirty.mockReturnValue(true);
 
@@ -78,7 +72,7 @@ describe("initAutoSave", () => {
     cleanup();
   });
 
-  it("should NOT call onSave when not dirty", async () => {
+  it('should NOT call onSave when not dirty', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     mockIsDirty.mockReturnValue(false);
 
@@ -90,7 +84,7 @@ describe("initAutoSave", () => {
     cleanup();
   });
 
-  it("should call onSuccess after successful save", async () => {
+  it('should call onSuccess after successful save', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     const onSuccess = vi.fn();
     mockIsDirty.mockReturnValue(true);
@@ -102,8 +96,8 @@ describe("initAutoSave", () => {
     cleanup();
   });
 
-  it("should call onError when save fails", async () => {
-    const onSave = vi.fn().mockRejectedValue(new Error("Save failed"));
+  it('should call onError when save fails', async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error('Save failed'));
     const onError = vi.fn();
     mockIsDirty.mockReturnValue(true);
 
@@ -115,10 +109,10 @@ describe("initAutoSave", () => {
     cleanup();
   });
 
-  it("should not start interval when autoSave is disabled", async () => {
+  it('should not start interval when autoSave is disabled', async () => {
     mockGetBehaviorSettings.mockReturnValue({
       autoSave: false,
-      autoSaveInterval: 5000,
+      autoSaveInterval: 5000
     });
 
     const onSave = vi.fn().mockResolvedValue(undefined);
@@ -131,7 +125,7 @@ describe("initAutoSave", () => {
     cleanup();
   });
 
-  it("should update interval when behavior settings change", async () => {
+  it('should update interval when behavior settings change', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     mockIsDirty.mockReturnValue(true);
 
@@ -140,33 +134,33 @@ describe("initAutoSave", () => {
     // Change settings to faster interval
     mockGetBehaviorSettings.mockReturnValue({
       autoSave: true,
-      autoSaveInterval: 1000,
+      autoSaveInterval: 1000
     });
-    settingsChangeCallback?.({ category: "behavior" });
+    settingsChangeCallback?.({ category: 'behavior' });
 
     await vi.advanceTimersByTimeAsync(1000);
     expect(onSave).toHaveBeenCalled();
     cleanup();
   });
 
-  it("should clean up interval and unsubscribe on cleanup", () => {
+  it('should clean up interval and unsubscribe on cleanup', () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     const cleanup = initAutoSave({ onSave });
 
     cleanup();
 
     // Settings change after cleanup should not cause errors
-    settingsChangeCallback?.({ category: "behavior" });
+    settingsChangeCallback?.({ category: 'behavior' });
   });
 });
 
-describe("AutoSaveManager", () => {
+describe('AutoSaveManager', () => {
   beforeEach(() => {
     vi.useFakeTimers();
 
     mockGetBehaviorSettings.mockReturnValue({
       autoSave: true,
-      autoSaveInterval: 5000,
+      autoSaveInterval: 5000
     });
     mockIsDirty.mockReturnValue(false);
     mockOnSettingsChange.mockImplementation(() => () => {});
@@ -176,9 +170,9 @@ describe("AutoSaveManager", () => {
     vi.useRealTimers();
   });
 
-  it("should start and stop", () => {
+  it('should start and stop', () => {
     const manager = new AutoSaveManager({
-      onSave: vi.fn().mockResolvedValue(undefined),
+      onSave: vi.fn().mockResolvedValue(undefined)
     });
 
     manager.start();
@@ -188,9 +182,9 @@ describe("AutoSaveManager", () => {
     expect(manager.isRunning()).toBe(false);
   });
 
-  it("should not start twice", () => {
+  it('should not start twice', () => {
     const manager = new AutoSaveManager({
-      onSave: vi.fn().mockResolvedValue(undefined),
+      onSave: vi.fn().mockResolvedValue(undefined)
     });
 
     manager.start();
@@ -200,25 +194,25 @@ describe("AutoSaveManager", () => {
     manager.stop();
   });
 
-  it("should report isEnabled based on settings", () => {
+  it('should report isEnabled based on settings', () => {
     const manager = new AutoSaveManager({
-      onSave: vi.fn().mockResolvedValue(undefined),
+      onSave: vi.fn().mockResolvedValue(undefined)
     });
 
     mockGetBehaviorSettings.mockReturnValue({
       autoSave: true,
-      autoSaveInterval: 5000,
+      autoSaveInterval: 5000
     });
     expect(manager.isEnabled()).toBe(true);
 
     mockGetBehaviorSettings.mockReturnValue({
       autoSave: false,
-      autoSaveInterval: 5000,
+      autoSaveInterval: 5000
     });
     expect(manager.isEnabled()).toBe(false);
   });
 
-  it("saveNow should trigger save when dirty", async () => {
+  it('saveNow should trigger save when dirty', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     mockIsDirty.mockReturnValue(true);
 
@@ -228,7 +222,7 @@ describe("AutoSaveManager", () => {
     expect(onSave).toHaveBeenCalledTimes(1);
   });
 
-  it("saveNow should skip when not dirty", async () => {
+  it('saveNow should skip when not dirty', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     mockIsDirty.mockReturnValue(false);
 

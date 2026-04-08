@@ -21,9 +21,9 @@
 // Components
 // ============================================================================
 
-export { default as ThemeToggle } from "../components/ThemeToggle.svelte";
-export { default as SettingsPanel } from "../components/SettingsPanel.svelte";
-export { default as SettingsModal } from "../components/SettingsModal.svelte";
+export { default as ThemeToggle } from '../components/ThemeToggle.svelte';
+export { default as SettingsPanel } from '../components/SettingsPanel.svelte';
+export { default as SettingsModal } from '../components/SettingsModal.svelte';
 
 // ============================================================================
 // Settings Types
@@ -43,8 +43,8 @@ export type {
   SettingsChangeEvent,
   SettingsChangeCallback,
   SyncStatus,
-  SettingsStoreState,
-} from "../types/settings.js";
+  SettingsStoreState
+} from '../types/settings.js';
 
 export {
   SETTINGS_CATEGORIES,
@@ -56,8 +56,8 @@ export {
   DEFAULT_BEHAVIOR_SETTINGS,
   DEFAULT_API_SETTINGS,
   DEFAULT_SETTINGS,
-  SETTINGS_STORAGE_KEY,
-} from "../types/settings.js";
+  SETTINGS_STORAGE_KEY
+} from '../types/settings.js';
 
 // ============================================================================
 // Settings Stores
@@ -78,8 +78,8 @@ export {
   setSettingsService,
   syncSettingsToApi,
   loadSettingsFromApi,
-  onSettingsChange,
-} from "../stores/settingsStore.svelte.js";
+  onSettingsChange
+} from '../stores/settingsStore.svelte.js';
 
 // ============================================================================
 // Settings Service
@@ -90,5 +90,5 @@ export {
   SettingsService,
   createSettingsService,
   setSettingsEndpointConfig,
-  getSettingsEndpointConfig,
-} from "../services/settingsService.js";
+  getSettingsEndpointConfig
+} from '../services/settingsService.js';

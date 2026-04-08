@@ -5,10 +5,7 @@
  * for testing the AI chat feature.
  */
 
-import type {
-  ChatHistoryMessage,
-  ChatMessageRole,
-} from "../../lib/types/chat.js";
+import type { ChatHistoryMessage, ChatMessageRole } from '../../lib/types/chat.js';
 
 // ============================================================================
 // Storage
@@ -49,11 +46,7 @@ export function getHistory(workflowId: string): ChatHistoryMessage[] {
 /**
  * Add a message to the conversation history
  */
-export function addMessage(
-  workflowId: string,
-  role: ChatMessageRole,
-  content: string,
-): void {
+export function addMessage(workflowId: string, role: ChatMessageRole, content: string): void {
   if (!conversations.has(workflowId)) {
     conversations.set(workflowId, []);
   }
@@ -94,7 +87,7 @@ const RESPONSE_PATTERNS: { pattern: RegExp; response: string }[] = [
 \`\`\`flowdrop
 list nodes
 list types
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(list|show|what).*(node|workflow)/i,
@@ -102,7 +95,7 @@ list types
 
 \`\`\`flowdrop
 list nodes
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(list|show|what).*(edge|connection)/i,
@@ -110,7 +103,7 @@ list nodes
 
 \`\`\`flowdrop
 list edges
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(list|show|what).*(type|available)/i,
@@ -118,7 +111,7 @@ list edges
 
 \`\`\`flowdrop
 list types
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\bdelete\b.*\b(\w+\.\d+)\b/i,
@@ -126,7 +119,7 @@ list types
 
 \`\`\`flowdrop
 delete $1
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(clear|remove all|start over|reset)\b/i,
@@ -134,7 +127,7 @@ delete $1
 
 \`\`\`flowdrop
 clear
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(undo)\b/i,
@@ -142,7 +135,7 @@ clear
 
 \`\`\`flowdrop
 undo
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(redo)\b/i,
@@ -150,7 +143,7 @@ undo
 
 \`\`\`flowdrop
 redo
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(layout|arrange|organize|auto.?layout)\b/i,
@@ -159,7 +152,7 @@ redo
 \`\`\`flowdrop
 layout auto
 canvas fitview
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\badd\s+(\w+)/i,
@@ -169,7 +162,7 @@ canvas fitview
 add $1
 layout auto
 canvas fitview
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\bconnect\b/i,
@@ -178,7 +171,7 @@ canvas fitview
 \`\`\`flowdrop
 list nodes
 list edges
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\bhelp\b/i,
@@ -186,7 +179,7 @@ list edges
 
 \`\`\`flowdrop
 help
-\`\`\``,
+\`\`\``
   },
   // Multiline set: prompt / system prompt / template / description
   {
@@ -199,7 +192,7 @@ You are a helpful assistant.
 Answer clearly and concisely.
 If unsure, say so.
 """
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(set|update|change)\b.*(template|body|text)\b/i,
@@ -212,7 +205,7 @@ Hello, {{ name }}!
 Your order {{ order_id }} is ready.
 Thank you for your patience.
 """
-\`\`\``,
+\`\`\``
   },
   {
     pattern: /\b(set|update|change)\b.*(description|notes?)\b/i,
@@ -224,7 +217,7 @@ This workflow processes incoming requests,
 validates the input data,
 and routes to the appropriate handler.
 """
-\`\`\``,
+\`\`\``
   },
   // Escape sequences in double-quoted values
   {
@@ -235,8 +228,8 @@ and routes to the appropriate handler.
 set text_node.1:separator "\\t"
 set text_node.1:line_break "\\n"
 set text_node.1:template "Line 1\\nLine 2\\nLine 3"
-\`\`\``,
-  },
+\`\`\``
+  }
 ];
 
 /**
@@ -260,7 +253,7 @@ What would you like to do?`;
  */
 export function generateMockResponse(
   userMessage: string,
-  workflowId: string,
+  workflowId: string
 ): { content: string; conversationId: string } {
   const conversationId = getConversationId(workflowId);
 
@@ -272,7 +265,7 @@ export function generateMockResponse(
       let content = response;
       for (let i = 1; i < match.length; i++) {
         if (match[i]) {
-          content = content.replace(new RegExp(`\\$${i}`, "g"), match[i]);
+          content = content.replace(new RegExp(`\\$${i}`, 'g'), match[i]);
         }
       }
       return { content, conversationId };

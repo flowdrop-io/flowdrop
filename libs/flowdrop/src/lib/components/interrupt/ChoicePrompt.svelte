@@ -8,8 +8,8 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import type { ChoiceConfig, InterruptChoice } from "../../types/interrupt.js";
+  import Icon from '@iconify/svelte';
+  import type { ChoiceConfig, InterruptChoice } from '../../types/interrupt.js';
 
   /**
    * Component props
@@ -38,7 +38,7 @@
     isSubmitting,
     error,
     resolvedByUserName,
-    onSubmit,
+    onSubmit
   }: Props = $props();
 
   /** Local state for selected values */
@@ -51,14 +51,11 @@
   const minSelections = $derived(config.minSelections ?? (isMultiple ? 0 : 1));
 
   /** Maximum selections allowed */
-  const maxSelections = $derived(
-    config.maxSelections ?? (isMultiple ? config.options.length : 1),
-  );
+  const maxSelections = $derived(config.maxSelections ?? (isMultiple ? config.options.length : 1));
 
   /** Check if submit is valid */
   const isValidSelection = $derived(
-    selectedValues.size >= minSelections &&
-      selectedValues.size <= maxSelections,
+    selectedValues.size >= minSelections && selectedValues.size <= maxSelections
   );
 
   /** Check if an option was selected in resolved state */
@@ -108,7 +105,7 @@
     if (isMultiple) {
       onSubmit(values);
     } else {
-      onSubmit(values[0] ?? "");
+      onSubmit(values[0] ?? '');
     }
   }
 </script>
@@ -130,48 +127,34 @@
   {/if}
 
   <!-- Options -->
-  <div
-    class="choice-prompt__options"
-    role={isMultiple ? "group" : "radiogroup"}
-  >
+  <div class="choice-prompt__options" role={isMultiple ? 'group' : 'radiogroup'}>
     {#each config.options as option (option.value)}
-      {@const isChecked = isResolved
-        ? isOptionResolved(option)
-        : selectedValues.has(option.value)}
+      {@const isChecked = isResolved ? isOptionResolved(option) : selectedValues.has(option.value)}
       <label
         class="choice-prompt__option"
         class:choice-prompt__option--selected={isChecked}
         class:choice-prompt__option--resolved={isResolved && isChecked}
       >
         <input
-          type={isMultiple ? "checkbox" : "radio"}
+          type={isMultiple ? 'checkbox' : 'radio'}
           name="choice-option"
           value={option.value}
           checked={isChecked}
           disabled={isResolved || isSubmitting}
-          onchange={(e) =>
-            handleOptionChange(option, (e.target as HTMLInputElement).checked)}
+          onchange={(e) => handleOptionChange(option, (e.target as HTMLInputElement).checked)}
           class="choice-prompt__input"
         />
         <span class="choice-prompt__checkmark">
           {#if isChecked}
-            <Icon
-              icon={isMultiple ? "mdi:checkbox-marked" : "mdi:radiobox-marked"}
-            />
+            <Icon icon={isMultiple ? 'mdi:checkbox-marked' : 'mdi:radiobox-marked'} />
           {:else}
-            <Icon
-              icon={isMultiple
-                ? "mdi:checkbox-blank-outline"
-                : "mdi:radiobox-blank"}
-            />
+            <Icon icon={isMultiple ? 'mdi:checkbox-blank-outline' : 'mdi:radiobox-blank'} />
           {/if}
         </span>
         <span class="choice-prompt__option-content">
           <span class="choice-prompt__option-label">{option.label}</span>
           {#if option.description}
-            <span class="choice-prompt__option-description"
-              >{option.description}</span
-            >
+            <span class="choice-prompt__option-description">{option.description}</span>
           {/if}
         </span>
       </label>
@@ -217,9 +200,7 @@
     <div class="choice-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName
-          ? `Response submitted by ${resolvedByUserName}`
-          : "Response submitted"}
+        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
       </span>
     </div>
   {/if}
@@ -277,9 +258,7 @@
     transition: all var(--fd-transition-fast);
   }
 
-  .choice-prompt__option:hover:not(
-      .choice-prompt--resolved .choice-prompt__option
-    ) {
+  .choice-prompt__option:hover:not(.choice-prompt--resolved .choice-prompt__option) {
     background-color: var(--fd-subtle);
     border-color: var(--fd-border-strong);
   }
@@ -289,9 +268,7 @@
     border-color: var(--fd-interrupt-completed-border);
   }
 
-  .choice-prompt__option--selected:hover:not(
-      .choice-prompt--resolved .choice-prompt__option
-    ) {
+  .choice-prompt__option--selected:hover:not(.choice-prompt--resolved .choice-prompt__option) {
     background-color: var(--fd-primary-muted);
   }
 
@@ -302,8 +279,7 @@
     cursor: default;
   }
 
-  .choice-prompt--resolved
-    .choice-prompt__option:not(.choice-prompt__option--resolved) {
+  .choice-prompt--resolved .choice-prompt__option:not(.choice-prompt__option--resolved) {
     opacity: var(--fd-interrupt-not-selected-opacity);
     cursor: default;
   }

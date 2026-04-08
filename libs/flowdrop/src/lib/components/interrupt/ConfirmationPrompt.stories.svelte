@@ -1,20 +1,20 @@
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
-  import ConfirmationPrompt from "./ConfirmationPrompt.svelte";
-  import { fn } from "storybook/test";
-  import { createConfirmationConfig } from "../../stories/utils.js";
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import ConfirmationPrompt from './ConfirmationPrompt.svelte';
+  import { fn } from 'storybook/test';
+  import { createConfirmationConfig } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: "Interrupt/ConfirmationPrompt",
+    title: 'Interrupt/ConfirmationPrompt',
     component: ConfirmationPrompt,
-    tags: ["autodocs"],
+    tags: ['autodocs'],
     args: {
       config: createConfirmationConfig(),
       isResolved: false,
       isSubmitting: false,
       onConfirm: fn(),
-      onDecline: fn(),
-    },
+      onDecline: fn()
+    }
   });
 </script>
 
@@ -24,10 +24,10 @@
   name="Custom Labels"
   args={{
     config: createConfirmationConfig({
-      message: "Deploy to production?",
-      confirmLabel: "Deploy",
-      cancelLabel: "Abort",
-    }),
+      message: 'Deploy to production?',
+      confirmLabel: 'Deploy',
+      cancelLabel: 'Abort'
+    })
   }}
 />
 
@@ -35,7 +35,7 @@
   name="Confirmed"
   args={{
     isResolved: true,
-    resolvedValue: true,
+    resolvedValue: true
   }}
 />
 
@@ -43,21 +43,21 @@
   name="Declined"
   args={{
     isResolved: true,
-    resolvedValue: false,
+    resolvedValue: false
   }}
 />
 
 <Story
   name="Submitting"
   args={{
-    isSubmitting: true,
+    isSubmitting: true
   }}
 />
 
 <Story
   name="With Error"
   args={{
-    error: "Network error: Failed to submit response",
+    error: 'Network error: Failed to submit response'
   }}
 />
 
@@ -66,6 +66,6 @@
   args={{
     isResolved: true,
     resolvedValue: true,
-    resolvedByUserName: "Alice",
+    resolvedByUserName: 'Alice'
   }}
 />

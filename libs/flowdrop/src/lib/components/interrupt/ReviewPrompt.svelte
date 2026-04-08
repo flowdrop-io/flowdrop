@@ -9,15 +9,15 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import { diffWords, diffArrays, diffJson } from "diff";
-  import type { Change } from "diff";
-  import { sanitizeHtml } from "../../utils/sanitize.js";
+  import Icon from '@iconify/svelte';
+  import { diffWords, diffArrays, diffJson } from 'diff';
+  import type { Change } from 'diff';
+  import { sanitizeHtml } from '../../utils/sanitize.js';
   import type {
     ReviewConfig,
     ReviewResolution,
-    ReviewFieldDecision,
-  } from "../../types/interrupt.js";
+    ReviewFieldDecision
+  } from '../../types/interrupt.js';
 
   /**
    * Component props
@@ -46,38 +46,34 @@
     isSubmitting,
     error,
     resolvedByUserName,
-    onSubmit,
+    onSubmit
   }: Props = $props();
 
   /** Local state: map of field -> accepted boolean. Default all to true (accept). */
   // svelte-ignore state_referenced_locally — initial default, user toggles during review
   let decisions = $state<Record<string, boolean>>(
-    Object.fromEntries(config.changes.map((c) => [c.field, true])),
+    Object.fromEntries(config.changes.map((c) => [c.field, true]))
   );
 
   /** Local state: map of field -> HTML view mode ('rendered' or 'raw'). Default to 'rendered'. */
   // svelte-ignore state_referenced_locally
-  let htmlViewMode = $state<Record<string, "rendered" | "raw">>(
-    Object.fromEntries(config.changes.map((c) => [c.field, "rendered"])),
+  let htmlViewMode = $state<Record<string, 'rendered' | 'raw'>>(
+    Object.fromEntries(config.changes.map((c) => [c.field, 'rendered']))
   );
 
   /** Count of accepted fields */
-  const acceptedCount = $derived(
-    Object.values(decisions).filter((v) => v).length,
-  );
+  const acceptedCount = $derived(Object.values(decisions).filter((v) => v).length);
 
   /** Count of rejected fields */
-  const rejectedCount = $derived(
-    Object.values(decisions).filter((v) => !v).length,
-  );
+  const rejectedCount = $derived(Object.values(decisions).filter((v) => !v).length);
 
   /** Total number of changes */
   const totalCount = $derived(config.changes.length);
 
   /** Button labels with defaults */
-  const acceptAllLabel = $derived(config.acceptAllLabel ?? "Accept All");
-  const rejectAllLabel = $derived(config.rejectAllLabel ?? "Reject All");
-  const submitLabel = $derived(config.submitLabel ?? "Submit Review");
+  const acceptAllLabel = $derived(config.acceptAllLabel ?? 'Accept All');
+  const rejectAllLabel = $derived(config.rejectAllLabel ?? 'Reject All');
+  const submitLabel = $derived(config.submitLabel ?? 'Submit Review');
 
   /**
    * Set a specific field's decision
@@ -114,7 +110,7 @@
       const accepted = decisions[change.field] ?? true;
       fieldDecisions[change.field] = {
         accepted,
-        value: accepted ? change.proposed : change.original,
+        value: accepted ? change.proposed : change.original
       };
     }
 
@@ -123,8 +119,8 @@
       summary: {
         accepted: acceptedCount,
         rejected: rejectedCount,
-        total: totalCount,
-      },
+        total: totalCount
+      }
     };
 
     onSubmit(resolution);
@@ -136,7 +132,7 @@
   function toggleHtmlView(field: string): void {
     htmlViewMode = {
       ...htmlViewMode,
-      [field]: htmlViewMode[field] === "rendered" ? "raw" : "rendered",
+      [field]: htmlViewMode[field] === 'rendered' ? 'raw' : 'rendered'
     };
   }
 
@@ -144,7 +140,7 @@
    * Check if a string contains HTML tags.
    */
   function containsHtml(value: unknown): boolean {
-    return typeof value === "string" && /<[a-z][\s\S]*?>/i.test(value);
+    return typeof value === 'string' && /<[a-z][\s\S]*?>/i.test(value);
   }
 
   /**
@@ -153,16 +149,16 @@
    */
   function stripHtmlTags(html: string): string {
     return html
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(?:p|div|li|h[1-6])>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(?:p|div|li|h[1-6])>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, " ")
-      .replace(/\n{3,}/g, "\n\n")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
   }
 
@@ -170,10 +166,10 @@
    * Format a value for display
    */
   function formatValue(value: unknown): string {
-    if (value === null || value === undefined) return "(empty)";
-    if (typeof value === "string") return value;
-    if (typeof value === "boolean") return value ? "Yes" : "No";
-    if (typeof value === "object") return JSON.stringify(value, null, 2);
+    if (value === null || value === undefined) return '(empty)';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'object') return JSON.stringify(value, null, 2);
     return String(value);
   }
 
@@ -185,29 +181,27 @@
   function computeDiff(
     original: unknown,
     proposed: unknown,
-    rawMode: boolean = false,
+    rawMode: boolean = false
   ): Change[] | null {
-    if (typeof original === "string" && typeof proposed === "string") {
-      const origText =
-        !rawMode && containsHtml(original) ? stripHtmlTags(original) : original;
-      const propText =
-        !rawMode && containsHtml(proposed) ? stripHtmlTags(proposed) : proposed;
+    if (typeof original === 'string' && typeof proposed === 'string') {
+      const origText = !rawMode && containsHtml(original) ? stripHtmlTags(original) : original;
+      const propText = !rawMode && containsHtml(proposed) ? stripHtmlTags(proposed) : proposed;
       return diffWords(origText, propText);
     }
     if (Array.isArray(original) && Array.isArray(proposed)) {
       const arrayChanges = diffArrays(original, proposed);
       return arrayChanges.map((part) => ({
-        value: part.value.map((v: unknown) => JSON.stringify(v)).join(", "),
+        value: part.value.map((v: unknown) => JSON.stringify(v)).join(', '),
         added: part.added,
         removed: part.removed,
-        count: part.count,
+        count: part.count
       }));
     }
     if (
-      typeof original === "object" &&
+      typeof original === 'object' &&
       original !== null &&
       !Array.isArray(original) &&
-      typeof proposed === "object" &&
+      typeof proposed === 'object' &&
       proposed !== null &&
       !Array.isArray(proposed)
     ) {
@@ -220,7 +214,7 @@
    * Check if a diff result contains multi-line content (e.g. JSON diffs).
    */
   function isMultiLineDiff(changes: Change[]): boolean {
-    return changes.some((part) => part.value.includes("\n"));
+    return changes.some((part) => part.value.includes('\n'));
   }
 </script>
 
@@ -275,9 +269,8 @@
       {@const isAccepted = isResolved
         ? (resolvedValue?.decisions[change.field]?.accepted ?? true)
         : (decisions[change.field] ?? true)}
-      {@const isHtml =
-        containsHtml(change.original) || containsHtml(change.proposed)}
-      {@const isRawView = htmlViewMode[change.field] === "raw"}
+      {@const isHtml = containsHtml(change.original) || containsHtml(change.proposed)}
+      {@const isRawView = htmlViewMode[change.field] === 'raw'}
       {@const diff = computeDiff(change.original, change.proposed, isRawView)}
       <div
         class="review-prompt__change"
@@ -340,16 +333,15 @@
                 class="review-prompt__html-toggle-btn"
                 onclick={() => toggleHtmlView(change.field)}
               >
-                <Icon icon={isRawView ? "mdi:eye" : "mdi:code-tags"} />
-                <span>{isRawView ? "Rendered" : "Raw HTML"}</span>
+                <Icon icon={isRawView ? 'mdi:eye' : 'mdi:code-tags'} />
+                <span>{isRawView ? 'Rendered' : 'Raw HTML'}</span>
               </button>
             </div>
           {/if}
           <div class="review-prompt__diff-row">
             <span class="review-prompt__diff-label">Original:</span>
             {#if isHtml && !isRawView}
-              <span
-                class="review-prompt__diff-value review-prompt__html-content"
+              <span class="review-prompt__diff-value review-prompt__html-content"
                 >{@html sanitizeHtml(String(change.original))}</span
               >
             {:else if isHtml && isRawView}
@@ -375,9 +367,7 @@
                 >{change.proposed}</code
               >
             {:else}
-              <span
-                class="review-prompt__diff-value review-prompt__diff-value--proposed"
-              >
+              <span class="review-prompt__diff-value review-prompt__diff-value--proposed">
                 {formatValue(change.proposed)}
               </span>
             {/if}
@@ -388,25 +378,17 @@
               {#if isMultiLineDiff(diff)}
                 <pre
                   class="review-prompt__diff-value review-prompt__diff-block">{#each diff as part}{#if part.added}<span
-                        class="review-prompt__diff-token--added"
-                        >{part.value}</span
-                      >{:else if part.removed}<span
-                        class="review-prompt__diff-token--removed"
+                        class="review-prompt__diff-token--added">{part.value}</span
+                      >{:else if part.removed}<span class="review-prompt__diff-token--removed"
                         >{part.value}</span
                       >{:else}<span>{part.value}</span>{/if}{/each}</pre>
               {:else}
-                <span
-                  class="review-prompt__diff-value review-prompt__diff-inline"
-                >
+                <span class="review-prompt__diff-value review-prompt__diff-inline">
                   {#each diff as part}
                     {#if part.added}
-                      <span class="review-prompt__diff-token--added"
-                        >{part.value}</span
-                      >
+                      <span class="review-prompt__diff-token--added">{part.value}</span>
                     {:else if part.removed}
-                      <span class="review-prompt__diff-token--removed"
-                        >{part.value}</span
-                      >
+                      <span class="review-prompt__diff-token--removed">{part.value}</span>
                     {:else}
                       <span>{part.value}</span>
                     {/if}
@@ -443,8 +425,8 @@
   {#if isResolved && resolvedValue}
     <div class="review-prompt__summary">
       <span class="review-prompt__summary-text">
-        {resolvedValue.summary.accepted} accepted, {resolvedValue.summary
-          .rejected} rejected out of {resolvedValue.summary.total} changes
+        {resolvedValue.summary.accepted} accepted, {resolvedValue.summary.rejected} rejected out of {resolvedValue
+          .summary.total} changes
       </span>
     </div>
   {/if}
@@ -454,9 +436,7 @@
     <div class="review-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName
-          ? `Response submitted by ${resolvedByUserName}`
-          : "Response submitted"}
+        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
       </span>
     </div>
   {/if}

@@ -22,17 +22,17 @@
  */
 
 /** Log severity levels. `'none'` disables all output. */
-export type LogLevel = "debug" | "info" | "warn" | "error" | "none";
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none';
 
 const LOG_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
   warn: 2,
   error: 3,
-  none: 4,
+  none: 4
 };
 
-let currentLevel: LogLevel = "none";
+let currentLevel: LogLevel = 'none';
 
 /**
  * Set the minimum log level for FlowDrop library output.
@@ -63,15 +63,15 @@ function shouldLog(level: LogLevel): boolean {
  */
 export const logger = {
   debug(message: string, ...args: unknown[]): void {
-    if (shouldLog("debug")) console.debug(`[FlowDrop] ${message}`, ...args);
+    if (shouldLog('debug')) console.debug(`[FlowDrop] ${message}`, ...args);
   },
   info(message: string, ...args: unknown[]): void {
-    if (shouldLog("info")) console.info(`[FlowDrop] ${message}`, ...args);
+    if (shouldLog('info')) console.info(`[FlowDrop] ${message}`, ...args);
   },
   warn(message: string, ...args: unknown[]): void {
-    if (shouldLog("warn")) console.warn(`[FlowDrop] ${message}`, ...args);
+    if (shouldLog('warn')) console.warn(`[FlowDrop] ${message}`, ...args);
   },
   error(message: string, ...args: unknown[]): void {
-    if (shouldLog("error")) console.error(`[FlowDrop] ${message}`, ...args);
-  },
+    if (shouldLog('error')) console.error(`[FlowDrop] ${message}`, ...args);
+  }
 };

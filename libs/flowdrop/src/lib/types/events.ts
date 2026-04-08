@@ -7,8 +7,8 @@
  * @module types/events
  */
 
-import type { Workflow, NodeExecutionInfo, WorkflowNode } from "./index.js";
-import type { SwapEventContext, SwapResult } from "../utils/nodeSwap.js";
+import type { Workflow, NodeExecutionInfo, WorkflowNode } from './index.js';
+import type { SwapEventContext, SwapResult } from '../utils/nodeSwap.js';
 
 /**
  * Types of workflow changes
@@ -16,16 +16,16 @@ import type { SwapEventContext, SwapResult } from "../utils/nodeSwap.js";
  * Used to identify what kind of change triggered the onWorkflowChange event.
  */
 export type WorkflowChangeType =
-  | "node_add"
-  | "node_remove"
-  | "node_move"
-  | "node_config"
-  | "node_swap"
-  | "edge_add"
-  | "edge_remove"
-  | "metadata"
-  | "name"
-  | "description";
+  | 'node_add'
+  | 'node_remove'
+  | 'node_move'
+  | 'node_config'
+  | 'node_swap'
+  | 'edge_add'
+  | 'edge_remove'
+  | 'metadata'
+  | 'name'
+  | 'description';
 
 /**
  * High-level event handlers for enterprise integration
@@ -58,10 +58,7 @@ export interface FlowDropEventHandlers {
    * @param workflow - The updated workflow
    * @param changeType - The type of change that occurred
    */
-  onWorkflowChange?: (
-    workflow: Workflow,
-    changeType: WorkflowChangeType,
-  ) => void;
+  onWorkflowChange?: (workflow: Workflow, changeType: WorkflowChangeType) => void;
 
   /**
    * Called when dirty state changes
@@ -149,9 +146,7 @@ export interface FlowDropEventHandlers {
    * @param context - Data-only swap context (oldNode, newMetadata, preview, overrides)
    * @returns false to cancel, true/void to proceed
    */
-  onBeforeSwap?: (
-    context: SwapEventContext,
-  ) => boolean | void | Promise<boolean | void>;
+  onBeforeSwap?: (context: SwapEventContext) => boolean | void | Promise<boolean | void>;
 
   /**
    * Called after a node swap is successfully executed.
@@ -160,11 +155,7 @@ export interface FlowDropEventHandlers {
    * @param oldNode - The node that was replaced
    * @param newNodeId - The ID of the newly created node
    */
-  onAfterSwap?: (
-    result: SwapResult,
-    oldNode: WorkflowNode,
-    newNodeId: string,
-  ) => void;
+  onAfterSwap?: (result: SwapResult, oldNode: WorkflowNode, newNodeId: string) => void;
 
   // ========================================================================
   // Agent Spec Runtime Events
@@ -183,10 +174,7 @@ export interface FlowDropEventHandlers {
    * @param executionId - The runtime execution ID
    * @param results - Execution results from the runtime
    */
-  onAgentSpecExecutionCompleted?: (
-    executionId: string,
-    results: Record<string, unknown>,
-  ) => void;
+  onAgentSpecExecutionCompleted?: (executionId: string, results: Record<string, unknown>) => void;
 
   /**
    * Called when an Agent Spec execution fails
@@ -202,10 +190,7 @@ export interface FlowDropEventHandlers {
    * @param nodeId - The FlowDrop node ID
    * @param status - Updated execution info
    */
-  onAgentSpecNodeStatusUpdate?: (
-    nodeId: string,
-    status: NodeExecutionInfo,
-  ) => void;
+  onAgentSpecNodeStatusUpdate?: (nodeId: string, status: NodeExecutionInfo) => void;
 }
 
 /**
@@ -264,7 +249,7 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
   autoSaveDraft: true,
   autoSaveDraftInterval: 30000,
   showToasts: true,
-  enableNodeSwap: true,
+  enableNodeSwap: true
 };
 
 /**
@@ -273,11 +258,9 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
  * @param features - User-provided feature configuration
  * @returns Complete feature configuration with defaults applied
  */
-export function mergeFeatures(
-  features?: FlowDropFeatures,
-): Required<FlowDropFeatures> {
+export function mergeFeatures(features?: FlowDropFeatures): Required<FlowDropFeatures> {
   return {
     ...DEFAULT_FEATURES,
-    ...features,
+    ...features
   };
 }

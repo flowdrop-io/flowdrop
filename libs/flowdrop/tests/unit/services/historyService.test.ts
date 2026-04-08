@@ -1,22 +1,19 @@
 /**
  * Tests for HistoryService
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { HistoryService } from "$lib/services/historyService.js";
-import {
-  createTestWorkflow,
-  createTestNode,
-} from "../../utils/test-helpers.js";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { HistoryService } from '$lib/services/historyService.js';
+import { createTestWorkflow, createTestNode } from '../../utils/test-helpers.js';
 
-describe("HistoryService", () => {
+describe('HistoryService', () => {
   let service: HistoryService;
 
   beforeEach(() => {
     service = new HistoryService(50);
   });
 
-  describe("initialize", () => {
-    it("should set initial state", () => {
+  describe('initialize', () => {
+    it('should set initial state', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
@@ -27,12 +24,12 @@ describe("HistoryService", () => {
       expect(state.isInTransaction).toBe(false);
     });
 
-    it("should clear existing history on re-initialization", () => {
-      const workflow1 = createTestWorkflow({ name: "First" });
-      const workflow2 = createTestWorkflow({ name: "Second" });
+    it('should clear existing history on re-initialization', () => {
+      const workflow1 = createTestWorkflow({ name: 'First' });
+      const workflow2 = createTestWorkflow({ name: 'Second' });
 
       service.initialize(workflow1);
-      service.push(workflow1, { description: "Change" });
+      service.push(workflow1, { description: 'Change' });
       service.initialize(workflow2);
 
       expect(service.getState().historyLength).toBe(1);
@@ -41,42 +38,42 @@ describe("HistoryService", () => {
     });
   });
 
-  describe("push", () => {
-    it("should add to undo stack and clear redo stack", () => {
+  describe('push', () => {
+    it('should add to undo stack and clear redo stack', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
-      service.push(workflow, { description: "Add node" });
+      service.push(workflow, { description: 'Add node' });
 
       expect(service.canUndo()).toBe(true);
       expect(service.getState().historyLength).toBe(2);
     });
 
-    it("should clear redo stack when new change is pushed", () => {
+    it('should clear redo stack when new change is pushed', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
-      service.push(workflow, { description: "Change 1" });
+      service.push(workflow, { description: 'Change 1' });
       service.undo();
       expect(service.canRedo()).toBe(true);
 
-      service.push(workflow, { description: "Change 2" });
+      service.push(workflow, { description: 'Change 2' });
       expect(service.canRedo()).toBe(false);
     });
 
-    it("should trim history when exceeding maxEntries", () => {
+    it('should trim history when exceeding maxEntries', () => {
       const service3 = new HistoryService(3);
       const workflow = createTestWorkflow();
       service3.initialize(workflow);
 
-      service3.push(workflow, { description: "Change 1" });
-      service3.push(workflow, { description: "Change 2" });
-      service3.push(workflow, { description: "Change 3" });
+      service3.push(workflow, { description: 'Change 1' });
+      service3.push(workflow, { description: 'Change 2' });
+      service3.push(workflow, { description: 'Change 3' });
 
       // maxEntries=3 means 3 entries in undo stack max
       expect(service3.getState().currentIndex).toBeLessThanOrEqual(2);
     });
 
-    it("should skip when skipHistory is true", () => {
+    it('should skip when skipHistory is true', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
@@ -84,12 +81,12 @@ describe("HistoryService", () => {
       expect(service.getState().historyLength).toBe(1);
     });
 
-    it("should skip during transaction", () => {
+    it('should skip during transaction', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
-      service.startTransaction(workflow, "Batch");
-      service.push(workflow, { description: "Should be skipped" });
+      service.startTransaction(workflow, 'Batch');
+      service.push(workflow, { description: 'Should be skipped' });
       service.commitTransaction();
 
       // Only 2 entries: initial + transaction commit
@@ -97,20 +94,20 @@ describe("HistoryService", () => {
     });
   });
 
-  describe("undo", () => {
-    it("should return previous state", () => {
-      const workflow1 = createTestWorkflow({ name: "Initial" });
+  describe('undo', () => {
+    it('should return previous state', () => {
+      const workflow1 = createTestWorkflow({ name: 'Initial' });
       service.initialize(workflow1);
 
-      const workflow2 = createTestWorkflow({ name: "Modified" });
-      service.push(workflow2, { description: "Modify" });
+      const workflow2 = createTestWorkflow({ name: 'Modified' });
+      service.push(workflow2, { description: 'Modify' });
 
       const result = service.undo();
       expect(result).not.toBeNull();
       // After undo, we get the state that was on top of the undo stack
     });
 
-    it("should return null when at beginning of history", () => {
+    it('should return null when at beginning of history', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
@@ -118,28 +115,28 @@ describe("HistoryService", () => {
       expect(result).toBeNull();
     });
 
-    it("should enable redo after undo", () => {
+    it('should enable redo after undo', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
-      service.push(workflow, { description: "Change" });
+      service.push(workflow, { description: 'Change' });
 
       service.undo();
       expect(service.canRedo()).toBe(true);
     });
   });
 
-  describe("redo", () => {
-    it("should return next state after undo", () => {
+  describe('redo', () => {
+    it('should return next state after undo', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
-      service.push(workflow, { description: "Change" });
+      service.push(workflow, { description: 'Change' });
       service.undo();
 
       const result = service.redo();
       expect(result).not.toBeNull();
     });
 
-    it("should return null when no redo available", () => {
+    it('should return null when no redo available', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
@@ -147,10 +144,10 @@ describe("HistoryService", () => {
       expect(result).toBeNull();
     });
 
-    it("should disable redo after redo is exhausted", () => {
+    it('should disable redo after redo is exhausted', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
-      service.push(workflow, { description: "Change" });
+      service.push(workflow, { description: 'Change' });
       service.undo();
       service.redo();
 
@@ -158,44 +155,44 @@ describe("HistoryService", () => {
     });
   });
 
-  describe("transactions", () => {
-    it("should combine operations into single undo entry", () => {
+  describe('transactions', () => {
+    it('should combine operations into single undo entry', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
-      service.startTransaction(workflow, "Delete node + edges");
+      service.startTransaction(workflow, 'Delete node + edges');
       // Multiple operations during transaction don't add to history
-      service.push(workflow, { description: "Delete node" });
-      service.push(workflow, { description: "Delete edge 1" });
-      service.push(workflow, { description: "Delete edge 2" });
+      service.push(workflow, { description: 'Delete node' });
+      service.push(workflow, { description: 'Delete edge 1' });
+      service.push(workflow, { description: 'Delete edge 2' });
       service.commitTransaction();
 
       expect(service.getState().historyLength).toBe(2); // initial + 1 commit
     });
 
-    it("should discard on cancelTransaction", () => {
+    it('should discard on cancelTransaction', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
-      service.startTransaction(workflow, "Cancelled");
+      service.startTransaction(workflow, 'Cancelled');
       service.cancelTransaction();
 
       expect(service.getState().historyLength).toBe(1);
       expect(service.getState().isInTransaction).toBe(false);
     });
 
-    it("should warn on nested startTransaction", () => {
+    it('should warn on nested startTransaction', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
-      service.startTransaction(workflow, "First");
+      service.startTransaction(workflow, 'First');
       // Second startTransaction should be ignored
-      service.startTransaction(workflow, "Second");
+      service.startTransaction(workflow, 'Second');
 
       expect(service.getState().isInTransaction).toBe(true);
     });
 
-    it("should warn on commitTransaction without active transaction", () => {
+    it('should warn on commitTransaction without active transaction', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
@@ -205,11 +202,11 @@ describe("HistoryService", () => {
     });
   });
 
-  describe("clear", () => {
-    it("should reset all history", () => {
+  describe('clear', () => {
+    it('should reset all history', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
-      service.push(workflow, { description: "Change" });
+      service.push(workflow, { description: 'Change' });
 
       service.clear();
 
@@ -218,8 +215,8 @@ describe("HistoryService", () => {
       expect(service.canRedo()).toBe(false);
     });
 
-    it("should keep current state as initial when provided", () => {
-      const workflow = createTestWorkflow({ name: "Current" });
+    it('should keep current state as initial when provided', () => {
+      const workflow = createTestWorkflow({ name: 'Current' });
       service.clear(workflow);
 
       expect(service.getState().historyLength).toBe(1);
@@ -227,8 +224,8 @@ describe("HistoryService", () => {
     });
   });
 
-  describe("subscribe", () => {
-    it("should immediately call callback with current state", () => {
+  describe('subscribe', () => {
+    it('should immediately call callback with current state', () => {
       const callback = vi.fn();
       const workflow = createTestWorkflow();
       service.initialize(workflow);
@@ -237,38 +234,38 @@ describe("HistoryService", () => {
 
       expect(callback).toHaveBeenCalledTimes(1);
       expect(callback).toHaveBeenCalledWith(
-        expect.objectContaining({ canUndo: false, canRedo: false }),
+        expect.objectContaining({ canUndo: false, canRedo: false })
       );
     });
 
-    it("should notify on state changes", () => {
+    it('should notify on state changes', () => {
       const callback = vi.fn();
       const workflow = createTestWorkflow();
       service.initialize(workflow);
       service.subscribe(callback);
 
-      service.push(workflow, { description: "Change" });
+      service.push(workflow, { description: 'Change' });
 
       // 1 for subscribe + 1 for push (notifyChange in initialize already happened before subscribe)
       expect(callback).toHaveBeenCalledTimes(2);
     });
 
-    it("should stop notifying after unsubscribe", () => {
+    it('should stop notifying after unsubscribe', () => {
       const callback = vi.fn();
       const workflow = createTestWorkflow();
       service.initialize(workflow);
       const unsubscribe = service.subscribe(callback);
 
       unsubscribe();
-      service.push(workflow, { description: "Change" });
+      service.push(workflow, { description: 'Change' });
 
       // Only the initial subscribe call
       expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("setMaxEntries", () => {
-    it("should trim history when reduced", () => {
+  describe('setMaxEntries', () => {
+    it('should trim history when reduced', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
@@ -283,10 +280,10 @@ describe("HistoryService", () => {
     });
   });
 
-  describe("deep cloning", () => {
-    it("should not share references between history entries", () => {
+  describe('deep cloning', () => {
+    it('should not share references between history entries', () => {
       const workflow = createTestWorkflow({
-        nodes: [createTestNode({ id: "node-1" })],
+        nodes: [createTestNode({ id: 'node-1' })]
       });
       service.initialize(workflow);
 

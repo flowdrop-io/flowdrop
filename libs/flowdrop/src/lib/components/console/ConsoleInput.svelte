@@ -6,10 +6,10 @@
 -->
 
 <script lang="ts">
-  import type { NodeMetadata } from "$lib/types/index.js";
-  import { getWorkflowStore } from "../../stores/workflowStore.svelte.js";
-  import { toShortId, resolveNode } from "../../commands/index.js";
-  import ConsoleAutocomplete, { type Suggestion } from "./ConsoleAutocomplete.svelte";
+  import type { NodeMetadata } from '$lib/types/index.js';
+  import { getWorkflowStore } from '../../stores/workflowStore.svelte.js';
+  import { toShortId, resolveNode } from '../../commands/index.js';
+  import ConsoleAutocomplete, { type Suggestion } from './ConsoleAutocomplete.svelte';
 
   interface Props {
     /** Whether the console is currently visible/open */
@@ -26,20 +26,20 @@
 
   let { open, nodeTypes = [], onSubmit, onBatchSubmit, onClose }: Props = $props();
 
-  let inputValue = $state("");
+  let inputValue = $state('');
   let inputElement: HTMLInputElement | undefined = $state();
 
   // Multiline value entry state
   let multilineMode = $state(false);
-  let multilinePrefix = $state(""); // e.g. "set node1:prompt"
-  let textareaValue = $state("");
+  let multilinePrefix = $state(''); // e.g. "set node1:prompt"
+  let textareaValue = $state('');
   let textareaElement: HTMLTextAreaElement | undefined = $state();
 
   // Command history state
   const MAX_HISTORY = 100;
   let history: string[] = $state([]);
   let historyIndex = $state(-1);
-  let savedInput = $state("");
+  let savedInput = $state('');
 
   // Autocomplete state
   let acVisible = $state(false);
@@ -47,15 +47,40 @@
   let acSuggestions: Suggestion[] = $state([]);
 
   const COMMAND_VERBS = [
-    "add", "delete", "rename", "set", "get", "info", "config", "select",
-    "connect", "disconnect", "list", "undo", "redo", "help", "clear", "cls",
-    "swap", "move", "layout", "canvas",
+    'add',
+    'delete',
+    'rename',
+    'set',
+    'get',
+    'info',
+    'config',
+    'select',
+    'connect',
+    'disconnect',
+    'list',
+    'undo',
+    'redo',
+    'help',
+    'clear',
+    'cls',
+    'swap',
+    'move',
+    'layout',
+    'canvas'
   ];
 
   /** Verbs that take a nodeId as their first argument */
   const NODE_ID_VERBS = [
-    "delete", "rename", "info", "config", "select", "set", "get",
-    "disconnect", "swap", "move",
+    'delete',
+    'rename',
+    'info',
+    'config',
+    'select',
+    'set',
+    'get',
+    'disconnect',
+    'swap',
+    'move'
   ];
 
   $effect(() => {
@@ -79,7 +104,7 @@
         return {
           value: shortId,
           label: shortId,
-          detail: node.data.label,
+          detail: node.data.label
         };
       })
       .filter((s) => s.value.toLowerCase().startsWith(lowerPrefix))
@@ -90,25 +115,28 @@
    * Detect if cursor is at a position expecting a node ID.
    * Returns the partial text typed so far, or null if not at a nodeId position.
    */
-  function getNodeIdContext(value: string): { partial: string; type: "nodeId" | "connectSource" | "connectTarget" } | null {
+  function getNodeIdContext(value: string): {
+    partial: string;
+    type: 'nodeId' | 'connectSource' | 'connectTarget';
+  } | null {
     // "connect <source> to <partial>" — target node ID
     const connectToMatch = value.match(/^connect\s+\S+\s+to\s+(.*)$/i);
-    if (connectToMatch) return { partial: connectToMatch[1], type: "connectTarget" };
+    if (connectToMatch) return { partial: connectToMatch[1], type: 'connectTarget' };
 
     // "connect <partial>" — source node ID (only if no "to" keyword yet)
     const connectMatch = value.match(/^connect\s+(?!.*\bto\b)(.*)$/i);
-    if (connectMatch) return { partial: connectMatch[1], type: "connectSource" };
+    if (connectMatch) return { partial: connectMatch[1], type: 'connectSource' };
 
     // Verbs that take nodeId as first arg: "verb <partial>"
     for (const verb of NODE_ID_VERBS) {
-      const regex = new RegExp(`^${verb}\\s+(.*)$`, "i");
+      const regex = new RegExp(`^${verb}\\s+(.*)$`, 'i');
       const match = value.match(regex);
       if (match) {
         // Only suggest if the partial doesn't already contain a space
         // (user has moved past the nodeId arg to further args)
         const partial = match[1];
-        if (!partial.includes(" ") && !partial.includes(":")) {
-          return { partial, type: "nodeId" };
+        if (!partial.includes(' ') && !partial.includes(':')) {
+          return { partial, type: 'nodeId' };
         }
         return null;
       }
@@ -121,35 +149,51 @@
    * Detect if cursor is after a "<nodeId>:" pattern, indicating port or config key position.
    * Returns the nodeId, partial text after colon, and context type.
    */
-  function getPortOrConfigContext(value: string): { nodeId: string; partial: string; type: "outputPort" | "inputPort" | "configKey" | "port" } | null {
+  function getPortOrConfigContext(value: string): {
+    nodeId: string;
+    partial: string;
+    type: 'outputPort' | 'inputPort' | 'configKey' | 'port';
+  } | null {
     // "connect <nodeId>:<partial>" — output ports (source position, no "to" yet)
     const connectSourcePort = value.match(/^connect\s+(\S+?):(\S*)$/i);
     if (connectSourcePort && !/\bto\b/i.test(value)) {
-      return { nodeId: connectSourcePort[1], partial: connectSourcePort[2], type: "outputPort" };
+      return {
+        nodeId: connectSourcePort[1],
+        partial: connectSourcePort[2],
+        type: 'outputPort'
+      };
     }
 
     // "connect <source> to <nodeId>:<partial>" — input ports (target position)
     const connectTargetPort = value.match(/^connect\s+\S+\s+to\s+(\S+?):(\S*)$/i);
     if (connectTargetPort) {
-      return { nodeId: connectTargetPort[1], partial: connectTargetPort[2], type: "inputPort" };
+      return {
+        nodeId: connectTargetPort[1],
+        partial: connectTargetPort[2],
+        type: 'inputPort'
+      };
     }
 
     // "set <nodeId>:<partial>" — config keys
     const setMatch = value.match(/^set\s+(\S+?):(\S*)$/i);
     if (setMatch) {
-      return { nodeId: setMatch[1], partial: setMatch[2], type: "configKey" };
+      return { nodeId: setMatch[1], partial: setMatch[2], type: 'configKey' };
     }
 
     // "get <nodeId>:<partial>" — config keys
     const getMatch = value.match(/^get\s+(\S+?):(\S*)$/i);
     if (getMatch) {
-      return { nodeId: getMatch[1], partial: getMatch[2], type: "configKey" };
+      return { nodeId: getMatch[1], partial: getMatch[2], type: 'configKey' };
     }
 
     // "disconnect <nodeId>:<partial>" — all ports
     const disconnectMatch = value.match(/^disconnect\s+(\S+?):(\S*)$/i);
     if (disconnectMatch) {
-      return { nodeId: disconnectMatch[1], partial: disconnectMatch[2], type: "port" };
+      return {
+        nodeId: disconnectMatch[1],
+        partial: disconnectMatch[2],
+        type: 'port'
+      };
     }
 
     return null;
@@ -158,7 +202,11 @@
   /**
    * Get port suggestions for a resolved node, filtered by direction and prefix.
    */
-  function getPortSuggestions(nodeId: string, partial: string, filter: "input" | "output" | "all"): Suggestion[] {
+  function getPortSuggestions(
+    nodeId: string,
+    partial: string,
+    filter: 'input' | 'output' | 'all'
+  ): Suggestion[] {
     const workflow = getWorkflowStore();
     if (!workflow) return [];
 
@@ -170,8 +218,8 @@
 
     const lowerPartial = partial.toLowerCase();
     const ports = [
-      ...(filter === "input" || filter === "all" ? metadata.inputs : []),
-      ...(filter === "output" || filter === "all" ? metadata.outputs : []),
+      ...(filter === 'input' || filter === 'all' ? metadata.inputs : []),
+      ...(filter === 'output' || filter === 'all' ? metadata.outputs : [])
     ];
 
     const staticSuggestions = ports
@@ -179,20 +227,22 @@
       .map((p) => ({
         value: p.id,
         label: p.id,
-        detail: `${p.name} (${p.dataType})`,
+        detail: `${p.name} (${p.dataType})`
       }));
 
     // Gateway nodes (e.g. if_else) have dynamic branch outputs stored in config, not metadata
     const branchSuggestions: Suggestion[] = [];
-    if ((filter === "output" || filter === "all") && metadata.type === "gateway") {
-      const branches = node.data.config?.branches as Array<{ name: string; label?: string }> | undefined;
+    if ((filter === 'output' || filter === 'all') && metadata.type === 'gateway') {
+      const branches = node.data.config?.branches as
+        | Array<{ name: string; label?: string }>
+        | undefined;
       if (branches) {
         for (const branch of branches) {
           if (branch.name.toLowerCase().startsWith(lowerPartial)) {
             branchSuggestions.push({
               value: branch.name,
               label: branch.name,
-              detail: branch.label ? `branch: ${branch.label}` : "branch",
+              detail: branch.label ? `branch: ${branch.label}` : 'branch'
             });
           }
         }
@@ -221,7 +271,7 @@
       .map(([key, prop]) => ({
         value: key,
         label: key,
-        detail: typeof prop === "object" && "type" in prop ? String(prop.type) : undefined,
+        detail: typeof prop === 'object' && 'type' in prop ? String(prop.type) : undefined
       }))
       .slice(0, 50);
   }
@@ -229,22 +279,22 @@
   /** Sub-commands for verbs that have them */
   const SUBCOMMAND_MAP: Record<string, Array<{ value: string; detail?: string }>> = {
     layout: [
-      { value: "auto", detail: "Re-arrange all nodes from scratch" },
-      { value: "beautify", detail: "Normalize spacing, preserve arrangement" },
+      { value: 'auto', detail: 'Re-arrange all nodes from scratch' },
+      { value: 'beautify', detail: 'Normalize spacing, preserve arrangement' }
     ],
     list: [
-      { value: "nodes", detail: "List all workflow nodes" },
-      { value: "edges", detail: "List all connections" },
-      { value: "types", detail: "List available node types" },
+      { value: 'nodes', detail: 'List all workflow nodes' },
+      { value: 'edges', detail: 'List all connections' },
+      { value: 'types', detail: 'List available node types' }
     ],
     canvas: [
-      { value: "fitview", detail: "Fit all nodes into the viewport" },
-      { value: "zoom in", detail: "Zoom in on the canvas" },
-      { value: "zoom out", detail: "Zoom out on the canvas" },
-      { value: "zoom", detail: "Set zoom level (e.g. canvas zoom 1.5)" },
-      { value: "pan", detail: "Pan to position (e.g. canvas pan 100,200)" },
-      { value: "reset", detail: "Reset viewport to default" },
-    ],
+      { value: 'fitview', detail: 'Fit all nodes into the viewport' },
+      { value: 'zoom in', detail: 'Zoom in on the canvas' },
+      { value: 'zoom out', detail: 'Zoom out on the canvas' },
+      { value: 'zoom', detail: 'Set zoom level (e.g. canvas zoom 1.5)' },
+      { value: 'pan', detail: 'Pan to position (e.g. canvas pan 100,200)' },
+      { value: 'reset', detail: 'Reset viewport to default' }
+    ]
   };
 
   function computeSuggestions(value: string): Suggestion[] {
@@ -253,12 +303,15 @@
     // Check if we're after "<nodeId>:" — port names or config keys
     const portConfigCtx = getPortOrConfigContext(value);
     if (portConfigCtx !== null) {
-      if (portConfigCtx.type === "configKey") {
+      if (portConfigCtx.type === 'configKey') {
         return getConfigKeySuggestions(portConfigCtx.nodeId, portConfigCtx.partial);
       }
-      const filter = portConfigCtx.type === "outputPort" ? "output"
-        : portConfigCtx.type === "inputPort" ? "input"
-        : "all";
+      const filter =
+        portConfigCtx.type === 'outputPort'
+          ? 'output'
+          : portConfigCtx.type === 'inputPort'
+            ? 'input'
+            : 'all';
       return getPortSuggestions(portConfigCtx.nodeId, portConfigCtx.partial, filter);
     }
 
@@ -268,7 +321,11 @@
       const prefix = subCmdContext.partial.toLowerCase();
       return subCmdContext.options
         .filter((opt) => opt.value.toLowerCase().startsWith(prefix))
-        .map((opt) => ({ value: opt.value, label: opt.value, detail: opt.detail }));
+        .map((opt) => ({
+          value: opt.value,
+          label: opt.value,
+          detail: opt.detail
+        }));
     }
 
     // Check if we're in a position where node type IDs should be suggested
@@ -280,7 +337,7 @@
         .map((nt) => ({
           value: nt.id,
           label: nt.id,
-          detail: `${nt.name} (${nt.category})`,
+          detail: `${nt.name} (${nt.category})`
         }))
         .slice(0, 50);
     }
@@ -292,11 +349,12 @@
     }
 
     // Check if we're at verb position (no space in input yet)
-    if (!value.includes(" ")) {
+    if (!value.includes(' ')) {
       const prefix = value.toLowerCase();
-      return COMMAND_VERBS
-        .filter((v) => v.startsWith(prefix))
-        .map((v) => ({ value: v, label: v }));
+      return COMMAND_VERBS.filter((v) => v.startsWith(prefix)).map((v) => ({
+        value: v,
+        label: v
+      }));
     }
 
     return [];
@@ -306,7 +364,10 @@
    * Detect if cursor is at a sub-command position (e.g. "layout <partial>").
    * Returns the verb's sub-command options and the partial typed so far, or null.
    */
-  function getSubcommandContext(value: string): { partial: string; options: Array<{ value: string; detail?: string }> } | null {
+  function getSubcommandContext(value: string): {
+    partial: string;
+    options: Array<{ value: string; detail?: string }>;
+  } | null {
     const match = value.match(/^(\w+)\s+(.*)$/i);
     if (!match) return null;
     const verb = match[1].toLowerCase();
@@ -314,7 +375,7 @@
     const options = SUBCOMMAND_MAP[verb];
     if (!options) return null;
     // Only suggest if the partial has no further spaces (still on sub-command)
-    if (partial.includes(" ")) return null;
+    if (partial.includes(' ')) return null;
     return { partial, options };
   }
 
@@ -411,15 +472,15 @@
     multilinePrefix = prefixText;
     textareaValue = initialValue;
     multilineMode = true;
-    inputValue = "";
+    inputValue = '';
     dismissAutocomplete();
     setTimeout(() => textareaElement?.focus(), 0);
   }
 
   function exitMultilineMode() {
     multilineMode = false;
-    multilinePrefix = "";
-    textareaValue = "";
+    multilinePrefix = '';
+    textareaValue = '';
     setTimeout(() => inputElement?.focus(), 0);
   }
 
@@ -434,33 +495,33 @@
   }
 
   function handleTextareaKeydown(event: KeyboardEvent) {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       submitMultilineValue();
-    } else if (event.key === "Escape") {
+    } else if (event.key === 'Escape') {
       event.preventDefault();
       exitMultilineMode();
     }
   }
 
   function handlePaste(event: ClipboardEvent) {
-    const text = event.clipboardData?.getData("text/plain");
-    if (!text || !text.includes("\n")) return;
+    const text = event.clipboardData?.getData('text/plain');
+    if (!text || !text.includes('\n')) return;
 
     // If already typing a set command, treat multiline paste as the value
     const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
     if (setMatch) {
       event.preventDefault();
-      enterMultilineMode(setMatch[1], (setMatch[2] ? setMatch[2] + "\n" : "") + text);
+      enterMultilineMode(setMatch[1], (setMatch[2] ? setMatch[2] + '\n' : '') + text);
       historyIndex = -1;
-      savedInput = "";
+      savedInput = '';
       return;
     }
 
     // Multi-line paste: prevent default and batch-submit
     event.preventDefault();
     const lines = text
-      .split("\n")
+      .split('\n')
       .map((l) => l.trim())
       .filter((l) => l.length > 0);
     if (lines.length <= 1) return;
@@ -474,35 +535,31 @@
       onBatchSubmit(lines);
     }
 
-    inputValue = "";
+    inputValue = '';
     historyIndex = -1;
-    savedInput = "";
+    savedInput = '';
     dismissAutocomplete();
   }
 
   function handleKeydown(event: KeyboardEvent) {
     // When autocomplete is visible, intercept navigation keys
     if (acVisible && acSuggestions.length > 0) {
-      if (event.key === "ArrowUp") {
+      if (event.key === 'ArrowUp') {
         event.preventDefault();
-        acSelectedIndex = acSelectedIndex > 0
-          ? acSelectedIndex - 1
-          : acSuggestions.length - 1;
+        acSelectedIndex = acSelectedIndex > 0 ? acSelectedIndex - 1 : acSuggestions.length - 1;
         return;
       }
-      if (event.key === "ArrowDown") {
+      if (event.key === 'ArrowDown') {
         event.preventDefault();
-        acSelectedIndex = acSelectedIndex < acSuggestions.length - 1
-          ? acSelectedIndex + 1
-          : 0;
+        acSelectedIndex = acSelectedIndex < acSuggestions.length - 1 ? acSelectedIndex + 1 : 0;
         return;
       }
-      if (event.key === "Tab") {
+      if (event.key === 'Tab') {
         event.preventDefault();
         acceptSuggestion(acSuggestions[acSelectedIndex]);
         return;
       }
-      if (event.key === "Enter") {
+      if (event.key === 'Enter') {
         const selected = acSuggestions[acSelectedIndex];
         // If accepting the suggestion wouldn't change the input, execute directly
         const before = inputValue;
@@ -513,14 +570,14 @@
         }
         // Input unchanged — fall through to submit handler below
       }
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault();
         dismissAutocomplete();
         return;
       }
     }
 
-    if (event.key === "Enter" && event.shiftKey) {
+    if (event.key === 'Enter' && event.shiftKey) {
       // Shift+Enter on a set command → expand to multiline textarea
       const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
       if (setMatch) {
@@ -530,21 +587,21 @@
       }
     }
 
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       const value = inputValue.trim();
       if (value) {
         addToHistory(value);
         onSubmit(value);
-        inputValue = "";
+        inputValue = '';
         historyIndex = -1;
-        savedInput = "";
+        savedInput = '';
         dismissAutocomplete();
       }
-    } else if (event.key === "Escape") {
+    } else if (event.key === 'Escape') {
       event.preventDefault();
       onClose();
-    } else if (event.key === "ArrowUp") {
+    } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       if (history.length === 0) return;
       if (historyIndex === -1) {
@@ -556,7 +613,7 @@
       }
       inputValue = history[historyIndex];
       dismissAutocomplete();
-    } else if (event.key === "ArrowDown") {
+    } else if (event.key === 'ArrowDown') {
       event.preventDefault();
       if (historyIndex === -1) return;
       if (historyIndex < history.length - 1) {
@@ -612,7 +669,9 @@
         role="combobox"
         aria-expanded={acVisible}
         aria-controls="console-autocomplete-listbox"
-        aria-activedescendant={acVisible && acSuggestions.length > 0 ? `console-autocomplete-option-${acSelectedIndex}` : undefined}
+        aria-activedescendant={acVisible && acSuggestions.length > 0
+          ? `console-autocomplete-option-${acSelectedIndex}`
+          : undefined}
         onkeydown={handleKeydown}
         oninput={handleInput}
         onpaste={handlePaste}

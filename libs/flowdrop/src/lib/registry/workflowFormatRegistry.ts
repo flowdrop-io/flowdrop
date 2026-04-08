@@ -12,9 +12,9 @@
  * Extends BaseRegistry for shared mechanics (subscribe, onClear, etc.).
  */
 
-import type { StandardWorkflow } from "../adapters/WorkflowAdapter.js";
-import type { NodeMetadata, WorkflowFormat } from "../types/index.js";
-import { BaseRegistry } from "./BaseRegistry.js";
+import type { StandardWorkflow } from '../adapters/WorkflowAdapter.js';
+import type { NodeMetadata, WorkflowFormat } from '../types/index.js';
+import { BaseRegistry } from './BaseRegistry.js';
 
 /**
  * Validation result returned by format adapters.
@@ -85,10 +85,7 @@ export interface WorkflowFormatAdapter {
  * const adapter = workflowFormatRegistry.get('n8n');
  * ```
  */
-class WorkflowFormatRegistry extends BaseRegistry<
-  string,
-  WorkflowFormatAdapter
-> {
+class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter> {
   /**
    * Register a workflow format adapter.
    *
@@ -100,7 +97,7 @@ class WorkflowFormatRegistry extends BaseRegistry<
     if (this.items.has(adapter.id) && !overwrite) {
       throw new Error(
         `Workflow format "${adapter.id}" is already registered. ` +
-          `Use overwrite: true to replace it.`,
+          `Use overwrite: true to replace it.`
       );
     }
     this.items.set(adapter.id, adapter);
@@ -152,7 +149,7 @@ class WorkflowFormatRegistry extends BaseRegistry<
   getOneOfOptions(): Array<{ const: string; title: string }> {
     return this.getAll().map((adapter) => ({
       const: adapter.id,
-      title: adapter.name,
+      title: adapter.name
     }));
   }
 }

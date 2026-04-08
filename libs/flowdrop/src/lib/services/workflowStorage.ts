@@ -3,8 +3,8 @@
  * This can be replaced with a database implementation later
  */
 
-import { v4 as uuidv4 } from "uuid";
-import type { Workflow } from "../types/index.js";
+import { v4 as uuidv4 } from 'uuid';
+import type { Workflow } from '../types/index.js';
 
 // In-memory storage
 const workflows = new Map<string, Workflow>();
@@ -19,19 +19,17 @@ function generateWorkflowId(): string {
 /**
  * Save a workflow
  */
-export async function saveWorkflow(
-  workflow: Omit<Workflow, "id">,
-): Promise<Workflow> {
+export async function saveWorkflow(workflow: Omit<Workflow, 'id'>): Promise<Workflow> {
   const id = generateWorkflowId();
   const newWorkflow: Workflow = {
     ...workflow,
     id,
     metadata: {
-      version: "1.0.0",
+      version: '1.0.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      ...workflow.metadata,
-    },
+      ...workflow.metadata
+    }
   };
 
   workflows.set(id, newWorkflow);
@@ -43,7 +41,7 @@ export async function saveWorkflow(
  */
 export async function updateWorkflow(
   id: string,
-  workflow: Partial<Workflow>,
+  workflow: Partial<Workflow>
 ): Promise<Workflow | null> {
   const existing = workflows.get(id);
   if (!existing) {
@@ -55,12 +53,12 @@ export async function updateWorkflow(
     ...workflow,
     id, // Ensure ID doesn't change
     metadata: {
-      version: existing.metadata?.version || "1.0.0",
+      version: existing.metadata?.version || '1.0.0',
       createdAt: existing.metadata?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       author: workflow.metadata?.author || existing.metadata?.author,
-      tags: workflow.metadata?.tags || existing.metadata?.tags,
-    },
+      tags: workflow.metadata?.tags || existing.metadata?.tags
+    }
   };
 
   workflows.set(id, updatedWorkflow);
@@ -91,9 +89,7 @@ export async function getWorkflows(options?: {
       (workflow) =>
         workflow.name.toLowerCase().includes(searchLower) ||
         workflow.description?.toLowerCase().includes(searchLower) ||
-        workflow.metadata?.tags?.some((tag) =>
-          tag.toLowerCase().includes(searchLower),
-        ),
+        workflow.metadata?.tags?.some((tag) => tag.toLowerCase().includes(searchLower))
     );
   }
 
@@ -101,7 +97,7 @@ export async function getWorkflows(options?: {
   filteredWorkflows.sort(
     (a, b) =>
       new Date(b.metadata?.updatedAt || 0).getTime() -
-      new Date(a.metadata?.updatedAt || 0).getTime(),
+      new Date(a.metadata?.updatedAt || 0).getTime()
   );
 
   // Apply pagination
@@ -135,18 +131,18 @@ export async function initializeSampleWorkflows(): Promise<void> {
   }
 
   // Add a sample workflow
-  const sampleWorkflow: Omit<Workflow, "id"> = {
-    name: "Sample Chat Workflow",
-    description: "A simple workflow demonstrating chat completion",
+  const sampleWorkflow: Omit<Workflow, 'id'> = {
+    name: 'Sample Chat Workflow',
+    description: 'A simple workflow demonstrating chat completion',
     nodes: [],
     edges: [],
     metadata: {
-      version: "1.0.0",
+      version: '1.0.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      author: "System",
-      tags: ["sample", "chat"],
-    },
+      author: 'System',
+      tags: ['sample', 'chat']
+    }
   };
 
   await saveWorkflow(sampleWorkflow);

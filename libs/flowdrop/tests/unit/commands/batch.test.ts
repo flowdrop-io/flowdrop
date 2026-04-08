@@ -1,16 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
-import { executeBatch } from "../../../src/lib/commands/batch.js";
-import type {
-  Command,
-  CommandContext,
-  CommandDispatch,
-} from "../../../src/lib/commands/types.js";
-import type {
-  WorkflowNode,
-  Workflow,
-  NodeMetadata,
-} from "../../../src/lib/types/index.js";
-import { buildTypeMap } from "../../../src/lib/commands/types.js";
+import { describe, it, expect, vi } from 'vitest';
+import { executeBatch } from '../../../src/lib/commands/batch.js';
+import type { Command, CommandContext, CommandDispatch } from '../../../src/lib/commands/types.js';
+import type { WorkflowNode, Workflow, NodeMetadata } from '../../../src/lib/types/index.js';
+import { buildTypeMap } from '../../../src/lib/commands/types.js';
 
 // ============================================================================
 // Test Fixtures
@@ -19,42 +11,39 @@ import { buildTypeMap } from "../../../src/lib/commands/types.js";
 function createMockMetadata(
   id: string,
   name: string,
-  overrides?: Partial<NodeMetadata>,
+  overrides?: Partial<NodeMetadata>
 ): NodeMetadata {
   return {
     id,
     name,
-    category: "ai",
+    category: 'ai',
     inputs: [],
     outputs: [],
     configSchema: {
-      type: "object",
+      type: 'object',
       properties: {
         model: {
-          type: "string",
-          default: "gpt-4",
-        },
-      },
+          type: 'string',
+          default: 'gpt-4'
+        }
+      }
     },
-    ...overrides,
+    ...overrides
   } as NodeMetadata;
 }
 
-function createMockNode(
-  id: string,
-  metadata: NodeMetadata,
-): WorkflowNode {
+function createMockNode(id: string, metadata: NodeMetadata): WorkflowNode {
   return {
     id,
-    type: "universalNode",
+    type: 'universalNode',
     position: { x: 100, y: 100 },
     deletable: true,
     data: {
       label: metadata.name,
-      config: { model: "gpt-4" },
+      config: { model: 'gpt-4' },
       metadata,
-      nodeId: id,
-    },
+      nodeId: id
+    }
   } as WorkflowNode;
 }
 
@@ -70,35 +59,29 @@ function createMockDispatch(): CommandDispatch {
     redo: vi.fn().mockReturnValue(true),
     startTransaction: vi.fn(),
     commitTransaction: vi.fn(),
-    cancelTransaction: vi.fn(),
+    cancelTransaction: vi.fn()
   };
 }
 
-function createMockWorkflow(
-  nodes: WorkflowNode[] = [],
-  edges: Workflow["edges"] = [],
-): Workflow {
+function createMockWorkflow(nodes: WorkflowNode[] = [], edges: Workflow['edges'] = []): Workflow {
   return {
-    id: "test-workflow",
-    name: "Test Workflow",
+    id: 'test-workflow',
+    name: 'Test Workflow',
     nodes,
-    edges,
+    edges
   };
 }
 
-const llmMeta = createMockMetadata("agentspec.llm_node", "LLM Node");
-const apiMeta = createMockMetadata("agentspec.api_node", "API Node");
+const llmMeta = createMockMetadata('agentspec.llm_node', 'LLM Node');
+const apiMeta = createMockMetadata('agentspec.api_node', 'API Node');
 const nodeTypes = [llmMeta, apiMeta];
 
-function createMockContext(
-  workflow: Workflow | null,
-  dispatch?: CommandDispatch,
-): CommandContext {
+function createMockContext(workflow: Workflow | null, dispatch?: CommandDispatch): CommandContext {
   return {
     getWorkflow: () => workflow,
     nodeTypes,
     typeMap: buildTypeMap(nodeTypes),
-    dispatch: dispatch ?? createMockDispatch(),
+    dispatch: dispatch ?? createMockDispatch()
   };
 }
 
@@ -106,15 +89,15 @@ function createMockContext(
 // Tests
 // ============================================================================
 
-describe("executeBatch", () => {
-  it("executes all commands and commits on success", () => {
+describe('executeBatch', () => {
+  it('executes all commands and commits on success', () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
 
     const commands: Command[] = [
-      { type: "add_node", nodeTypeId: "llm_node" },
-      { type: "add_node", nodeTypeId: "api_node" },
+      { type: 'add_node', nodeTypeId: 'llm_node' },
+      { type: 'add_node', nodeTypeId: 'api_node' }
     ];
 
     const result = executeBatch(commands, context);
@@ -128,21 +111,21 @@ describe("executeBatch", () => {
     expect(result.error).toBeUndefined();
 
     expect(dispatch.startTransaction).toHaveBeenCalledOnce();
-    expect(dispatch.startTransaction).toHaveBeenCalledWith("batch: 2 commands");
+    expect(dispatch.startTransaction).toHaveBeenCalledWith('batch: 2 commands');
     expect(dispatch.commitTransaction).toHaveBeenCalledOnce();
     expect(dispatch.cancelTransaction).not.toHaveBeenCalled();
     expect(dispatch.addNode).toHaveBeenCalledTimes(2);
   });
 
-  it("stops and cancels on first error", () => {
+  it('stops and cancels on first error', () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
 
     const commands: Command[] = [
-      { type: "add_node", nodeTypeId: "llm_node" },
-      { type: "delete_node", nodeId: "nonexistent.1" }, // will fail — node not found
-      { type: "add_node", nodeTypeId: "api_node" }, // should not execute
+      { type: 'add_node', nodeTypeId: 'llm_node' },
+      { type: 'delete_node', nodeId: 'nonexistent.1' }, // will fail — node not found
+      { type: 'add_node', nodeTypeId: 'api_node' } // should not execute
     ];
 
     const result = executeBatch(commands, context);
@@ -160,7 +143,7 @@ describe("executeBatch", () => {
     expect(dispatch.commitTransaction).not.toHaveBeenCalled();
   });
 
-  it("returns success for empty batch", () => {
+  it('returns success for empty batch', () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
@@ -177,14 +160,12 @@ describe("executeBatch", () => {
     expect(dispatch.cancelTransaction).not.toHaveBeenCalled();
   });
 
-  it("handles single-command batch", () => {
+  it('handles single-command batch', () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
 
-    const commands: Command[] = [
-      { type: "add_node", nodeTypeId: "llm_node" },
-    ];
+    const commands: Command[] = [{ type: 'add_node', nodeTypeId: 'llm_node' }];
 
     const result = executeBatch(commands, context);
 
@@ -193,13 +174,13 @@ describe("executeBatch", () => {
     expect(result.totalCount).toBe(1);
     expect(result.results).toHaveLength(1);
 
-    expect(dispatch.startTransaction).toHaveBeenCalledWith("batch: 1 command");
+    expect(dispatch.startTransaction).toHaveBeenCalledWith('batch: 1 command');
     expect(dispatch.commitTransaction).toHaveBeenCalledOnce();
   });
 
-  it("re-reads workflow before each command (avoids stale state)", () => {
+  it('re-reads workflow before each command (avoids stale state)', () => {
     const dispatch = createMockDispatch();
-    const node1 = createMockNode("agentspec.llm_node.1", llmMeta);
+    const node1 = createMockNode('agentspec.llm_node.1', llmMeta);
 
     // Start with empty workflow, then after first add the workflow has the node
     let callCount = 0;
@@ -217,12 +198,12 @@ describe("executeBatch", () => {
       getWorkflow,
       nodeTypes,
       typeMap: buildTypeMap(nodeTypes),
-      dispatch,
+      dispatch
     };
 
     const commands: Command[] = [
-      { type: "add_node", nodeTypeId: "llm_node" },
-      { type: "add_node", nodeTypeId: "llm_node" },
+      { type: 'add_node', nodeTypeId: 'llm_node' },
+      { type: 'add_node', nodeTypeId: 'llm_node' }
     ];
 
     const result = executeBatch(commands, context);
@@ -233,14 +214,14 @@ describe("executeBatch", () => {
     expect(getWorkflow).toHaveBeenCalledTimes(2);
   });
 
-  it("error at step 1 cancels immediately with no completed commands", () => {
+  it('error at step 1 cancels immediately with no completed commands', () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
 
     const commands: Command[] = [
-      { type: "delete_node", nodeId: "nonexistent.1" }, // fails immediately
-      { type: "add_node", nodeTypeId: "llm_node" },
+      { type: 'delete_node', nodeId: 'nonexistent.1' }, // fails immediately
+      { type: 'add_node', nodeTypeId: 'llm_node' }
     ];
 
     const result = executeBatch(commands, context);
@@ -256,18 +237,16 @@ describe("executeBatch", () => {
     expect(dispatch.commitTransaction).not.toHaveBeenCalled();
   });
 
-  it("propagates NO_WORKFLOW error from executor", () => {
+  it('propagates NO_WORKFLOW error from executor', () => {
     const dispatch = createMockDispatch();
     const context = createMockContext(null, dispatch); // null workflow
 
-    const commands: Command[] = [
-      { type: "add_node", nodeTypeId: "llm_node" },
-    ];
+    const commands: Command[] = [{ type: 'add_node', nodeTypeId: 'llm_node' }];
 
     const result = executeBatch(commands, context);
 
     expect(result.ok).toBe(false);
     expect(result.completedCount).toBe(0);
-    expect(result.error).toContain("No workflow");
+    expect(result.error).toContain('No workflow');
   });
 });

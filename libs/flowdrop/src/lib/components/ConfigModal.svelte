@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { ConfigSchema, ConfigValues } from "$lib/types";
-  import ConfigForm from "./ConfigForm.svelte";
+  import type { ConfigSchema, ConfigValues } from '$lib/types';
+  import ConfigForm from './ConfigForm.svelte';
 
   interface Props {
     isOpen: boolean;
@@ -25,7 +25,7 @@
 
   // Close modal on escape key
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       handleClose();
     }
   }

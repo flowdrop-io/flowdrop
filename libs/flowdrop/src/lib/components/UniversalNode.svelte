@@ -8,24 +8,20 @@
 -->
 
 <script lang="ts">
-  import type { WorkflowNode } from "../types/index.js";
-  import { nodeComponentRegistry } from "../registry/nodeComponentRegistry.js";
-  import { resolveBuiltinAlias } from "../registry/builtinNodes.js";
-  import NodeStatusOverlay from "./NodeStatusOverlay.svelte";
-  import { shouldShowNodeStatus } from "../utils/nodeWrapper.js";
-  import { resolveComponentName } from "../utils/nodeTypes.js";
+  import type { WorkflowNode } from '../types/index.js';
+  import { nodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
+  import { resolveBuiltinAlias } from '../registry/builtinNodes.js';
+  import NodeStatusOverlay from './NodeStatusOverlay.svelte';
+  import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
+  import { resolveComponentName } from '../utils/nodeTypes.js';
 
   let {
     data,
-    selected = false,
+    selected = false
   }: {
-    data: WorkflowNode["data"] & {
+    data: WorkflowNode['data'] & {
       nodeId?: string;
-      onConfigOpen?: (node: {
-        id: string;
-        type: string;
-        data: WorkflowNode["data"];
-      }) => void;
+      onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
     selected?: boolean;
   } = $props();
@@ -42,9 +38,7 @@
    * This handles the logic of choosing between config.nodeType and metadata.type.
    */
   let resolvedComponentName = $derived(
-    data.metadata
-      ? resolveComponentName(data.metadata, configNodeType)
-      : "workflowNode",
+    data.metadata ? resolveComponentName(data.metadata, configNodeType) : 'workflowNode'
   );
 
   /**
@@ -62,7 +56,7 @@
    * Hide for note nodes as they have their own styling.
    */
   let shouldShowStatus = $derived(
-    shouldShowNodeStatus(executionInfo) && resolvedComponentName !== "note",
+    shouldShowNodeStatus(executionInfo) && resolvedComponentName !== 'note'
   );
 
   /**
@@ -82,36 +76,30 @@
     }
 
     // Return the default component from registry
-    return nodeComponentRegistry.getComponent("workflowNode");
+    return nodeComponentRegistry.getComponent('workflowNode');
   }
 
   /**
    * Get optimal status position for this node type.
    * Uses registry if available, otherwise falls back to defaults.
    */
-  function getStatusPosition():
-    | "top-left"
-    | "top-right"
-    | "bottom-left"
-    | "bottom-right" {
+  function getStatusPosition(): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' {
     // Try registry first
-    const position = nodeComponentRegistry.getStatusPosition(
-      resolvedComponentName,
-    );
+    const position = nodeComponentRegistry.getStatusPosition(resolvedComponentName);
     if (position) {
       return position;
     }
 
     // Fallback based on node type
     switch (resolvedComponentName) {
-      case "tool":
-        return "top-left";
-      case "note":
-        return "bottom-right";
-      case "simple":
-      case "square":
+      case 'tool':
+        return 'top-left';
+      case 'note':
+        return 'bottom-right';
+      case 'simple':
+      case 'square':
       default:
-        return "top-right";
+        return 'top-right';
     }
   }
 
@@ -119,7 +107,7 @@
    * Get optimal status size for this node type.
    * Uses registry if available, otherwise falls back to defaults.
    */
-  function getStatusSize(): "sm" | "md" | "lg" {
+  function getStatusSize(): 'sm' | 'md' | 'lg' {
     // Try registry first
     const size = nodeComponentRegistry.getStatusSize(resolvedComponentName);
     if (size) {
@@ -128,13 +116,13 @@
 
     // Fallback based on node type
     switch (resolvedComponentName) {
-      case "tool":
-      case "note":
-      case "square":
-        return "sm";
-      case "simple":
+      case 'tool':
+      case 'note':
+      case 'square':
+        return 'sm';
+      case 'simple':
       default:
-        return "md";
+        return 'md';
     }
   }
 </script>
@@ -150,7 +138,7 @@
   <!-- Status overlay - only show if there's meaningful status information -->
   {#if shouldShowStatus}
     <NodeStatusOverlay
-      nodeId={data.nodeId ?? "unknown"}
+      nodeId={data.nodeId ?? 'unknown'}
       {executionInfo}
       position={getStatusPosition()}
       size={getStatusSize()}

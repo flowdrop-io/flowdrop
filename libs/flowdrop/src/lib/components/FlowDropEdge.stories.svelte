@@ -1,159 +1,159 @@
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
-  import EdgeDecorator from "../../lib/stories/EdgeDecorator.svelte";
-  import { createSampleNodeData } from "../../lib/stories/utils.js";
-  import { EDGE_MARKER_SIZES } from "../../lib/config/constants.js";
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import EdgeDecorator from '../../lib/stories/EdgeDecorator.svelte';
+  import { createSampleNodeData } from '../../lib/stories/utils.js';
+  import { EDGE_MARKER_SIZES } from '../../lib/config/constants.js';
 
   const { Story } = defineMeta({
-    title: "Edges/FlowDropEdge",
-    tags: ["autodocs"],
+    title: 'Edges/FlowDropEdge',
+    tags: ['autodocs'],
     parameters: {
-      layout: "centered",
-    },
+      layout: 'centered'
+    }
   });
 
   const sourceNode = createSampleNodeData({
-    label: "Text Input",
+    label: 'Text Input',
     metadata: {
-      id: "text_input",
-      name: "Text Input",
-      description: "Simple text input",
-      category: "inputs",
-      version: "1.0.0",
-      type: "simple",
-      icon: "mdi:text",
-      color: "#22c55e",
+      id: 'text_input',
+      name: 'Text Input',
+      description: 'Simple text input',
+      category: 'inputs',
+      version: '1.0.0',
+      type: 'simple',
+      icon: 'mdi:text',
+      color: '#22c55e',
       inputs: [],
       outputs: [
         {
-          id: "output",
-          name: "Output",
-          type: "output",
-          dataType: "string",
-          required: false,
-        },
-      ],
-    },
+          id: 'output',
+          name: 'Output',
+          type: 'output',
+          dataType: 'string',
+          required: false
+        }
+      ]
+    }
   });
 
   const targetNode = createSampleNodeData({
-    label: "Text Output",
+    label: 'Text Output',
     metadata: {
-      id: "text_output",
-      name: "Text Output",
-      description: "Display text output",
-      category: "outputs",
-      version: "1.0.0",
-      type: "simple",
-      icon: "mdi:text-box",
-      color: "#ef4444",
+      id: 'text_output',
+      name: 'Text Output',
+      description: 'Display text output',
+      category: 'outputs',
+      version: '1.0.0',
+      type: 'simple',
+      icon: 'mdi:text-box',
+      color: '#ef4444',
       inputs: [
         {
-          id: "input",
-          name: "Input",
-          type: "input",
-          dataType: "string",
-          required: false,
-        },
+          id: 'input',
+          name: 'Input',
+          type: 'input',
+          dataType: 'string',
+          required: false
+        }
       ],
-      outputs: [],
-    },
+      outputs: []
+    }
   });
 
   const triggerSource = createSampleNodeData({
-    label: "Trigger Source",
+    label: 'Trigger Source',
     metadata: {
-      id: "trigger_source",
-      name: "Trigger Source",
-      description: "Emits a trigger signal",
-      category: "processing",
-      version: "1.0.0",
-      type: "simple",
-      icon: "mdi:play",
-      color: "#3b82f6",
+      id: 'trigger_source',
+      name: 'Trigger Source',
+      description: 'Emits a trigger signal',
+      category: 'processing',
+      version: '1.0.0',
+      type: 'simple',
+      icon: 'mdi:play',
+      color: '#3b82f6',
       inputs: [],
       outputs: [
         {
-          id: "trigger",
-          name: "Trigger",
-          type: "output",
-          dataType: "trigger",
-          required: false,
-        },
-      ],
-    },
+          id: 'trigger',
+          name: 'Trigger',
+          type: 'output',
+          dataType: 'trigger',
+          required: false
+        }
+      ]
+    }
   });
 
   const triggerTarget = createSampleNodeData({
-    label: "Trigger Target",
+    label: 'Trigger Target',
     metadata: {
-      id: "trigger_target",
-      name: "Trigger Target",
-      description: "Receives a trigger signal",
-      category: "processing",
-      version: "1.0.0",
-      type: "simple",
-      icon: "mdi:lightning-bolt",
-      color: "#8b5cf6",
+      id: 'trigger_target',
+      name: 'Trigger Target',
+      description: 'Receives a trigger signal',
+      category: 'processing',
+      version: '1.0.0',
+      type: 'simple',
+      icon: 'mdi:lightning-bolt',
+      color: '#8b5cf6',
       inputs: [
         {
-          id: "trigger",
-          name: "Trigger",
-          type: "input",
-          dataType: "trigger",
-          required: false,
-        },
+          id: 'trigger',
+          name: 'Trigger',
+          type: 'input',
+          dataType: 'trigger',
+          required: false
+        }
       ],
-      outputs: [],
-    },
+      outputs: []
+    }
   });
 
   const toolSource = createSampleNodeData({
-    label: "Tool Provider",
+    label: 'Tool Provider',
     metadata: {
-      id: "tool_provider",
-      name: "Tool Provider",
-      description: "Provides a tool",
-      category: "processing",
-      version: "1.0.0",
-      type: "simple",
-      icon: "mdi:wrench",
-      color: "#f59e0b",
+      id: 'tool_provider',
+      name: 'Tool Provider',
+      description: 'Provides a tool',
+      category: 'processing',
+      version: '1.0.0',
+      type: 'simple',
+      icon: 'mdi:wrench',
+      color: '#f59e0b',
       inputs: [],
       outputs: [
         {
-          id: "tool",
-          name: "Tool",
-          type: "output",
-          dataType: "tool",
-          required: false,
-        },
-      ],
-    },
+          id: 'tool',
+          name: 'Tool',
+          type: 'output',
+          dataType: 'tool',
+          required: false
+        }
+      ]
+    }
   });
 
   const toolTarget = createSampleNodeData({
-    label: "Tool Consumer",
+    label: 'Tool Consumer',
     metadata: {
-      id: "tool_consumer",
-      name: "Tool Consumer",
-      description: "Consumes a tool",
-      category: "processing",
-      version: "1.0.0",
-      type: "simple",
-      icon: "mdi:cog",
-      color: "#f59e0b",
+      id: 'tool_consumer',
+      name: 'Tool Consumer',
+      description: 'Consumes a tool',
+      category: 'processing',
+      version: '1.0.0',
+      type: 'simple',
+      icon: 'mdi:cog',
+      color: '#f59e0b',
       inputs: [
         {
-          id: "tool",
-          name: "Tool",
-          type: "input",
-          dataType: "tool",
-          required: false,
-        },
+          id: 'tool',
+          name: 'Tool',
+          type: 'input',
+          dataType: 'tool',
+          required: false
+        }
       ],
-      outputs: [],
-    },
+      outputs: []
+    }
   });
 </script>
 

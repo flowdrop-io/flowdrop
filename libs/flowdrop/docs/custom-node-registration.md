@@ -41,14 +41,14 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 ```svelte
 <!-- CodeEditorNode.svelte -->
 <script lang="ts">
-  import type { NodeComponentProps } from "@flowdrop/flowdrop/editor";
+  import type { NodeComponentProps } from '@flowdrop/flowdrop/editor';
 
   let { data, selected = false }: NodeComponentProps = $props();
 </script>
 
 <div class="code-editor-node" class:selected>
   <h4>{data.label}</h4>
-  <pre>{data.config?.code ?? ""}</pre>
+  <pre>{data.config?.code ?? ''}</pre>
 </div>
 
 <style>
@@ -68,57 +68,53 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 **2. Register it:**
 
 ```typescript
-import { registerCustomNode } from "@flowdrop/flowdrop/editor";
-import CodeEditorNode from "./CodeEditorNode.svelte";
+import { registerCustomNode } from '@flowdrop/flowdrop/editor';
+import CodeEditorNode from './CodeEditorNode.svelte';
 
-registerCustomNode("myapp:code-editor", "Code Editor", CodeEditorNode, {
-  icon: "mdi:code-braces",
-  description: "A custom code editor node",
-  category: "custom",
+registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
+  icon: 'mdi:code-braces',
+  description: 'A custom code editor node',
+  category: 'custom'
 });
 ```
 
 **3. Mount the editor with node metadata:**
 
 ```typescript
-import { mountFlowDropApp } from "@flowdrop/flowdrop/editor";
-import "@flowdrop/flowdrop/styles";
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
+import '@flowdrop/flowdrop/styles';
 
-const app = await mountFlowDropApp(document.getElementById("editor")!, {
+const app = await mountFlowDropApp(document.getElementById('editor')!, {
   nodes: [
     {
-      id: "myapp:code-editor",
-      name: "Code Editor",
-      type: "myapp:code-editor",
-      description: "Write and edit code",
-      category: "processing",
-      version: "1.0.0",
-      icon: "mdi:code-braces",
-      inputs: [
-        { id: "input", name: "Input", type: "input", dataType: "string" },
-      ],
-      outputs: [
-        { id: "output", name: "Output", type: "output", dataType: "string" },
-      ],
+      id: 'myapp:code-editor',
+      name: 'Code Editor',
+      type: 'myapp:code-editor',
+      description: 'Write and edit code',
+      category: 'processing',
+      version: '1.0.0',
+      icon: 'mdi:code-braces',
+      inputs: [{ id: 'input', name: 'Input', type: 'input', dataType: 'string' }],
+      outputs: [{ id: 'output', name: 'Output', type: 'output', dataType: 'string' }],
       configSchema: {
-        type: "object",
+        type: 'object',
         properties: {
           language: {
-            type: "string",
-            title: "Language",
-            enum: ["javascript", "python", "rust"],
-            default: "javascript",
+            type: 'string',
+            title: 'Language',
+            enum: ['javascript', 'python', 'rust'],
+            default: 'javascript'
           },
           code: {
-            type: "string",
-            title: "Code",
-            format: "multiline",
-            default: "",
-          },
-        },
-      },
-    },
-  ],
+            type: 'string',
+            title: 'Code',
+            format: 'multiline',
+            default: ''
+          }
+        }
+      }
+    }
+  ]
 });
 ```
 
@@ -140,11 +136,7 @@ interface NodeComponentProps {
     nodeId?: string;
     executionInfo?: NodeExecutionInfo;
     extensions?: NodeExtensions;
-    onConfigOpen?: (node: {
-      id: string;
-      type: string;
-      data: WorkflowNode["data"];
-    }) => void;
+    onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
   };
 
   /** Whether the node is currently selected on the canvas */
@@ -164,25 +156,20 @@ User-configured values are available under `data.config`. These correspond to th
 
 ```svelte
 <script lang="ts">
-  import type { NodeComponentProps } from "@flowdrop/flowdrop/editor";
+  import type { NodeComponentProps } from '@flowdrop/flowdrop/editor';
 
   let {
     data,
     selected = false,
     isProcessing = false,
-    isError = false,
+    isError = false
   }: NodeComponentProps = $props();
 
-  const language = $derived(data.config?.language ?? "javascript");
-  const code = $derived(data.config?.code ?? "");
+  const language = $derived(data.config?.language ?? 'javascript');
+  const code = $derived(data.config?.code ?? '');
 </script>
 
-<div
-  class="node"
-  class:selected
-  class:processing={isProcessing}
-  class:error={isError}
->
+<div class="node" class:selected class:processing={isProcessing} class:error={isError}>
   <header>{data.label}</header>
   <span class="badge">{language}</span>
   <pre><code>{code}</code></pre>
@@ -208,13 +195,13 @@ If you want a button that opens the node's configuration panel:
 The simplest API. Registers one component with an explicit type string.
 
 ```typescript
-import { registerCustomNode } from "@flowdrop/flowdrop/editor";
-import MyNode from "./MyNode.svelte";
+import { registerCustomNode } from '@flowdrop/flowdrop/editor';
+import MyNode from './MyNode.svelte';
 
-registerCustomNode("myproject:special", "Special Node", MyNode, {
-  description: "A special node for my project",
-  icon: "mdi:star",
-  category: "custom",
+registerCustomNode('myproject:special', 'Special Node', MyNode, {
+  description: 'A special node for my project',
+  icon: 'mdi:star',
+  category: 'custom'
 });
 ```
 
@@ -232,7 +219,7 @@ function registerCustomNode(
     source?: string; // Defaults to "custom"
     statusPosition?: StatusPosition; // "top-left" | "top-right" | "bottom-left" | "bottom-right"
     statusSize?: StatusSize; // "sm" | "md" | "lg"
-  },
+  }
 ): void;
 ```
 
@@ -241,29 +228,29 @@ function registerCustomNode(
 Registers multiple node types under a shared namespace. All type identifiers are automatically prefixed with the namespace (e.g., `"awesome"` + `"fancy"` becomes `"awesome:fancy"`).
 
 ```typescript
-import { registerFlowDropPlugin } from "@flowdrop/flowdrop/editor";
-import FancyNode from "./FancyNode.svelte";
-import GlowNode from "./GlowNode.svelte";
+import { registerFlowDropPlugin } from '@flowdrop/flowdrop/editor';
+import FancyNode from './FancyNode.svelte';
+import GlowNode from './GlowNode.svelte';
 
 const result = registerFlowDropPlugin({
-  namespace: "awesome",
-  name: "Awesome Nodes",
-  version: "1.0.0",
+  namespace: 'awesome',
+  name: 'Awesome Nodes',
+  version: '1.0.0',
   nodes: [
     {
-      type: "fancy",
-      displayName: "Fancy Node",
+      type: 'fancy',
+      displayName: 'Fancy Node',
       component: FancyNode,
-      icon: "mdi:sparkles",
-      category: "custom",
+      icon: 'mdi:sparkles',
+      category: 'custom'
     },
     {
-      type: "glow",
-      displayName: "Glowing Node",
+      type: 'glow',
+      displayName: 'Glowing Node',
       component: GlowNode,
-      icon: "mdi:lightbulb",
-    },
-  ],
+      icon: 'mdi:lightbulb'
+    }
+  ]
 });
 
 // result:
@@ -282,15 +269,15 @@ const result = registerFlowDropPlugin({
 A chainable API that builds and registers a plugin in one expression:
 
 ```typescript
-import { createPlugin } from "@flowdrop/flowdrop/editor";
-import FancyNode from "./FancyNode.svelte";
-import GlowNode from "./GlowNode.svelte";
+import { createPlugin } from '@flowdrop/flowdrop/editor';
+import FancyNode from './FancyNode.svelte';
+import GlowNode from './GlowNode.svelte';
 
-createPlugin("awesome", "Awesome Nodes")
-  .version("1.0.0")
-  .description("A collection of awesome nodes")
-  .node("fancy", "Fancy Node", FancyNode, { icon: "mdi:sparkles" })
-  .node("glow", "Glowing Node", GlowNode, { icon: "mdi:lightbulb" })
+createPlugin('awesome', 'Awesome Nodes')
+  .version('1.0.0')
+  .description('A collection of awesome nodes')
+  .node('fancy', 'Fancy Node', FancyNode, { icon: 'mdi:sparkles' })
+  .node('glow', 'Glowing Node', GlowNode, { icon: 'mdi:lightbulb' })
   .register();
 ```
 
@@ -314,39 +301,37 @@ Registering a component tells FlowDrop _how to render_ a node type. To make the 
 const app = await mountFlowDropApp(container, {
   nodes: [
     {
-      id: "myapp:code-editor",
-      name: "Code Editor",
-      type: "myapp:code-editor", // Must match the registered component type
-      description: "Write and edit code",
-      category: "processing",
-      version: "1.0.0",
-      icon: "mdi:code-braces",
+      id: 'myapp:code-editor',
+      name: 'Code Editor',
+      type: 'myapp:code-editor', // Must match the registered component type
+      description: 'Write and edit code',
+      category: 'processing',
+      version: '1.0.0',
+      icon: 'mdi:code-braces',
       inputs: [
         {
-          id: "input",
-          name: "Input",
-          type: "input",
-          dataType: "string",
-          required: true,
-        },
+          id: 'input',
+          name: 'Input',
+          type: 'input',
+          dataType: 'string',
+          required: true
+        }
       ],
-      outputs: [
-        { id: "output", name: "Output", type: "output", dataType: "string" },
-      ],
+      outputs: [{ id: 'output', name: 'Output', type: 'output', dataType: 'string' }],
       configSchema: {
-        type: "object",
+        type: 'object',
         properties: {
           language: {
-            type: "string",
-            title: "Language",
-            enum: ["javascript", "python"],
-            default: "javascript",
-          },
+            type: 'string',
+            title: 'Language',
+            enum: ['javascript', 'python'],
+            default: 'javascript'
+          }
         },
-        required: ["language"],
-      },
-    },
-  ],
+        required: ['language']
+      }
+    }
+  ]
 });
 ```
 
@@ -415,11 +400,11 @@ import {
   unregisterFlowDropPlugin,
   getRegisteredPlugins,
   getPluginNodeCount,
-  isValidNamespace,
-} from "@flowdrop/flowdrop/editor";
+  isValidNamespace
+} from '@flowdrop/flowdrop/editor';
 
 // Remove all nodes from a plugin
-const removed = unregisterFlowDropPlugin("awesome");
+const removed = unregisterFlowDropPlugin('awesome');
 // Returns ["awesome:fancy", "awesome:glow"]
 
 // List all registered plugin namespaces
@@ -427,13 +412,13 @@ const plugins = getRegisteredPlugins();
 // Returns ["awesome", "mylib"]
 
 // Count nodes registered by a plugin
-const count = getPluginNodeCount("awesome");
+const count = getPluginNodeCount('awesome');
 // Returns 2
 
 // Validate a namespace before registration
-isValidNamespace("my-lib"); // true
-isValidNamespace("MyLib"); // false — uppercase not allowed
-isValidNamespace("123lib"); // false — must start with a letter
+isValidNamespace('my-lib'); // true
+isValidNamespace('MyLib'); // false — uppercase not allowed
+isValidNamespace('123lib'); // false — must start with a letter
 ```
 
 ---
@@ -482,13 +467,9 @@ interface PluginRegistrationResult {
 
 ```typescript
 interface NodeComponentProps {
-  data: WorkflowNode["data"] & {
+  data: WorkflowNode['data'] & {
     nodeId?: string;
-    onConfigOpen?: (node: {
-      id: string;
-      type: string;
-      data: WorkflowNode["data"];
-    }) => void;
+    onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
   };
   selected?: boolean;
   isProcessing?: boolean;

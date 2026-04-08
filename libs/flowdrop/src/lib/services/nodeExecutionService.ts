@@ -3,14 +3,14 @@
  * Handles fetching and managing node execution information from the backend
  */
 
-import type { NodeExecutionInfo } from "../types/index.js";
-import { getEndpointConfig } from "./api.js";
-import { buildEndpointUrl } from "../config/endpoints.js";
+import type { NodeExecutionInfo } from '../types/index.js';
+import { getEndpointConfig } from './api.js';
+import { buildEndpointUrl } from '../config/endpoints.js';
 import {
   NODE_EXECUTION_CACHE_TIMEOUT_MS,
-  PIPELINE_API_UNAVAILABLE_DURATION_MS,
-} from "../config/constants.js";
-import { logger } from "../utils/logger.js";
+  PIPELINE_API_UNAVAILABLE_DURATION_MS
+} from '../config/constants.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Internal type for pipeline job data from the API response
@@ -52,7 +52,7 @@ export class NodeExecutionService {
    */
   async getNodeExecutionInfo(
     nodeId: string,
-    pipelineId?: string,
+    pipelineId?: string
   ): Promise<NodeExecutionInfo | null> {
     if (!pipelineId) {
       return null;
@@ -60,14 +60,10 @@ export class NodeExecutionService {
 
     try {
       const endpointConfig = getEndpointConfig();
-      if (!endpointConfig) throw new Error("Endpoint config not available");
-      const url = buildEndpointUrl(
-        endpointConfig,
-        endpointConfig.endpoints.pipelines.get,
-        {
-          id: pipelineId,
-        },
-      );
+      if (!endpointConfig) throw new Error('Endpoint config not available');
+      const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
+        id: pipelineId
+      });
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -84,29 +80,25 @@ export class NodeExecutionService {
 
       if (!nodeJob && !nodeStatus) {
         return {
-          status: "idle",
+          status: 'idle',
           executionCount: 0,
-          isExecuting: false,
+          isExecuting: false
         };
       }
 
       const executionInfo: NodeExecutionInfo = {
-        status: this.mapJobStatusToExecutionStatus(
-          nodeStatus?.status || nodeJob?.status || "idle",
-        ),
+        status: this.mapJobStatusToExecutionStatus(nodeStatus?.status || nodeJob?.status || 'idle'),
         executionCount: nodeJob?.execution_count || 0,
-        isExecuting:
-          nodeStatus?.status === "running" || nodeJob?.status === "running",
+        isExecuting: nodeStatus?.status === 'running' || nodeJob?.status === 'running',
         lastExecuted: nodeJob?.last_executed || nodeStatus?.last_executed,
-        lastExecutionDuration:
-          nodeJob?.execution_time || nodeStatus?.execution_time,
-        lastError: nodeJob?.error || nodeStatus?.error,
+        lastExecutionDuration: nodeJob?.execution_time || nodeStatus?.execution_time,
+        lastError: nodeJob?.error || nodeStatus?.error
       };
 
       this.cache.set(nodeId, executionInfo);
       return executionInfo;
     } catch (error) {
-      logger.error("Failed to fetch node execution info:", error);
+      logger.error('Failed to fetch node execution info:', error);
       return null;
     }
   }
@@ -116,7 +108,7 @@ export class NodeExecutionService {
    */
   async getMultipleNodeExecutionInfo(
     nodeIds: string[],
-    pipelineId?: string,
+    pipelineId?: string
   ): Promise<Record<string, NodeExecutionInfo>> {
     if (!pipelineId) {
       return {};
@@ -127,9 +119,9 @@ export class NodeExecutionService {
       const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
       nodeIds.forEach((nodeId) => {
         defaultExecutionInfo[nodeId] = {
-          status: "idle",
+          status: 'idle',
           executionCount: 0,
-          isExecuting: false,
+          isExecuting: false
         };
       });
       return defaultExecutionInfo;
@@ -137,32 +129,25 @@ export class NodeExecutionService {
 
     try {
       const endpointConfig = getEndpointConfig();
-      if (!endpointConfig) throw new Error("Endpoint config not available");
-      const url = buildEndpointUrl(
-        endpointConfig,
-        endpointConfig.endpoints.pipelines.get,
-        {
-          id: pipelineId,
-        },
-      );
+      if (!endpointConfig) throw new Error('Endpoint config not available');
+      const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
+        id: pipelineId
+      });
       const response = await fetch(url);
 
       if (!response.ok) {
         // If the endpoint returns 404, it means the pipeline API is not available
         // Mark API as unavailable for 5 minutes to prevent repeated calls
         if (response.status === 404) {
-          logger.warn(
-            `Pipeline API endpoint not available for pipeline ${pipelineId}`,
-          );
+          logger.warn(`Pipeline API endpoint not available for pipeline ${pipelineId}`);
           this.apiUnavailable = true;
-          this.apiUnavailableUntil =
-            Date.now() + PIPELINE_API_UNAVAILABLE_DURATION_MS;
+          this.apiUnavailableUntil = Date.now() + PIPELINE_API_UNAVAILABLE_DURATION_MS;
           const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
           nodeIds.forEach((nodeId) => {
             defaultExecutionInfo[nodeId] = {
-              status: "idle",
+              status: 'idle',
               executionCount: 0,
-              isExecuting: false,
+              isExecuting: false
             };
           });
           return defaultExecutionInfo;
@@ -178,9 +163,9 @@ export class NodeExecutionService {
       // Initialize all nodes with default values
       nodeIds.forEach((nodeId) => {
         executionInfoMap[nodeId] = {
-          status: "idle",
+          status: 'idle',
           executionCount: 0,
-          isExecuting: false,
+          isExecuting: false
         };
       });
 
@@ -191,10 +176,10 @@ export class NodeExecutionService {
           executionInfoMap[nodeId] = {
             status: this.mapJobStatusToExecutionStatus(job.status),
             executionCount: job.execution_count || 0,
-            isExecuting: job.status === "running",
+            isExecuting: job.status === 'running',
             lastExecuted: job.completed || job.started,
             lastExecutionDuration: job.execution_time,
-            lastError: job.error_message,
+            lastError: job.error_message
           };
 
           // Update cache
@@ -204,14 +189,14 @@ export class NodeExecutionService {
 
       return executionInfoMap;
     } catch (error) {
-      logger.error("Failed to fetch multiple node execution info:", error);
+      logger.error('Failed to fetch multiple node execution info:', error);
       // Return default values instead of empty object to prevent repeated calls
       const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
       nodeIds.forEach((nodeId) => {
         defaultExecutionInfo[nodeId] = {
-          status: "idle",
+          status: 'idle',
           executionCount: 0,
-          isExecuting: false,
+          isExecuting: false
         };
       });
       return defaultExecutionInfo;
@@ -224,8 +209,8 @@ export class NodeExecutionService {
   async getAllNodeExecutionCounts(): Promise<Record<string, number>> {
     try {
       const endpointConfig = getEndpointConfig();
-      if (!endpointConfig) throw new Error("Endpoint config not available");
-      const url = buildEndpointUrl(endpointConfig, "/node-execution-counts");
+      if (!endpointConfig) throw new Error('Endpoint config not available');
+      const url = buildEndpointUrl(endpointConfig, '/node-execution-counts');
 
       const response = await fetch(url);
       if (!response.ok) {
@@ -239,7 +224,7 @@ export class NodeExecutionService {
 
       return {};
     } catch (error) {
-      logger.error("Failed to fetch all node execution counts:", error);
+      logger.error('Failed to fetch all node execution counts:', error);
       return {};
     }
   }
@@ -276,19 +261,16 @@ export class NodeExecutionService {
   /**
    * Update execution info for a node (for real-time updates)
    */
-  updateNodeExecutionInfo(
-    nodeId: string,
-    executionInfo: Partial<NodeExecutionInfo>,
-  ): void {
+  updateNodeExecutionInfo(nodeId: string, executionInfo: Partial<NodeExecutionInfo>): void {
     const existing = this.cache.get(nodeId);
     if (existing) {
       this.cache.set(nodeId, { ...existing, ...executionInfo });
     } else {
       this.cache.set(nodeId, {
-        status: "idle",
+        status: 'idle',
         executionCount: 0,
         isExecuting: false,
-        ...executionInfo,
+        ...executionInfo
       });
     }
   }
@@ -296,33 +278,29 @@ export class NodeExecutionService {
   /**
    * Map job status to execution status
    */
-  private mapJobStatusToExecutionStatus(
-    jobStatus: string,
-  ): NodeExecutionInfo["status"] {
+  private mapJobStatusToExecutionStatus(jobStatus: string): NodeExecutionInfo['status'] {
     switch (jobStatus) {
-      case "pending":
-        return "pending";
-      case "running":
-        return "running";
-      case "completed":
-        return "completed";
-      case "failed":
-        return "failed";
-      case "cancelled":
-        return "cancelled";
-      case "skipped":
-        return "skipped";
+      case 'pending':
+        return 'pending';
+      case 'running':
+        return 'running';
+      case 'completed':
+        return 'completed';
+      case 'failed':
+        return 'failed';
+      case 'cancelled':
+        return 'cancelled';
+      case 'skipped':
+        return 'skipped';
       default:
-        return "idle";
+        return 'idle';
     }
   }
 
   /**
    * Batch update execution info for multiple nodes
    */
-  updateMultipleNodeExecutionInfo(
-    updates: Record<string, Partial<NodeExecutionInfo>>,
-  ): void {
+  updateMultipleNodeExecutionInfo(updates: Record<string, Partial<NodeExecutionInfo>>): void {
     Object.entries(updates).forEach(([nodeId, executionInfo]) => {
       this.updateNodeExecutionInfo(nodeId, executionInfo);
     });

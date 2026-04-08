@@ -6,7 +6,7 @@
 -->
 
 <script lang="ts">
-  import { tick } from "svelte";
+  import { tick } from 'svelte';
 
   export interface Suggestion {
     /** The text to insert into the input */
@@ -37,7 +37,7 @@
     if (!visible || !listElement || selectedIndex < 0) return;
     const items = listElement.children;
     if (items[selectedIndex]) {
-      items[selectedIndex].scrollIntoView({ block: "nearest" });
+      items[selectedIndex].scrollIntoView({ block: 'nearest' });
     }
   });
 </script>
@@ -57,7 +57,10 @@
         id="console-autocomplete-option-{i}"
         tabindex="-1"
         aria-selected={i === selectedIndex}
-        onmousedown={(e: MouseEvent) => { e.preventDefault(); onAccept(suggestion); }}
+        onmousedown={(e: MouseEvent) => {
+          e.preventDefault();
+          onAccept(suggestion);
+        }}
       >
         <span class="console-autocomplete__label">{suggestion.label}</span>
         {#if suggestion.detail}

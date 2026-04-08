@@ -7,7 +7,7 @@
  * @module types/interrupt
  */
 
-import type { ConfigSchema } from "./index.js";
+import type { ConfigSchema } from './index.js';
 
 // Re-export state machine types for convenience
 export type {
@@ -24,8 +24,8 @@ export type {
   FailureAction,
   RetryAction,
   ResetAction,
-  TransitionResult,
-} from "./interruptState.js";
+  TransitionResult
+} from './interruptState.js';
 
 export {
   initialState,
@@ -36,8 +36,8 @@ export {
   canSubmit,
   getErrorMessage,
   getResolvedValue,
-  toLegacyStatus,
-} from "./interruptState.js";
+  toLegacyStatus
+} from './interruptState.js';
 
 /**
  * Types of interrupts supported by the system
@@ -47,12 +47,7 @@ export {
  * - `text`: Free-form text input
  * - `form`: JSON Schema-based form
  */
-export type InterruptType =
-  | "confirmation"
-  | "choice"
-  | "text"
-  | "form"
-  | "review";
+export type InterruptType = 'confirmation' | 'choice' | 'text' | 'form' | 'review';
 
 /**
  * Status of an interrupt request
@@ -62,7 +57,7 @@ export type InterruptType =
  * - `cancelled`: User or system cancelled the interrupt
  * - `expired`: Interrupt timed out without response
  */
-export type InterruptStatus = "pending" | "resolved" | "cancelled" | "expired";
+export type InterruptStatus = 'pending' | 'resolved' | 'cancelled' | 'expired';
 
 /**
  * Choice option for choice-type interrupts
@@ -363,7 +358,7 @@ export type InterruptResponse = InterruptApiResponse<Interrupt>;
  */
 export interface InterruptMessageMetadata {
   /** Indicates this is an interrupt request */
-  type: "interrupt_request";
+  type: 'interrupt_request';
   /** The interrupt ID */
   interrupt_id: string;
   /** Type of interrupt */
@@ -415,12 +410,12 @@ export interface InterruptMessageMetadata {
  * @returns True if the metadata indicates an interrupt request
  */
 export function isInterruptMetadata(
-  metadata: Record<string, unknown> | undefined,
+  metadata: Record<string, unknown> | undefined
 ): metadata is Record<string, unknown> {
   return (
     metadata !== undefined &&
-    metadata.type === "interrupt_request" &&
-    typeof metadata.interrupt_id === "string"
+    metadata.type === 'interrupt_request' &&
+    typeof metadata.interrupt_id === 'string'
   );
 }
 
@@ -431,7 +426,7 @@ export function isInterruptMetadata(
  * @returns The interrupt metadata if valid, or null
  */
 export function extractInterruptMetadata(
-  metadata: Record<string, unknown> | undefined,
+  metadata: Record<string, unknown> | undefined
 ): InterruptMessageMetadata | null {
   if (!isInterruptMetadata(metadata)) {
     return null;
@@ -439,7 +434,7 @@ export function extractInterruptMetadata(
 
   // Manually construct the typed object from the validated metadata
   return {
-    type: "interrupt_request",
+    type: 'interrupt_request',
     interrupt_id: metadata.interrupt_id as string,
     interrupt_type: metadata.interrupt_type as InterruptType,
     schema: metadata.schema as ConfigSchema | undefined,
@@ -463,7 +458,7 @@ export function extractInterruptMetadata(
     changes: metadata.changes as ReviewChange[] | undefined,
     accept_all_label: metadata.accept_all_label as string | undefined,
     reject_all_label: metadata.reject_all_label as string | undefined,
-    submit_label: metadata.submit_label as string | undefined,
+    submit_label: metadata.submit_label as string | undefined
   };
 }
 
@@ -478,12 +473,12 @@ export function extractInterruptMetadata(
 export function metadataToInterrupt(
   metadata: InterruptMessageMetadata,
   messageId: string,
-  content: string,
+  content: string
 ): Interrupt {
   const baseInterrupt: Interrupt = {
     id: metadata.interrupt_id,
     type: metadata.interrupt_type,
-    status: "pending",
+    status: 'pending',
     message: content,
     nodeId: metadata.node_id,
     executionId: metadata.execution_id,
@@ -494,8 +489,8 @@ export function metadataToInterrupt(
     // Include metadata for resolved-by info (passed through from message metadata)
     metadata: {
       resolvedByUserName: metadata.resolvedByUserName,
-      resolvedByUserId: metadata.resolvedByUserId,
-    },
+      resolvedByUserId: metadata.resolvedByUserId
+    }
   };
 
   return baseInterrupt;
@@ -510,51 +505,49 @@ export function metadataToInterrupt(
  */
 function buildInterruptConfig(
   metadata: InterruptMessageMetadata,
-  message: string,
+  message: string
 ): InterruptConfig {
   switch (metadata.interrupt_type) {
-    case "confirmation":
+    case 'confirmation':
       return {
         message,
-        confirmLabel: metadata.confirm_label ?? "Yes",
-        cancelLabel: metadata.cancel_label ?? "No",
+        confirmLabel: metadata.confirm_label ?? 'Yes',
+        cancelLabel: metadata.cancel_label ?? 'No'
       } as ConfirmationConfig;
 
-    case "choice":
+    case 'choice':
       return {
         message,
         options: metadata.options ?? [],
         multiple: metadata.multiple ?? false,
         minSelections: metadata.min_selections,
-        maxSelections: metadata.max_selections,
+        maxSelections: metadata.max_selections
       } as ChoiceConfig;
 
-    case "text":
+    case 'text':
       return {
         message,
         placeholder: metadata.placeholder,
         multiline: metadata.multiline ?? false,
         minLength: metadata.min_length,
         maxLength: metadata.max_length,
-        defaultValue: metadata.default_value as string | undefined,
+        defaultValue: metadata.default_value as string | undefined
       } as TextConfig;
 
-    case "form":
+    case 'form':
       return {
         message,
-        schema: metadata.schema ?? { type: "object", properties: {} },
-        defaultValues: metadata.default_value as
-          | Record<string, unknown>
-          | undefined,
+        schema: metadata.schema ?? { type: 'object', properties: {} },
+        defaultValues: metadata.default_value as Record<string, unknown> | undefined
       } as FormConfig;
 
-    case "review":
+    case 'review':
       return {
         message,
         changes: metadata.changes ?? [],
         acceptAllLabel: metadata.accept_all_label,
         rejectAllLabel: metadata.reject_all_label,
-        submitLabel: metadata.submit_label,
+        submitLabel: metadata.submit_label
       } as ReviewConfig;
 
     default:
@@ -580,5 +573,5 @@ export interface InterruptPollingConfig {
 export const defaultInterruptPollingConfig: InterruptPollingConfig = {
   enabled: false,
   interval: 2000,
-  maxBackoff: 10000,
+  maxBackoff: 10000
 };

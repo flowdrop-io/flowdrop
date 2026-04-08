@@ -5,8 +5,8 @@
 -->
 
 <script lang="ts">
-  import type { NodePort } from "../types/index.js";
-  import type { EditablePortMapping, MatchQuality } from "../utils/nodeSwap.js";
+  import type { NodePort } from '../types/index.js';
+  import type { EditablePortMapping, MatchQuality } from '../utils/nodeSwap.js';
 
   interface Props {
     mapping: EditablePortMapping;
@@ -16,29 +16,28 @@
     onReset: () => void;
   }
 
-  const { mapping, availablePorts, usedPortIds, onUpdate, onReset }: Props =
-    $props();
+  const { mapping, availablePorts, usedPortIds, onUpdate, onReset }: Props = $props();
 
   const QUALITY_LABELS: Record<MatchQuality, string> = {
-    id: "ID match",
-    name: "Name match",
-    type: "Type match",
-    manual: "Manual",
-    unmapped: "No match",
+    id: 'ID match',
+    name: 'Name match',
+    type: 'Type match',
+    manual: 'Manual',
+    unmapped: 'No match'
   };
 
   const QUALITY_CLASSES: Record<MatchQuality, string> = {
-    id: "port-mapping-row__badge--id",
-    name: "port-mapping-row__badge--name",
-    type: "port-mapping-row__badge--type",
-    manual: "port-mapping-row__badge--manual",
-    unmapped: "port-mapping-row__badge--unmapped",
+    id: 'port-mapping-row__badge--id',
+    name: 'port-mapping-row__badge--name',
+    type: 'port-mapping-row__badge--type',
+    manual: 'port-mapping-row__badge--manual',
+    unmapped: 'port-mapping-row__badge--unmapped'
   };
 
   function handleChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     const value = select.value;
-    onUpdate(value === "__drop__" ? null : value);
+    onUpdate(value === '__drop__' ? null : value);
   }
 </script>
 
@@ -54,7 +53,7 @@
     <select
       class="port-mapping-row__select"
       class:port-mapping-row__select--dropped={!mapping.selectedNewPortId}
-      value={mapping.selectedNewPortId ?? "__drop__"}
+      value={mapping.selectedNewPortId ?? '__drop__'}
       onchange={handleChange}
     >
       <option value="__drop__">(Drop connection)</option>
@@ -63,7 +62,10 @@
           value={port.id}
           disabled={usedPortIds.has(port.id) && port.id !== mapping.selectedNewPortId}
         >
-          {port.name} ({port.dataType}){usedPortIds.has(port.id) && port.id !== mapping.selectedNewPortId ? " (in use)" : ""}
+          {port.name} ({port.dataType}){usedPortIds.has(port.id) &&
+          port.id !== mapping.selectedNewPortId
+            ? ' (in use)'
+            : ''}
         </option>
       {/each}
     </select>
@@ -74,13 +76,7 @@
       {QUALITY_LABELS[mapping.matchQuality]}
     </span>
     {#if mapping.isOverridden}
-      <button
-        class="port-mapping-row__reset"
-        onclick={onReset}
-        type="button"
-      >
-        reset
-      </button>
+      <button class="port-mapping-row__reset" onclick={onReset} type="button"> reset </button>
     {/if}
   </div>
 </div>

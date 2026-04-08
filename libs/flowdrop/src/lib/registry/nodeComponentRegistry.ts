@@ -9,9 +9,9 @@
  * - Runtime switching between different node visualizations
  */
 
-import type { Component } from "svelte";
-import type { WorkflowNode } from "../types/index.js";
-import { BaseRegistry } from "./BaseRegistry.js";
+import type { Component } from 'svelte';
+import type { WorkflowNode } from '../types/index.js';
+import { BaseRegistry } from './BaseRegistry.js';
 
 /**
  * Props interface that all node components must accept.
@@ -19,13 +19,9 @@ import { BaseRegistry } from "./BaseRegistry.js";
  */
 export interface NodeComponentProps {
   /** Node data containing label, config, metadata, executionInfo */
-  data: WorkflowNode["data"] & {
+  data: WorkflowNode['data'] & {
     nodeId?: string;
-    onConfigOpen?: (node: {
-      id: string;
-      type: string;
-      data: WorkflowNode["data"];
-    }) => void;
+    onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
   };
   /** Whether the node is currently selected */
   selected?: boolean;
@@ -38,25 +34,17 @@ export interface NodeComponentProps {
 /**
  * Position options for the status overlay on nodes
  */
-export type StatusPosition =
-  | "top-left"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-right";
+export type StatusPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 /**
  * Size options for the status overlay on nodes
  */
-export type StatusSize = "sm" | "md" | "lg";
+export type StatusSize = 'sm' | 'md' | 'lg';
 
 /**
  * Category for organizing node types in the UI
  */
-export type NodeComponentCategory =
-  | "visual"
-  | "functional"
-  | "layout"
-  | "custom";
+export type NodeComponentCategory = 'visual' | 'functional' | 'layout' | 'custom';
 
 /**
  * Framework-agnostic metadata for a node type.
@@ -124,15 +112,12 @@ export interface NodeRegistrationFilter {
  * const component = nodeComponentRegistry.getComponent("myCustomNode");
  * ```
  */
-class NodeComponentRegistry extends BaseRegistry<
-  string,
-  NodeComponentRegistration
-> {
+class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistration> {
   /** Default type to use when requested type is not found */
-  private defaultType: string = "workflowNode";
+  private defaultType: string = 'workflowNode';
 
   /** Initial default type, restored on clear() */
-  private static readonly INITIAL_DEFAULT_TYPE = "workflowNode";
+  private static readonly INITIAL_DEFAULT_TYPE = 'workflowNode';
 
   /**
    * Register a node component type.
@@ -163,7 +148,7 @@ class NodeComponentRegistry extends BaseRegistry<
     if (this.items.has(registration.type) && !overwrite) {
       throw new Error(
         `Node type "${registration.type}" is already registered. ` +
-          `Use overwrite: true to replace it, or use a namespaced type like "mylib:${registration.type}".`,
+          `Use overwrite: true to replace it, or use a namespaced type like "mylib:${registration.type}".`
       );
     }
     this.items.set(registration.type, registration);
@@ -177,10 +162,7 @@ class NodeComponentRegistry extends BaseRegistry<
    * @param registrations - Array of registrations to add
    * @param overwrite - If true, allows overwriting existing registrations
    */
-  registerAll(
-    registrations: NodeComponentRegistration[],
-    overwrite = false,
-  ): void {
+  registerAll(registrations: NodeComponentRegistration[], overwrite = false): void {
     for (const registration of registrations) {
       this.register(registration, overwrite);
     }
@@ -193,8 +175,7 @@ class NodeComponentRegistry extends BaseRegistry<
    * @returns The component if found, or the default component
    */
   getComponent(type: string): Component<NodeComponentProps> | undefined {
-    const registration =
-      this.items.get(type) ?? this.items.get(this.defaultType);
+    const registration = this.items.get(type) ?? this.items.get(this.defaultType);
     return registration?.component;
   }
 
@@ -306,14 +287,12 @@ class NodeComponentRegistry extends BaseRegistry<
    * ```
    */
   getOneOfOptions(
-    filterFn?: (reg: NodeComponentRegistration) => boolean,
+    filterFn?: (reg: NodeComponentRegistration) => boolean
   ): Array<{ const: string; title: string }> {
-    const registrations = filterFn
-      ? this.getAll().filter(filterFn)
-      : this.getAll();
+    const registrations = filterFn ? this.getAll().filter(filterFn) : this.getAll();
     return registrations.map((r) => ({
       const: r.type,
-      title: r.displayName,
+      title: r.displayName
     }));
   }
 
@@ -324,7 +303,7 @@ class NodeComponentRegistry extends BaseRegistry<
    * @returns The status position, or default "top-right"
    */
   getStatusPosition(type: string): StatusPosition {
-    return this.items.get(type)?.statusPosition ?? "top-right";
+    return this.items.get(type)?.statusPosition ?? 'top-right';
   }
 
   /**
@@ -334,7 +313,7 @@ class NodeComponentRegistry extends BaseRegistry<
    * @returns The status size, or default "md"
    */
   getStatusSize(type: string): StatusSize {
-    return this.items.get(type)?.statusSize ?? "md";
+    return this.items.get(type)?.statusSize ?? 'md';
   }
 }
 
@@ -375,14 +354,14 @@ export function createNamespacedType(namespace: string, type: string): string {
  * ```
  */
 export function parseNamespacedType(
-  namespacedType: string,
+  namespacedType: string
 ): { namespace: string; type: string } | null {
-  const colonIndex = namespacedType.indexOf(":");
+  const colonIndex = namespacedType.indexOf(':');
   if (colonIndex === -1) {
     return null;
   }
   return {
     namespace: namespacedType.slice(0, colonIndex),
-    type: namespacedType.slice(colonIndex + 1),
+    type: namespacedType.slice(colonIndex + 1)
   };
 }

@@ -11,10 +11,10 @@
 -->
 
 <script lang="ts">
-  import { getBezierPath } from "@xyflow/svelte";
-  import { BaseEdge } from "@xyflow/svelte";
-  import type { BezierEdgeProps } from "@xyflow/svelte";
-  import { ARROW_LENGTH_PX, ARROW_HALF_WIDTH_PX } from "../config/constants.js";
+  import { getBezierPath } from '@xyflow/svelte';
+  import { BaseEdge } from '@xyflow/svelte';
+  import type { BezierEdgeProps } from '@xyflow/svelte';
+  import { ARROW_LENGTH_PX, ARROW_HALF_WIDTH_PX } from '../config/constants.js';
 
   let {
     id,
@@ -30,16 +30,16 @@
     style,
     targetPosition,
     targetX,
-    targetY,
+    targetY
   }: BezierEdgeProps = $props();
 
   /**
    * Extract stroke color from the edge's inline style for the arrowhead fill.
    */
   let strokeColor = $derived.by(() => {
-    if (!style) return "var(--fd-edge-data, #64748b)";
+    if (!style) return 'var(--fd-edge-data, #64748b)';
     const match = style.match(/stroke:\s*([^;]+)/);
-    return match ? match[1].trim() : "var(--fd-edge-data, #64748b)";
+    return match ? match[1].trim() : 'var(--fd-edge-data, #64748b)';
   });
 
   /**
@@ -57,7 +57,7 @@
       p2x: nums[4],
       p2y: nums[5],
       p3x: nums[6],
-      p3y: nums[7],
+      p3y: nums[7]
     };
   }
 
@@ -70,7 +70,7 @@
       targetY,
       sourcePosition,
       targetPosition,
-      curvature: pathOptions?.curvature,
+      curvature: pathOptions?.curvature
     });
 
     // 2. Parse control points from SVG path

@@ -8,8 +8,8 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import type { TextConfig } from "../../types/interrupt.js";
+  import Icon from '@iconify/svelte';
+  import type { TextConfig } from '../../types/interrupt.js';
 
   /**
    * Component props
@@ -38,17 +38,15 @@
     isSubmitting,
     error,
     resolvedByUserName,
-    onSubmit,
+    onSubmit
   }: Props = $props();
 
   /** Local state for input value */
   // svelte-ignore state_referenced_locally — initial default, user edits the input
-  let inputValue = $state(config.defaultValue ?? "");
+  let inputValue = $state(config.defaultValue ?? '');
 
   /** Display value - either resolved or current input */
-  const displayValue = $derived(
-    isResolved ? (resolvedValue ?? "") : inputValue,
-  );
+  const displayValue = $derived(isResolved ? (resolvedValue ?? '') : inputValue);
 
   /** Whether the input is multiline */
   const isMultiline = $derived(config.multiline ?? false);
@@ -59,9 +57,8 @@
   /** Check if input is valid */
   const isValidInput = $derived(
     inputValue.length > 0 &&
-      (config.minLength === undefined ||
-        inputValue.length >= config.minLength) &&
-      (config.maxLength === undefined || inputValue.length <= config.maxLength),
+      (config.minLength === undefined || inputValue.length >= config.minLength) &&
+      (config.maxLength === undefined || inputValue.length <= config.maxLength)
   );
 
   /**
@@ -85,7 +82,7 @@
    * Handle Enter key for single-line input
    */
   function handleKeyDown(event: KeyboardEvent): void {
-    if (event.key === "Enter" && !isMultiline && !event.shiftKey) {
+    if (event.key === 'Enter' && !isMultiline && !event.shiftKey) {
       event.preventDefault();
       handleSubmit();
     }
@@ -115,7 +112,7 @@
         class="text-prompt__textarea"
         class:text-prompt__textarea--resolved={isResolved}
         value={displayValue}
-        placeholder={config.placeholder ?? "Enter your response..."}
+        placeholder={config.placeholder ?? 'Enter your response...'}
         disabled={isResolved || isSubmitting}
         oninput={handleInput}
         onkeydown={handleKeyDown}
@@ -129,7 +126,7 @@
         class="text-prompt__input"
         class:text-prompt__input--resolved={isResolved}
         value={displayValue}
-        placeholder={config.placeholder ?? "Enter your response..."}
+        placeholder={config.placeholder ?? 'Enter your response...'}
         disabled={isResolved || isSubmitting}
         oninput={handleInput}
         onkeydown={handleKeyDown}
@@ -143,8 +140,8 @@
   {#if !isResolved && (config.minLength !== undefined || config.maxLength !== undefined)}
     <div class="text-prompt__char-count">
       <span
-        class:text-prompt__char-count--warning={config.maxLength !==
-          undefined && charCount > config.maxLength * 0.9}
+        class:text-prompt__char-count--warning={config.maxLength !== undefined &&
+          charCount > config.maxLength * 0.9}
       >
         {charCount}
         {#if config.maxLength !== undefined}
@@ -181,9 +178,7 @@
     <div class="text-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName
-          ? `Response submitted by ${resolvedByUserName}`
-          : "Response submitted"}
+        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
       </span>
     </div>
   {/if}

@@ -25,15 +25,15 @@
 // Chat Components
 // ============================================================================
 
-export { default as AIChatPanel } from "../components/chat/AIChatPanel.svelte";
-export { default as CommandPreview } from "../components/chat/CommandPreview.svelte";
+export { default as AIChatPanel } from '../components/chat/AIChatPanel.svelte';
+export { default as CommandPreview } from '../components/chat/CommandPreview.svelte';
 
 // ============================================================================
 // Chat Utilities
 // ============================================================================
 
-export { extractCommands } from "./responseParser.js";
-export { isMutatingCommand } from "./commandClassifier.js";
+export { extractCommands } from './responseParser.js';
+export { isMutatingCommand } from './commandClassifier.js';
 
 // ============================================================================
 // Chat Types
@@ -46,5 +46,5 @@ export type {
   ChatResponse,
   ExtractedCommands,
   CommandExecutionStatus,
-  CommandPreviewItem,
-} from "../types/chat.js";
+  CommandPreviewItem
+} from '../types/chat.js';

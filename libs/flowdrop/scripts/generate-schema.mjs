@@ -7,15 +7,15 @@
  *   node scripts/generate-schema.mjs --check  # Verify committed file matches generated output
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { parse as parseYAML } from "yaml";
+import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { parse as parseYAML } from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, "..");
-const SCHEMAS_DIR = resolve(ROOT, "api/v1/components/schemas");
-const OUTPUT_PATH = resolve(ROOT, "src/lib/schemas/v1/workflow.schema.json");
+const ROOT = resolve(__dirname, '..');
+const SCHEMAS_DIR = resolve(ROOT, 'api/v1/components/schemas');
+const OUTPUT_PATH = resolve(ROOT, 'src/lib/schemas/v1/workflow.schema.json');
 
 // ---------------------------------------------------------------------------
 // 1. Load and parse all YAML source files
@@ -24,13 +24,8 @@ const OUTPUT_PATH = resolve(ROOT, "src/lib/schemas/v1/workflow.schema.json");
 /** @type {Record<string, Record<string, unknown>>} filename -> parsed YAML */
 const sources = {};
 
-for (const file of [
-  "workflow.yaml",
-  "node.yaml",
-  "common.yaml",
-  "config.yaml",
-]) {
-  sources[file] = parseYAML(readFileSync(resolve(SCHEMAS_DIR, file), "utf-8"));
+for (const file of ['workflow.yaml', 'node.yaml', 'common.yaml', 'config.yaml']) {
+  sources[file] = parseYAML(readFileSync(resolve(SCHEMAS_DIR, file), 'utf-8'));
 }
 
 // ---------------------------------------------------------------------------
@@ -49,11 +44,11 @@ for (const file of [
  *   './config.yaml#/ConfigSchema'  -> file config.yaml, schema "ConfigSchema"
  */
 function parseRef(ref, currentFile) {
-  if (ref.startsWith("#/")) {
+  if (ref.startsWith('#/')) {
     return { file: currentFile, name: ref.slice(2) };
   }
-  const [filePart, fragmentPart] = ref.split("#");
-  const file = filePart.replace("./", "");
+  const [filePart, fragmentPart] = ref.split('#');
+  const file = filePart.replace('./', '');
   return { file, name: fragmentPart.slice(1) }; // strip leading /
 }
 
@@ -76,7 +71,7 @@ const defs = {};
  *  - Handle `$ref` alongside sibling properties (like `description`)
  */
 function convertSchema(schema, currentFile) {
-  if (schema == null || typeof schema !== "object") return schema;
+  if (schema == null || typeof schema !== 'object') return schema;
 
   if (Array.isArray(schema)) {
     return schema.map((item) => convertSchema(item, currentFile));
@@ -86,25 +81,25 @@ function convertSchema(schema, currentFile) {
 
   for (const [key, value] of Object.entries(schema)) {
     // Strip OpenAPI-specific properties
-    if (key === "example" || key === "examples") continue;
+    if (key === 'example' || key === 'examples') continue;
 
-    if (key === "$ref") {
+    if (key === '$ref') {
       const { file, name } = parseRef(value, currentFile);
       // Queue this definition for collection if not already done
       if (!collectedDefs.has(name)) {
         collectDef(file, name);
       }
-      result["$ref"] = `#/$defs/${name}`;
-    } else if (key === "allOf" || key === "anyOf" || key === "oneOf") {
+      result['$ref'] = `#/$defs/${name}`;
+    } else if (key === 'allOf' || key === 'anyOf' || key === 'oneOf') {
       result[key] = value.map((item) => convertSchema(item, currentFile));
-    } else if (key === "properties") {
+    } else if (key === 'properties') {
       result.properties = {};
       for (const [propName, propSchema] of Object.entries(value)) {
         result.properties[propName] = convertSchema(propSchema, currentFile);
       }
-    } else if (key === "additionalProperties" && typeof value === "object") {
+    } else if (key === 'additionalProperties' && typeof value === 'object') {
       result.additionalProperties = convertSchema(value, currentFile);
-    } else if (key === "items") {
+    } else if (key === 'items') {
       result.items = convertSchema(value, currentFile);
     } else {
       result[key] = value;
@@ -113,7 +108,7 @@ function convertSchema(schema, currentFile) {
 
   // If we have $ref alongside other properties (e.g., $ref + description),
   // use allOf to merge them per JSON Schema semantics.
-  if (result["$ref"] && Object.keys(result).length > 1) {
+  if (result['$ref'] && Object.keys(result).length > 1) {
     const { $ref, ...rest } = result;
     return { allOf: [{ $ref }, rest] };
   }
@@ -141,8 +136,8 @@ function collectDef(file, name) {
 // ---------------------------------------------------------------------------
 
 // Convert the root Workflow schema (it will recursively collect all dependencies)
-const workflowSource = sources["workflow.yaml"]["Workflow"];
-const rootSchema = convertSchema(workflowSource, "workflow.yaml");
+const workflowSource = sources['workflow.yaml']['Workflow'];
+const rootSchema = convertSchema(workflowSource, 'workflow.yaml');
 
 // Sort $defs alphabetically for stable output
 const sortedDefs = {};
@@ -151,40 +146,38 @@ for (const key of Object.keys(defs).sort()) {
 }
 
 const outputSchema = {
-  $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://flowdrop.io/schemas/v1/workflow.schema.json",
-  title: "FlowDrop Workflow",
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  $id: 'https://flowdrop.io/schemas/v1/workflow.schema.json',
+  title: 'FlowDrop Workflow',
   description:
-    "Schema for a FlowDrop workflow document. Validates the structure of workflows created by the FlowDrop visual workflow editor.",
+    'Schema for a FlowDrop workflow document. Validates the structure of workflows created by the FlowDrop visual workflow editor.',
   ...rootSchema,
-  $defs: sortedDefs,
+  $defs: sortedDefs
 };
 
-const output = JSON.stringify(outputSchema, null, 2) + "\n";
+const output = JSON.stringify(outputSchema, null, 2) + '\n';
 
 // ---------------------------------------------------------------------------
 // 5. Write or check
 // ---------------------------------------------------------------------------
 
-const isCheck = process.argv.includes("--check");
+const isCheck = process.argv.includes('--check');
 
 if (isCheck) {
   let committed;
   try {
-    committed = readFileSync(OUTPUT_PATH, "utf-8");
+    committed = readFileSync(OUTPUT_PATH, 'utf-8');
   } catch {
-    console.error(
-      `ERROR: ${OUTPUT_PATH} does not exist. Run 'npm run schema:generate' first.`,
-    );
+    console.error(`ERROR: ${OUTPUT_PATH} does not exist. Run 'npm run schema:generate' first.`);
     process.exit(1);
   }
   if (committed !== output) {
     console.error(
-      "ERROR: Committed schema is out of date. Run 'npm run schema:generate' to update.",
+      "ERROR: Committed schema is out of date. Run 'npm run schema:generate' to update."
     );
     process.exit(1);
   }
-  console.log("Schema is up to date.");
+  console.log('Schema is up to date.');
 } else {
   writeFileSync(OUTPUT_PATH, output);
   console.log(`Generated ${OUTPUT_PATH}`);

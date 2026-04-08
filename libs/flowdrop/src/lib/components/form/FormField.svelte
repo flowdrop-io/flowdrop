@@ -28,27 +28,23 @@
 -->
 
 <script lang="ts">
-  import FormFieldWrapper from "./FormFieldWrapper.svelte";
-  import FormTextField from "./FormTextField.svelte";
-  import FormTextarea from "./FormTextarea.svelte";
-  import FormNumberField from "./FormNumberField.svelte";
-  import FormRangeField from "./FormRangeField.svelte";
-  import FormToggle from "./FormToggle.svelte";
-  import FormSelect from "./FormSelect.svelte";
-  import FormCheckboxGroup from "./FormCheckboxGroup.svelte";
-  import FormArray from "./FormArray.svelte";
-  import FormCodeEditor from "./FormCodeEditor.svelte";
-  import FormMarkdownEditor from "./FormMarkdownEditor.svelte";
-  import FormTemplateEditor from "./FormTemplateEditor.svelte";
-  import FormAutocomplete from "./FormAutocomplete.svelte";
-  import type { FieldSchema } from "./types.js";
-  import { getSchemaOptions } from "./types.js";
-  import type {
-    WorkflowNode,
-    WorkflowEdge,
-    AuthProvider,
-  } from "$lib/types/index.js";
-  import { getResolvedTheme } from "$lib/stores/settingsStore.svelte.js";
+  import FormFieldWrapper from './FormFieldWrapper.svelte';
+  import FormTextField from './FormTextField.svelte';
+  import FormTextarea from './FormTextarea.svelte';
+  import FormNumberField from './FormNumberField.svelte';
+  import FormRangeField from './FormRangeField.svelte';
+  import FormToggle from './FormToggle.svelte';
+  import FormSelect from './FormSelect.svelte';
+  import FormCheckboxGroup from './FormCheckboxGroup.svelte';
+  import FormArray from './FormArray.svelte';
+  import FormCodeEditor from './FormCodeEditor.svelte';
+  import FormMarkdownEditor from './FormMarkdownEditor.svelte';
+  import FormTemplateEditor from './FormTemplateEditor.svelte';
+  import FormAutocomplete from './FormAutocomplete.svelte';
+  import type { FieldSchema } from './types.js';
+  import { getSchemaOptions } from './types.js';
+  import type { WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
+  import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
 
   interface Props {
     /** Unique key/id for the field */
@@ -86,7 +82,7 @@
     nodes,
     edges,
     workflowId,
-    authProvider,
+    authProvider
   }: Props = $props();
 
   /**
@@ -98,7 +94,7 @@
    * Computed description ID for ARIA association
    */
   const descriptionId = $derived(
-    schema.description && schema.title ? `${fieldKey}-description` : undefined,
+    schema.description && schema.title ? `${fieldKey}-description` : undefined
   );
 
   /**
@@ -109,95 +105,90 @@
   /**
    * Field label - prefer title, fall back to description, then key
    */
-  const fieldLabel = $derived(
-    String(schema.title ?? schema.description ?? fieldKey),
-  );
+  const fieldLabel = $derived(String(schema.title ?? schema.description ?? fieldKey));
 
   /**
    * Determine the field type to render
    */
   const fieldType = $derived.by(() => {
     // Hidden fields should not be rendered
-    if (schema.format === "hidden") {
-      return "hidden";
+    if (schema.format === 'hidden') {
+      return 'hidden';
     }
 
     // Autocomplete field for format: "autocomplete" with autocomplete.url
-    if (schema.format === "autocomplete" && schema.autocomplete?.url) {
-      return "autocomplete";
+    if (schema.format === 'autocomplete' && schema.autocomplete?.url) {
+      return 'autocomplete';
     }
 
     // JSON/code editor for format: "json" or "code"
-    if (schema.format === "json" || schema.format === "code") {
-      return "code-editor";
+    if (schema.format === 'json' || schema.format === 'code') {
+      return 'code-editor';
     }
 
     // Markdown editor for format: "markdown"
-    if (schema.format === "markdown") {
-      return "markdown-editor";
+    if (schema.format === 'markdown') {
+      return 'markdown-editor';
     }
 
     // Template editor for format: "template" (Twig/Liquid syntax)
-    if (schema.format === "template") {
-      return "template-editor";
+    if (schema.format === 'template') {
+      return 'template-editor';
     }
 
     // Enum with multiple selection -> checkbox group
     if (schema.enum && schema.multiple) {
-      return "checkbox-group";
+      return 'checkbox-group';
     }
 
     // Enum with single selection -> select
     if (schema.enum) {
-      return "select-enum";
+      return 'select-enum';
     }
 
     // oneOf with labeled options (standard JSON Schema) -> select
     // Must be checked before basic type checks since oneOf schemas often have type: 'string'
     if (schema.oneOf && schema.oneOf.length > 0) {
-      return "select-options";
+      return 'select-options';
     }
 
     // Multiline string -> textarea
-    if (schema.type === "string" && schema.format === "multiline") {
-      return "textarea";
+    if (schema.type === 'string' && schema.format === 'multiline') {
+      return 'textarea';
     }
 
     // Range slider for number/integer with format: "range"
-    if (
-      (schema.type === "number" || schema.type === "integer") &&
-      schema.format === "range"
-    ) {
-      return "range";
+    if ((schema.type === 'number' || schema.type === 'integer') && schema.format === 'range') {
+      return 'range';
     }
 
     // String -> text field
-    if (schema.type === "string") {
-      return "text";
+    if (schema.type === 'string') {
+      return 'text';
     }
 
     // Number or integer -> number field
-    if (schema.type === "number" || schema.type === "integer") {
-      return "number";
+    if (schema.type === 'number' || schema.type === 'integer') {
+      return 'number';
     }
 
     // Boolean -> toggle
-    if (schema.type === "boolean") {
-      return "toggle";
+    if (schema.type === 'boolean') {
+      return 'toggle';
     }
 
     // Future: Array type support
-    if (schema.type === "array") {
-      return "array";
+    if (schema.type === 'array') {
+      return 'array';
     }
 
     // Object type without specific format -> CodeMirror JSON editor
-    if (schema.type === "object") {
-      return "code-editor";
+    if (schema.type === 'object') {
+      return 'code-editor';
     }
 
     // Fallback to text
-    return "text";
+    return 'text';
   });
 
   /**
@@ -217,7 +208,7 @@
   /**
    * Get current value as the appropriate type
    */
-  const stringValue = $derived(String(value ?? ""));
+  const stringValue = $derived(String(value ?? ''));
   const numberValue = $derived(value as number | string);
   const booleanValue = $derived(Boolean(value ?? schema.default ?? false));
   const arrayValue = $derived.by((): string[] => {
@@ -243,11 +234,11 @@
       }
       return value ? [String(value)] : [];
     }
-    return String(value ?? "");
+    return String(value ?? '');
   });
 </script>
 
-{#if fieldType !== "hidden"}
+{#if fieldType !== 'hidden'}
   <FormFieldWrapper
     id={fieldKey}
     label={fieldLabel}
@@ -255,7 +246,7 @@
     description={schema.title ? schema.description : undefined}
     {animationDelay}
   >
-    {#if fieldType === "checkbox-group"}
+    {#if fieldType === 'checkbox-group'}
       <FormCheckboxGroup
         id={fieldKey}
         value={arrayValue}
@@ -264,7 +255,7 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "select-enum"}
+    {:else if fieldType === 'select-enum'}
       <FormSelect
         id={fieldKey}
         value={stringValue}
@@ -274,31 +265,31 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "textarea"}
+    {:else if fieldType === 'textarea'}
       <FormTextarea
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? ""}
+        placeholder={schema.placeholder ?? ''}
         {required}
         ariaDescribedBy={descriptionId}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "text"}
+    {:else if fieldType === 'text'}
       <FormTextField
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? ""}
+        placeholder={schema.placeholder ?? ''}
         {required}
         ariaDescribedBy={descriptionId}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "number"}
+    {:else if fieldType === 'number'}
       <FormNumberField
         id={fieldKey}
         value={numberValue}
-        placeholder={schema.placeholder ?? ""}
+        placeholder={schema.placeholder ?? ''}
         min={schema.minimum}
         max={schema.maximum}
         step={schema.step}
@@ -307,7 +298,7 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "range"}
+    {:else if fieldType === 'range'}
       <FormRangeField
         id={fieldKey}
         value={numberValue}
@@ -319,7 +310,7 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "toggle"}
+    {:else if fieldType === 'toggle'}
       <FormToggle
         id={fieldKey}
         value={booleanValue}
@@ -327,7 +318,7 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "select-options"}
+    {:else if fieldType === 'select-options'}
       <FormSelect
         id={fieldKey}
         value={stringValue}
@@ -337,38 +328,37 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "array" && schema.items}
+    {:else if fieldType === 'array' && schema.items}
       <FormArray
         id={fieldKey}
         value={arrayItems}
         itemSchema={schema.items}
         minItems={schema.minItems}
         maxItems={schema.maxItems}
-        addLabel={`Add ${schema.items.title ?? "Item"}`}
+        addLabel={`Add ${schema.items.title ?? 'Item'}`}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "code-editor"}
+    {:else if fieldType === 'code-editor'}
       <FormCodeEditor
         id={fieldKey}
         {value}
-        placeholder={schema.placeholder ?? "{}"}
+        placeholder={schema.placeholder ?? '{}'}
         {required}
-        height={(schema.height as string | undefined) ?? "200px"}
-        darkTheme={(schema.darkTheme as boolean | undefined) ??
-          getResolvedTheme() === "dark"}
+        height={(schema.height as string | undefined) ?? '200px'}
+        darkTheme={(schema.darkTheme as boolean | undefined) ?? getResolvedTheme() === 'dark'}
         autoFormat={(schema.autoFormat as boolean | undefined) ?? true}
         ariaDescribedBy={descriptionId}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "markdown-editor"}
+    {:else if fieldType === 'markdown-editor'}
       <FormMarkdownEditor
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? "Write your markdown here..."}
+        placeholder={schema.placeholder ?? 'Write your markdown here...'}
         {required}
-        height={(schema.height as string | undefined) ?? "300px"}
+        height={(schema.height as string | undefined) ?? '300px'}
         showToolbar={(schema.showToolbar as boolean | undefined) ?? true}
         showStatusBar={(schema.showStatusBar as boolean | undefined) ?? true}
         spellChecker={(schema.spellChecker as boolean | undefined) ?? false}
@@ -376,19 +366,18 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "template-editor"}
+    {:else if fieldType === 'template-editor'}
       <FormTemplateEditor
         id={fieldKey}
         value={stringValue}
         placeholder={schema.placeholder ??
-          "Enter your template here...\nUse {{ variable }} for dynamic values."}
+          'Enter your template here...\nUse {{ variable }} for dynamic values.'}
         {required}
-        height={(schema.height as string | undefined) ?? "250px"}
-        darkTheme={(schema.darkTheme as boolean | undefined) ??
-          getResolvedTheme() === "dark"}
+        height={(schema.height as string | undefined) ?? '250px'}
+        darkTheme={(schema.darkTheme as boolean | undefined) ?? getResolvedTheme() === 'dark'}
         variables={schema.variables}
         placeholderExample={(schema.placeholderExample as string | undefined) ??
-          "Hello {{ name }}, your order #{{ order_id }} is ready!"}
+          'Hello {{ name }}, your order #{{ order_id }} is ready!'}
         ariaDescribedBy={descriptionId}
         disabled={isReadOnly}
         {node}
@@ -398,12 +387,12 @@
         {authProvider}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === "autocomplete" && schema.autocomplete}
+    {:else if fieldType === 'autocomplete' && schema.autocomplete}
       <FormAutocomplete
         id={fieldKey}
         value={autocompleteValue}
         autocomplete={schema.autocomplete}
-        placeholder={schema.placeholder ?? ""}
+        placeholder={schema.placeholder ?? ''}
         {required}
         ariaDescribedBy={descriptionId}
         disabled={isReadOnly}
@@ -414,7 +403,7 @@
       <FormTextField
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? ""}
+        placeholder={schema.placeholder ?? ''}
         ariaDescribedBy={descriptionId}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}

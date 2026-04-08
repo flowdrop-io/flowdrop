@@ -6,80 +6,78 @@
 -->
 
 <script lang="ts">
-  import type { NodeExecutionInfo } from "../types/index.js";
-  import Icon from "@iconify/svelte";
-  import StatusLabel from "./StatusLabel.svelte";
+  import type { NodeExecutionInfo } from '../types/index.js';
+  import Icon from '@iconify/svelte';
+  import StatusLabel from './StatusLabel.svelte';
   import {
     getStatusColor,
     getStatusIcon,
     getStatusLabel,
     getStatusBackgroundColor,
     formatExecutionDuration,
-    formatLastExecuted,
-  } from "../utils/nodeStatus.js";
+    formatLastExecuted
+  } from '../utils/nodeStatus.js';
 
   interface Props {
     nodeId?: string;
     executionInfo?: NodeExecutionInfo;
-    position?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
-    size?: "sm" | "md" | "lg";
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    size?: 'sm' | 'md' | 'lg';
     showDetails?: boolean;
   }
 
   let props: Props = $props();
 
   // Default values
-  let position = $derived(props.position || "top-right");
-  let size = $derived(props.size || "md");
+  let position = $derived(props.position || 'top-right');
+  let size = $derived(props.size || 'md');
   let showDetails = $derived(props.showDetails || false);
   let isHovered = $state(false);
 
   // Size configurations - optimized for larger, centered overlay
   const sizeConfig = {
     sm: {
-      statusSize: "18px",
-      iconSize: "10px",
-      labelSize: "0.75rem",
-      padding: "6px 12px",
+      statusSize: '18px',
+      iconSize: '10px',
+      labelSize: '0.75rem',
+      padding: '6px 12px'
     },
     md: {
-      statusSize: "24px",
-      iconSize: "14px",
-      labelSize: "0.875rem",
-      padding: "8px 16px",
+      statusSize: '24px',
+      iconSize: '14px',
+      labelSize: '0.875rem',
+      padding: '8px 16px'
     },
     lg: {
-      statusSize: "28px",
-      iconSize: "16px",
-      labelSize: "1rem",
-      padding: "10px 20px",
-    },
+      statusSize: '28px',
+      iconSize: '16px',
+      labelSize: '1rem',
+      padding: '10px 20px'
+    }
   };
 
   const config = $derived(sizeConfig[size]);
 
   // Position styles - horizontal center aligned with top edge of node
   const positionStyles = {
-    "top-left": "top: -24px; left: 50%; transform: translateX(-50%);",
-    "top-right": "top: -24px; left: 50%; transform: translateX(-50%);",
-    "bottom-left": "top: -24px; left: 50%; transform: translateX(-50%);",
-    "bottom-right": "top: -24px; left: 50%; transform: translateX(-50%);",
+    'top-left': 'top: -24px; left: 50%; transform: translateX(-50%);',
+    'top-right': 'top: -24px; left: 50%; transform: translateX(-50%);',
+    'bottom-left': 'top: -24px; left: 50%; transform: translateX(-50%);',
+    'bottom-right': 'top: -24px; left: 50%; transform: translateX(-50%);'
   };
 
   // Get execution info or default
   let executionInfo = $derived(
     props.executionInfo || {
-      status: "idle" as const,
+      status: 'idle' as const,
       executionCount: 0,
-      isExecuting: false,
-    },
+      isExecuting: false
+    }
   );
 
   // Show overlay if there's meaningful status information
   let shouldShow = $derived(
-    executionInfo.status !== "idle" ||
-      executionInfo.executionCount > 0 ||
-      executionInfo.isExecuting,
+    executionInfo.status !== 'idle' || executionInfo.executionCount > 0 || executionInfo.isExecuting
   );
 </script>
 
@@ -88,9 +86,9 @@
     class="node-status-overlay"
     class:node-status-overlay--hovered={isHovered}
     class:node-status-overlay--top-left={true}
-    class:node-status-overlay--sm={size === "sm"}
-    class:node-status-overlay--md={size === "md"}
-    class:node-status-overlay--lg={size === "lg"}
+    class:node-status-overlay--sm={size === 'sm'}
+    class:node-status-overlay--md={size === 'md'}
+    class:node-status-overlay--lg={size === 'lg'}
     style="
 			{positionStyles[position]}
 			--status-size: {config.statusSize};
@@ -100,9 +98,7 @@
 		"
     onmouseenter={() => (isHovered = true)}
     onmouseleave={() => (isHovered = false)}
-    title="{getStatusLabel(
-      executionInfo.status,
-    )} - Executed {executionInfo.executionCount} times"
+    title="{getStatusLabel(executionInfo.status)} - Executed {executionInfo.executionCount} times"
     role="status"
     aria-label="Node execution status: {getStatusLabel(executionInfo.status)}"
   >
@@ -115,10 +111,7 @@
         class="node-status-overlay__status-icon"
         style="background-color: {getStatusColor(executionInfo.status)}"
       >
-        <Icon
-          icon={getStatusIcon(executionInfo.status)}
-          class="node-status-overlay__icon"
-        />
+        <Icon icon={getStatusIcon(executionInfo.status)} class="node-status-overlay__icon" />
       </div>
       <StatusLabel
         label={getStatusLabel(executionInfo.status)}
@@ -144,9 +137,7 @@
         </div>
         <div class="node-status-overlay__detail-item">
           <span class="node-status-overlay__detail-label">Executions:</span>
-          <span class="node-status-overlay__detail-value"
-            >{executionInfo.executionCount}</span
-          >
+          <span class="node-status-overlay__detail-value">{executionInfo.executionCount}</span>
         </div>
         {#if executionInfo.lastExecuted}
           <div class="node-status-overlay__detail-item">
@@ -160,20 +151,14 @@
           <div class="node-status-overlay__detail-item">
             <span class="node-status-overlay__detail-label">Duration:</span>
             <span class="node-status-overlay__detail-value"
-              >{formatExecutionDuration(
-                executionInfo.lastExecutionDuration,
-              )}</span
+              >{formatExecutionDuration(executionInfo.lastExecutionDuration)}</span
             >
           </div>
         {/if}
         {#if executionInfo.lastError}
-          <div
-            class="node-status-overlay__detail-item node-status-overlay__detail-item--error"
-          >
+          <div class="node-status-overlay__detail-item node-status-overlay__detail-item--error">
             <span class="node-status-overlay__detail-label">Error:</span>
-            <span class="node-status-overlay__detail-value"
-              >{executionInfo.lastError}</span
-            >
+            <span class="node-status-overlay__detail-value">{executionInfo.lastError}</span>
           </div>
         {/if}
       </div>
@@ -326,7 +311,7 @@
   }
 
   /* Animation for running status */
-  .node-status-overlay__status-icon[style*="running"] {
+  .node-status-overlay__status-icon[style*='running'] {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 

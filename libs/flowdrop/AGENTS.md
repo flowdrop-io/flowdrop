@@ -121,10 +121,10 @@ npm run build-storybook  # Build Storybook
 ```typescript
 // ✅ Good
 const message = `Hello, ${name}!`;
-const path = ["api", "flowdrop", endpoint].join("/");
+const path = ['api', 'flowdrop', endpoint].join('/');
 
 // ❌ Bad
-const message = "Hello, " + name + "!";
+const message = 'Hello, ' + name + '!';
 ```
 
 ### Svelte 5 Patterns
@@ -158,20 +158,20 @@ FlowDrop uses **Svelte 5 Runes mode**. Key patterns:
 
 ```svelte
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import type { Snippet } from 'svelte';
 
   interface Props {
     /** Required prop with description */
     title: string;
     /** Optional prop with default */
-    variant?: "primary" | "secondary";
+    variant?: 'primary' | 'secondary';
     /** Event handler */
     onchange?: (value: string) => void;
     /** Slot content */
     children?: Snippet;
   }
 
-  let { title, variant = "primary", onchange, children }: Props = $props();
+  let { title, variant = 'primary', onchange, children }: Props = $props();
 </script>
 ```
 
@@ -311,15 +311,15 @@ See `docs/config-schema-special-properties.md` for full documentation.
 ### Test Structure
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-describe("ComponentOrFunction", () => {
+describe('ComponentOrFunction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("methodName", () => {
-    it("should do expected behavior", () => {
+  describe('methodName', () => {
+    it('should do expected behavior', () => {
       // Arrange
       const input = createTestInput();
 
@@ -383,22 +383,22 @@ FlowDrop uses module exports for tree-shaking:
 
 ```typescript
 // Main entry - includes all components
-import { WorkflowEditor, NodeSidebar } from "@flowdrop/flowdrop";
+import { WorkflowEditor, NodeSidebar } from '@flowdrop/flowdrop';
 
 // Core - types and utilities only (zero heavy deps)
-import type { Workflow, WorkflowNode } from "@flowdrop/flowdrop/core";
+import type { Workflow, WorkflowNode } from '@flowdrop/flowdrop/core';
 
 // Editor - editor-specific exports
-import { mountFlowDropApp } from "@flowdrop/flowdrop/editor";
+import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
 
 // Form - form components
-import { SchemaForm, registerField } from "@flowdrop/flowdrop/form";
+import { SchemaForm, registerField } from '@flowdrop/flowdrop/form';
 
 // Display - read-only display components
-import { MarkdownDisplay } from "@flowdrop/flowdrop/display";
+import { MarkdownDisplay } from '@flowdrop/flowdrop/display';
 
 // Styles
-import "@flowdrop/flowdrop/styles/base.css";
+import '@flowdrop/flowdrop/styles/base.css';
 ```
 
 ---
@@ -409,8 +409,8 @@ import "@flowdrop/flowdrop/styles/base.css";
 
 ```typescript
 const config = createEndpointConfig({
-  baseUrl: "https://api.example.com/flowdrop",
-  auth: { type: "bearer", token: "your-token" },
+  baseUrl: 'https://api.example.com/flowdrop',
+  auth: { type: 'bearer', token: 'your-token' }
 });
 ```
 
@@ -419,14 +419,14 @@ const config = createEndpointConfig({
 ```typescript
 // Static authentication
 const authProvider = new StaticAuthProvider({
-  type: "bearer",
-  token: "your-token",
+  type: 'bearer',
+  token: 'your-token'
 });
 
 // Dynamic authentication with refresh
 const authProvider = new CallbackAuthProvider({
   getToken: () => authService.getAccessToken(),
-  onUnauthorized: () => authService.refreshToken(),
+  onUnauthorized: () => authService.refreshToken()
 });
 ```
 

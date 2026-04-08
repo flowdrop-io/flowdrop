@@ -7,7 +7,7 @@
  * @module utils/fetchWithAuth
  */
 
-import type { AuthProvider } from "$lib/types/auth.js";
+import type { AuthProvider } from '$lib/types/auth.js';
 
 /**
  * Build fetch headers with optional authentication
@@ -25,11 +25,11 @@ import type { AuthProvider } from "$lib/types/auth.js";
  * ```
  */
 export async function buildFetchHeaders(
-  authProvider?: AuthProvider,
+  authProvider?: AuthProvider
 ): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
   };
 
   if (authProvider) {

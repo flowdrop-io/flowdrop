@@ -8,8 +8,8 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import type { ConfirmationConfig } from "../../types/interrupt.js";
+  import Icon from '@iconify/svelte';
+  import type { ConfirmationConfig } from '../../types/interrupt.js';
 
   /**
    * Component props
@@ -41,14 +41,14 @@
     error,
     resolvedByUserName,
     onConfirm,
-    onDecline,
+    onDecline
   }: Props = $props();
 
   /** Computed label for confirm button */
-  const confirmLabel = $derived(config.confirmLabel ?? "Yes");
+  const confirmLabel = $derived(config.confirmLabel ?? 'Yes');
 
   /** Computed label for decline/cancel button */
-  const declineLabel = $derived(config.cancelLabel ?? "No");
+  const declineLabel = $derived(config.cancelLabel ?? 'No');
 </script>
 
 <div
@@ -72,10 +72,8 @@
     <button
       type="button"
       class="confirmation-prompt__button confirmation-prompt__button--decline"
-      class:confirmation-prompt__button--selected={isResolved &&
-        resolvedValue === false}
-      class:confirmation-prompt__button--not-selected={isResolved &&
-        resolvedValue !== false}
+      class:confirmation-prompt__button--selected={isResolved && resolvedValue === false}
+      class:confirmation-prompt__button--not-selected={isResolved && resolvedValue !== false}
       onclick={onDecline}
       disabled={isResolved || isSubmitting}
       aria-label={declineLabel}
@@ -96,10 +94,8 @@
     <button
       type="button"
       class="confirmation-prompt__button confirmation-prompt__button--confirm"
-      class:confirmation-prompt__button--selected={isResolved &&
-        resolvedValue === true}
-      class:confirmation-prompt__button--not-selected={isResolved &&
-        resolvedValue !== true}
+      class:confirmation-prompt__button--selected={isResolved && resolvedValue === true}
+      class:confirmation-prompt__button--not-selected={isResolved && resolvedValue !== true}
       onclick={onConfirm}
       disabled={isResolved || isSubmitting}
       aria-label={confirmLabel}
@@ -123,9 +119,7 @@
     <div class="confirmation-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName
-          ? `Response submitted by ${resolvedByUserName}`
-          : "Response submitted"}
+        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
       </span>
     </div>
   {/if}

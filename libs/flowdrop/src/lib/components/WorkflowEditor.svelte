@@ -13,60 +13,54 @@
     BackgroundVariant,
     MiniMap,
     SvelteFlowProvider,
-    type ColorMode,
-  } from "@xyflow/svelte";
-  import "@xyflow/svelte/dist/style.css";
+    type ColorMode
+  } from '@xyflow/svelte';
+  import '@xyflow/svelte/dist/style.css';
   import {
     getResolvedTheme,
     getEditorSettings,
-    getBehaviorSettings,
-  } from "../stores/settingsStore.svelte.js";
+    getBehaviorSettings
+  } from '../stores/settingsStore.svelte.js';
   import type {
     WorkflowNode as WorkflowNodeType,
     NodeMetadata,
     Workflow,
-    WorkflowEdge,
-  } from "../types/index.js";
-  import CanvasBanner from "./CanvasBanner.svelte";
-  import CanvasController from "./CanvasController.svelte";
-  import FlowDropZone from "./FlowDropZone.svelte";
-  import EdgeRefresher from "./EdgeRefresher.svelte";
-  import { tick, untrack } from "svelte";
-  import type { EndpointConfig } from "../config/endpoints.js";
-  import ConnectionLine from "./ConnectionLine.svelte";
-  import FlowDropEdge from "./FlowDropEdge.svelte";
-  import {
-    getWorkflowStore,
-    workflowActions,
-  } from "../stores/workflowStore.svelte.js";
-  import {
-    historyActions,
-    setOnRestoreCallback,
-  } from "../stores/historyStore.svelte.js";
-  import UniversalNode from "./UniversalNode.svelte";
+    WorkflowEdge
+  } from '../types/index.js';
+  import CanvasBanner from './CanvasBanner.svelte';
+  import CanvasController from './CanvasController.svelte';
+  import FlowDropZone from './FlowDropZone.svelte';
+  import EdgeRefresher from './EdgeRefresher.svelte';
+  import { tick, untrack } from 'svelte';
+  import type { EndpointConfig } from '../config/endpoints.js';
+  import ConnectionLine from './ConnectionLine.svelte';
+  import FlowDropEdge from './FlowDropEdge.svelte';
+  import { getWorkflowStore, workflowActions } from '../stores/workflowStore.svelte.js';
+  import { historyActions, setOnRestoreCallback } from '../stores/historyStore.svelte.js';
+  import UniversalNode from './UniversalNode.svelte';
   import {
     EdgeStylingHelper,
     NodeOperationsHelper,
     WorkflowOperationsHelper,
-    ConfigurationHelper,
-  } from "../helpers/workflowEditorHelper.js";
-  import type { NodeExecutionInfo } from "../types/index.js";
-  import { Toaster } from "svelte-5-french-toast";
+    ConfigurationHelper
+  } from '../helpers/workflowEditorHelper.js';
+  import type { NodeExecutionInfo } from '../types/index.js';
+  import { Toaster } from 'svelte-5-french-toast';
   import {
     flowdropToastOptions,
     FLOWDROP_TOASTER_CLASS,
-    apiToasts,
-  } from "../services/toastService.js";
+    apiToasts
+  } from '../services/toastService.js';
   import {
     ProximityConnectHelper,
-    type ProximityEdgeCandidate,
-  } from "../helpers/proximityConnect.js";
-  import PortCoordinateTracker from "./PortCoordinateTracker.svelte";
-  import { getPortCoordinateSnapshot } from "../stores/portCoordinateStore.svelte.js";
-  import { logger } from "../utils/logger.js";
-  import { validateWorkflowData } from "../utils/validation.js";
-  import { createEditorStateMachine } from "../stores/editorStateMachine.svelte.js";
-  import Icon from "@iconify/svelte";
+    type ProximityEdgeCandidate
+  } from '../helpers/proximityConnect.js';
+  import PortCoordinateTracker from './PortCoordinateTracker.svelte';
+  import { getPortCoordinateSnapshot } from '../stores/portCoordinateStore.svelte.js';
+  import { logger } from '../utils/logger.js';
+  import { validateWorkflowData } from '../utils/validation.js';
+  import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
+  import Icon from '@iconify/svelte';
 
   interface Props {
     nodes?: NodeMetadata[];
@@ -80,10 +74,7 @@
     // New configuration options for pipeline status mode
     lockWorkflow?: boolean;
     readOnly?: boolean;
-    nodeStatuses?: Record<
-      string,
-      "pending" | "running" | "completed" | "error"
-    >;
+    nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
     // Pipeline ID for fetching node execution info from jobs
     pipelineId?: string;
     // Console toggle
@@ -130,18 +121,15 @@
    * Key for SvelteFlow component — changes when workflow ID changes.
    * Forces SvelteFlow to remount with fresh state, allowing fitView to work correctly.
    */
-  let svelteFlowKey = $derived(getWorkflowStore()?.id ?? "default");
+  let svelteFlowKey = $derived(getWorkflowStore()?.id ?? 'default');
 
   /**
    * Derive snap grid configuration from editor settings
    */
   let snapGrid = $derived(
     getEditorSettings().snapToGrid
-      ? ([getEditorSettings().gridSize, getEditorSettings().gridSize] as [
-          number,
-          number,
-        ])
-      : undefined,
+      ? ([getEditorSettings().gridSize, getEditorSettings().gridSize] as [number, number])
+      : undefined
   );
 
   /**
@@ -150,7 +138,7 @@
   let initialViewport = $derived({
     zoom: getEditorSettings().defaultZoom,
     x: 0,
-    y: 0,
+    y: 0
   });
 
   // ---------------------------------------------------------------------------
@@ -164,13 +152,10 @@
       ...node,
       data: {
         ...node.data,
-        onConfigOpen: props.openConfigSidebar,
-      },
+        onConfigOpen: props.openConfigSidebar
+      }
     }));
-    const styledEdges = EdgeStylingHelper.updateEdgeStyles(
-      workflow.edges,
-      nodesWithCallbacks,
-    );
+    const styledEdges = EdgeStylingHelper.updateEdgeStyles(workflow.edges, nodesWithCallbacks);
     return { nodes: nodesWithCallbacks, edges: styledEdges };
   }
 
@@ -183,7 +168,7 @@
     const updatedWorkflow = WorkflowOperationsHelper.updateWorkflow(
       storeValue,
       flowNodes,
-      flowEdges,
+      flowEdges
     );
     workflowActions.updateWorkflow(updatedWorkflow);
   }
@@ -206,7 +191,7 @@
         flowNodes = [];
         flowEdges = [];
         previousSyncedWorkflowId = null;
-        untrack(() => machine.send("WORKFLOW_CLEARED"));
+        untrack(() => machine.send('WORKFLOW_CLEARED'));
       }
       return;
     }
@@ -215,9 +200,7 @@
 
     if (isNewWorkflow) {
       untrack(() =>
-        machine.send(
-          previousSyncedWorkflowId ? "WORKFLOW_SWITCHED" : "WORKFLOW_LOADED",
-        ),
+        machine.send(previousSyncedWorkflowId ? 'WORKFLOW_SWITCHED' : 'WORKFLOW_LOADED')
       );
     }
 
@@ -233,7 +216,7 @@
     }
 
     if (isNewWorkflow) {
-      untrack(() => machine.send("LOAD_COMPLETE"));
+      untrack(() => machine.send('LOAD_COMPLETE'));
     }
   });
 
@@ -268,12 +251,12 @@
     }
 
     // Schedule loading with requestIdleCallback (falls back to setTimeout)
-    if (typeof requestIdleCallback !== "undefined") {
+    if (typeof requestIdleCallback !== 'undefined') {
       loadExecutionInfoTimeout = requestIdleCallback(
         () => {
           loadNodeExecutionInfo();
         },
-        { timeout: 500 },
+        { timeout: 500 }
       ) as unknown as number;
     } else {
       loadExecutionInfoTimeout = setTimeout(() => {
@@ -287,14 +270,14 @@
   // ---------------------------------------------------------------------------
   $effect(() => {
     setOnRestoreCallback((restoredWorkflow: Workflow) => {
-      machine.send("START_RESTORE");
+      machine.send('START_RESTORE');
       // Update the store (effect is suppressed during 'restoring')
       workflowActions.restoreFromHistory(restoredWorkflow);
       // Derive flowNodes/flowEdges directly for immediate visual update
       const derived = buildFlowNodesFromStore(restoredWorkflow);
       flowNodes = derived.nodes;
       flowEdges = derived.edges;
-      machine.send("RESTORE_COMPLETE");
+      machine.send('RESTORE_COMPLETE');
       // After RESTORE_COMPLETE → idle, the sync effect runs but produces
       // the same data (no-op re-derive).
     });
@@ -316,15 +299,15 @@
 
       const executionInfo = await NodeOperationsHelper.loadNodeExecutionInfo(
         workflow,
-        props.pipelineId,
+        props.pipelineId
       );
 
       if (executionInfoAbortController?.signal.aborted) return;
 
       const defaultExecutionInfo: NodeExecutionInfo = {
-        status: "idle" as const,
+        status: 'idle' as const,
         executionCount: 0,
-        isExecuting: false,
+        isExecuting: false
       };
 
       // Update flowNodes with execution info (visual-only, no store sync needed)
@@ -332,14 +315,14 @@
         ...node,
         data: {
           ...node.data,
-          executionInfo: executionInfo[node.id] || defaultExecutionInfo,
-        },
+          executionInfo: executionInfo[node.id] || defaultExecutionInfo
+        }
       }));
 
       executionInfoAbortController = null;
     } catch (error) {
-      if (error instanceof Error && error.name !== "AbortError") {
-        logger.error("Failed to load node execution info:", error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        logger.error('Failed to load node execution info:', error);
       }
     }
   }
@@ -351,12 +334,12 @@
   // Node types for Svelte Flow - using UniversalNode for all node types
   // All nodes use 'universalNode' type, and UniversalNode handles internal switching
   const nodeTypes = {
-    universalNode: UniversalNode,
+    universalNode: UniversalNode
   };
 
   // Use custom edge that shortens the path so the stroke ends at the arrow base
   const edgeTypes = {
-    default: FlowDropEdge,
+    default: FlowDropEdge
   };
 
   // Handle arrows in our custom connection handler
@@ -370,7 +353,7 @@
    * position updates. SvelteFlow mutates flowNodes directly via bind:nodes.
    */
   function handleNodeDragStart(): void {
-    machine.send("START_DRAG");
+    machine.send('START_DRAG');
     // Clear any leftover proximity previews
     currentProximityCandidates = [];
   }
@@ -381,7 +364,7 @@
    * Uses port-to-port distance via the port coordinate store.
    */
   function handleNodeDrag({
-    targetNode,
+    targetNode
   }: {
     targetNode: WorkflowNodeType | null;
     nodes: WorkflowNodeType[];
@@ -415,13 +398,13 @@
             targetNode.id,
             portCoordinates,
             baseEdges,
-            getEditorSettings().proximityConnectDistance,
+            getEditorSettings().proximityConnectDistance
           )
         : ProximityConnectHelper.findCompatibleEdges(
             targetNode,
             flowNodes,
             baseEdges,
-            getEditorSettings().proximityConnectDistance,
+            getEditorSettings().proximityConnectDistance
           );
 
     // Create preview edges
@@ -442,24 +425,17 @@
     portCoordNodeToUpdate = null;
 
     // Finalize proximity connect if there are candidates
-    if (
-      getEditorSettings().proximityConnect &&
-      currentProximityCandidates.length > 0
-    ) {
+    if (getEditorSettings().proximityConnect && currentProximityCandidates.length > 0) {
       const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
       const permanentEdges = ProximityConnectHelper.createPermanentEdges(
-        currentProximityCandidates,
+        currentProximityCandidates
       );
 
       for (const edge of permanentEdges) {
         const sourceNode = flowNodes.find((n) => n.id === edge.source);
         const targetNode = flowNodes.find((n) => n.id === edge.target);
         if (sourceNode && targetNode) {
-          EdgeStylingHelper.applyConnectionStyling(
-            edge,
-            sourceNode,
-            targetNode,
-          );
+          EdgeStylingHelper.applyConnectionStyling(edge, sourceNode, targetNode);
         }
       }
 
@@ -473,11 +449,11 @@
     // Push history AFTER the drag completed
     const storeValue = getWorkflowStore();
     if (storeValue) {
-      workflowActions.pushHistory("Move node", storeValue);
+      workflowActions.pushHistory('Move node', storeValue);
     }
 
     // Transition to idle — sync effect is now unblocked
-    machine.send("STOP_DRAG");
+    machine.send('STOP_DRAG');
   }
 
   /**
@@ -489,7 +465,7 @@
     sourceHandle?: string;
     targetHandle?: string;
   }): Promise<void> {
-    machine.send("START_CONNECT");
+    machine.send('START_CONNECT');
 
     // SvelteFlow auto-creates the edge via bind:edges — wait for DOM update
     await tick();
@@ -502,10 +478,10 @@
 
     const storeValue = getWorkflowStore();
     if (storeValue) {
-      workflowActions.pushHistory("Add connection", storeValue);
+      workflowActions.pushHistory('Add connection', storeValue);
     }
 
-    machine.send("CONNECTION_MADE");
+    machine.send('CONNECTION_MADE');
   }
 
   /**
@@ -527,17 +503,17 @@
       const edgeCount = params.edges.length;
 
       // Build a descriptive message
-      let message = "Are you sure you want to delete ";
+      let message = 'Are you sure you want to delete ';
       const parts: string[] = [];
 
       if (nodeCount > 0) {
-        parts.push(`${nodeCount} node${nodeCount > 1 ? "s" : ""}`);
+        parts.push(`${nodeCount} node${nodeCount > 1 ? 's' : ''}`);
       }
       if (edgeCount > 0) {
-        parts.push(`${edgeCount} connection${edgeCount > 1 ? "s" : ""}`);
+        parts.push(`${edgeCount} connection${edgeCount > 1 ? 's' : ''}`);
       }
 
-      message += parts.join(" and ") + "?";
+      message += parts.join(' and ') + '?';
 
       // Show native confirmation dialog
       const confirmed = window.confirm(message);
@@ -554,18 +530,14 @@
   /**
    * Handle node deletion - automatically remove connected edges and push to history
    */
-  function handleNodesDelete(params: {
-    nodes: WorkflowNodeType[];
-    edges: WorkflowEdge[];
-  }): void {
-    machine.send("START_DELETE");
+  function handleNodesDelete(params: { nodes: WorkflowNodeType[]; edges: WorkflowEdge[] }): void {
+    machine.send('START_DELETE');
 
     const deletedNodeIds = new Set(params.nodes.map((node) => node.id));
 
     // Filter out edges connected to deleted nodes
     flowEdges = flowEdges.filter(
-      (edge) =>
-        !deletedNodeIds.has(edge.source) && !deletedNodeIds.has(edge.target),
+      (edge) => !deletedNodeIds.has(edge.source) && !deletedNodeIds.has(edge.target)
     );
 
     // Sync to store
@@ -574,20 +546,20 @@
     // Push to history AFTER the deletion so undo restores the previous state
     const nodeCount = params.nodes.length;
     const edgeCount = params.edges.length;
-    let description = "Delete";
+    let description = 'Delete';
     if (nodeCount > 0 && edgeCount > 0) {
-      description = `Delete ${nodeCount} node${nodeCount > 1 ? "s" : ""} and ${edgeCount} connection${edgeCount > 1 ? "s" : ""}`;
+      description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''} and ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
     } else if (nodeCount > 0) {
-      description = `Delete ${nodeCount} node${nodeCount > 1 ? "s" : ""}`;
+      description = `Delete ${nodeCount} node${nodeCount > 1 ? 's' : ''}`;
     } else if (edgeCount > 0) {
-      description = `Delete ${edgeCount} connection${edgeCount > 1 ? "s" : ""}`;
+      description = `Delete ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
     }
     const storeValue = getWorkflowStore();
     if (storeValue) {
       workflowActions.pushHistory(description, storeValue);
     }
 
-    machine.send("DELETE_COMPLETE");
+    machine.send('DELETE_COMPLETE');
   }
 
   // Edge styling will be handled when edges are first created or manually updated
@@ -613,21 +585,17 @@
    */
   async function handleNodeDrop(
     nodeTypeData: string,
-    position: { x: number; y: number },
+    position: { x: number; y: number }
   ): Promise<void> {
-    machine.send("START_DROP");
+    machine.send('START_DROP');
 
-    const newNode = NodeOperationsHelper.createNodeFromDrop(
-      nodeTypeData,
-      position,
-      flowNodes,
-    );
+    const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
 
     if (newNode) {
       // Add onConfigOpen callback and append to flowNodes for immediate visual feedback
       const nodeWithCallback = {
         ...newNode,
-        data: { ...newNode.data, onConfigOpen: props.openConfigSidebar },
+        data: { ...newNode.data, onConfigOpen: props.openConfigSidebar }
       };
       flowNodes = [...flowNodes, nodeWithCallback];
 
@@ -638,13 +606,13 @@
 
       const storeValue = getWorkflowStore();
       if (storeValue) {
-        workflowActions.pushHistory("Add node", storeValue);
+        workflowActions.pushHistory('Add node', storeValue);
       }
     } else {
-      logger.warn("Failed to create node from drop data");
+      logger.warn('Failed to create node from drop data');
     }
 
-    machine.send("DROP_COMPLETE");
+    machine.send('DROP_COMPLETE');
   }
 
   /**
@@ -658,34 +626,27 @@
     reader.onload = (event) => {
       try {
         const text = event.target?.result;
-        if (typeof text !== "string") {
-          throw new Error("Could not read file contents.");
+        if (typeof text !== 'string') {
+          throw new Error('Could not read file contents.');
         }
         const data = JSON.parse(text);
         const validation = validateWorkflowData(data);
         if (!validation.valid) {
-          apiToasts.error(
-            "Import workflow",
-            validation.error ?? "Invalid workflow JSON",
-          );
-          logger.warn(
-            "Workflow file drop validation failed:",
-            validation.error,
-          );
+          apiToasts.error('Import workflow', validation.error ?? 'Invalid workflow JSON');
+          logger.warn('Workflow file drop validation failed:', validation.error);
           return;
         }
         workflowActions.initialize(data as Workflow);
       } catch (error) {
-        const errorObj =
-          error instanceof Error ? error : new Error("Unknown error occurred");
-        logger.error("Workflow file drop import failed:", errorObj);
-        apiToasts.error("Import workflow", errorObj.message);
+        const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
+        logger.error('Workflow file drop import failed:', errorObj);
+        apiToasts.error('Import workflow', errorObj.message);
       }
     };
     reader.onerror = () => {
-      const message = "Failed to read the dropped file.";
+      const message = 'Failed to read the dropped file.';
       logger.error(message);
-      apiToasts.error("Import workflow", message);
+      apiToasts.error('Import workflow', message);
     };
     reader.readAsText(file);
   }
@@ -709,9 +670,9 @@
    */
   export function updateNodeData(
     nodeId: string,
-    dataUpdates: Partial<WorkflowNodeType["data"]>,
+    dataUpdates: Partial<WorkflowNodeType['data']>
   ): void {
-    machine.send("START_NODE_UPDATE");
+    machine.send('START_NODE_UPDATE');
 
     flowNodes = flowNodes.map((node) => {
       if (node.id === nodeId) {
@@ -719,14 +680,14 @@
           ...node,
           data: {
             ...node.data,
-            ...dataUpdates,
-          },
+            ...dataUpdates
+          }
         };
       }
       return node;
     });
 
-    machine.send("UPDATE_COMPLETE");
+    machine.send('UPDATE_COMPLETE');
   }
 
   /**
@@ -794,23 +755,21 @@
     // Don't handle shortcuts if user is typing in an input, textarea, or contenteditable
     const target = event.target as HTMLElement;
     const isInputElement =
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.isContentEditable;
+      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
     if (isInputElement) {
       return;
     }
 
     // Undo: Ctrl+Z (without Shift)
-    if (event.key === "z" && !event.shiftKey) {
+    if (event.key === 'z' && !event.shiftKey) {
       event.preventDefault();
       historyActions.undo();
       return;
     }
 
     // Redo: Ctrl+Shift+Z or Ctrl+Y
-    if ((event.key === "z" && event.shiftKey) || event.key === "y") {
+    if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
       event.preventDefault();
       historyActions.redo();
       return;
@@ -825,10 +784,7 @@
   <CanvasController bind:this={canvasControllerRef} />
 
   <!-- EdgeRefresher component - handles updateNodeInternals calls -->
-  <EdgeRefresher
-    {nodeIdToRefresh}
-    onRefreshComplete={handleEdgeRefreshComplete}
-  />
+  <EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
 
   <!-- Port Coordinate Tracker - maintains port positions for proximity connect -->
   <PortCoordinateTracker
@@ -842,10 +798,7 @@
     <div class="flowdrop-workflow-editor__main">
       <!-- Flow Canvas -->
       <div class="flowdrop-canvas">
-        <FlowDropZone
-          ondrop={handleNodeDrop}
-          onfiledrop={handleWorkflowFileDrop}
-        >
+        <FlowDropZone ondrop={handleNodeDrop} onfiledrop={handleWorkflowFileDrop}>
           {#key svelteFlowKey}
             <SvelteFlow
               bind:nodes={flowNodes}
@@ -858,7 +811,7 @@
                   source: connection.source,
                   target: connection.target,
                   sourceHandle: connection.sourceHandle ?? undefined,
-                  targetHandle: connection.targetHandle ?? undefined,
+                  targetHandle: connection.targetHandle ?? undefined
                 })}
               onbeforedelete={handleBeforeDelete}
               ondelete={handleNodesDelete}
@@ -894,9 +847,7 @@
                 gap={getEditorSettings().gridSize}
                 bgColor="var(--fd-background)"
                 variant={BackgroundVariant.Dots}
-                patternColor={getEditorSettings().showGrid
-                  ? undefined
-                  : "transparent"}
+                patternColor={getEditorSettings().showGrid ? undefined : 'transparent'}
               />
               {#if getEditorSettings().showMinimap}
                 <MiniMap />
@@ -937,18 +888,14 @@
       <div class="flowdrop-status-bar" aria-live="polite" aria-atomic="true">
         <div class="flowdrop-status-bar__content">
           <div class="flowdrop-flex flowdrop-gap--4">
-            <span class="flowdrop-text--xs flowdrop-text--gray"
-              >{flowNodes.length} nodes</span
-            >
+            <span class="flowdrop-text--xs flowdrop-text--gray">{flowNodes.length} nodes</span>
             <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-            <span class="flowdrop-text--xs flowdrop-text--gray"
-              >{flowEdges.length} connections</span
+            <span class="flowdrop-text--xs flowdrop-text--gray">{flowEdges.length} connections</span
             >
 
             {#if hasCycles}
               <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-              <span
-                class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error"
+              <span class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error"
                 >⚠️ Cycles detected</span
               >
             {/if}
@@ -1085,9 +1032,7 @@
   :global(.flowdrop-workflow-editor .svelte-flow__edge.selected) {
     stroke: var(--fd-primary) !important;
     stroke-width: 3 !important;
-    filter: drop-shadow(
-      0 0 4px color-mix(in srgb, var(--fd-primary) 50%, transparent)
-    );
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--fd-primary) 50%, transparent));
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__edge.selected path) {

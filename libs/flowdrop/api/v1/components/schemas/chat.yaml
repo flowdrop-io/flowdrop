@@ -17,7 +17,7 @@ ChatHistoryMessage:
     - content
   properties:
     role:
-      $ref: "#/ChatMessageRole"
+      $ref: '#/ChatMessageRole'
     content:
       type: string
       description: The message text content
@@ -44,7 +44,7 @@ ChatRequest:
       type: array
       description: Optional conversation history for multi-turn context
       items:
-        $ref: "#/ChatHistoryMessage"
+        $ref: '#/ChatHistoryMessage'
 
 ChatResponse:
   type: object
@@ -80,7 +80,7 @@ ChatMessagesResponse:
       type: boolean
       example: true
     data:
-      $ref: "#/ChatResponse"
+      $ref: '#/ChatResponse'
 
 ChatHistoryResponse:
   type: object
@@ -92,4 +92,4 @@ ChatHistoryResponse:
     data:
       type: array
       items:
-        $ref: "#/ChatHistoryMessage"
+        $ref: '#/ChatHistoryMessage'

@@ -12,14 +12,11 @@ import type {
   PlaygroundMessage,
   PlaygroundInputField,
   PlaygroundSessionStatus,
-  PlaygroundMessagesApiResponse,
-} from "../types/playground.js";
-import {
-  isChatInputNode,
-  defaultIsTerminalStatus,
-} from "../types/playground.js";
-import type { Workflow, WorkflowNode } from "../types/index.js";
-import { logger } from "../utils/logger.js";
+  PlaygroundMessagesApiResponse
+} from '../types/playground.js';
+import { isChatInputNode, defaultIsTerminalStatus } from '../types/playground.js';
+import type { Workflow, WorkflowNode } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Core State
@@ -133,7 +130,7 @@ export function getLastPollTimestamp(): string | null {
  * Get current session status
  */
 export function getSessionStatus(): PlaygroundSessionStatus {
-  return _currentSession?.status ?? "idle";
+  return _currentSession?.status ?? 'idle';
 }
 
 /**
@@ -147,14 +144,14 @@ export function getMessageCount(): number {
  * Get chat messages (excludes log messages)
  */
 export function getChatMessages(): PlaygroundMessage[] {
-  return _messages.filter((m) => m.role !== "log");
+  return _messages.filter((m) => m.role !== 'log');
 }
 
 /**
  * Get log messages only
  */
 export function getLogMessages(): PlaygroundMessage[] {
-  return _messages.filter((m) => m.role === "log");
+  return _messages.filter((m) => m.role === 'log');
 }
 
 /**
@@ -185,22 +182,22 @@ export function getInputFields(): PlaygroundInputField[] {
 
     // Check if this is an input-type node
     // The category can be "inputs" (standard) or variations like "input"
-    const categoryStr = String(category || "");
-    const isInputCategory = categoryStr === "inputs" || categoryStr === "input";
+    const categoryStr = String(category || '');
+    const isInputCategory = categoryStr === 'inputs' || categoryStr === 'input';
     if (isInputCategory || isChatInputNode(nodeTypeId)) {
       // Get output ports that provide data
       const outputs = node.data.metadata?.outputs ?? [];
 
       outputs.forEach((output) => {
-        if (output.type === "output") {
+        if (output.type === 'output') {
           // Create a field for each output
           const field: PlaygroundInputField = {
             nodeId: node.id,
             fieldId: output.id,
             label: node.data.label || output.name || nodeTypeId,
-            type: output.dataType || "string",
+            type: output.dataType || 'string',
             defaultValue: node.data.config?.[output.id],
-            required: output.required ?? false,
+            required: output.required ?? false
           };
 
           // Check for schema in configSchema
@@ -222,10 +219,10 @@ export function getInputFields(): PlaygroundInputField[] {
               nodeId: node.id,
               fieldId: key,
               label: schema.title || key,
-              type: schema.type || "string",
+              type: schema.type || 'string',
               defaultValue: node.data.config?.[key] ?? schema.default,
               required: configSchema.required?.includes(key) ?? false,
-              schema,
+              schema
             };
             fields.push(field);
           });
@@ -242,9 +239,7 @@ export function getInputFields(): PlaygroundInputField[] {
  */
 export function getHasChatInput(): boolean {
   const fields = getInputFields();
-  return fields.some(
-    (field) => isChatInputNode(field.nodeId) || field.type === "string",
-  );
+  return fields.some((field) => isChatInputNode(field.nodeId) || field.type === 'string');
 }
 
 /**
@@ -272,9 +267,7 @@ export function getSessionCount(): number {
  * @param messageList - Array of messages to sort
  * @returns Sorted array of messages
  */
-function sortMessagesChronologically(
-  messageList: PlaygroundMessage[],
-): PlaygroundMessage[] {
+function sortMessagesChronologically(messageList: PlaygroundMessage[]): PlaygroundMessage[] {
   return [...messageList].sort((a, b) => {
     // Primary: Sort by sequenceNumber
     const seqA = a.sequenceNumber ?? 0;
@@ -334,16 +327,14 @@ export const playgroundActions = {
       _currentSession = {
         ..._currentSession,
         status,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
     }
 
     // Also update in sessions list
     const session = _currentSession;
     if (session) {
-      _sessions = _sessions.map((s) =>
-        s.id === session.id ? { ...s, status } : s,
-      );
+      _sessions = _sessions.map((s) => (s.id === session.id ? { ...s, status } : s));
     }
   },
 
@@ -398,7 +389,8 @@ export const playgroundActions = {
    */
   addMessage: (message: PlaygroundMessage): void => {
     const seq = message.sequenceNumber ?? 0;
-    let lo = 0, hi = _messages.length;
+    let lo = 0,
+      hi = _messages.length;
     while (lo < hi) {
       const mid = (lo + hi) >>> 1;
       if ((_messages[mid].sequenceNumber ?? 0) <= seq) lo = mid + 1;
@@ -420,10 +412,7 @@ export const playgroundActions = {
     const existingIds = new Set(_messages.map((m) => m.id));
     const uniqueNewMessages = newMessages.filter((m) => !existingIds.has(m.id));
     // Sort the combined messages chronologically
-    _messages = sortMessagesChronologically([
-      ..._messages,
-      ...uniqueNewMessages,
-    ]);
+    _messages = sortMessagesChronologically([..._messages, ...uniqueNewMessages]);
   },
 
   /**
@@ -496,7 +485,7 @@ export const playgroundActions = {
       _messages = [];
       _lastPollTimestamp = null;
     }
-  },
+  }
 };
 
 // =========================================================================
@@ -512,9 +501,7 @@ export const playgroundActions = {
  * @returns A callback suitable for playgroundService.startPolling() or pushMessages()
  */
 export function createPollingCallback(
-  isTerminalStatus: (
-    status: PlaygroundSessionStatus,
-  ) => boolean = defaultIsTerminalStatus,
+  isTerminalStatus: (status: PlaygroundSessionStatus) => boolean = defaultIsTerminalStatus
 ): (response: PlaygroundMessagesApiResponse) => void {
   return (response: PlaygroundMessagesApiResponse) => {
     if (response.data && response.data.length > 0) {
@@ -579,10 +566,7 @@ export function getLatestMessageTimestamp(): string | null {
  * @returns Cleanup function to stop the subscription
  */
 export function subscribeToSessionStatus(
-  callback: (
-    status: PlaygroundSessionStatus,
-    previousStatus: PlaygroundSessionStatus,
-  ) => void,
+  callback: (status: PlaygroundSessionStatus, previousStatus: PlaygroundSessionStatus) => void
 ): () => void {
   let previousStatus = getSessionStatus();
   const cleanup = $effect.root(() => {
@@ -609,7 +593,7 @@ export function subscribeToSessionStatus(
  */
 export async function refreshSessionMessages(
   fetchMessages: (sessionId: string) => Promise<PlaygroundMessagesApiResponse>,
-  isTerminalStatus?: (status: PlaygroundSessionStatus) => boolean,
+  isTerminalStatus?: (status: PlaygroundSessionStatus) => boolean
 ): Promise<void> {
   const session = _currentSession;
   if (!session) return;
@@ -619,6 +603,6 @@ export async function refreshSessionMessages(
     const callback = createPollingCallback(isTerminalStatus);
     callback(response);
   } catch (err) {
-    logger.error("[playgroundStore] Failed to refresh messages:", err);
+    logger.error('[playgroundStore] Failed to refresh messages:', err);
   }
 }

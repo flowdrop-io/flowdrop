@@ -1,24 +1,24 @@
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
-  import FormFieldWrapper from "./FormFieldWrapper.svelte";
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import FormFieldWrapper from './FormFieldWrapper.svelte';
 
   const { Story } = defineMeta({
-    title: "Form/FormFieldWrapper",
+    title: 'Form/FormFieldWrapper',
     component: FormFieldWrapper,
-    tags: ["autodocs"],
+    tags: ['autodocs'],
     argTypes: {
-      label: { control: "text" },
-      required: { control: "boolean" },
-      description: { control: "text" },
+      label: { control: 'text' },
+      required: { control: 'boolean' },
+      description: { control: 'text' }
     },
     args: {
-      id: "demo-wrapper",
-      label: "Field Label",
-    },
+      id: 'demo-wrapper',
+      label: 'Field Label'
+    }
   });
 </script>
 
-<Story name="Default" args={{ label: "Username" }}>
+<Story name="Default" args={{ label: 'Username' }}>
   <input
     type="text"
     id="demo-wrapper"
@@ -30,9 +30,9 @@
 <Story
   name="With Description"
   args={{
-    label: "Email",
+    label: 'Email',
     description: "We'll never share your email with anyone.",
-    required: true,
+    required: true
   }}
 >
   <input
@@ -43,7 +43,7 @@
   />
 </Story>
 
-<Story name="Required" args={{ label: "Password", required: true }}>
+<Story name="Required" args={{ label: 'Password', required: true }}>
   <input
     type="password"
     id="demo-wrapper"

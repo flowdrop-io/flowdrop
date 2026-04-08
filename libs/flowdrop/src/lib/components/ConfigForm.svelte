@@ -18,8 +18,8 @@
 -->
 
 <script lang="ts">
-  import { setContext } from "svelte";
-  import Icon from "@iconify/svelte";
+  import { setContext } from 'svelte';
+  import Icon from '@iconify/svelte';
   import type {
     ConfigSchema,
     WorkflowNode,
@@ -28,32 +28,25 @@
     NodePort,
     DynamicPort,
     ConfigEditOptions,
-    AuthProvider,
-  } from "$lib/types/index.js";
-  import { dynamicPortToNodePort } from "$lib/types/index.js";
-  import type { UISchemaElement } from "$lib/types/uischema.js";
-  import {
-    FormField,
-    FormFieldWrapper,
-    FormToggle,
-  } from "$lib/components/form/index.js";
-  import FormUISchemaRenderer from "$lib/components/form/FormUISchemaRenderer.svelte";
-  import type { FieldSchema } from "$lib/components/form/index.js";
+    AuthProvider
+  } from '$lib/types/index.js';
+  import { dynamicPortToNodePort } from '$lib/types/index.js';
+  import type { UISchemaElement } from '$lib/types/uischema.js';
+  import { FormField, FormFieldWrapper, FormToggle } from '$lib/components/form/index.js';
+  import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
+  import type { FieldSchema } from '$lib/components/form/index.js';
   import {
     getEffectiveConfigEditOptions,
     fetchDynamicSchema,
     resolveExternalEditUrl,
     invalidateSchemaCache,
-    type DynamicSchemaResult,
-  } from "$lib/services/dynamicSchemaService.js";
-  import { globalSaveWorkflow } from "$lib/services/globalSave.js";
-  import { getAvailableVariables } from "$lib/services/variableService.js";
-  import { logger } from "../utils/logger.js";
-  import {
-    getDataTypeColorToken,
-    getPortBackgroundColor,
-  } from "$lib/utils/colors.js";
-  import { applyPortOrder } from "$lib/utils/portUtils.js";
+    type DynamicSchemaResult
+  } from '$lib/services/dynamicSchemaService.js';
+  import { globalSaveWorkflow } from '$lib/services/globalSave.js';
+  import { getAvailableVariables } from '$lib/services/variableService.js';
+  import { logger } from '../utils/logger.js';
+  import { getDataTypeColorToken, getPortBackgroundColor } from '$lib/utils/colors.js';
+  import { applyPortOrder } from '$lib/utils/portUtils.js';
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -88,15 +81,9 @@
     /** Auth provider for API requests (used for template variable API mode) */
     authProvider?: AuthProvider;
     /** Callback when any field value changes (fired on blur for immediate sync) */
-    onChange?: (
-      config: Record<string, unknown>,
-      uiExtensions?: NodeUIExtensions,
-    ) => void;
+    onChange?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
     /** Callback when form is saved (includes both config and extensions if enabled) */
-    onSave?: (
-      config: Record<string, unknown>,
-      uiExtensions?: NodeUIExtensions,
-    ) => void;
+    onSave?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
     /** Callback when form is cancelled */
     onCancel?: () => void;
   }
@@ -114,16 +101,13 @@
     authProvider,
     onChange,
     onSave,
-    onCancel,
+    onCancel
   }: Props = $props();
 
   // Set context for child components (e.g., FormAutocomplete)
   // Use getter functions to ensure child components always get the current prop value,
   // even if the prop changes after initial mount
-  setContext<() => AuthProvider | undefined>(
-    "flowdrop:getAuthProvider",
-    () => authProvider,
-  );
+  setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
 
   /**
    * State for dynamic schema loading
@@ -170,9 +154,7 @@
       return fetchedDynamicSchema;
     }
     // Otherwise use the direct prop or node metadata
-    return (
-      schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined)
-    );
+    return schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
   });
 
   /**
@@ -180,9 +162,7 @@
    * Priority: direct uiSchema prop > node metadata uiSchema
    */
   const configUISchema = $derived.by<UISchemaElement | undefined>(() => {
-    return (
-      uiSchema ?? (node?.data.metadata?.uiSchema as UISchemaElement | undefined)
-    );
+    return uiSchema ?? (node?.data.metadata?.uiSchema as UISchemaElement | undefined);
   });
 
   /**
@@ -247,23 +227,20 @@
       const result: DynamicSchemaResult = await fetchDynamicSchema(
         configEditOptions.dynamicSchema,
         node,
-        workflowId,
+        workflowId
       );
 
       if (result.success && result.schema) {
         fetchedDynamicSchema = result.schema;
       } else {
         dynamicSchemaError =
-          result.error ??
-          configEditOptions.errorMessage ??
-          "Failed to load configuration schema";
+          result.error ?? configEditOptions.errorMessage ?? 'Failed to load configuration schema';
       }
     } catch (err) {
       dynamicSchemaError =
         err instanceof Error
           ? err.message
-          : (configEditOptions.errorMessage ??
-            "Failed to load configuration schema");
+          : (configEditOptions.errorMessage ?? 'Failed to load configuration schema');
     } finally {
       dynamicSchemaLoading = false;
     }
@@ -287,12 +264,8 @@
    * Get the resolved external edit URL
    */
   function getExternalEditUrl(): string {
-    if (!node || !configEditOptions?.externalEditLink) return "#";
-    return resolveExternalEditUrl(
-      configEditOptions.externalEditLink,
-      node,
-      workflowId,
-    );
+    if (!node || !configEditOptions?.externalEditLink) return '#';
+    return resolveExternalEditUrl(configEditOptions.externalEditLink, node, workflowId);
   }
 
   /**
@@ -302,11 +275,10 @@
     if (!node || !configEditOptions?.externalEditLink) return;
 
     const url = getExternalEditUrl();
-    const openInNewTab =
-      configEditOptions.externalEditLink.openInNewTab !== false;
+    const openInNewTab = configEditOptions.externalEditLink.openInNewTab !== false;
 
     if (openInNewTab) {
-      window.open(url, "_blank", "noopener,noreferrer");
+      window.open(url, '_blank', 'noopener,noreferrer');
     } else {
       window.location.href = url;
     }
@@ -331,9 +303,7 @@
         const fieldConfig = field as Record<string, unknown>;
         // Use existing value if available, otherwise use default
         mergedConfig[key] =
-          initialConfig[key] !== undefined
-            ? initialConfig[key]
-            : fieldConfig.default;
+          initialConfig[key] !== undefined ? initialConfig[key] : fieldConfig.default;
       });
       configValues = mergedConfig;
     }
@@ -344,8 +314,7 @@
    */
   $effect(() => {
     uiExtensionValues = {
-      hideUnconnectedHandles:
-        initialUIExtensions.hideUnconnectedHandles ?? false,
+      hideUnconnectedHandles: initialUIExtensions.hideUnconnectedHandles ?? false,
       portOrder: initialUIExtensions.portOrder
         ? {
             inputs: initialUIExtensions.portOrder.inputs
@@ -353,7 +322,7 @@
               : undefined,
             outputs: initialUIExtensions.portOrder.outputs
               ? [...initialUIExtensions.portOrder.outputs]
-              : undefined,
+              : undefined
           }
         : undefined,
       hiddenPorts: initialUIExtensions.hiddenPorts
@@ -363,9 +332,9 @@
               : undefined,
             outputs: initialUIExtensions.hiddenPorts.outputs
               ? [...initialUIExtensions.hiddenPorts.outputs]
-              : undefined,
+              : undefined
           }
-        : undefined,
+        : undefined
     };
   });
 
@@ -376,13 +345,10 @@
   const allInputPortsForUI = $derived.by<NodePort[]>(() => {
     if (!node) return [];
     const staticInputs = node.data.metadata.inputs ?? [];
-    const dynInputs = (
-      (node.data.config?.dynamicInputs as DynamicPort[]) || []
-    ).map((p) => dynamicPortToNodePort(p, "input"));
-    return applyPortOrder(
-      [...staticInputs, ...dynInputs],
-      uiExtensionValues.portOrder?.inputs,
+    const dynInputs = ((node.data.config?.dynamicInputs as DynamicPort[]) || []).map((p) =>
+      dynamicPortToNodePort(p, 'input')
     );
+    return applyPortOrder([...staticInputs, ...dynInputs], uiExtensionValues.portOrder?.inputs);
   });
 
   /**
@@ -392,25 +358,17 @@
   const allOutputPortsForUI = $derived.by<NodePort[]>(() => {
     if (!node) return [];
     const staticOutputs = node.data.metadata.outputs ?? [];
-    const dynOutputs = (
-      (node.data.config?.dynamicOutputs as DynamicPort[]) || []
-    ).map((p) => dynamicPortToNodePort(p, "output"));
-    return applyPortOrder(
-      [...staticOutputs, ...dynOutputs],
-      uiExtensionValues.portOrder?.outputs,
+    const dynOutputs = ((node.data.config?.dynamicOutputs as DynamicPort[]) || []).map((p) =>
+      dynamicPortToNodePort(p, 'output')
     );
+    return applyPortOrder([...staticOutputs, ...dynOutputs], uiExtensionValues.portOrder?.outputs);
   });
 
   /**
    * Move a port one position up or down in the display order.
    */
-  function movePort(
-    direction: "inputs" | "outputs",
-    portId: string,
-    delta: -1 | 1,
-  ): void {
-    const list =
-      direction === "inputs" ? allInputPortsForUI : allOutputPortsForUI;
+  function movePort(direction: 'inputs' | 'outputs', portId: string, delta: -1 | 1): void {
+    const list = direction === 'inputs' ? allInputPortsForUI : allOutputPortsForUI;
     const idx = list.findIndex((p) => p.id === portId);
     if (idx === -1) return;
     const newIdx = idx + delta;
@@ -419,7 +377,7 @@
     [newOrder[idx], newOrder[newIdx]] = [newOrder[newIdx], newOrder[idx]];
     uiExtensionValues.portOrder = {
       ...uiExtensionValues.portOrder,
-      [direction]: newOrder,
+      [direction]: newOrder
     };
     handleFormBlur();
   }
@@ -427,18 +385,13 @@
   /**
    * Toggle manual visibility of a port. Required ports cannot be hidden.
    */
-  function togglePortHidden(
-    direction: "inputs" | "outputs",
-    portId: string,
-  ): void {
+  function togglePortHidden(direction: 'inputs' | 'outputs', portId: string): void {
     const current = uiExtensionValues.hiddenPorts?.[direction] ?? [];
     const isHidden = current.includes(portId);
-    const next = isHidden
-      ? current.filter((id) => id !== portId)
-      : [...current, portId];
+    const next = isHidden ? current.filter((id) => id !== portId) : [...current, portId];
     uiExtensionValues.hiddenPorts = {
       ...uiExtensionValues.hiddenPorts,
-      [direction]: next.length > 0 ? next : undefined,
+      [direction]: next.length > 0 ? next : undefined
     };
     handleFormBlur();
   }
@@ -446,15 +399,13 @@
   /**
    * Reset all port customizations (order + hidden) for a direction back to defaults.
    */
-  function resetPortCustomizations(direction: "inputs" | "outputs"): void {
+  function resetPortCustomizations(direction: 'inputs' | 'outputs'): void {
     const order = { ...uiExtensionValues.portOrder };
     const hidden = { ...uiExtensionValues.hiddenPorts };
     delete order[direction];
     delete hidden[direction];
-    uiExtensionValues.portOrder =
-      Object.keys(order).length > 0 ? order : undefined;
-    uiExtensionValues.hiddenPorts =
-      Object.keys(hidden).length > 0 ? hidden : undefined;
+    uiExtensionValues.portOrder = Object.keys(order).length > 0 ? order : undefined;
+    uiExtensionValues.hiddenPorts = Object.keys(hidden).length > 0 ? hidden : undefined;
     handleFormBlur();
   }
 
@@ -480,8 +431,7 @@
    */
   function handleFormBlur(): void {
     if (onChange) {
-      const extensions =
-        showUIExtensions && node ? uiExtensionValues : undefined;
+      const extensions = showUIExtensions && node ? uiExtensionValues : undefined;
       onChange({ ...configValues }, extensions);
     }
   }
@@ -493,34 +443,23 @@
    */
   async function handleSave(): Promise<void> {
     // Collect all form values including hidden fields
-    const form = document.querySelector(".config-form");
+    const form = document.querySelector('.config-form');
     const updatedConfig: Record<string, unknown> = { ...configValues };
 
     if (form) {
-      const inputs = form.querySelectorAll("input, select, textarea");
+      const inputs = form.querySelectorAll('input, select, textarea');
       inputs.forEach((input: Element) => {
-        const inputEl = input as
-          | HTMLInputElement
-          | HTMLSelectElement
-          | HTMLTextAreaElement;
+        const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
         // Skip UI extension fields (prefixed with ext-)
-        if (inputEl.id && !inputEl.id.startsWith("ext-")) {
-          if (
-            inputEl instanceof HTMLInputElement &&
-            inputEl.type === "checkbox"
-          ) {
+        if (inputEl.id && !inputEl.id.startsWith('ext-')) {
+          if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
             updatedConfig[inputEl.id] = inputEl.checked;
           } else if (
             inputEl instanceof HTMLInputElement &&
-            (inputEl.type === "number" || inputEl.type === "range")
+            (inputEl.type === 'number' || inputEl.type === 'range')
           ) {
-            updatedConfig[inputEl.id] = inputEl.value
-              ? Number(inputEl.value)
-              : inputEl.value;
-          } else if (
-            inputEl instanceof HTMLInputElement &&
-            inputEl.type === "hidden"
-          ) {
+            updatedConfig[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
+          } else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
             // Parse hidden field values that might be JSON
             try {
               const parsed = JSON.parse(inputEl.value);
@@ -540,14 +479,10 @@
     if (initialConfig && configSchema?.properties) {
       Object.entries(configSchema.properties).forEach(
         ([key, property]: [string, Record<string, unknown>]) => {
-          if (
-            property.format === "hidden" &&
-            !(key in updatedConfig) &&
-            key in initialConfig
-          ) {
+          if (property.format === 'hidden' && !(key in updatedConfig) && key in initialConfig) {
             updatedConfig[key] = initialConfig[key];
           }
-        },
+        }
       );
     }
 
@@ -566,7 +501,7 @@
       try {
         await globalSaveWorkflow();
       } catch (error) {
-        logger.error("Failed to save workflow after config save:", error);
+        logger.error('Failed to save workflow after config save:', error);
       } finally {
         isSavingWorkflow = false;
       }
@@ -585,7 +520,7 @@
 
     // Process template fields to compute variable schema
     if (
-      fieldSchema.format === "template" &&
+      fieldSchema.format === 'template' &&
       node &&
       workflowNodes.length > 0 &&
       workflowEdges.length > 0
@@ -594,23 +529,18 @@
       const variablesConfig = fieldSchema.variables;
 
       // Compute the variable schema with optional port filtering and port name prefixing
-      const computedSchema = getAvailableVariables(
-        node,
-        workflowNodes,
-        workflowEdges,
-        {
-          targetPortIds: variablesConfig?.ports,
-          includePortName: variablesConfig?.includePortName,
-        },
-      );
+      const computedSchema = getAvailableVariables(node, workflowNodes, workflowEdges, {
+        targetPortIds: variablesConfig?.ports,
+        includePortName: variablesConfig?.includePortName
+      });
 
       // Merge computed schema with any pre-defined schema
       const mergedSchema = variablesConfig?.schema
         ? {
             variables: {
               ...computedSchema.variables,
-              ...variablesConfig.schema.variables,
-            },
+              ...variablesConfig.schema.variables
+            }
           }
         : computedSchema;
 
@@ -618,8 +548,8 @@
         ...fieldSchema,
         variables: {
           ...variablesConfig,
-          schema: mergedSchema,
-        },
+          schema: mergedSchema
+        }
       } as FieldSchema;
     }
 
@@ -637,7 +567,7 @@
     <div class="config-form__admin-edit-content">
       <p class="config-form__admin-edit-description">
         {configEditOptions.externalEditLink.description ??
-          "This node requires external configuration. Click the button below to open the configuration panel."}
+          'This node requires external configuration. Click the button below to open the configuration panel.'}
       </p>
       <button
         type="button"
@@ -645,13 +575,9 @@
         onclick={handleExternalEditClick}
       >
         <Icon
-          icon={configEditOptions.externalEditLink.icon ??
-            "heroicons:arrow-top-right-on-square"}
+          icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
         />
-        <span
-          >{configEditOptions.externalEditLink.label ??
-            "Configure Externally"}</span
-        >
+        <span>{configEditOptions.externalEditLink.label ?? 'Configure Externally'}</span>
       </button>
     </div>
   </div>
@@ -662,7 +588,7 @@
   <div class="config-form__loading">
     <div class="config-form__loading-spinner"></div>
     <p class="config-form__loading-text">
-      {configEditOptions?.loadingMessage ?? "Loading configuration options..."}
+      {configEditOptions?.loadingMessage ?? 'Loading configuration options...'}
     </p>
   </div>
 {:else if dynamicSchemaError}
@@ -690,12 +616,9 @@
           >
             <Icon
               icon={configEditOptions.externalEditLink.icon ??
-                "heroicons:arrow-top-right-on-square"}
+                'heroicons:arrow-top-right-on-square'}
             />
-            <span
-              >{configEditOptions.externalEditLink.label ??
-                "Use External Editor"}</span
-            >
+            <span>{configEditOptions.externalEditLink.label ?? 'Use External Editor'}</span>
           </button>
         {/if}
       </div>
@@ -726,17 +649,13 @@
             type="button"
             class="config-form__schema-external"
             onclick={handleExternalEditClick}
-            title={configEditOptions.externalEditLink.description ??
-              "Open external editor"}
+            title={configEditOptions.externalEditLink.description ?? 'Open external editor'}
           >
             <Icon
               icon={configEditOptions.externalEditLink.icon ??
-                "heroicons:arrow-top-right-on-square"}
+                'heroicons:arrow-top-right-on-square'}
             />
-            <span
-              >{configEditOptions.externalEditLink.label ??
-                "External Editor"}</span
-            >
+            <span>{configEditOptions.externalEditLink.label ?? 'External Editor'}</span>
           </button>
         {/if}
       </div>
@@ -760,9 +679,7 @@
           />
         {:else}
           {#each Object.entries(configSchema.properties) as [key, field], index (key)}
-            {@const fieldSchema = toFieldSchema(
-              field as Record<string, unknown>,
-            )}
+            {@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
             {@const required = isFieldRequired(key)}
 
             <FormField
@@ -788,11 +705,7 @@
           <Icon icon="heroicons:bug-ant" class="config-form__debug-icon" />
           <span>Debug - Config Schema</span>
         </div>
-        <pre class="config-form__debug-content">{JSON.stringify(
-            configSchema,
-            null,
-            2,
-          )}</pre>
+        <pre class="config-form__debug-content">{JSON.stringify(configSchema, null, 2)}</pre>
       </div>
     {/if}
 
@@ -800,10 +713,7 @@
     {#if showUIExtensions && node}
       <div class="config-form__extensions">
         <div class="config-form__extensions-header">
-          <Icon
-            icon="heroicons:adjustments-horizontal"
-            class="config-form__extensions-icon"
-          />
+          <Icon icon="heroicons:adjustments-horizontal" class="config-form__extensions-icon" />
           <span>Display Settings</span>
         </div>
         <div class="config-form__extensions-content">
@@ -835,7 +745,7 @@
                   <button
                     type="button"
                     class="config-form__port-order-reset"
-                    onclick={() => resetPortCustomizations("inputs")}
+                    onclick={() => resetPortCustomizations('inputs')}
                     title="Reset to default order and visibility"
                   >
                     <Icon icon="heroicons:arrow-uturn-left" />
@@ -846,26 +756,21 @@
               <ul class="config-form__port-order-list">
                 {#each allInputPortsForUI as port, i (port.id)}
                   {@const isHidden =
-                    uiExtensionValues.hiddenPorts?.inputs?.includes(port.id) ??
-                    false}
+                    uiExtensionValues.hiddenPorts?.inputs?.includes(port.id) ?? false}
                   {@const isRequired = port.required ?? false}
                   <li
                     class="config-form__port-order-item"
                     class:config-form__port-order-item--hidden={isHidden}
                   >
-                    <span class="config-form__port-order-name">{port.name}</span
-                    >
+                    <span class="config-form__port-order-name">{port.name}</span>
                     <span
                       class="config-form__port-order-badge"
                       style="background-color:{getPortBackgroundColor(
                         port.dataType,
-                        15,
+                        15
                       )};color:{getDataTypeColorToken(
-                        port.dataType,
-                      )};border:1px solid {getPortBackgroundColor(
-                        port.dataType,
-                        30,
-                      )}"
+                        port.dataType
+                      )};border:1px solid {getPortBackgroundColor(port.dataType, 30)}"
                     >
                       {port.dataType}
                     </span>
@@ -874,23 +779,19 @@
                         type="button"
                         disabled={isRequired}
                         title={isRequired
-                          ? "Required ports cannot be hidden"
+                          ? 'Required ports cannot be hidden'
                           : isHidden
-                            ? "Show port"
-                            : "Hide port"}
+                            ? 'Show port'
+                            : 'Hide port'}
                         class:active={isHidden}
-                        onclick={() => togglePortHidden("inputs", port.id)}
+                        onclick={() => togglePortHidden('inputs', port.id)}
                       >
-                        <Icon
-                          icon={isHidden
-                            ? "heroicons:eye-slash"
-                            : "heroicons:eye"}
-                        />
+                        <Icon icon={isHidden ? 'heroicons:eye-slash' : 'heroicons:eye'} />
                       </button>
                       <button
                         type="button"
                         disabled={i === 0 || allInputPortsForUI.length === 1}
-                        onclick={() => movePort("inputs", port.id, -1)}
+                        onclick={() => movePort('inputs', port.id, -1)}
                         title="Move up"
                       >
                         <Icon icon="heroicons:chevron-up" />
@@ -899,7 +800,7 @@
                         type="button"
                         disabled={i === allInputPortsForUI.length - 1 ||
                           allInputPortsForUI.length === 1}
-                        onclick={() => movePort("inputs", port.id, 1)}
+                        onclick={() => movePort('inputs', port.id, 1)}
                         title="Move down"
                       >
                         <Icon icon="heroicons:chevron-down" />
@@ -920,7 +821,7 @@
                   <button
                     type="button"
                     class="config-form__port-order-reset"
-                    onclick={() => resetPortCustomizations("outputs")}
+                    onclick={() => resetPortCustomizations('outputs')}
                     title="Reset to default order and visibility"
                   >
                     <Icon icon="heroicons:arrow-uturn-left" />
@@ -931,26 +832,21 @@
               <ul class="config-form__port-order-list">
                 {#each allOutputPortsForUI as port, i (port.id)}
                   {@const isHidden =
-                    uiExtensionValues.hiddenPorts?.outputs?.includes(port.id) ??
-                    false}
+                    uiExtensionValues.hiddenPorts?.outputs?.includes(port.id) ?? false}
                   {@const isRequired = port.required ?? false}
                   <li
                     class="config-form__port-order-item"
                     class:config-form__port-order-item--hidden={isHidden}
                   >
-                    <span class="config-form__port-order-name">{port.name}</span
-                    >
+                    <span class="config-form__port-order-name">{port.name}</span>
                     <span
                       class="config-form__port-order-badge"
                       style="background-color:{getPortBackgroundColor(
                         port.dataType,
-                        15,
+                        15
                       )};color:{getDataTypeColorToken(
-                        port.dataType,
-                      )};border:1px solid {getPortBackgroundColor(
-                        port.dataType,
-                        30,
-                      )}"
+                        port.dataType
+                      )};border:1px solid {getPortBackgroundColor(port.dataType, 30)}"
                     >
                       {port.dataType}
                     </span>
@@ -959,23 +855,19 @@
                         type="button"
                         disabled={isRequired}
                         title={isRequired
-                          ? "Required ports cannot be hidden"
+                          ? 'Required ports cannot be hidden'
                           : isHidden
-                            ? "Show port"
-                            : "Hide port"}
+                            ? 'Show port'
+                            : 'Hide port'}
                         class:active={isHidden}
-                        onclick={() => togglePortHidden("outputs", port.id)}
+                        onclick={() => togglePortHidden('outputs', port.id)}
                       >
-                        <Icon
-                          icon={isHidden
-                            ? "heroicons:eye-slash"
-                            : "heroicons:eye"}
-                        />
+                        <Icon icon={isHidden ? 'heroicons:eye-slash' : 'heroicons:eye'} />
                       </button>
                       <button
                         type="button"
                         disabled={i === 0 || allOutputPortsForUI.length === 1}
-                        onclick={() => movePort("outputs", port.id, -1)}
+                        onclick={() => movePort('outputs', port.id, -1)}
                         title="Move up"
                       >
                         <Icon icon="heroicons:chevron-up" />
@@ -984,7 +876,7 @@
                         type="button"
                         disabled={i === allOutputPortsForUI.length - 1 ||
                           allOutputPortsForUI.length === 1}
-                        onclick={() => movePort("outputs", port.id, 1)}
+                        onclick={() => movePort('outputs', port.id, 1)}
                         title="Move down"
                       >
                         <Icon icon="heroicons:chevron-down" />
@@ -1034,9 +926,7 @@
     <div class="config-form__empty-icon">
       <Icon icon="heroicons:cog-6-tooth" />
     </div>
-    <p class="config-form__empty-text">
-      No configuration options available for this node.
-    </p>
+    <p class="config-form__empty-text">No configuration options available for this node.</p>
     {#if configEditOptions?.externalEditLink}
       <button
         type="button"
@@ -1044,13 +934,9 @@
         onclick={handleExternalEditClick}
       >
         <Icon
-          icon={configEditOptions.externalEditLink.icon ??
-            "heroicons:arrow-top-right-on-square"}
+          icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
         />
-        <span
-          >{configEditOptions.externalEditLink.label ??
-            "Configure Externally"}</span
-        >
+        <span>{configEditOptions.externalEditLink.label ?? 'Configure Externally'}</span>
       </button>
     {/if}
   </div>
@@ -1144,11 +1030,7 @@
   }
 
   .config-form__button--primary {
-    background: linear-gradient(
-      135deg,
-      var(--fd-primary) 0%,
-      var(--fd-primary-hover) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
     color: var(--fd-primary-foreground);
     box-shadow:
       0 1px 3px rgba(59, 130, 246, 0.3),
@@ -1156,11 +1038,7 @@
   }
 
   .config-form__button--primary:hover {
-    background: linear-gradient(
-      135deg,
-      var(--fd-primary-hover) 0%,
-      var(--fd-primary-hover) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
     box-shadow:
       0 4px 12px rgba(59, 130, 246, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1381,7 +1259,7 @@
     margin: 0;
     padding: var(--fd-space-xl);
     font-size: var(--fd-text-xs);
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     color: var(--fd-foreground);
     overflow-x: auto;
     background-color: var(--fd-background);
@@ -1430,11 +1308,7 @@
 	   ============================================ */
 
   .config-form__admin-edit {
-    background: linear-gradient(
-      135deg,
-      var(--fd-info-muted) 0%,
-      var(--fd-primary-muted) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
     border: 1px solid var(--fd-primary);
     border-radius: 0.625rem;
     overflow: hidden;
@@ -1446,11 +1320,7 @@
     align-items: center;
     gap: var(--fd-space-xs);
     padding: var(--fd-space-md) var(--fd-space-xl);
-    background: linear-gradient(
-      135deg,
-      var(--fd-primary-muted) 0%,
-      var(--fd-primary-muted) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-primary-muted) 0%, var(--fd-primary-muted) 100%);
     border-bottom: 1px solid var(--fd-primary);
     font-size: 0.8125rem;
     font-weight: 600;
@@ -1622,11 +1492,7 @@
 	   ============================================ */
 
   .config-form__button--external {
-    background: linear-gradient(
-      135deg,
-      var(--fd-accent) 0%,
-      var(--fd-primary) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-accent) 0%, var(--fd-primary) 100%);
     color: var(--fd-accent-foreground);
     box-shadow:
       0 1px 3px rgba(99, 102, 241, 0.3),
@@ -1634,11 +1500,7 @@
   }
 
   .config-form__button--external:hover {
-    background: linear-gradient(
-      135deg,
-      var(--fd-accent-hover) 0%,
-      var(--fd-primary-hover) 100%
-    );
+    background: linear-gradient(135deg, var(--fd-accent-hover) 0%, var(--fd-primary-hover) 100%);
     box-shadow:
       0 4px 12px rgba(99, 102, 241, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);

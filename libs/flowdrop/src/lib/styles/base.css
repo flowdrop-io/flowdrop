@@ -1,7 +1,7 @@
 /* Base CSS with BEM syntax */
 
 /* Import design tokens */
-@import "./tokens.css";
+@import './tokens.css';
 
 /* Reset and base styles */
 * {
@@ -32,49 +32,19 @@
 
 /* xyflow Controls & MiniMap: wire up to skin tokens so themes can restyle them */
 .svelte-flow {
-  --xy-controls-button-background-color: var(
-    --fd-controls-button-bg,
-    var(--fd-card)
-  );
-  --xy-controls-button-background-color-hover: var(
-    --fd-controls-button-bg-hover,
-    var(--fd-muted)
-  );
-  --xy-controls-button-color: var(
-    --fd-controls-button-color,
-    var(--fd-foreground)
-  );
-  --xy-controls-button-color-hover: var(
-    --fd-controls-button-color-hover,
-    var(--fd-foreground)
-  );
-  --xy-controls-button-border-color: var(
-    --fd-controls-button-border,
-    var(--fd-border)
-  );
-  --xy-controls-box-shadow: var(
-    --fd-controls-box-shadow,
-    0 0 2px 1px rgba(0, 0, 0, 0.08)
-  );
+  --xy-controls-button-background-color: var(--fd-controls-button-bg, var(--fd-card));
+  --xy-controls-button-background-color-hover: var(--fd-controls-button-bg-hover, var(--fd-muted));
+  --xy-controls-button-color: var(--fd-controls-button-color, var(--fd-foreground));
+  --xy-controls-button-color-hover: var(--fd-controls-button-color-hover, var(--fd-foreground));
+  --xy-controls-button-border-color: var(--fd-controls-button-border, var(--fd-border));
+  --xy-controls-box-shadow: var(--fd-controls-box-shadow, 0 0 2px 1px rgba(0, 0, 0, 0.08));
 
   --xy-minimap-background-color: var(--fd-minimap-bg, var(--fd-card));
-  --xy-minimap-mask-background-color: var(
-    --fd-minimap-mask-bg,
-    var(--fd-backdrop)
-  );
-  --xy-minimap-mask-stroke-color: var(
-    --fd-minimap-mask-stroke,
-    var(--fd-border)
-  );
+  --xy-minimap-mask-background-color: var(--fd-minimap-mask-bg, var(--fd-backdrop));
+  --xy-minimap-mask-stroke-color: var(--fd-minimap-mask-stroke, var(--fd-border));
   --xy-minimap-mask-stroke-width: var(--fd-minimap-mask-stroke-width, 1);
-  --xy-minimap-node-background-color: var(
-    --fd-minimap-node-bg,
-    var(--fd-muted)
-  );
-  --xy-minimap-node-stroke-color: var(
-    --fd-minimap-node-stroke,
-    var(--fd-border-muted)
-  );
+  --xy-minimap-node-background-color: var(--fd-minimap-node-bg, var(--fd-muted));
+  --xy-minimap-node-stroke-color: var(--fd-minimap-node-stroke, var(--fd-border-muted));
   --xy-minimap-node-stroke-width: var(--fd-minimap-node-stroke-width, 2);
 }
 
@@ -98,7 +68,7 @@
 }
 
 .svelte-flow .svelte-flow__handle::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   margin: auto;
@@ -405,7 +375,7 @@
 }
 
 .flowdrop-divider::before {
-  content: "";
+  content: '';
   flex: 1;
   height: 1px;
   background-color: var(--fd-border);
@@ -421,7 +391,7 @@
 }
 
 .flowdrop-divider::after {
-  content: "";
+  content: '';
   flex: 1;
   height: 1px;
   background-color: var(--fd-border);
@@ -1002,11 +972,7 @@
   --fd-interrupt-completed-text-light: var(--fd-primary);
 
   /* Interrupt state: Cancelled (dismissed without responding) */
-  --fd-interrupt-cancelled-bg: linear-gradient(
-    135deg,
-    var(--fd-muted) 0%,
-    var(--fd-subtle) 100%
-  );
+  --fd-interrupt-cancelled-bg: linear-gradient(135deg, var(--fd-muted) 0%, var(--fd-subtle) 100%);
   --fd-interrupt-cancelled-border: var(--fd-muted-foreground);
   --fd-interrupt-cancelled-shadow: rgba(107, 114, 128, 0.15);
   --fd-interrupt-cancelled-avatar: var(--fd-muted-foreground);
@@ -1121,7 +1087,7 @@
 }
 
 /* Dark mode overrides for interrupt component tokens */
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Interrupt prompt inner styling - dark background for dark mode */
   --fd-interrupt-prompt-bg: rgba(30, 30, 35, 0.95);
   --fd-interrupt-prompt-border-pending: rgba(251, 191, 36, 0.25);

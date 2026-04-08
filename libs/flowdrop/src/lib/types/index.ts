@@ -2,32 +2,32 @@
  * Core types for the Workflow Library
  */
 
-import type { Node, Edge, XYPosition } from "@xyflow/svelte";
-import { ConnectionLineType } from "@xyflow/svelte";
-import type { EndpointConfig } from "../config/endpoints.js";
+import type { Node, Edge, XYPosition } from '@xyflow/svelte';
+import { ConnectionLineType } from '@xyflow/svelte';
+import type { EndpointConfig } from '../config/endpoints.js';
 
 /**
  * Built-in node categories that ship with FlowDrop.
  * These categories have predefined icons, colors, and display names.
  */
 export type BuiltinNodeCategory =
-  | "triggers"
-  | "inputs"
-  | "outputs"
-  | "prompts"
-  | "models"
-  | "processing"
-  | "logic"
-  | "data"
-  | "tools"
-  | "helpers"
-  | "vector stores"
-  | "embeddings"
-  | "memories"
-  | "agents"
-  | "ai"
-  | "interrupts"
-  | "bundles";
+  | 'triggers'
+  | 'inputs'
+  | 'outputs'
+  | 'prompts'
+  | 'models'
+  | 'processing'
+  | 'logic'
+  | 'data'
+  | 'tools'
+  | 'helpers'
+  | 'vector stores'
+  | 'embeddings'
+  | 'memories'
+  | 'agents'
+  | 'ai'
+  | 'interrupts'
+  | 'bundles';
 
 /**
  * Node category for organizing nodes in the sidebar.
@@ -43,28 +43,24 @@ export type BuiltinNodeCategory =
  * const custom: NodeCategory = 'my-custom-category';
  * ```
  */
-export type NodeCategory =
-  | BuiltinNodeCategory
-  | (string & Record<never, never>);
+export type NodeCategory = BuiltinNodeCategory | (string & Record<never, never>);
 
 /**
  * Built-in workflow format identifiers that ship with FlowDrop.
  */
-export type BuiltinWorkflowFormat = "flowdrop" | "agentspec";
+export type BuiltinWorkflowFormat = 'flowdrop' | 'agentspec';
 
 /**
  * Workflow format identifier.
  * Determines sidebar node filtering and export behavior.
  * Includes built-in formats plus any custom string for third-party adapters.
  */
-export type WorkflowFormat =
-  | BuiltinWorkflowFormat
-  | (string & Record<never, never>);
+export type WorkflowFormat = BuiltinWorkflowFormat | (string & Record<never, never>);
 
 /**
  * Default workflow format used when none is specified.
  */
-export const DEFAULT_WORKFLOW_FORMAT: WorkflowFormat = "flowdrop";
+export const DEFAULT_WORKFLOW_FORMAT: WorkflowFormat = 'flowdrop';
 
 /**
  * Category definition with metadata for display and organization.
@@ -144,7 +140,7 @@ export type NodeDataType = string;
 export interface NodePort {
   id: string;
   name: string;
-  type: "input" | "output" | "metadata";
+  type: 'input' | 'output' | 'metadata';
   dataType: NodeDataType;
   required?: boolean;
   description?: string;
@@ -170,7 +166,7 @@ export interface PortCoordinate {
   /** The node this port belongs to */
   nodeId: string;
   /** Port direction */
-  direction: "input" | "output";
+  direction: 'input' | 'output';
   /** Port data type for compatibility checks */
   dataType: string;
 }
@@ -234,17 +230,14 @@ export interface Branch {
  * @param portType - Whether this is an input or output port
  * @returns A NodePort compatible with the rendering system
  */
-export function dynamicPortToNodePort(
-  port: DynamicPort,
-  portType: "input" | "output",
-): NodePort {
+export function dynamicPortToNodePort(port: DynamicPort, portType: 'input' | 'output'): NodePort {
   return {
     id: port.name,
     name: port.label,
     type: portType,
     dataType: port.dataType,
     required: port.required ?? false,
-    description: port.description,
+    description: port.description
   };
 }
 
@@ -253,13 +246,13 @@ export function dynamicPortToNodePort(
  * These are the node types that ship with FlowDrop.
  */
 export type BuiltinNodeType =
-  | "note"
-  | "simple"
-  | "square"
-  | "tool"
-  | "gateway"
-  | "terminal"
-  | "default";
+  | 'note'
+  | 'simple'
+  | 'square'
+  | 'tool'
+  | 'gateway'
+  | 'terminal'
+  | 'default';
 
 /**
  * Node type for component rendering.
@@ -282,7 +275,7 @@ export type NodeType = BuiltinNodeType | (string & Record<never, never>);
 /**
  * HTTP method types for dynamic schema endpoints
  */
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH";
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH';
 
 /**
  * Autocomplete configuration for form fields
@@ -675,7 +668,7 @@ export interface NodeMetadata {
    * @see UISchemaElement for the element type definitions
    * @see https://jsonforms.io/docs/uischema
    */
-  uiSchema?: import("./uischema.js").UISchemaElement;
+  uiSchema?: import('./uischema.js').UISchemaElement;
   /** Default configuration values for this node type */
   config?: Record<string, unknown>;
   tags?: string[];
@@ -716,15 +709,7 @@ export interface NodeMetadata {
  * Common base interface for all schema properties
  */
 export interface BaseProperty {
-  type:
-    | "string"
-    | "number"
-    | "boolean"
-    | "array"
-    | "object"
-    | "integer"
-    | "mixed"
-    | "float";
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'float';
   description?: string;
   title?: string;
   default?: unknown;
@@ -744,7 +729,7 @@ export interface BaseProperty {
  * Common base interface for all schemas
  */
 export interface BaseSchema {
-  type: "object";
+  type: 'object';
   properties: Record<string, BaseProperty>;
   required?: string[];
   additionalProperties?: boolean;
@@ -754,7 +739,7 @@ export interface BaseSchema {
  * Configuration schema property with specific attributes
  */
 export interface ConfigProperty extends BaseProperty {
-  type: "string" | "number" | "boolean" | "array" | "object" | "integer";
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer';
   title?: string;
   description?: string;
   default?: unknown;
@@ -765,7 +750,7 @@ export interface ConfigProperty extends BaseProperty {
   minLength?: number;
   maxLength?: number;
   pattern?: string;
-  format?: "multiline" | "hidden" | string; // Special formats: multiline for textarea, hidden to hide field
+  format?: 'multiline' | 'hidden' | string; // Special formats: multiline for textarea, hidden to hide field
   items?: ConfigProperty;
   properties?: Record<string, ConfigProperty>;
   [key: string]: unknown; // Allow additional JSON Schema properties
@@ -782,14 +767,7 @@ export interface ConfigSchema extends BaseSchema {
  * Input schema property with specific attributes
  */
 export interface InputProperty extends BaseProperty {
-  type:
-    | "string"
-    | "number"
-    | "boolean"
-    | "array"
-    | "object"
-    | "integer"
-    | "mixed";
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed';
   title?: string;
   description?: string;
   required?: boolean;
@@ -800,7 +778,7 @@ export interface InputProperty extends BaseProperty {
   minLength?: number;
   maxLength?: number;
   pattern?: string;
-  format?: "multiline" | string;
+  format?: 'multiline' | string;
   items?: InputProperty;
   properties?: Record<string, InputProperty>;
   [key: string]: unknown;
@@ -817,15 +795,7 @@ export interface InputSchema extends BaseSchema {
  * Output schema property with specific attributes
  */
 export interface OutputProperty extends BaseProperty {
-  type:
-    | "string"
-    | "number"
-    | "boolean"
-    | "array"
-    | "object"
-    | "integer"
-    | "mixed"
-    | "float";
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'float';
   description: string; // Required for outputs
   title?: string;
   default?: unknown;
@@ -852,14 +822,14 @@ export interface OutputSchema extends BaseSchema {
  * Primitive types for template variables
  */
 export type TemplateVariableType =
-  | "string"
-  | "number"
-  | "boolean"
-  | "array"
-  | "object"
-  | "integer"
-  | "mixed"
-  | "float";
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'array'
+  | 'object'
+  | 'integer'
+  | 'mixed'
+  | 'float';
 
 /**
  * Represents a variable available for template interpolation.
@@ -1140,27 +1110,27 @@ export type Property = ConfigProperty | InputProperty | OutputProperty;
 /**
  * Schema type discriminator
  */
-export type SchemaType = "config" | "input" | "output";
+export type SchemaType = 'config' | 'input' | 'output';
 
 /**
  * Utility type to get the appropriate property type based on schema type
  */
-export type SchemaProperty<T extends SchemaType> = T extends "config"
+export type SchemaProperty<T extends SchemaType> = T extends 'config'
   ? ConfigProperty
-  : T extends "input"
+  : T extends 'input'
     ? InputProperty
-    : T extends "output"
+    : T extends 'output'
       ? OutputProperty
       : never;
 
 /**
  * Utility type to get the appropriate schema type based on schema type
  */
-export type SchemaTypeMap<T extends SchemaType> = T extends "config"
+export type SchemaTypeMap<T extends SchemaType> = T extends 'config'
   ? ConfigSchema
-  : T extends "input"
+  : T extends 'input'
     ? InputSchema
-    : T extends "output"
+    : T extends 'output'
       ? OutputSchema
       : never;
 
@@ -1271,7 +1241,7 @@ export interface WorkflowNode extends Node {
  * - loopback: Dashed gray line for loop iteration (targets loop_back port)
  * - data: Normal gray line for all other data connections
  */
-export type EdgeCategory = "trigger" | "tool" | "loopback" | "data";
+export type EdgeCategory = 'trigger' | 'tool' | 'loopback' | 'data';
 
 /**
  * Extended edge type for workflows
@@ -1340,13 +1310,13 @@ export type WorkflowsResponse = ApiResponse<Workflow[]>;
  * Node execution status enum
  */
 export type NodeExecutionStatus =
-  | "idle"
-  | "pending"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled"
-  | "skipped";
+  | 'idle'
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'skipped';
 
 /**
  * Node execution tracking information
@@ -1371,12 +1341,7 @@ export interface NodeExecutionInfo {
 /**
  * Workflow execution status
  */
-export type ExecutionStatus =
-  | "idle"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type ExecutionStatus = 'idle' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 /**
  * Workflow execution result
@@ -1397,7 +1362,7 @@ export interface ExecutionResult {
  */
 export interface FlowDropConfig {
   endpointConfig?: EndpointConfig;
-  theme?: "light" | "dark" | "auto";
+  theme?: 'light' | 'dark' | 'auto';
   enableDebug?: boolean;
   autoSave?: boolean;
   autoSaveInterval?: number;
@@ -1423,16 +1388,8 @@ export interface WorkflowEvents {
 }
 
 // Re-export auth types for convenience
-export type {
-  AuthProvider,
-  StaticAuthConfig,
-  CallbackAuthConfig,
-} from "./auth.js";
-export {
-  StaticAuthProvider,
-  CallbackAuthProvider,
-  NoAuthProvider,
-} from "./auth.js";
+export type { AuthProvider, StaticAuthConfig, CallbackAuthConfig } from './auth.js';
+export { StaticAuthProvider, CallbackAuthProvider, NoAuthProvider } from './auth.js';
 
 // Re-export settings types
 export type {
@@ -1449,8 +1406,8 @@ export type {
   SyncStatus,
   SettingsStoreState,
   SettingsChangeEvent,
-  SettingsChangeCallback,
-} from "./settings.js";
+  SettingsChangeCallback
+} from './settings.js';
 export {
   DEFAULT_SETTINGS,
   DEFAULT_THEME_SETTINGS,
@@ -1461,8 +1418,8 @@ export {
   SETTINGS_CATEGORIES,
   SETTINGS_CATEGORY_LABELS,
   SETTINGS_CATEGORY_ICONS,
-  SETTINGS_STORAGE_KEY,
-} from "./settings.js";
+  SETTINGS_STORAGE_KEY
+} from './settings.js';
 
 // UISchema types for form layout control
 export type {
@@ -1471,11 +1428,7 @@ export type {
   UISchemaControl,
   UISchemaVerticalLayout,
   UISchemaGroup,
-  UISchemaElement,
-} from "./uischema.js";
+  UISchemaElement
+} from './uischema.js';
 
-export {
-  isUISchemaControl,
-  isUISchemaVerticalLayout,
-  isUISchemaGroup,
-} from "./uischema.js";
+export { isUISchemaControl, isUISchemaVerticalLayout, isUISchemaGroup } from './uischema.js';

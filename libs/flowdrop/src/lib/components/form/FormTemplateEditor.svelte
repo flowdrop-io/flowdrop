@@ -18,7 +18,7 @@
 -->
 
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy } from 'svelte';
   import {
     EditorView,
     lineNumbers,
@@ -30,30 +30,22 @@
     tooltips,
     Decoration,
     ViewPlugin,
-    MatchDecorator,
-  } from "@codemirror/view";
-  import { EditorState, Compartment } from "@codemirror/state";
-  import {
-    history,
-    historyKeymap,
-    defaultKeymap,
-    indentWithTab,
-  } from "@codemirror/commands";
-  import {
-    syntaxHighlighting,
-    defaultHighlightStyle,
-  } from "@codemirror/language";
-  import { oneDark } from "@codemirror/theme-one-dark";
+    MatchDecorator
+  } from '@codemirror/view';
+  import { EditorState, Compartment } from '@codemirror/state';
+  import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
+  import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+  import { oneDark } from '@codemirror/theme-one-dark';
   import type {
     VariableSchema,
     TemplateVariablesConfig,
     WorkflowNode,
     WorkflowEdge,
-    AuthProvider,
-  } from "$lib/types/index.js";
-  import { createTemplateAutocomplete } from "./templateAutocomplete.js";
-  import { getVariableSchema } from "$lib/services/variableService.js";
-  import { logger } from "../../utils/logger.js";
+    AuthProvider
+  } from '$lib/types/index.js';
+  import { createTemplateAutocomplete } from './templateAutocomplete.js';
+  import { getVariableSchema } from '$lib/services/variableService.js';
+  import { logger } from '../../utils/logger.js';
 
   interface Props {
     /** Field identifier */
@@ -95,13 +87,13 @@
 
   let {
     id,
-    value = "",
-    placeholder = "Enter your template here...\nUse {{ variable }} for dynamic values.",
+    value = '',
+    placeholder = 'Enter your template here...\nUse {{ variable }} for dynamic values.',
     required = false,
     darkTheme = false,
-    height = "250px",
+    height = '250px',
     variables,
-    placeholderExample = "Hello {{ name }}, your order #{{ order_id }} is ready!",
+    placeholderExample = 'Hello {{ name }}, your order #{{ order_id }} is ready!',
     disabled = false,
     ariaDescribedBy,
     onChange,
@@ -109,7 +101,7 @@
     nodes = [],
     edges = [],
     workflowId,
-    authProvider,
+    authProvider
   }: Props = $props();
 
   /** Loading state for API variable fetching */
@@ -136,22 +128,13 @@
     }
 
     // If variables config has static schema only (no API), use it directly
-    if (
-      variables.schema &&
-      !variables.api &&
-      Object.keys(variables.schema.variables).length > 0
-    ) {
+    if (variables.schema && !variables.api && Object.keys(variables.schema.variables).length > 0) {
       effectiveVariableSchema = variables.schema;
       return;
     }
 
     // If variables config requires node context (ports or API mode)
-    if (
-      (variables.ports !== undefined || variables.api) &&
-      node &&
-      nodes &&
-      edges
-    ) {
+    if ((variables.ports !== undefined || variables.api) && node && nodes && edges) {
       try {
         isLoadingVariables = true;
         effectiveVariableSchema = await getVariableSchema(
@@ -160,12 +143,11 @@
           edges,
           variables,
           workflowId,
-          authProvider,
+          authProvider
         );
       } catch (error) {
-        logger.error("Failed to load variable schema:", error);
-        variableLoadError =
-          error instanceof Error ? error.message : "Failed to load variables";
+        logger.error('Failed to load variable schema:', error);
+        variableLoadError = error instanceof Error ? error.message : 'Failed to load variables';
         effectiveVariableSchema = undefined;
       } finally {
         isLoadingVariables = false;
@@ -222,14 +204,14 @@
     regexp: /\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\}/g,
     decoration: (match) => {
       const text = match[0];
-      if (text.startsWith("{{")) {
-        return Decoration.mark({ class: "cm-twig-expression" });
-      } else if (text.startsWith("{%")) {
-        return Decoration.mark({ class: "cm-twig-block" });
+      if (text.startsWith('{{')) {
+        return Decoration.mark({ class: 'cm-twig-expression' });
+      } else if (text.startsWith('{%')) {
+        return Decoration.mark({ class: 'cm-twig-block' });
       } else {
-        return Decoration.mark({ class: "cm-twig-comment" });
+        return Decoration.mark({ class: 'cm-twig-comment' });
       }
-    },
+    }
   });
 
   const twigHighlighter = ViewPlugin.fromClass(
@@ -238,20 +220,17 @@
       constructor(view: EditorView) {
         this.decorations = twigMatcher.createDeco(view);
       }
-      update(update: import("@codemirror/view").ViewUpdate) {
+      update(update: import('@codemirror/view').ViewUpdate) {
         this.decorations = twigMatcher.updateDeco(update, this.decorations);
       }
     },
-    { decorations: (v) => v.decorations },
+    { decorations: (v) => v.decorations }
   );
 
   /**
    * Handle editor content changes
    */
-  function handleUpdate(update: {
-    docChanged: boolean;
-    state: EditorState;
-  }): void {
+  function handleUpdate(update: { docChanged: boolean; state: EditorState }): void {
     if (!update.docChanged || isInternalUpdate) {
       return;
     }
@@ -268,7 +247,7 @@
   function createExtensions() {
     const extensions = [
       // Position tooltips using fixed strategy so they aren't clipped by container overflow
-      tooltips({ position: "fixed" }),
+      tooltips({ position: 'fixed' }),
 
       // Essential visual features
       lineNumbers(),
@@ -280,20 +259,13 @@
       // Editing features (skip when read-only)
       ...(disabled
         ? []
-        : [
-            history(),
-            keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-          ]),
+        : [history(), keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])]),
 
       // Read-only: prevent document changes and mark content as non-editable
-      ...(disabled
-        ? [EditorState.readOnly.of(true), EditorView.editable.of(false)]
-        : []),
+      ...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
 
       // Syntax highlighting - use default for light mode, oneDark handles dark mode
-      ...(darkTheme
-        ? []
-        : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
+      ...(darkTheme ? [] : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
 
       // Twig syntax highlighting ({{ expressions }}, {% blocks %}, {# comments #})
       twigHighlighter,
@@ -303,92 +275,88 @@
 
       // Custom theme with autocomplete styling
       EditorView.theme({
-        "&": {
+        '&': {
           height: height,
-          fontSize: "0.875rem",
-          fontFamily:
-            "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace",
+          fontSize: '0.875rem',
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace"
         },
-        ".cm-scroller": {
-          overflow: "auto",
+        '.cm-scroller': {
+          overflow: 'auto'
         },
-        ".cm-content": {
-          minHeight: "100px",
-          padding: "0.5rem 0",
+        '.cm-content': {
+          minHeight: '100px',
+          padding: '0.5rem 0'
         },
-        "&.cm-focused": {
-          outline: "none",
+        '&.cm-focused': {
+          outline: 'none'
         },
-        ".cm-line": {
-          padding: "0 0.5rem",
+        '.cm-line': {
+          padding: '0 0.5rem'
         },
         // Twig expression: {{ variable }}
-        ".cm-twig-expression": {
-          color: "#a855f7",
-          backgroundColor: "rgba(168, 85, 247, 0.1)",
-          borderRadius: "3px",
-          padding: "1px 2px",
-          fontWeight: "500",
+        '.cm-twig-expression': {
+          color: '#a855f7',
+          backgroundColor: 'rgba(168, 85, 247, 0.1)',
+          borderRadius: '3px',
+          padding: '1px 2px',
+          fontWeight: '500'
         },
         // Twig block: {% for ... %}
-        ".cm-twig-block": {
-          color: "#14b8a6",
-          backgroundColor: "rgba(20, 184, 166, 0.1)",
-          borderRadius: "3px",
-          padding: "1px 2px",
-          fontWeight: "500",
+        '.cm-twig-block': {
+          color: '#14b8a6',
+          backgroundColor: 'rgba(20, 184, 166, 0.1)',
+          borderRadius: '3px',
+          padding: '1px 2px',
+          fontWeight: '500'
         },
         // Twig comment: {# ... #}
-        ".cm-twig-comment": {
-          color: "#6b7280",
-          fontStyle: "italic",
+        '.cm-twig-comment': {
+          color: '#6b7280',
+          fontStyle: 'italic'
         },
         // Autocomplete dropdown styling
-        ".cm-tooltip.cm-tooltip-autocomplete": {
-          backgroundColor: "var(--fd-background, #ffffff)",
-          border: "1px solid var(--fd-border, #e5e7eb)",
-          borderRadius: "var(--fd-radius-lg, 0.5rem)",
-          boxShadow: "var(--fd-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))",
-          padding: "0.25rem",
-          maxHeight: "200px",
-          overflow: "auto",
+        '.cm-tooltip.cm-tooltip-autocomplete': {
+          backgroundColor: 'var(--fd-background, #ffffff)',
+          border: '1px solid var(--fd-border, #e5e7eb)',
+          borderRadius: 'var(--fd-radius-lg, 0.5rem)',
+          boxShadow: 'var(--fd-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))',
+          padding: '0.25rem',
+          maxHeight: '200px',
+          overflow: 'auto'
         },
-        ".cm-tooltip.cm-tooltip-autocomplete > ul": {
-          fontFamily:
-            "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace",
-          fontSize: "0.8125rem",
+        '.cm-tooltip.cm-tooltip-autocomplete > ul': {
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace",
+          fontSize: '0.8125rem'
         },
-        ".cm-tooltip.cm-tooltip-autocomplete > ul > li": {
-          padding: "0.375rem 0.625rem",
-          borderRadius: "var(--fd-radius-md, 0.375rem)",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
+        '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
+          padding: '0.375rem 0.625rem',
+          borderRadius: 'var(--fd-radius-md, 0.375rem)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         },
-        ".cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]": {
-          backgroundColor: "var(--fd-accent-muted, rgba(168, 85, 247, 0.1))",
-          color: "var(--fd-accent-hover, #7c3aed)",
+        '.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+          backgroundColor: 'var(--fd-accent-muted, rgba(168, 85, 247, 0.1))',
+          color: 'var(--fd-accent-hover, #7c3aed)'
         },
-        ".cm-completionLabel": {
-          flex: "1",
+        '.cm-completionLabel': {
+          flex: '1'
         },
-        ".cm-completionDetail": {
-          fontSize: "0.6875rem",
-          color: "var(--fd-muted-foreground, #6b7280)",
-          opacity: "0.8",
-        },
+        '.cm-completionDetail': {
+          fontSize: '0.6875rem',
+          color: 'var(--fd-muted-foreground, #6b7280)',
+          opacity: '0.8'
+        }
       }),
       EditorView.lineWrapping,
-      EditorState.tabSize.of(2),
+      EditorState.tabSize.of(2)
     ];
 
     // Add autocomplete compartment (can be reconfigured dynamically)
     // When disabled or no schema, use empty array
     if (!disabled && effectiveVariableSchema) {
       extensions.push(
-        autocompleteCompartment.of(
-          createTemplateAutocomplete(effectiveVariableSchema),
-        ),
+        autocompleteCompartment.of(createTemplateAutocomplete(effectiveVariableSchema))
       );
     } else {
       extensions.push(autocompleteCompartment.of([]));
@@ -399,27 +367,27 @@
       // Add dark theme overrides for Twig highlighting and autocomplete
       extensions.push(
         EditorView.theme({
-          ".cm-twig-expression": {
-            color: "#c084fc",
-            backgroundColor: "rgba(192, 132, 252, 0.15)",
+          '.cm-twig-expression': {
+            color: '#c084fc',
+            backgroundColor: 'rgba(192, 132, 252, 0.15)'
           },
-          ".cm-twig-block": {
-            color: "#5eead4",
-            backgroundColor: "rgba(94, 234, 212, 0.1)",
+          '.cm-twig-block': {
+            color: '#5eead4',
+            backgroundColor: 'rgba(94, 234, 212, 0.1)'
           },
-          ".cm-twig-comment": {
-            color: "#6b7280",
+          '.cm-twig-comment': {
+            color: '#6b7280'
           },
-          ".cm-tooltip.cm-tooltip-autocomplete": {
-            backgroundColor: "#1e1e1e",
-            border: "1px solid #3e4451",
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
+          '.cm-tooltip.cm-tooltip-autocomplete': {
+            backgroundColor: '#1e1e1e',
+            border: '1px solid #3e4451',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)'
           },
-          ".cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]": {
-            backgroundColor: "rgba(192, 132, 252, 0.2)",
-            color: "#c084fc",
-          },
-        }),
+          '.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+            backgroundColor: 'rgba(192, 132, 252, 0.2)',
+            color: '#c084fc'
+          }
+        })
       );
     }
 
@@ -439,7 +407,7 @@
 
     editorView.dispatch({
       changes: { from, to, insert: insertText },
-      selection: { anchor: from + insertText.length },
+      selection: { anchor: from + insertText.length }
     });
 
     editorView.focus();
@@ -459,9 +427,9 @@
       editorView = new EditorView({
         state: EditorState.create({
           doc: value,
-          extensions: createExtensions(),
+          extensions: createExtensions()
         }),
-        parent: containerRef,
+        parent: containerRef
       });
     });
   });
@@ -492,8 +460,8 @@
         changes: {
           from: 0,
           to: editorView.state.doc.length,
-          insert: value,
-        },
+          insert: value
+        }
       });
       isInternalUpdate = false;
     }
@@ -512,11 +480,10 @@
 
     // When effectiveVariableSchema changes, reconfigure the autocomplete compartment
     // This happens after async API loading completes
-    const newAutocomplete =
-      !disabled && schema ? createTemplateAutocomplete(schema) : [];
+    const newAutocomplete = !disabled && schema ? createTemplateAutocomplete(schema) : [];
 
     editorView.dispatch({
-      effects: [autocompleteCompartment.reconfigure(newAutocomplete)],
+      effects: [autocompleteCompartment.reconfigure(newAutocomplete)]
     });
   });
 </script>
@@ -544,22 +511,14 @@
 
   <!-- Loading banner (shown while fetching variables from API) -->
   {#if isLoadingVariables}
-    <div
-      class="form-template-editor__banner form-template-editor__banner--loading"
-    >
+    <div class="form-template-editor__banner form-template-editor__banner--loading">
       <svg
         class="form-template-editor__banner-icon form-template-editor__banner-icon--spin"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
       >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
         ></circle>
         <path
           class="opacity-75"
@@ -573,9 +532,7 @@
 
   <!-- Error banner (shown when API fetch fails) -->
   {#if variableLoadError}
-    <div
-      class="form-template-editor__banner form-template-editor__banner--error"
-    >
+    <div class="form-template-editor__banner form-template-editor__banner--error">
       <svg
         class="form-template-editor__banner-icon"
         xmlns="http://www.w3.org/2000/svg"
@@ -603,8 +560,7 @@
   <!-- Variable hints section (shown when variables are available and showHints is true) -->
   {#if showHints && displayVariables.length > 0}
     <div class="form-template-editor__hints">
-      <span class="form-template-editor__hints-label">Available variables:</span
-      >
+      <span class="form-template-editor__hints-label">Available variables:</span>
       <div class="form-template-editor__hints-list">
         {#each displayVariables as varName (varName)}
           <button
@@ -613,7 +569,7 @@
             onclick={() => insertVariable(varName)}
             title={`Insert {{ ${varName} }}`}
           >
-            <code>{"{{ "}{varName}{" }}"}</code>
+            <code>{'{{ '}{varName}{' }}'}</code>
           </button>
         {/each}
       </div>
@@ -623,12 +579,8 @@
   <!-- Placeholder hint when empty -->
   {#if !value && placeholderExample}
     <div class="form-template-editor__placeholder">
-      <span class="form-template-editor__placeholder-label"
-        >Example template:</span
-      >
-      <code class="form-template-editor__placeholder-example"
-        >{placeholderExample}</code
-      >
+      <span class="form-template-editor__placeholder-label">Example template:</span>
+      <code class="form-template-editor__placeholder-example">{placeholderExample}</code>
     </div>
   {/if}
 
@@ -647,8 +599,7 @@
       />
     </svg>
     <span
-      >Use <code>{"{{ variable }}"}</code> syntax to insert dynamic values from the
-      data input</span
+      >Use <code>{'{{ variable }}'}</code> syntax to insert dynamic values from the data input</span
     >
   </div>
 </div>
@@ -751,7 +702,7 @@
   }
 
   .form-template-editor__hint-btn code {
-    font-family: "JetBrains Mono", "Fira Code", "Monaco", "Menlo", monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
     font-size: 0.6875rem;
     color: var(--fd-accent-hover);
   }
@@ -777,7 +728,7 @@
 
   .form-template-editor__placeholder-example {
     display: block;
-    font-family: "JetBrains Mono", "Fira Code", "Monaco", "Menlo", monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
     font-size: var(--fd-text-xs);
     color: var(--fd-foreground);
     word-break: break-all;
@@ -804,7 +755,7 @@
     padding: 0.0625rem 0.25rem;
     background-color: var(--fd-subtle);
     border-radius: var(--fd-radius-sm);
-    font-family: "JetBrains Mono", "Fira Code", "Monaco", "Menlo", monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
     font-size: 0.625rem;
   }
 

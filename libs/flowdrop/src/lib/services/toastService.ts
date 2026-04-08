@@ -4,8 +4,8 @@
  * Provides consistent toast notifications across the FlowDrop application
  */
 
-import { toast, type DefaultToastOptions } from "svelte-5-french-toast";
-import { TOAST_DURATION } from "../config/constants.js";
+import { toast, type DefaultToastOptions } from 'svelte-5-french-toast';
+import { TOAST_DURATION } from '../config/constants.js';
 
 /**
  * Default toast options themed with FlowDrop design tokens.
@@ -13,35 +13,35 @@ import { TOAST_DURATION } from "../config/constants.js";
  * and import '@flowdrop/flowdrop/styles/toast.css' (or app toast.css) so toast bar styles apply.
  */
 export const flowdropToastOptions: DefaultToastOptions = {
-  className: "flowdrop-toast-bar",
-  style: "",
+  className: 'flowdrop-toast-bar',
+  style: '',
   success: {
     iconTheme: {
-      primary: "var(--fd-success)",
-      secondary: "var(--fd-success-foreground)",
-    },
+      primary: 'var(--fd-success)',
+      secondary: 'var(--fd-success-foreground)'
+    }
   },
   error: {
     iconTheme: {
-      primary: "var(--fd-error)",
-      secondary: "var(--fd-error-foreground)",
-    },
+      primary: 'var(--fd-error)',
+      secondary: 'var(--fd-error-foreground)'
+    }
   },
   loading: {
     iconTheme: {
-      primary: "var(--fd-primary)",
-      secondary: "var(--fd-primary-muted)",
-    },
-  },
+      primary: 'var(--fd-primary)',
+      secondary: 'var(--fd-primary-muted)'
+    }
+  }
 };
 
 /** Container class for FlowDrop-themed Toaster (used with toast.css). */
-export const FLOWDROP_TOASTER_CLASS = "flowdrop-toaster";
+export const FLOWDROP_TOASTER_CLASS = 'flowdrop-toaster';
 
 /**
  * Toast notification types
  */
-export type ToastType = "success" | "error" | "warning" | "info" | "loading";
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
 /**
  * Toast configuration options
@@ -49,12 +49,12 @@ export type ToastType = "success" | "error" | "warning" | "info" | "loading";
 export interface ToastOptions {
   duration?: number;
   position?:
-    | "top-left"
-    | "top-center"
-    | "top-right"
-    | "bottom-left"
-    | "bottom-center"
-    | "bottom-right";
+    | 'top-left'
+    | 'top-center'
+    | 'top-right'
+    | 'bottom-left'
+    | 'bottom-center'
+    | 'bottom-right';
 }
 
 /**
@@ -63,7 +63,7 @@ export interface ToastOptions {
 export function showSuccess(message: string, options?: ToastOptions): string {
   return toast.success(message, {
     duration: options?.duration || TOAST_DURATION.SUCCESS,
-    position: options?.position || "bottom-center",
+    position: options?.position || 'bottom-center'
   });
 }
 
@@ -73,7 +73,7 @@ export function showSuccess(message: string, options?: ToastOptions): string {
 export function showError(message: string, options?: ToastOptions): string {
   return toast.error(message, {
     duration: options?.duration || TOAST_DURATION.ERROR,
-    position: options?.position || "bottom-center",
+    position: options?.position || 'bottom-center'
   });
 }
 
@@ -83,7 +83,7 @@ export function showError(message: string, options?: ToastOptions): string {
 export function showWarning(message: string, options?: ToastOptions): string {
   return toast.error(message, {
     duration: options?.duration || TOAST_DURATION.WARNING,
-    position: options?.position || "bottom-center",
+    position: options?.position || 'bottom-center'
   });
 }
 
@@ -93,7 +93,7 @@ export function showWarning(message: string, options?: ToastOptions): string {
 export function showInfo(message: string, options?: ToastOptions): string {
   return toast.success(message, {
     duration: options?.duration || TOAST_DURATION.INFO,
-    position: options?.position || "bottom-center",
+    position: options?.position || 'bottom-center'
   });
 }
 
@@ -103,7 +103,7 @@ export function showInfo(message: string, options?: ToastOptions): string {
 export function showLoading(message: string, options?: ToastOptions): string {
   return toast.loading(message, {
     duration: options?.duration || Infinity,
-    position: options?.position || "bottom-center",
+    position: options?.position || 'bottom-center'
   });
 }
 
@@ -130,32 +130,29 @@ export function showPromise<T>(
     loading,
     success,
     error,
-    options,
+    options
   }: {
     loading: string;
     success: string | ((data: T) => string);
     error: string | ((error: unknown) => string);
     options?: ToastOptions;
-  },
+  }
 ): Promise<T> {
   return toast.promise(promise, {
     loading,
     success,
     error,
-    ...options,
+    ...options
   });
 }
 
 /**
  * Show a confirmation toast (simplified version without action buttons)
  */
-export function showConfirmation(
-  message: string,
-  options?: ToastOptions,
-): string {
+export function showConfirmation(message: string, options?: ToastOptions): string {
   return toast(message, {
     duration: options?.duration || TOAST_DURATION.CONFIRMATION,
-    position: options?.position || "bottom-center",
+    position: options?.position || 'bottom-center'
   });
 }
 
@@ -195,14 +192,14 @@ export const apiToasts = {
     options?: {
       successMessage?: string;
       errorMessage?: string;
-    },
+    }
   ) => {
     return showPromise(promise, {
       loading: `${operation}...`,
       success: options?.successMessage || `${operation} completed successfully`,
-      error: options?.errorMessage || `${operation} failed`,
+      error: options?.errorMessage || `${operation} failed`
     });
-  },
+  }
 };
 
 /**
@@ -215,7 +212,7 @@ export const workflowToasts = {
   saved: (workflowName?: string) => {
     const message = workflowName
       ? `Workflow "${workflowName}" saved successfully`
-      : "Workflow saved successfully";
+      : 'Workflow saved successfully';
     return showSuccess(message);
   },
 
@@ -233,7 +230,7 @@ export const workflowToasts = {
   deleted: (workflowName?: string) => {
     const message = workflowName
       ? `Workflow "${workflowName}" deleted successfully`
-      : "Workflow deleted successfully";
+      : 'Workflow deleted successfully';
     return showSuccess(message);
   },
 
@@ -251,7 +248,7 @@ export const workflowToasts = {
   executionStarted: (workflowName?: string) => {
     const message = workflowName
       ? `Workflow "${workflowName}" execution started`
-      : "Workflow execution started";
+      : 'Workflow execution started';
     return showInfo(message);
   },
 
@@ -261,7 +258,7 @@ export const workflowToasts = {
   executionCompleted: (workflowName?: string) => {
     const message = workflowName
       ? `Workflow "${workflowName}" execution completed`
-      : "Workflow execution completed";
+      : 'Workflow execution completed';
     return showSuccess(message);
   },
 
@@ -271,7 +268,7 @@ export const workflowToasts = {
   exported: (workflowName?: string) => {
     const message = workflowName
       ? `Workflow "${workflowName}" exported successfully`
-      : "Workflow exported successfully";
+      : 'Workflow exported successfully';
     return showSuccess(message);
   },
 
@@ -281,7 +278,7 @@ export const workflowToasts = {
   executionError: (error: string | Error) => {
     const errorMessage = error instanceof Error ? error.message : error;
     return showError(`Workflow execution failed: ${errorMessage}`);
-  },
+  }
 };
 
 /**
@@ -294,7 +291,7 @@ export const pipelineToasts = {
   created: (pipelineName?: string) => {
     const message = pipelineName
       ? `Pipeline "${pipelineName}" created successfully`
-      : "Pipeline created successfully";
+      : 'Pipeline created successfully';
     return showSuccess(message);
   },
 
@@ -325,9 +322,7 @@ export const pipelineToasts = {
    */
   executionError: (pipelineId: string, error: string | Error) => {
     const errorMessage = error instanceof Error ? error.message : error;
-    return showError(
-      `Pipeline ${pipelineId} execution failed: ${errorMessage}`,
-    );
+    return showError(`Pipeline ${pipelineId} execution failed: ${errorMessage}`);
   },
 
   /**
@@ -335,5 +330,5 @@ export const pipelineToasts = {
    */
   statusUpdate: (pipelineId: string, status: string) => {
     return showInfo(`Pipeline ${pipelineId} status: ${status}`);
-  },
+  }
 };

@@ -7,16 +7,16 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import Logo from "./Logo.svelte";
-  import SettingsModal from "./SettingsModal.svelte";
-  import type { SettingsCategory } from "$lib/types/settings.js";
+  import Icon from '@iconify/svelte';
+  import Logo from './Logo.svelte';
+  import SettingsModal from './SettingsModal.svelte';
+  import type { SettingsCategory } from '$lib/types/settings.js';
 
   interface NavbarAction {
     label: string;
     href: string;
     icon?: string;
-    variant?: "primary" | "secondary" | "outline";
+    variant?: 'primary' | 'secondary' | 'outline';
     onclick?: (event: Event) => void;
     /** If true, opens link in new tab with proper security attributes */
     external?: boolean;
@@ -55,7 +55,7 @@
     showSettings = true,
     settingsCategories,
     showSettingsSyncButton,
-    showSettingsResetButton,
+    showSettingsResetButton
   }: Props = $props();
 
   // Dropdown state
@@ -67,16 +67,16 @@
   // Close dropdown when clicking outside
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    if (!target.closest(".flowdrop-navbar__dropdown")) {
+    if (!target.closest('.flowdrop-navbar__dropdown')) {
       isDropdownOpen = false;
     }
   }
 
   // Add event listener for click outside with proper cleanup
   $effect(() => {
-    document.addEventListener("click", handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   });
 </script>
@@ -91,9 +91,7 @@
         </div>
         <div>
           <h1 class="flowdrop-text--logo flowdrop-font--bold">FlowDrop</h1>
-          <p class="flowdrop-text--tagline flowdrop-text--gray">
-            Visual Workflow Manager
-          </p>
+          <p class="flowdrop-text--tagline flowdrop-text--gray">Visual Workflow Manager</p>
         </div>
       </div>
     </div>
@@ -119,40 +117,24 @@
               {#each breadcrumbs as breadcrumb, index (index)}
                 <li class="flowdrop-navbar__breadcrumb-item">
                   {#if breadcrumb.href && index < breadcrumbs.length - 1}
-                    <a
-                      href={breadcrumb.href}
-                      class="flowdrop-navbar__breadcrumb-link"
-                    >
+                    <a href={breadcrumb.href} class="flowdrop-navbar__breadcrumb-link">
                       {#if breadcrumb.icon}
-                        <Icon
-                          icon={breadcrumb.icon}
-                          class="flowdrop-navbar__breadcrumb-icon"
-                        />
+                        <Icon icon={breadcrumb.icon} class="flowdrop-navbar__breadcrumb-icon" />
                       {/if}
-                      <span class="flowdrop-navbar__breadcrumb-text"
-                        >{breadcrumb.label}</span
-                      >
+                      <span class="flowdrop-navbar__breadcrumb-text">{breadcrumb.label}</span>
                     </a>
                   {:else}
                     <span class="flowdrop-navbar__breadcrumb-current">
                       {#if breadcrumb.icon}
-                        <Icon
-                          icon={breadcrumb.icon}
-                          class="flowdrop-navbar__breadcrumb-icon"
-                        />
+                        <Icon icon={breadcrumb.icon} class="flowdrop-navbar__breadcrumb-icon" />
                       {/if}
-                      <span class="flowdrop-navbar__breadcrumb-text"
-                        >{breadcrumb.label}</span
-                      >
+                      <span class="flowdrop-navbar__breadcrumb-text">{breadcrumb.label}</span>
                     </span>
                   {/if}
                 </li>
                 {#if index < breadcrumbs.length - 1}
                   <li class="flowdrop-navbar__breadcrumb-separator">
-                    <Icon
-                      icon="mdi:chevron-right"
-                      class="flowdrop-navbar__breadcrumb-chevron"
-                    />
+                    <Icon icon="mdi:chevron-right" class="flowdrop-navbar__breadcrumb-chevron" />
                   </li>
                 {/if}
               {/each}
@@ -176,11 +158,10 @@
         {#each primaryActions as action (action.label)}
           <a
             href={action.href}
-            class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant ||
-              'primary'}"
+            class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant || 'primary'}"
             onclick={action.onclick}
-            target={action.external ? "_blank" : undefined}
-            rel={action.external ? "noopener noreferrer" : undefined}
+            target={action.external ? '_blank' : undefined}
+            rel={action.external ? 'noopener noreferrer' : undefined}
           >
             {#if action.icon}
               <span class="flowdrop-navbar__action-icon">
@@ -201,17 +182,15 @@
             class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant ||
               'primary'}"
             onclick={primaryAction.onclick}
-            target={primaryAction.external ? "_blank" : undefined}
-            rel={primaryAction.external ? "noopener noreferrer" : undefined}
+            target={primaryAction.external ? '_blank' : undefined}
+            rel={primaryAction.external ? 'noopener noreferrer' : undefined}
           >
             {#if primaryAction.icon}
               <span class="flowdrop-navbar__action-icon">
                 <Icon icon={primaryAction.icon} class="w-4 h-4" />
               </span>
             {/if}
-            <span class="flowdrop-navbar__action-label"
-              >{primaryAction.label}</span
-            >
+            <span class="flowdrop-navbar__action-label">{primaryAction.label}</span>
           </a>
         {/if}
 
@@ -237,8 +216,8 @@
                       action.onclick?.(e);
                       isDropdownOpen = false;
                     }}
-                    target={action.external ? "_blank" : undefined}
-                    rel={action.external ? "noopener noreferrer" : undefined}
+                    target={action.external ? '_blank' : undefined}
+                    rel={action.external ? 'noopener noreferrer' : undefined}
                   >
                     {#if action.icon}
                       <Icon icon={action.icon} class="w-4 h-4" />
@@ -276,11 +255,11 @@
   {@const settingsModalProps = {
     ...(settingsCategories !== undefined && { categories: settingsCategories }),
     ...(showSettingsSyncButton !== undefined && {
-      showSyncButton: showSettingsSyncButton,
+      showSyncButton: showSettingsSyncButton
     }),
     ...(showSettingsResetButton !== undefined && {
-      showResetButton: showSettingsResetButton,
-    }),
+      showResetButton: showSettingsResetButton
+    })
   }}
   <SettingsModal bind:open={isSettingsOpen} {...settingsModalProps} />
 {/if}
@@ -546,7 +525,7 @@
     color: var(--fd-foreground);
   }
 
-  .flowdrop-navbar__dropdown-trigger[aria-expanded="true"] {
+  .flowdrop-navbar__dropdown-trigger[aria-expanded='true'] {
     background-color: var(--fd-subtle);
     color: var(--fd-foreground);
   }

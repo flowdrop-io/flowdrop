@@ -10,11 +10,11 @@ import type {
   AgentSpecAgent,
   AgentSpecFlow,
   AgentSpecTool,
-  AgentSpecLLMConfig,
-} from "../../types/agentspec.js";
+  AgentSpecLLMConfig
+} from '../../types/agentspec.js';
 
-import type { StandardWorkflow } from "../WorkflowAdapter.js";
-import { AgentSpecAdapter } from "./AgentSpecAdapter.js";
+import type { StandardWorkflow } from '../WorkflowAdapter.js';
+import { AgentSpecAdapter } from './AgentSpecAdapter.js';
 
 /**
  * Agent-level configuration that wraps a workflow.
@@ -63,26 +63,26 @@ export class AgentSpecAgentAdapter {
     workflow: StandardWorkflow,
     agentConfig?: AgentConfig,
     tools?: AgentSpecTool[],
-    llmConfigs?: AgentSpecLLMConfig[],
+    llmConfigs?: AgentSpecLLMConfig[]
   ): AgentSpecDocument {
     const flow: AgentSpecFlow = this.flowAdapter.toAgentSpec(workflow);
 
     const doc: AgentSpecDocument = {
       flow,
       metadata: {
-        "flowdrop:exported_at": new Date().toISOString(),
-      },
+        'flowdrop:exported_at': new Date().toISOString()
+      }
     };
 
     // Add agent definition if config provided
     if (agentConfig) {
       const agent: AgentSpecAgent = {
-        component_type: "agent",
+        component_type: 'agent',
         name: agentConfig.name,
         description: agentConfig.description,
         system_prompt: agentConfig.systemPrompt,
         tools: agentConfig.tools,
-        llm_config: agentConfig.llmConfig,
+        llm_config: agentConfig.llmConfig
       };
       doc.agent = agent;
     }
@@ -105,13 +105,13 @@ export class AgentSpecAgentAdapter {
    */
   fromAgentSpecDocument(doc: AgentSpecDocument): AgentSpecImportResult {
     if (!doc.flow) {
-      throw new Error("AgentSpecDocument has no flow definition");
+      throw new Error('AgentSpecDocument has no flow definition');
     }
 
     const workflow = this.flowAdapter.fromAgentSpec(doc.flow);
 
     const result: AgentSpecImportResult = {
-      workflow,
+      workflow
     };
 
     // Extract agent config
@@ -120,13 +120,11 @@ export class AgentSpecAgentAdapter {
         name: doc.agent.name,
         description: doc.agent.description,
         systemPrompt: doc.agent.system_prompt,
-        tools: doc.agent.tools?.filter(
-          (t): t is AgentSpecTool => typeof t !== "string",
-        ),
+        tools: doc.agent.tools?.filter((t): t is AgentSpecTool => typeof t !== 'string'),
         llmConfig:
-          doc.agent.llm_config && typeof doc.agent.llm_config !== "string"
+          doc.agent.llm_config && typeof doc.agent.llm_config !== 'string'
             ? doc.agent.llm_config
-            : undefined,
+            : undefined
       };
     }
 
@@ -144,12 +142,12 @@ export class AgentSpecAgentAdapter {
     workflow: StandardWorkflow,
     agentConfig?: AgentConfig,
     tools?: AgentSpecTool[],
-    llmConfigs?: AgentSpecLLMConfig[],
+    llmConfigs?: AgentSpecLLMConfig[]
   ): string {
     return JSON.stringify(
       this.toAgentSpecDocument(workflow, agentConfig, tools, llmConfigs),
       null,
-      2,
+      2
     );
   }
 

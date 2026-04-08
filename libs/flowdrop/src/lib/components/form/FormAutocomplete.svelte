@@ -21,12 +21,12 @@
 -->
 
 <script lang="ts">
-  import { getContext, onMount } from "svelte";
-  import Icon from "@iconify/svelte";
-  import type { AutocompleteConfig, AuthProvider } from "$lib/types/index.js";
-  import type { FieldOption } from "./types.js";
-  import { buildFetchHeaders } from "$lib/utils/fetchWithAuth.js";
-  import { logger } from "../../utils/logger.js";
+  import { getContext, onMount } from 'svelte';
+  import Icon from '@iconify/svelte';
+  import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
+  import type { FieldOption } from './types.js';
+  import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
+  import { logger } from '../../utils/logger.js';
 
   /**
    * Props interface for FormAutocomplete component
@@ -52,31 +52,29 @@
 
   let {
     id,
-    value = "",
+    value = '',
     autocomplete,
     required = false,
-    placeholder = "",
+    placeholder = '',
     disabled = false,
     ariaDescribedBy,
-    onChange,
+    onChange
   }: Props = $props();
 
   // Get AuthProvider and baseUrl from context via getter functions
   // This pattern ensures we always get the current value, even if props change after mount
-  const getAuthProvider = getContext<
-    (() => AuthProvider | undefined) | undefined
-  >("flowdrop:getAuthProvider");
-  const getBaseUrl = getContext<(() => string) | undefined>(
-    "flowdrop:getBaseUrl",
+  const getAuthProvider = getContext<(() => AuthProvider | undefined) | undefined>(
+    'flowdrop:getAuthProvider'
   );
+  const getBaseUrl = getContext<(() => string) | undefined>('flowdrop:getBaseUrl');
 
   // Configuration with defaults
-  const queryParam = $derived(autocomplete.queryParam ?? "q");
+  const queryParam = $derived(autocomplete.queryParam ?? 'q');
   const minChars = $derived(autocomplete.minChars ?? 0);
   const debounceMs = $derived(autocomplete.debounceMs ?? 300);
   const fetchOnFocus = $derived(autocomplete.fetchOnFocus ?? false);
-  const labelField = $derived(autocomplete.labelField ?? "label");
-  const valueField = $derived(autocomplete.valueField ?? "value");
+  const labelField = $derived(autocomplete.labelField ?? 'label');
+  const valueField = $derived(autocomplete.valueField ?? 'value');
   const allowFreeText = $derived(autocomplete.allowFreeText ?? false);
   const multiple = $derived(autocomplete.multiple ?? false);
 
@@ -84,7 +82,7 @@
   let inputElement: HTMLInputElement | undefined = $state(undefined);
   let containerElement: HTMLDivElement | undefined = $state(undefined);
   let popoverElement: HTMLDivElement | undefined = $state(undefined);
-  let inputValue = $state("");
+  let inputValue = $state('');
   let suggestions = $state<FieldOption[]>([]);
   let isOpen = $state(false);
   let isLoading = $state(false);
@@ -94,7 +92,7 @@
   let abortController: AbortController | null = null;
 
   // Popover positioning style
-  let popoverStyle = $state("");
+  let popoverStyle = $state('');
 
   // Cache of value-to-label mappings for selected items
   let labelCache = $state<Map<string, string>>(new Map());
@@ -117,7 +115,7 @@
           : []
       : value
         ? [String(value)]
-        : [],
+        : []
   );
 
   /**
@@ -151,12 +149,12 @@
    * @returns Full URL with query parameter
    */
   function buildUrl(query: string): string {
-    const baseUrl = getBaseUrl?.() ?? "";
-    const url = autocomplete.url.startsWith("http")
+    const baseUrl = getBaseUrl?.() ?? '';
+    const url = autocomplete.url.startsWith('http')
       ? autocomplete.url
       : `${baseUrl}${autocomplete.url}`;
 
-    const separator = url.includes("?") ? "&" : "?";
+    const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
   }
 
@@ -167,13 +165,13 @@
    */
   function mapResponse(data: unknown): FieldOption[] {
     if (!Array.isArray(data)) {
-      logger.warn("[FormAutocomplete] Response is not an array:", data);
+      logger.warn('[FormAutocomplete] Response is not an array:', data);
       return [];
     }
 
     return data.map((item: Record<string, unknown>) => ({
-      label: String(item[labelField] ?? item[valueField] ?? ""),
-      value: String(item[valueField] ?? ""),
+      label: String(item[labelField] ?? item[valueField] ?? ''),
+      value: String(item[valueField] ?? '')
     }));
   }
 
@@ -207,9 +205,9 @@
       }, 5000);
 
       const response = await fetch(buildUrl(query), {
-        method: "GET",
+        method: 'GET',
         headers,
-        signal: abortController.signal,
+        signal: abortController.signal
       });
 
       clearTimeout(timeoutId);
@@ -229,13 +227,12 @@
       suggestions = mapped;
       highlightedIndex = -1;
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
+      if (err instanceof Error && err.name === 'AbortError') {
         // Request was cancelled, ignore
         return;
       }
-      logger.error("[FormAutocomplete] Fetch error:", err);
-      error =
-        err instanceof Error ? err.message : "Failed to fetch suggestions";
+      logger.error('[FormAutocomplete] Fetch error:', err);
+      error = err instanceof Error ? err.message : 'Failed to fetch suggestions';
       suggestions = [];
     } finally {
       isLoading = false;
@@ -296,15 +293,13 @@
       hideDropdown();
 
       // If not allowFreeText and single mode, validate the input
-      if (!allowFreeText && !multiple && inputValue !== "") {
+      if (!allowFreeText && !multiple && inputValue !== '') {
         const currentVal = selectedValues;
         const matchingSuggestion = suggestions.find(
-          (s) =>
-            s.value === currentVal[0] ||
-            s.label.toLowerCase() === inputValue.toLowerCase(),
+          (s) => s.value === currentVal[0] || s.label.toLowerCase() === inputValue.toLowerCase()
         );
         if (!matchingSuggestion && currentVal.length === 0) {
-          inputValue = "";
+          inputValue = '';
         }
       }
     }, 200);
@@ -330,11 +325,11 @@
         onChange(newValues);
       }
       // Clear input and keep dropdown open for more selections
-      inputValue = "";
+      inputValue = '';
       inputElement?.focus();
     } else {
       // Single selection mode
-      inputValue = "";
+      inputValue = '';
       onChange(option.value);
       hideDropdown();
     }
@@ -353,7 +348,7 @@
       const newValues = current.filter((v) => v !== valueToRemove);
       onChange(newValues);
     } else {
-      onChange("");
+      onChange('');
     }
     inputElement?.focus();
   }
@@ -364,28 +359,24 @@
    */
   function handleKeydown(event: KeyboardEvent): void {
     // Handle backspace to remove last tag in multiple mode
-    if (
-      event.key === "Backspace" &&
-      inputValue === "" &&
-      selectedValues.length > 0
-    ) {
+    if (event.key === 'Backspace' && inputValue === '' && selectedValues.length > 0) {
       event.preventDefault();
       const current = selectedValues;
       if (multiple) {
         const newValues = current.slice(0, -1);
         onChange(newValues);
       } else {
-        onChange("");
+        onChange('');
       }
       return;
     }
 
-    if (!isOpen && event.key !== "ArrowDown" && event.key !== "Enter") {
+    if (!isOpen && event.key !== 'ArrowDown' && event.key !== 'Enter') {
       return;
     }
 
     switch (event.key) {
-      case "ArrowDown":
+      case 'ArrowDown':
         event.preventDefault();
         if (!isOpen) {
           showDropdown();
@@ -393,29 +384,26 @@
             fetchSuggestions(inputValue);
           }
         } else {
-          highlightedIndex = Math.min(
-            highlightedIndex + 1,
-            suggestions.length - 1,
-          );
+          highlightedIndex = Math.min(highlightedIndex + 1, suggestions.length - 1);
         }
         break;
 
-      case "ArrowUp":
+      case 'ArrowUp':
         event.preventDefault();
         highlightedIndex = Math.max(highlightedIndex - 1, -1);
         break;
 
-      case "Enter":
+      case 'Enter':
         event.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
           selectOption(suggestions[highlightedIndex]);
-        } else if (allowFreeText && inputValue !== "") {
+        } else if (allowFreeText && inputValue !== '') {
           if (multiple) {
             const current = selectedValues;
             if (!current.includes(inputValue)) {
               onChange([...current, inputValue]);
             }
-            inputValue = "";
+            inputValue = '';
           } else {
             onChange(inputValue);
             hideDropdown();
@@ -423,13 +411,13 @@
         }
         break;
 
-      case "Escape":
+      case 'Escape':
         event.preventDefault();
         hideDropdown();
         highlightedIndex = -1;
         break;
 
-      case "Tab":
+      case 'Tab':
         // Allow tab to close dropdown naturally
         hideDropdown();
         break;
@@ -448,8 +436,8 @@
    * Clear all selections
    */
   function handleClearAll(): void {
-    inputValue = "";
-    onChange(multiple ? [] : "");
+    inputValue = '';
+    onChange(multiple ? [] : '');
     suggestions = [];
     inputElement?.focus();
   }
@@ -539,12 +527,12 @@
         updatePopoverPosition();
       };
 
-      window.addEventListener("scroll", handlePositionUpdate, true);
-      window.addEventListener("resize", handlePositionUpdate);
+      window.addEventListener('scroll', handlePositionUpdate, true);
+      window.addEventListener('resize', handlePositionUpdate);
 
       return () => {
-        window.removeEventListener("scroll", handlePositionUpdate, true);
-        window.removeEventListener("resize", handlePositionUpdate);
+        window.removeEventListener('scroll', handlePositionUpdate, true);
+        window.removeEventListener('resize', handlePositionUpdate);
       };
     }
   });
@@ -586,9 +574,7 @@
       <div class="form-autocomplete__tags">
         {#each selectedValues as selectedVal (selectedVal)}
           <span class="form-autocomplete__tag">
-            <span class="form-autocomplete__tag-label"
-              >{getDisplayLabel(selectedVal)}</span
-            >
+            <span class="form-autocomplete__tag-label">{getDisplayLabel(selectedVal)}</span>
             {#if !disabled}
               <button
                 type="button"
@@ -616,16 +602,14 @@
         {id}
         class="form-autocomplete__input"
         value={inputValue}
-        placeholder={selectedValues.length === 0 ? placeholder : ""}
+        placeholder={selectedValues.length === 0 ? placeholder : ''}
         {disabled}
         aria-required={required}
         aria-describedby={ariaDescribedBy}
         role="combobox"
         aria-expanded={isOpen}
         aria-controls={listboxId}
-        aria-activedescendant={highlightedIndex >= 0
-          ? getOptionId(highlightedIndex)
-          : undefined}
+        aria-activedescendant={highlightedIndex >= 0 ? getOptionId(highlightedIndex) : undefined}
         aria-autocomplete="list"
         autocomplete="off"
         oninput={handleInput}
@@ -638,10 +622,7 @@
     <!-- Status icons -->
     <div class="form-autocomplete__icons">
       {#if isLoading}
-        <span
-          class="form-autocomplete__spinner"
-          aria-label="Loading suggestions"
-        >
+        <span class="form-autocomplete__spinner" aria-label="Loading suggestions">
           <Icon icon="heroicons:arrow-path" />
         </span>
       {:else if selectedValues.length > 0 && !disabled}
@@ -676,42 +657,23 @@
     style={popoverStyle}
     onmousedown={(e) => e.preventDefault()}
   >
-    <ul
-      class="form-autocomplete__listbox"
-      role="listbox"
-      aria-label="Suggestions"
-    >
+    <ul class="form-autocomplete__listbox" role="listbox" aria-label="Suggestions">
       {#if isLoading}
-        <li
-          class="form-autocomplete__status form-autocomplete__status--loading"
-        >
-          <Icon
-            icon="heroicons:arrow-path"
-            class="form-autocomplete__status-icon"
-          />
+        <li class="form-autocomplete__status form-autocomplete__status--loading">
+          <Icon icon="heroicons:arrow-path" class="form-autocomplete__status-icon" />
           <span>Loading suggestions...</span>
         </li>
       {:else if error}
         <li class="form-autocomplete__status form-autocomplete__status--error">
-          <Icon
-            icon="heroicons:exclamation-triangle"
-            class="form-autocomplete__status-icon"
-          />
+          <Icon icon="heroicons:exclamation-triangle" class="form-autocomplete__status-icon" />
           <span>{error}</span>
-          <button
-            type="button"
-            class="form-autocomplete__retry"
-            onclick={handleRetry}
-          >
+          <button type="button" class="form-autocomplete__retry" onclick={handleRetry}>
             Retry
           </button>
         </li>
       {:else if suggestions.length === 0}
         <li class="form-autocomplete__status form-autocomplete__status--empty">
-          <Icon
-            icon="heroicons:magnifying-glass"
-            class="form-autocomplete__status-icon"
-          />
+          <Icon icon="heroicons:magnifying-glass" class="form-autocomplete__status-icon" />
           <span>No results found</span>
         </li>
       {:else}
@@ -720,8 +682,7 @@
           <li
             id={getOptionId(index)}
             class="form-autocomplete__option"
-            class:form-autocomplete__option--highlighted={index ===
-              highlightedIndex}
+            class:form-autocomplete__option--highlighted={index === highlightedIndex}
             class:form-autocomplete__option--selected={isSelected(option.value)}
             role="option"
             aria-selected={isSelected(option.value)}
@@ -730,10 +691,7 @@
           >
             <span class="form-autocomplete__option-label">{option.label}</span>
             {#if isSelected(option.value)}
-              <Icon
-                icon="heroicons:check"
-                class="form-autocomplete__option-check"
-              />
+              <Icon icon="heroicons:check" class="form-autocomplete__option-check" />
             {/if}
           </li>
         {/each}
@@ -805,8 +763,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
-    padding: var(--fd-space-3xs) var(--fd-space-3xs) var(--fd-space-3xs)
-      var(--fd-space-xs);
+    padding: var(--fd-space-3xs) var(--fd-space-3xs) var(--fd-space-3xs) var(--fd-space-xs);
     background-color: var(--fd-primary-muted);
     border: 1px solid var(--fd-primary-muted);
     border-radius: var(--fd-radius-md);

@@ -13,13 +13,13 @@ import type {
   InterruptResolution,
   InterruptResponse,
   InterruptListResponse,
-  InterruptPollingConfig,
-} from "../types/interrupt.js";
-import { defaultInterruptPollingConfig } from "../types/interrupt.js";
-import type { EndpointConfig } from "../config/endpoints.js";
-import { buildEndpointUrl, getEndpointHeaders } from "../config/endpoints.js";
-import { getEndpointConfig } from "./api.js";
-import { logger } from "../utils/logger.js";
+  InterruptPollingConfig
+} from '../types/interrupt.js';
+import { defaultInterruptPollingConfig } from '../types/interrupt.js';
+import type { EndpointConfig } from '../config/endpoints.js';
+import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
+import { getEndpointConfig } from './api.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Interrupt Service class
@@ -40,8 +40,7 @@ export class InterruptService {
    */
   private constructor() {
     this.pollingConfig = { ...defaultInterruptPollingConfig };
-    this.currentBackoff =
-      this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
+    this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
   }
 
   /**
@@ -63,8 +62,7 @@ export class InterruptService {
    */
   public setPollingConfig(config: Partial<InterruptPollingConfig>): void {
     this.pollingConfig = { ...this.pollingConfig, ...config };
-    this.currentBackoff =
-      this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
+    this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
   }
 
   /**
@@ -95,12 +93,10 @@ export class InterruptService {
   private getConfig(): EndpointConfig {
     const config = getEndpointConfig();
     if (!config) {
-      throw new Error(
-        "Endpoint configuration not set. Call setEndpointConfig() first.",
-      );
+      throw new Error('Endpoint configuration not set. Call setEndpointConfig() first.');
     }
     if (!config.endpoints.interrupts) {
-      throw new Error("Interrupt endpoints not configured.");
+      throw new Error('Interrupt endpoints not configured.');
     }
     return config;
   }
@@ -114,13 +110,13 @@ export class InterruptService {
    */
   private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
     const config = this.getConfig();
-    const headers = getEndpointHeaders(config, "interrupts");
+    const headers = getEndpointHeaders(config, 'interrupts');
     const response = await fetch(url, {
       ...options,
       headers: {
         ...headers,
-        ...options.headers,
-      },
+        ...options.headers
+      }
     });
 
     if (!response.ok) {
@@ -147,13 +143,13 @@ export class InterruptService {
   async getInterrupt(interruptId: string): Promise<Interrupt> {
     const config = this.getConfig();
     const url = buildEndpointUrl(config, config.endpoints.interrupts.get, {
-      interruptId,
+      interruptId
     });
 
     const response = await this.request<InterruptResponse>(url);
 
     if (!response.data) {
-      throw new Error("Interrupt not found");
+      throw new Error('Interrupt not found');
     }
 
     return response.data;
@@ -166,24 +162,21 @@ export class InterruptService {
    * @param value - The user's response value
    * @returns The updated interrupt
    */
-  async resolveInterrupt(
-    interruptId: string,
-    value: unknown,
-  ): Promise<Interrupt> {
+  async resolveInterrupt(interruptId: string, value: unknown): Promise<Interrupt> {
     const config = this.getConfig();
     const url = buildEndpointUrl(config, config.endpoints.interrupts.resolve, {
-      interruptId,
+      interruptId
     });
 
     const resolution: InterruptResolution = { value };
 
     const response = await this.request<InterruptResponse>(url, {
-      method: "POST",
-      body: JSON.stringify(resolution),
+      method: 'POST',
+      body: JSON.stringify(resolution)
     });
 
     if (!response.data) {
-      throw new Error("Failed to resolve interrupt: No data returned");
+      throw new Error('Failed to resolve interrupt: No data returned');
     }
 
     return response.data;
@@ -198,15 +191,15 @@ export class InterruptService {
   async cancelInterrupt(interruptId: string): Promise<Interrupt> {
     const config = this.getConfig();
     const url = buildEndpointUrl(config, config.endpoints.interrupts.cancel, {
-      interruptId,
+      interruptId
     });
 
     const response = await this.request<InterruptResponse>(url, {
-      method: "POST",
+      method: 'POST'
     });
 
     if (!response.data) {
-      throw new Error("Failed to cancel interrupt: No data returned");
+      throw new Error('Failed to cancel interrupt: No data returned');
     }
 
     return response.data;
@@ -220,13 +213,9 @@ export class InterruptService {
    */
   async listSessionInterrupts(sessionId: string): Promise<Interrupt[]> {
     const config = this.getConfig();
-    const url = buildEndpointUrl(
-      config,
-      config.endpoints.interrupts.listBySession,
-      {
-        sessionId,
-      },
-    );
+    const url = buildEndpointUrl(config, config.endpoints.interrupts.listBySession, {
+      sessionId
+    });
 
     const response = await this.request<InterruptListResponse>(url);
     return response.data ?? [];
@@ -240,13 +229,9 @@ export class InterruptService {
    */
   async listPipelineInterrupts(pipelineId: string): Promise<Interrupt[]> {
     const config = this.getConfig();
-    const url = buildEndpointUrl(
-      config,
-      config.endpoints.interrupts.listByPipeline,
-      {
-        pipelineId,
-      },
-    );
+    const url = buildEndpointUrl(config, config.endpoints.interrupts.listByPipeline, {
+      pipelineId
+    });
 
     const response = await this.request<InterruptListResponse>(url);
     return response.data ?? [];
@@ -265,14 +250,9 @@ export class InterruptService {
    * @param sessionId - The session UUID to poll
    * @param callback - Callback function to handle new interrupts
    */
-  startPolling(
-    sessionId: string,
-    callback: (interrupts: Interrupt[]) => void,
-  ): void {
+  startPolling(sessionId: string, callback: (interrupts: Interrupt[]) => void): void {
     if (!this.pollingConfig.enabled) {
-      logger.warn(
-        "[InterruptService] Polling is disabled. Enable via setPollingConfig().",
-      );
+      logger.warn('[InterruptService] Polling is disabled. Enable via setPollingConfig().');
       return;
     }
 
@@ -280,8 +260,7 @@ export class InterruptService {
     this.stopPolling();
 
     this.pollingSessionId = sessionId;
-    this.currentBackoff =
-      this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
+    this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
 
     const poll = async (): Promise<void> => {
       if (this.pollingSessionId !== sessionId) {
@@ -290,23 +269,19 @@ export class InterruptService {
 
       try {
         const interrupts = await this.listSessionInterrupts(sessionId);
-        const pendingInterrupts = interrupts.filter(
-          (i) => i.status === "pending",
-        );
+        const pendingInterrupts = interrupts.filter((i) => i.status === 'pending');
 
         // Reset backoff on successful request
-        this.currentBackoff =
-          this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
+        this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
 
         // Call the callback with pending interrupts
         callback(pendingInterrupts);
       } catch (error) {
-        logger.error("[InterruptService] Polling error:", error);
+        logger.error('[InterruptService] Polling error:', error);
 
         // Exponential backoff on error
         const maxBackoff =
-          this.pollingConfig.maxBackoff ??
-          defaultInterruptPollingConfig.maxBackoff;
+          this.pollingConfig.maxBackoff ?? defaultInterruptPollingConfig.maxBackoff;
         this.currentBackoff = Math.min(this.currentBackoff * 2, maxBackoff);
       }
 
@@ -329,8 +304,7 @@ export class InterruptService {
       this.pollingInterval = null;
     }
     this.pollingSessionId = null;
-    this.currentBackoff =
-      this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
+    this.currentBackoff = this.pollingConfig.interval ?? defaultInterruptPollingConfig.interval;
   }
 
   /**

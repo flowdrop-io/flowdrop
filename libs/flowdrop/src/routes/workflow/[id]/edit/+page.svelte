@@ -1,13 +1,13 @@
 <script lang="ts">
-  import App from "$lib/components/App.svelte";
-  import { page } from "$app/stores";
-  import { onMount } from "svelte";
+  import App from '$lib/components/App.svelte';
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';
   import {
     buildEndpointUrl,
     type EndpointConfig,
-    defaultEndpointConfig,
-  } from "$lib/config/endpoints.js";
-  import { apiToasts, dismissToast } from "$lib/services/toastService.js";
+    defaultEndpointConfig
+  } from '$lib/config/endpoints.js';
+  import { apiToasts, dismissToast } from '$lib/services/toastService.js';
 
   /**
    * Workflow edit type (minimal structure for editing)
@@ -30,7 +30,7 @@
   // svelte-ignore state_referenced_locally — page remounts on navigation
   let endpointConfig = $state<EndpointConfig>({
     ...defaultEndpointConfig,
-    baseUrl: data.runtimeConfig.apiBaseUrl,
+    baseUrl: data.runtimeConfig.apiBaseUrl
   });
 
   // Workflow data state
@@ -39,8 +39,8 @@
   let error = $state<string | null>(null);
 
   // Canvas dimensions - now using full viewport since no top navbar
-  let canvasHeight = $state<string>("100vh"); // Full viewport height
-  let canvasWidth = $state<string>("100%"); // Full width
+  let canvasHeight = $state<string>('100vh'); // Full viewport height
+  let canvasWidth = $state<string>('100%'); // Full width
 
   /**
    * Calculate optimal canvas dimensions
@@ -55,34 +55,27 @@
     const maxHeight = 1200; // Maximum height to prevent excessive scrolling
 
     // Calculate optimal height within constraints
-    const optimalHeight = Math.max(
-      minHeight,
-      Math.min(maxHeight, availableHeight),
-    );
+    const optimalHeight = Math.max(minHeight, Math.min(maxHeight, availableHeight));
 
     // Set dimensions
     canvasHeight = `${optimalHeight}px`;
-    canvasWidth = "100%"; // Use full available width
+    canvasWidth = '100%'; // Use full available width
   }
 
   // Fetch workflow data from API
   async function fetchWorkflow() {
     if (!workflowId) return;
     // Show loading toast
-    const loadingToast = apiToasts.loading("Loading workflow");
+    const loadingToast = apiToasts.loading('Loading workflow');
 
     try {
       loading = true;
       error = null;
 
       // Use configured endpoint
-      const url = buildEndpointUrl(
-        endpointConfig,
-        endpointConfig.endpoints.workflows.get,
-        {
-          id: workflowId,
-        },
-      );
+      const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.workflows.get, {
+        id: workflowId
+      });
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -98,10 +91,7 @@
       let refreshedNodes = workflowData.nodes || [];
       if (refreshedNodes.length > 0) {
         try {
-          const nodesUrl = buildEndpointUrl(
-            endpointConfig,
-            endpointConfig.endpoints.nodes.list,
-          );
+          const nodesUrl = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.nodes.list);
           const nodesResponse = await fetch(nodesUrl);
           if (nodesResponse.ok) {
             const nodesData = await nodesResponse.json();
@@ -111,16 +101,14 @@
             refreshedNodes = refreshedNodes.map((node: any) => {
               const nodeMetadataId = node.data?.metadata?.id;
               if (nodeMetadataId) {
-                const freshMetadata = availableNodes.find(
-                  (n: any) => n.id === nodeMetadataId,
-                );
+                const freshMetadata = availableNodes.find((n: any) => n.id === nodeMetadataId);
                 if (freshMetadata) {
                   return {
                     ...node,
                     data: {
                       ...node.data,
-                      metadata: freshMetadata,
-                    },
+                      metadata: freshMetadata
+                    }
                   };
                 }
               }
@@ -128,7 +116,7 @@
             });
           }
         } catch (nodesErr) {
-          console.warn("Failed to refresh node metadata:", nodesErr);
+          console.warn('Failed to refresh node metadata:', nodesErr);
           // Continue with original nodes if refresh fails
         }
       }
@@ -138,12 +126,12 @@
         id: workflowData.id,
         name: workflowData.name,
         description: workflowData.description,
-        status: workflowData.status || "Active",
+        status: workflowData.status || 'Active',
         nodes: refreshedNodes,
         edges: workflowData.edges || [],
         metadata: workflowData.metadata,
         created: workflowData.created,
-        changed: workflowData.changed,
+        changed: workflowData.changed
       };
 
       // Dismiss loading toast and show success toast
@@ -151,11 +139,8 @@
     } catch (err) {
       // Dismiss loading toast and show error toast
       dismissToast(loadingToast);
-      error = err instanceof Error ? err.message : "Failed to fetch workflow";
-      apiToasts.error(
-        "Load workflow",
-        err instanceof Error ? err.message : "Unknown error",
-      );
+      error = err instanceof Error ? err.message : 'Failed to fetch workflow';
+      apiToasts.error('Load workflow', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       loading = false;
     }
@@ -174,11 +159,11 @@
       calculateCanvasDimensions();
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('resize', handleResize);
     };
   });
 </script>
@@ -201,12 +186,7 @@
       <button onclick={fetchWorkflow} class="retry-button">Retry</button>
     </div>
   {:else if workflow}
-    <App
-      workflow={workflow as any}
-      height={canvasHeight}
-      width={canvasWidth}
-      showNavbar={false}
-    />
+    <App workflow={workflow as any} height={canvasHeight} width={canvasWidth} showNavbar={false} />
   {:else}
     <div class="no-workflow">
       <h3>Workflow Not Found</h3>

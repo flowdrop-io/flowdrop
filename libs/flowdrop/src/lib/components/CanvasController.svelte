@@ -5,11 +5,10 @@
 -->
 
 <script lang="ts">
-  import { useSvelteFlow } from "@xyflow/svelte";
-  import { getEditorSettings } from "../stores/settingsStore.svelte.js";
+  import { useSvelteFlow } from '@xyflow/svelte';
+  import { getEditorSettings } from '../stores/settingsStore.svelte.js';
 
-  const { fitView, zoomIn, zoomOut, setZoom, setCenter, setViewport } =
-    useSvelteFlow();
+  const { fitView, zoomIn, zoomOut, setZoom, setCenter, setViewport } = useSvelteFlow();
 
   export function canvasFitView(): void {
     fitView({ padding: 0.2, duration: 300 });

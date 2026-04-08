@@ -6,8 +6,8 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import type { WorkflowNode as WorkflowNodeType } from "../types/index.js";
+  import Icon from '@iconify/svelte';
+  import type { WorkflowNode as WorkflowNodeType } from '../types/index.js';
 
   interface LogEntry {
     timestamp: string;
@@ -37,10 +37,10 @@
       }, 100);
 
       // Prevent body scroll
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
       // Restore body scroll
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
   });
 
@@ -55,7 +55,7 @@
    * Handle keyboard shortcuts
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       handleClose();
     }
   }
@@ -66,16 +66,16 @@
    */
   function getLogLevelColor(level: string): string {
     switch (level) {
-      case "error":
-        return "var(--fd-error)";
-      case "warning":
-        return "var(--fd-warning)";
-      case "success":
-        return "var(--fd-success)";
-      case "info":
-        return "var(--fd-info)";
+      case 'error':
+        return 'var(--fd-error)';
+      case 'warning':
+        return 'var(--fd-warning)';
+      case 'success':
+        return 'var(--fd-success)';
+      case 'info':
+        return 'var(--fd-info)';
       default:
-        return "var(--fd-muted-foreground)";
+        return 'var(--fd-muted-foreground)';
     }
   }
 
@@ -84,16 +84,16 @@
    */
   function getLogLevelIcon(level: string): string {
     switch (level) {
-      case "error":
-        return "mdi:alert-circle";
-      case "warning":
-        return "mdi:alert";
-      case "success":
-        return "mdi:check-circle";
-      case "info":
-        return "mdi:information";
+      case 'error':
+        return 'mdi:alert-circle';
+      case 'warning':
+        return 'mdi:alert';
+      case 'success':
+        return 'mdi:check-circle';
+      case 'info':
+        return 'mdi:information';
       default:
-        return "mdi:circle";
+        return 'mdi:circle';
     }
   }
 
@@ -102,12 +102,12 @@
    */
   function formatTimestamp(timestamp: string): string {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString('en-US', {
       hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      fractionalSecondDigits: 3,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3
     });
   }
 
@@ -135,15 +135,15 @@
     const logText = filteredLogs
       .map(
         (log) =>
-          `[${formatTimestamp(log.timestamp)}] ${log.level.toUpperCase()}: ${log.message}${log.nodeId ? ` (Node: ${log.nodeId})` : ""}`,
+          `[${formatTimestamp(log.timestamp)}] ${log.level.toUpperCase()}: ${log.message}${log.nodeId ? ` (Node: ${log.nodeId})` : ''}`
       )
-      .join("\n");
+      .join('\n');
 
-    const blob = new Blob([logText], { type: "text/plain" });
+    const blob = new Blob([logText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `pipeline-logs-${new Date().toISOString().split("T")[0]}.txt`;
+    link.download = `pipeline-logs-${new Date().toISOString().split('T')[0]}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -203,10 +203,10 @@
         {#each filteredLogs as log, index (index)}
           <div
             class="logs-sidebar__log-entry"
-            class:logs-sidebar__log-entry--error={log.level === "error"}
-            class:logs-sidebar__log-entry--warning={log.level === "warning"}
-            class:logs-sidebar__log-entry--success={log.level === "success"}
-            class:logs-sidebar__log-entry--info={log.level === "info"}
+            class:logs-sidebar__log-entry--error={log.level === 'error'}
+            class:logs-sidebar__log-entry--warning={log.level === 'warning'}
+            class:logs-sidebar__log-entry--success={log.level === 'success'}
+            class:logs-sidebar__log-entry--info={log.level === 'info'}
           >
             <div class="logs-sidebar__log-header">
               <div class="logs-sidebar__log-level">
@@ -214,9 +214,7 @@
                   icon={getLogLevelIcon(log.level)}
                   style="color: {getLogLevelColor(log.level)}"
                 />
-                <span class="logs-sidebar__log-level-text"
-                  >{log.level.toUpperCase()}</span
-                >
+                <span class="logs-sidebar__log-level-text">{log.level.toUpperCase()}</span>
               </div>
               <div class="logs-sidebar__log-timestamp">
                 {formatTimestamp(log.timestamp)}
@@ -236,10 +234,7 @@
       </div>
     {:else}
       <div class="logs-sidebar__empty">
-        <Icon
-          icon="mdi:file-document-outline"
-          class="logs-sidebar__empty-icon"
-        />
+        <Icon icon="mdi:file-document-outline" class="logs-sidebar__empty-icon" />
         <p class="logs-sidebar__empty-text">
           {#if props.selectedNode}
             No logs available for this node
@@ -288,9 +283,7 @@
     top: var(--fd-navbar-height); /* Start below navbar */
     right: 0;
     width: 400px;
-    height: calc(
-      100vh - var(--fd-navbar-height)
-    ); /* Account for navbar height */
+    height: calc(100vh - var(--fd-navbar-height)); /* Account for navbar height */
     background-color: #ffffff;
     border-left: 1px solid #e5e7eb;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
@@ -445,7 +438,7 @@
   .logs-sidebar__log-timestamp {
     font-size: 0.75rem;
     color: #6b7280;
-    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   }
 
   .logs-sidebar__log-message {

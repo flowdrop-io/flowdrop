@@ -3,13 +3,9 @@
  * Provides methods to interact with the backend APIs using configurable endpoints
  */
 
-import type { NodeMetadata, Workflow, ApiResponse } from "../types/index.js";
-import type { EndpointConfig } from "../config/endpoints.js";
-import {
-  buildEndpointUrl,
-  getEndpointMethod,
-  getEndpointHeaders,
-} from "../config/endpoints.js";
+import type { NodeMetadata, Workflow, ApiResponse } from '../types/index.js';
+import type { EndpointConfig } from '../config/endpoints.js';
+import { buildEndpointUrl, getEndpointMethod, getEndpointHeaders } from '../config/endpoints.js';
 
 let endpointConfig: EndpointConfig | null = null;
 
@@ -34,12 +30,10 @@ async function apiRequest<T>(
   endpointKey: string,
   endpointPath: string,
   params?: Record<string, string>,
-  options: RequestInit = {},
+  options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   if (!endpointConfig) {
-    throw new Error(
-      "Endpoint configuration not set. Call setEndpointConfig() first.",
-    );
+    throw new Error('Endpoint configuration not set. Call setEndpointConfig() first.');
   }
 
   const url = buildEndpointUrl(endpointConfig, endpointPath, params);
@@ -49,12 +43,12 @@ async function apiRequest<T>(
   const response = await fetch(url, {
     method,
     headers,
-    ...options,
+    ...options
   });
 
   // Check if response is JSON
-  const contentType = response.headers.get("content-type");
-  const isJson = contentType?.includes("application/json");
+  const contentType = response.headers.get('content-type');
+  const isJson = contentType?.includes('application/json');
 
   if (!response.ok) {
     // Try to get error details
@@ -101,19 +95,19 @@ export const nodeApi = {
     offset?: number;
   }): Promise<NodeMetadata[]> {
     if (!endpointConfig) {
-      throw new Error("Endpoint configuration not set");
+      throw new Error('Endpoint configuration not set');
     }
 
     const params = new URLSearchParams();
 
-    if (options?.category) params.append("category", options.category);
-    if (options?.search) params.append("search", options.search);
-    if (options?.limit) params.append("limit", options.limit.toString());
-    if (options?.offset) params.append("offset", options.offset.toString());
+    if (options?.category) params.append('category', options.category);
+    if (options?.search) params.append('search', options.search);
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.offset) params.append('offset', options.offset.toString());
 
     const response = await apiRequest<NodeMetadata[]>(
-      "nodes.list",
-      endpointConfig.endpoints.nodes.list + "?" + params.toString(),
+      'nodes.list',
+      endpointConfig.endpoints.nodes.list + '?' + params.toString()
     );
     return response.data || [];
   },
@@ -123,19 +117,19 @@ export const nodeApi = {
    */
   async getNode(id: string): Promise<NodeMetadata> {
     if (!endpointConfig) {
-      throw new Error("Endpoint configuration not set");
+      throw new Error('Endpoint configuration not set');
     }
 
     const response = await apiRequest<NodeMetadata>(
-      "nodes.get",
+      'nodes.get',
       endpointConfig.endpoints.nodes.get,
-      { id },
+      { id }
     );
     if (!response.data) {
-      throw new Error("Node not found");
+      throw new Error('Node not found');
     }
     return response.data;
-  },
+  }
 };
 
 /**
@@ -151,18 +145,18 @@ export const workflowApi = {
     offset?: number;
   }): Promise<Workflow[]> {
     if (!endpointConfig) {
-      throw new Error("Endpoint configuration not set");
+      throw new Error('Endpoint configuration not set');
     }
 
     const params = new URLSearchParams();
 
-    if (options?.search) params.append("search", options.search);
-    if (options?.limit) params.append("limit", options.limit.toString());
-    if (options?.offset) params.append("offset", options.offset.toString());
+    if (options?.search) params.append('search', options.search);
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.offset) params.append('offset', options.offset.toString());
 
     const response = await apiRequest<Workflow[]>(
-      "workflows.list",
-      endpointConfig.endpoints.workflows.list + "?" + params.toString(),
+      'workflows.list',
+      endpointConfig.endpoints.workflows.list + '?' + params.toString()
     );
     return response.data || [];
   },
@@ -172,16 +166,16 @@ export const workflowApi = {
    */
   async getWorkflow(id: string): Promise<Workflow> {
     if (!endpointConfig) {
-      throw new Error("Endpoint configuration not set");
+      throw new Error('Endpoint configuration not set');
     }
 
     const response = await apiRequest<Workflow>(
-      "workflows.get",
+      'workflows.get',
       endpointConfig.endpoints.workflows.get,
-      { id },
+      { id }
     );
     if (!response.data) {
-      throw new Error("Workflow not found");
+      throw new Error('Workflow not found');
     }
     return response.data;
   },
@@ -189,9 +183,9 @@ export const workflowApi = {
   /**
    * Create a new workflow
    */
-  async createWorkflow(workflow: Omit<Workflow, "id">): Promise<Workflow> {
+  async createWorkflow(workflow: Omit<Workflow, 'id'>): Promise<Workflow> {
     if (!endpointConfig) {
-      throw new Error("Endpoint configuration not set");
+      throw new Error('Endpoint configuration not set');
     }
 
     // Apply the consumer-provided payload transform (e.g. Drupal's label mapping).
@@ -200,17 +194,17 @@ export const workflowApi = {
     const body = transform(workflow as Record<string, unknown>);
 
     const response = await apiRequest<Workflow>(
-      "workflows.create",
+      'workflows.create',
       endpointConfig.endpoints.workflows.create,
       undefined,
       {
-        method: "POST",
-        body: JSON.stringify(body),
-      },
+        method: 'POST',
+        body: JSON.stringify(body)
+      }
     );
 
     if (!response.data) {
-      throw new Error("Failed to create workflow");
+      throw new Error('Failed to create workflow');
     }
     return response.data;
   },
@@ -218,12 +212,9 @@ export const workflowApi = {
   /**
    * Update an existing workflow
    */
-  async updateWorkflow(
-    id: string,
-    workflow: Partial<Workflow>,
-  ): Promise<Workflow> {
+  async updateWorkflow(id: string, workflow: Partial<Workflow>): Promise<Workflow> {
     if (!endpointConfig) {
-      throw new Error("Endpoint configuration not set");
+      throw new Error('Endpoint configuration not set');
     }
 
     // Apply the consumer-provided payload transform (e.g. Drupal's label mapping).
@@ -232,17 +223,17 @@ export const workflowApi = {
     const body = transform(workflow as Record<string, unknown>);
 
     const response = await apiRequest<Workflow>(
-      "workflows.update",
+      'workflows.update',
       endpointConfig.endpoints.workflows.update,
       { id },
       {
-        method: "PUT",
-        body: JSON.stringify(body),
-      },
+        method: 'PUT',
+        body: JSON.stringify(body)
+      }
     );
 
     if (!response.data) {
-      throw new Error("Failed to update workflow");
+      throw new Error('Failed to update workflow');
     }
     return response.data;
   },
@@ -252,14 +243,14 @@ export const workflowApi = {
    */
   async deleteWorkflow(id: string): Promise<void> {
     if (!endpointConfig) {
-      throw new Error("Endpoint configuration not set");
+      throw new Error('Endpoint configuration not set');
     }
 
     await apiRequest<null>(
-      "workflows.delete",
+      'workflows.delete',
       endpointConfig.endpoints.workflows.delete,
       { id },
-      { method: "DELETE" },
+      { method: 'DELETE' }
     );
   },
 
@@ -285,7 +276,7 @@ export const workflowApi = {
       const { id, ...workflowData } = workflow;
       return this.createWorkflow(workflowData);
     }
-  },
+  }
 };
 
 /**
@@ -293,5 +284,5 @@ export const workflowApi = {
  */
 export const api = {
   nodes: nodeApi,
-  workflows: workflowApi,
+  workflows: workflowApi
 };

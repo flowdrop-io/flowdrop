@@ -7,12 +7,8 @@
  * @module stores/historyStore
  */
 
-import {
-  historyService,
-  type HistoryState,
-  type PushOptions,
-} from "../services/historyService.js";
-import type { Workflow } from "../types/index.js";
+import { historyService, type HistoryState, type PushOptions } from '../services/historyService.js';
+import type { Workflow } from '../types/index.js';
 
 // =========================================================================
 // Reactive State (Runes)
@@ -26,7 +22,7 @@ let historyState = $state<HistoryState>({
   canRedo: false,
   currentIndex: 0,
   historyLength: 0,
-  isInTransaction: false,
+  isInTransaction: false
 });
 
 // Subscribe to history service changes and update the rune state.
@@ -108,9 +104,7 @@ let onRestoreCallback: ((workflow: Workflow) => void) | null = null;
  *
  * @param callback - Function to call with restored workflow
  */
-export function setOnRestoreCallback(
-  callback: ((workflow: Workflow) => void) | null,
-): void {
+export function setOnRestoreCallback(callback: ((workflow: Workflow) => void) | null): void {
   onRestoreCallback = callback;
 }
 
@@ -232,16 +226,12 @@ export const historyActions = {
    */
   getState: (): HistoryState => {
     return historyState;
-  },
+  }
 };
 
 // =========================================================================
 // Re-exports
 // =========================================================================
 
-export type {
-  HistoryEntry,
-  HistoryState,
-  PushOptions,
-} from "../services/historyService.js";
-export { HistoryService, historyService } from "../services/historyService.js";
+export type { HistoryEntry, HistoryState, PushOptions } from '../services/historyService.js';
+export { HistoryService, historyService } from '../services/historyService.js';

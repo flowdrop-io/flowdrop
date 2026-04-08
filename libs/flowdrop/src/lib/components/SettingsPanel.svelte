@@ -28,23 +28,23 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import { SchemaForm } from "$lib/form/index.js";
-  import type { ConfigSchema } from "$lib/types/index.js";
-  import type { SettingsCategory } from "$lib/types/settings.js";
+  import Icon from '@iconify/svelte';
+  import { SchemaForm } from '$lib/form/index.js';
+  import type { ConfigSchema } from '$lib/types/index.js';
+  import type { SettingsCategory } from '$lib/types/settings.js';
   import {
     SETTINGS_CATEGORIES,
     SETTINGS_CATEGORY_LABELS,
-    SETTINGS_CATEGORY_ICONS,
-  } from "$lib/types/settings.js";
+    SETTINGS_CATEGORY_ICONS
+  } from '$lib/types/settings.js';
   import {
     getSettings,
     updateSettings,
     resetSettings,
     syncSettingsToApi,
-    getSyncStatus,
-  } from "$lib/stores/settingsStore.svelte.js";
-  import { logger } from "../utils/logger.js";
+    getSyncStatus
+  } from '$lib/stores/settingsStore.svelte.js';
+  import { logger } from '../utils/logger.js';
 
   /**
    * Props interface for SettingsPanel component
@@ -57,10 +57,7 @@
     /** Show the reset button */
     showResetButton?: boolean;
     /** Callback when settings change */
-    onSettingsChange?: (
-      category: SettingsCategory,
-      values: Record<string, unknown>,
-    ) => void;
+    onSettingsChange?: (category: SettingsCategory, values: Record<string, unknown>) => void;
     /** Callback when close is requested */
     onClose?: () => void;
     /** Custom CSS class */
@@ -73,215 +70,212 @@
     showResetButton = true,
     onSettingsChange,
     onClose,
-    class: className = "",
+    class: className = ''
   }: Props = $props();
 
   /**
    * Currently active tab
    */
   // svelte-ignore state_referenced_locally — initial default, user switches tabs
-  let activeTab = $state<SettingsCategory>(categories[0] ?? "theme");
+  let activeTab = $state<SettingsCategory>(categories[0] ?? 'theme');
 
   /**
    * Whether sync is in progress
    */
-  let isSyncing = $derived(getSyncStatus().status === "syncing");
+  let isSyncing = $derived(getSyncStatus().status === 'syncing');
 
   /**
    * JSON Schema definitions for each settings category
    */
   const schemas: Record<SettingsCategory, ConfigSchema> = {
     theme: {
-      type: "object",
+      type: 'object',
       properties: {
         preference: {
-          type: "string",
-          title: "Theme Preference",
-          description: "Choose your preferred color scheme",
+          type: 'string',
+          title: 'Theme Preference',
+          description: 'Choose your preferred color scheme',
           oneOf: [
-            { const: "light", title: "Light" },
-            { const: "dark", title: "Dark" },
-            { const: "auto", title: "Auto (System)" },
+            { const: 'light', title: 'Light' },
+            { const: 'dark', title: 'Dark' },
+            { const: 'auto', title: 'Auto (System)' }
           ],
-          default: "auto",
-        },
-      },
+          default: 'auto'
+        }
+      }
     },
     editor: {
-      type: "object",
+      type: 'object',
       properties: {
         showGrid: {
-          type: "boolean",
-          title: "Show Grid",
-          description: "Display grid lines on the canvas",
-          default: true,
+          type: 'boolean',
+          title: 'Show Grid',
+          description: 'Display grid lines on the canvas',
+          default: true
         },
         snapToGrid: {
-          type: "boolean",
-          title: "Snap to Grid",
-          description: "Snap nodes to grid when dragging",
-          default: true,
+          type: 'boolean',
+          title: 'Snap to Grid',
+          description: 'Snap nodes to grid when dragging',
+          default: true
         },
         gridSize: {
-          type: "number",
-          title: "Grid Size",
-          description: "Grid cell size in pixels",
+          type: 'number',
+          title: 'Grid Size',
+          description: 'Grid cell size in pixels',
           minimum: 5,
           maximum: 50,
-          default: 20,
+          default: 20
         },
         showMinimap: {
-          type: "boolean",
-          title: "Show Minimap",
-          description: "Display navigation minimap",
-          default: true,
+          type: 'boolean',
+          title: 'Show Minimap',
+          description: 'Display navigation minimap',
+          default: true
         },
         defaultZoom: {
-          type: "number",
-          title: "Default Zoom",
-          description: "Initial zoom level (1 = 100%)",
+          type: 'number',
+          title: 'Default Zoom',
+          description: 'Initial zoom level (1 = 100%)',
           minimum: 0.25,
           maximum: 2,
-          default: 1,
+          default: 1
         },
         fitViewOnLoad: {
-          type: "boolean",
-          title: "Fit View on Load",
-          description: "Automatically fit workflow to view when loading",
-          default: true,
+          type: 'boolean',
+          title: 'Fit View on Load',
+          description: 'Automatically fit workflow to view when loading',
+          default: true
         },
         proximityConnect: {
-          type: "boolean",
-          title: "Proximity Connect",
-          description:
-            "Auto-connect compatible ports when dragging nodes near each other",
-          default: false,
+          type: 'boolean',
+          title: 'Proximity Connect',
+          description: 'Auto-connect compatible ports when dragging nodes near each other',
+          default: false
         },
         proximityConnectDistance: {
-          type: "number",
-          title: "Proximity Distance",
-          description: "Distance threshold in pixels for proximity connect",
+          type: 'number',
+          title: 'Proximity Distance',
+          description: 'Distance threshold in pixels for proximity connect',
           minimum: 50,
           maximum: 500,
-          default: 150,
-        },
-      },
+          default: 150
+        }
+      }
     },
     ui: {
-      type: "object",
+      type: 'object',
       properties: {
         sidebarWidth: {
-          type: "number",
-          title: "Sidebar Width",
-          description: "Width of the node sidebar in pixels",
+          type: 'number',
+          title: 'Sidebar Width',
+          description: 'Width of the node sidebar in pixels',
           minimum: 200,
           maximum: 500,
-          default: 280,
+          default: 280
         },
         sidebarCollapsed: {
-          type: "boolean",
-          title: "Sidebar Collapsed",
-          description: "Start with sidebar collapsed",
-          default: false,
+          type: 'boolean',
+          title: 'Sidebar Collapsed',
+          description: 'Start with sidebar collapsed',
+          default: false
         },
         compactMode: {
-          type: "boolean",
-          title: "Compact Mode",
-          description: "Use compact UI with smaller spacing",
-          default: false,
+          type: 'boolean',
+          title: 'Compact Mode',
+          description: 'Use compact UI with smaller spacing',
+          default: false
         },
         theme: {
-          type: "string",
-          title: "UI Theme",
-          description: "Visual style and layout of the editor",
+          type: 'string',
+          title: 'UI Theme',
+          description: 'Visual style and layout of the editor',
           oneOf: [
-            { const: "default", title: "Default" },
-            { const: "minimal", title: "Minimal" },
+            { const: 'default', title: 'Default' },
+            { const: 'minimal', title: 'Minimal' }
           ],
-          default: "default",
-        },
-      },
+          default: 'default'
+        }
+      }
     },
     behavior: {
-      type: "object",
+      type: 'object',
       properties: {
         autoSave: {
-          type: "boolean",
-          title: "Auto Save",
-          description: "Automatically save changes",
-          default: false,
+          type: 'boolean',
+          title: 'Auto Save',
+          description: 'Automatically save changes',
+          default: false
         },
         autoSaveInterval: {
-          type: "number",
-          title: "Auto Save Interval",
-          description: "Time between auto-saves in milliseconds",
+          type: 'number',
+          title: 'Auto Save Interval',
+          description: 'Time between auto-saves in milliseconds',
           minimum: 5000,
           maximum: 300000,
-          default: 30000,
+          default: 30000
         },
         undoHistoryLimit: {
-          type: "number",
-          title: "Undo History Limit",
-          description: "Maximum number of undo steps (0 to disable)",
+          type: 'number',
+          title: 'Undo History Limit',
+          description: 'Maximum number of undo steps (0 to disable)',
           minimum: 0,
           maximum: 200,
-          default: 0,
+          default: 0
         },
         confirmDelete: {
-          type: "boolean",
-          title: "Confirm Delete",
-          description: "Show confirmation before deleting nodes",
-          default: true,
+          type: 'boolean',
+          title: 'Confirm Delete',
+          description: 'Show confirmation before deleting nodes',
+          default: true
         },
         chatAutoRetry: {
-          type: "boolean",
-          title: "AI Chat Auto-retry",
-          description: "Automatically ask the AI to self-correct when commands fail",
-          default: true,
-        },
-      },
+          type: 'boolean',
+          title: 'AI Chat Auto-retry',
+          description: 'Automatically ask the AI to self-correct when commands fail',
+          default: true
+        }
+      }
     },
     api: {
-      type: "object",
+      type: 'object',
       properties: {
         timeout: {
-          type: "number",
-          title: "Request Timeout",
-          description: "API request timeout in milliseconds",
+          type: 'number',
+          title: 'Request Timeout',
+          description: 'API request timeout in milliseconds',
           minimum: 5000,
           maximum: 120000,
-          default: 30000,
+          default: 30000
         },
         retryEnabled: {
-          type: "boolean",
-          title: "Enable Retry",
-          description: "Automatically retry failed requests",
-          default: true,
+          type: 'boolean',
+          title: 'Enable Retry',
+          description: 'Automatically retry failed requests',
+          default: true
         },
         retryAttempts: {
-          type: "number",
-          title: "Retry Attempts",
-          description: "Maximum number of retry attempts",
+          type: 'number',
+          title: 'Retry Attempts',
+          description: 'Maximum number of retry attempts',
           minimum: 1,
           maximum: 10,
-          default: 3,
+          default: 3
         },
         cacheEnabled: {
-          type: "boolean",
-          title: "Enable Caching",
-          description: "Cache API responses for better performance",
-          default: true,
-        },
-      },
-    },
+          type: 'boolean',
+          title: 'Enable Caching',
+          description: 'Cache API responses for better performance',
+          default: true
+        }
+      }
+    }
   };
 
   /**
    * Get current values for a category from the store
    */
-  function getCategoryValues(
-    category: SettingsCategory,
-  ): Record<string, unknown> {
+  function getCategoryValues(category: SettingsCategory): Record<string, unknown> {
     const settings = getSettings();
     const categorySettings = settings[category];
     // Convert to Record<string, unknown> for SchemaForm compatibility
@@ -291,10 +285,7 @@
   /**
    * Handle form value changes
    */
-  function handleChange(
-    category: SettingsCategory,
-    values: Record<string, unknown>,
-  ): void {
+  function handleChange(category: SettingsCategory, values: Record<string, unknown>): void {
     // Update the store
     updateSettings({ [category]: values });
 
@@ -311,7 +302,7 @@
     try {
       await syncSettingsToApi();
     } catch (error) {
-      logger.error("Failed to sync settings:", error);
+      logger.error('Failed to sync settings:', error);
     }
   }
 
@@ -319,11 +310,7 @@
    * Handle reset button click
    */
   function handleReset(): void {
-    if (
-      confirm(
-        `Reset ${SETTINGS_CATEGORY_LABELS[activeTab]} settings to defaults?`,
-      )
-    ) {
+    if (confirm(`Reset ${SETTINGS_CATEGORY_LABELS[activeTab]} settings to defaults?`)) {
       resetSettings([activeTab]);
     }
   }
@@ -332,7 +319,7 @@
    * Handle reset all button click
    */
   function handleResetAll(): void {
-    if (confirm("Reset all settings to defaults?")) {
+    if (confirm('Reset all settings to defaults?')) {
       resetSettings();
     }
   }
@@ -345,16 +332,16 @@
     let newIndex = index;
 
     switch (event.key) {
-      case "ArrowLeft":
+      case 'ArrowLeft':
         newIndex = index > 0 ? index - 1 : tabs.length - 1;
         break;
-      case "ArrowRight":
+      case 'ArrowRight':
         newIndex = index < tabs.length - 1 ? index + 1 : 0;
         break;
-      case "Home":
+      case 'Home':
         newIndex = 0;
         break;
-      case "End":
+      case 'End':
         newIndex = tabs.length - 1;
         break;
       default:
@@ -366,7 +353,7 @@
 
     // Focus the new tab
     const tabElement = document.querySelector(
-      `[data-tab="${tabs[newIndex]}"]`,
+      `[data-tab="${tabs[newIndex]}"]`
     ) as HTMLElement | null;
     tabElement?.focus();
   }
@@ -374,11 +361,7 @@
 
 <div class="flowdrop-settings-panel {className}">
   <!-- Tab Navigation -->
-  <div
-    class="flowdrop-settings-panel__tabs"
-    role="tablist"
-    aria-label="Settings categories"
-  >
+  <div class="flowdrop-settings-panel__tabs" role="tablist" aria-label="Settings categories">
     {#each categories as category, index (category)}
       <button
         class="flowdrop-settings-panel__tab"
@@ -391,13 +374,8 @@
         onclick={() => (activeTab = category)}
         onkeydown={(e) => handleTabKeydown(e, index)}
       >
-        <Icon
-          icon={SETTINGS_CATEGORY_ICONS[category]}
-          class="flowdrop-settings-panel__tab-icon"
-        />
-        <span class="flowdrop-settings-panel__tab-label"
-          >{SETTINGS_CATEGORY_LABELS[category]}</span
-        >
+        <Icon icon={SETTINGS_CATEGORY_ICONS[category]} class="flowdrop-settings-panel__tab-icon" />
+        <span class="flowdrop-settings-panel__tab-label">{SETTINGS_CATEGORY_LABELS[category]}</span>
       </button>
     {/each}
   </div>
@@ -482,14 +460,10 @@
       <Icon icon="mdi:alert-circle" />
       <span>{getSyncStatus().error}</span>
     </div>
-  {:else if getSyncStatus().status === "synced" && getSyncStatus().lastSyncedAt}
+  {:else if getSyncStatus().status === 'synced' && getSyncStatus().lastSyncedAt}
     <div class="flowdrop-settings-panel__synced">
       <Icon icon="mdi:check-circle" />
-      <span
-        >Synced {new Date(
-          getSyncStatus().lastSyncedAt!,
-        ).toLocaleTimeString()}</span
-      >
+      <span>Synced {new Date(getSyncStatus().lastSyncedAt!).toLocaleTimeString()}</span>
     </div>
   {/if}
 </div>

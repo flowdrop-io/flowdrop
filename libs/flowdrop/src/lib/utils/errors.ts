@@ -22,7 +22,7 @@ export function normalizeError(error: unknown): Error {
   if (error instanceof Error) {
     return error;
   }
-  if (typeof error === "string") {
+  if (typeof error === 'string') {
     return new Error(error);
   }
   return new Error(String(error));
@@ -35,14 +35,11 @@ export function normalizeError(error: unknown): Error {
  * @param fallback - Fallback message if error has no useful info
  * @returns A string message
  */
-export function getErrorMessage(
-  error: unknown,
-  fallback = "Unknown error",
-): string {
+export function getErrorMessage(error: unknown, fallback = 'Unknown error'): string {
   if (error instanceof Error) {
     return error.message;
   }
-  if (typeof error === "string") {
+  if (typeof error === 'string') {
     return error;
   }
   return fallback;

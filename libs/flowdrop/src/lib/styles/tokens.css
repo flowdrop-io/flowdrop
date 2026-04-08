@@ -130,11 +130,7 @@
   /* ----- HEADER (Distinct header styling) ----- */
   --fd-header: #f5f7fa; /* @public */
   --fd-header-foreground: var(--_gray-8); /* @public */
-  --fd-header-gradient: linear-gradient(
-    180deg,
-    #f8f9fc 0%,
-    #f4f5f8 100%
-  ); /* @public */
+  --fd-header-gradient: linear-gradient(180deg, #f8f9fc 0%, #f4f5f8 100%); /* @public */
 
   /* ----- SURFACE TINT (Subtle accent for surfaces) ----- */
   --fd-surface-tint: rgba(99, 102, 241, 0.02); /* @public */
@@ -216,14 +212,10 @@
   --fd-radius-full: 9999px; /* @public */
 
   /* ----- SHADOWS (Refined layered shadows for modern depth) ----- */
-  --fd-shadow-sm:
-    0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06); /* @public */
-  --fd-shadow-md:
-    0 4px 8px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04); /* @public */
-  --fd-shadow-lg:
-    0 10px 20px rgb(0 0 0 / 0.08), 0 4px 8px rgb(0 0 0 / 0.04); /* @public */
-  --fd-shadow-xl:
-    0 20px 30px rgb(0 0 0 / 0.1), 0 8px 16px rgb(0 0 0 / 0.06); /* @public */
+  --fd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06); /* @public */
+  --fd-shadow-md: 0 4px 8px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04); /* @public */
+  --fd-shadow-lg: 0 10px 20px rgb(0 0 0 / 0.08), 0 4px 8px rgb(0 0 0 / 0.04); /* @public */
+  --fd-shadow-xl: 0 20px 30px rgb(0 0 0 / 0.1), 0 8px 16px rgb(0 0 0 / 0.06); /* @public */
 
   /* ----- FONT SIZES ----- */
   --fd-text-2xs: 0.6875rem; /* @public  11px */
@@ -243,8 +235,7 @@
 
   /* ----- FONT FAMILIES ----- */
   --fd-font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
-    monospace; /* @public */
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; /* @public */
 
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
@@ -360,12 +351,8 @@
   --fd-sidebar-header-display: flex; /* @public  show sidebar "Components" header */
   --fd-sidebar-card-display: block; /* @public  show accordion card node list */
   --fd-sidebar-flat-display: none; /* @public  hide flat dot-name node list */
-  --fd-sidebar-category-color: var(
-    --fd-muted-foreground
-  ); /* @public  category header text color */
-  --fd-sidebar-flat-item-color: var(
-    --fd-foreground
-  ); /* @public  flat list item text color */
+  --fd-sidebar-category-color: var(--fd-muted-foreground); /* @public  category header text color */
+  --fd-sidebar-flat-item-color: var(--fd-foreground); /* @public  flat list item text color */
   --fd-navbar-split-display: none; /* @public  show all actions as separate buttons */
   --fd-navbar-dropdown-display: flex; /* @public  show primary-action + dropdown chevron */
 }
@@ -376,7 +363,7 @@
    Designed for softer contrast and reduced eye strain
    ========================================================================= */
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* ----- SURFACES (Backgrounds) - Softer contrast ----- */
   --fd-background: #1a1a1e;
   --fd-foreground: var(--_gray-2);
@@ -497,10 +484,5 @@
   --fd-edge-loopback-selected: #a78bfa;
 
   /* ----- LAYOUT BACKGROUND (darker gradient for dark mode) ----- */
-  --fd-layout-background: linear-gradient(
-    135deg,
-    #141418 0%,
-    #1a1a2e 50%,
-    #16162a 100%
-  );
+  --fd-layout-background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
 }

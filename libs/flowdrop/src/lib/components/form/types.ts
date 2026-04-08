@@ -6,10 +6,7 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
-import type {
-  AutocompleteConfig,
-  TemplateVariablesConfig,
-} from "$lib/types/index.js";
+import type { AutocompleteConfig, TemplateVariablesConfig } from '$lib/types/index.js';
 
 /**
  * Supported field types for form rendering
@@ -19,13 +16,7 @@ import type {
  * - Use `enum` for simple value lists
  * - Use `oneOf` with `const`/`title` for labeled options
  */
-export type FieldType =
-  | "string"
-  | "number"
-  | "integer"
-  | "boolean"
-  | "array"
-  | "object";
+export type FieldType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
 /**
  * Field format for specialized rendering
@@ -39,14 +30,14 @@ export type FieldType =
  * - autocomplete: Renders as text input with autocomplete suggestions from callback URL
  */
 export type FieldFormat =
-  | "multiline"
-  | "hidden"
-  | "range"
-  | "json"
-  | "code"
-  | "markdown"
-  | "template"
-  | "autocomplete"
+  | 'multiline'
+  | 'hidden'
+  | 'range'
+  | 'json'
+  | 'code'
+  | 'markdown'
+  | 'template'
+  | 'autocomplete'
   | string;
 
 /**
@@ -241,8 +232,7 @@ export interface TemplateEditorFieldProps extends BaseFieldProps<string> {
  * Properties for autocomplete fields
  * Fetches suggestions from a callback URL with support for debouncing and keyboard navigation
  */
-export interface AutocompleteFieldProps
-  extends BaseFieldProps<string | string[]> {
+export interface AutocompleteFieldProps extends BaseFieldProps<string | string[]> {
   /** Autocomplete configuration from schema */
   autocomplete: AutocompleteConfig;
   /** Base URL for resolving relative callback URLs */
@@ -253,7 +243,7 @@ export interface AutocompleteFieldProps
  * Autocomplete configuration imported from main types
  * Re-exported here for convenience
  */
-export type { AutocompleteConfig } from "$lib/types/index.js";
+export type { AutocompleteConfig } from '$lib/types/index.js';
 
 /**
  * Field schema definition derived from JSON Schema property
@@ -386,14 +376,8 @@ export interface FormFieldWrapperProps {
 /**
  * Type guard to check if options are FieldOption objects
  */
-export function isFieldOptionArray(
-  options: FieldOption[] | string[],
-): options is FieldOption[] {
-  return (
-    options.length > 0 &&
-    typeof options[0] === "object" &&
-    "value" in options[0]
-  );
+export function isFieldOptionArray(options: FieldOption[] | string[]): options is FieldOption[] {
+  return options.length > 0 && typeof options[0] === 'object' && 'value' in options[0];
 }
 
 /**
@@ -401,10 +385,7 @@ export function isFieldOptionArray(
  */
 export function isOneOfArray(items: unknown[]): items is OneOfItem[] {
   return (
-    items.length > 0 &&
-    typeof items[0] === "object" &&
-    items[0] !== null &&
-    "const" in items[0]
+    items.length > 0 && typeof items[0] === 'object' && items[0] !== null && 'const' in items[0]
   );
 }
 
@@ -418,7 +399,7 @@ export function isOneOfArray(items: unknown[]): items is OneOfItem[] {
 export function oneOfToOptions(oneOfItems: OneOfItem[]): FieldOption[] {
   return oneOfItems.map((item) => ({
     value: String(item.const),
-    label: item.title ?? String(item.const),
+    label: item.title ?? String(item.const)
   }));
 }
 
@@ -433,7 +414,7 @@ export function oneOfToOptions(oneOfItems: OneOfItem[]): FieldOption[] {
  * @returns Normalized FieldOption array
  */
 export function normalizeOptions(
-  options: FieldOption[] | string[] | OneOfItem[] | unknown[],
+  options: FieldOption[] | string[] | OneOfItem[] | unknown[]
 ): FieldOption[] {
   if (!options || options.length === 0) {
     return [];
@@ -452,7 +433,7 @@ export function normalizeOptions(
   // Handle string array (simple enum values)
   return (options as string[]).map((opt) => ({
     value: String(opt),
-    label: String(opt),
+    label: String(opt)
   }));
 }
 
@@ -502,7 +483,7 @@ export interface SchemaFormProps {
    * Properties define the form fields to render.
    */
   schema: {
-    type: "object";
+    type: 'object';
     properties: Record<string, FieldSchema>;
     required?: string[];
     additionalProperties?: boolean;
@@ -581,7 +562,7 @@ export interface SchemaFormProps {
    * Authentication provider for autocomplete fields.
    * Used to add authentication headers when fetching suggestions from callback URLs.
    */
-  authProvider?: import("$lib/types/index.js").AuthProvider;
+  authProvider?: import('$lib/types/index.js').AuthProvider;
 
   /**
    * Base URL for resolving relative autocomplete callback URLs.

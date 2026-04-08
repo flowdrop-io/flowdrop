@@ -7,14 +7,14 @@ import type {
   ListEdgesResultData,
   ListTypesResultData,
   InfoResultData,
-  HelpResultData,
-} from "../../commands/types.js";
+  HelpResultData
+} from '../../commands/types.js';
 
 /**
  * Pads a string to a given width (right-padded with spaces).
  */
 function pad(str: string, width: number): string {
-  return str.length >= width ? str : str + " ".repeat(width - str.length);
+  return str.length >= width ? str : str + ' '.repeat(width - str.length);
 }
 
 /**
@@ -23,16 +23,14 @@ function pad(str: string, width: number): string {
  */
 function formatTable(headers: string[], rows: string[][]): string {
   const colWidths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => (r[i] ?? "").length)),
+    Math.max(h.length, ...rows.map((r) => (r[i] ?? '').length))
   );
 
-  const headerLine = headers.map((h, i) => pad(h, colWidths[i])).join("  ");
-  const separator = colWidths.map((w) => "-".repeat(w)).join("  ");
-  const dataLines = rows.map((row) =>
-    row.map((cell, i) => pad(cell, colWidths[i])).join("  "),
-  );
+  const headerLine = headers.map((h, i) => pad(h, colWidths[i])).join('  ');
+  const separator = colWidths.map((w) => '-'.repeat(w)).join('  ');
+  const dataLines = rows.map((row) => row.map((cell, i) => pad(cell, colWidths[i])).join('  '));
 
-  return [headerLine, separator, ...dataLines].join("\n");
+  return [headerLine, separator, ...dataLines].join('\n');
 }
 
 /**
@@ -40,11 +38,11 @@ function formatTable(headers: string[], rows: string[][]): string {
  */
 export function formatListNodes(data: ListNodesResultData): string {
   if (data.nodes.length === 0) {
-    return "No nodes in workflow";
+    return 'No nodes in workflow';
   }
 
   const rows = data.nodes.map((n) => [n.nodeId, n.label, n.type]);
-  return formatTable(["ID", "Label", "Type"], rows);
+  return formatTable(['ID', 'Label', 'Type'], rows);
 }
 
 /**
@@ -52,17 +50,17 @@ export function formatListNodes(data: ListNodesResultData): string {
  */
 export function formatListEdges(data: ListEdgesResultData): string {
   if (data.edges.length === 0) {
-    return "No edges in workflow";
+    return 'No edges in workflow';
   }
 
   const rows = data.edges.map((e) => [
     e.sourceNodeId,
     e.sourcePort,
-    "->",
+    '->',
     e.targetNodeId,
-    e.targetPort,
+    e.targetPort
   ]);
-  return formatTable(["Source", "Port", "", "Target", "Port"], rows);
+  return formatTable(['Source', 'Port', '', 'Target', 'Port'], rows);
 }
 
 /**
@@ -70,11 +68,11 @@ export function formatListEdges(data: ListEdgesResultData): string {
  */
 export function formatListTypes(data: ListTypesResultData): string {
   if (data.types.length === 0) {
-    return "No node types available";
+    return 'No node types available';
   }
 
   const rows = data.types.map((t) => [t.typeId, t.name, t.category]);
-  return formatTable(["Type ID", "Name", "Category"], rows);
+  return formatTable(['Type ID', 'Name', 'Category'], rows);
 }
 
 /**
@@ -93,29 +91,26 @@ export function formatInfo(data: InfoResultData): string {
   // Config section
   const configEntries = Object.entries(data.config);
   if (configEntries.length > 0) {
-    lines.push("");
-    lines.push("Config:");
+    lines.push('');
+    lines.push('Config:');
     for (const [key, value] of configEntries) {
-      const display =
-        typeof value === "string"
-          ? `"${value}"`
-          : JSON.stringify(value) ?? "null";
+      const display = typeof value === 'string' ? `"${value}"` : (JSON.stringify(value) ?? 'null');
       lines.push(`  ${key}: ${display}`);
     }
   }
 
   // Ports section
   if (data.inputs.length > 0 || data.outputs.length > 0) {
-    lines.push("");
-    lines.push("Ports:");
+    lines.push('');
+    lines.push('Ports:');
     if (data.inputs.length > 0) {
-      lines.push("  Inputs:");
+      lines.push('  Inputs:');
       for (const port of data.inputs) {
         lines.push(`    ${port.portId} (${port.dataType})`);
       }
     }
     if (data.outputs.length > 0) {
-      lines.push("  Outputs:");
+      lines.push('  Outputs:');
       for (const port of data.outputs) {
         lines.push(`    ${port.portId} (${port.dataType})`);
       }
@@ -124,22 +119,18 @@ export function formatInfo(data: InfoResultData): string {
 
   // Connected edges section
   if (data.connectedEdges.length > 0) {
-    lines.push("");
-    lines.push("Edges:");
+    lines.push('');
+    lines.push('Edges:');
     for (const edge of data.connectedEdges) {
-      if (edge.direction === "incoming") {
-        lines.push(
-          `  ${edge.remoteNodeId}:${edge.remotePort} -> ${edge.localPort}`,
-        );
+      if (edge.direction === 'incoming') {
+        lines.push(`  ${edge.remoteNodeId}:${edge.remotePort} -> ${edge.localPort}`);
       } else {
-        lines.push(
-          `  ${edge.localPort} -> ${edge.remoteNodeId}:${edge.remotePort}`,
-        );
+        lines.push(`  ${edge.localPort} -> ${edge.remoteNodeId}:${edge.remotePort}`);
       }
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /**
@@ -147,9 +138,9 @@ export function formatInfo(data: InfoResultData): string {
  */
 export function formatHelp(data: HelpResultData): string {
   if (data.commands.length === 0) {
-    return "No commands available";
+    return 'No commands available';
   }
 
   const rows = data.commands.map((c) => [c.name, c.syntax, c.description]);
-  return formatTable(["Name", "Syntax", "Description"], rows);
+  return formatTable(['Name', 'Syntax', 'Description'], rows);
 }

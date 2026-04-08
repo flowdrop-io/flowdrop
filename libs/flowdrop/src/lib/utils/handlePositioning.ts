@@ -33,17 +33,16 @@ export interface HandlePosition {
 export function getCircleHandlePosition(
   index: number,
   count: number,
-  side: "left" | "right",
+  side: 'left' | 'right',
   radius: number = 40,
-  arcSpan: number = (Math.PI * 5) / 6,
+  arcSpan: number = (Math.PI * 5) / 6
 ): HandlePosition {
-  const centerAngle = side === "left" ? Math.PI : 0; // 180° for left, 0° for right
-  const angle =
-    centerAngle - arcSpan / 2 + (arcSpan * (index + 1)) / (count + 1);
+  const centerAngle = side === 'left' ? Math.PI : 0; // 180° for left, 0° for right
+  const angle = centerAngle - arcSpan / 2 + (arcSpan * (index + 1)) / (count + 1);
   const centerOffset = radius; // center of the circle (assuming square bounding box)
 
   return {
     left: centerOffset + radius * Math.cos(angle),
-    top: centerOffset + radius * Math.sin(angle),
+    top: centerOffset + radius * Math.sin(angle)
   };
 }

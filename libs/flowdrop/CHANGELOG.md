@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Progressive command execution**: AI chat apply flow executes each command with a 100 ms inter-command delay so canvas updates are visually distinct. `executeBatch` is now async with an optional `delayBetweenMs` option; undo still covers the entire batch as a single transaction.
+- **Command preview feedback states**: After clicking Apply, preview buttons are replaced with "Applying…" (spinning) then "Applied" (green). After Cancel, replaced with "Dismissed" (muted). The preview block stays mounted in both cases so chat history shows what was actioned.
+- **AI response markdown rendering**: Assistant messages in the AI Chat panel are rendered as sanitised markdown instead of plain text.
+- **Auto-retry on batch command failure**: When AI-generated commands fail, the panel automatically sends a structured error report back to the LLM (up to 3 attempts) so it can self-correct. Retry notices render as muted "Auto-retrying (attempt N/3)…" spinners, keeping raw error context out of the visible conversation. Controlled by a new `chatAutoRetry` setting in `BehaviorSettings` (default: `true`).
+
+### Fixed
+
+- **Triple-quote multiline parsing**: `chatResponseParser` and the commands parser now correctly handle triple-quoted (`"""`) multi-line strings in DSL blocks, preventing premature block truncation.
+
 ## [1.5.0] - 2026-04-03
 
 ### Added

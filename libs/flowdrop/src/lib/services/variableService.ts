@@ -17,9 +17,9 @@ import type {
   InputProperty,
   BaseProperty,
   TemplateVariablesConfig,
-  AuthProvider,
-} from "../types/index.js";
-import { logger } from "../utils/logger.js";
+  AuthProvider
+} from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Converts a JSON Schema property type to a TemplateVariableType.
@@ -27,26 +27,24 @@ import { logger } from "../utils/logger.js";
  * @param schemaType - The type from JSON Schema
  * @returns The corresponding TemplateVariableType
  */
-function toTemplateVariableType(
-  schemaType: string | undefined,
-): TemplateVariableType {
+function toTemplateVariableType(schemaType: string | undefined): TemplateVariableType {
   switch (schemaType) {
-    case "string":
-      return "string";
-    case "number":
-      return "number";
-    case "integer":
-      return "integer";
-    case "boolean":
-      return "boolean";
-    case "array":
-      return "array";
-    case "object":
-      return "object";
-    case "float":
-      return "float";
+    case 'string':
+      return 'string';
+    case 'number':
+      return 'number';
+    case 'integer':
+      return 'integer';
+    case 'boolean':
+      return 'boolean';
+    case 'array':
+      return 'array';
+    case 'object':
+      return 'object';
+    case 'float':
+      return 'float';
     default:
-      return "mixed";
+      return 'mixed';
   }
 }
 
@@ -64,7 +62,7 @@ function propertyToTemplateVariable(
   name: string,
   property: BaseProperty | OutputProperty | InputProperty,
   sourcePort?: string,
-  sourceNode?: string,
+  sourceNode?: string
 ): TemplateVariable {
   const variable: TemplateVariable = {
     name,
@@ -72,29 +70,29 @@ function propertyToTemplateVariable(
     description: property.description,
     type: toTemplateVariableType(property.type),
     sourcePort,
-    sourceNode,
+    sourceNode
   };
 
   // Handle nested object properties
-  if (property.type === "object" && property.properties) {
+  if (property.type === 'object' && property.properties) {
     variable.properties = {};
     for (const [propName, propValue] of Object.entries(property.properties)) {
       variable.properties[propName] = propertyToTemplateVariable(
         propName,
         propValue as BaseProperty,
         sourcePort,
-        sourceNode,
+        sourceNode
       );
     }
   }
 
   // Handle array items
-  if (property.type === "array" && property.items) {
+  if (property.type === 'array' && property.items) {
     variable.items = propertyToTemplateVariable(
-      "item",
+      'item',
       property.items as BaseProperty,
       sourcePort,
-      sourceNode,
+      sourceNode
     );
   }
 
@@ -109,30 +107,25 @@ function propertyToTemplateVariable(
  * @param sourceNode - The source node ID
  * @returns A TemplateVariable representing the port's data
  */
-function portToTemplateVariable(
-  port: NodePort,
-  sourceNode: string,
-): TemplateVariable {
+function portToTemplateVariable(port: NodePort, sourceNode: string): TemplateVariable {
   // If the port has a schema, use it to build a detailed variable
   if (port.schema && port.schema.properties) {
     const variable: TemplateVariable = {
       name: port.id,
       label: port.name,
       description: port.description,
-      type: "object",
+      type: 'object',
       sourcePort: port.id,
       sourceNode,
-      properties: {},
+      properties: {}
     };
 
-    for (const [propName, propValue] of Object.entries(
-      port.schema.properties,
-    )) {
+    for (const [propName, propValue] of Object.entries(port.schema.properties)) {
       variable.properties![propName] = propertyToTemplateVariable(
         propName,
         propValue as BaseProperty,
         port.id,
-        sourceNode,
+        sourceNode
       );
     }
 
@@ -146,7 +139,7 @@ function portToTemplateVariable(
     description: port.description,
     type: toTemplateVariableType(port.dataType),
     sourcePort: port.id,
-    sourceNode,
+    sourceNode
   };
 }
 
@@ -171,9 +164,7 @@ interface UpstreamConnection {
  * @param handleId - The handle ID (e.g., "http_request.1-output-json")
  * @returns The port ID (e.g., "json") or the original handleId if parsing fails
  */
-function extractPortIdFromHandle(
-  handleId: string | undefined,
-): string | undefined {
+function extractPortIdFromHandle(handleId: string | undefined): string | undefined {
   if (!handleId) return undefined;
 
   // Handle format: {nodeId}-{input|output}-{portId}
@@ -204,7 +195,7 @@ function extractPortIdFromHandle(
 function findUpstreamConnections(
   node: WorkflowNode,
   nodes: WorkflowNode[],
-  edges: WorkflowEdge[],
+  edges: WorkflowEdge[]
 ): UpstreamConnection[] {
   const connections: UpstreamConnection[] = [];
 
@@ -222,20 +213,16 @@ function findUpstreamConnections(
     const targetPortId = extractPortIdFromHandle(edge.targetHandle);
 
     // Find the source output port
-    const sourcePort = sourceNode.data.metadata.outputs.find(
-      (p) => p.id === sourcePortId,
-    );
+    const sourcePort = sourceNode.data.metadata.outputs.find((p) => p.id === sourcePortId);
 
     // Find the target input port
-    const targetPort = node.data.metadata.inputs.find(
-      (p) => p.id === targetPortId,
-    );
+    const targetPort = node.data.metadata.inputs.find((p) => p.id === targetPortId);
 
     connections.push({
       edge,
       sourceNode,
       sourcePort,
-      targetPort,
+      targetPort
     });
   }
 
@@ -287,7 +274,7 @@ export function getAvailableVariables(
   node: WorkflowNode,
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
-  options?: GetAvailableVariablesOptions,
+  options?: GetAvailableVariablesOptions
 ): VariableSchema {
   const variables: Record<string, TemplateVariable> = {};
   const { targetPortIds, includePortName } = options ?? {};
@@ -299,11 +286,11 @@ export function getAvailableVariables(
     const { sourceNode, sourcePort, targetPort } = connection;
 
     // Skip trigger ports - they don't carry data
-    if (sourcePort?.dataType === "trigger") continue;
-    if (targetPort?.dataType === "trigger") continue;
+    if (sourcePort?.dataType === 'trigger') continue;
+    if (targetPort?.dataType === 'trigger') continue;
 
     // Get the target port ID for filtering
-    const targetPortId = targetPort?.id ?? sourcePort?.id ?? "data";
+    const targetPortId = targetPort?.id ?? sourcePort?.id ?? 'data';
 
     // Filter by target port IDs if specified
     if (targetPortIds !== undefined) {
@@ -316,9 +303,7 @@ export function getAvailableVariables(
     // unpack them as top-level variables (unless includePortName is true)
     if (sourcePort.schema?.properties && !includePortName) {
       // Unpack schema properties as top-level variables
-      for (const [propName, propValue] of Object.entries(
-        sourcePort.schema.properties,
-      )) {
+      for (const [propName, propValue] of Object.entries(sourcePort.schema.properties)) {
         // Skip if we already have a variable with this name
         if (variables[propName]) continue;
 
@@ -326,7 +311,7 @@ export function getAvailableVariables(
           propName,
           propValue as BaseProperty,
           sourcePort.id,
-          sourceNode.id,
+          sourceNode.id
         );
       }
     } else {
@@ -365,11 +350,8 @@ export function getAvailableVariables(
  * // Returns: [{ name: "city", ... }, { name: "country", ... }]
  * ```
  */
-export function getChildVariables(
-  schema: VariableSchema,
-  path: string,
-): TemplateVariable[] {
-  const parts = path.split(".");
+export function getChildVariables(schema: VariableSchema, path: string): TemplateVariable[] {
+  const parts = path.split('.');
   let current: TemplateVariable | undefined;
 
   // Navigate to the target variable
@@ -425,7 +407,7 @@ export function getArrayIndexSuggestions(maxIndex: number = 2): string[] {
   }
 
   // Add wildcard for "all items"
-  suggestions.push("*]");
+  suggestions.push('*]');
 
   return suggestions;
 }
@@ -438,7 +420,7 @@ export function getArrayIndexSuggestions(maxIndex: number = 2): string[] {
  * @returns True if the variable is an array type
  */
 export function isArrayVariable(schema: VariableSchema, path: string): boolean {
-  const parts = path.split(".");
+  const parts = path.split('.');
   let current: TemplateVariable | undefined;
 
   for (let i = 0; i < parts.length; i++) {
@@ -468,7 +450,7 @@ export function isArrayVariable(schema: VariableSchema, path: string): boolean {
     }
   }
 
-  return current?.type === "array";
+  return current?.type === 'array';
 }
 
 /**
@@ -501,7 +483,7 @@ export function hasChildren(schema: VariableSchema, path: string): boolean {
  */
 export function mergeVariableSchemas(
   primary: VariableSchema,
-  secondary: VariableSchema,
+  secondary: VariableSchema
 ): VariableSchema {
   // Create a shallow copy of secondary variables
   const mergedVariables = { ...secondary.variables };
@@ -551,7 +533,7 @@ export async function getVariableSchema(
   edges: WorkflowEdge[],
   config: TemplateVariablesConfig,
   workflowId?: string,
-  authProvider?: AuthProvider,
+  authProvider?: AuthProvider
 ): Promise<VariableSchema> {
   let resultSchema: VariableSchema = { variables: {} };
 
@@ -559,14 +541,9 @@ export async function getVariableSchema(
   if (config.api) {
     try {
       // Import API variable service dynamically to avoid circular dependencies
-      const { fetchVariableSchema } = await import("./apiVariableService.js");
+      const { fetchVariableSchema } = await import('./apiVariableService.js');
 
-      const apiResult = await fetchVariableSchema(
-        workflowId,
-        node.id,
-        config.api,
-        authProvider,
-      );
+      const apiResult = await fetchVariableSchema(workflowId, node.id, config.api, authProvider);
 
       if (apiResult.success && apiResult.schema) {
         resultSchema = apiResult.schema;
@@ -580,7 +557,7 @@ export async function getVariableSchema(
         if (config.api.mergeWithPorts) {
           const portSchema = getAvailableVariables(node, nodes, edges, {
             targetPortIds: config.ports,
-            includePortName: config.includePortName,
+            includePortName: config.includePortName
           });
           resultSchema = mergeVariableSchemas(resultSchema, portSchema);
         }
@@ -588,12 +565,12 @@ export async function getVariableSchema(
         return resultSchema;
       } else if (!config.api.fallbackOnError) {
         // API failed and fallback is disabled - return empty schema
-        logger.error("Failed to fetch variables from API:", apiResult.error);
+        logger.error('Failed to fetch variables from API:', apiResult.error);
         return { variables: {} };
       }
       // If fallback is enabled (default), continue to schema-based mode below
     } catch (error) {
-      logger.error("Error fetching variables from API:", error);
+      logger.error('Error fetching variables from API:', error);
       // If fallback is disabled, return empty schema
       if (config.api.fallbackOnError === false) {
         return { variables: {} };
@@ -609,7 +586,7 @@ export async function getVariableSchema(
   if (config.ports !== undefined || !config.api) {
     const portSchema = getAvailableVariables(node, nodes, edges, {
       targetPortIds: config.ports,
-      includePortName: config.includePortName,
+      includePortName: config.includePortName
     });
     resultSchema = portSchema;
   }

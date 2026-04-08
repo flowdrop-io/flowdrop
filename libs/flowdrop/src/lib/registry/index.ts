@@ -4,7 +4,7 @@
  */
 
 // Base registry
-export { BaseRegistry } from "./BaseRegistry.js";
+export { BaseRegistry } from './BaseRegistry.js';
 
 // Core registry
 export {
@@ -17,8 +17,8 @@ export {
   type NodeComponentCategory,
   type StatusPosition,
   type StatusSize,
-  type NodeRegistrationFilter,
-} from "./nodeComponentRegistry.js";
+  type NodeRegistrationFilter
+} from './nodeComponentRegistry.js';
 
 // Built-in nodes
 export {
@@ -31,8 +31,8 @@ export {
   resolveBuiltinAlias,
   isBuiltinType,
   getBuiltinTypes,
-  type BuiltinNodeType,
-} from "./builtinNodes.js";
+  type BuiltinNodeType
+} from './builtinNodes.js';
 
 // Plugin system
 export {
@@ -45,5 +45,5 @@ export {
   getPluginNodeCount,
   type FlowDropPluginConfig,
   type PluginNodeDefinition,
-  type PluginRegistrationResult,
-} from "./plugin.js";
+  type PluginRegistrationResult
+} from './plugin.js';

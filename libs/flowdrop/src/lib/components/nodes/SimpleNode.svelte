@@ -10,28 +10,21 @@
 -->
 
 <script lang="ts">
-  import { Position, Handle } from "@xyflow/svelte";
+  import { Position, Handle } from '@xyflow/svelte';
   import type {
     ConfigValues,
     NodeMetadata,
     NodeExtensions,
     NodePort,
-    DynamicPort,
-  } from "../../types/index.js";
-  import { dynamicPortToNodePort } from "../../types/index.js";
-  import Icon from "@iconify/svelte";
-  import {
-    getDataTypeColor,
-    getCategoryColorToken,
-  } from "$lib/utils/colors.js";
-  import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
-  import {
-    applyPortOrder,
-    getPortTop,
-    isPortVisible,
-  } from "../../utils/portUtils.js";
-  import CogIcon from "../icons/CogIcon.svelte";
-  import AlertCircleIcon from "../icons/AlertCircleIcon.svelte";
+    DynamicPort
+  } from '../../types/index.js';
+  import { dynamicPortToNodePort } from '../../types/index.js';
+  import Icon from '@iconify/svelte';
+  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
+  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { applyPortOrder, getPortTop, isPortVisible } from '../../utils/portUtils.js';
+  import CogIcon from '../icons/CogIcon.svelte';
+  import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   const props = $props<{
     data: {
@@ -57,31 +50,23 @@
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
       props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false,
+      false
   );
 
   const hiddenPorts = $derived(
-    props.data.extensions?.ui?.hiddenPorts ??
-      props.data.metadata?.extensions?.ui?.hiddenPorts ??
-      {},
+    props.data.extensions?.ui?.hiddenPorts ?? props.data.metadata?.extensions?.ui?.hiddenPorts ?? {}
   );
 
   const portOrder = $derived(
-    props.data.extensions?.ui?.portOrder ??
-      props.data.metadata?.extensions?.ui?.portOrder ??
-      {},
+    props.data.extensions?.ui?.portOrder ?? props.data.metadata?.extensions?.ui?.portOrder ?? {}
   );
 
   // Prioritize metadata icon over config icon for simple nodes (metadata is the node definition)
   let nodeIcon = $derived(
-    (props.data.metadata?.icon as string) ||
-      (props.data.config?.icon as string) ||
-      "mdi:square",
+    (props.data.metadata?.icon as string) || (props.data.config?.icon as string) || 'mdi:square'
   );
   let nodeColor = $derived(
-    (props.data.metadata?.color as string) ||
-      (props.data.config?.color as string) ||
-      "#6366f1",
+    (props.data.metadata?.color as string) || (props.data.config?.color as string) || '#6366f1'
   );
 
   /**
@@ -89,9 +74,7 @@
    * Falls back to the original label if not set.
    * This allows users to customize the node title per-instance via config.
    */
-  const displayTitle = $derived(
-    (props.data.config?.instanceTitle as string) || props.data.label,
-  );
+  const displayTitle = $derived((props.data.config?.instanceTitle as string) || props.data.label);
 
   /**
    * Instance-specific description override from config.
@@ -101,7 +84,7 @@
   const displayDescription = $derived(
     (props.data.config?.instanceDescription as string) ||
       props.data.metadata?.description ||
-      "A configurable simple node",
+      'A configurable simple node'
   );
 
   // Handle configuration sidebar - now using global ConfigSidebar
@@ -109,9 +92,9 @@
     if (props.data.onConfigOpen) {
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
-        id: props.data.nodeId || "unknown",
-        type: "simple",
-        data: props.data,
+        id: props.data.nodeId || 'unknown',
+        type: 'simple',
+        data: props.data
       };
       props.data.onConfigOpen(nodeForConfig);
     }
@@ -129,7 +112,7 @@
 
   // Handle keyboard events
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleDoubleClick();
     }
@@ -137,14 +120,14 @@
 
   const dynamicInputs = $derived(
     ((props.data.config?.dynamicInputs as DynamicPort[]) || []).map((port) =>
-      dynamicPortToNodePort(port, "input"),
-    ),
+      dynamicPortToNodePort(port, 'input')
+    )
   );
 
   const dynamicOutputs = $derived(
     ((props.data.config?.dynamicOutputs as DynamicPort[]) || []).map((port) =>
-      dynamicPortToNodePort(port, "output"),
-    ),
+      dynamicPortToNodePort(port, 'output')
+    )
   );
 
   /**
@@ -153,17 +136,17 @@
   const visibleInputPorts = $derived(
     applyPortOrder(
       [...(props.data.metadata?.inputs ?? []), ...dynamicInputs],
-      portOrder.inputs,
+      portOrder.inputs
     ).filter((p: NodePort) =>
       isPortVisible(
         p,
-        "input",
+        'input',
         hiddenPorts,
         hideUnconnectedHandles,
         getConnectedHandles(),
-        props.data.nodeId,
-      ),
-    ),
+        props.data.nodeId
+      )
+    )
   );
 
   /**
@@ -172,17 +155,17 @@
   const visibleOutputPorts = $derived(
     applyPortOrder(
       [...(props.data.metadata?.outputs ?? []), ...dynamicOutputs],
-      portOrder.outputs,
+      portOrder.outputs
     ).filter((p: NodePort) =>
       isPortVisible(
         p,
-        "output",
+        'output',
         hiddenPorts,
         hideUnconnectedHandles,
         getConnectedHandles(),
-        props.data.nodeId,
-      ),
-    ),
+        props.data.nodeId
+      )
+    )
   );
 
   /**
@@ -190,13 +173,9 @@
    */
   const nodeMinHeight = $derived(
     (() => {
-      const maxPorts = Math.max(
-        visibleInputPorts.length,
-        visibleOutputPorts.length,
-        1,
-      );
+      const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
       return maxPorts <= 1 ? 80 : 20 + maxPorts * 40;
-    })(),
+    })()
   );
 </script>
 
@@ -206,10 +185,10 @@
     type="target"
     position={Position.Left}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      port.dataType,
+      port.dataType
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,
-      visibleInputPorts.length,
+      visibleInputPorts.length
     )}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-input-${port.id}`}
   />
@@ -231,18 +210,13 @@
   <div class="flowdrop-simple-node__header">
     <div class="flowdrop-simple-node__header-content">
       <!-- Node Icon (squircle) — visibility controlled by --fd-node-icon-display -->
-      <div
-        class="flowdrop-simple-node__icon-wrapper"
-        style="--_icon-color: {nodeColor}"
-      >
+      <div class="flowdrop-simple-node__icon-wrapper" style="--_icon-color: {nodeColor}">
         <Icon icon={nodeIcon} class="flowdrop-simple-node__icon" />
       </div>
       <!-- Node Icon (circle dot) — visibility controlled by --fd-node-circle-display -->
       <span
         class="flowdrop-simple-node__color-dot"
-        style="background: {getCategoryColorToken(
-          props.data.metadata?.category,
-        )}"
+        style="background: {getCategoryColorToken(props.data.metadata?.category)}"
       ></span>
 
       <!-- Node Title -->
@@ -287,10 +261,10 @@
     type="source"
     position={Position.Right}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      port.dataType,
+      port.dataType
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,
-      visibleOutputPorts.length,
+      visibleOutputPorts.length
     )}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-output-${port.id}`}
   />
@@ -371,11 +345,7 @@
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 0.5rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }

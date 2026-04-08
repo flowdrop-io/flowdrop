@@ -10,7 +10,7 @@
 -->
 
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
 
   /**
    * Configuration props for the MainLayout component
@@ -59,17 +59,17 @@
     /** Custom CSS class for the layout container */
     class?: string;
     /** Slot for header content */
-    header?: import("svelte").Snippet;
+    header?: import('svelte').Snippet;
     /** Slot for left sidebar content */
-    leftSidebar?: import("svelte").Snippet;
+    leftSidebar?: import('svelte').Snippet;
     /** Slot for right sidebar content */
-    rightSidebar?: import("svelte").Snippet;
+    rightSidebar?: import('svelte').Snippet;
     /** Slot for bottom panel content */
-    bottomPanel?: import("svelte").Snippet;
+    bottomPanel?: import('svelte').Snippet;
     /** Slot for footer content */
-    footer?: import("svelte").Snippet;
+    footer?: import('svelte').Snippet;
     /** Slot for main content (default slot) */
-    children?: import("svelte").Snippet;
+    children?: import('svelte').Snippet;
   }
 
   let {
@@ -92,14 +92,14 @@
     enableLeftSplitPane = true,
     enableRightSplitPane = true,
     enableBottomSplitPane = true,
-    backgroundColor = "var(--fd-layout-background)",
-    class: customClass = "",
+    backgroundColor = 'var(--fd-layout-background)',
+    class: customClass = '',
     header,
     leftSidebar,
     rightSidebar,
     bottomPanel,
     footer,
-    children,
+    children
   }: Props = $props();
 
   /** Current width of the left sidebar */
@@ -181,20 +181,14 @@
       // Calculate new width from the left edge of the layout
       const newWidth = event.clientX - layoutRect.left;
       // Clamp the width between min and max values
-      leftSidebarWidth = Math.min(
-        Math.max(newWidth, leftSidebarMinWidth),
-        leftSidebarMaxWidth,
-      );
+      leftSidebarWidth = Math.min(Math.max(newWidth, leftSidebarMinWidth), leftSidebarMaxWidth);
     }
 
     if (isDraggingRight) {
       // Calculate new width from the right edge of the layout
       const newWidth = layoutRect.right - event.clientX;
       // Clamp the width between min and max values
-      rightSidebarWidth = Math.min(
-        Math.max(newWidth, rightSidebarMinWidth),
-        rightSidebarMaxWidth,
-      );
+      rightSidebarWidth = Math.min(Math.max(newWidth, rightSidebarMinWidth), rightSidebarMaxWidth);
     }
 
     if (isDraggingBottom && mainContentRef) {
@@ -204,7 +198,7 @@
       // Clamp the height between min and max values
       bottomPanelHeightState = Math.min(
         Math.max(newHeight, bottomPanelMinHeight),
-        bottomPanelMaxHeight,
+        bottomPanelMaxHeight
       );
     }
   }
@@ -225,58 +219,37 @@
    * @param event - The keyboard event
    * @param side - Which divider is being adjusted
    */
-  function handleKeyDown(
-    event: KeyboardEvent,
-    side: "left" | "right" | "bottom",
-  ): void {
+  function handleKeyDown(event: KeyboardEvent, side: 'left' | 'right' | 'bottom'): void {
     // Check if the specific side's split pane is enabled
-    if (side === "left" && !enableLeftSplitPane) return;
-    if (side === "right" && !enableRightSplitPane) return;
-    if (side === "bottom" && !enableBottomSplitPane) return;
+    if (side === 'left' && !enableLeftSplitPane) return;
+    if (side === 'right' && !enableRightSplitPane) return;
+    if (side === 'bottom' && !enableBottomSplitPane) return;
 
     const step = event.shiftKey ? 50 : 10;
 
-    if (side === "left") {
-      if (event.key === "ArrowRight") {
+    if (side === 'left') {
+      if (event.key === 'ArrowRight') {
         event.preventDefault();
-        leftSidebarWidth = Math.min(
-          leftSidebarWidth + step,
-          leftSidebarMaxWidth,
-        );
-      } else if (event.key === "ArrowLeft") {
+        leftSidebarWidth = Math.min(leftSidebarWidth + step, leftSidebarMaxWidth);
+      } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        leftSidebarWidth = Math.max(
-          leftSidebarWidth - step,
-          leftSidebarMinWidth,
-        );
+        leftSidebarWidth = Math.max(leftSidebarWidth - step, leftSidebarMinWidth);
       }
-    } else if (side === "right") {
-      if (event.key === "ArrowLeft") {
+    } else if (side === 'right') {
+      if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        rightSidebarWidth = Math.min(
-          rightSidebarWidth + step,
-          rightSidebarMaxWidth,
-        );
-      } else if (event.key === "ArrowRight") {
+        rightSidebarWidth = Math.min(rightSidebarWidth + step, rightSidebarMaxWidth);
+      } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        rightSidebarWidth = Math.max(
-          rightSidebarWidth - step,
-          rightSidebarMinWidth,
-        );
+        rightSidebarWidth = Math.max(rightSidebarWidth - step, rightSidebarMinWidth);
       }
-    } else if (side === "bottom") {
-      if (event.key === "ArrowUp") {
+    } else if (side === 'bottom') {
+      if (event.key === 'ArrowUp') {
         event.preventDefault();
-        bottomPanelHeightState = Math.min(
-          bottomPanelHeightState + step,
-          bottomPanelMaxHeight,
-        );
-      } else if (event.key === "ArrowDown") {
+        bottomPanelHeightState = Math.min(bottomPanelHeightState + step, bottomPanelMaxHeight);
+      } else if (event.key === 'ArrowDown') {
         event.preventDefault();
-        bottomPanelHeightState = Math.max(
-          bottomPanelHeightState - step,
-          bottomPanelMinHeight,
-        );
+        bottomPanelHeightState = Math.max(bottomPanelHeightState - step, bottomPanelMinHeight);
       }
     }
   }
@@ -300,13 +273,13 @@
     };
 
     // Attach event listeners to window for drag tracking
-    window.addEventListener("mousemove", mouseMoveHandler);
-    window.addEventListener("mouseup", mouseUpHandler);
+    window.addEventListener('mousemove', mouseMoveHandler);
+    window.addEventListener('mouseup', mouseUpHandler);
 
     // Cleanup on component unmount
     return () => {
-      window.removeEventListener("mousemove", mouseMoveHandler);
-      window.removeEventListener("mouseup", mouseUpHandler);
+      window.removeEventListener('mousemove', mouseMoveHandler);
+      window.removeEventListener('mouseup', mouseUpHandler);
     };
   });
 
@@ -329,9 +302,7 @@
 <div
   bind:this={layoutRef}
   class="flowdrop-main-layout {customClass}"
-  class:flowdrop-main-layout--dragging={isDraggingLeft ||
-    isDraggingRight ||
-    isDraggingBottom}
+  class:flowdrop-main-layout--dragging={isDraggingLeft || isDraggingRight || isDraggingBottom}
   class:flowdrop-main-layout--dragging-vertical={isDraggingBottom}
   style="
 		--layout-header-height: {headerHeightVar};
@@ -353,9 +324,7 @@
   <div class="flowdrop-main-layout__body">
     <!-- Left Sidebar -->
     {#if showLeftSidebar && leftSidebar}
-      <aside
-        class="flowdrop-main-layout__sidebar flowdrop-main-layout__sidebar--left"
-      >
+      <aside class="flowdrop-main-layout__sidebar flowdrop-main-layout__sidebar--left">
         {@render leftSidebar()}
       </aside>
 
@@ -367,7 +336,7 @@
           class="flowdrop-main-layout__divider flowdrop-main-layout__divider--left"
           class:flowdrop-main-layout__divider--active={isDraggingLeft}
           onmousedown={handleLeftDragStart}
-          onkeydown={(e) => handleKeyDown(e, "left")}
+          onkeydown={(e) => handleKeyDown(e, 'left')}
           role="separator"
           aria-orientation="vertical"
           aria-valuenow={leftSidebarWidth}
@@ -385,8 +354,7 @@
     <div
       bind:this={mainContentRef}
       class="flowdrop-main-layout__main-wrapper"
-      class:flowdrop-main-layout__main-wrapper--with-bottom={showBottomPanel &&
-        bottomPanel}
+      class:flowdrop-main-layout__main-wrapper--with-bottom={showBottomPanel && bottomPanel}
     >
       <!-- Main Content Area -->
       <main class="flowdrop-main-layout__main">
@@ -403,7 +371,7 @@
           class="flowdrop-main-layout__divider flowdrop-main-layout__divider--bottom"
           class:flowdrop-main-layout__divider--active={isDraggingBottom}
           onmousedown={handleBottomDragStart}
-          onkeydown={(e) => handleKeyDown(e, "bottom")}
+          onkeydown={(e) => handleKeyDown(e, 'bottom')}
           role="separator"
           aria-orientation="horizontal"
           aria-valuenow={bottomPanelHeightState}
@@ -420,9 +388,7 @@
 
       <!-- Bottom Panel -->
       {#if showBottomPanel && bottomPanel}
-        <aside
-          class="flowdrop-main-layout__panel flowdrop-main-layout__panel--bottom"
-        >
+        <aside class="flowdrop-main-layout__panel flowdrop-main-layout__panel--bottom">
           {@render bottomPanel()}
         </aside>
       {/if}
@@ -436,7 +402,7 @@
         class="flowdrop-main-layout__divider flowdrop-main-layout__divider--right"
         class:flowdrop-main-layout__divider--active={isDraggingRight}
         onmousedown={handleRightDragStart}
-        onkeydown={(e) => handleKeyDown(e, "right")}
+        onkeydown={(e) => handleKeyDown(e, 'right')}
         role="separator"
         aria-orientation="vertical"
         aria-valuenow={rightSidebarWidth}
@@ -451,9 +417,7 @@
 
     <!-- Right Sidebar -->
     {#if showRightSidebar && rightSidebar}
-      <aside
-        class="flowdrop-main-layout__sidebar flowdrop-main-layout__sidebar--right"
-      >
+      <aside class="flowdrop-main-layout__sidebar flowdrop-main-layout__sidebar--right">
         {@render rightSidebar()}
       </aside>
     {/if}
@@ -661,10 +625,8 @@
     height: 4px;
   }
 
-  .flowdrop-main-layout__divider--bottom:hover
-    .flowdrop-main-layout__divider-handle--horizontal,
-  .flowdrop-main-layout__divider--bottom:focus
-    .flowdrop-main-layout__divider-handle--horizontal {
+  .flowdrop-main-layout__divider--bottom:hover .flowdrop-main-layout__divider-handle--horizontal,
+  .flowdrop-main-layout__divider--bottom:focus .flowdrop-main-layout__divider-handle--horizontal {
     transform: scaleX(1.2);
   }
 

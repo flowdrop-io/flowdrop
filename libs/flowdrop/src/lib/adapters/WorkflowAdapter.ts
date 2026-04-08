@@ -14,9 +14,9 @@
  * - Systems that need to generate or modify workflows programmatically
  */
 
-import type { Workflow, NodeMetadata, WorkflowFormat } from "../types/index.js";
-import { v4 as uuidv4 } from "uuid";
-import { generateNodeId } from "../utils/nodeIds.js";
+import type { Workflow, NodeMetadata, WorkflowFormat } from '../types/index.js';
+import { v4 as uuidv4 } from 'uuid';
+import { generateNodeId } from '../utils/nodeIds.js';
 
 /**
  * Standard workflow node interface (SvelteFlow-agnostic)
@@ -104,10 +104,10 @@ export class WorkflowAdapter {
       nodes: [],
       edges: [],
       metadata: {
-        version: "1.0.0",
+        version: '1.0.0',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     };
   }
 
@@ -118,7 +118,7 @@ export class WorkflowAdapter {
     workflow: StandardWorkflow,
     nodeType: string,
     position: { x: number; y: number },
-    config?: Record<string, unknown>,
+    config?: Record<string, unknown>
   ): StandardNode {
     const metadata = this.nodeTypes.find((nt) => nt.id === nodeType);
     if (!metadata) {
@@ -135,8 +135,8 @@ export class WorkflowAdapter {
       data: {
         label: metadata.name,
         config: config || {},
-        metadata,
-      },
+        metadata
+      }
     };
 
     workflow.nodes.push(node);
@@ -156,7 +156,7 @@ export class WorkflowAdapter {
 
     // Remove associated edges
     workflow.edges = workflow.edges.filter(
-      (edge) => edge.source !== nodeId && edge.target !== nodeId,
+      (edge) => edge.source !== nodeId && edge.target !== nodeId
     );
 
     workflow.metadata!.updatedAt = new Date().toISOString();
@@ -169,7 +169,7 @@ export class WorkflowAdapter {
   updateNodePosition(
     workflow: StandardWorkflow,
     nodeId: string,
-    position: { x: number; y: number },
+    position: { x: number; y: number }
   ): boolean {
     const node = workflow.nodes.find((n) => n.id === nodeId);
     if (!node) return false;
@@ -185,7 +185,7 @@ export class WorkflowAdapter {
   updateNodeConfig(
     workflow: StandardWorkflow,
     nodeId: string,
-    config: Record<string, unknown>,
+    config: Record<string, unknown>
   ): boolean {
     const node = workflow.nodes.find((n) => n.id === nodeId);
     if (!node) return false;
@@ -203,14 +203,14 @@ export class WorkflowAdapter {
     sourceNodeId: string,
     targetNodeId: string,
     sourceHandle?: string,
-    targetHandle?: string,
+    targetHandle?: string
   ): StandardEdge {
     const edge: StandardEdge = {
       id: uuidv4(),
       source: sourceNodeId,
       target: targetNodeId,
       sourceHandle,
-      targetHandle,
+      targetHandle
     };
 
     workflow.edges.push(edge);
@@ -242,18 +242,13 @@ export class WorkflowAdapter {
    * Get all edges connected to a node
    */
   getNodeEdges(workflow: StandardWorkflow, nodeId: string): StandardEdge[] {
-    return workflow.edges.filter(
-      (edge) => edge.source === nodeId || edge.target === nodeId,
-    );
+    return workflow.edges.filter((edge) => edge.source === nodeId || edge.target === nodeId);
   }
 
   /**
    * Get connected nodes (both incoming and outgoing)
    */
-  getConnectedNodes(
-    workflow: StandardWorkflow,
-    nodeId: string,
-  ): StandardNode[] {
+  getConnectedNodes(workflow: StandardWorkflow, nodeId: string): StandardNode[] {
     const connectedNodeIds = new Set<string>();
 
     workflow.edges.forEach((edge) => {
@@ -276,21 +271,17 @@ export class WorkflowAdapter {
 
     // Check for empty workflow
     if (workflow.nodes.length === 0) {
-      warnings.push("Workflow has no nodes");
+      warnings.push('Workflow has no nodes');
     }
 
     // Check for orphaned edges
     const nodeIds = new Set(workflow.nodes.map((n) => n.id));
     workflow.edges.forEach((edge) => {
       if (!nodeIds.has(edge.source)) {
-        errors.push(
-          `Edge ${edge.id} references non-existent source node ${edge.source}`,
-        );
+        errors.push(`Edge ${edge.id} references non-existent source node ${edge.source}`);
       }
       if (!nodeIds.has(edge.target)) {
-        errors.push(
-          `Edge ${edge.id} references non-existent target node ${edge.target}`,
-        );
+        errors.push(`Edge ${edge.id} references non-existent target node ${edge.target}`);
       }
     });
 
@@ -326,7 +317,7 @@ export class WorkflowAdapter {
     return {
       valid: errors.length === 0,
       errors,
-      warnings,
+      warnings
     };
   }
 
@@ -347,22 +338,22 @@ export class WorkflowAdapter {
       // Validate the imported workflow
       const validation = this.validateWorkflow(workflow);
       if (!validation.valid) {
-        throw new Error(`Invalid workflow: ${validation.errors.join(", ")}`);
+        throw new Error(`Invalid workflow: ${validation.errors.join(', ')}`);
       }
 
       // Update metadata
       workflow.metadata = {
-        version: workflow.metadata?.version || "1.0.0",
+        version: workflow.metadata?.version || '1.0.0',
         createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         author: workflow.metadata?.author,
-        tags: workflow.metadata?.tags,
+        tags: workflow.metadata?.tags
       };
 
       return workflow;
     } catch (error) {
       throw new Error(
-        `Failed to import workflow: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to import workflow: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -382,17 +373,17 @@ export class WorkflowAdapter {
         data: {
           label: node.data.label,
           config: node.data.config,
-          metadata: node.data.metadata,
-        },
+          metadata: node.data.metadata
+        }
       })),
       edges: svelteFlowWorkflow.edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         sourceHandle: edge.sourceHandle,
-        targetHandle: edge.targetHandle,
+        targetHandle: edge.targetHandle
       })),
-      metadata: svelteFlowWorkflow.metadata,
+      metadata: svelteFlowWorkflow.metadata
     };
   }
 
@@ -406,24 +397,24 @@ export class WorkflowAdapter {
       description: workflow.description,
       nodes: workflow.nodes.map((node) => ({
         id: node.id,
-        type: "workflowNode",
+        type: 'workflowNode',
         position: node.position,
         deletable: true,
         data: {
           label: node.data.label,
           config: node.data.config,
           metadata: node.data.metadata,
-          nodeId: node.id,
-        },
+          nodeId: node.id
+        }
       })),
       edges: workflow.edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         sourceHandle: edge.sourceHandle,
-        targetHandle: edge.targetHandle,
+        targetHandle: edge.targetHandle
       })),
-      metadata: workflow.metadata,
+      metadata: workflow.metadata
     };
   }
 
@@ -440,17 +431,14 @@ export class WorkflowAdapter {
       totalNodes: workflow.nodes.length,
       totalEdges: workflow.edges.length,
       nodeTypeCounts: Object.fromEntries(nodeTypeCounts),
-      lastModified: workflow.metadata?.updatedAt,
+      lastModified: workflow.metadata?.updatedAt
     };
   }
 
   /**
    * Clone a workflow
    */
-  cloneWorkflow(
-    workflow: StandardWorkflow,
-    newName?: string,
-  ): StandardWorkflow {
+  cloneWorkflow(workflow: StandardWorkflow, newName?: string): StandardWorkflow {
     const cloned = JSON.parse(JSON.stringify(workflow)) as StandardWorkflow;
 
     // Generate new IDs for all nodes and edges
@@ -482,11 +470,11 @@ export class WorkflowAdapter {
     cloned.id = uuidv4();
     cloned.name = newName || `${workflow.name} (Copy)`;
     cloned.metadata = {
-      version: cloned.metadata?.version || "1.0.0",
+      version: cloned.metadata?.version || '1.0.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       author: cloned.metadata?.author,
-      tags: cloned.metadata?.tags,
+      tags: cloned.metadata?.tags
     };
 
     return cloned;

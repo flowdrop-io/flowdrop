@@ -12,7 +12,7 @@
  * - GET /api/flowdrop/autocomplete/locations - Search locations
  */
 
-import { http, HttpResponse, delay } from "msw";
+import { http, HttpResponse, delay } from 'msw';
 import {
   searchUsers,
   searchTags,
@@ -23,11 +23,11 @@ import {
   type MockTag,
   type MockCategory,
   type MockProduct,
-  type MockLocation,
-} from "../data/autocomplete.js";
+  type MockLocation
+} from '../data/autocomplete.js';
 
 /** Base API path for flowdrop endpoints */
-const API_BASE = "/api/flowdrop";
+const API_BASE = '/api/flowdrop';
 
 /** Simulated network delay range in ms */
 const MIN_DELAY = 100;
@@ -45,13 +45,13 @@ function getRandomDelay(): number {
  * Uses 'name' as label and 'id' as value
  */
 function formatUsersResponse(
-  users: MockUser[],
+  users: MockUser[]
 ): Array<{ label: string; value: string; email: string; department?: string }> {
   return users.map((user) => ({
     label: user.name,
     value: user.id,
     email: user.email,
-    department: user.department,
+    department: user.department
   }));
 }
 
@@ -60,13 +60,13 @@ function formatUsersResponse(
  * Uses 'name' as label and 'id' as value
  */
 function formatTagsResponse(
-  tags: MockTag[],
+  tags: MockTag[]
 ): Array<{ label: string; value: string; color?: string; count?: number }> {
   return tags.map((tag) => ({
     label: tag.name,
     value: tag.id,
     color: tag.color,
-    count: tag.count,
+    count: tag.count
   }));
 }
 
@@ -75,12 +75,12 @@ function formatTagsResponse(
  * Uses 'label' as label and 'id' as value
  */
 function formatCategoriesResponse(
-  categories: MockCategory[],
+  categories: MockCategory[]
 ): Array<{ label: string; value: string; description?: string }> {
   return categories.map((cat) => ({
     label: cat.label,
     value: cat.id,
-    description: cat.description,
+    description: cat.description
   }));
 }
 
@@ -89,13 +89,13 @@ function formatCategoriesResponse(
  * Uses 'title' as label and 'sku' as value
  */
 function formatProductsResponse(
-  products: MockProduct[],
+  products: MockProduct[]
 ): Array<{ label: string; value: string; price: number; inStock?: boolean }> {
   return products.map((product) => ({
     label: product.title,
     value: product.sku,
     price: product.price,
-    inStock: product.inStock,
+    inStock: product.inStock
   }));
 }
 
@@ -104,12 +104,12 @@ function formatProductsResponse(
  * Uses 'city, country' as label and 'code' as value
  */
 function formatLocationsResponse(
-  locations: MockLocation[],
+  locations: MockLocation[]
 ): Array<{ label: string; value: string; timezone?: string }> {
   return locations.map((loc) => ({
     label: `${loc.city}, ${loc.country}`,
     value: loc.code,
-    timezone: loc.timezone,
+    timezone: loc.timezone
   }));
 }
 
@@ -129,14 +129,14 @@ export const getUsersAutocompleteHandler = http.get(
     await delay(getRandomDelay());
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const query = url.searchParams.get('q') || '';
+    const limit = parseInt(url.searchParams.get('limit') || '10');
 
     const users = searchUsers(query);
     const limitedUsers = users.slice(0, limit);
 
     return HttpResponse.json(formatUsersResponse(limitedUsers));
-  },
+  }
 );
 
 /**
@@ -155,14 +155,14 @@ export const getTagsAutocompleteHandler = http.get(
     await delay(getRandomDelay());
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const query = url.searchParams.get('q') || '';
+    const limit = parseInt(url.searchParams.get('limit') || '10');
 
     const tags = searchTags(query);
     const limitedTags = tags.slice(0, limit);
 
     return HttpResponse.json(formatTagsResponse(limitedTags));
-  },
+  }
 );
 
 /**
@@ -181,14 +181,14 @@ export const getCategoriesAutocompleteHandler = http.get(
     await delay(getRandomDelay());
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const query = url.searchParams.get('q') || '';
+    const limit = parseInt(url.searchParams.get('limit') || '10');
 
     const categories = searchCategories(query);
     const limitedCategories = categories.slice(0, limit);
 
     return HttpResponse.json(formatCategoriesResponse(limitedCategories));
-  },
+  }
 );
 
 /**
@@ -207,14 +207,14 @@ export const getProductsAutocompleteHandler = http.get(
     await delay(getRandomDelay());
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const query = url.searchParams.get('q') || '';
+    const limit = parseInt(url.searchParams.get('limit') || '10');
 
     const products = searchProducts(query);
     const limitedProducts = products.slice(0, limit);
 
     return HttpResponse.json(formatProductsResponse(limitedProducts));
-  },
+  }
 );
 
 /**
@@ -233,14 +233,14 @@ export const getLocationsAutocompleteHandler = http.get(
     await delay(getRandomDelay());
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const query = url.searchParams.get('q') || '';
+    const limit = parseInt(url.searchParams.get('limit') || '10');
 
     const locations = searchLocations(query);
     const limitedLocations = locations.slice(0, limit);
 
     return HttpResponse.json(formatLocationsResponse(limitedLocations));
-  },
+  }
 );
 
 /**
@@ -261,38 +261,34 @@ export const getGenericAutocompleteHandler = http.get(
     await delay(getRandomDelay());
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
-    const type = url.searchParams.get("type") || "users";
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const query = url.searchParams.get('q') || '';
+    const type = url.searchParams.get('type') || 'users';
+    const limit = parseInt(url.searchParams.get('limit') || '10');
 
     let results: Array<{ label: string; value: string }> = [];
 
     switch (type) {
-      case "users":
+      case 'users':
         results = formatUsersResponse(searchUsers(query).slice(0, limit));
         break;
-      case "tags":
+      case 'tags':
         results = formatTagsResponse(searchTags(query).slice(0, limit));
         break;
-      case "categories":
-        results = formatCategoriesResponse(
-          searchCategories(query).slice(0, limit),
-        );
+      case 'categories':
+        results = formatCategoriesResponse(searchCategories(query).slice(0, limit));
         break;
-      case "products":
+      case 'products':
         results = formatProductsResponse(searchProducts(query).slice(0, limit));
         break;
-      case "locations":
-        results = formatLocationsResponse(
-          searchLocations(query).slice(0, limit),
-        );
+      case 'locations':
+        results = formatLocationsResponse(searchLocations(query).slice(0, limit));
         break;
       default:
         results = formatUsersResponse(searchUsers(query).slice(0, limit));
     }
 
     return HttpResponse.json(results);
-  },
+  }
 );
 
 /**
@@ -302,20 +298,17 @@ export const getGenericAutocompleteHandler = http.get(
  *
  * Always returns a 500 error
  */
-export const getAutocompleteErrorHandler = http.get(
-  `${API_BASE}/autocomplete/error`,
-  async () => {
-    await delay(getRandomDelay());
+export const getAutocompleteErrorHandler = http.get(`${API_BASE}/autocomplete/error`, async () => {
+  await delay(getRandomDelay());
 
-    return HttpResponse.json(
-      {
-        error: "Internal server error",
-        message: "Failed to fetch autocomplete suggestions",
-      },
-      { status: 500 },
-    );
-  },
-);
+  return HttpResponse.json(
+    {
+      error: 'Internal server error',
+      message: 'Failed to fetch autocomplete suggestions'
+    },
+    { status: 500 }
+  );
+});
 
 /**
  * Slow response handler for testing loading states
@@ -331,11 +324,11 @@ export const getAutocompleteSlowHandler = http.get(
     await delay(2000);
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
+    const query = url.searchParams.get('q') || '';
 
     const users = searchUsers(query).slice(0, 5);
     return HttpResponse.json(formatUsersResponse(users));
-  },
+  }
 );
 
 /**
@@ -346,33 +339,33 @@ export const getAutocompleteSlowHandler = http.get(
  * Requires Authorization: Bearer test-auth-token-123
  * Returns 401 if the header is missing or has wrong token
  */
-export const AUTH_TEST_TOKEN = "test-auth-token-123";
+export const AUTH_TEST_TOKEN = 'test-auth-token-123';
 
 export const getAuthUsersAutocompleteHandler = http.get(
   `${API_BASE}/autocomplete/auth-users`,
   async ({ request }) => {
     await delay(getRandomDelay());
 
-    const authHeader = request.headers.get("Authorization");
+    const authHeader = request.headers.get('Authorization');
     if (!authHeader || authHeader !== `Bearer ${AUTH_TEST_TOKEN}`) {
       return HttpResponse.json(
         {
-          error: "Unauthorized",
-          message: "Missing or invalid authorization token",
+          error: 'Unauthorized',
+          message: 'Missing or invalid authorization token'
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
     const url = new URL(request.url);
-    const query = url.searchParams.get("q") || "";
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const query = url.searchParams.get('q') || '';
+    const limit = parseInt(url.searchParams.get('limit') || '10');
 
     const users = searchUsers(query);
     const limitedUsers = users.slice(0, limit);
 
     return HttpResponse.json(formatUsersResponse(limitedUsers));
-  },
+  }
 );
 
 /**
@@ -387,5 +380,5 @@ export const autocompleteHandlers = [
   getGenericAutocompleteHandler,
   getAutocompleteErrorHandler,
   getAutocompleteSlowHandler,
-  getAuthUsersAutocompleteHandler,
+  getAuthUsersAutocompleteHandler
 ];

@@ -10,12 +10,12 @@
 
 /** Commands that only read workflow state without modifying it */
 const READ_ONLY_COMMANDS = new Set([
-  "list_nodes",
-  "list_edges",
-  "list_types",
-  "info",
-  "get_config",
-  "help",
+  'list_nodes',
+  'list_edges',
+  'list_types',
+  'info',
+  'get_config',
+  'help'
 ]);
 
 /**

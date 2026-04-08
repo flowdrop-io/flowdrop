@@ -5,14 +5,14 @@
 -->
 
 <script lang="ts">
-  import { onMount } from "svelte";
-  import App from "./App.svelte";
-  import LogsSidebar from "./LogsSidebar.svelte";
-  import { EnhancedFlowDropApiClient } from "$lib/api/enhanced-client.js";
-  import { createEndpointConfig } from "$lib/config/endpoints.js";
-  import type { Workflow } from "$lib/types/index.js";
-  import type { EndpointConfig } from "$lib/config/endpoints.js";
-  import { logger } from "../utils/logger.js";
+  import { onMount } from 'svelte';
+  import App from './App.svelte';
+  import LogsSidebar from './LogsSidebar.svelte';
+  import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
+  import { createEndpointConfig } from '$lib/config/endpoints.js';
+  import type { Workflow } from '$lib/types/index.js';
+  import type { EndpointConfig } from '$lib/config/endpoints.js';
+  import { logger } from '../utils/logger.js';
 
   interface Props {
     pipelineId: string;
@@ -25,31 +25,25 @@
         label: string;
         href: string;
         icon?: string;
-        variant?: "primary" | "secondary" | "outline";
+        variant?: 'primary' | 'secondary' | 'outline';
         onclick?: (event: Event) => void;
-      }>,
+      }>
     ) => void;
   }
 
-  let {
-    pipelineId,
-    workflow,
-    apiClient,
-    baseUrl,
-    endpointConfig,
-    onActionsReady,
-  }: Props = $props();
+  let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady }: Props =
+    $props();
 
   // Initialize API client if not provided
   // svelte-ignore state_referenced_locally — client created once from props
   const client =
     apiClient ||
     new EnhancedFlowDropApiClient(
-      endpointConfig ?? createEndpointConfig(baseUrl || "/api/flowdrop"),
+      endpointConfig ?? createEndpointConfig(baseUrl || '/api/flowdrop')
     );
 
   // Pipeline status and job data
-  let pipelineStatus = $state<string>("unknown");
+  let pipelineStatus = $state<string>('unknown');
   interface PipelineNodeStatus {
     status: string;
     [key: string]: unknown;
@@ -75,23 +69,19 @@
       running: 0,
       completed: 0,
       failed: 0,
-      cancelled: 0,
-    },
+      cancelled: 0
+    }
   });
 
   // Node statuses for visual indicators
-  let nodeStatuses = $state<
-    Record<string, "pending" | "running" | "completed" | "error">
-  >({});
+  let nodeStatuses = $state<Record<string, 'pending' | 'running' | 'completed' | 'error'>>({});
 
   // Loading and error states
   let isLoadingJobStatus = $state(false);
 
   // Logs sidebar state
   let isLogsSidebarOpen = $state(false);
-  let logs = $state<
-    Array<{ level: string; message: string; timestamp: string }>
-  >([]);
+  let logs = $state<Array<{ level: string; message: string; timestamp: string }>>([]);
 
   /**
    * Fetch pipeline data including job information
@@ -113,50 +103,38 @@
           running: 0,
           completed: 0,
           failed: 0,
-          cancelled: 0,
-        },
+          cancelled: 0
+        }
       };
 
       // Update node statuses based on job data
       if (jobStatusData.node_statuses) {
-        const newNodeStatuses: Record<
-          string,
-          "pending" | "running" | "completed" | "error"
-        > = {};
+        const newNodeStatuses: Record<string, 'pending' | 'running' | 'completed' | 'error'> = {};
 
         // Initialize all nodes as pending
         if (workflow && workflow.nodes) {
           workflow.nodes.forEach((node) => {
-            newNodeStatuses[node.id] = "pending";
+            newNodeStatuses[node.id] = 'pending';
           });
         }
 
         // Override with actual job statuses
         for (const nodeId in jobStatusData.node_statuses) {
           const status = jobStatusData.node_statuses[nodeId].status;
-          if (
-            ["pending", "running", "completed", "failed", "cancelled"].includes(
-              status,
-            )
-          ) {
+          if (['pending', 'running', 'completed', 'failed', 'cancelled'].includes(status)) {
             newNodeStatuses[nodeId] =
-              status === "failed"
-                ? "error"
-                : (status as "pending" | "running" | "completed");
+              status === 'failed' ? 'error' : (status as 'pending' | 'running' | 'completed');
           }
         }
         nodeStatuses = newNodeStatuses;
       }
 
-      addLog(
-        "info",
-        `Job status updated: ${jobStatusData.status_summary.total} total jobs`,
-      );
+      addLog('info', `Job status updated: ${jobStatusData.status_summary.total} total jobs`);
     } catch (error) {
-      logger.error("Failed to fetch pipeline data:", error);
+      logger.error('Failed to fetch pipeline data:', error);
       addLog(
-        "error",
-        `Failed to fetch pipeline data: ${error instanceof Error ? error.message : "Unknown error"}`,
+        'error',
+        `Failed to fetch pipeline data: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     } finally {
       isLoadingJobStatus = false;
@@ -172,8 +150,8 @@
       {
         level,
         message,
-        timestamp: new Date().toISOString(),
-      },
+        timestamp: new Date().toISOString()
+      }
     ];
   }
 
@@ -190,25 +168,25 @@
   function getPipelineActions() {
     return [
       {
-        label: isLoadingJobStatus ? "Refreshing..." : "Refresh Status",
-        href: "#refresh",
-        icon: isLoadingJobStatus ? "mdi:loading" : "mdi:refresh",
-        variant: "outline" as const,
+        label: isLoadingJobStatus ? 'Refreshing...' : 'Refresh Status',
+        href: '#refresh',
+        icon: isLoadingJobStatus ? 'mdi:loading' : 'mdi:refresh',
+        variant: 'outline' as const,
         onclick: (e: Event) => {
           e.preventDefault();
           fetchPipelineData();
-        },
+        }
       },
       {
-        label: "View Logs",
-        href: "#logs",
-        icon: "mdi:file-document-outline",
-        variant: "outline" as const,
+        label: 'View Logs',
+        href: '#logs',
+        icon: 'mdi:file-document-outline',
+        variant: 'outline' as const,
         onclick: (e: Event) => {
           e.preventDefault();
           toggleLogsSidebar();
-        },
-      },
+        }
+      }
     ];
   }
 
@@ -224,12 +202,12 @@
     const handleRefresh = () => fetchPipelineData();
     const handleViewLogs = () => toggleLogsSidebar();
 
-    window.addEventListener("pipeline-refresh", handleRefresh);
-    window.addEventListener("pipeline-view-logs", handleViewLogs);
+    window.addEventListener('pipeline-refresh', handleRefresh);
+    window.addEventListener('pipeline-view-logs', handleViewLogs);
 
     return () => {
-      window.removeEventListener("pipeline-refresh", handleRefresh);
-      window.removeEventListener("pipeline-view-logs", handleViewLogs);
+      window.removeEventListener('pipeline-refresh', handleRefresh);
+      window.removeEventListener('pipeline-view-logs', handleViewLogs);
     };
   });
 
@@ -238,35 +216,35 @@
     if (pipelineStatus && pipelineId && workflow) {
       const breadcrumbs = [
         {
-          label: "Home",
-          href: "/",
-          icon: "mdi:home",
+          label: 'Home',
+          href: '/',
+          icon: 'mdi:home'
         },
         {
-          label: "Workflows",
-          href: "/",
-          icon: "mdi:view-list",
+          label: 'Workflows',
+          href: '/',
+          icon: 'mdi:view-list'
         },
         {
-          label: workflow.name || "Workflow",
+          label: workflow.name || 'Workflow',
           href: `/workflow/${workflow.id}/edit`,
-          icon: "mdi:workflow",
+          icon: 'mdi:workflow'
         },
         {
-          label: "Pipelines",
+          label: 'Pipelines',
           href: `/workflow/${workflow.id}/pipelines`,
-          icon: "mdi:source-branch",
+          icon: 'mdi:source-branch'
         },
         {
           label: `Pipeline ${pipelineId} - ${pipelineStatus}`,
-          icon: "mdi:play-circle",
-        },
+          icon: 'mdi:play-circle'
+        }
       ];
 
       window.dispatchEvent(
-        new CustomEvent("page-breadcrumbs-update", {
-          detail: { breadcrumbs },
-        }),
+        new CustomEvent('page-breadcrumbs-update', {
+          detail: { breadcrumbs }
+        })
       );
     }
   });
@@ -289,7 +267,7 @@
     }
 
     // Only start polling if pipeline is running
-    if (pipelineStatus === "running" && pipelineId) {
+    if (pipelineStatus === 'running' && pipelineId) {
       refreshInterval = setInterval(() => {
         fetchPipelineData();
       }, 5000);
@@ -317,11 +295,7 @@
 
   <!-- Logs Sidebar -->
   {#if isLogsSidebarOpen}
-    <LogsSidebar
-      {logs}
-      isOpen={isLogsSidebarOpen}
-      onClose={() => (isLogsSidebarOpen = false)}
-    />
+    <LogsSidebar {logs} isOpen={isLogsSidebarOpen} onClose={() => (isLogsSidebarOpen = false)} />
   {/if}
 </div>
 
@@ -334,7 +308,7 @@
   }
 
   /* Dark mode override */
-  :global([data-theme="dark"]) .pipeline-status-container {
+  :global([data-theme='dark']) .pipeline-status-container {
     background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
   }
 </style>

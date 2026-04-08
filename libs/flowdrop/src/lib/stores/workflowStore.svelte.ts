@@ -11,22 +11,22 @@
  * @module stores/workflowStore
  */
 
-import type { Workflow, WorkflowNode, WorkflowEdge } from "$lib/types";
-import { DEFAULT_WORKFLOW_FORMAT } from "$lib/types/index.js";
-import type { WorkflowChangeType } from "$lib/types/events.js";
-import { historyService } from "../services/historyService.js";
+import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
+import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
+import type { WorkflowChangeType } from '$lib/types/events.js';
+import { historyService } from '../services/historyService.js';
 
-type WorkflowMetadata = NonNullable<Workflow["metadata"]>;
+type WorkflowMetadata = NonNullable<Workflow['metadata']>;
 
 /**
  * Safely build updated workflow metadata, providing defaults for required fields.
  */
 function buildMetadata(
-  existing: Workflow["metadata"],
-  updates?: Partial<WorkflowMetadata>,
+  existing: Workflow['metadata'],
+  updates?: Partial<WorkflowMetadata>
 ): WorkflowMetadata {
   return {
-    version: existing?.version ?? "1.0",
+    version: existing?.version ?? '1.0',
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     author: existing?.author,
@@ -34,7 +34,7 @@ function buildMetadata(
     versionId: existing?.versionId,
     updateNumber: existing?.updateNumber,
     format: existing?.format,
-    ...updates,
+    ...updates
   };
 }
 
@@ -137,7 +137,7 @@ export function getWorkflowId(): string | null {
  * @returns The workflow name or 'Untitled Workflow'
  */
 export function getWorkflowName(): string {
-  return workflowState?.name ?? "Untitled Workflow";
+  return workflowState?.name ?? 'Untitled Workflow';
 }
 
 /**
@@ -166,11 +166,11 @@ export function getWorkflowEdges(): WorkflowEdge[] {
 export function getWorkflowMetadata(): WorkflowMetadata {
   return (
     workflowState?.metadata ?? {
-      version: "1.0.0",
+      version: '1.0.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      updateNumber: 0,
+      updateNumber: 0
     }
   );
 }
@@ -197,7 +197,7 @@ export function getWorkflowChanged(): {
   return {
     nodes: getWorkflowNodes(),
     edges: getWorkflowEdges(),
-    name: getWorkflowName(),
+    name: getWorkflowName()
   };
 }
 
@@ -220,7 +220,7 @@ export function getWorkflowValidation(): {
     hasEdges: edges.length > 0,
     nodeCount: nodes.length,
     edgeCount: edges.length,
-    isValid: nodes.length > 0 && edges.length >= 0,
+    isValid: nodes.length > 0 && edges.length >= 0
   };
 }
 
@@ -238,7 +238,7 @@ export function getWorkflowMetadataChanged(): {
   return {
     createdAt: metadata.createdAt,
     updatedAt: metadata.updatedAt,
-    version: metadata.version ?? "1.0.0",
+    version: metadata.version ?? '1.0.0'
   };
 }
 
@@ -283,9 +283,7 @@ export function getConnectedHandles(): Set<string> {
  *
  * @param callback - Function to call when dirty state changes
  */
-export function setOnDirtyStateChange(
-  callback: ((isDirty: boolean) => void) | null,
-): void {
+export function setOnDirtyStateChange(callback: ((isDirty: boolean) => void) | null): void {
   onDirtyStateChangeCallback = callback;
 }
 
@@ -295,9 +293,7 @@ export function setOnDirtyStateChange(
  * @param callback - Function to call when workflow changes
  */
 export function setOnWorkflowChange(
-  callback:
-    | ((workflow: Workflow, changeType: WorkflowChangeType) => void)
-    | null,
+  callback: ((workflow: Workflow, changeType: WorkflowChangeType) => void) | null
 ): void {
   onWorkflowChangeCallback = callback;
 }
@@ -440,7 +436,7 @@ export function getWorkflow(): Workflow | null {
 function hasWorkflowDataChanged(
   currentWorkflow: Workflow | null,
   newNodes: WorkflowNode[],
-  newEdges: WorkflowEdge[],
+  newEdges: WorkflowEdge[]
 ): boolean {
   if (!currentWorkflow) return true;
 
@@ -470,11 +466,7 @@ function hasWorkflowDataChanged(
 
     if (!currentEdge || !newEdge) return true;
     if (currentEdge.id !== newEdge.id) return true;
-    if (
-      currentEdge.source !== newEdge.source ||
-      currentEdge.target !== newEdge.target
-    )
-      return true;
+    if (currentEdge.source !== newEdge.source || currentEdge.target !== newEdge.target) return true;
   }
 
   return false;
@@ -517,7 +509,7 @@ export const workflowActions = {
   updateWorkflow: (workflow: Workflow) => {
     workflowState = workflow;
     bumpVersion();
-    notifyWorkflowChange("metadata");
+    notifyWorkflowChange('metadata');
   },
 
   /**
@@ -529,7 +521,7 @@ export const workflowActions = {
     isRestoringFromHistory = true;
     workflowState = workflow;
     bumpVersion();
-    notifyWorkflowChange("metadata");
+    notifyWorkflowChange('metadata');
     isRestoringFromHistory = false;
   },
 
@@ -552,11 +544,11 @@ export const workflowActions = {
       nodes,
       metadata: buildMetadata(workflowState.metadata, {
         versionId,
-        updateNumber: (workflowState.metadata?.updateNumber ?? 0) + 1,
-      }),
+        updateNumber: (workflowState.metadata?.updateNumber ?? 0) + 1
+      })
     };
     bumpVersion();
-    notifyWorkflowChange("node_move");
+    notifyWorkflowChange('node_move');
   },
 
   /**
@@ -578,11 +570,11 @@ export const workflowActions = {
       edges,
       metadata: buildMetadata(workflowState.metadata, {
         versionId,
-        updateNumber: (workflowState.metadata?.updateNumber ?? 0) + 1,
-      }),
+        updateNumber: (workflowState.metadata?.updateNumber ?? 0) + 1
+      })
     };
     bumpVersion();
-    notifyWorkflowChange("edge_add");
+    notifyWorkflowChange('edge_add');
   },
 
   /**
@@ -593,25 +585,25 @@ export const workflowActions = {
     workflowState = {
       ...workflowState,
       name,
-      metadata: buildMetadata(workflowState.metadata),
+      metadata: buildMetadata(workflowState.metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("name");
+    notifyWorkflowChange('name');
   },
 
   /**
    * Add a node
    */
   addNode: (node: WorkflowNode) => {
-    pushToHistory("Add node");
+    pushToHistory('Add node');
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
       nodes: [...workflowState.nodes, node],
-      metadata: buildMetadata(workflowState.metadata),
+      metadata: buildMetadata(workflowState.metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("node_add");
+    notifyWorkflowChange('node_add');
   },
 
   /**
@@ -621,48 +613,46 @@ export const workflowActions = {
    * A single undo will restore both the node and its edges.
    */
   removeNode: (nodeId: string) => {
-    pushToHistory("Delete node");
+    pushToHistory('Delete node');
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
       nodes: workflowState.nodes.filter((node) => node.id !== nodeId),
-      edges: workflowState.edges.filter(
-        (edge) => edge.source !== nodeId && edge.target !== nodeId,
-      ),
-      metadata: buildMetadata(workflowState.metadata),
+      edges: workflowState.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
+      metadata: buildMetadata(workflowState.metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("node_remove");
+    notifyWorkflowChange('node_remove');
   },
 
   /**
    * Add an edge
    */
   addEdge: (edge: WorkflowEdge) => {
-    pushToHistory("Add connection");
+    pushToHistory('Add connection');
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
       edges: [...workflowState.edges, edge],
-      metadata: buildMetadata(workflowState.metadata),
+      metadata: buildMetadata(workflowState.metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("edge_add");
+    notifyWorkflowChange('edge_add');
   },
 
   /**
    * Remove an edge
    */
   removeEdge: (edgeId: string) => {
-    pushToHistory("Delete connection");
+    pushToHistory('Delete connection');
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
       edges: workflowState.edges.filter((edge) => edge.id !== edgeId),
-      metadata: buildMetadata(workflowState.metadata),
+      metadata: buildMetadata(workflowState.metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("edge_remove");
+    notifyWorkflowChange('edge_remove');
   },
 
   /**
@@ -671,17 +661,17 @@ export const workflowActions = {
    * Used for config changes. Pushes to history for undo support.
    */
   updateNode: (nodeId: string, updates: Partial<WorkflowNode>) => {
-    pushToHistory("Update node config");
+    pushToHistory('Update node config');
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
       nodes: workflowState.nodes.map((node) =>
-        node.id === nodeId ? { ...node, ...updates } : node,
+        node.id === nodeId ? { ...node, ...updates } : node
       ),
-      metadata: buildMetadata(workflowState.metadata),
+      metadata: buildMetadata(workflowState.metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("node_config");
+    notifyWorkflowChange('node_config');
   },
 
   /**
@@ -702,14 +692,14 @@ export const workflowActions = {
   /**
    * Update workflow metadata
    */
-  updateMetadata: (metadata: Partial<Workflow["metadata"]>) => {
+  updateMetadata: (metadata: Partial<Workflow['metadata']>) => {
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
-      metadata: buildMetadata(workflowState.metadata, metadata),
+      metadata: buildMetadata(workflowState.metadata, metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("metadata");
+    notifyWorkflowChange('metadata');
   },
 
   /**
@@ -723,9 +713,9 @@ export const workflowActions = {
     edges?: WorkflowEdge[];
     name?: string;
     description?: string;
-    metadata?: Partial<Workflow["metadata"]>;
+    metadata?: Partial<Workflow['metadata']>;
   }) => {
-    pushToHistory("Batch update");
+    pushToHistory('Batch update');
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
@@ -733,15 +723,12 @@ export const workflowActions = {
       ...(updates.edges && { edges: updates.edges }),
       ...(updates.name && { name: updates.name }),
       ...(updates.description !== undefined && {
-        description: updates.description,
+        description: updates.description
       }),
-      metadata: buildMetadata(
-        workflowState.metadata,
-        updates.metadata ?? undefined,
-      ),
+      metadata: buildMetadata(workflowState.metadata, updates.metadata ?? undefined)
     };
     bumpVersion();
-    notifyWorkflowChange("metadata");
+    notifyWorkflowChange('metadata');
   },
 
   /**
@@ -750,21 +737,17 @@ export const workflowActions = {
    * Unlike batchUpdate, this uses `"node_swap"` as the change type and
    * records a meaningful description for the undo history.
    */
-  swapNode: (updates: {
-    nodes: WorkflowNode[];
-    edges: WorkflowEdge[];
-    description?: string;
-  }) => {
-    pushToHistory(updates.description ?? "Swap node");
+  swapNode: (updates: { nodes: WorkflowNode[]; edges: WorkflowEdge[]; description?: string }) => {
+    pushToHistory(updates.description ?? 'Swap node');
     if (!workflowState) return;
     workflowState = {
       ...workflowState,
       nodes: updates.nodes,
       edges: updates.edges,
-      metadata: buildMetadata(workflowState.metadata),
+      metadata: buildMetadata(workflowState.metadata)
     };
     bumpVersion();
-    notifyWorkflowChange("node_swap");
+    notifyWorkflowChange('node_swap');
   },
 
   /**
@@ -778,5 +761,5 @@ export const workflowActions = {
    */
   pushHistory: (description?: string, workflow?: Workflow) => {
     pushToHistory(description, workflow);
-  },
+  }
 };

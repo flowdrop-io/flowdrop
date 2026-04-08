@@ -19,17 +19,17 @@ import type {
   ListEdgesResultData,
   ListTypesResultData,
   HelpResultData,
-  SwapNodeResultData,
-} from "./types.js";
-import type { ConfigProperty, Branch } from "../types/index.js";
-import type { WorkflowNode, WorkflowEdge } from "../types/index.js";
-import { generateNodeId } from "../utils/nodeIds.js";
-import { extractConfigDefaults } from "../utils/nodeIds.js";
-import { computeAutoPosition } from "./positioner.js";
-import { buildHandleId, extractPortId } from "../utils/handleIds.js";
-import { applyConnectionStyling } from "../utils/edgeStyling.js";
-import { computeSwapPreview, executeSwap } from "../utils/nodeSwap.js";
-import { computeAutoLayout, computeBeautifyLayout } from "../adapters/agentspec/autoLayout.js";
+  SwapNodeResultData
+} from './types.js';
+import type { ConfigProperty, Branch } from '../types/index.js';
+import type { WorkflowNode, WorkflowEdge } from '../types/index.js';
+import { generateNodeId } from '../utils/nodeIds.js';
+import { extractConfigDefaults } from '../utils/nodeIds.js';
+import { computeAutoPosition } from './positioner.js';
+import { buildHandleId, extractPortId } from '../utils/handleIds.js';
+import { applyConnectionStyling } from '../utils/edgeStyling.js';
+import { computeSwapPreview, executeSwap } from '../utils/nodeSwap.js';
+import { computeAutoLayout, computeBeautifyLayout } from '../adapters/agentspec/autoLayout.js';
 
 // ============================================================================
 // Internal Helpers
@@ -44,12 +44,12 @@ export function toShortId(internalId: string): string {
   // Node IDs are <namespace>.<typeId>.<number> or <typeId>.<number>
   // The namespace is the first segment if there are 3+ dot-separated parts
   // and the last segment is a number
-  const parts = internalId.split(".");
+  const parts = internalId.split('.');
   if (parts.length >= 3) {
     const lastPart = parts[parts.length - 1];
     if (/^\d+$/.test(lastPart)) {
       // Strip the first segment (namespace)
-      return parts.slice(1).join(".");
+      return parts.slice(1).join('.');
     }
   }
   return internalId;
@@ -61,7 +61,7 @@ export function toShortId(internalId: string): string {
  * "llm_node" → "llm_node" (no namespace, unchanged)
  */
 export function toShortTypeId(typeId: string): string {
-  const dotIndex = typeId.indexOf(".");
+  const dotIndex = typeId.indexOf('.');
   if (dotIndex !== -1) {
     return typeId.substring(dotIndex + 1);
   }
@@ -72,10 +72,7 @@ export function toShortTypeId(typeId: string): string {
  * Resolve a DSL short ID (e.g. "llm_node.1") to the actual workflow node.
  * Tries direct match first, then looks for a namespaced match.
  */
-export function resolveNode(
-  shortId: string,
-  nodes: WorkflowNode[],
-): WorkflowNode | undefined {
+export function resolveNode(shortId: string, nodes: WorkflowNode[]): WorkflowNode | undefined {
   // Direct match
   const direct = nodes.find((n) => n.id === shortId);
   if (direct) return direct;
@@ -89,12 +86,12 @@ export function resolveNode(
 // ============================================================================
 
 function executeAddNode(
-  command: Extract<Command, { type: "add_node" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'add_node' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const metadata = context.typeMap.get(command.nodeTypeId);
@@ -102,7 +99,7 @@ function executeAddNode(
     return {
       ok: false,
       error: `Unknown node type: ${command.nodeTypeId}`,
-      code: "NODE_TYPE_NOT_FOUND",
+      code: 'NODE_TYPE_NOT_FOUND'
     };
   }
 
@@ -112,15 +109,15 @@ function executeAddNode(
 
   const node: WorkflowNode = {
     id: nodeId,
-    type: "universalNode",
+    type: 'universalNode',
     position,
     deletable: true,
     data: {
       label: metadata.name,
       config,
       metadata,
-      nodeId,
-    },
+      nodeId
+    }
   };
 
   context.dispatch.addNode(node);
@@ -130,23 +127,23 @@ function executeAddNode(
     nodeId: shortId,
     type: command.nodeTypeId,
     label: metadata.name,
-    position,
+    position
   };
 
   return {
     ok: true,
     message: `Added ${metadata.name} as ${shortId}`,
-    data: resultData,
+    data: resultData
   };
 }
 
 function executeDeleteNode(
-  command: Extract<Command, { type: "delete_node" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'delete_node' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -154,7 +151,7 @@ function executeDeleteNode(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -162,17 +159,17 @@ function executeDeleteNode(
 
   return {
     ok: true,
-    message: `Deleted node ${toShortId(node.id)}`,
+    message: `Deleted node ${toShortId(node.id)}`
   };
 }
 
 function executeRenameNode(
-  command: Extract<Command, { type: "rename_node" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'rename_node' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -180,17 +177,17 @@ function executeRenameNode(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
   context.dispatch.updateNode(node.id, {
-    data: { ...node.data, label: command.label },
+    data: { ...node.data, label: command.label }
   });
 
   return {
     ok: true,
-    message: `Renamed ${toShortId(node.id)} to "${command.label}"`,
+    message: `Renamed ${toShortId(node.id)} to "${command.label}"`
   };
 }
 
@@ -214,7 +211,7 @@ function parseConfigValue(raw: string): unknown {
   }
 
   // Try JSON (arrays, objects, null)
-  if (raw.startsWith("[") || raw.startsWith("{") || raw === "null") {
+  if (raw.startsWith('[') || raw.startsWith('{') || raw === 'null') {
     try {
       return JSON.parse(raw);
     } catch {
@@ -223,13 +220,13 @@ function parseConfigValue(raw: string): unknown {
   }
 
   // Number
-  if (raw !== "" && !isNaN(Number(raw))) {
+  if (raw !== '' && !isNaN(Number(raw))) {
     return Number(raw);
   }
 
   // Boolean
-  if (raw === "true") return true;
-  if (raw === "false") return false;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
 
   // Raw string
   return raw;
@@ -242,39 +239,39 @@ function parseConfigValue(raw: string): unknown {
 function validateConfigValue(
   key: string,
   value: unknown,
-  property: ConfigProperty | undefined,
-): SetConfigResultData["warnings"] {
+  property: ConfigProperty | undefined
+): SetConfigResultData['warnings'] {
   if (!property) return [];
 
-  const warnings: NonNullable<SetConfigResultData["warnings"]> = [];
+  const warnings: NonNullable<SetConfigResultData['warnings']> = [];
 
   // Enum validation
   if (property.enum && property.enum.length > 0) {
     if (!property.enum.includes(value)) {
       warnings.push({
-        type: "enum",
-        message: `Value ${JSON.stringify(value)} is not in allowed values: ${property.enum.map((v) => JSON.stringify(v)).join(", ")}`,
-        allowedValues: property.enum,
+        type: 'enum',
+        message: `Value ${JSON.stringify(value)} is not in allowed values: ${property.enum.map((v) => JSON.stringify(v)).join(', ')}`,
+        allowedValues: property.enum
       });
     }
   }
 
   // Type validation
   if (property.type) {
-    const actualType = Array.isArray(value) ? "array" : typeof value;
-    const expectedType = property.type === "integer" ? "number" : property.type;
+    const actualType = Array.isArray(value) ? 'array' : typeof value;
+    const expectedType = property.type === 'integer' ? 'number' : property.type;
 
     // Only warn if there's a genuine mismatch (null/object handled specially)
     if (
       value !== null &&
       actualType !== expectedType &&
-      !(expectedType === "object" && actualType === "object")
+      !(expectedType === 'object' && actualType === 'object')
     ) {
       warnings.push({
-        type: "type_mismatch",
+        type: 'type_mismatch',
         message: `Expected type '${property.type}' but got '${actualType}'`,
         expectedType: property.type,
-        actualType,
+        actualType
       });
     }
   }
@@ -283,12 +280,12 @@ function validateConfigValue(
 }
 
 function executeSetConfig(
-  command: Extract<Command, { type: "set_config" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'set_config' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -296,7 +293,7 @@ function executeSetConfig(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -310,46 +307,46 @@ function executeSetConfig(
 
   // In strict mode, validation warnings become errors
   if (command.strict && warnings && warnings.length > 0) {
-    const messages = warnings.map((w) => w.message).join("; ");
+    const messages = warnings.map((w) => w.message).join('; ');
     return {
       ok: false,
       error: `Config validation failed for ${toShortId(node.id)}:${command.key}: ${messages}`,
-      code: "CONFIG_VALIDATION_ERROR",
+      code: 'CONFIG_VALIDATION_ERROR'
     };
   }
 
   const updatedConfig = { ...node.data.config, [command.key]: parsedValue };
 
   context.dispatch.updateNode(node.id, {
-    data: { ...node.data, config: updatedConfig },
+    data: { ...node.data, config: updatedConfig }
   });
 
   const resultData: SetConfigResultData = {
     nodeId: toShortId(node.id),
     key: command.key,
     value: parsedValue,
-    ...(warnings && warnings.length > 0 ? { warnings } : {}),
+    ...(warnings && warnings.length > 0 ? { warnings } : {})
   };
 
   const warningMsg =
     warnings && warnings.length > 0
-      ? ` (warning: ${warnings.map((w) => w.message).join("; ")})`
-      : "";
+      ? ` (warning: ${warnings.map((w) => w.message).join('; ')})`
+      : '';
 
   return {
     ok: true,
     message: `Set ${toShortId(node.id)}:${command.key} = ${JSON.stringify(parsedValue)}${warningMsg}`,
-    data: resultData,
+    data: resultData
   };
 }
 
 function executeGetConfig(
-  command: Extract<Command, { type: "get_config" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'get_config' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -357,7 +354,7 @@ function executeGetConfig(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -366,30 +363,30 @@ function executeGetConfig(
     return {
       ok: false,
       error: `Config key not found: ${command.key} on ${toShortId(node.id)}`,
-      code: "CONFIG_KEY_NOT_FOUND",
+      code: 'CONFIG_KEY_NOT_FOUND'
     };
   }
 
   const resultData: GetConfigResultData = {
     nodeId: toShortId(node.id),
     key: command.key,
-    value: config[command.key],
+    value: config[command.key]
   };
 
   return {
     ok: true,
     message: `${toShortId(node.id)}:${command.key} = ${JSON.stringify(config[command.key])}`,
-    data: resultData,
+    data: resultData
   };
 }
 
 function executeInfo(
-  command: Extract<Command, { type: "info" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'info' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -397,7 +394,7 @@ function executeInfo(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -407,64 +404,64 @@ function executeInfo(
   const inputs = (metadata?.inputs ?? []).map((p) => ({
     portId: p.id,
     name: p.name,
-    dataType: p.dataType,
+    dataType: p.dataType
   }));
 
   const staticOutputs = (metadata?.outputs ?? []).map((p) => ({
     portId: p.id,
     name: p.name,
-    dataType: p.dataType,
+    dataType: p.dataType
   }));
 
   // Gateway nodes expose dynamic branch ports from config.branches
   const branchOutputs: typeof staticOutputs =
-    metadata?.type === "gateway"
+    metadata?.type === 'gateway'
       ? ((node.data.config?.branches as Branch[] | undefined) ?? []).map((b) => ({
           portId: b.name,
           name: b.name,
-          dataType: "trigger",
+          dataType: 'trigger'
         }))
       : [];
 
   const outputs = [...staticOutputs, ...branchOutputs];
 
   // Build connected edges info
-  const connectedEdges: InfoResultData["connectedEdges"] = [];
+  const connectedEdges: InfoResultData['connectedEdges'] = [];
   for (const edge of workflow.edges) {
     if (edge.source === node.id) {
       connectedEdges.push({
         edgeId: edge.id,
-        direction: "outgoing",
+        direction: 'outgoing',
         remoteNodeId: toShortId(edge.target),
-        remotePort: extractPortId(edge.targetHandle) ?? "",
-        localPort: extractPortId(edge.sourceHandle) ?? "",
+        remotePort: extractPortId(edge.targetHandle) ?? '',
+        localPort: extractPortId(edge.sourceHandle) ?? ''
       });
     } else if (edge.target === node.id) {
       connectedEdges.push({
         edgeId: edge.id,
-        direction: "incoming",
+        direction: 'incoming',
         remoteNodeId: toShortId(edge.source),
-        remotePort: extractPortId(edge.sourceHandle) ?? "",
-        localPort: extractPortId(edge.targetHandle) ?? "",
+        remotePort: extractPortId(edge.sourceHandle) ?? '',
+        localPort: extractPortId(edge.targetHandle) ?? ''
       });
     }
   }
 
   const resultData: InfoResultData = {
     nodeId: shortId,
-    label: node.data.label ?? metadata?.name ?? "",
-    type: metadata?.id ? toShortTypeId(metadata.id) : "",
+    label: node.data.label ?? metadata?.name ?? '',
+    type: metadata?.id ? toShortTypeId(metadata.id) : '',
     position: node.position,
     config: (node.data.config as Record<string, unknown>) ?? {},
     inputs,
     outputs,
-    connectedEdges,
+    connectedEdges
   };
 
   return {
     ok: true,
     message: `Info for ${shortId}`,
-    data: resultData,
+    data: resultData
   };
 }
 
@@ -479,30 +476,36 @@ function executeInfo(
 function findPort(
   node: WorkflowNode,
   portId: string,
-  preferDirection?: "output" | "input",
-): { port: { id: string; name: string; dataType: string }; direction: "input" | "output" } | null {
+  preferDirection?: 'output' | 'input'
+): {
+  port: { id: string; name: string; dataType: string };
+  direction: 'input' | 'output';
+} | null {
   const metadata = node.data?.metadata;
   if (!metadata) return null;
 
   const outputPort = metadata.outputs?.find((p) => p.id === portId);
   const inputPort = metadata.inputs?.find((p) => p.id === portId);
 
-  if (preferDirection === "output") {
-    if (outputPort) return { port: outputPort, direction: "output" };
-    if (inputPort) return { port: inputPort, direction: "input" };
-  } else if (preferDirection === "input") {
-    if (inputPort) return { port: inputPort, direction: "input" };
-    if (outputPort) return { port: outputPort, direction: "output" };
+  if (preferDirection === 'output') {
+    if (outputPort) return { port: outputPort, direction: 'output' };
+    if (inputPort) return { port: inputPort, direction: 'input' };
+  } else if (preferDirection === 'input') {
+    if (inputPort) return { port: inputPort, direction: 'input' };
+    if (outputPort) return { port: outputPort, direction: 'output' };
   } else {
-    if (outputPort) return { port: outputPort, direction: "output" };
-    if (inputPort) return { port: inputPort, direction: "input" };
+    if (outputPort) return { port: outputPort, direction: 'output' };
+    if (inputPort) return { port: inputPort, direction: 'input' };
   }
 
   // Gateway nodes have dynamic branch ports stored in config.branches, not metadata.outputs
-  if (metadata.type === "gateway") {
+  if (metadata.type === 'gateway') {
     const branches = node.data.config?.branches as Branch[] | undefined;
     if (branches?.some((b) => b.name === portId)) {
-      return { port: { id: portId, name: portId, dataType: "trigger" }, direction: "output" };
+      return {
+        port: { id: portId, name: portId, dataType: 'trigger' },
+        direction: 'output'
+      };
     }
   }
 
@@ -510,12 +513,12 @@ function findPort(
 }
 
 function executeConnect(
-  command: Extract<Command, { type: "connect" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'connect' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   // Resolve both nodes
@@ -524,7 +527,7 @@ function executeConnect(
     return {
       ok: false,
       error: `Node not found: ${command.sourceNodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -533,7 +536,7 @@ function executeConnect(
     return {
       ok: false,
       error: `Node not found: ${command.targetNodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -541,52 +544,52 @@ function executeConnect(
   // Since connections always flow output → input, prefer the output port on the
   // source node and the input port on the target node when the same port name
   // exists in both directions on a node.
-  const sourcePortInfo = findPort(sourceNode, command.sourcePort, "output");
+  const sourcePortInfo = findPort(sourceNode, command.sourcePort, 'output');
   if (!sourcePortInfo) {
     return {
       ok: false,
       error: `Port '${command.sourcePort}' not found on node ${toShortId(sourceNode.id)}`,
-      code: "PORT_NOT_FOUND",
+      code: 'PORT_NOT_FOUND'
     };
   }
 
-  const targetPortInfo = findPort(targetNode, command.targetPort, "input");
+  const targetPortInfo = findPort(targetNode, command.targetPort, 'input');
   if (!targetPortInfo) {
     return {
       ok: false,
       error: `Port '${command.targetPort}' not found on node ${toShortId(targetNode.id)}`,
-      code: "PORT_NOT_FOUND",
+      code: 'PORT_NOT_FOUND'
     };
   }
 
   // Validate directions: source port must be output, target port must be input
-  if (sourcePortInfo.direction !== "output" || targetPortInfo.direction !== "input") {
+  if (sourcePortInfo.direction !== 'output' || targetPortInfo.direction !== 'input') {
     // Check if they're reversed
-    if (sourcePortInfo.direction === "input" && targetPortInfo.direction === "output") {
+    if (sourcePortInfo.direction === 'input' && targetPortInfo.direction === 'output') {
       return {
         ok: false,
         error: `Connection direction reversed: '${command.sourcePort}' is an input on ${toShortId(sourceNode.id)} and '${command.targetPort}' is an output on ${toShortId(targetNode.id)}. Swap source and target.`,
-        code: "INVALID_CONNECTION",
+        code: 'INVALID_CONNECTION'
       };
     }
     // One of them is the wrong direction
-    if (sourcePortInfo.direction !== "output") {
+    if (sourcePortInfo.direction !== 'output') {
       return {
         ok: false,
         error: `Port '${command.sourcePort}' on ${toShortId(sourceNode.id)} is an input, not an output (per node metadata)`,
-        code: "INVALID_CONNECTION",
+        code: 'INVALID_CONNECTION'
       };
     }
     return {
       ok: false,
       error: `Port '${command.targetPort}' on ${toShortId(targetNode.id)} is an output, not an input (per node metadata)`,
-      code: "INVALID_CONNECTION",
+      code: 'INVALID_CONNECTION'
     };
   }
 
   // Build handle IDs
-  const sourceHandle = buildHandleId(sourceNode.id, "output", command.sourcePort);
-  const targetHandle = buildHandleId(targetNode.id, "input", command.targetPort);
+  const sourceHandle = buildHandleId(sourceNode.id, 'output', command.sourcePort);
+  const targetHandle = buildHandleId(targetNode.id, 'input', command.targetPort);
 
   // Generate edge ID
   const edgeId = `${sourceNode.id}-${sourceHandle}-${targetNode.id}-${targetHandle}`;
@@ -597,7 +600,7 @@ function executeConnect(
     source: sourceNode.id,
     target: targetNode.id,
     sourceHandle,
-    targetHandle,
+    targetHandle
   };
 
   // Apply styling
@@ -608,17 +611,17 @@ function executeConnect(
 
   return {
     ok: true,
-    message: `Connected ${toShortId(sourceNode.id)}:${command.sourcePort} → ${toShortId(targetNode.id)}:${command.targetPort}`,
+    message: `Connected ${toShortId(sourceNode.id)}:${command.sourcePort} → ${toShortId(targetNode.id)}:${command.targetPort}`
   };
 }
 
 function executeDisconnectPorts(
-  command: Extract<Command, { type: "disconnect_ports" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'disconnect_ports' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   // Resolve both nodes
@@ -627,7 +630,7 @@ function executeDisconnectPorts(
     return {
       ok: false,
       error: `Node not found: ${command.sourceNodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -636,7 +639,7 @@ function executeDisconnectPorts(
     return {
       ok: false,
       error: `Node not found: ${command.targetNodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -652,7 +655,7 @@ function executeDisconnectPorts(
     return {
       ok: false,
       error: `No edge found from ${toShortId(sourceNode.id)}:${command.sourcePort} to ${toShortId(targetNode.id)}:${command.targetPort}`,
-      code: "EDGE_NOT_FOUND",
+      code: 'EDGE_NOT_FOUND'
     };
   }
 
@@ -660,17 +663,17 @@ function executeDisconnectPorts(
 
   return {
     ok: true,
-    message: `Disconnected ${toShortId(sourceNode.id)}:${command.sourcePort} from ${toShortId(targetNode.id)}:${command.targetPort}`,
+    message: `Disconnected ${toShortId(sourceNode.id)}:${command.sourcePort} from ${toShortId(targetNode.id)}:${command.targetPort}`
   };
 }
 
 function executeDisconnectNode(
-  command: Extract<Command, { type: "disconnect_node" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'disconnect_node' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -678,14 +681,12 @@ function executeDisconnectNode(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
   // Find all edges connected to this node
-  const connectedEdges = workflow.edges.filter(
-    (e) => e.source === node.id || e.target === node.id,
-  );
+  const connectedEdges = workflow.edges.filter((e) => e.source === node.id || e.target === node.id);
 
   for (const edge of connectedEdges) {
     context.dispatch.removeEdge(edge.id);
@@ -693,7 +694,7 @@ function executeDisconnectNode(
 
   return {
     ok: true,
-    message: `Disconnected ${connectedEdges.length} edge(s) from ${toShortId(node.id)}`,
+    message: `Disconnected ${connectedEdges.length} edge(s) from ${toShortId(node.id)}`
   };
 }
 
@@ -704,48 +705,47 @@ function executeDisconnectNode(
 function executeListNodes(context: CommandContext): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const nodes = workflow.nodes.map((n) => ({
     nodeId: toShortId(n.id),
-    label: n.data.label ?? n.data.metadata?.name ?? "",
-    type: n.data.metadata?.id ? toShortTypeId(n.data.metadata.id) : "",
+    label: n.data.label ?? n.data.metadata?.name ?? '',
+    type: n.data.metadata?.id ? toShortTypeId(n.data.metadata.id) : ''
   }));
 
   const resultData: ListNodesResultData = { nodes };
 
   return {
     ok: true,
-    message: nodes.length === 0
-      ? "No nodes in workflow"
-      : `${nodes.length} node(s): ${nodes.map((n) => n.nodeId).join(", ")}`,
-    data: resultData,
+    message:
+      nodes.length === 0
+        ? 'No nodes in workflow'
+        : `${nodes.length} node(s): ${nodes.map((n) => n.nodeId).join(', ')}`,
+    data: resultData
   };
 }
 
 function executeListEdges(context: CommandContext): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const edges = workflow.edges.map((e) => ({
     edgeId: e.id,
     sourceNodeId: toShortId(e.source),
-    sourcePort: extractPortId(e.sourceHandle) ?? "",
+    sourcePort: extractPortId(e.sourceHandle) ?? '',
     targetNodeId: toShortId(e.target),
-    targetPort: extractPortId(e.targetHandle) ?? "",
+    targetPort: extractPortId(e.targetHandle) ?? ''
   }));
 
   const resultData: ListEdgesResultData = { edges };
 
   return {
     ok: true,
-    message: edges.length === 0
-      ? "No edges in workflow"
-      : `${edges.length} edge(s)`,
-    data: resultData,
+    message: edges.length === 0 ? 'No edges in workflow' : `${edges.length} edge(s)`,
+    data: resultData
   };
 }
 
@@ -753,7 +753,7 @@ function executeListTypes(context: CommandContext): CommandResult {
   const types = context.nodeTypes.map((m) => ({
     typeId: toShortTypeId(m.id),
     name: m.name,
-    category: m.category,
+    category: m.category
   }));
 
   const resultData: ListTypesResultData = { types };
@@ -761,44 +761,138 @@ function executeListTypes(context: CommandContext): CommandResult {
   return {
     ok: true,
     message: `${types.length} type(s) available`,
-    data: resultData,
+    data: resultData
   };
 }
 
 /** All command help entries */
-export const COMMAND_HELP: Array<{ name: string; syntax: string; description: string }> = [
-  { name: "add", syntax: "add <type> [at <x>,<y>]", description: "Add a new node of the specified type" },
-  { name: "delete", syntax: "delete <nodeId>", description: "Delete a node and its connections" },
-  { name: "rename", syntax: "rename <nodeId> <label>", description: "Rename a node's display label" },
-  { name: "set", syntax: "set <nodeId>:<key> <value>", description: "Set a config value on a node" },
-  { name: "get", syntax: "get <nodeId>:<key>", description: "Get a config value from a node" },
-  { name: "connect", syntax: "connect <nid>:<port> to <nid>:<port>", description: "Connect two node ports" },
-  { name: "disconnect", syntax: "disconnect <nid>:<port> from <nid>:<port>", description: "Disconnect two node ports" },
-  { name: "disconnect", syntax: "disconnect <nodeId>", description: "Disconnect all edges from a node" },
-  { name: "list", syntax: "list nodes|edges|types", description: "List workflow nodes, edges, or available types" },
-  { name: "info", syntax: "info <nodeId>", description: "Show detailed info about a node" },
-  { name: "config", syntax: "config <nodeId>", description: "Open the config panel for a node" },
-  { name: "select", syntax: "select <nodeId>", description: "Select a node on the canvas" },
-  { name: "swap", syntax: "swap <nodeId> with <type>", description: "Replace a node's type, preserving connections" },
-  { name: "move", syntax: "move <nodeId> to <x>,<y>", description: "Move a node to a position" },
-  { name: "layout", syntax: "layout auto [--direction horizontal|vertical]", description: "Auto-arrange all nodes" },
-  { name: "layout", syntax: "layout beautify", description: "Normalize spacing while preserving node arrangement" },
-  { name: "undo", syntax: "undo", description: "Undo the last action" },
-  { name: "redo", syntax: "redo", description: "Redo the last undone action" },
-  { name: "help", syntax: "help [<command>]", description: "Show help for all or a specific command" },
-  { name: "clear", syntax: "clear", description: "Remove all nodes and edges" },
-  { name: "canvas", syntax: "canvas fitview", description: "Fit all nodes into the viewport" },
-  { name: "canvas", syntax: "canvas zoom in", description: "Zoom in on the canvas" },
-  { name: "canvas", syntax: "canvas zoom out", description: "Zoom out on the canvas" },
-  { name: "canvas", syntax: "canvas zoom <level>", description: "Set zoom to a specific level (e.g. 1.5)" },
-  { name: "canvas", syntax: "canvas pan <x>,<y>", description: "Pan the canvas to center on a position" },
-  { name: "canvas", syntax: "canvas reset", description: "Reset viewport to default position and zoom" },
+export const COMMAND_HELP: Array<{
+  name: string;
+  syntax: string;
+  description: string;
+}> = [
+  {
+    name: 'add',
+    syntax: 'add <type> [at <x>,<y>]',
+    description: 'Add a new node of the specified type'
+  },
+  {
+    name: 'delete',
+    syntax: 'delete <nodeId>',
+    description: 'Delete a node and its connections'
+  },
+  {
+    name: 'rename',
+    syntax: 'rename <nodeId> <label>',
+    description: "Rename a node's display label"
+  },
+  {
+    name: 'set',
+    syntax: 'set <nodeId>:<key> <value>',
+    description: 'Set a config value on a node'
+  },
+  {
+    name: 'get',
+    syntax: 'get <nodeId>:<key>',
+    description: 'Get a config value from a node'
+  },
+  {
+    name: 'connect',
+    syntax: 'connect <nid>:<port> to <nid>:<port>',
+    description: 'Connect two node ports'
+  },
+  {
+    name: 'disconnect',
+    syntax: 'disconnect <nid>:<port> from <nid>:<port>',
+    description: 'Disconnect two node ports'
+  },
+  {
+    name: 'disconnect',
+    syntax: 'disconnect <nodeId>',
+    description: 'Disconnect all edges from a node'
+  },
+  {
+    name: 'list',
+    syntax: 'list nodes|edges|types',
+    description: 'List workflow nodes, edges, or available types'
+  },
+  {
+    name: 'info',
+    syntax: 'info <nodeId>',
+    description: 'Show detailed info about a node'
+  },
+  {
+    name: 'config',
+    syntax: 'config <nodeId>',
+    description: 'Open the config panel for a node'
+  },
+  {
+    name: 'select',
+    syntax: 'select <nodeId>',
+    description: 'Select a node on the canvas'
+  },
+  {
+    name: 'swap',
+    syntax: 'swap <nodeId> with <type>',
+    description: "Replace a node's type, preserving connections"
+  },
+  {
+    name: 'move',
+    syntax: 'move <nodeId> to <x>,<y>',
+    description: 'Move a node to a position'
+  },
+  {
+    name: 'layout',
+    syntax: 'layout auto [--direction horizontal|vertical]',
+    description: 'Auto-arrange all nodes'
+  },
+  {
+    name: 'layout',
+    syntax: 'layout beautify',
+    description: 'Normalize spacing while preserving node arrangement'
+  },
+  { name: 'undo', syntax: 'undo', description: 'Undo the last action' },
+  { name: 'redo', syntax: 'redo', description: 'Redo the last undone action' },
+  {
+    name: 'help',
+    syntax: 'help [<command>]',
+    description: 'Show help for all or a specific command'
+  },
+  { name: 'clear', syntax: 'clear', description: 'Remove all nodes and edges' },
+  {
+    name: 'canvas',
+    syntax: 'canvas fitview',
+    description: 'Fit all nodes into the viewport'
+  },
+  {
+    name: 'canvas',
+    syntax: 'canvas zoom in',
+    description: 'Zoom in on the canvas'
+  },
+  {
+    name: 'canvas',
+    syntax: 'canvas zoom out',
+    description: 'Zoom out on the canvas'
+  },
+  {
+    name: 'canvas',
+    syntax: 'canvas zoom <level>',
+    description: 'Set zoom to a specific level (e.g. 1.5)'
+  },
+  {
+    name: 'canvas',
+    syntax: 'canvas pan <x>,<y>',
+    description: 'Pan the canvas to center on a position'
+  },
+  {
+    name: 'canvas',
+    syntax: 'canvas reset',
+    description: 'Reset viewport to default position and zoom'
+  }
 ];
 
-function executeHelp(
-  command: Extract<Command, { type: "help" }>,
-): CommandResult {
-  let commands: HelpResultData["commands"];
+function executeHelp(command: Extract<Command, { type: 'help' }>): CommandResult {
+  let commands: HelpResultData['commands'];
 
   if (command.command) {
     commands = COMMAND_HELP.filter((h) => h.name === command.command);
@@ -811,16 +905,14 @@ function executeHelp(
 
   const resultData: HelpResultData = { commands };
 
-  const message = commands
-    .map((c) => `  ${c.syntax} — ${c.description}`)
-    .join("\n");
+  const message = commands.map((c) => `  ${c.syntax} — ${c.description}`).join('\n');
 
   return {
     ok: true,
     message: command.command
       ? `Help for '${command.command}':\n${message}`
       : `Available commands:\n${message}`,
-    data: resultData,
+    data: resultData
   };
 }
 
@@ -833,11 +925,11 @@ function executeUndo(context: CommandContext): CommandResult {
   if (!success) {
     return {
       ok: false,
-      error: "Nothing to undo",
-      code: "UNDO_UNAVAILABLE",
+      error: 'Nothing to undo',
+      code: 'UNDO_UNAVAILABLE'
     };
   }
-  return { ok: true, message: "Undone" };
+  return { ok: true, message: 'Undone' };
 }
 
 function executeRedo(context: CommandContext): CommandResult {
@@ -845,17 +937,17 @@ function executeRedo(context: CommandContext): CommandResult {
   if (!success) {
     return {
       ok: false,
-      error: "Nothing to redo",
-      code: "REDO_UNAVAILABLE",
+      error: 'Nothing to redo',
+      code: 'REDO_UNAVAILABLE'
     };
   }
-  return { ok: true, message: "Redone" };
+  return { ok: true, message: 'Redone' };
 }
 
 function executeClear(context: CommandContext): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const nodeCount = workflow.nodes.length;
@@ -865,17 +957,17 @@ function executeClear(context: CommandContext): CommandResult {
 
   return {
     ok: true,
-    message: `Cleared ${nodeCount} node(s) and ${edgeCount} edge(s)`,
+    message: `Cleared ${nodeCount} node(s) and ${edgeCount} edge(s)`
   };
 }
 
 function executeConfigOpen(
-  command: Extract<Command, { type: "config_open" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'config_open' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -883,32 +975,32 @@ function executeConfigOpen(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
   if (context.dispatch.emitUIAction) {
-    context.dispatch.emitUIAction({ type: "open_config", nodeId: node.id });
+    context.dispatch.emitUIAction({ type: 'open_config', nodeId: node.id });
     return {
       ok: true,
-      message: `Opened config for ${toShortId(node.id)}`,
+      message: `Opened config for ${toShortId(node.id)}`
     };
   }
 
   return {
     ok: true,
     message: `Config open requested for ${toShortId(node.id)} (no UI handler)`,
-    uiActionPending: true,
+    uiActionPending: true
   };
 }
 
 function executeSelectNode(
-  command: Extract<Command, { type: "select_node" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'select_node' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -916,32 +1008,32 @@ function executeSelectNode(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
   if (context.dispatch.emitUIAction) {
-    context.dispatch.emitUIAction({ type: "select_node", nodeId: node.id });
+    context.dispatch.emitUIAction({ type: 'select_node', nodeId: node.id });
     return {
       ok: true,
-      message: `Selected ${toShortId(node.id)}`,
+      message: `Selected ${toShortId(node.id)}`
     };
   }
 
   return {
     ok: true,
     message: `Select requested for ${toShortId(node.id)} (no UI handler)`,
-    uiActionPending: true,
+    uiActionPending: true
   };
 }
 
 function executeSwapNode(
-  command: Extract<Command, { type: "swap_node" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'swap_node' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -949,7 +1041,7 @@ function executeSwapNode(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
@@ -958,34 +1050,23 @@ function executeSwapNode(
     return {
       ok: false,
       error: `Unknown node type: ${command.newTypeId}`,
-      code: "NODE_TYPE_NOT_FOUND",
+      code: 'NODE_TYPE_NOT_FOUND'
     };
   }
 
-  const preview = computeSwapPreview(
-    node,
-    newMetadata,
-    workflow.edges,
-    workflow.nodes,
-  );
+  const preview = computeSwapPreview(node, newMetadata, workflow.edges, workflow.nodes);
 
-  const swapResult = executeSwap(
-    node,
-    newMetadata,
-    preview,
-    workflow.nodes,
-    workflow.edges,
-  );
+  const swapResult = executeSwap(node, newMetadata, preview, workflow.nodes, workflow.edges);
 
   if (context.dispatch.swapNode) {
     context.dispatch.swapNode({
       nodes: swapResult.updatedNodes,
-      edges: swapResult.updatedEdges,
+      edges: swapResult.updatedEdges
     });
   } else {
     context.dispatch.batchUpdate({
       nodes: swapResult.updatedNodes,
-      edges: swapResult.updatedEdges,
+      edges: swapResult.updatedEdges
     });
   }
 
@@ -997,28 +1078,26 @@ function executeSwapNode(
     droppedEdges: preview.droppedEdges.length,
     hasDataLoss: preview.hasDataLoss,
     configCarriedOver: preview.configCarriedOver,
-    configReset: preview.configReset,
+    configReset: preview.configReset
   };
 
   const droppedMsg =
-    preview.droppedEdges.length > 0
-      ? ` (${preview.droppedEdges.length} edge(s) dropped)`
-      : "";
+    preview.droppedEdges.length > 0 ? ` (${preview.droppedEdges.length} edge(s) dropped)` : '';
 
   return {
     ok: true,
     message: `Swapped ${toShortId(node.id)} → ${toShortId(preview.newNodeId)} (${command.newTypeId})${droppedMsg}`,
-    data: resultData,
+    data: resultData
   };
 }
 
 function executeMoveNode(
-  command: Extract<Command, { type: "move_node" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'move_node' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   const node = resolveNode(command.nodeId, workflow.nodes);
@@ -1026,39 +1105,39 @@ function executeMoveNode(
     return {
       ok: false,
       error: `Node not found: ${command.nodeId}`,
-      code: "NODE_NOT_FOUND",
+      code: 'NODE_NOT_FOUND'
     };
   }
 
   context.dispatch.updateNode(node.id, {
-    position: command.position,
+    position: command.position
   });
 
   return {
     ok: true,
-    message: `Moved ${toShortId(node.id)} to (${command.position.x}, ${command.position.y})`,
+    message: `Moved ${toShortId(node.id)} to (${command.position.x}, ${command.position.y})`
   };
 }
 
 function executeAutoLayout(
-  command: Extract<Command, { type: "auto_layout" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'auto_layout' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   if (workflow.nodes.length === 0) {
-    return { ok: true, message: "No nodes to layout" };
+    return { ok: true, message: 'No nodes to layout' };
   }
 
-  const isVertical = command.direction === "vertical";
+  const isVertical = command.direction === 'vertical';
 
   // Filter out loopback edges (loop_back port) — they go backwards and
   // would reverse the layout direction if included.
   const layoutEdges = workflow.edges.filter(
-    (e) => !(e.targetHandle ?? "").includes("-input-loop_back"),
+    (e) => !(e.targetHandle ?? '').includes('-input-loop_back')
   );
 
   // Determine start node via in-degree: a node with no incoming edges
@@ -1070,23 +1149,21 @@ function executeAutoLayout(
   }
   const startNode =
     workflow.nodes.find((n) => (inDegree.get(n.id) ?? 0) === 0)?.id ??
-    workflow.nodes.reduce((leftmost, n) =>
-      n.position.x < leftmost.position.x ? n : leftmost,
-    ).id;
+    workflow.nodes.reduce((leftmost, n) => (n.position.x < leftmost.position.x ? n : leftmost)).id;
 
   const flow = {
-    component_type: "flow" as const,
-    name: "layout",
+    component_type: 'flow' as const,
+    name: 'layout',
     start_node: startNode,
     nodes: workflow.nodes.map((n) => ({
-      component_type: "start_node" as const,
-      name: n.id,
+      component_type: 'start_node' as const,
+      name: n.id
     })),
     control_flow_connections: layoutEdges.map((e) => ({
       name: e.id,
       from_node: e.source,
-      to_node: e.target,
-    })),
+      to_node: e.target
+    }))
   };
 
   // Collect measured node dimensions when available
@@ -1102,7 +1179,7 @@ function executeAutoLayout(
   const positions = computeAutoLayout(
     flow,
     {},
-    nodeDimensions.size > 0 ? nodeDimensions : undefined,
+    nodeDimensions.size > 0 ? nodeDimensions : undefined
   );
 
   // Apply positions — swap x/y for vertical layout
@@ -1111,30 +1188,30 @@ function executeAutoLayout(
     if (!pos) return n;
     return {
       ...n,
-      position: isVertical ? { x: pos.y, y: pos.x } : pos,
+      position: isVertical ? { x: pos.y, y: pos.x } : pos
     };
   });
 
   context.dispatch.batchUpdate({ nodes: updatedNodes });
 
-  const direction = command.direction ?? "horizontal";
+  const direction = command.direction ?? 'horizontal';
   return {
     ok: true,
-    message: `Auto-layout applied to ${workflow.nodes.length} nodes (${direction})`,
+    message: `Auto-layout applied to ${workflow.nodes.length} nodes (${direction})`
   };
 }
 
 function executeBeautifyLayout(
-  _command: Extract<Command, { type: "beautify_layout" }>,
-  context: CommandContext,
+  _command: Extract<Command, { type: 'beautify_layout' }>,
+  context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
-    return { ok: false, error: "No workflow loaded", code: "NO_WORKFLOW" };
+    return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
   }
 
   if (workflow.nodes.length === 0) {
-    return { ok: true, message: "No nodes to beautify" };
+    return { ok: true, message: 'No nodes to beautify' };
   }
 
   // Collect current positions
@@ -1156,7 +1233,7 @@ function executeBeautifyLayout(
   const positions = computeBeautifyLayout(
     currentPositions,
     {},
-    nodeDimensions.size > 0 ? nodeDimensions : undefined,
+    nodeDimensions.size > 0 ? nodeDimensions : undefined
   );
 
   // Apply positions
@@ -1170,7 +1247,7 @@ function executeBeautifyLayout(
 
   return {
     ok: true,
-    message: `Beautified layout for ${workflow.nodes.length} nodes`,
+    message: `Beautified layout for ${workflow.nodes.length} nodes`
   };
 }
 
@@ -1181,7 +1258,7 @@ function executeBeautifyLayout(
 function emitCanvasAction(
   context: CommandContext,
   action: Parameters<NonNullable<typeof context.dispatch.emitUIAction>>[0],
-  successMessage: string,
+  successMessage: string
 ): CommandResult {
   if (context.dispatch.emitUIAction) {
     context.dispatch.emitUIAction(action);
@@ -1190,46 +1267,46 @@ function emitCanvasAction(
   return {
     ok: true,
     message: `${successMessage} (no UI handler)`,
-    uiActionPending: true,
+    uiActionPending: true
   };
 }
 
 function executeCanvasFitView(context: CommandContext): CommandResult {
-  return emitCanvasAction(context, { type: "canvas_fit_view" }, "Fit view applied");
+  return emitCanvasAction(context, { type: 'canvas_fit_view' }, 'Fit view applied');
 }
 
 function executeCanvasZoomIn(context: CommandContext): CommandResult {
-  return emitCanvasAction(context, { type: "canvas_zoom_in" }, "Zoomed in");
+  return emitCanvasAction(context, { type: 'canvas_zoom_in' }, 'Zoomed in');
 }
 
 function executeCanvasZoomOut(context: CommandContext): CommandResult {
-  return emitCanvasAction(context, { type: "canvas_zoom_out" }, "Zoomed out");
+  return emitCanvasAction(context, { type: 'canvas_zoom_out' }, 'Zoomed out');
 }
 
 function executeCanvasZoomTo(
-  command: Extract<Command, { type: "canvas_zoom_to" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'canvas_zoom_to' }>,
+  context: CommandContext
 ): CommandResult {
   return emitCanvasAction(
     context,
-    { type: "canvas_zoom_to", level: command.level },
-    `Zoom set to ${command.level}`,
+    { type: 'canvas_zoom_to', level: command.level },
+    `Zoom set to ${command.level}`
   );
 }
 
 function executeCanvasPanTo(
-  command: Extract<Command, { type: "canvas_pan_to" }>,
-  context: CommandContext,
+  command: Extract<Command, { type: 'canvas_pan_to' }>,
+  context: CommandContext
 ): CommandResult {
   return emitCanvasAction(
     context,
-    { type: "canvas_pan_to", position: command.position },
-    `Panned to (${command.position.x}, ${command.position.y})`,
+    { type: 'canvas_pan_to', position: command.position },
+    `Panned to (${command.position.x}, ${command.position.y})`
   );
 }
 
 function executeCanvasResetView(context: CommandContext): CommandResult {
-  return emitCanvasAction(context, { type: "canvas_reset_view" }, "Viewport reset");
+  return emitCanvasAction(context, { type: 'canvas_reset_view' }, 'Viewport reset');
 }
 
 // ============================================================================
@@ -1239,73 +1316,70 @@ function executeCanvasResetView(context: CommandContext): CommandResult {
 /**
  * Execute a parsed command against a workflow context.
  */
-export function executeCommand(
-  command: Command,
-  context: CommandContext,
-): CommandResult {
+export function executeCommand(command: Command, context: CommandContext): CommandResult {
   switch (command.type) {
-    case "add_node":
+    case 'add_node':
       return executeAddNode(command, context);
-    case "delete_node":
+    case 'delete_node':
       return executeDeleteNode(command, context);
-    case "rename_node":
+    case 'rename_node':
       return executeRenameNode(command, context);
-    case "set_config":
+    case 'set_config':
       return executeSetConfig(command, context);
-    case "get_config":
+    case 'get_config':
       return executeGetConfig(command, context);
-    case "info":
+    case 'info':
       return executeInfo(command, context);
-    case "connect":
+    case 'connect':
       return executeConnect(command, context);
-    case "disconnect_ports":
+    case 'disconnect_ports':
       return executeDisconnectPorts(command, context);
-    case "disconnect_node":
+    case 'disconnect_node':
       return executeDisconnectNode(command, context);
-    case "list_nodes":
+    case 'list_nodes':
       return executeListNodes(context);
-    case "list_edges":
+    case 'list_edges':
       return executeListEdges(context);
-    case "list_types":
+    case 'list_types':
       return executeListTypes(context);
-    case "help":
+    case 'help':
       return executeHelp(command);
-    case "undo":
+    case 'undo':
       return executeUndo(context);
-    case "redo":
+    case 'redo':
       return executeRedo(context);
-    case "clear":
+    case 'clear':
       return executeClear(context);
-    case "config_open":
+    case 'config_open':
       return executeConfigOpen(command, context);
-    case "select_node":
+    case 'select_node':
       return executeSelectNode(command, context);
-    case "swap_node":
+    case 'swap_node':
       return executeSwapNode(command, context);
-    case "move_node":
+    case 'move_node':
       return executeMoveNode(command, context);
-    case "auto_layout":
+    case 'auto_layout':
       return executeAutoLayout(command, context);
-    case "beautify_layout":
+    case 'beautify_layout':
       return executeBeautifyLayout(command, context);
-    case "canvas_fit_view":
+    case 'canvas_fit_view':
       return executeCanvasFitView(context);
-    case "canvas_zoom_in":
+    case 'canvas_zoom_in':
       return executeCanvasZoomIn(context);
-    case "canvas_zoom_out":
+    case 'canvas_zoom_out':
       return executeCanvasZoomOut(context);
-    case "canvas_zoom_to":
+    case 'canvas_zoom_to':
       return executeCanvasZoomTo(command, context);
-    case "canvas_pan_to":
+    case 'canvas_pan_to':
       return executeCanvasPanTo(command, context);
-    case "canvas_reset_view":
+    case 'canvas_reset_view':
       return executeCanvasResetView(context);
     default: {
       const _exhaustive: never = command;
       return {
         ok: false,
         error: `Command not yet implemented: ${(_exhaustive as Command).type}`,
-        code: "UNKNOWN_COMMAND",
+        code: 'UNKNOWN_COMMAND'
       };
     }
   }

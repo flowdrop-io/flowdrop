@@ -6,18 +6,12 @@
 -->
 
 <script lang="ts">
-  import type {
-    NodeMetadata,
-    NodeCategory,
-    WorkflowFormat,
-    WorkflowNode,
-  } from "../types/index.js";
-  import Icon from "@iconify/svelte";
-  import { getNodeIcon, getCategoryIcon } from "../utils/icons.js";
-  import { getCategoryColorToken } from "../utils/colors.js";
-  import { getCategoryLabel } from "../stores/categoriesStore.svelte.js";
-  import { getVersionUpgrade } from "../utils/nodeSwap.js";
-
+  import type { NodeMetadata, NodeCategory, WorkflowFormat, WorkflowNode } from '../types/index.js';
+  import Icon from '@iconify/svelte';
+  import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
+  import { getCategoryColorToken } from '../utils/colors.js';
+  import { getCategoryLabel } from '../stores/categoriesStore.svelte.js';
+  import { getVersionUpgrade } from '../utils/nodeSwap.js';
 
   interface Props {
     /** The node being swapped */
@@ -32,20 +26,12 @@
     onCancel: () => void;
   }
 
-  const {
-    currentNode,
-    availableNodes,
-    activeFormat,
-    onSelect,
-    onCancel,
-  }: Props = $props();
+  const { currentNode, availableNodes, activeFormat, onSelect, onCancel }: Props = $props();
 
-  let searchInput = $state("");
+  let searchInput = $state('');
 
   /** Check version upgrade availability */
-  let versionUpgrade = $derived(
-    getVersionUpgrade(currentNode.data.metadata, availableNodes),
-  );
+  let versionUpgrade = $derived(getVersionUpgrade(currentNode.data.metadata, availableNodes));
 
   /** Filter nodes compatible with active format */
   function isNodeCompatibleWithFormat(node: NodeMetadata): boolean {
@@ -55,9 +41,7 @@
   }
 
   /** Nodes filtered by format compatibility */
-  let formatCompatibleNodes = $derived(
-    availableNodes.filter((n) => isNodeCompatibleWithFormat(n)),
-  );
+  let formatCompatibleNodes = $derived(availableNodes.filter((n) => isNodeCompatibleWithFormat(n)));
 
   /** Apply search filter */
   let filteredNodes = $derived.by(() => {
@@ -68,7 +52,7 @@
         (node) =>
           node.name.toLowerCase().includes(query) ||
           node.description.toLowerCase().includes(query) ||
-          node.tags?.some((tag) => tag.toLowerCase().includes(query)),
+          node.tags?.some((tag) => tag.toLowerCase().includes(query))
       );
     }
     return nodes;
@@ -96,11 +80,7 @@
 <div class="swap-picker">
   <!-- Header -->
   <div class="swap-picker__header">
-    <button
-      class="swap-picker__back"
-      onclick={onCancel}
-      aria-label="Back to configuration"
-    >
+    <button class="swap-picker__back" onclick={onCancel} aria-label="Back to configuration">
       <Icon icon="heroicons:arrow-left" />
     </button>
     <h2 class="swap-picker__title">Swap Node</h2>
@@ -114,10 +94,7 @@
 
   <!-- Version upgrade banner -->
   {#if versionUpgrade}
-    <button
-      class="swap-picker__upgrade"
-      onclick={() => onSelect(versionUpgrade!)}
-    >
+    <button class="swap-picker__upgrade" onclick={() => onSelect(versionUpgrade!)}>
       <Icon icon="heroicons:arrow-up-circle" />
       <div class="swap-picker__upgrade-info">
         <span class="swap-picker__upgrade-title">Upgrade Available</span>
@@ -156,10 +133,7 @@
             </div>
             <div class="swap-picker__flat-list">
               {#each categoryNodes as nodeType (nodeType.id)}
-                <button
-                  class="swap-picker__flat-item"
-                  onclick={() => onSelect(nodeType)}
-                >
+                <button class="swap-picker__flat-item" onclick={() => onSelect(nodeType)}>
                   <span
                     class="swap-picker__flat-dot"
                     style="background: {getCategoryColorToken(nodeType.category)}"
@@ -188,19 +162,12 @@
             </div>
             <div class="swap-picker__category-items">
               {#each categoryNodes as nodeType (nodeType.id)}
-                <button
-                  class="swap-picker__item"
-                  onclick={() => onSelect(nodeType)}
-                >
+                <button class="swap-picker__item" onclick={() => onSelect(nodeType)}>
                   <span
                     class="swap-picker__item-icon"
-                    style="--_icon-color: {getCategoryColorToken(
-                      nodeType.category,
-                    )}"
+                    style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
                   >
-                    <Icon
-                      icon={getNodeIcon(nodeType.icon, nodeType.category)}
-                    />
+                    <Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
                   </span>
                   <div class="swap-picker__item-info">
                     <span class="swap-picker__item-name">{nodeType.name}</span>
@@ -208,10 +175,7 @@
                       {nodeType.description}
                     </span>
                   </div>
-                  <Icon
-                    icon="heroicons:chevron-right"
-                    class="swap-picker__item-arrow"
-                  />
+                  <Icon icon="heroicons:chevron-right" class="swap-picker__item-arrow" />
                 </button>
               {/each}
             </div>
@@ -439,11 +403,7 @@
     width: 1.25rem;
     height: 1.25rem;
     border-radius: 0.25rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     color: var(--fd-node-icon);
     font-size: 0.625rem;
     display: flex;
@@ -498,11 +458,7 @@
     width: 1.75rem;
     height: 1.75rem;
     border-radius: 0.375rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     color: var(--fd-node-icon);
     font-size: var(--fd-text-xs);
     display: flex;

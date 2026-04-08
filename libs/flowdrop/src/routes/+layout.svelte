@@ -5,30 +5,24 @@
 -->
 
 <script lang="ts">
-  import "../app.css";
-  import MainLayout from "$lib/components/layouts/MainLayout.svelte";
-  import Navbar from "$lib/components/Navbar.svelte";
-  import { page } from "$app/stores";
-  import { onMount } from "svelte";
-  import {
-    globalSaveWorkflow,
-    globalExportWorkflow,
-  } from "$lib/services/globalSave.js";
+  import '../app.css';
+  import MainLayout from '$lib/components/layouts/MainLayout.svelte';
+  import Navbar from '$lib/components/Navbar.svelte';
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';
+  import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
   import {
     buildEndpointUrl,
     type EndpointConfig,
     defaultEndpointConfig,
-    createEndpointConfig,
-  } from "$lib/config/endpoints.js";
-  import { getDevConfig, getDevConfigSync } from "./devConfig";
-  import { setEndpointConfig } from "$lib/services/api.js";
-  import { Toaster } from "svelte-5-french-toast";
-  import {
-    flowdropToastOptions,
-    FLOWDROP_TOASTER_CLASS,
-  } from "$lib/services/toastService.js";
-  import type { RuntimeConfig } from "$lib/config/runtimeConfig";
-  import { initializeSettings } from "$lib/stores/settingsStore.svelte.js";
+    createEndpointConfig
+  } from '$lib/config/endpoints.js';
+  import { getDevConfig, getDevConfigSync } from './devConfig';
+  import { setEndpointConfig } from '$lib/services/api.js';
+  import { Toaster } from 'svelte-5-french-toast';
+  import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
+  import type { RuntimeConfig } from '$lib/config/runtimeConfig';
+  import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
 
   let { data, children } = $props();
 
@@ -37,7 +31,7 @@
   // svelte-ignore state_referenced_locally — page remounts on navigation
   let endpointConfig = $state<EndpointConfig>({
     ...defaultEndpointConfig,
-    baseUrl: data.runtimeConfig.apiBaseUrl,
+    baseUrl: data.runtimeConfig.apiBaseUrl
   });
 
   // Workflow name for breadcrumbs
@@ -48,13 +42,9 @@
    */
   async function fetchWorkflowName(workflowId: string) {
     try {
-      const url = buildEndpointUrl(
-        endpointConfig,
-        endpointConfig.endpoints.workflows.get,
-        {
-          id: workflowId,
-        },
-      );
+      const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.workflows.get, {
+        id: workflowId
+      });
       const response = await fetch(url);
 
       if (response.ok) {
@@ -80,9 +70,9 @@
     const endpointConfig = createEndpointConfig(runtimeConfig.apiBaseUrl, {
       auth: {
         type: runtimeConfig.authType,
-        token: runtimeConfig.authToken,
+        token: runtimeConfig.authToken
       },
-      timeout: runtimeConfig.timeout,
+      timeout: runtimeConfig.timeout
     });
     setEndpointConfig(endpointConfig);
 
@@ -91,16 +81,10 @@
       pageBreadcrumbs = event.detail.breadcrumbs || [];
     };
 
-    window.addEventListener(
-      "page-breadcrumbs-update",
-      handleBreadcrumbs as EventListener,
-    );
+    window.addEventListener('page-breadcrumbs-update', handleBreadcrumbs as EventListener);
 
     return () => {
-      window.removeEventListener(
-        "page-breadcrumbs-update",
-        handleBreadcrumbs as EventListener,
-      );
+      window.removeEventListener('page-breadcrumbs-update', handleBreadcrumbs as EventListener);
     };
   });
 
@@ -117,14 +101,12 @@
   >([]);
 
   // Generate breadcrumbs based on current page
-  let currentBreadcrumbs = $derived(
-    generateBreadcrumbsForPage($page.url.pathname),
-  );
+  let currentBreadcrumbs = $derived(generateBreadcrumbsForPage($page.url.pathname));
 
   // Clear custom breadcrumbs when page changes (unless it's a pipeline detail page)
   $effect(() => {
     const pathname = $page.url.pathname;
-    if (!pathname.includes("/pipelines/") || pathname.split("/").length <= 4) {
+    if (!pathname.includes('/pipelines/') || pathname.split('/').length <= 4) {
       // Clear custom breadcrumbs for non-pipeline detail pages
       pageBreadcrumbs = [];
     }
@@ -133,8 +115,8 @@
   // Fetch workflow name for edit pages
   $effect(() => {
     const pathname = $page.url.pathname;
-    if (pathname.startsWith("/workflow/") && pathname.includes("/edit")) {
-      const workflowId = pathname.split("/")[2];
+    if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
+      const workflowId = pathname.split('/')[2];
       if (workflowId) {
         fetchWorkflowName(workflowId);
       }
@@ -146,196 +128,181 @@
 
   // Determine if we should show the navbar (show for all pages except workflow edit pages without breadcrumbs)
   let showNavbar = $derived(
-    !$page.url.pathname.startsWith("/workflow/") ||
-      $page.url.pathname.includes("/pipelines") ||
-      $page.url.pathname.includes("/edit") ||
-      $page.url.pathname.includes("/playground"),
+    !$page.url.pathname.startsWith('/workflow/') ||
+      $page.url.pathname.includes('/pipelines') ||
+      $page.url.pathname.includes('/edit') ||
+      $page.url.pathname.includes('/playground')
   );
 
   function getPrimaryActionsForPage(pathname: string) {
-    if (pathname === "/") {
+    if (pathname === '/') {
       // Main workflows page
       return [
         {
-          label: "Create Workflow",
-          href: "/workflow/create",
-          icon: "mdi:plus",
-          variant: "primary" as const,
+          label: 'Create Workflow',
+          href: '/workflow/create',
+          icon: 'mdi:plus',
+          variant: 'primary' as const
         },
         {
-          label: "API Docs",
-          href: "https://flowdrop-io.github.io/flowdrop/",
-          icon: "mdi:api",
-          variant: "outline" as const,
-          external: true,
-        },
+          label: 'API Docs',
+          href: 'https://flowdrop-io.github.io/flowdrop/',
+          icon: 'mdi:api',
+          variant: 'outline' as const,
+          external: true
+        }
       ];
-    } else if (pathname.startsWith("/workflow/create")) {
+    } else if (pathname.startsWith('/workflow/create')) {
       // Create workflow page
       return [
         {
-          label: "Back to Workflows",
-          href: "/",
-          icon: "mdi:arrow-left",
-          variant: "outline" as const,
+          label: 'Back to Workflows',
+          href: '/',
+          icon: 'mdi:arrow-left',
+          variant: 'outline' as const
         },
         {
-          label: "Save Workflow",
-          href: "#",
-          icon: "mdi:content-save",
-          variant: "primary" as const,
+          label: 'Save Workflow',
+          href: '#',
+          icon: 'mdi:content-save',
+          variant: 'primary' as const,
           onclick: (e: Event) => {
             e.preventDefault();
             globalSaveWorkflow();
-          },
-        },
+          }
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/edit")
-    ) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
       // Edit workflow page
       return [
         {
-          label: "Save",
-          href: "#",
-          icon: "mdi:content-save",
-          variant: "primary" as const,
+          label: 'Save',
+          href: '#',
+          icon: 'mdi:content-save',
+          variant: 'primary' as const,
           onclick: (e: Event) => {
             e.preventDefault();
             globalSaveWorkflow();
-          },
+          }
         },
         {
-          label: "Export",
-          href: "#",
-          icon: "mdi:download",
-          variant: "outline" as const,
+          label: 'Export',
+          href: '#',
+          icon: 'mdi:download',
+          variant: 'outline' as const,
           onclick: (e: Event) => {
             e.preventDefault();
             globalExportWorkflow();
-          },
+          }
         },
         {
-          label: "Pipelines",
-          href: `/workflow/${pathname.split("/")[2]}/pipelines`,
-          icon: "mdi:source-branch",
-          variant: "outline" as const,
+          label: 'Pipelines',
+          href: `/workflow/${pathname.split('/')[2]}/pipelines`,
+          icon: 'mdi:source-branch',
+          variant: 'outline' as const
         },
         {
-          label: "Playground",
-          href: `/workflow/${pathname.split("/")[2]}/playground`,
-          icon: "mdi:play-circle-outline",
-          variant: "outline" as const,
+          label: 'Playground',
+          href: `/workflow/${pathname.split('/')[2]}/playground`,
+          icon: 'mdi:play-circle-outline',
+          variant: 'outline' as const
         },
         {
-          label: "Workflow Settings",
-          href: "#",
-          icon: "mdi:cog",
-          variant: "outline" as const,
+          label: 'Workflow Settings',
+          href: '#',
+          icon: 'mdi:cog',
+          variant: 'outline' as const,
           onclick: (e: Event) => {
             e.preventDefault();
             // This will be handled by the App component
-            window.dispatchEvent(new CustomEvent("workflow-settings-toggle"));
-          },
-        },
+            window.dispatchEvent(new CustomEvent('workflow-settings-toggle'));
+          }
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/execute")
-    ) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/execute')) {
       // Execute workflow page
       return [
         {
-          label: "Back to Workflow",
-          href: pathname.replace("/execute", ""),
-          icon: "mdi:arrow-left",
-          variant: "outline" as const,
+          label: 'Back to Workflow',
+          href: pathname.replace('/execute', ''),
+          icon: 'mdi:arrow-left',
+          variant: 'outline' as const
         },
         {
-          label: "Stop Execution",
-          href: "#",
-          icon: "mdi:stop",
-          variant: "primary" as const,
-        },
+          label: 'Stop Execution',
+          href: '#',
+          icon: 'mdi:stop',
+          variant: 'primary' as const
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/logs")
-    ) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/logs')) {
       // Logs page
       return [
         {
-          label: "Back to Workflow",
-          href: pathname.replace("/logs", ""),
-          icon: "mdi:arrow-left",
-          variant: "outline" as const,
+          label: 'Back to Workflow',
+          href: pathname.replace('/logs', ''),
+          icon: 'mdi:arrow-left',
+          variant: 'outline' as const
         },
         {
-          label: "Refresh Logs",
-          href: "#",
-          icon: "mdi:refresh",
-          variant: "secondary" as const,
-        },
+          label: 'Refresh Logs',
+          href: '#',
+          icon: 'mdi:refresh',
+          variant: 'secondary' as const
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/playground")
-    ) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/playground')) {
       // Playground page
-      const workflowId = pathname.split("/")[2];
+      const workflowId = pathname.split('/')[2];
       return [
         {
-          label: "Edit Workflow",
+          label: 'Edit Workflow',
           href: `/workflow/${workflowId}/edit`,
-          icon: "mdi:pencil",
-          variant: "outline" as const,
+          icon: 'mdi:pencil',
+          variant: 'outline' as const
         },
         {
-          label: "Pipelines",
+          label: 'Pipelines',
           href: `/workflow/${workflowId}/pipelines`,
-          icon: "mdi:source-branch",
-          variant: "outline" as const,
-        },
+          icon: 'mdi:source-branch',
+          variant: 'outline' as const
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/pipelines")
-    ) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/pipelines')) {
       // Pipeline monitoring pages
-      if (pathname.includes("/pipelines/") && pathname.split("/").length > 4) {
+      if (pathname.includes('/pipelines/') && pathname.split('/').length > 4) {
         // Individual pipeline status page
         // Extract workflowId from pathname
-        const workflowId = pathname.split("/")[2];
+        const workflowId = pathname.split('/')[2];
         return [
           {
-            label: "Refresh Status",
-            href: "#",
-            icon: "mdi:refresh",
-            variant: "outline" as const,
+            label: 'Refresh Status',
+            href: '#',
+            icon: 'mdi:refresh',
+            variant: 'outline' as const,
             onclick: (e: Event) => {
               e.preventDefault();
               // This will be handled by the PipelineStatus component
-              window.dispatchEvent(new CustomEvent("pipeline-refresh"));
-            },
+              window.dispatchEvent(new CustomEvent('pipeline-refresh'));
+            }
           },
           {
-            label: "View Logs",
-            href: "#",
-            icon: "mdi:file-document-outline",
-            variant: "outline" as const,
+            label: 'View Logs',
+            href: '#',
+            icon: 'mdi:file-document-outline',
+            variant: 'outline' as const,
             onclick: (e: Event) => {
               e.preventDefault();
               // This will be handled by the PipelineStatus component
-              window.dispatchEvent(new CustomEvent("pipeline-view-logs"));
-            },
+              window.dispatchEvent(new CustomEvent('pipeline-view-logs'));
+            }
           },
           {
-            label: "Edit Workflow",
+            label: 'Edit Workflow',
             href: `/workflow/${workflowId}/edit`,
-            icon: "mdi:pencil",
-            variant: "secondary" as const,
-          },
+            icon: 'mdi:pencil',
+            variant: 'secondary' as const
+          }
         ];
       } else {
         // Pipeline selection page (pipeline creation is not yet implemented)
@@ -346,11 +313,11 @@
     // Default actions for unknown pages
     return [
       {
-        label: "Home",
-        href: "/",
-        icon: "mdi:home",
-        variant: "primary" as const,
-      },
+        label: 'Home',
+        href: '/',
+        icon: 'mdi:home',
+        variant: 'primary' as const
+      }
     ];
   }
 
@@ -361,108 +328,99 @@
       return pageBreadcrumbs;
     }
     // Generate default breadcrumbs based on path
-    if (pathname === "/") {
+    if (pathname === '/') {
       // On homepage, just show "Home"
       return [
         {
-          label: "Home",
-          icon: "mdi:home",
-        },
+          label: 'Home',
+          icon: 'mdi:home'
+        }
       ];
-    } else if (pathname.startsWith("/workflow/create")) {
+    } else if (pathname.startsWith('/workflow/create')) {
       return [
         {
-          label: "Home",
-          href: "/",
-          icon: "mdi:home",
+          label: 'Home',
+          href: '/',
+          icon: 'mdi:home'
         },
         {
-          label: "Workflows",
-          href: "/",
-          icon: "mdi:view-list",
+          label: 'Workflows',
+          href: '/',
+          icon: 'mdi:view-list'
         },
         {
-          label: "Create Workflow",
-          icon: "mdi:plus",
-        },
+          label: 'Create Workflow',
+          icon: 'mdi:plus'
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/edit")
-    ) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
       return [
         {
-          label: "Home",
-          href: "/",
-          icon: "mdi:home",
+          label: 'Home',
+          href: '/',
+          icon: 'mdi:home'
         },
         {
-          label: "Workflows",
-          href: "/",
-          icon: "mdi:view-list",
+          label: 'Workflows',
+          href: '/',
+          icon: 'mdi:view-list'
         },
         {
-          label: workflowName || "Workflow",
-          icon: "mdi:pencil",
-        },
+          label: workflowName || 'Workflow',
+          icon: 'mdi:pencil'
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/playground")
-    ) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/playground')) {
       // Playground page
-      const workflowId = pathname.split("/")[2];
+      const workflowId = pathname.split('/')[2];
       return [
         {
-          label: "Home",
-          href: "/",
-          icon: "mdi:home",
+          label: 'Home',
+          href: '/',
+          icon: 'mdi:home'
         },
         {
-          label: "Workflows",
-          href: "/",
-          icon: "mdi:view-list",
+          label: 'Workflows',
+          href: '/',
+          icon: 'mdi:view-list'
         },
         {
-          label: workflowName || "Workflow",
+          label: workflowName || 'Workflow',
           href: `/workflow/${workflowId}/edit`,
-          icon: "mdi:workflow",
+          icon: 'mdi:workflow'
         },
         {
-          label: "Playground",
-          icon: "mdi:play-circle-outline",
-        },
+          label: 'Playground',
+          icon: 'mdi:play-circle-outline'
+        }
       ];
-    } else if (
-      pathname.startsWith("/workflow/") &&
-      pathname.includes("/pipelines")
-    ) {
-      const workflowId = pathname.split("/")[2];
-      if (pathname.includes("/pipelines/") && pathname.split("/").length > 4) {
+    } else if (pathname.startsWith('/workflow/') && pathname.includes('/pipelines')) {
+      const workflowId = pathname.split('/')[2];
+      if (pathname.includes('/pipelines/') && pathname.split('/').length > 4) {
         // Individual pipeline status page - this will be handled by PipelineStatus component
         return [];
       } else {
         // Pipeline list page
         return [
           {
-            label: "Home",
-            href: "/",
-            icon: "mdi:home",
+            label: 'Home',
+            href: '/',
+            icon: 'mdi:home'
           },
           {
-            label: "Workflows",
-            href: "/",
-            icon: "mdi:view-list",
+            label: 'Workflows',
+            href: '/',
+            icon: 'mdi:view-list'
           },
           {
-            label: "Workflow",
+            label: 'Workflow',
             href: `/workflow/${workflowId}/edit`,
-            icon: "mdi:workflow",
+            icon: 'mdi:workflow'
           },
           {
-            label: "Pipelines",
-            icon: "mdi:source-branch",
-          },
+            label: 'Pipelines',
+            icon: 'mdi:source-branch'
+          }
         ];
       }
     }
@@ -470,17 +428,17 @@
     // Default breadcrumb for other pages
     return [
       {
-        label: "Home",
-        href: "/",
-        icon: "mdi:home",
+        label: 'Home',
+        href: '/',
+        icon: 'mdi:home'
       },
       {
-        label: "API Docs",
-        href: "https://flowdrop-io.github.io/flowdrop/",
-        icon: "mdi:api",
-        variant: "outline" as const,
-        external: true,
-      },
+        label: 'API Docs',
+        href: 'https://flowdrop-io.github.io/flowdrop/',
+        icon: 'mdi:api',
+        variant: 'outline' as const,
+        external: true
+      }
     ];
   }
 </script>
@@ -499,13 +457,11 @@
     {#snippet header()}
       <Navbar
         title={currentBreadcrumbs.length === 0
-          ? $page.url.pathname === "/"
-            ? "Workflows"
-            : "FlowDrop"
+          ? $page.url.pathname === '/'
+            ? 'Workflows'
+            : 'FlowDrop'
           : undefined}
-        breadcrumbs={currentBreadcrumbs.length > 0
-          ? currentBreadcrumbs
-          : undefined}
+        breadcrumbs={currentBreadcrumbs.length > 0 ? currentBreadcrumbs : undefined}
         {primaryActions}
       />
     {/snippet}

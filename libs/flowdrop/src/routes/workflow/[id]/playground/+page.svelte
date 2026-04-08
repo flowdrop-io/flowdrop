@@ -6,18 +6,15 @@
 -->
 
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { get } from "svelte/store";
-  import { onMount } from "svelte";
-  import Icon from "@iconify/svelte";
-  import Playground from "$lib/components/playground/Playground.svelte";
-  import {
-    createEndpointConfig,
-    type EndpointConfig,
-  } from "$lib/config/endpoints.js";
-  import { setEndpointConfig } from "$lib/services/api.js";
-  import type { Workflow } from "$lib/types/index.js";
-  import type { PlaygroundConfig } from "$lib/types/playground.js";
+  import { page } from '$app/stores';
+  import { get } from 'svelte/store';
+  import { onMount } from 'svelte';
+  import Icon from '@iconify/svelte';
+  import Playground from '$lib/components/playground/Playground.svelte';
+  import { createEndpointConfig, type EndpointConfig } from '$lib/config/endpoints.js';
+  import { setEndpointConfig } from '$lib/services/api.js';
+  import type { Workflow } from '$lib/types/index.js';
+  import type { PlaygroundConfig } from '$lib/types/playground.js';
 
   let { data } = $props();
 
@@ -27,10 +24,10 @@
     createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
       auth: {
         type: data.runtimeConfig.authType,
-        token: data.runtimeConfig.authToken,
+        token: data.runtimeConfig.authToken
       },
-      timeout: data.runtimeConfig.timeout,
-    }),
+      timeout: data.runtimeConfig.timeout
+    })
   );
 
   /** Workflow ID from URL params (captured once at init to avoid re-renders) */
@@ -38,8 +35,7 @@
   const workflowId: string = pageData.params.id;
 
   /** Session ID from URL query params (captured once at init) */
-  const sessionId: string | undefined =
-    pageData.url.searchParams.get("session") ?? undefined;
+  const sessionId: string | undefined = pageData.url.searchParams.get('session') ?? undefined;
 
   /**
    * Parse boolean query parameter
@@ -47,7 +43,7 @@
    */
   function parseBoolParam(value: string | null): boolean | undefined {
     if (value === null) return undefined;
-    return value === "true" || value === "1";
+    return value === 'true' || value === '1';
   }
 
   /**
@@ -68,16 +64,11 @@
    * - /workflow/demo/playground?sidebarWidth=320px (Wider sidebar)
    */
   const playgroundConfig: PlaygroundConfig = {
-    showChatInput: parseBoolParam(
-      pageData.url.searchParams.get("showChatInput"),
-    ),
-    showRunButton: parseBoolParam(
-      pageData.url.searchParams.get("showRunButton"),
-    ),
-    predefinedMessage:
-      pageData.url.searchParams.get("predefinedMessage") ?? undefined,
-    autoRun: parseBoolParam(pageData.url.searchParams.get("autoRun")),
-    sidebarWidth: pageData.url.searchParams.get("sidebarWidth") ?? undefined,
+    showChatInput: parseBoolParam(pageData.url.searchParams.get('showChatInput')),
+    showRunButton: parseBoolParam(pageData.url.searchParams.get('showRunButton')),
+    predefinedMessage: pageData.url.searchParams.get('predefinedMessage') ?? undefined,
+    autoRun: parseBoolParam(pageData.url.searchParams.get('autoRun')),
+    sidebarWidth: pageData.url.searchParams.get('sidebarWidth') ?? undefined
   };
 
   /** Workflow data */
@@ -102,7 +93,7 @@
    */
   async function loadWorkflow(): Promise<void> {
     if (!workflowId) {
-      error = "Missing workflow ID";
+      error = 'Missing workflow ID';
       loading = false;
       return;
     }
@@ -113,18 +104,18 @@
 
       // Build the API URL
       const apiUrl = `${endpointConfig.baseUrl}/workflows/${encodeURIComponent(workflowId)}`;
-      console.log("[Playground] Fetching workflow from:", apiUrl);
+      console.log('[Playground] Fetching workflow from:', apiUrl);
 
       // Create an AbortController for timeout handling
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         controller.abort();
-        console.warn("[Playground] Fetch timeout - aborting request");
+        console.warn('[Playground] Fetch timeout - aborting request');
       }, 10000); // 10 second timeout
 
       try {
         const response = await fetch(apiUrl, {
-          signal: controller.signal,
+          signal: controller.signal
         });
 
         clearTimeout(timeoutId);
@@ -134,31 +125,30 @@
         }
 
         const result = await response.json();
-        console.log("[Playground] Workflow loaded:", result);
+        console.log('[Playground] Workflow loaded:', result);
 
         // Extract workflow data from response
         workflow = result.success && result.data ? result.data : result;
 
         if (!workflow) {
-          throw new Error("No workflow data in response");
+          throw new Error('No workflow data in response');
         }
       } catch (fetchErr) {
         clearTimeout(timeoutId);
         throw fetchErr;
       }
     } catch (err) {
-      console.error("[Playground] Failed to load workflow:", err);
+      console.error('[Playground] Failed to load workflow:', err);
 
       // Handle specific error types
       if (err instanceof Error) {
-        if (err.name === "AbortError") {
-          error =
-            "Request timed out. Please check your connection and try again.";
+        if (err.name === 'AbortError') {
+          error = 'Request timed out. Please check your connection and try again.';
         } else {
           error = err.message;
         }
       } else {
-        error = "Failed to load workflow";
+        error = 'Failed to load workflow';
       }
     } finally {
       loading = false;
@@ -167,7 +157,7 @@
 </script>
 
 <svelte:head>
-  <title>Playground - {workflow?.name ?? "Workflow"} - FlowDrop</title>
+  <title>Playground - {workflow?.name ?? 'Workflow'} - FlowDrop</title>
 </svelte:head>
 
 <div class="playground-page">
@@ -183,11 +173,7 @@
         <Icon icon="mdi:alert-circle" class="playground-page__error-icon" />
         <h2 class="playground-page__error-title">Failed to load workflow</h2>
         <p class="playground-page__error-text">{error}</p>
-        <button
-          type="button"
-          class="playground-page__retry-btn"
-          onclick={loadWorkflow}
-        >
+        <button type="button" class="playground-page__retry-btn" onclick={loadWorkflow}>
           <Icon icon="mdi:refresh" />
           Retry
         </button>

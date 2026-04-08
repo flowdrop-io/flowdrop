@@ -105,17 +105,17 @@ canvas reset                       — Reset viewport to default.
 
 Values are auto-parsed in this priority order:
 
-| Input | Parsed As | Example |
-|-------|-----------|---------|
-| `"""..."""` | Multiline string (triple-quote) | see below |
-| `"text"` | String — JSON-unescaped (`\n`, `\t`, `\\` work) | `set n.1:name "Line1\nLine2"` |
-| `'text'` | String (quotes stripped, no escape processing) | `set n.1:name 'My Node'` |
-| `[1,2,3]` | JSON array | `set n.1:items [1,2,3]` |
-| `{"k":"v"}` | JSON object | `set n.1:meta {"key":"val"}` |
-| `null` | null | `set n.1:ref null` |
-| `123` or `0.7` | Number | `set n.1:temperature 0.7` |
-| `true` / `false` | Boolean | `set n.1:enabled true` |
-| `anything else` | String (fallback) | `set n.1:model gpt-4` |
+| Input            | Parsed As                                       | Example                       |
+| ---------------- | ----------------------------------------------- | ----------------------------- |
+| `"""..."""`      | Multiline string (triple-quote)                 | see below                     |
+| `"text"`         | String — JSON-unescaped (`\n`, `\t`, `\\` work) | `set n.1:name "Line1\nLine2"` |
+| `'text'`         | String (quotes stripped, no escape processing)  | `set n.1:name 'My Node'`      |
+| `[1,2,3]`        | JSON array                                      | `set n.1:items [1,2,3]`       |
+| `{"k":"v"}`      | JSON object                                     | `set n.1:meta {"key":"val"}`  |
+| `null`           | null                                            | `set n.1:ref null`            |
+| `123` or `0.7`   | Number                                          | `set n.1:temperature 0.7`     |
+| `true` / `false` | Boolean                                         | `set n.1:enabled true`        |
+| `anything else`  | String (fallback)                               | `set n.1:model gpt-4`         |
 
 ### Multiline values (triple-quote syntax)
 
@@ -137,17 +137,17 @@ This is the preferred way to set prompts, instructions, or any other long-form t
 
 ### Port Data Types
 
-| Type | Description |
-|------|-------------|
-| `string` | Text data |
-| `number` | Numeric values |
-| `boolean` | True/false |
-| `array` | Arrays/lists |
-| `object` | Structured objects |
-| `json` | JSON data |
-| `mixed` | Accepts any compatible type |
-| `tool` | Tool invocations |
-| `trigger` | Execution flow signal |
+| Type      | Description                 |
+| --------- | --------------------------- |
+| `string`  | Text data                   |
+| `number`  | Numeric values              |
+| `boolean` | True/false                  |
+| `array`   | Arrays/lists                |
+| `object`  | Structured objects          |
+| `json`    | JSON data                   |
+| `mixed`   | Accepts any compatible type |
+| `tool`    | Tool invocations            |
+| `trigger` | Execution flow signal       |
 
 ### Connection Constraints
 
@@ -214,7 +214,7 @@ interface NodePort {
   /** Display name */
   name: string;
   /** Direction: "input" | "output" */
-  type: "input" | "output";
+  type: 'input' | 'output';
   /** Data type for compatibility checking */
   dataType: string;
   /** Whether this port must be connected */
@@ -224,13 +224,13 @@ interface NodePort {
 }
 
 interface ConfigSchema {
-  type: "object";
+  type: 'object';
   properties: Record<string, ConfigProperty>;
   required?: string[];
 }
 
 interface ConfigProperty {
-  type: "string" | "number" | "boolean" | "array" | "object" | "integer";
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer';
   title?: string;
   description?: string;
   default?: unknown;
@@ -244,7 +244,7 @@ interface ConfigProperty {
   maxLength?: number;
   pattern?: string;
   /** "multiline" for textarea, "hidden" to hide field */
-  format?: "multiline" | "hidden" | string;
+  format?: 'multiline' | 'hidden' | string;
   /** For array type — schema of each item */
   items?: ConfigProperty;
   /** For object type — nested properties */
@@ -295,22 +295,22 @@ interface WorkflowEdge {
 ```typescript
 type CommandResult =
   | { ok: true; message: string; data?: object }
-  | { ok: false; error: string; code: CommandErrorCode }
+  | { ok: false; error: string; code: CommandErrorCode };
 
 type CommandErrorCode =
-  | "NODE_NOT_FOUND"
-  | "NODE_TYPE_NOT_FOUND"
-  | "PORT_NOT_FOUND"
-  | "EDGE_NOT_FOUND"
-  | "INVALID_CONNECTION"
-  | "CYCLE_DETECTED"
-  | "NO_WORKFLOW"
-  | "PARSE_ERROR"
-  | "UNKNOWN_COMMAND"
-  | "CONFIG_KEY_NOT_FOUND"
-  | "CONFIG_VALIDATION_ERROR"
-  | "UNDO_UNAVAILABLE"
-  | "REDO_UNAVAILABLE"
+  | 'NODE_NOT_FOUND'
+  | 'NODE_TYPE_NOT_FOUND'
+  | 'PORT_NOT_FOUND'
+  | 'EDGE_NOT_FOUND'
+  | 'INVALID_CONNECTION'
+  | 'CYCLE_DETECTED'
+  | 'NO_WORKFLOW'
+  | 'PARSE_ERROR'
+  | 'UNKNOWN_COMMAND'
+  | 'CONFIG_KEY_NOT_FOUND'
+  | 'CONFIG_VALIDATION_ERROR'
+  | 'UNDO_UNAVAILABLE'
+  | 'REDO_UNAVAILABLE';
 ```
 
 ---

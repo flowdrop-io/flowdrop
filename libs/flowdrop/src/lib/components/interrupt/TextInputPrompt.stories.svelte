@@ -1,19 +1,19 @@
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
-  import TextInputPrompt from "./TextInputPrompt.svelte";
-  import { fn } from "storybook/test";
-  import { createTextConfig } from "../../stories/utils.js";
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import TextInputPrompt from './TextInputPrompt.svelte';
+  import { fn } from 'storybook/test';
+  import { createTextConfig } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: "Interrupt/TextInputPrompt",
+    title: 'Interrupt/TextInputPrompt',
     component: TextInputPrompt,
-    tags: ["autodocs"],
+    tags: ['autodocs'],
     args: {
       config: createTextConfig(),
       isResolved: false,
       isSubmitting: false,
-      onSubmit: fn(),
-    },
+      onSubmit: fn()
+    }
   });
 </script>
 
@@ -23,10 +23,10 @@
   name="Multiline"
   args={{
     config: createTextConfig({
-      message: "Describe the issue in detail:",
+      message: 'Describe the issue in detail:',
       multiline: true,
-      placeholder: "Type your description...",
-    }),
+      placeholder: 'Type your description...'
+    })
   }}
 />
 
@@ -34,10 +34,10 @@
   name="With Constraints"
   args={{
     config: createTextConfig({
-      message: "Enter a short summary:",
+      message: 'Enter a short summary:',
       minLength: 10,
-      maxLength: 100,
-    }),
+      maxLength: 100
+    })
   }}
 />
 
@@ -45,8 +45,7 @@
   name="Resolved"
   args={{
     isResolved: true,
-    resolvedValue:
-      "The workflow completed successfully with all checks passed.",
-    resolvedByUserName: "Charlie",
+    resolvedValue: 'The workflow completed successfully with all checks passed.',
+    resolvedByUserName: 'Charlie'
   }}
 />

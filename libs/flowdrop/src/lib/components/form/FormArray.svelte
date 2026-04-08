@@ -18,8 +18,8 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import type { FieldSchema } from "./types.js";
+  import Icon from '@iconify/svelte';
+  import type { FieldSchema } from './types.js';
 
   interface Props {
     /** Field identifier */
@@ -46,9 +46,9 @@
     itemSchema,
     minItems = 0,
     maxItems,
-    addLabel = "Add Item",
+    addLabel = 'Add Item',
     disabled = false,
-    onChange,
+    onChange
   }: Props = $props();
 
   /**
@@ -59,9 +59,7 @@
   /**
    * Check if we can add more items
    */
-  const canAddItem = $derived(
-    maxItems === undefined || items.length < maxItems,
-  );
+  const canAddItem = $derived(maxItems === undefined || items.length < maxItems);
 
   /**
    * Check if we can remove items
@@ -72,10 +70,10 @@
    * Determine if items are simple (primitive) or complex (objects)
    */
   const isSimpleType = $derived(
-    itemSchema.type === "string" ||
-      itemSchema.type === "number" ||
-      itemSchema.type === "integer" ||
-      itemSchema.type === "boolean",
+    itemSchema.type === 'string' ||
+      itemSchema.type === 'number' ||
+      itemSchema.type === 'integer' ||
+      itemSchema.type === 'boolean'
   );
 
   /**
@@ -87,14 +85,14 @@
     }
 
     switch (itemSchema.type) {
-      case "string":
-        return "";
-      case "number":
-      case "integer":
+      case 'string':
+        return '';
+      case 'number':
+      case 'integer':
         return 0;
-      case "boolean":
+      case 'boolean':
         return false;
-      case "object":
+      case 'object':
         // Create default object from properties
         if (itemSchema.properties) {
           const defaultObj: Record<string, unknown> = {};
@@ -108,10 +106,10 @@
           return defaultObj;
         }
         return {};
-      case "array":
+      case 'array':
         return [];
       default:
-        return "";
+        return '';
     }
   }
 
@@ -120,19 +118,19 @@
    */
   function getDefaultForType(type: string | undefined): unknown {
     switch (type) {
-      case "string":
-        return "";
-      case "number":
-      case "integer":
+      case 'string':
+        return '';
+      case 'number':
+      case 'integer':
         return 0;
-      case "boolean":
+      case 'boolean':
         return false;
-      case "object":
+      case 'object':
         return {};
-      case "array":
+      case 'array':
         return [];
       default:
-        return "";
+        return '';
     }
   }
 
@@ -158,20 +156,14 @@
    * Update an item at the specified index
    */
   function updateItem(index: number, newItemValue: unknown): void {
-    const newValue = items.map((item, i) =>
-      i === index ? newItemValue : item,
-    );
+    const newValue = items.map((item, i) => (i === index ? newItemValue : item));
     onChange(newValue);
   }
 
   /**
    * Update a property of an object item
    */
-  function updateObjectProperty(
-    index: number,
-    propertyKey: string,
-    propertyValue: unknown,
-  ): void {
+  function updateObjectProperty(index: number, propertyKey: string, propertyValue: unknown): void {
     const currentItem = items[index] as Record<string, unknown>;
     const updatedItem = { ...currentItem, [propertyKey]: propertyValue };
     updateItem(index, updatedItem);
@@ -183,10 +175,7 @@
   function moveItemUp(index: number): void {
     if (index === 0 || disabled) return;
     const newValue = [...items];
-    [newValue[index - 1], newValue[index]] = [
-      newValue[index],
-      newValue[index - 1],
-    ];
+    [newValue[index - 1], newValue[index]] = [newValue[index], newValue[index - 1]];
     onChange(newValue);
   }
 
@@ -196,10 +185,7 @@
   function moveItemDown(index: number): void {
     if (index === items.length - 1 || disabled) return;
     const newValue = [...items];
-    [newValue[index], newValue[index + 1]] = [
-      newValue[index + 1],
-      newValue[index],
-    ];
+    [newValue[index], newValue[index + 1]] = [newValue[index + 1], newValue[index]];
     onChange(newValue);
   }
 
@@ -215,10 +201,10 @@
     }
 
     // For objects, try to find a name/label/title property
-    if (typeof item === "object" && item !== null) {
+    if (typeof item === 'object' && item !== null) {
       const obj = item as Record<string, unknown>;
       const labelKey = Object.keys(obj).find((k) =>
-        ["name", "label", "title", "id"].includes(k.toLowerCase()),
+        ['name', 'label', 'title', 'id'].includes(k.toLowerCase())
       );
       if (labelKey && obj[labelKey]) {
         return String(obj[labelKey]);
@@ -274,19 +260,13 @@
                 class="form-array__item-toggle"
                 onclick={() => toggleCollapse(index)}
                 aria-expanded={!isCollapsed(index)}
-                aria-label={isCollapsed(index)
-                  ? "Expand item"
-                  : "Collapse item"}
+                aria-label={isCollapsed(index) ? 'Expand item' : 'Collapse item'}
               >
                 <Icon
-                  icon={isCollapsed(index)
-                    ? "heroicons:chevron-right"
-                    : "heroicons:chevron-down"}
+                  icon={isCollapsed(index) ? 'heroicons:chevron-right' : 'heroicons:chevron-down'}
                   class="form-array__toggle-icon"
                 />
-                <span class="form-array__item-label"
-                  >{getItemLabel(index, item)}</span
-                >
+                <span class="form-array__item-label">{getItemLabel(index, item)}</span>
               </button>
             {:else}
               <span class="form-array__item-number">#{index + 1}</span>
@@ -335,17 +315,16 @@
           <!-- Item Content -->
           <div
             class="form-array__item-content"
-            class:form-array__item-content--collapsed={!isSimpleType &&
-              isCollapsed(index)}
+            class:form-array__item-content--collapsed={!isSimpleType && isCollapsed(index)}
           >
             {#if isSimpleType}
               <!-- Simple type: render inline input -->
-              {#if itemSchema.type === "string"}
-                {#if itemSchema.format === "multiline"}
+              {#if itemSchema.type === 'string'}
+                {#if itemSchema.format === 'multiline'}
                   <textarea
                     class="form-array__input form-array__textarea"
-                    value={String(item ?? "")}
-                    placeholder={itemSchema.placeholder ?? ""}
+                    value={String(item ?? '')}
+                    placeholder={itemSchema.placeholder ?? ''}
                     rows={3}
                     oninput={(e) => updateItem(index, e.currentTarget.value)}
                     {disabled}
@@ -354,27 +333,27 @@
                   <input
                     type="text"
                     class="form-array__input"
-                    value={String(item ?? "")}
-                    placeholder={itemSchema.placeholder ?? ""}
+                    value={String(item ?? '')}
+                    placeholder={itemSchema.placeholder ?? ''}
                     oninput={(e) => updateItem(index, e.currentTarget.value)}
                     {disabled}
                   />
                 {/if}
-              {:else if itemSchema.type === "number" || itemSchema.type === "integer"}
+              {:else if itemSchema.type === 'number' || itemSchema.type === 'integer'}
                 <input
                   type="number"
                   class="form-array__input form-array__input--number"
                   value={item as number}
-                  placeholder={itemSchema.placeholder ?? ""}
+                  placeholder={itemSchema.placeholder ?? ''}
                   min={itemSchema.minimum}
                   max={itemSchema.maximum}
                   oninput={(e) => {
                     const val = e.currentTarget.value;
-                    updateItem(index, val === "" ? "" : Number(val));
+                    updateItem(index, val === '' ? '' : Number(val));
                   }}
                   {disabled}
                 />
-              {:else if itemSchema.type === "boolean"}
+              {:else if itemSchema.type === 'boolean'}
                 <label class="form-array__toggle-wrapper">
                   <input
                     type="checkbox"
@@ -387,14 +366,14 @@
                     <span class="form-array__toggle-thumb"></span>
                   </span>
                   <span class="form-array__toggle-label">
-                    {item ? "Yes" : "No"}
+                    {item ? 'Yes' : 'No'}
                   </span>
                 </label>
               {:else if itemSchema.enum}
                 <!-- Enum: render select -->
                 <select
                   class="form-array__select"
-                  value={String(item ?? "")}
+                  value={String(item ?? '')}
                   onchange={(e) => updateItem(index, e.currentTarget.value)}
                   {disabled}
                 >
@@ -407,32 +386,26 @@
                 <input
                   type="text"
                   class="form-array__input"
-                  value={String(item ?? "")}
-                  placeholder={itemSchema.placeholder ?? ""}
+                  value={String(item ?? '')}
+                  placeholder={itemSchema.placeholder ?? ''}
                   oninput={(e) => updateItem(index, e.currentTarget.value)}
                   {disabled}
                 />
               {/if}
-            {:else if itemSchema.type === "object" && itemSchema.properties}
+            {:else if itemSchema.type === 'object' && itemSchema.properties}
               <!-- Complex type: render sub-form for object properties -->
               {#if !isCollapsed(index)}
                 <div class="form-array__subform">
                   {#each Object.entries(itemSchema.properties) as [propKey, propSchema], propIndex (propKey)}
-                    {@const propValue = (item as Record<string, unknown>)?.[
-                      propKey
-                    ]}
-                    {@const isRequired =
-                      itemSchema.required?.includes(propKey) ?? false}
+                    {@const propValue = (item as Record<string, unknown>)?.[propKey]}
+                    {@const isRequired = itemSchema.required?.includes(propKey) ?? false}
                     {@const propFieldSchema = propSchema as FieldSchema}
 
                     <div
                       class="form-array__subform-field"
                       style="animation-delay: {propIndex * 20}ms"
                     >
-                      <label
-                        class="form-array__subform-label"
-                        for="{id}-{index}-{propKey}"
-                      >
+                      <label class="form-array__subform-label" for="{id}-{index}-{propKey}">
                         <span class="form-array__subform-label-text">
                           {propFieldSchema.title ?? propKey}
                         </span>
@@ -446,71 +419,53 @@
                           <select
                             id="{id}-{index}-{propKey}"
                             class="form-array__select"
-                            value={String(propValue ?? "")}
+                            value={String(propValue ?? '')}
                             onchange={(e) =>
-                              updateObjectProperty(
-                                index,
-                                propKey,
-                                e.currentTarget.value,
-                              )}
+                              updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
                           >
                             {#each propFieldSchema.enum as option}
-                              <option value={String(option)}
-                                >{String(option)}</option
-                              >
+                              <option value={String(option)}>{String(option)}</option>
                             {/each}
                           </select>
-                        {:else if propFieldSchema.type === "string" && propFieldSchema.format === "multiline"}
+                        {:else if propFieldSchema.type === 'string' && propFieldSchema.format === 'multiline'}
                           <textarea
                             id="{id}-{index}-{propKey}"
                             class="form-array__input form-array__textarea"
-                            value={String(propValue ?? "")}
-                            placeholder={propFieldSchema.placeholder ?? ""}
+                            value={String(propValue ?? '')}
+                            placeholder={propFieldSchema.placeholder ?? ''}
                             rows={3}
                             oninput={(e) =>
-                              updateObjectProperty(
-                                index,
-                                propKey,
-                                e.currentTarget.value,
-                              )}
+                              updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
                           ></textarea>
-                        {:else if propFieldSchema.type === "string"}
+                        {:else if propFieldSchema.type === 'string'}
                           <input
                             id="{id}-{index}-{propKey}"
                             type="text"
                             class="form-array__input"
-                            value={String(propValue ?? "")}
-                            placeholder={propFieldSchema.placeholder ?? ""}
+                            value={String(propValue ?? '')}
+                            placeholder={propFieldSchema.placeholder ?? ''}
                             oninput={(e) =>
-                              updateObjectProperty(
-                                index,
-                                propKey,
-                                e.currentTarget.value,
-                              )}
+                              updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
                           />
-                        {:else if propFieldSchema.type === "number" || propFieldSchema.type === "integer"}
+                        {:else if propFieldSchema.type === 'number' || propFieldSchema.type === 'integer'}
                           <input
                             id="{id}-{index}-{propKey}"
                             type="number"
                             class="form-array__input form-array__input--number"
                             value={propValue as number}
-                            placeholder={propFieldSchema.placeholder ?? ""}
+                            placeholder={propFieldSchema.placeholder ?? ''}
                             min={propFieldSchema.minimum}
                             max={propFieldSchema.maximum}
                             oninput={(e) => {
                               const val = e.currentTarget.value;
-                              updateObjectProperty(
-                                index,
-                                propKey,
-                                val === "" ? "" : Number(val),
-                              );
+                              updateObjectProperty(index, propKey, val === '' ? '' : Number(val));
                             }}
                             {disabled}
                           />
-                        {:else if propFieldSchema.type === "boolean"}
+                        {:else if propFieldSchema.type === 'boolean'}
                           <label class="form-array__toggle-wrapper">
                             <input
                               id="{id}-{index}-{propKey}"
@@ -518,18 +473,14 @@
                               class="form-array__checkbox-input"
                               checked={Boolean(propValue)}
                               onchange={(e) =>
-                                updateObjectProperty(
-                                  index,
-                                  propKey,
-                                  e.currentTarget.checked,
-                                )}
+                                updateObjectProperty(index, propKey, e.currentTarget.checked)}
                               {disabled}
                             />
                             <span class="form-array__toggle-track">
                               <span class="form-array__toggle-thumb"></span>
                             </span>
                             <span class="form-array__toggle-label">
-                              {propValue ? "Yes" : "No"}
+                              {propValue ? 'Yes' : 'No'}
                             </span>
                           </label>
                         {:else}
@@ -537,14 +488,10 @@
                             id="{id}-{index}-{propKey}"
                             type="text"
                             class="form-array__input"
-                            value={String(propValue ?? "")}
-                            placeholder={propFieldSchema.placeholder ?? ""}
+                            value={String(propValue ?? '')}
+                            placeholder={propFieldSchema.placeholder ?? ''}
                             oninput={(e) =>
-                              updateObjectProperty(
-                                index,
-                                propKey,
-                                e.currentTarget.value,
-                              )}
+                              updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
                           />
                         {/if}
@@ -594,9 +541,7 @@
   <!-- Item count and limits -->
   {#if minItems > 0 || maxItems !== undefined}
     <div class="form-array__info">
-      <span class="form-array__count"
-        >{items.length} item{items.length !== 1 ? "s" : ""}</span
-      >
+      <span class="form-array__count">{items.length} item{items.length !== 1 ? 's' : ''}</span>
       {#if minItems > 0}
         <span class="form-array__limit">Min: {minItems}</span>
       {/if}
@@ -932,9 +877,7 @@
     background-color: var(--fd-primary);
   }
 
-  .form-array__checkbox-input:checked
-    + .form-array__toggle-track
-    .form-array__toggle-thumb {
+  .form-array__checkbox-input:checked + .form-array__toggle-track .form-array__toggle-thumb {
     transform: translateX(1rem);
   }
 

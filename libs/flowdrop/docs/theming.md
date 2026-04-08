@@ -289,7 +289,7 @@ The token system supports dark mode. Semantic color tokens (surfaces, primary, a
 Or via JavaScript:
 
 ```javascript
-document.documentElement.setAttribute("data-theme", "dark");
+document.documentElement.setAttribute('data-theme', 'dark');
 ```
 
 ## Best Practices

@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-  import { useUpdateNodeInternals } from "@xyflow/svelte";
+  import { useUpdateNodeInternals } from '@xyflow/svelte';
 
   interface Props {
     /** Node ID to refresh - when this changes, edges are recalculated */

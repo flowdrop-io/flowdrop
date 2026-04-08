@@ -8,33 +8,30 @@ import type {
   NodeMetadata,
   Workflow,
   WorkflowEdge,
-  NodeExecutionInfo,
-} from "../types/index.js";
-import {
-  hasCycles,
-  hasInvalidCycles,
-} from "../utils/connections.js";
-import { workflowApi, nodeApi, setEndpointConfig } from "../services/api.js";
-import { v4 as uuidv4 } from "uuid";
-import { workflowActions } from "../stores/workflowStore.svelte.js";
-import { nodeExecutionService } from "../services/nodeExecutionService.js";
-import type { EndpointConfig } from "../config/endpoints.js";
-import { WorkflowAdapter } from "../adapters/WorkflowAdapter.js";
-import { AgentSpecAdapter } from "../adapters/agentspec/AgentSpecAdapter.js";
-import { validateForAgentSpecExport } from "../adapters/agentspec/validator.js";
-import { extractPortId } from "../utils/handleIds.js";
-import { logger } from "../utils/logger.js";
-import { generateNodeId, extractConfigDefaults } from "../utils/nodeIds.js";
+  NodeExecutionInfo
+} from '../types/index.js';
+import { hasCycles, hasInvalidCycles } from '../utils/connections.js';
+import { workflowApi, nodeApi, setEndpointConfig } from '../services/api.js';
+import { v4 as uuidv4 } from 'uuid';
+import { workflowActions } from '../stores/workflowStore.svelte.js';
+import { nodeExecutionService } from '../services/nodeExecutionService.js';
+import type { EndpointConfig } from '../config/endpoints.js';
+import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
+import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
+import { validateForAgentSpecExport } from '../adapters/agentspec/validator.js';
+import { extractPortId } from '../utils/handleIds.js';
+import { logger } from '../utils/logger.js';
+import { generateNodeId, extractConfigDefaults } from '../utils/nodeIds.js';
 import {
   applyConnectionStyling as applyConnectionStylingUtil,
   updateEdgeStyles as updateEdgeStylesUtil,
   isGatewayBranch as isGatewayBranchUtil,
   getPortDataType as getPortDataTypeUtil,
   getEdgeCategory as getEdgeCategoryUtil,
-  getEdgeCategoryWithLoopback as getEdgeCategoryWithLoopbackUtil,
-} from "../utils/edgeStyling.js";
+  getEdgeCategoryWithLoopback as getEdgeCategoryWithLoopbackUtil
+} from '../utils/edgeStyling.js';
 
-export { generateNodeId, extractConfigDefaults } from "../utils/nodeIds.js";
+export { generateNodeId, extractConfigDefaults } from '../utils/nodeIds.js';
 
 /**
  * Edge category type for styling purposes
@@ -43,7 +40,7 @@ export { generateNodeId, extractConfigDefaults } from "../utils/nodeIds.js";
  * - loopback: Dashed gray line for loop iteration connections (targets loop_back port)
  * - data: Normal gray line for all other data connections
  */
-export type EdgeCategory = "trigger" | "tool" | "loopback" | "data";
+export type EdgeCategory = 'trigger' | 'tool' | 'loopback' | 'data';
 
 /**
  * Edge styling configuration based on source port data type.
@@ -61,7 +58,7 @@ export class EdgeStylingHelper {
   static getPortDataType(
     node: WorkflowNodeType,
     portId: string,
-    portType: "input" | "output",
+    portType: 'input' | 'output'
   ): string | null {
     return getPortDataTypeUtil(node, portId, portType);
   }
@@ -72,7 +69,7 @@ export class EdgeStylingHelper {
 
   static getEdgeCategoryWithLoopback(
     edge: WorkflowEdge,
-    sourcePortDataType: string | null,
+    sourcePortDataType: string | null
   ): EdgeCategory {
     return getEdgeCategoryWithLoopbackUtil(edge, sourcePortDataType);
   }
@@ -80,15 +77,12 @@ export class EdgeStylingHelper {
   static applyConnectionStyling(
     edge: WorkflowEdge,
     sourceNode: WorkflowNodeType,
-    targetNode: WorkflowNodeType,
+    targetNode: WorkflowNodeType
   ): void {
     applyConnectionStylingUtil(edge, sourceNode, targetNode);
   }
 
-  static updateEdgeStyles(
-    edges: WorkflowEdge[],
-    nodes: WorkflowNodeType[],
-  ): WorkflowEdge[] {
+  static updateEdgeStyles(edges: WorkflowEdge[], nodes: WorkflowNodeType[]): WorkflowEdge[] {
     return updateEdgeStylesUtil(edges, nodes);
   }
 }
@@ -100,9 +94,7 @@ export class NodeOperationsHelper {
   /**
    * Load nodes from API
    */
-  static async loadNodesFromApi(
-    providedNodes?: NodeMetadata[],
-  ): Promise<NodeMetadata[]> {
+  static async loadNodesFromApi(providedNodes?: NodeMetadata[]): Promise<NodeMetadata[]> {
     // If nodes are provided via props, use them
     if (providedNodes && providedNodes.length > 0) {
       return providedNodes;
@@ -113,34 +105,30 @@ export class NodeOperationsHelper {
       const fetchedNodes = await nodeApi.getNodes();
       return fetchedNodes;
     } catch (error) {
-      logger.error("Failed to load nodes from API:", error);
+      logger.error('Failed to load nodes from API:', error);
 
       // Use fallback sample nodes
       return [
         {
-          id: "text-input",
-          name: "Text Input",
-          category: "inputs",
-          description: "Simple text input field",
-          version: "1.0.0",
-          icon: "mdi:text-box",
+          id: 'text-input',
+          name: 'Text Input',
+          category: 'inputs',
+          description: 'Simple text input field',
+          version: '1.0.0',
+          icon: 'mdi:text-box',
           inputs: [],
-          outputs: [
-            { id: "text", name: "text", type: "output", dataType: "string" },
-          ],
+          outputs: [{ id: 'text', name: 'text', type: 'output', dataType: 'string' }]
         },
         {
-          id: "text-output",
-          name: "Text Output",
-          category: "outputs",
-          description: "Display text output",
-          version: "1.0.0",
-          icon: "mdi:text-box-outline",
-          inputs: [
-            { id: "text", name: "text", type: "input", dataType: "string" },
-          ],
-          outputs: [],
-        },
+          id: 'text-output',
+          name: 'Text Output',
+          category: 'outputs',
+          description: 'Display text output',
+          version: '1.0.0',
+          icon: 'mdi:text-box-outline',
+          inputs: [{ id: 'text', name: 'text', type: 'input', dataType: 'string' }],
+          outputs: []
+        }
       ];
     }
   }
@@ -150,7 +138,7 @@ export class NodeOperationsHelper {
    */
   static async loadNodeExecutionInfo(
     workflow: Workflow | null,
-    pipelineId?: string,
+    pipelineId?: string
   ): Promise<Record<string, NodeExecutionInfo>> {
     if (!workflow?.nodes) return {};
 
@@ -159,15 +147,14 @@ export class NodeOperationsHelper {
 
     try {
       const nodeIds = workflow.nodes.map((node) => node.id);
-      const executionInfo =
-        await nodeExecutionService.getMultipleNodeExecutionInfo(
-          nodeIds,
-          pipelineId,
-        );
+      const executionInfo = await nodeExecutionService.getMultipleNodeExecutionInfo(
+        nodeIds,
+        pipelineId
+      );
 
       return executionInfo;
     } catch (error) {
-      logger.error("Failed to load node execution info:", error);
+      logger.error('Failed to load node execution info:', error);
       return {};
     }
   }
@@ -178,7 +165,7 @@ export class NodeOperationsHelper {
   static createNodeFromDrop(
     nodeTypeData: string,
     position: { x: number; y: number },
-    existingNodes: WorkflowNodeType[] = [],
+    existingNodes: WorkflowNodeType[] = []
   ): WorkflowNodeType | null {
     try {
       const parsedData = JSON.parse(nodeTypeData);
@@ -191,7 +178,7 @@ export class NodeOperationsHelper {
         metadata: NodeMetadata;
       };
 
-      if (parsedData.type === "node") {
+      if (parsedData.type === 'node') {
         // Old format from sidebar
         nodeType = parsedData.nodeData.metadata;
         nodeData = parsedData.nodeData;
@@ -202,7 +189,7 @@ export class NodeOperationsHelper {
         nodeData = {
           label: nodeType.name,
           config: extractConfigDefaults(nodeType.configSchema),
-          metadata: nodeType,
+          metadata: nodeType
         };
       }
 
@@ -213,18 +200,18 @@ export class NodeOperationsHelper {
       // UniversalNode component handles internal switching based on metadata and config
       const newNode: WorkflowNodeType = {
         id: newNodeId,
-        type: "universalNode",
+        type: 'universalNode',
         position, // Use the position calculated from the drop event
         deletable: true,
         data: {
           ...nodeData,
-          nodeId: newNodeId, // Use the same ID
-        },
+          nodeId: newNodeId // Use the same ID
+        }
       };
 
       return newNode;
     } catch (error) {
-      logger.error("Error parsing node data:", error);
+      logger.error('Error parsing node data:', error);
       return null;
     }
   }
@@ -237,17 +224,15 @@ export class WorkflowOperationsHelper {
   /**
    * Generate workflow metadata for updates
    */
-  static generateMetadata(
-    existingMetadata?: Workflow["metadata"],
-  ): Workflow["metadata"] {
+  static generateMetadata(existingMetadata?: Workflow['metadata']): Workflow['metadata'] {
     const now = new Date().toISOString();
     return {
-      version: "1.0.0",
+      version: '1.0.0',
       createdAt: now,
       ...(existingMetadata ?? {}),
       updatedAt: now,
       versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      updateNumber: (existingMetadata?.updateNumber || 0) + 1,
+      updateNumber: (existingMetadata?.updateNumber || 0) + 1
     };
   }
 
@@ -257,13 +242,13 @@ export class WorkflowOperationsHelper {
   static updateWorkflow(
     workflow: Workflow,
     nodes: WorkflowNodeType[],
-    edges: WorkflowEdge[],
+    edges: WorkflowEdge[]
   ): Workflow {
     return {
       ...workflow,
       nodes,
       edges,
-      metadata: this.generateMetadata(workflow.metadata),
+      metadata: this.generateMetadata(workflow.metadata)
     };
   }
 
@@ -275,7 +260,7 @@ export class WorkflowOperationsHelper {
       ...workflow,
       nodes: [],
       edges: [],
-      metadata: this.generateMetadata(workflow.metadata),
+      metadata: this.generateMetadata(workflow.metadata)
     };
   }
 
@@ -285,7 +270,7 @@ export class WorkflowOperationsHelper {
   static updateNodeConfig(
     workflow: Workflow,
     nodeId: string,
-    newConfig: Record<string, unknown>,
+    newConfig: Record<string, unknown>
   ): Workflow {
     return {
       ...workflow,
@@ -293,11 +278,11 @@ export class WorkflowOperationsHelper {
         node.id === nodeId
           ? {
               ...node,
-              data: { ...node.data, config: { ...newConfig } },
+              data: { ...node.data, config: { ...newConfig } }
             }
-          : node,
+          : node
       ),
-      metadata: this.generateMetadata(workflow.metadata),
+      metadata: this.generateMetadata(workflow.metadata)
     };
   }
 
@@ -308,18 +293,16 @@ export class WorkflowOperationsHelper {
     return {
       ...workflow,
       nodes: [...workflow.nodes, node],
-      metadata: this.generateMetadata(workflow.metadata),
+      metadata: this.generateMetadata(workflow.metadata)
     };
   }
 
   /**
    * Save workflow to backend
    */
-  static async saveWorkflow(
-    workflow: Workflow | null,
-  ): Promise<Workflow | null> {
+  static async saveWorkflow(workflow: Workflow | null): Promise<Workflow | null> {
     if (!workflow) {
-      logger.warn("No workflow data available to save");
+      logger.warn('No workflow data available to save');
       return null;
     }
 
@@ -336,14 +319,14 @@ export class WorkflowOperationsHelper {
 
       const workflowToSave: Workflow = {
         id: workflowId,
-        name: workflow.name || "Untitled Workflow",
+        name: workflow.name || 'Untitled Workflow',
         nodes: workflow.nodes || [],
         edges: workflow.edges || [],
         metadata: {
-          version: "1.0.0",
+          version: '1.0.0',
           createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
+          updatedAt: new Date().toISOString()
+        }
       };
 
       const savedWorkflow = await workflowApi.saveWorkflow(workflowToSave);
@@ -356,14 +339,14 @@ export class WorkflowOperationsHelper {
           name: workflowToSave.name,
           metadata: {
             ...workflowToSave.metadata,
-            ...savedWorkflow.metadata,
-          },
+            ...savedWorkflow.metadata
+          }
         });
       }
 
       return savedWorkflow;
     } catch (error) {
-      logger.error("Failed to save workflow:", error);
+      logger.error('Failed to save workflow:', error);
       throw error;
     }
   }
@@ -373,7 +356,7 @@ export class WorkflowOperationsHelper {
    */
   static exportWorkflow(workflow: Workflow | null): void {
     if (!workflow) {
-      logger.warn("No workflow data available to export");
+      logger.warn('No workflow data available to export');
       return;
     }
 
@@ -382,20 +365,20 @@ export class WorkflowOperationsHelper {
 
     const workflowToExport: Workflow = {
       id: workflowId,
-      name: workflow.name || "Untitled Workflow",
+      name: workflow.name || 'Untitled Workflow',
       nodes: workflow.nodes || [],
       edges: workflow.edges || [],
       metadata: {
-        version: "1.0.0",
+        version: '1.0.0',
         createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     };
 
     const dataStr = JSON.stringify(workflowToExport, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
     link.download = `${workflowToExport.name}.json`;
     link.click();
@@ -419,8 +402,8 @@ export class WorkflowOperationsHelper {
     if (!workflow) {
       return {
         valid: false,
-        errors: ["No workflow data available to export"],
-        warnings: [],
+        errors: ['No workflow data available to export'],
+        warnings: []
       };
     }
 
@@ -439,11 +422,11 @@ export class WorkflowOperationsHelper {
     const agentSpecJson = agentSpecAdapter.exportJSON(standardWorkflow);
 
     // Trigger download
-    const dataBlob = new Blob([agentSpecJson], { type: "application/json" });
+    const dataBlob = new Blob([agentSpecJson], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `${workflow.name || "workflow"}-agentspec.json`;
+    link.download = `${workflow.name || 'workflow'}-agentspec.json`;
     link.click();
     URL.revokeObjectURL(url);
 
@@ -481,10 +464,7 @@ export class WorkflowOperationsHelper {
    * @param edges - Array of workflow edges
    * @returns True if there are invalid (non-loopback) cycles
    */
-  static checkWorkflowCycles(
-    nodes: WorkflowNodeType[],
-    edges: WorkflowEdge[],
-  ): boolean {
+  static checkWorkflowCycles(nodes: WorkflowNodeType[], edges: WorkflowEdge[]): boolean {
     return hasInvalidCycles(nodes, edges);
   }
 
@@ -496,10 +476,7 @@ export class WorkflowOperationsHelper {
    * @param edges - Array of workflow edges
    * @returns True if any cycle exists
    */
-  static checkWorkflowHasAnyCycles(
-    nodes: WorkflowNodeType[],
-    edges: WorkflowEdge[],
-  ): boolean {
+  static checkWorkflowHasAnyCycles(nodes: WorkflowNodeType[], edges: WorkflowEdge[]): boolean {
     return hasCycles(nodes, edges);
   }
 }

@@ -3,16 +3,13 @@
  * Helper functions for optimizing performance in the FlowDrop app
  */
 
-import type { WorkflowNode, WorkflowEdge } from "../types/index.js";
+import type { WorkflowNode, WorkflowEdge } from '../types/index.js';
 
 /**
  * Fast shallow comparison for workflow nodes
  * Avoids expensive JSON.stringify operations
  */
-export function areNodeArraysEqual(
-  nodes1: WorkflowNode[],
-  nodes2: WorkflowNode[],
-): boolean {
+export function areNodeArraysEqual(nodes1: WorkflowNode[], nodes2: WorkflowNode[]): boolean {
   if (nodes1.length !== nodes2.length) return false;
 
   for (let i = 0; i < nodes1.length; i++) {
@@ -23,10 +20,7 @@ export function areNodeArraysEqual(
     if (node1?.id !== node2?.id) return false;
 
     // Check position (most common change during drag)
-    if (
-      node1?.position?.x !== node2?.position?.x ||
-      node1?.position?.y !== node2?.position?.y
-    ) {
+    if (node1?.position?.x !== node2?.position?.x || node1?.position?.y !== node2?.position?.y) {
       return false;
     }
 
@@ -44,10 +38,7 @@ export function areNodeArraysEqual(
  * Fast shallow comparison for workflow edges
  * Avoids expensive JSON.stringify operations
  */
-export function areEdgeArraysEqual(
-  edges1: WorkflowEdge[],
-  edges2: WorkflowEdge[],
-): boolean {
+export function areEdgeArraysEqual(edges1: WorkflowEdge[], edges2: WorkflowEdge[]): boolean {
   if (edges1.length !== edges2.length) return false;
 
   for (let i = 0; i < edges1.length; i++) {
@@ -74,7 +65,7 @@ export function areEdgeArraysEqual(
  */
 export function throttle<T extends (...args: any[]) => void>(
   func: T,
-  wait: number,
+  wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   let lastRan = 0;
@@ -95,7 +86,7 @@ export function throttle<T extends (...args: any[]) => void>(
           func(...args);
           lastRan = Date.now();
         },
-        wait - (now - lastRan),
+        wait - (now - lastRan)
       );
     }
   };
@@ -107,7 +98,7 @@ export function throttle<T extends (...args: any[]) => void>(
  */
 export function debounce<T extends (...args: any[]) => void>(
   func: T,
-  wait: number,
+  wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -127,7 +118,7 @@ export function debounce<T extends (...args: any[]) => void>(
  * Better for visual updates like node dragging
  */
 export function rafThrottle<T extends (...args: any[]) => void>(
-  func: T,
+  func: T
 ): (...args: Parameters<T>) => void {
   let rafId: number | null = null;
   let lastArgs: Parameters<T> | null = null;

@@ -11,17 +11,17 @@ import type {
   PlaygroundMessageRole,
   PlaygroundMessageLevel,
   PlaygroundMessageStatus,
-  PlaygroundMessageMetadata,
-} from "../../lib/types/playground.js";
-import { ENABLE_RUN_METADATA_KEY } from "../../lib/types/playground.js";
+  PlaygroundMessageMetadata
+} from '../../lib/types/playground.js';
+import { ENABLE_RUN_METADATA_KEY } from '../../lib/types/playground.js';
 import {
   createConfirmationInterrupt,
   createChoiceInterrupt,
   createTextInterrupt,
   createFormInterrupt,
   createReviewInterrupt,
-  sampleInterruptConfigs,
-} from "./interrupts.js";
+  sampleInterruptConfigs
+} from './interrupts.js';
 
 /**
  * Mock sessions storage
@@ -73,14 +73,11 @@ function generateMessageId(): string {
 export function getSessionsForWorkflow(
   workflowId: string,
   limit: number = 20,
-  offset: number = 0,
+  offset: number = 0
 ): PlaygroundSession[] {
   const sessions = Array.from(mockSessions.values())
     .filter((s) => s.workflowId === workflowId)
-    .sort(
-      (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   return sessions.slice(offset, offset + limit);
 }
@@ -91,9 +88,7 @@ export function getSessionsForWorkflow(
  * @param sessionId - The session ID
  * @returns The session or undefined
  */
-export function getSessionById(
-  sessionId: string,
-): PlaygroundSession | undefined {
+export function getSessionById(sessionId: string): PlaygroundSession | undefined {
   return mockSessions.get(sessionId);
 }
 
@@ -108,17 +103,17 @@ export function getSessionById(
 export function createSession(
   workflowId: string,
   name?: string,
-  metadata?: Record<string, unknown>,
+  metadata?: Record<string, unknown>
 ): PlaygroundSession {
   const now = new Date().toISOString();
   const session: PlaygroundSession = {
     id: generateSessionId(),
     workflowId,
     name: name || `Session ${sessionIdCounter}`,
-    status: "idle",
+    status: 'idle',
     createdAt: now,
     updatedAt: now,
-    metadata,
+    metadata
   };
 
   mockSessions.set(session.id, session);
@@ -137,7 +132,7 @@ export function createSession(
  */
 export function updateSessionStatus(
   sessionId: string,
-  status: PlaygroundSessionStatus,
+  status: PlaygroundSessionStatus
 ): PlaygroundSession | undefined {
   const session = mockSessions.get(sessionId);
   if (!session) {
@@ -179,16 +174,14 @@ export function deleteSession(sessionId: string): boolean {
 export function getSessionMessages(
   sessionId: string,
   since?: string,
-  limit: number = 100,
+  limit: number = 100
 ): PlaygroundMessage[] {
   const messages = mockMessages.get(sessionId) || [];
 
   let filtered = messages;
   if (since) {
     const sinceTime = new Date(since).getTime();
-    filtered = messages.filter(
-      (m) => new Date(m.timestamp).getTime() > sinceTime,
-    );
+    filtered = messages.filter((m) => new Date(m.timestamp).getTime() > sinceTime);
   }
 
   return filtered.slice(-limit);
@@ -215,7 +208,7 @@ export function addMessage(
     parentMessageId?: string;
     status?: PlaygroundMessageStatus;
     metadata?: PlaygroundMessageMetadata;
-  },
+  }
 ): PlaygroundMessage | undefined {
   if (!mockSessions.has(sessionId)) {
     return undefined;
@@ -234,15 +227,15 @@ export function addMessage(
     role,
     content,
     timestamp: new Date().toISOString(),
-    status: options?.status || "completed",
+    status: options?.status || 'completed',
     sequenceNumber,
     parentMessageId: options?.parentMessageId,
     nodeId: options?.nodeId,
     metadata: options?.metadata || {
       level: options?.level,
       duration: options?.duration,
-      nodeLabel: options?.nodeLabel,
-    },
+      nodeLabel: options?.nodeLabel
+    }
   };
 
   messages.push(message);
@@ -262,44 +255,44 @@ export function addMessage(
  * Detect which type of interrupt to trigger based on user message keywords
  */
 function detectInterruptType(
-  userMessage: string,
-): "confirmation" | "choice" | "text" | "form" | "review" | null {
+  userMessage: string
+): 'confirmation' | 'choice' | 'text' | 'form' | 'review' | null {
   const lowerMessage = userMessage.toLowerCase();
 
   if (
-    lowerMessage.includes("confirm") ||
-    lowerMessage.includes("approve") ||
-    lowerMessage.includes("delete")
+    lowerMessage.includes('confirm') ||
+    lowerMessage.includes('approve') ||
+    lowerMessage.includes('delete')
   ) {
-    return "confirmation";
+    return 'confirmation';
   }
   if (
-    lowerMessage.includes("choose") ||
-    lowerMessage.includes("select") ||
-    lowerMessage.includes("pick")
+    lowerMessage.includes('choose') ||
+    lowerMessage.includes('select') ||
+    lowerMessage.includes('pick')
   ) {
-    return "choice";
+    return 'choice';
   }
   if (
-    lowerMessage.includes("input") ||
-    lowerMessage.includes("enter") ||
-    lowerMessage.includes("provide text")
+    lowerMessage.includes('input') ||
+    lowerMessage.includes('enter') ||
+    lowerMessage.includes('provide text')
   ) {
-    return "text";
+    return 'text';
   }
   if (
-    lowerMessage.includes("form") ||
-    lowerMessage.includes("fill") ||
-    lowerMessage.includes("details")
+    lowerMessage.includes('form') ||
+    lowerMessage.includes('fill') ||
+    lowerMessage.includes('details')
   ) {
-    return "form";
+    return 'form';
   }
   if (
-    lowerMessage.includes("review") ||
-    lowerMessage.includes("diff") ||
-    lowerMessage.includes("changes")
+    lowerMessage.includes('review') ||
+    lowerMessage.includes('diff') ||
+    lowerMessage.includes('changes')
   ) {
-    return "review";
+    return 'review';
   }
 
   return null;
@@ -312,10 +305,10 @@ function detectInterruptType(
 function isRunWorkflowTrigger(userMessage: string): boolean {
   const lowerMessage = userMessage.toLowerCase();
   return (
-    lowerMessage === "run workflow" ||
-    lowerMessage === "execute pipeline" ||
-    lowerMessage === "start automation" ||
-    lowerMessage.startsWith("run ")
+    lowerMessage === 'run workflow' ||
+    lowerMessage === 'execute pipeline' ||
+    lowerMessage === 'start automation' ||
+    lowerMessage.startsWith('run ')
   );
 }
 
@@ -336,7 +329,7 @@ function isRunWorkflowTrigger(userMessage: string): boolean {
 export function simulateExecution(
   sessionId: string,
   userMessage: string,
-  parentMessageId?: string,
+  parentMessageId?: string
 ): void {
   const session = mockSessions.get(sessionId);
   if (!session) {
@@ -344,19 +337,14 @@ export function simulateExecution(
   }
 
   // Update status to running
-  updateSessionStatus(sessionId, "running");
+  updateSessionStatus(sessionId, 'running');
 
   // Check if we should trigger an interrupt
   const interruptType = detectInterruptType(userMessage);
 
   if (interruptType) {
     // Simulate interrupt flow
-    simulateInterruptExecution(
-      sessionId,
-      userMessage,
-      interruptType,
-      parentMessageId,
-    );
+    simulateInterruptExecution(sessionId, userMessage, interruptType, parentMessageId);
   } else {
     // Normal execution flow
     simulateNormalExecution(sessionId, userMessage, parentMessageId);
@@ -369,7 +357,7 @@ export function simulateExecution(
 function simulateNormalExecution(
   sessionId: string,
   userMessage: string,
-  parentMessageId?: string,
+  parentMessageId?: string
 ): void {
   const isRunTrigger = isRunWorkflowTrigger(userMessage);
 
@@ -381,50 +369,48 @@ function simulateNormalExecution(
   const steps = [
     {
       delay: 500,
-      role: "log" as const,
+      role: 'log' as const,
       content: isRunTrigger
-        ? "Run button triggered - starting workflow..."
-        : "Starting workflow execution...",
-      level: "info" as const,
-      nodeId: "node-start",
-      nodeLabel: "Start",
+        ? 'Run button triggered - starting workflow...'
+        : 'Starting workflow execution...',
+      level: 'info' as const,
+      nodeId: 'node-start',
+      nodeLabel: 'Start'
     },
     {
       delay: 1000,
-      role: "log" as const,
+      role: 'log' as const,
       content: isRunTrigger
-        ? "Processing workflow inputs..."
+        ? 'Processing workflow inputs...'
         : `Processing input: "${userMessage.substring(0, 50)}..."`,
-      level: "info" as const,
-      nodeId: "node-processor",
-      nodeLabel: "Text Processor",
+      level: 'info' as const,
+      nodeId: 'node-processor',
+      nodeLabel: 'Text Processor'
     },
     {
       delay: 1500,
-      role: "log" as const,
-      content: isRunTrigger
-        ? "Executing workflow nodes..."
-        : "Analyzing content with AI model...",
-      level: "info" as const,
-      nodeId: "node-ai",
-      nodeLabel: "AI Model",
+      role: 'log' as const,
+      content: isRunTrigger ? 'Executing workflow nodes...' : 'Analyzing content with AI model...',
+      level: 'info' as const,
+      nodeId: 'node-ai',
+      nodeLabel: 'AI Model'
     },
     {
       delay: 2500,
-      role: "assistant" as const,
+      role: 'assistant' as const,
       content: responseContent,
-      nodeId: "node-output",
-      nodeLabel: "Output",
-      duration: 2000,
+      nodeId: 'node-output',
+      nodeLabel: 'Output',
+      duration: 2000
     },
     {
       delay: 3000,
-      role: "log" as const,
-      content: "Workflow execution completed successfully",
-      level: "info" as const,
-      nodeId: "node-end",
-      nodeLabel: "End",
-    },
+      role: 'log' as const,
+      content: 'Workflow execution completed successfully',
+      level: 'info' as const,
+      nodeId: 'node-end',
+      nodeLabel: 'End'
+    }
   ];
 
   steps.forEach((step) => {
@@ -434,20 +420,20 @@ function simulateNormalExecution(
         level: step.level,
         duration: step.duration,
         nodeLabel: step.nodeLabel,
-        parentMessageId,
+        parentMessageId
       });
 
       // Complete the session after the last step
       if (step === steps[steps.length - 1]) {
-        updateSessionStatus(sessionId, "completed");
+        updateSessionStatus(sessionId, 'completed');
 
         // Add a system message with enableRun: true to re-enable the Run button
         // This simulates the backend signaling that the workflow is ready for another run
         setTimeout(() => {
-          addMessage(sessionId, "system", "Ready for next execution.", {
+          addMessage(sessionId, 'system', 'Ready for next execution.', {
             metadata: {
-              [ENABLE_RUN_METADATA_KEY]: true,
-            },
+              [ENABLE_RUN_METADATA_KEY]: true
+            }
           });
         }, 500);
       }
@@ -461,43 +447,33 @@ function simulateNormalExecution(
 function simulateInterruptExecution(
   sessionId: string,
   userMessage: string,
-  interruptType: "confirmation" | "choice" | "text" | "form" | "review",
-  parentMessageId?: string,
+  interruptType: 'confirmation' | 'choice' | 'text' | 'form' | 'review',
+  parentMessageId?: string
 ): void {
   const executionId = `exec-${Date.now().toString(36)}`;
 
   // First step: log the start
   setTimeout(() => {
-    addMessage(sessionId, "log", "Starting workflow execution...", {
-      level: "info",
-      nodeId: "node-start",
-      nodeLabel: "Start",
-      parentMessageId,
+    addMessage(sessionId, 'log', 'Starting workflow execution...', {
+      level: 'info',
+      nodeId: 'node-start',
+      nodeLabel: 'Start',
+      parentMessageId
     });
   }, 500);
 
   // Second step: trigger the interrupt
   setTimeout(() => {
-    addMessage(
-      sessionId,
-      "log",
-      `Processing requires ${interruptType} input...`,
-      {
-        level: "info",
-        nodeId: "node-hitl",
-        nodeLabel: "Human Input",
-        parentMessageId,
-      },
-    );
+    addMessage(sessionId, 'log', `Processing requires ${interruptType} input...`, {
+      level: 'info',
+      nodeId: 'node-hitl',
+      nodeLabel: 'Human Input',
+      parentMessageId
+    });
 
     // Create the interrupt message after a short delay
     setTimeout(() => {
-      createInterruptMessage(
-        sessionId,
-        interruptType,
-        executionId,
-        parentMessageId,
-      );
+      createInterruptMessage(sessionId, interruptType, executionId, parentMessageId);
     }, 500);
   }, 1500);
 }
@@ -507,11 +483,11 @@ function simulateInterruptExecution(
  */
 function createInterruptMessage(
   sessionId: string,
-  interruptType: "confirmation" | "choice" | "text" | "form" | "review",
+  interruptType: 'confirmation' | 'choice' | 'text' | 'form' | 'review',
   executionId: string,
-  parentMessageId?: string,
+  parentMessageId?: string
 ): void {
-  const nodeId = "node-hitl";
+  const nodeId = 'node-hitl';
 
   // Create the message first to get its ID
   const messageId = generateMessageId();
@@ -521,7 +497,7 @@ function createInterruptMessage(
   let metadata: PlaygroundMessageMetadata;
 
   switch (interruptType) {
-    case "confirmation": {
+    case 'confirmation': {
       const config = sampleInterruptConfigs.confirmation;
       interrupt = createConfirmationInterrupt(
         sessionId,
@@ -529,114 +505,86 @@ function createInterruptMessage(
         nodeId,
         executionId,
         config,
-        true,
+        true
       );
       content = config.message;
       metadata = {
-        type: "interrupt_request",
+        type: 'interrupt_request',
         interrupt_id: interrupt.id,
-        interrupt_type: "confirmation",
+        interrupt_type: 'confirmation',
         node_id: nodeId,
         execution_id: executionId,
         confirm_label: config.confirmLabel,
         cancel_label: config.cancelLabel,
-        allow_cancel: true,
+        allow_cancel: true
       };
       break;
     }
-    case "choice": {
+    case 'choice': {
       const config = sampleInterruptConfigs.choice;
-      interrupt = createChoiceInterrupt(
-        sessionId,
-        messageId,
-        nodeId,
-        executionId,
-        config,
-        true,
-      );
+      interrupt = createChoiceInterrupt(sessionId, messageId, nodeId, executionId, config, true);
       content = config.message;
       metadata = {
-        type: "interrupt_request",
+        type: 'interrupt_request',
         interrupt_id: interrupt.id,
-        interrupt_type: "choice",
+        interrupt_type: 'choice',
         node_id: nodeId,
         execution_id: executionId,
         options: config.options,
         multiple: config.multiple,
-        allow_cancel: true,
+        allow_cancel: true
       };
       break;
     }
-    case "text": {
+    case 'text': {
       const config = sampleInterruptConfigs.text;
-      interrupt = createTextInterrupt(
-        sessionId,
-        messageId,
-        nodeId,
-        executionId,
-        config,
-        true,
-      );
+      interrupt = createTextInterrupt(sessionId, messageId, nodeId, executionId, config, true);
       content = config.message;
       metadata = {
-        type: "interrupt_request",
+        type: 'interrupt_request',
         interrupt_id: interrupt.id,
-        interrupt_type: "text",
+        interrupt_type: 'text',
         node_id: nodeId,
         execution_id: executionId,
         placeholder: config.placeholder,
         multiline: config.multiline,
         min_length: config.minLength,
         max_length: config.maxLength,
-        allow_cancel: true,
+        allow_cancel: true
       };
       break;
     }
-    case "form": {
+    case 'form': {
       const config = sampleInterruptConfigs.form;
-      interrupt = createFormInterrupt(
-        sessionId,
-        messageId,
-        nodeId,
-        executionId,
-        config,
-        true,
-      );
+      interrupt = createFormInterrupt(sessionId, messageId, nodeId, executionId, config, true);
       content = config.message;
       metadata = {
-        type: "interrupt_request",
+        type: 'interrupt_request',
         interrupt_id: interrupt.id,
-        interrupt_type: "form",
+        interrupt_type: 'form',
         node_id: nodeId,
         execution_id: executionId,
         schema: config.schema,
         default_value: config.defaultValues,
-        allow_cancel: true,
+        allow_cancel: true
       };
       break;
     }
-    case "review": {
+    case 'review': {
       const config = sampleInterruptConfigs.review;
-      interrupt = createReviewInterrupt(
-        sessionId,
-        messageId,
-        nodeId,
-        executionId,
-        config,
-        true,
-      );
+      interrupt = createReviewInterrupt(sessionId, messageId, nodeId, executionId, config, true);
       content = config.message;
       metadata = {
-        type: "interrupt_request",
+        type: 'interrupt_request',
         interrupt_id: interrupt.id,
-        interrupt_type: "review",
+        interrupt_type: 'review',
         node_id: nodeId,
         execution_id: executionId,
         changes: config.changes,
         accept_all_label: config.acceptAllLabel,
         reject_all_label: config.rejectAllLabel,
         submit_label: config.submitLabel,
-        allow_cancel: true,
+        allow_cancel: true
       };
       break;
     }
@@ -651,17 +599,17 @@ function createInterruptMessage(
   const message: PlaygroundMessage = {
     id: messageId,
     sessionId,
-    role: "assistant",
+    role: 'assistant',
     content,
     timestamp: new Date().toISOString(),
     // Use 'pending' status for interrupt messages - they should only be 'completed'
     // after the user has responded. The ChatPanel effect checks message.status
     // and auto-resolves interrupts with 'completed' status.
-    status: "pending",
+    status: 'pending',
     sequenceNumber,
     parentMessageId,
     nodeId,
-    metadata,
+    metadata
   };
 
   messages.push(message);
@@ -671,7 +619,7 @@ function createInterruptMessage(
   const session = mockSessions.get(sessionId);
   if (session) {
     session.updatedAt = message.timestamp;
-    session.status = "idle";
+    session.status = 'idle';
     mockSessions.set(sessionId, session);
   }
 }
@@ -692,33 +640,29 @@ export function resetPlaygroundData(): void {
  */
 export function initializeSamplePlaygroundData(workflowId: string): void {
   // Create a sample session with some messages
-  const session = createSession(workflowId, "Sample Session");
+  const session = createSession(workflowId, 'Sample Session');
 
   // Add user message (will get sequenceNumber 1)
-  const userMessage = addMessage(
-    session.id,
-    "user",
-    "Hello, can you help me test this workflow?",
-  );
+  const userMessage = addMessage(session.id, 'user', 'Hello, can you help me test this workflow?');
 
   // Add responses with parentMessageId linking to user message
-  addMessage(session.id, "log", "Starting workflow execution...", {
-    level: "info",
-    nodeId: "node-start",
-    nodeLabel: "Start",
-    parentMessageId: userMessage?.id,
+  addMessage(session.id, 'log', 'Starting workflow execution...', {
+    level: 'info',
+    nodeId: 'node-start',
+    nodeLabel: 'Start',
+    parentMessageId: userMessage?.id
   });
   addMessage(
     session.id,
-    "assistant",
+    'assistant',
     "Hello! I'm ready to help you test the workflow. What would you like to do?",
     {
-      nodeId: "node-output",
-      nodeLabel: "Output",
+      nodeId: 'node-output',
+      nodeLabel: 'Output',
       duration: 1500,
-      parentMessageId: userMessage?.id,
-    },
+      parentMessageId: userMessage?.id
+    }
   );
 
-  updateSessionStatus(session.id, "completed");
+  updateSessionStatus(session.id, 'completed');
 }

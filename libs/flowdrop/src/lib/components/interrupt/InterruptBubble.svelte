@@ -8,12 +8,12 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import ConfirmationPrompt from "./ConfirmationPrompt.svelte";
-  import ChoicePrompt from "./ChoicePrompt.svelte";
-  import TextInputPrompt from "./TextInputPrompt.svelte";
-  import FormPrompt from "./FormPrompt.svelte";
-  import ReviewPrompt from "./ReviewPrompt.svelte";
+  import Icon from '@iconify/svelte';
+  import ConfirmationPrompt from './ConfirmationPrompt.svelte';
+  import ChoicePrompt from './ChoicePrompt.svelte';
+  import TextInputPrompt from './TextInputPrompt.svelte';
+  import FormPrompt from './FormPrompt.svelte';
+  import ReviewPrompt from './ReviewPrompt.svelte';
   import type {
     Interrupt,
     InterruptType,
@@ -22,21 +22,21 @@
     TextConfig,
     FormConfig,
     ReviewConfig,
-    ReviewResolution,
-  } from "../../types/interrupt.js";
+    ReviewResolution
+  } from '../../types/interrupt.js';
   import {
     isTerminalState,
     isSubmitting as checkIsSubmitting,
     getErrorMessage,
-    getResolvedValue,
-  } from "../../types/interruptState.js";
+    getResolvedValue
+  } from '../../types/interruptState.js';
   import {
     getInterruptsMap,
     interruptActions,
-    type InterruptWithState,
-  } from "../../stores/interruptStore.svelte.js";
-  import { interruptService } from "../../services/interruptService.js";
-  import { logger } from "../../utils/logger.js";
+    type InterruptWithState
+  } from '../../stores/interruptStore.svelte.js';
+  import { interruptService } from '../../services/interruptService.js';
+  import { logger } from '../../utils/logger.js';
 
   /**
    * Component props
@@ -50,33 +50,26 @@
     onResolved?: () => void;
   }
 
-  let {
-    interrupt: initialInterrupt,
-    showTimestamp = true,
-    onResolved,
-  }: Props = $props();
+  let { interrupt: initialInterrupt, showTimestamp = true, onResolved }: Props = $props();
 
   /**
    * Get the current interrupt state from the store.
    * This ensures we react to store updates (like status changes).
    */
   const currentInterrupt = $derived(
-    getInterruptsMap().get(initialInterrupt.id) ??
-      addMachineState(initialInterrupt),
+    getInterruptsMap().get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
   );
 
   /**
    * Helper to ensure interrupt has machine state
    */
-  function addMachineState(
-    interrupt: Interrupt | InterruptWithState,
-  ): InterruptWithState {
-    if ("machineState" in interrupt) {
+  function addMachineState(interrupt: Interrupt | InterruptWithState): InterruptWithState {
+    if ('machineState' in interrupt) {
       return interrupt;
     }
     return {
       ...interrupt,
-      machineState: { status: "idle" },
+      machineState: { status: 'idle' }
     };
   }
 
@@ -84,35 +77,31 @@
   const isResolved = $derived(isTerminalState(currentInterrupt.machineState));
 
   /** Whether this interrupt is currently submitting */
-  const isSubmitting = $derived(
-    checkIsSubmitting(currentInterrupt.machineState),
-  );
+  const isSubmitting = $derived(checkIsSubmitting(currentInterrupt.machineState));
 
   /** Error message for this interrupt */
   const error = $derived(getErrorMessage(currentInterrupt.machineState));
 
   /** Resolved value for display */
-  const resolvedValue = $derived(
-    getResolvedValue(currentInterrupt.machineState),
-  );
+  const resolvedValue = $derived(getResolvedValue(currentInterrupt.machineState));
 
   /**
    * Get the icon for the interrupt type
    */
   function getTypeIcon(type: InterruptType): string {
     switch (type) {
-      case "confirmation":
-        return "mdi:help-circle";
-      case "choice":
-        return "mdi:format-list-bulleted";
-      case "text":
-        return "mdi:text-box";
-      case "form":
-        return "mdi:form-select";
-      case "review":
-        return "mdi:file-compare";
+      case 'confirmation':
+        return 'mdi:help-circle';
+      case 'choice':
+        return 'mdi:format-list-bulleted';
+      case 'text':
+        return 'mdi:text-box';
+      case 'form':
+        return 'mdi:form-select';
+      case 'review':
+        return 'mdi:file-compare';
       default:
-        return "mdi:bell";
+        return 'mdi:bell';
     }
   }
 
@@ -121,36 +110,36 @@
    */
   function getTypeLabel(type: InterruptType): string {
     switch (type) {
-      case "confirmation":
-        return "Confirmation Required";
-      case "choice":
-        return "Selection Required";
-      case "text":
-        return "Input Required";
-      case "form":
-        return "Form Required";
-      case "review":
-        return "Review Required";
+      case 'confirmation':
+        return 'Confirmation Required';
+      case 'choice':
+        return 'Selection Required';
+      case 'text':
+        return 'Input Required';
+      case 'form':
+        return 'Form Required';
+      case 'review':
+        return 'Review Required';
       default:
-        return "Action Required";
+        return 'Action Required';
     }
   }
 
   /** Get resolved label for the header when resolved */
   function getResolvedLabel(type: InterruptType): string {
     switch (type) {
-      case "confirmation":
-        return "Confirmation Submitted";
-      case "choice":
-        return "Selection Made";
-      case "text":
-        return "Input Submitted";
-      case "form":
-        return "Form Submitted";
-      case "review":
-        return "Review Submitted";
+      case 'confirmation':
+        return 'Confirmation Submitted';
+      case 'choice':
+        return 'Selection Made';
+      case 'text':
+        return 'Input Submitted';
+      case 'form':
+        return 'Form Submitted';
+      case 'review':
+        return 'Review Submitted';
       default:
-        return "Response Submitted";
+        return 'Response Submitted';
     }
   }
 
@@ -159,11 +148,11 @@
    */
   function formatTimestamp(timestamp: string): string {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString('en-US', {
       hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
   }
 
@@ -172,12 +161,9 @@
    */
   async function handleResolve(value: unknown): Promise<void> {
     // Start the submission - state machine validates this transition
-    const startResult = interruptActions.startSubmit(
-      currentInterrupt.id,
-      value,
-    );
+    const startResult = interruptActions.startSubmit(currentInterrupt.id, value);
     if (!startResult.valid) {
-      logger.warn("[InterruptBubble] Cannot submit:", startResult.error);
+      logger.warn('[InterruptBubble] Cannot submit:', startResult.error);
       return;
     }
 
@@ -194,10 +180,9 @@
       onResolved?.();
     } catch (err) {
       // Mark as failed - transitions to error state (can retry)
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to submit response";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit response';
       interruptActions.submitFailure(currentInterrupt.id, errorMessage);
-      logger.error("[InterruptBubble] Resolve error:", err);
+      logger.error('[InterruptBubble] Resolve error:', err);
     }
   }
 
@@ -208,7 +193,7 @@
     // Start the cancel - state machine validates this transition
     const startResult = interruptActions.startCancel(currentInterrupt.id);
     if (!startResult.valid) {
-      logger.warn("[InterruptBubble] Cannot cancel:", startResult.error);
+      logger.warn('[InterruptBubble] Cannot cancel:', startResult.error);
       return;
     }
 
@@ -225,10 +210,9 @@
       onResolved?.();
     } catch (err) {
       // Mark as failed - transitions to error state (can retry)
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to cancel";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel';
       interruptActions.submitFailure(currentInterrupt.id, errorMessage);
-      logger.error("[InterruptBubble] Cancel error:", err);
+      logger.error('[InterruptBubble] Cancel error:', err);
     }
   }
 
@@ -240,49 +224,42 @@
   }
 
   // Typed config getters for each prompt type
-  const confirmationConfig = $derived(
-    currentInterrupt.config as ConfirmationConfig,
-  );
+  const confirmationConfig = $derived(currentInterrupt.config as ConfirmationConfig);
   const choiceConfig = $derived(currentInterrupt.config as ChoiceConfig);
   const textConfig = $derived(currentInterrupt.config as TextConfig);
   const formConfig = $derived(currentInterrupt.config as FormConfig);
   const reviewConfig = $derived(currentInterrupt.config as ReviewConfig);
 
   // Determine the actual resolved value to pass to prompt components
-  const displayResolvedValue = $derived(
-    resolvedValue ?? currentInterrupt.responseValue,
-  );
+  const displayResolvedValue = $derived(resolvedValue ?? currentInterrupt.responseValue);
 
   /**
    * Extract the username of who resolved the interrupt from metadata.
    * This is provided by the backend when the interrupt is resolved.
    */
   const resolvedByUserName = $derived(
-    typeof currentInterrupt.metadata?.resolvedByUserName === "string"
+    typeof currentInterrupt.metadata?.resolvedByUserName === 'string'
       ? currentInterrupt.metadata.resolvedByUserName
-      : undefined,
+      : undefined
   );
 </script>
 
 <div
   class="interrupt-bubble"
-  class:interrupt-bubble--completed={currentInterrupt.machineState.status ===
-    "resolved"}
-  class:interrupt-bubble--cancelled={currentInterrupt.machineState.status ===
-    "cancelled"}
+  class:interrupt-bubble--completed={currentInterrupt.machineState.status === 'resolved'}
+  class:interrupt-bubble--cancelled={currentInterrupt.machineState.status === 'cancelled'}
   class:interrupt-bubble--submitting={isSubmitting}
-  class:interrupt-bubble--error={currentInterrupt.machineState.status ===
-    "error"}
+  class:interrupt-bubble--error={currentInterrupt.machineState.status === 'error'}
 >
   <!-- Header -->
   <div class="interrupt-bubble__header">
     <span class="interrupt-bubble__type">
       <Icon icon={getTypeIcon(currentInterrupt.type)} />
       {#if isResolved}
-        {currentInterrupt.machineState.status === "cancelled"
-          ? "Cancelled"
+        {currentInterrupt.machineState.status === 'cancelled'
+          ? 'Cancelled'
           : getResolvedLabel(currentInterrupt.type)}
-      {:else if currentInterrupt.machineState.status === "error"}
+      {:else if currentInterrupt.machineState.status === 'error'}
         Error - Click to Retry
       {:else}
         {getTypeLabel(currentInterrupt.type)}
@@ -290,23 +267,17 @@
     </span>
     {#if showTimestamp}
       <span class="interrupt-bubble__timestamp">
-        {formatTimestamp(
-          currentInterrupt.resolvedAt ?? currentInterrupt.createdAt,
-        )}
+        {formatTimestamp(currentInterrupt.resolvedAt ?? currentInterrupt.createdAt)}
       </span>
     {/if}
   </div>
 
   <!-- Error message with retry button -->
-  {#if currentInterrupt.machineState.status === "error"}
+  {#if currentInterrupt.machineState.status === 'error'}
     <div class="interrupt-bubble__error">
       <Icon icon="mdi:alert-circle" />
       <span>{error}</span>
-      <button
-        type="button"
-        class="interrupt-bubble__retry-btn"
-        onclick={handleRetry}
-      >
+      <button type="button" class="interrupt-bubble__retry-btn" onclick={handleRetry}>
         <Icon icon="mdi:refresh" />
         Retry
       </button>
@@ -315,7 +286,7 @@
 
   <!-- Prompt content based on type -->
   <div class="interrupt-bubble__body">
-    {#if currentInterrupt.type === "confirmation"}
+    {#if currentInterrupt.type === 'confirmation'}
       <ConfirmationPrompt
         config={confirmationConfig}
         {isResolved}
@@ -326,7 +297,7 @@
         onConfirm={() => handleResolve(true)}
         onDecline={() => handleResolve(false)}
       />
-    {:else if currentInterrupt.type === "choice"}
+    {:else if currentInterrupt.type === 'choice'}
       <ChoicePrompt
         config={choiceConfig}
         {isResolved}
@@ -336,7 +307,7 @@
         {resolvedByUserName}
         onSubmit={(value) => handleResolve(value)}
       />
-    {:else if currentInterrupt.type === "text"}
+    {:else if currentInterrupt.type === 'text'}
       <TextInputPrompt
         config={textConfig}
         {isResolved}
@@ -346,19 +317,17 @@
         {resolvedByUserName}
         onSubmit={(value) => handleResolve(value)}
       />
-    {:else if currentInterrupt.type === "form"}
+    {:else if currentInterrupt.type === 'form'}
       <FormPrompt
         config={formConfig}
         {isResolved}
-        resolvedValue={displayResolvedValue as
-          | Record<string, unknown>
-          | undefined}
+        resolvedValue={displayResolvedValue as Record<string, unknown> | undefined}
         {isSubmitting}
         {error}
         {resolvedByUserName}
         onSubmit={(value) => handleResolve(value)}
       />
-    {:else if currentInterrupt.type === "review"}
+    {:else if currentInterrupt.type === 'review'}
       <ReviewPrompt
         config={reviewConfig}
         {isResolved}
@@ -372,18 +341,15 @@
   </div>
 
   <!-- Footer -->
-  {#if currentInterrupt.nodeId || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== "confirmation")}
+  {#if currentInterrupt.nodeId || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
     <div class="interrupt-bubble__footer">
       {#if currentInterrupt.nodeId}
-        <span
-          class="interrupt-bubble__node"
-          title="Node ID: {currentInterrupt.nodeId}"
-        >
+        <span class="interrupt-bubble__node" title="Node ID: {currentInterrupt.nodeId}">
           <Icon icon="mdi:graph" />
           <span>From workflow node</span>
         </span>
       {/if}
-      {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== "confirmation"}
+      {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
         <button
           type="button"
           class="interrupt-bubble__cancel-btn"

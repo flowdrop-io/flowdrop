@@ -5,12 +5,12 @@
  * and for generating default UISchema from a ConfigSchema.
  */
 
-import type { ConfigSchema } from "$lib/types/index.js";
+import type { ConfigSchema } from '$lib/types/index.js';
 import type {
   UISchemaElement,
   UISchemaControl,
-  UISchemaVerticalLayout,
-} from "$lib/types/uischema.js";
+  UISchemaVerticalLayout
+} from '$lib/types/uischema.js';
 
 /**
  * Resolve a JSON Pointer scope string to a property key.
@@ -28,13 +28,13 @@ import type {
  * ```
  */
 export function resolveScopeToKey(scope: string): string | null {
-  const prefix = "#/properties/";
+  const prefix = '#/properties/';
   if (!scope.startsWith(prefix)) {
     return null;
   }
   const key = scope.slice(prefix.length);
   // Only support single-level property references (no nested paths)
-  if (key.includes("/") || key.length === 0) {
+  if (key.includes('/') || key.length === 0) {
     return null;
   }
   return key;
@@ -61,19 +61,15 @@ export function keyToScope(key: string): string {
  * @param schema - The ConfigSchema to generate a UISchema from
  * @returns A VerticalLayout UISchema element
  */
-export function generateDefaultUISchema(
-  schema: ConfigSchema,
-): UISchemaVerticalLayout {
-  const elements: UISchemaControl[] = Object.keys(schema.properties).map(
-    (key) => ({
-      type: "Control" as const,
-      scope: keyToScope(key),
-    }),
-  );
+export function generateDefaultUISchema(schema: ConfigSchema): UISchemaVerticalLayout {
+  const elements: UISchemaControl[] = Object.keys(schema.properties).map((key) => ({
+    type: 'Control' as const,
+    scope: keyToScope(key)
+  }));
 
   return {
-    type: "VerticalLayout",
-    elements,
+    type: 'VerticalLayout',
+    elements
   };
 }
 
@@ -89,10 +85,10 @@ export function collectReferencedKeys(element: UISchemaElement): Set<string> {
   const keys = new Set<string>();
 
   function walk(el: UISchemaElement): void {
-    if (el.type === "Control") {
+    if (el.type === 'Control') {
       const key = resolveScopeToKey(el.scope);
       if (key) keys.add(key);
-    } else if (el.type === "VerticalLayout" || el.type === "Group") {
+    } else if (el.type === 'VerticalLayout' || el.type === 'Group') {
       for (const child of el.elements) {
         walk(child);
       }

@@ -29,9 +29,9 @@
  * ```
  */
 
-import type { Component } from "svelte";
-import type { FieldSchema } from "../components/form/types.js";
-import { BaseRegistry } from "../registry/BaseRegistry.js";
+import type { Component } from 'svelte';
+import type { FieldSchema } from '../components/form/types.js';
+import { BaseRegistry } from '../registry/BaseRegistry.js';
 
 /**
  * Base field component props that all registered field components should accept.
@@ -90,10 +90,7 @@ export interface FieldComponentRegistration extends FieldMatcherRegistration {
  * Class-based field component registry.
  * Extends BaseRegistry with priority-based field resolution.
  */
-class FieldComponentRegistry extends BaseRegistry<
-  string,
-  FieldComponentRegistration
-> {
+class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistration> {
   /** Cached ordered keys by priority (highest first), invalidated on mutation */
   private orderedKeys: string[] | null = null;
 
@@ -136,9 +133,7 @@ class FieldComponentRegistry extends BaseRegistry<
    * @param schema - The field schema to resolve
    * @returns The matching registration or null if no match
    */
-  resolveFieldComponent(
-    schema: FieldSchema,
-  ): FieldComponentRegistration | null {
+  resolveFieldComponent(schema: FieldSchema): FieldComponentRegistration | null {
     const keys = this.getOrderedKeys();
 
     for (const key of keys) {
@@ -175,8 +170,7 @@ export const fieldComponentRegistry = new FieldComponentRegistry();
 /**
  * Matcher for hidden fields (should not render)
  */
-export const hiddenFieldMatcher: FieldMatcher = (schema) =>
-  schema.format === "hidden";
+export const hiddenFieldMatcher: FieldMatcher = (schema) => schema.format === 'hidden';
 
 /**
  * Matcher for checkbox group fields (enum with multiple)
@@ -187,40 +181,36 @@ export const checkboxGroupMatcher: FieldMatcher = (schema) =>
 /**
  * Matcher for enum select fields
  */
-export const enumSelectMatcher: FieldMatcher = (schema) =>
-  Boolean(schema.enum && !schema.multiple);
+export const enumSelectMatcher: FieldMatcher = (schema) => Boolean(schema.enum && !schema.multiple);
 
 /**
  * Matcher for multiline textarea fields
  */
 export const textareaMatcher: FieldMatcher = (schema) =>
-  schema.type === "string" && schema.format === "multiline";
+  schema.type === 'string' && schema.format === 'multiline';
 
 /**
  * Matcher for range slider fields
  */
 export const rangeMatcher: FieldMatcher = (schema) =>
-  (schema.type === "number" || schema.type === "integer") &&
-  schema.format === "range";
+  (schema.type === 'number' || schema.type === 'integer') && schema.format === 'range';
 
 /**
  * Matcher for string text fields
  */
 export const textFieldMatcher: FieldMatcher = (schema) =>
-  schema.type === "string" && !schema.format;
+  schema.type === 'string' && !schema.format;
 
 /**
  * Matcher for number fields
  */
 export const numberFieldMatcher: FieldMatcher = (schema) =>
-  (schema.type === "number" || schema.type === "integer") &&
-  schema.format !== "range";
+  (schema.type === 'number' || schema.type === 'integer') && schema.format !== 'range';
 
 /**
  * Matcher for boolean toggle fields
  */
-export const toggleMatcher: FieldMatcher = (schema) =>
-  schema.type === "boolean";
+export const toggleMatcher: FieldMatcher = (schema) => schema.type === 'boolean';
 
 /**
  * Matcher for select fields with labeled options (JSON Schema oneOf pattern)
@@ -237,11 +227,11 @@ export const selectOptionsMatcher: FieldMatcher = (schema) =>
  * Matcher for array fields
  */
 export const arrayMatcher: FieldMatcher = (schema) =>
-  schema.type === "array" && Boolean(schema.items);
+  schema.type === 'array' && Boolean(schema.items);
 
 /**
  * Matcher for autocomplete fields
  * Matches when format is "autocomplete" and autocomplete config with URL is provided
  */
 export const autocompleteMatcher: FieldMatcher = (schema) =>
-  schema.format === "autocomplete" && Boolean(schema.autocomplete?.url);
+  schema.format === 'autocomplete' && Boolean(schema.autocomplete?.url);

@@ -221,14 +221,7 @@ interface DynamicPort {
   /** Description of the port's purpose */
   description?: string;
   /** Data type for validation and styling */
-  dataType?:
-    | "string"
-    | "number"
-    | "boolean"
-    | "object"
-    | "array"
-    | "any"
-    | "json";
+  dataType?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | 'json';
   /** Whether this port is required for execution */
   required?: boolean;
 }
@@ -336,7 +329,7 @@ The `nodeType` config property changes how a node is visually rendered. This all
 You can use the `createNodeTypeConfigProperty()` utility to automatically generate the options:
 
 ```typescript
-import { createNodeTypeConfigProperty } from "$lib/utils/nodeTypes.js";
+import { createNodeTypeConfigProperty } from '$lib/utils/nodeTypes.js';
 
 // Automatically generates oneOf options from metadata.supportedTypes
 const nodeTypeProperty = createNodeTypeConfigProperty(metadata);
@@ -538,56 +531,56 @@ Here's a complete node configuration demonstrating multiple special properties:
 
 ```typescript
 const nodeMetadata: NodeMetadata = {
-  id: "advanced-processor",
-  name: "Advanced Processor",
-  type: "default",
-  supportedTypes: ["default", "simple"],
-  description: "A processor with dynamic ports and type switching",
-  category: "processing",
-  version: "1.0.0",
-  inputs: [{ name: "data", label: "Data", dataType: "json" }],
-  outputs: [{ name: "result", label: "Result", dataType: "json" }],
+  id: 'advanced-processor',
+  name: 'Advanced Processor',
+  type: 'default',
+  supportedTypes: ['default', 'simple'],
+  description: 'A processor with dynamic ports and type switching',
+  category: 'processing',
+  version: '1.0.0',
+  inputs: [{ name: 'data', label: 'Data', dataType: 'json' }],
+  outputs: [{ name: 'result', label: 'Result', dataType: 'json' }],
   configSchema: {
-    type: "object",
+    type: 'object',
     properties: {
       // Node type selection (using oneOf for labeled options)
       nodeType: {
-        type: "string",
-        title: "Node Style",
+        type: 'string',
+        title: 'Node Style',
         oneOf: [
-          { const: "default", title: "Default" },
-          { const: "simple", title: "Compact" },
+          { const: 'default', title: 'Default' },
+          { const: 'simple', title: 'Compact' }
         ],
-        default: "default",
+        default: 'default'
       },
       // Regular config (simple enum without labels)
       model: {
-        type: "string",
-        title: "Model",
-        enum: ["gpt-4o", "gpt-4o-mini", "claude-3"],
-        default: "gpt-4o-mini",
+        type: 'string',
+        title: 'Model',
+        enum: ['gpt-4o', 'gpt-4o-mini', 'claude-3'],
+        default: 'gpt-4o-mini'
       },
       // Template field
       prompt: {
-        type: "string",
-        title: "Prompt Template",
-        format: "template",
-        default: "Process: {{ data }}",
+        type: 'string',
+        title: 'Prompt Template',
+        format: 'template',
+        default: 'Process: {{ data }}'
       },
       // Hidden internal ID
       internalId: {
-        type: "string",
-        format: "hidden",
-      },
-    },
+        type: 'string',
+        format: 'hidden'
+      }
+    }
   },
   // Default config values including dynamic ports
   config: {
-    nodeType: "default",
-    model: "gpt-4o-mini",
-    dynamicInputs: [{ name: "context", label: "Context", dataType: "string" }],
-    dynamicOutputs: [{ name: "logs", label: "Logs", dataType: "string" }],
-  },
+    nodeType: 'default',
+    model: 'gpt-4o-mini',
+    dynamicInputs: [{ name: 'context', label: 'Context', dataType: 'string' }],
+    dynamicOutputs: [{ name: 'logs', label: 'Logs', dataType: 'string' }]
+  }
 };
 ```
 

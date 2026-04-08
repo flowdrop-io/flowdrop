@@ -4,10 +4,10 @@
  * Uses BEM syntax for CSS classes
  */
 
-import type { NodeCategory, PortDataTypeConfig } from "../types/index.js";
-import { getPortCompatibilityChecker } from "./connections.js";
-import { getCategoryColor as getCategoryColorFromStore } from "../stores/categoriesStore.svelte.js";
-import { logger } from "./logger.js";
+import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
+import { getPortCompatibilityChecker } from './connections.js';
+import { getCategoryColor as getCategoryColorFromStore } from '../stores/categoriesStore.svelte.js';
+import { logger } from './logger.js';
 
 /**
  * Category color mapping to design tokens (CSS variables)
@@ -15,23 +15,23 @@ import { logger } from "./logger.js";
  * These serve as static defaults; the categories store provides dynamic overrides.
  */
 export const CATEGORY_COLOR_TOKENS: Record<string, string> = {
-  triggers: "var(--fd-node-cyan)",
-  inputs: "var(--fd-node-emerald)",
-  outputs: "var(--fd-node-blue)",
-  prompts: "var(--fd-node-amber)",
-  models: "var(--fd-node-indigo)",
-  processing: "var(--fd-node-teal)",
-  logic: "var(--fd-node-purple)",
-  data: "var(--fd-node-orange)",
-  helpers: "var(--fd-node-slate)",
-  tools: "var(--fd-node-amber)",
-  "vector stores": "var(--fd-node-emerald)",
-  embeddings: "var(--fd-node-indigo)",
-  memories: "var(--fd-node-blue)",
-  agents: "var(--fd-node-teal)",
-  ai: "var(--fd-node-purple)",
-  interrupts: "var(--fd-node-red)",
-  bundles: "var(--fd-node-slate)",
+  triggers: 'var(--fd-node-cyan)',
+  inputs: 'var(--fd-node-emerald)',
+  outputs: 'var(--fd-node-blue)',
+  prompts: 'var(--fd-node-amber)',
+  models: 'var(--fd-node-indigo)',
+  processing: 'var(--fd-node-teal)',
+  logic: 'var(--fd-node-purple)',
+  data: 'var(--fd-node-orange)',
+  helpers: 'var(--fd-node-slate)',
+  tools: 'var(--fd-node-amber)',
+  'vector stores': 'var(--fd-node-emerald)',
+  embeddings: 'var(--fd-node-indigo)',
+  memories: 'var(--fd-node-blue)',
+  agents: 'var(--fd-node-teal)',
+  ai: 'var(--fd-node-purple)',
+  interrupts: 'var(--fd-node-red)',
+  bundles: 'var(--fd-node-slate)'
 };
 
 /**
@@ -39,33 +39,33 @@ export const CATEGORY_COLOR_TOKENS: Record<string, string> = {
  * Uses --fd-node-* tokens from tokens.css
  */
 const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
-  string: "var(--fd-node-emerald)",
-  text: "var(--fd-node-emerald)",
-  number: "var(--fd-node-blue)",
-  integer: "var(--fd-node-blue)",
-  float: "var(--fd-node-blue)",
-  boolean: "var(--fd-node-purple)",
-  array: "var(--fd-node-amber)",
-  list: "var(--fd-node-amber)",
-  object: "var(--fd-node-orange)",
-  json: "var(--fd-node-orange)",
-  mixed: "var(--fd-node-orange)",
-  file: "var(--fd-node-red)",
-  document: "var(--fd-node-red)",
-  image: "var(--fd-node-pink)",
-  picture: "var(--fd-node-pink)",
-  audio: "var(--fd-node-indigo)",
-  sound: "var(--fd-node-indigo)",
-  video: "var(--fd-node-teal)",
-  movie: "var(--fd-node-teal)",
-  url: "var(--fd-node-cyan)",
-  email: "var(--fd-node-cyan)",
-  date: "var(--fd-node-lime)",
-  datetime: "var(--fd-node-lime)",
-  time: "var(--fd-node-lime)",
-  tool: "var(--fd-node-amber)",
-  trigger: "var(--fd-edge-trigger)",
-  branch: "var(--fd-node-purple)",
+  string: 'var(--fd-node-emerald)',
+  text: 'var(--fd-node-emerald)',
+  number: 'var(--fd-node-blue)',
+  integer: 'var(--fd-node-blue)',
+  float: 'var(--fd-node-blue)',
+  boolean: 'var(--fd-node-purple)',
+  array: 'var(--fd-node-amber)',
+  list: 'var(--fd-node-amber)',
+  object: 'var(--fd-node-orange)',
+  json: 'var(--fd-node-orange)',
+  mixed: 'var(--fd-node-orange)',
+  file: 'var(--fd-node-red)',
+  document: 'var(--fd-node-red)',
+  image: 'var(--fd-node-pink)',
+  picture: 'var(--fd-node-pink)',
+  audio: 'var(--fd-node-indigo)',
+  sound: 'var(--fd-node-indigo)',
+  video: 'var(--fd-node-teal)',
+  movie: 'var(--fd-node-teal)',
+  url: 'var(--fd-node-cyan)',
+  email: 'var(--fd-node-cyan)',
+  date: 'var(--fd-node-lime)',
+  datetime: 'var(--fd-node-lime)',
+  time: 'var(--fd-node-lime)',
+  tool: 'var(--fd-node-amber)',
+  trigger: 'var(--fd-edge-trigger)',
+  branch: 'var(--fd-node-purple)'
 };
 
 /**
@@ -91,22 +91,18 @@ export function getDataTypeColorToken(dataType: string): string {
     // Fallback to static color mapping if port checker not initialized
   }
 
-  return (
-    DEFAULT_DATA_TYPE_COLORS[dataType.toLowerCase()] || "var(--fd-node-slate)"
-  );
+  return DEFAULT_DATA_TYPE_COLORS[dataType.toLowerCase()] || 'var(--fd-node-slate)';
 }
 
 /**
  * Get data type configuration from port config
  */
-export function getDataTypeConfig(
-  dataType: string,
-): PortDataTypeConfig | undefined {
+export function getDataTypeConfig(dataType: string): PortDataTypeConfig | undefined {
   try {
     const checker = getPortCompatibilityChecker();
     return checker.getDataTypeConfig(dataType);
   } catch (error) {
-    logger.warn("Port compatibility checker not initialized:", error);
+    logger.warn('Port compatibility checker not initialized:', error);
     return undefined;
   }
 }
@@ -119,7 +115,7 @@ export function getAvailableDataTypes(): PortDataTypeConfig[] {
     const checker = getPortCompatibilityChecker();
     return checker.getEnabledDataTypes();
   } catch (error) {
-    logger.warn("Port compatibility checker not initialized:", error);
+    logger.warn('Port compatibility checker not initialized:', error);
     return [];
   }
 }
@@ -128,10 +124,10 @@ export function getAvailableDataTypes(): PortDataTypeConfig[] {
  * Default colors for fallback cases
  */
 export const DEFAULT_COLORS = {
-  background: "flowdrop-color--base-light",
-  accent: "flowdrop-color--neutral",
-  text: "flowdrop-color--base-text",
-  border: "flowdrop-color--base-border",
+  background: 'flowdrop-color--base-light',
+  accent: 'flowdrop-color--neutral',
+  text: 'flowdrop-color--base-text',
+  border: 'flowdrop-color--base-border'
 };
 
 /**
@@ -191,42 +187,42 @@ export function getNodeColors(
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
-  isSelected: boolean = false,
+  isSelected: boolean = false
 ): { background: string; accent: string; text: string; border: string } {
   const baseColor = getCategoryColors(category);
 
   if (isError) {
     return {
-      background: "var(--fd-error-muted)",
-      accent: "var(--fd-error)",
-      text: "var(--fd-error-hover)",
-      border: "var(--fd-error)",
+      background: 'var(--fd-error-muted)',
+      accent: 'var(--fd-error)',
+      text: 'var(--fd-error-hover)',
+      border: 'var(--fd-error)'
     };
   }
 
   if (isProcessing) {
     return {
-      background: "var(--fd-info-muted)",
-      accent: "var(--fd-info)",
-      text: "var(--fd-primary-hover)",
-      border: "var(--fd-primary)",
+      background: 'var(--fd-info-muted)',
+      accent: 'var(--fd-info)',
+      text: 'var(--fd-primary-hover)',
+      border: 'var(--fd-primary)'
     };
   }
 
   if (isSelected) {
     return {
-      background: "var(--fd-accent-muted)",
-      accent: "var(--fd-accent)",
-      text: "var(--fd-accent-hover)",
-      border: "var(--fd-accent)",
+      background: 'var(--fd-accent-muted)',
+      accent: 'var(--fd-accent)',
+      text: 'var(--fd-accent-hover)',
+      border: 'var(--fd-accent)'
     };
   }
 
   return {
     background: baseColor,
     accent: baseColor,
-    text: "var(--fd-foreground)",
-    border: baseColor,
+    text: 'var(--fd-foreground)',
+    border: baseColor
   };
 }
 
@@ -242,7 +238,7 @@ export function getNodeBackground(
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
-  isSelected: boolean = false,
+  isSelected: boolean = false
 ): string {
   return getNodeColors(category, isError, isProcessing, isSelected).background;
 }
@@ -259,7 +255,7 @@ export function getNodeAccent(
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
-  isSelected: boolean = false,
+  isSelected: boolean = false
 ): string {
   return getNodeColors(category, isError, isProcessing, isSelected).accent;
 }
@@ -276,7 +272,7 @@ export function getNodeText(
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
-  isSelected: boolean = false,
+  isSelected: boolean = false
 ): string {
   return getNodeColors(category, isError, isProcessing, isSelected).text;
 }
@@ -293,7 +289,7 @@ export function getNodeBorder(
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
-  isSelected: boolean = false,
+  isSelected: boolean = false
 ): string {
   return getNodeColors(category, isError, isProcessing, isSelected).border;
 }
@@ -319,7 +315,7 @@ export function parseDataTypeDisplay(dataType: string): {
   elementType?: string;
 } {
   // Check if it's a typed array (ends with [])
-  const isArray = dataType.endsWith("[]");
+  const isArray = dataType.endsWith('[]');
 
   if (isArray) {
     const elementType = dataType.slice(0, -2); // Remove []
@@ -329,14 +325,14 @@ export function parseDataTypeDisplay(dataType: string): {
       baseType: dataType,
       isArray: true,
       displayName: config?.name || `${elementType}[]`,
-      elementType: elementType,
+      elementType: elementType
     };
   } else {
     const config = getDataTypeConfig(dataType);
     return {
       baseType: dataType,
       isArray: false,
-      displayName: config?.name || dataType,
+      displayName: config?.name || dataType
     };
   }
 }
@@ -357,7 +353,7 @@ export function getDataTypeDisplayText(dataType: string): string {
  * @returns True if it's an array type
  */
 export function isArrayDataType(dataType: string): boolean {
-  return dataType.endsWith("[]") || dataType === "array" || dataType === "list";
+  return dataType.endsWith('[]') || dataType === 'array' || dataType === 'list';
 }
 
 /**
@@ -366,7 +362,7 @@ export function isArrayDataType(dataType: string): boolean {
  * @returns The element type (e.g., "string") or null if not an array
  */
 export function getArrayElementType(arrayDataType: string): string | null {
-  if (arrayDataType.endsWith("[]")) {
+  if (arrayDataType.endsWith('[]')) {
     return arrayDataType.slice(0, -2);
   }
   return null;
@@ -377,10 +373,8 @@ export function getArrayElementType(arrayDataType: string): string | null {
  * @param hex - Hex color string (e.g., "#f59e0b" or "f59e0b")
  * @returns Object with r, g, b values (0-255) or null if invalid
  */
-export function hexToRgb(
-  hex: string,
-): { r: number; g: number; b: number } | null {
-  const cleanHex = hex.replace(/^#/, "");
+export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const cleanHex = hex.replace(/^#/, '');
   if (!/^[0-9A-Fa-f]{6}$/.test(cleanHex)) {
     return null;
   }
@@ -401,9 +395,7 @@ export function hexToRgb(
 export function getRelativeLuminance(r: number, g: number, b: number): number {
   const toLinear = (value: number): number => {
     const srgb = value / 255;
-    return srgb <= 0.03928
-      ? srgb / 12.92
-      : Math.pow((srgb + 0.055) / 1.055, 2.4);
+    return srgb <= 0.03928 ? srgb / 12.92 : Math.pow((srgb + 0.055) / 1.055, 2.4);
   };
   return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
@@ -430,7 +422,7 @@ export function isLightColor(hex: string): boolean {
  * @returns CSS color value for text that provides good contrast
  */
 export function getContrastTextColor(backgroundColor: string): string {
-  return isLightColor(backgroundColor) ? "#18181b" : "#ffffff";
+  return isLightColor(backgroundColor) ? '#18181b' : '#ffffff';
 }
 
 /**
@@ -438,18 +430,18 @@ export function getContrastTextColor(backgroundColor: string): string {
  * Used for contrast calculations when working with design tokens
  */
 const TOKEN_TO_HEX: Record<string, string> = {
-  "var(--fd-node-cyan)": "#06b6d4",
-  "var(--fd-node-emerald)": "#10b981",
-  "var(--fd-node-blue)": "#3b82f6",
-  "var(--fd-node-amber)": "#f59e0b",
-  "var(--fd-node-indigo)": "#6366f1",
-  "var(--fd-node-teal)": "#14b8a6",
-  "var(--fd-node-purple)": "#8b5cf6",
-  "var(--fd-node-orange)": "#f97316",
-  "var(--fd-node-slate)": "#64748b",
-  "var(--fd-node-red)": "#ef4444",
-  "var(--fd-node-pink)": "#ec4899",
-  "var(--fd-node-lime)": "#84cc16",
+  'var(--fd-node-cyan)': '#06b6d4',
+  'var(--fd-node-emerald)': '#10b981',
+  'var(--fd-node-blue)': '#3b82f6',
+  'var(--fd-node-amber)': '#f59e0b',
+  'var(--fd-node-indigo)': '#6366f1',
+  'var(--fd-node-teal)': '#14b8a6',
+  'var(--fd-node-purple)': '#8b5cf6',
+  'var(--fd-node-orange)': '#f97316',
+  'var(--fd-node-slate)': '#64748b',
+  'var(--fd-node-red)': '#ef4444',
+  'var(--fd-node-pink)': '#ec4899',
+  'var(--fd-node-lime)': '#84cc16'
 };
 
 /**
@@ -477,9 +469,7 @@ export function getContrastTextColorForDataType(dataType: string): string {
  * @param category - The node category
  * @returns CSS color value for text that provides good contrast on the category's background
  */
-export function getContrastTextColorForCategory(
-  category: NodeCategory,
-): string {
+export function getContrastTextColorForCategory(category: NodeCategory): string {
   const colorToken = getCategoryColorToken(category);
   const hexColor = resolveColorToken(colorToken);
   return getContrastTextColor(hexColor);
@@ -492,10 +482,7 @@ export function getContrastTextColorForCategory(
  * @param opacity - Opacity percentage (default 25%)
  * @returns CSS color-mix expression for the tinted background
  */
-export function getPortBackgroundColor(
-  dataType: string,
-  opacity: number = 25,
-): string {
+export function getPortBackgroundColor(dataType: string, opacity: number = 25): string {
   const colorToken = getDataTypeColorToken(dataType);
   return `color-mix(in srgb, ${colorToken} ${opacity}%, transparent)`;
 }
@@ -519,7 +506,7 @@ export function getPortBorderColor(dataType: string): string {
 export function rgbToHex(r: number, g: number, b: number): string {
   const toHex = (value: number): string => {
     const clamped = Math.max(0, Math.min(255, Math.round(value)));
-    return clamped.toString(16).padStart(2, "0");
+    return clamped.toString(16).padStart(2, '0');
   };
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
@@ -533,7 +520,7 @@ export function rgbToHex(r: number, g: number, b: number): string {
 export function getLightTint(hex: string): string {
   const rgb = hexToRgb(hex);
   if (!rgb) {
-    return "#fffbeb"; // Fallback to amber-50
+    return '#fffbeb'; // Fallback to amber-50
   }
   // Mix with white at 95% to create a very light tint
   const mixRatio = 0.95;
@@ -553,7 +540,7 @@ export function getLightTint(hex: string): string {
 export function getDarkTint(hex: string, opacity: number = 0.15): string {
   const rgb = hexToRgb(hex);
   if (!rgb) {
-    return "#2a2518"; // Fallback dark amber tint
+    return '#2a2518'; // Fallback dark amber tint
   }
   // Mix with dark background (#1a1a1e) to create a subtle dark tint
   const darkBg = { r: 26, g: 26, b: 30 };
@@ -572,7 +559,7 @@ export function getDarkTint(hex: string, opacity: number = 0.15): string {
 export function getBorderTint(hex: string): string {
   const rgb = hexToRgb(hex);
   if (!rgb) {
-    return "#fcd34d"; // Fallback to amber-300
+    return '#fcd34d'; // Fallback to amber-300
   }
   // Mix with white at 60% to create a medium-light tint
   const mixRatio = 0.6;
@@ -591,7 +578,7 @@ export function getBorderTint(hex: string): string {
 export function getDarkBorderTint(hex: string): string {
   const rgb = hexToRgb(hex);
   if (!rgb) {
-    return "#5c4a1e"; // Fallback dark amber border
+    return '#5c4a1e'; // Fallback dark amber border
   }
   // Mix with dark background to create a muted but visible border
   const darkBg = { r: 26, g: 26, b: 30 };
@@ -630,7 +617,7 @@ export function getColorVariants(baseColor: string): ColorVariants {
     light: getLightTint(baseColor),
     border: getBorderTint(baseColor),
     darkLight: getDarkTint(baseColor),
-    darkBorder: getDarkBorderTint(baseColor),
+    darkBorder: getDarkBorderTint(baseColor)
   };
 }
 
@@ -643,7 +630,7 @@ export function getColorVariants(baseColor: string): ColorVariants {
  */
 export function getThemeAwareColorVariants(
   baseColor: string,
-  isDarkMode: boolean,
+  isDarkMode: boolean
 ): {
   base: string;
   background: string;
@@ -653,6 +640,6 @@ export function getThemeAwareColorVariants(
   return {
     base: variants.base,
     background: isDarkMode ? variants.darkLight : variants.light,
-    border: isDarkMode ? variants.darkBorder : variants.border,
+    border: isDarkMode ? variants.darkBorder : variants.border
   };
 }

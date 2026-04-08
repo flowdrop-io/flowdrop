@@ -7,15 +7,15 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import { slide } from "svelte/transition";
-  import type { PlaygroundSession } from "../../types/playground.js";
+  import Icon from '@iconify/svelte';
+  import { slide } from 'svelte/transition';
+  import type { PlaygroundSession } from '../../types/playground.js';
   import {
     getSessions,
     getCurrentSession,
     getIsLoading,
-    getSessionCount,
-  } from "../../stores/playgroundStore.svelte.js";
+    getSessionCount
+  } from '../../stores/playgroundStore.svelte.js';
 
   /**
    * Component props
@@ -32,7 +32,7 @@
     /** Callback when user wants to delete a session */
     onDeleteSession?: (sessionId: string) => void;
     /** Display mode: sidebar or dropdown */
-    mode?: "sidebar" | "dropdown";
+    mode?: 'sidebar' | 'dropdown';
   }
 
   let {
@@ -41,7 +41,7 @@
     onCreateSession,
     onSelectSession,
     onDeleteSession,
-    mode = "sidebar",
+    mode = 'sidebar'
   }: Props = $props();
 
   /** Session pending deletion (for confirmation) */
@@ -60,7 +60,7 @@
    */
   function handleSelectSession(sessionId: string): void {
     onSelectSession?.(sessionId);
-    if (mode === "dropdown") {
+    if (mode === 'dropdown') {
       isExpanded = false;
     }
   }
@@ -105,7 +105,7 @@
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) {
-      return "Just now";
+      return 'Just now';
     }
     if (diffMins < 60) {
       return `${diffMins}m ago`;
@@ -116,41 +116,41 @@
     if (diffDays < 7) {
       return `${diffDays}d ago`;
     }
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
     });
   }
 
   /**
    * Get status icon
    */
-  function getStatusIcon(status: PlaygroundSession["status"]): string {
+  function getStatusIcon(status: PlaygroundSession['status']): string {
     switch (status) {
-      case "running":
-        return "mdi:loading";
-      case "completed":
-        return "mdi:check-circle";
-      case "failed":
-        return "mdi:alert-circle";
+      case 'running':
+        return 'mdi:loading';
+      case 'completed':
+        return 'mdi:check-circle';
+      case 'failed':
+        return 'mdi:alert-circle';
       default:
-        return "mdi:circle-outline";
+        return 'mdi:circle-outline';
     }
   }
 
   /**
    * Get status color class
    */
-  function getStatusClass(status: PlaygroundSession["status"]): string {
+  function getStatusClass(status: PlaygroundSession['status']): string {
     switch (status) {
-      case "running":
-        return "session-manager__status--running";
-      case "completed":
-        return "session-manager__status--completed";
-      case "failed":
-        return "session-manager__status--failed";
+      case 'running':
+        return 'session-manager__status--running';
+      case 'completed':
+        return 'session-manager__status--completed';
+      case 'failed':
+        return 'session-manager__status--failed';
       default:
-        return "session-manager__status--idle";
+        return 'session-manager__status--idle';
     }
   }
 </script>
@@ -158,8 +158,8 @@
 <div
   class="session-manager"
   class:session-manager--expanded={isExpanded}
-  class:session-manager--sidebar={mode === "sidebar"}
-  class:session-manager--dropdown={mode === "dropdown"}
+  class:session-manager--sidebar={mode === 'sidebar'}
+  class:session-manager--dropdown={mode === 'dropdown'}
 >
   <!-- Header / Toggle -->
   <button
@@ -177,9 +177,7 @@
     </div>
     <Icon
       icon="mdi:chevron-down"
-      class="session-manager__chevron {isExpanded
-        ? 'session-manager__chevron--expanded'
-        : ''}"
+      class="session-manager__chevron {isExpanded ? 'session-manager__chevron--expanded' : ''}"
     />
   </button>
 
@@ -208,13 +206,11 @@
           {#each getSessions() as session (session.id)}
             <div
               class="session-manager__item"
-              class:session-manager__item--active={getCurrentSession()?.id ===
-                session.id}
+              class:session-manager__item--active={getCurrentSession()?.id === session.id}
               role="button"
               tabindex="0"
               onclick={() => handleSelectSession(session.id)}
-              onkeydown={(e) =>
-                e.key === "Enter" && handleSelectSession(session.id)}
+              onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
             >
               <div class="session-manager__item-info">
                 <div class="session-manager__item-header">
@@ -222,9 +218,7 @@
                     {session.name}
                   </span>
                   <span
-                    class="session-manager__status {getStatusClass(
-                      session.status,
-                    )}"
+                    class="session-manager__status {getStatusClass(session.status)}"
                     title={session.status}
                   >
                     <Icon icon={getStatusIcon(session.status)} />

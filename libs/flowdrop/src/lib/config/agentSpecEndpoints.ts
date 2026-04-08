@@ -47,7 +47,7 @@ export interface AgentSpecEndpointConfig {
 
   /** Authentication for the runtime */
   auth?: {
-    type: "none" | "bearer" | "api_key";
+    type: 'none' | 'bearer' | 'api_key';
     token?: string;
     apiKey?: string;
   };
@@ -61,19 +61,19 @@ export interface AgentSpecEndpointConfig {
  * Targets a local WayFlow/PyAgentSpec instance on port 8000.
  */
 export const defaultAgentSpecEndpoints: AgentSpecEndpointConfig = {
-  baseUrl: "http://localhost:8000",
+  baseUrl: 'http://localhost:8000',
   endpoints: {
-    execute: "/flows/execute",
-    status: "/executions/{id}",
-    cancel: "/executions/{id}/cancel",
-    results: "/executions/{id}/results",
-    stream: "/executions/{id}/stream",
-    validate: "/flows/validate",
-    agents: "/agents",
-    tools: "/tools",
-    health: "/health",
+    execute: '/flows/execute',
+    status: '/executions/{id}',
+    cancel: '/executions/{id}/cancel',
+    results: '/executions/{id}/results',
+    stream: '/executions/{id}/stream',
+    validate: '/flows/validate',
+    agents: '/agents',
+    tools: '/tools',
+    health: '/health'
   },
-  timeout: 60000,
+  timeout: 60000
 };
 
 /**
@@ -81,12 +81,12 @@ export const defaultAgentSpecEndpoints: AgentSpecEndpointConfig = {
  */
 export function createAgentSpecEndpointConfig(
   baseUrl: string,
-  overrides?: Partial<AgentSpecEndpointConfig>,
+  overrides?: Partial<AgentSpecEndpointConfig>
 ): AgentSpecEndpointConfig {
   return {
     ...defaultAgentSpecEndpoints,
-    baseUrl: baseUrl.replace(/\/$/, ""),
-    ...overrides,
+    baseUrl: baseUrl.replace(/\/$/, ''),
+    ...overrides
   };
 }
 
@@ -96,7 +96,7 @@ export function createAgentSpecEndpointConfig(
 export function buildAgentSpecUrl(
   config: AgentSpecEndpointConfig,
   endpointPath: string,
-  params?: Record<string, string>,
+  params?: Record<string, string>
 ): string {
   let url = endpointPath;
 
@@ -106,8 +106,8 @@ export function buildAgentSpecUrl(
     }
   }
 
-  if (!url.startsWith("http") && !url.startsWith("//")) {
-    url = `${config.baseUrl}${url.startsWith("/") ? url : `/${url}`}`;
+  if (!url.startsWith('http') && !url.startsWith('//')) {
+    url = `${config.baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
   }
 
   return url;
@@ -116,17 +116,15 @@ export function buildAgentSpecUrl(
 /**
  * Get authentication headers for Agent Spec runtime requests.
  */
-export function getAgentSpecAuthHeaders(
-  config: AgentSpecEndpointConfig,
-): Record<string, string> {
+export function getAgentSpecAuthHeaders(config: AgentSpecEndpointConfig): Record<string, string> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json'
   };
 
-  if (config.auth?.type === "bearer" && config.auth.token) {
-    headers["Authorization"] = `Bearer ${config.auth.token}`;
-  } else if (config.auth?.type === "api_key" && config.auth.apiKey) {
-    headers["X-API-Key"] = config.auth.apiKey;
+  if (config.auth?.type === 'bearer' && config.auth.token) {
+    headers['Authorization'] = `Bearer ${config.auth.token}`;
+  } else if (config.auth?.type === 'api_key' && config.auth.apiKey) {
+    headers['X-API-Key'] = config.auth.apiKey;
   }
 
   return headers;

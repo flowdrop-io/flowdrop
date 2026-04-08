@@ -21,19 +21,16 @@
  * ```
  */
 
-import { fieldComponentRegistry } from "./fieldRegistry.js";
-import type { FieldComponent } from "./fieldRegistry.js";
-import type { FieldSchema } from "../components/form/types.js";
+import { fieldComponentRegistry } from './fieldRegistry.js';
+import type { FieldComponent } from './fieldRegistry.js';
+import type { FieldSchema } from '../components/form/types.js';
 
 // Re-export the components for direct usage if needed
-export { default as FormCodeEditor } from "../components/form/FormCodeEditor.svelte";
-export { default as FormTemplateEditor } from "../components/form/FormTemplateEditor.svelte";
+export { default as FormCodeEditor } from '../components/form/FormCodeEditor.svelte';
+export { default as FormTemplateEditor } from '../components/form/FormTemplateEditor.svelte';
 
 // Re-export types for code editor props
-export type {
-  CodeEditorFieldProps,
-  TemplateEditorFieldProps,
-} from "../components/form/types.js";
+export type { CodeEditorFieldProps, TemplateEditorFieldProps } from '../components/form/types.js';
 
 /**
  * Matcher for code/JSON editor fields
@@ -41,12 +38,12 @@ export type {
  */
 export function codeEditorFieldMatcher(schema: FieldSchema): boolean {
   // JSON/code format
-  if (schema.format === "json" || schema.format === "code") {
+  if (schema.format === 'json' || schema.format === 'code') {
     return true;
   }
 
   // Object type without specific format (render as JSON editor)
-  if (schema.type === "object" && !schema.format) {
+  if (schema.type === 'object' && !schema.format) {
     return true;
   }
 
@@ -58,7 +55,7 @@ export function codeEditorFieldMatcher(schema: FieldSchema): boolean {
  * Matches: format "template" (Twig/Liquid-style templates)
  */
 export function templateEditorFieldMatcher(schema: FieldSchema): boolean {
-  return schema.format === "template";
+  return schema.format === 'template';
 }
 
 /**
@@ -99,11 +96,11 @@ export function registerCodeEditorField(priority: number = 100): void {
   }
 
   // Dynamic import to ensure proper code splitting
-  import("../components/form/FormCodeEditor.svelte").then((module) => {
-    fieldComponentRegistry.register("code-editor", {
+  import('../components/form/FormCodeEditor.svelte').then((module) => {
+    fieldComponentRegistry.register('code-editor', {
       component: module.default,
       matcher: codeEditorFieldMatcher,
-      priority,
+      priority
     });
     codeEditorRegistered = true;
   });
@@ -131,11 +128,11 @@ export function registerTemplateEditorField(priority: number = 100): void {
   }
 
   // Dynamic import to ensure proper code splitting
-  import("../components/form/FormTemplateEditor.svelte").then((module) => {
-    fieldComponentRegistry.register("template-editor", {
+  import('../components/form/FormTemplateEditor.svelte').then((module) => {
+    fieldComponentRegistry.register('template-editor', {
       component: module.default,
       matcher: templateEditorFieldMatcher,
-      priority,
+      priority
     });
     templateEditorRegistered = true;
   });
@@ -168,16 +165,16 @@ export function registerAllCodeEditors(priority: number = 100): void {
  */
 export function registerCodeEditorFieldWithComponent(
   component: FieldComponent,
-  priority: number = 100,
+  priority: number = 100
 ): void {
   if (codeEditorRegistered) {
     return;
   }
 
-  fieldComponentRegistry.register("code-editor", {
+  fieldComponentRegistry.register('code-editor', {
     component,
     matcher: codeEditorFieldMatcher,
-    priority,
+    priority
   });
   codeEditorRegistered = true;
 }

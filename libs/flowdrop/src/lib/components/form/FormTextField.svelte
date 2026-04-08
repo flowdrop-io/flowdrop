@@ -28,12 +28,12 @@
 
   let {
     id,
-    value = "",
-    placeholder = "",
+    value = '',
+    placeholder = '',
     required = false,
     disabled = false,
     ariaDescribedBy,
-    onChange,
+    onChange
   }: Props = $props();
 
   /**
@@ -49,7 +49,7 @@
   {id}
   type="text"
   class="form-text-field"
-  value={value ?? ""}
+  value={value ?? ''}
   {placeholder}
   {disabled}
   aria-describedby={ariaDescribedBy}

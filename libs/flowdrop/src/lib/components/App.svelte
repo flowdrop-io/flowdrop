@@ -5,71 +5,65 @@
 -->
 
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-  import MainLayout from "$lib/components/layouts/MainLayout.svelte";
-  import WorkflowEditor from "$lib/components/WorkflowEditor.svelte";
-  import NodeSidebar from "$lib/components/NodeSidebar.svelte";
-  import Icon from "@iconify/svelte";
-  import ConfigForm from "$lib/components/ConfigForm.svelte";
-  import ConfigPanel from "$lib/components/ConfigPanel.svelte";
-  import CommandConsole from "$lib/components/console/CommandConsole.svelte";
-  import AIChatPanel from "$lib/components/chat/AIChatPanel.svelte";
-  import type { UIAction } from "$lib/commands/index.js";
-  import NodeSwapPicker from "$lib/components/NodeSwapPicker.svelte";
-  import SwapMappingEditor from "$lib/components/SwapMappingEditor.svelte";
-  import Navbar from "$lib/components/Navbar.svelte";
-  import { api, setEndpointConfig } from "$lib/services/api.js";
-  import { EnhancedFlowDropApiClient } from "$lib/api/enhanced-client.js";
+  import { onMount, tick } from 'svelte';
+  import MainLayout from '$lib/components/layouts/MainLayout.svelte';
+  import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
+  import NodeSidebar from '$lib/components/NodeSidebar.svelte';
+  import Icon from '@iconify/svelte';
+  import ConfigForm from '$lib/components/ConfigForm.svelte';
+  import ConfigPanel from '$lib/components/ConfigPanel.svelte';
+  import CommandConsole from '$lib/components/console/CommandConsole.svelte';
+  import AIChatPanel from '$lib/components/chat/AIChatPanel.svelte';
+  import type { UIAction } from '$lib/commands/index.js';
+  import NodeSwapPicker from '$lib/components/NodeSwapPicker.svelte';
+  import SwapMappingEditor from '$lib/components/SwapMappingEditor.svelte';
+  import Navbar from '$lib/components/Navbar.svelte';
+  import { api, setEndpointConfig } from '$lib/services/api.js';
+  import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
   import type {
     NodeMetadata,
     Workflow,
     WorkflowNode,
     ConfigSchema,
-    NodeUIExtensions,
-  } from "$lib/types/index.js";
-  import type { InteractiveSwapState, SwapEventContext } from "$lib/utils/nodeSwap.js";
+    NodeUIExtensions
+  } from '$lib/types/index.js';
+  import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
   import {
     computeInteractiveState,
     buildSwapPreviewFromState,
     executeSwap,
-    validateSwapResult,
-  } from "$lib/utils/nodeSwap.js";
-  import type { SwapStrategy } from "$lib/utils/nodeSwap.js";
-  import { DEFAULT_WORKFLOW_FORMAT } from "$lib/types/index.js";
-  import { createEndpointConfig } from "$lib/config/endpoints.js";
-  import type { EndpointConfig } from "$lib/config/endpoints.js";
-  import type { AuthProvider } from "$lib/types/auth.js";
-  import type {
-    FlowDropEventHandlers,
-    FlowDropFeatures,
-  } from "$lib/types/events.js";
-  import { mergeFeatures } from "$lib/types/events.js";
-  import type { FlowDropTheme, FlowDropThemeName } from "$lib/types/theme.js";
-  import type { FlowDropSkinTokens } from "$lib/types/skin.js";
-  import { resolveTheme } from "$lib/themes/index.js";
+    validateSwapResult
+  } from '$lib/utils/nodeSwap.js';
+  import type { SwapStrategy } from '$lib/utils/nodeSwap.js';
+  import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
+  import { createEndpointConfig } from '$lib/config/endpoints.js';
+  import type { EndpointConfig } from '$lib/config/endpoints.js';
+  import type { AuthProvider } from '$lib/types/auth.js';
+  import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
+  import { mergeFeatures } from '$lib/types/events.js';
+  import type { FlowDropTheme, FlowDropThemeName } from '$lib/types/theme.js';
+  import type { FlowDropSkinTokens } from '$lib/types/skin.js';
+  import { resolveTheme } from '$lib/themes/index.js';
   import {
     getWorkflowStore,
     workflowActions,
     getWorkflowName,
     getWorkflowFormat,
-    markAsSaved,
-  } from "../stores/workflowStore.svelte.js";
+    markAsSaved
+  } from '../stores/workflowStore.svelte.js';
+  import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
+  import { apiToasts, dismissToast } from '$lib/services/toastService.js';
+  import { initAutoSave } from '$lib/services/autoSaveService.js';
+  import { getUiSettings, updateSettings } from '../stores/settingsStore.svelte.js';
   import {
-    globalSaveWorkflow,
-    globalExportWorkflow,
-  } from "$lib/services/globalSave.js";
-  import { apiToasts, dismissToast } from "$lib/services/toastService.js";
-  import { initAutoSave } from "$lib/services/autoSaveService.js";
-  import {
-    getUiSettings,
-    updateSettings,
-  } from "../stores/settingsStore.svelte.js";
-  import { initializePortCompatibility, getPortCompatibilityChecker } from "$lib/utils/connections.js";
-  import { DEFAULT_PORT_CONFIG } from "$lib/config/defaultPortConfig.js";
-  import { workflowFormatRegistry } from "../registry/workflowFormatRegistry.js";
-  import { logger } from "../utils/logger.js";
-  import { validateWorkflowData } from "../utils/validation.js";
-  import type { SettingsCategory } from "$lib/types/settings.js";
+    initializePortCompatibility,
+    getPortCompatibilityChecker
+  } from '$lib/utils/connections.js';
+  import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
+  import { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
+  import { logger } from '../utils/logger.js';
+  import { validateWorkflowData } from '../utils/validation.js';
+  import type { SettingsCategory } from '$lib/types/settings.js';
 
   /**
    * Configuration props for runtime customization
@@ -92,10 +86,7 @@
     /** Read-only mode */
     readOnly?: boolean;
     /** Node execution statuses */
-    nodeStatuses?: Record<
-      string,
-      "pending" | "running" | "completed" | "error"
-    >;
+    nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
     /** Pipeline ID for fetching node execution info */
     pipelineId?: string;
     /** Custom navbar title */
@@ -105,7 +96,7 @@
       label: string;
       href: string;
       icon?: string;
-      variant?: "primary" | "secondary" | "outline";
+      variant?: 'primary' | 'secondary' | 'outline';
       onclick?: (event: Event) => void;
     }>;
     /** Show settings gear icon in navbar */
@@ -135,8 +126,8 @@
   let {
     workflow: initialWorkflow,
     nodes: propNodes,
-    height = "100vh",
-    width = "100%",
+    height = '100vh',
+    width = '100%',
     showNavbar = false,
     disableSidebar = false,
     lockWorkflow = false,
@@ -155,7 +146,7 @@
     settingsCategories,
     showSettingsSyncButton,
     showSettingsResetButton,
-    swapStrategies,
+    swapStrategies
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally — feature flags don't change at runtime
@@ -163,9 +154,7 @@
 
   // Theme system — resolve named theme or custom object, inject CSS tokens from skin
   // Explicit prop wins; falls back to user's persisted theme preference from settings
-  let resolvedTheme = $derived(
-    resolveTheme(themeProp ?? getUiSettings().theme),
-  );
+  let resolvedTheme = $derived(resolveTheme(themeProp ?? getUiSettings().theme));
   let themeConfig = $derived(resolvedTheme.config);
 
   // Inject skin tokens as a style tag so light/dark palettes can coexist.
@@ -176,19 +165,19 @@
     const skin = resolvedTheme.skin;
     const tokens = skin?.tokens;
     const darkTokens = skin?.darkTokens;
-    if ((!tokens && !darkTokens) || typeof document === "undefined") return;
+    if ((!tokens && !darkTokens) || typeof document === 'undefined') return;
 
     const toRules = (dict: FlowDropSkinTokens) =>
       Object.entries(dict)
         .map(([k, v]) => `  --fd-${k}: ${v};`)
-        .join("\n");
+        .join('\n');
 
-    let css = "";
+    let css = '';
     if (tokens) css += `:root {\n${toRules(tokens)}\n}\n`;
     if (darkTokens) css += `[data-theme='dark'] {\n${toRules(darkTokens)}\n}\n`;
 
-    const style = document.createElement("style");
-    style.id = "fd-skin-tokens";
+    const style = document.createElement('style');
+    style.id = 'fd-skin-tokens';
     document.head.appendChild(style);
     style.textContent = css;
 
@@ -203,8 +192,8 @@
     }
     // Default workflow title logic
     const wfName = getWorkflowName();
-    if (!wfName || wfName === "Untitled Workflow") {
-      return "Workflow / New Workflow";
+    if (!wfName || wfName === 'Untitled Workflow') {
+      return 'Workflow / New Workflow';
     }
     return `Workflow / ${wfName}`;
   });
@@ -230,43 +219,43 @@
   let isWorkflowSettingsOpen = $state(false);
 
   // Node swap state
-  let swapMode = $state<"idle" | "picking" | "mapping">("idle");
+  let swapMode = $state<'idle' | 'picking' | 'mapping'>('idle');
   let swapTargetMetadata = $state<NodeMetadata | null>(null);
   let swapInteractiveState = $state<InteractiveSwapState | null>(null);
 
   // Workflow configuration schema (derived to pick up dynamic format options)
   let workflowConfigSchema: ConfigSchema = $derived({
-    type: "object" as const,
+    type: 'object' as const,
     properties: {
       name: {
-        type: "string",
-        title: "Workflow Name",
-        description: "The name of the workflow",
-        default: "",
+        type: 'string',
+        title: 'Workflow Name',
+        description: 'The name of the workflow',
+        default: ''
       },
       description: {
-        type: "string",
-        title: "Description",
-        description: "A description of the workflow",
-        format: "multiline",
-        default: "",
+        type: 'string',
+        title: 'Description',
+        description: 'A description of the workflow',
+        format: 'multiline',
+        default: ''
       },
       format: {
-        type: "string",
-        title: "Workflow Format",
-        description: "The specification format for this workflow",
+        type: 'string',
+        title: 'Workflow Format',
+        description: 'The specification format for this workflow',
         oneOf: workflowFormatRegistry.getOneOfOptions(),
-        default: "flowdrop",
-      },
+        default: 'flowdrop'
+      }
     },
-    required: ["name"],
+    required: ['name']
   });
 
   // Workflow configuration values
   let workflowConfigValues = $derived({
-    name: getWorkflowName() || "",
-    description: getWorkflowStore()?.description || "",
-    format: getWorkflowStore()?.metadata?.format || "flowdrop",
+    name: getWorkflowName() || '',
+    description: getWorkflowStore()?.description || '',
+    format: getWorkflowStore()?.metadata?.format || 'flowdrop'
   });
 
   // Get the current node from the workflow store
@@ -291,18 +280,14 @@
       // Merge format-provided nodes with prop nodes (deduplicate by ID, props take priority)
       const formatNodes = workflowFormatRegistry.getAllFormatNodes();
       const existingIds = new Set(propNodes.map((n) => n.id));
-      const uniqueFormatNodes = formatNodes.filter(
-        (n) => !existingIds.has(n.id),
-      );
+      const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
       nodes = [...propNodes, ...uniqueFormatNodes];
       nodeTypesLoading = false;
       return;
     }
 
     // Show loading toast (if toasts are enabled)
-    const loadingToast = features.showToasts
-      ? apiToasts.loading("Loading node types")
-      : null;
+    const loadingToast = features.showToasts ? apiToasts.loading('Loading node types') : null;
     try {
       error = null;
 
@@ -317,9 +302,7 @@
       // Merge format-provided nodes with API nodes (deduplicate by ID, API takes priority)
       const formatNodes = workflowFormatRegistry.getAllFormatNodes();
       const existingIds = new Set(fetchedNodes.map((n) => n.id));
-      const uniqueFormatNodes = formatNodes.filter(
-        (n) => !existingIds.has(n.id),
-      );
+      const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
       nodes = [...fetchedNodes, ...uniqueFormatNodes];
       error = null;
       nodeTypesLoading = false;
@@ -334,13 +317,13 @@
         dismissToast(loadingToast);
       }
 
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 
       // Notify parent via event handler
       if (eventHandlers?.onApiError) {
         const suppressToast = eventHandlers.onApiError(
           err instanceof Error ? err : new Error(errorMessage),
-          "fetchNodes",
+          'fetchNodes'
         );
         if (suppressToast) {
           // Parent handled the error, keep nodes empty
@@ -353,7 +336,7 @@
       // Show error and set empty nodes array (no fallback to sample data)
       error = `API Error: ${errorMessage}. No node types available.`;
       if (features.showToasts) {
-        apiToasts.error("Load node types", errorMessage);
+        apiToasts.error('Load node types', errorMessage);
       }
 
       // Set empty nodes array instead of fallback data
@@ -374,22 +357,19 @@
    */
   async function testApiConnection(): Promise<void> {
     try {
-      const baseUrl = endpointConfig?.baseUrl || apiBaseUrl || "/api/flowdrop";
+      const baseUrl = endpointConfig?.baseUrl || apiBaseUrl || '/api/flowdrop';
       const testUrl = `${baseUrl}/nodes`;
 
       const response = await fetch(testUrl);
       const data = await response.json();
 
       if (response.ok && data.success) {
-        apiToasts.success("API connection test", "Connection successful");
+        apiToasts.success('API connection test', 'Connection successful');
       } else {
-        apiToasts.error("API connection test", "Connection failed");
+        apiToasts.error('API connection test', 'Connection failed');
       }
     } catch (err) {
-      apiToasts.error(
-        "API connection test",
-        err instanceof Error ? err.message : "Unknown error",
-      );
+      apiToasts.error('API connection test', err instanceof Error ? err.message : 'Unknown error');
     }
   }
 
@@ -405,16 +385,13 @@
 
       // Create enhanced API client with authProvider support if provided
       if (authProvider) {
-        apiClient = new EnhancedFlowDropApiClient(
-          propEndpointConfig,
-          authProvider,
-        );
+        apiClient = new EnhancedFlowDropApiClient(propEndpointConfig, authProvider);
       }
       return;
     }
 
     // Second priority: Check if endpoint config is already set (e.g., by parent layout)
-    const { getEndpointConfig } = await import("$lib/services/api.js");
+    const { getEndpointConfig } = await import('$lib/services/api.js');
     const existingConfig = getEndpointConfig();
 
     // If config already exists and no override provided, use existing
@@ -429,19 +406,19 @@
     }
 
     // Third priority: Use provided apiBaseUrl or default
-    const baseUrl = apiBaseUrl || "/api/flowdrop";
+    const baseUrl = apiBaseUrl || '/api/flowdrop';
 
     const config = createEndpointConfig(baseUrl, {
       auth: {
-        type: "none", // No authentication for now
+        type: 'none' // No authentication for now
       },
       timeout: 10000, // 10 second timeout
       retry: {
         enabled: true,
         maxAttempts: 2,
         delay: 1000,
-        backoff: "exponential",
-      },
+        backoff: 'exponential'
+      }
     });
 
     setEndpointConfig(config);
@@ -466,7 +443,7 @@
     selectedNodeId = node.id;
     isConfigSidebarOpen = true;
     // Reset swap state when switching nodes
-    swapMode = "idle";
+    swapMode = 'idle';
     swapTargetMetadata = null;
     swapInteractiveState = null;
   }
@@ -475,7 +452,7 @@
     isConfigSidebarOpen = false;
     selectedNodeId = null;
     // Reset swap state when closing
-    swapMode = "idle";
+    swapMode = 'idle';
     swapTargetMetadata = null;
     swapInteractiveState = null;
   }
@@ -495,7 +472,7 @@
    * Start swap mode — transitions the right sidebar to the node picker
    */
   function startSwap(): void {
-    swapMode = "picking";
+    swapMode = 'picking';
     swapTargetMetadata = null;
     swapInteractiveState = null;
   }
@@ -517,24 +494,21 @@
     }
 
     // Get port compatibility checker (may be null if not initialized)
-    let checker: import("$lib/utils/connections.js").PortCompatibilityChecker | null = null;
+    let checker: import('$lib/utils/connections.js').PortCompatibilityChecker | null = null;
     try {
       checker = getPortCompatibilityChecker();
     } catch {
       // Checker not initialized — computeSwapPreview will use exact dataType matching
     }
 
-    const interactive = computeInteractiveState(
-      node,
-      metadata,
-      wf.edges,
-      wf.nodes,
-      { checker, strategies: swapStrategies },
-    );
+    const interactive = computeInteractiveState(node, metadata, wf.edges, wf.nodes, {
+      checker,
+      strategies: swapStrategies
+    });
 
     swapTargetMetadata = metadata;
     swapInteractiveState = interactive;
-    swapMode = "mapping";
+    swapMode = 'mapping';
   }
 
   /**
@@ -554,18 +528,12 @@
     const preview = buildSwapPreviewFromState(state, wf.edges);
 
     // Execute the swap
-    const result = executeSwap(
-      state.oldNode,
-      state.newMetadata,
-      preview,
-      wf.nodes,
-      wf.edges,
-    );
+    const result = executeSwap(state.oldNode, state.newMetadata, preview, wf.nodes, wf.edges);
 
     // Post-swap validation
     const validation = validateSwapResult(result);
     if (!validation.valid) {
-      logger.error("Swap validation failed:", validation.error);
+      logger.error('Swap validation failed:', validation.error);
       return;
     }
 
@@ -576,7 +544,7 @@
         newMetadata: state.newMetadata,
         preview,
         portOverrides: [],
-        configOverrides: [],
+        configOverrides: []
       };
       const shouldProceed = await eventHandlers.onBeforeSwap(swapEventCtx);
       if (shouldProceed === false) return;
@@ -586,7 +554,7 @@
     workflowActions.swapNode({
       nodes: result.updatedNodes,
       edges: result.updatedEdges,
-      description: `Swap node: ${oldLabel} → ${newLabel}`,
+      description: `Swap node: ${oldLabel} → ${newLabel}`
     });
 
     // onAfterSwap hook (fire-and-forget — swap is already applied)
@@ -594,7 +562,7 @@
       try {
         eventHandlers.onAfterSwap(result, state.oldNode, state.newNodeId);
       } catch (err) {
-        logger.error("onAfterSwap hook error:", err);
+        logger.error('onAfterSwap hook error:', err);
       }
     }
 
@@ -603,7 +571,7 @@
     selectedNodeId = newNodeId;
 
     // Reset swap state
-    swapMode = "idle";
+    swapMode = 'idle';
     swapTargetMetadata = null;
     swapInteractiveState = null;
 
@@ -624,7 +592,7 @@
    * Cancel swap and return to normal config view
    */
   function cancelSwap(): void {
-    swapMode = "idle";
+    swapMode = 'idle';
     swapTargetMetadata = null;
     swapInteractiveState = null;
   }
@@ -632,14 +600,12 @@
   /**
    * Handle workflow configuration save
    */
-  async function handleWorkflowSave(
-    config: Record<string, unknown>,
-  ): Promise<void> {
+  async function handleWorkflowSave(config: Record<string, unknown>): Promise<void> {
     // Update the workflow store
     if (getWorkflowStore()) {
       workflowActions.batchUpdate({
         name: config.name as string | undefined,
-        description: config.description as string | undefined,
+        description: config.description as string | undefined
       });
     }
 
@@ -650,7 +616,7 @@
     try {
       await saveWorkflow();
     } catch (error) {
-      logger.error("Failed to save workflow to backend:", error);
+      logger.error('Failed to save workflow to backend:', error);
       // Note: We don't throw the error here to avoid breaking the UI flow
       // The user can still manually save via the main Save button if needed
     }
@@ -667,7 +633,7 @@
       apiClient: apiClient ?? undefined,
       eventHandlers,
       features,
-      onMarkAsSaved: markAsSaved,
+      onMarkAsSaved: markAsSaved
     });
   }
 
@@ -691,45 +657,38 @@
     reader.onload = (event) => {
       try {
         const text = event.target?.result;
-        if (typeof text !== "string") {
-          throw new Error("Could not read file contents.");
+        if (typeof text !== 'string') {
+          throw new Error('Could not read file contents.');
         }
         const data = JSON.parse(text);
         const validation = validateWorkflowData(data);
         if (!validation.valid) {
           if (features.showToasts) {
-            apiToasts.error(
-              "Import workflow",
-              validation.error ?? "Invalid workflow JSON",
-            );
+            apiToasts.error('Import workflow', validation.error ?? 'Invalid workflow JSON');
           }
-          logger.warn("Workflow import validation failed:", validation.error);
+          logger.warn('Workflow import validation failed:', validation.error);
           return;
         }
         workflowActions.initialize(data as Workflow);
         if (features.showToasts) {
-          apiToasts.success(
-            "Import workflow",
-            "Workflow imported successfully",
-          );
+          apiToasts.success('Import workflow', 'Workflow imported successfully');
         }
         if (eventHandlers?.onWorkflowLoad) {
           eventHandlers.onWorkflowLoad(data as Workflow);
         }
       } catch (error) {
-        const errorObj =
-          error instanceof Error ? error : new Error("Unknown error occurred");
-        logger.error("Workflow import failed:", errorObj);
+        const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
+        logger.error('Workflow import failed:', errorObj);
         if (features.showToasts) {
-          apiToasts.error("Import workflow", errorObj.message);
+          apiToasts.error('Import workflow', errorObj.message);
         }
       }
     };
     reader.onerror = () => {
-      const message = "Failed to read the selected file.";
+      const message = 'Failed to read the selected file.';
       logger.error(message);
       if (features.showToasts) {
-        apiToasts.error("Import workflow", message);
+        apiToasts.error('Import workflow', message);
       }
     };
     reader.readAsText(file);
@@ -745,15 +704,13 @@
       importWorkflow(file);
     }
     // Reset input so same file can be re-imported
-    input.value = "";
+    input.value = '';
   }
 
   // Function to handle clicks outside the sidebar
   function handleCanvasClick(event: MouseEvent): void {
     // Check if the click is outside the right sidebar
-    const rightSidebar = document.querySelector(
-      ".flowdrop-main-layout__sidebar--right",
-    );
+    const rightSidebar = document.querySelector('.flowdrop-main-layout__sidebar--right');
     if (rightSidebar && !rightSidebar.contains(event.target as Node)) {
       // Close sidebar when clicking outside of it
       if (isConfigSidebarOpen) {
@@ -786,21 +743,21 @@
           // Initialize with a default empty workflow so the editor is functional
           // (e.g., drag-and-drop requires a non-null workflow in the store)
           const defaultWorkflow: Workflow = {
-            id: "",
-            name: "Untitled Workflow",
+            id: '',
+            name: 'Untitled Workflow',
             nodes: [],
             edges: [],
             metadata: {
-              version: "1.0.0",
+              version: '1.0.0',
               format: DEFAULT_WORKFLOW_FORMAT,
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
+              updatedAt: new Date().toISOString()
+            }
           };
           workflowActions.initialize(defaultWorkflow);
         }
       } catch (error) {
-        logger.error("Failed to initialize editor:", error);
+        logger.error('Failed to initialize editor:', error);
       }
     })();
 
@@ -809,10 +766,7 @@
       toggleWorkflowSettings();
     };
 
-    window.addEventListener(
-      "workflow-settings-toggle",
-      handleWorkflowSettingsToggle,
-    );
+    window.addEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
 
     // Initialize auto-save based on user settings
     const cleanupAutoSave = initAutoSave({
@@ -821,18 +775,15 @@
       },
       onError: (error) => {
         // Don't show toast for auto-save errors to avoid noise
-        logger.warn("Auto-save failed:", error);
+        logger.warn('Auto-save failed:', error);
       },
       onSuccess: () => {
-        logger.debug("Auto-saved workflow");
-      },
+        logger.debug('Auto-saved workflow');
+      }
     });
 
     return () => {
-      window.removeEventListener(
-        "workflow-settings-toggle",
-        handleWorkflowSettingsToggle,
-      );
+      window.removeEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
       cleanupAutoSave();
     };
   });
@@ -842,9 +793,7 @@
    * Config panel always appears on the right side
    */
   const hasConfigPanelOpen = $derived(
-    isWorkflowSettingsOpen ||
-      !!selectedNodeForConfig ||
-      swapMode !== "idle",
+    isWorkflowSettingsOpen || !!selectedNodeForConfig || swapMode !== 'idle'
   );
   const showRightPanel = $derived(!disableSidebar && hasConfigPanelOpen);
 
@@ -853,7 +802,7 @@
    * When collapsed, use 0; otherwise use user-configured width
    */
   const leftSidebarWidth = $derived(
-    getUiSettings().sidebarCollapsed ? 0 : getUiSettings().sidebarWidth,
+    getUiSettings().sidebarCollapsed ? 0 : getUiSettings().sidebarWidth
   );
 
   /** Whether the sidebar is collapsed */
@@ -862,7 +811,7 @@
   /** Toggle sidebar collapsed state */
   function toggleSidebar(): void {
     updateSettings({
-      ui: { sidebarCollapsed: !getUiSettings().sidebarCollapsed },
+      ui: { sidebarCollapsed: !getUiSettings().sidebarCollapsed }
     });
   }
 
@@ -875,16 +824,14 @@
    */
   function handleGlobalKeydown(event: KeyboardEvent): void {
     // Dead key on international keyboards — do not intercept
-    if (event.key === "Dead") return;
+    if (event.key === 'Dead') return;
 
-    if (event.key !== "`") return;
+    if (event.key !== '`') return;
 
     // Don't intercept when user is typing in an input, textarea, or contenteditable
     const target = event.target as HTMLElement;
     const isInputElement =
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.isContentEditable;
+      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
     if (isInputElement) return;
 
@@ -893,24 +840,24 @@
   }
 
   function handleConsoleUIAction(action: UIAction): void {
-    if (action.type === "open_config") {
+    if (action.type === 'open_config') {
       const wf = getWorkflowStore();
       if (!wf) return;
       const node = wf.nodes.find((n) => n.id === action.nodeId);
       if (node) openConfigSidebar(node);
-    } else if (action.type === "select_node") {
+    } else if (action.type === 'select_node') {
       selectedNodeId = action.nodeId;
-    } else if (action.type === "canvas_fit_view") {
+    } else if (action.type === 'canvas_fit_view') {
       workflowEditorRef?.canvasFitView();
-    } else if (action.type === "canvas_zoom_in") {
+    } else if (action.type === 'canvas_zoom_in') {
       workflowEditorRef?.canvasZoomIn();
-    } else if (action.type === "canvas_zoom_out") {
+    } else if (action.type === 'canvas_zoom_out') {
       workflowEditorRef?.canvasZoomOut();
-    } else if (action.type === "canvas_zoom_to") {
+    } else if (action.type === 'canvas_zoom_to') {
       workflowEditorRef?.canvasZoomTo(action.level);
-    } else if (action.type === "canvas_pan_to") {
+    } else if (action.type === 'canvas_pan_to') {
       workflowEditorRef?.canvasPanTo(action.position.x, action.position.y);
-    } else if (action.type === "canvas_reset_view") {
+    } else if (action.type === 'canvas_reset_view') {
       workflowEditorRef?.canvasResetView();
     }
   }
@@ -923,13 +870,12 @@
     tick().then(() => {
       if (currentOpen) {
         // Console was open, now closing — focus the canvas
-        const canvas = document.querySelector<HTMLElement>(".flowdrop-editor-main");
+        const canvas = document.querySelector<HTMLElement>('.flowdrop-editor-main');
         canvas?.focus();
       } else {
         // Console was closed, now opening — focus first focusable element inside console
-        const consoleEl = document.querySelector<HTMLElement>(".command-console");
-        const focusTarget =
-          consoleEl?.querySelector<HTMLElement>("input, button, [tabindex]");
+        const consoleEl = document.querySelector<HTMLElement>('.command-console');
+        const focusTarget = consoleEl?.querySelector<HTMLElement>('input, button, [tabindex]');
         focusTarget?.focus();
       }
     });
@@ -940,10 +886,7 @@
 
 <svelte:head>
   <title>FlowDrop - Visual Workflow Manager</title>
-  <meta
-    name="description"
-    content="A modern drag-and-drop workflow editor for LLM applications"
-  />
+  <meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
 
 <!-- Hidden file input for workflow JSON import -->
@@ -983,45 +926,45 @@
           ? navbarActions
           : [
               {
-                label: "Save",
-                href: "#save",
-                icon: "heroicons:document-arrow-down",
-                variant: "primary",
+                label: 'Save',
+                href: '#save',
+                icon: 'heroicons:document-arrow-down',
+                variant: 'primary',
                 onclick: (e) => {
                   e.preventDefault();
                   saveWorkflow();
-                },
+                }
               },
               {
-                label: "Export",
-                href: "#export",
-                icon: "heroicons:arrow-down-tray",
-                variant: "outline",
+                label: 'Export',
+                href: '#export',
+                icon: 'heroicons:arrow-down-tray',
+                variant: 'outline',
                 onclick: (e) => {
                   e.preventDefault();
                   exportWorkflow();
-                },
+                }
               },
               {
-                label: "Import",
-                href: "#import",
-                icon: "heroicons:arrow-up-tray",
-                variant: "outline",
+                label: 'Import',
+                href: '#import',
+                icon: 'heroicons:arrow-up-tray',
+                variant: 'outline',
                 onclick: (e) => {
                   e.preventDefault();
                   fileInputRef?.click();
-                },
+                }
               },
               {
-                label: "Workflow Settings",
-                href: "#settings",
-                icon: "heroicons:cog-6-tooth",
-                variant: "outline",
+                label: 'Workflow Settings',
+                href: '#settings',
+                icon: 'heroicons:cog-6-tooth',
+                variant: 'outline',
                 onclick: (e) => {
                   e.preventDefault();
                   toggleWorkflowSettings();
-                },
-              },
+                }
+              }
             ]}
         showStatus={true}
         {showSettings}
@@ -1037,23 +980,31 @@
         {nodes}
         loading={nodeTypesLoading}
         activeFormat={getWorkflowFormat()}
-        categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ??
-          false}
+        categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
       />
     {/snippet}
 
     <!-- Right Sidebar: Configuration, Swap, or Workflow Settings -->
     {#snippet rightSidebar()}
-      {#if swapMode === "mapping" && swapInteractiveState && selectedNodeForConfig}
-        {@const swapChecker = (() => { try { return getPortCompatibilityChecker(); } catch { return null; } })()}
+      {#if swapMode === 'mapping' && swapInteractiveState && selectedNodeForConfig}
+        {@const swapChecker = (() => {
+          try {
+            return getPortCompatibilityChecker();
+          } catch {
+            return null;
+          }
+        })()}
         <SwapMappingEditor
           interactiveState={swapInteractiveState}
           checker={swapChecker}
           onConfirm={executeNodeSwap}
           onCancel={cancelSwap}
-          onBack={() => { swapMode = "picking"; swapInteractiveState = null; }}
+          onBack={() => {
+            swapMode = 'picking';
+            swapInteractiveState = null;
+          }}
         />
-      {:else if swapMode === "picking" && selectedNodeForConfig}
+      {:else if swapMode === 'picking' && selectedNodeForConfig}
         <NodeSwapPicker
           currentNode={selectedNodeForConfig}
           availableNodes={nodes}
@@ -1067,13 +1018,13 @@
           id={getWorkflowStore()?.id}
           details={[
             {
-              label: "Nodes",
-              value: String(getWorkflowStore()?.nodes?.length ?? 0),
+              label: 'Nodes',
+              value: String(getWorkflowStore()?.nodes?.length ?? 0)
             },
             {
-              label: "Connections",
-              value: String(getWorkflowStore()?.edges?.length ?? 0),
-            },
+              label: 'Connections',
+              value: String(getWorkflowStore()?.edges?.length ?? 0)
+            }
           ]}
           configTitle="Settings"
           onClose={() => (isWorkflowSettingsOpen = false)}
@@ -1087,25 +1038,19 @@
               // Sync workflow settings changes immediately on field blur
               const wf = getWorkflowStore();
               if (wf) {
-                const newFormat =
-                  (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
-                const currentFormat =
-                  wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
+                const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
+                const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
 
                 // Warn about incompatible nodes when format changes
                 if (newFormat !== currentFormat) {
                   const incompatibleNodes = wf.nodes?.filter((node) => {
                     const formats = node.data?.metadata?.formats;
-                    return (
-                      formats &&
-                      formats.length > 0 &&
-                      !formats.includes(newFormat)
-                    );
+                    return formats && formats.length > 0 && !formats.includes(newFormat);
                   });
                   if (incompatibleNodes && incompatibleNodes.length > 0) {
                     logger.warn(
                       `Format changed to '${newFormat}'. ${incompatibleNodes.length} node(s) are not compatible with this format and may not export correctly:`,
-                      incompatibleNodes.map((n) => n.data?.label || n.type),
+                      incompatibleNodes.map((n) => n.data?.label || n.type)
                     );
                   }
                 }
@@ -1115,8 +1060,8 @@
                   description: config.description as string | undefined,
                   metadata: {
                     ...wf.metadata,
-                    format: newFormat,
-                  },
+                    format: newFormat
+                  }
                 });
               }
             }}
@@ -1127,17 +1072,16 @@
         <ConfigPanel
           title={currentNode.data.label}
           id={currentNode.id}
-          description={currentNode.data.metadata?.description ||
-            "Node configuration"}
+          description={currentNode.data.metadata?.description || 'Node configuration'}
           details={[
             {
-              label: "Type",
-              value: currentNode.data.metadata?.type || currentNode.type,
+              label: 'Type',
+              value: currentNode.data.metadata?.type || currentNode.type
             },
             {
-              label: "Category",
-              value: currentNode.data.metadata?.category || "general",
-            },
+              label: 'Category',
+              value: currentNode.data.metadata?.category || 'general'
+            }
           ]}
           onClose={closeConfigSidebar}
           onSwap={!readOnly && !lockWorkflow && features.enableNodeSwap ? startSwap : undefined}
@@ -1154,20 +1098,20 @@
                 // Build the updated node data
                 const updatedData = {
                   ...currentNode.data,
-                  config: updatedConfig,
+                  config: updatedConfig
                 };
 
                 // Include UI extensions if provided
                 if (uiExtensions) {
                   updatedData.extensions = {
                     ...currentNode.data.extensions,
-                    ui: uiExtensions,
+                    ui: uiExtensions
                   };
                 }
 
                 // Update the node in the workflow store
                 const nodeUpdates: Record<string, unknown> = {
-                  data: updatedData,
+                  data: updatedData
                 };
 
                 workflowActions.updateNode(selectedNodeId, nodeUpdates);
@@ -1190,24 +1134,39 @@
       <div class="bottom-panel-tabs">
         <div class="bottom-panel-tabs__bar">
           <button
-            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'console' ? 'bottom-panel-tabs__tab--active' : ''}"
+            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'console'
+              ? 'bottom-panel-tabs__tab--active'
+              : ''}"
             onclick={() => updateSettings({ ui: { bottomPanelTab: 'console' } })}
           >
             Console
           </button>
           <button
-            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'chat' ? 'bottom-panel-tabs__tab--active' : ''}"
+            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'chat'
+              ? 'bottom-panel-tabs__tab--active'
+              : ''}"
             onclick={() => updateSettings({ ui: { bottomPanelTab: 'chat' } })}
           >
             AI Chat
           </button>
         </div>
         <div class="bottom-panel-tabs__content">
-          <div class="bottom-panel-tabs__panel" style:display={getUiSettings().bottomPanelTab === 'console' ? 'contents' : 'none'}>
+          <div
+            class="bottom-panel-tabs__panel"
+            style:display={getUiSettings().bottomPanelTab === 'console' ? 'contents' : 'none'}
+          >
             <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
           </div>
-          <div class="bottom-panel-tabs__panel" style:display={getUiSettings().bottomPanelTab === 'chat' ? 'flex' : 'none'}>
-            <AIChatPanel nodeTypes={nodes} workflowId={getWorkflowStore()?.id} onUIAction={handleConsoleUIAction} endpointConfig={endpointConfig} />
+          <div
+            class="bottom-panel-tabs__panel"
+            style:display={getUiSettings().bottomPanelTab === 'chat' ? 'flex' : 'none'}
+          >
+            <AIChatPanel
+              nodeTypes={nodes}
+              workflowId={getWorkflowStore()?.id}
+              onUIAction={handleConsoleUIAction}
+              {endpointConfig}
+            />
           </div>
         </div>
       </div>
@@ -1216,19 +1175,11 @@
     <!-- Main Content: Workflow Editor with Error Status -->
     <!-- Status Display: aria-live announces API errors dynamically without requiring focus -->
     {#if error}
-      <div
-        class="flowdrop-status flowdrop-status--error"
-        aria-live="polite"
-        aria-atomic="true"
-      >
+      <div class="flowdrop-status flowdrop-status--error" aria-live="polite" aria-atomic="true">
         <div class="flowdrop-status__content">
           <div class="flowdrop-flex flowdrop-gap--3">
-            <div
-              class="flowdrop-status__indicator flowdrop-status__indicator--error"
-            ></div>
-            <span class="flowdrop-text--sm flowdrop-font--medium"
-              >Error: {error}</span
-            >
+            <div class="flowdrop-status__indicator flowdrop-status__indicator--error"></div>
+            <span class="flowdrop-text--sm flowdrop-font--medium">Error: {error}</span>
           </div>
           <div class="flowdrop-flex flowdrop-gap--2">
             <button
@@ -1241,8 +1192,8 @@
             <button
               class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
               onclick={() => {
-                const defaultUrl = "/api/flowdrop";
-                const newUrl = prompt("Enter Backend API URL:", defaultUrl);
+                const defaultUrl = '/api/flowdrop';
+                const newUrl = prompt('Enter Backend API URL:', defaultUrl);
                 if (newUrl) {
                   const endpointConfig = createEndpointConfig(newUrl);
                   setEndpointConfig(endpointConfig);
@@ -1277,11 +1228,9 @@
     <div
       class="flowdrop-editor-main"
       class:pipeline-view={!!pipelineId}
-      style="--fd-canvas-left-offset: {!disableSidebar
-        ? leftSidebarWidth + 'px'
-        : '0px'}"
+      style="--fd-canvas-left-offset: {!disableSidebar ? leftSidebarWidth + 'px' : '0px'}"
       onclick={handleCanvasClick}
-      onkeydown={(e) => e.key === "Escape" && closeConfigSidebar()}
+      onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()}
       role="region"
       aria-label="Workflow canvas"
     >
@@ -1290,12 +1239,10 @@
         <button
           class="flowdrop-sidebar-fab"
           onclick={toggleSidebar}
-          aria-label={isSidebarCollapsed
-            ? "Expand sidebar"
-            : "Collapse sidebar"}
-          title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <Icon icon={isSidebarCollapsed ? "mdi:menu" : "mdi:menu-open"} />
+          <Icon icon={isSidebarCollapsed ? 'mdi:menu' : 'mdi:menu-open'} />
         </button>
       {/if}
 
@@ -1306,7 +1253,7 @@
         {width}
         endpointConfig={endpointConfig ?? undefined}
         {isConfigSidebarOpen}
-        selectedNodeForConfig={selectedNodeForConfig}
+        {selectedNodeForConfig}
         {openConfigSidebar}
         {closeConfigSidebar}
         {lockWorkflow}
@@ -1520,5 +1467,4 @@
     overflow: hidden;
     flex-direction: column;
   }
-
 </style>

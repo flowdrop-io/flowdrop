@@ -4,7 +4,7 @@
  * consistent behavior across all code paths.
  */
 
-import type { ConfigSchema } from "../types/index.js";
+import type { ConfigSchema } from '../types/index.js';
 
 /**
  * Minimal node shape required for ID generation.
@@ -20,10 +20,7 @@ interface NodeWithMetadata {
  * Format: <node_type>.<number>
  * Example: boolean_gateway.1, calculator.2
  */
-export function generateNodeId(
-  nodeTypeId: string,
-  existingNodes: NodeWithMetadata[],
-): string {
+export function generateNodeId(nodeTypeId: string, existingNodes: NodeWithMetadata[]): string {
   // Count how many nodes of this type already exist
   const existingNodeIds = existingNodes
     .filter((node) => node.data?.metadata?.id === nodeTypeId)
@@ -38,8 +35,7 @@ export function generateNodeId(
     .filter((num) => num > 0);
 
   // Find the next available number (highest + 1)
-  const nextNumber =
-    existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+  const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
 
   return `${nodeTypeId}.${nextNumber}`;
 }
@@ -49,14 +45,12 @@ export function generateNodeId(
  * Iterates configSchema.properties and returns an object with each property's
  * default value (if defined).
  */
-export function extractConfigDefaults(
-  configSchema?: ConfigSchema,
-): Record<string, unknown> {
+export function extractConfigDefaults(configSchema?: ConfigSchema): Record<string, unknown> {
   const config: Record<string, unknown> = {};
   if (!configSchema?.properties) return config;
 
   for (const [key, prop] of Object.entries(configSchema.properties)) {
-    if (prop && typeof prop === "object" && "default" in prop) {
+    if (prop && typeof prop === 'object' && 'default' in prop) {
       config[key] = prop.default;
     }
   }

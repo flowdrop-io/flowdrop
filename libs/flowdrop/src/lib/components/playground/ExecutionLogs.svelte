@@ -7,13 +7,10 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import { slide } from "svelte/transition";
-  import type {
-    PlaygroundMessage,
-    PlaygroundMessageLevel,
-  } from "../../types/playground.js";
-  import { getLogMessages } from "../../stores/playgroundStore.svelte.js";
+  import Icon from '@iconify/svelte';
+  import { slide } from 'svelte/transition';
+  import type { PlaygroundMessage, PlaygroundMessageLevel } from '../../types/playground.js';
+  import { getLogMessages } from '../../stores/playgroundStore.svelte.js';
 
   /**
    * Component props
@@ -27,14 +24,10 @@
     onToggle?: (expanded: boolean) => void;
   }
 
-  let {
-    isExpanded = $bindable(false),
-    maxHeight = "300px",
-    onToggle,
-  }: Props = $props();
+  let { isExpanded = $bindable(false), maxHeight = '300px', onToggle }: Props = $props();
 
   /** Current log level filter */
-  let levelFilter = $state<PlaygroundMessageLevel | "all">("all");
+  let levelFilter = $state<PlaygroundMessageLevel | 'all'>('all');
 
   /** Reference to logs container for auto-scroll */
   let logsContainer = $state<HTMLDivElement>();
@@ -43,9 +36,9 @@
    * Filter logs based on selected level
    */
   const filteredLogs = $derived(
-    levelFilter === "all"
+    levelFilter === 'all'
       ? getLogMessages()
-      : getLogMessages().filter((log) => log.metadata?.level === levelFilter),
+      : getLogMessages().filter((log) => log.metadata?.level === levelFilter)
   );
 
   /**
@@ -53,11 +46,10 @@
    */
   const logCounts = $derived({
     all: getLogMessages().length,
-    info: getLogMessages().filter((l) => l.metadata?.level === "info").length,
-    warning: getLogMessages().filter((l) => l.metadata?.level === "warning")
-      .length,
-    error: getLogMessages().filter((l) => l.metadata?.level === "error").length,
-    debug: getLogMessages().filter((l) => l.metadata?.level === "debug").length,
+    info: getLogMessages().filter((l) => l.metadata?.level === 'info').length,
+    warning: getLogMessages().filter((l) => l.metadata?.level === 'warning').length,
+    error: getLogMessages().filter((l) => l.metadata?.level === 'error').length,
+    debug: getLogMessages().filter((l) => l.metadata?.level === 'debug').length
   });
 
   /**
@@ -73,12 +65,12 @@
    */
   function formatTimestamp(timestamp: string): string {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString('en-US', {
       hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      fractionalSecondDigits: 3,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3
     });
   }
 
@@ -87,14 +79,14 @@
    */
   function getLevelIcon(level: PlaygroundMessageLevel | undefined): string {
     switch (level) {
-      case "error":
-        return "mdi:alert-circle";
-      case "warning":
-        return "mdi:alert";
-      case "debug":
-        return "mdi:bug";
+      case 'error':
+        return 'mdi:alert-circle';
+      case 'warning':
+        return 'mdi:alert';
+      case 'debug':
+        return 'mdi:bug';
       default:
-        return "mdi:information";
+        return 'mdi:information';
     }
   }
 
@@ -105,15 +97,15 @@
     const logText = filteredLogs
       .map(
         (log) =>
-          `[${formatTimestamp(log.timestamp)}] [${(log.metadata?.level ?? "info").toUpperCase()}] ${log.content}${log.nodeId ? ` (Node: ${log.nodeId})` : ""}`,
+          `[${formatTimestamp(log.timestamp)}] [${(log.metadata?.level ?? 'info').toUpperCase()}] ${log.content}${log.nodeId ? ` (Node: ${log.nodeId})` : ''}`
       )
-      .join("\n");
+      .join('\n');
 
-    const blob = new Blob([logText], { type: "text/plain" });
+    const blob = new Blob([logText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `playground-logs-${new Date().toISOString().split("T")[0]}.txt`;
+    link.download = `playground-logs-${new Date().toISOString().split('T')[0]}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -143,21 +135,16 @@
         <span class="execution-logs__badge">{logCounts.all}</span>
       {/if}
       {#if logCounts.error > 0}
-        <span class="execution-logs__badge execution-logs__badge--error"
-          >{logCounts.error}</span
-        >
+        <span class="execution-logs__badge execution-logs__badge--error">{logCounts.error}</span>
       {/if}
       {#if logCounts.warning > 0}
-        <span class="execution-logs__badge execution-logs__badge--warning"
-          >{logCounts.warning}</span
+        <span class="execution-logs__badge execution-logs__badge--warning">{logCounts.warning}</span
         >
       {/if}
     </div>
     <Icon
       icon="mdi:chevron-down"
-      class="execution-logs__chevron {isExpanded
-        ? 'execution-logs__chevron--expanded'
-        : ''}"
+      class="execution-logs__chevron {isExpanded ? 'execution-logs__chevron--expanded' : ''}"
     />
   </button>
 
@@ -170,32 +157,32 @@
           <button
             type="button"
             class="execution-logs__filter"
-            class:execution-logs__filter--active={levelFilter === "all"}
-            onclick={() => (levelFilter = "all")}
+            class:execution-logs__filter--active={levelFilter === 'all'}
+            onclick={() => (levelFilter = 'all')}
           >
             All ({logCounts.all})
           </button>
           <button
             type="button"
             class="execution-logs__filter execution-logs__filter--info"
-            class:execution-logs__filter--active={levelFilter === "info"}
-            onclick={() => (levelFilter = "info")}
+            class:execution-logs__filter--active={levelFilter === 'info'}
+            onclick={() => (levelFilter = 'info')}
           >
             Info ({logCounts.info})
           </button>
           <button
             type="button"
             class="execution-logs__filter execution-logs__filter--warning"
-            class:execution-logs__filter--active={levelFilter === "warning"}
-            onclick={() => (levelFilter = "warning")}
+            class:execution-logs__filter--active={levelFilter === 'warning'}
+            onclick={() => (levelFilter = 'warning')}
           >
             Warning ({logCounts.warning})
           </button>
           <button
             type="button"
             class="execution-logs__filter execution-logs__filter--error"
-            class:execution-logs__filter--active={levelFilter === "error"}
-            onclick={() => (levelFilter = "error")}
+            class:execution-logs__filter--active={levelFilter === 'error'}
+            onclick={() => (levelFilter = 'error')}
           >
             Error ({logCounts.error})
           </button>
@@ -212,11 +199,7 @@
       </div>
 
       <!-- Logs List -->
-      <div
-        class="execution-logs__list"
-        bind:this={logsContainer}
-        style="max-height: {maxHeight}"
-      >
+      <div class="execution-logs__list" bind:this={logsContainer} style="max-height: {maxHeight}">
         {#if filteredLogs.length === 0}
           <div class="execution-logs__empty">
             <Icon icon="mdi:file-document-outline" />
@@ -226,12 +209,9 @@
           {#each filteredLogs as log (log.id)}
             <div
               class="execution-logs__entry"
-              class:execution-logs__entry--error={log.metadata?.level ===
-                "error"}
-              class:execution-logs__entry--warning={log.metadata?.level ===
-                "warning"}
-              class:execution-logs__entry--debug={log.metadata?.level ===
-                "debug"}
+              class:execution-logs__entry--error={log.metadata?.level === 'error'}
+              class:execution-logs__entry--warning={log.metadata?.level === 'warning'}
+              class:execution-logs__entry--debug={log.metadata?.level === 'debug'}
             >
               <span class="execution-logs__entry-time">
                 {formatTimestamp(log.timestamp)}
@@ -243,10 +223,7 @@
                 {log.content}
               </span>
               {#if log.nodeId}
-                <span
-                  class="execution-logs__entry-node"
-                  title="Node: {log.nodeId}"
-                >
+                <span class="execution-logs__entry-node" title="Node: {log.nodeId}">
                   {log.metadata?.nodeLabel ?? log.nodeId}
                 </span>
               {/if}

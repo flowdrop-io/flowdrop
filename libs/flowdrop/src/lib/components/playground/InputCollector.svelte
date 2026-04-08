@@ -7,13 +7,10 @@
 -->
 
 <script lang="ts">
-  import Icon from "@iconify/svelte";
-  import { slide } from "svelte/transition";
-  import type { PlaygroundInputField } from "../../types/playground.js";
-  import {
-    getInputFields,
-    getHasChatInput,
-  } from "../../stores/playgroundStore.svelte.js";
+  import Icon from '@iconify/svelte';
+  import { slide } from 'svelte/transition';
+  import type { PlaygroundInputField } from '../../types/playground.js';
+  import { getInputFields, getHasChatInput } from '../../stores/playgroundStore.svelte.js';
 
   /**
    * Component props
@@ -33,7 +30,7 @@
     isExpanded = $bindable(true),
     onToggle,
     values = $bindable({}),
-    onValuesChange,
+    onValuesChange
   }: Props = $props();
 
   /** Flag to track if we've initialized default values */
@@ -53,8 +50,7 @@
 
       getInputFields().forEach((field) => {
         if (field.defaultValue !== undefined) {
-          initialValues[`${field.nodeId}:${field.fieldId}`] =
-            field.defaultValue;
+          initialValues[`${field.nodeId}:${field.fieldId}`] = field.defaultValue;
           hasDefaults = true;
         }
       });
@@ -88,24 +84,24 @@
    */
   function getValue(field: PlaygroundInputField): unknown {
     const key = `${field.nodeId}:${field.fieldId}`;
-    return values[key] ?? field.defaultValue ?? "";
+    return values[key] ?? field.defaultValue ?? '';
   }
 
   /**
    * Get input type from field schema
    */
   function getInputType(field: PlaygroundInputField): string {
-    if (field.schema?.format === "multiline") {
-      return "textarea";
+    if (field.schema?.format === 'multiline') {
+      return 'textarea';
     }
     switch (field.type) {
-      case "number":
-      case "integer":
-        return "number";
-      case "boolean":
-        return "checkbox";
+      case 'number':
+      case 'integer':
+        return 'number';
+      case 'boolean':
+        return 'checkbox';
       default:
-        return "text";
+        return 'text';
     }
   }
 
@@ -147,34 +143,24 @@
       </div>
       <Icon
         icon="mdi:chevron-down"
-        class="input-collector__chevron {isExpanded
-          ? 'input-collector__chevron--expanded'
-          : ''}"
+        class="input-collector__chevron {isExpanded ? 'input-collector__chevron--expanded' : ''}"
       />
     </button>
 
     <!-- Content -->
     {#if isExpanded}
-      <div
-        class="input-collector__content"
-        transition:slide={{ duration: 200 }}
-      >
+      <div class="input-collector__content" transition:slide={{ duration: 200 }}>
         {#if getHasChatInput()}
           <div class="input-collector__hint">
             <Icon icon="mdi:information-outline" />
-            <span
-              >Chat input will be collected from the message field below</span
-            >
+            <span>Chat input will be collected from the message field below</span>
           </div>
         {/if}
 
         <div class="input-collector__fields">
-          {#each getInputFields() as field (field.nodeId + ":" + field.fieldId)}
+          {#each getInputFields() as field (field.nodeId + ':' + field.fieldId)}
             <div class="input-collector__field">
-              <label
-                class="input-collector__label"
-                for="input-{field.nodeId}-{field.fieldId}"
-              >
+              <label class="input-collector__label" for="input-{field.nodeId}-{field.fieldId}">
                 {field.label}
                 {#if field.required}
                   <span class="input-collector__required">*</span>
@@ -194,18 +180,17 @@
                     <option value={String(option)}>{option}</option>
                   {/each}
                 </select>
-              {:else if getInputType(field) === "textarea"}
+              {:else if getInputType(field) === 'textarea'}
                 <!-- Textarea for multiline -->
                 <textarea
                   id="input-{field.nodeId}-{field.fieldId}"
                   class="input-collector__textarea"
-                  placeholder={field.schema?.description ??
-                    `Enter ${field.label}`}
-                  value={String(getValue(field) ?? "")}
+                  placeholder={field.schema?.description ?? `Enter ${field.label}`}
+                  value={String(getValue(field) ?? '')}
                   oninput={(e) => updateValue(field, e.currentTarget.value)}
                   rows="3"
                 ></textarea>
-              {:else if getInputType(field) === "checkbox"}
+              {:else if getInputType(field) === 'checkbox'}
                 <!-- Checkbox for boolean -->
                 <label class="input-collector__checkbox-wrapper">
                   <input
@@ -213,26 +198,23 @@
                     type="checkbox"
                     class="input-collector__checkbox"
                     checked={Boolean(getValue(field))}
-                    onchange={(e) =>
-                      updateValue(field, e.currentTarget.checked)}
+                    onchange={(e) => updateValue(field, e.currentTarget.checked)}
                   />
                   <span class="input-collector__checkbox-label">
-                    {field.schema?.description ?? "Enable"}
+                    {field.schema?.description ?? 'Enable'}
                   </span>
                 </label>
-              {:else if getInputType(field) === "number"}
+              {:else if getInputType(field) === 'number'}
                 <!-- Number input -->
                 <input
                   id="input-{field.nodeId}-{field.fieldId}"
                   type="number"
                   class="input-collector__input"
-                  placeholder={field.schema?.description ??
-                    `Enter ${field.label}`}
+                  placeholder={field.schema?.description ?? `Enter ${field.label}`}
                   value={Number(getValue(field) ?? 0)}
                   min={field.schema?.minimum}
                   max={field.schema?.maximum}
-                  oninput={(e) =>
-                    updateValue(field, parseFloat(e.currentTarget.value) || 0)}
+                  oninput={(e) => updateValue(field, parseFloat(e.currentTarget.value) || 0)}
                 />
               {:else}
                 <!-- Text input (default) -->
@@ -240,14 +222,13 @@
                   id="input-{field.nodeId}-{field.fieldId}"
                   type="text"
                   class="input-collector__input"
-                  placeholder={field.schema?.description ??
-                    `Enter ${field.label}`}
-                  value={String(getValue(field) ?? "")}
+                  placeholder={field.schema?.description ?? `Enter ${field.label}`}
+                  value={String(getValue(field) ?? '')}
                   oninput={(e) => updateValue(field, e.currentTarget.value)}
                 />
               {/if}
 
-              {#if field.schema?.description && getInputType(field) !== "checkbox"}
+              {#if field.schema?.description && getInputType(field) !== 'checkbox'}
                 <p class="input-collector__description">
                   {field.schema.description}
                 </p>

@@ -8,19 +8,15 @@
 -->
 
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import {
     buildEndpointUrl,
     defaultEndpointConfig,
-    type EndpointConfig,
-  } from "$lib/config/endpoints.js";
-  import Icon from "@iconify/svelte";
-  import {
-    apiToasts,
-    workflowToasts,
-    showConfirmation,
-  } from "$lib/services/toastService.js";
+    type EndpointConfig
+  } from '$lib/config/endpoints.js';
+  import Icon from '@iconify/svelte';
+  import { apiToasts, workflowToasts, showConfirmation } from '$lib/services/toastService.js';
 
   let { data } = $props();
 
@@ -28,7 +24,7 @@
   // svelte-ignore state_referenced_locally — page remounts on navigation
   let endpointConfig = $state<EndpointConfig>({
     ...defaultEndpointConfig,
-    baseUrl: data.runtimeConfig.apiBaseUrl,
+    baseUrl: data.runtimeConfig.apiBaseUrl
   });
 
   /**
@@ -49,14 +45,14 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
 
-  let searchQuery = $state("");
-  let viewMode = $state<"list" | "grid">("list");
+  let searchQuery = $state('');
+  let viewMode = $state<'list' | 'grid'>('list');
   let filteredWorkflows = $derived(
     (Array.isArray(workflows) ? workflows : []).filter(
       (workflow) =>
         workflow.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        workflow.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-    ),
+        workflow.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   // Fetch workflows from API
@@ -66,11 +62,8 @@
       error = null;
 
       // Use configured endpoint (config is loaded from server)
-      const url = buildEndpointUrl(
-        endpointConfig,
-        endpointConfig.endpoints.workflows.list,
-      );
-      console.log("Fetching workflows from:", url); // Debug log
+      const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.workflows.list);
+      console.log('Fetching workflows from:', url); // Debug log
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -94,51 +87,43 @@
           id: workflow.id,
           title: workflow.name,
           description: workflow.description,
-          status: workflow.status || "Active", // Default to Active if no status
+          status: workflow.status || 'Active', // Default to Active if no status
           lastModified: workflow.changed
-            ? new Date(workflow.changed * 1000).toISOString().split("T")[0]
-            : "Unknown",
+            ? new Date(workflow.changed * 1000).toISOString().split('T')[0]
+            : 'Unknown',
           nodes: workflow.nodes?.length || 0,
-          connections: workflow.edges?.length || 0,
-        }),
+          connections: workflow.edges?.length || 0
+        })
       );
 
       // Show success toast if workflows were loaded
       if (workflows.length > 0) {
-        apiToasts.success(
-          "Workflows loaded",
-          `${workflows.length} workflows found`,
-        );
+        apiToasts.success('Workflows loaded', `${workflows.length} workflows found`);
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to fetch workflows";
-      apiToasts.error(
-        "Load workflows",
-        err instanceof Error ? err.message : "Unknown error",
-      );
+      error = err instanceof Error ? err.message : 'Failed to fetch workflows';
+      apiToasts.error('Load workflows', err instanceof Error ? err.message : 'Unknown error');
 
       // Fallback to sample data
       workflows = [
         {
-          id: "1",
-          title: "Content Analysis Pipeline",
-          description:
-            "Analyze content for quality issues and provide recommendations",
-          status: "Active",
-          lastModified: "2024-01-15",
+          id: '1',
+          title: 'Content Analysis Pipeline',
+          description: 'Analyze content for quality issues and provide recommendations',
+          status: 'Active',
+          lastModified: '2024-01-15',
           nodes: 5,
-          connections: 4,
+          connections: 4
         },
         {
-          id: "workflow-2",
-          title: "Multi-Agent Content Management",
-          description:
-            "Orchestrate multiple AI agents for content management tasks",
-          status: "Draft",
-          lastModified: "2024-01-14",
+          id: 'workflow-2',
+          title: 'Multi-Agent Content Management',
+          description: 'Orchestrate multiple AI agents for content management tasks',
+          status: 'Draft',
+          lastModified: '2024-01-14',
           nodes: 8,
-          connections: 6,
-        },
+          connections: 6
+        }
       ];
     } finally {
       loading = false;
@@ -161,13 +146,13 @@
     selectedWorkflow = null; // Close dropdown
 
     switch (operation) {
-      case "edit":
+      case 'edit':
         goto(`/workflow/${workflowId}/edit`);
         break;
-      case "delete": {
+      case 'delete': {
         // Find the workflow to get its name
         const workflow = workflows.find((w) => w.id === workflowId);
-        const workflowName = workflow?.title || "Unknown";
+        const workflowName = workflow?.title || 'Unknown';
 
         // Show confirmation toast
         showConfirmation(`Are you sure you want to delete "${workflowName}"?`);
@@ -178,10 +163,10 @@
         workflows = workflows.filter((w) => w.id !== workflowId);
         break;
       }
-      case "view-execution":
+      case 'view-execution':
         goto(`/workflow/${workflowId}/pipelines`);
         break;
-      case "playground":
+      case 'playground':
         goto(`/workflow/${workflowId}/playground`);
         break;
     }
@@ -212,37 +197,21 @@
 
           <div class="workflows-view-toggle">
             <button
-              class="view-toggle {viewMode === 'list'
-                ? 'view-toggle--active'
-                : ''}"
+              class="view-toggle {viewMode === 'list' ? 'view-toggle--active' : ''}"
               aria-label="List view"
-              onclick={() => (viewMode = "list")}
+              onclick={() => (viewMode = 'list')}
             >
-              <svg
-                class="w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                style="color: #374151;"
-              >
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style="color: #374151;">
                 <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"></path>
               </svg>
             </button>
             <button
-              class="view-toggle {viewMode === 'grid'
-                ? 'view-toggle--active'
-                : ''}"
+              class="view-toggle {viewMode === 'grid' ? 'view-toggle--active' : ''}"
               aria-label="Grid view"
-              onclick={() => (viewMode = "grid")}
+              onclick={() => (viewMode = 'grid')}
             >
-              <svg
-                class="w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                style="color: #374151;"
-              >
-                <path
-                  d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"
-                ></path>
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style="color: #374151;">
+                <path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"></path>
               </svg>
             </button>
           </div>
@@ -268,10 +237,7 @@
           </div>
           <h3>Failed to load workflows</h3>
           <p>{error}</p>
-          <button
-            class="flowdrop-btn flowdrop-btn--primary"
-            onclick={fetchWorkflows}
-          >
+          <button class="flowdrop-btn flowdrop-btn--primary" onclick={fetchWorkflows}>
             Try Again
           </button>
         </div>
@@ -284,8 +250,7 @@
             role="button"
             tabindex="0"
             onclick={() => goto(`/workflow/${workflow.id}/edit`)}
-            onkeydown={(e) =>
-              e.key === "Enter" && goto(`/workflow/${workflow.id}/edit`)}
+            onkeydown={(e) => e.key === 'Enter' && goto(`/workflow/${workflow.id}/edit`)}
           >
             <div class="workflow-card__icon">
               <Icon icon="mdi:file-document" class="w-5 h-5" />
@@ -294,20 +259,15 @@
             <div class="workflow-card__content">
               <div class="workflow-card__header">
                 <h3 class="workflow-card__title">{workflow.title}</h3>
-                <span class="workflow-card__time"
-                  >Edited {workflow.lastModified}</span
-                >
+                <span class="workflow-card__time">Edited {workflow.lastModified}</span>
               </div>
               <p class="workflow-card__description">{workflow.description}</p>
               <div class="workflow-card__meta">
-                <span class="workflow-meta workflow-meta--nodes"
-                  >{workflow.nodes} nodes</span
-                >
+                <span class="workflow-meta workflow-meta--nodes">{workflow.nodes} nodes</span>
                 <span class="workflow-meta workflow-meta--connections"
                   >{workflow.connections} connections</span
                 >
-                <span
-                  class="workflow-status workflow-status--{workflow.status.toLowerCase()}"
+                <span class="workflow-status workflow-status--{workflow.status.toLowerCase()}"
                   >{workflow.status}</span
                 >
               </div>
@@ -319,8 +279,7 @@
                   class="workflow-dropdown__trigger"
                   onclick={(e) => {
                     e.stopPropagation();
-                    selectedWorkflow =
-                      selectedWorkflow === workflow.id ? null : workflow.id;
+                    selectedWorkflow = selectedWorkflow === workflow.id ? null : workflow.id;
                   }}
                   aria-label="Open workflow options menu"
                 >
@@ -335,14 +294,9 @@
                   <div class="workflow-dropdown__menu">
                     <button
                       class="workflow-dropdown__item"
-                      onclick={() => handleOperation(workflow.id, "edit")}
+                      onclick={() => handleOperation(workflow.id, 'edit')}
                     >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           stroke-linecap="round"
                           stroke-linejoin="round"
@@ -354,15 +308,9 @@
                     </button>
                     <button
                       class="workflow-dropdown__item"
-                      onclick={() =>
-                        handleOperation(workflow.id, "view-execution")}
+                      onclick={() => handleOperation(workflow.id, 'view-execution')}
                     >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           stroke-linecap="round"
                           stroke-linejoin="round"
@@ -380,14 +328,9 @@
                     </button>
                     <button
                       class="workflow-dropdown__item"
-                      onclick={() => handleOperation(workflow.id, "playground")}
+                      onclick={() => handleOperation(workflow.id, 'playground')}
                     >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           stroke-linecap="round"
                           stroke-linejoin="round"
@@ -406,14 +349,9 @@
                     <div class="workflow-dropdown__divider"></div>
                     <button
                       class="workflow-dropdown__item workflow-dropdown__item--danger"
-                      onclick={() => handleOperation(workflow.id, "delete")}
+                      onclick={() => handleOperation(workflow.id, 'delete')}
                     >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           stroke-linecap="round"
                           stroke-linejoin="round"
@@ -439,13 +377,13 @@
               <h3>No workflows found</h3>
               <p>
                 {searchQuery
-                  ? "Try adjusting your search query"
-                  : "Create your first workflow to get started"}
+                  ? 'Try adjusting your search query'
+                  : 'Create your first workflow to get started'}
               </p>
               {#if !searchQuery}
                 <button
                   class="flowdrop-btn flowdrop-btn--primary"
-                  onclick={() => goto("/workflow/create")}
+                  onclick={() => goto('/workflow/create')}
                 >
                   Create Your First Workflow
                 </button>
@@ -489,8 +427,7 @@
 
   .workflows-filters {
     background: transparent;
-    padding: var(--fd-space-3xl) var(--fd-space-4xl) var(--fd-space-xl)
-      var(--fd-space-4xl);
+    padding: var(--fd-space-3xl) var(--fd-space-4xl) var(--fd-space-xl) var(--fd-space-4xl);
   }
 
   .workflows-search {

@@ -27,7 +27,7 @@
       content:
         application/json:
           schema:
-            $ref: "../components/schemas/chat.yaml#/ChatRequest"
+            $ref: '../components/schemas/chat.yaml#/ChatRequest'
           examples:
             simpleMessage:
               summary: Simple chat message
@@ -42,29 +42,29 @@
                 message: Now connect it to the start node
                 workflowState:
                   nodes:
-                    - id: "node-1"
+                    - id: 'node-1'
                       type: start
-                    - id: "node-2"
+                    - id: 'node-2'
                       type: processing
                   edges: []
                 history:
                   - role: user
                     content: Add a processing node called "transform"
                   - role: assistant
-                    content: "Done! I've added a processing node named \"transform\"."
+                    content: 'Done! I''ve added a processing node named "transform".'
     responses:
-      "200":
+      '200':
         description: Chat response with LLM-generated content
         content:
           application/json:
             schema:
-              $ref: "../components/schemas/chat.yaml#/ChatMessagesResponse"
-      "400":
-        $ref: "../components/responses.yaml#/BadRequest"
-      "404":
-        $ref: "../components/responses.yaml#/NotFound"
-      "500":
-        $ref: "../components/responses.yaml#/InternalServerError"
+              $ref: '../components/schemas/chat.yaml#/ChatMessagesResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
 
   get:
     operationId: getChatHistory
@@ -82,16 +82,16 @@
         schema:
           type: string
     responses:
-      "200":
+      '200':
         description: Conversation history retrieved successfully
         content:
           application/json:
             schema:
-              $ref: "../components/schemas/chat.yaml#/ChatHistoryResponse"
-      "404":
-        $ref: "../components/responses.yaml#/NotFound"
-      "500":
-        $ref: "../components/responses.yaml#/InternalServerError"
+              $ref: '../components/schemas/chat.yaml#/ChatHistoryResponse'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
 
   delete:
     operationId: clearChatHistory
@@ -109,9 +109,9 @@
         schema:
           type: string
     responses:
-      "204":
+      '204':
         description: Conversation history cleared successfully
-      "404":
-        $ref: "../components/responses.yaml#/NotFound"
-      "500":
-        $ref: "../components/responses.yaml#/InternalServerError"
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

@@ -7,49 +7,35 @@
  * @module svelte-app
  */
 
-import { mount, unmount } from "svelte";
-import WorkflowEditor from "./components/WorkflowEditor.svelte";
-import App from "./components/App.svelte";
-import type {
-  Workflow,
-  NodeMetadata,
-  PortConfig,
-  CategoryDefinition,
-} from "./types/index.js";
-import type { EndpointConfig } from "./config/endpoints.js";
-import type { AuthProvider } from "./types/auth.js";
-import type {
-  FlowDropEventHandlers,
-  FlowDropFeatures,
-} from "./types/events.js";
-import type { FlowDropTheme, FlowDropThemeName } from "./types/theme.js";
-import type { WorkflowFormatAdapter } from "./registry/workflowFormatRegistry.js";
-import { workflowFormatRegistry } from "./registry/workflowFormatRegistry.js";
-import "./registry/builtinFormats.js";
-import { initializePortCompatibility } from "./utils/connections.js";
-import { DEFAULT_PORT_CONFIG } from "./config/defaultPortConfig.js";
-import { fetchPortConfig } from "./services/portConfigApi.js";
-import { fetchCategories } from "./services/categoriesApi.js";
-import { initializeCategories } from "./stores/categoriesStore.svelte.js";
+import { mount, unmount } from 'svelte';
+import WorkflowEditor from './components/WorkflowEditor.svelte';
+import App from './components/App.svelte';
+import type { Workflow, NodeMetadata, PortConfig, CategoryDefinition } from './types/index.js';
+import type { EndpointConfig } from './config/endpoints.js';
+import type { AuthProvider } from './types/auth.js';
+import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
+import type { FlowDropTheme, FlowDropThemeName } from './types/theme.js';
+import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
+import { workflowFormatRegistry } from './registry/workflowFormatRegistry.js';
+import './registry/builtinFormats.js';
+import { initializePortCompatibility } from './utils/connections.js';
+import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
+import { fetchPortConfig } from './services/portConfigApi.js';
+import { fetchCategories } from './services/categoriesApi.js';
+import { initializeCategories } from './stores/categoriesStore.svelte.js';
 import {
   isDirty,
   markAsSaved,
   getWorkflow as getWorkflowFromStore,
   setOnDirtyStateChange,
-  setOnWorkflowChange,
-} from "./stores/workflowStore.svelte.js";
-import {
-  DraftAutoSaveManager,
-  getDraftStorageKey,
-} from "./services/draftStorage.js";
-import { mergeFeatures } from "./types/events.js";
-import type { PartialSettings, SettingsCategory } from "./types/settings.js";
-import { initializeSettings } from "./stores/settingsStore.svelte.js";
-import { logger } from "./utils/logger.js";
-import {
-  globalSaveWorkflow,
-  globalExportWorkflow,
-} from "./services/globalSave.js";
+  setOnWorkflowChange
+} from './stores/workflowStore.svelte.js';
+import { DraftAutoSaveManager, getDraftStorageKey } from './services/draftStorage.js';
+import { mergeFeatures } from './types/events.js';
+import type { PartialSettings, SettingsCategory } from './types/settings.js';
+import { initializeSettings } from './stores/settingsStore.svelte.js';
+import { logger } from './utils/logger.js';
+import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
 
 /**
  * Navbar action configuration
@@ -58,7 +44,7 @@ export interface NavbarAction {
   label: string;
   href: string;
   icon?: string;
-  variant?: "primary" | "secondary" | "outline";
+  variant?: 'primary' | 'secondary' | 'outline';
   onclick?: (event: Event) => void;
 }
 
@@ -96,7 +82,7 @@ export interface FlowDropMountOptions {
   /** Pipeline ID for status display */
   pipelineId?: string;
   /** Node execution statuses */
-  nodeStatuses?: Record<string, "pending" | "running" | "completed" | "error">;
+  nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
 
   // Navbar customization
   /** Custom navbar title */
@@ -213,7 +199,7 @@ interface MountedAppState {
  */
 export async function mountFlowDropApp(
   container: HTMLElement,
-  options: FlowDropMountOptions = {},
+  options: FlowDropMountOptions = {}
 ): Promise<MountedFlowDropApp> {
   const {
     workflow,
@@ -221,8 +207,8 @@ export async function mountFlowDropApp(
     endpointConfig,
     portConfig,
     categories,
-    height = "100vh",
-    width = "100%",
+    height = '100vh',
+    width = '100%',
     showNavbar = false,
     disableSidebar,
     lockWorkflow,
@@ -241,7 +227,7 @@ export async function mountFlowDropApp(
     theme,
     settingsCategories,
     showSettingsSyncButton,
-    showSettingsResetButton,
+    showSettingsResetButton
   } = options;
 
   // Register custom format adapters before mounting
@@ -256,7 +242,7 @@ export async function mountFlowDropApp(
 
   // Apply initial settings overrides and initialize theme
   await initializeSettings({
-    defaults: initialSettings,
+    defaults: initialSettings
   });
 
   // Create endpoint configuration
@@ -264,18 +250,18 @@ export async function mountFlowDropApp(
 
   if (endpointConfig) {
     // Merge with default configuration to ensure all required endpoints are present
-    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    const { defaultEndpointConfig } = await import('./config/endpoints.js');
     config = {
       ...defaultEndpointConfig,
       ...endpointConfig,
       endpoints: {
         ...defaultEndpointConfig.endpoints,
-        ...endpointConfig.endpoints,
-      },
+        ...endpointConfig.endpoints
+      }
     };
   } else {
     // Use default configuration if none provided
-    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    const { defaultEndpointConfig } = await import('./config/endpoints.js');
     config = defaultEndpointConfig;
   }
 
@@ -287,10 +273,7 @@ export async function mountFlowDropApp(
     try {
       finalPortConfig = await fetchPortConfig(config);
     } catch (error) {
-      logger.warn(
-        "Failed to fetch port config from API, using default:",
-        error,
-      );
+      logger.warn('Failed to fetch port config from API, using default:', error);
       finalPortConfig = DEFAULT_PORT_CONFIG;
     }
   } else if (!finalPortConfig) {
@@ -307,10 +290,7 @@ export async function mountFlowDropApp(
       const fetchedCategories = await fetchCategories(config);
       initializeCategories(fetchedCategories);
     } catch (error) {
-      logger.warn(
-        "Failed to fetch categories from API, using defaults:",
-        error,
-      );
+      logger.warn('Failed to fetch categories from API, using defaults:', error);
     }
   }
 
@@ -347,8 +327,8 @@ export async function mountFlowDropApp(
       theme,
       settingsCategories,
       showSettingsSyncButton,
-      showSettingsResetButton,
-    },
+      showSettingsResetButton
+    }
   });
 
   // Set up draft auto-save manager
@@ -362,7 +342,7 @@ export async function mountFlowDropApp(
       interval: features.autoSaveDraftInterval,
       enabled: features.autoSaveDraft,
       getWorkflow: getWorkflowFromStore,
-      isDirty,
+      isDirty
     });
 
     draftManager.start();
@@ -372,7 +352,7 @@ export async function mountFlowDropApp(
   const state: MountedAppState = {
     svelteApp,
     draftManager,
-    eventHandlers: eventHandlers ?? null,
+    eventHandlers: eventHandlers ?? null
   };
 
   // Create the mounted app interface
@@ -421,7 +401,7 @@ export async function mountFlowDropApp(
 
     export: () => {
       globalExportWorkflow();
-    },
+    }
   };
 
   return mountedApp;
@@ -444,7 +424,7 @@ export async function mountWorkflowEditor(
     endpointConfig?: EndpointConfig;
     portConfig?: PortConfig;
     categories?: CategoryDefinition[];
-  } = {},
+  } = {}
 ): Promise<MountedFlowDropApp> {
   const { nodes = [], endpointConfig, portConfig, categories } = options;
 
@@ -453,18 +433,18 @@ export async function mountWorkflowEditor(
 
   if (endpointConfig) {
     // Merge with default configuration to ensure all required endpoints are present
-    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    const { defaultEndpointConfig } = await import('./config/endpoints.js');
     config = {
       ...defaultEndpointConfig,
       ...endpointConfig,
       endpoints: {
         ...defaultEndpointConfig.endpoints,
-        ...endpointConfig.endpoints,
-      },
+        ...endpointConfig.endpoints
+      }
     };
   } else {
     // Use default configuration if none provided
-    const { defaultEndpointConfig } = await import("./config/endpoints.js");
+    const { defaultEndpointConfig } = await import('./config/endpoints.js');
     config = defaultEndpointConfig;
   }
 
@@ -476,10 +456,7 @@ export async function mountWorkflowEditor(
     try {
       finalPortConfig = await fetchPortConfig(config);
     } catch (error) {
-      logger.warn(
-        "Failed to fetch port config from API, using default:",
-        error,
-      );
+      logger.warn('Failed to fetch port config from API, using default:', error);
       finalPortConfig = DEFAULT_PORT_CONFIG;
     }
   } else if (!finalPortConfig) {
@@ -496,10 +473,7 @@ export async function mountWorkflowEditor(
       const fetchedCategories = await fetchCategories(config);
       initializeCategories(fetchedCategories);
     } catch (error) {
-      logger.warn(
-        "Failed to fetch categories from API, using defaults:",
-        error,
-      );
+      logger.warn('Failed to fetch categories from API, using defaults:', error);
     }
   }
 
@@ -508,8 +482,8 @@ export async function mountWorkflowEditor(
     target: container,
     props: {
       nodes,
-      endpointConfig: config,
-    },
+      endpointConfig: config
+    }
   });
 
   // Create the mounted app interface (simpler version)
@@ -530,7 +504,7 @@ export async function mountWorkflowEditor(
 
     export: () => {
       globalExportWorkflow();
-    },
+    }
   };
 
   return mountedApp;
@@ -542,7 +516,7 @@ export async function mountWorkflowEditor(
  * @param app - The mounted app to unmount
  */
 export function unmountFlowDropApp(app: MountedFlowDropApp): void {
-  if (app && typeof app.destroy === "function") {
+  if (app && typeof app.destroy === 'function') {
     app.destroy();
   }
 }

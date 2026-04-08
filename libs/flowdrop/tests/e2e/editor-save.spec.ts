@@ -5,48 +5,42 @@
  * the correct API request with the current workflow data.
  */
 
-import { test, expect } from "@playwright/test";
-import { gotoEditor, setupEditorApiMocks } from "./helpers/editor-helpers";
+import { test, expect } from '@playwright/test';
+import { gotoEditor, setupEditorApiMocks } from './helpers/editor-helpers';
 
-test.describe("Save Workflow", () => {
+test.describe('Save Workflow', () => {
   test.beforeEach(({}, testInfo) => {
-    test.skip(
-      testInfo.project.name === "Mobile Chrome",
-      "Editor requires desktop-width viewport",
-    );
+    test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
   });
 
-  test("save button sends workflow data via API", async ({ page }) => {
+  test('save button sends workflow data via API', async ({ page }) => {
     // Set up API mocking to capture the save request
     let capturedSaveBody: Record<string, unknown> | null = null;
     let saveMethodCalled = false;
 
-    await page.route("**/api/flowdrop/workflows/**", async (route) => {
-      if (
-        route.request().method() === "PUT" ||
-        route.request().method() === "POST"
-      ) {
+    await page.route('**/api/flowdrop/workflows/**', async (route) => {
+      if (route.request().method() === 'PUT' || route.request().method() === 'POST') {
         saveMethodCalled = true;
         capturedSaveBody = route.request().postDataJSON();
         await route.fulfill({
           status: 200,
-          contentType: "application/json",
+          contentType: 'application/json',
           body: JSON.stringify({
             success: true,
-            data: { id: "test-workflow-simple" },
-            message: "Workflow saved",
-          }),
+            data: { id: 'test-workflow-simple' },
+            message: 'Workflow saved'
+          })
         });
       } else {
         await route.continue();
       }
     });
 
-    await gotoEditor(page, "simple");
+    await gotoEditor(page, 'simple');
 
     // Find and click the Save button in the navbar
-    const saveButton = page.locator(".flowdrop-navbar__primary-action", {
-      hasText: "Save",
+    const saveButton = page.locator('.flowdrop-navbar__primary-action', {
+      hasText: 'Save'
     });
     await expect(saveButton).toBeVisible({ timeout: 5000 });
     await saveButton.click();
@@ -60,8 +54,8 @@ test.describe("Save Workflow", () => {
     // Verify the saved data contains nodes
     if (capturedSaveBody) {
       const body = capturedSaveBody as Record<string, unknown>;
-      expect(body).toHaveProperty("nodes");
-      expect(body).toHaveProperty("edges");
+      expect(body).toHaveProperty('nodes');
+      expect(body).toHaveProperty('edges');
       const nodes = body.nodes as unknown[];
       const edges = body.edges as unknown[];
       expect(nodes.length).toBe(2);
@@ -69,24 +63,24 @@ test.describe("Save Workflow", () => {
     }
   });
 
-  test("save uses PUT when workflow already has a UUID id (regression: issue #26)", async ({
-    page,
+  test('save uses PUT when workflow already has a UUID id (regression: issue #26)', async ({
+    page
   }) => {
-    const backendUUID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+    const backendUUID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 
     // Intercept save requests — the uuid workflow variant is passed inline with the UUID id,
     // so no GET interception is needed. The app should issue PUT on save.
-    await page.route("**/api/flowdrop/workflows/**", async (route) => {
+    await page.route('**/api/flowdrop/workflows/**', async (route) => {
       const method = route.request().method();
-      if (method === "PUT" || method === "POST") {
+      if (method === 'PUT' || method === 'POST') {
         await route.fulfill({
           status: 200,
-          contentType: "application/json",
+          contentType: 'application/json',
           body: JSON.stringify({
             success: true,
             data: { id: backendUUID },
-            message: "Workflow saved",
-          }),
+            message: 'Workflow saved'
+          })
         });
       } else {
         await route.continue();
@@ -94,46 +88,46 @@ test.describe("Save Workflow", () => {
     });
 
     // Load the uuid workflow variant — it has id: backendUUID passed inline via props
-    await gotoEditor(page, "uuid");
+    await gotoEditor(page, 'uuid');
 
-    const saveButton = page.locator(".flowdrop-navbar__primary-action", {
-      hasText: "Save",
+    const saveButton = page.locator('.flowdrop-navbar__primary-action', {
+      hasText: 'Save'
     });
     await expect(saveButton).toBeVisible({ timeout: 5000 });
 
     // Wait for the save request and capture it
     const saveRequestPromise = page.waitForRequest(
       (req) =>
-        req.url().includes("/api/flowdrop/workflows/") &&
-        (req.method() === "PUT" || req.method() === "POST"),
-      { timeout: 5000 },
+        req.url().includes('/api/flowdrop/workflows/') &&
+        (req.method() === 'PUT' || req.method() === 'POST'),
+      { timeout: 5000 }
     );
     await saveButton.click();
     const saveRequest = await saveRequestPromise;
 
     // Must use PUT (update), not POST (create)
-    expect(saveRequest.method()).toBe("PUT");
+    expect(saveRequest.method()).toBe('PUT');
     expect(new URL(saveRequest.url()).pathname).toContain(backendUUID);
   });
 
-  test("save button is visible in navbar", async ({ page }) => {
-    await gotoEditor(page, "simple");
+  test('save button is visible in navbar', async ({ page }) => {
+    await gotoEditor(page, 'simple');
 
     // The navbar should show Save as the primary action
-    const saveButton = page.locator(".flowdrop-navbar__primary-action", {
-      hasText: "Save",
+    const saveButton = page.locator('.flowdrop-navbar__primary-action', {
+      hasText: 'Save'
     });
     await expect(saveButton).toBeVisible({ timeout: 5000 });
   });
 
-  test("navbar shows export and import actions", async ({ page }) => {
-    await gotoEditor(page, "simple");
+  test('navbar shows export and import actions', async ({ page }) => {
+    await gotoEditor(page, 'simple');
 
     // There are two navbars (outer layout + inner App); use the inner one
-    const navbar = page.locator(".flowdrop-navbar").last();
+    const navbar = page.locator('.flowdrop-navbar').last();
     await expect(navbar).toBeVisible({ timeout: 5000 });
 
     // Should contain Save action
-    await expect(navbar).toContainText("Save", { timeout: 5000 });
+    await expect(navbar).toContainText('Save', { timeout: 5000 });
   });
 });

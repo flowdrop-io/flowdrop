@@ -5,12 +5,12 @@
 -->
 
 <script lang="ts">
-  import { Position, Handle } from "@xyflow/svelte";
-  import Icon from "@iconify/svelte";
-  import { getDataTypeColor, getCategoryColorToken } from "$lib/utils/colors";
-  import type { NodeMetadata, NodePort } from "../../types/index.js";
-  import CogIcon from "../icons/CogIcon.svelte";
-  import AlertCircleIcon from "../icons/AlertCircleIcon.svelte";
+  import { Position, Handle } from '@xyflow/svelte';
+  import Icon from '@iconify/svelte';
+  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors';
+  import type { NodeMetadata, NodePort } from '../../types/index.js';
+  import CogIcon from '../icons/CogIcon.svelte';
+  import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface ToolNodeParameter {
     name: string;
@@ -48,14 +48,10 @@
 
   // Prioritize metadata over config for tool nodes (metadata is the node definition)
   let toolIcon = $derived(
-    (props.data.metadata?.icon as string) ||
-      (props.data.config?.icon as string) ||
-      "mdi:tools",
+    (props.data.metadata?.icon as string) || (props.data.config?.icon as string) || 'mdi:tools'
   );
   let toolColor = $derived(
-    (props.data.metadata?.color as string) ||
-      (props.data.config?.color as string) ||
-      "#f59e0b",
+    (props.data.metadata?.color as string) || (props.data.config?.color as string) || '#f59e0b'
   );
 
   /**
@@ -68,7 +64,7 @@
       (props.data.metadata?.name as string) ||
       (props.data.config?.toolName as string) ||
       props.data.label ||
-      "Tool",
+      'Tool'
   );
 
   /**
@@ -77,9 +73,7 @@
    * This allows users to customize the badge text per-instance via config.
    */
   const displayBadge = $derived(
-    (props.data.config?.instanceBadge as string) ||
-      (props.data.metadata?.badge as string) ||
-      "TOOL",
+    (props.data.config?.instanceBadge as string) || (props.data.metadata?.badge as string) || 'TOOL'
   );
 
   /**
@@ -91,13 +85,13 @@
     (props.data.config?.instanceDescription as string) ||
       (props.data.metadata?.description as string) ||
       (props.data.config?.toolDescription as string) ||
-      "A configurable tool for agents",
+      'A configurable tool for agents'
   );
 
   let toolVersion = $derived(
     (props.data.metadata?.version as string) ||
       (props.data.config?.toolVersion as string) ||
-      "1.0.0",
+      '1.0.0'
   );
 
   /**
@@ -112,32 +106,22 @@
    * to show a different port type (e.g., 'trigger') when the node is
    * repurposed with a custom badge.
    */
-  let portDataType = $derived(
-    (props.data.metadata?.portDataType as string) || "tool",
-  );
+  let portDataType = $derived((props.data.metadata?.portDataType as string) || 'tool');
 
   // Check for matching interface ports in metadata
   let hasToolInputPort = $derived(
-    props.data.metadata?.inputs?.some(
-      (port: NodePort) => port.dataType === portDataType,
-    ) || false,
+    props.data.metadata?.inputs?.some((port: NodePort) => port.dataType === portDataType) || false
   );
   let hasToolOutputPort = $derived(
-    props.data.metadata?.outputs?.some(
-      (port: NodePort) => port.dataType === portDataType,
-    ) || false,
+    props.data.metadata?.outputs?.some((port: NodePort) => port.dataType === portDataType) || false
   );
 
   // Get the actual matching ports for proper handle generation
   let toolInputPort = $derived(
-    props.data.metadata?.inputs?.find(
-      (port: NodePort) => port.dataType === portDataType,
-    ),
+    props.data.metadata?.inputs?.find((port: NodePort) => port.dataType === portDataType)
   );
   let toolOutputPort = $derived(
-    props.data.metadata?.outputs?.find(
-      (port: NodePort) => port.dataType === portDataType,
-    ),
+    props.data.metadata?.outputs?.find((port: NodePort) => port.dataType === portDataType)
   );
 
   /**
@@ -147,9 +131,9 @@
     if (props.data.onConfigOpen) {
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
-        id: props.data.nodeId || "unknown",
-        type: "tool",
-        data: props.data,
+        id: props.data.nodeId || 'unknown',
+        type: 'tool',
+        data: props.data
       };
       props.data.onConfigOpen(nodeForConfig);
     }
@@ -173,7 +157,7 @@
    * Handle keyboard events for accessibility
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleDoubleClick();
     }
@@ -187,7 +171,7 @@
     position={Position.Left}
     id={`${props.data.nodeId}-input-${toolInputPort.id}`}
     style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      portDataType,
+      portDataType
     )}); --fd-handle-border-color: var(--fd-handle-border);"
   />
 {/if}
@@ -215,9 +199,7 @@
       <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
       <span
         class="flowdrop-tool-node__color-dot"
-        style="background: {getCategoryColorToken(
-          props.data.metadata?.category,
-        )}"
+        style="background: {getCategoryColorToken(props.data.metadata?.category)}"
       ></span>
 
       <!-- Tool Info -->
@@ -255,11 +237,7 @@
   {/if}
 
   <!-- Config button -->
-  <button
-    class="flowdrop-tool-node__config-btn"
-    onclick={openConfigSidebar}
-    title="Configure tool"
-  >
+  <button class="flowdrop-tool-node__config-btn" onclick={openConfigSidebar} title="Configure tool">
     <CogIcon />
   </button>
 </div>
@@ -271,7 +249,7 @@
     position={Position.Right}
     id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
     style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      portDataType,
+      portDataType
     )}); --fd-handle-border-color: var(--fd-handle-border);"
   />
 {/if}
@@ -336,13 +314,9 @@
   }
 
   /* Dark mode header styles */
-  :global([data-theme="dark"]) .flowdrop-tool-node__header {
+  :global([data-theme='dark']) .flowdrop-tool-node__header {
     /* Dark mode: mix tool color with dark background (15%) for subtle tint */
-    background-color: color-mix(
-      in srgb,
-      var(--fd-tool-node-color) 15%,
-      #1a1a1e
-    );
+    background-color: color-mix(in srgb, var(--fd-tool-node-color) 15%, #1a1a1e);
     border: none;
   }
 
@@ -400,14 +374,9 @@
   }
 
   .flowdrop-tool-node__badge {
-    background-color: color-mix(
-      in srgb,
-      var(--fd-tool-node-color) 15%,
-      transparent
-    );
+    background-color: color-mix(in srgb, var(--fd-tool-node-color) 15%, transparent);
     color: var(--fd-tool-node-color);
-    border: 1px solid
-      color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent);
     font-size: 0.625rem;
     font-weight: 700;
     padding: 0.25rem 0.5rem;
@@ -437,8 +406,7 @@
   .flowdrop-tool-node__spinner {
     width: 12px;
     height: 12px;
-    border: 1px solid
-      color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent);
     border-top: 1px solid var(--fd-tool-node-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -509,8 +477,7 @@
   }
 
   :global(.svelte-flow__node-tool .svelte-flow__handle:hover::before) {
-    box-shadow: 0 0 0 2px
-      color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent) !important;
   }
 
   :global(.svelte-flow__node-tool .svelte-flow__handle:focus) {

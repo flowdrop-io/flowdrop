@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ConfigValues, NodeMetadata } from "../../types/index.js";
-  import Icon from "@iconify/svelte";
-  import MarkdownDisplay from "../MarkdownDisplay.svelte";
+  import type { ConfigValues, NodeMetadata } from '../../types/index.js';
+  import Icon from '@iconify/svelte';
+  import MarkdownDisplay from '../MarkdownDisplay.svelte';
 
   /**
    * NotesNode component props
@@ -25,46 +25,42 @@
   }>();
 
   /** Note content derived from config */
-  const noteContent = $derived(
-    (props.data.config?.content as string) || "Add your notes here...",
-  );
+  const noteContent = $derived((props.data.config?.content as string) || 'Add your notes here...');
 
   /** Note type derived from config */
-  const noteType = $derived((props.data.config?.noteType as string) || "info");
+  const noteType = $derived((props.data.config?.noteType as string) || 'info');
 
   /** Note type configuration with styling for each type */
   const noteTypes = {
     info: {
-      name: "Info",
-      typeClass: "flowdrop-notes-node--info",
-      icon: "mdi:information",
+      name: 'Info',
+      typeClass: 'flowdrop-notes-node--info',
+      icon: 'mdi:information'
     },
     warning: {
-      name: "Warning",
-      typeClass: "flowdrop-notes-node--warning",
-      icon: "mdi:alert",
+      name: 'Warning',
+      typeClass: 'flowdrop-notes-node--warning',
+      icon: 'mdi:alert'
     },
     success: {
-      name: "Success",
-      typeClass: "flowdrop-notes-node--success",
-      icon: "mdi:check-circle",
+      name: 'Success',
+      typeClass: 'flowdrop-notes-node--success',
+      icon: 'mdi:check-circle'
     },
     error: {
-      name: "Error",
-      typeClass: "flowdrop-notes-node--error",
-      icon: "mdi:close-circle",
+      name: 'Error',
+      typeClass: 'flowdrop-notes-node--error',
+      icon: 'mdi:close-circle'
     },
     note: {
-      name: "Note",
-      typeClass: "flowdrop-notes-node--note",
-      icon: "mdi:note-text",
-    },
+      name: 'Note',
+      typeClass: 'flowdrop-notes-node--note',
+      icon: 'mdi:note-text'
+    }
   };
 
   /** Current note type configuration based on selected type */
-  const currentType = $derived(
-    noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info,
-  );
+  const currentType = $derived(noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info);
 
   /**
    * Opens the configuration sidebar for editing note properties
@@ -72,9 +68,9 @@
   function openConfigSidebar(): void {
     if (props.data.onConfigOpen) {
       const nodeForConfig = {
-        id: props.data.nodeId || "unknown",
-        type: "note",
-        data: props.data,
+        id: props.data.nodeId || 'unknown',
+        type: 'note',
+        data: props.data
       };
       props.data.onConfigOpen(nodeForConfig);
     }
@@ -92,7 +88,7 @@
    * @param event - The keyboard event
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleDoubleClick();
     }
@@ -123,10 +119,7 @@
 
     <!-- Rendered markdown content -->
     <div class="flowdrop-notes-node__body">
-      <MarkdownDisplay
-        content={noteContent}
-        className="flowdrop-notes-node__markdown"
-      />
+      <MarkdownDisplay content={noteContent} className="flowdrop-notes-node__markdown" />
     </div>
 
     <!-- Processing indicator -->
@@ -266,11 +259,7 @@
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 0.5rem;
-    background: color-mix(
-      in srgb,
-      var(--_notes-icon) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_notes-icon) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }

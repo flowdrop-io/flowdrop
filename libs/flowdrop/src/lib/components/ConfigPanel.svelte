@@ -7,10 +7,10 @@
 -->
 
 <script lang="ts">
-  import type { Snippet } from "svelte";
-  import Icon from "@iconify/svelte";
-  import ReadOnlyDetails from "./ReadOnlyDetails.svelte";
-  import { getUiSettings } from "../stores/settingsStore.svelte.js";
+  import type { Snippet } from 'svelte';
+  import Icon from '@iconify/svelte';
+  import ReadOnlyDetails from './ReadOnlyDetails.svelte';
+  import { getUiSettings } from '../stores/settingsStore.svelte.js';
 
   /**
    * A single detail item with label and value
@@ -49,24 +49,19 @@
     id,
     description,
     details = [],
-    configTitle = "Configuration",
+    configTitle = 'Configuration',
     onClose,
     onSwap,
-    children,
+    children
   }: Props = $props();
 
   /**
    * Check if details section should be shown
    */
-  const hasDetails = $derived(
-    id !== undefined || details.length > 0 || description !== undefined,
-  );
+  const hasDetails = $derived(id !== undefined || details.length > 0 || description !== undefined);
 </script>
 
-<div
-  class="config-panel"
-  class:config-panel--compact={getUiSettings().compactMode}
->
+<div class="config-panel" class:config-panel--compact={getUiSettings().compactMode}>
   <!-- Header -->
   <div class="config-panel__header">
     <h2 class="config-panel__title">{title}</h2>
@@ -81,13 +76,7 @@
           <Icon icon="heroicons:arrows-right-left" />
         </button>
       {/if}
-      <button
-        class="config-panel__close"
-        onclick={onClose}
-        aria-label="Close panel"
-      >
-        ×
-      </button>
+      <button class="config-panel__close" onclick={onClose} aria-label="Close panel"> × </button>
     </div>
   </div>
 

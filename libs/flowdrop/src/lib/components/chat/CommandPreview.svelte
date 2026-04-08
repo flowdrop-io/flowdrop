@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { CommandPreviewItem } from "../../types/chat.js";
-  import Icon from "@iconify/svelte";
+  import type { CommandPreviewItem } from '../../types/chat.js';
+  import Icon from '@iconify/svelte';
 
   interface Props {
     commands: CommandPreviewItem[];
@@ -10,18 +10,18 @@
 
   let { commands, onApprove, onCancel }: Props = $props();
 
-  const hasPending = $derived(commands.some((c) => c.status === "pending"));
-  const isExecuting = $derived(commands.some((c) => c.status === "executing"));
+  const hasPending = $derived(commands.some((c) => c.status === 'pending'));
+  const isExecuting = $derived(commands.some((c) => c.status === 'executing'));
 
-  let resolvedAction: "applied" | "cancelled" | null = $state(null);
+  let resolvedAction: 'applied' | 'cancelled' | null = $state(null);
 
   function handleApprove() {
-    resolvedAction = "applied";
+    resolvedAction = 'applied';
     onApprove();
   }
 
   function handleCancel() {
-    resolvedAction = "cancelled";
+    resolvedAction = 'cancelled';
     onCancel();
   }
 </script>
@@ -31,18 +31,18 @@
     {#each commands as command, i}
       <div class="command-preview__item command-preview__item--{command.status}">
         <span class="command-preview__status">
-          {#if command.status === "pending"}
+          {#if command.status === 'pending'}
             <Icon icon="mdi:chevron-right" />
-          {:else if command.status === "executing"}
+          {:else if command.status === 'executing'}
             <Icon icon="mdi:loading" />
-          {:else if command.status === "success"}
+          {:else if command.status === 'success'}
             <Icon icon="mdi:check-circle" />
-          {:else if command.status === "error"}
+          {:else if command.status === 'error'}
             <Icon icon="mdi:alert-circle" />
           {/if}
         </span>
         <pre class="command-preview__command">{command.raw}</pre>
-        {#if command.status === "error" && command.result}
+        {#if command.status === 'error' && command.result}
           <span class="command-preview__error">{command.result}</span>
         {/if}
       </div>
@@ -50,7 +50,7 @@
   </div>
 
   <div class="command-preview__actions">
-    {#if resolvedAction === "applied"}
+    {#if resolvedAction === 'applied'}
       <span class="command-preview__resolved command-preview__resolved--applied">
         {#if isExecuting}
           <Icon icon="mdi:loading" />
@@ -60,7 +60,7 @@
           Applied
         {/if}
       </span>
-    {:else if resolvedAction === "cancelled"}
+    {:else if resolvedAction === 'cancelled'}
       <span class="command-preview__resolved command-preview__resolved--cancelled">
         <Icon icon="mdi:close" />
         Dismissed
@@ -224,7 +224,7 @@
     color: var(--fd-success);
   }
 
-  .command-preview__resolved--applied :global(svg.iconify[data-icon="mdi:loading"]) {
+  .command-preview__resolved--applied :global(svg.iconify[data-icon='mdi:loading']) {
     animation: spin 1s linear infinite;
   }
 

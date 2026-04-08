@@ -29,37 +29,37 @@ export interface WorkflowValidationResult {
  * @returns A `WorkflowValidationResult` indicating whether the data is valid.
  */
 export function validateWorkflowData(data: unknown): WorkflowValidationResult {
-  if (data === null || typeof data !== "object" || Array.isArray(data)) {
-    return { valid: false, error: "Workflow must be a JSON object." };
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+    return { valid: false, error: 'Workflow must be a JSON object.' };
   }
 
   const obj = data as Record<string, unknown>;
 
-  if (typeof obj.id !== "string" || obj.id.trim() === "") {
+  if (typeof obj.id !== 'string' || obj.id.trim() === '') {
     return {
       valid: false,
-      error: 'Workflow JSON must contain a non-empty string "id" field.',
+      error: 'Workflow JSON must contain a non-empty string "id" field.'
     };
   }
 
-  if (typeof obj.name !== "string" || obj.name.trim() === "") {
+  if (typeof obj.name !== 'string' || obj.name.trim() === '') {
     return {
       valid: false,
-      error: 'Workflow JSON must contain a non-empty string "name" field.',
+      error: 'Workflow JSON must contain a non-empty string "name" field.'
     };
   }
 
   if (!Array.isArray(obj.nodes)) {
     return {
       valid: false,
-      error: 'Workflow JSON must contain a "nodes" array.',
+      error: 'Workflow JSON must contain a "nodes" array.'
     };
   }
 
   if (!Array.isArray(obj.edges)) {
     return {
       valid: false,
-      error: 'Workflow JSON must contain an "edges" array.',
+      error: 'Workflow JSON must contain an "edges" array.'
     };
   }
 

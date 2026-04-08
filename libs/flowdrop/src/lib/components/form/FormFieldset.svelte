@@ -14,9 +14,9 @@
 -->
 
 <script lang="ts">
-  import type { Snippet } from "svelte";
-  import type { UISchemaGroup } from "$lib/types/uischema.js";
-  import Icon from "@iconify/svelte";
+  import type { Snippet } from 'svelte';
+  import type { UISchemaGroup } from '$lib/types/uischema.js';
+  import Icon from '@iconify/svelte';
 
   interface Props {
     /** The UISchema Group element to render */

@@ -1,15 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { extractCommands } from "../../../src/lib/chat/responseParser.js";
+import { describe, it, expect } from 'vitest';
+import { extractCommands } from '../../../src/lib/chat/responseParser.js';
 
-describe("extractCommands", () => {
-  it("returns explanation with empty commands for pure text", () => {
-    const response = "Here is some explanation about your workflow.\nIt has two nodes connected.";
+describe('extractCommands', () => {
+  it('returns explanation with empty commands for pure text', () => {
+    const response = 'Here is some explanation about your workflow.\nIt has two nodes connected.';
     const result = extractCommands(response);
     expect(result.explanation).toBe(response);
     expect(result.commands).toEqual([]);
   });
 
-  it("extracts commands from flowdrop fenced code blocks", () => {
+  it('extracts commands from flowdrop fenced code blocks', () => {
     const response = `Here is what I'll do:
 
 \`\`\`flowdrop
@@ -22,15 +22,15 @@ Let me know if you'd like changes.`;
 
     const result = extractCommands(response);
     expect(result.commands).toEqual([
-      "add llm_node",
-      "add http_request",
-      "connect llm_node.1 output to http_request.1 input",
+      'add llm_node',
+      'add http_request',
+      'connect llm_node.1 output to http_request.1 input'
     ]);
     expect(result.explanation).toContain("Here is what I'll do:");
     expect(result.explanation).toContain("Let me know if you'd like changes.");
   });
 
-  it("handles mixed text and commands", () => {
+  it('handles mixed text and commands', () => {
     const response = `I'll add a node first.
 
 \`\`\`flowdrop
@@ -47,15 +47,15 @@ Done!`;
 
     const result = extractCommands(response);
     expect(result.commands).toEqual([
-      "add llm_node",
-      "connect llm_node.1 output to http_request.1 input",
+      'add llm_node',
+      'connect llm_node.1 output to http_request.1 input'
     ]);
     expect(result.explanation).toContain("I'll add a node first.");
-    expect(result.explanation).toContain("Now let me connect it.");
-    expect(result.explanation).toContain("Done!");
+    expect(result.explanation).toContain('Now let me connect it.');
+    expect(result.explanation).toContain('Done!');
   });
 
-  it("handles multiple code blocks", () => {
+  it('handles multiple code blocks', () => {
     const response = `\`\`\`flowdrop
 add llm_node
 \`\`\`
@@ -65,16 +65,16 @@ add http_request
 \`\`\``;
 
     const result = extractCommands(response);
-    expect(result.commands).toEqual(["add llm_node", "add http_request"]);
+    expect(result.commands).toEqual(['add llm_node', 'add http_request']);
   });
 
-  it("returns empty commands for empty input", () => {
-    const result = extractCommands("");
-    expect(result.explanation).toBe("");
+  it('returns empty commands for empty input', () => {
+    const result = extractCommands('');
+    expect(result.explanation).toBe('');
     expect(result.commands).toEqual([]);
   });
 
-  it("skips empty lines inside code blocks", () => {
+  it('skips empty lines inside code blocks', () => {
     const response = `\`\`\`flowdrop
 add llm_node
 
@@ -82,10 +82,10 @@ add http_request
 \`\`\``;
 
     const result = extractCommands(response);
-    expect(result.commands).toEqual(["add llm_node", "add http_request"]);
+    expect(result.commands).toEqual(['add llm_node', 'add http_request']);
   });
 
-  it("skips comment lines inside code blocks", () => {
+  it('skips comment lines inside code blocks', () => {
     const response = `\`\`\`flowdrop
 # This adds a node
 add llm_node
@@ -95,12 +95,12 @@ connect llm_node.1 output to http_request.1 input
 
     const result = extractCommands(response);
     expect(result.commands).toEqual([
-      "add llm_node",
-      "connect llm_node.1 output to http_request.1 input",
+      'add llm_node',
+      'connect llm_node.1 output to http_request.1 input'
     ]);
   });
 
-  it("ignores bare (untagged) fenced code blocks", () => {
+  it('ignores bare (untagged) fenced code blocks', () => {
     const response = `Here are the commands:
 
 \`\`\`
@@ -111,11 +111,11 @@ Done!`;
 
     const result = extractCommands(response);
     expect(result.commands).toEqual([]);
-    expect(result.explanation).toContain("Here are the commands:");
-    expect(result.explanation).toContain("Done!");
+    expect(result.explanation).toContain('Here are the commands:');
+    expect(result.explanation).toContain('Done!');
   });
 
-  it("ignores non-flowdrop language code blocks", () => {
+  it('ignores non-flowdrop language code blocks', () => {
     const response = `Here's some JavaScript:
 
 \`\`\`javascript
@@ -129,23 +129,23 @@ add llm_node
 \`\`\``;
 
     const result = extractCommands(response);
-    expect(result.commands).toEqual(["add llm_node"]);
+    expect(result.commands).toEqual(['add llm_node']);
     expect(result.explanation).toContain("Here's some JavaScript:");
-    expect(result.explanation).toContain("And here are the commands:");
+    expect(result.explanation).toContain('And here are the commands:');
   });
 
-  it("handles response with only a code block", () => {
+  it('handles response with only a code block', () => {
     const response = `\`\`\`flowdrop
 list_nodes
 \`\`\``;
 
     const result = extractCommands(response);
-    expect(result.commands).toEqual(["list_nodes"]);
-    expect(result.explanation).toBe("");
+    expect(result.commands).toEqual(['list_nodes']);
+    expect(result.explanation).toBe('');
   });
 
-  describe("multiline triple-quote values", () => {
-    it("extracts a basic multiline value as a single command string", () => {
+  describe('multiline triple-quote values', () => {
+    it('extracts a basic multiline value as a single command string', () => {
       const response = `\`\`\`flowdrop
 set llm_node.1:system_prompt """
 You are helpful.
@@ -155,11 +155,11 @@ Answer concisely.
 
       const result = extractCommands(response);
       expect(result.commands).toEqual([
-        'set llm_node.1:system_prompt """\nYou are helpful.\nAnswer concisely.\n"""',
+        'set llm_node.1:system_prompt """\nYou are helpful.\nAnswer concisely.\n"""'
       ]);
     });
 
-    it("does not close the block when a content line ends with \"\"\" (bug 1 regression)", () => {
+    it('does not close the block when a content line ends with """ (bug 1 regression)', () => {
       const response = `\`\`\`flowdrop
 set note.1:content """
 Use Python """docstrings""" for documentation.
@@ -170,10 +170,10 @@ Wrap them in triple quotes.
       const result = extractCommands(response);
       expect(result.commands).toHaveLength(1);
       expect(result.commands[0]).toContain('Use Python """docstrings"""');
-      expect(result.commands[0]).toContain("Wrap them in triple quotes.");
+      expect(result.commands[0]).toContain('Wrap them in triple quotes.');
     });
 
-    it("does not close the flowdrop block when content contains nested code fences (bug 2 regression)", () => {
+    it('does not close the flowdrop block when content contains nested code fences (bug 2 regression)', () => {
       const response = `\`\`\`flowdrop
 set llm_node.1:system_prompt """
 Use this example:
@@ -186,11 +186,11 @@ add http_request
 
       const result = extractCommands(response);
       expect(result.commands).toHaveLength(2);
-      expect(result.commands[0]).toContain("```python");
-      expect(result.commands[1]).toBe("add http_request");
+      expect(result.commands[0]).toContain('```python');
+      expect(result.commands[1]).toBe('add http_request');
     });
 
-    it("handles multiline JSON value inside triple-quotes", () => {
+    it('handles multiline JSON value inside triple-quotes', () => {
       const response = `\`\`\`flowdrop
 set api_node.1:headers """
 {"Content-Type": "application/json", "Authorization": "Bearer token"}
@@ -202,7 +202,7 @@ set api_node.1:headers """
       expect(result.commands[0]).toContain('"Content-Type"');
     });
 
-    it("preserves \\\"\"\" escape sequence in extracted command (not treated as close)", () => {
+    it('preserves \\""" escape sequence in extracted command (not treated as close)', () => {
       const response = `\`\`\`flowdrop
 set note.1:content """
 The delimiter is \\""" in our DSL.
@@ -214,7 +214,7 @@ The delimiter is \\""" in our DSL.
       expect(result.commands[0]).toContain('\\"""');
     });
 
-    it("silently drops an unclosed triple-quote block", () => {
+    it('silently drops an unclosed triple-quote block', () => {
       const response = `\`\`\`flowdrop
 set llm_node.1:system_prompt """
 This value is never closed
@@ -224,7 +224,7 @@ This value is never closed
       expect(result.commands).toEqual([]);
     });
 
-    it("extracts multiline command followed by a single-line command", () => {
+    it('extracts multiline command followed by a single-line command', () => {
       const response = `\`\`\`flowdrop
 set llm_node.1:system_prompt """
 You are helpful.
@@ -235,7 +235,7 @@ add http_request
       const result = extractCommands(response);
       expect(result.commands).toEqual([
         'set llm_node.1:system_prompt """\nYou are helpful.\n"""',
-        "add http_request",
+        'add http_request'
       ]);
     });
   });

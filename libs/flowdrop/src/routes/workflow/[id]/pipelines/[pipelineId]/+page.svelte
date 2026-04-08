@@ -5,18 +5,18 @@
 -->
 
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { onMount } from "svelte";
-  import PipelineStatus from "$lib/components/PipelineStatus.svelte";
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';
+  import PipelineStatus from '$lib/components/PipelineStatus.svelte';
   import {
     buildEndpointUrl,
     defaultEndpointConfig,
     createEndpointConfig,
-    type EndpointConfig,
-  } from "$lib/config/endpoints.js";
-  import { setEndpointConfig } from "$lib/services/api.js";
-  import type { Workflow } from "$lib/types/index.js";
-  import Icon from "@iconify/svelte";
+    type EndpointConfig
+  } from '$lib/config/endpoints.js';
+  import { setEndpointConfig } from '$lib/services/api.js';
+  import type { Workflow } from '$lib/types/index.js';
+  import Icon from '@iconify/svelte';
 
   let { data } = $props();
 
@@ -26,10 +26,10 @@
     createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
       auth: {
         type: data.runtimeConfig.authType,
-        token: data.runtimeConfig.authToken,
+        token: data.runtimeConfig.authToken
       },
-      timeout: data.runtimeConfig.timeout,
-    }),
+      timeout: data.runtimeConfig.timeout
+    })
   );
 
   // Initialize API service with runtime config
@@ -51,7 +51,7 @@
   // Fetch workflow and pipeline data
   async function fetchData() {
     if (!workflowId || !pipelineId) {
-      error = "Missing workflow or pipeline ID";
+      error = 'Missing workflow or pipeline ID';
       loading = false;
       return;
     }
@@ -61,36 +61,29 @@
       error = null;
 
       // Fetch workflow
-      const workflowUrl = buildEndpointUrl(endpointConfig, "/workflows/{id}", {
-        id: workflowId,
+      const workflowUrl = buildEndpointUrl(endpointConfig, '/workflows/{id}', {
+        id: workflowId
       });
       const workflowResponse = await fetch(workflowUrl);
       if (!workflowResponse.ok) {
-        throw new Error(
-          `Failed to fetch workflow: ${workflowResponse.statusText}`,
-        );
+        throw new Error(`Failed to fetch workflow: ${workflowResponse.statusText}`);
       }
       const workflowData = await workflowResponse.json();
       // Extract the actual workflow data from the API response structure
-      workflow =
-        workflowData.success && workflowData.data
-          ? workflowData.data
-          : workflowData;
+      workflow = workflowData.success && workflowData.data ? workflowData.data : workflowData;
 
       // Fetch pipeline
-      const pipelineUrl = buildEndpointUrl(endpointConfig, "/pipeline/{id}", {
-        id: pipelineId,
+      const pipelineUrl = buildEndpointUrl(endpointConfig, '/pipeline/{id}', {
+        id: pipelineId
       });
       const pipelineResponse = await fetch(pipelineUrl);
       if (!pipelineResponse.ok) {
-        throw new Error(
-          `Failed to fetch pipeline: ${pipelineResponse.statusText}`,
-        );
+        throw new Error(`Failed to fetch pipeline: ${pipelineResponse.statusText}`);
       }
       pipeline = await pipelineResponse.json();
     } catch (err) {
-      console.error("Failed to fetch data:", err);
-      error = err instanceof Error ? err.message : "Failed to fetch data";
+      console.error('Failed to fetch data:', err);
+      error = err instanceof Error ? err.message : 'Failed to fetch data';
     } finally {
       loading = false;
     }

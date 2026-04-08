@@ -10,29 +10,22 @@
 -->
 
 <script lang="ts">
-  import { Position, Handle } from "@xyflow/svelte";
+  import { Position, Handle } from '@xyflow/svelte';
   import type {
     ConfigValues,
     NodeMetadata,
     NodeExtensions,
     NodePort,
-    DynamicPort,
-  } from "../../types/index.js";
-  import { dynamicPortToNodePort } from "../../types/index.js";
-  import Icon from "@iconify/svelte";
-  import {
-    getDataTypeColor,
-    getCategoryColorToken,
-  } from "$lib/utils/colors.js";
-  import { getNodeIcon } from "../../utils/icons.js";
-  import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
-  import {
-    applyPortOrder,
-    getPortTop,
-    isPortVisible,
-  } from "../../utils/portUtils.js";
-  import CogIcon from "../icons/CogIcon.svelte";
-  import AlertCircleIcon from "../icons/AlertCircleIcon.svelte";
+    DynamicPort
+  } from '../../types/index.js';
+  import { dynamicPortToNodePort } from '../../types/index.js';
+  import Icon from '@iconify/svelte';
+  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
+  import { getNodeIcon } from '../../utils/icons.js';
+  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { applyPortOrder, getPortTop, isPortVisible } from '../../utils/portUtils.js';
+  import CogIcon from '../icons/CogIcon.svelte';
+  import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   const props = $props<{
     data: {
@@ -58,45 +51,37 @@
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
       props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false,
+      false
   );
 
   const hiddenPorts = $derived(
-    props.data.extensions?.ui?.hiddenPorts ??
-      props.data.metadata?.extensions?.ui?.hiddenPorts ??
-      {},
+    props.data.extensions?.ui?.hiddenPorts ?? props.data.metadata?.extensions?.ui?.hiddenPorts ?? {}
   );
 
   const portOrder = $derived(
-    props.data.extensions?.ui?.portOrder ??
-      props.data.metadata?.extensions?.ui?.portOrder ??
-      {},
+    props.data.extensions?.ui?.portOrder ?? props.data.metadata?.extensions?.ui?.portOrder ?? {}
   );
 
   /**
    * Get icon using the same resolution as WorkflowNode
    * Uses getNodeIcon utility with category fallback
    */
-  let squareIcon = $derived(
-    getNodeIcon(props.data.metadata?.icon, props.data.metadata?.category),
-  );
+  let squareIcon = $derived(getNodeIcon(props.data.metadata?.icon, props.data.metadata?.category));
 
   /**
    * Get icon color using category-based color tokens for consistency
    * Falls back to primary color if category not available
    */
-  let squareColor = $derived(
-    getCategoryColorToken(props.data.metadata?.category),
-  );
+  let squareColor = $derived(getCategoryColorToken(props.data.metadata?.category));
 
   // Handle configuration sidebar - now using global ConfigSidebar
   function openConfigSidebar(): void {
     if (props.data.onConfigOpen) {
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
-        id: props.data.nodeId || "unknown",
-        type: "square",
-        data: props.data,
+        id: props.data.nodeId || 'unknown',
+        type: 'square',
+        data: props.data
       };
       props.data.onConfigOpen(nodeForConfig);
     }
@@ -114,21 +99,21 @@
 
   // Handle keyboard events
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       openConfigSidebar();
     }
   }
   const dynamicInputs = $derived(
     ((props.data.config?.dynamicInputs as DynamicPort[]) || []).map((port) =>
-      dynamicPortToNodePort(port, "input"),
-    ),
+      dynamicPortToNodePort(port, 'input')
+    )
   );
 
   const dynamicOutputs = $derived(
     ((props.data.config?.dynamicOutputs as DynamicPort[]) || []).map((port) =>
-      dynamicPortToNodePort(port, "output"),
-    ),
+      dynamicPortToNodePort(port, 'output')
+    )
   );
 
   /**
@@ -137,17 +122,17 @@
   const visibleInputPorts = $derived(
     applyPortOrder(
       [...(props.data.metadata?.inputs ?? []), ...dynamicInputs],
-      portOrder.inputs,
+      portOrder.inputs
     ).filter((p: NodePort) =>
       isPortVisible(
         p,
-        "input",
+        'input',
         hiddenPorts,
         hideUnconnectedHandles,
         getConnectedHandles(),
-        props.data.nodeId,
-      ),
-    ),
+        props.data.nodeId
+      )
+    )
   );
 
   /**
@@ -156,17 +141,17 @@
   const visibleOutputPorts = $derived(
     applyPortOrder(
       [...(props.data.metadata?.outputs ?? []), ...dynamicOutputs],
-      portOrder.outputs,
+      portOrder.outputs
     ).filter((p: NodePort) =>
       isPortVisible(
         p,
-        "output",
+        'output',
         hiddenPorts,
         hideUnconnectedHandles,
         getConnectedHandles(),
-        props.data.nodeId,
-      ),
-    ),
+        props.data.nodeId
+      )
+    )
   );
 
   /**
@@ -175,13 +160,9 @@
    */
   const nodeSize = $derived(
     (() => {
-      const maxPorts = Math.max(
-        visibleInputPorts.length,
-        visibleOutputPorts.length,
-        1,
-      );
+      const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
       return maxPorts <= 1 ? 80 : 20 + maxPorts * 40;
-    })(),
+    })()
   );
 </script>
 
@@ -191,10 +172,10 @@
     type="target"
     position={Position.Left}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      port.dataType,
+      port.dataType
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,
-      visibleInputPorts.length,
+      visibleInputPorts.length
     )}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-input-${port.id}`}
   />
@@ -216,10 +197,7 @@
   <!-- Square Layout: Always compact with centered icon in squircle wrapper -->
   <div class="flowdrop-square-node__compact-content">
     <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
-    <div
-      class="flowdrop-square-node__icon-wrapper"
-      style="--_icon-color: {squareColor}"
-    >
+    <div class="flowdrop-square-node__icon-wrapper" style="--_icon-color: {squareColor}">
       <Icon icon={squareIcon} class="flowdrop-square-node__icon" />
     </div>
     <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
@@ -259,10 +237,10 @@
     type="source"
     position={Position.Right}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
-      port.dataType,
+      port.dataType
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,
-      visibleOutputPorts.length,
+      visibleOutputPorts.length
     )}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.data.nodeId}-output-${port.id}`}
   />
@@ -342,11 +320,7 @@
     width: 3rem;
     height: 3rem;
     border-radius: 0.625rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }

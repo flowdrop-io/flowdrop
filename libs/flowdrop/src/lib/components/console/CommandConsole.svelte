@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-  import type { NodeMetadata } from "$lib/types/index.js";
+  import type { NodeMetadata } from '$lib/types/index.js';
   import {
     parseCommand,
     executeCommand,
@@ -17,19 +17,19 @@
     type ListEdgesResultData,
     type ListTypesResultData,
     type InfoResultData,
-    type HelpResultData,
-  } from "../../commands/index.js";
-  import { createStoreCommandContext } from "../../commands/storeIntegration.svelte.js";
-  import { updateSettings, getUiSettings } from "../../stores/settingsStore.svelte.js";
-  import ConsoleInput from "./ConsoleInput.svelte";
-  import ConsoleOutput, { type ConsoleEntry } from "./ConsoleOutput.svelte";
+    type HelpResultData
+  } from '../../commands/index.js';
+  import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
+  import { updateSettings, getUiSettings } from '../../stores/settingsStore.svelte.js';
+  import ConsoleInput from './ConsoleInput.svelte';
+  import ConsoleOutput, { type ConsoleEntry } from './ConsoleOutput.svelte';
   import {
     formatListNodes,
     formatListEdges,
     formatListTypes,
     formatInfo,
-    formatHelp,
-  } from "./formatters.js";
+    formatHelp
+  } from './formatters.js';
 
   interface Props {
     /** Available node types for command execution */
@@ -56,15 +56,15 @@
     if (!result.data) return null;
 
     switch (commandType) {
-      case "list_nodes":
+      case 'list_nodes':
         return formatListNodes(result.data as ListNodesResultData);
-      case "list_edges":
+      case 'list_edges':
         return formatListEdges(result.data as ListEdgesResultData);
-      case "list_types":
+      case 'list_types':
         return formatListTypes(result.data as ListTypesResultData);
-      case "info":
+      case 'info':
         return formatInfo(result.data as InfoResultData);
-      case "help":
+      case 'help':
         return formatHelp(result.data as HelpResultData);
       default:
         return null;
@@ -80,10 +80,10 @@
     if (!trimmed) return;
 
     // Add the input entry to the output
-    outputEntries.push({ type: "input", text: trimmed });
+    outputEntries.push({ type: 'input', text: trimmed });
 
     // Handle cls command (clear console output; use 'clear' to clear the canvas)
-    if (trimmed.toLowerCase() === "cls") {
+    if (trimmed.toLowerCase() === 'cls') {
       outputEntries = [];
       return;
     }
@@ -91,13 +91,13 @@
     // Parse the command
     const parseResult = parseCommand(trimmed);
     if (!parseResult.ok) {
-      outputEntries.push({ type: "error", text: parseResult.error });
+      outputEntries.push({ type: 'error', text: parseResult.error });
       return;
     }
 
     // Ensure we have a command context
     if (!commandContext) {
-      outputEntries.push({ type: "error", text: "No workflow loaded" });
+      outputEntries.push({ type: 'error', text: 'No workflow loaded' });
       return;
     }
 
@@ -106,29 +106,33 @@
     if (result.ok) {
       const formatted = formatResultData(parseResult.command.type, result);
       if (formatted) {
-        outputEntries.push({ type: "formatted", text: formatted });
+        outputEntries.push({ type: 'formatted', text: formatted });
       } else {
-        outputEntries.push({ type: "success", text: result.message });
+        outputEntries.push({ type: 'success', text: result.message });
       }
     } else {
-      outputEntries.push({ type: "error", text: result.error });
+      outputEntries.push({ type: 'error', text: result.error });
     }
   }
 
   function handleBatchSubmit(lines: string[]) {
     if (!commandContext) {
-      outputEntries.push({ type: "error", text: "No workflow loaded" });
+      outputEntries.push({ type: 'error', text: 'No workflow loaded' });
       return;
     }
 
     const totalCount = lines.length;
 
     // Parse all commands first
-    const parsed: { line: string; command?: import("../../commands/index.js").Command; error?: string }[] = [];
+    const parsed: {
+      line: string;
+      command?: import('../../commands/index.js').Command;
+      error?: string;
+    }[] = [];
     for (const line of lines) {
-      outputEntries.push({ type: "input", text: line });
+      outputEntries.push({ type: 'input', text: line });
 
-      if (line.toLowerCase() === "cls") {
+      if (line.toLowerCase() === 'cls') {
         outputEntries = [];
         parsed.length = 0;
         continue;
@@ -136,11 +140,11 @@
 
       const parseResult = parseCommand(line);
       if (!parseResult.ok) {
-        outputEntries.push({ type: "error", text: parseResult.error });
+        outputEntries.push({ type: 'error', text: parseResult.error });
         const succeeded = parsed.length;
         outputEntries.push({
-          type: "error",
-          text: `Batch failed at command ${succeeded + 1}/${totalCount}: parse error`,
+          type: 'error',
+          text: `Batch failed at command ${succeeded + 1}/${totalCount}: parse error`
         });
         return;
       }
@@ -158,25 +162,25 @@
       if (result.ok) {
         const formatted = formatResultData(commands[i].type, result);
         if (formatted) {
-          outputEntries.push({ type: "formatted", text: formatted });
+          outputEntries.push({ type: 'formatted', text: formatted });
         } else {
-          outputEntries.push({ type: "success", text: result.message });
+          outputEntries.push({ type: 'success', text: result.message });
         }
       } else {
-        outputEntries.push({ type: "error", text: result.error });
+        outputEntries.push({ type: 'error', text: result.error });
       }
     }
 
     // Show summary
     if (batchResult.ok) {
       outputEntries.push({
-        type: "success",
-        text: `Batch: ${batchResult.completedCount}/${batchResult.totalCount} commands succeeded`,
+        type: 'success',
+        text: `Batch: ${batchResult.completedCount}/${batchResult.totalCount} commands succeeded`
       });
     } else {
       outputEntries.push({
-        type: "error",
-        text: `Batch failed at command ${batchResult.completedCount + 1}/${batchResult.totalCount}: ${batchResult.error}`,
+        type: 'error',
+        text: `Batch failed at command ${batchResult.completedCount + 1}/${batchResult.totalCount}: ${batchResult.error}`
       });
     }
   }

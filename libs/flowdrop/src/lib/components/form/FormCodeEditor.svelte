@@ -15,25 +15,22 @@
 -->
 
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy } from 'svelte';
   import {
     EditorView,
     lineNumbers,
     highlightActiveLineGutter,
-    drawSelection,
-  } from "@codemirror/view";
-  import { EditorState } from "@codemirror/state";
-  import { history, historyKeymap } from "@codemirror/commands";
-  import { highlightSpecialChars, highlightActiveLine } from "@codemirror/view";
-  import {
-    syntaxHighlighting,
-    defaultHighlightStyle,
-  } from "@codemirror/language";
-  import { keymap } from "@codemirror/view";
-  import { defaultKeymap, indentWithTab } from "@codemirror/commands";
-  import { json, jsonParseLinter } from "@codemirror/lang-json";
-  import { oneDark } from "@codemirror/theme-one-dark";
-  import { linter } from "@codemirror/lint";
+    drawSelection
+  } from '@codemirror/view';
+  import { EditorState } from '@codemirror/state';
+  import { history, historyKeymap } from '@codemirror/commands';
+  import { highlightSpecialChars, highlightActiveLine } from '@codemirror/view';
+  import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+  import { keymap } from '@codemirror/view';
+  import { defaultKeymap, indentWithTab } from '@codemirror/commands';
+  import { json, jsonParseLinter } from '@codemirror/lang-json';
+  import { oneDark } from '@codemirror/theme-one-dark';
+  import { linter } from '@codemirror/lint';
 
   interface Props {
     /** Field identifier */
@@ -60,15 +57,15 @@
 
   let {
     id,
-    value = "",
-    placeholder = "{}",
+    value = '',
+    placeholder = '{}',
     required = false,
     darkTheme = false,
-    height = "200px",
+    height = '200px',
     autoFormat = true,
     disabled = false,
     ariaDescribedBy,
-    onChange,
+    onChange
   }: Props = $props();
 
   /** Reference to the container element */
@@ -91,9 +88,9 @@
    */
   function valueToString(val: unknown): string {
     if (val === undefined || val === null) {
-      return "";
+      return '';
     }
-    if (typeof val === "string") {
+    if (typeof val === 'string') {
       // Check if it's already a valid JSON string
       try {
         JSON.parse(val);
@@ -123,7 +120,7 @@
       const parsed = JSON.parse(content);
       return { valid: true, value: parsed };
     } catch (e) {
-      const error = e instanceof Error ? e.message : "Invalid JSON";
+      const error = e instanceof Error ? e.message : 'Invalid JSON';
       return { valid: false, error };
     }
   }
@@ -131,10 +128,7 @@
   /**
    * Handle editor content changes
    */
-  function handleUpdate(update: {
-    docChanged: boolean;
-    state: EditorState;
-  }): void {
+  function handleUpdate(update: { docChanged: boolean; state: EditorState }): void {
     if (!update.docChanged || isInternalUpdate) {
       return;
     }
@@ -173,8 +167,8 @@
           changes: {
             from: 0,
             to: editorView.state.doc.length,
-            insert: formatted,
-          },
+            insert: formatted
+          }
         });
         isInternalUpdate = false;
       }
@@ -198,20 +192,13 @@
       // Editing features (skip when read-only)
       ...(disabled
         ? []
-        : [
-            history(),
-            keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-          ]),
+        : [history(), keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])]),
 
       // Read-only: prevent document changes and mark content as non-editable
-      ...(disabled
-        ? [EditorState.readOnly.of(true), EditorView.editable.of(false)]
-        : []),
+      ...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
 
       // Syntax highlighting - use default for light mode, oneDark handles dark mode
-      ...(darkTheme
-        ? [oneDark]
-        : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
+      ...(darkTheme ? [oneDark] : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
 
       // JSON-specific features
       json(),
@@ -222,23 +209,22 @@
 
       // Custom theme
       EditorView.theme({
-        "&": {
+        '&': {
           height: height,
-          fontSize: "0.8125rem",
-          fontFamily:
-            "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace",
+          fontSize: '0.8125rem',
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace"
         },
-        ".cm-scroller": {
-          overflow: "auto",
+        '.cm-scroller': {
+          overflow: 'auto'
         },
-        ".cm-content": {
-          minHeight: "100px",
+        '.cm-content': {
+          minHeight: '100px'
         },
-        "&.cm-focused": {
-          outline: "none",
-        },
+        '&.cm-focused': {
+          outline: 'none'
+        }
       }),
-      EditorView.lineWrapping,
+      EditorView.lineWrapping
     ];
 
     return extensions;
@@ -257,9 +243,9 @@
     editorView = new EditorView({
       state: EditorState.create({
         doc: initialContent,
-        extensions: createExtensions(),
+        extensions: createExtensions()
       }),
-      parent: containerRef,
+      parent: containerRef
     });
 
     // Validate initial content
@@ -305,8 +291,8 @@
         changes: {
           from: 0,
           to: editorView.state.doc.length,
-          insert: newContent,
-        },
+          insert: newContent
+        }
       });
       isInternalUpdate = false;
 
@@ -323,7 +309,7 @@
     type="hidden"
     {id}
     name={id}
-    value={typeof value === "string" ? value : JSON.stringify(value)}
+    value={typeof value === 'string' ? value : JSON.stringify(value)}
     aria-describedby={ariaDescribedBy}
     aria-required={required}
   />
@@ -469,7 +455,7 @@
     padding: 0.125rem 0.375rem;
     background-color: var(--fd-subtle);
     border-radius: var(--fd-radius-sm);
-    font-family: "JetBrains Mono", "Fira Code", "Monaco", "Menlo", monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
     font-size: 0.6875rem;
     font-style: normal;
   }

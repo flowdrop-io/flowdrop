@@ -7,13 +7,13 @@
  * @module services/draftStorage
  */
 
-import type { Workflow } from "../types/index.js";
-import { logger } from "../utils/logger.js";
+import type { Workflow } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Default storage key prefix
  */
-const STORAGE_KEY_PREFIX = "flowdrop:draft";
+const STORAGE_KEY_PREFIX = 'flowdrop:draft';
 
 /**
  * Draft metadata stored alongside the workflow
@@ -47,10 +47,7 @@ interface StoredDraft {
  * @param customKey - Custom storage key provided by enterprise (optional)
  * @returns The storage key to use
  */
-export function getDraftStorageKey(
-  workflowId?: string,
-  customKey?: string,
-): string {
+export function getDraftStorageKey(workflowId?: string, customKey?: string): string {
   if (customKey) {
     return customKey;
   }
@@ -76,15 +73,15 @@ export function saveDraft(workflow: Workflow, storageKey: string): boolean {
       metadata: {
         savedAt: new Date().toISOString(),
         workflowId: workflow.id,
-        workflowName: workflow.name,
-      },
+        workflowName: workflow.name
+      }
     };
 
     localStorage.setItem(storageKey, JSON.stringify(draft));
     return true;
   } catch (error) {
     // localStorage might be full or disabled
-    logger.warn("Failed to save draft to localStorage:", error);
+    logger.warn('Failed to save draft to localStorage:', error);
     return false;
   }
 }
@@ -106,13 +103,13 @@ export function loadDraft(storageKey: string): StoredDraft | null {
 
     // Validate the draft structure
     if (!draft.workflow || !draft.metadata) {
-      logger.warn("Invalid draft structure in localStorage");
+      logger.warn('Invalid draft structure in localStorage');
       return null;
     }
 
     return draft;
   } catch (error) {
-    logger.warn("Failed to load draft from localStorage:", error);
+    logger.warn('Failed to load draft from localStorage:', error);
     return null;
   }
 }
@@ -126,7 +123,7 @@ export function deleteDraft(storageKey: string): void {
   try {
     localStorage.removeItem(storageKey);
   } catch (error) {
-    logger.warn("Failed to delete draft from localStorage:", error);
+    logger.warn('Failed to delete draft from localStorage:', error);
   }
 }
 
@@ -339,15 +336,15 @@ export class DraftAutoSaveManager {
       nodes: workflow.nodes.map((n) => ({
         id: n.id,
         position: n.position,
-        data: n.data,
+        data: n.data
       })),
       edges: workflow.edges.map((e) => ({
         id: e.id,
         source: e.source,
         target: e.target,
         sourceHandle: e.sourceHandle,
-        targetHandle: e.targetHandle,
-      })),
+        targetHandle: e.targetHandle
+      }))
     };
 
     return JSON.stringify(toHash);

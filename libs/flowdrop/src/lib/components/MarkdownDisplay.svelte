@@ -5,8 +5,8 @@
 -->
 
 <script lang="ts">
-  import { marked } from "marked";
-  import { sanitizeHtml } from "../utils/sanitize.js";
+  import { marked } from 'marked';
+  import { sanitizeHtml } from '../utils/sanitize.js';
 
   interface Props {
     content: string;
@@ -16,12 +16,10 @@
   let props: Props = $props();
 
   // Parse markdown content and sanitize to prevent XSS
-  let renderedContent = $derived(
-    sanitizeHtml(marked.parse(props.content || "") as string),
-  );
+  let renderedContent = $derived(sanitizeHtml(marked.parse(props.content || '') as string));
 
   // Default class name if none provided
-  let displayClass = $derived(props.className || "markdown-display");
+  let displayClass = $derived(props.className || 'markdown-display');
 </script>
 
 <div class={displayClass}>

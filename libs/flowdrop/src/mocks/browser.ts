@@ -3,8 +3,8 @@
  * Initializes the service worker for browser-based API mocking
  */
 
-import { setupWorker } from "msw/browser";
-import { handlers } from "./handlers/index.js";
+import { setupWorker } from 'msw/browser';
+import { handlers } from './handlers/index.js';
 
 /**
  * Create the MSW browser service worker
@@ -29,17 +29,15 @@ export const worker = setupWorker(...handlers);
  * }
  * ```
  */
-export async function startMockServer(
-  options?: Parameters<typeof worker.start>[0],
-) {
+export async function startMockServer(options?: Parameters<typeof worker.start>[0]) {
   return worker.start({
     // Default options - can be overridden
-    onUnhandledRequest: "bypass", // Don't warn about requests we don't handle
+    onUnhandledRequest: 'bypass', // Don't warn about requests we don't handle
     serviceWorker: {
-      url: "/mockServiceWorker.js",
+      url: '/mockServiceWorker.js'
     },
     quiet: false, // Set to true to suppress console output
-    ...options,
+    ...options
   });
 }
 

@@ -9,26 +9,18 @@
 -->
 
 <script lang="ts">
-  import { Position, Handle } from "@xyflow/svelte";
-  import type {
-    ConfigValues,
-    NodeMetadata,
-    NodeExtensions,
-    NodePort,
-  } from "../../types/index.js";
-  import Icon from "@iconify/svelte";
-  import {
-    getDataTypeColor,
-    getCategoryColorToken,
-  } from "$lib/utils/colors.js";
-  import { getNodeIcon } from "../../utils/icons.js";
-  import { getCircleHandlePosition } from "$lib/utils/handlePositioning.js";
-  import { getConnectedHandles } from "../../stores/workflowStore.svelte.js";
+  import { Position, Handle } from '@xyflow/svelte';
+  import type { ConfigValues, NodeMetadata, NodeExtensions, NodePort } from '../../types/index.js';
+  import Icon from '@iconify/svelte';
+  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
+  import { getNodeIcon } from '../../utils/icons.js';
+  import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
+  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
 
   /**
    * Terminal node variant types
    */
-  type TerminalVariant = "start" | "end" | "exit";
+  type TerminalVariant = 'start' | 'end' | 'exit';
 
   /**
    * Configuration for each terminal variant
@@ -51,26 +43,26 @@
    */
   const VARIANT_CONFIGS: Record<TerminalVariant, VariantConfig> = {
     start: {
-      icon: "mdi:play-circle",
-      color: "var(--fd-node-emerald)",
-      label: "Start",
+      icon: 'mdi:play-circle',
+      color: 'var(--fd-node-emerald)',
+      label: 'Start',
       hasInputs: false,
-      hasOutputs: true,
+      hasOutputs: true
     },
     end: {
-      icon: "mdi:stop-circle",
-      color: "var(--fd-node-slate)",
-      label: "End",
+      icon: 'mdi:stop-circle',
+      color: 'var(--fd-node-slate)',
+      label: 'End',
       hasInputs: true,
-      hasOutputs: false,
+      hasOutputs: false
     },
     exit: {
-      icon: "mdi:close-circle",
-      color: "var(--fd-node-red)",
-      label: "Exit",
+      icon: 'mdi:close-circle',
+      color: 'var(--fd-node-red)',
+      label: 'Exit',
       hasInputs: true,
-      hasOutputs: false,
-    },
+      hasOutputs: false
+    }
   };
 
   const props = $props<{
@@ -104,44 +96,36 @@
 
     // Check metadata tags for variant hints
     const tags = props.data.metadata?.tags || [];
-    if (tags.includes("start") || tags.includes("entry")) {
-      return "start";
+    if (tags.includes('start') || tags.includes('entry')) {
+      return 'start';
     }
-    if (
-      tags.includes("exit") ||
-      tags.includes("abort") ||
-      tags.includes("error")
-    ) {
-      return "exit";
+    if (tags.includes('exit') || tags.includes('abort') || tags.includes('error')) {
+      return 'exit';
     }
-    if (
-      tags.includes("end") ||
-      tags.includes("finish") ||
-      tags.includes("complete")
-    ) {
-      return "end";
+    if (tags.includes('end') || tags.includes('finish') || tags.includes('complete')) {
+      return 'end';
     }
 
     // Check metadata id/name for hints
-    const idLower = (props.data.metadata?.id || "").toLowerCase();
-    const nameLower = (props.data.metadata?.name || "").toLowerCase();
-    if (idLower.includes("start") || nameLower.includes("start")) {
-      return "start";
+    const idLower = (props.data.metadata?.id || '').toLowerCase();
+    const nameLower = (props.data.metadata?.name || '').toLowerCase();
+    if (idLower.includes('start') || nameLower.includes('start')) {
+      return 'start';
     }
     if (
-      idLower.includes("exit") ||
-      idLower.includes("abort") ||
-      nameLower.includes("exit") ||
-      nameLower.includes("abort")
+      idLower.includes('exit') ||
+      idLower.includes('abort') ||
+      nameLower.includes('exit') ||
+      nameLower.includes('abort')
     ) {
-      return "exit";
+      return 'exit';
     }
-    if (idLower.includes("end") || nameLower.includes("end")) {
-      return "end";
+    if (idLower.includes('end') || nameLower.includes('end')) {
+      return 'end';
     }
 
     // Default to start
-    return "start";
+    return 'start';
   }
 
   let variant = $derived(getVariant());
@@ -158,13 +142,13 @@
   const hideUnconnectedHandles = $derived(
     props.data.extensions?.ui?.hideUnconnectedHandles ??
       props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false,
+      false
   );
 
   /**
    * Check if a port should be visible based on connection state and settings
    */
-  function isPortVisible(port: NodePort, type: "input" | "output"): boolean {
+  function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
     if (!hideUnconnectedHandles) {
       return true;
     }
@@ -182,7 +166,7 @@
   let terminalIcon = $derived(
     props.data.metadata?.icon
       ? getNodeIcon(props.data.metadata.icon, props.data.metadata?.category)
-      : variantConfig.icon,
+      : variantConfig.icon
   );
 
   /**
@@ -192,7 +176,7 @@
   let terminalColor = $derived(
     props.data.metadata?.category
       ? getCategoryColorToken(props.data.metadata.category)
-      : variantConfig.color,
+      : variantConfig.color
   );
 
   /**
@@ -204,7 +188,7 @@
     (props.data.config?.instanceTitle as string) ||
       props.data.label ||
       props.data.metadata?.name ||
-      variantConfig.label,
+      variantConfig.label
   );
 
   /**
@@ -213,9 +197,7 @@
    * This allows users to customize the node description per-instance via config.
    */
   const displayDescription = $derived(
-    (props.data.config?.instanceDescription as string) ||
-      props.data.metadata?.description ||
-      "",
+    (props.data.config?.instanceDescription as string) || props.data.metadata?.description || ''
   );
 
   /**
@@ -230,30 +212,28 @@
   /**
    * Check if metadata explicitly defines outputs (including empty array)
    */
-  let hasExplicitOutputs = $derived(
-    Array.isArray(props.data.metadata?.outputs),
-  );
+  let hasExplicitOutputs = $derived(Array.isArray(props.data.metadata?.outputs));
 
   /**
    * Default trigger input port for end/exit nodes
    */
   const DEFAULT_INPUT_PORT = {
-    id: "trigger",
-    name: "Trigger",
-    type: "input" as const,
-    dataType: "trigger",
-    description: "Workflow trigger input",
+    id: 'trigger',
+    name: 'Trigger',
+    type: 'input' as const,
+    dataType: 'trigger',
+    description: 'Workflow trigger input'
   };
 
   /**
    * Default trigger output port for start nodes
    */
   const DEFAULT_OUTPUT_PORT = {
-    id: "trigger",
-    name: "Trigger",
-    type: "output" as const,
-    dataType: "trigger",
-    description: "Workflow trigger output",
+    id: 'trigger',
+    name: 'Trigger',
+    type: 'output' as const,
+    dataType: 'trigger',
+    description: 'Workflow trigger output'
   };
 
   /**
@@ -267,7 +247,7 @@
       ? props.data.metadata.inputs
       : variantConfig.hasInputs
         ? [DEFAULT_INPUT_PORT]
-        : [],
+        : []
   );
 
   /**
@@ -281,21 +261,21 @@
       ? props.data.metadata.outputs
       : variantConfig.hasOutputs
         ? [DEFAULT_OUTPUT_PORT]
-        : [],
+        : []
   );
 
   /**
    * Visible input ports filtered by hideUnconnectedHandles setting
    */
   let visibleInputPorts = $derived(
-    inputPorts.filter((port: NodePort) => isPortVisible(port, "input")),
+    inputPorts.filter((port: NodePort) => isPortVisible(port, 'input'))
   );
 
   /**
    * Visible output ports filtered by hideUnconnectedHandles setting
    */
   let visibleOutputPorts = $derived(
-    outputPorts.filter((port: NodePort) => isPortVisible(port, "output")),
+    outputPorts.filter((port: NodePort) => isPortVisible(port, 'output'))
   );
 
   /**
@@ -314,9 +294,9 @@
   function openConfigSidebar(): void {
     if (props.data.onConfigOpen) {
       const nodeForConfig = {
-        id: props.data.nodeId || "unknown",
-        type: "terminal",
-        data: props.data,
+        id: props.data.nodeId || 'unknown',
+        type: 'terminal',
+        data: props.data
       };
       props.data.onConfigOpen(nodeForConfig);
     }
@@ -340,7 +320,7 @@
    * Handle keyboard events for accessibility
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleDoubleClick();
     }
@@ -353,9 +333,9 @@
   class:flowdrop-terminal-node--selected={props.selected}
   class:flowdrop-terminal-node--processing={props.isProcessing}
   class:flowdrop-terminal-node--error={props.isError}
-  class:flowdrop-terminal-node--start={variant === "start"}
-  class:flowdrop-terminal-node--end={variant === "end"}
-  class:flowdrop-terminal-node--exit={variant === "exit"}
+  class:flowdrop-terminal-node--start={variant === 'start'}
+  class:flowdrop-terminal-node--end={variant === 'end'}
+  class:flowdrop-terminal-node--exit={variant === 'exit'}
   style="--terminal-color: {terminalColor};"
   onclick={handleClick}
   ondblclick={handleDoubleClick}
@@ -378,16 +358,12 @@
     <!-- Input Handles (for end/exit variants) -->
     {#if showInputs}
       {#each visibleInputPorts as port, index (`${port.id}-${visibleInputPorts.length}`)}
-        {@const pos = getCircleHandlePosition(
-          index,
-          visibleInputPorts.length,
-          "left",
-        )}
+        {@const pos = getCircleHandlePosition(index, visibleInputPorts.length, 'left')}
         <Handle
           type="target"
           position={Position.Left}
           style="--fd-handle-fill: {getDataTypeColor(
-            port.dataType,
+            port.dataType
           )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
           id={`${props.data.nodeId}-input-${port.id}`}
         />
@@ -396,10 +372,7 @@
 
     <!-- Circular content with icon in squircle wrapper -->
     <div class="flowdrop-terminal-node__content">
-      <div
-        class="flowdrop-terminal-node__icon-wrapper"
-        style="--_icon-color: {terminalColor}"
-      >
+      <div class="flowdrop-terminal-node__icon-wrapper" style="--_icon-color: {terminalColor}">
         <Icon icon={terminalIcon} class="flowdrop-terminal-node__icon" />
       </div>
     </div>
@@ -407,17 +380,13 @@
     <!-- Output Handles (for start variant) -->
     {#if showOutputs}
       {#each visibleOutputPorts as port, index (`${port.id}-${visibleOutputPorts.length}`)}
-        {@const pos = getCircleHandlePosition(
-          index,
-          visibleOutputPorts.length,
-          "right",
-        )}
+        {@const pos = getCircleHandlePosition(index, visibleOutputPorts.length, 'right')}
         <Handle
           type="source"
           position={Position.Right}
           id={`${props.data.nodeId}-output-${port.id}`}
           style="--fd-handle-fill: {getDataTypeColor(
-            port.dataType,
+            port.dataType
           )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
         />
       {/each}
@@ -446,10 +415,7 @@
   <!-- Error indicator -->
   {#if props.isError}
     <div class="flowdrop-terminal-node__error">
-      <Icon
-        icon="mdi:alert-circle"
-        class="flowdrop-terminal-node__error-icon"
-      />
+      <Icon icon="mdi:alert-circle" class="flowdrop-terminal-node__error-icon" />
     </div>
   {/if}
 </div>
@@ -571,11 +537,7 @@
     width: 2.75rem;
     height: 2.75rem;
     border-radius: 0.625rem;
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity),
-      transparent
-    );
+    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }

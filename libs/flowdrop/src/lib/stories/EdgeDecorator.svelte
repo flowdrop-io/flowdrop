@@ -3,13 +3,13 @@
   to showcase edge rendering with arrowhead markers.
 -->
 <script lang="ts">
-  import { SvelteFlow, Controls, MarkerType } from "@xyflow/svelte";
-  import type { Node, Edge, ColorMode } from "@xyflow/svelte";
-  import "@xyflow/svelte/dist/style.css";
-  import UniversalNode from "$lib/components/UniversalNode.svelte";
-  import FlowDropEdge from "$lib/components/FlowDropEdge.svelte";
-  import { registerBuiltinNodes } from "$lib/registry/builtinNodes.js";
-  import { EDGE_MARKER_SIZES } from "$lib/config/constants.js";
+  import { SvelteFlow, Controls, MarkerType } from '@xyflow/svelte';
+  import type { Node, Edge, ColorMode } from '@xyflow/svelte';
+  import '@xyflow/svelte/dist/style.css';
+  import UniversalNode from '$lib/components/UniversalNode.svelte';
+  import FlowDropEdge from '$lib/components/FlowDropEdge.svelte';
+  import { registerBuiltinNodes } from '$lib/registry/builtinNodes.js';
+  import { EDGE_MARKER_SIZES } from '$lib/config/constants.js';
 
   interface Props {
     sourceData: Record<string, unknown>;
@@ -25,46 +25,46 @@
   let {
     sourceData,
     targetData,
-    edgeStyle = "stroke: #64748b;",
-    edgeClass = "flowdrop--edge--data",
-    edgeMarkerColor = "#64748b",
+    edgeStyle = 'stroke: #64748b;',
+    edgeClass = 'flowdrop--edge--data',
+    edgeMarkerColor = '#64748b',
     edgeMarkerSize = EDGE_MARKER_SIZES.data,
-    sourceHandleId = "output",
-    targetHandleId = "input",
+    sourceHandleId = 'output',
+    targetHandleId = 'input'
   }: Props = $props();
 
   registerBuiltinNodes();
 
   const nodeTypes = {
-    universalNode: UniversalNode,
+    universalNode: UniversalNode
   };
 
   const edgeTypes = {
-    default: FlowDropEdge,
+    default: FlowDropEdge
   };
 
-  const SOURCE_ID = "source-node";
-  const TARGET_ID = "target-node";
+  const SOURCE_ID = 'source-node';
+  const TARGET_ID = 'target-node';
 
   let nodes = $derived<Node[]>([
     {
       id: SOURCE_ID,
-      type: "universalNode",
+      type: 'universalNode',
       position: { x: 0, y: 0 },
-      data: { ...sourceData, nodeId: SOURCE_ID },
+      data: { ...sourceData, nodeId: SOURCE_ID }
     },
     {
       id: TARGET_ID,
-      type: "universalNode",
+      type: 'universalNode',
       position: { x: 350, y: 0 },
-      data: { ...targetData, nodeId: TARGET_ID },
-    },
+      data: { ...targetData, nodeId: TARGET_ID }
+    }
   ]);
 
   // Handle IDs follow the format: {nodeId}-{input|output}-{portId}
   let edges = $derived<Edge[]>([
     {
-      id: "edge-1",
+      id: 'edge-1',
       source: SOURCE_ID,
       target: TARGET_ID,
       sourceHandle: `${SOURCE_ID}-output-${sourceHandleId}`,
@@ -74,25 +74,22 @@
       markerEnd: {
         type: MarkerType.ArrowClosed,
         ...edgeMarkerSize,
-        color: edgeMarkerColor,
-      },
-    },
+        color: edgeMarkerColor
+      }
+    }
   ]);
 
   let colorMode = $state<ColorMode>(
-    (document.documentElement.getAttribute("data-theme") as ColorMode) ||
-      "light",
+    (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light'
   );
 
   $effect(() => {
     const observer = new MutationObserver(() => {
-      colorMode =
-        (document.documentElement.getAttribute("data-theme") as ColorMode) ||
-        "light";
+      colorMode = (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light';
     });
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-theme"],
+      attributeFilter: ['data-theme']
     });
     return () => observer.disconnect();
   });

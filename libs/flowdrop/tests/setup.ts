@@ -4,7 +4,7 @@
  * This file runs before all tests and sets up the testing environment.
  */
 
-import { afterEach, vi } from "vitest";
+import { afterEach, vi } from 'vitest';
 
 // Note: Install these dependencies when ready to use Testing Library
 // import { cleanup } from "@testing-library/svelte";
@@ -26,7 +26,7 @@ afterEach(() => {
  *
  * Many components use matchMedia for responsive design.
  */
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -36,8 +36,8 @@ Object.defineProperty(window, "matchMedia", {
     removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+    dispatchEvent: vi.fn()
+  }))
 });
 
 /**
@@ -76,12 +76,10 @@ const originalError = console.error;
 beforeAll(() => {
   console.error = (...args: unknown[]) => {
     // Filter out known noisy errors
-    const message = args[0]?.toString() || "";
+    const message = args[0]?.toString() || '';
     if (
-      message.includes(
-        "Not implemented: HTMLFormElement.prototype.requestSubmit",
-      ) ||
-      message.includes("Error: Could not parse CSS stylesheet")
+      message.includes('Not implemented: HTMLFormElement.prototype.requestSubmit') ||
+      message.includes('Error: Could not parse CSS stylesheet')
     ) {
       return;
     }

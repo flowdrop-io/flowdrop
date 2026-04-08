@@ -8,23 +8,20 @@
  * construction happen in exactly one place.
  */
 
-import { tick } from "svelte";
+import { tick } from 'svelte';
 import {
   getWorkflowStore,
   workflowActions,
-  markAsSaved as storeMarkAsSaved,
-} from "$lib/stores/workflowStore.svelte.js";
-import { workflowApi, setEndpointConfig } from "./api.js";
-import { createEndpointConfig } from "$lib/config/endpoints.js";
-import { v4 as uuidv4 } from "uuid";
-import type { Workflow } from "$lib/types/index.js";
-import { DEFAULT_WORKFLOW_FORMAT } from "$lib/types/index.js";
-import { apiToasts, workflowToasts, dismissToast } from "./toastService.js";
-import type {
-  FlowDropEventHandlers,
-  FlowDropFeatures,
-} from "$lib/types/events.js";
-import { DEFAULT_FEATURES } from "$lib/types/events.js";
+  markAsSaved as storeMarkAsSaved
+} from '$lib/stores/workflowStore.svelte.js';
+import { workflowApi, setEndpointConfig } from './api.js';
+import { createEndpointConfig } from '$lib/config/endpoints.js';
+import { v4 as uuidv4 } from 'uuid';
+import type { Workflow } from '$lib/types/index.js';
+import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
+import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
+import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
+import { DEFAULT_FEATURES } from '$lib/types/events.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,7 +74,7 @@ export interface GlobalExportOptions {
  */
 async function ensureApiConfiguration(): Promise<void> {
   try {
-    const { getEndpointConfig } = await import("./api.js");
+    const { getEndpointConfig } = await import('./api.js');
     const currentConfig = getEndpointConfig();
     if (currentConfig && currentConfig.baseUrl) {
       return;
@@ -88,21 +85,21 @@ async function ensureApiConfiguration(): Promise<void> {
 
   // API configuration is not initialized — derive URL from window.location when available
   const apiBaseUrl =
-    typeof window !== "undefined"
+    typeof window !== 'undefined'
       ? `${window.location.protocol}//${window.location.host}/api/flowdrop`
-      : "/api/flowdrop";
+      : '/api/flowdrop';
 
   const config = createEndpointConfig(apiBaseUrl, {
     auth: {
-      type: "none",
+      type: 'none'
     },
     timeout: 10000,
     retry: {
       enabled: true,
       maxAttempts: 2,
       delay: 1000,
-      backoff: "exponential",
-    },
+      backoff: 'exponential'
+    }
   });
 
   setEndpointConfig(config);
@@ -116,10 +113,7 @@ async function ensureApiConfiguration(): Promise<void> {
  * Must be called once, in this file only, so the logic lives in exactly one place.
  */
 async function flushPendingFormChanges(): Promise<void> {
-  if (
-    typeof document !== "undefined" &&
-    document.activeElement instanceof HTMLElement
-  ) {
+  if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
   // Wait for any pending DOM / Svelte reactive updates before reading the store
@@ -145,9 +139,7 @@ async function flushPendingFormChanges(): Promise<void> {
  *  6. Call onMarkAsSaved / onAfterSave hooks
  *  7. Show toast notifications (respecting features.showToasts)
  */
-export async function globalSaveWorkflow(
-  options: GlobalSaveOptions = {},
-): Promise<void> {
+export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promise<void> {
   const { apiClient, eventHandlers, onMarkAsSaved } = options;
   const features = { ...DEFAULT_FEATURES, ...options.features };
 
@@ -159,7 +151,7 @@ export async function globalSaveWorkflow(
 
   if (!currentWorkflow) {
     if (features.showToasts) {
-      apiToasts.error("Save workflow", "No workflow to save");
+      apiToasts.error('Save workflow', 'No workflow to save');
     }
     return;
   }
@@ -172,9 +164,7 @@ export async function globalSaveWorkflow(
     }
   }
 
-  const loadingToast = features.showToasts
-    ? apiToasts.loading("Saving workflow")
-    : null;
+  const loadingToast = features.showToasts ? apiToasts.loading('Saving workflow') : null;
 
   try {
     // Ensure API configuration is initialised (needed when called outside App.svelte)
@@ -191,18 +181,17 @@ export async function globalSaveWorkflow(
 
     const finalWorkflow: Workflow = {
       id: workflowId,
-      name: currentWorkflow.name || "Untitled Workflow",
-      description: currentWorkflow.description || "",
+      name: currentWorkflow.name || 'Untitled Workflow',
+      description: currentWorkflow.description || '',
       nodes: currentWorkflow.nodes || [],
       edges: currentWorkflow.edges || [],
       metadata: {
         ...currentWorkflow.metadata,
-        version: currentWorkflow.metadata?.version || "1.0.0",
+        version: currentWorkflow.metadata?.version || '1.0.0',
         format: currentWorkflow.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
-        createdAt:
-          currentWorkflow.metadata?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
+        createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     };
 
     // Step 4 — Persist
@@ -210,20 +199,14 @@ export async function globalSaveWorkflow(
 
     if (apiClient) {
       if (isExistingWorkflow) {
-        savedWorkflow = await apiClient.updateWorkflow(
-          finalWorkflow.id,
-          finalWorkflow,
-        );
+        savedWorkflow = await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow);
       } else {
         savedWorkflow = await apiClient.saveWorkflow(finalWorkflow);
       }
     } else {
       // Legacy path
       if (isExistingWorkflow) {
-        savedWorkflow = await workflowApi.updateWorkflow(
-          finalWorkflow.id,
-          finalWorkflow,
-        );
+        savedWorkflow = await workflowApi.updateWorkflow(finalWorkflow.id, finalWorkflow);
       } else {
         const { id: _id, ...workflowData } = finalWorkflow;
         savedWorkflow = await workflowApi.createWorkflow(workflowData);
@@ -238,8 +221,8 @@ export async function globalSaveWorkflow(
         name: finalWorkflow.name,
         metadata: {
           ...finalWorkflow.metadata,
-          ...savedWorkflow.metadata,
-        },
+          ...savedWorkflow.metadata
+        }
       });
     }
 
@@ -264,8 +247,7 @@ export async function globalSaveWorkflow(
   } catch (error) {
     if (loadingToast) dismissToast(loadingToast);
 
-    const errorObj =
-      error instanceof Error ? error : new Error("Unknown error occurred");
+    const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
 
     // onSaveError hook
     const currentWorkflowForError = getWorkflowStore();
@@ -276,11 +258,11 @@ export async function globalSaveWorkflow(
     // onApiError hook — return true suppresses the default toast
     let suppressToast = false;
     if (eventHandlers?.onApiError) {
-      suppressToast = eventHandlers.onApiError(errorObj, "save") === true;
+      suppressToast = eventHandlers.onApiError(errorObj, 'save') === true;
     }
 
     if (features.showToasts && !suppressToast) {
-      apiToasts.error("Save workflow", errorObj.message);
+      apiToasts.error('Save workflow', errorObj.message);
     }
 
     throw error;
@@ -295,9 +277,7 @@ export async function globalSaveWorkflow(
  *
  * Preserves all metadata fields (format, tags, etc.) consistently with save.
  */
-export async function globalExportWorkflow(
-  options: GlobalExportOptions = {},
-): Promise<void> {
+export async function globalExportWorkflow(options: GlobalExportOptions = {}): Promise<void> {
   const features = { ...DEFAULT_FEATURES, ...options.features };
 
   try {
@@ -308,33 +288,32 @@ export async function globalExportWorkflow(
 
     if (!currentWorkflow) {
       if (features.showToasts) {
-        apiToasts.error("Export workflow", "No workflow to export");
+        apiToasts.error('Export workflow', 'No workflow to export');
       }
       return;
     }
 
     // Build the canonical export object — preserve all metadata fields
     const finalWorkflow: Workflow = {
-      id: currentWorkflow.id || "untitled-workflow",
-      name: currentWorkflow.name || "Untitled Workflow",
-      description: currentWorkflow.description || "",
+      id: currentWorkflow.id || 'untitled-workflow',
+      name: currentWorkflow.name || 'Untitled Workflow',
+      description: currentWorkflow.description || '',
       nodes: currentWorkflow.nodes || [],
       edges: currentWorkflow.edges || [],
       metadata: {
         ...currentWorkflow.metadata,
-        version: currentWorkflow.metadata?.version || "1.0.0",
+        version: currentWorkflow.metadata?.version || '1.0.0',
         format: currentWorkflow.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
-        createdAt:
-          currentWorkflow.metadata?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
+        createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     };
 
     // Trigger browser download
     const dataStr = JSON.stringify(finalWorkflow, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
     link.download = `${finalWorkflow.name}.json`;
     link.click();
@@ -344,8 +323,7 @@ export async function globalExportWorkflow(
       workflowToasts.exported(finalWorkflow.name);
     }
   } catch (error) {
-    const errorObj =
-      error instanceof Error ? error : new Error("Unknown error occurred");
-    apiToasts.error("Export workflow", errorObj.message);
+    const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
+    apiToasts.error('Export workflow', errorObj.message);
   }
 }

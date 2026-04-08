@@ -17,8 +17,8 @@
  */
 export function buildHandleId(
   nodeId: string,
-  direction: "input" | "output",
-  portId: string,
+  direction: 'input' | 'output',
+  portId: string
 ): string {
   return `${nodeId}-${direction}-${portId}`;
 }
@@ -36,14 +36,14 @@ export function buildHandleId(
 export function extractPortId(handleId: string | undefined): string | null {
   if (!handleId) return null;
 
-  const outputMatch = handleId.lastIndexOf("-output-");
+  const outputMatch = handleId.lastIndexOf('-output-');
   if (outputMatch !== -1) {
-    return handleId.substring(outputMatch + "-output-".length);
+    return handleId.substring(outputMatch + '-output-'.length);
   }
 
-  const inputMatch = handleId.lastIndexOf("-input-");
+  const inputMatch = handleId.lastIndexOf('-input-');
   if (inputMatch !== -1) {
-    return handleId.substring(inputMatch + "-input-".length);
+    return handleId.substring(inputMatch + '-input-'.length);
   }
 
   // Short format: the handleId IS the port ID
@@ -56,13 +56,11 @@ export function extractPortId(handleId: string | undefined): string | null {
  * @param handleId - The handle ID string
  * @returns 'input', 'output', or null if not found
  */
-export function extractDirection(
-  handleId: string | undefined,
-): "input" | "output" | null {
+export function extractDirection(handleId: string | undefined): 'input' | 'output' | null {
   if (!handleId) return null;
 
-  if (handleId.includes("-output-")) return "output";
-  if (handleId.includes("-input-")) return "input";
+  if (handleId.includes('-output-')) return 'output';
+  if (handleId.includes('-input-')) return 'input';
 
   return null;
 }

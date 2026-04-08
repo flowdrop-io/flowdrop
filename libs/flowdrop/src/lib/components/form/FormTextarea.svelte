@@ -30,13 +30,13 @@
 
   let {
     id,
-    value = "",
-    placeholder = "",
+    value = '',
+    placeholder = '',
     rows = 4,
     required = false,
     disabled = false,
     ariaDescribedBy,
-    onChange,
+    onChange
   }: Props = $props();
 
   /**
@@ -51,7 +51,7 @@
 <textarea
   {id}
   class="form-textarea"
-  value={value ?? ""}
+  value={value ?? ''}
   {placeholder}
   {rows}
   {disabled}

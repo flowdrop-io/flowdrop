@@ -14,7 +14,7 @@
 /**
  * Role for chat history messages
  */
-export type ChatMessageRole = "user" | "assistant";
+export type ChatMessageRole = 'user' | 'assistant';
 
 /**
  * A single message in the chat history
@@ -71,7 +71,7 @@ export interface ExtractedCommands {
 /**
  * Status of a single command in the preview
  */
-export type CommandExecutionStatus = "pending" | "executing" | "success" | "error";
+export type CommandExecutionStatus = 'pending' | 'executing' | 'success' | 'error';
 
 /**
  * A single command shown in the command preview UI

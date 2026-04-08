@@ -14,29 +14,26 @@
 
 /** Agent Spec node component_type discriminator values */
 export type AgentSpecNodeComponentType =
-  | "start_node"
-  | "end_node"
-  | "llm_node"
-  | "api_node"
-  | "agent_node"
-  | "flow_node"
-  | "map_node"
-  | "branching_node"
-  | "tool_node";
+  | 'start_node'
+  | 'end_node'
+  | 'llm_node'
+  | 'api_node'
+  | 'agent_node'
+  | 'flow_node'
+  | 'map_node'
+  | 'branching_node'
+  | 'tool_node';
 
 /** Agent Spec tool component_type discriminator values */
-export type AgentSpecToolComponentType =
-  | "server_tool"
-  | "client_tool"
-  | "remote_tool";
+export type AgentSpecToolComponentType = 'server_tool' | 'client_tool' | 'remote_tool';
 
 /** All Agent Spec component_type values */
 export type AgentSpecComponentType =
-  | "agent"
-  | "flow"
+  | 'agent'
+  | 'flow'
   | AgentSpecNodeComponentType
   | AgentSpecToolComponentType
-  | "llm_config";
+  | 'llm_config';
 
 // ============================================================================
 // Properties (JSON Schema-based)
@@ -91,17 +88,17 @@ export interface AgentSpecNodeBase {
 
 /** Graph entry point */
 export interface AgentSpecStartNode extends AgentSpecNodeBase {
-  component_type: "start_node";
+  component_type: 'start_node';
 }
 
 /** Graph exit point */
 export interface AgentSpecEndNode extends AgentSpecNodeBase {
-  component_type: "end_node";
+  component_type: 'end_node';
 }
 
 /** LLM text generation node */
 export interface AgentSpecLLMNode extends AgentSpecNodeBase {
-  component_type: "llm_node";
+  component_type: 'llm_node';
   /** LLM configuration (inline or $component_ref string) */
   llm_config?: AgentSpecLLMConfig | string;
   /** System prompt template (supports {{variable}} syntax) */
@@ -114,7 +111,7 @@ export interface AgentSpecLLMNode extends AgentSpecNodeBase {
 
 /** API call node */
 export interface AgentSpecAPINode extends AgentSpecNodeBase {
-  component_type: "api_node";
+  component_type: 'api_node';
   /** API endpoint URL */
   endpoint?: string;
   /** HTTP method */
@@ -127,21 +124,21 @@ export interface AgentSpecAPINode extends AgentSpecNodeBase {
 
 /** Multi-round agent conversation node */
 export interface AgentSpecAgentNode extends AgentSpecNodeBase {
-  component_type: "agent_node";
+  component_type: 'agent_node';
   /** Agent reference ($component_ref or inline) */
   agent?: AgentSpecAgent | string;
 }
 
 /** Nested flow execution node */
 export interface AgentSpecFlowNode extends AgentSpecNodeBase {
-  component_type: "flow_node";
+  component_type: 'flow_node';
   /** Flow reference ($component_ref or inline) */
   flow?: AgentSpecFlow | string;
 }
 
 /** Map-reduce operation node */
 export interface AgentSpecMapNode extends AgentSpecNodeBase {
-  component_type: "map_node";
+  component_type: 'map_node';
   /** Input collection property name */
   input_collection?: string;
   /** Output collection property name */
@@ -152,14 +149,14 @@ export interface AgentSpecMapNode extends AgentSpecNodeBase {
 
 /** Conditional routing node */
 export interface AgentSpecBranchingNode extends AgentSpecNodeBase {
-  component_type: "branching_node";
+  component_type: 'branching_node';
   /** Branch definitions with conditions */
   branches: AgentSpecBranch[];
 }
 
 /** Tool execution node */
 export interface AgentSpecToolNode extends AgentSpecNodeBase {
-  component_type: "tool_node";
+  component_type: 'tool_node';
   /** Tool reference ($component_ref or inline) */
   tool?: AgentSpecTool | string;
 }
@@ -240,7 +237,7 @@ export interface AgentSpecDataFlowEdge {
  * They separate control-flow (execution order) from data-flow (data routing).
  */
 export interface AgentSpecFlow {
-  component_type: "flow";
+  component_type: 'flow';
   /** Flow name */
   name: string;
   /** Human-readable description */
@@ -282,19 +279,19 @@ export interface AgentSpecToolBase {
 
 /** Tool executed in the same runtime environment */
 export interface AgentSpecServerTool extends AgentSpecToolBase {
-  component_type: "server_tool";
+  component_type: 'server_tool';
   /** Function name or module path */
   function_name?: string;
 }
 
 /** Tool executed by the client, results returned to runtime */
 export interface AgentSpecClientTool extends AgentSpecToolBase {
-  component_type: "client_tool";
+  component_type: 'client_tool';
 }
 
 /** Tool triggered via RPC/REST calls */
 export interface AgentSpecRemoteTool extends AgentSpecToolBase {
-  component_type: "remote_tool";
+  component_type: 'remote_tool';
   /** Remote endpoint URL */
   endpoint?: string;
   /** HTTP method */
@@ -304,10 +301,7 @@ export interface AgentSpecRemoteTool extends AgentSpecToolBase {
 }
 
 /** Union of all Agent Spec tool types */
-export type AgentSpecTool =
-  | AgentSpecServerTool
-  | AgentSpecClientTool
-  | AgentSpecRemoteTool;
+export type AgentSpecTool = AgentSpecServerTool | AgentSpecClientTool | AgentSpecRemoteTool;
 
 // ============================================================================
 // LLM Configuration
@@ -315,7 +309,7 @@ export type AgentSpecTool =
 
 /** LLM model configuration */
 export interface AgentSpecLLMConfig {
-  component_type: "llm_config";
+  component_type: 'llm_config';
   /** Configuration name */
   name: string;
   /** Model identifier (e.g., "gpt-4o", "claude-sonnet-4-5-20250929") */
@@ -341,7 +335,7 @@ export interface AgentSpecLLMConfig {
  * tools, memory, and LLM configuration.
  */
 export interface AgentSpecAgent {
-  component_type: "agent";
+  component_type: 'agent';
   /** Agent name */
   name: string;
   /** Human-readable description */
@@ -388,7 +382,7 @@ export interface AgentSpecDocument {
 // ============================================================================
 
 /** Prefix for component references in Agent Spec */
-export const COMPONENT_REF_PREFIX = "$component_ref:";
+export const COMPONENT_REF_PREFIX = '$component_ref:';
 
 /**
  * Check if a value is a component reference string.
@@ -400,7 +394,7 @@ export const COMPONENT_REF_PREFIX = "$component_ref:";
  * ```
  */
 export function isComponentRef(value: unknown): value is string {
-  return typeof value === "string" && value.startsWith(COMPONENT_REF_PREFIX);
+  return typeof value === 'string' && value.startsWith(COMPONENT_REF_PREFIX);
 }
 
 /**

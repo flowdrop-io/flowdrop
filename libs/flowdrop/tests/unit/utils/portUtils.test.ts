@@ -4,164 +4,160 @@
  * Tests for applyPortOrder, getPortTop, and isPortVisible.
  */
 
-import { describe, it, expect } from "vitest";
-import {
-  applyPortOrder,
-  getPortTop,
-  isPortVisible,
-} from "$lib/utils/portUtils.js";
-import type { NodePort } from "$lib/types/index.js";
+import { describe, it, expect } from 'vitest';
+import { applyPortOrder, getPortTop, isPortVisible } from '$lib/utils/portUtils.js';
+import type { NodePort } from '$lib/types/index.js';
 
 // Minimal port factory — only the fields applyPortOrder cares about
-function makePort(id: string, dataType = "string"): NodePort {
-  return { id, name: id, type: "input", dataType };
+function makePort(id: string, dataType = 'string'): NodePort {
+  return { id, name: id, type: 'input', dataType };
 }
 
-const A = makePort("a");
-const B = makePort("b");
-const C = makePort("c");
-const D = makePort("d");
+const A = makePort('a');
+const B = makePort('b');
+const C = makePort('c');
+const D = makePort('d');
 
-describe("applyPortOrder", () => {
-  describe("no-op cases", () => {
-    it("returns the original array when orderedIds is undefined", () => {
+describe('applyPortOrder', () => {
+  describe('no-op cases', () => {
+    it('returns the original array when orderedIds is undefined', () => {
       const ports = [A, B, C];
       const result = applyPortOrder(ports, undefined);
       expect(result).toEqual([A, B, C]);
     });
 
-    it("returns the original array when orderedIds is empty", () => {
+    it('returns the original array when orderedIds is empty', () => {
       const ports = [A, B, C];
       const result = applyPortOrder(ports, []);
       expect(result).toEqual([A, B, C]);
     });
 
-    it("returns the original array when ports is empty", () => {
-      const result = applyPortOrder([], ["a", "b"]);
+    it('returns the original array when ports is empty', () => {
+      const result = applyPortOrder([], ['a', 'b']);
       expect(result).toEqual([]);
     });
   });
 
-  describe("full ordering", () => {
-    it("sorts ports to match the given order exactly", () => {
+  describe('full ordering', () => {
+    it('sorts ports to match the given order exactly', () => {
       const ports = [A, B, C];
-      const result = applyPortOrder(ports, ["c", "a", "b"]);
-      expect(result.map((p) => p.id)).toEqual(["c", "a", "b"]);
+      const result = applyPortOrder(ports, ['c', 'a', 'b']);
+      expect(result.map((p) => p.id)).toEqual(['c', 'a', 'b']);
     });
 
-    it("handles a two-port swap", () => {
+    it('handles a two-port swap', () => {
       const ports = [A, B];
-      const result = applyPortOrder(ports, ["b", "a"]);
-      expect(result.map((p) => p.id)).toEqual(["b", "a"]);
+      const result = applyPortOrder(ports, ['b', 'a']);
+      expect(result.map((p) => p.id)).toEqual(['b', 'a']);
     });
 
-    it("preserves order when orderedIds matches existing order", () => {
+    it('preserves order when orderedIds matches existing order', () => {
       const ports = [A, B, C];
-      const result = applyPortOrder(ports, ["a", "b", "c"]);
-      expect(result.map((p) => p.id)).toEqual(["a", "b", "c"]);
+      const result = applyPortOrder(ports, ['a', 'b', 'c']);
+      expect(result.map((p) => p.id)).toEqual(['a', 'b', 'c']);
     });
   });
 
-  describe("partial ordering — unlisted ports go to end", () => {
-    it("places listed ports first, unlisted last in original order", () => {
+  describe('partial ordering — unlisted ports go to end', () => {
+    it('places listed ports first, unlisted last in original order', () => {
       const ports = [A, B, C, D];
       // Only specify b and d — a and c should follow in their original relative order
-      const result = applyPortOrder(ports, ["b", "d"]);
-      expect(result.map((p) => p.id)).toEqual(["b", "d", "a", "c"]);
+      const result = applyPortOrder(ports, ['b', 'd']);
+      expect(result.map((p) => p.id)).toEqual(['b', 'd', 'a', 'c']);
     });
 
-    it("places a single listed port first, rest follow in original order", () => {
+    it('places a single listed port first, rest follow in original order', () => {
       const ports = [A, B, C];
-      const result = applyPortOrder(ports, ["c"]);
-      expect(result.map((p) => p.id)).toEqual(["c", "a", "b"]);
+      const result = applyPortOrder(ports, ['c']);
+      expect(result.map((p) => p.id)).toEqual(['c', 'a', 'b']);
     });
 
-    it("preserves relative order of multiple unlisted ports", () => {
+    it('preserves relative order of multiple unlisted ports', () => {
       const ports = [A, B, C, D];
-      const result = applyPortOrder(ports, ["d"]);
+      const result = applyPortOrder(ports, ['d']);
       // d first, then a, b, c in original order
-      expect(result.map((p) => p.id)).toEqual(["d", "a", "b", "c"]);
+      expect(result.map((p) => p.id)).toEqual(['d', 'a', 'b', 'c']);
     });
   });
 
-  describe("unknown IDs in orderedIds", () => {
-    it("ignores IDs in orderedIds that do not exist in ports", () => {
+  describe('unknown IDs in orderedIds', () => {
+    it('ignores IDs in orderedIds that do not exist in ports', () => {
       const ports = [A, B, C];
-      const result = applyPortOrder(ports, ["z", "b", "a"]);
+      const result = applyPortOrder(ports, ['z', 'b', 'a']);
       // z doesn't exist — b and a are placed first, c follows
-      expect(result.map((p) => p.id)).toEqual(["b", "a", "c"]);
+      expect(result.map((p) => p.id)).toEqual(['b', 'a', 'c']);
     });
 
-    it("returns ports in original order when all orderedIds are unknown", () => {
+    it('returns ports in original order when all orderedIds are unknown', () => {
       const ports = [A, B, C];
-      const result = applyPortOrder(ports, ["x", "y", "z"]);
-      expect(result.map((p) => p.id)).toEqual(["a", "b", "c"]);
+      const result = applyPortOrder(ports, ['x', 'y', 'z']);
+      expect(result.map((p) => p.id)).toEqual(['a', 'b', 'c']);
     });
   });
 
-  describe("does not mutate inputs", () => {
-    it("does not mutate the original ports array", () => {
+  describe('does not mutate inputs', () => {
+    it('does not mutate the original ports array', () => {
       const ports = [A, B, C];
       const original = [...ports];
-      applyPortOrder(ports, ["c", "a", "b"]);
+      applyPortOrder(ports, ['c', 'a', 'b']);
       expect(ports).toEqual(original);
     });
 
-    it("returns a new array instance", () => {
+    it('returns a new array instance', () => {
       const ports = [A, B, C];
-      const result = applyPortOrder(ports, ["a", "b", "c"]);
+      const result = applyPortOrder(ports, ['a', 'b', 'c']);
       expect(result).not.toBe(ports);
     });
   });
 
-  describe("NaN guard — two or more unlisted ports", () => {
-    it("handles multiple unlisted ports without corrupting sort (Infinity - Infinity guard)", () => {
+  describe('NaN guard — two or more unlisted ports', () => {
+    it('handles multiple unlisted ports without corrupting sort (Infinity - Infinity guard)', () => {
       // All ports are unlisted — sort must not produce NaN comparisons
       const ports = [A, B, C, D];
-      const result = applyPortOrder(ports, ["z"]); // z doesn't exist, all 4 are unlisted
+      const result = applyPortOrder(ports, ['z']); // z doesn't exist, all 4 are unlisted
       // Original relative order must be preserved
-      expect(result.map((p) => p.id)).toEqual(["a", "b", "c", "d"]);
+      expect(result.map((p) => p.id)).toEqual(['a', 'b', 'c', 'd']);
     });
 
-    it("preserves original order for all unlisted ports when orderedIds only covers some", () => {
+    it('preserves original order for all unlisted ports when orderedIds only covers some', () => {
       const ports = [A, B, C, D];
-      const result = applyPortOrder(ports, ["b"]);
-      expect(result[0].id).toBe("b");
+      const result = applyPortOrder(ports, ['b']);
+      expect(result[0].id).toBe('b');
       // The rest — a, c, d — must maintain original relative order
-      expect(result.slice(1).map((p) => p.id)).toEqual(["a", "c", "d"]);
+      expect(result.slice(1).map((p) => p.id)).toEqual(['a', 'c', 'd']);
     });
   });
 
-  describe("single port", () => {
-    it("handles a single port with matching orderedId", () => {
-      const result = applyPortOrder([A], ["a"]);
-      expect(result.map((p) => p.id)).toEqual(["a"]);
+  describe('single port', () => {
+    it('handles a single port with matching orderedId', () => {
+      const result = applyPortOrder([A], ['a']);
+      expect(result.map((p) => p.id)).toEqual(['a']);
     });
 
-    it("handles a single port not in orderedIds", () => {
-      const result = applyPortOrder([A], ["z"]);
-      expect(result.map((p) => p.id)).toEqual(["a"]);
+    it('handles a single port not in orderedIds', () => {
+      const result = applyPortOrder([A], ['z']);
+      expect(result.map((p) => p.id)).toEqual(['a']);
     });
   });
 });
 
-describe("getPortTop", () => {
-  it("centers a single port at 40px", () => {
+describe('getPortTop', () => {
+  it('centers a single port at 40px', () => {
     expect(getPortTop(0, 1)).toBe(40);
   });
 
-  it("places two ports at 20px and 60px", () => {
+  it('places two ports at 20px and 60px', () => {
     expect(getPortTop(0, 2)).toBe(20);
     expect(getPortTop(1, 2)).toBe(60);
   });
 
-  it("spaces three ports at 20, 60, 100px", () => {
+  it('spaces three ports at 20, 60, 100px', () => {
     expect(getPortTop(0, 3)).toBe(20);
     expect(getPortTop(1, 3)).toBe(60);
     expect(getPortTop(2, 3)).toBe(100);
   });
 
-  it("maintains 40px gap between consecutive ports", () => {
+  it('maintains 40px gap between consecutive ports', () => {
     for (let n = 2; n <= 5; n++) {
       for (let i = 0; i < n - 1; i++) {
         expect(getPortTop(i + 1, n) - getPortTop(i, n)).toBe(40);
@@ -170,140 +166,105 @@ describe("getPortTop", () => {
   });
 });
 
-describe("isPortVisible", () => {
-  const port = makePort("data-1");
-  const triggerPort = makePort("trigger-1", "trigger");
-  const nodeId = "node-42";
+describe('isPortVisible', () => {
+  const port = makePort('data-1');
+  const triggerPort = makePort('trigger-1', 'trigger');
+  const nodeId = 'node-42';
 
-  describe("manual hide (hiddenPorts)", () => {
-    it("hides an input port listed in hiddenPorts.inputs", () => {
+  describe('manual hide (hiddenPorts)', () => {
+    it('hides an input port listed in hiddenPorts.inputs', () => {
+      const result = isPortVisible(port, 'input', { inputs: ['data-1'] }, false, new Set(), nodeId);
+      expect(result).toBe(false);
+    });
+
+    it('hides an output port listed in hiddenPorts.outputs', () => {
       const result = isPortVisible(
         port,
-        "input",
-        { inputs: ["data-1"] },
+        'output',
+        { outputs: ['data-1'] },
         false,
         new Set(),
-        nodeId,
+        nodeId
       );
       expect(result).toBe(false);
     });
 
-    it("hides an output port listed in hiddenPorts.outputs", () => {
+    it('does not hide an input port listed only in hiddenPorts.outputs', () => {
       const result = isPortVisible(
         port,
-        "output",
-        { outputs: ["data-1"] },
+        'input',
+        { outputs: ['data-1'] },
         false,
         new Set(),
-        nodeId,
-      );
-      expect(result).toBe(false);
-    });
-
-    it("does not hide an input port listed only in hiddenPorts.outputs", () => {
-      const result = isPortVisible(
-        port,
-        "input",
-        { outputs: ["data-1"] },
-        false,
-        new Set(),
-        nodeId,
+        nodeId
       );
       expect(result).toBe(true);
     });
 
-    it("manual hide wins even when the port is connected", () => {
+    it('manual hide wins even when the port is connected', () => {
       const connected = new Set([`${nodeId}-input-data-1`]);
-      const result = isPortVisible(
-        port,
-        "input",
-        { inputs: ["data-1"] },
-        false,
-        connected,
-        nodeId,
-      );
+      const result = isPortVisible(port, 'input', { inputs: ['data-1'] }, false, connected, nodeId);
       expect(result).toBe(false);
     });
 
-    it("shows port not listed in hiddenPorts", () => {
+    it('shows port not listed in hiddenPorts', () => {
       const result = isPortVisible(
         port,
-        "input",
-        { inputs: ["other-port"] },
+        'input',
+        { inputs: ['other-port'] },
         false,
         new Set(),
-        nodeId,
+        nodeId
       );
       expect(result).toBe(true);
     });
 
-    it("shows port when hiddenPorts is empty", () => {
-      const result = isPortVisible(port, "input", {}, false, new Set(), nodeId);
+    it('shows port when hiddenPorts is empty', () => {
+      const result = isPortVisible(port, 'input', {}, false, new Set(), nodeId);
       expect(result).toBe(true);
     });
   });
 
-  describe("hideUnconnectedHandles", () => {
-    it("hides an unconnected port when hideUnconnectedHandles is true", () => {
-      const result = isPortVisible(port, "input", {}, true, new Set(), nodeId);
+  describe('hideUnconnectedHandles', () => {
+    it('hides an unconnected port when hideUnconnectedHandles is true', () => {
+      const result = isPortVisible(port, 'input', {}, true, new Set(), nodeId);
       expect(result).toBe(false);
     });
 
-    it("shows a connected port when hideUnconnectedHandles is true", () => {
+    it('shows a connected port when hideUnconnectedHandles is true', () => {
       const connected = new Set([`${nodeId}-input-data-1`]);
-      const result = isPortVisible(port, "input", {}, true, connected, nodeId);
+      const result = isPortVisible(port, 'input', {}, true, connected, nodeId);
       expect(result).toBe(true);
     });
 
-    it("uses the correct handle ID format: nodeId-direction-portId", () => {
+    it('uses the correct handle ID format: nodeId-direction-portId', () => {
       // Only the exact handle ID format should match
       const wrongFormat = new Set([`data-1`, `input-data-1`, `node-42-data-1`]);
-      const result = isPortVisible(
-        port,
-        "input",
-        {},
-        true,
-        wrongFormat,
-        nodeId,
-      );
+      const result = isPortVisible(port, 'input', {}, true, wrongFormat, nodeId);
       expect(result).toBe(false);
     });
 
-    it("distinguishes input and output handle IDs", () => {
+    it('distinguishes input and output handle IDs', () => {
       // Port is connected as output but we're checking as input — should be hidden
       const connected = new Set([`${nodeId}-output-data-1`]);
-      const result = isPortVisible(port, "input", {}, true, connected, nodeId);
+      const result = isPortVisible(port, 'input', {}, true, connected, nodeId);
       expect(result).toBe(false);
     });
 
-    it("shows all ports when hideUnconnectedHandles is false regardless of connections", () => {
-      const result = isPortVisible(port, "input", {}, false, new Set(), nodeId);
+    it('shows all ports when hideUnconnectedHandles is false regardless of connections', () => {
+      const result = isPortVisible(port, 'input', {}, false, new Set(), nodeId);
       expect(result).toBe(true);
     });
   });
 
-  describe("default behaviour", () => {
-    it("shows port when hiddenPorts is empty and hideUnconnectedHandles is false", () => {
-      const result = isPortVisible(
-        triggerPort,
-        "input",
-        {},
-        false,
-        new Set(),
-        nodeId,
-      );
+  describe('default behaviour', () => {
+    it('shows port when hiddenPorts is empty and hideUnconnectedHandles is false', () => {
+      const result = isPortVisible(triggerPort, 'input', {}, false, new Set(), nodeId);
       expect(result).toBe(true);
     });
 
-    it("shows port when nodeId is undefined and neither hide flag applies", () => {
-      const result = isPortVisible(
-        port,
-        "output",
-        {},
-        false,
-        new Set(),
-        undefined,
-      );
+    it('shows port when nodeId is undefined and neither hide flag applies', () => {
+      const result = isPortVisible(port, 'output', {}, false, new Set(), undefined);
       expect(result).toBe(true);
     });
   });

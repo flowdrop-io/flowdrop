@@ -24,11 +24,11 @@ import type {
   ThemePreference,
   SettingsChangeCallback,
   SettingsChangeEvent,
-  SettingsCategory,
-} from "$lib/types/settings.js";
-export type { ThemePreference, ResolvedTheme } from "$lib/types/settings.js";
-import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from "$lib/types/settings.js";
-import { logger } from "../utils/logger.js";
+  SettingsCategory
+} from '$lib/types/settings.js';
+export type { ThemePreference, ResolvedTheme } from '$lib/types/settings.js';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '$lib/types/settings.js';
+import { logger } from '../utils/logger.js';
 
 // =========================================================================
 // Internal State
@@ -58,7 +58,7 @@ const changeListeners: Set<SettingsChangeCallback> = new Set();
  * @returns Saved settings or null if not found/invalid
  */
 function loadFromStorage(): FlowDropSettings | null {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return null;
   }
 
@@ -70,7 +70,7 @@ function loadFromStorage(): FlowDropSettings | null {
       return deepMergeSettings(DEFAULT_SETTINGS, parsed);
     }
   } catch (error) {
-    logger.warn("Failed to load settings from localStorage:", error);
+    logger.warn('Failed to load settings from localStorage:', error);
   }
 
   return null;
@@ -82,14 +82,14 @@ function loadFromStorage(): FlowDropSettings | null {
  * @param settings - Settings to persist
  */
 function saveToStorage(settings: FlowDropSettings): void {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return;
   }
 
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
   } catch (error) {
-    logger.warn("Failed to save settings to localStorage:", error);
+    logger.warn('Failed to save settings to localStorage:', error);
   }
 }
 
@@ -106,14 +106,14 @@ function saveToStorage(settings: FlowDropSettings): void {
  */
 function deepMergeSettings(
   target: FlowDropSettings,
-  source: Partial<FlowDropSettings>,
+  source: Partial<FlowDropSettings>
 ): FlowDropSettings {
   const result: FlowDropSettings = {
     theme: { ...target.theme },
     editor: { ...target.editor },
     ui: { ...target.ui },
     behavior: { ...target.behavior },
-    api: { ...target.api },
+    api: { ...target.api }
   };
 
   // Merge theme settings
@@ -159,9 +159,9 @@ const initialSettings = loadFromStorage() ?? DEFAULT_SETTINGS;
 let storeState = $state<SettingsStoreState>({
   settings: initialSettings,
   initialized: true,
-  syncStatus: "idle",
+  syncStatus: 'idle',
   lastSyncedAt: null,
-  syncError: null,
+  syncError: null
 });
 
 /**
@@ -169,7 +169,7 @@ let storeState = $state<SettingsStoreState>({
  * Updates when system preference changes
  */
 let systemThemeState = $state<ResolvedTheme>(
-  typeof window !== "undefined" ? getSystemTheme() : "light",
+  typeof window !== 'undefined' ? getSystemTheme() : 'light'
 );
 
 // =========================================================================
@@ -194,7 +194,7 @@ export function getSyncStatus(): {
   return {
     status: storeState.syncStatus,
     lastSyncedAt: storeState.lastSyncedAt,
-    error: storeState.syncError,
+    error: storeState.syncError
   };
 }
 
@@ -246,7 +246,7 @@ export function getTheme(): ThemePreference {
  * (replaces resolvedTheme derived store)
  */
 export function getResolvedTheme(): ResolvedTheme {
-  if (storeState.settings.theme.preference === "auto") {
+  if (storeState.settings.theme.preference === 'auto') {
     return systemThemeState;
   }
   return storeState.settings.theme.preference;
@@ -267,12 +267,10 @@ export function getSystemThemeState(): ResolvedTheme {
  * Get the system's color scheme preference
  */
 function getSystemTheme(): ResolvedTheme {
-  if (typeof window === "undefined") {
-    return "light";
+  if (typeof window === 'undefined') {
+    return 'light';
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 /**
@@ -282,20 +280,20 @@ function getSystemTheme(): ResolvedTheme {
  * @returns Cleanup function that removes the listener
  */
 export function initThemeListener(): () => void {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return () => {};
   }
 
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
   const handleSystemThemeChange = (event: MediaQueryListEvent): void => {
-    systemThemeState = event.matches ? "dark" : "light";
+    systemThemeState = event.matches ? 'dark' : 'light';
   };
 
-  mediaQuery.addEventListener("change", handleSystemThemeChange);
+  mediaQuery.addEventListener('change', handleSystemThemeChange);
 
   return () => {
-    mediaQuery.removeEventListener("change", handleSystemThemeChange);
+    mediaQuery.removeEventListener('change', handleSystemThemeChange);
   };
 }
 
@@ -310,20 +308,20 @@ function notifyChange(
   category: SettingsCategory,
   key: string,
   previousValue: unknown,
-  newValue: unknown,
+  newValue: unknown
 ): void {
   const event: SettingsChangeEvent = {
     category,
     key,
     previousValue,
-    newValue,
+    newValue
   };
 
   changeListeners.forEach((listener) => {
     try {
       listener(event);
     } catch (error) {
-      logger.error("Settings change listener error:", error);
+      logger.error('Settings change listener error:', error);
     }
   });
 }
@@ -333,7 +331,7 @@ function notifyChange(
  */
 function getCategoryAsRecord(
   settings: FlowDropSettings,
-  category: SettingsCategory,
+  category: SettingsCategory
 ): Record<string, unknown> {
   return Object.fromEntries(Object.entries(settings[category]));
 }
@@ -345,10 +343,7 @@ function getCategoryAsRecord(
  */
 export function updateSettings(partial: PartialSettings): void {
   const previousSettings = storeState.settings;
-  const newSettings = deepMergeSettings(
-    storeState.settings,
-    partial as Partial<FlowDropSettings>,
-  );
+  const newSettings = deepMergeSettings(storeState.settings, partial as Partial<FlowDropSettings>);
 
   // Persist to localStorage immediately
   saveToStorage(newSettings);
@@ -356,7 +351,7 @@ export function updateSettings(partial: PartialSettings): void {
   // Notify listeners for each changed category
   for (const category of Object.keys(partial) as SettingsCategory[]) {
     const partialCategory = partial[category];
-    if (partialCategory && typeof partialCategory === "object") {
+    if (partialCategory && typeof partialCategory === 'object') {
       for (const key of Object.keys(partialCategory)) {
         const prevCat = getCategoryAsRecord(previousSettings, category);
         const newCat = getCategoryAsRecord(newSettings, category);
@@ -369,7 +364,7 @@ export function updateSettings(partial: PartialSettings): void {
 
   storeState = {
     ...storeState,
-    settings: newSettings,
+    settings: newSettings
   };
 }
 
@@ -382,15 +377,14 @@ export function resetSettings(categories?: SettingsCategory[]): void {
   if (categories && categories.length > 0) {
     const partial: PartialSettings = {};
     for (const category of categories) {
-      (partial as Record<string, unknown>)[category] =
-        DEFAULT_SETTINGS[category];
+      (partial as Record<string, unknown>)[category] = DEFAULT_SETTINGS[category];
     }
     updateSettings(partial);
   } else {
     saveToStorage(DEFAULT_SETTINGS);
     storeState = {
       ...storeState,
-      settings: DEFAULT_SETTINGS,
+      settings: DEFAULT_SETTINGS
     };
   }
 }
@@ -416,10 +410,10 @@ export function toggleTheme(): void {
   const currentTheme = getTheme();
   const currentResolved = getResolvedTheme();
 
-  if (currentTheme === "auto") {
-    setTheme(currentResolved === "dark" ? "light" : "dark");
+  if (currentTheme === 'auto') {
+    setTheme(currentResolved === 'dark' ? 'light' : 'dark');
   } else {
-    setTheme(currentTheme === "dark" ? "light" : "dark");
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
   }
 }
 
@@ -430,14 +424,14 @@ export function cycleTheme(): void {
   const currentTheme = getTheme();
 
   switch (currentTheme) {
-    case "light":
-      setTheme("dark");
+    case 'light':
+      setTheme('dark');
       break;
-    case "dark":
-      setTheme("auto");
+    case 'dark':
+      setTheme('auto');
       break;
-    case "auto":
-      setTheme("light");
+    case 'auto':
+      setTheme('light');
       break;
   }
 }
@@ -448,10 +442,10 @@ export function cycleTheme(): void {
  * @param resolved - The resolved theme to apply
  */
 function applyTheme(resolved: ResolvedTheme): void {
-  if (typeof document === "undefined") {
+  if (typeof document === 'undefined') {
     return;
   }
-  document.documentElement.setAttribute("data-theme", resolved);
+  document.documentElement.setAttribute('data-theme', resolved);
 }
 
 /**
@@ -505,10 +499,10 @@ export function initializeTheme(): void {
  * @returns true if running in browser and theme is applied
  */
 export function isThemeInitialized(): boolean {
-  if (typeof document === "undefined") {
+  if (typeof document === 'undefined') {
     return false;
   }
-  return document.documentElement.hasAttribute("data-theme");
+  return document.documentElement.hasAttribute('data-theme');
 }
 
 // =========================================================================
@@ -524,7 +518,7 @@ export function setSettingsService(
   service: {
     savePreferences: (settings: FlowDropSettings) => Promise<void>;
     getPreferences: () => Promise<FlowDropSettings>;
-  } | null,
+  } | null
 ): void {
   settingsService = service;
 }
@@ -536,14 +530,14 @@ export function setSettingsService(
  */
 export async function syncSettingsToApi(): Promise<void> {
   if (!settingsService) {
-    logger.warn("Settings service not configured for API sync");
+    logger.warn('Settings service not configured for API sync');
     return;
   }
 
   storeState = {
     ...storeState,
-    syncStatus: "syncing" as SyncStatus,
-    syncError: null,
+    syncStatus: 'syncing' as SyncStatus,
+    syncError: null
   };
 
   try {
@@ -552,18 +546,17 @@ export async function syncSettingsToApi(): Promise<void> {
 
     storeState = {
       ...storeState,
-      syncStatus: "synced" as SyncStatus,
+      syncStatus: 'synced' as SyncStatus,
       lastSyncedAt: Date.now(),
-      syncError: null,
+      syncError: null
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Failed to sync settings";
+    const errorMessage = error instanceof Error ? error.message : 'Failed to sync settings';
 
     storeState = {
       ...storeState,
-      syncStatus: "error" as SyncStatus,
-      syncError: errorMessage,
+      syncStatus: 'error' as SyncStatus,
+      syncError: errorMessage
     };
 
     throw error;
@@ -577,14 +570,14 @@ export async function syncSettingsToApi(): Promise<void> {
  */
 export async function loadSettingsFromApi(): Promise<void> {
   if (!settingsService) {
-    logger.warn("Settings service not configured for API sync");
+    logger.warn('Settings service not configured for API sync');
     return;
   }
 
   storeState = {
     ...storeState,
-    syncStatus: "syncing" as SyncStatus,
-    syncError: null,
+    syncStatus: 'syncing' as SyncStatus,
+    syncError: null
   };
 
   try {
@@ -594,23 +587,21 @@ export async function loadSettingsFromApi(): Promise<void> {
     storeState = {
       ...storeState,
       settings: mergedSettings,
-      syncStatus: "synced" as SyncStatus,
+      syncStatus: 'synced' as SyncStatus,
       lastSyncedAt: Date.now(),
-      syncError: null,
+      syncError: null
     };
 
     // Also persist to localStorage
     saveToStorage(mergedSettings);
   } catch (error) {
     const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Failed to load settings from API";
+      error instanceof Error ? error.message : 'Failed to load settings from API';
 
     storeState = {
       ...storeState,
-      syncStatus: "error" as SyncStatus,
-      syncError: errorMessage,
+      syncStatus: 'error' as SyncStatus,
+      syncError: errorMessage
     };
 
     throw error;
@@ -654,11 +645,11 @@ export async function initializeSettings(options?: {
     const currentSettings = getSettings();
     const withDefaults = deepMergeSettings(
       currentSettings,
-      options.defaults as Partial<FlowDropSettings>,
+      options.defaults as Partial<FlowDropSettings>
     );
     storeState = {
       ...storeState,
-      settings: withDefaults,
+      settings: withDefaults
     };
     saveToStorage(withDefaults);
   }
@@ -672,7 +663,7 @@ export async function initializeSettings(options?: {
       await loadSettingsFromApi();
     } catch {
       // Silently fail - local settings are still available
-      logger.warn("Failed to sync settings from API on initialization");
+      logger.warn('Failed to sync settings from API on initialization');
     }
   }
 }

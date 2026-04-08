@@ -7,36 +7,36 @@
  * @module types/playground
  */
 
-import type { ConfigProperty } from "./index.js";
+import type { ConfigProperty } from './index.js';
 
 /**
  * Status of a playground session
  */
 export type PlaygroundSessionStatus =
-  | "idle"
-  | "running"
-  | "awaiting_input"
-  | "completed"
-  | "failed";
+  | 'idle'
+  | 'running'
+  | 'awaiting_input'
+  | 'completed'
+  | 'failed';
 
 /**
  * Statuses that stop polling by default (resource efficiency)
  */
 export const DEFAULT_STOP_POLLING_STATUSES: PlaygroundSessionStatus[] = [
-  "idle",
-  "completed",
-  "failed",
-  "awaiting_input",
+  'idle',
+  'completed',
+  'failed',
+  'awaiting_input'
 ];
 
 /**
  * Statuses that are considered terminal by default (clears isExecuting)
  */
 export const DEFAULT_TERMINAL_STATUSES: PlaygroundSessionStatus[] = [
-  "idle",
-  "completed",
-  "failed",
-  "awaiting_input",
+  'idle',
+  'completed',
+  'failed',
+  'awaiting_input'
 ];
 
 /**
@@ -46,9 +46,7 @@ export const DEFAULT_TERMINAL_STATUSES: PlaygroundSessionStatus[] = [
  * @param status - The current session status
  * @returns True if polling should stop
  */
-export function defaultShouldStopPolling(
-  status: PlaygroundSessionStatus,
-): boolean {
+export function defaultShouldStopPolling(status: PlaygroundSessionStatus): boolean {
   return (DEFAULT_STOP_POLLING_STATUSES as string[]).includes(status);
 }
 
@@ -59,9 +57,7 @@ export function defaultShouldStopPolling(
  * @param status - The current session status
  * @returns True if the status is terminal
  */
-export function defaultIsTerminalStatus(
-  status: PlaygroundSessionStatus,
-): boolean {
+export function defaultIsTerminalStatus(status: PlaygroundSessionStatus): boolean {
   return (DEFAULT_TERMINAL_STATUSES as string[]).includes(status);
 }
 
@@ -73,21 +69,17 @@ export function defaultIsTerminalStatus(
  * - `system`: System notifications
  * - `log`: Execution log entries
  */
-export type PlaygroundMessageRole = "user" | "assistant" | "system" | "log";
+export type PlaygroundMessageRole = 'user' | 'assistant' | 'system' | 'log';
 
 /**
  * Log level for log-type messages
  */
-export type PlaygroundMessageLevel = "info" | "warning" | "error" | "debug";
+export type PlaygroundMessageLevel = 'info' | 'warning' | 'error' | 'debug';
 
 /**
  * Status of a playground message
  */
-export type PlaygroundMessageStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "failed";
+export type PlaygroundMessageStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 /**
  * Playground session representing a test conversation
@@ -260,7 +252,7 @@ export interface PlaygroundConfig {
   /** Show timestamps on messages (default: true) */
   showTimestamps?: boolean;
   /** Show log messages inline or in collapsible section (default: "collapsible") */
-  logDisplayMode?: "inline" | "collapsible";
+  logDisplayMode?: 'inline' | 'collapsible';
   /** Enable markdown rendering in messages (default: true) */
   enableMarkdown?: boolean;
   /**
@@ -338,7 +330,7 @@ export interface PlaygroundConfig {
  * };
  * ```
  */
-export const ENABLE_RUN_METADATA_KEY = "enableRun";
+export const ENABLE_RUN_METADATA_KEY = 'enableRun';
 
 /**
  * Check if a message metadata contains the enableRun flag
@@ -346,26 +338,24 @@ export const ENABLE_RUN_METADATA_KEY = "enableRun";
  * @param metadata - The message metadata to check
  * @returns True if the metadata signals to enable the Run button
  */
-export function hasEnableRunFlag(
-  metadata: PlaygroundMessageMetadata | undefined,
-): boolean {
+export function hasEnableRunFlag(metadata: PlaygroundMessageMetadata | undefined): boolean {
   return metadata?.[ENABLE_RUN_METADATA_KEY] === true;
 }
 
 /**
  * Display mode for the Playground component
  */
-export type PlaygroundMode = "embedded" | "standalone" | "modal";
+export type PlaygroundMode = 'embedded' | 'standalone' | 'modal';
 
 /**
  * Chat input detection patterns for identifying chat nodes in workflows
  */
 export const CHAT_INPUT_PATTERNS = [
-  "chat_input",
-  "text_input",
-  "user_input",
-  "message_input",
-  "prompt_input",
+  'chat_input',
+  'text_input',
+  'user_input',
+  'message_input',
+  'prompt_input'
 ] as const;
 
 /**
@@ -396,27 +386,22 @@ export interface PlaygroundApiResponse<T> {
 /**
  * Type alias for session list response
  */
-export type PlaygroundSessionsResponse = PlaygroundApiResponse<
-  PlaygroundSession[]
->;
+export type PlaygroundSessionsResponse = PlaygroundApiResponse<PlaygroundSession[]>;
 
 /**
  * Type alias for single session response
  */
-export type PlaygroundSessionResponse =
-  PlaygroundApiResponse<PlaygroundSession>;
+export type PlaygroundSessionResponse = PlaygroundApiResponse<PlaygroundSession>;
 
 /**
  * Type alias for message response
  */
-export type PlaygroundMessageResponse =
-  PlaygroundApiResponse<PlaygroundMessage>;
+export type PlaygroundMessageResponse = PlaygroundApiResponse<PlaygroundMessage>;
 
 /**
  * Type alias for messages list response with polling metadata
  */
-export interface PlaygroundMessagesApiResponse
-  extends PlaygroundApiResponse<PlaygroundMessage[]> {
+export interface PlaygroundMessagesApiResponse extends PlaygroundApiResponse<PlaygroundMessage[]> {
   /** Whether there are more messages to fetch */
   hasMore?: boolean;
   /** Current session status */

@@ -27,17 +27,14 @@ The settings system provides a unified store (`settingsStore`) with five categor
 
 ```svelte
 <script lang="ts">
-  import { SvelteFlow, MiniMap, Background } from "@xyflow/svelte";
-  import { editorSettings } from "$lib/stores/settingsStore.js";
+  import { SvelteFlow, MiniMap, Background } from '@xyflow/svelte';
+  import { editorSettings } from '$lib/stores/settingsStore.js';
 
   // Derive snap grid from settings
   const snapGrid = $derived(
     $editorSettings.snapToGrid
-      ? ([$editorSettings.gridSize, $editorSettings.gridSize] as [
-          number,
-          number,
-        ])
-      : undefined,
+      ? ([$editorSettings.gridSize, $editorSettings.gridSize] as [number, number])
+      : undefined
   );
 </script>
 
@@ -74,7 +71,7 @@ The settings system provides a unified store (`settingsStore`) with five categor
 
 ```svelte
 <script lang="ts">
-  import { uiSettings, updateSettings } from "$lib/stores/settingsStore.js";
+  import { uiSettings, updateSettings } from '$lib/stores/settingsStore.js';
 
   function toggleSidebar() {
     updateSettings({ ui: { sidebarCollapsed: !$uiSettings.sidebarCollapsed } });
@@ -88,11 +85,7 @@ The settings system provides a unified store (`settingsStore`) with five categor
   style:width="{$uiSettings.sidebarCollapsed ? 48 : $uiSettings.sidebarWidth}px"
 >
   <button class="collapse-toggle" onclick={toggleSidebar}>
-    <Icon
-      icon={$uiSettings.sidebarCollapsed
-        ? "mdi:chevron-right"
-        : "mdi:chevron-left"}
-    />
+    <Icon icon={$uiSettings.sidebarCollapsed ? 'mdi:chevron-right' : 'mdi:chevron-left'} />
   </button>
 
   {#if !$uiSettings.sidebarCollapsed}
@@ -117,7 +110,7 @@ The settings system provides a unified store (`settingsStore`) with five categor
 
 ```svelte
 <script lang="ts">
-  import { uiSettings } from "$lib/stores/settingsStore.js";
+  import { uiSettings } from '$lib/stores/settingsStore.js';
 </script>
 
 <div class="config-panel" class:config-panel--compact={$uiSettings.compactMode}>
@@ -142,9 +135,9 @@ The settings system provides a unified store (`settingsStore`) with five categor
 In `workflowStore.ts` or a dedicated auto-save service:
 
 ```typescript
-import { behaviorSettings } from "$lib/stores/settingsStore.js";
-import { isDirtyStore, workflowStore } from "./workflowStore.js";
-import { get } from "svelte/store";
+import { behaviorSettings } from '$lib/stores/settingsStore.js';
+import { isDirtyStore, workflowStore } from './workflowStore.js';
+import { get } from 'svelte/store';
 
 let autoSaveTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -173,9 +166,9 @@ export function initAutoSave(saveCallback: () => Promise<void>): () => void {
         if (isDirty) {
           try {
             await saveCallback();
-            console.log("Auto-saved workflow");
+            console.log('Auto-saved workflow');
           } catch (error) {
-            console.error("Auto-save failed:", error);
+            console.error('Auto-save failed:', error);
           }
         }
       }, $behavior.autoSaveInterval);
@@ -198,12 +191,12 @@ export function initAutoSave(saveCallback: () => Promise<void>): () => void {
 
 ```svelte
 <script lang="ts">
-  import { behaviorSettings } from "$lib/stores/settingsStore.js";
-  import { deleteNodes } from "$lib/stores/workflowStore.js";
+  import { behaviorSettings } from '$lib/stores/settingsStore.js';
+  import { deleteNodes } from '$lib/stores/workflowStore.js';
 
   function handleDeleteNode(nodeId: string) {
     if ($behaviorSettings.confirmDelete) {
-      const confirmed = confirm("Are you sure you want to delete this node?");
+      const confirmed = confirm('Are you sure you want to delete this node?');
       if (!confirmed) {
         return;
       }
@@ -218,16 +211,13 @@ export function initAutoSave(saveCallback: () => Promise<void>): () => void {
 ### 6. API Settings → Request Configuration
 
 ```typescript
-import { apiSettings } from "$lib/stores/settingsStore.js";
-import { get } from "svelte/store";
+import { apiSettings } from '$lib/stores/settingsStore.js';
+import { get } from 'svelte/store';
 
 /**
  * Make an API request with settings-based configuration
  */
-async function apiRequest<T>(
-  url: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const $api = get(apiSettings);
 
   // Create abort controller for timeout
@@ -241,7 +231,7 @@ async function apiRequest<T>(
     try {
       const response = await fetch(url, {
         ...options,
-        signal: controller.signal,
+        signal: controller.signal
       });
 
       clearTimeout(timeoutId);
@@ -266,14 +256,12 @@ async function apiRequest<T>(
 
       // Exponential backoff: 1s, 2s, 4s...
       const delay = 1000 * Math.pow(2, attempt - 1);
-      console.warn(
-        `Request failed, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`,
-      );
+      console.warn(`Request failed, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
-  throw lastError ?? new Error("Request failed");
+  throw lastError ?? new Error('Request failed');
 }
 ```
 
@@ -282,16 +270,12 @@ async function apiRequest<T>(
 ## Testing Settings Integration
 
 ```typescript
-import {
-  updateSettings,
-  getSettings,
-  resetSettings,
-} from "$lib/stores/settingsStore.js";
+import { updateSettings, getSettings, resetSettings } from '$lib/stores/settingsStore.js';
 
 // Set specific settings for testing
 updateSettings({
   editor: { showMinimap: false, snapToGrid: false },
-  behavior: { confirmDelete: false },
+  behavior: { confirmDelete: false }
 });
 
 // Verify current settings
@@ -299,7 +283,7 @@ const settings = getSettings();
 console.log(settings.editor.showMinimap); // false
 
 // Reset to defaults
-resetSettings(["editor"]); // Reset only editor category
+resetSettings(['editor']); // Reset only editor category
 resetSettings(); // Reset all categories
 ```
 

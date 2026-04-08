@@ -5,8 +5,8 @@
  * Exposes lookup helpers for icon, color, and label resolution.
  */
 
-import type { CategoryDefinition, NodeCategory } from "../types/index.js";
-import { DEFAULT_CATEGORIES } from "../config/defaultCategories.js";
+import type { CategoryDefinition, NodeCategory } from '../types/index.js';
+import { DEFAULT_CATEGORIES } from '../config/defaultCategories.js';
 
 /**
  * Internal reactive state holding the category definitions.
@@ -24,25 +24,21 @@ let categoryMap = $derived(
       map.set(cat.name, cat);
     }
     return map;
-  })(),
+  })()
 );
 
 /**
  * Get all category definitions, sorted by weight.
  */
 export function getCategories(): CategoryDefinition[] {
-  return [...categoriesState].sort(
-    (a, b) => (a.weight ?? 999) - (b.weight ?? 999),
-  );
+  return [...categoriesState].sort((a, b) => (a.weight ?? 999) - (b.weight ?? 999));
 }
 
 /**
  * Initialize categories with API data, merging with defaults.
  * API categories override defaults by name; custom categories are appended.
  */
-export function initializeCategories(
-  apiCategories: CategoryDefinition[],
-): void {
+export function initializeCategories(apiCategories: CategoryDefinition[]): void {
   const defaultMap = new Map<string, CategoryDefinition>();
   for (const cat of DEFAULT_CATEGORIES) {
     defaultMap.set(cat.name, cat);
@@ -52,7 +48,7 @@ export function initializeCategories(
   for (const cat of apiCategories) {
     defaultMap.set(cat.name, {
       ...defaultMap.get(cat.name),
-      ...cat,
+      ...cat
     });
   }
 
@@ -70,28 +66,26 @@ export function getCategoryLabel(category: NodeCategory): string {
   return category
     .split(/[\s_-]+/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 }
 
 /**
  * Get the icon for a category.
  */
 export function getCategoryIcon(category: NodeCategory): string {
-  return categoryMap.get(category)?.icon ?? "mdi:folder";
+  return categoryMap.get(category)?.icon ?? 'mdi:folder';
 }
 
 /**
  * Get the color token for a category.
  */
 export function getCategoryColor(category: NodeCategory): string {
-  return categoryMap.get(category)?.color ?? "var(--fd-node-slate)";
+  return categoryMap.get(category)?.color ?? 'var(--fd-node-slate)';
 }
 
 /**
  * Get the full category definition, or undefined if not found.
  */
-export function getCategoryDefinition(
-  category: NodeCategory,
-): CategoryDefinition | undefined {
+export function getCategoryDefinition(category: NodeCategory): CategoryDefinition | undefined {
   return categoryMap.get(category);
 }
