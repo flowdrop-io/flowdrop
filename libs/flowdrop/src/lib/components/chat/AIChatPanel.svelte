@@ -226,7 +226,6 @@
       totalCount === 1 ? "batch: 1 command" : `batch: ${totalCount} commands`,
     );
 
-    const results: import("../../commands/types.js").BatchResult["results"] = [];
     let completedCount = 0;
     let batchError: string | undefined;
 
@@ -236,7 +235,6 @@
         item.status = "executing";
 
         const result = executeCommand(command, context);
-        results.push(result);
 
         if (!result.ok) {
           item.status = "error";
@@ -271,11 +269,9 @@
       return;
     }
 
-    const batchResult = { ok: false as const, results, completedCount, totalCount, error: batchError };
-
     if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
       autoRetryCount++;
-      const errorText = buildBatchErrorMessage(batchResult, pendingItems);
+      const errorText = buildBatchErrorMessage(completedCount, totalCount, batchError, pendingItems);
       await sendMessageInternal(errorText, autoRetryCount);
     } else {
       appendErrorToHistory(
@@ -299,24 +295,26 @@
 
   /** Build a structured error report from a failed batch for the LLM */
   function buildBatchErrorMessage(
-    result: import("../../commands/types.js").BatchResult,
+    completedCount: number,
+    totalCount: number,
+    error: string,
     items: CommandPreviewItem[],
   ): string {
     const lines: string[] = [
-      `Batch execution failed at command ${result.completedCount + 1}/${result.totalCount}: ${result.error}`,
+      `Batch execution failed at command ${completedCount + 1}/${totalCount}: ${error}`,
     ];
 
-    if (result.completedCount > 0) {
+    if (completedCount > 0) {
       lines.push("\nCommands that succeeded (rolled back):");
-      for (let i = 0; i < result.completedCount; i++) {
+      for (let i = 0; i < completedCount; i++) {
         lines.push(`  ${i + 1}. ${items[i].raw}`);
       }
     }
 
     lines.push("\nFailed command:");
-    lines.push(`  ${items[result.completedCount]?.raw ?? "(unknown)"}`);
+    lines.push(`  ${items[completedCount]?.raw ?? "(unknown)"}`);
 
-    const remaining = result.totalCount - result.completedCount - 1;
+    const remaining = totalCount - completedCount - 1;
     if (remaining > 0) {
       lines.push(`\n${remaining} command(s) were skipped.`);
     }
