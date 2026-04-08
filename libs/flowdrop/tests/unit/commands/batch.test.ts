@@ -107,7 +107,7 @@ function createMockContext(
 // ============================================================================
 
 describe("executeBatch", () => {
-  it("executes all commands and commits on success", () => {
+  it("executes all commands and commits on success", async () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
@@ -117,7 +117,7 @@ describe("executeBatch", () => {
       { type: "add_node", nodeTypeId: "api_node" },
     ];
 
-    const result = executeBatch(commands, context);
+    const result = await executeBatch(commands, context);
 
     expect(result.ok).toBe(true);
     expect(result.completedCount).toBe(2);
@@ -134,7 +134,7 @@ describe("executeBatch", () => {
     expect(dispatch.addNode).toHaveBeenCalledTimes(2);
   });
 
-  it("stops and cancels on first error", () => {
+  it("stops and cancels on first error", async () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
@@ -145,7 +145,7 @@ describe("executeBatch", () => {
       { type: "add_node", nodeTypeId: "api_node" }, // should not execute
     ];
 
-    const result = executeBatch(commands, context);
+    const result = await executeBatch(commands, context);
 
     expect(result.ok).toBe(false);
     expect(result.completedCount).toBe(1); // only the add succeeded
@@ -160,12 +160,12 @@ describe("executeBatch", () => {
     expect(dispatch.commitTransaction).not.toHaveBeenCalled();
   });
 
-  it("returns success for empty batch", () => {
+  it("returns success for empty batch", async () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
 
-    const result = executeBatch([], context);
+    const result = await executeBatch([], context);
 
     expect(result.ok).toBe(true);
     expect(result.completedCount).toBe(0);
@@ -177,7 +177,7 @@ describe("executeBatch", () => {
     expect(dispatch.cancelTransaction).not.toHaveBeenCalled();
   });
 
-  it("handles single-command batch", () => {
+  it("handles single-command batch", async () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
@@ -186,7 +186,7 @@ describe("executeBatch", () => {
       { type: "add_node", nodeTypeId: "llm_node" },
     ];
 
-    const result = executeBatch(commands, context);
+    const result = await executeBatch(commands, context);
 
     expect(result.ok).toBe(true);
     expect(result.completedCount).toBe(1);
@@ -197,7 +197,7 @@ describe("executeBatch", () => {
     expect(dispatch.commitTransaction).toHaveBeenCalledOnce();
   });
 
-  it("re-reads workflow before each command (avoids stale state)", () => {
+  it("re-reads workflow before each command (avoids stale state)", async () => {
     const dispatch = createMockDispatch();
     const node1 = createMockNode("agentspec.llm_node.1", llmMeta);
 
@@ -225,7 +225,7 @@ describe("executeBatch", () => {
       { type: "add_node", nodeTypeId: "llm_node" },
     ];
 
-    const result = executeBatch(commands, context);
+    const result = await executeBatch(commands, context);
 
     expect(result.ok).toBe(true);
     expect(result.completedCount).toBe(2);
@@ -233,7 +233,7 @@ describe("executeBatch", () => {
     expect(getWorkflow).toHaveBeenCalledTimes(2);
   });
 
-  it("error at step 1 cancels immediately with no completed commands", () => {
+  it("error at step 1 cancels immediately with no completed commands", async () => {
     const dispatch = createMockDispatch();
     const workflow = createMockWorkflow();
     const context = createMockContext(workflow, dispatch);
@@ -243,7 +243,7 @@ describe("executeBatch", () => {
       { type: "add_node", nodeTypeId: "llm_node" },
     ];
 
-    const result = executeBatch(commands, context);
+    const result = await executeBatch(commands, context);
 
     expect(result.ok).toBe(false);
     expect(result.completedCount).toBe(0);
@@ -256,7 +256,7 @@ describe("executeBatch", () => {
     expect(dispatch.commitTransaction).not.toHaveBeenCalled();
   });
 
-  it("propagates NO_WORKFLOW error from executor", () => {
+  it("propagates NO_WORKFLOW error from executor", async () => {
     const dispatch = createMockDispatch();
     const context = createMockContext(null, dispatch); // null workflow
 
@@ -264,7 +264,7 @@ describe("executeBatch", () => {
       { type: "add_node", nodeTypeId: "llm_node" },
     ];
 
-    const result = executeBatch(commands, context);
+    const result = await executeBatch(commands, context);
 
     expect(result.ok).toBe(false);
     expect(result.completedCount).toBe(0);
