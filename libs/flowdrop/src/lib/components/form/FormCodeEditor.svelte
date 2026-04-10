@@ -91,13 +91,14 @@
       return '';
     }
     if (typeof val === 'string') {
-      // Check if it's already a valid JSON string
+      // If the string is already a valid JSON representation (e.g. '{"a":1}' or '"foo"'),
+      // use it as-is to avoid double-encoding
       try {
         JSON.parse(val);
         return val;
       } catch {
-        // Not valid JSON, return as-is
-        return val;
+        // Plain JS string value — serialize it as a JSON string literal (adds quotes)
+        return JSON.stringify(val);
       }
     }
     // Convert object to formatted JSON string
