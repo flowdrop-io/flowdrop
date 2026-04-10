@@ -7,15 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-10
+
+### Added
+
+- **`workflowSettingsSchema` prop**: Pass a `ConfigSchema` to the `App` component to inject additional fields into the Workflow Settings panel. Values are persisted in a new `workflow.config` field and round-trip correctly through load/save.
+
 ### Fixed
 
-- **Workflow settings editing**: The Workflow Settings panel previously showed fields but could not persist custom metadata, giving a false impression of editability. Passing a `workflowSettingsSchema` (ConfigSchema) to the `App` component now injects additional fields into the panel whose values round-trip correctly through load/save via a new `workflow.config` field.
 - **CodeEditor JSON string preservation**: External value updates to a `CodeEditor` field no longer strip quotes from JSON string values.
-- **`workflowSettingsSchema` reserved name collision**: Consumer-supplied schema properties that shadowed built-in workflow fields (`name`, `description`, `format`) would silently overwrite the schema definition and produce a broken settings panel. Colliding keys are now filtered out and a warning is logged so misconfigured consumers fail loudly.
+- **`workflowSettingsSchema` reserved name collision**: Consumer-supplied schema properties that shadowed built-in workflow fields (`name`, `description`, `format`) would silently overwrite the schema definition and produce a broken settings panel. Colliding keys are now filtered out and a warning is logged.
+- **Port preservation on mount**: `App` no longer reinitialises the port compatibility checker when one has already been set, preserving custom port configs in SvelteKit route usage.
+- **SimpleNode description fallback removed**: Nodes without a description no longer render a placeholder `"A configurable simple node"` paragraph.
 
 ### Refactored
 
-- **Port compatibility init check**: Replaced try/catch-as-sentinel pattern with an explicit `isPortCompatibilityInitialized()` predicate exported from `connections.ts`, making the intent clear and reserving exceptions for genuinely unexpected conditions.
+- **Port compatibility init check**: Replaced try/catch-as-sentinel pattern with an explicit `isPortCompatibilityInitialized()` predicate, making the intent clear and reserving exceptions for genuinely unexpected conditions.
 
 ## [1.6.0] - 2026-04-08
 
