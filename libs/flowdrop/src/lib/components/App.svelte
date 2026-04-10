@@ -227,33 +227,52 @@
   let swapTargetMetadata = $state<NodeMetadata | null>(null);
   let swapInteractiveState = $state<InteractiveSwapState | null>(null);
 
+  // Built-in workflow settings field names — consumer schemas must not reuse these.
+  const WORKFLOW_SETTINGS_RESERVED = new Set(['name', 'description', 'format']);
+
   // Workflow configuration schema (derived to pick up dynamic format options)
-  let workflowConfigSchema: ConfigSchema = $derived({
-    type: 'object' as const,
-    properties: {
-      name: {
-        type: 'string',
-        title: 'Workflow Name',
-        description: 'The name of the workflow',
-        default: ''
+  let workflowConfigSchema: ConfigSchema = $derived.by(() => {
+    const extraProps = Object.fromEntries(
+      Object.entries(workflowSettingsSchema?.properties ?? {}).filter(([k]) => {
+        if (WORKFLOW_SETTINGS_RESERVED.has(k)) {
+          logger.warn(
+            `workflowSettingsSchema: property "${k}" is reserved and will be ignored. Choose a different key.`
+          );
+          return false;
+        }
+        return true;
+      })
+    );
+    const extraRequired = (workflowSettingsSchema?.required ?? []).filter(
+      (k) => !WORKFLOW_SETTINGS_RESERVED.has(k)
+    );
+    return {
+      type: 'object' as const,
+      properties: {
+        name: {
+          type: 'string',
+          title: 'Workflow Name',
+          description: 'The name of the workflow',
+          default: ''
+        },
+        description: {
+          type: 'string',
+          title: 'Description',
+          description: 'A description of the workflow',
+          format: 'multiline',
+          default: ''
+        },
+        format: {
+          type: 'string',
+          title: 'Workflow Format',
+          description: 'The specification format for this workflow',
+          oneOf: workflowFormatRegistry.getOneOfOptions(),
+          default: 'flowdrop'
+        },
+        ...extraProps
       },
-      description: {
-        type: 'string',
-        title: 'Description',
-        description: 'A description of the workflow',
-        format: 'multiline',
-        default: ''
-      },
-      format: {
-        type: 'string',
-        title: 'Workflow Format',
-        description: 'The specification format for this workflow',
-        oneOf: workflowFormatRegistry.getOneOfOptions(),
-        default: 'flowdrop'
-      },
-      ...(workflowSettingsSchema?.properties ?? {})
-    },
-    required: ['name', ...(workflowSettingsSchema?.required ?? [])]
+      required: ['name', ...extraRequired]
+    };
   });
 
   // Workflow configuration values
