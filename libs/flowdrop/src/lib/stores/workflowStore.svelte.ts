@@ -714,6 +714,7 @@ export const workflowActions = {
     name?: string;
     description?: string;
     metadata?: Partial<Workflow['metadata']>;
+    config?: Record<string, unknown>;
   }) => {
     pushToHistory('Batch update');
     if (!workflowState) return;
@@ -725,6 +726,7 @@ export const workflowActions = {
       ...(updates.description !== undefined && {
         description: updates.description
       }),
+      ...(updates.config !== undefined && { config: updates.config }),
       metadata: buildMetadata(workflowState.metadata, updates.metadata ?? undefined)
     };
     bumpVersion();

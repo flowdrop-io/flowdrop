@@ -3686,6 +3686,10 @@ components:
           description: Workflow edges
         metadata:
           $ref: '#/components/schemas/WorkflowMetadata'
+        config:
+          type: object
+          description: Custom workflow-level configuration values. Populated when a workflowSettingsSchema is provided to the editor.
+          additionalProperties: true
       required:
         - id
         - name

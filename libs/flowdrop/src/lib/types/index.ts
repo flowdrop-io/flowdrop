@@ -1290,6 +1290,8 @@ export interface Workflow {
     /** Workflow format. Determines sidebar filtering and export behavior. */
     format?: WorkflowFormat;
   };
+  /** Custom workflow-level configuration values, populated via workflowSettingsSchema. */
+  config?: Record<string, unknown>;
 }
 
 /**

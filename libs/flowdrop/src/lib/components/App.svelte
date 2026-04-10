@@ -121,6 +121,8 @@
     showSettingsResetButton?: boolean;
     /** Pluggable swap strategies — instance-scoped, checked in order */
     swapStrategies?: SwapStrategy[];
+    /** Additional JSON Schema properties to show in the Workflow Settings panel. Values are persisted in workflow.config. */
+    workflowSettingsSchema?: ConfigSchema;
   }
 
   let {
@@ -146,7 +148,8 @@
     settingsCategories,
     showSettingsSyncButton,
     showSettingsResetButton,
-    swapStrategies
+    swapStrategies,
+    workflowSettingsSchema
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally — feature flags don't change at runtime
@@ -246,16 +249,18 @@
         description: 'The specification format for this workflow',
         oneOf: workflowFormatRegistry.getOneOfOptions(),
         default: 'flowdrop'
-      }
+      },
+      ...(workflowSettingsSchema?.properties ?? {})
     },
-    required: ['name']
+    required: ['name', ...(workflowSettingsSchema?.required ?? [])]
   });
 
   // Workflow configuration values
   let workflowConfigValues = $derived({
     name: getWorkflowName() || '',
     description: getWorkflowStore()?.description || '',
-    format: getWorkflowStore()?.metadata?.format || 'flowdrop'
+    format: getWorkflowStore()?.metadata?.format || 'flowdrop',
+    ...(getWorkflowStore()?.config ?? {})
   });
 
   // Get the current node from the workflow store
@@ -1055,13 +1060,16 @@
                   }
                 }
 
+                // Extract built-in fields; everything else belongs in workflow.config
+                const { name, description, format: _format, ...customConfig } = config;
                 workflowActions.batchUpdate({
-                  name: config.name as string,
-                  description: config.description as string | undefined,
+                  name: name as string,
+                  description: description as string | undefined,
                   metadata: {
                     ...wf.metadata,
                     format: newFormat
-                  }
+                  },
+                  ...(workflowSettingsSchema && { config: customConfig as Record<string, unknown> })
                 });
               }
             }}
