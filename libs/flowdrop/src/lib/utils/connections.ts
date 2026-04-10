@@ -144,6 +144,13 @@ export function initializePortCompatibility(portConfig: PortConfig): void {
 }
 
 /**
+ * Returns true if the port compatibility checker has been initialized.
+ */
+export function isPortCompatibilityInitialized(): boolean {
+  return globalCompatibilityChecker !== null;
+}
+
+/**
  * Get the global port compatibility checker
  */
 export function getPortCompatibilityChecker(): PortCompatibilityChecker {

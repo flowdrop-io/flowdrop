@@ -57,7 +57,8 @@
   import { getUiSettings, updateSettings } from '../stores/settingsStore.svelte.js';
   import {
     initializePortCompatibility,
-    getPortCompatibilityChecker
+    getPortCompatibilityChecker,
+    isPortCompatibilityInitialized
   } from '$lib/utils/connections.js';
   import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
   import { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
@@ -733,9 +734,7 @@
         // Ensure port compatibility checker is initialized (needed for proximity connect, etc.)
         // mountFlowDropApp initializes this before mounting, but SvelteKit routes need it here.
         // Only initialize with defaults if not already set — preserves custom port configs.
-        try {
-          getPortCompatibilityChecker();
-        } catch {
+        if (!isPortCompatibilityInitialized()) {
           initializePortCompatibility(DEFAULT_PORT_CONFIG);
         }
 
