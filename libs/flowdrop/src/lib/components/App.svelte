@@ -732,7 +732,12 @@
 
         // Ensure port compatibility checker is initialized (needed for proximity connect, etc.)
         // mountFlowDropApp initializes this before mounting, but SvelteKit routes need it here.
-        initializePortCompatibility(DEFAULT_PORT_CONFIG);
+        // Only initialize with defaults if not already set — preserves custom port configs.
+        try {
+          getPortCompatibilityChecker();
+        } catch {
+          initializePortCompatibility(DEFAULT_PORT_CONFIG);
+        }
 
         await fetchNodeTypes();
 
