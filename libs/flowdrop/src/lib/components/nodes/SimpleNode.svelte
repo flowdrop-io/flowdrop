@@ -82,9 +82,7 @@
    * This allows users to customize the node description per-instance via config.
    */
   const displayDescription = $derived(
-    (props.data.config?.instanceDescription as string) ||
-      props.data.metadata?.description ||
-      'A configurable simple node'
+    (props.data.config?.instanceDescription as string) || props.data.metadata?.description || null
   );
 
   // Handle configuration sidebar - now using global ConfigSidebar
@@ -226,9 +224,11 @@
     </div>
 
     <!-- Node Description -->
-    <p class="flowdrop-simple-node__description">
-      {displayDescription}
-    </p>
+    {#if displayDescription}
+      <p class="flowdrop-simple-node__description">
+        {displayDescription}
+      </p>
+    {/if}
   </div>
 
   <!-- Processing indicator -->
@@ -281,7 +281,7 @@
     cursor: pointer;
     transition: all var(--fd-transition-fast);
     box-shadow: var(--fd-shadow-md);
-    overflow: visible; /* Changed from hidden to visible to allow handles to be properly accessible */
+    overflow: hidden;
     z-index: 10;
     color: var(--fd-foreground);
   }
@@ -328,7 +328,7 @@
   .flowdrop-simple-node__header {
     padding: var(--fd-space-xl);
     background: var(--fd-header);
-    border-radius: var(--fd-radius-xl);
+    flex: 1;
   }
 
   .flowdrop-simple-node__header-content {

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Workflow settings editing**: The Workflow Settings panel previously showed fields but could not persist custom metadata, giving a false impression of editability. Passing a `workflowSettingsSchema` (ConfigSchema) to the `App` component now injects additional fields into the panel whose values round-trip correctly through load/save via a new `workflow.config` field.
+- **CodeEditor JSON string preservation**: External value updates to a `CodeEditor` field no longer strip quotes from JSON string values.
+
+## [1.6.0] - 2026-04-08
+
 ### Added
 
 - **Progressive command execution**: AI chat apply flow executes each command with a 100 ms inter-command delay so canvas updates are visually distinct. `executeBatch` is now async with an optional `delayBetweenMs` option; undo still covers the entire batch as a single transaction.
