@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`clearAllDrafts()` API**: New method on the mounted `MountedFlowDropApp` instance and as a standalone export from `@flowdrop/flowdrop/editor`. Removes every `localStorage` key beginning with `flowdrop:draft:` (plus the configured `draftStorageKey`, when called via the instance). Intended for host applications to call from their logout handler so workflow drafts do not persist across user sessions on shared browser profiles.
 
+### Fixed
+
+- **Minimap visually distinct from canvas**: The MiniMap defaulted to `--fd-card`, which is identical to `--fd-background` in light mode, causing users to click and drag on it mistaking it for the canvas. The minimap background now uses `--fd-muted`, node fill uses `--fd-muted-foreground` for contrast in both light and dark modes, and the panel renders with a border, rounded corners, and a shadow so it reads as a floating overlay.
+
 ### Documentation
 
 - **Logout integration recipe**: `auto-save-and-drafts.md` now documents that drafts persist in `localStorage` until explicitly cleared and shows the recommended `clearAllDrafts()` integration pattern.
