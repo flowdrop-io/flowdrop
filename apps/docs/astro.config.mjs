@@ -140,6 +140,7 @@ export default defineConfig({
 								{ label: 'Creating Workflows', slug: 'guides/creating-workflows' },
 								{ label: 'Node Types', slug: 'guides/node-types' },
 								{ label: 'Theming', slug: 'guides/theming' },
+								{ label: 'i18n & Custom Messages', slug: 'guides/i18n' },
 								{ label: 'Interactive Playground', slug: 'guides/playground' },
 								{ label: 'Human-in-the-Loop', slug: 'guides/interrupts' }
 							]

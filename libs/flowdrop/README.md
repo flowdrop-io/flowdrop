@@ -131,6 +131,16 @@ const app = await mountFlowDropApp(container, {
 });
 ```
 
+## Customising messages
+
+Every user-facing string flows through a typed `Messages` tree. Pass a callback to override any subset:
+
+```svelte
+<FlowDrop messages={() => ({ form: { schema: { save: 'Apply' } } })} />
+```
+
+Wire the callback to your i18n library (paraglide-js, sveltekit-i18n, etc.) — locale changes propagate automatically. See the [i18n & Custom Messages guide](https://docs.flowdrop.io/guides/i18n) for the full shape and a paraglide-js worked example.
+
 ## Sub-Module Exports
 
 FlowDrop provides tree-shakeable sub-module exports so you can import only what you need:

@@ -1,0 +1,120 @@
+---
+title: i18n & Custom Messages
+description: Override or translate every user-facing string in FlowDrop via the messages prop.
+---
+
+Every user-facing label, tooltip, placeholder, and notice in FlowDrop is rendered from a single typed `Messages` tree. You can override any subset by passing a `messages` callback to `<FlowDrop>`. Wire that callback to your i18n library and locale changes propagate into FlowDrop without a subscription.
+
+FlowDrop is **not** an i18n library. It is a consumer of one. Translations live in your app, alongside the rest of your UI copy.
+
+## Quick start
+
+Override a single string:
+
+```svelte
+<script>
+  import { FlowDrop } from '@flowdrop/flowdrop';
+</script>
+
+<FlowDrop messages={() => ({ form: { schema: { save: 'Apply' } } })} />
+```
+
+The callback returns a `DeepPartial<Messages>` — every key is optional, missing keys fall through to the English defaults.
+
+## Translating with paraglide-js
+
+[Paraglide-js](https://inlang.com/m/gerre34r/library-inlang-paraglideJs) compiles your `.json` translation files into typed message functions. Wire them into FlowDrop's `messages` prop:
+
+```svelte
+<script>
+  import { FlowDrop } from '@flowdrop/flowdrop';
+  import * as p from '$lib/paraglide/messages';
+
+  // The callback re-runs on each read; paraglide's reactive locale
+  // store causes Svelte to re-derive the merged tree and re-render.
+  const messages = () => ({
+    common: {
+      save: p.flowdrop_common_save(),
+      cancel: p.flowdrop_common_cancel()
+    },
+    form: {
+      array: {
+        moveUp: p.flowdrop_form_array_moveUp(),
+        moveDown: p.flowdrop_form_array_moveDown()
+      }
+    },
+    interrupt: {
+      // Parameterised messages take a typed params object.
+      responseSubmittedBy: ({ name }) => p.flowdrop_interrupt_responseSubmittedBy({ name })
+    }
+  });
+</script>
+
+<FlowDrop {messages} />
+```
+
+`paraglide-js` is one option — `sveltekit-i18n`, `typesafe-i18n`, or any reactive store will work. The contract is just: a callback returning a partial tree.
+
+## The Messages shape
+
+The full default tree lives at `libs/flowdrop/src/lib/messages/defaults.ts` and is exported as `defaultMessages` from `@flowdrop/flowdrop`. The shape is grouped by **domain**, not by component — file paths churn, domains don't.
+
+| Branch        | What it covers                                                                       |
+| ------------- | ------------------------------------------------------------------------------------ |
+| `common`      | Generic verbs reused everywhere: `save`, `cancel`, `confirm`, `close`, `delete`, `yes`, `no`. |
+| `form`        | All form components — `array.*` (move/delete/empty/limits), `markdown.*` (toolbar, status bar), `autocomplete.*`, `field.required`, `toggle.{enabled,disabled}`, `schema.{save,cancel,empty}`. |
+| `interrupt`   | Inline interrupt prompts — `confirmation.*`, `choice.*` (with parameterised counter), `review.*` (accept/reject/diff/summary), `text.*` (placeholder, min, submit), `form.*`, `bubble.*` (per-kind required/submitted labels, retry, cancel). Plus shared `responseSubmitted` / `responseSubmittedBy({ name })`. |
+| `chat`        | AI Assistant panel: `aiAssistant`, `placeholder`, `send`, `autoRetry({ attempt, max })`, plus `commandPreview.*` (apply / cancel / status). |
+| `playground`  | Playground chat: `chat.{placeholder, predefinedRun}`, `states.*` (welcome screens), `actions.*` (run/stop/send), `roles.*` (you/assistant/system/log/message), `messageTooltips.*`, `sessions.*` (list, empty, delete confirm, relative timestamps). |
+| `nodes.notes` | NotesNode placeholder, type names (info/warning/success/error/note), processing/error indicators, configure tooltip. |
+| `navigation`  | Navbar branding (`appName`, `tagline`), connection indicator, settings button, default primary action labels (`save`, `export`, `import`, `workflowSettings`). |
+| `status`      | `pipeline.*` (refresh/view-logs/breadcrumbs) and `overlay.*` (NodeStatusOverlay tooltip and detail labels). |
+
+Parameterised entries are functions, not template strings:
+
+```ts
+// From defaults
+interrupt: {
+  responseSubmittedBy: ({ name }: { name: string }) => `Response submitted by ${name}`,
+  choice: {
+    selectedCount: ({ n, total }: { n: number; total: number }) => `${n} of ${total} selected`
+  }
+}
+```
+
+When you override, you can pass either a function of the same shape or a plain `string` for cases where the parameters don't matter to your translation (the `DeepPartial` type widens accordingly).
+
+## Migrating from deprecated label props
+
+Several components used to accept individual `*Label` props. These are deprecated in **v1.x** and removed in **v2.0**. They keep working but emit a one-shot `console.warn` (development only).
+
+| Component       | Deprecated prop          | Replace with                                |
+| --------------- | ------------------------ | ------------------------------------------- |
+| `<SchemaForm>`  | `saveLabel`              | `messages.form.schema.save`                 |
+| `<SchemaForm>`  | `cancelLabel`            | `messages.form.schema.cancel`               |
+| `<FormToggle>`  | `onLabel`                | `messages.form.toggle.enabled`              |
+| `<FormToggle>`  | `offLabel`               | `messages.form.toggle.disabled`             |
+| `<FormArray>`   | `addLabel`               | `messages.form.array.add`                   |
+| `<AIChatPanel>` | `placeholder`            | `messages.chat.placeholder`                 |
+
+Workflow-level overrides on interrupt configs (`config.confirmLabel`, `config.acceptAllLabel`, etc.) are **not** deprecated — those are runtime data from the workflow author, not component-prop API. They keep their priority over the `messages` defaults.
+
+## Components used outside the `<FlowDrop>` provider
+
+If you mount a flowdrop component (e.g. `<SchemaForm>` standalone, or a Storybook story) outside the root `<FlowDrop>`, it falls back silently to the English `defaultMessages`. There is no error. The trade-off: a missing provider always renders English regardless of locale. To get translations in standalone usage, set up the messages context yourself:
+
+```svelte
+<script>
+  import { setMessages, defaultMessages, mergeMessages } from '@flowdrop/flowdrop';
+
+  setMessages(() => mergeMessages(defaultMessages, { /* ...overrides */ }));
+</script>
+```
+
+`setMessages` accepts a getter so reactive overrides propagate the same way they do under `<FlowDrop>`.
+
+## Reference
+
+- Defaults: `libs/flowdrop/src/lib/messages/defaults.ts`
+- Public types: `Messages`, `MessagesOverride` (re-exported from `@flowdrop/flowdrop`)
+- Source: `libs/flowdrop/src/lib/messages/`
