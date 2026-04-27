@@ -155,6 +155,46 @@ export function getDraftMetadata(storageKey: string): DraftMetadata | null {
 }
 
 /**
+ * Clear all FlowDrop drafts from localStorage
+ *
+ * Removes every key beginning with `flowdrop:draft:`. Intended to be called
+ * from a host application's logout handler so workflow drafts do not persist
+ * across user sessions on shared devices.
+ *
+ * @param extraKeys - Additional explicit keys to remove. Pass any custom
+ *   `draftStorageKey` values configured at mount time so they are cleared
+ *   alongside the default-prefixed keys.
+ * @returns The number of entries removed.
+ */
+export function clearAllDrafts(extraKeys: readonly string[] = []): number {
+  try {
+    const keysToRemove = new Set<string>();
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(`${STORAGE_KEY_PREFIX}:`)) {
+        keysToRemove.add(key);
+      }
+    }
+
+    for (const key of extraKeys) {
+      if (localStorage.getItem(key) !== null) {
+        keysToRemove.add(key);
+      }
+    }
+
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
+
+    return keysToRemove.size;
+  } catch (error) {
+    logger.warn('Failed to clear drafts from localStorage:', error);
+    return 0;
+  }
+}
+
+/**
  * Draft auto-save manager
  *
  * Handles interval-based auto-saving of workflow drafts.

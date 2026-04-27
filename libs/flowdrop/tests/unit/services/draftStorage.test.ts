@@ -12,6 +12,7 @@ import {
   deleteDraft,
   hasDraft,
   getDraftMetadata,
+  clearAllDrafts,
   DraftAutoSaveManager
 } from '$lib/services/draftStorage.js';
 import { createTestWorkflow } from '../../utils/index.js';
@@ -40,8 +41,10 @@ describe('Draft Storage Service', () => {
         const keys = Array.from(mockStorage.keys());
         return keys[index] ?? null;
       }),
-      length: mockStorage.size
-    };
+      get length() {
+        return mockStorage.size;
+      }
+    } as Storage;
   });
 
   afterEach(() => {
@@ -233,6 +236,76 @@ describe('Draft Storage Service', () => {
     it('should return null when draft does not exist', () => {
       const metadata = getDraftMetadata('non-existent');
       expect(metadata).toBeNull();
+    });
+  });
+
+  describe('clearAllDrafts', () => {
+    it('should remove all keys with the flowdrop:draft: prefix', () => {
+      const workflow = createTestWorkflow();
+      saveDraft(workflow, 'flowdrop:draft:workflow-1');
+      saveDraft(workflow, 'flowdrop:draft:workflow-2');
+      saveDraft(workflow, 'flowdrop:draft:new');
+
+      const removed = clearAllDrafts();
+
+      expect(removed).toBe(3);
+      expect(hasDraft('flowdrop:draft:workflow-1')).toBe(false);
+      expect(hasDraft('flowdrop:draft:workflow-2')).toBe(false);
+      expect(hasDraft('flowdrop:draft:new')).toBe(false);
+    });
+
+    it('should leave unrelated localStorage keys intact', () => {
+      const workflow = createTestWorkflow();
+      saveDraft(workflow, 'flowdrop:draft:workflow-1');
+      mockStorage.set('user-token', 'abc');
+      mockStorage.set('app-settings', '{"theme":"dark"}');
+
+      clearAllDrafts();
+
+      expect(hasDraft('flowdrop:draft:workflow-1')).toBe(false);
+      expect(mockStorage.get('user-token')).toBe('abc');
+      expect(mockStorage.get('app-settings')).toBe('{"theme":"dark"}');
+    });
+
+    it('should also remove explicit extra keys when provided', () => {
+      const workflow = createTestWorkflow();
+      saveDraft(workflow, 'flowdrop:draft:workflow-1');
+      saveDraft(workflow, 'my-custom-draft-key');
+
+      const removed = clearAllDrafts(['my-custom-draft-key']);
+
+      expect(removed).toBe(2);
+      expect(hasDraft('flowdrop:draft:workflow-1')).toBe(false);
+      expect(hasDraft('my-custom-draft-key')).toBe(false);
+    });
+
+    it('should ignore extra keys that do not exist', () => {
+      const workflow = createTestWorkflow();
+      saveDraft(workflow, 'flowdrop:draft:workflow-1');
+
+      const removed = clearAllDrafts(['nonexistent-key']);
+
+      expect(removed).toBe(1);
+    });
+
+    it('should return 0 when no drafts exist', () => {
+      mockStorage.set('user-token', 'abc');
+
+      const removed = clearAllDrafts();
+
+      expect(removed).toBe(0);
+      expect(mockStorage.get('user-token')).toBe('abc');
+    });
+
+    it('should handle localStorage errors gracefully', () => {
+      vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+      mockStorage.set('flowdrop:draft:workflow-1', '{}');
+
+      const removed = clearAllDrafts();
+
+      expect(removed).toBe(0);
     });
   });
 
