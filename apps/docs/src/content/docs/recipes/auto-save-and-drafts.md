@@ -59,6 +59,32 @@ eventHandlers: {
 }
 ```
 
+## Clearing Drafts on Logout
+
+Drafts persist in `localStorage` until they are explicitly cleared. **FlowDrop has no notion of authentication**, so it cannot clear drafts when the user signs out of your application — you must do this from the host application's logout handler. On a shared browser profile, leftover drafts could otherwise be readable by the next user via DevTools.
+
+The mounted FlowDrop instance exposes `clearAllDrafts()` for this purpose. It removes every key beginning with `flowdrop:draft:` plus the custom `draftStorageKey` you configured at mount time (if any), and returns the number of entries removed.
+
+```typescript
+const app = await mountFlowDropApp(container, {
+  /* ... */
+});
+
+async function logout() {
+  app.clearAllDrafts();
+  await authService.signOut();
+}
+```
+
+If you need to clear drafts after the editor has already been unmounted, import the standalone helper:
+
+```typescript
+import { clearAllDrafts } from '@flowdrop/flowdrop/editor';
+
+clearAllDrafts(); // clears flowdrop:draft:* keys
+clearAllDrafts(['my-custom-draft-key']); // also clears explicit custom keys
+```
+
 ## Storage Limits
 
 Browsers typically limit `localStorage` to **5-10MB**. Large workflows with many nodes and complex configurations could approach this limit.
