@@ -37,6 +37,7 @@
   } from '../../stores/interruptStore.svelte.js';
   import { interruptService } from '../../services/interruptService.js';
   import { logger } from '../../utils/logger.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -109,37 +110,39 @@
    * Get the label for the interrupt type
    */
   function getTypeLabel(type: InterruptType): string {
+    const required = m().interrupt.bubble.required;
     switch (type) {
       case 'confirmation':
-        return 'Confirmation Required';
+        return required.confirmation;
       case 'choice':
-        return 'Selection Required';
+        return required.selection;
       case 'text':
-        return 'Input Required';
+        return required.input;
       case 'form':
-        return 'Form Required';
+        return required.form;
       case 'review':
-        return 'Review Required';
+        return required.review;
       default:
-        return 'Action Required';
+        return required.default;
     }
   }
 
   /** Get resolved label for the header when resolved */
   function getResolvedLabel(type: InterruptType): string {
+    const submitted = m().interrupt.bubble.submitted;
     switch (type) {
       case 'confirmation':
-        return 'Confirmation Submitted';
+        return submitted.confirmation;
       case 'choice':
-        return 'Selection Made';
+        return submitted.selection;
       case 'text':
-        return 'Input Submitted';
+        return submitted.input;
       case 'form':
-        return 'Form Submitted';
+        return submitted.form;
       case 'review':
-        return 'Review Submitted';
+        return submitted.review;
       default:
-        return 'Response Submitted';
+        return submitted.default;
     }
   }
 
@@ -257,10 +260,10 @@
       <Icon icon={getTypeIcon(currentInterrupt.type)} />
       {#if isResolved}
         {currentInterrupt.machineState.status === 'cancelled'
-          ? 'Cancelled'
+          ? m().interrupt.bubble.cancelled
           : getResolvedLabel(currentInterrupt.type)}
       {:else if currentInterrupt.machineState.status === 'error'}
-        Error - Click to Retry
+        {m().interrupt.bubble.errorRetry}
       {:else}
         {getTypeLabel(currentInterrupt.type)}
       {/if}
@@ -279,7 +282,7 @@
       <span>{error}</span>
       <button type="button" class="interrupt-bubble__retry-btn" onclick={handleRetry}>
         <Icon icon="mdi:refresh" />
-        Retry
+        {m().interrupt.bubble.retry}
       </button>
     </div>
   {/if}
@@ -344,9 +347,12 @@
   {#if currentInterrupt.nodeId || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
     <div class="interrupt-bubble__footer">
       {#if currentInterrupt.nodeId}
-        <span class="interrupt-bubble__node" title="Node ID: {currentInterrupt.nodeId}">
+        <span
+          class="interrupt-bubble__node"
+          title={m().interrupt.bubble.nodeIdTooltip({ id: currentInterrupt.nodeId })}
+        >
           <Icon icon="mdi:graph" />
-          <span>From workflow node</span>
+          <span>{m().interrupt.bubble.fromWorkflow}</span>
         </span>
       {/if}
       {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
@@ -357,7 +363,7 @@
           disabled={isSubmitting}
         >
           <Icon icon="mdi:close" />
-          <span>Cancel</span>
+          <span>{m().interrupt.bubble.cancel}</span>
         </button>
       {/if}
     </div>

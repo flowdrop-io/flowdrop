@@ -10,6 +10,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { ChoiceConfig, InterruptChoice } from '../../types/interrupt.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -165,12 +166,15 @@
   {#if isMultiple && !isResolved}
     <div class="choice-prompt__info">
       <span>
-        {selectedValues.size} of {config.options.length} selected
+        {m().interrupt.choice.selectedCount({
+          n: selectedValues.size,
+          total: config.options.length
+        })}
         {#if minSelections > 0}
-          (min: {minSelections})
+          {m().interrupt.choice.min({ n: minSelections })}
         {/if}
         {#if maxSelections < config.options.length}
-          (max: {maxSelections})
+          {m().interrupt.choice.max({ n: maxSelections })}
         {/if}
       </span>
     </div>
@@ -190,7 +194,7 @@
         {:else}
           <Icon icon="mdi:check" />
         {/if}
-        <span>Submit</span>
+        <span>{m().interrupt.choice.submit}</span>
       </button>
     </div>
   {/if}
@@ -200,7 +204,9 @@
     <div class="choice-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+        {resolvedByUserName
+          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
+          : m().interrupt.responseSubmitted}
       </span>
     </div>
   {/if}

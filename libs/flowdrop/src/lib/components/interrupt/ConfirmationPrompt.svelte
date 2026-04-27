@@ -10,6 +10,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { ConfirmationConfig } from '../../types/interrupt.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -44,11 +45,11 @@
     onDecline
   }: Props = $props();
 
-  /** Computed label for confirm button */
-  const confirmLabel = $derived(config.confirmLabel ?? 'Yes');
+  /** Computed label for confirm button — config wins, falls back to messages tree. */
+  const confirmLabel = $derived(config.confirmLabel ?? m().interrupt.confirmation.yes);
 
-  /** Computed label for decline/cancel button */
-  const declineLabel = $derived(config.cancelLabel ?? 'No');
+  /** Computed label for decline/cancel button — config wins, falls back to messages tree. */
+  const declineLabel = $derived(config.cancelLabel ?? m().interrupt.confirmation.no);
 </script>
 
 <div
@@ -119,7 +120,9 @@
     <div class="confirmation-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+        {resolvedByUserName
+          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
+          : m().interrupt.responseSubmitted}
       </span>
     </div>
   {/if}

@@ -18,6 +18,7 @@
     ReviewResolution,
     ReviewFieldDecision
   } from '../../types/interrupt.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -70,10 +71,10 @@
   /** Total number of changes */
   const totalCount = $derived(config.changes.length);
 
-  /** Button labels with defaults */
-  const acceptAllLabel = $derived(config.acceptAllLabel ?? 'Accept All');
-  const rejectAllLabel = $derived(config.rejectAllLabel ?? 'Reject All');
-  const submitLabel = $derived(config.submitLabel ?? 'Submit Review');
+  /** Button labels — config wins, falls back to messages tree. */
+  const acceptAllLabel = $derived(config.acceptAllLabel ?? m().interrupt.review.acceptAll);
+  const rejectAllLabel = $derived(config.rejectAllLabel ?? m().interrupt.review.rejectAll);
+  const submitLabel = $derived(config.submitLabel ?? m().interrupt.review.submit);
 
   /**
    * Set a specific field's decision
@@ -166,9 +167,10 @@
    * Format a value for display
    */
   function formatValue(value: unknown): string {
-    if (value === null || value === undefined) return '(empty)';
+    if (value === null || value === undefined) return m().interrupt.review.empty;
     if (typeof value === 'string') return value;
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'boolean')
+      return value ? m().interrupt.review.yes : m().interrupt.review.no;
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
     return String(value);
   }
@@ -258,7 +260,7 @@
         </button>
       </div>
       <span class="review-prompt__counter">
-        {acceptedCount} of {totalCount} accepted
+        {m().interrupt.review.counter({ accepted: acceptedCount, total: totalCount })}
       </span>
     </div>
   {/if}
@@ -288,11 +290,11 @@
                 class:review-prompt__toggle-btn--active={isAccepted}
                 onclick={() => setFieldDecision(change.field, true)}
                 disabled={isSubmitting}
-                aria-label="Accept {change.label}"
-                title="Accept"
+                aria-label={m().interrupt.review.acceptItem({ label: change.label })}
+                title={m().interrupt.review.accept}
               >
                 <Icon icon="mdi:check" />
-                <span>Accept</span>
+                <span>{m().interrupt.review.accept}</span>
               </button>
               <button
                 type="button"
@@ -300,11 +302,11 @@
                 class:review-prompt__toggle-btn--active={!isAccepted}
                 onclick={() => setFieldDecision(change.field, false)}
                 disabled={isSubmitting}
-                aria-label="Reject {change.label}"
-                title="Reject"
+                aria-label={m().interrupt.review.rejectItem({ label: change.label })}
+                title={m().interrupt.review.reject}
               >
                 <Icon icon="mdi:close" />
-                <span>Reject</span>
+                <span>{m().interrupt.review.reject}</span>
               </button>
             </div>
           {:else}
@@ -315,10 +317,10 @@
             >
               {#if isAccepted}
                 <Icon icon="mdi:check-circle" />
-                <span>Accepted</span>
+                <span>{m().interrupt.review.accepted}</span>
               {:else}
                 <Icon icon="mdi:close-circle" />
-                <span>Rejected</span>
+                <span>{m().interrupt.review.rejected}</span>
               {/if}
             </span>
           {/if}
@@ -334,12 +336,14 @@
                 onclick={() => toggleHtmlView(change.field)}
               >
                 <Icon icon={isRawView ? 'mdi:eye' : 'mdi:code-tags'} />
-                <span>{isRawView ? 'Rendered' : 'Raw HTML'}</span>
+                <span
+                  >{isRawView ? m().interrupt.review.rendered : m().interrupt.review.rawHtml}</span
+                >
               </button>
             </div>
           {/if}
           <div class="review-prompt__diff-row">
-            <span class="review-prompt__diff-label">Original:</span>
+            <span class="review-prompt__diff-label">{m().interrupt.review.original}</span>
             {#if isHtml && !isRawView}
               <span class="review-prompt__diff-value review-prompt__html-content"
                 >{@html sanitizeHtml(String(change.original))}</span
@@ -355,7 +359,7 @@
             {/if}
           </div>
           <div class="review-prompt__diff-row">
-            <span class="review-prompt__diff-label">Proposed:</span>
+            <span class="review-prompt__diff-label">{m().interrupt.review.proposed}</span>
             {#if isHtml && !isRawView}
               <span
                 class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content"
@@ -374,7 +378,7 @@
           </div>
           {#if diff}
             <div class="review-prompt__diff-row">
-              <span class="review-prompt__diff-label">Diff:</span>
+              <span class="review-prompt__diff-label">{m().interrupt.review.diff}</span>
               {#if isMultiLineDiff(diff)}
                 <pre
                   class="review-prompt__diff-value review-prompt__diff-block">{#each diff as part}{#if part.added}<span
@@ -425,8 +429,11 @@
   {#if isResolved && resolvedValue}
     <div class="review-prompt__summary">
       <span class="review-prompt__summary-text">
-        {resolvedValue.summary.accepted} accepted, {resolvedValue.summary.rejected} rejected out of {resolvedValue
-          .summary.total} changes
+        {m().interrupt.review.summary({
+          accepted: resolvedValue.summary.accepted,
+          rejected: resolvedValue.summary.rejected,
+          total: resolvedValue.summary.total
+        })}
       </span>
     </div>
   {/if}
@@ -436,7 +443,9 @@
     <div class="review-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+        {resolvedByUserName
+          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
+          : m().interrupt.responseSubmitted}
       </span>
     </div>
   {/if}

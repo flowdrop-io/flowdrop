@@ -103,5 +103,101 @@ export const defaultMessages = {
       cancel: 'Cancel',
       empty: 'No schema properties defined.'
     }
+  },
+
+  interrupt: {
+    // Shared resolution notice rendered after any interrupt prompt is answered.
+    responseSubmitted: 'Response submitted',
+    responseSubmittedBy: ({ name }: { name: string }) => `Response submitted by ${name}`,
+
+    confirmation: {
+      yes: 'Yes',
+      no: 'No'
+    },
+
+    choice: {
+      submit: 'Submit',
+      // Selection counter rendered inside the picker, e.g. "2 of 5 selected".
+      selectedCount: ({ n, total }: { n: number; total: number }) => `${n} of ${total} selected`,
+      min: ({ n }: { n: number }) => `(min: ${n})`,
+      max: ({ n }: { n: number }) => `(max: ${n})`
+    },
+
+    review: {
+      acceptAll: 'Accept All',
+      rejectAll: 'Reject All',
+      submit: 'Submit Review',
+      empty: '(empty)',
+      yes: 'Yes',
+      no: 'No',
+      // Per-row controls.
+      acceptItem: ({ label }: { label: string }) => `Accept ${label}`,
+      rejectItem: ({ label }: { label: string }) => `Reject ${label}`,
+      accept: 'Accept',
+      reject: 'Reject',
+      accepted: 'Accepted',
+      rejected: 'Rejected',
+      // Diff/preview controls.
+      rendered: 'Rendered',
+      rawHtml: 'Raw HTML',
+      original: 'Original:',
+      proposed: 'Proposed:',
+      diff: 'Diff:',
+      // Header counter — accepted decisions out of total.
+      counter: ({ accepted, total }: { accepted: number; total: number }) =>
+        `${accepted} of ${total} accepted`,
+      // Footer summary — accepted/rejected breakdown.
+      summary: ({
+        accepted,
+        rejected,
+        total
+      }: {
+        accepted: number;
+        rejected: number;
+        total: number;
+      }) => `${accepted} accepted, ${rejected} rejected out of ${total} changes`
+    },
+
+    form: {
+      submit: 'Submit',
+      // Boolean and empty-cell rendering in the submitted-values readout.
+      yes: 'Yes',
+      no: 'No',
+      empty: '—',
+      submittedValuesTitle: 'Submitted Values'
+    },
+
+    text: {
+      placeholder: 'Enter your response...',
+      min: ({ n }: { n: number }) => `(min: ${n})`,
+      submit: 'Submit'
+    },
+
+    bubble: {
+      // Pre-resolution status — keyed by interrupt kind.
+      required: {
+        confirmation: 'Confirmation Required',
+        selection: 'Selection Required',
+        input: 'Input Required',
+        form: 'Form Required',
+        review: 'Review Required',
+        default: 'Action Required'
+      },
+      // Post-resolution status.
+      submitted: {
+        confirmation: 'Confirmation Submitted',
+        selection: 'Selection Made',
+        input: 'Input Submitted',
+        form: 'Form Submitted',
+        review: 'Review Submitted',
+        default: 'Response Submitted'
+      },
+      cancelled: 'Cancelled',
+      errorRetry: 'Error - Click to Retry',
+      retry: 'Retry',
+      cancel: 'Cancel',
+      fromWorkflow: 'From workflow node',
+      nodeIdTooltip: ({ id }: { id: string }) => `Node ID: ${id}`
+    }
   }
 } as const;

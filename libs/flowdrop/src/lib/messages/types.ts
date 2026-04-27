@@ -22,14 +22,18 @@ type AnyFn = (...args: any[]) => unknown;
  * A recursive partial that:
  *   - allows skipping any key at any level,
  *   - preserves function leaves with their original signature,
+ *   - widens string leaves to `string` so `as const` literal defaults
+ *     (e.g. `'Cancel'`) accept arbitrary translations,
  *   - additionally accepts a plain `string` where the default is a function,
  *     so consumers using i18n libraries that emit pre-resolved strings don't
  *     have to wrap them.
  */
 export type DeepPartial<T> = T extends AnyFn
   ? T | string
-  : T extends object
-    ? { [K in keyof T]?: DeepPartial<T[K]> }
-    : T;
+  : T extends string
+    ? string
+    : T extends object
+      ? { [K in keyof T]?: DeepPartial<T[K]> }
+      : T;
 
 export type MessagesOverride = DeepPartial<Messages>;

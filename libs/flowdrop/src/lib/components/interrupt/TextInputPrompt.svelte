@@ -10,6 +10,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { TextConfig } from '../../types/interrupt.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -112,7 +113,7 @@
         class="text-prompt__textarea"
         class:text-prompt__textarea--resolved={isResolved}
         value={displayValue}
-        placeholder={config.placeholder ?? 'Enter your response...'}
+        placeholder={config.placeholder ?? m().interrupt.text.placeholder}
         disabled={isResolved || isSubmitting}
         oninput={handleInput}
         onkeydown={handleKeyDown}
@@ -126,7 +127,7 @@
         class="text-prompt__input"
         class:text-prompt__input--resolved={isResolved}
         value={displayValue}
-        placeholder={config.placeholder ?? 'Enter your response...'}
+        placeholder={config.placeholder ?? m().interrupt.text.placeholder}
         disabled={isResolved || isSubmitting}
         oninput={handleInput}
         onkeydown={handleKeyDown}
@@ -148,7 +149,7 @@
           / {config.maxLength}
         {/if}
         {#if config.minLength !== undefined}
-          (min: {config.minLength})
+          {m().interrupt.text.min({ n: config.minLength })}
         {/if}
       </span>
     </div>
@@ -168,7 +169,7 @@
         {:else}
           <Icon icon="mdi:send" />
         {/if}
-        <span>Submit</span>
+        <span>{m().interrupt.text.submit}</span>
       </button>
     </div>
   {/if}
@@ -178,7 +179,9 @@
     <div class="text-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+        {resolvedByUserName
+          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
+          : m().interrupt.responseSubmitted}
       </span>
     </div>
   {/if}

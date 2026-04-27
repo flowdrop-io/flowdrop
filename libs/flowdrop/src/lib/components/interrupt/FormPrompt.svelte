@@ -11,6 +11,7 @@
   import Icon from '@iconify/svelte';
   import SchemaForm from '../SchemaForm.svelte';
   import type { FormConfig } from '../../types/interrupt.js';
+  import { getMessages, m, mergeMessages, setMessages } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -66,14 +67,30 @@
   }
 
   /**
-   * Format resolved value for display
+   * Format resolved value for display.
+   * Returns localized strings via the current messages tree.
    */
   function formatResolvedValue(value: unknown): string {
-    if (value === null || value === undefined) return '—';
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (value === null || value === undefined) return m().interrupt.form.empty;
+    if (typeof value === 'boolean') return value ? m().interrupt.form.yes : m().interrupt.form.no;
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
     return String(value);
   }
+
+  // Scope a messages override for the inner SchemaForm so its Save button reads
+  // the interrupt-specific submit label (e.g. "Submit"), and the cancel button
+  // remains empty — historical behavior that effectively hid it. Avoids passing
+  // deprecated `saveLabel` / `cancelLabel` props on SchemaForm.
+  // Merges over the parent's tree so consumer-supplied overrides higher up
+  // (e.g. translations from <FlowDrop messages={...} />) still apply.
+  const parentMessages = getMessages();
+  const scopedMessages = $derived.by(() => {
+    const base = parentMessages();
+    return mergeMessages(base, {
+      form: { schema: { save: base.interrupt.form.submit, cancel: '' } }
+    });
+  });
+  setMessages(() => scopedMessages);
 </script>
 
 <div
@@ -101,8 +118,6 @@
         onChange={handleChange}
         onSave={handleSave}
         showActions={true}
-        saveLabel="Submit"
-        cancelLabel=""
         loading={isSubmitting}
         disabled={isResolved}
       />
@@ -110,7 +125,7 @@
   {:else}
     <!-- Resolved state: Show submitted values as read-only -->
     <div class="form-prompt__resolved-values">
-      <h4 class="form-prompt__resolved-title">Submitted Values</h4>
+      <h4 class="form-prompt__resolved-title">{m().interrupt.form.submittedValuesTitle}</h4>
       <div class="form-prompt__values-list">
         {#each Object.entries(config.schema.properties ?? {}) as [key, field]}
           {@const value = displayValues[key]}
@@ -131,7 +146,9 @@
     <div class="form-prompt__resolved-badge">
       <Icon icon="mdi:check-circle" />
       <span>
-        {resolvedByUserName ? `Response submitted by ${resolvedByUserName}` : 'Response submitted'}
+        {resolvedByUserName
+          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
+          : m().interrupt.responseSubmitted}
       </span>
     </div>
   {/if}
