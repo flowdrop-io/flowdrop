@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     /** Field identifier for label association */
@@ -42,7 +43,7 @@
       {label}
     </span>
     {#if required}
-      <span class="form-field__required" aria-label="required">*</span>
+      <span class="form-field__required" aria-label={m().form.field.required}>*</span>
     {/if}
   </label>
 

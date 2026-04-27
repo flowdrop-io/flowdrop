@@ -61,6 +61,7 @@
   import { FormField } from '$lib/components/form/index.js';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/index.js';
+  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
 
   /**
    * Props interface for SchemaForm component
@@ -100,14 +101,12 @@
     showActions?: boolean;
 
     /**
-     * Label for the save button.
-     * @default "Save"
+     * @deprecated since v1.8 — use `messages.form.schema.save`. Removed in v2.0.
      */
     saveLabel?: string;
 
     /**
-     * Label for the cancel button.
-     * @default "Cancel"
+     * @deprecated since v1.8 — use `messages.form.schema.cancel`. Removed in v2.0.
      */
     cancelLabel?: string;
 
@@ -160,8 +159,8 @@
     values = {},
     onChange,
     showActions = false,
-    saveLabel = 'Save',
-    cancelLabel = 'Cancel',
+    saveLabel,
+    cancelLabel,
     onSave,
     onCancel,
     loading = false,
@@ -170,6 +169,18 @@
     authProvider,
     baseUrl = ''
   }: Props = $props();
+
+  // svelte-ignore state_referenced_locally — deprecation warns once per mount; later prop rebinds aren't relevant
+  if (saveLabel !== undefined) {
+    warnDeprecatedProp('SchemaForm', 'saveLabel', 'messages.form.schema.save');
+  }
+  // svelte-ignore state_referenced_locally
+  if (cancelLabel !== undefined) {
+    warnDeprecatedProp('SchemaForm', 'cancelLabel', 'messages.form.schema.cancel');
+  }
+
+  const resolvedSaveLabel = $derived(saveLabel ?? m().form.schema.save);
+  const resolvedCancelLabel = $derived(cancelLabel ?? m().form.schema.cancel);
 
   // Set context for child components (e.g., FormAutocomplete)
   // Use getter functions to ensure child components always get the current prop value,
@@ -352,7 +363,7 @@
           disabled={loading}
         >
           <Icon icon="heroicons:x-mark" class="schema-form__button-icon" />
-          <span>{cancelLabel}</span>
+          <span>{resolvedCancelLabel}</span>
         </button>
         <button
           type="submit"
@@ -364,7 +375,7 @@
           {:else}
             <Icon icon="heroicons:check" class="schema-form__button-icon" />
           {/if}
-          <span>{saveLabel}</span>
+          <span>{resolvedSaveLabel}</span>
         </button>
       </div>
     {/if}
@@ -374,7 +385,7 @@
     <div class="schema-form__empty-icon">
       <Icon icon="heroicons:document-text" />
     </div>
-    <p class="schema-form__empty-text">No schema properties defined.</p>
+    <p class="schema-form__empty-text">{m().form.schema.empty}</p>
   </div>
 {/if}
 

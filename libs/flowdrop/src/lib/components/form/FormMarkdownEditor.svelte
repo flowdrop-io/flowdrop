@@ -25,6 +25,7 @@
   import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
   import { markdown } from '@codemirror/lang-markdown';
   import { oneDark } from '@codemirror/theme-one-dark';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     /** Field identifier */
@@ -165,104 +166,110 @@
     editorView.focus();
   }
 
-  const toolbarActions: (ToolbarAction | '|')[] = [
-    {
-      id: 'bold',
-      label: 'Bold',
-      icon: 'B',
-      shortcut: 'Mod-b',
-      action: () => wrapSelection('**', '**')
-    },
-    {
-      id: 'italic',
-      label: 'Italic',
-      icon: 'I',
-      shortcut: 'Mod-i',
-      action: () => wrapSelection('_', '_')
-    },
-    {
-      id: 'strikethrough',
-      label: 'Strikethrough',
-      icon: 'S',
-      action: () => wrapSelection('~~', '~~')
-    },
-    '|',
-    {
-      id: 'heading-1',
-      label: 'Heading 1',
-      icon: 'H1',
-      action: () => prefixLine('# ')
-    },
-    {
-      id: 'heading-2',
-      label: 'Heading 2',
-      icon: 'H2',
-      action: () => prefixLine('## ')
-    },
-    {
-      id: 'heading-3',
-      label: 'Heading 3',
-      icon: 'H3',
-      action: () => prefixLine('### ')
-    },
-    '|',
-    {
-      id: 'quote',
-      label: 'Quote',
-      icon: '"',
-      action: () => prefixLine('> ')
-    },
-    {
-      id: 'unordered-list',
-      label: 'Unordered List',
-      icon: '•',
-      action: () => prefixLine('- ')
-    },
-    {
-      id: 'ordered-list',
-      label: 'Ordered List',
-      icon: '1.',
-      action: () => prefixLine('1. ')
-    },
-    '|',
-    {
-      id: 'link',
-      label: 'Link',
-      icon: icons.link,
-      isSvg: true,
-      shortcut: 'Mod-k',
-      action: () => {
-        if (!editorView) return;
-        const { from, to } = editorView.state.selection.main;
-        const selected = editorView.state.sliceDoc(from, to);
-        const text = selected || 'link text';
-        const replacement = `[${text}](url)`;
-        editorView.dispatch({
-          changes: { from, to, insert: replacement },
-          selection: {
-            anchor: from + text.length + 3,
-            head: from + text.length + 6
-          }
-        });
-        editorView.focus();
+  // Derived so `label` strings refresh whenever the consumer's i18n source
+  // changes locale. Action closures recreate alongside, but they're cheap —
+  // they only capture a stable reference to `editorView` (a state).
+  const toolbarActions: (ToolbarAction | '|')[] = $derived.by(() => {
+    const md = m().form.markdown;
+    return [
+      {
+        id: 'bold',
+        label: md.bold,
+        icon: 'B',
+        shortcut: 'Mod-b',
+        action: () => wrapSelection('**', '**')
+      },
+      {
+        id: 'italic',
+        label: md.italic,
+        icon: 'I',
+        shortcut: 'Mod-i',
+        action: () => wrapSelection('_', '_')
+      },
+      {
+        id: 'strikethrough',
+        label: md.strikethrough,
+        icon: 'S',
+        action: () => wrapSelection('~~', '~~')
+      },
+      '|',
+      {
+        id: 'heading-1',
+        label: md.heading1,
+        icon: 'H1',
+        action: () => prefixLine('# ')
+      },
+      {
+        id: 'heading-2',
+        label: md.heading2,
+        icon: 'H2',
+        action: () => prefixLine('## ')
+      },
+      {
+        id: 'heading-3',
+        label: md.heading3,
+        icon: 'H3',
+        action: () => prefixLine('### ')
+      },
+      '|',
+      {
+        id: 'quote',
+        label: md.quote,
+        icon: '"',
+        action: () => prefixLine('> ')
+      },
+      {
+        id: 'unordered-list',
+        label: md.unorderedList,
+        icon: '•',
+        action: () => prefixLine('- ')
+      },
+      {
+        id: 'ordered-list',
+        label: md.orderedList,
+        icon: '1.',
+        action: () => prefixLine('1. ')
+      },
+      '|',
+      {
+        id: 'link',
+        label: md.link,
+        icon: icons.link,
+        isSvg: true,
+        shortcut: 'Mod-k',
+        action: () => {
+          if (!editorView) return;
+          const { from, to } = editorView.state.selection.main;
+          const selected = editorView.state.sliceDoc(from, to);
+          const text = selected || 'link text';
+          const replacement = `[${text}](url)`;
+          editorView.dispatch({
+            changes: { from, to, insert: replacement },
+            selection: {
+              anchor: from + text.length + 3,
+              head: from + text.length + 6
+            }
+          });
+          editorView.focus();
+        }
+      },
+      {
+        id: 'image',
+        label: md.image,
+        icon: icons.image,
+        isSvg: true,
+        action: () => insertAtCursor('![alt text](image-url)')
+      },
+      {
+        id: 'table',
+        label: md.table,
+        icon: icons.table,
+        isSvg: true,
+        action: () =>
+          insertAtCursor('\n| Header | Header |\n| ------ | ------ |\n| Cell   | Cell   |\n')
       }
-    },
-    {
-      id: 'image',
-      label: 'Image',
-      icon: icons.image,
-      isSvg: true,
-      action: () => insertAtCursor('![alt text](image-url)')
-    },
-    {
-      id: 'table',
-      label: 'Table',
-      icon: icons.table,
-      isSvg: true,
-      action: () =>
-        insertAtCursor('\n| Header | Header |\n| ------ | ------ |\n| Cell   | Cell   |\n')
-    }
-  ];
+    ];
+  });
 
   // ── CM6 Keyboard shortcuts for toolbar actions ───────────
 
@@ -395,7 +402,7 @@
 
       // Accessibility
       EditorView.contentAttributes.of({
-        'aria-label': 'Markdown editor',
+        'aria-label': m().form.markdown.editor,
         'aria-multiline': 'true'
       })
     ];
@@ -481,7 +488,11 @@
 
   <!-- Toolbar -->
   {#if showToolbar && !disabled}
-    <div class="form-markdown-editor__toolbar" role="toolbar" aria-label="Markdown formatting">
+    <div
+      class="form-markdown-editor__toolbar"
+      role="toolbar"
+      aria-label={m().form.markdown.toolbar}
+    >
       {#each toolbarActions as item}
         {#if item === '|'}
           <span class="form-markdown-editor__separator"></span>
@@ -515,9 +526,9 @@
   <!-- Status bar -->
   {#if showStatusBar}
     <div class="form-markdown-editor__status">
-      <span>words: {wordCount}</span>
-      <span>lines: {lineCount}</span>
-      <span>characters: {charCount}</span>
+      <span>{m().form.markdown.words}: {wordCount}</span>
+      <span>{m().form.markdown.lines}: {lineCount}</span>
+      <span>{m().form.markdown.characters}: {charCount}</span>
     </div>
   {/if}
 </div>

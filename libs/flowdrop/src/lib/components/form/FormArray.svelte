@@ -20,6 +20,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { FieldSchema } from './types.js';
+  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
 
   interface Props {
     /** Field identifier */
@@ -32,7 +33,9 @@
     minItems?: number;
     /** Maximum number of items allowed */
     maxItems?: number;
-    /** Label for add button */
+    /**
+     * @deprecated since v1.8 — use `messages.form.array.add`. Removed in v2.0.
+     */
     addLabel?: string;
     /** Whether the field is disabled */
     disabled?: boolean;
@@ -46,10 +49,17 @@
     itemSchema,
     minItems = 0,
     maxItems,
-    addLabel = 'Add Item',
+    addLabel,
     disabled = false,
     onChange
   }: Props = $props();
+
+  // svelte-ignore state_referenced_locally — deprecation warns once per mount; later prop rebinds aren't relevant
+  if (addLabel !== undefined) {
+    warnDeprecatedProp('FormArray', 'addLabel', 'messages.form.array.add');
+  }
+
+  const resolvedAddLabel = $derived(addLabel ?? m().form.array.add);
 
   /**
    * Ensure value is always an array
@@ -197,7 +207,7 @@
       const itemStr = String(item);
       return itemStr.length > 30
         ? `${itemStr.substring(0, 30)}...`
-        : itemStr || `Item ${index + 1}`;
+        : itemStr || m().form.array.itemLabel({ n: index + 1 });
     }
 
     // For objects, try to find a name/label/title property
@@ -211,7 +221,7 @@
       }
     }
 
-    return `Item ${index + 1}`;
+    return m().form.array.itemLabel({ n: index + 1 });
   }
 
   /**
@@ -260,7 +270,9 @@
                 class="form-array__item-toggle"
                 onclick={() => toggleCollapse(index)}
                 aria-expanded={!isCollapsed(index)}
-                aria-label={isCollapsed(index) ? 'Expand item' : 'Collapse item'}
+                aria-label={isCollapsed(index)
+                  ? m().form.array.expandItem
+                  : m().form.array.collapseItem}
               >
                 <Icon
                   icon={isCollapsed(index) ? 'heroicons:chevron-right' : 'heroicons:chevron-down'}
@@ -280,8 +292,8 @@
                 class="form-array__action-btn form-array__action-btn--move"
                 onclick={() => moveItemUp(index)}
                 disabled={index === 0 || disabled}
-                aria-label="Move item {index + 1} up"
-                title="Move up"
+                aria-label={m().form.array.moveItemUp({ n: index + 1 })}
+                title={m().form.array.moveUp}
               >
                 <Icon icon="heroicons:arrow-up" />
               </button>
@@ -292,8 +304,8 @@
                 class="form-array__action-btn form-array__action-btn--move"
                 onclick={() => moveItemDown(index)}
                 disabled={index === items.length - 1 || disabled}
-                aria-label="Move item {index + 1} down"
-                title="Move down"
+                aria-label={m().form.array.moveItemDown({ n: index + 1 })}
+                title={m().form.array.moveDown}
               >
                 <Icon icon="heroicons:arrow-down" />
               </button>
@@ -304,8 +316,8 @@
                 class="form-array__action-btn form-array__action-btn--delete"
                 onclick={() => removeItem(index)}
                 disabled={!canRemoveItem || disabled}
-                aria-label="Delete item {index + 1}"
-                title="Delete item"
+                aria-label={m().form.array.deleteItem({ n: index + 1 })}
+                title={m().form.array.delete}
               >
                 <Icon icon="heroicons:trash" />
               </button>
@@ -366,7 +378,7 @@
                     <span class="form-array__toggle-thumb"></span>
                   </span>
                   <span class="form-array__toggle-label">
-                    {item ? 'Yes' : 'No'}
+                    {item ? m().form.array.yes : m().form.array.no}
                   </span>
                 </label>
               {:else if itemSchema.enum}
@@ -480,7 +492,7 @@
                               <span class="form-array__toggle-thumb"></span>
                             </span>
                             <span class="form-array__toggle-label">
-                              {propValue ? 'Yes' : 'No'}
+                              {propValue ? m().form.array.yes : m().form.array.no}
                             </span>
                           </label>
                         {:else}
@@ -510,7 +522,7 @@
               <!-- Unknown complex type -->
               <div class="form-array__unsupported">
                 <p>
-                  Complex item type "{itemSchema.type}" is not fully supported.
+                  {m().form.array.unsupported({ type: String(itemSchema.type ?? '') })}
                 </p>
               </div>
             {/if}
@@ -522,7 +534,7 @@
     <!-- Empty State -->
     <div class="form-array__empty">
       <Icon icon="heroicons:squares-plus" class="form-array__empty-icon" />
-      <p class="form-array__empty-text">No items yet</p>
+      <p class="form-array__empty-text">{m().form.array.empty}</p>
     </div>
   {/if}
 
@@ -532,21 +544,21 @@
     class="form-array__add-btn"
     onclick={addItem}
     disabled={!canAddItem || disabled}
-    aria-label={addLabel}
+    aria-label={resolvedAddLabel}
   >
     <Icon icon="heroicons:plus" />
-    <span>{addLabel}</span>
+    <span>{resolvedAddLabel}</span>
   </button>
 
   <!-- Item count and limits -->
   {#if minItems > 0 || maxItems !== undefined}
     <div class="form-array__info">
-      <span class="form-array__count">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+      <span class="form-array__count">{m().form.array.count({ n: items.length })}</span>
       {#if minItems > 0}
-        <span class="form-array__limit">Min: {minItems}</span>
+        <span class="form-array__limit">{m().form.array.min({ n: minItems })}</span>
       {/if}
       {#if maxItems !== undefined}
-        <span class="form-array__limit">Max: {maxItems}</span>
+        <span class="form-array__limit">{m().form.array.max({ n: maxItems })}</span>
       {/if}
     </div>
   {/if}

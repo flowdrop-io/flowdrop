@@ -9,14 +9,20 @@
 -->
 
 <script lang="ts">
+  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
+
   interface Props {
     /** Field identifier */
     id: string;
     /** Current value */
     value: boolean;
-    /** Label shown when toggle is on */
+    /**
+     * @deprecated since v1.8 — use `messages.form.toggle.enabled`. Removed in v2.0.
+     */
     onLabel?: string;
-    /** Label shown when toggle is off */
+    /**
+     * @deprecated since v1.8 — use `messages.form.toggle.disabled`. Removed in v2.0.
+     */
     offLabel?: string;
     /** Whether the field is disabled (read-only) */
     disabled?: boolean;
@@ -29,12 +35,24 @@
   let {
     id,
     value = false,
-    onLabel = 'Enabled',
-    offLabel = 'Disabled',
+    onLabel,
+    offLabel,
     disabled = false,
     ariaDescribedBy,
     onChange
   }: Props = $props();
+
+  // svelte-ignore state_referenced_locally — deprecation warns once per mount; later prop rebinds aren't relevant
+  if (onLabel !== undefined) {
+    warnDeprecatedProp('FormToggle', 'onLabel', 'messages.form.toggle.enabled');
+  }
+  // svelte-ignore state_referenced_locally
+  if (offLabel !== undefined) {
+    warnDeprecatedProp('FormToggle', 'offLabel', 'messages.form.toggle.disabled');
+  }
+
+  const resolvedOnLabel = $derived(onLabel ?? m().form.toggle.enabled);
+  const resolvedOffLabel = $derived(offLabel ?? m().form.toggle.disabled);
 
   /**
    * Handle toggle changes
@@ -59,7 +77,7 @@
     <span class="form-toggle__thumb"></span>
   </span>
   <span class="form-toggle__label">
-    {value ? onLabel : offLabel}
+    {value ? resolvedOnLabel : resolvedOffLabel}
   </span>
 </label>
 

@@ -27,6 +27,7 @@
   import type { FieldOption } from './types.js';
   import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
   import { logger } from '../../utils/logger.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Props interface for FormAutocomplete component
@@ -579,7 +580,9 @@
               <button
                 type="button"
                 class="form-autocomplete__tag-remove"
-                aria-label={`Remove ${getDisplayLabel(selectedVal)}`}
+                aria-label={m().form.autocomplete.removeTag({
+                  label: getDisplayLabel(selectedVal)
+                })}
                 onclick={(e) => {
                   e.stopPropagation();
                   removeTag(selectedVal);
@@ -622,14 +625,14 @@
     <!-- Status icons -->
     <div class="form-autocomplete__icons">
       {#if isLoading}
-        <span class="form-autocomplete__spinner" aria-label="Loading suggestions">
+        <span class="form-autocomplete__spinner" aria-label={m().form.autocomplete.loading}>
           <Icon icon="heroicons:arrow-path" />
         </span>
       {:else if selectedValues.length > 0 && !disabled}
         <button
           type="button"
           class="form-autocomplete__clear"
-          aria-label="Clear all selections"
+          aria-label={m().form.autocomplete.clearAll}
           onclick={(e) => {
             e.stopPropagation();
             handleClearAll();
@@ -657,24 +660,28 @@
     style={popoverStyle}
     onmousedown={(e) => e.preventDefault()}
   >
-    <ul class="form-autocomplete__listbox" role="listbox" aria-label="Suggestions">
+    <ul
+      class="form-autocomplete__listbox"
+      role="listbox"
+      aria-label={m().form.autocomplete.suggestions}
+    >
       {#if isLoading}
         <li class="form-autocomplete__status form-autocomplete__status--loading">
           <Icon icon="heroicons:arrow-path" class="form-autocomplete__status-icon" />
-          <span>Loading suggestions...</span>
+          <span>{m().form.autocomplete.loadingPending}</span>
         </li>
       {:else if error}
         <li class="form-autocomplete__status form-autocomplete__status--error">
           <Icon icon="heroicons:exclamation-triangle" class="form-autocomplete__status-icon" />
           <span>{error}</span>
           <button type="button" class="form-autocomplete__retry" onclick={handleRetry}>
-            Retry
+            {m().form.autocomplete.retry}
           </button>
         </li>
       {:else if suggestions.length === 0}
         <li class="form-autocomplete__status form-autocomplete__status--empty">
           <Icon icon="heroicons:magnifying-glass" class="form-autocomplete__status-icon" />
-          <span>No results found</span>
+          <span>{m().form.autocomplete.noResults}</span>
         </li>
       {:else}
         {#each suggestions as option, index (option.value)}

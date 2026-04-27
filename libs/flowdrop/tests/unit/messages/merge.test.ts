@@ -23,9 +23,18 @@ describe('mergeMessages', () => {
   });
 
   it('does not mutate the base tree', () => {
-    const baseSnapshot = JSON.parse(JSON.stringify(defaultMessages));
+    // Capture refs before merging — function leaves can't be JSON-snapshotted,
+    // so spot-check that both string and function leaves still point at their
+    // original values after a partial override is applied.
+    const originalSave = defaultMessages.common.save;
+    const originalArrayDelete = defaultMessages.form.array.delete;
+    const originalArrayMoveUp = defaultMessages.form.array.moveItemUp;
+
     mergeMessages(defaultMessages, { common: { save: 'Apply' } });
-    expect(defaultMessages).toEqual(baseSnapshot);
+
+    expect(defaultMessages.common.save).toBe(originalSave);
+    expect(defaultMessages.form.array.delete).toBe(originalArrayDelete);
+    expect(defaultMessages.form.array.moveItemUp).toBe(originalArrayMoveUp);
   });
 
   it('preserves keys that are absent from the partial', () => {
