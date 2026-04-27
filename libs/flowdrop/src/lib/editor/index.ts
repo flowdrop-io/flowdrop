@@ -284,6 +284,7 @@ export {
   deleteDraft,
   hasDraft,
   getDraftMetadata,
+  clearAllDrafts,
   DraftAutoSaveManager
 } from '../services/draftStorage.js';
 

@@ -30,7 +30,11 @@ import {
   setOnDirtyStateChange,
   setOnWorkflowChange
 } from './stores/workflowStore.svelte.js';
-import { DraftAutoSaveManager, getDraftStorageKey } from './services/draftStorage.js';
+import {
+  DraftAutoSaveManager,
+  getDraftStorageKey,
+  clearAllDrafts as clearAllDraftsFromStorage
+} from './services/draftStorage.js';
 import { mergeFeatures } from './types/events.js';
 import type { PartialSettings, SettingsCategory } from './types/settings.js';
 import { initializeSettings } from './stores/settingsStore.svelte.js';
@@ -162,6 +166,18 @@ export interface MountedFlowDropApp {
    * Trigger export operation (downloads JSON)
    */
   export: () => void;
+
+  /**
+   * Clear all FlowDrop workflow drafts from `localStorage`.
+   *
+   * Removes every key beginning with `flowdrop:draft:` plus the custom
+   * `draftStorageKey` configured at mount time (if any). Call this from
+   * the host application's logout handler so drafts do not persist across
+   * user sessions on shared devices.
+   *
+   * @returns The number of entries removed.
+   */
+  clearAllDrafts: () => number;
 }
 
 /**
@@ -401,6 +417,15 @@ export async function mountFlowDropApp(
 
     export: () => {
       globalExportWorkflow();
+    },
+
+    clearAllDrafts: () => {
+      const extras = customDraftKey ? [customDraftKey] : [];
+      const removed = clearAllDraftsFromStorage(extras);
+      if (state.draftManager) {
+        state.draftManager.markAsSaved();
+      }
+      return removed;
     }
   };
 
@@ -504,7 +529,9 @@ export async function mountWorkflowEditor(
 
     export: () => {
       globalExportWorkflow();
-    }
+    },
+
+    clearAllDrafts: () => clearAllDraftsFromStorage()
   };
 
   return mountedApp;
