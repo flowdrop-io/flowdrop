@@ -1160,7 +1160,7 @@
       {/if}
     {/snippet}
 
-    <!-- Bottom Panel: Tabbed Console / AI Chat -->
+    <!-- Bottom Panel: Tabbed Console / AI Assistant -->
     {#snippet bottomPanel()}
       <div class="bottom-panel-tabs">
         <div class="bottom-panel-tabs__bar">
@@ -1178,7 +1178,7 @@
               : ''}"
             onclick={() => updateSettings({ ui: { bottomPanelTab: 'chat' } })}
           >
-            AI Chat
+            AI Assistant
           </button>
         </div>
         <div class="bottom-panel-tabs__content">

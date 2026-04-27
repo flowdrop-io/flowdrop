@@ -365,12 +365,12 @@
   }
 </script>
 
-<div class="ai-chat-panel" role="region" aria-label="AI Chat">
+<div class="ai-chat-panel" role="region" aria-label="AI Assistant">
   {#if !isChatConfigured}
     <!-- No backend configured -->
     <div class="ai-chat-panel__notice">
       <Icon icon="mdi:robot-off-outline" />
-      <span>AI Chat requires backend configuration</span>
+      <span>AI Assistant requires backend configuration</span>
     </div>
   {:else if isDisabled}
     <!-- No workflow loaded -->

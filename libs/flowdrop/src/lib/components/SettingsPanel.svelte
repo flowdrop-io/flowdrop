@@ -231,7 +231,7 @@
         },
         chatAutoRetry: {
           type: 'boolean',
-          title: 'AI Chat Auto-retry',
+          title: 'AI Assistant Auto-retry',
           description: 'Automatically ask the AI to self-correct when commands fail',
           default: true
         }
