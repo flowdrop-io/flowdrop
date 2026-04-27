@@ -39,13 +39,22 @@
   --xy-controls-button-border-color: var(--fd-controls-button-border, var(--fd-border));
   --xy-controls-box-shadow: var(--fd-controls-box-shadow, 0 0 2px 1px rgba(0, 0, 0, 0.08));
 
-  --xy-minimap-background-color: var(--fd-minimap-bg, var(--fd-card));
+  --xy-minimap-background-color: var(--fd-minimap-bg, var(--fd-muted));
   --xy-minimap-mask-background-color: var(--fd-minimap-mask-bg, var(--fd-backdrop));
   --xy-minimap-mask-stroke-color: var(--fd-minimap-mask-stroke, var(--fd-border));
   --xy-minimap-mask-stroke-width: var(--fd-minimap-mask-stroke-width, 1);
-  --xy-minimap-node-background-color: var(--fd-minimap-node-bg, var(--fd-muted));
-  --xy-minimap-node-stroke-color: var(--fd-minimap-node-stroke, var(--fd-border-muted));
-  --xy-minimap-node-stroke-width: var(--fd-minimap-node-stroke-width, 2);
+  --xy-minimap-node-background-color: var(--fd-minimap-node-bg, var(--fd-muted-foreground));
+  --xy-minimap-node-stroke-color: var(--fd-minimap-node-stroke, var(--fd-border-strong));
+  --xy-minimap-node-stroke-width: var(--fd-minimap-node-stroke-width, 1);
+}
+
+/* Minimap: render as a clearly bounded floating panel so users don't mistake
+   it for the canvas and pan unintentionally when clicking/dragging on it. */
+.svelte-flow .svelte-flow__minimap {
+  border: 1px solid var(--fd-border-strong);
+  border-radius: var(--fd-radius-md);
+  box-shadow: var(--fd-shadow-md);
+  overflow: hidden;
 }
 
 /* Flow node handles: 20px connection area, 12px visible circle (::before)
