@@ -65,6 +65,8 @@
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
+  import { defaultMessages, mergeMessages, setMessages } from '$lib/messages/index.js';
+  import type { MessagesOverride } from '$lib/messages/index.js';
 
   /**
    * Configuration props for runtime customization
@@ -124,6 +126,13 @@
     swapStrategies?: SwapStrategy[];
     /** Additional JSON Schema properties to show in the Workflow Settings panel. Values are persisted in workflow.config. */
     workflowSettingsSchema?: ConfigSchema;
+    /**
+     * Override user-facing strings. Pass a callback that returns a partial of
+     * the `Messages` tree; missing keys fall through to English defaults.
+     * Wire to your i18n library by re-reading translations inside the callback —
+     * Svelte 5's reactivity propagates locale changes for free.
+     */
+    messages?: () => MessagesOverride;
   }
 
   let {
@@ -150,11 +159,18 @@
     showSettingsSyncButton,
     showSettingsResetButton,
     swapStrategies,
-    workflowSettingsSchema
+    workflowSettingsSchema,
+    messages: messagesOverride
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally — feature flags don't change at runtime
   const features = mergeFeatures(propFeatures);
+
+  // Messages: merge consumer overrides over defaults; expose via context as a
+  // getter so consumer-side reactivity (e.g. paraglide-js locale switches)
+  // propagates into every child without a subscription.
+  let mergedMessages = $derived(mergeMessages(defaultMessages, messagesOverride?.()));
+  setMessages(() => mergedMessages);
 
   // Theme system — resolve named theme or custom object, inject CSS tokens from skin
   // Explicit prop wins; falls back to user's persisted theme preference from settings
