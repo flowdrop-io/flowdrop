@@ -17,6 +17,7 @@
     formatExecutionDuration,
     formatLastExecuted
   } from '../utils/nodeStatus.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     nodeId?: string;
@@ -98,9 +99,12 @@
 		"
     onmouseenter={() => (isHovered = true)}
     onmouseleave={() => (isHovered = false)}
-    title="{getStatusLabel(executionInfo.status)} - Executed {executionInfo.executionCount} times"
+    title={m().status.overlay.tooltip({
+      status: getStatusLabel(executionInfo.status),
+      count: executionInfo.executionCount
+    })}
     role="status"
-    aria-label="Node execution status: {getStatusLabel(executionInfo.status)}"
+    aria-label={m().status.overlay.ariaLabel({ status: getStatusLabel(executionInfo.status) })}
   >
     <!-- Status Display: [icon] [label] -->
     <div
@@ -130,18 +134,19 @@
     {#if showDetails && isHovered}
       <div class="node-status-overlay__details">
         <div class="node-status-overlay__detail-item">
-          <span class="node-status-overlay__detail-label">Status:</span>
+          <span class="node-status-overlay__detail-label">{m().status.overlay.statusLabel}</span>
           <span class="node-status-overlay__detail-value"
             >{getStatusLabel(executionInfo.status)}</span
           >
         </div>
         <div class="node-status-overlay__detail-item">
-          <span class="node-status-overlay__detail-label">Executions:</span>
+          <span class="node-status-overlay__detail-label">{m().status.overlay.executionsLabel}</span
+          >
           <span class="node-status-overlay__detail-value">{executionInfo.executionCount}</span>
         </div>
         {#if executionInfo.lastExecuted}
           <div class="node-status-overlay__detail-item">
-            <span class="node-status-overlay__detail-label">Last Run:</span>
+            <span class="node-status-overlay__detail-label">{m().status.overlay.lastRunLabel}</span>
             <span class="node-status-overlay__detail-value"
               >{formatLastExecuted(executionInfo.lastExecuted)}</span
             >
@@ -149,7 +154,8 @@
         {/if}
         {#if executionInfo.lastExecutionDuration}
           <div class="node-status-overlay__detail-item">
-            <span class="node-status-overlay__detail-label">Duration:</span>
+            <span class="node-status-overlay__detail-label">{m().status.overlay.durationLabel}</span
+            >
             <span class="node-status-overlay__detail-value"
               >{formatExecutionDuration(executionInfo.lastExecutionDuration)}</span
             >
@@ -157,7 +163,7 @@
         {/if}
         {#if executionInfo.lastError}
           <div class="node-status-overlay__detail-item node-status-overlay__detail-item--error">
-            <span class="node-status-overlay__detail-label">Error:</span>
+            <span class="node-status-overlay__detail-label">{m().status.overlay.errorLabel}</span>
             <span class="node-status-overlay__detail-value">{executionInfo.lastError}</span>
           </div>
         {/if}

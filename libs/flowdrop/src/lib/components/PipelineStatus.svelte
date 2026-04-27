@@ -13,6 +13,7 @@
   import type { Workflow } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
   import { logger } from '../utils/logger.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     pipelineId: string;
@@ -166,9 +167,10 @@
    * Get pipeline actions for the parent navbar
    */
   function getPipelineActions() {
+    const sp = m().status.pipeline;
     return [
       {
-        label: isLoadingJobStatus ? 'Refreshing...' : 'Refresh Status',
+        label: isLoadingJobStatus ? sp.refreshing : sp.refresh,
         href: '#refresh',
         icon: isLoadingJobStatus ? 'mdi:loading' : 'mdi:refresh',
         variant: 'outline' as const,
@@ -178,7 +180,7 @@
         }
       },
       {
-        label: 'View Logs',
+        label: sp.viewLogs,
         href: '#logs',
         icon: 'mdi:file-document-outline',
         variant: 'outline' as const,
@@ -214,29 +216,30 @@
   // Send pipeline breadcrumbs to layout when they change
   $effect(() => {
     if (pipelineStatus && pipelineId && workflow) {
+      const sp = m().status.pipeline;
       const breadcrumbs = [
         {
-          label: 'Home',
+          label: sp.home,
           href: '/',
           icon: 'mdi:home'
         },
         {
-          label: 'Workflows',
+          label: sp.workflows,
           href: '/',
           icon: 'mdi:view-list'
         },
         {
-          label: workflow.name || 'Workflow',
+          label: workflow.name || sp.workflow,
           href: `/workflow/${workflow.id}/edit`,
           icon: 'mdi:workflow'
         },
         {
-          label: 'Pipelines',
+          label: sp.pipelines,
           href: `/workflow/${workflow.id}/pipelines`,
           icon: 'mdi:source-branch'
         },
         {
-          label: `Pipeline ${pipelineId} - ${pipelineStatus}`,
+          label: sp.pipelineCrumb({ id: pipelineId, status: pipelineStatus }),
           icon: 'mdi:play-circle'
         }
       ];

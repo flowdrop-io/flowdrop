@@ -11,6 +11,7 @@
   import Logo from './Logo.svelte';
   import SettingsModal from './SettingsModal.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
+  import { m } from '$lib/messages/index.js';
 
   interface NavbarAction {
     label: string;
@@ -90,8 +91,8 @@
           <Logo />
         </div>
         <div>
-          <h1 class="flowdrop-text--logo flowdrop-font--bold">FlowDrop</h1>
-          <p class="flowdrop-text--tagline flowdrop-text--gray">Visual Workflow Manager</p>
+          <h1 class="flowdrop-text--logo flowdrop-font--bold">{m().navigation.appName}</h1>
+          <p class="flowdrop-text--tagline flowdrop-text--gray">{m().navigation.tagline}</p>
         </div>
       </div>
     </div>
@@ -104,7 +105,7 @@
         <div class="flowdrop-navbar__status-container">
           <div class="flowdrop-navbar__status">
             <div class="flowdrop-navbar__status-indicator"></div>
-            <span class="flowdrop-navbar__status-text">Connected</span>
+            <span class="flowdrop-navbar__status-text">{m().navigation.connected}</span>
           </div>
         </div>
       {/if}
@@ -112,7 +113,7 @@
       <!-- Title or Breadcrumbs on bottom -->
       {#if breadcrumbs.length > 0}
         <div class="flowdrop-navbar__breadcrumb-container">
-          <nav class="flowdrop-navbar__breadcrumb" aria-label="Breadcrumb">
+          <nav class="flowdrop-navbar__breadcrumb" aria-label={m().navigation.breadcrumbAriaLabel}>
             <ol class="flowdrop-navbar__breadcrumb-list">
               {#each breadcrumbs as breadcrumb, index (index)}
                 <li class="flowdrop-navbar__breadcrumb-item">
@@ -241,8 +242,8 @@
       <button
         class="flowdrop-navbar__settings-btn"
         onclick={() => (isSettingsOpen = true)}
-        title="Settings"
-        aria-label="Open settings"
+        title={m().navigation.settingsTitle}
+        aria-label={m().navigation.settingsAriaLabel}
       >
         <Icon icon="mdi:cog" />
       </button>

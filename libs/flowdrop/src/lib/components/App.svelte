@@ -172,6 +172,51 @@
   let mergedMessages = $derived(mergeMessages(defaultMessages, messagesOverride?.()));
   setMessages(() => mergedMessages);
 
+  // Default navbar primary actions — used when no `navbarActions` prop is supplied.
+  // Derived so the labels track locale changes.
+  const defaultPrimaryActions = $derived([
+    {
+      label: mergedMessages.navigation.save,
+      href: '#save',
+      icon: 'heroicons:document-arrow-down',
+      variant: 'primary' as const,
+      onclick: (e: Event) => {
+        e.preventDefault();
+        saveWorkflow();
+      }
+    },
+    {
+      label: mergedMessages.navigation.export,
+      href: '#export',
+      icon: 'heroicons:arrow-down-tray',
+      variant: 'outline' as const,
+      onclick: (e: Event) => {
+        e.preventDefault();
+        exportWorkflow();
+      }
+    },
+    {
+      label: mergedMessages.navigation.import,
+      href: '#import',
+      icon: 'heroicons:arrow-up-tray',
+      variant: 'outline' as const,
+      onclick: (e: Event) => {
+        e.preventDefault();
+        fileInputRef?.click();
+      }
+    },
+    {
+      label: mergedMessages.navigation.workflowSettings,
+      href: '#settings',
+      icon: 'heroicons:cog-6-tooth',
+      variant: 'outline' as const,
+      onclick: (e: Event) => {
+        e.preventDefault();
+        toggleWorkflowSettings();
+      }
+    }
+  ]);
+
   // Theme system — resolve named theme or custom object, inject CSS tokens from skin
   // Explicit prop wins; falls back to user's persisted theme preference from settings
   let resolvedTheme = $derived(resolveTheme(themeProp ?? getUiSettings().theme));
@@ -966,50 +1011,7 @@
     {#snippet header()}
       <Navbar
         title={breadcrumbTitle}
-        primaryActions={navbarActions.length > 0
-          ? navbarActions
-          : [
-              {
-                label: 'Save',
-                href: '#save',
-                icon: 'heroicons:document-arrow-down',
-                variant: 'primary',
-                onclick: (e) => {
-                  e.preventDefault();
-                  saveWorkflow();
-                }
-              },
-              {
-                label: 'Export',
-                href: '#export',
-                icon: 'heroicons:arrow-down-tray',
-                variant: 'outline',
-                onclick: (e) => {
-                  e.preventDefault();
-                  exportWorkflow();
-                }
-              },
-              {
-                label: 'Import',
-                href: '#import',
-                icon: 'heroicons:arrow-up-tray',
-                variant: 'outline',
-                onclick: (e) => {
-                  e.preventDefault();
-                  fileInputRef?.click();
-                }
-              },
-              {
-                label: 'Workflow Settings',
-                href: '#settings',
-                icon: 'heroicons:cog-6-tooth',
-                variant: 'outline',
-                onclick: (e) => {
-                  e.preventDefault();
-                  toggleWorkflowSettings();
-                }
-              }
-            ]}
+        primaryActions={navbarActions.length > 0 ? navbarActions : defaultPrimaryActions}
         showStatus={true}
         {showSettings}
         {settingsCategories}

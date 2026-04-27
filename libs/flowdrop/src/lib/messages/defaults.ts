@@ -199,5 +199,48 @@ export const defaultMessages = {
       fromWorkflow: 'From workflow node',
       nodeIdTooltip: ({ id }: { id: string }) => `Node ID: ${id}`
     }
+  },
+
+  navigation: {
+    // Navbar branding (rendered when no consumer overrides via title prop).
+    appName: 'FlowDrop',
+    tagline: 'Visual Workflow Manager',
+    breadcrumbAriaLabel: 'Breadcrumb',
+    connected: 'Connected',
+    settingsTitle: 'Settings',
+    settingsAriaLabel: 'Open settings',
+    // Default primary action labels rendered when no `navbarActions` prop is supplied.
+    save: 'Save',
+    export: 'Export',
+    import: 'Import',
+    workflowSettings: 'Workflow Settings'
+  },
+
+  status: {
+    // Pipeline status panel.
+    pipeline: {
+      refresh: 'Refresh Status',
+      refreshing: 'Refreshing...',
+      viewLogs: 'View Logs',
+      home: 'Home',
+      workflows: 'Workflows',
+      workflow: 'Workflow',
+      pipelines: 'Pipelines',
+      pipelineCrumb: ({ id, status }: { id: string; status: string }) =>
+        `Pipeline ${id} - ${status}`
+    },
+    // NodeStatusOverlay tooltip content. The `status` parameter is the
+    // resolved status label (typically from `getStatusLabel()` so it stays
+    // consistent with status icons elsewhere); the wrapper text is localized.
+    overlay: {
+      tooltip: ({ status, count }: { status: string; count: number }) =>
+        `${status} - Executed ${count} times`,
+      ariaLabel: ({ status }: { status: string }) => `Node execution status: ${status}`,
+      statusLabel: 'Status:',
+      executionsLabel: 'Executions:',
+      lastRunLabel: 'Last Run:',
+      durationLabel: 'Duration:',
+      errorLabel: 'Error:'
+    }
   }
 } as const;
