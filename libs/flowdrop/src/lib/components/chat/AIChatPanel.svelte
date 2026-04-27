@@ -15,6 +15,7 @@
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { tick } from 'svelte';
   import Icon from '@iconify/svelte';
+  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
 
   // =========================================================================
   // Internal Display Message Type
@@ -35,11 +36,21 @@
     nodeTypes: NodeMetadata[];
     workflowId?: string;
     onUIAction?: (action: UIAction) => void;
+    /**
+     * @deprecated since v1.8 — use `messages.chat.placeholder`. Removed in v2.0.
+     */
     placeholder?: string;
     endpointConfig?: EndpointConfig | null;
   }
 
   let { nodeTypes, workflowId, onUIAction, placeholder, endpointConfig }: Props = $props();
+
+  // svelte-ignore state_referenced_locally — deprecation warns once per mount; later prop rebinds aren't relevant
+  if (placeholder !== undefined) {
+    warnDeprecatedProp('AIChatPanel', 'placeholder', 'messages.chat.placeholder');
+  }
+
+  const resolvedPlaceholder = $derived(placeholder ?? m().chat.placeholder);
 
   // =========================================================================
   // State
@@ -365,18 +376,18 @@
   }
 </script>
 
-<div class="ai-chat-panel" role="region" aria-label="AI Assistant">
+<div class="ai-chat-panel" role="region" aria-label={m().chat.aiAssistant}>
   {#if !isChatConfigured}
     <!-- No backend configured -->
     <div class="ai-chat-panel__notice">
       <Icon icon="mdi:robot-off-outline" />
-      <span>AI Assistant requires backend configuration</span>
+      <span>{m().chat.requiresBackend}</span>
     </div>
   {:else if isDisabled}
     <!-- No workflow loaded -->
     <div class="ai-chat-panel__notice">
       <Icon icon="mdi:chat-sleep-outline" />
-      <span>Load a workflow to start chatting</span>
+      <span>{m().chat.loadWorkflow}</span>
     </div>
   {:else}
     <!-- Messages area -->
@@ -384,7 +395,7 @@
       {#if displayMessages.length === 0}
         <div class="ai-chat-panel__empty">
           <Icon icon="mdi:chat-outline" />
-          <span>Ask the AI to help build your workflow</span>
+          <span>{m().chat.helpBuild}</span>
         </div>
       {/if}
       {#each displayMessages as message, msgIndex}
@@ -395,7 +406,9 @@
               msgIndex === displayMessages.length - 1}
           >
             <Icon icon="mdi:autorenew" />
-            <span>Auto-retrying (attempt {message.retryAttempt}/{MAX_AUTO_RETRIES})…</span>
+            <span
+              >{m().chat.autoRetry({ attempt: message.retryAttempt, max: MAX_AUTO_RETRIES })}</span
+            >
           </div>
         {:else}
           <div class="ai-chat-panel__bubble ai-chat-panel__bubble--{message.role}">
@@ -443,7 +456,7 @@
         bind:value={inputValue}
         onkeydown={handleKeydown}
         class="ai-chat-panel__input"
-        placeholder={placeholder ?? 'Describe what you want to build...'}
+        placeholder={resolvedPlaceholder}
         rows="1"
         disabled={isLoading}
       ></textarea>
@@ -451,7 +464,7 @@
         class="ai-chat-panel__send"
         onclick={sendMessage}
         disabled={!canSend}
-        aria-label="Send message"
+        aria-label={m().chat.send}
       >
         <Icon icon="mdi:send" />
       </button>

@@ -30,6 +30,7 @@
     interruptActions,
     getInterruptByMessageId
   } from '../../stores/interruptStore.svelte.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -78,7 +79,7 @@
   let {
     showTimestamps = true,
     autoScroll = true,
-    placeholder = 'Type your message...',
+    placeholder,
     onSendMessage,
     onStopExecution,
     showLogsInline = false,
@@ -86,9 +87,16 @@
     onInterruptResolved,
     showChatInput = true,
     showRunButton = true,
-    predefinedMessage = 'Run workflow',
+    predefinedMessage,
     compactSystemMessages = true
   }: Props = $props();
+
+  // Playground placeholders/labels are configurable per-instance (workflow
+  // author) but fall back to the localized messages tree when not provided.
+  const resolvedPlaceholder = $derived(placeholder ?? m().playground.chat.placeholder);
+  const resolvedPredefinedMessage = $derived(
+    predefinedMessage ?? m().playground.chat.predefinedRun
+  );
 
   /**
    * Tracks whether the Run button is enabled.
@@ -283,7 +291,7 @@
     }
     // Disable the Run button after clicking
     runEnabled = false;
-    onSendMessage?.(predefinedMessage);
+    onSendMessage?.(resolvedPredefinedMessage);
   }
 
   /**
@@ -468,16 +476,16 @@
           </svg>
         </div>
         {#if noInputsAvailable}
-          <h2 class="chat-panel__welcome-title">View only</h2>
+          <h2 class="chat-panel__welcome-title">{m().playground.states.viewOnlyTitle}</h2>
           <p class="chat-panel__welcome-text">
-            This playground is in view-only mode. No inputs are available.
+            {m().playground.states.viewOnlyText}
           </p>
         {:else if showChatInput}
-          <h2 class="chat-panel__welcome-title">New session</h2>
-          <p class="chat-panel__welcome-text">Test your flow with a prompt</p>
+          <h2 class="chat-panel__welcome-title">{m().playground.states.newSessionTitle}</h2>
+          <p class="chat-panel__welcome-text">{m().playground.states.newSessionText}</p>
         {:else}
-          <h2 class="chat-panel__welcome-title">Ready to run</h2>
-          <p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
+          <h2 class="chat-panel__welcome-title">{m().playground.states.readyTitle}</h2>
+          <p class="chat-panel__welcome-text">{m().playground.states.readyText}</p>
         {/if}
       </div>
     {:else if showEmptyChat}
@@ -509,16 +517,16 @@
           </svg>
         </div>
         {#if noInputsAvailable}
-          <h2 class="chat-panel__welcome-title">View only</h2>
+          <h2 class="chat-panel__welcome-title">{m().playground.states.viewOnlyTitle}</h2>
           <p class="chat-panel__welcome-text">
-            This playground is in view-only mode. No inputs are available.
+            {m().playground.states.viewOnlyText}
           </p>
         {:else if showChatInput}
-          <h2 class="chat-panel__welcome-title">New session</h2>
-          <p class="chat-panel__welcome-text">Test your flow with a prompt</p>
+          <h2 class="chat-panel__welcome-title">{m().playground.states.newSessionTitle}</h2>
+          <p class="chat-panel__welcome-text">{m().playground.states.newSessionText}</p>
         {:else}
-          <h2 class="chat-panel__welcome-title">Ready to run</h2>
-          <p class="chat-panel__welcome-text">Click Run to execute your workflow</p>
+          <h2 class="chat-panel__welcome-title">{m().playground.states.readyTitle}</h2>
+          <p class="chat-panel__welcome-text">{m().playground.states.readyText}</p>
         {/if}
       </div>
     {:else}
@@ -552,7 +560,7 @@
             <span></span>
             <span></span>
           </div>
-          <span class="chat-panel__typing-text">Processing...</span>
+          <span class="chat-panel__typing-text">{m().playground.states.processing}</span>
         </div>
       {/if}
     {/if}
@@ -564,7 +572,7 @@
       <!-- No inputs available - show informational message -->
       <div class="chat-panel__no-inputs">
         <Icon icon="mdi:information-outline" />
-        <span>View-only mode. Workflow execution is controlled externally.</span>
+        <span>{m().playground.states.viewOnlyHelp}</span>
       </div>
     {:else}
       <div
@@ -577,7 +585,7 @@
               bind:this={inputField}
               bind:value={inputValue}
               class="chat-panel__input"
-              {placeholder}
+              placeholder={resolvedPlaceholder}
               rows="1"
               disabled={getIsExecuting()}
               onkeydown={handleKeydown}
@@ -591,10 +599,10 @@
             type="button"
             class="chat-panel__stop-btn"
             onclick={handleStop}
-            title="Stop execution"
+            title={m().playground.actions.stopTitle}
           >
             <Icon icon="mdi:stop" />
-            Stop
+            {m().playground.actions.stop}
           </button>
         {:else if showChatInput}
           <button
@@ -602,9 +610,9 @@
             class="chat-panel__send-btn"
             onclick={handleSend}
             disabled={!inputValue.trim()}
-            title="Send message"
+            title={m().playground.actions.sendTitle}
           >
-            Send
+            {m().playground.actions.send}
           </button>
         {:else if showRunButton}
           <button
@@ -612,10 +620,12 @@
             class="chat-panel__run-btn"
             onclick={handleRun}
             disabled={!runEnabled}
-            title={runEnabled ? 'Run workflow' : 'Waiting for workflow to be ready...'}
+            title={runEnabled
+              ? m().playground.actions.runTitle
+              : m().playground.actions.runWaitingTitle}
           >
             <Icon icon="mdi:play" />
-            Run
+            {m().playground.actions.run}
           </button>
         {/if}
       </div>

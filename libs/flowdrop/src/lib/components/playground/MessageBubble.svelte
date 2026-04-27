@@ -17,6 +17,7 @@
     PlaygroundMessageMetadata,
     PlaygroundMessageRole
   } from '../../types/playground.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -91,17 +92,18 @@
    * @returns Display label
    */
   function getRoleLabel(role: PlaygroundMessageRole, metadata?: PlaygroundMessageMetadata): string {
+    const roles = m().playground.roles;
     switch (role) {
       case 'user':
-        return metadata?.userName ?? 'You';
+        return metadata?.userName ?? roles.you;
       case 'assistant':
-        return 'Assistant';
+        return roles.assistant;
       case 'system':
-        return 'System';
+        return roles.system;
       case 'log':
-        return metadata?.nodeLabel ?? 'Log';
+        return metadata?.nodeLabel ?? roles.log;
       default:
-        return 'Message';
+        return roles.message;
     }
   }
 
@@ -208,13 +210,19 @@
       {#if message.metadata?.duration !== undefined || message.nodeId}
         <div class="message-bubble__footer">
           {#if message.nodeId}
-            <span class="message-bubble__node" title="Node ID: {message.nodeId}">
+            <span
+              class="message-bubble__node"
+              title={m().playground.messageTooltips.nodeId({ id: message.nodeId })}
+            >
               <Icon icon="mdi:graph" />
               {message.metadata?.nodeLabel ?? message.nodeId}
             </span>
           {/if}
           {#if message.metadata?.duration !== undefined}
-            <span class="message-bubble__duration" title="Execution duration">
+            <span
+              class="message-bubble__duration"
+              title={m().playground.messageTooltips.executionDuration}
+            >
               <Icon icon="mdi:timer-outline" />
               {formatDuration(message.metadata.duration)}
             </span>

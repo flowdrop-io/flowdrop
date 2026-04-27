@@ -216,6 +216,94 @@ export const defaultMessages = {
     workflowSettings: 'Workflow Settings'
   },
 
+  chat: {
+    // AIChatPanel labels.
+    aiAssistant: 'AI Assistant',
+    requiresBackend: 'AI Assistant requires backend configuration',
+    loadWorkflow: 'Load a workflow to start chatting',
+    helpBuild: 'Ask the AI to help build your workflow',
+    placeholder: 'Describe what you want to build...',
+    send: 'Send message',
+    autoRetry: ({ attempt, max }: { attempt: number; max: number }) =>
+      `Auto-retrying (attempt ${attempt}/${max})…`,
+    // CommandPreview labels.
+    commandPreview: {
+      ariaLabel: 'Command preview',
+      applying: 'Applying…',
+      applied: 'Applied',
+      dismissed: 'Dismissed',
+      applyAll: 'Apply All',
+      cancel: 'Cancel'
+    }
+  },
+
+  playground: {
+    chat: {
+      placeholder: 'Type your message...',
+      predefinedRun: 'Run workflow'
+    },
+    states: {
+      viewOnlyTitle: 'View only',
+      viewOnlyText: 'This playground is in view-only mode. No inputs are available.',
+      newSessionTitle: 'New session',
+      newSessionText: 'Test your flow with a prompt',
+      readyTitle: 'Ready to run',
+      readyText: 'Click Run to execute your workflow',
+      processing: 'Processing...',
+      viewOnlyHelp: 'View-only mode. Workflow execution is controlled externally.'
+    },
+    actions: {
+      stopTitle: 'Stop execution',
+      stop: 'Stop',
+      sendTitle: 'Send message',
+      send: 'Send',
+      runTitle: 'Run workflow',
+      runWaitingTitle: 'Waiting for workflow to be ready...',
+      run: 'Run'
+    },
+    // Message author labels.
+    roles: {
+      you: 'You',
+      assistant: 'Assistant',
+      system: 'System',
+      log: 'Log',
+      message: 'Message'
+    },
+    messageTooltips: {
+      nodeId: ({ id }: { id: string }) => `Node ID: ${id}`,
+      executionDuration: 'Execution duration'
+    },
+    sessions: {
+      header: 'Sessions',
+      newSession: 'New Session',
+      empty: 'No sessions yet',
+      clickAgainToConfirm: 'Click again to confirm',
+      cancel: 'Cancel',
+      deleteSession: 'Delete session',
+      // Relative timestamp formatting.
+      justNow: 'Just now',
+      minutesAgo: ({ n }: { n: number }) => `${n}m ago`,
+      hoursAgo: ({ n }: { n: number }) => `${n}h ago`,
+      daysAgo: ({ n }: { n: number }) => `${n}d ago`
+    }
+  },
+
+  nodes: {
+    notes: {
+      placeholder: 'Add your notes here...',
+      types: {
+        info: 'Info',
+        warning: 'Warning',
+        success: 'Success',
+        error: 'Error',
+        default: 'Note'
+      },
+      processing: 'Processing...',
+      errorOccurred: 'Error occurred',
+      configure: 'Configure note'
+    }
+  },
+
   status: {
     // Pipeline status panel.
     pipeline: {

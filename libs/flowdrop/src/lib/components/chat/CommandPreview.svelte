@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CommandPreviewItem } from '../../types/chat.js';
   import Icon from '@iconify/svelte';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     commands: CommandPreviewItem[];
@@ -26,7 +27,7 @@
   }
 </script>
 
-<div class="command-preview" role="region" aria-label="Command preview">
+<div class="command-preview" role="region" aria-label={m().chat.commandPreview.ariaLabel}>
   <div class="command-preview__list">
     {#each commands as command, i}
       <div class="command-preview__item command-preview__item--{command.status}">
@@ -54,16 +55,16 @@
       <span class="command-preview__resolved command-preview__resolved--applied">
         {#if isExecuting}
           <Icon icon="mdi:loading" />
-          Applying…
+          {m().chat.commandPreview.applying}
         {:else}
           <Icon icon="mdi:check-all" />
-          Applied
+          {m().chat.commandPreview.applied}
         {/if}
       </span>
     {:else if resolvedAction === 'cancelled'}
       <span class="command-preview__resolved command-preview__resolved--cancelled">
         <Icon icon="mdi:close" />
-        Dismissed
+        {m().chat.commandPreview.dismissed}
       </span>
     {:else}
       <button
@@ -72,14 +73,14 @@
         disabled={!hasPending || isExecuting}
       >
         <Icon icon="mdi:check-all" />
-        Apply All
+        {m().chat.commandPreview.applyAll}
       </button>
       <button
         class="command-preview__btn command-preview__btn--cancel"
         onclick={handleCancel}
         disabled={isExecuting}
       >
-        Cancel
+        {m().chat.commandPreview.cancel}
       </button>
     {/if}
   </div>

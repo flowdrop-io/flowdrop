@@ -16,6 +16,7 @@
     getIsLoading,
     getSessionCount
   } from '../../stores/playgroundStore.svelte.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -104,17 +105,18 @@
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
+    const sessions = m().playground.sessions;
     if (diffMins < 1) {
-      return 'Just now';
+      return sessions.justNow;
     }
     if (diffMins < 60) {
-      return `${diffMins}m ago`;
+      return sessions.minutesAgo({ n: diffMins });
     }
     if (diffHours < 24) {
-      return `${diffHours}h ago`;
+      return sessions.hoursAgo({ n: diffHours });
     }
     if (diffDays < 7) {
-      return `${diffDays}d ago`;
+      return sessions.daysAgo({ n: diffDays });
     }
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -170,7 +172,7 @@
   >
     <div class="session-manager__title">
       <Icon icon="mdi:history" />
-      <span>Sessions</span>
+      <span>{m().playground.sessions.header}</span>
       {#if getSessionCount() > 0}
         <span class="session-manager__count">{getSessionCount()}</span>
       {/if}
@@ -192,7 +194,7 @@
         disabled={getIsLoading()}
       >
         <Icon icon="mdi:plus" />
-        New Session
+        {m().playground.sessions.newSession}
       </button>
 
       <!-- Sessions List -->
@@ -200,7 +202,7 @@
         {#if getSessions().length === 0}
           <div class="session-manager__empty">
             <Icon icon="mdi:chat-outline" />
-            <span>No sessions yet</span>
+            <span>{m().playground.sessions.empty}</span>
           </div>
         {:else}
           {#each getSessions() as session (session.id)}
@@ -236,7 +238,7 @@
                     type="button"
                     class="session-manager__delete-btn session-manager__delete-btn--confirm"
                     onclick={(e) => handleDeleteClick(e, session.id)}
-                    title="Click again to confirm"
+                    title={m().playground.sessions.clickAgainToConfirm}
                   >
                     <Icon icon="mdi:check" />
                   </button>
@@ -244,7 +246,7 @@
                     type="button"
                     class="session-manager__delete-btn session-manager__delete-btn--cancel"
                     onclick={cancelDelete}
-                    title="Cancel"
+                    title={m().playground.sessions.cancel}
                   >
                     <Icon icon="mdi:close" />
                   </button>
@@ -253,7 +255,7 @@
                     type="button"
                     class="session-manager__delete-btn"
                     onclick={(e) => handleDeleteClick(e, session.id)}
-                    title="Delete session"
+                    title={m().playground.sessions.deleteSession}
                   >
                     <Icon icon="mdi:delete-outline" />
                   </button>

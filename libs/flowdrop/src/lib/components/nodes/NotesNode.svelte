@@ -2,6 +2,7 @@
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * NotesNode component props
@@ -25,39 +26,42 @@
   }>();
 
   /** Note content derived from config */
-  const noteContent = $derived((props.data.config?.content as string) || 'Add your notes here...');
+  const noteContent = $derived(
+    (props.data.config?.content as string) || m().nodes.notes.placeholder
+  );
 
   /** Note type derived from config */
   const noteType = $derived((props.data.config?.noteType as string) || 'info');
 
-  /** Note type configuration with styling for each type */
-  const noteTypes = {
+  /** Note type configuration with styling for each type. Type names track the
+   * messages tree so locale changes flow through. */
+  const noteTypes = $derived({
     info: {
-      name: 'Info',
+      name: m().nodes.notes.types.info,
       typeClass: 'flowdrop-notes-node--info',
       icon: 'mdi:information'
     },
     warning: {
-      name: 'Warning',
+      name: m().nodes.notes.types.warning,
       typeClass: 'flowdrop-notes-node--warning',
       icon: 'mdi:alert'
     },
     success: {
-      name: 'Success',
+      name: m().nodes.notes.types.success,
       typeClass: 'flowdrop-notes-node--success',
       icon: 'mdi:check-circle'
     },
     error: {
-      name: 'Error',
+      name: m().nodes.notes.types.error,
       typeClass: 'flowdrop-notes-node--error',
       icon: 'mdi:close-circle'
     },
     note: {
-      name: 'Note',
+      name: m().nodes.notes.types.default,
       typeClass: 'flowdrop-notes-node--note',
       icon: 'mdi:note-text'
     }
-  };
+  });
 
   /** Current note type configuration based on selected type */
   const currentType = $derived(noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info);
@@ -126,7 +130,7 @@
     {#if props.isProcessing}
       <div class="flowdrop-notes-node__processing">
         <div class="flowdrop-notes-node__spinner"></div>
-        <span>Processing...</span>
+        <span>{m().nodes.notes.processing}</span>
       </div>
     {/if}
 
@@ -134,7 +138,7 @@
     {#if props.isError}
       <div class="flowdrop-notes-node__error-indicator">
         <Icon icon="mdi:alert-circle" class="flowdrop-notes-node__error-icon" />
-        <span>Error occurred</span>
+        <span>{m().nodes.notes.errorOccurred}</span>
       </div>
     {/if}
   </div>
@@ -143,7 +147,7 @@
   <button
     class="flowdrop-notes-node__config-btn"
     onclick={openConfigSidebar}
-    title="Configure note"
+    title={m().nodes.notes.configure}
   >
     <Icon icon="mdi:cog" />
   </button>
