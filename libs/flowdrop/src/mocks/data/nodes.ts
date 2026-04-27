@@ -4366,6 +4366,113 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
+    id: 'synchronizer',
+    name: 'Synchronizer',
+    type: 'default',
+    supportedTypes: ['default'],
+    description:
+      'Waits for all configured input triggers to fire, then emits a single trigger output. Use this to join parallel branches (AND-join semantics).',
+    category: 'flow-control',
+    icon: 'mdi:call-merge',
+    color: '#f59e0b',
+    version: '1.0.0',
+    tags: ['flow-control', 'synchronizer', 'and-join', 'join', 'parallel', 'wait', 'merge'],
+    inputs: [],
+    outputs: [
+      {
+        id: 'trigger',
+        name: 'Trigger',
+        type: 'output',
+        dataType: 'trigger',
+        required: false,
+        description: 'Fires once after every configured input has fired'
+      }
+    ],
+    config: {
+      dynamicInputs: [
+        {
+          name: 'input_1',
+          label: 'Input 1',
+          description: 'First trigger to wait for',
+          dataType: 'trigger',
+          required: true
+        },
+        {
+          name: 'input_2',
+          label: 'Input 2',
+          description: 'Second trigger to wait for',
+          dataType: 'trigger',
+          required: true
+        }
+      ]
+    },
+    configSchema: {
+      type: 'object',
+      properties: {
+        dynamicInputs: {
+          type: 'array',
+          title: 'Input Triggers',
+          description:
+            'Add one input port per upstream branch you want to synchronize. The Synchronizer fires its output trigger only after every required input has fired.',
+          items: {
+            type: 'object',
+            title: 'Input Port',
+            properties: {
+              name: {
+                type: 'string',
+                title: 'Port ID',
+                description: 'Unique identifier for this input port (used for connections)',
+                placeholder: 'e.g., branch_a'
+              },
+              label: {
+                type: 'string',
+                title: 'Label',
+                description: 'Display label for this input port',
+                placeholder: 'e.g., Branch A'
+              },
+              description: {
+                type: 'string',
+                title: 'Description',
+                description: 'Description of which upstream branch fires this input',
+                placeholder: 'e.g., Triggered when branch A completes'
+              },
+              dataType: {
+                type: 'string',
+                format: 'hidden',
+                default: 'trigger'
+              },
+              required: {
+                type: 'boolean',
+                title: 'Required',
+                description:
+                  'If true, this input must fire for the synchronizer to proceed (AND semantics)',
+                default: true
+              }
+            },
+            required: ['name', 'label', 'dataType']
+          },
+          default: [
+            {
+              name: 'input_1',
+              label: 'Input 1',
+              description: 'First trigger to wait for',
+              dataType: 'trigger',
+              required: true
+            },
+            {
+              name: 'input_2',
+              label: 'Input 2',
+              description: 'Second trigger to wait for',
+              dataType: 'trigger',
+              required: true
+            }
+          ],
+          minItems: 2
+        }
+      }
+    }
+  },
+  {
     id: 'json_validator',
     name: 'JSON Validator',
     type: 'default',
