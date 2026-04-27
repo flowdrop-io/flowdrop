@@ -570,3 +570,15 @@ export type {
   SwapStrategyContext,
   SwapEventContext
 } from '../utils/nodeSwap.js';
+
+// ============================================================================
+// Messages (typed, overridable, translation-ready user-facing strings)
+//
+// Consumers pass `messages={() => partial}` to <FlowDrop>; type the partial
+// as `MessagesOverride`. The runtime helpers (`setMessages`, `m`,
+// `mergeMessages`) are internal to library components — import them from
+// `@flowdrop/flowdrop/messages` if you're authoring a custom integration.
+// ============================================================================
+
+export { defaultMessages } from '../messages/index.js';
+export type { Messages, MessagesOverride } from '../messages/index.js';
