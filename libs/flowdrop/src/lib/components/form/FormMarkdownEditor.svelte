@@ -18,7 +18,7 @@
 
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { EditorView, lineNumbers, drawSelection, keymap } from '@codemirror/view';
+  import { EditorView, lineNumbers, drawSelection, keymap, placeholder } from '@codemirror/view';
   import { EditorState, Compartment } from '@codemirror/state';
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { highlightSpecialChars, highlightActiveLine } from '@codemirror/view';
@@ -32,7 +32,7 @@
     id: string;
     /** Current value (markdown string) */
     value: string;
-    /** Placeholder text shown when empty */
+    /** Placeholder text shown when empty. Falls back to `messages.form.markdown.placeholder`. */
     placeholder?: string;
     /** Whether the field is required */
     required?: boolean;
@@ -61,7 +61,7 @@
   let {
     id,
     value = '',
-    placeholder = 'Write your markdown here...',
+    placeholder: placeholderProp,
     required = false,
     height = '300px',
     showToolbar = true,
@@ -334,11 +334,14 @@
   // ── Editor setup ─────────────────────────────────────────
 
   function createExtensions() {
+    const placeholderText = placeholderProp ?? m().form.markdown.placeholder;
+
     const extensions = [
       lineNumbers(),
       highlightSpecialChars(),
       highlightActiveLine(),
       drawSelection(),
+      placeholder(placeholderText),
 
       // Editing features (skip when read-only)
       ...(disabled
