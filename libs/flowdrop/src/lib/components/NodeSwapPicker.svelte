@@ -10,6 +10,7 @@
   import Icon from '@iconify/svelte';
   import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
   import { getCategoryColorToken } from '../utils/colors.js';
+  import { m } from '$lib/messages/index.js';
   import { getCategoryLabel } from '../stores/categoriesStore.svelte.js';
   import { getVersionUpgrade } from '../utils/nodeSwap.js';
 
@@ -80,7 +81,7 @@
 <div class="swap-picker">
   <!-- Header -->
   <div class="swap-picker__header">
-    <button class="swap-picker__back" onclick={onCancel} aria-label="Back to configuration">
+    <button class="swap-picker__back" onclick={onCancel} aria-label={m().layout.backToConfiguration}>
       <Icon icon="heroicons:arrow-left" />
     </button>
     <h2 class="swap-picker__title">Swap Node</h2>

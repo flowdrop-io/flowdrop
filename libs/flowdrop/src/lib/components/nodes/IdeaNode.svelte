@@ -11,6 +11,7 @@
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { getDataTypeColor } from '$lib/utils/colors.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * IdeaNode component props
@@ -142,7 +143,7 @@
   onkeydown={handleKeydown}
   role="button"
   tabindex="0"
-  aria-label="Idea node: {displayTitle}"
+  aria-label={m().nodes.graph.ideaNode({ title: displayTitle })}
 >
   <!-- Left Port (Target/Input): center at top 40px (multiple of 10), 20px connection area -->
   {#if enableLeftPort}

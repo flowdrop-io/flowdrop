@@ -12,6 +12,7 @@
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import type { PlaygroundConfig } from '../../types/playground.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -86,7 +87,7 @@
           type="button"
           class="playground-modal__close-btn"
           onclick={onClose}
-          aria-label="Close playground modal"
+          aria-label={m().layout.closePlaygroundModal}
         >
           <Icon icon="mdi:close" />
         </button>

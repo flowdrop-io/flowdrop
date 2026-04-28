@@ -14,6 +14,7 @@
   import { getCategoryColorToken } from '../utils/colors.js';
   import PortMappingRow from './PortMappingRow.svelte';
   import ConfigMappingRow from './ConfigMappingRow.svelte';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     interactiveState: InteractiveSwapState;
@@ -129,7 +130,7 @@
 <div class="swap-editor">
   <!-- Header -->
   <div class="swap-editor__header">
-    <button class="swap-editor__back" onclick={onBack} aria-label="Back to node selection">
+    <button class="swap-editor__back" onclick={onBack} aria-label={m().layout.backToNodeSelection}>
       <Icon icon="heroicons:arrow-left" />
     </button>
     <h2 class="swap-editor__title">Swap Mapping</h2>

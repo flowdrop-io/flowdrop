@@ -29,6 +29,7 @@
   } from '../../stores/playgroundStore.svelte.js';
   import { interruptActions } from '../../stores/interruptStore.svelte.js';
   import { logger } from '../../utils/logger.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Component props
@@ -545,7 +546,7 @@
                     role="button"
                     tabindex="0"
                     title="Click to load this session"
-                    aria-label="Load session: {session.name}"
+                    aria-label={m().layout.loadSession({ name: session.name })}
                     onclick={() => handleSelectSession(session.id)}
                     onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
                   >

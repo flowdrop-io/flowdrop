@@ -102,6 +102,16 @@ export const defaultMessages = {
       save: 'Save',
       cancel: 'Cancel',
       empty: 'No schema properties defined.'
+    },
+
+    code: {
+      // FormCodeEditor — JSON editor aria-label.
+      editor: 'JSON editor'
+    },
+
+    template: {
+      // FormTemplateEditor — Mustache/template editor aria-label.
+      editor: 'Template editor'
     }
   },
 
@@ -213,7 +223,43 @@ export const defaultMessages = {
     save: 'Save',
     export: 'Export',
     import: 'Import',
-    workflowSettings: 'Workflow Settings'
+    workflowSettings: 'Workflow Settings',
+    // Right-sidebar workflow settings panel (distinct from the navbar action label above).
+    workflowSettingsPanelTitle: 'Workflow Settings',
+    workflowSettingsPanelSubtitle: 'Settings',
+    nodeConfigDescription: 'Node configuration',
+    closeSettings: 'Close settings',
+    closeConfigModal: 'Close configuration modal',
+    copyId: 'Copy ID to clipboard',
+    // Bottom panel tab labels.
+    bottomPanel: {
+      console: 'Console',
+      chat: 'AI Assistant'
+    }
+  },
+
+  layout: {
+    // Sidebar/main-region landmarks.
+    componentsSidebar: 'Components sidebar',
+    workflowCanvas: 'Workflow canvas',
+    executionLogs: 'Execution logs sidebar',
+    settingsCategories: 'Settings categories',
+    searchComponents: 'Search components',
+    commandConsole: 'Command Console (`)',
+    backToConfiguration: 'Back to configuration',
+    // Resize handle labels — keyboard users tab to these.
+    resizeLeftSidebar: 'Resize left sidebar',
+    resizeRightSidebar: 'Resize right sidebar',
+    resizeBottomPanel: 'Resize bottom panel',
+    expandSidebar: 'Expand sidebar',
+    collapseSidebar: 'Collapse sidebar',
+    closePlaygroundModal: 'Close playground modal',
+    closeLogsSidebar: 'Close logs sidebar',
+    closeConfigPanel: 'Close panel',
+    closeConsole: 'Close console',
+    swapNode: 'Swap node',
+    backToNodeSelection: 'Back to node selection',
+    loadSession: ({ name }: { name: string }) => `Load session: ${name}`
   },
 
   chat: {
@@ -301,6 +347,18 @@ export const defaultMessages = {
       processing: 'Processing...',
       errorOccurred: 'Error occurred',
       configure: 'Configure note'
+    },
+
+    // SvelteFlow node aria-labels — every visible node and port needs a
+    // landmark. The `name`/`title` parameter is the rendered display
+    // string (already localised by the workflow author or fallback).
+    graph: {
+      workflowNode: ({ name }: { name: string }) => `Workflow node: ${name}`,
+      gatewayNode: ({ title }: { title: string }) => `Gateway node: ${title}`,
+      ideaNode: ({ title }: { title: string }) => `Idea node: ${title}`,
+      connectInputPort: ({ name }: { name: string }) => `Connect to ${name} input port`,
+      connectOutputPort: ({ name }: { name: string }) => `Connect from ${name} output port`,
+      connectBranch: ({ name }: { name: string }) => `Connect from ${name} branch`
     }
   },
 

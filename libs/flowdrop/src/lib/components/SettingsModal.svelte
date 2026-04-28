@@ -27,6 +27,7 @@
   import Icon from '@iconify/svelte';
   import SettingsPanel from './SettingsPanel.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Props interface for SettingsModal component
@@ -131,13 +132,13 @@
     <div class="flowdrop-settings-modal__header">
       <h2 id="settings-modal-title" class="flowdrop-settings-modal__title">
         <Icon icon="mdi:cog" class="flowdrop-settings-modal__title-icon" />
-        Settings
+        {m().navigation.settingsTitle}
       </h2>
       <button
         class="flowdrop-settings-modal__close"
         onclick={closeModal}
-        aria-label="Close settings"
-        title="Close"
+        aria-label={m().navigation.closeSettings}
+        title={m().common.close}
       >
         <Icon icon="mdi:close" />
       </button>

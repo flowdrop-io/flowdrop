@@ -46,6 +46,7 @@
   import { createTemplateAutocomplete } from './templateAutocomplete.js';
   import { getVariableSchema } from '$lib/services/variableService.js';
   import { logger } from '../../utils/logger.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     /** Field identifier */
@@ -506,7 +507,7 @@
     class:form-template-editor__container--dark={darkTheme}
     role="textbox"
     aria-multiline="true"
-    aria-label="Template editor"
+    aria-label={m().form.template.editor}
   ></div>
 
   <!-- Loading banner (shown while fetching variables from API) -->

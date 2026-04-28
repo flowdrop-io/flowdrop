@@ -23,6 +23,7 @@
   import { updateSettings, getUiSettings } from '../../stores/settingsStore.svelte.js';
   import ConsoleInput from './ConsoleInput.svelte';
   import ConsoleOutput, { type ConsoleEntry } from './ConsoleOutput.svelte';
+  import { m } from '$lib/messages/index.js';
   import {
     formatListNodes,
     formatListEdges,
@@ -186,13 +187,13 @@
   }
 </script>
 
-<div class="command-console" role="region" aria-label="Command Console">
+<div class="command-console" role="region" aria-label={m().layout.commandConsole}>
   <div class="command-console__header">
-    <h2 class="command-console__title">Console</h2>
+    <h2 class="command-console__title">{m().navigation.bottomPanel.console}</h2>
     <button
       class="command-console__close"
       onclick={closeConsole}
-      aria-label="Close console"
+      aria-label={m().layout.closeConsole}
       type="button"
     >
       &times;

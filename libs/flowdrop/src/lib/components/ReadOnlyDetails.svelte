@@ -5,6 +5,8 @@
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
+
   /**
    * A single detail item with label and value
    */
@@ -52,8 +54,8 @@
       <button
         class="readonly-details__copy-btn"
         onclick={copyId}
-        title="Copy ID"
-        aria-label="Copy ID to clipboard"
+        title={m().navigation.copyId}
+        aria-label={m().navigation.copyId}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

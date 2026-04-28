@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ConfigSchema, ConfigValues } from '$lib/types';
   import ConfigForm from './ConfigForm.svelte';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     isOpen: boolean;
@@ -60,7 +61,7 @@
           type="button"
           class="config-modal__close-btn"
           onclick={handleClose}
-          aria-label="Close configuration modal"
+          aria-label={m().navigation.closeConfigModal}
         >
           <span aria-hidden="true">×</span>
         </button>

@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * Configuration props for the MainLayout component
@@ -342,7 +343,7 @@
           aria-valuenow={leftSidebarWidth}
           aria-valuemin={leftSidebarMinWidth}
           aria-valuemax={leftSidebarMaxWidth}
-          aria-label="Resize left sidebar"
+          aria-label={m().layout.resizeLeftSidebar}
           tabindex="0"
         >
           <div class="flowdrop-main-layout__divider-handle"></div>
@@ -377,7 +378,7 @@
           aria-valuenow={bottomPanelHeightState}
           aria-valuemin={bottomPanelMinHeight}
           aria-valuemax={bottomPanelMaxHeight}
-          aria-label="Resize bottom panel"
+          aria-label={m().layout.resizeBottomPanel}
           tabindex="0"
         >
           <div
@@ -408,7 +409,7 @@
         aria-valuenow={rightSidebarWidth}
         aria-valuemin={rightSidebarMinWidth}
         aria-valuemax={rightSidebarMaxWidth}
-        aria-label="Resize right sidebar"
+        aria-label={m().layout.resizeRightSidebar}
         tabindex="0"
       >
         <div class="flowdrop-main-layout__divider-handle"></div>

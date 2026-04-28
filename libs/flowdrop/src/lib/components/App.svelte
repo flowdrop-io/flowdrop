@@ -1060,7 +1060,7 @@
         />
       {:else if isWorkflowSettingsOpen}
         <ConfigPanel
-          title="Workflow Settings"
+          title={mergedMessages.navigation.workflowSettingsPanelTitle}
           id={getWorkflowStore()?.id}
           details={[
             {
@@ -1072,7 +1072,7 @@
               value: String(getWorkflowStore()?.edges?.length ?? 0)
             }
           ]}
-          configTitle="Settings"
+          configTitle={mergedMessages.navigation.workflowSettingsPanelSubtitle}
           onClose={() => (isWorkflowSettingsOpen = false)}
         >
           <ConfigForm
@@ -1121,7 +1121,8 @@
         <ConfigPanel
           title={currentNode.data.label}
           id={currentNode.id}
-          description={currentNode.data.metadata?.description || 'Node configuration'}
+          description={currentNode.data.metadata?.description ||
+            mergedMessages.navigation.nodeConfigDescription}
           details={[
             {
               label: 'Type',
@@ -1188,7 +1189,7 @@
               : ''}"
             onclick={() => updateSettings({ ui: { bottomPanelTab: 'console' } })}
           >
-            Console
+            {mergedMessages.navigation.bottomPanel.console}
           </button>
           <button
             class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'chat'
@@ -1196,7 +1197,7 @@
               : ''}"
             onclick={() => updateSettings({ ui: { bottomPanelTab: 'chat' } })}
           >
-            AI Assistant
+            {mergedMessages.navigation.bottomPanel.chat}
           </button>
         </div>
         <div class="bottom-panel-tabs__content">
@@ -1281,15 +1282,19 @@
       onclick={handleCanvasClick}
       onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()}
       role="region"
-      aria-label="Workflow canvas"
+      aria-label={mergedMessages.layout.workflowCanvas}
     >
       <!-- Floating sidebar toggle — always visible on the canvas top-left -->
       {#if !disableSidebar}
         <button
           class="flowdrop-sidebar-fab"
           onclick={toggleSidebar}
-          aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={isSidebarCollapsed
+            ? mergedMessages.layout.expandSidebar
+            : mergedMessages.layout.collapseSidebar}
+          title={isSidebarCollapsed
+            ? mergedMessages.layout.expandSidebar
+            : mergedMessages.layout.collapseSidebar}
         >
           <Icon icon={isSidebarCollapsed ? 'mdi:menu' : 'mdi:menu-open'} />
         </button>

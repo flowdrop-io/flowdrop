@@ -13,6 +13,7 @@
   import { getCategoryLabel } from '../stores/categoriesStore.svelte.js';
   import { getUiSettings } from '../stores/settingsStore.svelte.js';
   import { extractConfigDefaults } from '../utils/nodeIds.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     nodes: NodeMetadata[];
@@ -168,7 +169,7 @@
   class:flowdrop-sidebar--collapsed={isCollapsed}
   class:flowdrop-sidebar--compact={getUiSettings().compactMode}
   style:width="{isCollapsed ? 0 : getUiSettings().sidebarWidth}px"
-  aria-label="Components sidebar"
+  aria-label={m().layout.componentsSidebar}
 >
   <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
   <div class="flowdrop-sidebar__search">
@@ -176,13 +177,13 @@
       <div class="flowdrop-join__item flowdrop-flex--1">
         <input
           type="text"
-          placeholder="Search components..."
+          placeholder={m().layout.searchComponents}
           class="flowdrop-input flowdrop-join__item flowdrop-w--full"
           bind:value={searchInput}
           oninput={handleSearchChange}
         />
       </div>
-      <button class="flowdrop-btn flowdrop-join__item" aria-label="Search components">
+      <button class="flowdrop-btn flowdrop-join__item" aria-label={m().layout.searchComponents}>
         <Icon icon="mdi:magnify" class="flowdrop-icon" />
       </button>
     </div>

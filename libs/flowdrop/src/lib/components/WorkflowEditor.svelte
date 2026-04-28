@@ -35,6 +35,7 @@
   import type { EndpointConfig } from '../config/endpoints.js';
   import ConnectionLine from './ConnectionLine.svelte';
   import FlowDropEdge from './FlowDropEdge.svelte';
+  import { m } from '$lib/messages/index.js';
   import { getWorkflowStore, workflowActions } from '../stores/workflowStore.svelte.js';
   import { historyActions, setOnRestoreCallback } from '../stores/historyStore.svelte.js';
   import UniversalNode from './UniversalNode.svelte';
@@ -835,8 +836,8 @@
                   class="flowdrop-console-toggle"
                   class:flowdrop-console-toggle--active={props.consoleOpen}
                   onclick={props.onToggleConsole}
-                  aria-label="Command Console (`)"
-                  title="Command Console (`)"
+                  aria-label={m().layout.commandConsole}
+                  title={m().layout.commandConsole}
                   type="button"
                 >
                   <Icon icon="heroicons:command-line" width="18" height="18" />

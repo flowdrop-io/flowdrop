@@ -62,12 +62,14 @@ The full default tree lives at `libs/flowdrop/src/lib/messages/defaults.ts` and 
 | Branch        | What it covers                                                                       |
 | ------------- | ------------------------------------------------------------------------------------ |
 | `common`      | Generic verbs reused everywhere: `save`, `cancel`, `confirm`, `close`, `delete`, `yes`, `no`. |
-| `form`        | All form components — `array.*` (move/delete/empty/limits), `markdown.*` (toolbar, status bar), `autocomplete.*`, `field.required`, `toggle.{enabled,disabled}`, `schema.{save,cancel,empty}`. |
+| `form`        | All form components — `array.*` (move/delete/empty/limits), `markdown.*` (toolbar, status bar, placeholder), `autocomplete.*`, `field.required`, `toggle.{enabled,disabled}`, `schema.{save,cancel,empty}`, `code.editor` (JSON), `template.editor` (Mustache). |
 | `interrupt`   | Inline interrupt prompts — `confirmation.*`, `choice.*` (with parameterised counter), `review.*` (accept/reject/diff/summary), `text.*` (placeholder, min, submit), `form.*`, `bubble.*` (per-kind required/submitted labels, retry, cancel). Plus shared `responseSubmitted` / `responseSubmittedBy({ name })`. |
 | `chat`        | AI Assistant panel: `aiAssistant`, `placeholder`, `send`, `autoRetry({ attempt, max })`, plus `commandPreview.*` (apply / cancel / status). |
 | `playground`  | Playground chat: `chat.{placeholder, predefinedRun}`, `states.*` (welcome screens), `actions.*` (run/stop/send), `roles.*` (you/assistant/system/log/message), `messageTooltips.*`, `sessions.*` (list, empty, delete confirm, relative timestamps). |
 | `nodes.notes` | NotesNode placeholder, type names (info/warning/success/error/note), processing/error indicators, configure tooltip. |
-| `navigation`  | Navbar branding (`appName`, `tagline`), connection indicator, settings button, default primary action labels (`save`, `export`, `import`, `workflowSettings`). |
+| `nodes.graph` | SvelteFlow node and port aria-labels — `workflowNode({ name })`, `gatewayNode({ title })`, `ideaNode({ title })`, `connectInputPort({ name })`, `connectOutputPort({ name })`, `connectBranch({ name })`. |
+| `navigation`  | Navbar branding (`appName`, `tagline`), connection indicator, settings button, default primary action labels (`save`, `export`, `import`, `workflowSettings`), right-sidebar panel titles (`workflowSettingsPanelTitle`, `workflowSettingsPanelSubtitle`, `nodeConfigDescription`), close affordances (`closeSettings`, `closeConfigModal`, `copyId`), and bottom-panel tab labels (`bottomPanel.console`, `bottomPanel.chat`). |
+| `layout`      | Sidebar/canvas landmarks (`componentsSidebar`, `workflowCanvas`, `executionLogs`, `settingsCategories`), search input (`searchComponents`), command console (`commandConsole`, `closeConsole`), resize handles (`resizeLeftSidebar`, `resizeRightSidebar`, `resizeBottomPanel`), sidebar toggle (`expandSidebar`, `collapseSidebar`), modal close affordances, swap workflow (`swapNode`, `backToConfiguration`, `backToNodeSelection`), and `loadSession({ name })`. |
 | `status`      | `pipeline.*` (refresh/view-logs/breadcrumbs) and `overlay.*` (NodeStatusOverlay tooltip and detail labels). |
 
 Parameterised entries are functions, not template strings:

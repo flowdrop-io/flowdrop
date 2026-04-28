@@ -8,6 +8,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { WorkflowNode as WorkflowNodeType } from '../types/index.js';
+  import { m } from '$lib/messages/index.js';
 
   interface LogEntry {
     timestamp: string;
@@ -163,7 +164,7 @@
   class="logs-sidebar"
   class:logs-sidebar--open={props.isOpen}
   role="dialog"
-  aria-label="Execution logs sidebar"
+  aria-label={m().layout.executionLogs}
   aria-modal="true"
   tabindex="-1"
   onkeydown={handleKeydown}
@@ -189,7 +190,7 @@
       class="logs-sidebar__close-btn"
       onclick={handleClose}
       title="Close logs sidebar (Esc)"
-      aria-label="Close logs sidebar"
+      aria-label={m().layout.closeLogsSidebar}
     >
       <Icon icon="mdi:close" />
     </button>

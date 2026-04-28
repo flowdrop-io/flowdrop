@@ -11,6 +11,7 @@
   import Icon from '@iconify/svelte';
   import ReadOnlyDetails from './ReadOnlyDetails.svelte';
   import { getUiSettings } from '../stores/settingsStore.svelte.js';
+  import { m } from '$lib/messages/index.js';
 
   /**
    * A single detail item with label and value
@@ -70,13 +71,13 @@
         <button
           class="config-panel__action-btn"
           onclick={onSwap}
-          aria-label="Swap node"
+          aria-label={m().layout.swapNode}
           title="Swap node type"
         >
           <Icon icon="heroicons:arrows-right-left" />
         </button>
       {/if}
-      <button class="config-panel__close" onclick={onClose} aria-label="Close panel"> × </button>
+      <button class="config-panel__close" onclick={onClose} aria-label={m().layout.closeConfigPanel}> × </button>
     </div>
   </div>
 

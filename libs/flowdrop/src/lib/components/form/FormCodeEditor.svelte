@@ -31,6 +31,7 @@
   import { json, jsonParseLinter } from '@codemirror/lang-json';
   import { oneDark } from '@codemirror/theme-one-dark';
   import { linter } from '@codemirror/lint';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     /** Field identifier */
@@ -322,7 +323,7 @@
     class:form-code-editor__container--dark={darkTheme}
     role="textbox"
     aria-multiline="true"
-    aria-label="JSON editor"
+    aria-label={m().form.code.editor}
     onblur={formatContent}
   ></div>
 

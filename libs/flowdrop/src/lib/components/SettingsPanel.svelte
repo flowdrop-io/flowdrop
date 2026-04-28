@@ -30,6 +30,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import { SchemaForm } from '$lib/form/index.js';
+  import { m } from '$lib/messages/index.js';
   import type { ConfigSchema } from '$lib/types/index.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
   import {
@@ -361,7 +362,7 @@
 
 <div class="flowdrop-settings-panel {className}">
   <!-- Tab Navigation -->
-  <div class="flowdrop-settings-panel__tabs" role="tablist" aria-label="Settings categories">
+  <div class="flowdrop-settings-panel__tabs" role="tablist" aria-label={m().layout.settingsCategories}>
     {#each categories as category, index (category)}
       <button
         class="flowdrop-settings-panel__tab"

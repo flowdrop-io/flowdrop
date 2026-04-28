@@ -19,6 +19,7 @@
     getPortBackgroundColor
   } from '../../utils/colors.js';
   import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     data: WorkflowNode['data'] & {
@@ -159,7 +160,7 @@
   onkeydown={handleKeydown}
   role="button"
   tabindex="0"
-  aria-label="Gateway node: {displayTitle}"
+  aria-label={m().nodes.graph.gatewayNode({ title: displayTitle })}
   aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
   <!-- Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
@@ -207,7 +208,7 @@
               )}; --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
-              aria-label="Connect to {port.name} input port"
+              aria-label={m().nodes.graph.connectInputPort({ name: port.name })}
             />
 
             <!-- Port Info: padding lives here so handle position is simple -->
@@ -295,7 +296,7 @@
                   )}; --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
-              aria-label="Connect from {branch.name} branch"
+              aria-label={m().nodes.graph.connectBranch({ name: branch.name })}
             />
           </div>
         {/each}

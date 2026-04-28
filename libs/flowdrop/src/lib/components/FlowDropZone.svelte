@@ -7,6 +7,7 @@
 <script lang="ts">
   import { useSvelteFlow } from '@xyflow/svelte';
   import type { Snippet } from 'svelte';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     ondrop: (nodeTypeData: string, position: { x: number; y: number }) => void;
@@ -68,7 +69,7 @@
 <div
   class="flow-drop-zone"
   role="application"
-  aria-label="Workflow canvas"
+  aria-label={m().layout.workflowCanvas}
   ondragover={handleDragOver}
   ondrop={handleDrop}
 >
