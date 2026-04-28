@@ -127,12 +127,17 @@
     /** Additional JSON Schema properties to show in the Workflow Settings panel. Values are persisted in workflow.config. */
     workflowSettingsSchema?: ConfigSchema;
     /**
-     * Override user-facing strings. Pass a callback that returns a partial of
-     * the `Messages` tree; missing keys fall through to English defaults.
-     * Wire to your i18n library by re-reading translations inside the callback —
-     * Svelte 5's reactivity propagates locale changes for free.
+     * Override user-facing strings. Pass either a partial of the `Messages`
+     * tree directly, or a callback that returns one. Missing keys fall through
+     * to English defaults.
+     *
+     * For static overrides, a value is fine: `messages={{ common: { save: 'Apply' } }}`.
+     * For reactive overrides driven by an i18n library (paraglide, etc.),
+     * either form works — Svelte 5's prop reactivity propagates locale changes.
+     * The callback form is useful when your translations live behind a
+     * function call you'd rather not invoke unless the prop is actually read.
      */
-    messages?: () => MessagesOverride;
+    messages?: MessagesOverride | (() => MessagesOverride);
   }
 
   let {
@@ -168,8 +173,18 @@
 
   // Messages: merge consumer overrides over defaults; expose via context as a
   // getter so consumer-side reactivity (e.g. paraglide-js locale switches)
-  // propagates into every child without a subscription.
-  let mergedMessages = $derived(mergeMessages(defaultMessages, messagesOverride?.()));
+  // propagates into every child without a subscription. Accepts either a
+  // value or a callback — normalize here so the rest of the component sees
+  // the merged tree directly.
+  let mergedMessages = $derived(
+    mergeMessages(
+      defaultMessages,
+      typeof messagesOverride === 'function' ? messagesOverride() : messagesOverride
+    )
+  );
+  // setContext must run during component init (synchronously, not in $effect)
+  // — Svelte enforces that. The context value is a getter that closes over
+  // the live $derived, so child components always read the current tree.
   setMessages(() => mergedMessages);
 
   // Default navbar primary actions — used when no `navbarActions` prop is supplied.

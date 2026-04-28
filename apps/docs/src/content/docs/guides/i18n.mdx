@@ -9,17 +9,23 @@ FlowDrop is **not** an i18n library. It is a consumer of one. Translations live 
 
 ## Quick start
 
-Override a single string:
+Override a single string with a value:
 
 ```svelte
 <script>
   import { FlowDrop } from '@flowdrop/flowdrop';
 </script>
 
-<FlowDrop messages={() => ({ form: { schema: { save: 'Apply' } } })} />
+<FlowDrop messages={{ form: { schema: { save: 'Apply' } } }} />
 ```
 
-The callback returns a `DeepPartial<Messages>` — every key is optional, missing keys fall through to the English defaults.
+`messages` is `DeepPartial<Messages>` — every key is optional, missing keys fall through to the English defaults.
+
+You can also pass a callback. The two forms are equivalent for static overrides; the callback is useful when your translations come from a function call you'd rather not invoke unless the prop is actually read:
+
+```svelte
+<FlowDrop messages={() => ({ form: { schema: { save: 'Apply' } } })} />
+```
 
 ## Translating with paraglide-js
 
@@ -30,8 +36,8 @@ The callback returns a `DeepPartial<Messages>` — every key is optional, missin
   import { FlowDrop } from '@flowdrop/flowdrop';
   import * as p from '$lib/paraglide/messages';
 
-  // The callback re-runs on each read; paraglide's reactive locale
-  // store causes Svelte to re-derive the merged tree and re-render.
+  // Paraglide's reactive locale store causes Svelte to re-evaluate the
+  // expression; FlowDrop's root re-derives the merged tree and re-renders.
   const messages = () => ({
     common: {
       save: p.flowdrop_common_save(),
