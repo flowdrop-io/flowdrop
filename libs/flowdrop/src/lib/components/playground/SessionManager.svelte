@@ -45,6 +45,9 @@
     mode = 'sidebar'
   }: Props = $props();
 
+  // Hoist the sessions branch — used in formatDate plus several template reads.
+  const t = $derived(m().playground.sessions);
+
   /** Session pending deletion (for confirmation) */
   let pendingDeleteId = $state<string | null>(null);
 
@@ -105,18 +108,17 @@
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    const sessions = m().playground.sessions;
     if (diffMins < 1) {
-      return sessions.justNow;
+      return t.justNow;
     }
     if (diffMins < 60) {
-      return sessions.minutesAgo({ n: diffMins });
+      return t.minutesAgo({ n: diffMins });
     }
     if (diffHours < 24) {
-      return sessions.hoursAgo({ n: diffHours });
+      return t.hoursAgo({ n: diffHours });
     }
     if (diffDays < 7) {
-      return sessions.daysAgo({ n: diffDays });
+      return t.daysAgo({ n: diffDays });
     }
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -172,7 +174,7 @@
   >
     <div class="session-manager__title">
       <Icon icon="mdi:history" />
-      <span>{m().playground.sessions.header}</span>
+      <span>{t.header}</span>
       {#if getSessionCount() > 0}
         <span class="session-manager__count">{getSessionCount()}</span>
       {/if}
@@ -194,7 +196,7 @@
         disabled={getIsLoading()}
       >
         <Icon icon="mdi:plus" />
-        {m().playground.sessions.newSession}
+        {t.newSession}
       </button>
 
       <!-- Sessions List -->
@@ -202,7 +204,7 @@
         {#if getSessions().length === 0}
           <div class="session-manager__empty">
             <Icon icon="mdi:chat-outline" />
-            <span>{m().playground.sessions.empty}</span>
+            <span>{t.empty}</span>
           </div>
         {:else}
           {#each getSessions() as session (session.id)}
@@ -238,7 +240,7 @@
                     type="button"
                     class="session-manager__delete-btn session-manager__delete-btn--confirm"
                     onclick={(e) => handleDeleteClick(e, session.id)}
-                    title={m().playground.sessions.clickAgainToConfirm}
+                    title={t.clickAgainToConfirm}
                   >
                     <Icon icon="mdi:check" />
                   </button>
@@ -246,7 +248,7 @@
                     type="button"
                     class="session-manager__delete-btn session-manager__delete-btn--cancel"
                     onclick={cancelDelete}
-                    title={m().playground.sessions.cancel}
+                    title={t.cancel}
                   >
                     <Icon icon="mdi:close" />
                   </button>
@@ -255,7 +257,7 @@
                     type="button"
                     class="session-manager__delete-btn"
                     onclick={(e) => handleDeleteClick(e, session.id)}
-                    title={m().playground.sessions.deleteSession}
+                    title={t.deleteSession}
                   >
                     <Icon icon="mdi:delete-outline" />
                   </button>

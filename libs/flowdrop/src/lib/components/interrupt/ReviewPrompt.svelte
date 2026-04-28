@@ -71,10 +71,14 @@
   /** Total number of changes */
   const totalCount = $derived(config.changes.length);
 
+  // Hoist the review branch — 18 reads inside the template, plus three label
+  // resolvers below. One getter walk per render is enough.
+  const t = $derived(m().interrupt.review);
+
   /** Button labels — config wins, falls back to messages tree. */
-  const acceptAllLabel = $derived(config.acceptAllLabel ?? m().interrupt.review.acceptAll);
-  const rejectAllLabel = $derived(config.rejectAllLabel ?? m().interrupt.review.rejectAll);
-  const submitLabel = $derived(config.submitLabel ?? m().interrupt.review.submit);
+  const acceptAllLabel = $derived(config.acceptAllLabel ?? t.acceptAll);
+  const rejectAllLabel = $derived(config.rejectAllLabel ?? t.rejectAll);
+  const submitLabel = $derived(config.submitLabel ?? t.submit);
 
   /**
    * Set a specific field's decision
@@ -167,10 +171,9 @@
    * Format a value for display
    */
   function formatValue(value: unknown): string {
-    if (value === null || value === undefined) return m().interrupt.review.empty;
+    if (value === null || value === undefined) return t.empty;
     if (typeof value === 'string') return value;
-    if (typeof value === 'boolean')
-      return value ? m().interrupt.review.yes : m().interrupt.review.no;
+    if (typeof value === 'boolean') return value ? t.yes : t.no;
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
     return String(value);
   }
@@ -260,7 +263,7 @@
         </button>
       </div>
       <span class="review-prompt__counter">
-        {m().interrupt.review.counter({ accepted: acceptedCount, total: totalCount })}
+        {t.counter({ accepted: acceptedCount, total: totalCount })}
       </span>
     </div>
   {/if}
@@ -290,11 +293,11 @@
                 class:review-prompt__toggle-btn--active={isAccepted}
                 onclick={() => setFieldDecision(change.field, true)}
                 disabled={isSubmitting}
-                aria-label={m().interrupt.review.acceptItem({ label: change.label })}
-                title={m().interrupt.review.accept}
+                aria-label={t.acceptItem({ label: change.label })}
+                title={t.accept}
               >
                 <Icon icon="mdi:check" />
-                <span>{m().interrupt.review.accept}</span>
+                <span>{t.accept}</span>
               </button>
               <button
                 type="button"
@@ -302,11 +305,11 @@
                 class:review-prompt__toggle-btn--active={!isAccepted}
                 onclick={() => setFieldDecision(change.field, false)}
                 disabled={isSubmitting}
-                aria-label={m().interrupt.review.rejectItem({ label: change.label })}
-                title={m().interrupt.review.reject}
+                aria-label={t.rejectItem({ label: change.label })}
+                title={t.reject}
               >
                 <Icon icon="mdi:close" />
-                <span>{m().interrupt.review.reject}</span>
+                <span>{t.reject}</span>
               </button>
             </div>
           {:else}
@@ -317,10 +320,10 @@
             >
               {#if isAccepted}
                 <Icon icon="mdi:check-circle" />
-                <span>{m().interrupt.review.accepted}</span>
+                <span>{t.accepted}</span>
               {:else}
                 <Icon icon="mdi:close-circle" />
-                <span>{m().interrupt.review.rejected}</span>
+                <span>{t.rejected}</span>
               {/if}
             </span>
           {/if}
@@ -336,14 +339,12 @@
                 onclick={() => toggleHtmlView(change.field)}
               >
                 <Icon icon={isRawView ? 'mdi:eye' : 'mdi:code-tags'} />
-                <span
-                  >{isRawView ? m().interrupt.review.rendered : m().interrupt.review.rawHtml}</span
-                >
+                <span>{isRawView ? t.rendered : t.rawHtml}</span>
               </button>
             </div>
           {/if}
           <div class="review-prompt__diff-row">
-            <span class="review-prompt__diff-label">{m().interrupt.review.original}</span>
+            <span class="review-prompt__diff-label">{t.original}</span>
             {#if isHtml && !isRawView}
               <span class="review-prompt__diff-value review-prompt__html-content"
                 >{@html sanitizeHtml(String(change.original))}</span
@@ -359,7 +360,7 @@
             {/if}
           </div>
           <div class="review-prompt__diff-row">
-            <span class="review-prompt__diff-label">{m().interrupt.review.proposed}</span>
+            <span class="review-prompt__diff-label">{t.proposed}</span>
             {#if isHtml && !isRawView}
               <span
                 class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content"
@@ -378,7 +379,7 @@
           </div>
           {#if diff}
             <div class="review-prompt__diff-row">
-              <span class="review-prompt__diff-label">{m().interrupt.review.diff}</span>
+              <span class="review-prompt__diff-label">{t.diff}</span>
               {#if isMultiLineDiff(diff)}
                 <pre
                   class="review-prompt__diff-value review-prompt__diff-block">{#each diff as part}{#if part.added}<span
@@ -429,7 +430,7 @@
   {#if isResolved && resolvedValue}
     <div class="review-prompt__summary">
       <span class="review-prompt__summary-text">
-        {m().interrupt.review.summary({
+        {t.summary({
           accepted: resolvedValue.summary.accepted,
           rejected: resolvedValue.summary.rejected,
           total: resolvedValue.summary.total

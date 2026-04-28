@@ -25,10 +25,12 @@
     isError?: boolean;
   }>();
 
+  // Hoist the notes branch — read for placeholder, every type name, processing,
+  // error, and configure tooltip.
+  const notes = $derived(m().nodes.notes);
+
   /** Note content derived from config */
-  const noteContent = $derived(
-    (props.data.config?.content as string) || m().nodes.notes.placeholder
-  );
+  const noteContent = $derived((props.data.config?.content as string) || notes.placeholder);
 
   /** Note type derived from config */
   const noteType = $derived((props.data.config?.noteType as string) || 'info');
@@ -37,27 +39,27 @@
    * messages tree so locale changes flow through. */
   const noteTypes = $derived({
     info: {
-      name: m().nodes.notes.types.info,
+      name: notes.types.info,
       typeClass: 'flowdrop-notes-node--info',
       icon: 'mdi:information'
     },
     warning: {
-      name: m().nodes.notes.types.warning,
+      name: notes.types.warning,
       typeClass: 'flowdrop-notes-node--warning',
       icon: 'mdi:alert'
     },
     success: {
-      name: m().nodes.notes.types.success,
+      name: notes.types.success,
       typeClass: 'flowdrop-notes-node--success',
       icon: 'mdi:check-circle'
     },
     error: {
-      name: m().nodes.notes.types.error,
+      name: notes.types.error,
       typeClass: 'flowdrop-notes-node--error',
       icon: 'mdi:close-circle'
     },
     note: {
-      name: m().nodes.notes.types.default,
+      name: notes.types.default,
       typeClass: 'flowdrop-notes-node--note',
       icon: 'mdi:note-text'
     }
@@ -130,7 +132,7 @@
     {#if props.isProcessing}
       <div class="flowdrop-notes-node__processing">
         <div class="flowdrop-notes-node__spinner"></div>
-        <span>{m().nodes.notes.processing}</span>
+        <span>{notes.processing}</span>
       </div>
     {/if}
 
@@ -138,7 +140,7 @@
     {#if props.isError}
       <div class="flowdrop-notes-node__error-indicator">
         <Icon icon="mdi:alert-circle" class="flowdrop-notes-node__error-icon" />
-        <span>{m().nodes.notes.errorOccurred}</span>
+        <span>{notes.errorOccurred}</span>
       </div>
     {/if}
   </div>
@@ -147,7 +149,7 @@
   <button
     class="flowdrop-notes-node__config-btn"
     onclick={openConfigSidebar}
-    title={m().nodes.notes.configure}
+    title={notes.configure}
   >
     <Icon icon="mdi:cog" />
   </button>

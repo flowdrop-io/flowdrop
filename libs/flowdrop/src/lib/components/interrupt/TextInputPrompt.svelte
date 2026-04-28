@@ -42,6 +42,10 @@
     onSubmit
   }: Props = $props();
 
+  // Hoist the text branch — placeholder/min/submit reads, including duplicate
+  // placeholder in single- vs. multiline branches.
+  const t = $derived(m().interrupt.text);
+
   /** Local state for input value */
   // svelte-ignore state_referenced_locally — initial default, user edits the input
   let inputValue = $state(config.defaultValue ?? '');
@@ -113,7 +117,7 @@
         class="text-prompt__textarea"
         class:text-prompt__textarea--resolved={isResolved}
         value={displayValue}
-        placeholder={config.placeholder ?? m().interrupt.text.placeholder}
+        placeholder={config.placeholder ?? t.placeholder}
         disabled={isResolved || isSubmitting}
         oninput={handleInput}
         onkeydown={handleKeyDown}
@@ -127,7 +131,7 @@
         class="text-prompt__input"
         class:text-prompt__input--resolved={isResolved}
         value={displayValue}
-        placeholder={config.placeholder ?? m().interrupt.text.placeholder}
+        placeholder={config.placeholder ?? t.placeholder}
         disabled={isResolved || isSubmitting}
         oninput={handleInput}
         onkeydown={handleKeyDown}
@@ -149,7 +153,7 @@
           / {config.maxLength}
         {/if}
         {#if config.minLength !== undefined}
-          {m().interrupt.text.min({ n: config.minLength })}
+          {t.min({ n: config.minLength })}
         {/if}
       </span>
     </div>
@@ -169,7 +173,7 @@
         {:else}
           <Icon icon="mdi:send" />
         {/if}
-        <span>{m().interrupt.text.submit}</span>
+        <span>{t.submit}</span>
       </button>
     </div>
   {/if}

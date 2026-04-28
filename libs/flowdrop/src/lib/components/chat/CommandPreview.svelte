@@ -25,9 +25,12 @@
     resolvedAction = 'cancelled';
     onCancel();
   }
+
+  // Hoist the commandPreview branch — six template reads.
+  const t = $derived(m().chat.commandPreview);
 </script>
 
-<div class="command-preview" role="region" aria-label={m().chat.commandPreview.ariaLabel}>
+<div class="command-preview" role="region" aria-label={t.ariaLabel}>
   <div class="command-preview__list">
     {#each commands as command, i}
       <div class="command-preview__item command-preview__item--{command.status}">
@@ -55,16 +58,16 @@
       <span class="command-preview__resolved command-preview__resolved--applied">
         {#if isExecuting}
           <Icon icon="mdi:loading" />
-          {m().chat.commandPreview.applying}
+          {t.applying}
         {:else}
           <Icon icon="mdi:check-all" />
-          {m().chat.commandPreview.applied}
+          {t.applied}
         {/if}
       </span>
     {:else if resolvedAction === 'cancelled'}
       <span class="command-preview__resolved command-preview__resolved--cancelled">
         <Icon icon="mdi:close" />
-        {m().chat.commandPreview.dismissed}
+        {t.dismissed}
       </span>
     {:else}
       <button
@@ -73,14 +76,14 @@
         disabled={!hasPending || isExecuting}
       >
         <Icon icon="mdi:check-all" />
-        {m().chat.commandPreview.applyAll}
+        {t.applyAll}
       </button>
       <button
         class="command-preview__btn command-preview__btn--cancel"
         onclick={handleCancel}
         disabled={isExecuting}
       >
-        {m().chat.commandPreview.cancel}
+        {t.cancel}
       </button>
     {/if}
   </div>

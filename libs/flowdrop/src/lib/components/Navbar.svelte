@@ -65,6 +65,9 @@
   // Settings modal state
   let isSettingsOpen = $state(false);
 
+  // Hoist the navigation branch — six reads in the template.
+  const nav = $derived(m().navigation);
+
   // Close dropdown when clicking outside
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
@@ -91,8 +94,8 @@
           <Logo />
         </div>
         <div>
-          <h1 class="flowdrop-text--logo flowdrop-font--bold">{m().navigation.appName}</h1>
-          <p class="flowdrop-text--tagline flowdrop-text--gray">{m().navigation.tagline}</p>
+          <h1 class="flowdrop-text--logo flowdrop-font--bold">{nav.appName}</h1>
+          <p class="flowdrop-text--tagline flowdrop-text--gray">{nav.tagline}</p>
         </div>
       </div>
     </div>
@@ -105,7 +108,7 @@
         <div class="flowdrop-navbar__status-container">
           <div class="flowdrop-navbar__status">
             <div class="flowdrop-navbar__status-indicator"></div>
-            <span class="flowdrop-navbar__status-text">{m().navigation.connected}</span>
+            <span class="flowdrop-navbar__status-text">{nav.connected}</span>
           </div>
         </div>
       {/if}
@@ -113,7 +116,7 @@
       <!-- Title or Breadcrumbs on bottom -->
       {#if breadcrumbs.length > 0}
         <div class="flowdrop-navbar__breadcrumb-container">
-          <nav class="flowdrop-navbar__breadcrumb" aria-label={m().navigation.breadcrumbAriaLabel}>
+          <nav class="flowdrop-navbar__breadcrumb" aria-label={nav.breadcrumbAriaLabel}>
             <ol class="flowdrop-navbar__breadcrumb-list">
               {#each breadcrumbs as breadcrumb, index (index)}
                 <li class="flowdrop-navbar__breadcrumb-item">
@@ -242,8 +245,8 @@
       <button
         class="flowdrop-navbar__settings-btn"
         onclick={() => (isSettingsOpen = true)}
-        title={m().navigation.settingsTitle}
-        aria-label={m().navigation.settingsAriaLabel}
+        title={nav.settingsTitle}
+        aria-label={nav.settingsAriaLabel}
       >
         <Icon icon="mdi:cog" />
       </button>

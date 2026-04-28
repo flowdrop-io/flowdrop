@@ -50,7 +50,11 @@
     warnDeprecatedProp('AIChatPanel', 'placeholder', 'messages.chat.placeholder');
   }
 
-  const resolvedPlaceholder = $derived(placeholder ?? m().chat.placeholder);
+  // Hoist the chat branch — read in placeholder, header, three welcome states,
+  // auto-retry banner, and the send button aria-label.
+  const t = $derived(m().chat);
+
+  const resolvedPlaceholder = $derived(placeholder ?? t.placeholder);
 
   // =========================================================================
   // State
@@ -376,18 +380,18 @@
   }
 </script>
 
-<div class="ai-chat-panel" role="region" aria-label={m().chat.aiAssistant}>
+<div class="ai-chat-panel" role="region" aria-label={t.aiAssistant}>
   {#if !isChatConfigured}
     <!-- No backend configured -->
     <div class="ai-chat-panel__notice">
       <Icon icon="mdi:robot-off-outline" />
-      <span>{m().chat.requiresBackend}</span>
+      <span>{t.requiresBackend}</span>
     </div>
   {:else if isDisabled}
     <!-- No workflow loaded -->
     <div class="ai-chat-panel__notice">
       <Icon icon="mdi:chat-sleep-outline" />
-      <span>{m().chat.loadWorkflow}</span>
+      <span>{t.loadWorkflow}</span>
     </div>
   {:else}
     <!-- Messages area -->
@@ -395,7 +399,7 @@
       {#if displayMessages.length === 0}
         <div class="ai-chat-panel__empty">
           <Icon icon="mdi:chat-outline" />
-          <span>{m().chat.helpBuild}</span>
+          <span>{t.helpBuild}</span>
         </div>
       {/if}
       {#each displayMessages as message, msgIndex}
@@ -406,9 +410,7 @@
               msgIndex === displayMessages.length - 1}
           >
             <Icon icon="mdi:autorenew" />
-            <span
-              >{m().chat.autoRetry({ attempt: message.retryAttempt, max: MAX_AUTO_RETRIES })}</span
-            >
+            <span>{t.autoRetry({ attempt: message.retryAttempt, max: MAX_AUTO_RETRIES })}</span>
           </div>
         {:else}
           <div class="ai-chat-panel__bubble ai-chat-panel__bubble--{message.role}">
@@ -464,7 +466,7 @@
         class="ai-chat-panel__send"
         onclick={sendMessage}
         disabled={!canSend}
-        aria-label={m().chat.send}
+        aria-label={t.send}
       >
         <Icon icon="mdi:send" />
       </button>

@@ -59,7 +59,10 @@
     warnDeprecatedProp('FormArray', 'addLabel', 'messages.form.array.add');
   }
 
-  const resolvedAddLabel = $derived(addLabel ?? m().form.array.add);
+  // Hoist the array branch — every {#each} iteration would otherwise re-walk
+  // `m().form.array.*` for ~6 keys per item. One getter call instead of N×6.
+  const t = $derived(m().form.array);
+  const resolvedAddLabel = $derived(addLabel ?? t.add);
 
   /**
    * Ensure value is always an array
@@ -207,7 +210,7 @@
       const itemStr = String(item);
       return itemStr.length > 30
         ? `${itemStr.substring(0, 30)}...`
-        : itemStr || m().form.array.itemLabel({ n: index + 1 });
+        : itemStr || t.itemLabel({ n: index + 1 });
     }
 
     // For objects, try to find a name/label/title property
@@ -221,7 +224,7 @@
       }
     }
 
-    return m().form.array.itemLabel({ n: index + 1 });
+    return t.itemLabel({ n: index + 1 });
   }
 
   /**
@@ -270,9 +273,7 @@
                 class="form-array__item-toggle"
                 onclick={() => toggleCollapse(index)}
                 aria-expanded={!isCollapsed(index)}
-                aria-label={isCollapsed(index)
-                  ? m().form.array.expandItem
-                  : m().form.array.collapseItem}
+                aria-label={isCollapsed(index) ? t.expandItem : t.collapseItem}
               >
                 <Icon
                   icon={isCollapsed(index) ? 'heroicons:chevron-right' : 'heroicons:chevron-down'}
@@ -292,8 +293,8 @@
                 class="form-array__action-btn form-array__action-btn--move"
                 onclick={() => moveItemUp(index)}
                 disabled={index === 0 || disabled}
-                aria-label={m().form.array.moveItemUp({ n: index + 1 })}
-                title={m().form.array.moveUp}
+                aria-label={t.moveItemUp({ n: index + 1 })}
+                title={t.moveUp}
               >
                 <Icon icon="heroicons:arrow-up" />
               </button>
@@ -304,8 +305,8 @@
                 class="form-array__action-btn form-array__action-btn--move"
                 onclick={() => moveItemDown(index)}
                 disabled={index === items.length - 1 || disabled}
-                aria-label={m().form.array.moveItemDown({ n: index + 1 })}
-                title={m().form.array.moveDown}
+                aria-label={t.moveItemDown({ n: index + 1 })}
+                title={t.moveDown}
               >
                 <Icon icon="heroicons:arrow-down" />
               </button>
@@ -316,8 +317,8 @@
                 class="form-array__action-btn form-array__action-btn--delete"
                 onclick={() => removeItem(index)}
                 disabled={!canRemoveItem || disabled}
-                aria-label={m().form.array.deleteItem({ n: index + 1 })}
-                title={m().form.array.delete}
+                aria-label={t.deleteItem({ n: index + 1 })}
+                title={t.delete}
               >
                 <Icon icon="heroicons:trash" />
               </button>
@@ -378,7 +379,7 @@
                     <span class="form-array__toggle-thumb"></span>
                   </span>
                   <span class="form-array__toggle-label">
-                    {item ? m().form.array.yes : m().form.array.no}
+                    {item ? t.yes : t.no}
                   </span>
                 </label>
               {:else if itemSchema.enum}
@@ -492,7 +493,7 @@
                               <span class="form-array__toggle-thumb"></span>
                             </span>
                             <span class="form-array__toggle-label">
-                              {propValue ? m().form.array.yes : m().form.array.no}
+                              {propValue ? t.yes : t.no}
                             </span>
                           </label>
                         {:else}
@@ -522,7 +523,7 @@
               <!-- Unknown complex type -->
               <div class="form-array__unsupported">
                 <p>
-                  {m().form.array.unsupported({ type: String(itemSchema.type ?? '') })}
+                  {t.unsupported({ type: String(itemSchema.type ?? '') })}
                 </p>
               </div>
             {/if}
@@ -534,7 +535,7 @@
     <!-- Empty State -->
     <div class="form-array__empty">
       <Icon icon="heroicons:squares-plus" class="form-array__empty-icon" />
-      <p class="form-array__empty-text">{m().form.array.empty}</p>
+      <p class="form-array__empty-text">{t.empty}</p>
     </div>
   {/if}
 
@@ -553,12 +554,12 @@
   <!-- Item count and limits -->
   {#if minItems > 0 || maxItems !== undefined}
     <div class="form-array__info">
-      <span class="form-array__count">{m().form.array.count({ n: items.length })}</span>
+      <span class="form-array__count">{t.count({ n: items.length })}</span>
       {#if minItems > 0}
-        <span class="form-array__limit">{m().form.array.min({ n: minItems })}</span>
+        <span class="form-array__limit">{t.min({ n: minItems })}</span>
       {/if}
       {#if maxItems !== undefined}
-        <span class="form-array__limit">{m().form.array.max({ n: maxItems })}</span>
+        <span class="form-array__limit">{t.max({ n: maxItems })}</span>
       {/if}
     </div>
   {/if}

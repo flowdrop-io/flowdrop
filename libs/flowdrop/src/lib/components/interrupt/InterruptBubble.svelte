@@ -106,11 +106,14 @@
     }
   }
 
+  // Hoist the bubble branch — five reads inside the header alone.
+  const t = $derived(m().interrupt.bubble);
+
   /**
    * Get the label for the interrupt type
    */
   function getTypeLabel(type: InterruptType): string {
-    const required = m().interrupt.bubble.required;
+    const required = t.required;
     switch (type) {
       case 'confirmation':
         return required.confirmation;
@@ -129,7 +132,7 @@
 
   /** Get resolved label for the header when resolved */
   function getResolvedLabel(type: InterruptType): string {
-    const submitted = m().interrupt.bubble.submitted;
+    const submitted = t.submitted;
     switch (type) {
       case 'confirmation':
         return submitted.confirmation;
@@ -260,10 +263,10 @@
       <Icon icon={getTypeIcon(currentInterrupt.type)} />
       {#if isResolved}
         {currentInterrupt.machineState.status === 'cancelled'
-          ? m().interrupt.bubble.cancelled
+          ? t.cancelled
           : getResolvedLabel(currentInterrupt.type)}
       {:else if currentInterrupt.machineState.status === 'error'}
-        {m().interrupt.bubble.errorRetry}
+        {t.errorRetry}
       {:else}
         {getTypeLabel(currentInterrupt.type)}
       {/if}
@@ -282,7 +285,7 @@
       <span>{error}</span>
       <button type="button" class="interrupt-bubble__retry-btn" onclick={handleRetry}>
         <Icon icon="mdi:refresh" />
-        {m().interrupt.bubble.retry}
+        {t.retry}
       </button>
     </div>
   {/if}
@@ -349,10 +352,10 @@
       {#if currentInterrupt.nodeId}
         <span
           class="interrupt-bubble__node"
-          title={m().interrupt.bubble.nodeIdTooltip({ id: currentInterrupt.nodeId })}
+          title={t.nodeIdTooltip({ id: currentInterrupt.nodeId })}
         >
           <Icon icon="mdi:graph" />
-          <span>{m().interrupt.bubble.fromWorkflow}</span>
+          <span>{t.fromWorkflow}</span>
         </span>
       {/if}
       {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
@@ -363,7 +366,7 @@
           disabled={isSubmitting}
         >
           <Icon icon="mdi:close" />
-          <span>{m().interrupt.bubble.cancel}</span>
+          <span>{t.cancel}</span>
         </button>
       {/if}
     </div>

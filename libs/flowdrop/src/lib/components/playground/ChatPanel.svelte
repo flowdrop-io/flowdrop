@@ -91,12 +91,16 @@
     compactSystemMessages = true
   }: Props = $props();
 
+  // Hoist playground branches — states/actions are read 8+ times each in the
+  // template. Single getter walk per render instead of per-string.
+  const states = $derived(m().playground.states);
+  const actions = $derived(m().playground.actions);
+  const chat = $derived(m().playground.chat);
+
   // Playground placeholders/labels are configurable per-instance (workflow
   // author) but fall back to the localized messages tree when not provided.
-  const resolvedPlaceholder = $derived(placeholder ?? m().playground.chat.placeholder);
-  const resolvedPredefinedMessage = $derived(
-    predefinedMessage ?? m().playground.chat.predefinedRun
-  );
+  const resolvedPlaceholder = $derived(placeholder ?? chat.placeholder);
+  const resolvedPredefinedMessage = $derived(predefinedMessage ?? chat.predefinedRun);
 
   /**
    * Tracks whether the Run button is enabled.
@@ -476,16 +480,16 @@
           </svg>
         </div>
         {#if noInputsAvailable}
-          <h2 class="chat-panel__welcome-title">{m().playground.states.viewOnlyTitle}</h2>
+          <h2 class="chat-panel__welcome-title">{states.viewOnlyTitle}</h2>
           <p class="chat-panel__welcome-text">
-            {m().playground.states.viewOnlyText}
+            {states.viewOnlyText}
           </p>
         {:else if showChatInput}
-          <h2 class="chat-panel__welcome-title">{m().playground.states.newSessionTitle}</h2>
-          <p class="chat-panel__welcome-text">{m().playground.states.newSessionText}</p>
+          <h2 class="chat-panel__welcome-title">{states.newSessionTitle}</h2>
+          <p class="chat-panel__welcome-text">{states.newSessionText}</p>
         {:else}
-          <h2 class="chat-panel__welcome-title">{m().playground.states.readyTitle}</h2>
-          <p class="chat-panel__welcome-text">{m().playground.states.readyText}</p>
+          <h2 class="chat-panel__welcome-title">{states.readyTitle}</h2>
+          <p class="chat-panel__welcome-text">{states.readyText}</p>
         {/if}
       </div>
     {:else if showEmptyChat}
@@ -517,16 +521,16 @@
           </svg>
         </div>
         {#if noInputsAvailable}
-          <h2 class="chat-panel__welcome-title">{m().playground.states.viewOnlyTitle}</h2>
+          <h2 class="chat-panel__welcome-title">{states.viewOnlyTitle}</h2>
           <p class="chat-panel__welcome-text">
-            {m().playground.states.viewOnlyText}
+            {states.viewOnlyText}
           </p>
         {:else if showChatInput}
-          <h2 class="chat-panel__welcome-title">{m().playground.states.newSessionTitle}</h2>
-          <p class="chat-panel__welcome-text">{m().playground.states.newSessionText}</p>
+          <h2 class="chat-panel__welcome-title">{states.newSessionTitle}</h2>
+          <p class="chat-panel__welcome-text">{states.newSessionText}</p>
         {:else}
-          <h2 class="chat-panel__welcome-title">{m().playground.states.readyTitle}</h2>
-          <p class="chat-panel__welcome-text">{m().playground.states.readyText}</p>
+          <h2 class="chat-panel__welcome-title">{states.readyTitle}</h2>
+          <p class="chat-panel__welcome-text">{states.readyText}</p>
         {/if}
       </div>
     {:else}
@@ -560,7 +564,7 @@
             <span></span>
             <span></span>
           </div>
-          <span class="chat-panel__typing-text">{m().playground.states.processing}</span>
+          <span class="chat-panel__typing-text">{states.processing}</span>
         </div>
       {/if}
     {/if}
@@ -572,7 +576,7 @@
       <!-- No inputs available - show informational message -->
       <div class="chat-panel__no-inputs">
         <Icon icon="mdi:information-outline" />
-        <span>{m().playground.states.viewOnlyHelp}</span>
+        <span>{states.viewOnlyHelp}</span>
       </div>
     {:else}
       <div
@@ -599,10 +603,10 @@
             type="button"
             class="chat-panel__stop-btn"
             onclick={handleStop}
-            title={m().playground.actions.stopTitle}
+            title={actions.stopTitle}
           >
             <Icon icon="mdi:stop" />
-            {m().playground.actions.stop}
+            {actions.stop}
           </button>
         {:else if showChatInput}
           <button
@@ -610,9 +614,9 @@
             class="chat-panel__send-btn"
             onclick={handleSend}
             disabled={!inputValue.trim()}
-            title={m().playground.actions.sendTitle}
+            title={actions.sendTitle}
           >
-            {m().playground.actions.send}
+            {actions.send}
           </button>
         {:else if showRunButton}
           <button
@@ -620,12 +624,10 @@
             class="chat-panel__run-btn"
             onclick={handleRun}
             disabled={!runEnabled}
-            title={runEnabled
-              ? m().playground.actions.runTitle
-              : m().playground.actions.runWaitingTitle}
+            title={runEnabled ? actions.runTitle : actions.runWaitingTitle}
           >
             <Icon icon="mdi:play" />
-            {m().playground.actions.run}
+            {actions.run}
           </button>
         {/if}
       </div>

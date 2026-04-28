@@ -42,6 +42,9 @@
     onSubmit
   }: Props = $props();
 
+  // Hoist the choice branch — counter, min, max, submit reads.
+  const t = $derived(m().interrupt.choice);
+
   /** Local state for selected values */
   let selectedValues = $state<Set<string>>(new Set());
 
@@ -166,15 +169,15 @@
   {#if isMultiple && !isResolved}
     <div class="choice-prompt__info">
       <span>
-        {m().interrupt.choice.selectedCount({
+        {t.selectedCount({
           n: selectedValues.size,
           total: config.options.length
         })}
         {#if minSelections > 0}
-          {m().interrupt.choice.min({ n: minSelections })}
+          {t.min({ n: minSelections })}
         {/if}
         {#if maxSelections < config.options.length}
-          {m().interrupt.choice.max({ n: maxSelections })}
+          {t.max({ n: maxSelections })}
         {/if}
       </span>
     </div>
@@ -194,7 +197,7 @@
         {:else}
           <Icon icon="mdi:check" />
         {/if}
-        <span>{m().interrupt.choice.submit}</span>
+        <span>{t.submit}</span>
       </button>
     </div>
   {/if}
