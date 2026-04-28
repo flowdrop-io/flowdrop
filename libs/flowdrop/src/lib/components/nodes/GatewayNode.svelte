@@ -31,6 +31,10 @@
 
   let props: Props = $props();
 
+  // Hoist the graph branch — three reads in the template, two inside
+  // {#each port} / {#each branch} loops. One getter walk per render.
+  const graph = $derived(m().nodes.graph);
+
   /**
    * Instance-specific title override from config.
    * Falls back to the original label if not set.
@@ -160,7 +164,7 @@
   onkeydown={handleKeydown}
   role="button"
   tabindex="0"
-  aria-label={m().nodes.graph.gatewayNode({ title: displayTitle })}
+  aria-label={graph.gatewayNode({ title: displayTitle })}
   aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
   <!-- Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
@@ -208,7 +212,7 @@
               )}; --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
-              aria-label={m().nodes.graph.connectInputPort({ name: port.name })}
+              aria-label={graph.connectInputPort({ name: port.name })}
             />
 
             <!-- Port Info: padding lives here so handle position is simple -->
@@ -296,7 +300,7 @@
                   )}; --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
-              aria-label={m().nodes.graph.connectBranch({ name: branch.name })}
+              aria-label={graph.connectBranch({ name: branch.name })}
             />
           </div>
         {/each}

@@ -50,6 +50,10 @@
   /** Display values - either resolved or current form values */
   const displayValues = $derived(isResolved ? (resolvedValue ?? {}) : formValues);
 
+  // Hoist the interrupt branch — six reads in the template, three of them
+  // inside `formatResolvedValue` which is called per `{#each schema.property}`.
+  const interrupt = $derived(m().interrupt);
+
   /**
    * Handle form value changes
    */
@@ -71,8 +75,8 @@
    * Returns localized strings via the current messages tree.
    */
   function formatResolvedValue(value: unknown): string {
-    if (value === null || value === undefined) return m().interrupt.form.empty;
-    if (typeof value === 'boolean') return value ? m().interrupt.form.yes : m().interrupt.form.no;
+    if (value === null || value === undefined) return interrupt.form.empty;
+    if (typeof value === 'boolean') return value ? interrupt.form.yes : interrupt.form.no;
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
     return String(value);
   }
@@ -125,7 +129,7 @@
   {:else}
     <!-- Resolved state: Show submitted values as read-only -->
     <div class="form-prompt__resolved-values">
-      <h4 class="form-prompt__resolved-title">{m().interrupt.form.submittedValuesTitle}</h4>
+      <h4 class="form-prompt__resolved-title">{interrupt.form.submittedValuesTitle}</h4>
       <div class="form-prompt__values-list">
         {#each Object.entries(config.schema.properties ?? {}) as [key, field]}
           {@const value = displayValues[key]}
@@ -147,8 +151,8 @@
       <Icon icon="mdi:check-circle" />
       <span>
         {resolvedByUserName
-          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
-          : m().interrupt.responseSubmitted}
+          ? interrupt.responseSubmittedBy({ name: resolvedByUserName })
+          : interrupt.responseSubmitted}
       </span>
     </div>
   {/if}

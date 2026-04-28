@@ -37,6 +37,10 @@
   let props: Props = $props();
   let isHandleInteraction = $state(false);
 
+  // Hoist the graph branch — three reads in the template, two of them inside
+  // {#each port} loops where N×M reads add up. One getter walk per render.
+  const graph = $derived(m().nodes.graph);
+
   /**
    * Instance-specific title override from config.
    * Falls back to the original label if not set.
@@ -206,7 +210,7 @@
       handleDoubleClick();
     }
   }}
-  aria-label={m().nodes.graph.workflowNode({ name: props.data.metadata.name })}
+  aria-label={graph.workflowNode({ name: props.data.metadata.name })}
   aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
   <!-- Default Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
@@ -262,7 +266,7 @@
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
-              aria-label={m().nodes.graph.connectInputPort({ name: port.name })}
+              aria-label={graph.connectInputPort({ name: port.name })}
             />
 
             <!-- Port Info: padding lives here so handle position is simple -->
@@ -340,7 +344,7 @@
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               role="button"
               tabindex={0}
-              aria-label={m().nodes.graph.connectOutputPort({ name: port.name })}
+              aria-label={graph.connectOutputPort({ name: port.name })}
             />
           </div>
         {/each}
