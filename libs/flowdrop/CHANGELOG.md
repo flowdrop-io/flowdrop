@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-04-28
+
 ### Fixed
 
 - **AI Assistant freeze on corrupted batches with unclosed `"""`**: When a low-quality LLM emitted a multiline `set` value that opened `"""` without a matching closing `"""` on its own line, `extractCommands` silently swallowed everything from the opener through end-of-input. Surviving commands referenced nodes whose `add` had been eaten, failing with `NODE_NOT_FOUND` and triggering up to three auto-retry round-trips that locked the chat input behind `isLoading`. The dangling buffer is now flushed as a (broken) command at end-of-input, the parser flags it with a clear `Unclosed """ block` error, and `handleApproveCommands` skips the auto-retry cascade when the batch already contained a parse error.
