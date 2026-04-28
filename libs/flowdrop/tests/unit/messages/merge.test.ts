@@ -81,7 +81,12 @@ describe('mergeMessages', () => {
     expect(result.greet({ name: 'A' })).toBe('Hi A!');
   });
 
-  it('replaces a function leaf with a plain string', () => {
+  it('still merges when callers force a string into a function slot at runtime', () => {
+    // The public `DeepPartial` type forbids string-for-function overrides
+    // because call sites invoke parameterised messages with their params.
+    // This test pins the merge behaviour for the cast-around-types case so
+    // we know what consumers who bypass TS will get: the string replaces
+    // the function wholesale, and any subsequent call site will throw.
     const original = ({ name }: { name: string }) => `Hello, ${name}`;
     const base = { greet: original } as unknown as Messages;
     const partial = { greet: 'Hi there' } as unknown as MessagesOverride;

@@ -82,7 +82,7 @@ interrupt: {
 }
 ```
 
-When you override, you can pass either a function of the same shape or a plain `string` for cases where the parameters don't matter to your translation (the `DeepPartial` type widens accordingly).
+When you override a parameterised entry, you must supply a function with the same signature. Call sites invoke it with the params object, so a plain string would throw at runtime. If your translation doesn't need the params, ignore them: `({ n: _n }) => 'Move up'`.
 
 ## Migrating from deprecated label props
 
