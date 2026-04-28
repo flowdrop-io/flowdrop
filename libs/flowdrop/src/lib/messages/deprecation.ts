@@ -14,11 +14,8 @@
 
 const warned = new Set<string>();
 
-const isProd =
-  typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
-
 export function warnDeprecatedProp(component: string, prop: string, replacement: string): void {
-  if (isProd) return;
+  if (import.meta.env.PROD) return;
   const key = `${component}.${prop}`;
   if (warned.has(key)) return;
   warned.add(key);
