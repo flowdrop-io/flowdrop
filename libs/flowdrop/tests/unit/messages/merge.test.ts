@@ -103,6 +103,32 @@ describe('mergeMessages', () => {
     expect(result.items).toEqual(['X']);
   });
 
+  it('preserves branch identity when leaves are === to the base (paraglide-style)', () => {
+    // Consumers passing inline `messages={{...}}` literals or paraglide-style
+    // callbacks pass a fresh outer object on every parent re-render. When the
+    // computed leaf values are stable (string interning makes this the common
+    // case for static translations), the merge must NOT churn branch
+    // identities — otherwise downstream `$derived(m().branch)` reads in
+    // components invalidate every render even though no string changed.
+    const partial: MessagesOverride = {
+      common: { save: defaultMessages.common.save, cancel: defaultMessages.common.cancel }
+    };
+    const result = mergeMessages(defaultMessages, partial);
+    expect(result).toBe(defaultMessages);
+    expect(result.common).toBe(defaultMessages.common);
+  });
+
+  it('preserves sibling-branch identity when only one branch actually differs', () => {
+    const partial: MessagesOverride = { common: { save: 'Apply' } };
+    const result = mergeMessages(defaultMessages, partial);
+    // The branch we touched gets a new identity (it changed)…
+    expect(result.common).not.toBe(defaultMessages.common);
+    // …but every other top-level branch keeps its original reference.
+    expect(result.form).toBe(defaultMessages.form);
+    expect(result.interrupt).toBe(defaultMessages.interrupt);
+    expect(result.navigation).toBe(defaultMessages.navigation);
+  });
+
   it('ignores unknown keys when present (forward-compat with stale overrides)', () => {
     const partial = {
       common: { save: 'Apply' },
