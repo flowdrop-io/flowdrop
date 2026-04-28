@@ -286,6 +286,18 @@ describe('parseCommand', () => {
           }
         });
       });
+
+      it('returns a clear error when """ block is opened but never closed', () => {
+        // responseParser surfaces dangling multiline buffers as commands so
+        // that the parser can flag them here instead of failing silently.
+        const input = 'set llm_node.1:system_prompt """\nThis value is never closed';
+        const result = parseCommand(input);
+        expect(result).toEqual({
+          ok: false,
+          error: 'Unclosed """ block — missing closing """ on its own line',
+          input
+        });
+      });
     });
   });
 

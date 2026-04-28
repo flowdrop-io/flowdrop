@@ -191,6 +191,11 @@
     const msg = displayMessages[messageIndex];
     if (!msg?.commandPreview) return;
 
+    // Capture pre-existing parse errors before execution. If the LLM produced
+    // a malformed batch (e.g. unclosed """), retrying tends to reproduce the
+    // same shape and just locks the input behind isLoading for the cascade.
+    const hadParseErrors = msg.commandPreview.some((c) => c.status === 'error');
+
     const context = getCommandContext();
     if (!context) {
       for (const cmd of msg.commandPreview) {
@@ -271,7 +276,12 @@
       return;
     }
 
-    if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
+    if (
+      !hadParseErrors &&
+      getBehaviorSettings().chatAutoRetry &&
+      workflowId &&
+      autoRetryCount < MAX_AUTO_RETRIES
+    ) {
       autoRetryCount++;
       const errorText = buildBatchErrorMessage(
         completedCount,

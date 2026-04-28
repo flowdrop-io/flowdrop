@@ -276,6 +276,19 @@ export function parseCommand(input: string): ParseResult {
     return { ok: false, error: 'Empty command', input };
   }
 
+  // Detect an unclosed multiline """ block — common when a low-quality LLM
+  // omits the closing """ on its own line. The opener pattern is `"""\n`
+  // (triple-quote followed by a newline), and a well-formed value must end
+  // with `"""`. If we see the opener but not the closer, surface a clear
+  // error instead of falling through to a generic "Invalid syntax".
+  if (trimmed.includes('"""\n') && !trimmed.endsWith('"""')) {
+    return {
+      ok: false,
+      error: 'Unclosed """ block — missing closing """ on its own line',
+      input
+    };
+  }
+
   for (const rule of rules) {
     const match = trimmed.match(rule.pattern);
     if (match) {

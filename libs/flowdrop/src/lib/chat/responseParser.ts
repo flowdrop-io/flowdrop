@@ -90,6 +90,14 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
     }
   }
 
+  // Flush dangling multiline buffer (LLM never closed """ and the response
+  // ended before any closing fence). Surface as a command so the parser
+  // produces a visible error rather than silently dropping the content.
+  if (multilineBuffer !== null) {
+    commands.push(multilineBuffer.join('\n'));
+    multilineBuffer = null;
+  }
+
   // Flush remaining explanation text
   if (currentExplanation.length > 0) {
     explanationParts.push(currentExplanation.join('\n'));

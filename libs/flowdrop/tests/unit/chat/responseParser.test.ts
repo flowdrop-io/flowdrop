@@ -214,14 +214,35 @@ The delimiter is \\""" in our DSL.
       expect(result.commands[0]).toContain('\\"""');
     });
 
-    it('silently drops an unclosed triple-quote block', () => {
+    it('surfaces an unclosed triple-quote block as a (broken) command at end-of-input', () => {
+      // Previously silently dropped — this masked LLM corruption and led
+      // to NODE_NOT_FOUND cascades when later commands referenced nodes
+      // that were eaten by the dangling buffer.
       const response = `\`\`\`flowdrop
 set llm_node.1:system_prompt """
 This value is never closed
 \`\`\``;
 
       const result = extractCommands(response);
-      expect(result.commands).toEqual([]);
+      expect(result.commands).toHaveLength(1);
+      expect(result.commands[0]).toContain('"""');
+      expect(result.commands[0]).toContain('This value is never closed');
+      expect(result.commands[0].endsWith('"""')).toBe(false);
+    });
+
+    it('preserves valid commands before an unclosed triple-quote block', () => {
+      const response = `\`\`\`flowdrop
+add llm_node
+set llm_node.1:system_prompt """
+This value is never closed and the response just ends`;
+
+      const result = extractCommands(response);
+      // The valid `add` is kept; the broken block surfaces as a separate
+      // (broken) command that the parser flags as an unclosed-""" error.
+      expect(result.commands).toHaveLength(2);
+      expect(result.commands[0]).toBe('add llm_node');
+      expect(result.commands[1]).toContain('"""');
+      expect(result.commands[1].endsWith('"""')).toBe(false);
     });
 
     it('extracts multiline command followed by a single-line command', () => {
