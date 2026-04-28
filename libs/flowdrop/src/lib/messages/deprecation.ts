@@ -28,3 +28,12 @@ export function warnDeprecatedProp(component: string, prop: string, replacement:
       `Use \`messages\` on <FlowDrop> instead: ${replacement}`
   );
 }
+
+/**
+ * Test-only: clear the warned-once cache so subsequent renders re-emit the
+ * warning. Storybook stories and Vitest specs that share a module instance
+ * need this to assert the warning fires per case.
+ */
+export function __resetDeprecationWarningsForTests(): void {
+  warned.clear();
+}
