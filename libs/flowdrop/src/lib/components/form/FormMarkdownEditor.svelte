@@ -98,6 +98,12 @@
   /** Theme compartment for dynamic theme switching */
   const themeCompartment = new Compartment();
 
+  /** Placeholder compartment so locale changes can reconfigure without rebuilding the editor */
+  const placeholderCompartment = new Compartment();
+
+  /** aria-label compartment so locale changes update the editor's accessible name */
+  const ariaLabelCompartment = new Compartment();
+
   // ── Toolbar actions ──────────────────────────────────────
 
   type ToolbarAction = {
@@ -341,7 +347,7 @@
       highlightSpecialChars(),
       highlightActiveLine(),
       drawSelection(),
-      placeholder(placeholderText),
+      placeholderCompartment.of(placeholder(placeholderText)),
 
       // Editing features (skip when read-only)
       ...(disabled
@@ -404,10 +410,12 @@
       EditorView.lineWrapping,
 
       // Accessibility
-      EditorView.contentAttributes.of({
-        'aria-label': m().form.markdown.editor,
-        'aria-multiline': 'true'
-      })
+      ariaLabelCompartment.of(
+        EditorView.contentAttributes.of({
+          'aria-label': m().form.markdown.editor,
+          'aria-multiline': 'true'
+        })
+      )
     ];
 
     return extensions;
@@ -472,6 +480,27 @@
       updateStats(editorView.state.doc);
     }
   });
+
+  // Reconfigure CodeMirror-owned strings (placeholder, content aria-label)
+  // when the consumer's locale or `placeholder` prop changes. Toolbar and
+  // status-bar strings rerender via `$derived` in the template; CodeMirror
+  // lives outside Svelte's reactivity graph, so this effect bridges the gap.
+  $effect(() => {
+    const placeholderText = placeholderProp ?? m().form.markdown.placeholder;
+    const ariaLabel = m().form.markdown.editor;
+    if (!editorView) return;
+    editorView.dispatch({
+      effects: [
+        placeholderCompartment.reconfigure(placeholder(placeholderText)),
+        ariaLabelCompartment.reconfigure(
+          EditorView.contentAttributes.of({
+            'aria-label': ariaLabel,
+            'aria-multiline': 'true'
+          })
+        )
+      ]
+    });
+  });
 </script>
 
 <div
@@ -528,10 +557,11 @@
 
   <!-- Status bar -->
   {#if showStatusBar}
+    {@const md = m().form.markdown}
     <div class="form-markdown-editor__status">
-      <span>{m().form.markdown.words}: {wordCount}</span>
-      <span>{m().form.markdown.lines}: {lineCount}</span>
-      <span>{m().form.markdown.characters}: {charCount}</span>
+      <span>{md.words}: {wordCount}</span>
+      <span>{md.lines}: {lineCount}</span>
+      <span>{md.characters}: {charCount}</span>
     </div>
   {/if}
 </div>
