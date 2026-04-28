@@ -10,18 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`clearAllDrafts()` API**: New method on the mounted `MountedFlowDropApp` instance and as a standalone export from `@flowdrop/flowdrop/editor`. Removes every `localStorage` key beginning with `flowdrop:draft:` (plus the configured `draftStorageKey`, when called via the instance). Intended for host applications to call from their logout handler so workflow drafts do not persist across user sessions on shared browser profiles.
+- **Typed, overridable messages system (i18n)**: Every user-facing label, tooltip, placeholder, and notice in the library is now rendered from a single typed `Messages` tree. Pass `messages` to `<FlowDrop>` (a `DeepPartial<Messages>` value or a callback returning one) to override any subset; missing keys fall through to the English defaults. Reactive overrides (paraglide-js, sveltekit-i18n, or any reactive store) propagate locale changes into FlowDrop without a subscription. New public exports from `@flowdrop/flowdrop`: `defaultMessages`, `mergeMessages`, `setMessages`, `getMessages`, `m`, plus the `Messages` and `MessagesOverride` types. Components used outside the `<FlowDrop>` provider fall back silently to English.
 
 ### Changed
 
 - **"AI Chat" renamed to "AI Assistant"**: The bottom-panel tab label, panel notice, settings entry ("AI Assistant Auto-retry"), and aria-label now read "AI Assistant" to better reflect the panel's role as a workflow-building assistant rather than a generic chat. Internal component names, CSS classes, and the underlying `chat` settings/storage keys are unchanged, so no host-side migration is required.
 
+### Deprecated
+
+- **Per-component label props in favour of `messages`**: `SchemaForm`'s `saveLabel` / `cancelLabel`, `FormToggle`'s `onLabel` / `offLabel`, `FormArray`'s `addLabel`, and `AIChatPanel`'s `placeholder` keep working but emit a one-shot dev-mode `console.warn`. They will be removed in v2.0. Replace each with the corresponding key under `messages` (see the i18n guide for the mapping table). Workflow-level overrides on interrupt configs (`config.confirmLabel`, `config.acceptAllLabel`, etc.) are **not** deprecated — those are runtime data from the workflow author, not component-prop API.
+
 ### Fixed
 
 - **Minimap visually distinct from canvas**: The MiniMap defaulted to `--fd-card`, which is identical to `--fd-background` in light mode, causing users to click and drag on it mistaking it for the canvas. The minimap background now uses `--fd-muted`, node fill uses `--fd-muted-foreground` for contrast in both light and dark modes, and the panel renders with a border, rounded corners, and a shadow so it reads as a floating overlay.
+- **Markdown editor strings reconfigure on locale change**: `FormMarkdownEditor`'s placeholder and content `aria-label` live inside CodeMirror, which sits outside Svelte's reactivity graph. They now reconfigure via dedicated `Compartment`s when the consumer's locale changes, so translated copy reaches the editor without a remount.
+
+### Performance
+
+- **Identity-preserving message merge**: `mergeMessages` now lazy-allocates — when override leaves are `===` to the corresponding base values (the common case for paraglide-style overrides where `p.save()` returns the same `'Save'` string each call thanks to JS string interning), the base reference is returned unchanged at every level it applies. Stops downstream `$derived(m().branch)` reads in components from invalidating on every parent re-render when the consumer passes an inline `messages={{...}}` literal whose contents are stable but whose outer identity churns.
+- **Hoisted `m()` branch reads**: Components that read the same `m().branch.*` repeatedly per render now pull the branch into a single `$derived` at the top of the script — one getter walk per render instead of N×M. Covers Navbar, NodeStatusOverlay, FormArray, all interrupt prompts, AIChatPanel, CommandPreview, ChatPanel, SessionManager, NotesNode, and the per-port `aria-label`s inside `WorkflowNode` / `GatewayNode` `{#each}` loops, plus FormAutocomplete and FormPrompt.
 
 ### Documentation
 
 - **Logout integration recipe**: `auto-save-and-drafts.md` now documents that drafts persist in `localStorage` until explicitly cleared and shows the recommended `clearAllDrafts()` integration pattern.
+- **i18n & Custom Messages guide**: New `apps/docs` page covering the `messages` prop, the `Messages` shape by domain, the paraglide-js wiring recipe, and the migration table from deprecated label props.
 
 ## [1.7.0] - 2026-04-10
 
