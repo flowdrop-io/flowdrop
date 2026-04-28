@@ -574,11 +574,11 @@ export type {
 // ============================================================================
 // Messages (typed, overridable, translation-ready user-facing strings)
 //
-// Consumers pass `messages={() => partial}` to <FlowDrop>; type the partial
-// as `MessagesOverride`. The runtime helpers (`setMessages`, `m`,
-// `mergeMessages`) are internal to library components — import them from
-// `@flowdrop/flowdrop/messages` if you're authoring a custom integration.
+// Consumers pass `messages={partial}` (or a getter) to <FlowDrop>; type the
+// partial as `MessagesOverride`. `setMessages` + `mergeMessages` are exported
+// for ad-hoc mounts that render flowdrop components outside the root provider
+// (Storybook stories, standalone <SchemaForm>, etc.) — see the i18n guide.
 // ============================================================================
 
-export { defaultMessages } from '../messages/index.js';
+export { defaultMessages, mergeMessages, setMessages } from '../messages/index.js';
 export type { Messages, MessagesOverride } from '../messages/index.js';
