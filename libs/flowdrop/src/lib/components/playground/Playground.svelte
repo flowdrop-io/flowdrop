@@ -739,15 +739,6 @@
           {/if}
 
           <div class="playground__header-actions">
-            {#if mode === 'standalone'}
-              <a
-                href="/workflow/{workflowId}/edit"
-                class="playground__edit-link"
-                title="Edit workflow"
-              >
-                <Icon icon="mdi:pencil-outline" />
-              </a>
-            {/if}
             <button
               type="button"
               class="playground__log-toggle"

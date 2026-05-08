@@ -169,7 +169,14 @@
 
   function getPrimaryActionsForPage(pathname: string) {
     if (pathname.includes('/playground')) {
+      const workflowId = pathname.split('/')[2];
       return [
+        {
+          label: 'Edit Workflow',
+          href: `/workflow/${workflowId}/edit`,
+          icon: 'mdi:pencil-outline',
+          variant: 'outline' as const
+        },
         {
           label: getPipelinePanelOpen() ? 'Hide Pipeline' : 'Show Pipeline',
           href: '#',
