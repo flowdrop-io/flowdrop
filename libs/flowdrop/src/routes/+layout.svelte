@@ -22,7 +22,9 @@
   import { Toaster } from 'svelte-5-french-toast';
   import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
   import type { RuntimeConfig } from '$lib/config/runtimeConfig';
-  import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
+  import { initializeSettings, getUiSettings } from '$lib/stores/settingsStore.svelte.js';
+  import { resolveTheme } from '$lib/themes/index.js';
+  import type { FlowDropSkinTokens } from '$lib/types/skin.js';
   import { getPipelinePanelOpen, pipelinePanelActions } from '$lib/stores/pipelinePanelStore.svelte.js';
 
   let { data, children } = $props();
@@ -87,6 +89,34 @@
     return () => {
       window.removeEventListener('page-breadcrumbs-update', handleBreadcrumbs as EventListener);
     };
+  });
+
+  // Inject skin tokens globally so all pages (Navbar, MainLayout, etc.) respond to theme changes.
+  // Uses a separate id from App.svelte's "fd-skin-tokens" so App can override with a custom
+  // theme prop while this base layer stays active when App is not mounted.
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const skin = resolveTheme(getUiSettings().theme).skin;
+    const tokens = skin?.tokens;
+    const darkTokens = skin?.darkTokens;
+    if (!tokens && !darkTokens) return;
+
+    const toRules = (dict: FlowDropSkinTokens) =>
+      Object.entries(dict)
+        .map(([k, v]) => `  --fd-${k}: ${v};`)
+        .join('\n');
+
+    let css = '';
+    if (tokens) css += `:root {\n${toRules(tokens)}\n}\n`;
+    if (darkTokens) css += `[data-theme='dark'] {\n${toRules(darkTokens)}\n}\n`;
+
+    let style = document.getElementById('fd-skin-tokens-base') as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'fd-skin-tokens-base';
+      document.head.appendChild(style);
+    }
+    style.textContent = css;
   });
 
   // Define primary actions based on current page
