@@ -24,6 +24,9 @@
     "@xyflow/svelte": "^1.2",
     "codemirror": "^6.0.2"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.0.0",
     "@sveltejs/kit": "^2.49.2",
