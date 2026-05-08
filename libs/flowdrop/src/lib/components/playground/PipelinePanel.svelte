@@ -61,8 +61,8 @@
   .pipeline-panel__header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0 1rem;
+    gap: var(--fd-space-xs);
+    padding: 0 var(--fd-space-xl);
     height: var(--fd-playground-header-height);
     min-height: var(--fd-playground-header-height);
     border-bottom: 1px solid var(--fd-border);
@@ -70,31 +70,31 @@
   }
 
   :global(.pipeline-panel__icon) {
-    font-size: 1rem;
-    color: var(--fd-muted);
+    font-size: var(--fd-text-base);
+    color: var(--fd-muted-foreground);
     flex-shrink: 0;
   }
 
   .pipeline-panel__title {
-    font-size: 0.8rem;
+    font-size: var(--fd-text-sm);
     font-weight: 600;
     color: var(--fd-foreground);
     flex: 1;
   }
 
   .pipeline-panel__status-badge {
-    font-size: 0.65rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0.1rem 0.4rem;
-    border-radius: 0.25rem;
+    padding: 2px var(--fd-space-xs);
+    border-radius: var(--fd-radius-sm);
     flex-shrink: 0;
   }
 
   .pipeline-panel__status-badge--live {
-    background-color: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
+    background-color: var(--fd-success-muted);
+    color: var(--fd-success);
   }
 
   .pipeline-panel__status-badge--pinned {
@@ -114,21 +114,21 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
+    gap: var(--fd-space-md);
     color: var(--fd-muted-foreground);
-    padding: 2rem;
+    padding: var(--fd-space-4xl);
     text-align: center;
   }
 
   :global(.pipeline-panel__empty-icon) {
-    font-size: 3rem;
+    font-size: var(--fd-space-6xl);
     opacity: 0.4;
   }
 
   .pipeline-panel__empty-text {
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
     margin: 0;
     max-width: 200px;
-    line-height: 1.5;
+    line-height: var(--fd-leading-relaxed);
   }
 </style>

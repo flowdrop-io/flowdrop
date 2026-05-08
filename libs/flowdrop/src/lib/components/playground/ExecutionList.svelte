@@ -105,11 +105,11 @@
   }
 
   .execution-list__badge {
-    font-size: 0.65rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--fd-primary);
+    color: var(--fd-success);
     flex-shrink: 0;
   }
 
@@ -117,7 +117,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background-color: var(--fd-running-color, #22c55e);
+    background-color: var(--fd-success);
     flex-shrink: 0;
     animation: pulse 1.5s ease-in-out infinite;
   }
@@ -129,7 +129,7 @@
 
   :global(.execution-list__status-icon) {
     flex-shrink: 0;
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
   }
 
   :global(.execution-list__status-icon--completed) {

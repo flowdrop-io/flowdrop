@@ -546,11 +546,8 @@
             <span>New Session</span>
           </button>
 
-          <!-- Sessions List - click a session to load it -->
+          <!-- Sessions List -->
           <div class="playground__sessions-wrap">
-            {#if getSessions().length > 0}
-              <p class="playground__sessions-hint">Click a session to load it</p>
-            {/if}
             <div class="playground__sessions">
               {#if getSessions().length === 0 && !getIsLoading()}
                 <div class="playground__sessions-empty">
@@ -797,7 +794,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    padding: var(--fd-space-md) var(--fd-space-xs) 0;
+    padding: var(--fd-space-md) var(--fd-space-md) 0;
   }
 
   /* New Session – neutral full-width button with icon */
@@ -852,17 +849,10 @@
     min-height: 0;
   }
 
-  .playground__sessions-hint {
-    font-size: var(--fd-text-2xs);
-    color: var(--fd-muted-foreground);
-    margin: var(--fd-space-md) 0 var(--fd-space-2xs) var(--fd-space-md);
-    line-height: 1.3;
-  }
-
   .playground__sessions {
     flex: 1;
     overflow-y: auto;
-    padding: 0 var(--fd-space-xs) var(--fd-space-xl);
+    padding: 0 var(--fd-space-3xs) var(--fd-space-xl);
     min-height: 0;
   }
 
@@ -1125,10 +1115,8 @@
 
   .playground__executions-header {
     padding: var(--fd-space-3xs) var(--fd-space-md);
-    font-size: var(--fd-text-xs, 0.7rem);
+    font-size: var(--fd-text-xs);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--fd-muted-foreground);
   }
 
