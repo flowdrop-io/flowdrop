@@ -403,8 +403,19 @@ export async function mountFlowDropApp(
 
     markAsSaved: () => {
       markAsSaved();
-      // Also update draft manager
       if (state.draftManager) {
+        // Migrate the draft key when the host confirms a save. New workflows start
+        // on 'flowdrop:draft:new', a key shared across all tabs. If the host has
+        // written the server-assigned ID back into the store before calling
+        // markAsSaved(), we can move to a unique per-workflow key and stop
+        // competing with other tabs that may also have unsaved new workflows.
+        // Skip when customDraftKey is set — the host manages that key explicitly.
+        if (!customDraftKey) {
+          const currentWorkflow = getWorkflowFromStore();
+          if (currentWorkflow?.id) {
+            state.draftManager.updateStorageKey(getDraftStorageKey(currentWorkflow.id));
+          }
+        }
         state.draftManager.markAsSaved();
       }
     },
@@ -412,7 +423,19 @@ export async function mountFlowDropApp(
     getWorkflow: () => getWorkflowFromStore(),
 
     save: async () => {
-      await globalSaveWorkflow();
+      await globalSaveWorkflow({
+        onSaved: (saved) => {
+          // globalSaveWorkflow does not write the server-assigned ID back to the
+          // workflow store, so we cannot read it from getWorkflowFromStore() here.
+          // Instead we use the savedWorkflow returned by the API directly.
+          // This migrates 'flowdrop:draft:new' to a unique per-workflow key
+          // immediately after the first save, preventing cross-tab collisions
+          // when multiple new workflows are open simultaneously.
+          if (state.draftManager && !customDraftKey && saved.id) {
+            state.draftManager.updateStorageKey(getDraftStorageKey(saved.id));
+          }
+        }
+      });
     },
 
     export: () => {

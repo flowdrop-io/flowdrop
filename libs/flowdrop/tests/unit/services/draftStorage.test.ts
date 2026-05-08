@@ -526,6 +526,80 @@ describe('Draft Storage Service', () => {
       });
     });
 
+    describe('cross-tab collision via flowdrop:draft:new', () => {
+      it('two managers sharing the same key overwrite each other', () => {
+        const workflowA = createTestWorkflow({ name: 'Tab A Workflow' });
+        const workflowB = createTestWorkflow({ name: 'Tab B Workflow' });
+
+        const managerA = new DraftAutoSaveManager({
+          storageKey: 'flowdrop:draft:new',
+          interval: 1000,
+          enabled: true,
+          getWorkflow: vi.fn().mockReturnValue(workflowA),
+          isDirty: vi.fn().mockReturnValue(true)
+        });
+        const managerB = new DraftAutoSaveManager({
+          storageKey: 'flowdrop:draft:new',
+          interval: 1000,
+          enabled: true,
+          getWorkflow: vi.fn().mockReturnValue(workflowB),
+          isDirty: vi.fn().mockReturnValue(true)
+        });
+
+        managerA.forceSave();
+        managerB.forceSave(); // B overwrites A
+
+        const loaded = loadDraft('flowdrop:draft:new');
+        expect(loaded?.workflow.name).toBe('Tab B Workflow');
+      });
+
+      it('migrating key after first save isolates subsequent writes from the other tab', () => {
+        const workflowA = createTestWorkflow({ name: 'Tab A Workflow' });
+        const workflowB = createTestWorkflow({ name: 'Tab B Workflow' });
+
+        const managerA = new DraftAutoSaveManager({
+          storageKey: 'flowdrop:draft:new',
+          interval: 1000,
+          enabled: true,
+          getWorkflow: vi.fn().mockReturnValue(workflowA),
+          isDirty: vi.fn().mockReturnValue(true)
+        });
+
+        managerA.forceSave(); // saves to flowdrop:draft:new
+        managerA.updateStorageKey('flowdrop:draft:server-id-123'); // migrated after first save
+
+        // Tab B (still on the shared key) writes its draft
+        saveDraft(workflowB, 'flowdrop:draft:new');
+
+        const draftA = loadDraft('flowdrop:draft:server-id-123');
+        const draftNew = loadDraft('flowdrop:draft:new');
+
+        expect(draftA?.workflow.name).toBe('Tab A Workflow');
+        expect(draftNew?.workflow.name).toBe('Tab B Workflow');
+      });
+
+      it('subsequent auto-saves after migration do not touch flowdrop:draft:new', () => {
+        const workflow = createTestWorkflow({ name: 'My Workflow' });
+        getWorkflow.mockReturnValue(workflow);
+        isDirty.mockReturnValue(true);
+
+        manager.updateStorageKey('flowdrop:draft:server-id-456');
+        manager.start();
+
+        // Another tab writes to flowdrop:draft:new
+        saveDraft(createTestWorkflow({ name: 'Other Tab' }), 'flowdrop:draft:new');
+
+        vi.advanceTimersByTime(1000);
+
+        // Our manager must not have overwritten flowdrop:draft:new
+        const newDraft = loadDraft('flowdrop:draft:new');
+        expect(newDraft?.workflow.name).toBe('Other Tab');
+
+        // Our auto-save went to the migrated key
+        expect(hasDraft('flowdrop:draft:server-id-456')).toBe(true);
+      });
+    });
+
     describe('getStorageKey', () => {
       it('should return current storage key', () => {
         expect(manager.getStorageKey()).toBe('test-autosave');

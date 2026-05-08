@@ -53,6 +53,13 @@ export interface GlobalSaveOptions {
    * Pass workflowStore's markAsSaved here when calling from App.svelte.
    */
   onMarkAsSaved?: () => void;
+  /**
+   * Callback invoked after a successful save with the persisted workflow.
+   * Receives the server-returned workflow (which may have a different ID than
+   * the one sent, e.g. server-assigned integer vs client UUID).
+   * Use this to update draft storage keys or other ID-dependent state.
+   */
+  onSaved?: (savedWorkflow: Workflow) => void;
 }
 
 /**
@@ -140,7 +147,7 @@ async function flushPendingFormChanges(): Promise<void> {
  *  7. Show toast notifications (respecting features.showToasts)
  */
 export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promise<void> {
-  const { apiClient, eventHandlers, onMarkAsSaved } = options;
+  const { apiClient, eventHandlers, onMarkAsSaved, onSaved } = options;
   const features = { ...DEFAULT_FEATURES, ...options.features };
 
   // Step 1 — Flush pending form changes (single location for this logic)
@@ -232,6 +239,11 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     } else {
       // Fallback: call the store's own markAsSaved if no callback was provided
       storeMarkAsSaved();
+    }
+
+    // Notify caller with the definitive saved workflow (server-assigned ID)
+    if (onSaved) {
+      onSaved(savedWorkflow);
     }
 
     // Show success toast

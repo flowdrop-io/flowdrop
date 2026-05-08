@@ -247,4 +247,104 @@ describe('globalSaveWorkflow', () => {
     expect(mockCreateWorkflow).not.toHaveBeenCalled();
     expect(mockUpdateWorkflow).not.toHaveBeenCalled();
   });
+
+  // -------------------------------------------------------------------------
+  // onSaved callback
+  // -------------------------------------------------------------------------
+
+  describe('onSaved callback', () => {
+    it('is called with the server-returned workflow after a legacy create', async () => {
+      const serverWorkflow = backendWorkflow('server-assigned-id');
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      mockCreateWorkflow.mockResolvedValue(serverWorkflow);
+      const onSaved = vi.fn();
+
+      await globalSaveWorkflow({ onSaved });
+
+      expect(onSaved).toHaveBeenCalledOnce();
+      expect(onSaved).toHaveBeenCalledWith(serverWorkflow);
+    });
+
+    it('receives the server-assigned ID, not the client UUID, for new workflows', async () => {
+      const serverWorkflow = backendWorkflow('server-integer-42');
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      mockCreateWorkflow.mockResolvedValue(serverWorkflow);
+      const onSaved = vi.fn();
+
+      await globalSaveWorkflow({ onSaved });
+
+      const [calledWith] = onSaved.mock.calls[0];
+      expect(calledWith.id).toBe('server-integer-42');
+      expect(calledWith.id).not.toBe(FIXED_UUID);
+    });
+
+    it('is called with the server-returned workflow after a legacy update', async () => {
+      const serverWorkflow = backendWorkflow('existing-id');
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('existing-id'));
+      mockUpdateWorkflow.mockResolvedValue(serverWorkflow);
+      const onSaved = vi.fn();
+
+      await globalSaveWorkflow({ onSaved });
+
+      expect(onSaved).toHaveBeenCalledWith(serverWorkflow);
+    });
+
+    it('is called with the server-returned workflow after an enhanced client create', async () => {
+      const serverWorkflow = backendWorkflow('server-uuid');
+      const apiClient = {
+        saveWorkflow: vi.fn().mockResolvedValue(serverWorkflow),
+        updateWorkflow: vi.fn()
+      };
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      const onSaved = vi.fn();
+
+      await globalSaveWorkflow({ apiClient, onSaved });
+
+      expect(onSaved).toHaveBeenCalledWith(serverWorkflow);
+    });
+
+    it('is not called when the API call fails', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      mockCreateWorkflow.mockRejectedValue(new Error('Network error'));
+      const onSaved = vi.fn();
+
+      await expect(globalSaveWorkflow({ onSaved })).rejects.toThrow('Network error');
+      expect(onSaved).not.toHaveBeenCalled();
+    });
+
+    it('is not called when cancelled by onBeforeSave returning false', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      const onSaved = vi.fn();
+
+      await globalSaveWorkflow({
+        eventHandlers: { onBeforeSave: vi.fn().mockResolvedValue(false) },
+        onSaved
+      });
+
+      expect(onSaved).not.toHaveBeenCalled();
+      expect(mockCreateWorkflow).not.toHaveBeenCalled();
+    });
+
+    it('is not called when the store is empty', async () => {
+      mockGetWorkflowStore.mockReturnValue(null);
+      const onSaved = vi.fn();
+
+      await globalSaveWorkflow({ onSaved });
+
+      expect(onSaved).not.toHaveBeenCalled();
+    });
+
+    it('is called after onMarkAsSaved', async () => {
+      const callOrder: string[] = [];
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      mockCreateWorkflow.mockResolvedValue(backendWorkflow('new-id'));
+
+      await globalSaveWorkflow({
+        onMarkAsSaved: () => callOrder.push('markAsSaved'),
+        onSaved: () => callOrder.push('onSaved')
+      });
+
+      expect(callOrder).toEqual(['markAsSaved', 'onSaved']);
+    });
+  });
 });
