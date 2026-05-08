@@ -73,7 +73,7 @@
           onclick={() => (runDropdownOpen = !runDropdownOpen)}
           title="Switch run"
         >
-          <span class="pipeline-panel__run-chip-label">{isPinned ? (runLabel ?? 'Run') : 'Latest'}</span>
+          <span class="pipeline-panel__run-chip-label">{runLabel ?? 'Run'}</span>
           <Icon icon={runDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'} class="pipeline-panel__run-chip-chevron" />
         </button>
 
