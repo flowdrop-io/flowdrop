@@ -318,5 +318,7 @@
 
   .pipeline-status-container--embedded {
     height: 100%;
+    background: var(--fd-muted);
+    --fd-layout-background: var(--fd-muted);
   }
 </style>

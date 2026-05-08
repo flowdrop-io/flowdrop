@@ -151,7 +151,7 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    background-color: var(--fd-background);
+    background-color: var(--fd-muted);
   }
 
   .pipeline-panel__header {
