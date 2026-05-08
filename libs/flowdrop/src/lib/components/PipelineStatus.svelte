@@ -21,6 +21,9 @@
     apiClient?: EnhancedFlowDropApiClient;
     baseUrl?: string;
     endpointConfig?: EndpointConfig;
+    runLabel?: string;
+    /** When true, suppresses breadcrumb and layout events (used inside playground panel) */
+    isEmbedded?: boolean;
     onActionsReady?: (
       actions: Array<{
         label: string;
@@ -32,7 +35,7 @@
     ) => void;
   }
 
-  let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady }: Props =
+  let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady, runLabel, isEmbedded = false }: Props =
     $props();
 
   // Initialize API client if not provided
@@ -213,8 +216,9 @@
     };
   });
 
-  // Send pipeline breadcrumbs to layout when they change
+  // Send pipeline breadcrumbs to layout when they change (skip when embedded in playground)
   $effect(() => {
+    if (isEmbedded) return;
     if (pipelineStatus && pipelineId && workflow) {
       const sp = m().status.pipeline;
       const breadcrumbs = [
@@ -239,7 +243,9 @@
           icon: 'mdi:source-branch'
         },
         {
-          label: sp.pipelineCrumb({ id: pipelineId, status: pipelineStatus }),
+          label: runLabel
+            ? `${runLabel} – ${pipelineStatus}`
+            : sp.pipelineCrumb({ id: pipelineId, status: pipelineStatus }),
           icon: 'mdi:play-circle'
         }
       ];

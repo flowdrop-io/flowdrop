@@ -214,8 +214,8 @@
               class="message-bubble__node"
               title={m().playground.messageTooltips.nodeId({ id: message.nodeId })}
             >
-              <Icon icon="mdi:graph" />
-              {message.metadata?.nodeLabel ?? message.nodeId}
+              <Icon icon="mdi:vector-square" />
+              via {message.metadata?.nodeLabel ?? message.nodeId}
             </span>
           {/if}
           {#if message.metadata?.duration !== undefined}

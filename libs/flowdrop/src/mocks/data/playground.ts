@@ -241,6 +241,7 @@ export function addMessage(
     parentMessageId?: string;
     status?: PlaygroundMessageStatus;
     metadata?: PlaygroundMessageMetadata;
+    timestamp?: string;
   }
 ): PlaygroundMessage | undefined {
   if (!mockSessions.has(sessionId)) {
@@ -259,7 +260,7 @@ export function addMessage(
     sessionId,
     role,
     content,
-    timestamp: new Date().toISOString(),
+    timestamp: options?.timestamp ?? new Date().toISOString(),
     status: options?.status || 'completed',
     sequenceNumber,
     parentMessageId: options?.parentMessageId,
@@ -691,28 +692,32 @@ export function initializeDemoForeachPlaygroundData(): void {
   addExecutionToSession(session.id, exec1Id, ts(-120_000));
 
   const userMsg1 = addMessage(session.id, 'user', 'Process the fruit list', {
-    executionId: exec1Id
+    executionId: exec1Id,
+    timestamp: ts(-120_000)
   });
   addMessage(session.id, 'log', 'Starting ForEach loop — 5 items queued', {
     executionId: exec1Id,
     level: 'info',
     nodeId: 'json-loader.1',
     nodeLabel: 'JSON Loader',
-    parentMessageId: userMsg1?.id
+    parentMessageId: userMsg1?.id,
+    timestamp: ts(-119_500)
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
     executionId: exec1Id,
     level: 'info',
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
-    parentMessageId: userMsg1?.id
+    parentMessageId: userMsg1?.id,
+    timestamp: ts(-119_000)
   });
   addMessage(session.id, 'log', 'Processing item 5/5: Elderberry', {
     executionId: exec1Id,
     level: 'info',
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
-    parentMessageId: userMsg1?.id
+    parentMessageId: userMsg1?.id,
+    timestamp: ts(-117_500)
   });
   addMessage(
     session.id,
@@ -723,7 +728,8 @@ export function initializeDemoForeachPlaygroundData(): void {
       nodeId: 'output.1',
       nodeLabel: 'Output',
       duration: 3200,
-      parentMessageId: userMsg1?.id
+      parentMessageId: userMsg1?.id,
+      timestamp: ts(-116_800)
     }
   );
   // Mark exec1 as completed by updating the session status then restoring to idle
@@ -740,35 +746,40 @@ export function initializeDemoForeachPlaygroundData(): void {
   addExecutionToSession(session.id, exec2Id, ts(-60_000));
 
   const userMsg2 = addMessage(session.id, 'user', 'Run again with the same list', {
-    executionId: exec2Id
+    executionId: exec2Id,
+    timestamp: ts(-60_000)
   });
   addMessage(session.id, 'log', 'Starting ForEach loop — 5 items queued', {
     executionId: exec2Id,
     level: 'info',
     nodeId: 'json-loader.1',
     nodeLabel: 'JSON Loader',
-    parentMessageId: userMsg2?.id
+    parentMessageId: userMsg2?.id,
+    timestamp: ts(-59_500)
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
     executionId: exec2Id,
     level: 'info',
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
-    parentMessageId: userMsg2?.id
+    parentMessageId: userMsg2?.id,
+    timestamp: ts(-59_000)
   });
   addMessage(session.id, 'log', 'Error processing item 3/5: Cherry — upstream timeout', {
     executionId: exec2Id,
     level: 'error',
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
-    parentMessageId: userMsg2?.id
+    parentMessageId: userMsg2?.id,
+    timestamp: ts(-58_500)
   });
   addMessage(session.id, 'assistant', 'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.', {
     executionId: exec2Id,
     nodeId: 'output.1',
     nodeLabel: 'Output',
     duration: 1800,
-    parentMessageId: userMsg2?.id
+    parentMessageId: userMsg2?.id,
+    timestamp: ts(-58_200)
   });
   updateSessionStatus(session.id, 'failed');
   // Reset to idle so the playground is ready for a new run

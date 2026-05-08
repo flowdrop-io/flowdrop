@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '@iconify/svelte';
   import type { PlaygroundExecution } from '$lib/types/playground.js';
 
   interface Props {
@@ -13,6 +14,12 @@
   function label(index: number): string {
     return `Run #${index + 1}`;
   }
+
+  function statusIcon(status: PlaygroundExecution['status']): string {
+    if (status === 'completed') return 'mdi:check-circle';
+    if (status === 'failed') return 'mdi:alert-circle';
+    return '';
+  }
 </script>
 
 <div class="execution-list">
@@ -21,6 +28,8 @@
       class="execution-list__item"
       class:execution-list__item--active={execution.id === activeExecutionId}
       class:execution-list__item--running={execution.status === 'running'}
+      class:execution-list__item--completed={execution.status === 'completed'}
+      class:execution-list__item--failed={execution.status === 'failed'}
       role="button"
       tabindex="0"
       onclick={() => onSelect(execution.id)}
@@ -28,6 +37,11 @@
     >
       {#if execution.status === 'running'}
         <span class="execution-list__running-dot" aria-hidden="true"></span>
+      {:else if statusIcon(execution.status)}
+        <Icon
+          icon={statusIcon(execution.status)}
+          class="execution-list__status-icon execution-list__status-icon--{execution.status}"
+        />
       {/if}
       <span class="execution-list__label">{label(i)}</span>
       {#if execution.id === latestExecutionId}
@@ -111,5 +125,18 @@
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
+  }
+
+  :global(.execution-list__status-icon) {
+    flex-shrink: 0;
+    font-size: 0.875rem;
+  }
+
+  :global(.execution-list__status-icon--completed) {
+    color: var(--fd-success, #22c55e);
+  }
+
+  :global(.execution-list__status-icon--failed) {
+    color: var(--fd-error, #ef4444);
   }
 </style>

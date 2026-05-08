@@ -510,17 +510,13 @@
           <div class="playground__sidebar-title">
             <span>Playground</span>
           </div>
-          {#if onTogglePanel}
-            <button
-              class="playground__panel-toggle"
-              class:playground__panel-toggle--active={isPipelinePanelOpen}
-              type="button"
-              title={isPipelinePanelOpen ? 'Hide pipeline' : 'Show pipeline'}
-              onclick={onTogglePanel}
-            >
-              <Icon icon="mdi:source-branch" />
-            </button>
-          {/if}
+          <a
+            href="/workflow/{workflowId}/edit"
+            class="playground__edit-link"
+            title="Edit workflow"
+          >
+            <Icon icon="mdi:pencil-outline" />
+          </a>
           {#if (mode === 'embedded' || mode === 'modal') && onClose}
             <button
               type="button"
@@ -629,15 +625,17 @@
       <!-- Session Header (conditionally rendered based on config.showSessionHeader) -->
       {#if getCurrentSession() && config.showSessionHeader !== false}
         <header class="playground__header">
-          <h2 class="playground__header-title">{getCurrentSession()?.name}</h2>
-          <button
-            type="button"
-            class="playground__header-close"
-            onclick={handleCloseSession}
-            title="Close session"
-          >
-            <Icon icon="mdi:close" />
-          </button>
+          <div class="playground__header-group">
+            <h2 class="playground__header-title">{getCurrentSession()?.name}</h2>
+            <button
+              type="button"
+              class="playground__header-close"
+              onclick={handleCloseSession}
+              title="Close session"
+            >
+              <Icon icon="mdi:close" />
+            </button>
+          </div>
         </header>
       {/if}
 
@@ -753,6 +751,24 @@
     font-size: var(--fd-text-md);
     font-weight: 600;
     line-height: 1.25;
+    color: var(--fd-foreground);
+  }
+
+  .playground__edit-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--fd-playground-icon-btn-size);
+    height: var(--fd-playground-icon-btn-size);
+    border-radius: var(--fd-radius-md);
+    color: var(--fd-muted-foreground);
+    text-decoration: none;
+    transition: all var(--fd-transition-fast);
+    flex-shrink: 0;
+  }
+
+  .playground__edit-link:hover {
+    background-color: var(--fd-muted);
     color: var(--fd-foreground);
   }
 
@@ -995,13 +1011,18 @@
   .playground__header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     height: var(--fd-playground-header-height);
     padding: 0 var(--fd-space-2xl);
     border-bottom: 1px solid var(--fd-border);
     background-color: var(--fd-background);
     box-sizing: border-box;
     flex-shrink: 0;
+  }
+
+  .playground__header-group {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
   }
 
   .playground__header-title {
@@ -1108,34 +1129,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--fd-muted);
-  }
-
-  /* Pipeline panel toggle button in sidebar header */
-  .playground__panel-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: var(--fd-radius-sm, 0.25rem);
-    background: transparent;
-    color: var(--fd-muted);
-    cursor: pointer;
-    transition: var(--fd-transition-fast);
-    flex-shrink: 0;
-    font-size: 1rem;
-  }
-
-  .playground__panel-toggle:hover {
-    background-color: var(--fd-hover-background, rgba(255, 255, 255, 0.08));
-    color: var(--fd-foreground);
-  }
-
-  .playground__panel-toggle--active {
-    color: var(--fd-primary);
-    background-color: var(--fd-primary-muted);
+    color: var(--fd-muted-foreground);
   }
 
   /* Responsive */

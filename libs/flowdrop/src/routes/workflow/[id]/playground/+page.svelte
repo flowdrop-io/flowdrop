@@ -15,7 +15,8 @@
   import { getPipelinePanelOpen, pipelinePanelActions } from '$lib/stores/pipelinePanelStore.svelte.js';
   import {
     getActiveExecutionId,
-    getPinnedExecutionId
+    getPinnedExecutionId,
+    getCurrentSession
   } from '$lib/stores/playgroundStore.svelte.js';
   import { createEndpointConfig, type EndpointConfig } from '$lib/config/endpoints.js';
   import { setEndpointConfig } from '$lib/services/api.js';
@@ -214,12 +215,17 @@
       </div>
 
       {#if getPipelinePanelOpen() && workflow}
+        {@const activeId = getActiveExecutionId()}
+        {@const executions = getCurrentSession()?.executions ?? []}
+        {@const activeIndex = executions.findIndex((e) => e.id === activeId)}
+        {@const runLabel = activeIndex >= 0 ? `Run #${activeIndex + 1}` : undefined}
         <div class="playground-page__pipeline">
           <PipelinePanel
-            pipelineId={getActiveExecutionId()}
+            pipelineId={activeId}
             {workflow}
             {endpointConfig}
             isPinned={getPinnedExecutionId() !== null}
+            {runLabel}
           />
         </div>
       {/if}

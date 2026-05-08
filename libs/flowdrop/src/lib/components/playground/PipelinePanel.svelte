@@ -9,9 +9,10 @@
     workflow: Workflow;
     endpointConfig: EndpointConfig;
     isPinned: boolean;
+    runLabel?: string;
   }
 
-  let { pipelineId, workflow, endpointConfig, isPinned }: Props = $props();
+  let { pipelineId, workflow, endpointConfig, isPinned, runLabel }: Props = $props();
 </script>
 
 <div class="pipeline-panel">
@@ -20,9 +21,15 @@
     <span class="pipeline-panel__title">Pipeline</span>
     {#if pipelineId}
       {#if isPinned}
-        <span class="pipeline-panel__status-badge pipeline-panel__status-badge--pinned">pinned</span>
+        <span
+          class="pipeline-panel__status-badge pipeline-panel__status-badge--pinned"
+          title="Viewing a past run — click the latest run to return to live view"
+        >{runLabel ?? 'Run'}</span>
       {:else}
-        <span class="pipeline-panel__status-badge pipeline-panel__status-badge--live">live</span>
+        <span
+          class="pipeline-panel__status-badge pipeline-panel__status-badge--live"
+          title="Showing the most recent execution"
+        >Latest</span>
       {/if}
     {/if}
   </div>
@@ -30,7 +37,7 @@
   {#if pipelineId}
     {#key pipelineId}
       <div class="pipeline-panel__content">
-        <PipelineStatus {pipelineId} {workflow} {endpointConfig} />
+        <PipelineStatus {pipelineId} {workflow} {endpointConfig} {runLabel} isEmbedded={true} />
       </div>
     {/key}
   {:else}
@@ -56,8 +63,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0 1rem;
-    height: 40px;
-    min-height: 40px;
+    height: var(--fd-playground-header-height);
+    min-height: var(--fd-playground-header-height);
     border-bottom: 1px solid var(--fd-border);
     flex-shrink: 0;
   }
@@ -108,7 +115,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    color: var(--fd-muted);
+    color: var(--fd-muted-foreground);
     padding: 2rem;
     text-align: center;
   }
