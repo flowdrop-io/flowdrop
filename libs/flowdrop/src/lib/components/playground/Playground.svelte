@@ -725,6 +725,7 @@
     width: var(--fd-playground-sidebar-width);
     background-color: var(--fd-background);
     border-right: 1px solid var(--fd-border);
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
   }

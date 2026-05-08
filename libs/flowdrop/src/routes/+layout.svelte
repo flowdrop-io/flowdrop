@@ -113,16 +113,18 @@
     }
   });
 
-  // Fetch workflow name for edit pages
+  // Fetch workflow name for edit and playground pages
   $effect(() => {
     const pathname = $page.url.pathname;
-    if (pathname.startsWith('/workflow/') && pathname.includes('/edit')) {
+    if (
+      pathname.startsWith('/workflow/') &&
+      (pathname.includes('/edit') || pathname.includes('/playground'))
+    ) {
       const workflowId = pathname.split('/')[2];
       if (workflowId) {
         fetchWorkflowName(workflowId);
       }
     } else {
-      // Clear workflow name when not on edit page
       workflowName = null;
     }
   });

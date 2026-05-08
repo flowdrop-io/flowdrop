@@ -87,6 +87,27 @@
   /** Error state */
   let error = $state<string | null>(null);
 
+  /** Pipeline panel resize state */
+  let splitEl = $state<HTMLElement | null>(null);
+  let pipelineWidth = $state(500);
+  let isResizing = $state(false);
+
+  function handleResizerPointerDown(e: PointerEvent) {
+    isResizing = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function handleResizerPointerMove(e: PointerEvent) {
+    if (!isResizing || !splitEl) return;
+    const rect = splitEl.getBoundingClientRect();
+    const newWidth = rect.right - e.clientX;
+    pipelineWidth = Math.min(Math.max(newWidth, 300), rect.width * 0.75);
+  }
+
+  function handleResizerPointerUp() {
+    isResizing = false;
+  }
+
   /**
    * Initialize API configuration
    */
@@ -168,10 +189,10 @@
   <title>Playground - {workflow?.name ?? 'Workflow'} - FlowDrop</title>
 </svelte:head>
 
-<div class="playground-page">
+<div class="playground-page" class:playground-page--resizing={isResizing}>
   <!-- Content -->
   <main class="playground-page__content">
-    <div class="playground-page__split">
+    <div class="playground-page__split" bind:this={splitEl}>
       <div class="playground-page__primary">
         {#if loading}
           <div class="playground-page__loading">
@@ -219,7 +240,20 @@
         {@const executions = getCurrentSession()?.executions ?? []}
         {@const activeIndex = executions.findIndex((e) => e.id === activeId)}
         {@const runLabel = activeIndex >= 0 ? `Run #${activeIndex + 1}` : undefined}
-        <div class="playground-page__pipeline">
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <div
+          class="playground-page__resizer"
+          class:playground-page__resizer--active={isResizing}
+          role="separator"
+          aria-orientation="vertical"
+          onpointerdown={handleResizerPointerDown}
+          onpointermove={handleResizerPointerMove}
+          onpointerup={handleResizerPointerUp}
+          onpointercancel={handleResizerPointerUp}
+        >
+          <div class="playground-page__resizer-handle"></div>
+        </div>
+        <div class="playground-page__pipeline" style="width: {pipelineWidth}px;">
           <PipelinePanel
             pipelineId={activeId}
             {workflow}
@@ -270,14 +304,60 @@
     flex-direction: column;
   }
 
-  /* Pipeline panel (right side) */
-  .playground-page__pipeline {
-    width: 500px;
-    min-width: 300px;
-    max-width: 60%;
+  /* Drag handle between primary and pipeline panels — matches MainLayout divider style */
+  .playground-page__resizer {
+    width: 8px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background-color: var(--fd-background);
+    border-right: 1px solid var(--fd-border);
     border-left: 1px solid var(--fd-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    touch-action: none;
+    z-index: 1;
+    transition: background-color 0.2s ease;
+  }
+
+  .playground-page__resizer:hover,
+  .playground-page__resizer--active {
+    background-color: var(--fd-primary-muted);
+  }
+
+  .playground-page__resizer-handle {
+    width: 4px;
+    height: 48px;
+    background-color: var(--fd-border-strong);
+    border-radius: 4px;
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .playground-page__resizer:hover .playground-page__resizer-handle {
+    background-color: var(--fd-primary);
+    transform: scaleY(1.2);
+  }
+
+  .playground-page__resizer--active .playground-page__resizer-handle {
+    background-color: var(--fd-primary-hover);
+    transform: scaleY(1.4);
+  }
+
+  /* Pipeline panel (right side) — width set via inline style */
+  .playground-page__pipeline {
+    min-width: 300px;
+    max-width: 75%;
     overflow: hidden;
     flex-shrink: 0;
+  }
+
+  /* Prevent text selection and keep col-resize cursor while dragging */
+  .playground-page--resizing {
+    cursor: col-resize;
+    user-select: none;
   }
 
   /* Loading */
