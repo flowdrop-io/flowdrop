@@ -86,7 +86,18 @@
       }
 
       const data = await response.json();
-      pipelines = data.pipelines || [];
+      const raw = data.data || data.pipelines || [];
+      pipelines = raw.map(
+        (p: { id: string; status: string; created?: string; createdAt?: string; updated?: string; description?: string; name?: string; executionCount?: number; lastExecuted?: string }) => ({
+          id: p.id,
+          name: p.name || p.id,
+          description: p.description || '',
+          status: p.status,
+          createdAt: p.createdAt || p.created || new Date().toISOString(),
+          lastExecuted: p.lastExecuted || p.updated,
+          executionCount: p.executionCount ?? 0
+        })
+      );
     } catch (err) {
       apiToasts.error('Load pipelines', err instanceof Error ? err.message : 'Unknown error');
       error = err instanceof Error ? err.message : 'Failed to fetch pipelines';
