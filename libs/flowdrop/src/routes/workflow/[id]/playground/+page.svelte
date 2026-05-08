@@ -16,7 +16,9 @@
   import {
     getActiveExecutionId,
     getPinnedExecutionId,
-    getCurrentSession
+    getLatestExecutionId,
+    getCurrentSession,
+    playgroundActions
   } from '$lib/stores/playgroundStore.svelte.js';
   import { createEndpointConfig, type EndpointConfig } from '$lib/config/endpoints.js';
   import { setEndpointConfig } from '$lib/services/api.js';
@@ -205,6 +207,9 @@
             {endpointConfig}
             isPinned={getPinnedExecutionId() !== null}
             {runLabel}
+            {executions}
+            latestExecutionId={getLatestExecutionId()}
+            onSelectExecution={(id) => playgroundActions.pinExecution(id)}
           />
         </div>
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
