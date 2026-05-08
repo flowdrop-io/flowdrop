@@ -100,7 +100,7 @@
   function handleResizerPointerMove(e: PointerEvent) {
     if (!isResizing || !splitEl) return;
     const rect = splitEl.getBoundingClientRect();
-    const newWidth = rect.right - e.clientX;
+    const newWidth = e.clientX - rect.left;
     pipelineWidth = Math.min(Math.max(newWidth, 300), rect.width * 0.75);
   }
 
@@ -193,6 +193,35 @@
   <!-- Content -->
   <main class="playground-page__content">
     <div class="playground-page__split" bind:this={splitEl}>
+      {#if getPipelinePanelOpen() && workflow}
+        {@const activeId = getActiveExecutionId()}
+        {@const executions = getCurrentSession()?.executions ?? []}
+        {@const activeIndex = executions.findIndex((e) => e.id === activeId)}
+        {@const runLabel = activeIndex >= 0 ? `Run #${activeIndex + 1}` : undefined}
+        <div class="playground-page__pipeline" style="width: {pipelineWidth}px;">
+          <PipelinePanel
+            pipelineId={activeId}
+            {workflow}
+            {endpointConfig}
+            isPinned={getPinnedExecutionId() !== null}
+            {runLabel}
+          />
+        </div>
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <div
+          class="playground-page__resizer"
+          class:playground-page__resizer--active={isResizing}
+          role="separator"
+          aria-orientation="vertical"
+          onpointerdown={handleResizerPointerDown}
+          onpointermove={handleResizerPointerMove}
+          onpointerup={handleResizerPointerUp}
+          onpointercancel={handleResizerPointerUp}
+        >
+          <div class="playground-page__resizer-handle"></div>
+        </div>
+      {/if}
+
       <div class="playground-page__primary">
         {#if loading}
           <div class="playground-page__loading">
@@ -234,35 +263,6 @@
           </div>
         {/if}
       </div>
-
-      {#if getPipelinePanelOpen() && workflow}
-        {@const activeId = getActiveExecutionId()}
-        {@const executions = getCurrentSession()?.executions ?? []}
-        {@const activeIndex = executions.findIndex((e) => e.id === activeId)}
-        {@const runLabel = activeIndex >= 0 ? `Run #${activeIndex + 1}` : undefined}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <div
-          class="playground-page__resizer"
-          class:playground-page__resizer--active={isResizing}
-          role="separator"
-          aria-orientation="vertical"
-          onpointerdown={handleResizerPointerDown}
-          onpointermove={handleResizerPointerMove}
-          onpointerup={handleResizerPointerUp}
-          onpointercancel={handleResizerPointerUp}
-        >
-          <div class="playground-page__resizer-handle"></div>
-        </div>
-        <div class="playground-page__pipeline" style="width: {pipelineWidth}px;">
-          <PipelinePanel
-            pipelineId={activeId}
-            {workflow}
-            {endpointConfig}
-            isPinned={getPinnedExecutionId() !== null}
-            {runLabel}
-          />
-        </div>
-      {/if}
     </div>
   </main>
 </div>
@@ -346,7 +346,7 @@
     transform: scaleY(1.4);
   }
 
-  /* Pipeline panel (right side) — width set via inline style */
+  /* Pipeline panel — width set via inline style */
   .playground-page__pipeline {
     min-width: 300px;
     max-width: 75%;
