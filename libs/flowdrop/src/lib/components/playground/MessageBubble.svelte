@@ -241,19 +241,22 @@
 {/if}
 
 <style>
+  /* ============================================================
+     Bubble container — layout only, no background
+     ============================================================ */
   .message-bubble {
     display: flex;
-    gap: var(--fd-space-md);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    margin-bottom: var(--fd-space-xs);
-    border-radius: var(--fd-radius-xl);
-    animation: fadeIn 0.2s ease-out;
+    gap: var(--fd-space-sm);
+    padding: 2px var(--fd-space-xl);
+    margin-bottom: 2px;
+    align-items: flex-end;
+    animation: fadeIn 0.18s ease-out;
   }
 
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
@@ -261,54 +264,37 @@
     }
   }
 
-  /* Role-specific styling - Neutral theme */
   .message-bubble--user {
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    color: var(--fd-foreground);
-    margin-left: var(--fd-space-4xl);
     flex-direction: row-reverse;
-  }
-
-  .message-bubble--assistant {
-    background-color: var(--fd-card);
-    border: 1px solid var(--fd-border);
-    color: var(--fd-card-foreground);
-    margin-right: var(--fd-space-4xl);
-  }
-
-  .message-bubble--system {
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    color: var(--fd-muted-foreground);
-    margin: 0 var(--fd-space-xl);
-    font-size: var(--fd-text-sm);
   }
 
   .message-bubble--last {
     margin-bottom: var(--fd-space-xl);
   }
 
-  /* Avatar */
+  /* ============================================================
+     Avatar — smaller, aligned to bubble bottom
+     ============================================================ */
   .message-bubble__avatar {
     flex-shrink: 0;
-    width: var(--fd-space-4xl);
-    height: var(--fd-space-4xl);
+    width: 1.875rem;
+    height: 1.875rem;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--fd-radius-full);
-    font-size: var(--fd-text-lg);
+    font-size: 1rem;
   }
 
   .message-bubble--user .message-bubble__avatar {
-    background-color: var(--fd-secondary);
-    color: var(--fd-secondary-foreground);
+    background-color: var(--fd-primary);
+    color: var(--fd-primary-foreground);
   }
 
   .message-bubble--assistant .message-bubble__avatar {
     background-color: var(--fd-secondary);
     color: var(--fd-secondary-foreground);
+    border: 1px solid var(--fd-border);
   }
 
   .message-bubble--system .message-bubble__avatar {
@@ -316,13 +302,41 @@
     color: var(--fd-muted-foreground);
   }
 
-  /* Content */
+  /* ============================================================
+     Content — the actual visible bubble
+     ============================================================ */
   .message-bubble__content {
-    flex: 1;
     min-width: 0;
+    max-width: 78%;
+    padding: var(--fd-space-sm) var(--fd-space-md);
+    border-radius: var(--fd-radius-2xl);
   }
 
-  /* Header */
+  .message-bubble--user .message-bubble__content {
+    background-color: var(--fd-primary);
+    color: var(--fd-primary-foreground);
+    border-bottom-right-radius: var(--fd-radius-sm);
+  }
+
+  .message-bubble--assistant .message-bubble__content {
+    background-color: var(--fd-card);
+    border: 1px solid var(--fd-border);
+    color: var(--fd-card-foreground);
+    box-shadow: 0 1px 3px 0 oklch(0% 0 0 / 0.06), 0 1px 2px -1px oklch(0% 0 0 / 0.04);
+    border-bottom-left-radius: var(--fd-radius-sm);
+  }
+
+  .message-bubble--system .message-bubble__content {
+    background-color: var(--fd-muted);
+    border: 1px solid var(--fd-border);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-sm);
+    max-width: 88%;
+  }
+
+  /* ============================================================
+     Header — role label + timestamp
+     ============================================================ */
   .message-bubble__header {
     display: flex;
     align-items: center;
@@ -336,35 +350,47 @@
 
   .message-bubble__role {
     font-weight: 600;
-    font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
+    font-size: var(--fd-text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .message-bubble--user .message-bubble__role {
-    color: var(--fd-foreground);
+    color: var(--fd-primary-foreground);
+    opacity: 0.75;
   }
 
   .message-bubble--assistant .message-bubble__role {
-    color: var(--fd-foreground);
+    color: var(--fd-muted-foreground);
+  }
+
+  .message-bubble--system .message-bubble__role {
+    color: var(--fd-muted-foreground);
   }
 
   .message-bubble__timestamp {
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
+    font-size: 0.6875rem;
     font-family: var(--fd-font-mono);
+    opacity: 0.55;
   }
 
   .message-bubble--user .message-bubble__timestamp {
+    color: var(--fd-primary-foreground);
+  }
+
+  .message-bubble--assistant .message-bubble__timestamp {
     color: var(--fd-muted-foreground);
   }
 
-  /* Message text */
+  /* ============================================================
+     Message text
+     ============================================================ */
   .message-bubble__text {
     line-height: var(--fd-leading-relaxed);
     word-break: break-word;
   }
 
-  /* Markdown styling for message content */
+  /* Markdown — shared */
   .message-bubble__text :global(p) {
     margin: 0 0 var(--fd-space-md) 0;
   }
@@ -393,17 +419,9 @@
     margin-top: 0;
   }
 
-  .message-bubble__text :global(h1) {
-    font-size: var(--fd-text-xl);
-  }
-
-  .message-bubble__text :global(h2) {
-    font-size: var(--fd-text-lg);
-  }
-
-  .message-bubble__text :global(h3) {
-    font-size: var(--fd-text-base);
-  }
+  .message-bubble__text :global(h1) { font-size: var(--fd-text-xl); }
+  .message-bubble__text :global(h2) { font-size: var(--fd-text-lg); }
+  .message-bubble__text :global(h3) { font-size: var(--fd-text-base); }
 
   .message-bubble__text :global(ul),
   .message-bubble__text :global(ol) {
@@ -484,26 +502,51 @@
     font-weight: 600;
   }
 
-  .message-bubble__text :global(strong) {
-    font-weight: 600;
+  .message-bubble__text :global(strong) { font-weight: 600; }
+  .message-bubble__text :global(em) { font-style: italic; }
+
+  /* Markdown overrides for primary-bg (user) bubbles */
+  .message-bubble--user .message-bubble__text :global(code) {
+    background-color: oklch(from var(--fd-primary-foreground) l c h / 0.18);
+    color: var(--fd-primary-foreground);
   }
 
-  .message-bubble__text :global(em) {
-    font-style: italic;
+  .message-bubble--user .message-bubble__text :global(pre) {
+    background-color: oklch(0% 0 0 / 0.25);
+    color: var(--fd-primary-foreground);
   }
 
-  /* Footer */
+  .message-bubble--user .message-bubble__text :global(a) {
+    color: var(--fd-primary-foreground);
+    text-decoration: underline;
+    opacity: 0.85;
+  }
+
+  .message-bubble--user .message-bubble__text :global(blockquote) {
+    border-left-color: oklch(from var(--fd-primary-foreground) l c h / 0.4);
+    color: var(--fd-primary-foreground);
+    opacity: 0.8;
+  }
+
+  /* ============================================================
+     Footer — node / duration metadata
+     ============================================================ */
   .message-bubble__footer {
     display: flex;
     align-items: center;
     gap: var(--fd-space-md);
     margin-top: var(--fd-space-xs);
+    padding-top: var(--fd-space-3xs);
+    border-top: 1px solid var(--fd-border);
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
   }
 
   .message-bubble--user .message-bubble__footer {
     justify-content: flex-end;
+    border-top-color: oklch(from var(--fd-primary-foreground) l c h / 0.2);
+    color: var(--fd-primary-foreground);
+    opacity: 0.75;
   }
 
   .message-bubble__node,
@@ -513,18 +556,18 @@
     gap: var(--fd-space-3xs);
   }
 
-  /* Responsive */
+  /* ============================================================
+     Responsive
+     ============================================================ */
   @media (max-width: 640px) {
-    .message-bubble--user,
-    .message-bubble--assistant {
-      margin-left: 0;
-      margin-right: 0;
+    .message-bubble__content {
+      max-width: 88%;
     }
 
     .message-bubble__avatar {
-      width: 1.75rem;
-      height: 1.75rem;
-      font-size: var(--fd-text-base);
+      width: 1.625rem;
+      height: 1.625rem;
+      font-size: var(--fd-text-sm);
     }
   }
 
