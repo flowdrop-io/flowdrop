@@ -160,16 +160,31 @@
       <span class="system-notice__timestamp">{formatTimestamp(message.timestamp)}</span>
     {/if}
   </div>
+{:else if message.role === 'log'}
+  <!-- Compact log row: terminal-style entry, visually distinct from chat bubbles -->
+  <div
+    class="log-row"
+    class:log-row--error={message.metadata?.level === 'error'}
+    class:log-row--warning={message.metadata?.level === 'warning'}
+    class:log-row--debug={message.metadata?.level === 'debug'}
+  >
+    <div class="log-row__level">
+      <Icon icon={getLogLevelIcon()} />
+    </div>
+    <div class="log-row__body">
+      <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId ?? 'log'}</span>
+      <span class="log-row__text">{message.content}</span>
+    </div>
+    {#if showTimestamp}
+      <span class="log-row__timestamp">{formatTimestamp(message.timestamp)}</span>
+    {/if}
+  </div>
 {:else}
   <div
     class="message-bubble"
     class:message-bubble--user={message.role === 'user'}
     class:message-bubble--assistant={message.role === 'assistant'}
     class:message-bubble--system={message.role === 'system'}
-    class:message-bubble--log={message.role === 'log'}
-    class:message-bubble--log-error={message.role === 'log' && message.metadata?.level === 'error'}
-    class:message-bubble--log-warning={message.role === 'log' &&
-      message.metadata?.level === 'warning'}
     class:message-bubble--last={isLast}
   >
     <!-- Avatar / Icon -->
@@ -182,14 +197,6 @@
       <!-- Header -->
       <div class="message-bubble__header">
         <span class="message-bubble__role">{getRoleLabel(message.role, message.metadata)}</span>
-        {#if message.role === 'log' && message.metadata?.level}
-          <span
-            class="message-bubble__log-level message-bubble__log-level--{message.metadata.level}"
-          >
-            <Icon icon={getLogLevelIcon()} />
-            {message.metadata.level.toUpperCase()}
-          </span>
-        {/if}
         {#if showTimestamp}
           <span class="message-bubble__timestamp">{formatTimestamp(message.timestamp)}</span>
         {/if}
@@ -197,7 +204,7 @@
 
       <!-- Message Text -->
       <div class="message-bubble__text">
-        {#if enableMarkdown && message.role !== 'log'}
+        {#if enableMarkdown}
           <!-- Markdown content - sanitized with DOMPurify to prevent XSS -->
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html renderedContent}
@@ -278,27 +285,6 @@
     font-size: var(--fd-text-sm);
   }
 
-  .message-bubble--log {
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    color: var(--fd-muted-foreground);
-    margin: 0 var(--fd-space-xl);
-    font-size: var(--fd-text-sm);
-    font-family: var(--fd-font-mono);
-  }
-
-  .message-bubble--log-error {
-    background-color: var(--fd-error-muted);
-    border-color: var(--fd-error);
-    color: var(--fd-error);
-  }
-
-  .message-bubble--log-warning {
-    background-color: var(--fd-warning-muted);
-    border-color: var(--fd-warning);
-    color: var(--fd-warning);
-  }
-
   .message-bubble--last {
     margin-bottom: var(--fd-space-xl);
   }
@@ -328,14 +314,6 @@
   .message-bubble--system .message-bubble__avatar {
     background-color: var(--fd-muted);
     color: var(--fd-muted-foreground);
-  }
-
-  .message-bubble--log .message-bubble__avatar {
-    background-color: var(--fd-secondary);
-    color: var(--fd-muted-foreground);
-    width: var(--fd-space-3xl);
-    height: var(--fd-space-3xl);
-    font-size: var(--fd-text-sm);
   }
 
   /* Content */
@@ -370,42 +348,6 @@
     color: var(--fd-foreground);
   }
 
-  .message-bubble--log .message-bubble__role {
-    font-weight: 500;
-  }
-
-  .message-bubble__log-level {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    padding: 0.125rem var(--fd-space-3xs);
-    border-radius: var(--fd-radius-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .message-bubble__log-level--info {
-    background-color: var(--fd-info-muted);
-    color: var(--fd-info);
-  }
-
-  .message-bubble__log-level--warning {
-    background-color: var(--fd-warning-muted);
-    color: var(--fd-warning);
-  }
-
-  .message-bubble__log-level--error {
-    background-color: var(--fd-error-muted);
-    color: var(--fd-error);
-  }
-
-  .message-bubble__log-level--debug {
-    background-color: var(--fd-accent-muted);
-    color: var(--fd-accent);
-  }
-
   .message-bubble__timestamp {
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
@@ -420,12 +362,6 @@
   .message-bubble__text {
     line-height: var(--fd-leading-relaxed);
     word-break: break-word;
-  }
-
-  .message-bubble--log .message-bubble__text {
-    font-size: var(--fd-text-sm);
-    line-height: var(--fd-leading-tight);
-    white-space: pre-wrap;
   }
 
   /* Markdown styling for message content */
@@ -590,6 +526,95 @@
       height: 1.75rem;
       font-size: var(--fd-text-base);
     }
+  }
+
+  /* ========================================
+	   Log Row Styles
+	   Compact terminal-style entry, distinct from chat bubbles
+	   ======================================== */
+
+  .log-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--fd-space-sm);
+    padding: 0.1875rem var(--fd-space-xl);
+    border-left: 2px solid var(--fd-info);
+    margin: 1px 0;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+    line-height: var(--fd-leading-normal);
+    background-color: transparent;
+  }
+
+  .log-row:hover {
+    background-color: var(--fd-muted);
+  }
+
+  .log-row--error {
+    border-left-color: var(--fd-error);
+    color: var(--fd-error);
+  }
+
+  .log-row--warning {
+    border-left-color: var(--fd-warning);
+    color: var(--fd-warning);
+  }
+
+  .log-row--debug {
+    border-left-color: var(--fd-border-strong);
+    color: var(--fd-border-strong);
+  }
+
+  .log-row__level {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    font-size: var(--fd-text-sm);
+    opacity: 0.7;
+  }
+
+  .log-row--error .log-row__level {
+    color: var(--fd-error);
+    opacity: 1;
+  }
+
+  .log-row--warning .log-row__level {
+    color: var(--fd-warning);
+    opacity: 1;
+  }
+
+  .log-row__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: var(--fd-space-sm);
+    overflow: hidden;
+  }
+
+  .log-row__node {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--fd-foreground);
+    opacity: 0.5;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .log-row__text {
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .log-row__timestamp {
+    flex-shrink: 0;
+    font-size: 0.625rem;
+    color: var(--fd-border-strong);
+    opacity: 0.8;
   }
 
   /* ========================================
