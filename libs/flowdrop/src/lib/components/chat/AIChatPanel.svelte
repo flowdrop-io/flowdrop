@@ -191,10 +191,22 @@
     const msg = displayMessages[messageIndex];
     if (!msg?.commandPreview) return;
 
-    // Capture pre-existing parse errors before execution. If the LLM produced
-    // a malformed batch (e.g. unclosed """), retrying tends to reproduce the
-    // same shape and just locks the input behind isLoading for the cascade.
-    const hadParseErrors = msg.commandPreview.some((c) => c.status === 'error');
+    // Refuse to run the batch if any command failed to parse. A corrupted batch
+    // (e.g. multiline set without """) causes partial execution and can hang the
+    // app — rejecting the whole batch is safer than executing the healthy subset.
+    const parseErrorCount = msg.commandPreview.filter((c) => c.status === 'error').length;
+    if (parseErrorCount > 0) {
+      for (const cmd of msg.commandPreview) {
+        if (cmd.status === 'pending') {
+          cmd.status = 'error';
+          cmd.result = 'Batch refused: fix parse errors before executing';
+        }
+      }
+      appendErrorToHistory(
+        `Batch was not executed: ${parseErrorCount} command${parseErrorCount > 1 ? 's have' : ' has'} parse errors. Dismiss this batch and ask the AI to provide corrected commands.`
+      );
+      return;
+    }
 
     const context = getCommandContext();
     if (!context) {
@@ -277,7 +289,6 @@
     }
 
     if (
-      !hadParseErrors &&
       getBehaviorSettings().chatAutoRetry &&
       workflowId &&
       autoRetryCount < MAX_AUTO_RETRIES
