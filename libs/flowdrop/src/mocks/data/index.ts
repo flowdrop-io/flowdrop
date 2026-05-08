@@ -55,8 +55,10 @@ export {
   addMessage,
   updateSessionStatus,
   simulateExecution,
+  addExecutionToSession,
   resetPlaygroundData,
-  initializeSamplePlaygroundData
+  initializeSamplePlaygroundData,
+  initializeDemoForeachPlaygroundData
 } from './playground.js';
 
 // Re-export interrupt data

@@ -13,7 +13,8 @@ import {
   getSessionMessages,
   addMessage,
   updateSessionStatus,
-  simulateExecution
+  simulateExecution,
+  initializeDemoForeachPlaygroundData
 } from '../data/playground.js';
 
 /** Base API path for flowdrop endpoints */
@@ -29,6 +30,11 @@ export const listSessionsHandler = http.get(
     console.log('[MSW] listSessionsHandler called');
     const { id } = params;
     const workflowId = Array.isArray(id) ? id[0] : id;
+
+    // Lazy-seed demo data for the foreach-loop workflow on first request
+    if (workflowId === 'demo-foreach-loop') {
+      initializeDemoForeachPlaygroundData();
+    }
     console.log('[MSW] workflowId:', workflowId);
 
     const url = new URL(request.url);

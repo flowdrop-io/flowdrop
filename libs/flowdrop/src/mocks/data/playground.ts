@@ -6,6 +6,7 @@
 
 import type {
   PlaygroundSession,
+  PlaygroundExecution,
   PlaygroundMessage,
   PlaygroundSessionStatus,
   PlaygroundMessageRole,
@@ -113,7 +114,8 @@ export function createSession(
     status: 'idle',
     createdAt: now,
     updatedAt: now,
-    metadata
+    metadata,
+    executions: []
   };
 
   mockSessions.set(session.id, session);
@@ -141,9 +143,39 @@ export function updateSessionStatus(
 
   session.status = status;
   session.updatedAt = new Date().toISOString();
+
+  // Mirror terminal session status onto the latest running execution
+  if ((status === 'completed' || status === 'failed') && session.executions?.length) {
+    const execs = session.executions;
+    const last = execs[execs.length - 1];
+    if (last.status === 'running') {
+      execs[execs.length - 1] = { ...last, status };
+    }
+  }
+
   mockSessions.set(sessionId, session);
 
   return session;
+}
+
+/**
+ * Add a pipeline execution entry to a session
+ *
+ * @param sessionId - The session ID
+ * @param executionId - The pipeline/execution ID
+ * @param startedAt - ISO timestamp when execution started
+ */
+export function addExecutionToSession(
+  sessionId: string,
+  executionId: string,
+  startedAt: string = new Date().toISOString()
+): void {
+  const session = mockSessions.get(sessionId);
+  if (!session) return;
+
+  const entry: PlaygroundExecution = { id: executionId, startedAt, status: 'running' };
+  session.executions = [...(session.executions ?? []), entry];
+  mockSessions.set(sessionId, session);
 }
 
 /**
@@ -202,6 +234,7 @@ export function addMessage(
   content: string,
   options?: {
     nodeId?: string;
+    executionId?: string;
     level?: PlaygroundMessageLevel;
     duration?: number;
     nodeLabel?: string;
@@ -230,6 +263,7 @@ export function addMessage(
     status: options?.status || 'completed',
     sequenceNumber,
     parentMessageId: options?.parentMessageId,
+    executionId: options?.executionId ?? null,
     nodeId: options?.nodeId,
     metadata: options?.metadata || {
       level: options?.level,
@@ -359,6 +393,9 @@ function simulateNormalExecution(
   userMessage: string,
   parentMessageId?: string
 ): void {
+  const executionId = `exec-${Date.now().toString(36)}`;
+  addExecutionToSession(sessionId, executionId);
+
   const isRunTrigger = isRunWorkflowTrigger(userMessage);
 
   // Different response for "Run workflow" triggers vs normal chat messages
@@ -417,6 +454,7 @@ function simulateNormalExecution(
     setTimeout(() => {
       addMessage(sessionId, step.role, step.content, {
         nodeId: step.nodeId,
+        executionId,
         level: step.level,
         duration: step.duration,
         nodeLabel: step.nodeLabel,
@@ -451,11 +489,13 @@ function simulateInterruptExecution(
   parentMessageId?: string
 ): void {
   const executionId = `exec-${Date.now().toString(36)}`;
+  addExecutionToSession(sessionId, executionId);
 
   // First step: log the start
   setTimeout(() => {
     addMessage(sessionId, 'log', 'Starting workflow execution...', {
       level: 'info',
+      executionId,
       nodeId: 'node-start',
       nodeLabel: 'Start',
       parentMessageId
@@ -466,6 +506,7 @@ function simulateInterruptExecution(
   setTimeout(() => {
     addMessage(sessionId, 'log', `Processing requires ${interruptType} input...`, {
       level: 'info',
+      executionId,
       nodeId: 'node-hitl',
       nodeLabel: 'Human Input',
       parentMessageId
@@ -621,6 +662,120 @@ function createInterruptMessage(
     session.updatedAt = message.timestamp;
     session.status = 'idle';
     mockSessions.set(sessionId, session);
+  }
+}
+
+/**
+ * Pre-seed a demo playground session for the demo-foreach-loop workflow.
+ *
+ * Creates one session with two completed executions, each linked to an existing
+ * pipeline mock (pipeline-foreach-001 = completed, pipeline-foreach-002 = failed).
+ * This lets the integrated playground+pipeline panel be exercised immediately
+ * without running a real backend.
+ */
+export function initializeDemoForeachPlaygroundData(): void {
+  const workflowId = 'demo-foreach-loop';
+
+  // Idempotent: skip if a session already exists for this workflow
+  if (getSessionsForWorkflow(workflowId).length > 0) return;
+
+  const now = new Date();
+
+  // Helper to produce a timestamp offset by `offsetMs` from now
+  const ts = (offsetMs: number) => new Date(now.getTime() + offsetMs).toISOString();
+
+  const session = createSession(workflowId, 'ForEach Demo');
+
+  // ── Execution 1: completed (pipeline-foreach-001) ────────────────────────
+  const exec1Id = 'pipeline-foreach-001';
+  addExecutionToSession(session.id, exec1Id, ts(-120_000));
+
+  const userMsg1 = addMessage(session.id, 'user', 'Process the fruit list', {
+    executionId: exec1Id
+  });
+  addMessage(session.id, 'log', 'Starting ForEach loop — 5 items queued', {
+    executionId: exec1Id,
+    level: 'info',
+    nodeId: 'json-loader.1',
+    nodeLabel: 'JSON Loader',
+    parentMessageId: userMsg1?.id
+  });
+  addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
+    executionId: exec1Id,
+    level: 'info',
+    nodeId: 'foreach.1',
+    nodeLabel: 'ForEach Loop',
+    parentMessageId: userMsg1?.id
+  });
+  addMessage(session.id, 'log', 'Processing item 5/5: Elderberry', {
+    executionId: exec1Id,
+    level: 'info',
+    nodeId: 'foreach.1',
+    nodeLabel: 'ForEach Loop',
+    parentMessageId: userMsg1?.id
+  });
+  addMessage(
+    session.id,
+    'assistant',
+    'All 5 fruits processed successfully:\n\n- Apple ✓\n- Banana ✓\n- Cherry ✓\n- Date ✓\n- Elderberry ✓',
+    {
+      executionId: exec1Id,
+      nodeId: 'output.1',
+      nodeLabel: 'Output',
+      duration: 3200,
+      parentMessageId: userMsg1?.id
+    }
+  );
+  // Mark exec1 as completed by updating the session status then restoring to idle
+  updateSessionStatus(session.id, 'completed');
+  // Manually mark exec1 completed and reset session to idle for next execution
+  const s1 = mockSessions.get(session.id);
+  if (s1) {
+    s1.status = 'idle';
+    mockSessions.set(session.id, s1);
+  }
+
+  // ── Execution 2: failed (pipeline-foreach-002) ───────────────────────────
+  const exec2Id = 'pipeline-foreach-002';
+  addExecutionToSession(session.id, exec2Id, ts(-60_000));
+
+  const userMsg2 = addMessage(session.id, 'user', 'Run again with the same list', {
+    executionId: exec2Id
+  });
+  addMessage(session.id, 'log', 'Starting ForEach loop — 5 items queued', {
+    executionId: exec2Id,
+    level: 'info',
+    nodeId: 'json-loader.1',
+    nodeLabel: 'JSON Loader',
+    parentMessageId: userMsg2?.id
+  });
+  addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
+    executionId: exec2Id,
+    level: 'info',
+    nodeId: 'foreach.1',
+    nodeLabel: 'ForEach Loop',
+    parentMessageId: userMsg2?.id
+  });
+  addMessage(session.id, 'log', 'Error processing item 3/5: Cherry — upstream timeout', {
+    executionId: exec2Id,
+    level: 'error',
+    nodeId: 'foreach.1',
+    nodeLabel: 'ForEach Loop',
+    parentMessageId: userMsg2?.id
+  });
+  addMessage(session.id, 'assistant', 'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.', {
+    executionId: exec2Id,
+    nodeId: 'output.1',
+    nodeLabel: 'Output',
+    duration: 1800,
+    parentMessageId: userMsg2?.id
+  });
+  updateSessionStatus(session.id, 'failed');
+  // Reset to idle so the playground is ready for a new run
+  const s2 = mockSessions.get(session.id);
+  if (s2) {
+    s2.status = 'idle';
+    mockSessions.set(session.id, s2);
   }
 }
 
