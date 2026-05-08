@@ -176,16 +176,6 @@
           href: `/workflow/${workflowId}/edit`,
           icon: 'mdi:pencil-outline',
           variant: 'outline' as const
-        },
-        {
-          label: getPipelinePanelOpen() ? 'Hide Pipeline' : 'Show Pipeline',
-          href: '#',
-          icon: 'mdi:source-branch',
-          variant: 'outline' as const,
-          onclick: (e: Event) => {
-            e.preventDefault();
-            pipelinePanelActions.toggle();
-          }
         }
       ];
     } else if (pathname === '/') {

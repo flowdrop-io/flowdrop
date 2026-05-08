@@ -739,6 +739,18 @@
           {/if}
 
           <div class="playground__header-actions">
+            {#if mode === 'standalone' && onTogglePanel}
+              <button
+                type="button"
+                class="playground__log-toggle"
+                class:playground__log-toggle--active={isPipelinePanelOpen}
+                onclick={onTogglePanel}
+                title={isPipelinePanelOpen ? 'Hide pipeline' : 'Show pipeline'}
+              >
+                <Icon icon="mdi:source-branch" />
+                Pipeline
+              </button>
+            {/if}
             <button
               type="button"
               class="playground__log-toggle"
