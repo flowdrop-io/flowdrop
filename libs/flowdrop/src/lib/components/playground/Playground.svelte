@@ -11,6 +11,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Icon from '@iconify/svelte';
   import ChatPanel from './ChatPanel.svelte';
+  import ExecutionList from './ExecutionList.svelte';
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import type { PlaygroundMode, PlaygroundConfig } from '../../types/playground.js';
@@ -25,7 +26,10 @@
     getError,
     playgroundActions,
     getInputFields,
-    createPollingCallback
+    createPollingCallback,
+    getActiveExecutionId,
+    getLatestExecutionId,
+    getPinnedExecutionId,
   } from '../../stores/playgroundStore.svelte.js';
   import { interruptActions } from '../../stores/interruptStore.svelte.js';
   import { logger } from '../../utils/logger.js';
@@ -49,6 +53,10 @@
     config?: PlaygroundConfig;
     /** Callback when playground is closed (for embedded mode) */
     onClose?: () => void;
+    /** Callback to toggle the pipeline panel (if undefined, toggle button is hidden) */
+    onTogglePanel?: () => void;
+    /** Whether the pipeline panel is currently open (for toggle button active state) */
+    isPipelinePanelOpen?: boolean;
   }
 
   let {
@@ -58,7 +66,9 @@
     initialSessionId,
     endpointConfig,
     config = {},
-    onClose
+    onClose,
+    onTogglePanel,
+    isPipelinePanelOpen = false,
   }: Props = $props();
 
   /** Current input values from InputCollector */
@@ -278,6 +288,7 @@
    * Select a session
    */
   async function handleSelectSession(sessionId: string): Promise<void> {
+    playgroundActions.pinExecution(null);
     const currentSessionId = getCurrentSession()?.id;
     if (currentSessionId === sessionId) {
       return;
@@ -499,6 +510,17 @@
           <div class="playground__sidebar-title">
             <span>Playground</span>
           </div>
+          {#if onTogglePanel}
+            <button
+              class="playground__panel-toggle"
+              class:playground__panel-toggle--active={isPipelinePanelOpen}
+              type="button"
+              title={isPipelinePanelOpen ? 'Hide pipeline' : 'Show pipeline'}
+              onclick={onTogglePanel}
+            >
+              <Icon icon="mdi:graph" />
+            </button>
+          {/if}
           {#if (mode === 'embedded' || mode === 'modal') && onClose}
             <button
               type="button"
@@ -581,6 +603,23 @@
               {/if}
             </div>
           </div>
+          {#if getCurrentSession()?.executions?.length}
+            <div class="playground__executions-section">
+              <div class="playground__executions-header">Executions</div>
+              <ExecutionList
+                executions={getCurrentSession()!.executions!}
+                activeExecutionId={getActiveExecutionId()}
+                latestExecutionId={getLatestExecutionId()}
+                onSelect={(id) => {
+                  if (id === getLatestExecutionId()) {
+                    playgroundActions.pinExecution(null);
+                  } else {
+                    playgroundActions.pinExecution(id);
+                  }
+                }}
+              />
+            </div>
+          {/if}
         </div>
       </aside>
     {/if}
@@ -1054,6 +1093,49 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  /* Executions section below session list */
+  .playground__executions-section {
+    border-top: 1px solid var(--fd-border);
+    padding-top: var(--fd-space-sm);
+    margin-top: var(--fd-space-sm);
+  }
+
+  .playground__executions-header {
+    padding: var(--fd-space-3xs) var(--fd-space-md);
+    font-size: var(--fd-text-xs, 0.7rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fd-muted);
+  }
+
+  /* Pipeline panel toggle button in sidebar header */
+  .playground__panel-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--fd-radius-sm, 0.25rem);
+    background: transparent;
+    color: var(--fd-muted);
+    cursor: pointer;
+    transition: var(--fd-transition-fast);
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+
+  .playground__panel-toggle:hover {
+    background-color: var(--fd-hover-background, rgba(255, 255, 255, 0.08));
+    color: var(--fd-foreground);
+  }
+
+  .playground__panel-toggle--active {
+    color: var(--fd-primary);
+    background-color: var(--fd-primary-muted);
   }
 
   /* Responsive */

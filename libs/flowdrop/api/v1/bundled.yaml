@@ -3992,6 +3992,12 @@ components:
           type: string
           format: date-time
           description: Last activity timestamp
+        executions:
+          type: array
+          description: Pipeline executions triggered within this session, ordered oldest-first
+          items:
+            $ref: '#/components/schemas/PlaygroundExecution'
+          nullable: true
         metadata:
           type: object
           additionalProperties: true
@@ -5950,6 +5956,28 @@ components:
           - data
         showHints: true
         includePortName: false
+    PlaygroundExecution:
+      type: object
+      description: A single pipeline execution associated with a playground session
+      properties:
+        id:
+          type: string
+          description: Pipeline/execution ID
+        startedAt:
+          type: string
+          format: date-time
+          description: When the execution started
+        status:
+          type: string
+          enum:
+            - running
+            - completed
+            - failed
+          description: Current execution status
+      required:
+        - id
+        - startedAt
+        - status
     AgentSpecNodeBase:
       type: object
       description: Base properties shared by all Agent Spec nodes

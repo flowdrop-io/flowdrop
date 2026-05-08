@@ -82,6 +82,15 @@ export type PlaygroundMessageLevel = 'info' | 'warning' | 'error' | 'debug';
 export type PlaygroundMessageStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 /**
+ * A single pipeline execution associated with a playground session
+ */
+export interface PlaygroundExecution {
+  id: string;
+  startedAt: string;
+  status: 'running' | 'completed' | 'failed';
+}
+
+/**
  * Playground session representing a test conversation
  *
  * Sessions maintain conversation history and allow interactive testing
@@ -112,6 +121,8 @@ export interface PlaygroundSession {
   createdAt: string;
   /** Last activity timestamp (ISO 8601) */
   updatedAt: string;
+  /** Pipeline executions triggered within this session, ordered oldest-first */
+  executions?: PlaygroundExecution[];
   /** Custom session metadata */
   metadata?: Record<string, unknown>;
 }
@@ -175,6 +186,8 @@ export interface PlaygroundMessage {
   sequenceNumber?: number;
   /** Parent message ID (for assistant responses linked to user messages) */
   parentMessageId?: string;
+  /** Pipeline/execution ID that generated this message */
+  executionId?: string | null;
   /** Associated node ID (for log/assistant messages) */
   nodeId?: string | null;
   /** Additional message metadata */

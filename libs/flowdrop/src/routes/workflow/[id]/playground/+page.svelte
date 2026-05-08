@@ -11,6 +11,12 @@
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import Playground from '$lib/components/playground/Playground.svelte';
+  import PipelinePanel from '$lib/components/playground/PipelinePanel.svelte';
+  import { getPipelinePanelOpen, pipelinePanelActions } from '$lib/stores/pipelinePanelStore.svelte.js';
+  import {
+    getActiveExecutionId,
+    getPinnedExecutionId
+  } from '$lib/stores/playgroundStore.svelte.js';
   import { createEndpointConfig, type EndpointConfig } from '$lib/config/endpoints.js';
   import { setEndpointConfig } from '$lib/services/api.js';
   import type { Workflow } from '$lib/types/index.js';
@@ -84,6 +90,7 @@
    * Initialize API configuration
    */
   onMount(() => {
+    pipelinePanelActions.init();
     setEndpointConfig(endpointConfig);
     loadWorkflow();
   });
@@ -163,43 +170,60 @@
 <div class="playground-page">
   <!-- Content -->
   <main class="playground-page__content">
-    {#if loading}
-      <div class="playground-page__loading">
-        <Icon icon="mdi:loading" class="playground-page__loading-icon" />
-        <p>Loading workflow...</p>
+    <div class="playground-page__split">
+      <div class="playground-page__primary">
+        {#if loading}
+          <div class="playground-page__loading">
+            <Icon icon="mdi:loading" class="playground-page__loading-icon" />
+            <p>Loading workflow...</p>
+          </div>
+        {:else if error}
+          <div class="playground-page__error">
+            <Icon icon="mdi:alert-circle" class="playground-page__error-icon" />
+            <h2 class="playground-page__error-title">Failed to load workflow</h2>
+            <p class="playground-page__error-text">{error}</p>
+            <button type="button" class="playground-page__retry-btn" onclick={loadWorkflow}>
+              <Icon icon="mdi:refresh" />
+              Retry
+            </button>
+          </div>
+        {:else if workflow}
+          <Playground
+            {workflowId}
+            {workflow}
+            {endpointConfig}
+            mode="standalone"
+            initialSessionId={sessionId}
+            config={playgroundConfig}
+            onTogglePanel={pipelinePanelActions.toggle}
+            isPipelinePanelOpen={getPipelinePanelOpen()}
+          />
+        {:else}
+          <div class="playground-page__empty">
+            <Icon icon="mdi:file-question" class="playground-page__empty-icon" />
+            <h2 class="playground-page__empty-title">Workflow not found</h2>
+            <p class="playground-page__empty-text">
+              The workflow you're looking for doesn't exist or has been deleted.
+            </p>
+            <a href="/" class="playground-page__home-link">
+              <Icon icon="mdi:home" />
+              Go to Home
+            </a>
+          </div>
+        {/if}
       </div>
-    {:else if error}
-      <div class="playground-page__error">
-        <Icon icon="mdi:alert-circle" class="playground-page__error-icon" />
-        <h2 class="playground-page__error-title">Failed to load workflow</h2>
-        <p class="playground-page__error-text">{error}</p>
-        <button type="button" class="playground-page__retry-btn" onclick={loadWorkflow}>
-          <Icon icon="mdi:refresh" />
-          Retry
-        </button>
-      </div>
-    {:else if workflow}
-      <Playground
-        {workflowId}
-        {workflow}
-        {endpointConfig}
-        mode="standalone"
-        initialSessionId={sessionId}
-        config={playgroundConfig}
-      />
-    {:else}
-      <div class="playground-page__empty">
-        <Icon icon="mdi:file-question" class="playground-page__empty-icon" />
-        <h2 class="playground-page__empty-title">Workflow not found</h2>
-        <p class="playground-page__empty-text">
-          The workflow you're looking for doesn't exist or has been deleted.
-        </p>
-        <a href="/" class="playground-page__home-link">
-          <Icon icon="mdi:home" />
-          Go to Home
-        </a>
-      </div>
-    {/if}
+
+      {#if getPipelinePanelOpen() && workflow}
+        <div class="playground-page__pipeline">
+          <PipelinePanel
+            pipelineId={getActiveExecutionId()}
+            {workflow}
+            {endpointConfig}
+            isPinned={getPinnedExecutionId() !== null}
+          />
+        </div>
+      {/if}
+    </div>
   </main>
 </div>
 
@@ -213,13 +237,41 @@
     background-color: var(--fd-background);
   }
 
-  /* Content - fills the available space without scrolling */
+  /* Content - fills the available space */
   .playground-page__content {
     flex: 1;
     min-height: 0;
-    overflow: hidden; /* Prevent content area scrolling - ChatPanel handles its own scroll */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  /* Split layout container */
+  .playground-page__split {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Primary area (playground chat) */
+  .playground-page__primary {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Pipeline panel (right side) */
+  .playground-page__pipeline {
+    width: 500px;
+    min-width: 300px;
+    max-width: 60%;
+    border-left: 1px solid var(--fd-border);
+    overflow: hidden;
+    flex-shrink: 0;
   }
 
   /* Loading */

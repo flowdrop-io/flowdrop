@@ -12,7 +12,8 @@ import type {
   PlaygroundMessage,
   PlaygroundInputField,
   PlaygroundSessionStatus,
-  PlaygroundMessagesApiResponse
+  PlaygroundMessagesApiResponse,
+  PlaygroundExecution
 } from '../types/playground.js';
 import { isChatInputNode, defaultIsTerminalStatus } from '../types/playground.js';
 import type { Workflow, WorkflowNode } from '../types/index.js';
@@ -61,6 +62,19 @@ let _currentWorkflow = $state<Workflow | null>(null);
  * Last polling timestamp for incremental message fetching
  */
 let _lastPollTimestamp = $state<string | null>(null);
+
+/** Execution ID explicitly pinned by the user (null = follow latest) */
+let _pinnedExecutionId = $state<string | null>(null);
+
+/** Latest execution ID derived from current session's executions list */
+const _latestExecutionId = $derived(
+  _currentSession?.executions?.at(-1)?.id ?? null
+);
+
+/** Active execution: pinned if set, otherwise latest */
+const _activeExecutionId = $derived(
+  _pinnedExecutionId ?? _latestExecutionId
+);
 
 // =========================================================================
 // Getter Functions (for reactive access in components)
@@ -249,6 +263,18 @@ export function getSessionCount(): number {
   return _sessions.length;
 }
 
+export function getPinnedExecutionId(): string | null {
+  return _pinnedExecutionId;
+}
+
+export function getLatestExecutionId(): string | null {
+  return _latestExecutionId;
+}
+
+export function getActiveExecutionId(): string | null {
+  return _activeExecutionId;
+}
+
 // =========================================================================
 // Helper Functions
 // =========================================================================
@@ -287,6 +313,35 @@ function sortMessagesChronologically(messageList: PlaygroundMessage[]): Playgrou
   });
 }
 
+/**
+ * Syncs the current session's executions list from incoming messages.
+ * When a message has a new executionId not yet tracked, adds it as a new execution entry.
+ */
+function syncExecutionsFromMessages(messages: PlaygroundMessage[]): void {
+  if (!_currentSession) return;
+
+  const existingIds = new Set((_currentSession.executions ?? []).map((e) => e.id));
+  const newExecutions: PlaygroundExecution[] = [];
+
+  for (const msg of messages) {
+    if (msg.executionId && !existingIds.has(msg.executionId)) {
+      existingIds.add(msg.executionId);
+      newExecutions.push({
+        id: msg.executionId,
+        startedAt: msg.timestamp,
+        status: 'running'
+      });
+    }
+  }
+
+  if (newExecutions.length > 0) {
+    _currentSession = {
+      ..._currentSession,
+      executions: [...(_currentSession.executions ?? []), ...newExecutions]
+    };
+  }
+}
+
 // =========================================================================
 // Actions
 // =========================================================================
@@ -310,6 +365,7 @@ export const playgroundActions = {
    * @param session - The session to set as active
    */
   setCurrentSession: (session: PlaygroundSession | null): void => {
+    _pinnedExecutionId = null;
     _currentSession = session;
     if (session) {
       // Update session in the list
@@ -329,6 +385,16 @@ export const playgroundActions = {
         status,
         updatedAt: new Date().toISOString()
       };
+    }
+
+    // Update latest execution status when session reaches a terminal state
+    if ((status === 'completed' || status === 'failed') && _currentSession?.executions?.length) {
+      const execs = [..._currentSession.executions];
+      const last = execs[execs.length - 1];
+      if (last.status === 'running') {
+        execs[execs.length - 1] = { ...last, status };
+        _currentSession = { ..._currentSession, executions: execs };
+      }
     }
 
     // Also update in sessions list
@@ -413,6 +479,7 @@ export const playgroundActions = {
     const uniqueNewMessages = newMessages.filter((m) => !existingIds.has(m.id));
     // Sort the combined messages chronologically
     _messages = sortMessagesChronologically([..._messages, ...uniqueNewMessages]);
+    syncExecutionsFromMessages(newMessages);
   },
 
   /**
@@ -479,12 +546,17 @@ export const playgroundActions = {
    * @param sessionId - The session ID to switch to
    */
   switchSession: (sessionId: string): void => {
+    _pinnedExecutionId = null;
     const session = _sessions.find((s) => s.id === sessionId);
     if (session) {
       _currentSession = session;
       _messages = [];
       _lastPollTimestamp = null;
     }
+  },
+
+  pinExecution(executionId: string | null): void {
+    _pinnedExecutionId = executionId;
   }
 };
 

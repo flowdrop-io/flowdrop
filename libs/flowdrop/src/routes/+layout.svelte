@@ -23,6 +23,7 @@
   import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
   import type { RuntimeConfig } from '$lib/config/runtimeConfig';
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
+  import { getPipelinePanelOpen, pipelinePanelActions } from '$lib/stores/pipelinePanelStore.svelte.js';
 
   let { data, children } = $props();
 
@@ -135,7 +136,20 @@
   );
 
   function getPrimaryActionsForPage(pathname: string) {
-    if (pathname === '/') {
+    if (pathname.includes('/playground')) {
+      return [
+        {
+          label: getPipelinePanelOpen() ? 'Hide Pipeline' : 'Show Pipeline',
+          href: '#',
+          icon: 'mdi:graph',
+          variant: 'outline' as const,
+          onclick: (e: Event) => {
+            e.preventDefault();
+            pipelinePanelActions.toggle();
+          }
+        }
+      ];
+    } else if (pathname === '/') {
       // Main workflows page
       return [
         {
@@ -249,23 +263,6 @@
           href: '#',
           icon: 'mdi:refresh',
           variant: 'secondary' as const
-        }
-      ];
-    } else if (pathname.startsWith('/workflow/') && pathname.includes('/playground')) {
-      // Playground page
-      const workflowId = pathname.split('/')[2];
-      return [
-        {
-          label: 'Edit Workflow',
-          href: `/workflow/${workflowId}/edit`,
-          icon: 'mdi:pencil',
-          variant: 'outline' as const
-        },
-        {
-          label: 'Pipelines',
-          href: `/workflow/${workflowId}/pipelines`,
-          icon: 'mdi:source-branch',
-          variant: 'outline' as const
         }
       ];
     } else if (pathname.startsWith('/workflow/') && pathname.includes('/pipelines')) {
