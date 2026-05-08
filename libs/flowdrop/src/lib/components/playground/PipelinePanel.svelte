@@ -106,21 +106,22 @@
       </div>
 
       <!-- Latest toggle -->
-      <label class="pipeline-panel__latest-toggle" title={isPinned ? 'Following latest is off — click to resume' : 'Always showing the most recent run'}>
-        <input
-          type="checkbox"
-          class="pipeline-panel__latest-checkbox"
-          checked={!isPinned}
-          onchange={(e) => {
-            if ((e.currentTarget as HTMLInputElement).checked) {
-              onSelectExecution?.(null);
-            } else {
-              onSelectExecution?.(latestExecutionId);
-            }
-          }}
-        />
-        <span>Latest</span>
-      </label>
+      <button
+        type="button"
+        class="pipeline-panel__latest-toggle"
+        class:pipeline-panel__latest-toggle--active={!isPinned}
+        onclick={() => {
+          if (isPinned) {
+            onSelectExecution?.(null);
+          } else {
+            onSelectExecution?.(latestExecutionId);
+          }
+        }}
+        title={isPinned ? 'Following latest is off — click to resume' : 'Always showing the most recent run'}
+      >
+        <Icon icon="mdi:refresh" />
+        Latest
+      </button>
     {:else if pipelineId}
       <span
         class="pipeline-panel__status-badge pipeline-panel__status-badge--live"
@@ -314,24 +315,33 @@
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
+    padding: var(--fd-space-3xs) var(--fd-space-sm);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background: transparent;
+    color: var(--fd-muted-foreground);
     font-size: var(--fd-text-xs);
     font-weight: 500;
-    color: var(--fd-muted-foreground);
     cursor: pointer;
-    user-select: none;
+    transition: all var(--fd-transition-fast);
+    line-height: 1;
     flex-shrink: 0;
+  }
+
+  .pipeline-panel__latest-toggle :global(svg) {
+    font-size: var(--fd-text-xs);
   }
 
   .pipeline-panel__latest-toggle:hover {
+    background-color: var(--fd-muted);
     color: var(--fd-foreground);
+    border-color: var(--fd-border-strong);
   }
 
-  .pipeline-panel__latest-checkbox {
-    width: 12px;
-    height: 12px;
-    accent-color: var(--fd-primary);
-    cursor: pointer;
-    flex-shrink: 0;
+  .pipeline-panel__latest-toggle--active {
+    background-color: var(--fd-primary-muted);
+    border-color: var(--fd-primary);
+    color: var(--fd-primary);
   }
 
   .pipeline-panel__content {

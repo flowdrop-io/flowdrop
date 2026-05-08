@@ -881,7 +881,7 @@
     display: flex;
     align-items: flex-end;
     gap: var(--fd-space-md);
-    max-width: 800px;
+    max-width: 760px;
     margin: 0 auto;
   }
 
@@ -1015,7 +1015,7 @@
     border-radius: var(--fd-radius-lg);
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-sm);
-    max-width: 800px;
+    max-width: 760px;
     margin: 0 auto;
   }
 

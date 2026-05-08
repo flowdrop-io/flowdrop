@@ -674,6 +674,10 @@
       {#if mode === 'standalone' || (getCurrentSession() && config.showSessionHeader !== false)}
         <header class="playground__header">
           {#if mode === 'standalone'}
+            <!-- Panel icon + label (mirrors PipelinePanel header) -->
+            <Icon icon="mdi:message-text-outline" class="playground__header-icon" />
+            <span class="playground__header-label">Sessions</span>
+
             <!-- Session chip — switches sessions via popover -->
             <div class="playground__session-chip-wrap">
               <button
@@ -683,7 +687,6 @@
                 onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
                 title="Switch session"
               >
-                <Icon icon="mdi:message-text-outline" />
                 <span class="playground__session-chip-name">
                   {getCurrentSession()?.name ?? 'No session'}
                 </span>
@@ -1216,11 +1219,25 @@
   .playground__header {
     display: flex;
     align-items: center;
+    gap: var(--fd-space-xs);
     height: var(--fd-playground-header-height);
-    padding: 0 var(--fd-space-2xl);
+    padding: 0 var(--fd-space-xl);
     border-bottom: 1px solid var(--fd-border);
     background-color: var(--fd-background);
     box-sizing: border-box;
+    flex-shrink: 0;
+  }
+
+  :global(.playground__header-icon) {
+    font-size: var(--fd-text-base);
+    color: var(--fd-muted-foreground);
+    flex-shrink: 0;
+  }
+
+  .playground__header-label {
+    font-size: var(--fd-text-sm);
+    font-weight: 600;
+    color: var(--fd-foreground);
     flex-shrink: 0;
   }
 
@@ -1291,9 +1308,9 @@
   }
 
   .playground__log-toggle--active {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-    color: var(--fd-foreground);
+    background-color: var(--fd-primary-muted);
+    border-color: var(--fd-primary);
+    color: var(--fd-primary);
   }
 
   /* Session chip (standalone mode) */

@@ -74,7 +74,7 @@
   function handleResizerPointerMove(e: PointerEvent) {
     if (!isResizing || !splitEl) return;
     const rect = splitEl.getBoundingClientRect();
-    pipelineWidth = Math.min(Math.max(e.clientX - rect.left, 300), rect.width * 0.75);
+    pipelineWidth = Math.min(Math.max(e.clientX - rect.left, rect.width - 760), rect.width * 0.75);
   }
 
   function handleResizerPointerUp() {
@@ -173,7 +173,7 @@
         </div>
       {/if}
 
-      <div class="playground-page__primary">
+      <div class="playground-page__primary" class:playground-page__primary--solo={!getPipelinePanelOpen()}>
         {#if loading}
           <div class="playground-page__loading">
             <Icon icon="mdi:loading" class="playground-page__loading-icon" />
@@ -251,9 +251,16 @@
   .playground-page__primary {
     flex: 1;
     min-width: 0;
+    max-width: 760px;
+    margin: 0 auto;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  .playground-page__primary--solo {
+    border-left: 1px solid var(--fd-border);
+    border-right: 1px solid var(--fd-border);
   }
 
   .playground-page__resizer {
@@ -296,7 +303,7 @@
   }
 
   .playground-page__pipeline {
-    min-width: 300px;
+    min-width: calc(100% - 760px);
     max-width: 75%;
     overflow: hidden;
     flex-shrink: 0;
