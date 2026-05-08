@@ -57,6 +57,8 @@
     onTogglePanel?: () => void;
     /** Whether the pipeline panel is currently open (for toggle button active state) */
     isPipelinePanelOpen?: boolean;
+    /** When provided, session switches and creation navigate to a URL instead of mutating store state */
+    onSessionNavigate?: (sessionId: string) => void;
   }
 
   let {
@@ -69,6 +71,7 @@
     onClose,
     onTogglePanel,
     isPipelinePanelOpen = false,
+    onSessionNavigate,
   }: Props = $props();
 
   /** Current input values from InputCollector */
@@ -293,6 +296,13 @@
     try {
       const sessionName = `Session ${getSessions().length + 1}`;
       const session = await playgroundService.createSession(workflowId, sessionName);
+
+      if (onSessionNavigate) {
+        // URL-based routing: navigate to the new session; page remount handles store init
+        onSessionNavigate(session.id);
+        return;
+      }
+
       playgroundActions.addSession(session);
       playgroundActions.setCurrentSession(session);
       playgroundActions.clearMessages();
@@ -686,7 +696,7 @@
                     type="button"
                     class="playground__session-popover-item playground__session-popover-item--new"
                     disabled={getIsLoading()}
-                    onclick={() => { void handleCreateSession(); sessionDropdownOpen = false; }}
+                    onclick={() => { sessionDropdownOpen = false; void handleCreateSession(); }}
                   >
                     <Icon icon="mdi:plus" />
                     <span>New session</span>
@@ -700,7 +710,14 @@
                           type="button"
                           class="playground__session-popover-item"
                           class:playground__session-popover-item--active={isActive}
-                          onclick={() => { void handleSelectSession(session.id); sessionDropdownOpen = false; }}
+                          onclick={() => {
+                            sessionDropdownOpen = false;
+                            if (onSessionNavigate) {
+                              onSessionNavigate(session.id);
+                            } else {
+                              void handleSelectSession(session.id);
+                            }
+                          }}
                         >
                           {#if isActive}
                             <Icon icon="mdi:check" class="playground__session-popover-check" />
