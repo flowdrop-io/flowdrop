@@ -287,11 +287,11 @@
   // In Svelte 5, $effect cleanup runs both on re-execution and component destroy.
 </script>
 
-<div class="pipeline-status-container">
+<div class="pipeline-status-container" class:pipeline-status-container--embedded={isEmbedded}>
   <!-- Workflow Visualization using App component -->
   <App
     {workflow}
-    height="100vh"
+    height={isEmbedded ? '100%' : '100vh'}
     width="100%"
     showNavbar={false}
     disableSidebar={true}
