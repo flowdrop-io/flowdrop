@@ -80,6 +80,9 @@
   /** Track which session's dropdown menu is open */
   let openMenuId = $state<string | null>(null);
 
+  /** Whether the runs sub-section is expanded under the active session */
+  let runsExpanded = $state(false);
+
   /** Track if initial session has been loaded to prevent duplicate loads */
   let initialSessionLoaded = $state(false);
 
@@ -292,6 +295,7 @@
    */
   async function handleSelectSession(sessionId: string): Promise<void> {
     playgroundActions.pinExecution(null);
+    runsExpanded = false;
     const currentSessionId = getCurrentSession()?.id;
     if (currentSessionId === sessionId) {
       return;
@@ -536,18 +540,21 @@
           {/if}
         </div>
 
-        <!-- New Session Section -->
+        <!-- Sessions Section -->
         <div class="playground__section">
-          <button
-            type="button"
-            class="playground__new-session-btn"
-            onclick={handleCreateSession}
-            disabled={getIsLoading()}
-            title="Start a new session"
-          >
-            <Icon icon="mdi:plus" />
-            <span>New Session</span>
-          </button>
+          <!-- Section header with inline add button -->
+          <div class="playground__section-header">
+            <span class="playground__section-label">Sessions</span>
+            <button
+              type="button"
+              class="playground__section-add"
+              onclick={handleCreateSession}
+              disabled={getIsLoading()}
+              title="New session"
+            >
+              <Icon icon="mdi:plus" />
+            </button>
+          </div>
 
           <!-- Sessions List -->
           <div class="playground__sessions-wrap">
@@ -558,64 +565,80 @@
                 </div>
               {:else}
                 {#each getSessions() as session (session.id)}
-                  <div
-                    class="playground__session"
-                    class:playground__session--active={getCurrentSession()?.id === session.id}
-                    role="button"
-                    tabindex="0"
-                    title="Click to load this session"
-                    aria-label={m().layout.loadSession({ name: session.name })}
-                    onclick={() => handleSelectSession(session.id)}
-                    onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
-                  >
-                    <span class="playground__session-name" title={session.name}>
-                      {session.name}
-                    </span>
-                    <div class="playground__session-actions">
-                      <button
-                        type="button"
-                        class="playground__session-menu"
-                        class:playground__session-menu--open={openMenuId === session.id}
-                        onclick={(e) => handleMenuToggle(e, session.id)}
-                        title="Session options"
-                      >
-                        <Icon icon="mdi:dots-vertical" />
-                      </button>
-                      {#if openMenuId === session.id}
-                        <div class="playground__session-dropdown">
-                          <button
-                            type="button"
-                            class="playground__session-dropdown-item playground__session-dropdown-item--danger"
-                            onclick={(e) => handleMenuDelete(e, session.id)}
-                          >
-                            <Icon icon="mdi:delete-outline" />
-                            <span>Delete</span>
-                          </button>
-                        </div>
-                      {/if}
+                  {@const isActive = getCurrentSession()?.id === session.id}
+                  <div class="playground__session-group">
+                    <div
+                      class="playground__session"
+                      class:playground__session--active={isActive}
+                      role="button"
+                      tabindex="0"
+                      title="Click to load this session"
+                      aria-label={m().layout.loadSession({ name: session.name })}
+                      onclick={() => handleSelectSession(session.id)}
+                      onkeydown={(e) => e.key === 'Enter' && handleSelectSession(session.id)}
+                    >
+                      <span class="playground__session-name" title={session.name}>
+                        {session.name}
+                      </span>
+                      <div class="playground__session-actions">
+                        <button
+                          type="button"
+                          class="playground__session-menu"
+                          class:playground__session-menu--open={openMenuId === session.id}
+                          onclick={(e) => handleMenuToggle(e, session.id)}
+                          title="Session options"
+                        >
+                          <Icon icon="mdi:dots-vertical" />
+                        </button>
+                        {#if openMenuId === session.id}
+                          <div class="playground__session-dropdown">
+                            <button
+                              type="button"
+                              class="playground__session-dropdown-item playground__session-dropdown-item--danger"
+                              onclick={(e) => handleMenuDelete(e, session.id)}
+                            >
+                              <Icon icon="mdi:delete-outline" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        {/if}
+                      </div>
                     </div>
+                    <!-- Collapsible runs sub-section under active session -->
+                    {#if isActive && getCurrentSession()?.executions?.length}
+                      <div class="playground__runs-section">
+                        <button
+                          type="button"
+                          class="playground__runs-toggle"
+                          onclick={() => (runsExpanded = !runsExpanded)}
+                        >
+                          <Icon icon={runsExpanded ? 'mdi:chevron-down' : 'mdi:chevron-right'} />
+                          <span>Runs</span>
+                          <span class="playground__runs-count">{getCurrentSession()!.executions!.length}</span>
+                        </button>
+                        {#if runsExpanded}
+                          <div class="playground__executions-inline">
+                            <ExecutionList
+                              executions={getCurrentSession()!.executions!}
+                              activeExecutionId={getActiveExecutionId()}
+                              latestExecutionId={getLatestExecutionId()}
+                              onSelect={(id) => {
+                                if (id === getLatestExecutionId()) {
+                                  playgroundActions.pinExecution(null);
+                                } else {
+                                  playgroundActions.pinExecution(id);
+                                }
+                              }}
+                            />
+                          </div>
+                        {/if}
+                      </div>
+                    {/if}
                   </div>
                 {/each}
               {/if}
             </div>
           </div>
-          {#if getCurrentSession()?.executions?.length}
-            <div class="playground__executions-section">
-              <div class="playground__executions-header">Executions</div>
-              <ExecutionList
-                executions={getCurrentSession()!.executions!}
-                activeExecutionId={getActiveExecutionId()}
-                latestExecutionId={getLatestExecutionId()}
-                onSelect={(id) => {
-                  if (id === getLatestExecutionId()) {
-                    playgroundActions.pinExecution(null);
-                  } else {
-                    playgroundActions.pinExecution(id);
-                  }
-                }}
-              />
-            </div>
-          {/if}
         </div>
       </aside>
     {/if}
@@ -811,51 +834,119 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    padding: var(--fd-space-md) var(--fd-space-md) 0;
+    padding: 0 var(--fd-space-md);
   }
 
-  /* New Session – neutral full-width button with icon */
-  .playground__new-session-btn {
+  /* Section header: label + add icon */
+  .playground__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--fd-space-md) var(--fd-space-xs) var(--fd-space-xs);
+  }
+
+  .playground__section-label {
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    color: var(--fd-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .playground__section-add {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--fd-space-xs);
-    width: 100%;
-    padding: var(--fd-space-sm) var(--fd-space-xl);
-    border: 1px solid var(--fd-border);
+    width: var(--fd-playground-icon-btn-size);
+    height: var(--fd-playground-icon-btn-size);
+    border: none;
     border-radius: var(--fd-radius-md);
-    background-color: var(--fd-background);
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    transition: all var(--fd-transition-fast);
+  }
+
+  .playground__section-add:hover:not(:disabled) {
+    background-color: var(--fd-muted);
     color: var(--fd-foreground);
-    font-size: var(--fd-text-sm);
+  }
+
+  .playground__section-add:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Session group wraps session row + its inline runs */
+  .playground__session-group {
+    margin-bottom: var(--fd-space-3xs);
+  }
+
+  /* Collapsible runs sub-section under active session */
+  .playground__runs-section {
+    margin-bottom: var(--fd-space-3xs);
+  }
+
+  .playground__runs-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-3xs);
+    width: 100%;
+    padding: var(--fd-space-3xs) var(--fd-space-sm);
+    padding-left: calc(var(--fd-space-md) + var(--fd-space-3xs));
+    border: none;
+    border-radius: var(--fd-radius-sm);
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
     font-weight: 500;
     cursor: pointer;
-    transition:
-      background-color var(--fd-transition-fast),
-      border-color var(--fd-transition-fast),
-      transform 0.1s ease;
-    box-sizing: border-box;
+    text-align: left;
+    transition: all var(--fd-transition-fast);
   }
 
-  .playground__new-session-btn:hover:not(:disabled) {
+  .playground__runs-toggle:hover {
     background-color: var(--fd-muted);
-    border-color: var(--fd-border);
-    transform: translateY(-1px);
+    color: var(--fd-foreground);
   }
 
-  .playground__new-session-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
+  .playground__runs-toggle :global(svg) {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
   }
 
-  .playground__new-session-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+  .playground__runs-count {
+    margin-left: auto;
+    font-size: var(--fd-text-2xs);
+    font-weight: 600;
+    color: var(--fd-muted-foreground);
+    background: var(--fd-muted);
+    border-radius: 999px;
+    padding: 1px var(--fd-space-xs);
+    min-width: 1.4em;
+    text-align: center;
+    line-height: 1.4;
   }
 
-  .playground__new-session-btn :global(svg) {
-    width: 1.125rem;
-    height: 1.125rem;
+  /* Inline runs tree under active session */
+  .playground__executions-inline {
+    margin-left: calc(var(--fd-space-md) + var(--fd-space-xs));
+    margin-bottom: var(--fd-space-xs);
+    border-left: 2px solid var(--fd-border);
+    padding-left: var(--fd-space-xs);
+  }
+
+  .playground__executions-inline :global(.execution-list__item) {
+    padding: var(--fd-space-xs) var(--fd-space-sm);
+    font-size: var(--fd-text-xs);
+    border-radius: var(--fd-radius-sm);
+    border-left-width: 2px;
+  }
+
+  .playground__executions-inline :global(.execution-list) {
+    gap: 1px;
+    padding: var(--fd-space-3xs) 0;
   }
 
   /* Sessions */
@@ -886,7 +977,6 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--fd-space-sm) var(--fd-space-md);
-    margin-bottom: var(--fd-space-3xs);
     border-radius: var(--fd-radius-md);
     border-left: 3px solid transparent;
     cursor: pointer;
@@ -1160,20 +1250,6 @@
     to {
       transform: rotate(360deg);
     }
-  }
-
-  /* Executions section below session list */
-  .playground__executions-section {
-    border-top: 1px solid var(--fd-border);
-    padding-top: var(--fd-space-sm);
-    margin-top: var(--fd-space-sm);
-  }
-
-  .playground__executions-header {
-    padding: var(--fd-space-3xs) var(--fd-space-md);
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    color: var(--fd-muted-foreground);
   }
 
   /* Responsive */
