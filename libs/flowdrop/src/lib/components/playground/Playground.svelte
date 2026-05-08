@@ -89,6 +89,9 @@
   /** Track if auto-run has already been triggered to prevent duplicate executions */
   let autoRunTriggered = $state(false);
 
+  /** Whether log messages are visible in the chat panel */
+  let showLogs = $state(true);
+
   /**
    * Initialize the playground on mount
    */
@@ -633,6 +636,18 @@
               <Icon icon="mdi:close" />
             </button>
           </div>
+          <div class="playground__header-actions">
+            <button
+              type="button"
+              class="playground__log-toggle"
+              class:playground__log-toggle--active={showLogs}
+              onclick={() => (showLogs = !showLogs)}
+              title={showLogs ? 'Hide log messages' : 'Show log messages'}
+            >
+              <Icon icon="mdi:console" />
+              Logs
+            </button>
+          </div>
         </header>
       {/if}
 
@@ -670,6 +685,7 @@
             onSendMessage={handleSendMessage}
             onStopExecution={handleStopExecution}
             onInterruptResolved={handleInterruptResolved}
+            bind:showLogs
           />
         {/if}
       </div>
@@ -1040,6 +1056,45 @@
 
   .playground__header-close:hover {
     background-color: var(--fd-muted);
+    color: var(--fd-foreground);
+  }
+
+  .playground__header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    margin-left: auto;
+  }
+
+  .playground__log-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-3xs);
+    padding: var(--fd-space-3xs) var(--fd-space-sm);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--fd-transition-fast);
+    line-height: 1;
+  }
+
+  .playground__log-toggle :global(svg) {
+    font-size: var(--fd-text-xs);
+  }
+
+  .playground__log-toggle:hover {
+    background-color: var(--fd-muted);
+    color: var(--fd-foreground);
+    border-color: var(--fd-border-strong);
+  }
+
+  .playground__log-toggle--active {
+    background-color: var(--fd-muted);
+    border-color: var(--fd-border-strong);
     color: var(--fd-foreground);
   }
 

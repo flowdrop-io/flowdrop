@@ -75,6 +75,8 @@
      * @default true
      */
     compactSystemMessages?: boolean;
+    /** Whether log messages are visible — bindable so parent can host the toggle */
+    showLogs?: boolean;
   }
 
   let {
@@ -89,7 +91,8 @@
     showChatInput = true,
     showRunButton = true,
     predefinedMessage,
-    compactSystemMessages = true
+    compactSystemMessages = true,
+    showLogs = $bindable(true)
   }: Props = $props();
 
   // Hoist playground branches — states/actions are read 8+ times each in the
@@ -124,9 +127,6 @@
 
   /** Reference to the input field */
   let inputField = $state<HTMLTextAreaElement>();
-
-  /** Local log visibility toggle — defaults to on so developers see debug info */
-  let showLogs = $state(true);
 
   /**
    * Filter messages based on local showLogs toggle.
@@ -497,22 +497,6 @@
 </script>
 
 <div class="chat-panel">
-  <!-- Toolbar: log toggle (only shown when a session is active) -->
-  {#if getCurrentSession()}
-    <div class="chat-panel__toolbar">
-      <button
-        type="button"
-        class="chat-panel__log-toggle"
-        class:chat-panel__log-toggle--active={showLogs}
-        onclick={() => (showLogs = !showLogs)}
-        title={showLogs ? 'Hide log messages' : 'Show log messages'}
-      >
-        <Icon icon="mdi:console" />
-        Logs
-      </button>
-    </div>
-  {/if}
-
   <!-- Messages Container -->
   <div class="chat-panel__messages" bind:this={messagesContainer}>
     {#if showWelcome}
@@ -730,50 +714,6 @@
     height: 100%;
     min-height: 0; /* Critical: allows flexbox to shrink properly */
     background-color: var(--fd-background);
-  }
-
-  /* Toolbar */
-  .chat-panel__toolbar {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: 0 var(--fd-space-3xl);
-    height: 2.25rem;
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-muted);
-  }
-
-  .chat-panel__log-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-3xs) var(--fd-space-sm);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background: var(--fd-background);
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    line-height: 1;
-  }
-
-  .chat-panel__log-toggle :global(svg) {
-    font-size: var(--fd-text-xs);
-  }
-
-  .chat-panel__log-toggle:hover {
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
-    border-color: var(--fd-border-strong);
-  }
-
-  .chat-panel__log-toggle--active {
-    background-color: var(--fd-background);
-    border-color: var(--fd-border-strong);
-    color: var(--fd-foreground);
   }
 
   /* Execution separator */
