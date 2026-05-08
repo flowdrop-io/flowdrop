@@ -141,7 +141,7 @@
         {
           label: getPipelinePanelOpen() ? 'Hide Pipeline' : 'Show Pipeline',
           href: '#',
-          icon: 'mdi:graph',
+          icon: 'mdi:source-branch',
           variant: 'outline' as const,
           onclick: (e: Event) => {
             e.preventDefault();

@@ -518,7 +518,7 @@
               title={isPipelinePanelOpen ? 'Hide pipeline' : 'Show pipeline'}
               onclick={onTogglePanel}
             >
-              <Icon icon="mdi:graph" />
+              <Icon icon="mdi:source-branch" />
             </button>
           {/if}
           {#if (mode === 'embedded' || mode === 'modal') && onClose}

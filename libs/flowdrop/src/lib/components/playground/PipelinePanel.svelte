@@ -16,7 +16,7 @@
 
 <div class="pipeline-panel">
   <div class="pipeline-panel__header">
-    <Icon icon="mdi:graph" class="pipeline-panel__icon" />
+    <Icon icon="mdi:source-branch" class="pipeline-panel__icon" />
     <span class="pipeline-panel__title">Pipeline</span>
     {#if pipelineId}
       {#if isPinned}
@@ -35,7 +35,7 @@
     {/key}
   {:else}
     <div class="pipeline-panel__empty">
-      <Icon icon="mdi:graph-outline" class="pipeline-panel__empty-icon" />
+      <Icon icon="mdi:source-branch" class="pipeline-panel__empty-icon" />
       <p class="pipeline-panel__empty-text">Run the workflow to see the pipeline.</p>
     </div>
   {/if}
