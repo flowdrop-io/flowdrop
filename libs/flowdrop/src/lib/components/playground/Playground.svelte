@@ -95,6 +95,21 @@
   /** Whether log messages are visible in the chat panel */
   let showLogs = $state(true);
 
+  /** Whether the session switcher popover is open (standalone mode) */
+  let sessionDropdownOpen = $state(false);
+
+  // Close session popover on outside click
+  $effect(() => {
+    if (!sessionDropdownOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest('.playground__session-chip-wrap')) {
+        sessionDropdownOpen = false;
+      }
+    }
+    document.addEventListener('click', handleOutside);
+    return () => document.removeEventListener('click', handleOutside);
+  });
+
   /**
    * Initialize the playground on mount
    */
@@ -506,8 +521,8 @@
   class:playground--no-sidebar={config.showSidebar === false}
 >
   <div class="playground__container">
-    <!-- Sidebar (conditionally rendered based on config.showSidebar) -->
-    {#if config.showSidebar !== false}
+    <!-- Sidebar — hidden in standalone mode (session switcher lives in the header chip instead) -->
+    {#if config.showSidebar === true || (config.showSidebar !== false && mode !== 'standalone')}
       <aside
         class="playground__sidebar"
         style={config.sidebarWidth ? `--fd-playground-sidebar-width: ${config.sidebarWidth}` : ''}
@@ -645,21 +660,94 @@
 
     <!-- Main Content -->
     <main class="playground__main">
-      <!-- Session Header (conditionally rendered based on config.showSessionHeader) -->
-      {#if getCurrentSession() && config.showSessionHeader !== false}
+      <!-- Session Header -->
+      {#if mode === 'standalone' || (getCurrentSession() && config.showSessionHeader !== false)}
         <header class="playground__header">
-          <div class="playground__header-group">
-            <h2 class="playground__header-title">{getCurrentSession()?.name}</h2>
-            <button
-              type="button"
-              class="playground__header-close"
-              onclick={handleCloseSession}
-              title="Close session"
-            >
-              <Icon icon="mdi:close" />
-            </button>
-          </div>
+          {#if mode === 'standalone'}
+            <!-- Session chip — switches sessions via popover -->
+            <div class="playground__session-chip-wrap">
+              <button
+                type="button"
+                class="playground__session-chip"
+                class:playground__session-chip--open={sessionDropdownOpen}
+                onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
+                title="Switch session"
+              >
+                <Icon icon="mdi:message-text-outline" />
+                <span class="playground__session-chip-name">
+                  {getCurrentSession()?.name ?? 'No session'}
+                </span>
+                <Icon icon={sessionDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'} class="playground__session-chip-chevron" />
+              </button>
+
+              {#if sessionDropdownOpen}
+                <div class="playground__session-popover">
+                  <button
+                    type="button"
+                    class="playground__session-popover-item playground__session-popover-item--new"
+                    disabled={getIsLoading()}
+                    onclick={() => { void handleCreateSession(); sessionDropdownOpen = false; }}
+                  >
+                    <Icon icon="mdi:plus" />
+                    <span>New session</span>
+                  </button>
+                  {#if getSessions().length > 0}
+                    <div class="playground__session-popover-divider"></div>
+                    {#each getSessions() as session (session.id)}
+                      {@const isActive = getCurrentSession()?.id === session.id}
+                      <div class="playground__session-popover-row">
+                        <button
+                          type="button"
+                          class="playground__session-popover-item"
+                          class:playground__session-popover-item--active={isActive}
+                          onclick={() => { void handleSelectSession(session.id); sessionDropdownOpen = false; }}
+                        >
+                          {#if isActive}
+                            <Icon icon="mdi:check" class="playground__session-popover-check" />
+                          {:else}
+                            <Icon icon="mdi:message-outline" />
+                          {/if}
+                          <span>{session.name}</span>
+                        </button>
+                        <button
+                          type="button"
+                          class="playground__session-popover-delete"
+                          onclick={(e) => { handleMenuDelete(e, session.id); sessionDropdownOpen = false; }}
+                          title="Delete session"
+                        >
+                          <Icon icon="mdi:delete-outline" />
+                        </button>
+                      </div>
+                    {/each}
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <!-- Embedded / modal: original title + close -->
+            <div class="playground__header-group">
+              <h2 class="playground__header-title">{getCurrentSession()?.name}</h2>
+              <button
+                type="button"
+                class="playground__header-close"
+                onclick={handleCloseSession}
+                title="Close session"
+              >
+                <Icon icon="mdi:close" />
+              </button>
+            </div>
+          {/if}
+
           <div class="playground__header-actions">
+            {#if mode === 'standalone'}
+              <a
+                href="/workflow/{workflowId}/edit"
+                class="playground__edit-link"
+                title="Edit workflow"
+              >
+                <Icon icon="mdi:pencil-outline" />
+              </a>
+            {/if}
             <button
               type="button"
               class="playground__log-toggle"
@@ -1186,6 +1274,168 @@
     background-color: var(--fd-muted);
     border-color: var(--fd-border-strong);
     color: var(--fd-foreground);
+  }
+
+  /* Session chip (standalone mode) */
+  .playground__session-chip-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .playground__session-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-3xs) var(--fd-space-sm) var(--fd-space-3xs) var(--fd-space-xs);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background: var(--fd-background);
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--fd-transition-fast);
+    max-width: 220px;
+    line-height: 1;
+  }
+
+  .playground__session-chip :global(svg) {
+    flex-shrink: 0;
+    font-size: var(--fd-text-sm);
+    color: var(--fd-muted-foreground);
+  }
+
+  .playground__session-chip:hover {
+    background-color: var(--fd-muted);
+    border-color: var(--fd-border-strong);
+  }
+
+  .playground__session-chip--open {
+    background-color: var(--fd-muted);
+    border-color: var(--fd-border-strong);
+  }
+
+  .playground__session-chip-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  :global(.playground__session-chip-chevron) {
+    color: var(--fd-muted-foreground);
+    flex-shrink: 0;
+  }
+
+  /* Session switcher popover */
+  .playground__session-popover {
+    position: absolute;
+    top: calc(100% + var(--fd-space-xs));
+    left: 0;
+    z-index: 50;
+    min-width: 220px;
+    max-width: 300px;
+    padding: var(--fd-space-xs);
+    background-color: var(--fd-background);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-lg);
+    box-shadow: var(--fd-shadow-lg);
+  }
+
+  .playground__session-popover-divider {
+    height: 1px;
+    background-color: var(--fd-border-muted);
+    margin: var(--fd-space-xs) 0;
+  }
+
+  .playground__session-popover-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .playground__session-popover-item {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-sm);
+    flex: 1;
+    min-width: 0;
+    padding: var(--fd-space-sm) var(--fd-space-sm);
+    border: none;
+    border-radius: var(--fd-radius-sm);
+    background: transparent;
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-sm);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--fd-transition-fast);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .playground__session-popover-item :global(svg) {
+    flex-shrink: 0;
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-sm);
+  }
+
+  .playground__session-popover-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .playground__session-popover-item:hover {
+    background-color: var(--fd-muted);
+  }
+
+  .playground__session-popover-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .playground__session-popover-item--new {
+    color: var(--fd-primary);
+    font-weight: 500;
+  }
+
+  .playground__session-popover-item--new :global(svg) {
+    color: var(--fd-primary);
+  }
+
+  .playground__session-popover-item--active {
+    font-weight: 500;
+  }
+
+  :global(.playground__session-popover-check) {
+    color: var(--fd-primary) !important;
+  }
+
+  .playground__session-popover-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: var(--fd-size-icon-btn);
+    height: var(--fd-size-icon-btn);
+    border: none;
+    border-radius: var(--fd-radius-sm);
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--fd-transition-fast);
+  }
+
+  .playground__session-popover-row:hover .playground__session-popover-delete {
+    opacity: 1;
+  }
+
+  .playground__session-popover-delete:hover {
+    background-color: var(--fd-error-muted);
+    color: var(--fd-error);
+    opacity: 1;
   }
 
   /* Error */
