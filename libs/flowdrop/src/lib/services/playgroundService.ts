@@ -308,19 +308,21 @@ export class PlaygroundService {
    * @param callback - Callback function to handle new messages
    * @param interval - Polling interval in milliseconds (default: 1500)
    * @param shouldStopPolling - Optional override for stop conditions (default: defaultShouldStopPolling)
+   * @param initialTimestamp - Optional timestamp to seed polling from (avoids re-fetching already loaded messages)
    */
   startPolling(
     sessionId: string,
     callback: (response: PlaygroundMessagesApiResponse) => void,
     interval: number = DEFAULT_POLLING_INTERVAL,
-    shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean
+    shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean,
+    initialTimestamp?: string | null
   ): void {
     // Stop any existing polling
     this.stopPolling();
 
     this.pollingSessionId = sessionId;
     this.currentBackoff = interval;
-    this.lastMessageTimestamp = null;
+    this.lastMessageTimestamp = initialTimestamp ?? null;
 
     const shouldStop = shouldStopPolling ?? defaultShouldStopPolling;
 
@@ -395,6 +397,15 @@ export class PlaygroundService {
    */
   getPollingSessionId(): string | null {
     return this.pollingSessionId;
+  }
+
+  /**
+   * Get the last message timestamp used for incremental polling
+   *
+   * @returns The last message timestamp, or null
+   */
+  getLastMessageTimestamp(): string | null {
+    return this.lastMessageTimestamp;
   }
 }
 
