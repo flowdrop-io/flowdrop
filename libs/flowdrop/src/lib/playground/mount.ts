@@ -63,8 +63,9 @@ import {
   getCurrentSession,
   getSessions,
   getMessages,
+  getIsExecuting,
   playgroundActions,
-  createPollingCallback,
+  applyServerResponse,
   subscribeToSessionStatus
 } from '../stores/playgroundStore.svelte.js';
 
@@ -222,7 +223,6 @@ function buildMountedPlayground(
     previousStatus: PlaygroundSessionStatus
   ) => void
 ): MountedPlayground {
-  const pollingCallback = createPollingCallback(config.isTerminalStatus);
   const pollingInterval = config.pollingInterval ?? 1500;
   const unsubscribeStatus = onSessionStatusChange
     ? subscribeToSessionStatus(onSessionStatusChange)
@@ -238,15 +238,20 @@ function buildMountedPlayground(
     getCurrentSession: () => getCurrentSession(),
     getSessions: () => getSessions(),
     getMessageCount: () => getMessages().length,
-    isExecuting: () => playgroundService.isPolling(),
+    isExecuting: () => getIsExecuting(),
     stopPolling: () => playgroundService.stopPolling(),
     startPolling: () => {
       const session = getCurrentSession();
       if (session) {
-        playgroundService.startPolling(session.id, pollingCallback, pollingInterval, config.shouldStopPolling);
+        playgroundService.startPolling(
+          session.id,
+          (response) => applyServerResponse(response),
+          pollingInterval,
+          config.shouldStopPolling
+        );
       }
     },
-    pushMessages: (response: PlaygroundMessagesApiResponse) => pollingCallback(response),
+    pushMessages: (response: PlaygroundMessagesApiResponse) => applyServerResponse(response),
     reset: () => {
       playgroundService.stopPolling();
       playgroundActions.reset();
