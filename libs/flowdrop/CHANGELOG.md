@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Integrated pipeline view in the playground**: A toggleable side panel displays a live embedded pipeline canvas alongside the chat. The panel can be shown or hidden via a pipeline toggle in the session header, without leaving the playground.
+- **Resizable pipeline panel**: Users can drag the separator between the pipeline panel and the chat panel to adjust the split to their preference.
+- **Run picker and "latest" toggle in the pipeline panel header**: Select a specific run to inspect directly from the panel, or pin to the latest run automatically.
+- **Session chip dropdown in standalone playground**: Replaces the previous sidebar with a compact chip that opens a dropdown for switching sessions, reducing visual clutter.
+- **Global skin token propagation**: Skin design tokens are now applied from the top-level app layout so all embedded views inherit the correct theme.
+
+### Fixed
+
+- **Pipeline panel canvas height**: The embedded canvas now fills the panel correctly instead of expanding to `100vh`, which previously caused the panel to overflow the viewport.
+- **Pipeline toggle icon**: Corrected to `mdi:source-branch` to match the icon used in the Pipelines navigation item.
+
+### Changed
+
+- **Session routing**: Playground sessions now navigate via dedicated URL segments for cleaner, bookmarkable URLs.
+- **Pipeline and Logs toggles moved to session header**: Both controls now live beside the session title rather than being split across the navbar and chat panel.
+- **Edit workflow link moved to navbar**: Relocated from the chat header for more consistent top-level navigation.
+- **Playground layout**: Pipeline panel is now in the middle column; chat panel is on the right.
+- **Log display**: Log entries replaced with compact terminal-style rows for denser, more readable output.
+- **Chat bubble design**: Modernized visual treatment with updated typography and spacing.
+- **Pipeline run chip label**: The current run label is always visible in the pipeline chip regardless of pin state.
+- **Design tokens**: Hardcoded colour and sizing values in the playground replaced with `--fd-*` design tokens. Pipeline panel and embedded canvas use `--fd-muted` background.
+
 ## [1.8.1] - 2026-04-28
 
 ### Fixed
