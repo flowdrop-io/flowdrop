@@ -134,32 +134,15 @@
   const displayMessages = $derived(showLogs ? getMessages() : getChatMessages());
 
   // ---------------------------------------------------------------------------
-  /**
-   * Track previous message count for detecting new messages.
-   * We only want to auto-scroll when NEW messages are added,
-   * not when existing messages are updated.
-   */
   let previousMessageCount = $state(0);
+  let userScrolledUp = $state(false);
 
-  /**
-   * Check if user is near the bottom of the scroll container.
-   * Used to determine if we should auto-scroll when new messages arrive.
-   * If user has scrolled up to read previous messages, we don't interrupt them.
-   *
-   * @param threshold - Pixels from bottom to consider "near bottom"
-   * @returns True if user is within threshold of the bottom
-   */
-  function isNearBottom(threshold: number = 100): boolean {
-    if (!messagesContainer) return true;
+  function handleScroll() {
+    if (!messagesContainer) return;
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
-    return scrollHeight - scrollTop - clientHeight <= threshold;
+    userScrolledUp = scrollHeight - scrollTop - clientHeight > 50;
   }
 
-  /**
-   * Check if a form element inside the messages container has focus.
-   * When user is interacting with a form (e.g., interrupt prompt),
-   * we should not auto-scroll as it disrupts their input.
-   */
   function isFormFocused(): boolean {
     if (!messagesContainer) return false;
     const activeElement = document.activeElement;
@@ -337,58 +320,25 @@
   $effect(() => {
     const session = getCurrentSession();
     if (session) {
-      // Reset to enabled state for new/changed sessions
       runEnabled = true;
-      // Clear processed IDs for the new session
       processedEnableRunIds = new Set();
+      userScrolledUp = false;
     }
   });
 
-  /**
-   * Smart auto-scroll to bottom when NEW messages are added.
-   *
-   * Only scrolls if:
-   * 1. autoScroll prop is enabled
-   * 2. New messages were actually added (not just updates)
-   * 3. User is already near the bottom (hasn't scrolled up to read)
-   * 4. User is not interacting with a form inside the chat
-   *
-   * This prevents disruptive scrolling when:
-   * - User is reading previous messages
-   * - User is filling out an interrupt form
-   * - Messages are being updated (e.g., status changes)
-   */
   $effect(() => {
     const currentCount = displayMessages.length;
 
-    // Skip if auto-scroll is disabled or no container
     if (!autoScroll || !messagesContainer) {
       previousMessageCount = currentCount;
       return;
     }
 
-    // Check if this is a NEW message (count increased)
     const hasNewMessage = currentCount > previousMessageCount;
-
-    // Update the tracked count
     previousMessageCount = currentCount;
 
-    // Only scroll if there's a new message
-    if (!hasNewMessage) {
-      return;
-    }
+    if (!hasNewMessage || userScrolledUp || isFormFocused()) return;
 
-    // Don't scroll if user has scrolled up to read previous messages
-    if (!isNearBottom()) {
-      return;
-    }
-
-    // Don't scroll if user is interacting with a form
-    if (isFormFocused()) {
-      return;
-    }
-
-    // Safe to scroll to bottom
     tick().then(() => {
       if (messagesContainer) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -455,7 +405,7 @@
 
 <div class="chat-panel">
   <!-- Messages Container -->
-  <div class="chat-panel__messages" bind:this={messagesContainer}>
+  <div class="chat-panel__messages" bind:this={messagesContainer} onscroll={handleScroll}>
     {#if showWelcome}
       <!-- Welcome State (no session) -->
       <div class="chat-panel__welcome">
@@ -655,7 +605,6 @@
     min-height: 0; /* Critical: allows overflow to work in flex container */
     overflow-y: auto;
     padding: var(--fd-space-3xl);
-    scroll-behavior: smooth;
   }
 
   /* Welcome State */
