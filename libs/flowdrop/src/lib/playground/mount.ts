@@ -47,6 +47,7 @@
 import { mount, unmount } from 'svelte';
 import Playground from '../components/playground/Playground.svelte';
 import PlaygroundModal from '../components/playground/PlaygroundModal.svelte';
+import PlaygroundStudio from '../components/playground/PlaygroundStudio.svelte';
 import type { Workflow } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import type {
@@ -198,18 +199,59 @@ export interface MountedPlayground {
   reset: () => void;
 }
 
-/**
- * Internal state for a mounted Playground instance
- */
-interface MountedPlaygroundState {
-  /** Svelte component instance */
-  svelteApp: ReturnType<typeof mount>;
-  /** Container element */
-  container: HTMLElement;
-  /** Original container (for cleanup) */
-  originalContainer?: HTMLElement;
-  /** Workflow ID */
-  workflowId: string;
+async function resolveEndpointConfig(
+  endpointConfig: EndpointConfig | undefined
+): Promise<EndpointConfig | undefined> {
+  if (!endpointConfig) return undefined;
+  const { defaultEndpointConfig } = await import('../config/endpoints.js');
+  const resolved: EndpointConfig = {
+    ...defaultEndpointConfig,
+    ...endpointConfig,
+    endpoints: { ...defaultEndpointConfig.endpoints, ...endpointConfig.endpoints }
+  };
+  setEndpointConfig(resolved);
+  return resolved;
+}
+
+function buildMountedPlayground(
+  svelteApp: ReturnType<typeof mount>,
+  workflowId: string,
+  config: PlaygroundConfig,
+  onSessionStatusChange?: (
+    status: PlaygroundSessionStatus,
+    previousStatus: PlaygroundSessionStatus
+  ) => void
+): MountedPlayground {
+  const pollingCallback = createPollingCallback(config.isTerminalStatus);
+  const pollingInterval = config.pollingInterval ?? 1500;
+  const unsubscribeStatus = onSessionStatusChange
+    ? subscribeToSessionStatus(onSessionStatusChange)
+    : undefined;
+
+  return {
+    destroy: () => {
+      unsubscribeStatus?.();
+      playgroundService.stopPolling();
+      playgroundActions.reset();
+      unmount(svelteApp);
+    },
+    getCurrentSession: () => getCurrentSession(),
+    getSessions: () => getSessions(),
+    getMessageCount: () => getMessages().length,
+    isExecuting: () => playgroundService.isPolling(),
+    stopPolling: () => playgroundService.stopPolling(),
+    startPolling: () => {
+      const session = getCurrentSession();
+      if (session) {
+        playgroundService.startPolling(session.id, pollingCallback, pollingInterval, config.shouldStopPolling);
+      }
+    },
+    pushMessages: (response: PlaygroundMessagesApiResponse) => pollingCallback(response),
+    reset: () => {
+      playgroundService.stopPolling();
+      playgroundActions.reset();
+    }
+  };
 }
 
 /**
@@ -272,40 +314,17 @@ export async function mountPlayground(
     throw new Error('onClose callback is required for modal mode');
   }
 
-  // Set endpoint configuration if provided
-  let finalEndpointConfig: EndpointConfig | undefined;
+  const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
 
-  if (endpointConfig) {
-    // Merge with default configuration to ensure all required endpoints are present
-    const { defaultEndpointConfig } = await import('../config/endpoints.js');
-    finalEndpointConfig = {
-      ...defaultEndpointConfig,
-      ...endpointConfig,
-      endpoints: {
-        ...defaultEndpointConfig.endpoints,
-        ...endpointConfig.endpoints
-      }
-    };
-    setEndpointConfig(finalEndpointConfig);
-  }
-
-  // Handle modal mode differently
-  // For modal mode, PlaygroundModal creates its own backdrop, so we mount directly to body
-  // For other modes, use the provided container
   let targetContainer = container;
 
   if (mode === 'modal') {
-    // For modal mode, create a container in the body
-    // PlaygroundModal will handle the backdrop itself
     targetContainer = document.body;
   } else {
-    // Apply container styling for non-modal modes
     container.style.height = height;
     container.style.width = width;
   }
 
-  // Mount the appropriate component
-  // Separate the mount calls to avoid TypeScript inference issues with different props types
   let svelteApp: ReturnType<typeof mount>;
   if (mode === 'modal') {
     svelteApp = mount(PlaygroundModal, {
@@ -339,83 +358,7 @@ export async function mountPlayground(
     });
   }
 
-  // Store state for cleanup
-  const state: MountedPlaygroundState = {
-    svelteApp,
-    container: targetContainer,
-    originalContainer: mode === 'modal' ? container : undefined,
-    workflowId
-  };
-
-  // Create shared polling callback using lifecycle hooks from config
-  const pollingCallback = createPollingCallback(config.isTerminalStatus);
-  const pollingInterval = config.pollingInterval ?? 1500;
-
-  // Subscribe to session status changes if callback provided
-  let unsubscribeStatus: (() => void) | undefined;
-  if (onSessionStatusChange) {
-    unsubscribeStatus = subscribeToSessionStatus(onSessionStatusChange);
-  }
-
-  // Create the mounted playground interface
-  const mountedPlayground: MountedPlayground = {
-    destroy: () => {
-      // Unsubscribe from status changes
-      unsubscribeStatus?.();
-
-      // Stop any active polling
-      playgroundService.stopPolling();
-
-      // Reset playground state
-      playgroundActions.reset();
-
-      // Unmount Svelte component
-      unmount(state.svelteApp);
-    },
-
-    getCurrentSession: () => {
-      return getCurrentSession();
-    },
-
-    getSessions: () => {
-      return getSessions();
-    },
-
-    getMessageCount: () => {
-      return getMessages().length;
-    },
-
-    isExecuting: () => {
-      return playgroundService.isPolling();
-    },
-
-    stopPolling: () => {
-      playgroundService.stopPolling();
-    },
-
-    startPolling: () => {
-      const session = getCurrentSession();
-      if (session) {
-        playgroundService.startPolling(
-          session.id,
-          pollingCallback,
-          pollingInterval,
-          config.shouldStopPolling
-        );
-      }
-    },
-
-    pushMessages: (response: PlaygroundMessagesApiResponse) => {
-      pollingCallback(response);
-    },
-
-    reset: () => {
-      playgroundService.stopPolling();
-      playgroundActions.reset();
-    }
-  };
-
-  return mountedPlayground;
+  return buildMountedPlayground(svelteApp, workflowId, config, onSessionStatusChange);
 }
 
 /**
@@ -437,4 +380,67 @@ export function unmountPlayground(app: MountedPlayground): void {
   if (app && typeof app.destroy === 'function') {
     app.destroy();
   }
+}
+
+export interface PlaygroundStudioMountOptions extends PlaygroundMountOptions {
+  initialPipelineOpen?: boolean;
+  minChatWidth?: number;
+  initialPipelineWidth?: number;
+  onSessionNavigate?: (sessionId: string) => void;
+}
+
+export async function mountPlaygroundStudio(
+  container: HTMLElement,
+  options: PlaygroundStudioMountOptions
+): Promise<MountedPlayground> {
+  const {
+    workflowId,
+    workflow,
+    mode = 'standalone',
+    initialSessionId,
+    endpointConfig,
+    config = {},
+    height = '100%',
+    width = '100%',
+    initialPipelineOpen,
+    minChatWidth,
+    initialPipelineWidth,
+    onClose,
+    onSessionNavigate,
+    onSessionStatusChange
+  } = options;
+
+  if (!workflowId) {
+    throw new Error('workflowId is required for mountPlaygroundStudio()');
+  }
+  if (!container) {
+    throw new Error('container element is required for mountPlaygroundStudio()');
+  }
+  if (mode === 'modal') {
+    throw new Error('modal mode is not supported by mountPlaygroundStudio() — use mountPlayground() instead');
+  }
+
+  const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
+
+  container.style.height = height;
+  container.style.width = width;
+
+  const svelteApp = mount(PlaygroundStudio, {
+    target: container,
+    props: {
+      workflowId,
+      workflow,
+      mode,
+      initialSessionId,
+      endpointConfig: finalEndpointConfig,
+      config,
+      onClose,
+      onSessionNavigate,
+      initialPipelineOpen,
+      minChatWidth,
+      initialPipelineWidth
+    }
+  });
+
+  return buildMountedPlayground(svelteApp, workflowId, config, onSessionStatusChange);
 }

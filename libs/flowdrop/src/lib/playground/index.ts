@@ -299,7 +299,9 @@ export type { InterruptWithState } from '../stores/interruptStore.svelte.js';
 export {
   mountPlayground,
   unmountPlayground,
+  mountPlaygroundStudio,
   type PlaygroundMountOptions,
+  type PlaygroundStudioMountOptions,
   type MountedPlayground
 } from './mount.js';
 

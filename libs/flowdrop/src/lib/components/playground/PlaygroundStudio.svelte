@@ -54,7 +54,7 @@
     getCurrentSession,
     playgroundActions,
   } from '../../stores/playgroundStore.svelte.js';
-  import { setEndpointConfig } from '../../services/api.js';
+  import { setEndpointConfig, workflowApi } from '../../services/api.js';
   import { logger } from '../../utils/logger.js';
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
@@ -106,6 +106,16 @@
   let splitEl = $state<HTMLElement | null>(null);
   let pipelineWidth = $state(initialPipelineWidth);
   let isResizing = $state(false);
+  let containerWidth = $state(0);
+
+  $effect(() => {
+    if (!splitEl) return;
+    const observer = new ResizeObserver(([entry]) => {
+      containerWidth = entry.contentRect.width;
+    });
+    observer.observe(splitEl);
+    return () => observer.disconnect();
+  });
 
   onMount(() => {
     pipelinePanelActions.init();
@@ -130,31 +140,9 @@
     try {
       workflowLoading = true;
       workflowError = null;
-
-      const url = `${endpointConfig.baseUrl}/workflows/${encodeURIComponent(workflowId)}`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-      try {
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        const result = await response.json();
-        resolvedWorkflow = result.success && result.data ? result.data : result;
-        if (!resolvedWorkflow) throw new Error('No workflow data in response');
-      } catch (fetchErr) {
-        clearTimeout(timeoutId);
-        throw fetchErr;
-      }
+      resolvedWorkflow = await workflowApi.getWorkflow(workflowId);
     } catch (err) {
-      if (err instanceof Error) {
-        workflowError =
-          err.name === 'AbortError'
-            ? 'Request timed out. Check your connection and try again.'
-            : err.message;
-      } else {
-        workflowError = 'Failed to load workflow';
-      }
+      workflowError = err instanceof Error ? err.message : 'Failed to load workflow';
       logger.error('[PlaygroundStudio] Workflow load failed:', err);
     } finally {
       workflowLoading = false;
@@ -180,7 +168,7 @@
   }
 </script>
 
-<div class="playground-studio" class:playground-studio--resizing={isResizing} style="--playground-studio-chat-width: {minChatWidth}px">
+<div class="playground-studio" class:playground-studio--resizing={isResizing} style="--playground-studio-min-chat-width: {minChatWidth}px">
   <div class="playground-studio__panes" bind:this={splitEl}>
     {#if getPipelinePanelOpen() && resolvedWorkflow && endpointConfig}
       {@const activeId = getActiveExecutionId()}
@@ -201,12 +189,15 @@
         />
       </div>
 
-      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
         class="playground-studio__resizer"
         class:playground-studio__resizer--active={isResizing}
         role="separator"
         aria-orientation="vertical"
+        aria-valuenow={Math.round(pipelineWidth)}
+        aria-valuemin={0}
+        aria-valuemax={Math.round(containerWidth * 0.75)}
+        tabindex="0"
         onpointerdown={handleResizerPointerDown}
         onpointermove={handleResizerPointerMove}
         onpointerup={handleResizerPointerUp}
@@ -279,7 +270,7 @@
 
   /* Pipeline pane — explicit width set via inline style */
   .playground-studio__pipeline {
-    min-width: calc(100% - var(--playground-studio-chat-width));
+    min-width: calc(100% - var(--playground-studio-min-chat-width));
     max-width: 75%;
     overflow: hidden;
     flex-shrink: 0;
@@ -326,12 +317,10 @@
     transform: scaleY(1.4);
   }
 
-  /* Chat pane — fills remaining space, capped at max readable width */
+  /* Chat pane — fills remaining space */
   .playground-studio__chat {
     flex: 1;
     min-width: 0;
-    max-width: var(--playground-studio-chat-width);
-    margin: 0 auto;
     overflow: hidden;
     display: flex;
     flex-direction: column;
