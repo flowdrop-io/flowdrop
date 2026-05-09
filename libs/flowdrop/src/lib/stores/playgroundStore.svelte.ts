@@ -56,7 +56,7 @@ let _currentWorkflow = $state<Workflow | null>(null);
 /**
  * Last polling timestamp for incremental message fetching
  */
-let _lastPollTimestamp = $state<string | null>(null);
+let _lastPollSequenceNumber = $state<number | null>(null);
 
 /** Execution ID explicitly pinned by the user (null = follow latest) */
 let _pinnedExecutionId = $state<string | null>(null);
@@ -130,10 +130,10 @@ export function getCurrentWorkflow(): Workflow | null {
 }
 
 /**
- * Get the last poll timestamp
+ * Get the last poll sequence number cursor
  */
-export function getLastPollTimestamp(): string | null {
-  return _lastPollTimestamp;
+export function getLastPollSequenceNumber(): number | null {
+  return _lastPollSequenceNumber;
 }
 
 // =========================================================================
@@ -498,7 +498,7 @@ export const playgroundActions = {
    */
   clearMessages: (): void => {
     _messages = [];
-    _lastPollTimestamp = null;
+    _lastPollSequenceNumber = null;
   },
 
   /**
@@ -524,8 +524,8 @@ export const playgroundActions = {
    *
    * @param timestamp - ISO 8601 timestamp
    */
-  updateLastPollTimestamp: (timestamp: string): void => {
-    _lastPollTimestamp = timestamp;
+  updateLastPollSequenceNumber: (seq: number): void => {
+    _lastPollSequenceNumber = seq;
   },
 
   /**
@@ -538,7 +538,7 @@ export const playgroundActions = {
     _isLoading = false;
     _error = null;
     _currentWorkflow = null;
-    _lastPollTimestamp = null;
+    _lastPollSequenceNumber = null;
   },
 
   /**
@@ -552,7 +552,7 @@ export const playgroundActions = {
     if (session) {
       _currentSession = session;
       _messages = [];
-      _lastPollTimestamp = null;
+      _lastPollSequenceNumber = null;
     }
   },
 
@@ -612,13 +612,17 @@ export function getMessagesSnapshot(): PlaygroundMessage[] {
 }
 
 /**
- * Get the latest message timestamp for polling
+ * Get the sequence number of the latest message, used to seed incremental polling.
  *
- * @returns ISO 8601 timestamp of the latest message, or null
+ * @returns Sequence number of the last message, or null
  */
-export function getLatestMessageTimestamp(): string | null {
-  if (_messages.length === 0) return null;
-  return _messages[_messages.length - 1].timestamp;
+export function getLatestSequenceNumber(): number | null {
+  for (let i = _messages.length - 1; i >= 0; i--) {
+    if (_messages[i].sequenceNumber !== undefined) {
+      return _messages[i].sequenceNumber!;
+    }
+  }
+  return null;
 }
 
 /**

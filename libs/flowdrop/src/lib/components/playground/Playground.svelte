@@ -28,7 +28,7 @@
     getInputFields,
     applyServerResponse,
     getCanSendMessage,
-    getLatestMessageTimestamp,
+    getLatestSequenceNumber,
     getActiveExecutionId,
     getLatestExecutionId,
     getPinnedExecutionId,
@@ -100,6 +100,9 @@
   /** Whether log messages are visible in the chat panel */
   let showLogs = $state(true);
 
+  /** Whether a manual refresh is in flight */
+  let isRefreshing = $state(false);
+
   /** Whether the session switcher popover is open (standalone mode) */
   let sessionDropdownOpen = $state(false);
 
@@ -127,7 +130,7 @@
         const sessionId = getCurrentSession()?.id;
         if (sessionId) {
           void playgroundService
-            .getMessages(sessionId, playgroundService.getLastMessageTimestamp() ?? undefined)
+            .getMessages(sessionId, playgroundService.getLastSequenceNumber() ?? undefined)
             .then((response) => applyServerResponse(response))
             .catch((err) => logger.error('[Playground] Visibility catchup failed:', err));
         }
@@ -135,10 +138,14 @@
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
+    const handleRefreshStatus = () => void refreshFromServer();
+    document.addEventListener('flowdrop:refresh-status', handleRefreshStatus);
+
     void initializePlayground();
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
+      document.removeEventListener('flowdrop:refresh-status', handleRefreshStatus);
     };
   });
 
@@ -459,17 +466,41 @@
   /**
    * Start polling for messages
    */
-  function startPolling(sessionId: string, seedTimestamp = false): void {
+  function startPolling(sessionId: string, seedSequence = false): void {
     const pollingInterval = config.pollingInterval ?? 1500;
-    const initialTimestamp = seedTimestamp ? getLatestMessageTimestamp() : null;
+    const initialSequenceNumber = seedSequence ? getLatestSequenceNumber() : null;
 
     playgroundService.startPolling(
       sessionId,
       (response) => applyServerResponse(response),
       pollingInterval,
       config.shouldStopPolling,
-      initialTimestamp
+      initialSequenceNumber
     );
+  }
+
+  /**
+   * Fetch the latest messages and session status from the server.
+   * Resumes polling if the session is running but polling had stopped.
+   */
+  async function refreshFromServer(): Promise<void> {
+    const sessionId = getCurrentSession()?.id;
+    if (!sessionId || isRefreshing) return;
+    isRefreshing = true;
+    try {
+      const response = await playgroundService.getMessages(
+        sessionId,
+        playgroundService.getLastSequenceNumber() ?? undefined
+      );
+      applyServerResponse(response);
+      if (response.sessionStatus === 'running' && !playgroundService.isPolling()) {
+        startPolling(sessionId, true);
+      }
+    } catch (err) {
+      logger.error('[Playground] Status refresh failed:', err);
+    } finally {
+      isRefreshing = false;
+    }
   }
 
   /**
@@ -768,6 +799,19 @@
               >
                 <Icon icon="mdi:source-branch" />
                 Pipeline
+              </button>
+            {/if}
+            {#if getCurrentSession()}
+              <button
+                type="button"
+                class="playground__log-toggle"
+                class:playground__refresh--spinning={isRefreshing}
+                onclick={() => void refreshFromServer()}
+                disabled={isRefreshing}
+                title="Refresh status"
+              >
+                <Icon icon="mdi:refresh" />
+                Refresh
               </button>
             {/if}
             <button
@@ -1310,6 +1354,10 @@
     background-color: var(--fd-primary-muted);
     border-color: var(--fd-primary);
     color: var(--fd-primary);
+  }
+
+  .playground__refresh--spinning :global(svg) {
+    animation: spin 0.8s linear infinite;
   }
 
   /* Session chip (standalone mode) */

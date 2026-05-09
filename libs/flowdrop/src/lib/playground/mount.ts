@@ -247,7 +247,8 @@ function buildMountedPlayground(
           session.id,
           (response) => applyServerResponse(response),
           pollingInterval,
-          config.shouldStopPolling
+          config.shouldStopPolling,
+          playgroundService.getLastSequenceNumber()
         );
       }
     },

@@ -180,11 +180,7 @@ export interface PlaygroundMessage {
   timestamp: string;
   /** Message status */
   status?: PlaygroundMessageStatus;
-  /**
-   * Sequence number for ordering messages
-   * - User messages: incrementing numbers (1, 2, 3, ...)
-   * - Assistant/system responses: 0 (sorted after parent via parentMessageId)
-   */
+  /** Incrementing sequence number for chronological ordering. All message roles receive unique incrementing numbers (1, 2, 3, ...). Primary sort key. */
   sequenceNumber?: number;
   /** Parent message ID (for assistant responses linked to user messages) */
   parentMessageId?: string;

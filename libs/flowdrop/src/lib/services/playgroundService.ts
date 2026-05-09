@@ -43,7 +43,7 @@ export class PlaygroundService {
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private pollingSessionId: string | null = null;
   private currentBackoff: number = DEFAULT_POLLING_INTERVAL;
-  private lastMessageTimestamp: string | null = null;
+  private lastSequenceNumber: number | null = null;
 
   private constructor() {}
 
@@ -213,13 +213,13 @@ export class PlaygroundService {
    * Get messages from a playground session
    *
    * @param sessionId - The session UUID
-   * @param since - Optional timestamp to fetch only newer messages (ISO 8601)
+   * @param afterSequence - Optional sequence number cursor — returns only messages with sequenceNumber > this value
    * @param limit - Maximum number of messages to return
    * @returns Messages and session status
    */
   async getMessages(
     sessionId: string,
-    since?: string,
+    afterSequence?: number,
     limit?: number
   ): Promise<PlaygroundMessagesApiResponse> {
     const config = this.getConfig();
@@ -227,10 +227,9 @@ export class PlaygroundService {
       sessionId
     });
 
-    // Add query parameters
     const params = new URLSearchParams();
-    if (since) {
-      params.append('since', since);
+    if (afterSequence !== undefined) {
+      params.append('since', afterSequence.toString());
     }
     if (limit !== undefined) {
       params.append('limit', limit.toString());
@@ -308,21 +307,21 @@ export class PlaygroundService {
    * @param callback - Callback function to handle new messages
    * @param interval - Polling interval in milliseconds (default: 1500)
    * @param shouldStopPolling - Optional override for stop conditions (default: defaultShouldStopPolling)
-   * @param initialTimestamp - Optional timestamp to seed polling from (avoids re-fetching already loaded messages)
+   * @param initialSequenceNumber - Optional sequence number to seed polling from (avoids re-fetching already loaded messages)
    */
   startPolling(
     sessionId: string,
     callback: (response: PlaygroundMessagesApiResponse) => void,
     interval: number = DEFAULT_POLLING_INTERVAL,
     shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean,
-    initialTimestamp?: string | null
+    initialSequenceNumber?: number | null
   ): void {
     // Stop any existing polling
     this.stopPolling();
 
     this.pollingSessionId = sessionId;
     this.currentBackoff = interval;
-    this.lastMessageTimestamp = initialTimestamp ?? null;
+    this.lastSequenceNumber = initialSequenceNumber ?? null;
 
     const shouldStop = shouldStopPolling ?? defaultShouldStopPolling;
 
@@ -332,12 +331,14 @@ export class PlaygroundService {
       }
 
       try {
-        const response = await this.getMessages(sessionId, this.lastMessageTimestamp ?? undefined);
+        const response = await this.getMessages(sessionId, this.lastSequenceNumber ?? undefined);
 
-        // Update last message timestamp
+        // Update last sequence number cursor
         if (response.data && response.data.length > 0) {
           const lastMessage = response.data[response.data.length - 1];
-          this.lastMessageTimestamp = lastMessage.timestamp;
+          if (lastMessage.sequenceNumber !== undefined) {
+            this.lastSequenceNumber = lastMessage.sequenceNumber;
+          }
         }
 
         // Reset backoff on successful request
@@ -377,7 +378,7 @@ export class PlaygroundService {
       this.pollingInterval = null;
     }
     this.pollingSessionId = null;
-    this.lastMessageTimestamp = null;
+    this.lastSequenceNumber = null;
     this.currentBackoff = DEFAULT_POLLING_INTERVAL;
   }
 
@@ -400,12 +401,12 @@ export class PlaygroundService {
   }
 
   /**
-   * Get the last message timestamp used for incremental polling
+   * Get the last sequence number used as cursor for incremental polling
    *
-   * @returns The last message timestamp, or null
+   * @returns The last sequence number, or null
    */
-  getLastMessageTimestamp(): string | null {
-    return this.lastMessageTimestamp;
+  getLastSequenceNumber(): number | null {
+    return this.lastSequenceNumber;
   }
 }
 

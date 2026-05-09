@@ -165,7 +165,7 @@ export {
   getIsLoading,
   getError as getPlaygroundError,
   getCurrentWorkflow,
-  getLastPollTimestamp,
+  getLastPollSequenceNumber,
   // Derived getters
   getSessionStatus,
   getMessageCount,
@@ -189,7 +189,7 @@ export {
   getCurrentSessionId,
   isSessionSelected,
   getMessagesSnapshot,
-  getLatestMessageTimestamp
+  getLatestSequenceNumber
 } from '../stores/playgroundStore.svelte.js';
 
 // ============================================================================
