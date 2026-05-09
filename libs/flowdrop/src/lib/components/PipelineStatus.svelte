@@ -41,6 +41,7 @@
     $props();
 
   // Track previous trigger value so the $effect only fires on increments, not on initial mount.
+  // svelte-ignore state_referenced_locally
   let _prevRefreshTrigger = refreshTrigger;
 
   // Initialize API client if not provided

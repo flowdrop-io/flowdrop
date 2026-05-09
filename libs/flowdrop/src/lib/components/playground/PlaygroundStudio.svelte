@@ -100,11 +100,14 @@
     onClose,
   }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let resolvedWorkflow = $state<Workflow | null>(workflowProp ?? null);
+  // svelte-ignore state_referenced_locally
   let workflowLoading = $state(workflowProp === undefined);
   let workflowError = $state<string | null>(null);
 
   let splitEl = $state<HTMLElement | null>(null);
+  // svelte-ignore state_referenced_locally
   let pipelineWidth = $state(initialPipelineWidth);
   let isResizing = $state(false);
   let containerWidth = $state(0);
@@ -191,6 +194,7 @@
         />
       </div>
 
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div
         class="playground-studio__resizer"
         class:playground-studio__resizer--active={isResizing}
