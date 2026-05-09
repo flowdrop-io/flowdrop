@@ -52,6 +52,7 @@
     getPinnedExecutionId,
     getLatestExecutionId,
     getCurrentSession,
+    getMessages,
     playgroundActions,
   } from '../../stores/playgroundStore.svelte.js';
   import { setEndpointConfig, workflowApi } from '../../services/api.js';
@@ -186,6 +187,7 @@
           {executions}
           latestExecutionId={getLatestExecutionId()}
           onSelectExecution={(id) => playgroundActions.pinExecution(id)}
+          refreshTrigger={getMessages().length}
         />
       </div>
 

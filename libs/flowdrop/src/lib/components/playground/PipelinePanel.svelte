@@ -17,6 +17,8 @@
     latestExecutionId?: string | null;
     /** Called with an execution ID to pin it, or null to follow latest */
     onSelectExecution?: (id: string | null) => void;
+    /** Increments when new messages arrive — forwarded to PipelineStatus for immediate refresh */
+    refreshTrigger?: number;
   }
 
   let {
@@ -28,6 +30,7 @@
     executions = [],
     latestExecutionId = null,
     onSelectExecution,
+    refreshTrigger = 0,
   }: Props = $props();
 
   let runDropdownOpen = $state(false);
@@ -134,7 +137,7 @@
   {#if pipelineId}
     {#key pipelineId}
       <div class="pipeline-panel__content">
-        <PipelineStatus {pipelineId} {workflow} {endpointConfig} {runLabel} isEmbedded={true} />
+        <PipelineStatus {pipelineId} {workflow} {endpointConfig} {runLabel} {refreshTrigger} isEmbedded={true} />
       </div>
     {/key}
   {:else}

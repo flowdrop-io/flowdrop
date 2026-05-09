@@ -24,6 +24,8 @@
     runLabel?: string;
     /** When true, suppresses breadcrumb and layout events (used inside playground panel) */
     isEmbedded?: boolean;
+    /** Increments when new messages arrive — triggers an immediate pipeline data refresh */
+    refreshTrigger?: number;
     onActionsReady?: (
       actions: Array<{
         label: string;
@@ -35,8 +37,11 @@
     ) => void;
   }
 
-  let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady, runLabel, isEmbedded = false }: Props =
+  let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady, runLabel, isEmbedded = false, refreshTrigger = 0 }: Props =
     $props();
+
+  // Track previous trigger value so the $effect only fires on increments, not on initial mount.
+  let _prevRefreshTrigger = refreshTrigger;
 
   // Initialize API client if not provided
   // svelte-ignore state_referenced_locally — client created once from props
@@ -285,6 +290,16 @@
 
   // Note: Interval cleanup is handled by the $effect above.
   // In Svelte 5, $effect cleanup runs both on re-execution and component destroy.
+
+  // Refresh pipeline data whenever new messages arrive (e.g. log messages during execution).
+  // Debounced so burst arrivals collapse into one fetch.
+  $effect(() => {
+    const t = refreshTrigger;
+    if (t <= 0 || t === _prevRefreshTrigger) return;
+    _prevRefreshTrigger = t;
+    const timer = setTimeout(fetchPipelineData, 300);
+    return () => clearTimeout(timer);
+  });
 </script>
 
 <div class="pipeline-status-container" class:pipeline-status-container--embedded={isEmbedded}>
