@@ -25,7 +25,6 @@
     getSessionStatus,
     getCurrentSession
   } from '../../stores/playgroundStore.svelte.js';
-  import type { PlaygroundExecution } from '../../types/playground.js';
   import {
     getInterruptsMap,
     interruptActions,
@@ -135,48 +134,6 @@
   const displayMessages = $derived(showLogs ? getMessages() : getChatMessages());
 
   // ---------------------------------------------------------------------------
-  // Execution separators
-  // ---------------------------------------------------------------------------
-
-  type ChatItem =
-    | { type: 'message'; message: PlaygroundMessage; msgIndex: number }
-    | { type: 'separator'; key: string; label: string; status: PlaygroundExecution['status'] };
-
-  /** Map executionId → { label, status } derived from the current session */
-  const executionMeta = $derived(
-    new Map(
-      (getCurrentSession()?.executions ?? []).map((e, i) => [
-        e.id,
-        { label: `Run #${i + 1}`, status: e.status }
-      ])
-    )
-  );
-
-  /**
-   * Interleave execution-boundary separators into the message list.
-   * A separator is inserted before the first message of each new execution.
-   */
-  const chatItems = $derived(
-    (() => {
-      const items: ChatItem[] = [];
-      let lastExecId: string | null = null;
-
-      displayMessages.forEach((msg, i) => {
-        const execId = msg.executionId ?? null;
-        if (execId !== null && execId !== lastExecId) {
-          const meta = executionMeta.get(execId);
-          if (meta) {
-            items.push({ type: 'separator', key: `sep-${execId}`, label: meta.label, status: meta.status });
-            lastExecId = execId;
-          }
-        }
-        items.push({ type: 'message', message: msg, msgIndex: i });
-      });
-
-      return items;
-    })()
-  );
-
   /**
    * Track previous message count for detecting new messages.
    * We only want to auto-scroll when NEW messages are added,
@@ -582,50 +539,25 @@
         {/if}
       </div>
     {:else}
-      <!-- Messages with execution separators -->
-      {#each chatItems as item (item.type === 'message' ? item.message.id : item.key)}
-        {#if item.type === 'separator'}
-          <div
-            class="chat-panel__exec-sep"
-            class:chat-panel__exec-sep--completed={item.status === 'completed'}
-            class:chat-panel__exec-sep--failed={item.status === 'failed'}
-            class:chat-panel__exec-sep--running={item.status === 'running'}
-          >
-            <span class="chat-panel__exec-sep-line"></span>
-            <span class="chat-panel__exec-sep-label">
-              {#if item.status === 'completed'}
-                <Icon icon="mdi:check-circle" class="chat-panel__exec-sep-icon" />
-              {:else if item.status === 'failed'}
-                <Icon icon="mdi:alert-circle" class="chat-panel__exec-sep-icon" />
-              {:else}
-                <Icon icon="mdi:play-circle" class="chat-panel__exec-sep-icon" />
-              {/if}
-              {item.label}
-              <span class="chat-panel__exec-sep-status">{item.status}</span>
-            </span>
-            <span class="chat-panel__exec-sep-line"></span>
-          </div>
-        {:else}
-          {@const message = item.message}
-          {@const index = item.msgIndex}
-          {#if isInterruptMessage(message)}
-            {@const interrupt = getInterruptForMessage(message)}
-            {#if interrupt}
-              <InterruptBubble
-                {interrupt}
-                showTimestamp={showTimestamps}
-                onResolved={onInterruptResolved}
-              />
-            {/if}
-          {:else}
-            <MessageBubble
-              {message}
+      <!-- Messages -->
+      {#each displayMessages as message, index (message.id)}
+        {#if isInterruptMessage(message)}
+          {@const interrupt = getInterruptForMessage(message)}
+          {#if interrupt}
+            <InterruptBubble
+              {interrupt}
               showTimestamp={showTimestamps}
-              isLast={index === displayMessages.length - 1}
-              {enableMarkdown}
-              {compactSystemMessages}
+              onResolved={onInterruptResolved}
             />
           {/if}
+        {:else}
+          <MessageBubble
+            {message}
+            showTimestamp={showTimestamps}
+            isLast={index === displayMessages.length - 1}
+            {enableMarkdown}
+            {compactSystemMessages}
+          />
         {/if}
       {/each}
 
@@ -716,57 +648,6 @@
     background-color: var(--fd-background);
   }
 
-  /* Execution separator */
-  .chat-panel__exec-sep {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-sm);
-    padding: var(--fd-space-md) var(--fd-space-3xl);
-    margin: var(--fd-space-sm) 0;
-  }
-
-  .chat-panel__exec-sep-line {
-    flex: 1;
-    height: 1px;
-    background-color: var(--fd-border);
-  }
-
-  .chat-panel__exec-sep-label {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    white-space: nowrap;
-    color: var(--fd-muted-foreground);
-  }
-
-  :global(.chat-panel__exec-sep-icon) {
-    font-size: 0.875rem;
-  }
-
-  .chat-panel__exec-sep--completed .chat-panel__exec-sep-label {
-    color: var(--fd-success, #16a34a);
-  }
-
-  .chat-panel__exec-sep--completed .chat-panel__exec-sep-line {
-    background-color: var(--fd-success-muted, rgba(22, 163, 74, 0.2));
-  }
-
-  .chat-panel__exec-sep--failed .chat-panel__exec-sep-label {
-    color: var(--fd-error);
-  }
-
-  .chat-panel__exec-sep--failed .chat-panel__exec-sep-line {
-    background-color: var(--fd-error-muted);
-  }
-
-  .chat-panel__exec-sep-status {
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.8;
-    font-size: var(--fd-text-2xs);
-  }
 
   /* Messages Container - Scrollable area that takes remaining space */
   .chat-panel__messages {
