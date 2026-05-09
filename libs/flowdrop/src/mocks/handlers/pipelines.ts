@@ -33,18 +33,6 @@ interface PipelineListResponse {
 }
 
 /**
- * Response type for pipeline details
- */
-interface PipelineDetailResponse {
-  success?: boolean;
-  status: PipelineStatus;
-  jobs: Pipeline['jobs'];
-  node_statuses: Pipeline['node_statuses'];
-  job_status_summary: Pipeline['job_status_summary'];
-  error?: string;
-}
-
-/**
  * GET /api/flowdrop/workflow/:workflow_id/pipelines
  * List all pipeline executions for a workflow
  */
@@ -112,14 +100,15 @@ export const getPipelineHandler = http.get(`${API_BASE}/pipeline/:id`, ({ params
     );
   }
 
-  const response: PipelineDetailResponse = {
-    status: pipeline.status,
-    jobs: pipeline.jobs,
-    node_statuses: pipeline.node_statuses,
-    job_status_summary: pipeline.job_status_summary
-  };
-
-  return HttpResponse.json(response);
+  return HttpResponse.json({
+    success: true,
+    data: {
+      status: pipeline.status,
+      jobs: pipeline.jobs,
+      node_statuses: pipeline.node_statuses,
+      job_status_summary: pipeline.job_status_summary
+    }
+  });
 });
 
 /**

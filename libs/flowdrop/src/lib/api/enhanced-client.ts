@@ -681,12 +681,26 @@ export class EnhancedFlowDropApiClient {
       cancelled: number;
     };
   }> {
-    return this.request(
-      'pipelines.get',
-      this.config.endpoints.pipelines.get,
-      { id: pipelineId },
-      {},
-      'get pipeline data'
-    );
+    const response = await this.request<
+      ApiResponse<{
+        status: string;
+        jobs: Array<Record<string, unknown>>;
+        node_statuses: Record<string, { status: string; [key: string]: unknown }>;
+        job_status_summary: {
+          total: number;
+          pending: number;
+          running: number;
+          completed: number;
+          failed: number;
+          cancelled: number;
+        };
+      }>
+    >('pipelines.get', this.config.endpoints.pipelines.get, { id: pipelineId }, {}, 'get pipeline data');
+
+    if (!response.success || !response.data) {
+      throw new Error(response.error ?? 'Failed to fetch pipeline data');
+    }
+
+    return response.data;
   }
 }

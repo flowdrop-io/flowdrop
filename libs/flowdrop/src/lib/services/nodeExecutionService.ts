@@ -70,7 +70,8 @@ export class NodeExecutionService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const pipelineData = await response.json();
+      const raw = await response.json();
+      const pipelineData = raw.data ?? raw;
       const jobs: PipelineJob[] = pipelineData.jobs || [];
       const nodeStatuses = pipelineData.node_statuses || {};
 
@@ -155,7 +156,8 @@ export class NodeExecutionService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
+      const raw = await response.json();
+      const result = raw.data ?? raw;
       const jobs: PipelineJob[] = result.jobs || [];
 
       const executionInfoMap: Record<string, NodeExecutionInfo> = {};
