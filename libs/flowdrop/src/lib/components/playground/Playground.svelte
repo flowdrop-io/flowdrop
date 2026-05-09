@@ -26,7 +26,9 @@
     getError,
     playgroundActions,
     getInputFields,
-    createPollingCallback,
+    applyServerResponse,
+    getCanSendMessage,
+    getLatestMessageTimestamp,
     getActiveExecutionId,
     getLatestExecutionId,
     getPinnedExecutionId,
@@ -117,41 +119,27 @@
    * Initialize the playground on mount
    */
   onMount(() => {
-    // Set endpoint config if provided
-    if (endpointConfig) {
-      setEndpointConfig(endpointConfig);
-    }
+    if (endpointConfig) setEndpointConfig(endpointConfig);
+    if (workflow) playgroundActions.setWorkflow(workflow);
 
-    // Set workflow in store
-    if (workflow) {
-      playgroundActions.setWorkflow(workflow);
-    }
-
-    // Async initialization
-    const initializePlayground = async (): Promise<void> => {
-      try {
-        // Load sessions
-        await loadSessions();
-
-        // Resume initial session if provided
-        if (initialSessionId) {
-          await loadInitialSession(initialSessionId);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && playgroundService.isPolling()) {
+        const sessionId = getCurrentSession()?.id;
+        if (sessionId) {
+          void playgroundService
+            .getMessages(sessionId, playgroundService.getLastMessageTimestamp() ?? undefined)
+            .then((response) => applyServerResponse(response))
+            .catch((err) => logger.error('[Playground] Visibility catchup failed:', err));
         }
-
-        // Handle auto-run after initialization is complete
-        if (config.autoRun && !autoRunTriggered) {
-          autoRunTriggered = true;
-          const predefinedMessage = config.predefinedMessage ?? 'Run workflow';
-          logger.debug('[Playground] Auto-run triggered with message:', predefinedMessage);
-          await handleSendMessage(predefinedMessage);
-        }
-      } catch (err) {
-        logger.error('[Playground] Initialization error:', err);
       }
     };
+    document.addEventListener('visibilitychange', handleVisibility);
 
-    // Execute initialization
     void initializePlayground();
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   });
 
   /**
@@ -180,6 +168,28 @@
       void loadInitialSession(initialSessionId);
     }
   });
+
+  /**
+   * Initialize the playground: load sessions, load initial session, handle auto-run
+   */
+  async function initializePlayground(): Promise<void> {
+    try {
+      await loadSessions();
+
+      if (initialSessionId) {
+        await loadInitialSession(initialSessionId);
+      }
+
+      if (config.autoRun && !autoRunTriggered) {
+        autoRunTriggered = true;
+        const predefinedMessage = config.predefinedMessage ?? 'Run workflow';
+        logger.debug('[Playground] Auto-run triggered with message:', predefinedMessage);
+        await handleSendMessage(predefinedMessage);
+      }
+    } catch (err) {
+      logger.error('[Playground] Initialization error:', err);
+    }
+  }
 
   /**
    * Load the initial session with validation and error handling
@@ -265,17 +275,14 @@
     playgroundActions.setError(null);
 
     try {
-      // Get session details
       const session = await playgroundService.getSession(sessionId);
       playgroundActions.setCurrentSession(session);
 
-      // Get messages
       const response = await playgroundService.getMessages(sessionId);
-      playgroundActions.setMessages(response.data ?? []);
+      applyServerResponse(response);
 
-      // Start polling if session is running
       if (session.status === 'running') {
-        startPolling(sessionId);
+        startPolling(sessionId, true);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load session';
@@ -326,9 +333,8 @@
       return;
     }
 
-    // Stop polling for current session
     playgroundService.stopPolling();
-
+    playgroundActions.updateSessionStatus('idle');
     await loadSession(sessionId);
   }
 
@@ -387,9 +393,10 @@
    * Send a message
    */
   async function handleSendMessage(content: string): Promise<void> {
+    if (getIsExecuting()) return;
+
     const session = getCurrentSession();
     if (!session) {
-      // Create a session first if none exists
       await handleCreateSession();
       const newSession = getCurrentSession();
       if (!newSession) {
@@ -397,23 +404,18 @@
       }
     }
 
-    const sessionId = getCurrentSession()?.id;
-    if (!sessionId) {
-      return;
-    }
+    const sessionId = getCurrentSession()!.id;
 
-    playgroundActions.setExecuting(true);
+    playgroundActions.updateSessionStatus('running');
     playgroundActions.setError(null);
 
     try {
-      // Prepare inputs from the input collector
       const inputs: Record<string, unknown> = {};
       const fields = getInputFields();
 
       fields.forEach((field) => {
         const key = `${field.nodeId}:${field.fieldId}`;
         if (inputValues[key] !== undefined) {
-          // Map to node ID and field ID for the backend
           if (!inputs[field.nodeId]) {
             inputs[field.nodeId] = {};
           }
@@ -421,19 +423,13 @@
         }
       });
 
-      // Send message
       const message = await playgroundService.sendMessage(sessionId, content, inputs);
       playgroundActions.addMessage(message);
-
-      // Update session status
-      playgroundActions.updateSessionStatus('running');
-
-      // Start polling for responses
       startPolling(sessionId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       playgroundActions.setError(errorMessage);
-      playgroundActions.setExecuting(false);
+      playgroundActions.updateSessionStatus('idle');
       logger.error('Failed to send message:', err);
     }
   }
@@ -450,30 +446,29 @@
     try {
       await playgroundService.stopExecution(sessionId);
       playgroundService.stopPolling();
-      playgroundActions.setExecuting(false);
       playgroundActions.updateSessionStatus('idle');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to stop execution';
       playgroundActions.setError(errorMessage);
+      playgroundService.stopPolling();
+      playgroundActions.updateSessionStatus('idle');
       logger.error('Failed to stop execution:', err);
     }
   }
 
-  /** Shared polling callback created from config lifecycle hooks */
-  // svelte-ignore state_referenced_locally — config is static
-  const pollingCallback = createPollingCallback(config.isTerminalStatus);
-
   /**
    * Start polling for messages
    */
-  function startPolling(sessionId: string): void {
+  function startPolling(sessionId: string, seedTimestamp = false): void {
     const pollingInterval = config.pollingInterval ?? 1500;
+    const initialTimestamp = seedTimestamp ? getLatestMessageTimestamp() : null;
 
     playgroundService.startPolling(
       sessionId,
-      pollingCallback,
+      (response) => applyServerResponse(response),
       pollingInterval,
-      config.shouldStopPolling
+      config.shouldStopPolling,
+      initialTimestamp
     );
   }
 
@@ -487,9 +482,13 @@
 
     try {
       const response = await playgroundService.getMessages(sessionId);
-      pollingCallback(response);
+      applyServerResponse(response);
+
+      if (response.sessionStatus === 'running') {
+        startPolling(sessionId, true);
+      }
     } catch (err) {
-      logger.error('[Playground] Failed to refresh messages after interrupt:', err);
+      logger.error('[Playground] Failed to refresh after interrupt:', err);
     }
   }
 
