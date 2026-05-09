@@ -242,6 +242,7 @@ export function addMessage(
     status?: PlaygroundMessageStatus;
     metadata?: PlaygroundMessageMetadata;
     timestamp?: string;
+    source?: string;
   }
 ): PlaygroundMessage | undefined {
   if (!mockSessions.has(sessionId)) {
@@ -266,10 +267,13 @@ export function addMessage(
     parentMessageId: options?.parentMessageId,
     executionId: options?.executionId ?? null,
     nodeId: options?.nodeId,
-    metadata: options?.metadata || {
-      level: options?.level,
-      duration: options?.duration,
-      nodeLabel: options?.nodeLabel
+    metadata: {
+      ...(options?.metadata ?? {
+        level: options?.level,
+        duration: options?.duration,
+        nodeLabel: options?.nodeLabel
+      }),
+      ...(options?.source !== undefined ? { source: options.source } : {})
     }
   };
 
@@ -459,20 +463,20 @@ function simulateNormalExecution(
         level: step.level,
         duration: step.duration,
         nodeLabel: step.nodeLabel,
-        parentMessageId
+        parentMessageId,
+        source: 'pipeline'
       });
 
       // Complete the session after the last step
       if (step === steps[steps.length - 1]) {
         updateSessionStatus(sessionId, 'completed');
 
-        // Add a system message with enableRun: true to re-enable the Run button
-        // This simulates the backend signaling that the workflow is ready for another run
         setTimeout(() => {
-          addMessage(sessionId, 'system', 'Ready for next execution.', {
-            metadata: {
-              [ENABLE_RUN_METADATA_KEY]: true
-            }
+          const session = mockSessions.get(sessionId);
+          const runNumber = session?.executions?.length ?? 1;
+          addMessage(sessionId, 'system', `Run #${runNumber} completed`, {
+            source: 'pipeline',
+            metadata: { [ENABLE_RUN_METADATA_KEY]: true }
           });
         }, 500);
       }
@@ -499,7 +503,8 @@ function simulateInterruptExecution(
       executionId,
       nodeId: 'node-start',
       nodeLabel: 'Start',
-      parentMessageId
+      parentMessageId,
+      source: 'pipeline'
     });
   }, 500);
 
@@ -510,7 +515,8 @@ function simulateInterruptExecution(
       executionId,
       nodeId: 'node-hitl',
       nodeLabel: 'Human Input',
-      parentMessageId
+      parentMessageId,
+      source: 'pipeline'
     });
 
     // Create the interrupt message after a short delay
@@ -701,7 +707,8 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeId: 'json-loader.1',
     nodeLabel: 'JSON Loader',
     parentMessageId: userMsg1?.id,
-    timestamp: ts(-119_500)
+    timestamp: ts(-119_500),
+    source: 'pipeline'
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
     executionId: exec1Id,
@@ -709,7 +716,8 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg1?.id,
-    timestamp: ts(-119_000)
+    timestamp: ts(-119_000),
+    source: 'pipeline'
   });
   addMessage(session.id, 'log', 'Processing item 5/5: Elderberry', {
     executionId: exec1Id,
@@ -717,7 +725,8 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg1?.id,
-    timestamp: ts(-117_500)
+    timestamp: ts(-117_500),
+    source: 'pipeline'
   });
   addMessage(
     session.id,
@@ -732,9 +741,13 @@ export function initializeDemoForeachPlaygroundData(): void {
       timestamp: ts(-116_800)
     }
   );
-  // Mark exec1 as completed by updating the session status then restoring to idle
+  // Mark exec1 as completed
   updateSessionStatus(session.id, 'completed');
-  // Manually mark exec1 completed and reset session to idle for next execution
+  addMessage(session.id, 'system', 'Run #1 completed', {
+    source: 'pipeline',
+    metadata: { [ENABLE_RUN_METADATA_KEY]: true },
+    timestamp: ts(-116_500)
+  });
   const s1 = mockSessions.get(session.id);
   if (s1) {
     s1.status = 'idle';
@@ -755,7 +768,8 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeId: 'json-loader.1',
     nodeLabel: 'JSON Loader',
     parentMessageId: userMsg2?.id,
-    timestamp: ts(-59_500)
+    timestamp: ts(-59_500),
+    source: 'pipeline'
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
     executionId: exec2Id,
@@ -763,7 +777,8 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg2?.id,
-    timestamp: ts(-59_000)
+    timestamp: ts(-59_000),
+    source: 'pipeline'
   });
   addMessage(session.id, 'log', 'Error processing item 3/5: Cherry — upstream timeout', {
     executionId: exec2Id,
@@ -771,7 +786,8 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeId: 'foreach.1',
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg2?.id,
-    timestamp: ts(-58_500)
+    timestamp: ts(-58_500),
+    source: 'pipeline'
   });
   addMessage(session.id, 'assistant', 'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.', {
     executionId: exec2Id,
@@ -782,6 +798,11 @@ export function initializeDemoForeachPlaygroundData(): void {
     timestamp: ts(-58_200)
   });
   updateSessionStatus(session.id, 'failed');
+  addMessage(session.id, 'system', 'Run #2 failed', {
+    source: 'pipeline',
+    level: 'error',
+    timestamp: ts(-58_000)
+  });
   // Reset to idle so the playground is ready for a new run
   const s2 = mockSessions.get(session.id);
   if (s2) {
@@ -816,7 +837,8 @@ export function initializeSamplePlaygroundData(workflowId: string): void {
     level: 'info',
     nodeId: 'node-start',
     nodeLabel: 'Start',
-    parentMessageId: userMessage?.id
+    parentMessageId: userMessage?.id,
+    source: 'pipeline'
   });
   addMessage(
     session.id,
@@ -831,4 +853,8 @@ export function initializeSamplePlaygroundData(workflowId: string): void {
   );
 
   updateSessionStatus(session.id, 'completed');
+  addMessage(session.id, 'system', 'Run #1 completed', {
+    source: 'pipeline',
+    metadata: { [ENABLE_RUN_METADATA_KEY]: true }
+  });
 }

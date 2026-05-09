@@ -153,8 +153,17 @@
 
 {#if useCompactMode}
   <!-- Compact system message: minimal inline text without bubble -->
-  <div class="system-notice" class:system-notice--last={isLast}>
-    <Icon icon="mdi:information-outline" class="system-notice__icon" />
+  <div
+    class="system-notice"
+    class:system-notice--last={isLast}
+    class:system-notice--warning={message.metadata?.level === 'warning'}
+    class:system-notice--error={message.metadata?.level === 'error'}
+    class:system-notice--debug={message.metadata?.level === 'debug'}
+  >
+    <Icon icon={getLogLevelIcon()} class="system-notice__icon" />
+    {#if message.metadata?.source}
+      <span class="system-notice__source">{message.metadata.source}</span>
+    {/if}
     <span class="system-notice__text">{message.content}</span>
     {#if showTimestamp}
       <span class="system-notice__timestamp">{formatTimestamp(message.timestamp)}</span>
@@ -172,6 +181,9 @@
       <Icon icon={getLogLevelIcon()} />
     </div>
     <div class="log-row__body">
+      {#if message.metadata?.source}
+        <span class="log-row__source">{message.metadata.source}</span>
+      {/if}
       <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId ?? 'log'}</span>
       <span class="log-row__text">{message.content}</span>
     </div>
@@ -636,6 +648,20 @@
     overflow: hidden;
   }
 
+  .log-row__source {
+    flex-shrink: 0;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fd-muted-foreground);
+    opacity: 0.6;
+    background-color: var(--fd-muted);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm);
+    padding: 0 0.25rem;
+    line-height: 1.4;
+  }
+
   .log-row__node {
     flex-shrink: 0;
     font-weight: 600;
@@ -688,9 +714,40 @@
     color: var(--fd-border-strong);
   }
 
-  .system-notice__text {
+  .system-notice__source {
+    flex-shrink: 0;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--fd-muted-foreground);
+    background-color: var(--fd-muted);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm);
+    padding: 0 0.25rem;
+    line-height: 1.4;
+  }
+
+  .system-notice__text {
     line-height: var(--fd-leading-tight);
+  }
+
+  .system-notice--warning {
+    color: var(--fd-warning);
+  }
+  .system-notice--warning :global(.system-notice__icon) {
+    color: var(--fd-warning);
+  }
+
+  .system-notice--error {
+    color: var(--fd-error);
+  }
+  .system-notice--error :global(.system-notice__icon) {
+    color: var(--fd-error);
+  }
+
+  .system-notice--debug {
+    color: var(--fd-border-strong);
+    opacity: 0.6;
   }
 
   .system-notice__timestamp {

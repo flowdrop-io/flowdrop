@@ -141,6 +141,8 @@ export interface PlaygroundMessageMetadata {
   outputs?: Record<string, unknown>;
   /** User's display name for user-role messages (from backend) */
   userName?: string;
+  /** Subsystem that produced this message (e.g. 'pipeline', 'job', 'queue', 'cron') */
+  source?: string;
   /** Allow additional properties */
   [key: string]: unknown;
 }
