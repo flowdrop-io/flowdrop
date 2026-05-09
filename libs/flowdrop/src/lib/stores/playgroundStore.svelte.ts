@@ -485,12 +485,19 @@ export const playgroundActions = {
   addMessages: (newMessages: PlaygroundMessage[]): void => {
     if (newMessages.length === 0) return;
 
-    // Deduplicate by message ID
+    // Deduplicate against existing messages AND within the incoming batch itself.
+    // The latter matters when the backend returns the same page twice (e.g. broken
+    // offset pagination), which would otherwise create duplicate IDs in _messages
+    // and trigger Svelte's each_key_duplicate error.
     const existingIds = new Set(_messages.map((m) => m.id));
-    const uniqueNewMessages = newMessages.filter((m) => !existingIds.has(m.id));
-    // Sort the combined messages chronologically
+    const seenInBatch = new Set<string>();
+    const uniqueNewMessages = newMessages.filter((m) => {
+      if (existingIds.has(m.id) || seenInBatch.has(m.id)) return false;
+      seenInBatch.add(m.id);
+      return true;
+    });
     _messages = sortMessagesChronologically([..._messages, ...uniqueNewMessages]);
-    syncExecutionsFromMessages(newMessages);
+    syncExecutionsFromMessages(uniqueNewMessages);
   },
 
   /**

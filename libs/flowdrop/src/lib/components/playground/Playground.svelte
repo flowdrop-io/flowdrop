@@ -159,8 +159,10 @@
       return;
     }
 
-    // Skip if this session was already loaded
-    if (initialSessionLoaded && loadedInitialSessionId === initialSessionId) {
+    // Skip if this session was already loaded or is currently loading.
+    // loadedInitialSessionId is set synchronously at the start of loadInitialSession,
+    // so this prevents the effect from spawning concurrent loads when isLoading changes.
+    if (loadedInitialSessionId === initialSessionId) {
       return;
     }
 
@@ -171,7 +173,7 @@
     }
 
     // Load the initial session if sessions are available
-    if (sessionList.length > 0 && !initialSessionLoaded) {
+    if (sessionList.length > 0) {
       void loadInitialSession(initialSessionId);
     }
   });
@@ -204,6 +206,10 @@
    * @param sessionId - The session ID to load
    */
   async function loadInitialSession(sessionId: string): Promise<void> {
+    // Set immediately (before any await) so the $effect guard sees it synchronously
+    // and won't spawn a second concurrent load when isLoading changes.
+    loadedInitialSessionId = sessionId;
+
     // Validate session exists in loaded sessions
     const sessionList = getSessions();
     const sessionExists = sessionList.some((s) => s.id === sessionId);
@@ -213,21 +219,16 @@
         `[Playground] Initial session "${sessionId}" not found in available sessions. ` +
           `Available sessions: ${sessionList.map((s) => s.id).join(', ') || 'none'}`
       );
-      // Don't set error - just log warning and let user pick a session
       initialSessionLoaded = true;
-      loadedInitialSessionId = sessionId;
       return;
     }
 
     try {
       await loadSession(sessionId);
       initialSessionLoaded = true;
-      loadedInitialSessionId = sessionId;
     } catch (err) {
       logger.error('[Playground] Failed to load initial session:', err);
-      // Mark as attempted to prevent retry loops
       initialSessionLoaded = true;
-      loadedInitialSessionId = sessionId;
     }
   }
 
