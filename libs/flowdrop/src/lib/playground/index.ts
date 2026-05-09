@@ -161,6 +161,7 @@ export {
   getSessions,
   getMessages,
   getIsExecuting,
+  getCanSendMessage,
   getIsLoading,
   getError as getPlaygroundError,
   getCurrentWorkflow,
@@ -180,8 +181,8 @@ export {
   getLatestExecutionId,
   // Actions
   playgroundActions,
-  // Polling callback factory
-  createPollingCallback,
+  // Server response application (single update path)
+  applyServerResponse,
   // Subscription utility
   subscribeToSessionStatus,
   // Utilities

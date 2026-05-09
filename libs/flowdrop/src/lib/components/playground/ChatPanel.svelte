@@ -22,6 +22,7 @@
     getMessages,
     getChatMessages,
     getIsExecuting,
+    getCanSendMessage,
     getSessionStatus,
     getCurrentSession
   } from '../../stores/playgroundStore.svelte.js';
@@ -237,7 +238,7 @@
    */
   function handleSend(): void {
     const trimmedValue = inputValue.trim();
-    if (!trimmedValue || getIsExecuting()) {
+    if (!trimmedValue || !getCanSendMessage()) {
       return;
     }
 
@@ -346,50 +347,17 @@
     });
   });
 
-  /**
-   * Track previous executing state to detect when execution completes
-   */
-  let wasExecuting = $state(false);
+  let wasExecuting = false;
 
   /**
-   * Auto-focus input when execution completes or session becomes ready
+   * Auto-focus input when execution completes
    */
   $effect(() => {
-    const currentlyExecuting = getIsExecuting();
-
-    // Focus input when execution completes (was executing, now not)
-    if (wasExecuting && !currentlyExecuting && inputField) {
-      tick().then(() => {
-        inputField?.focus();
-      });
+    const nowExecuting = getIsExecuting();
+    if (wasExecuting && !nowExecuting && inputField) {
+      tick().then(() => inputField?.focus());
     }
-
-    // Update tracking state
-    wasExecuting = currentlyExecuting;
-  });
-
-  /**
-   * Focus input when session status changes to idle or completed
-   */
-  $effect(() => {
-    const status = getSessionStatus();
-    if ((status === 'idle' || status === 'completed') && inputField && !getIsExecuting()) {
-      tick().then(() => {
-        inputField?.focus();
-      });
-    }
-  });
-
-  /**
-   * Focus input when a new session is created/loaded
-   */
-  $effect(() => {
-    const session = getCurrentSession();
-    if (session && inputField && !getIsExecuting()) {
-      tick().then(() => {
-        inputField?.focus();
-      });
-    }
+    wasExecuting = nowExecuting;
   });
 
   /**
@@ -552,7 +520,7 @@
           </div>
         {/if}
 
-        {#if getSessionStatus() === 'running' || getIsExecuting()}
+        {#if getIsExecuting()}
           <button
             type="button"
             class="chat-panel__stop-btn"
@@ -567,7 +535,7 @@
             type="button"
             class="chat-panel__send-btn"
             onclick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || !getCanSendMessage()}
             title={actions.sendTitle}
           >
             {actions.send}
