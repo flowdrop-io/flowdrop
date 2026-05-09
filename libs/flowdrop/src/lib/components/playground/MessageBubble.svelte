@@ -590,7 +590,7 @@
 
   .log-row {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: var(--fd-space-sm);
     padding: 0.1875rem var(--fd-space-xl);
     border-left: 2px solid var(--fd-info);
