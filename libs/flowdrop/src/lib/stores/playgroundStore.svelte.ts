@@ -387,7 +387,9 @@ export const playgroundActions = {
       };
     }
 
-    // Update latest execution status when session reaches a terminal state
+    // Update the latest execution status when the session reaches a terminal state.
+    // Only the last execution can be running at any time (sessions are single-pipeline),
+    // so we only need to check and update the tail entry.
     if ((status === 'completed' || status === 'failed') && _currentSession?.executions?.length) {
       const execs = [..._currentSession.executions];
       const last = execs[execs.length - 1];

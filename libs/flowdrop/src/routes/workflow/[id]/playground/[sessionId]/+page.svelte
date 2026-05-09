@@ -48,13 +48,14 @@
     return value === 'true' || value === '1';
   }
 
-  const playgroundConfig: PlaygroundConfig = {
+  // $derived keeps config in sync if query params change without a full navigation
+  const playgroundConfig: PlaygroundConfig = $derived({
     showChatInput: parseBoolParam($page.url.searchParams.get('showChatInput')),
     showRunButton: parseBoolParam($page.url.searchParams.get('showRunButton')),
     predefinedMessage: $page.url.searchParams.get('predefinedMessage') ?? undefined,
     autoRun: parseBoolParam($page.url.searchParams.get('autoRun')),
     sidebarWidth: $page.url.searchParams.get('sidebarWidth') ?? undefined
-  };
+  });
 
   /** Workflow data */
   let workflow = $state<Workflow | null>(null);
@@ -74,7 +75,8 @@
   function handleResizerPointerMove(e: PointerEvent) {
     if (!isResizing || !splitEl) return;
     const rect = splitEl.getBoundingClientRect();
-    pipelineWidth = Math.min(Math.max(e.clientX - rect.left, rect.width - 760), rect.width * 0.75);
+    const MIN_CHAT_WIDTH = 760;
+    pipelineWidth = Math.min(Math.max(e.clientX - rect.left, rect.width - MIN_CHAT_WIDTH), rect.width * 0.75);
   }
 
   function handleResizerPointerUp() {

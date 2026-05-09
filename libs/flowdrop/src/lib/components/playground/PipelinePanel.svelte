@@ -31,12 +31,13 @@
   }: Props = $props();
 
   let runDropdownOpen = $state(false);
+  let chipWrapEl = $state<HTMLElement | null>(null);
 
   // Close run popover on outside click
   $effect(() => {
     if (!runDropdownOpen) return;
     function handleOutside(e: MouseEvent) {
-      if (!(e.target as HTMLElement).closest('.pipeline-panel__run-chip-wrap')) {
+      if (!chipWrapEl?.contains(e.target as Node)) {
         runDropdownOpen = false;
       }
     }
@@ -64,7 +65,7 @@
 
     {#if pipelineId && executions.length > 0}
       <!-- Run picker chip -->
-      <div class="pipeline-panel__run-chip-wrap">
+      <div class="pipeline-panel__run-chip-wrap" bind:this={chipWrapEl}>
         <button
           type="button"
           class="pipeline-panel__run-chip"
@@ -191,11 +192,6 @@
   .pipeline-panel__status-badge--live {
     background-color: var(--fd-success-muted);
     color: var(--fd-success);
-  }
-
-  .pipeline-panel__status-badge--pinned {
-    background-color: var(--fd-primary-muted);
-    color: var(--fd-primary);
   }
 
   /* Run picker chip */

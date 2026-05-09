@@ -33,8 +33,11 @@
 
     try {
       const sessions = await playgroundService.listSessions(workflowId);
-      const target = sessions.length > 0
-        ? sessions[sessions.length - 1].id
+      const mostRecent = sessions.length > 0
+        ? [...sessions].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).pop()!
+        : null;
+      const target = mostRecent
+        ? mostRecent.id
         : (await playgroundService.createSession(workflowId, 'Session 1')).id;
 
       goto(`/workflow/${workflowId}/playground/${target}`, { replaceState: true });

@@ -507,12 +507,12 @@
 
   /* Markdown overrides for primary-bg (user) bubbles */
   .message-bubble--user .message-bubble__text :global(code) {
-    background-color: oklch(from var(--fd-primary-foreground) l c h / 0.18);
+    background-color: color-mix(in srgb, var(--fd-primary-foreground) 18%, transparent);
     color: var(--fd-primary-foreground);
   }
 
   .message-bubble--user .message-bubble__text :global(pre) {
-    background-color: oklch(0% 0 0 / 0.25);
+    background-color: rgb(0 0 0 / 0.25);
     color: var(--fd-primary-foreground);
   }
 
@@ -523,7 +523,7 @@
   }
 
   .message-bubble--user .message-bubble__text :global(blockquote) {
-    border-left-color: oklch(from var(--fd-primary-foreground) l c h / 0.4);
+    border-left-color: color-mix(in srgb, var(--fd-primary-foreground) 40%, transparent);
     color: var(--fd-primary-foreground);
     opacity: 0.8;
   }
@@ -544,7 +544,7 @@
 
   .message-bubble--user .message-bubble__footer {
     justify-content: flex-end;
-    border-top-color: oklch(from var(--fd-primary-foreground) l c h / 0.2);
+    border-top-color: color-mix(in srgb, var(--fd-primary-foreground) 20%, transparent);
     color: var(--fd-primary-foreground);
     opacity: 0.75;
   }
@@ -572,9 +572,9 @@
   }
 
   /* ========================================
-	   Log Row Styles
-	   Compact terminal-style entry, distinct from chat bubbles
-	   ======================================== */
+     Log Row Styles
+     Compact terminal-style entry, distinct from chat bubbles
+     ======================================== */
 
   .log-row {
     display: flex;
@@ -661,9 +661,9 @@
   }
 
   /* ========================================
-	   Compact System Notice Styles
-	   Minimal inline display for system messages
-	   ======================================== */
+     Compact System Notice Styles
+     Minimal inline display for system messages
+     ======================================== */
 
   .system-notice {
     display: flex;
