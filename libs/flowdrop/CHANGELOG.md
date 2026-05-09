@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-05-09
+
 ### Added
 
 - **Integrated pipeline view in the playground**: A toggleable side panel displays a live embedded pipeline canvas alongside the chat. The panel can be shown or hidden via a pipeline toggle in the session header, without leaving the playground.
