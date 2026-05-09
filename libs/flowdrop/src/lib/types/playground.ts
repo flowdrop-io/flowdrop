@@ -412,9 +412,16 @@ export type PlaygroundMessageResponse = PlaygroundApiResponse<PlaygroundMessage>
 /**
  * Type alias for messages list response with polling metadata
  */
+export interface PlaygroundMessagesPagination {
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
 export interface PlaygroundMessagesApiResponse extends PlaygroundApiResponse<PlaygroundMessage[]> {
-  /** Whether there are more messages to fetch */
-  hasMore?: boolean;
+  /** Pagination metadata returned by the server */
+  pagination?: PlaygroundMessagesPagination;
   /** Current session status */
   sessionStatus?: PlaygroundSessionStatus;
 }

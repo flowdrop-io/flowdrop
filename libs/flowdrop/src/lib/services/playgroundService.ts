@@ -210,36 +210,58 @@ export class PlaygroundService {
   // =========================================================================
 
   /**
-   * Get messages from a playground session
-   *
-   * @param sessionId - The session UUID
-   * @param afterSequence - Optional sequence number cursor — returns only messages with sequenceNumber > this value
-   * @param limit - Maximum number of messages to return
-   * @returns Messages and session status
+   * Fetch a single page of messages from the server.
    */
-  async getMessages(
+  private async fetchMessagesPage(
     sessionId: string,
     afterSequence?: number,
-    limit?: number
+    offset = 0
   ): Promise<PlaygroundMessagesApiResponse> {
     const config = this.getConfig();
-    let url = buildEndpointUrl(config, config.endpoints.playground.getMessages, {
-      sessionId
-    });
+    let url = buildEndpointUrl(config, config.endpoints.playground.getMessages, { sessionId });
 
     const params = new URLSearchParams();
     if (afterSequence !== undefined) {
       params.append('since', afterSequence.toString());
     }
-    if (limit !== undefined) {
-      params.append('limit', limit.toString());
+    params.append('limit', '100');
+    if (offset > 0) {
+      params.append('offset', offset.toString());
     }
-    const queryString = params.toString();
-    if (queryString) {
-      url = `${url}?${queryString}`;
-    }
+    url = `${url}?${params.toString()}`;
 
     return this.request<PlaygroundMessagesApiResponse>(url);
+  }
+
+  /**
+   * Get all messages from a playground session, following pagination automatically.
+   *
+   * @param sessionId - The session UUID
+   * @param afterSequence - Optional sequence number cursor — returns only messages with sequenceNumber > this value
+   * @returns All messages and session status
+   */
+  async getMessages(
+    sessionId: string,
+    afterSequence?: number
+  ): Promise<PlaygroundMessagesApiResponse> {
+    const first = await this.fetchMessagesPage(sessionId, afterSequence, 0);
+
+    if (!first.pagination?.has_more) {
+      return first;
+    }
+
+    const allMessages = [...(first.data ?? [])];
+    let offset = 100;
+
+    while (true) {
+      const page = await this.fetchMessagesPage(sessionId, afterSequence, offset);
+      allMessages.push(...(page.data ?? []));
+
+      if (!page.pagination?.has_more) {
+        return { ...page, data: allMessages };
+      }
+      offset += 100;
+    }
   }
 
   /**

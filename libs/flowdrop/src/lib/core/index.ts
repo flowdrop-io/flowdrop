@@ -170,7 +170,8 @@ export type {
   PlaygroundSessionsResponse,
   PlaygroundSessionResponse,
   PlaygroundMessageResponse,
-  PlaygroundMessagesApiResponse
+  PlaygroundMessagesApiResponse,
+  PlaygroundMessagesPagination
 } from '../types/playground.js';
 
 export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';

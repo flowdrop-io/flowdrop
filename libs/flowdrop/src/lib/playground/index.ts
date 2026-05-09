@@ -222,6 +222,7 @@ export type {
   PlaygroundSessionResponse,
   PlaygroundMessageResponse,
   PlaygroundMessagesApiResponse,
+  PlaygroundMessagesPagination,
   PlaygroundExecution
 } from '../types/playground.js';
 
