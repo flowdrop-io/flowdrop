@@ -116,8 +116,11 @@
 // ============================================================================
 
 export { default as Playground } from '../components/playground/Playground.svelte';
+export { default as PlaygroundStudio } from '../components/playground/PlaygroundStudio.svelte';
 export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
 export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
+export { default as PipelinePanel } from '../components/playground/PipelinePanel.svelte';
+export { default as ExecutionList } from '../components/playground/ExecutionList.svelte';
 export { default as SessionManager } from '../components/playground/SessionManager.svelte';
 export { default as InputCollector } from '../components/playground/InputCollector.svelte';
 export { default as ExecutionLogs } from '../components/playground/ExecutionLogs.svelte';
@@ -171,6 +174,10 @@ export {
   getInputFields,
   getHasChatInput,
   getSessionCount,
+  // Execution getters (used with PipelinePanel / PlaygroundSplit)
+  getActiveExecutionId,
+  getPinnedExecutionId,
+  getLatestExecutionId,
   // Actions
   playgroundActions,
   // Polling callback factory
@@ -183,6 +190,15 @@ export {
   getMessagesSnapshot,
   getLatestMessageTimestamp
 } from '../stores/playgroundStore.svelte.js';
+
+// ============================================================================
+// Pipeline Panel Store (open/close state, persisted to localStorage)
+// ============================================================================
+
+export {
+  getPipelinePanelOpen,
+  pipelinePanelActions
+} from '../stores/pipelinePanelStore.svelte.js';
 
 // ============================================================================
 // Playground Types
@@ -204,7 +220,8 @@ export type {
   PlaygroundSessionsResponse,
   PlaygroundSessionResponse,
   PlaygroundMessageResponse,
-  PlaygroundMessagesApiResponse
+  PlaygroundMessagesApiResponse,
+  PlaygroundExecution
 } from '../types/playground.js';
 
 export {
