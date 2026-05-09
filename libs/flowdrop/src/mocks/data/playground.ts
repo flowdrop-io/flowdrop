@@ -104,11 +104,12 @@ export function getSessionById(sessionId: string): PlaygroundSession | undefined
 export function createSession(
   workflowId: string,
   name?: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  id?: string
 ): PlaygroundSession {
   const now = new Date().toISOString();
   const session: PlaygroundSession = {
-    id: generateSessionId(),
+    id: id ?? generateSessionId(),
     workflowId,
     name: name || `Session ${sessionIdCounter}`,
     status: 'idle',
@@ -691,7 +692,7 @@ export function initializeDemoForeachPlaygroundData(): void {
   // Helper to produce a timestamp offset by `offsetMs` from now
   const ts = (offsetMs: number) => new Date(now.getTime() + offsetMs).toISOString();
 
-  const session = createSession(workflowId, 'ForEach Demo');
+  const session = createSession(workflowId, 'ForEach Demo', undefined, 'sess-foreach-demo');
 
   // ── Execution 1: completed (pipeline-foreach-001) ────────────────────────
   const exec1Id = 'pipeline-foreach-001';
