@@ -15,7 +15,7 @@ import type {
   PlaygroundMessagesApiResponse,
   PlaygroundExecution
 } from '../types/playground.js';
-import { isChatInputNode, defaultIsTerminalStatus } from '../types/playground.js';
+import { isChatInputNode } from '../types/playground.js';
 import type { Workflow, WorkflowNode } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
@@ -37,11 +37,6 @@ let _sessions = $state<PlaygroundSession[]>([]);
  * Messages in the current session
  */
 let _messages = $state<PlaygroundMessage[]>([]);
-
-/**
- * Whether an execution is currently running
- */
-let _isExecuting = $state<boolean>(false);
 
 /**
  * Whether we are currently loading data
@@ -75,6 +70,11 @@ const _latestExecutionId = $derived(
 const _activeExecutionId = $derived(
   _pinnedExecutionId ?? _latestExecutionId
 );
+
+// Derived from server status — never manually set.
+// Exception: updateSessionStatus('running') in handleSendMessage is an
+// acknowledged optimistic write, overwritten by the next server response.
+const _isExecuting = $derived(_currentSession?.status === 'running');
 
 // =========================================================================
 // Getter Functions (for reactive access in components)
@@ -145,6 +145,15 @@ export function getLastPollTimestamp(): string | null {
  */
 export function getSessionStatus(): PlaygroundSessionStatus {
   return _currentSession?.status ?? 'idle';
+}
+
+/**
+ * Whether the user can currently send a message.
+ * False when executing, when awaiting input, or when no session exists.
+ */
+export function getCanSendMessage(): boolean {
+  const status = _currentSession?.status ?? 'idle';
+  return _currentSession !== null && !_isExecuting && status !== 'awaiting_input';
 }
 
 /**
@@ -493,15 +502,6 @@ export const playgroundActions = {
   },
 
   /**
-   * Set the executing state
-   *
-   * @param executing - Whether execution is in progress
-   */
-  setExecuting: (executing: boolean): void => {
-    _isExecuting = executing;
-  },
-
-  /**
    * Set the loading state
    *
    * @param loading - Whether loading is in progress
@@ -535,7 +535,6 @@ export const playgroundActions = {
     _currentSession = null;
     _sessions = [];
     _messages = [];
-    _isExecuting = false;
     _isLoading = false;
     _error = null;
     _currentWorkflow = null;
@@ -563,31 +562,21 @@ export const playgroundActions = {
 };
 
 // =========================================================================
-// Polling Callback Factory
+// Server Response Application
 // =========================================================================
 
 /**
- * Create a polling callback that processes poll responses.
- * This is the single source of truth for how poll responses update stores.
- * Used by mount.ts, Playground.svelte, and refreshSessionMessages.
- *
- * @param isTerminalStatus - Function to determine if a status clears isExecuting (default: defaultIsTerminalStatus)
- * @returns A callback suitable for playgroundService.startPolling() or pushMessages()
+ * Apply a server response to the store. All message and status updates from
+ * the server flow through here — polling callback, manual fetches, interrupt
+ * resolution. Nothing updates messages or session status except this function.
  */
-export function createPollingCallback(
-  isTerminalStatus: (status: PlaygroundSessionStatus) => boolean = defaultIsTerminalStatus
-): (response: PlaygroundMessagesApiResponse) => void {
-  return (response: PlaygroundMessagesApiResponse) => {
-    if (response.data && response.data.length > 0) {
-      playgroundActions.addMessages(response.data);
-    }
-    if (response.sessionStatus) {
-      playgroundActions.updateSessionStatus(response.sessionStatus);
-      if (isTerminalStatus(response.sessionStatus)) {
-        playgroundActions.setExecuting(false);
-      }
-    }
-  };
+export function applyServerResponse(response: PlaygroundMessagesApiResponse): void {
+  if (response.data && response.data.length > 0) {
+    playgroundActions.addMessages(response.data);
+  }
+  if (response.sessionStatus) {
+    playgroundActions.updateSessionStatus(response.sessionStatus);
+  }
 }
 
 // =========================================================================
@@ -662,20 +651,17 @@ export function subscribeToSessionStatus(
  * has stopped but new messages may exist on the server.
  *
  * @param fetchMessages - Async function to fetch messages from the API
- * @param isTerminalStatus - Optional override for terminal status check
  * @returns Promise that resolves when messages are refreshed
  */
 export async function refreshSessionMessages(
-  fetchMessages: (sessionId: string) => Promise<PlaygroundMessagesApiResponse>,
-  isTerminalStatus?: (status: PlaygroundSessionStatus) => boolean
+  fetchMessages: (sessionId: string) => Promise<PlaygroundMessagesApiResponse>
 ): Promise<void> {
   const session = _currentSession;
   if (!session) return;
 
   try {
     const response = await fetchMessages(session.id);
-    const callback = createPollingCallback(isTerminalStatus);
-    callback(response);
+    applyServerResponse(response);
   } catch (err) {
     logger.error('[playgroundStore] Failed to refresh messages:', err);
   }
