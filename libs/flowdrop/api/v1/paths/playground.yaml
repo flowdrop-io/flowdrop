@@ -177,12 +177,12 @@
       - name: since
         in: query
         description: |
-          ISO 8601 timestamp to fetch messages after this time.
-          Used for polling to get only new messages.
+          Sequence number cursor — returns only messages with sequenceNumber
+          greater than this value. Used for efficient polling.
         required: false
         schema:
-          type: string
-          format: date-time
+          type: integer
+          minimum: 0
       - name: limit
         in: query
         description: Maximum number of messages to return
