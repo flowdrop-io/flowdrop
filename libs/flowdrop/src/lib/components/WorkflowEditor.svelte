@@ -266,6 +266,32 @@
     }
   });
 
+  // Apply nodeStatuses from the parent (PipelineStatus embedded mode) to flowNodes
+  // whenever they change. loadNodeExecutionInfo() only fires on pipelineId change,
+  // so this is the update path for subsequent refreshes (e.g. after HITL resolution).
+  $effect(() => {
+    const statuses = props.nodeStatuses;
+    if (!statuses || Object.keys(statuses).length === 0) return;
+
+    flowNodes = untrack(() => flowNodes).map((node) => {
+      const rawStatus = statuses[node.id];
+      if (!rawStatus) return node;
+
+      const existing = node.data.executionInfo ?? { status: 'idle' as const, executionCount: 0, isExecuting: false };
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          executionInfo: {
+            ...existing,
+            status: rawStatus === 'error' ? ('failed' as const) : rawStatus,
+            isExecuting: rawStatus === 'running'
+          }
+        }
+      };
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // History restore callback
   // ---------------------------------------------------------------------------
