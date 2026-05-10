@@ -177,8 +177,6 @@
     {#if getPipelinePanelOpen() && resolvedWorkflow && endpointConfig}
       {@const activeId = getActiveExecutionId()}
       {@const executions = getCurrentSession()?.executions ?? []}
-      {@const activeIndex = executions.findIndex((e) => e.id === activeId)}
-      {@const runLabel = activeIndex >= 0 ? `Run #${activeIndex + 1}` : undefined}
 
       <div class="playground-studio__pipeline" style="width: {pipelineWidth}px;">
         <PipelinePanel
@@ -186,7 +184,6 @@
           workflow={resolvedWorkflow}
           {endpointConfig}
           isPinned={getPinnedExecutionId() !== null}
-          {runLabel}
           {executions}
           latestExecutionId={getLatestExecutionId()}
           onSelectExecution={(id) => playgroundActions.pinExecution(id)}

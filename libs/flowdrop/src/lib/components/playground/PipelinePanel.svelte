@@ -10,7 +10,6 @@
     workflow: Workflow;
     endpointConfig: EndpointConfig;
     isPinned: boolean;
-    runLabel?: string;
     /** All executions for the current session, oldest-first */
     executions?: PlaygroundExecution[];
     /** ID of the most-recent execution */
@@ -26,7 +25,6 @@
     workflow,
     endpointConfig,
     isPinned,
-    runLabel,
     executions = [],
     latestExecutionId = null,
     onSelectExecution,
@@ -77,14 +75,13 @@
           onclick={() => (runDropdownOpen = !runDropdownOpen)}
           title="Switch run"
         >
-          <span class="pipeline-panel__run-chip-label">{runLabel ?? 'Run'}</span>
+          <span class="pipeline-panel__run-chip-label">{pipelineId ?? 'Run'}</span>
           <Icon icon={runDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'} class="pipeline-panel__run-chip-chevron" />
         </button>
 
         {#if runDropdownOpen}
           <div class="pipeline-panel__run-popover">
-            {#each [...executions].reverse() as exec, i (exec.id)}
-              {@const index = executions.length - i}
+            {#each [...executions].reverse() as exec (exec.id)}
               {@const isActive = pipelineId === exec.id}
               <button
                 type="button"
@@ -99,7 +96,7 @@
                   icon={statusIcon(exec.status)}
                   class="pipeline-panel__run-status {statusClass(exec.status)}"
                 />
-                <span>Run #{index}</span>
+                <span class="pipeline-panel__run-id">{exec.id}</span>
                 {#if isActive}
                   <Icon icon="mdi:check" class="pipeline-panel__run-popover-check" />
                 {/if}
@@ -137,7 +134,7 @@
   {#if pipelineId}
     {#key pipelineId}
       <div class="pipeline-panel__content">
-        <PipelineStatus {pipelineId} {workflow} {endpointConfig} {runLabel} {refreshTrigger} isEmbedded={true} />
+        <PipelineStatus {pipelineId} {workflow} {endpointConfig} runLabel={pipelineId ?? undefined} {refreshTrigger} isEmbedded={true} />
       </div>
     {/key}
   {:else}
@@ -278,6 +275,16 @@
 
   .pipeline-panel__run-popover-item--active {
     font-weight: 500;
+  }
+
+  .pipeline-panel__run-id {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--fd-font-mono, monospace);
+    font-size: var(--fd-text-xs);
   }
 
   :global(.pipeline-panel__run-popover-check) {

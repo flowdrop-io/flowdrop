@@ -11,10 +11,6 @@
 
   let { executions, activeExecutionId, latestExecutionId, onSelect }: Props = $props();
 
-  function label(index: number): string {
-    return `Run #${index + 1}`;
-  }
-
   function statusIcon(status: PlaygroundExecution['status']): string {
     if (status === 'completed') return 'mdi:check-circle';
     if (status === 'failed') return 'mdi:alert-circle';
@@ -23,7 +19,7 @@
 </script>
 
 <div class="execution-list">
-  {#each executions as execution, i (execution.id)}
+  {#each executions as execution (execution.id)}
     <div
       class="execution-list__item"
       class:execution-list__item--active={execution.id === activeExecutionId}
@@ -43,7 +39,7 @@
           class="execution-list__status-icon execution-list__status-icon--{execution.status}"
         />
       {/if}
-      <span class="execution-list__label">{label(i)}</span>
+      <span class="execution-list__label">{execution.id}</span>
       {#if execution.id === latestExecutionId}
         <span class="execution-list__badge">latest</span>
       {/if}
