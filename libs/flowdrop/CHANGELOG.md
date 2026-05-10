@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-05-10
+
+### Added
+
+- **`PlaygroundStudio` component**: A drop-in split-pane component that combines `PipelinePanel` and `Playground` side by side — the same layout as the demo app, available as a single import. Accepts a `minChatWidth` prop (CSS-var backed, default 760 px).
+- **`mountPlaygroundStudio()`**: Vanilla JS / framework-agnostic mount function for the split-pane layout, alongside a matching `PlaygroundStudioMountOptions` type. Mirrors `mountPlayground` so host apps can embed the integrated experience without Svelte.
+- **Missing pipeline exports from 1.9.0**: `PipelinePanel`, `ExecutionList`, `PlaygroundExecution`, `getActiveExecutionId`, `getPinnedExecutionId`, `getLatestExecutionId`, `getPipelinePanelOpen`, and `pipelinePanelActions` are now all exported from the `@flowdrop/flowdrop` and `@flowdrop/flowdrop/playground` entry points.
+- **`source` field on playground messages**: `PlaygroundMessageMetadata` gains an optional `source?: string` property so the subsystem that produced a message (e.g. `'pipeline'`, `'job'`, `'cron'`) can be identified. Rendered as a small pill badge before the node label in log rows and before the text in compact system notices.
+- **Refresh button and `flowdrop:refresh-status` DOM event**: A Refresh button in the playground header triggers an immediate fetch of the latest messages and resumes polling if it had stopped. Host applications can also dispatch `flowdrop:refresh-status` on the mount container to trigger the same action programmatically.
+- **Sequence-number polling cursor**: Incremental message fetches now use `?since=<sequenceNumber>` instead of a timestamp, matching the `PlaygroundMessage.sequenceNumber` field in the OpenAPI spec. `getLastSequenceNumber()` is exposed from `playgroundService`; `getLatestSequenceNumber()` and `getLastPollSequenceNumber()` from `playgroundStore`. `startPolling` accepts an optional `initialSequenceNumber` seed to avoid a full re-fetch on restart.
+- **Automatic pipeline panel refresh**: When following the latest run (not pinned to a historical execution), the pipeline panel re-fetches pipeline data from the server on every incoming message batch. Pinned historical runs are unaffected. The panel also auto-clears the pin when a new execution is detected in incoming messages, or when the user sends a new message.
+- **`PlaygroundMessagesPagination` type**: Exported from both `@flowdrop/flowdrop/playground` and the core index.
+- **`getCanSendMessage()`**: New store helper that combines `isExecuting`, `awaitingInput`, and no-active-session guards into a single predicate for the send button and `handleSend`.
+
+### Fixed
+
+- **Automatic pagination of `getMessages`**: `playgroundService.getMessages` now follows pagination automatically — it fetches pages of 100 until `pagination.has_more` is false, then returns all messages merged. Previously only the first page was returned when a session had many messages. Also corrects `PlaygroundMessagesApiResponse` to match the actual server shape where pagination is nested under `pagination: { has_more, total, limit, offset }` rather than a top-level `hasMore` field.
+- **Pipeline run picker status icon after completion**: Execution entries were stuck at `'running'` indefinitely because `updateSessionStatus()` only promoted them to `'completed'` on `'completed'` or `'failed'` — but the server returns `'idle'` when a pipeline finishes normally. `'idle'` is now mapped to `'completed'` in the `PlaygroundExecution` entry.
+- **Node statuses in pipeline panel after HITL resolution**: `WorkflowEditor` accepted a `nodeStatuses` prop but never applied it, so Confirmation and Chat Output nodes remained in their pre-interrupt visual state after an interrupt resolved (since `loadNodeExecutionInfo` only fires on `pipelineId` change). A new `$effect` watches `props.nodeStatuses` and maps values onto `flowNodes[*].data.executionInfo` directly from the data already fetched by `PipelineStatus.fetchPipelineData()`.
+- **Execution ID detection from interrupt metadata**: The server no longer stamps `executionId` on user messages — it now arrives only as `metadata.execution_id` (snake_case) inside interrupt messages. `syncExecutionsFromMessages` falls back to that field so new runs are correctly detected and the pipeline panel switches to the right run.
+- **`PlaygroundStudio` refresh trigger**: `PlaygroundStudio` was passing `refreshTrigger={getMessages().length}` (a stale approach) instead of `getPipelineRefreshTrigger()`, which applies the pinned-vs-latest guard. Aligned with the fix already in `+page.svelte`.
+- **`isExecuting` / `isPolling` desync**: `isExecuting()` was reading `playgroundService.isPolling()`, which returns `true` whenever a polling loop is active — including during `awaiting_input` when `_isExecuting` is `false`. It now reads `getIsExecuting()` from the store, which is derived from `_currentSession.status === 'running'`, so the two cannot desync. The stop button and send button guards are updated accordingly.
+- **State machine edge cases**: `loadSession` seeds the polling timestamp and uses `applyServerResponse`; `handleSelectSession` resets status to `idle` before loading the next session; `handleSendMessage` guards with `getIsExecuting()` and resets to `idle` on error; `handleStopExecution` resets status in the catch block; `handleInterruptResolved` restarts polling and sets executing if the server resumed. A `visibilitychange` listener triggers an immediate catch-up fetch when the user returns to the tab.
+- **Concurrent session loads**: `loadedInitialSessionId` is assigned before the first `await` in `loadInitialSession`, making the `$effect` guard visible synchronously and preventing a second concurrent load when reactive dependencies change mid-load.
+- **Intra-batch message duplicates**: `addMessages` now deduplicates against the incoming batch itself (not only existing messages), preventing `each_key_duplicate` errors when the server returns the same message ID twice in one response.
+- **Scroll to bottom on new messages**: Scroll anchor now fires reliably when new messages arrive, fixing cases where the message list did not scroll to the latest entry.
+- **Log row icon alignment**: Icons in playground log rows are now vertically centered.
+
+### Changed
+
+- **Pipeline selector shows execution ID, not "Run #N"**: The pipeline chip and run picker popover now display the raw execution ID in a monospace truncated format. The `runLabel` prop is removed from `PipelineStatus`; it receives `pipelineId` directly as its label. `PlaygroundStudio` and the page component no longer need to compute a run label.
+- **Pipeline refresh trigger moved into the store**: `applyServerResponse` now owns the `_pipelineRefreshTrigger` counter and increments it whenever a message batch arrives while following latest. Consumer pages call `getPipelineRefreshTrigger()` and pass it to `PipelinePanel`.
+
 ## [1.9.0] - 2026-05-09
 
 ### Added
