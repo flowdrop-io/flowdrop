@@ -18,6 +18,7 @@
     getActiveExecutionId,
     getPinnedExecutionId,
     getLatestExecutionId,
+    getLatestSequenceNumber,
     getCurrentSession,
     playgroundActions
   } from '$lib/stores/playgroundStore.svelte.js';
@@ -61,6 +62,23 @@
   let workflow = $state<Workflow | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
+
+  /**
+   * Incremented whenever new messages arrive while following latest (not pinned).
+   * Forwarded to PipelinePanel so PipelineStatus re-fetches without changing pipelineId.
+   */
+  let pipelineRefreshTrigger = $state(0);
+
+  $effect(() => {
+    const seq = getLatestSequenceNumber();
+    const pinned = getPinnedExecutionId();
+    const latest = getLatestExecutionId();
+    // Refresh when following latest (not pinned) OR pinned to the latest execution.
+    // Skip only when pinned to a historical run.
+    if (seq !== null && (pinned === null || pinned === latest)) {
+      pipelineRefreshTrigger++;
+    }
+  });
 
   /** Pipeline panel resize state */
   let splitEl = $state<HTMLElement | null>(null);
@@ -158,6 +176,7 @@
             {executions}
             latestExecutionId={getLatestExecutionId()}
             onSelectExecution={(id) => playgroundActions.pinExecution(id)}
+            refreshTrigger={pipelineRefreshTrigger}
           />
         </div>
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->

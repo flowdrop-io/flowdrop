@@ -206,11 +206,9 @@
    * @param sessionId - The session ID to load
    */
   async function loadInitialSession(sessionId: string): Promise<void> {
-    // Set immediately (before any await) so the $effect guard sees it synchronously
-    // and won't spawn a second concurrent load when isLoading changes.
-    loadedInitialSessionId = sessionId;
-
-    // Validate session exists in loaded sessions
+    // Validate session exists in loaded sessions before setting the guard.
+    // If not found yet, we skip setting loadedInitialSessionId so the $effect
+    // can retry when _sessions updates (e.g. after a new session is created).
     const sessionList = getSessions();
     const sessionExists = sessionList.some((s) => s.id === sessionId);
 
@@ -222,6 +220,9 @@
       initialSessionLoaded = true;
       return;
     }
+
+    // Set guard BEFORE the first await to prevent concurrent loads.
+    loadedInitialSessionId = sessionId;
 
     try {
       await loadSession(sessionId);
@@ -415,6 +416,7 @@
     const sessionId = getCurrentSession()!.id;
 
     playgroundActions.updateSessionStatus('running');
+    playgroundActions.pinExecution(null);
     playgroundActions.setError(null);
 
     try {

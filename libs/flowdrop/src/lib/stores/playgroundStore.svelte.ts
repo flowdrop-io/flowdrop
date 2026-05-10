@@ -348,6 +348,8 @@ function syncExecutionsFromMessages(messages: PlaygroundMessage[]): void {
       ..._currentSession,
       executions: [...(_currentSession.executions ?? []), ...newExecutions]
     };
+    // Clear any manual pin so the panel automatically follows the new run.
+    _pinnedExecutionId = null;
   }
 }
 
