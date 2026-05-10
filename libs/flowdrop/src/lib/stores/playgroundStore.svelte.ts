@@ -61,6 +61,9 @@ let _lastPollSequenceNumber = $state<number | null>(null);
 /** Execution ID explicitly pinned by the user (null = follow latest) */
 let _pinnedExecutionId = $state<string | null>(null);
 
+/** Incremented on every message batch that should trigger a pipeline re-fetch */
+let _pipelineRefreshTrigger = $state(0);
+
 /** Latest execution ID derived from current session's executions list */
 const _latestExecutionId = $derived(
   _currentSession?.executions?.at(-1)?.id ?? null
@@ -282,6 +285,15 @@ export function getLatestExecutionId(): string | null {
 
 export function getActiveExecutionId(): string | null {
   return _activeExecutionId;
+}
+
+/**
+ * Counter that increments whenever new messages arrive and the pipeline display
+ * should re-fetch — i.e. when following latest or pinned to the latest execution.
+ * Pass to PipelinePanel's refreshTrigger prop.
+ */
+export function getPipelineRefreshTrigger(): number {
+  return _pipelineRefreshTrigger;
 }
 
 // =========================================================================
@@ -548,6 +560,7 @@ export const playgroundActions = {
     _error = null;
     _currentWorkflow = null;
     _lastPollSequenceNumber = null;
+    _pipelineRefreshTrigger = 0;
   },
 
   /**
@@ -582,6 +595,11 @@ export const playgroundActions = {
 export function applyServerResponse(response: PlaygroundMessagesApiResponse): void {
   if (response.data && response.data.length > 0) {
     playgroundActions.addMessages(response.data);
+    // Refresh pipeline when following latest or pinned to the latest execution.
+    // Skip only when the user is viewing a historical run.
+    if (_pinnedExecutionId === null || _pinnedExecutionId === _latestExecutionId) {
+      _pipelineRefreshTrigger++;
+    }
   }
   if (response.sessionStatus) {
     playgroundActions.updateSessionStatus(response.sessionStatus);
