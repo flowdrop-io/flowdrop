@@ -345,10 +345,16 @@ function syncExecutionsFromMessages(messages: PlaygroundMessage[]): void {
   const newExecutions: PlaygroundExecution[] = [];
 
   for (const msg of messages) {
-    if (msg.executionId && !existingIds.has(msg.executionId)) {
-      existingIds.add(msg.executionId);
+    // Top-level executionId (user messages) OR metadata.execution_id (interrupt messages).
+    // The server stopped stamping executionId on user messages in newer versions;
+    // interrupt messages carry it as metadata.execution_id (snake_case) instead.
+    const execId =
+      msg.executionId ??
+      (typeof msg.metadata?.execution_id === 'string' ? msg.metadata.execution_id : undefined);
+    if (execId && !existingIds.has(execId)) {
+      existingIds.add(execId);
       newExecutions.push({
-        id: msg.executionId,
+        id: execId,
         startedAt: msg.timestamp,
         status: 'running'
       });
