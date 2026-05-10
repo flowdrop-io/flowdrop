@@ -413,11 +413,15 @@ export const playgroundActions = {
     // Update the latest execution status when the session reaches a terminal state.
     // Only the last execution can be running at any time (sessions are single-pipeline),
     // so we only need to check and update the tail entry.
-    if ((status === 'completed' || status === 'failed') && _currentSession?.executions?.length) {
+    // 'idle' means the run finished normally (server returns 'idle' post-completion,
+    // not 'completed'), so map it to 'completed' for the execution entry.
+    const terminalExecutionStatus =
+      status === 'failed' ? 'failed' : status === 'completed' || status === 'idle' ? 'completed' : null;
+    if (terminalExecutionStatus && _currentSession?.executions?.length) {
       const execs = [..._currentSession.executions];
       const last = execs[execs.length - 1];
       if (last.status === 'running') {
-        execs[execs.length - 1] = { ...last, status };
+        execs[execs.length - 1] = { ...last, status: terminalExecutionStatus };
         _currentSession = { ..._currentSession, executions: execs };
       }
     }
