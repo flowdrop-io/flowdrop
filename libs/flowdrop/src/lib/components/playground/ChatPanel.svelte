@@ -53,6 +53,8 @@
     enableMarkdown?: boolean;
     /** Callback when an interrupt is resolved (to refresh messages) */
     onInterruptResolved?: () => void;
+    /** Callback to create a new session — when provided, a button is shown in the no-session welcome state */
+    onCreateSession?: () => void;
     /**
      * Whether to show the chat text input (default: true)
      * When false, only the "Run" button is displayed.
@@ -92,7 +94,8 @@
     showRunButton = true,
     predefinedMessage,
     compactSystemMessages = true,
-    showLogs = $bindable(true)
+    showLogs = $bindable(true),
+    onCreateSession
   }: Props = $props();
 
   // Hoist playground branches — states/actions are read 8+ times each in the
@@ -414,6 +417,12 @@
           <h2 class="chat-panel__welcome-title">{states.readyTitle}</h2>
           <p class="chat-panel__welcome-text">{states.readyText}</p>
         {/if}
+        {#if onCreateSession}
+          <button type="button" class="chat-panel__create-session-btn" onclick={onCreateSession}>
+            <Icon icon="mdi:plus" />
+            New session
+          </button>
+        {/if}
       </div>
     {:else if showEmptyChat}
       <!-- Empty Chat State (session exists but no messages) -->
@@ -513,7 +522,7 @@
               class="chat-panel__input"
               placeholder={resolvedPlaceholder}
               rows="1"
-              disabled={getIsExecuting()}
+              disabled={getIsExecuting() || !getCurrentSession()}
               onkeydown={handleKeydown}
               oninput={handleInput}
             ></textarea>
@@ -612,6 +621,26 @@
     font-size: var(--fd-text-base);
     color: var(--fd-muted-foreground);
     margin: 0;
+  }
+
+  .chat-panel__create-session-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    margin-top: var(--fd-space-2xl);
+    padding: var(--fd-space-sm) var(--fd-space-xl);
+    border: none;
+    border-radius: var(--fd-radius-md);
+    background: var(--fd-primary);
+    color: var(--fd-primary-foreground);
+    font-size: var(--fd-text-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .chat-panel__create-session-btn:hover {
+    opacity: 0.9;
   }
 
   /* Typing Indicator */

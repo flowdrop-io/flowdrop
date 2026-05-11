@@ -105,6 +105,9 @@
 
   /** Whether the session switcher popover is open (standalone mode) */
   let sessionDropdownOpen = $state(false);
+  const chatPanelCreateSession = $derived(
+    getSessions().length === 0 ? () => void handleCreateSession() : undefined
+  );
 
   // Close session popover on outside click
   $effect(() => {
@@ -620,6 +623,15 @@
               {#if getSessions().length === 0 && !getIsLoading()}
                 <div class="playground__sessions-empty">
                   <span>No sessions yet</span>
+                  <button
+                    type="button"
+                    class="playground__sessions-empty-btn"
+                    onclick={handleCreateSession}
+                    disabled={getIsLoading()}
+                  >
+                    <Icon icon="mdi:plus" />
+                    New session
+                  </button>
                 </div>
               {:else}
                 {#each getSessions() as session (session.id)}
@@ -865,6 +877,7 @@
             onSendMessage={handleSendMessage}
             onStopExecution={handleStopExecution}
             onInterruptResolved={handleInterruptResolved}
+            onCreateSession={chatPanelCreateSession}
             bind:showLogs
           />
         {/if}
@@ -1126,6 +1139,34 @@
     text-align: center;
     font-size: var(--fd-text-xsm);
     color: var(--fd-muted-foreground);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fd-space-md);
+  }
+
+  .playground__sessions-empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    border: none;
+    border-radius: var(--fd-radius-md);
+    background: var(--fd-primary);
+    color: var(--fd-primary-foreground);
+    font-size: var(--fd-text-xsm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .playground__sessions-empty-btn:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .playground__sessions-empty-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   /* Session row - clickable to load session; clear hover/active affordance */
