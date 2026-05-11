@@ -48,6 +48,7 @@ import { mount, unmount } from 'svelte';
 import Playground from '../components/playground/Playground.svelte';
 import PlaygroundModal from '../components/playground/PlaygroundModal.svelte';
 import PlaygroundStudio from '../components/playground/PlaygroundStudio.svelte';
+import PlaygroundApp from '../components/playground/PlaygroundApp.svelte';
 import type { Workflow } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import type {
@@ -57,6 +58,9 @@ import type {
   PlaygroundMessagesApiResponse,
   PlaygroundSessionStatus
 } from '../types/playground.js';
+import type { PartialSettings, SettingsCategory } from '../types/settings.js';
+import { initializeSettings } from '../stores/settingsStore.svelte.js';
+import type { NavbarAction } from '../svelte-app.js';
 import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
@@ -138,6 +142,13 @@ export interface PlaygroundMountOptions {
     status: PlaygroundSessionStatus,
     previousStatus: PlaygroundSessionStatus
   ) => void;
+
+  /**
+   * Optional setting overrides deep-merged over current settings before mount.
+   * Theme is re-initialized on every mount regardless. Mirrors mountFlowDropApp's
+   * `settings` option.
+   */
+  settings?: PartialSettings;
 }
 
 /**
@@ -302,6 +313,7 @@ export async function mountPlayground(
     config = {},
     height = '100%',
     width = '100%',
+    settings: initialSettings,
     onClose,
     onSessionStatusChange
   } = options;
@@ -321,6 +333,8 @@ export async function mountPlayground(
   }
 
   const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
+
+  await initializeSettings({ defaults: initialSettings });
 
   let targetContainer = container;
 
@@ -411,6 +425,7 @@ export async function mountPlaygroundStudio(
     initialPipelineOpen,
     minChatWidth,
     initialPipelineWidth,
+    settings: initialSettings,
     onClose,
     onSessionNavigate,
     onSessionStatusChange
@@ -427,6 +442,8 @@ export async function mountPlaygroundStudio(
   }
 
   const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
+
+  await initializeSettings({ defaults: initialSettings });
 
   container.style.height = height;
   container.style.width = width;
@@ -445,6 +462,122 @@ export async function mountPlaygroundStudio(
       initialPipelineOpen,
       minChatWidth,
       initialPipelineWidth
+    }
+  });
+
+  return buildMountedPlayground(svelteApp, workflowId, config, onSessionStatusChange);
+}
+
+export interface PlaygroundAppMountOptions
+  extends Omit<PlaygroundStudioMountOptions, 'mode'> {
+  /**
+   * Display mode. Modal is unsupported — use mountPlayground() for that.
+   * @default "standalone"
+   */
+  mode?: 'standalone' | 'embedded';
+  /** Render the FlowDrop Navbar above the playground (default: true). */
+  showNavbar?: boolean;
+  /** Title shown in the navbar. Falls back to the workflow name, then "Playground". */
+  navbarTitle?: string;
+  /** Action buttons rendered in the navbar. Passed straight through to <Navbar primaryActions>. */
+  primaryActions?: NavbarAction[];
+  /** Show the settings gear icon in the navbar (default: true). */
+  showSettings?: boolean;
+  /** Restrict which settings categories are exposed in the settings modal. */
+  settingsCategories?: SettingsCategory[];
+  /** Show the "Sync to Cloud" button in the settings modal. */
+  showSettingsSyncButton?: boolean;
+  /** Show the reset buttons in the settings modal. */
+  showSettingsResetButton?: boolean;
+}
+
+/**
+ * Mount the full-page PlaygroundApp (Navbar + PlaygroundStudio) into a container.
+ *
+ * Use this when you want the same chrome as the FlowDrop editor — logo,
+ * branding, and settings modal — wrapped around the playground. For an
+ * embeddable split-pane without the navbar, use mountPlaygroundStudio().
+ *
+ * @example
+ * ```typescript
+ * const app = await mountPlaygroundApp(container, {
+ *   workflowId: 'wf-123',
+ *   endpointConfig: createEndpointConfig('/api/flowdrop'),
+ *   navbarTitle: 'My Workflow',
+ *   primaryActions: [
+ *     { label: 'Edit', href: '/workflows/wf-123/edit', icon: 'mdi:pencil-outline', variant: 'secondary' },
+ *     { label: 'Workflows', href: '/workflows', icon: 'mdi:arrow-left', variant: 'outline' }
+ *   ]
+ * });
+ * ```
+ */
+export async function mountPlaygroundApp(
+  container: HTMLElement,
+  options: PlaygroundAppMountOptions
+): Promise<MountedPlayground> {
+  const {
+    workflowId,
+    workflow,
+    mode = 'standalone',
+    initialSessionId,
+    endpointConfig,
+    config = {},
+    height = '100%',
+    width = '100%',
+    showNavbar = true,
+    navbarTitle,
+    primaryActions,
+    showSettings = true,
+    settingsCategories,
+    showSettingsSyncButton,
+    showSettingsResetButton,
+    initialPipelineOpen,
+    minChatWidth,
+    initialPipelineWidth,
+    settings: initialSettings,
+    onClose,
+    onSessionNavigate,
+    onSessionStatusChange
+  } = options;
+
+  if (!workflowId) {
+    throw new Error('workflowId is required for mountPlaygroundApp()');
+  }
+  if (!container) {
+    throw new Error('container element is required for mountPlaygroundApp()');
+  }
+  if ((mode as string) === 'modal') {
+    throw new Error('modal mode is not supported by mountPlaygroundApp() — use mountPlayground() instead');
+  }
+
+  const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
+
+  await initializeSettings({ defaults: initialSettings });
+
+  container.style.height = height;
+  container.style.width = width;
+
+  const svelteApp = mount(PlaygroundApp, {
+    target: container,
+    props: {
+      workflowId,
+      workflow,
+      mode,
+      initialSessionId,
+      endpointConfig: finalEndpointConfig,
+      config,
+      showNavbar,
+      navbarTitle,
+      primaryActions,
+      showSettings,
+      settingsCategories,
+      showSettingsSyncButton,
+      showSettingsResetButton,
+      initialPipelineOpen,
+      minChatWidth,
+      initialPipelineWidth,
+      onClose,
+      onSessionNavigate
     }
   });
 

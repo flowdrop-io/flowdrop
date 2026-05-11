@@ -890,7 +890,7 @@
   }
 
   .playground--standalone {
-    height: 100vh;
+    height: 100%;
     background: var(--fd-layout-background, var(--fd-muted));
   }
 

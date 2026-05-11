@@ -117,6 +117,7 @@
 
 export { default as Playground } from '../components/playground/Playground.svelte';
 export { default as PlaygroundStudio } from '../components/playground/PlaygroundStudio.svelte';
+export { default as PlaygroundApp } from '../components/playground/PlaygroundApp.svelte';
 export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
 export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
 export { default as PipelinePanel } from '../components/playground/PipelinePanel.svelte';
@@ -301,8 +302,10 @@ export {
   mountPlayground,
   unmountPlayground,
   mountPlaygroundStudio,
+  mountPlaygroundApp,
   type PlaygroundMountOptions,
   type PlaygroundStudioMountOptions,
+  type PlaygroundAppMountOptions,
   type MountedPlayground
 } from './mount.js';
 
