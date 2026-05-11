@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-05-11
+
+### Added
+
+- **`PlaygroundApp` component**: A full-page playground wrapper that pairs the FlowDrop `Navbar` with `PlaygroundStudio`. Callers build their own `primaryActions` array (no hardcoded back/edit URLs), so the component can be embedded in any host that wants the standard FlowDrop chrome around the playground. The Navbar settings modal is wired through (`showSettings`, `settingsCategories`, `showSettingsSyncButton`, `showSettingsResetButton`) so hosts can restrict which tabs appear or hide the gear entirely.
+- **`mountPlaygroundApp()`**: Vanilla JS / framework-agnostic mount function for `PlaygroundApp`, alongside a matching `PlaygroundAppMountOptions` type. Mirrors `mountPlaygroundStudio` so non-Svelte hosts (e.g. Drupal) can embed the full chrome.
+- **`settings` option on all playground mount functions**: `mountPlayground`, `mountPlaygroundStudio`, and `mountPlaygroundApp` now accept a deep-merged `PartialSettings` value, mirroring `mountFlowDropApp`. Theme is re-initialized on every mount, after validation, so failed calls do not mutate global theme state.
+- **Shared `NavbarAction` type**: Extracted to `types/navbar.ts` as the single source of truth and re-exported from the package entry points.
+
+### Fixed
+
+- **Mount runtime validation for `mode: 'modal'`**: `mountPlaygroundStudio` and `mountPlaygroundApp` now reject `mode: 'modal'` at runtime with a clear error, so JS hosts (Drupal SDC, where TS narrowing does not apply) get a useful message instead of a silent miscast.
+- **`Playground` standalone height**: Switched from `height: 100vh` to `height: 100%` so the chat input is not clipped when a host wraps `Playground` with a navbar.
+
+### Changed
+
+- **No implicit `height`/`width: '100%'` default on playground mounts**: The previous default did not resolve inside parents that only set `min-height` (e.g. Drupal admin chrome under `.fd-fullscreen-layout`), collapsing the playground to zero. Hosts that need an inline size must now pass one explicitly via the `height` / `width` options; hosts that already size the container via CSS no longer have it overwritten. If you previously relied on the implicit cascade, pass `height: '100vh'` (or your desired value) when calling `mountPlayground` / `mountPlaygroundStudio` / `mountPlaygroundApp`.
+
 ## [1.10.0] - 2026-05-10
 
 ### Added
