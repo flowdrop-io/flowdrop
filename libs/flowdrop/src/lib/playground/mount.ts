@@ -60,7 +60,7 @@ import type {
 } from '../types/playground.js';
 import type { PartialSettings, SettingsCategory } from '../types/settings.js';
 import { initializeSettings } from '../stores/settingsStore.svelte.js';
-import type { NavbarAction } from '../svelte-app.js';
+import type { NavbarAction } from '../types/navbar.js';
 import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
@@ -116,14 +116,16 @@ export interface PlaygroundMountOptions {
   config?: PlaygroundConfig;
 
   /**
-   * Container height (CSS value)
-   * @default "100%"
+   * Container height (CSS value). If omitted, the library does NOT set an
+   * inline height — the host's own CSS owns sizing. Pass a definite value
+   * (e.g. `"100dvh"`, `"600px"`) only when mounting into an unsized
+   * container.
    */
   height?: string;
 
   /**
-   * Container width (CSS value)
-   * @default "100%"
+   * Container width (CSS value). If omitted, the library does NOT set an
+   * inline width. See `height` for rationale.
    */
   width?: string;
 
@@ -225,6 +227,35 @@ async function resolveEndpointConfig(
   return resolved;
 }
 
+/**
+ * Shared prelude for the playground mount functions: resolves the endpoint
+ * config and initializes settings/theme. Each mount function still owns its
+ * own argument validation and container sizing (those vary per mode).
+ */
+async function prepareMount(options: {
+  endpointConfig?: EndpointConfig;
+  settings?: PartialSettings;
+}): Promise<EndpointConfig | undefined> {
+  const finalEndpointConfig = await resolveEndpointConfig(options.endpointConfig);
+  await initializeSettings({ defaults: options.settings });
+  return finalEndpointConfig;
+}
+
+/**
+ * Apply caller-supplied height/width as inline styles. When omitted, the host
+ * CSS owns container sizing — this is deliberate: a default of `100%` does not
+ * resolve inside parents with only `min-height` set (a common pattern in
+ * Drupal admin chrome), collapsing the playground to zero.
+ */
+function sizeContainer(
+  container: HTMLElement,
+  height: string | undefined,
+  width: string | undefined
+): void {
+  if (height !== undefined) container.style.height = height;
+  if (width !== undefined) container.style.width = width;
+}
+
 function buildMountedPlayground(
   svelteApp: ReturnType<typeof mount>,
   workflowId: string,
@@ -311,8 +342,8 @@ export async function mountPlayground(
     initialSessionId,
     endpointConfig,
     config = {},
-    height = '100%',
-    width = '100%',
+    height,
+    width,
     settings: initialSettings,
     onClose,
     onSessionStatusChange
@@ -332,17 +363,17 @@ export async function mountPlayground(
     throw new Error('onClose callback is required for modal mode');
   }
 
-  const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
-
-  await initializeSettings({ defaults: initialSettings });
+  const finalEndpointConfig = await prepareMount({
+    endpointConfig,
+    settings: initialSettings
+  });
 
   let targetContainer = container;
 
   if (mode === 'modal') {
     targetContainer = document.body;
   } else {
-    container.style.height = height;
-    container.style.width = width;
+    sizeContainer(container, height, width);
   }
 
   let svelteApp: ReturnType<typeof mount>;
@@ -420,8 +451,8 @@ export async function mountPlaygroundStudio(
     initialSessionId,
     endpointConfig,
     config = {},
-    height = '100%',
-    width = '100%',
+    height,
+    width,
     initialPipelineOpen,
     minChatWidth,
     initialPipelineWidth,
@@ -441,12 +472,12 @@ export async function mountPlaygroundStudio(
     throw new Error('modal mode is not supported by mountPlaygroundStudio() — use mountPlayground() instead');
   }
 
-  const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
+  const finalEndpointConfig = await prepareMount({
+    endpointConfig,
+    settings: initialSettings
+  });
 
-  await initializeSettings({ defaults: initialSettings });
-
-  container.style.height = height;
-  container.style.width = width;
+  sizeContainer(container, height, width);
 
   const svelteApp = mount(PlaygroundStudio, {
     target: container,
@@ -522,8 +553,8 @@ export async function mountPlaygroundApp(
     initialSessionId,
     endpointConfig,
     config = {},
-    height = '100%',
-    width = '100%',
+    height,
+    width,
     showNavbar = true,
     navbarTitle,
     primaryActions,
@@ -546,16 +577,21 @@ export async function mountPlaygroundApp(
   if (!container) {
     throw new Error('container element is required for mountPlaygroundApp()');
   }
-  if ((mode as string) === 'modal') {
-    throw new Error('modal mode is not supported by mountPlaygroundApp() — use mountPlayground() instead');
+  // Positive narrowing (not `=== 'modal'`) because PlaygroundAppMountOptions
+  // Omit-narrows `mode`, so the type lies for JS callers — check the values
+  // we actually accept instead of the one we don't.
+  if (mode !== 'standalone' && mode !== 'embedded') {
+    throw new Error(
+      `mountPlaygroundApp(): mode must be 'standalone' or 'embedded', got ${String(mode)}`
+    );
   }
 
-  const finalEndpointConfig = await resolveEndpointConfig(endpointConfig);
+  const finalEndpointConfig = await prepareMount({
+    endpointConfig,
+    settings: initialSettings
+  });
 
-  await initializeSettings({ defaults: initialSettings });
-
-  container.style.height = height;
-  container.style.width = width;
+  sizeContainer(container, height, width);
 
   const svelteApp = mount(PlaygroundApp, {
     target: container,

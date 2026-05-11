@@ -16,15 +16,7 @@
   import type { EndpointConfig } from '$lib/config/endpoints.js';
   import type { PlaygroundConfig } from '$lib/types/playground.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
-
-  interface NavbarAction {
-    label: string;
-    href: string;
-    icon?: string;
-    variant?: 'primary' | 'secondary' | 'outline';
-    onclick?: (event: Event) => void;
-    external?: boolean;
-  }
+  import type { NavbarAction } from '$lib/types/navbar.js';
 
   interface Props {
     workflowId: string;

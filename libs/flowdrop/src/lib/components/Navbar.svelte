@@ -11,17 +11,8 @@
   import Logo from './Logo.svelte';
   import SettingsModal from './SettingsModal.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
+  import type { NavbarAction } from '$lib/types/navbar.js';
   import { m } from '$lib/messages/index.js';
-
-  interface NavbarAction {
-    label: string;
-    href: string;
-    icon?: string;
-    variant?: 'primary' | 'secondary' | 'outline';
-    onclick?: (event: Event) => void;
-    /** If true, opens link in new tab with proper security attributes */
-    external?: boolean;
-  }
 
   interface BreadcrumbItem {
     label: string;

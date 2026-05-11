@@ -41,16 +41,8 @@ import { initializeSettings } from './stores/settingsStore.svelte.js';
 import { logger } from './utils/logger.js';
 import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
 
-/**
- * Navbar action configuration
- */
-export interface NavbarAction {
-  label: string;
-  href: string;
-  icon?: string;
-  variant?: 'primary' | 'secondary' | 'outline';
-  onclick?: (event: Event) => void;
-}
+import type { NavbarAction } from './types/navbar.js';
+export type { NavbarAction };
 
 /**
  * Mount options for FlowDrop App
