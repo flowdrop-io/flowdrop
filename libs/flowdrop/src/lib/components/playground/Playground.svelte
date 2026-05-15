@@ -14,7 +14,7 @@
   import ExecutionList from './ExecutionList.svelte';
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
-  import type { PlaygroundMode, PlaygroundConfig } from '../../types/playground.js';
+  import type { PlaygroundMode, PlaygroundConfig, PlaygroundSessionStatus } from '../../types/playground.js';
   import { playgroundService } from '../../services/playgroundService.js';
   import { interruptService } from '../../services/interruptService.js';
   import { setEndpointConfig } from '../../services/api.js';
@@ -472,7 +472,11 @@
   /**
    * Start polling for messages
    */
-  function startPolling(sessionId: string, seedSequence = false): void {
+  function startPolling(
+    sessionId: string,
+    seedSequence = false,
+    overrideShouldStopPolling?: (status: PlaygroundSessionStatus) => boolean
+  ): void {
     const pollingInterval = config.pollingInterval ?? 1500;
     const initialSequenceNumber = seedSequence ? getLatestSequenceNumber() : null;
 
@@ -480,7 +484,7 @@
       sessionId,
       (response) => applyServerResponse(response),
       pollingInterval,
-      config.shouldStopPolling,
+      overrideShouldStopPolling ?? config.shouldStopPolling,
       initialSequenceNumber
     );
   }
@@ -523,6 +527,14 @@
 
       if (response.sessionStatus === 'running') {
         startPolling(sessionId, true);
+      } else if (response.sessionStatus === 'awaiting_input') {
+        // Backend hasn't finished processing the interrupt resolution yet.
+        // Poll until the session leaves awaiting_input — only stop on truly terminal states.
+        startPolling(
+          sessionId,
+          true,
+          (status) => status === 'idle' || status === 'completed' || status === 'failed'
+        );
       }
     } catch (err) {
       logger.error('[Playground] Failed to refresh after interrupt:', err);
