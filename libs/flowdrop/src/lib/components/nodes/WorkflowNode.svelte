@@ -264,9 +264,7 @@
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
                 port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
-              role="button"
-              tabindex={0}
-              aria-label={graph.connectInputPort({ name: port.name })}
+              tabindex={-1}
             />
 
             <!-- Port Info: padding lives here so handle position is simple -->
@@ -342,9 +340,7 @@
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
                 port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
-              role="button"
-              tabindex={0}
-              aria-label={graph.connectOutputPort({ name: port.name })}
+              tabindex={-1}
             />
           </div>
         {/each}
