@@ -855,6 +855,9 @@
               {initialViewport}
               colorMode={getResolvedTheme() as ColorMode}
               fitView={getEditorSettings().fitViewOnLoad}
+              nodesDraggable={!props.lockWorkflow && !props.readOnly}
+              nodesConnectable={!props.lockWorkflow && !props.readOnly}
+              elementsSelectable={!props.lockWorkflow && !props.readOnly}
             >
               <Controls />
               {#if !props.readOnly && !props.lockWorkflow && props.onToggleConsole}
