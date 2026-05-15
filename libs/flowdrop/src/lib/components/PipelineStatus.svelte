@@ -117,18 +117,10 @@
         }
       };
 
-      // Update node statuses based on job data
+      // Update node statuses based on job data — only set what the server reported
       if (jobStatusData.node_statuses) {
         const newNodeStatuses: Record<string, 'pending' | 'running' | 'completed' | 'error'> = {};
 
-        // Initialize all nodes as pending
-        if (workflow && workflow.nodes) {
-          workflow.nodes.forEach((node) => {
-            newNodeStatuses[node.id] = 'pending';
-          });
-        }
-
-        // Override with actual job statuses
         for (const nodeId in jobStatusData.node_statuses) {
           const status = jobStatusData.node_statuses[nodeId].status;
           if (['pending', 'running', 'completed', 'failed', 'cancelled'].includes(status)) {
