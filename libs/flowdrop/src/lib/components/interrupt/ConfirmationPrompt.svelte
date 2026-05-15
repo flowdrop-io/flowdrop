@@ -184,6 +184,11 @@
     min-width: 100px;
   }
 
+  .confirmation-prompt__button:focus-visible {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: 2px;
+  }
+
   .confirmation-prompt__button:disabled {
     cursor: not-allowed;
   }

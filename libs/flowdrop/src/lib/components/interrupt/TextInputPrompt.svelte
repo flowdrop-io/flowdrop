@@ -315,6 +315,11 @@
     transform: translateY(-1px);
   }
 
+  .text-prompt__submit:focus-visible {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: 2px;
+  }
+
   .text-prompt__submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;

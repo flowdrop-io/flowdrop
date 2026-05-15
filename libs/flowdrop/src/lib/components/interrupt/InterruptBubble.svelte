@@ -256,6 +256,8 @@
   class:interrupt-bubble--cancelled={currentInterrupt.machineState.status === 'cancelled'}
   class:interrupt-bubble--submitting={isSubmitting}
   class:interrupt-bubble--error={currentInterrupt.machineState.status === 'error'}
+  role="group"
+  aria-label={getTypeLabel(currentInterrupt.type)}
 >
   <!-- Header -->
   <div class="interrupt-bubble__header">
@@ -517,6 +519,11 @@
     background-color: var(--fd-error-hover);
   }
 
+  .interrupt-bubble__retry-btn:focus-visible {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: 2px;
+  }
+
   /* Body - prompt content area, full width */
   .interrupt-bubble__body {
     padding: var(--fd-space-xl);
@@ -587,6 +594,11 @@
     color: var(--fd-error);
     border-color: var(--fd-error);
     background-color: var(--fd-error-muted);
+  }
+
+  .interrupt-bubble__cancel-btn:focus-visible {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: 2px;
   }
 
   .interrupt-bubble__cancel-btn:disabled {

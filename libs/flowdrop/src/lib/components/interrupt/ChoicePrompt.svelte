@@ -45,6 +45,10 @@
   // Hoist the choice branch — counter, min, max, submit reads.
   const t = $derived(m().interrupt.choice);
 
+  // Unique name for the radio/checkbox group so multiple ChoicePrompts on
+  // screen don't share the same HTML group and interfere with each other.
+  const groupName = `choice-option-${Math.random().toString(36).slice(2, 8)}`;
+
   /** Local state for selected values */
   let selectedValues = $state<Set<string>>(new Set());
 
@@ -131,7 +135,7 @@
   {/if}
 
   <!-- Options -->
-  <div class="choice-prompt__options" role={isMultiple ? 'group' : 'radiogroup'}>
+  <div class="choice-prompt__options" role={isMultiple ? 'group' : 'radiogroup'} aria-label={config.message}>
     {#each config.options as option (option.value)}
       {@const isChecked = isResolved ? isOptionResolved(option) : selectedValues.has(option.value)}
       <label
@@ -141,7 +145,7 @@
       >
         <input
           type={isMultiple ? 'checkbox' : 'radio'}
-          name="choice-option"
+          name={groupName}
           value={option.value}
           checked={isChecked}
           disabled={isResolved || isSubmitting}
@@ -295,9 +299,19 @@
 
   .choice-prompt__input {
     position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .choice-prompt__option:focus-within {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: 2px;
   }
 
   .choice-prompt__checkmark {
@@ -370,6 +384,11 @@
     background: var(--fd-interrupt-btn-primary-bg-hover);
     box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
     transform: translateY(-1px);
+  }
+
+  .choice-prompt__submit:focus-visible {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: 2px;
   }
 
   .choice-prompt__submit:disabled {
