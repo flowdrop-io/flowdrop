@@ -1,5 +1,6 @@
 <script lang="ts">
   import PipelineStatus from '$lib/components/PipelineStatus.svelte';
+  import App from '$lib/components/App.svelte';
   import Icon from '@iconify/svelte';
   import type { Workflow } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
@@ -156,9 +157,17 @@
       </div>
     {/key}
   {:else}
-    <div class="pipeline-panel__empty">
-      <Icon icon="mdi:source-branch" class="pipeline-panel__empty-icon" />
-      <p class="pipeline-panel__empty-text">Run the workflow to see the pipeline.</p>
+    <div class="pipeline-panel__content">
+      <App
+        {workflow}
+        height="100%"
+        width="100%"
+        showNavbar={false}
+        disableSidebar={true}
+        lockWorkflow={true}
+        readOnly={true}
+        {endpointConfig}
+      />
     </div>
   {/if}
 </div>
@@ -374,27 +383,4 @@
     overflow: hidden;
   }
 
-  .pipeline-panel__empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-md);
-    color: var(--fd-muted-foreground);
-    padding: var(--fd-space-4xl);
-    text-align: center;
-  }
-
-  :global(.pipeline-panel__empty-icon) {
-    font-size: var(--fd-space-6xl);
-    opacity: 0.4;
-  }
-
-  .pipeline-panel__empty-text {
-    font-size: var(--fd-text-sm);
-    margin: 0;
-    max-width: 200px;
-    line-height: var(--fd-leading-relaxed);
-  }
 </style>
