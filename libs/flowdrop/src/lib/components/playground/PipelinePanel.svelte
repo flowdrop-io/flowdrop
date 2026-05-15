@@ -33,6 +33,14 @@
 
   let runDropdownOpen = $state(false);
   let chipWrapEl = $state<HTMLElement | null>(null);
+  let runChipEl = $state<HTMLElement | null>(null);
+  let runPopoverEl = $state<HTMLElement | null>(null);
+
+  $effect(() => {
+    if (runDropdownOpen && runPopoverEl) {
+      runPopoverEl.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    }
+  });
 
   // Close run popover on outside click
   $effect(() => {
@@ -72,7 +80,11 @@
           class="pipeline-panel__run-chip"
           class:pipeline-panel__run-chip--pinned={isPinned}
           class:pipeline-panel__run-chip--open={runDropdownOpen}
+          bind:this={runChipEl}
+          aria-haspopup="true"
+          aria-expanded={runDropdownOpen}
           onclick={() => (runDropdownOpen = !runDropdownOpen)}
+          onkeydown={(e) => { if (e.key === 'Escape') { runDropdownOpen = false; } }}
           title="Switch run"
         >
           <span class="pipeline-panel__run-chip-label">{pipelineId ?? 'Run'}</span>
@@ -80,11 +92,17 @@
         </button>
 
         {#if runDropdownOpen}
-          <div class="pipeline-panel__run-popover">
+          <div
+            class="pipeline-panel__run-popover"
+            bind:this={runPopoverEl}
+            role="menu"
+            onkeydown={(e) => { if (e.key === 'Escape') { runDropdownOpen = false; runChipEl?.focus(); } }}
+          >
             {#each [...executions].reverse() as exec (exec.id)}
               {@const isActive = pipelineId === exec.id}
               <button
                 type="button"
+                role="menuitem"
                 class="pipeline-panel__run-popover-item"
                 class:pipeline-panel__run-popover-item--active={isActive}
                 onclick={() => {

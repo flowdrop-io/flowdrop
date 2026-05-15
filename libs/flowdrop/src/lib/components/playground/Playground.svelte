@@ -105,6 +105,14 @@
 
   /** Whether the session switcher popover is open (standalone mode) */
   let sessionDropdownOpen = $state(false);
+  let sessionChipEl = $state<HTMLElement | null>(null);
+  let sessionPopoverEl = $state<HTMLElement | null>(null);
+
+  $effect(() => {
+    if (sessionDropdownOpen && sessionPopoverEl) {
+      sessionPopoverEl.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    }
+  });
   const chatPanelCreateSession = $derived(
     getSessions().length === 0 ? () => void handleCreateSession() : undefined
   );
@@ -624,6 +632,7 @@
               onclick={handleCreateSession}
               disabled={getIsLoading()}
               title="New session"
+              aria-label="New session"
             >
               <Icon icon="mdi:plus" />
             </button>
@@ -741,7 +750,11 @@
                 type="button"
                 class="playground__session-chip"
                 class:playground__session-chip--open={sessionDropdownOpen}
+                bind:this={sessionChipEl}
+                aria-haspopup="true"
+                aria-expanded={sessionDropdownOpen}
                 onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
+                onkeydown={(e) => { if (e.key === 'Escape') { sessionDropdownOpen = false; } }}
                 title="Switch session"
               >
                 <span class="playground__session-chip-name">
@@ -751,9 +764,15 @@
               </button>
 
               {#if sessionDropdownOpen}
-                <div class="playground__session-popover">
+                <div
+                  class="playground__session-popover"
+                  bind:this={sessionPopoverEl}
+                  role="menu"
+                  onkeydown={(e) => { if (e.key === 'Escape') { sessionDropdownOpen = false; sessionChipEl?.focus(); } }}
+                >
                   <button
                     type="button"
+                    role="menuitem"
                     class="playground__session-popover-item playground__session-popover-item--new"
                     disabled={getIsLoading()}
                     onclick={() => { sessionDropdownOpen = false; void handleCreateSession(); }}
@@ -768,6 +787,7 @@
                       <div class="playground__session-popover-row">
                         <button
                           type="button"
+                          role="menuitem"
                           class="playground__session-popover-item"
                           class:playground__session-popover-item--active={isActive}
                           onclick={() => {
@@ -788,6 +808,7 @@
                         </button>
                         <button
                           type="button"
+                          role="menuitem"
                           class="playground__session-popover-delete"
                           onclick={(e) => { handleMenuDelete(e, session.id); sessionDropdownOpen = false; }}
                           title="Delete session"
