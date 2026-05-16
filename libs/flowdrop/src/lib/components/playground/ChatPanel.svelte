@@ -12,7 +12,6 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
-  import { onMount } from 'svelte';
   import MessageStream from './MessageStream.svelte';
   import ChatInput from './ChatInput.svelte';
   import { playgroundActions } from '../../stores/playgroundStore.svelte.js';
@@ -68,8 +67,8 @@
 
   const noInputsAvailable = $derived(!showChatInput && !showRunButton);
 
-  // Back-compat: sync legacy showLogs prop into the store once on mount.
-  onMount(() => {
+  // Back-compat: sync legacy showLogs prop into the store whenever it changes.
+  $effect(() => {
     if (showLogs !== undefined) {
       playgroundActions.setShowLogs(showLogs);
     }
