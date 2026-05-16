@@ -120,6 +120,10 @@ export { default as PlaygroundStudio } from '../components/playground/Playground
 export { default as PlaygroundApp } from '../components/playground/PlaygroundApp.svelte';
 export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
 export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
+export { default as MessageStream } from '../components/playground/MessageStream.svelte';
+export { default as ChatInput } from '../components/playground/ChatInput.svelte';
+export { default as ExecutionConsole } from '../components/playground/ExecutionConsole.svelte';
+export { default as ControlPanel } from '../components/playground/ControlPanel.svelte';
 export { default as PipelinePanel } from '../components/playground/PipelinePanel.svelte';
 export { default as ExecutionList } from '../components/playground/ExecutionList.svelte';
 export { default as SessionManager } from '../components/playground/SessionManager.svelte';
@@ -180,6 +184,8 @@ export {
   getActiveExecutionId,
   getPinnedExecutionId,
   getLatestExecutionId,
+  // UI state
+  getShowLogs,
   // Actions
   playgroundActions,
   // Server response application (single update path)
@@ -197,10 +203,7 @@ export {
 // Pipeline Panel Store (open/close state, persisted to localStorage)
 // ============================================================================
 
-export {
-  getPipelinePanelOpen,
-  pipelinePanelActions
-} from '../stores/pipelinePanelStore.svelte.js';
+export { getPipelinePanelOpen, pipelinePanelActions } from '../stores/pipelinePanelStore.svelte.js';
 
 // ============================================================================
 // Playground Types

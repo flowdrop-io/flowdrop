@@ -29,7 +29,7 @@
     executions = [],
     latestExecutionId = null,
     onSelectExecution,
-    refreshTrigger = 0,
+    refreshTrigger = 0
   }: Props = $props();
 
   let runDropdownOpen = $state(false);
@@ -71,7 +71,7 @@
 <div class="pipeline-panel">
   <div class="pipeline-panel__header">
     <Icon icon="mdi:source-branch" class="pipeline-panel__icon" />
-    <span class="pipeline-panel__title">Pipeline</span>
+    <span class="pipeline-panel__title">Pipeline Viewer</span>
 
     {#if pipelineId && executions.length > 0}
       <!-- Run picker chip -->
@@ -85,11 +85,18 @@
           aria-haspopup="true"
           aria-expanded={runDropdownOpen}
           onclick={() => (runDropdownOpen = !runDropdownOpen)}
-          onkeydown={(e) => { if (e.key === 'Escape') { runDropdownOpen = false; } }}
+          onkeydown={(e) => {
+            if (e.key === 'Escape') {
+              runDropdownOpen = false;
+            }
+          }}
           title="Switch run"
         >
           <span class="pipeline-panel__run-chip-label">{pipelineId ?? 'Run'}</span>
-          <Icon icon={runDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'} class="pipeline-panel__run-chip-chevron" />
+          <Icon
+            icon={runDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+            class="pipeline-panel__run-chip-chevron"
+          />
         </button>
 
         {#if runDropdownOpen}
@@ -97,7 +104,12 @@
             class="pipeline-panel__run-popover"
             bind:this={runPopoverEl}
             role="menu"
-            onkeydown={(e) => { if (e.key === 'Escape') { runDropdownOpen = false; runChipEl?.focus(); } }}
+            onkeydown={(e) => {
+              if (e.key === 'Escape') {
+                runDropdownOpen = false;
+                runChipEl?.focus();
+              }
+            }}
           >
             {#each [...executions].reverse() as exec (exec.id)}
               {@const isActive = pipelineId === exec.id}
@@ -137,7 +149,9 @@
             onSelectExecution?.(latestExecutionId);
           }
         }}
-        title={isPinned ? 'Following latest is off — click to resume' : 'Always showing the most recent run'}
+        title={isPinned
+          ? 'Following latest is off — click to resume'
+          : 'Always showing the most recent run'}
       >
         <Icon icon="mdi:refresh" />
         Latest
@@ -145,15 +159,22 @@
     {:else if pipelineId}
       <span
         class="pipeline-panel__status-badge pipeline-panel__status-badge--live"
-        title="Showing the most recent execution"
-      >Latest</span>
+        title="Showing the most recent execution">Latest</span
+      >
     {/if}
   </div>
 
   {#if pipelineId}
     {#key pipelineId}
       <div class="pipeline-panel__content">
-        <PipelineStatus {pipelineId} {workflow} {endpointConfig} runLabel={pipelineId ?? undefined} {refreshTrigger} isEmbedded={true} />
+        <PipelineStatus
+          {pipelineId}
+          {workflow}
+          {endpointConfig}
+          runLabel={pipelineId ?? undefined}
+          {refreshTrigger}
+          isEmbedded={true}
+        />
       </div>
     {/key}
   {:else}
@@ -339,8 +360,12 @@
   }
 
   @keyframes pp-spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Latest toggle */
@@ -382,5 +407,4 @@
     min-height: 0;
     overflow: hidden;
   }
-
 </style>

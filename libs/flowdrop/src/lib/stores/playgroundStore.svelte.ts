@@ -64,15 +64,14 @@ let _pinnedExecutionId = $state<string | null>(null);
 /** Incremented on every message batch that should trigger a pipeline re-fetch */
 let _pipelineRefreshTrigger = $state(0);
 
+/** Whether log messages are visible in the execution console */
+let _showLogs = $state<boolean>(true);
+
 /** Latest execution ID derived from current session's executions list */
-const _latestExecutionId = $derived(
-  _currentSession?.executions?.at(-1)?.id ?? null
-);
+const _latestExecutionId = $derived(_currentSession?.executions?.at(-1)?.id ?? null);
 
 /** Active execution: pinned if set, otherwise latest */
-const _activeExecutionId = $derived(
-  _pinnedExecutionId ?? _latestExecutionId
-);
+const _activeExecutionId = $derived(_pinnedExecutionId ?? _latestExecutionId);
 
 // Derived from server status — never manually set.
 // Exception: updateSessionStatus('running') in handleSendMessage is an
@@ -296,6 +295,13 @@ export function getPipelineRefreshTrigger(): number {
   return _pipelineRefreshTrigger;
 }
 
+/**
+ * Whether log messages should be shown in the execution console
+ */
+export function getShowLogs(): boolean {
+  return _showLogs;
+}
+
 // =========================================================================
 // Helper Functions
 // =========================================================================
@@ -416,7 +422,11 @@ export const playgroundActions = {
     // 'idle' means the run finished normally (server returns 'idle' post-completion,
     // not 'completed'), so map it to 'completed' for the execution entry.
     const terminalExecutionStatus =
-      status === 'failed' ? 'failed' : status === 'completed' || status === 'idle' ? 'completed' : null;
+      status === 'failed'
+        ? 'failed'
+        : status === 'completed' || status === 'idle'
+          ? 'completed'
+          : null;
     if (terminalExecutionStatus && _currentSession?.executions?.length) {
       const execs = [..._currentSession.executions];
       const last = execs[execs.length - 1];
@@ -584,6 +594,14 @@ export const playgroundActions = {
 
   pinExecution(executionId: string | null): void {
     _pinnedExecutionId = executionId;
+  },
+
+  setShowLogs(value: boolean): void {
+    _showLogs = value;
+  },
+
+  toggleShowLogs(): void {
+    _showLogs = !_showLogs;
   }
 };
 

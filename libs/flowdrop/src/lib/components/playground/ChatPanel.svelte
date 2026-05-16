@@ -1,83 +1,49 @@
 <!--
   ChatPanel Component
-  
-  Clean conversational chat interface for the playground.
-  Displays messages with chat bubbles and includes a simple input area.
-  Styled with BEM syntax for a Langflow-like appearance.
+
+  Public conversational chat interface for the playground. Composes
+  MessageStream (message + interrupt feed) and ChatInput (textarea +
+  send/run/stop). Use this for chat-style agent interactions.
+
+  For view-only execution surfaces, prefer the MessageStream primitive
+  directly — ChatPanel's showChatInput/showRunButton flags are kept for
+  backwards compatibility but are deprecated.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
-  import { tick } from 'svelte';
-  import MessageBubble from './MessageBubble.svelte';
-  import { InterruptBubble } from '../interrupt/index.js';
-  import type { PlaygroundMessage } from '../../types/playground.js';
-  import { hasEnableRunFlag } from '../../types/playground.js';
-  import {
-    isInterruptMetadata,
-    extractInterruptMetadata,
-    metadataToInterrupt
-  } from '../../types/interrupt.js';
-  import {
-    getMessages,
-    getChatMessages,
-    getIsExecuting,
-    getCanSendMessage,
-    getSessionStatus,
-    getCurrentSession
-  } from '../../stores/playgroundStore.svelte.js';
-  import {
-    getInterruptsMap,
-    interruptActions,
-    getInterruptByMessageId
-  } from '../../stores/interruptStore.svelte.js';
+  import { onMount } from 'svelte';
+  import MessageStream from './MessageStream.svelte';
+  import ChatInput from './ChatInput.svelte';
+  import { playgroundActions } from '../../stores/playgroundStore.svelte.js';
   import { m } from '$lib/messages/index.js';
 
-  /**
-   * Component props
-   */
   interface Props {
-    /** Whether to show timestamps on messages */
     showTimestamps?: boolean;
-    /** Whether to auto-scroll to bottom on new messages */
     autoScroll?: boolean;
-    /** Placeholder text for the input */
     placeholder?: string;
-    /** Callback when user sends a message */
     onSendMessage?: (content: string) => void;
-    /** Callback when user requests to stop execution */
     onStopExecution?: () => void;
-    /** Whether to show log messages inline (false = hide them) */
     showLogsInline?: boolean;
-    /** Whether to enable markdown rendering in messages */
     enableMarkdown?: boolean;
-    /** Callback when an interrupt is resolved (to refresh messages) */
     onInterruptResolved?: () => void;
-    /** Callback to create a new session — when provided, a button is shown in the no-session welcome state */
+    /** Render a "New session" CTA in the welcome state */
     onCreateSession?: () => void;
     /**
-     * Whether to show the chat text input (default: true)
-     * When false, only the "Run" button is displayed.
+     * @deprecated Use `<MessageStream />` directly for view-only feeds.
+     * Kept for backwards compatibility with PlaygroundConfig URL params.
      */
     showChatInput?: boolean;
     /**
-     * Whether to show the "Run" button (default: true)
-     * When false, the Run button is hidden.
+     * @deprecated Use `<MessageStream />` directly for view-only feeds.
      */
     showRunButton?: boolean;
-    /**
-     * Predefined message to send when "Run" button is clicked
-     * Used when showChatInput is false.
-     */
     predefinedMessage?: string;
-    /**
-     * Whether to display system messages in compact mode.
-     * When true, system messages appear as minimal inline text
-     * instead of full chat bubbles to reduce visual noise.
-     * @default true
-     */
     compactSystemMessages?: boolean;
-    /** Whether log messages are visible — bindable so parent can host the toggle */
+    /**
+     * @deprecated `showLogs` is now managed by playgroundStore.
+     * Setting it here syncs to the store on mount for backwards compatibility.
+     */
     showLogs?: boolean;
   }
 
@@ -90,501 +56,107 @@
     showLogsInline = false,
     enableMarkdown = true,
     onInterruptResolved,
+    onCreateSession,
     showChatInput = true,
     showRunButton = true,
     predefinedMessage,
     compactSystemMessages = true,
-    showLogs = $bindable(true),
-    onCreateSession
+    showLogs
   }: Props = $props();
 
-  // Hoist playground branches — states/actions are read 8+ times each in the
-  // template. Single getter walk per render instead of per-string.
   const states = $derived(m().playground.states);
-  const actions = $derived(m().playground.actions);
-  const chat = $derived(m().playground.chat);
 
-  // Playground placeholders/labels are configurable per-instance (workflow
-  // author) but fall back to the localized messages tree when not provided.
-  const resolvedPlaceholder = $derived(placeholder ?? chat.placeholder);
-  const resolvedPredefinedMessage = $derived(predefinedMessage ?? chat.predefinedRun);
-
-  /**
-   * Tracks whether the Run button is enabled.
-   * Starts as true, becomes false after Run is clicked,
-   * and is re-enabled when backend sends a message with enableRun: true metadata.
-   */
-  let runEnabled = $state(true);
-
-  /**
-   * Computed flag: true if both chat input and run button are hidden.
-   * In this case, we show a helpful message to the user.
-   */
   const noInputsAvailable = $derived(!showChatInput && !showRunButton);
 
-  /** Input field value */
-  let inputValue = $state('');
-
-  /** Reference to the messages container for scrolling */
-  let messagesContainer = $state<HTMLDivElement>();
-
-  /** Reference to the input field */
-  let inputField = $state<HTMLTextAreaElement>();
-
-  /**
-   * Filter messages based on local showLogs toggle.
-   * The showLogsInline prop is still honoured as the initial hint when explicitly set to false.
-   */
-  const displayMessages = $derived(showLogs ? getMessages() : getChatMessages());
-
-  // ---------------------------------------------------------------------------
-  let previousMessageCount = $state(0);
-  let userScrolledUp = $state(false);
-
-  function handleScroll() {
-    if (!messagesContainer) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
-    userScrolledUp = scrollHeight - scrollTop - clientHeight > 50;
-  }
-
-  function isFormFocused(): boolean {
-    if (!messagesContainer) return false;
-    const activeElement = document.activeElement;
-    if (!activeElement) return false;
-    // Check if active element is a form control inside the messages container
-    const isFormControl =
-      activeElement.tagName === 'INPUT' ||
-      activeElement.tagName === 'TEXTAREA' ||
-      activeElement.tagName === 'SELECT' ||
-      activeElement.tagName === 'BUTTON' ||
-      activeElement.getAttribute('contenteditable') === 'true';
-    return isFormControl && messagesContainer.contains(activeElement);
-  }
-
-  /**
-   * Check if a message is an interrupt request
-   */
-  function isInterruptMessage(message: PlaygroundMessage): boolean {
-    return isInterruptMetadata(message.metadata as Record<string, unknown> | undefined);
-  }
-
-  /**
-   * Sync interrupt messages to the interrupt store.
-   * This effect runs when messages change and adds any new interrupt messages
-   * to the interrupt store. We do this in an effect rather than during render
-   * to avoid Svelte 5's state_unsafe_mutation error.
-   *
-   * If a message has status 'completed', the interrupt is marked as resolved
-   * to show the "Confirmation Submitted" header, disabled buttons, and
-   * "Response submitted" indicator.
-   */
-  $effect(() => {
-    // Get all messages that are interrupt requests
-    const interruptMessages = displayMessages.filter(isInterruptMessage);
-
-    for (const message of interruptMessages) {
-      // Check if we already have this interrupt in the store
-      const existing = getInterruptByMessageId(message.id);
-      if (!existing) {
-        // Extract and validate interrupt metadata
-        const metadata = extractInterruptMetadata(
-          message.metadata as Record<string, unknown> | undefined
-        );
-        if (metadata) {
-          const interrupt = metadataToInterrupt(metadata, message.id, message.content);
-          interruptActions.addInterrupt(interrupt);
-
-          // If the message status is 'completed', mark the interrupt as resolved
-          // This ensures completed interrupts show proper UI state:
-          // - "Confirmation Submitted" header
-          // - Disabled buttons
-          // - "Response submitted" indicator
-          if (message.status === 'completed') {
-            interruptActions.resolveInterrupt(interrupt.id, metadata.response_value);
-          }
-        }
-      }
+  // Back-compat: sync legacy showLogs prop into the store once on mount.
+  onMount(() => {
+    if (showLogs !== undefined) {
+      playgroundActions.setShowLogs(showLogs);
     }
   });
-
-  /**
-   * Reactive map of message IDs to interrupts.
-   * This ensures the component re-renders when interrupts are added to the store.
-   */
-  const interruptsByMessageId = $derived(
-    new Map(
-      Array.from(getInterruptsMap().values())
-        .filter((i) => i.messageId)
-        .map((i) => [i.messageId, i])
-    )
-  );
-
-  /**
-   * Get interrupt data for a message from the reactive map
-   */
-  function getInterruptForMessage(message: PlaygroundMessage) {
-    return interruptsByMessageId.get(message.id);
-  }
-
-  /**
-   * Check if we should show the welcome state
-   */
-  const showWelcome = $derived(!getCurrentSession() && displayMessages.length === 0);
-
-  /**
-   * Check if we should show the empty chat state (session exists but no messages)
-   */
-  const showEmptyChat = $derived(getCurrentSession() && displayMessages.length === 0);
-
-  /**
-   * Handle sending a message
-   */
-  function handleSend(): void {
-    const trimmedValue = inputValue.trim();
-    if (!trimmedValue || !getCanSendMessage()) {
-      return;
-    }
-
-    onSendMessage?.(trimmedValue);
-    inputValue = '';
-
-    // Reset textarea height
-    if (inputField) {
-      inputField.style.height = 'auto';
-    }
-
-    // Re-focus the input
-    tick().then(() => {
-      inputField?.focus();
-    });
-  }
-
-  /**
-   * Handle keyboard events in the input
-   */
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  }
-
-  /**
-   * Handle stop execution
-   */
-  function handleStop(): void {
-    onStopExecution?.();
-  }
-
-  /**
-   * Handle "Run" button click when chat input is hidden.
-   * Sends the predefined message to execute the workflow.
-   * Disables the Run button after clicking until backend re-enables it.
-   */
-  function handleRun(): void {
-    if (getIsExecuting() || !runEnabled) {
-      return;
-    }
-    // Disable the Run button after clicking
-    runEnabled = false;
-    onSendMessage?.(resolvedPredefinedMessage);
-  }
-
-  /**
-   * Track processed message IDs for enableRun detection
-   * to avoid re-processing the same messages.
-   */
-  let processedEnableRunIds = $state(new Set<string>());
-
-  /**
-   * Watch for messages with enableRun: true metadata from the backend.
-   * When detected, re-enable the Run button.
-   */
-  $effect(() => {
-    // Check all messages for enableRun flag
-    for (const message of displayMessages) {
-      // Skip if already processed
-      if (processedEnableRunIds.has(message.id)) {
-        continue;
-      }
-      // Check if this message has the enableRun flag
-      if (hasEnableRunFlag(message.metadata)) {
-        // Mark as processed
-        processedEnableRunIds = new Set([...processedEnableRunIds, message.id]);
-        // Re-enable the Run button
-        runEnabled = true;
-      }
-    }
-  });
-
-  /**
-   * Reset runEnabled state when session changes.
-   * This ensures a fresh state for each session.
-   */
-  $effect(() => {
-    const session = getCurrentSession();
-    if (session) {
-      runEnabled = true;
-      processedEnableRunIds = new Set();
-      userScrolledUp = false;
-    }
-  });
-
-  $effect(() => {
-    const currentCount = displayMessages.length;
-
-    if (!autoScroll || !messagesContainer) {
-      previousMessageCount = currentCount;
-      return;
-    }
-
-    const hasNewMessage = currentCount > previousMessageCount;
-    previousMessageCount = currentCount;
-
-    if (!hasNewMessage || userScrolledUp || isFormFocused()) return;
-
-    tick().then(() => {
-      if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-    });
-  });
-
-  let wasExecuting = false;
-
-  /**
-   * Auto-focus input when execution completes
-   */
-  $effect(() => {
-    const nowExecuting = getIsExecuting();
-    if (wasExecuting && !nowExecuting && inputField) {
-      tick().then(() => inputField?.focus());
-    }
-    wasExecuting = nowExecuting;
-  });
-
-  /**
-   * Auto-resize textarea based on content
-   */
-  function handleInput(): void {
-    if (inputField) {
-      inputField.style.height = 'auto';
-      inputField.style.height = `${Math.min(inputField.scrollHeight, 120)}px`;
-    }
-  }
 </script>
 
 <div class="chat-panel">
-  <!-- Messages Container -->
-  <div class="chat-panel__messages" bind:this={messagesContainer} onscroll={handleScroll}>
-    {#if showWelcome}
-      <!-- Welcome State (no session) -->
-      <div class="chat-panel__welcome">
-        <div class="chat-panel__welcome-icon">
-          <svg
-            width="48"
-            height="48"
-            viewBox="0 0 48 48"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 16L24 8L40 16V32L24 40L8 32V16Z"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M8 16L24 24L40 16"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path d="M24 24V40" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            <path d="M16 12L32 20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            <path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-          </svg>
-        </div>
-        {#if noInputsAvailable}
-          <h2 class="chat-panel__welcome-title">{states.viewOnlyTitle}</h2>
-          <p class="chat-panel__welcome-text">
-            {states.viewOnlyText}
-          </p>
-        {:else if showChatInput}
-          <h2 class="chat-panel__welcome-title">{states.newSessionTitle}</h2>
-          <p class="chat-panel__welcome-text">{states.newSessionText}</p>
-        {:else}
-          <h2 class="chat-panel__welcome-title">{states.readyTitle}</h2>
-          <p class="chat-panel__welcome-text">{states.readyText}</p>
-        {/if}
-        {#if onCreateSession}
-          <button type="button" class="chat-panel__create-session-btn" onclick={onCreateSession}>
-            <Icon icon="mdi:plus" />
-            New session
-          </button>
-        {/if}
-      </div>
-    {:else if showEmptyChat}
-      <!-- Empty Chat State (session exists but no messages) -->
-      <div class="chat-panel__welcome">
-        <div class="chat-panel__welcome-icon">
-          <svg
-            width="48"
-            height="48"
-            viewBox="0 0 48 48"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 16L24 8L40 16V32L24 40L8 32V16Z"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M8 16L24 24L40 16"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-            <path d="M24 24V40" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            <path d="M16 12L32 20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            <path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-          </svg>
-        </div>
-        {#if noInputsAvailable}
-          <h2 class="chat-panel__welcome-title">{states.viewOnlyTitle}</h2>
-          <p class="chat-panel__welcome-text">
-            {states.viewOnlyText}
-          </p>
-        {:else if showChatInput}
-          <h2 class="chat-panel__welcome-title">{states.newSessionTitle}</h2>
-          <p class="chat-panel__welcome-text">{states.newSessionText}</p>
-        {:else}
-          <h2 class="chat-panel__welcome-title">{states.readyTitle}</h2>
-          <p class="chat-panel__welcome-text">{states.readyText}</p>
-        {/if}
-      </div>
-    {:else}
-      <!-- Messages -->
-      {#each displayMessages as message, index (message.id)}
-        {#if isInterruptMessage(message)}
-          {@const interrupt = getInterruptForMessage(message)}
-          {#if interrupt}
-            <InterruptBubble
-              {interrupt}
-              showTimestamp={showTimestamps}
-              onResolved={onInterruptResolved}
-            />
-          {/if}
-        {:else}
-          <MessageBubble
-            {message}
-            showTimestamp={showTimestamps}
-            isLast={index === displayMessages.length - 1}
-            {enableMarkdown}
-            {compactSystemMessages}
-          />
-        {/if}
-      {/each}
+  <MessageStream
+    {showTimestamps}
+    {autoScroll}
+    {enableMarkdown}
+    {showLogsInline}
+    {compactSystemMessages}
+    {onInterruptResolved}
+    welcome={welcomeState}
+    emptySession={emptyChatState}
+  />
 
-      {#if getIsExecuting()}
-        <div class="chat-panel__typing">
-          <div class="chat-panel__typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span class="chat-panel__typing-text">{states.processing}</span>
-        </div>
-      {/if}
-    {/if}
-  </div>
-
-  <!-- Input Area -->
-  <div class="chat-panel__input-area">
-    {#if noInputsAvailable}
-      <!-- No inputs available - show informational message -->
-      <div class="chat-panel__no-inputs">
-        <Icon icon="mdi:information-outline" />
-        <span>{states.viewOnlyHelp}</span>
-      </div>
-    {:else}
-      <div
-        class="chat-panel__input-container"
-        class:chat-panel__input-container--run-only={!showChatInput}
-      >
-        {#if showChatInput}
-          <div class="chat-panel__input-wrapper">
-            <textarea
-              bind:this={inputField}
-              bind:value={inputValue}
-              class="chat-panel__input"
-              placeholder={resolvedPlaceholder}
-              rows="1"
-              disabled={getIsExecuting() || !getCurrentSession()}
-              onkeydown={handleKeydown}
-              oninput={handleInput}
-            ></textarea>
-          </div>
-        {/if}
-
-        {#if getIsExecuting()}
-          <button
-            type="button"
-            class="chat-panel__stop-btn"
-            onclick={handleStop}
-            title={actions.stopTitle}
-          >
-            <Icon icon="mdi:stop" />
-            {actions.stop}
-          </button>
-        {:else if showChatInput}
-          <button
-            type="button"
-            class="chat-panel__send-btn"
-            onclick={handleSend}
-            disabled={!inputValue.trim() || !getCanSendMessage()}
-            title={actions.sendTitle}
-          >
-            {actions.send}
-          </button>
-        {:else if showRunButton}
-          <button
-            type="button"
-            class="chat-panel__run-btn"
-            onclick={handleRun}
-            disabled={!runEnabled}
-            title={runEnabled ? actions.runTitle : actions.runWaitingTitle}
-          >
-            <Icon icon="mdi:play" />
-            {actions.run}
-          </button>
-        {/if}
-      </div>
-    {/if}
-  </div>
+  <ChatInput
+    {placeholder}
+    {predefinedMessage}
+    {onSendMessage}
+    {onStopExecution}
+    showTextarea={showChatInput}
+    {showRunButton}
+  />
 </div>
+
+{#snippet welcomeIcon()}
+  <div class="chat-panel__welcome-icon">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M8 16L24 8L40 16V32L24 40L8 32V16Z"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linejoin="round"
+      />
+      <path d="M8 16L24 24L40 16" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      <path d="M24 24V40" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      <path d="M16 12L32 20" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      <path d="M16 36L32 28" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+    </svg>
+  </div>
+{/snippet}
+
+{#snippet welcomeCopy()}
+  {#if noInputsAvailable}
+    <h2 class="chat-panel__welcome-title">{states.viewOnlyTitle}</h2>
+    <p class="chat-panel__welcome-text">{states.viewOnlyText}</p>
+  {:else if showChatInput}
+    <h2 class="chat-panel__welcome-title">{states.newSessionTitle}</h2>
+    <p class="chat-panel__welcome-text">{states.newSessionText}</p>
+  {:else}
+    <h2 class="chat-panel__welcome-title">{states.readyTitle}</h2>
+    <p class="chat-panel__welcome-text">{states.readyText}</p>
+  {/if}
+{/snippet}
+
+{#snippet welcomeState()}
+  <div class="chat-panel__welcome">
+    {@render welcomeIcon()}
+    {@render welcomeCopy()}
+    {#if onCreateSession}
+      <button type="button" class="chat-panel__create-session-btn" onclick={onCreateSession}>
+        <Icon icon="mdi:plus" />
+        New session
+      </button>
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet emptyChatState()}
+  <div class="chat-panel__welcome">
+    {@render welcomeIcon()}
+    {@render welcomeCopy()}
+  </div>
+{/snippet}
 
 <style>
   .chat-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
-    min-height: 0; /* Critical: allows flexbox to shrink properly */
+    min-height: 0;
     background-color: var(--fd-background);
   }
 
-
-  /* Messages Container - Scrollable area that takes remaining space */
-  .chat-panel__messages {
-    flex: 1;
-    min-height: 0; /* Critical: allows overflow to work in flex container */
-    overflow-y: auto;
-    padding: var(--fd-space-3xl);
-  }
-
-  /* Welcome State */
   .chat-panel__welcome {
     display: flex;
     flex-direction: column;
@@ -641,229 +213,5 @@
 
   .chat-panel__create-session-btn:hover {
     opacity: 0.9;
-  }
-
-  /* Typing Indicator */
-  .chat-panel__typing {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    margin-top: var(--fd-space-xs);
-    background-color: var(--fd-muted);
-    border-radius: var(--fd-radius-2xl);
-    width: fit-content;
-  }
-
-  .chat-panel__typing-indicator {
-    display: flex;
-    gap: var(--fd-space-3xs);
-  }
-
-  .chat-panel__typing-indicator span {
-    width: var(--fd-space-2xs);
-    height: var(--fd-space-2xs);
-    background-color: var(--fd-muted-foreground);
-    border-radius: var(--fd-radius-full);
-    animation: bounce 1.4s ease-in-out infinite;
-  }
-
-  .chat-panel__typing-indicator span:nth-child(1) {
-    animation-delay: 0s;
-  }
-
-  .chat-panel__typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-
-  .chat-panel__typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-
-  @keyframes bounce {
-    0%,
-    60%,
-    100% {
-      transform: translateY(0);
-    }
-    30% {
-      transform: translateY(-0.25rem);
-    }
-  }
-
-  .chat-panel__typing-text {
-    font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
-  }
-
-  /* Input Area - Always stays at bottom, never shrinks */
-  .chat-panel__input-area {
-    flex-shrink: 0;
-    padding: var(--fd-space-xl) var(--fd-space-3xl) var(--fd-space-3xl);
-    background-color: var(--fd-background);
-    border-top: 1px solid var(--fd-border-muted);
-  }
-
-  .chat-panel__input-container {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--fd-space-md);
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  .chat-panel__input-wrapper {
-    flex: 1;
-    display: flex;
-    align-items: flex-end;
-    background-color: var(--fd-background);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-xl);
-    padding: var(--fd-space-sm) var(--fd-space-md);
-    transition:
-      border-color var(--fd-transition-fast),
-      box-shadow var(--fd-transition-fast);
-  }
-
-  .chat-panel__input-wrapper:focus-within {
-    border-color: var(--fd-primary);
-    box-shadow: 0 0 0 3px var(--fd-primary-muted);
-  }
-
-  .chat-panel__input {
-    flex: 1;
-    border: none;
-    outline: none;
-    resize: none;
-    font-family: inherit;
-    font-size: var(--fd-text-base);
-    line-height: var(--fd-leading-normal);
-    max-height: 120px;
-    background: transparent;
-    color: var(--fd-foreground);
-  }
-
-  .chat-panel__input::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .chat-panel__input:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  .chat-panel__send-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--fd-space-sm) var(--fd-space-2xl);
-    border: none;
-    border-radius: var(--fd-radius-lg);
-    background-color: var(--fd-foreground);
-    color: var(--fd-background);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    flex-shrink: 0;
-  }
-
-  .chat-panel__send-btn:hover:not(:disabled) {
-    opacity: 0.85;
-  }
-
-  .chat-panel__send-btn:disabled {
-    background-color: var(--fd-foreground);
-    color: var(--fd-background);
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .chat-panel__stop-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-sm) var(--fd-space-xl);
-    border: none;
-    border-radius: var(--fd-radius-lg);
-    background-color: var(--fd-error);
-    color: var(--fd-error-foreground);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color var(--fd-transition-fast);
-    flex-shrink: 0;
-  }
-
-  .chat-panel__stop-btn:hover {
-    background-color: var(--fd-error-hover);
-  }
-
-  /* Run button (when chat input is hidden) */
-  .chat-panel__run-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-sm) var(--fd-space-2xl);
-    border: none;
-    border-radius: var(--fd-radius-lg);
-    background-color: var(--fd-success);
-    color: var(--fd-success-foreground);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    flex-shrink: 0;
-  }
-
-  .chat-panel__run-btn:hover:not(:disabled) {
-    background-color: var(--fd-success-hover);
-  }
-
-  .chat-panel__run-btn:disabled {
-    background-color: var(--fd-border);
-    color: var(--fd-muted-foreground);
-    cursor: not-allowed;
-  }
-
-  /* Container modifier for run-only mode (no text input) */
-  .chat-panel__input-container--run-only {
-    justify-content: flex-end;
-  }
-
-  /* No inputs available message (view-only mode) */
-  .chat-panel__no-inputs {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background-color: var(--fd-muted);
-    border-radius: var(--fd-radius-lg);
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-sm);
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  /* Responsive */
-  @media (max-width: 640px) {
-    .chat-panel__messages {
-      padding: var(--fd-space-xl);
-    }
-
-    .chat-panel__input-area {
-      padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-xl);
-    }
-
-    .chat-panel__input-container {
-      gap: var(--fd-space-xs);
-    }
-
-    .chat-panel__send-btn,
-    .chat-panel__stop-btn,
-    .chat-panel__run-btn {
-      padding: var(--fd-space-xs) var(--fd-space-xl);
-    }
   }
 </style>
