@@ -14,12 +14,27 @@
     failed: 'mdi:alert-circle',
     pending: 'mdi:clock-outline'
   };
+
+  function formatDuration(ms: number | null | undefined): string | null {
+    if (ms == null) return null;
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
+    const mins = Math.floor(ms / 60000);
+    const secs = Math.floor((ms % 60000) / 1000);
+    return `${mins}m ${secs}s`;
+  }
+
+  function formatDateTime(iso: string | null | undefined): string | null {
+    if (!iso) return null;
+    return new Date(iso).toLocaleString();
+  }
 </script>
 
 <script lang="ts">
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import { createPipelineDataFetcher, resolveStatus } from './pipelineViewUtils.svelte.js';
+  import type { NodeStatusData } from './pipelineViewUtils.svelte.js';
   import type { Workflow, WorkflowNode } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
 
@@ -35,6 +50,7 @@
   interface NodeRow {
     node: WorkflowNode;
     status: NodeStatus;
+    statusData: NodeStatusData | undefined;
   }
 
   const fetcher = createPipelineDataFetcher(
@@ -46,9 +62,29 @@
 
   const sortedRows = $derived.by((): NodeRow[] =>
     workflow.nodes
-      .map((node) => ({ node, status: resolveStatus(fetcher.nodeStatusMap[node.id]) }))
+      .map((node) => {
+        const statusData = fetcher.nodeStatusMap[node.id];
+        return { node, status: resolveStatus(statusData), statusData };
+      })
       .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
   );
+
+  let expandedIds = $state(new Set<string>());
+
+  function hasDetails(row: NodeRow): boolean {
+    return !!(row.statusData?.last_executed || row.statusData?.error);
+  }
+
+  function toggleRow(row: NodeRow) {
+    if (!hasDetails(row)) return;
+    const next = new Set(expandedIds);
+    if (next.has(row.node.id)) {
+      next.delete(row.node.id);
+    } else {
+      next.add(row.node.id);
+    }
+    expandedIds = next;
+  }
 
   onMount(() => {
     fetcher.fetchData();
@@ -68,6 +104,7 @@
       <table class="pipeline-table__table">
         <thead class="pipeline-table__thead">
           <tr>
+            <th class="pipeline-table__th pipeline-table__th--expand"></th>
             <th class="pipeline-table__th">Node</th>
             <th class="pipeline-table__th">Type</th>
             <th class="pipeline-table__th">Status</th>
@@ -76,7 +113,22 @@
         </thead>
         <tbody>
           {#each sortedRows as row (row.node.id)}
-            <tr class="pipeline-table__row">
+            {@const expanded = expandedIds.has(row.node.id)}
+            {@const expandable = hasDetails(row)}
+            <tr
+              class="pipeline-table__row"
+              class:pipeline-table__row--expandable={expandable}
+              class:pipeline-table__row--expanded={expanded}
+              onclick={() => toggleRow(row)}
+            >
+              <td class="pipeline-table__td pipeline-table__td--expand">
+                {#if expandable}
+                  <Icon
+                    icon="mdi:chevron-right"
+                    class="pipeline-table__chevron {expanded ? 'pipeline-table__chevron--open' : ''}"
+                  />
+                {/if}
+              </td>
               <td class="pipeline-table__td pipeline-table__td--label" title={row.node.data.label}>{row.node.data.label}</td>
               <td class="pipeline-table__td pipeline-table__td--muted" title={row.node.data.metadata.id}>{row.node.data.metadata.id}</td>
               <td class="pipeline-table__td">
@@ -90,6 +142,32 @@
               </td>
               <td class="pipeline-table__td pipeline-table__td--id" title={row.node.id}>{row.node.id}</td>
             </tr>
+            {#if expanded && expandable}
+              <tr class="pipeline-table__detail-row">
+                <td colspan="5" class="pipeline-table__detail-cell">
+                  <dl class="pipeline-table__details">
+                    {#if row.statusData?.last_executed}
+                      <div class="pipeline-table__detail-item">
+                        <dt>Last executed</dt>
+                        <dd>{formatDateTime(row.statusData.last_executed)}</dd>
+                      </div>
+                    {/if}
+                    {#if row.statusData?.execution_time != null}
+                      <div class="pipeline-table__detail-item">
+                        <dt>Duration</dt>
+                        <dd>{formatDuration(row.statusData.execution_time)}</dd>
+                      </div>
+                    {/if}
+                    {#if row.statusData?.error}
+                      <div class="pipeline-table__detail-item pipeline-table__detail-item--error">
+                        <dt>Error</dt>
+                        <dd>{row.statusData.error}</dd>
+                      </div>
+                    {/if}
+                  </dl>
+                </td>
+              </tr>
+            {/if}
           {/each}
         </tbody>
       </table>
@@ -167,14 +245,34 @@
     font-family: var(--fd-font-mono, monospace);
   }
 
-  .pipeline-table__row:hover {
+  .pipeline-table__th--expand {
+    width: 1.5rem;
+    padding-right: 0;
+  }
+
+  .pipeline-table__row--expandable {
+    cursor: pointer;
+  }
+
+  .pipeline-table__row--expandable:hover,
+  .pipeline-table__row--expanded:hover {
     background-color: var(--fd-muted);
+  }
+
+  .pipeline-table__row--expanded {
+    background-color: color-mix(in srgb, var(--fd-muted) 60%, transparent);
   }
 
   .pipeline-table__td {
     padding: var(--fd-space-sm) var(--fd-space-md);
     color: var(--fd-foreground);
     border-bottom: 1px solid var(--fd-border);
+  }
+
+  .pipeline-table__td--expand {
+    padding-right: 0;
+    width: 1.5rem;
+    color: var(--fd-muted-foreground);
   }
 
   .pipeline-table__td--label,
@@ -193,6 +291,62 @@
     font-family: var(--fd-font-mono, monospace);
     font-size: var(--fd-text-2xs);
     color: var(--fd-muted-foreground);
+  }
+
+  :global(.pipeline-table__chevron) {
+    font-size: var(--fd-text-sm);
+    transition: transform 0.15s ease;
+    display: block;
+  }
+
+  :global(.pipeline-table__chevron--open) {
+    transform: rotate(90deg);
+  }
+
+  .pipeline-table__detail-row {
+    background-color: color-mix(in srgb, var(--fd-muted) 40%, transparent);
+  }
+
+  .pipeline-table__detail-cell {
+    padding: var(--fd-space-sm) var(--fd-space-md) var(--fd-space-sm) calc(1.5rem + var(--fd-space-md));
+    border-bottom: 1px solid var(--fd-border);
+  }
+
+  .pipeline-table__details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fd-space-sm) var(--fd-space-xl);
+    margin: 0;
+  }
+
+  .pipeline-table__detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .pipeline-table__detail-item dt {
+    font-size: var(--fd-text-2xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fd-muted-foreground);
+  }
+
+  .pipeline-table__detail-item dd {
+    font-size: var(--fd-text-xs);
+    color: var(--fd-foreground);
+    margin: 0;
+  }
+
+  .pipeline-table__detail-item--error dt {
+    color: var(--fd-error);
+  }
+
+  .pipeline-table__detail-item--error dd {
+    color: var(--fd-error);
+    font-family: var(--fd-font-mono, monospace);
+    font-size: var(--fd-text-2xs);
   }
 
   .pipeline-table__status {

@@ -4,10 +4,18 @@ import type { EndpointConfig } from '$lib/config/endpoints.js';
 
 export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed';
 
-export function resolveStatus(raw: string | undefined): NodeStatus {
-  if (raw === 'running') return 'running';
-  if (raw === 'completed') return 'completed';
-  if (raw === 'failed' || raw === 'cancelled') return 'failed';
+export interface NodeStatusData {
+  status: string;
+  last_executed?: string | null;
+  execution_time?: number | null;
+  error?: string | null;
+}
+
+export function resolveStatus(raw: NodeStatusData | undefined): NodeStatus {
+  if (!raw) return 'pending';
+  if (raw.status === 'running') return 'running';
+  if (raw.status === 'completed') return 'completed';
+  if (raw.status === 'failed' || raw.status === 'cancelled') return 'failed';
   return 'pending';
 }
 
@@ -16,7 +24,7 @@ export function createPipelineDataFetcher(
   getEndpointConfig: () => EndpointConfig
 ) {
   const client = new EnhancedFlowDropApiClient(getEndpointConfig());
-  let nodeStatusMap = $state<Record<string, string>>({});
+  let nodeStatusMap = $state<Record<string, NodeStatusData>>({});
   let isLoading = $state(false);
   let isError = $state(false);
 
@@ -25,9 +33,14 @@ export function createPipelineDataFetcher(
       isLoading = true;
       isError = false;
       const data = await client.getPipelineData(getPipelineId());
-      const map: Record<string, string> = {};
+      const map: Record<string, NodeStatusData> = {};
       for (const [nodeId, info] of Object.entries(data.node_statuses)) {
-        map[nodeId] = info.status;
+        map[nodeId] = {
+          status: info.status,
+          last_executed: info.last_executed as string | null | undefined,
+          execution_time: info.execution_time as number | null | undefined,
+          error: info.error as string | null | undefined,
+        };
       }
       nodeStatusMap = map;
     } catch {
