@@ -153,6 +153,12 @@
     }
   }
 
+  function clampPipelineWidth(w: number): number {
+    if (!splitEl) return Math.max(w, 0);
+    const rect = splitEl.getBoundingClientRect();
+    return Math.min(Math.max(w, rect.width - minChatWidth), rect.width * 0.75);
+  }
+
   function handleResizerPointerDown(e: PointerEvent) {
     isResizing = true;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -161,14 +167,22 @@
   function handleResizerPointerMove(e: PointerEvent) {
     if (!isResizing || !splitEl) return;
     const rect = splitEl.getBoundingClientRect();
-    pipelineWidth = Math.min(
-      Math.max(e.clientX - rect.left, rect.width - minChatWidth),
-      rect.width * 0.75
-    );
+    pipelineWidth = clampPipelineWidth(e.clientX - rect.left);
   }
 
   function handleResizerPointerUp() {
     isResizing = false;
+  }
+
+  function handleResizerKeyDown(e: KeyboardEvent) {
+    const step = e.shiftKey ? 50 : 20;
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      pipelineWidth = clampPipelineWidth(pipelineWidth - step);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      pipelineWidth = clampPipelineWidth(pipelineWidth + step);
+    }
   }
 </script>
 
@@ -191,7 +205,6 @@
         />
       </div>
 
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div
         class="playground-studio__resizer"
         class:playground-studio__resizer--active={isResizing}
@@ -200,11 +213,13 @@
         aria-valuenow={Math.round(pipelineWidth)}
         aria-valuemin={0}
         aria-valuemax={Math.round(containerWidth * 0.75)}
+        aria-label="Resize pipeline panel"
         tabindex="0"
         onpointerdown={handleResizerPointerDown}
         onpointermove={handleResizerPointerMove}
         onpointerup={handleResizerPointerUp}
         onpointercancel={handleResizerPointerUp}
+        onkeydown={handleResizerKeyDown}
       >
         <div class="playground-studio__resizer-handle"></div>
       </div>
