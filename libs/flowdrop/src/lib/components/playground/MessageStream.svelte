@@ -10,7 +10,7 @@
 -->
 
 <script lang="ts">
-  import { tick, type Snippet } from 'svelte';
+  import { tick, untrack, type Snippet } from 'svelte';
   import MessageBubble from './MessageBubble.svelte';
   import { InterruptBubble } from '../interrupt/index.js';
   import type { PlaygroundMessage } from '../../types/playground.js';
@@ -40,8 +40,13 @@
     autoScroll?: boolean;
     /** Whether to enable markdown rendering in messages */
     enableMarkdown?: boolean;
-    /** Initial hint to hide log messages even when getShowLogs() is true */
-    showLogsInline?: boolean;
+    /**
+     * Whether this surface is permitted to show log messages.
+     * When true, the store's showLogs toggle takes effect.
+     * When false (default), only chat messages are ever shown regardless of the toggle.
+     * Set to true on execution surfaces (e.g. ExecutionConsole); leave false on pure chat surfaces.
+     */
+    allowLogs?: boolean;
     /** Render system messages in compact inline form */
     compactSystemMessages?: boolean;
     /** Called when an interrupt is resolved */
@@ -56,7 +61,7 @@
     showTimestamps = true,
     autoScroll = true,
     enableMarkdown = true,
-    showLogsInline = false,
+    allowLogs = false,
     compactSystemMessages = true,
     onInterruptResolved,
     welcome,
@@ -68,13 +73,8 @@
   /** Reference to the messages container for scrolling */
   let messagesContainer: HTMLDivElement | undefined;
 
-  /**
-   * Filter messages based on the store-managed showLogs flag.
-   * When showLogsInline is false (default), log messages are never shown
-   * regardless of getShowLogs().
-   */
   const displayMessages = $derived(
-    getShowLogs() && showLogsInline ? getMessages() : getChatMessages()
+    allowLogs && getShowLogs() ? getMessages() : getChatMessages()
   );
 
   let previousMessageCount = 0;
@@ -141,7 +141,7 @@
   }
 
   const showWelcome = $derived(!getCurrentSession() && displayMessages.length === 0);
-  const showEmptyChat = $derived(getCurrentSession() && displayMessages.length === 0);
+  const showEmptyChat = $derived(getCurrentSession() !== null && displayMessages.length === 0);
 
   // Reset scroll-tracking when session changes
   $effect(() => {
@@ -154,12 +154,12 @@
     const currentCount = displayMessages.length;
 
     if (!autoScroll || !messagesContainer) {
-      previousMessageCount = currentCount;
+      untrack(() => { previousMessageCount = currentCount; });
       return;
     }
 
     const hasNewMessage = currentCount > previousMessageCount;
-    previousMessageCount = currentCount;
+    untrack(() => { previousMessageCount = currentCount; });
 
     if (!hasNewMessage || userScrolledUp || isFormFocused()) return;
 

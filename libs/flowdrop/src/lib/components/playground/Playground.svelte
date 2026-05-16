@@ -32,7 +32,6 @@
     getIsLoading,
     getError,
     playgroundActions,
-    getInputFields,
     applyServerResponse,
     getLatestSequenceNumber
   } from '../../stores/playgroundStore.svelte.js';
@@ -65,9 +64,6 @@
     onSessionNavigate
   }: Props = $props();
 
-  /** Current input values from InputCollector */
-  let inputValues = $state<Record<string, unknown>>({});
-
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
   let isRefreshing = $state(false);
@@ -99,8 +95,7 @@
   );
 
   function clampControlPanelHeight(h: number): number {
-    const max = containerHeight ? containerHeight * 0.6 : 600;
-    return Math.min(Math.max(h, 140), max);
+    return Math.min(Math.max(h, 140), maxControlPanelHeight);
   }
 
   function handleVerticalResizerPointerDown(e: PointerEvent) {
@@ -165,11 +160,9 @@
     if (loadedInitialSessionId === initialSessionId) return;
 
     const sessionList = getSessions();
-    if (sessionList.length === 0 && getIsLoading()) return;
+    if (sessionList.length === 0) return;
 
-    if (sessionList.length > 0) {
-      void loadInitialSession(initialSessionId);
-    }
+    void loadInitialSession(initialSessionId);
   });
 
   async function initializePlayground(): Promise<void> {
@@ -323,20 +316,7 @@
     playgroundActions.setError(null);
 
     try {
-      const inputs: Record<string, unknown> = {};
-      const fields = getInputFields();
-
-      fields.forEach((field) => {
-        const key = `${field.nodeId}:${field.fieldId}`;
-        if (inputValues[key] !== undefined) {
-          if (!inputs[field.nodeId]) {
-            inputs[field.nodeId] = {};
-          }
-          (inputs[field.nodeId] as Record<string, unknown>)[field.fieldId] = inputValues[key];
-        }
-      });
-
-      const message = await playgroundService.sendMessage(sessionId, content, inputs);
+      const message = await playgroundService.sendMessage(sessionId, content, {});
       playgroundActions.addMessage(message);
       startPolling(sessionId);
     } catch (err) {

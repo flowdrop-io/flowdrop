@@ -62,6 +62,32 @@ export class ApiError extends Error {
  * const client = new EnhancedFlowDropApiClient(config);
  * ```
  */
+export interface PipelineDataResponse {
+  status: string;
+  jobs: Array<Record<string, unknown>>;
+  node_statuses: Record<string, { status: string; [key: string]: unknown }>;
+  job_status_summary: {
+    total: number;
+    pending: number;
+    running: number;
+    completed: number;
+    failed: number;
+    cancelled: number;
+    skipped?: number;
+    paused?: number;
+    interrupted?: number;
+  };
+  kanban_config?: {
+    columns: Array<{
+      key: string;
+      label: string;
+      statuses: string[];
+      icon?: string;
+      color?: string;
+    }>;
+  };
+}
+
 export class EnhancedFlowDropApiClient {
   private config: EndpointConfig;
   private authProvider: AuthProvider;
@@ -668,58 +694,14 @@ export class EnhancedFlowDropApiClient {
   /**
    * Fetch pipeline data including job information and status
    */
-  async getPipelineData(pipelineId: string): Promise<{
-    status: string;
-    jobs: Array<Record<string, unknown>>;
-    node_statuses: Record<string, { status: string; [key: string]: unknown }>;
-    job_status_summary: {
-      total: number;
-      pending: number;
-      running: number;
-      completed: number;
-      failed: number;
-      cancelled: number;
-      skipped?: number;
-      paused?: number;
-      interrupted?: number;
-    };
-    kanban_config?: {
-      columns: Array<{
-        key: string;
-        label: string;
-        statuses: string[];
-        icon?: string;
-        color?: string;
-      }>;
-    };
-  }> {
-    const response = await this.request<
-      ApiResponse<{
-        status: string;
-        jobs: Array<Record<string, unknown>>;
-        node_statuses: Record<string, { status: string; [key: string]: unknown }>;
-        job_status_summary: {
-          total: number;
-          pending: number;
-          running: number;
-          completed: number;
-          failed: number;
-          cancelled: number;
-          skipped?: number;
-          paused?: number;
-          interrupted?: number;
-        };
-        kanban_config?: {
-          columns: Array<{
-            key: string;
-            label: string;
-            statuses: string[];
-            icon?: string;
-            color?: string;
-          }>;
-        };
-      }>
-    >('pipelines.get', this.config.endpoints.pipelines.get, { id: pipelineId }, {}, 'get pipeline data');
+  async getPipelineData(pipelineId: string): Promise<PipelineDataResponse> {
+    const response = await this.request<ApiResponse<PipelineDataResponse>>(
+      'pipelines.get',
+      this.config.endpoints.pipelines.get,
+      { id: pipelineId },
+      {},
+      'get pipeline data'
+    );
 
     if (!response.success || !response.data) {
       throw new Error(response.error ?? 'Failed to fetch pipeline data');

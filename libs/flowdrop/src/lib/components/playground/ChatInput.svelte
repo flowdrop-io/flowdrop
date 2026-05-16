@@ -10,7 +10,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { hasEnableRunFlag } from '../../types/playground.js';
   import {
     getMessages,
@@ -60,25 +60,22 @@
   let inputValue = $state('');
   let inputField: HTMLTextAreaElement | undefined;
 
-  /** Track processed message IDs to avoid rescanning on every update */
-  const processedEnableRunIds = new Set<string>();
+  // Count of enableRun messages seen so far — plain let, not $state.
+  // Written with untrack to make the bookkeeping intent explicit.
+  let seenEnableRunCount = 0;
 
   $effect(() => {
-    for (const message of getMessages()) {
-      if (processedEnableRunIds.has(message.id)) continue;
-      processedEnableRunIds.add(message.id);
-      if (hasEnableRunFlag(message.metadata)) {
-        runEnabled = true;
-      }
+    const count = getMessages().filter(m => hasEnableRunFlag(m.metadata)).length;
+    if (count > seenEnableRunCount) {
+      untrack(() => { seenEnableRunCount = count; });
+      runEnabled = true;
     }
   });
 
-  /** Reset runEnabled when the active session changes. */
   $effect(() => {
-    const id = getCurrentSession()?.id;
-    if (id) {
+    if (getCurrentSession()?.id) {
+      untrack(() => { seenEnableRunCount = 0; });
       runEnabled = true;
-      processedEnableRunIds.clear();
     }
   });
 
@@ -90,7 +87,7 @@
     if (wasExecuting && !nowExecuting && inputField) {
       tick().then(() => inputField?.focus({ preventScroll: true }));
     }
-    wasExecuting = nowExecuting;
+    untrack(() => { wasExecuting = nowExecuting; });
   });
 
   function handleSend(): void {

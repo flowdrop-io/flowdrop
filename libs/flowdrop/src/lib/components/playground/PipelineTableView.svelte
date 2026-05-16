@@ -64,12 +64,13 @@
     statusData: NodeStatusData | undefined;
   }
 
-  const fetcher = createPipelineDataFetcher(
-    () => pipelineId,
-    () => endpointConfig
-  );
+  const fetcher = createPipelineDataFetcher(() => pipelineId, endpointConfig);
 
-  fetcher.connectRefreshTrigger(() => refreshTrigger);
+  $effect(() => {
+    if (refreshTrigger <= 0) return;
+    const timer = setTimeout(() => fetcher.fetchData(), 300);
+    return () => clearTimeout(timer);
+  });
 
   const sortedRows = $derived.by((): NodeRow[] =>
     workflow.nodes

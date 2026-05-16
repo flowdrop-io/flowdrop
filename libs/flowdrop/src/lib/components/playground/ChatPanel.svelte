@@ -80,7 +80,7 @@
     {showTimestamps}
     {autoScroll}
     {enableMarkdown}
-    {showLogsInline}
+    allowLogs={showLogsInline}
     {compactSystemMessages}
     {onInterruptResolved}
     welcome={welcomeState}

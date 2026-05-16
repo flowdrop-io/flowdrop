@@ -493,6 +493,7 @@ export const playgroundActions = {
    * @param message - The message to add
    */
   addMessage: (message: PlaygroundMessage): void => {
+    if (_messages.some(m => m.id === message.id)) return;
     const seq = message.sequenceNumber ?? 0;
     let lo = 0,
       hi = _messages.length;

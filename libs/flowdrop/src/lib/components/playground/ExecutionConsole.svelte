@@ -16,7 +16,8 @@
     showTimestamps?: boolean;
     autoScroll?: boolean;
     enableMarkdown?: boolean;
-    showLogsInline?: boolean;
+    /** Whether log messages can appear when the user toggle is on. Defaults to true for the execution console. */
+    allowLogs?: boolean;
     compactSystemMessages?: boolean;
     onInterruptResolved?: () => void;
     /** Optional callback that, when provided, shows a "New session" CTA in the welcome state */
@@ -27,7 +28,7 @@
     showTimestamps = true,
     autoScroll = true,
     enableMarkdown = true,
-    showLogsInline = false,
+    allowLogs = true,
     compactSystemMessages = true,
     onInterruptResolved,
     onCreateSession
@@ -46,7 +47,7 @@
     {showTimestamps}
     {autoScroll}
     {enableMarkdown}
-    {showLogsInline}
+    {allowLogs}
     {compactSystemMessages}
     {onInterruptResolved}
     welcome={welcomeState}

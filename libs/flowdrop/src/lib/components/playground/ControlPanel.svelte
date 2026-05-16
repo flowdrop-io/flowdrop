@@ -63,6 +63,7 @@
   const logsTitle = $derived(getShowLogs() ? cp.hideLogs : cp.showLogs);
 
   let sessionDropdownOpen = $state(false);
+  let chipWrapEl = $state<HTMLElement | null>(null);
   let sessionChipEl = $state<HTMLElement | null>(null);
   let sessionPopoverEl = $state<HTMLElement | null>(null);
 
@@ -76,7 +77,7 @@
   $effect(() => {
     if (!sessionDropdownOpen) return;
     function handleOutside(e: MouseEvent) {
-      if (!(e.target as HTMLElement).closest('.control-panel__session-chip-wrap')) {
+      if (!chipWrapEl?.contains(e.target as Node)) {
         sessionDropdownOpen = false;
       }
     }
@@ -110,13 +111,13 @@
     <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
     <span class="control-panel__label">{cp.sessionsLabel}</span>
 
-    <div class="control-panel__session-chip-wrap">
+    <div class="control-panel__session-chip-wrap" bind:this={chipWrapEl}>
       <button
         type="button"
         class="control-panel__session-chip"
         class:control-panel__session-chip--open={sessionDropdownOpen}
         bind:this={sessionChipEl}
-        aria-haspopup="true"
+        aria-haspopup="menu"
         aria-expanded={sessionDropdownOpen}
         onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
         onkeydown={(e) => {

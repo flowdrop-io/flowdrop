@@ -1,9 +1,14 @@
-import { untrack } from 'svelte';
 import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
 import type { EndpointConfig } from '$lib/config/endpoints.js';
 import type { NodeExecutionStatus, KanbanColumnDef } from '$lib/types/index.js';
+import { logger } from '$lib/utils/logger.js';
 
 export type NodeStatus = NodeExecutionStatus;
+
+const KNOWN_STATUSES = new Set<string>([
+  'idle', 'pending', 'running', 'paused', 'interrupted',
+  'completed', 'skipped', 'failed', 'cancelled'
+]);
 
 export interface NodeStatusData {
   status: string;
@@ -14,14 +19,24 @@ export interface NodeStatusData {
 
 export function resolveStatus(raw: NodeStatusData | undefined): NodeStatus {
   if (!raw) return 'pending';
-  return (raw.status || 'pending') as NodeStatus;
+  const s = raw.status || 'pending';
+  if (!KNOWN_STATUSES.has(s)) {
+    logger.warn(`[FlowDrop] Unknown node status from server: "${s}" — falling back to "pending"`);
+    return 'pending';
+  }
+  return s as NodeStatus;
 }
 
+/**
+ * Creates a reactive pipeline data fetcher.
+ * `endpointConfig` is used once to construct the API client — it must be stable.
+ * `getPipelineId` is called on every fetch so pipeline ID changes are picked up.
+ */
 export function createPipelineDataFetcher(
   getPipelineId: () => string,
-  getEndpointConfig: () => EndpointConfig
+  endpointConfig: EndpointConfig
 ) {
-  const client = new EnhancedFlowDropApiClient(getEndpointConfig());
+  const client = new EnhancedFlowDropApiClient(endpointConfig);
   let nodeStatusMap = $state<Record<string, NodeStatusData>>({});
   let kanbanConfig = $state<KanbanColumnDef[] | null>(null);
   let isLoading = $state(false);
@@ -43,24 +58,21 @@ export function createPipelineDataFetcher(
       }
       nodeStatusMap = map;
       if (data.kanban_config?.columns) {
-        kanbanConfig = data.kanban_config.columns as KanbanColumnDef[];
+        // Server sends statuses as string[]; trust the server and cast at this
+        // boundary. resolveStatus() handles unknown values at read time.
+        kanbanConfig = data.kanban_config.columns.map((col) => ({
+          key: col.key,
+          label: col.label,
+          statuses: col.statuses as NodeExecutionStatus[],
+          icon: col.icon,
+          color: col.color,
+        }));
       }
     } catch {
       isError = true;
     } finally {
       isLoading = false;
     }
-  }
-
-  function connectRefreshTrigger(getTrigger: () => number) {
-    let last = untrack(getTrigger);
-    $effect(() => {
-      const t = getTrigger();
-      if (t <= 0 || t === last) return;
-      last = t;
-      const timer = setTimeout(fetchData, 300);
-      return () => clearTimeout(timer);
-    });
   }
 
   return {
@@ -76,7 +88,6 @@ export function createPipelineDataFetcher(
     get isError() {
       return isError;
     },
-    fetchData,
-    connectRefreshTrigger
+    fetchData
   };
 }

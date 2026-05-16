@@ -60,12 +60,12 @@
     extraPipelineViews = [],
   }: Props = $props();
 
-  let resolvedWorkflow = $state<Workflow | null>(untrack(() => workflowProp ?? null));
-  let workflowLoading = $state(untrack(() => workflowProp === undefined));
+  let resolvedWorkflow = $state<Workflow | null>(workflowProp ?? null);
+  let workflowLoading = $state(workflowProp === undefined);
   let workflowError = $state<string | null>(null);
 
   let splitEl = $state<HTMLElement | null>(null);
-  let pipelineWidth = $state(untrack(() => initialPipelineWidth));
+  let pipelineWidth = $state(initialPipelineWidth);
   let isResizing = $state(false);
   let containerWidth = $state(0);
   let dragContainerLeft = 0;

@@ -27,12 +27,13 @@
 
   let { pipelineId, workflow, endpointConfig, refreshTrigger = 0 }: Props = $props();
 
-  const fetcher = createPipelineDataFetcher(
-    () => pipelineId,
-    () => endpointConfig
-  );
+  const fetcher = createPipelineDataFetcher(() => pipelineId, endpointConfig);
 
-  fetcher.connectRefreshTrigger(() => refreshTrigger);
+  $effect(() => {
+    if (refreshTrigger <= 0) return;
+    const timer = setTimeout(() => fetcher.fetchData(), 300);
+    return () => clearTimeout(timer);
+  });
 
   interface CardItem {
     node: WorkflowNode;

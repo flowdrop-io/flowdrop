@@ -1,3 +1,10 @@
+<script module lang="ts">
+  const VIEW_MODE_KEY = 'fd-pipeline-view-mode';
+  const BUILTIN_VIEWS = ['graph', 'kanban', 'table'] as const;
+  // `string & {}` preserves autocomplete for built-in values while still accepting arbitrary strings from extraViews.
+  type ViewMode = typeof BUILTIN_VIEWS[number] | (string & {});
+</script>
+
 <script lang="ts">
   import { onMount } from 'svelte';
   import PipelineStatus from '$lib/components/PipelineStatus.svelte';
@@ -5,6 +12,7 @@
   import PipelineTableView from './PipelineTableView.svelte';
   import App from '$lib/components/App.svelte';
   import Icon from '@iconify/svelte';
+  import { logger } from '$lib/utils/logger.js';
   import type { Workflow, PipelineViewDef } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
   import type { PlaygroundExecution } from '$lib/types/playground.js';
@@ -38,9 +46,6 @@
     extraViews = []
   }: Props = $props();
 
-  const VIEW_MODE_KEY = 'fd-pipeline-view-mode';
-  const BUILTIN_VIEWS = ['graph', 'kanban', 'table'] as const;
-  type ViewMode = typeof BUILTIN_VIEWS[number] | (string & {});
   let viewMode = $state<ViewMode>('graph');
 
   onMount(() => {
@@ -54,12 +59,14 @@
     viewMode = mode;
     try {
       localStorage.setItem(VIEW_MODE_KEY, mode);
-    } catch {}
+    } catch (e) {
+      logger.warn('[FlowDrop] Could not persist view mode to localStorage:', e);
+    }
   }
 
   let runDropdownOpen = $state(false);
-  let chipWrapEl: HTMLElement | null = null;
-  let runChipEl: HTMLElement | null = null;
+  let chipWrapEl = $state<HTMLElement | null>(null);
+  let runChipEl = $state<HTMLElement | null>(null);
   let runPopoverEl = $state<HTMLElement | null>(null);
 
   $effect(() => {
@@ -95,7 +102,7 @@
 <div class="pipeline-panel">
   <div class="pipeline-panel__header">
     <Icon icon="mdi:source-branch" class="pipeline-panel__icon" />
-    <span class="pipeline-panel__title">Pipeline Viewer</span>
+    <span class="pipeline-panel__title">Pipeline</span>
 
     {#if pipelineId}
       <div class="pipeline-panel__view-toggle" role="group" aria-label="View mode">
