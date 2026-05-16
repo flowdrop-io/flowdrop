@@ -191,6 +191,7 @@
    * This fixes the Svelte 5 reactivity warnings
    */
   let configValues = $state<Record<string, unknown>>({});
+  setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => configValues);
 
   /**
    * UI Extension values for display settings

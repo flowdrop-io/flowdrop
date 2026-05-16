@@ -197,6 +197,7 @@
    * Internal reactive state for form values
    */
   let formValues = $state<Record<string, unknown>>({});
+  setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => formValues);
 
   /**
    * Initialize form values when schema or values change

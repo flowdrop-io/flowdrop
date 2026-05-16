@@ -68,6 +68,9 @@
     'flowdrop:getAuthProvider'
   );
   const getBaseUrl = getContext<(() => string) | undefined>('flowdrop:getBaseUrl');
+  const getFormValues = getContext<(() => Record<string, unknown>) | undefined>(
+    'flowdrop:getFormValues'
+  );
 
   // Hoist the autocomplete branch — seven reads in the template, one inside
   // an {#each tag} loop. One getter walk per render.
@@ -82,6 +85,7 @@
   const valueField = $derived(autocomplete.valueField ?? 'value');
   const allowFreeText = $derived(autocomplete.allowFreeText ?? false);
   const multiple = $derived(autocomplete.multiple ?? false);
+  const params = $derived(autocomplete.params ?? {});
 
   // Component state
   let inputElement: HTMLInputElement | undefined = $state(undefined);
@@ -101,6 +105,14 @@
 
   // Cache of value-to-label mappings for selected items
   let labelCache = $state<Map<string, string>>(new Map());
+
+  // Fingerprint of dependency field values — changes trigger selection clearing
+  const depValues = $derived.by(() => {
+    const all = getFormValues?.() ?? {};
+    return Object.values(params).map((k) => String(all[k] ?? '')).join('\0');
+  });
+
+  let depInitialized = false;
 
   // Generate unique IDs for accessibility
   // svelte-ignore state_referenced_locally — id prop never changes
@@ -160,7 +172,17 @@
       : `${baseUrl}${autocomplete.url}`;
 
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
+    let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
+
+    const all = getFormValues?.() ?? {};
+    for (const [paramName, fieldName] of Object.entries(params)) {
+      const val = all[fieldName];
+      if (val !== undefined && val !== '') {
+        fullUrl += `&${encodeURIComponent(paramName)}=${encodeURIComponent(String(val))}`;
+      }
+    }
+
+    return fullUrl;
   }
 
   /**
@@ -540,6 +562,20 @@
         window.removeEventListener('resize', handlePositionUpdate);
       };
     }
+  });
+
+  $effect(() => {
+    const _ = depValues; // track dependency fingerprint
+    if (!depInitialized) {
+      depInitialized = true;
+      return;
+    }
+    // A dependency field changed — abort any in-flight fetch, clear state
+    abortController?.abort();
+    suggestions = [];
+    labelCache = new Map();
+    if (multiple) onChange([]);
+    else onChange('');
   });
 
   /**

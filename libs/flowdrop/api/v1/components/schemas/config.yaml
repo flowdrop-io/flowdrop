@@ -329,6 +329,16 @@ AutocompleteConfig:
       description: |
         Whether to allow multiple selections.
         When true, users can select multiple values displayed as tags.
+    params:
+      type: object
+      additionalProperties:
+        type: string
+      description: |
+        Map of URL query parameter names to sibling form field names.
+        When fetching autocomplete options, the current value of each
+        referenced sibling field is appended as a query parameter.
+        When any dependency field changes, the autocomplete clears its
+        current value and invalidates the suggestion cache.
   required:
     - url
 

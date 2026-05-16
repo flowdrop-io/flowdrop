@@ -359,6 +359,20 @@ export interface AutocompleteConfig {
    * @default false
    */
   multiple?: boolean;
+
+  /**
+   * Map of URL query parameter names to sibling form field names.
+   * When fetching autocomplete options, the current value of each
+   * referenced sibling field is appended as a query parameter.
+   *
+   * Example: { "account": "account", "project": "project" }
+   * If the "account" field currently holds "my-jira", the URL becomes:
+   * /api/jira/issue-types?account=my-jira&q=...
+   *
+   * When any dependency field changes, the autocomplete clears its
+   * current value and invalidates the suggestion cache.
+   */
+  params?: Record<string, string>;
 }
 
 /**

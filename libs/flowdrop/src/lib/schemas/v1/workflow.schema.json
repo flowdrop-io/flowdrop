@@ -98,6 +98,13 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to allow multiple selections.\nWhen true, users can select multiple values displayed as tags.\n"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Map of URL query parameter names to sibling form field names.\nWhen fetching autocomplete options, the current value of each\nreferenced sibling field is appended as a query parameter.\nWhen any dependency field changes, the autocomplete clears its\ncurrent value and invalidates the suggestion cache.\n"
         }
       },
       "required": [
@@ -453,7 +460,9 @@
         "completed",
         "failed",
         "cancelled",
-        "skipped"
+        "skipped",
+        "paused",
+        "interrupted"
       ],
       "description": "Current execution status of a node"
     },
