@@ -679,6 +679,18 @@ export class EnhancedFlowDropApiClient {
       completed: number;
       failed: number;
       cancelled: number;
+      skipped?: number;
+      paused?: number;
+      interrupted?: number;
+    };
+    kanban_config?: {
+      columns: Array<{
+        key: string;
+        label: string;
+        statuses: string[];
+        icon?: string;
+        color?: string;
+      }>;
     };
   }> {
     const response = await this.request<
@@ -693,6 +705,18 @@ export class EnhancedFlowDropApiClient {
           completed: number;
           failed: number;
           cancelled: number;
+          skipped?: number;
+          paused?: number;
+          interrupted?: number;
+        };
+        kanban_config?: {
+          columns: Array<{
+            key: string;
+            label: string;
+            statuses: string[];
+            icon?: string;
+            color?: string;
+          }>;
         };
       }>
     >('pipelines.get', this.config.endpoints.pipelines.get, { id: pipelineId }, {}, 'get pipeline data');
