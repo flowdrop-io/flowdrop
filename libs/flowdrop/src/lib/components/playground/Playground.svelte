@@ -68,7 +68,6 @@
   /** Current input values from InputCollector */
   let inputValues = $state<Record<string, unknown>>({});
 
-  let initialSessionLoaded = $state(false);
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
   let isRefreshing = $state(false);
@@ -77,6 +76,17 @@
   let playgroundContentEl = $state<HTMLElement | null>(null);
   let controlPanelHeight = $state(280);
   let isVerticalResizing = $state(false);
+  const maxControlPanelHeight = $derived(
+    playgroundContentEl
+      ? Math.round(playgroundContentEl.getBoundingClientRect().height * 0.6)
+      : 600
+  );
+
+  function clampControlPanelHeight(h: number): number {
+    if (!playgroundContentEl) return Math.max(h, 140);
+    const rect = playgroundContentEl.getBoundingClientRect();
+    return Math.min(Math.max(h, 140), rect.height * 0.6);
+  }
 
   function handleVerticalResizerPointerDown(e: PointerEvent) {
     isVerticalResizing = true;
@@ -86,11 +96,22 @@
   function handleVerticalResizerPointerMove(e: PointerEvent) {
     if (!isVerticalResizing || !playgroundContentEl) return;
     const rect = playgroundContentEl.getBoundingClientRect();
-    controlPanelHeight = Math.min(Math.max(rect.bottom - e.clientY, 140), rect.height * 0.6);
+    controlPanelHeight = clampControlPanelHeight(rect.bottom - e.clientY);
   }
 
   function handleVerticalResizerPointerUp() {
     isVerticalResizing = false;
+  }
+
+  function handleVerticalResizerKeyDown(e: KeyboardEvent) {
+    const step = e.shiftKey ? 50 : 20;
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      controlPanelHeight = clampControlPanelHeight(controlPanelHeight + step);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      controlPanelHeight = clampControlPanelHeight(controlPanelHeight - step);
+    }
   }
 
   onMount(() => {
@@ -164,7 +185,6 @@
         `[Playground] Initial session "${sessionId}" not found. ` +
           `Available: ${sessionList.map((s) => s.id).join(', ') || 'none'}`
       );
-      initialSessionLoaded = true;
       return;
     }
 
@@ -172,10 +192,8 @@
 
     try {
       await loadSession(sessionId);
-      initialSessionLoaded = true;
     } catch (err) {
       logger.error('[Playground] Failed to load initial session:', err);
-      initialSessionLoaded = true;
     }
   }
 
@@ -278,11 +296,9 @@
   async function handleSendMessage(content: string): Promise<void> {
     if (getIsExecuting()) return;
 
-    const session = getCurrentSession();
-    if (!session) {
+    if (!getCurrentSession()) {
       await handleCreateSession();
-      const newSession = getCurrentSession();
-      if (!newSession) return;
+      if (!getCurrentSession()) return;
     }
 
     const sessionId = getCurrentSession()!.id;
@@ -417,7 +433,6 @@
     <div
       class="playground__content"
       bind:this={playgroundContentEl}
-      style="--control-panel-height: {controlPanelHeight}px;"
     >
       {#if getIsLoading() && !getCurrentSession()}
         <div class="playground__loading">
@@ -434,7 +449,6 @@
           onCreateSession={getSessions().length === 0 ? handleCreateSession : undefined}
         />
 
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
         <div
           class="playground__vertical-resizer"
           class:playground__vertical-resizer--active={isVerticalResizing}
@@ -442,16 +456,20 @@
           aria-orientation="horizontal"
           aria-valuenow={Math.round(controlPanelHeight)}
           aria-valuemin={140}
+          aria-valuemax={maxControlPanelHeight}
+          aria-label="Resize execution console"
           tabindex="0"
           onpointerdown={handleVerticalResizerPointerDown}
           onpointermove={handleVerticalResizerPointerMove}
           onpointerup={handleVerticalResizerPointerUp}
           onpointercancel={handleVerticalResizerPointerUp}
+          onkeydown={handleVerticalResizerKeyDown}
         >
           <div class="playground__vertical-resizer-handle"></div>
         </div>
 
         <ControlPanel
+          style="height: {controlPanelHeight}px; flex-shrink: 0;"
           {isPipelinePanelOpen}
           {onTogglePanel}
           {isRefreshing}
@@ -558,11 +576,6 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-  }
-
-  .playground__content :global(.control-panel) {
-    height: var(--control-panel-height, 280px);
-    flex-shrink: 0;
   }
 
   .playground__vertical-resizer {

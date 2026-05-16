@@ -58,26 +58,27 @@
   let runEnabled = $state(true);
 
   let inputValue = $state('');
-  let inputField = $state<HTMLTextAreaElement>();
+  let inputField: HTMLTextAreaElement | undefined;
 
-  /** Track processed message IDs for enableRun detection */
-  let processedEnableRunIds = $state(new Set<string>());
+  /** Track processed message IDs to avoid rescanning on every update */
+  const processedEnableRunIds = new Set<string>();
 
   $effect(() => {
     for (const message of getMessages()) {
       if (processedEnableRunIds.has(message.id)) continue;
+      processedEnableRunIds.add(message.id);
       if (hasEnableRunFlag(message.metadata)) {
-        processedEnableRunIds = new Set([...processedEnableRunIds, message.id]);
         runEnabled = true;
       }
     }
   });
 
-  /** Reset runEnabled when session changes. */
+  /** Reset runEnabled when the active session changes. */
   $effect(() => {
-    if (getCurrentSession()) {
+    const id = getCurrentSession()?.id;
+    if (id) {
       runEnabled = true;
-      processedEnableRunIds = new Set();
+      processedEnableRunIds.clear();
     }
   });
 
@@ -162,6 +163,7 @@
           class="chat-input__stop-btn"
           onclick={handleStop}
           title={actions.stopTitle}
+          aria-label={actions.stopTitle}
         >
           <Icon icon="mdi:stop" />
           {actions.stop}
@@ -173,16 +175,19 @@
           onclick={handleSend}
           disabled={!inputValue.trim() || !getCanSendMessage()}
           title={actions.sendTitle}
+          aria-label={actions.sendTitle}
         >
           {actions.send}
         </button>
       {:else if showRunButton}
+        {@const runLabel = runEnabled ? actions.runTitle : actions.runWaitingTitle}
         <button
           type="button"
           class="chat-input__run-btn"
           onclick={handleRun}
           disabled={!runEnabled}
-          title={runEnabled ? actions.runTitle : actions.runWaitingTitle}
+          title={runLabel}
+          aria-label={runLabel}
         >
           <Icon icon="mdi:play" />
           {actions.run}

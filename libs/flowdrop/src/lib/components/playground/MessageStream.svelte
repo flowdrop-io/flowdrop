@@ -66,19 +66,19 @@
   const states = $derived(m().playground.states);
 
   /** Reference to the messages container for scrolling */
-  let messagesContainer = $state<HTMLDivElement>();
+  let messagesContainer: HTMLDivElement | undefined;
 
   /**
    * Filter messages based on the store-managed showLogs flag.
-   * showLogsInline=false is a hard override (used by view-only modes that
-   * never want logs surfaced inline).
+   * When showLogsInline is false (default), log messages are never shown
+   * regardless of getShowLogs().
    */
   const displayMessages = $derived(
-    getShowLogs() && showLogsInline !== false ? getMessages() : getChatMessages()
+    getShowLogs() && showLogsInline ? getMessages() : getChatMessages()
   );
 
-  let previousMessageCount = $state(0);
-  let userScrolledUp = $state(false);
+  let previousMessageCount = 0;
+  let userScrolledUp = false;
 
   function handleScroll() {
     if (!messagesContainer) return;
@@ -171,7 +171,7 @@
   });
 </script>
 
-<div class="message-stream" bind:this={messagesContainer} onscroll={handleScroll}>
+<div class="message-stream" role="log" aria-label={m().playground.controlPanel.messageStreamLabel} bind:this={messagesContainer} onscroll={handleScroll}>
   {#if showWelcome}
     {#if welcome}
       {@render welcome()}
