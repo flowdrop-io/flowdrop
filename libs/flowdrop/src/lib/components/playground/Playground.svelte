@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, untrack } from 'svelte';
   import Icon from '@iconify/svelte';
   import ExecutionConsole from './ExecutionConsole.svelte';
   import ControlPanel from './ControlPanel.svelte';
@@ -76,27 +76,42 @@
   let playgroundContentEl = $state<HTMLElement | null>(null);
   let controlPanelHeight = $state(280);
   let isVerticalResizing = $state(false);
+  let containerHeight = $state(0);
+  let dragContainerBottom = 0;
+
+  $effect(() => {
+    if (!playgroundContentEl) return;
+    const observer = new ResizeObserver(([entry]) => {
+      containerHeight = entry.contentRect.height;
+    });
+    observer.observe(playgroundContentEl);
+    return () => observer.disconnect();
+  });
+
+  $effect(() => {
+    if (containerHeight > 0) {
+      controlPanelHeight = clampControlPanelHeight(untrack(() => controlPanelHeight));
+    }
+  });
+
   const maxControlPanelHeight = $derived(
-    playgroundContentEl
-      ? Math.round(playgroundContentEl.getBoundingClientRect().height * 0.6)
-      : 600
+    containerHeight ? Math.round(containerHeight * 0.6) : 600
   );
 
   function clampControlPanelHeight(h: number): number {
-    if (!playgroundContentEl) return Math.max(h, 140);
-    const rect = playgroundContentEl.getBoundingClientRect();
-    return Math.min(Math.max(h, 140), rect.height * 0.6);
+    const max = containerHeight ? containerHeight * 0.6 : 600;
+    return Math.min(Math.max(h, 140), max);
   }
 
   function handleVerticalResizerPointerDown(e: PointerEvent) {
+    if (playgroundContentEl) dragContainerBottom = playgroundContentEl.getBoundingClientRect().bottom;
     isVerticalResizing = true;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
   function handleVerticalResizerPointerMove(e: PointerEvent) {
-    if (!isVerticalResizing || !playgroundContentEl) return;
-    const rect = playgroundContentEl.getBoundingClientRect();
-    controlPanelHeight = clampControlPanelHeight(rect.bottom - e.clientY);
+    if (!isVerticalResizing) return;
+    controlPanelHeight = clampControlPanelHeight(dragContainerBottom - e.clientY);
   }
 
   function handleVerticalResizerPointerUp() {

@@ -65,6 +65,7 @@
   let pipelineWidth = $state(untrack(() => initialPipelineWidth));
   let isResizing = $state(false);
   let containerWidth = $state(0);
+  let dragContainerLeft = 0;
 
   $effect(() => {
     if (!splitEl) return;
@@ -73,6 +74,12 @@
     });
     observer.observe(splitEl);
     return () => observer.disconnect();
+  });
+
+  $effect(() => {
+    if (containerWidth > 0) {
+      pipelineWidth = clampPipelineWidth(untrack(() => pipelineWidth));
+    }
   });
 
   onMount(() => {
@@ -108,20 +115,19 @@
   }
 
   function clampPipelineWidth(w: number): number {
-    if (!splitEl) return Math.max(w, 0);
-    const rect = splitEl.getBoundingClientRect();
-    return Math.min(Math.max(w, rect.width - minChatWidth), rect.width * 0.75);
+    if (!containerWidth) return Math.max(w, 0);
+    return Math.min(Math.max(w, containerWidth - minChatWidth), containerWidth * 0.75);
   }
 
   function handleResizerPointerDown(e: PointerEvent) {
+    if (splitEl) dragContainerLeft = splitEl.getBoundingClientRect().left;
     isResizing = true;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
   function handleResizerPointerMove(e: PointerEvent) {
-    if (!isResizing || !splitEl) return;
-    const rect = splitEl.getBoundingClientRect();
-    pipelineWidth = clampPipelineWidth(e.clientX - rect.left);
+    if (!isResizing) return;
+    pipelineWidth = clampPipelineWidth(e.clientX - dragContainerLeft);
   }
 
   function handleResizerPointerUp() {
@@ -240,10 +246,8 @@
     overflow: hidden;
   }
 
-  /* Pipeline pane — explicit width set via inline style */
+  /* Pipeline pane — explicit width driven by JS; clamping keeps it in bounds */
   .playground-studio__pipeline {
-    min-width: calc(100% - var(--playground-studio-min-chat-width));
-    max-width: 75%;
     overflow: hidden;
     flex-shrink: 0;
   }
