@@ -17,6 +17,7 @@
     getShowLogs,
     playgroundActions
   } from '../../stores/playgroundStore.svelte.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     // Session management
@@ -37,6 +38,7 @@
     showRunButton?: boolean;
     predefinedMessage?: string;
     placeholder?: string;
+    style?: string;
   }
 
   let {
@@ -53,8 +55,12 @@
     showChatInput = true,
     showRunButton = true,
     predefinedMessage,
-    placeholder
+    placeholder,
+    style
   }: Props = $props();
+
+  const cp = $derived(m().playground.controlPanel);
+  const logsTitle = $derived(getShowLogs() ? cp.hideLogs : cp.showLogs);
 
   let sessionDropdownOpen = $state(false);
   let sessionChipEl = $state<HTMLElement | null>(null);
@@ -99,10 +105,10 @@
   }
 </script>
 
-<section class="control-panel">
+<section class="control-panel" {style}>
   <header class="control-panel__header">
     <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
-    <span class="control-panel__label">Sessions</span>
+    <span class="control-panel__label">{cp.sessionsLabel}</span>
 
     <div class="control-panel__session-chip-wrap">
       <button
@@ -116,10 +122,10 @@
         onkeydown={(e) => {
           if (e.key === 'Escape') sessionDropdownOpen = false;
         }}
-        title="Switch session"
+        title={cp.switchSession}
       >
         <span class="control-panel__session-chip-name">
-          {getCurrentSession()?.name ?? 'No session'}
+          {getCurrentSession()?.name ?? cp.noSession}
         </span>
         <Icon
           icon={sessionDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
@@ -148,7 +154,7 @@
             onclick={handleCreate}
           >
             <Icon icon="mdi:plus" />
-            <span>New session</span>
+            <span>{cp.newSession}</span>
           </button>
           {#if getSessions().length > 0}
             <div class="control-panel__session-popover-divider"></div>
@@ -174,7 +180,8 @@
                   role="menuitem"
                   class="control-panel__session-popover-delete"
                   onclick={(e) => handleDelete(e, session.id)}
-                  title="Delete session"
+                  title={cp.deleteSession}
+                  aria-label={cp.deleteSession}
                 >
                   <Icon icon="mdi:delete-outline" />
                 </button>
@@ -187,15 +194,17 @@
 
     <div class="control-panel__header-actions">
       {#if onTogglePanel}
+        {@const pipelineTitle = isPipelinePanelOpen ? cp.hidePipeline : cp.showPipeline}
         <button
           type="button"
           class="control-panel__toolbar-btn"
           class:control-panel__toolbar-btn--active={isPipelinePanelOpen}
           onclick={onTogglePanel}
-          title={isPipelinePanelOpen ? 'Hide pipeline' : 'Show pipeline'}
+          title={pipelineTitle}
+          aria-label={pipelineTitle}
         >
           <Icon icon="mdi:source-branch" />
-          Pipeline
+          {cp.pipeline}
         </button>
       {/if}
       {#if getCurrentSession()}
@@ -205,10 +214,11 @@
           class:control-panel__toolbar-btn--spinning={isRefreshing}
           onclick={onRefresh}
           disabled={isRefreshing}
-          title="Refresh status"
+          title={cp.refreshTitle}
+          aria-label={cp.refreshTitle}
         >
           <Icon icon="mdi:refresh" />
-          Refresh
+          {cp.refresh}
         </button>
       {/if}
       <button
@@ -216,10 +226,11 @@
         class="control-panel__toolbar-btn"
         class:control-panel__toolbar-btn--active={getShowLogs()}
         onclick={() => playgroundActions.toggleShowLogs()}
-        title={getShowLogs() ? 'Hide log messages' : 'Show log messages'}
+        title={logsTitle}
+        aria-label={logsTitle}
       >
         <Icon icon="mdi:console" />
-        Logs
+        {cp.logs}
       </button>
     </div>
   </header>
@@ -414,7 +425,8 @@
     transition: all var(--fd-transition-fast);
   }
 
-  .control-panel__session-popover-row:hover .control-panel__session-popover-delete {
+  .control-panel__session-popover-row:hover .control-panel__session-popover-delete,
+  .control-panel__session-popover-row:focus-within .control-panel__session-popover-delete {
     opacity: 1;
   }
 

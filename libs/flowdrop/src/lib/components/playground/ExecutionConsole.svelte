@@ -10,6 +10,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import MessageStream from './MessageStream.svelte';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     showTimestamps?: boolean;
@@ -31,12 +32,14 @@
     onInterruptResolved,
     onCreateSession
   }: Props = $props();
+
+  const ec = $derived(m().playground.executionConsole);
 </script>
 
 <section class="execution-console">
   <header class="execution-console__header">
     <Icon icon="mdi:console-line" class="execution-console__icon" />
-    <span class="execution-console__title">Execution</span>
+    <span class="execution-console__title">{ec.header}</span>
   </header>
 
   <MessageStream
@@ -54,14 +57,12 @@
 {#snippet welcomeState()}
   <div class="execution-console__placeholder">
     <Icon icon="mdi:play-circle-outline" class="execution-console__placeholder-icon" />
-    <h2 class="execution-console__placeholder-title">No execution yet</h2>
-    <p class="execution-console__placeholder-text">
-      Create or select a session below, then run your workflow to see execution output here.
-    </p>
+    <h2 class="execution-console__placeholder-title">{ec.noExecutionTitle}</h2>
+    <p class="execution-console__placeholder-text">{ec.noExecutionText}</p>
     {#if onCreateSession}
       <button type="button" class="execution-console__cta" onclick={onCreateSession}>
         <Icon icon="mdi:plus" />
-        New session
+        {ec.newSession}
       </button>
     {/if}
   </div>
@@ -70,10 +71,8 @@
 {#snippet readyState()}
   <div class="execution-console__placeholder">
     <Icon icon="mdi:play-circle-outline" class="execution-console__placeholder-icon" />
-    <h2 class="execution-console__placeholder-title">Ready to run</h2>
-    <p class="execution-console__placeholder-text">
-      Use the controls below to start the workflow. Output and interactive prompts will appear here.
-    </p>
+    <h2 class="execution-console__placeholder-title">{ec.readyTitle}</h2>
+    <p class="execution-console__placeholder-text">{ec.readyText}</p>
   </div>
 {/snippet}
 

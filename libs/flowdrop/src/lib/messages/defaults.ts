@@ -331,6 +331,32 @@ export const defaultMessages = {
       minutesAgo: ({ n }: { n: number }) => `${n}m ago`,
       hoursAgo: ({ n }: { n: number }) => `${n}h ago`,
       daysAgo: ({ n }: { n: number }) => `${n}d ago`
+    },
+    executionConsole: {
+      header: 'Execution',
+      noExecutionTitle: 'No execution yet',
+      noExecutionText:
+        'Create or select a session below, then run your workflow to see execution output here.',
+      readyTitle: 'Ready to run',
+      readyText:
+        'Use the controls below to start the workflow. Output and interactive prompts will appear here.',
+      newSession: 'New session'
+    },
+    controlPanel: {
+      sessionsLabel: 'Sessions',
+      noSession: 'No session',
+      switchSession: 'Switch session',
+      newSession: 'New session',
+      pipeline: 'Pipeline',
+      showPipeline: 'Show pipeline',
+      hidePipeline: 'Hide pipeline',
+      refresh: 'Refresh',
+      refreshTitle: 'Refresh status',
+      logs: 'Logs',
+      showLogs: 'Show log messages',
+      hideLogs: 'Hide log messages',
+      deleteSession: 'Delete session',
+      messageStreamLabel: 'Execution output'
     }
   },
 
