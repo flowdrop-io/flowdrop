@@ -45,6 +45,7 @@
   import { getSchemaOptions } from './types.js';
   import type { WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
+  import { fieldComponentRegistry } from '$lib/form/fieldRegistry.js';
 
   interface Props {
     /** Unique key/id for the field */
@@ -224,6 +225,10 @@
     return [];
   });
 
+  const registeredAutocompleteComponent = $derived(
+    fieldType === 'autocomplete' ? fieldComponentRegistry.resolveFieldComponent(schema) : null
+  );
+
   /**
    * Get autocomplete value - can be string or string[] based on multiple setting
    */
@@ -386,6 +391,22 @@
         {workflowId}
         {authProvider}
         onChange={(val) => onChange(val)}
+      />
+    {:else if fieldType === 'autocomplete' && schema.autocomplete && registeredAutocompleteComponent}
+      <registeredAutocompleteComponent.component
+        id={fieldKey}
+        value={autocompleteValue}
+        autocomplete={schema.autocomplete}
+        placeholder={schema.placeholder ?? ''}
+        {required}
+        ariaDescribedBy={descriptionId}
+        disabled={isReadOnly}
+        {node}
+        {nodes}
+        {edges}
+        {workflowId}
+        {authProvider}
+        onChange={(val: unknown) => onChange(val)}
       />
     {:else if fieldType === 'autocomplete' && schema.autocomplete}
       <FormAutocomplete
