@@ -20,14 +20,12 @@ export type PlaygroundSessionStatus =
   | 'failed';
 
 /**
- * Statuses that stop polling by default (resource efficiency)
+ * Statuses that stop polling by default.
+ * Only truly-dormant sessions stop polling — completed/failed/awaiting_input
+ * sessions on async servers can still generate messages after the status change,
+ * so polling continues until the session is explicitly idle.
  */
-export const DEFAULT_STOP_POLLING_STATUSES: PlaygroundSessionStatus[] = [
-  'idle',
-  'completed',
-  'failed',
-  'awaiting_input'
-];
+export const DEFAULT_STOP_POLLING_STATUSES: PlaygroundSessionStatus[] = ['idle'];
 
 /**
  * Statuses that are considered terminal by default (clears isExecuting)
@@ -310,7 +308,7 @@ export interface PlaygroundConfig {
   /**
    * Determines if polling should stop for a given session status.
    * Override to customize which statuses pause polling.
-   * @default defaultShouldStopPolling (stops on idle, completed, failed, awaiting_input)
+   * @default defaultShouldStopPolling (stops only on idle)
    */
   shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean;
 

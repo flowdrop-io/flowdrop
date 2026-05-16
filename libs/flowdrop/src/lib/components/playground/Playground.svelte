@@ -239,7 +239,7 @@
       const response = await playgroundService.getMessages(sessionId);
       applyServerResponse(response);
 
-      if (session.status === 'running') {
+      if (session.status !== 'idle') {
         startPolling(sessionId, true);
       }
     } catch (err) {
@@ -318,7 +318,11 @@
     try {
       const message = await playgroundService.sendMessage(sessionId, content, {});
       playgroundActions.addMessage(message);
-      startPolling(sessionId);
+      // Only start polling if not already active — avoids resetting the cursor
+      // mid-session and re-fetching messages that are already in the store.
+      if (!playgroundService.isPolling()) {
+        startPolling(sessionId);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       playgroundActions.setError(errorMessage);
@@ -386,20 +390,21 @@
     if (!sessionId) return;
 
     try {
-      const response = await playgroundService.getMessages(sessionId);
+      // Catch up immediately rather than waiting for the next poll interval.
+      // Use the service's sequence cursor so we only fetch new messages.
+      const response = await playgroundService.getMessages(
+        sessionId,
+        playgroundService.getLastSequenceNumber() ?? undefined
+      );
       applyServerResponse(response);
-
-      if (response.sessionStatus === 'running') {
-        startPolling(sessionId, true);
-      } else if (response.sessionStatus === 'awaiting_input') {
-        startPolling(
-          sessionId,
-          true,
-          (status) => status === 'idle' || status === 'completed' || status === 'failed'
-        );
-      }
     } catch (err) {
       logger.error('[Playground] Failed to refresh after interrupt:', err);
+    }
+
+    // Polling continues through awaiting_input now, but restart defensively
+    // in case it stopped for any reason (e.g. component re-mount).
+    if (!playgroundService.isPolling()) {
+      startPolling(sessionId, true);
     }
   }
 </script>
