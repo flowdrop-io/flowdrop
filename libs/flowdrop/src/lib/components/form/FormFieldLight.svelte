@@ -243,6 +243,8 @@
         spellChecker={schema.spellChecker as boolean | undefined}
         variables={schema.variables}
         placeholderExample={schema.placeholderExample as string | undefined}
+        autocomplete={schema.autocomplete}
+        dependencies={schema.dependencies}
         onChange={(val: unknown) => onChange(val)}
       />
     {:else if fieldType === 'checkbox-group'}

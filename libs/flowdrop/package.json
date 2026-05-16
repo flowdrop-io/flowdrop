@@ -108,6 +108,11 @@
       "svelte": "./dist/form/index.js",
       "default": "./dist/form/index.js"
     },
+    "./form/autocomplete": {
+      "types": "./dist/form/autocomplete.d.ts",
+      "svelte": "./dist/form/autocomplete.js",
+      "default": "./dist/form/autocomplete.js"
+    },
     "./form/code": {
       "types": "./dist/form/code.d.ts",
       "svelte": "./dist/form/code.js",

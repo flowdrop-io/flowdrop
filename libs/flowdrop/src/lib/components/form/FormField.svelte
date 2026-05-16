@@ -41,6 +41,7 @@
   import FormMarkdownEditor from './FormMarkdownEditor.svelte';
   import FormTemplateEditor from './FormTemplateEditor.svelte';
   import FormAutocomplete from './FormAutocomplete.svelte';
+  import { fieldComponentRegistry } from '../../form/fieldRegistry.js';
   import type { FieldSchema } from './types.js';
   import { getSchemaOptions } from './types.js';
   import type { WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
@@ -101,6 +102,12 @@
    * Animation delay based on index
    */
   const animationDelay = $derived(animationIndex * 30);
+
+  /**
+   * Check field registry for a custom component matching this schema (e.g. a
+   * dependent autocomplete component contributed by a consumer).
+   */
+  const registeredComponent = $derived(fieldComponentRegistry.resolveFieldComponent(schema));
 
   /**
    * Field label - prefer title, fall back to description, then key
@@ -386,6 +393,23 @@
         {workflowId}
         {authProvider}
         onChange={(val) => onChange(val)}
+      />
+    {:else if fieldType === 'autocomplete' && schema.autocomplete && registeredComponent}
+      <!--
+        A consumer has registered a custom component that matches this
+        autocomplete field (e.g. a dependent-autocomplete that needs sibling
+        form values). Render that instead of the built-in FormAutocomplete.
+      -->
+      <registeredComponent.component
+        id={fieldKey}
+        value={autocompleteValue}
+        autocomplete={schema.autocomplete}
+        dependencies={schema.dependencies}
+        placeholder={schema.placeholder ?? ''}
+        {required}
+        ariaDescribedBy={descriptionId}
+        disabled={isReadOnly}
+        onChange={(val: unknown) => onChange(val)}
       />
     {:else if fieldType === 'autocomplete' && schema.autocomplete}
       <FormAutocomplete

@@ -312,6 +312,14 @@ export interface FieldSchema {
   /** Autocomplete configuration for fetching suggestions from callback URL */
   autocomplete?: AutocompleteConfig;
   /**
+   * Map of URL query-parameter name → sibling field name. When a registered
+   * autocomplete component is rendered, dependency values can be read from the
+   * form via the `flowdrop:getFormValues` context and appended to the
+   * autocomplete fetch URL. The built-in `FormAutocomplete` does not consume
+   * this map directly; it is forwarded to registered components.
+   */
+  dependencies?: Record<string, string>;
+  /**
    * Whether the field is read-only (JSON Schema readOnly keyword).
    * When true, the field is displayed but cannot be edited.
    */

@@ -108,6 +108,10 @@
   // Use getter functions to ensure child components always get the current prop value,
   // even if the prop changes after initial mount
   setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
+  // Expose the current form values so custom field components registered via
+  // fieldComponentRegistry can read sibling field values (e.g. for dependent
+  // autocomplete fields whose fetch URL depends on another field's value).
+  setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => configValues);
 
   /**
    * State for dynamic schema loading
