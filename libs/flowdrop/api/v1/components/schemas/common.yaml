@@ -102,6 +102,8 @@ NodeExecutionStatus:
     - failed
     - cancelled
     - skipped
+    - paused
+    - interrupted
   description: Current execution status of a node
 
 Position:

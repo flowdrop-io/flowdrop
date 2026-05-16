@@ -2536,6 +2536,8 @@ components:
         - failed
         - cancelled
         - skipped
+        - paused
+        - interrupted
       description: Current execution status of a node
     Position:
       type: object
@@ -3820,6 +3822,15 @@ components:
         cancelled:
           type: integer
           description: Number of cancelled jobs
+        skipped:
+          type: integer
+          description: Number of skipped jobs
+        paused:
+          type: integer
+          description: Number of paused jobs
+        interrupted:
+          type: integer
+          description: Number of interrupted jobs
       required:
         - total
         - pending
@@ -3838,6 +3849,8 @@ components:
             - completed
             - failed
             - cancelled
+            - paused
+            - interrupted
           description: Overall pipeline status
         jobs:
           type: array
@@ -3851,6 +3864,9 @@ components:
           description: Node execution statuses keyed by node ID
         job_status_summary:
           $ref: '#/components/schemas/JobStatusSummary'
+        kanban_config:
+          $ref: '#/components/schemas/KanbanConfig'
+          description: Optional server-defined kanban board layout; frontend falls back to defaults if absent
       required:
         - status
         - jobs
@@ -5956,6 +5972,40 @@ components:
           - data
         showHints: true
         includePortName: false
+    KanbanColumnDef:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Unique column identifier
+        label:
+          type: string
+          description: Display label for the column
+        statuses:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeExecutionStatus'
+          description: Node statuses that belong to this column
+        icon:
+          type: string
+          description: Iconify icon name (e.g. mdi:clock-outline)
+        color:
+          type: string
+          description: CSS color value for the column accent (e.g. var(--fd-warning) or
+      required:
+        - key
+        - label
+        - statuses
+    KanbanConfig:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/KanbanColumnDef'
+          description: Ordered list of kanban columns to display
+      required:
+        - columns
     PlaygroundExecution:
       type: object
       description: A single pipeline execution associated with a playground session

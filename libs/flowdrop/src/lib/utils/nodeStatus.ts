@@ -16,7 +16,9 @@ export function getStatusColor(status: NodeExecutionStatus): string {
     completed: '#10b981', // emerald
     failed: '#ef4444', // red
     cancelled: '#6b7280', // gray
-    skipped: '#8b5cf6' // violet
+    skipped: '#8b5cf6', // violet
+    paused: '#f97316', // orange
+    interrupted: '#06b6d4' // cyan
   };
 
   return statusColors[status] || statusColors.idle;
@@ -33,7 +35,9 @@ export function getStatusIcon(status: NodeExecutionStatus): string {
     completed: 'mdi:check-circle',
     failed: 'mdi:alert-circle',
     cancelled: 'mdi:cancel',
-    skipped: 'mdi:skip-next'
+    skipped: 'mdi:skip-next',
+    paused: 'mdi:pause-circle-outline',
+    interrupted: 'mdi:account-clock-outline'
   };
 
   return statusIcons[status] || statusIcons.idle;
@@ -50,7 +54,9 @@ export function getStatusLabel(status: NodeExecutionStatus): string {
     completed: 'Completed',
     failed: 'Failed',
     cancelled: 'Cancelled',
-    skipped: 'Skipped'
+    skipped: 'Skipped',
+    paused: 'Paused',
+    interrupted: 'Waiting'
   };
 
   return statusLabels[status] || statusLabels.idle;
@@ -67,7 +73,9 @@ export function getStatusBackgroundColor(status: NodeExecutionStatus): string {
     completed: '#d1fae5', // light emerald
     failed: '#fee2e2', // light red
     cancelled: '#f3f4f6', // light gray
-    skipped: '#ede9fe' // light violet
+    skipped: '#ede9fe', // light violet
+    paused: '#ffedd5', // light orange
+    interrupted: '#cffafe' // light cyan
   };
 
   return statusBackgroundColors[status] || statusBackgroundColors.idle;
@@ -84,7 +92,9 @@ export function getStatusTextColor(status: NodeExecutionStatus): string {
     completed: '#059669', // emerald
     failed: '#dc2626', // red
     cancelled: '#6b7280', // gray
-    skipped: '#7c3aed' // violet
+    skipped: '#7c3aed', // violet
+    paused: '#ea580c', // orange
+    interrupted: '#0891b2' // cyan
   };
 
   return statusTextColors[status] || statusTextColors.idle;
