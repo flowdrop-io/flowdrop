@@ -142,6 +142,7 @@ export default defineConfig({
 								{ label: 'Theming', slug: 'guides/theming' },
 								{ label: 'i18n & Custom Messages', slug: 'guides/i18n' },
 								{ label: 'Interactive Playground', slug: 'guides/playground' },
+								{ label: 'Pipeline Views', slug: 'guides/pipeline-views' },
 								{ label: 'Human-in-the-Loop', slug: 'guides/interrupts' }
 							]
 						},
