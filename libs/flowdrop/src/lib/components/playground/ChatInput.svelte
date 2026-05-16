@@ -88,7 +88,7 @@
   $effect(() => {
     const nowExecuting = getIsExecuting();
     if (wasExecuting && !nowExecuting && inputField) {
-      tick().then(() => inputField?.focus());
+      tick().then(() => inputField?.focus({ preventScroll: true }));
     }
     wasExecuting = nowExecuting;
   });
@@ -105,7 +105,7 @@
     }
 
     tick().then(() => {
-      inputField?.focus();
+      inputField?.focus({ preventScroll: true });
     });
   }
 

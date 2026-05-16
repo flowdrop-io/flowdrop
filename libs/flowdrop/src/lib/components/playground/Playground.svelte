@@ -507,7 +507,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    overflow: clip; /* clip avoids the BFC that overflow:hidden creates, which breaks position:sticky inside */
     background-color: var(--fd-muted);
     font-family:
       -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -536,7 +536,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    overflow: hidden;
+    overflow: clip; /* clip avoids the BFC that overflow:hidden creates, which breaks position:sticky inside */
     background-color: var(--fd-background);
   }
 

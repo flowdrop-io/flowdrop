@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import PipelineStatus from '$lib/components/PipelineStatus.svelte';
+  import PipelineKanbanView from './PipelineKanbanView.svelte';
+  import PipelineTableView from './PipelineTableView.svelte';
   import App from '$lib/components/App.svelte';
   import Icon from '@iconify/svelte';
   import type { Workflow } from '$lib/types/index.js';
@@ -32,9 +35,27 @@
     refreshTrigger = 0
   }: Props = $props();
 
+  const VIEW_MODE_KEY = 'fd-pipeline-view-mode';
+  type ViewMode = 'graph' | 'kanban' | 'table';
+  let viewMode = $state<ViewMode>('graph');
+
+  onMount(() => {
+    const stored = localStorage.getItem(VIEW_MODE_KEY);
+    if (stored === 'kanban' || stored === 'table') {
+      viewMode = stored;
+    }
+  });
+
+  function selectViewMode(mode: ViewMode) {
+    viewMode = mode;
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, mode);
+    } catch {}
+  }
+
   let runDropdownOpen = $state(false);
-  let chipWrapEl = $state<HTMLElement | null>(null);
-  let runChipEl = $state<HTMLElement | null>(null);
+  let chipWrapEl: HTMLElement | null = null;
+  let runChipEl: HTMLElement | null = null;
   let runPopoverEl = $state<HTMLElement | null>(null);
 
   $effect(() => {
@@ -43,7 +64,6 @@
     }
   });
 
-  // Close run popover on outside click
   $effect(() => {
     if (!runDropdownOpen) return;
     function handleOutside(e: MouseEvent) {
@@ -55,17 +75,17 @@
     return () => document.removeEventListener('click', handleOutside);
   });
 
-  function statusIcon(status: PlaygroundExecution['status']): string {
-    if (status === 'running') return 'mdi:loading';
-    if (status === 'failed') return 'mdi:alert-circle';
-    return 'mdi:check-circle';
-  }
+  const STATUS_ICON: Record<PlaygroundExecution['status'], string> = {
+    running: 'mdi:play-circle-outline',
+    failed: 'mdi:alert-circle',
+    completed: 'mdi:check-circle'
+  };
 
-  function statusClass(status: PlaygroundExecution['status']): string {
-    if (status === 'running') return 'pipeline-panel__run-status--running';
-    if (status === 'failed') return 'pipeline-panel__run-status--failed';
-    return 'pipeline-panel__run-status--completed';
-  }
+  const STATUS_CLASS: Record<PlaygroundExecution['status'], string> = {
+    running: 'pipeline-panel__run-status--running',
+    failed: 'pipeline-panel__run-status--failed',
+    completed: 'pipeline-panel__run-status--completed'
+  };
 </script>
 
 <div class="pipeline-panel">
@@ -73,8 +93,39 @@
     <Icon icon="mdi:source-branch" class="pipeline-panel__icon" />
     <span class="pipeline-panel__title">Pipeline Viewer</span>
 
+    {#if pipelineId}
+      <div class="pipeline-panel__view-toggle" role="group" aria-label="View mode">
+        <button
+          type="button"
+          class="pipeline-panel__view-btn"
+          class:pipeline-panel__view-btn--active={viewMode === 'graph'}
+          onclick={() => selectViewMode('graph')}
+          title="Graph view"
+        >
+          <Icon icon="mdi:sitemap-outline" />
+        </button>
+        <button
+          type="button"
+          class="pipeline-panel__view-btn"
+          class:pipeline-panel__view-btn--active={viewMode === 'kanban'}
+          onclick={() => selectViewMode('kanban')}
+          title="Kanban view"
+        >
+          <Icon icon="mdi:view-column-outline" />
+        </button>
+        <button
+          type="button"
+          class="pipeline-panel__view-btn"
+          class:pipeline-panel__view-btn--active={viewMode === 'table'}
+          onclick={() => selectViewMode('table')}
+          title="Table view"
+        >
+          <Icon icon="mdi:table-large" />
+        </button>
+      </div>
+    {/if}
+
     {#if pipelineId && executions.length > 0}
-      <!-- Run picker chip -->
       <div class="pipeline-panel__run-chip-wrap" bind:this={chipWrapEl}>
         <button
           type="button"
@@ -82,7 +133,7 @@
           class:pipeline-panel__run-chip--pinned={isPinned}
           class:pipeline-panel__run-chip--open={runDropdownOpen}
           bind:this={runChipEl}
-          aria-haspopup="true"
+          aria-haspopup="menu"
           aria-expanded={runDropdownOpen}
           onclick={() => (runDropdownOpen = !runDropdownOpen)}
           onkeydown={(e) => {
@@ -92,7 +143,7 @@
           }}
           title="Switch run"
         >
-          <span class="pipeline-panel__run-chip-label">{pipelineId ?? 'Run'}</span>
+          <span class="pipeline-panel__run-chip-label">{pipelineId}</span>
           <Icon
             icon={runDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
             class="pipeline-panel__run-chip-chevron"
@@ -124,8 +175,8 @@
                 }}
               >
                 <Icon
-                  icon={statusIcon(exec.status)}
-                  class="pipeline-panel__run-status {statusClass(exec.status)}"
+                  icon={STATUS_ICON[exec.status]}
+                  class="pipeline-panel__run-status {STATUS_CLASS[exec.status]}"
                 />
                 <span class="pipeline-panel__run-id">{exec.id}</span>
                 {#if isActive}
@@ -137,7 +188,6 @@
         {/if}
       </div>
 
-      <!-- Latest toggle -->
       <button
         type="button"
         class="pipeline-panel__latest-toggle"
@@ -164,21 +214,25 @@
     {/if}
   </div>
 
-  {#if pipelineId}
-    {#key pipelineId}
-      <div class="pipeline-panel__content">
-        <PipelineStatus
-          {pipelineId}
-          {workflow}
-          {endpointConfig}
-          runLabel={pipelineId ?? undefined}
-          {refreshTrigger}
-          isEmbedded={true}
-        />
-      </div>
-    {/key}
-  {:else}
-    <div class="pipeline-panel__content">
+  <div class="pipeline-panel__content">
+    {#if pipelineId}
+      {#key pipelineId}
+        {#if viewMode === 'kanban'}
+          <PipelineKanbanView {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
+        {:else if viewMode === 'table'}
+          <PipelineTableView {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
+        {:else}
+          <PipelineStatus
+            {pipelineId}
+            {workflow}
+            {endpointConfig}
+            runLabel={pipelineId}
+            {refreshTrigger}
+            isEmbedded={true}
+          />
+        {/if}
+      {/key}
+    {:else}
       <App
         {workflow}
         height="100%"
@@ -189,8 +243,8 @@
         readOnly={true}
         {endpointConfig}
       />
-    </div>
-  {/if}
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -240,6 +294,45 @@
   .pipeline-panel__status-badge--live {
     background-color: var(--fd-success-muted);
     color: var(--fd-success);
+  }
+
+  /* View mode toggle */
+  .pipeline-panel__view-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background-color: var(--fd-muted);
+    flex-shrink: 0;
+  }
+
+  .pipeline-panel__view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: calc(var(--fd-radius-md) - 2px);
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    transition: all var(--fd-transition-fast);
+    font-size: var(--fd-text-sm);
+    line-height: 1;
+  }
+
+  .pipeline-panel__view-btn:hover {
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+  }
+
+  .pipeline-panel__view-btn--active {
+    background-color: var(--fd-background);
+    color: var(--fd-primary);
+    box-shadow: var(--fd-shadow-sm);
   }
 
   /* Run picker chip */
@@ -348,7 +441,6 @@
 
   :global(.pipeline-panel__run-status--running) {
     color: var(--fd-warning);
-    animation: pp-spin 1s linear infinite;
   }
 
   :global(.pipeline-panel__run-status--completed) {
@@ -357,15 +449,6 @@
 
   :global(.pipeline-panel__run-status--failed) {
     color: var(--fd-error);
-  }
-
-  @keyframes pp-spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   /* Latest toggle */

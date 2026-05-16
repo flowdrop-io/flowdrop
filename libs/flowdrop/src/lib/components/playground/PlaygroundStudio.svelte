@@ -1,48 +1,5 @@
-<!--
-  PlaygroundStudio Component
-
-  Drop-in embeddable split-pane layout: PipelinePanel (left, resizable) + Playground
-  chat (right). Provides the same integrated experience as the FlowDrop demo app with a
-  single import and zero layout glue code.
-
-  @example Basic usage — workflow fetched automatically
-  ```svelte
-  <script>
-    import { PlaygroundStudio, createEndpointConfig } from '@flowdrop/flowdrop/playground';
-    import '@flowdrop/flowdrop/styles';
-  </script>
-
-  <PlaygroundStudio
-    workflowId="wf-123"
-    endpointConfig={createEndpointConfig('/api/flowdrop')}
-  />
-  ```
-
-  @example With pre-loaded workflow and URL-based session routing
-  ```svelte
-  <script>
-    import { PlaygroundStudio, createEndpointConfig } from '@flowdrop/flowdrop/playground';
-
-    let { data } = $props();          // workflow from server load
-    let sessionId = $derived($page.params.sessionId);
-
-    function handleSessionNavigate(id) {
-      goto(`/playground/${id}`);
-    }
-  </script>
-
-  <PlaygroundStudio
-    workflowId={data.workflow.id}
-    workflow={data.workflow}
-    endpointConfig={createEndpointConfig('/api/flowdrop')}
-    initialSessionId={sessionId}
-    onSessionNavigate={handleSessionNavigate}
-  />
-  ```
--->
-
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import Icon from '@iconify/svelte';
   import Playground from './Playground.svelte';
   import PipelinePanel from './PipelinePanel.svelte';
@@ -100,15 +57,12 @@
     onClose,
   }: Props = $props();
 
-  // svelte-ignore state_referenced_locally
-  let resolvedWorkflow = $state<Workflow | null>(workflowProp ?? null);
-  // svelte-ignore state_referenced_locally
-  let workflowLoading = $state(workflowProp === undefined);
+  let resolvedWorkflow = $state<Workflow | null>(untrack(() => workflowProp ?? null));
+  let workflowLoading = $state(untrack(() => workflowProp === undefined));
   let workflowError = $state<string | null>(null);
 
   let splitEl = $state<HTMLElement | null>(null);
-  // svelte-ignore state_referenced_locally
-  let pipelineWidth = $state(initialPipelineWidth);
+  let pipelineWidth = $state(untrack(() => initialPipelineWidth));
   let isResizing = $state(false);
   let containerWidth = $state(0);
 
@@ -366,9 +320,6 @@
   }
 
   @keyframes studio-spin {
-    from {
-      transform: rotate(0deg);
-    }
     to {
       transform: rotate(360deg);
     }
