@@ -1,8 +1,9 @@
 import { untrack } from 'svelte';
 import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
 import type { EndpointConfig } from '$lib/config/endpoints.js';
+import type { NodeExecutionStatus, KanbanColumnDef } from '$lib/types/index.js';
 
-export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type NodeStatus = NodeExecutionStatus;
 
 export interface NodeStatusData {
   status: string;
@@ -11,11 +12,14 @@ export interface NodeStatusData {
   error?: string | null;
 }
 
+const KNOWN_STATUSES = new Set<string>([
+  'idle', 'pending', 'running', 'completed', 'failed',
+  'cancelled', 'skipped', 'paused', 'interrupted'
+]);
+
 export function resolveStatus(raw: NodeStatusData | undefined): NodeStatus {
   if (!raw) return 'pending';
-  if (raw.status === 'running') return 'running';
-  if (raw.status === 'completed') return 'completed';
-  if (raw.status === 'failed' || raw.status === 'cancelled') return 'failed';
+  if (KNOWN_STATUSES.has(raw.status)) return raw.status as NodeStatus;
   return 'pending';
 }
 
@@ -25,6 +29,7 @@ export function createPipelineDataFetcher(
 ) {
   const client = new EnhancedFlowDropApiClient(getEndpointConfig());
   let nodeStatusMap = $state<Record<string, NodeStatusData>>({});
+  let kanbanConfig = $state<KanbanColumnDef[] | null>(null);
   let isLoading = $state(false);
   let isError = $state(false);
 
@@ -43,6 +48,9 @@ export function createPipelineDataFetcher(
         };
       }
       nodeStatusMap = map;
+      if (data.kanban_config?.columns) {
+        kanbanConfig = data.kanban_config.columns as KanbanColumnDef[];
+      }
     } catch {
       isError = true;
     } finally {
@@ -64,6 +72,9 @@ export function createPipelineDataFetcher(
   return {
     get nodeStatusMap() {
       return nodeStatusMap;
+    },
+    get kanbanConfig() {
+      return kanbanConfig;
     },
     get isLoading() {
       return isLoading;
