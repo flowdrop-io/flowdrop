@@ -106,13 +106,32 @@
   // Cache of value-to-label mappings for selected items
   let labelCache = $state<Map<string, string>>(new Map());
 
-  // Fingerprint of dependency field values — changes trigger selection clearing
-  const depValues = $derived.by(() => {
+  // Resolved values for each param dependency: { paramName -> currentFieldValue }
+  // Used both in buildUrl (appending to query) and in the dep-change effect.
+  const depParamValues = $derived.by(() => {
     const all = getFormValues?.() ?? {};
-    return Object.values(params).map((k) => String(all[k] ?? '')).join('\0');
+    const result: Record<string, string> = {};
+    for (const [paramName, fieldName] of Object.entries(params)) {
+      const val = all[fieldName];
+      if (val !== undefined && val !== '') result[paramName] = String(val);
+    }
+    return result;
   });
 
-  let depInitialized = false;
+  // Stable fingerprint — any change triggers selection clearing.
+  // JSON.stringify gives a canonical string without null-byte ambiguity.
+  const depFingerprint = $derived(JSON.stringify(depParamValues));
+  let prevDepFingerprint = depFingerprint;
+
+  $effect(() => {
+    if (Object.keys(params).length > 0 && !getFormValues) {
+      logger.warn(
+        '[FormAutocomplete] `params` is configured but no flowdrop:getFormValues context ' +
+          'was found. Dependent field values will not be passed to the autocomplete URL. ' +
+          'Ensure this component is rendered inside ConfigForm or SchemaForm.'
+      );
+    }
+  });
 
   // Generate unique IDs for accessibility
   // svelte-ignore state_referenced_locally — id prop never changes
@@ -174,12 +193,8 @@
     const separator = url.includes('?') ? '&' : '?';
     let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
 
-    const all = getFormValues?.() ?? {};
-    for (const [paramName, fieldName] of Object.entries(params)) {
-      const val = all[fieldName];
-      if (val !== undefined && val !== '') {
-        fullUrl += `&${encodeURIComponent(paramName)}=${encodeURIComponent(String(val))}`;
-      }
+    for (const [paramName, val] of Object.entries(depParamValues)) {
+      fullUrl += `&${encodeURIComponent(paramName)}=${encodeURIComponent(val)}`;
     }
 
     return fullUrl;
@@ -220,24 +235,24 @@
 
     isLoading = true;
     error = null;
-    abortController = new AbortController();
+    // Capture in a local const so the timeout closure and fetch signal
+    // always reference the same controller, even if a new request starts
+    // before the 5-second timeout fires.
+    const controller = new AbortController();
+    abortController = controller;
 
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     try {
       // Build headers with authentication (call getter to get current value)
       const headers = await buildFetchHeaders(getAuthProvider?.());
 
-      // Fetch with timeout
-      const timeoutId = setTimeout(() => {
-        abortController?.abort();
-      }, 5000);
+      timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const response = await fetch(buildUrl(query), {
         method: 'GET',
         headers,
-        signal: abortController.signal
+        signal: controller.signal
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -262,6 +277,7 @@
       error = err instanceof Error ? err.message : 'Failed to fetch suggestions';
       suggestions = [];
     } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId);
       isLoading = false;
       abortController = null;
     }
@@ -318,6 +334,13 @@
   function handleBlur(): void {
     setTimeout(() => {
       hideDropdown();
+
+      // When dependent params are configured, the suggestion list is bound to the
+      // current values of sibling fields. Clear it on blur so that fetchOnFocus
+      // always re-fetches with the current dep values rather than showing stale results.
+      if (Object.keys(params).length > 0) {
+        suggestions = [];
+      }
 
       // If not allowFreeText and single mode, validate the input
       if (!allowFreeText && !multiple && inputValue !== '') {
@@ -565,11 +588,9 @@
   });
 
   $effect(() => {
-    const _ = depValues; // track dependency fingerprint
-    if (!depInitialized) {
-      depInitialized = true;
-      return;
-    }
+    const current = depFingerprint;
+    if (current === prevDepFingerprint) return;
+    prevDepFingerprint = current;
     // A dependency field changed — abort any in-flight fetch, clear state
     abortController?.abort();
     suggestions = [];
@@ -603,11 +624,11 @@
   class:form-autocomplete--has-value={selectedValues.length > 0}
 >
   <!-- Main input container styled like a textfield/textarea -->
+  <!-- svelte-ignore a11y_no_static_element_interactions — role="presentation"; keyboard interaction is handled by the <input> inside -->
   <div
     class="form-autocomplete__field"
     class:form-autocomplete__field--focused={isOpen}
     onclick={() => inputElement?.focus()}
-    onkeydown={() => {}}
     role="presentation"
   >
     <!-- Selected tags -->
