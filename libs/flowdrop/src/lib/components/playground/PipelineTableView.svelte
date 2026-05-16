@@ -78,7 +78,7 @@
           {#each sortedRows as row (row.node.id)}
             <tr class="pipeline-table__row">
               <td class="pipeline-table__td pipeline-table__td--label" title={row.node.data.label}>{row.node.data.label}</td>
-              <td class="pipeline-table__td pipeline-table__td--muted" title={row.node.type}>{row.node.type}</td>
+              <td class="pipeline-table__td pipeline-table__td--muted" title={row.node.data.metadata.id}>{row.node.data.metadata.id}</td>
               <td class="pipeline-table__td">
                 <span class="pipeline-table__status pipeline-table__status--{row.status}">
                   <Icon

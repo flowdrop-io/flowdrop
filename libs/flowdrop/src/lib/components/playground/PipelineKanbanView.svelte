@@ -76,7 +76,7 @@
               <div class="pipeline-kanban__card pipeline-kanban__card--{col.key}">
                 <div class="pipeline-kanban__card-body">
                   <span class="pipeline-kanban__card-label">{node.data.label}</span>
-                  <span class="pipeline-kanban__card-type">{node.type}</span>
+                  <span class="pipeline-kanban__card-type">{node.data.metadata.id}</span>
                 </div>
               </div>
             {/each}
