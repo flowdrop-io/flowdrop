@@ -123,9 +123,14 @@
 
         for (const nodeId in jobStatusData.node_statuses) {
           const status = jobStatusData.node_statuses[nodeId].status;
-          if (['pending', 'running', 'completed', 'failed', 'cancelled'].includes(status)) {
-            newNodeStatuses[nodeId] =
-              status === 'failed' ? 'error' : (status as 'pending' | 'running' | 'completed');
+          if (status === 'failed' || status === 'cancelled') {
+            newNodeStatuses[nodeId] = 'error';
+          } else if (status === 'running' || status === 'paused' || status === 'interrupted') {
+            newNodeStatuses[nodeId] = 'running';
+          } else if (status === 'completed' || status === 'skipped') {
+            newNodeStatuses[nodeId] = 'completed';
+          } else if (status === 'pending' || status === 'idle') {
+            newNodeStatuses[nodeId] = 'pending';
           }
         }
         nodeStatuses = newNodeStatuses;

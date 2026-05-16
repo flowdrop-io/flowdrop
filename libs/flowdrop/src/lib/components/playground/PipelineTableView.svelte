@@ -3,16 +3,26 @@
 
   const STATUS_ORDER: Record<NodeStatus, number> = {
     running: 0,
-    pending: 1,
-    completed: 2,
-    failed: 3
+    paused: 1,
+    interrupted: 2,
+    pending: 3,
+    idle: 4,
+    completed: 5,
+    skipped: 6,
+    cancelled: 7,
+    failed: 8
   };
 
   const STATUS_ICON: Record<NodeStatus, string> = {
     running: 'mdi:play-circle-outline',
+    paused: 'mdi:pause-circle-outline',
+    interrupted: 'mdi:account-clock-outline',
     completed: 'mdi:check-circle',
+    skipped: 'mdi:skip-next-circle-outline',
     failed: 'mdi:alert-circle',
-    pending: 'mdi:clock-outline'
+    cancelled: 'mdi:cancel',
+    pending: 'mdi:clock-outline',
+    idle: 'mdi:circle-outline'
   };
 
   function formatDuration(ms: number | null | undefined): string | null {
@@ -357,7 +367,9 @@
     text-transform: capitalize;
   }
 
-  .pipeline-table__status--pending {
+  .pipeline-table__status--idle,
+  .pipeline-table__status--pending,
+  .pipeline-table__status--cancelled {
     color: var(--fd-muted-foreground);
   }
 
@@ -365,8 +377,20 @@
     color: var(--fd-warning);
   }
 
+  .pipeline-table__status--paused {
+    color: #f97316;
+  }
+
+  .pipeline-table__status--interrupted {
+    color: #06b6d4;
+  }
+
   .pipeline-table__status--completed {
     color: var(--fd-success);
+  }
+
+  .pipeline-table__status--skipped {
+    color: #8b5cf6;
   }
 
   .pipeline-table__status--failed {
