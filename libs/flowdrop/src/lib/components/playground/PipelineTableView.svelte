@@ -44,6 +44,7 @@
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import { createPipelineDataFetcher, resolveStatus } from './pipelineViewUtils.svelte.js';
+  import { getStatusTextColor } from '$lib/utils/nodeStatus.js';
   import type { NodeStatusData } from './pipelineViewUtils.svelte.js';
   import type { Workflow, WorkflowNode } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
@@ -76,7 +77,7 @@
         const statusData = fetcher.nodeStatusMap[node.id];
         return { node, status: resolveStatus(statusData), statusData };
       })
-      .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
+      .sort((a, b) => (STATUS_ORDER[a.status] ?? Infinity) - (STATUS_ORDER[b.status] ?? Infinity))
   );
 
   let expandedIds = $state(new Set<string>());
@@ -142,9 +143,9 @@
               <td class="pipeline-table__td pipeline-table__td--label" title={row.node.data.label}>{row.node.data.label}</td>
               <td class="pipeline-table__td pipeline-table__td--muted" title={row.node.data.metadata.id}>{row.node.data.metadata.id}</td>
               <td class="pipeline-table__td">
-                <span class="pipeline-table__status pipeline-table__status--{row.status}">
+                <span class="pipeline-table__status" style="color: {getStatusTextColor(row.status)}">
                   <Icon
-                    icon={STATUS_ICON[row.status]}
+                    icon={STATUS_ICON[row.status] ?? 'mdi:circle-outline'}
                     class="pipeline-table__status-icon"
                   />
                   {row.status}
@@ -365,36 +366,6 @@
     gap: var(--fd-space-3xs);
     font-weight: 500;
     text-transform: capitalize;
-  }
-
-  .pipeline-table__status--idle,
-  .pipeline-table__status--pending,
-  .pipeline-table__status--cancelled {
-    color: var(--fd-muted-foreground);
-  }
-
-  .pipeline-table__status--running {
-    color: var(--fd-warning);
-  }
-
-  .pipeline-table__status--paused {
-    color: #f97316;
-  }
-
-  .pipeline-table__status--interrupted {
-    color: #06b6d4;
-  }
-
-  .pipeline-table__status--completed {
-    color: var(--fd-success);
-  }
-
-  .pipeline-table__status--skipped {
-    color: #8b5cf6;
-  }
-
-  .pipeline-table__status--failed {
-    color: var(--fd-error);
   }
 
   :global(.pipeline-table__status-icon) {

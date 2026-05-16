@@ -12,15 +12,9 @@ export interface NodeStatusData {
   error?: string | null;
 }
 
-const KNOWN_STATUSES = new Set<string>([
-  'idle', 'pending', 'running', 'completed', 'failed',
-  'cancelled', 'skipped', 'paused', 'interrupted'
-]);
-
 export function resolveStatus(raw: NodeStatusData | undefined): NodeStatus {
   if (!raw) return 'pending';
-  if (KNOWN_STATUSES.has(raw.status)) return raw.status as NodeStatus;
-  return 'pending';
+  return (raw.status || 'pending') as NodeStatus;
 }
 
 export function createPipelineDataFetcher(
