@@ -1318,7 +1318,17 @@ export type NodeExecutionStatus =
   | 'completed'
   | 'failed'
   | 'cancelled'
-  | 'skipped';
+  | 'skipped'
+  | 'paused'
+  | 'interrupted';
+
+export interface KanbanColumnDef {
+  key: string;
+  label: string;
+  statuses: NodeExecutionStatus[];
+  icon?: string;
+  color?: string;
+}
 
 /**
  * Node execution tracking information
@@ -1343,7 +1353,7 @@ export interface NodeExecutionInfo {
 /**
  * Workflow execution status
  */
-export type ExecutionStatus = 'idle' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type ExecutionStatus = 'idle' | 'running' | 'completed' | 'failed' | 'cancelled' | 'paused' | 'interrupted';
 
 /**
  * Workflow execution result
