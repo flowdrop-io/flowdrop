@@ -128,6 +128,69 @@ The status pill on a card is shown automatically when a column's `statuses` arra
 
 The table view lists all nodes sorted by activity (running nodes first), with expandable rows showing execution details — last executed time, duration, and error message.
 
+## Custom Views
+
+Register additional views alongside the built-in three by passing a `pipelineViews` array. Each entry needs a unique `key`, a toggle button `icon` and `label`, and a Svelte component that receives `PipelineViewProps`.
+
+### Svelte component
+
+```svelte
+<!-- MyTimelineView.svelte -->
+<script lang="ts">
+  import type { PipelineViewProps } from '@flowdrop/flowdrop/playground';
+
+  let { pipelineId, workflow, endpointConfig, refreshTrigger }: PipelineViewProps = $props();
+</script>
+
+<div>Timeline for pipeline {pipelineId}</div>
+```
+
+### Registering via mountPlaygroundStudio
+
+```typescript
+import { mountPlaygroundStudio, createEndpointConfig } from '@flowdrop/flowdrop/playground';
+import MyTimelineView from './MyTimelineView.svelte';
+
+await mountPlaygroundStudio(container, {
+  workflowId: 'wf-123',
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  pipelineViews: [
+    {
+      key: 'timeline',
+      label: 'Timeline',
+      icon: 'mdi:chart-timeline-variant',
+      component: MyTimelineView
+    }
+  ]
+});
+```
+
+### Registering via Svelte component
+
+```svelte
+<script lang="ts">
+  import { PlaygroundStudio } from '@flowdrop/flowdrop/playground';
+  import MyTimelineView from './MyTimelineView.svelte';
+
+  const extraViews = [
+    { key: 'timeline', label: 'Timeline', icon: 'mdi:chart-timeline-variant', component: MyTimelineView }
+  ];
+</script>
+
+<PlaygroundStudio workflowId="wf-123" extraPipelineViews={extraViews} />
+```
+
+### PipelineViewDef fields
+
+| Field | Type | Description |
+|---|---|---|
+| `key` | `string` | Unique identifier — must not clash with `graph`, `kanban`, or `table` |
+| `label` | `string` | Tooltip text on the toggle button |
+| `icon` | `string` | Iconify icon name |
+| `component` | `Component<PipelineViewProps>` | Svelte component that receives the view props |
+
+The selected view key persists in `localStorage` under `fd-pipeline-view-mode`, so switching to a custom view and reloading restores it automatically.
+
 ## Graph View
 
 The graph view renders the workflow canvas in read-only mode with colour-coded node overlays:

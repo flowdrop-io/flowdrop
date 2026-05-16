@@ -14,7 +14,7 @@
   } from '../../stores/playgroundStore.svelte.js';
   import { setEndpointConfig, workflowApi } from '../../services/api.js';
   import { logger } from '../../utils/logger.js';
-  import type { Workflow } from '../../types/index.js';
+  import type { Workflow, PipelineViewDef } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import type { PlaygroundConfig, PlaygroundMode } from '../../types/playground.js';
 
@@ -41,6 +41,8 @@
     onSessionNavigate?: (sessionId: string) => void;
     /** Called when the playground is closed (embedded / modal mode) */
     onClose?: () => void;
+    /** Additional pipeline views injected by the consumer */
+    extraPipelineViews?: PipelineViewDef[];
   }
 
   let {
@@ -55,6 +57,7 @@
     initialPipelineWidth = 500,
     onSessionNavigate,
     onClose,
+    extraPipelineViews = [],
   }: Props = $props();
 
   let resolvedWorkflow = $state<Workflow | null>(untrack(() => workflowProp ?? null));
@@ -162,6 +165,7 @@
           latestExecutionId={getLatestExecutionId()}
           onSelectExecution={(id) => playgroundActions.pinExecution(id)}
           refreshTrigger={getPipelineRefreshTrigger()}
+          extraViews={extraPipelineViews}
         />
       </div>
 

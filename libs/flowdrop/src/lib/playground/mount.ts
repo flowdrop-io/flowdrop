@@ -61,6 +61,7 @@ import type {
 import type { PartialSettings, SettingsCategory } from '../types/settings.js';
 import { initializeSettings } from '../stores/settingsStore.svelte.js';
 import type { NavbarAction } from '../types/navbar.js';
+import type { PipelineViewDef } from '../types/index.js';
 import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
@@ -438,6 +439,8 @@ export interface PlaygroundStudioMountOptions extends PlaygroundMountOptions {
   minChatWidth?: number;
   initialPipelineWidth?: number;
   onSessionNavigate?: (sessionId: string) => void;
+  /** Additional pipeline views injected into the view switcher */
+  pipelineViews?: PipelineViewDef[];
 }
 
 export async function mountPlaygroundStudio(
@@ -459,7 +462,8 @@ export async function mountPlaygroundStudio(
     settings: initialSettings,
     onClose,
     onSessionNavigate,
-    onSessionStatusChange
+    onSessionStatusChange,
+    pipelineViews
   } = options;
 
   if (!workflowId) {
@@ -492,7 +496,8 @@ export async function mountPlaygroundStudio(
       onSessionNavigate,
       initialPipelineOpen,
       minChatWidth,
-      initialPipelineWidth
+      initialPipelineWidth,
+      extraPipelineViews: pipelineViews
     }
   });
 

@@ -312,6 +312,8 @@ export {
   type MountedPlayground
 } from './mount.js';
 
+export type { PipelineViewDef, PipelineViewProps } from '../types/index.js';
+
 // ============================================================================
 // Endpoint Configuration (re-exported for convenience)
 // ============================================================================

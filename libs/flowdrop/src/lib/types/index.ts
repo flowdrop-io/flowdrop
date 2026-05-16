@@ -2,6 +2,7 @@
  * Core types for the Workflow Library
  */
 
+import type { Component } from 'svelte';
 import type { Node, Edge, XYPosition } from '@xyflow/svelte';
 import { ConnectionLineType } from '@xyflow/svelte';
 import type { EndpointConfig } from '../config/endpoints.js';
@@ -1328,6 +1329,26 @@ export interface KanbanColumnDef {
   statuses: NodeExecutionStatus[];
   icon?: string;
   color?: string;
+}
+
+/** Props passed to every pipeline view component, built-in or custom. */
+export interface PipelineViewProps {
+  pipelineId: string | null;
+  workflow: Workflow;
+  endpointConfig: EndpointConfig;
+  refreshTrigger?: number;
+}
+
+/** A custom view injected into the PipelinePanel view switcher. */
+export interface PipelineViewDef {
+  /** Unique key — must not clash with built-ins: 'graph' | 'kanban' | 'table' */
+  key: string;
+  /** Label shown in the toggle button tooltip */
+  label: string;
+  /** Iconify icon name, e.g. 'mdi:chart-bar' */
+  icon: string;
+  /** Svelte component that receives PipelineViewProps */
+  component: Component<PipelineViewProps>;
 }
 
 /**

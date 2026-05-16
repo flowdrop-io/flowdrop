@@ -5,7 +5,7 @@
   import PipelineTableView from './PipelineTableView.svelte';
   import App from '$lib/components/App.svelte';
   import Icon from '@iconify/svelte';
-  import type { Workflow } from '$lib/types/index.js';
+  import type { Workflow, PipelineViewDef } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
   import type { PlaygroundExecution } from '$lib/types/playground.js';
 
@@ -22,6 +22,8 @@
     onSelectExecution?: (id: string | null) => void;
     /** Increments when new messages arrive — forwarded to PipelineStatus for immediate refresh */
     refreshTrigger?: number;
+    /** Additional views injected by the library consumer */
+    extraViews?: PipelineViewDef[];
   }
 
   let {
@@ -32,18 +34,20 @@
     executions = [],
     latestExecutionId = null,
     onSelectExecution,
-    refreshTrigger = 0
+    refreshTrigger = 0,
+    extraViews = []
   }: Props = $props();
 
   const VIEW_MODE_KEY = 'fd-pipeline-view-mode';
-  type ViewMode = 'graph' | 'kanban' | 'table';
+  const BUILTIN_VIEWS = ['graph', 'kanban', 'table'] as const;
+  type ViewMode = typeof BUILTIN_VIEWS[number] | (string & {});
   let viewMode = $state<ViewMode>('graph');
 
   onMount(() => {
     const stored = localStorage.getItem(VIEW_MODE_KEY);
-    if (stored === 'kanban' || stored === 'table') {
-      viewMode = stored;
-    }
+    if (!stored) return;
+    const validKeys = [...BUILTIN_VIEWS, ...extraViews.map((v) => v.key)];
+    if (validKeys.includes(stored)) viewMode = stored;
   });
 
   function selectViewMode(mode: ViewMode) {
@@ -122,6 +126,17 @@
         >
           <Icon icon="mdi:table-large" />
         </button>
+        {#each extraViews as view (view.key)}
+          <button
+            type="button"
+            class="pipeline-panel__view-btn"
+            class:pipeline-panel__view-btn--active={viewMode === view.key}
+            onclick={() => selectViewMode(view.key)}
+            title={view.label}
+          >
+            <Icon icon={view.icon} />
+          </button>
+        {/each}
       </div>
     {/if}
 
@@ -221,7 +236,7 @@
           <PipelineKanbanView {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
         {:else if viewMode === 'table'}
           <PipelineTableView {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
-        {:else}
+        {:else if viewMode === 'graph'}
           <PipelineStatus
             {pipelineId}
             {workflow}
@@ -230,6 +245,12 @@
             {refreshTrigger}
             isEmbedded={true}
           />
+        {:else}
+          {@const activeView = extraViews.find((v) => v.key === viewMode)}
+          {#if activeView}
+            {@const View = activeView.component}
+            <View {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
+          {/if}
         {/if}
       {/key}
     {:else}
