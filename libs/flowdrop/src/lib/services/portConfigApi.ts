@@ -5,18 +5,24 @@
 
 import type { PortConfig } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl } from '../config/endpoints.js';
+import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
 import { logger } from '../utils/logger.js';
+import type { AuthProvider } from '../types/auth.js';
 
 /**
  * Fetch port configuration from API
  */
-export async function fetchPortConfig(endpointConfig: EndpointConfig): Promise<PortConfig> {
+export async function fetchPortConfig(
+  endpointConfig: EndpointConfig,
+  authProvider?: AuthProvider
+): Promise<PortConfig> {
   try {
     const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.portConfig);
+    const configHeaders = getEndpointHeaders(endpointConfig, 'portConfig');
+    const authHeaders = authProvider ? await authProvider.getAuthHeaders() : {};
     const response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...configHeaders, ...authHeaders }
     });
 
     if (!response.ok) {

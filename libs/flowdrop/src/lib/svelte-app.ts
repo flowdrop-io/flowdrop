@@ -279,7 +279,7 @@ export async function mountFlowDropApp(
   if (!finalPortConfig && config) {
     // Try to fetch port configuration from API
     try {
-      finalPortConfig = await fetchPortConfig(config);
+      finalPortConfig = await fetchPortConfig(config, authProvider);
     } catch (error) {
       logger.warn('Failed to fetch port config from API, using default:', error);
       finalPortConfig = DEFAULT_PORT_CONFIG;
@@ -295,7 +295,7 @@ export async function mountFlowDropApp(
     initializeCategories(categories);
   } else if (config) {
     try {
-      const fetchedCategories = await fetchCategories(config);
+      const fetchedCategories = await fetchCategories(config, authProvider);
       initializeCategories(fetchedCategories);
     } catch (error) {
       logger.warn('Failed to fetch categories from API, using defaults:', error);
@@ -464,9 +464,10 @@ export async function mountWorkflowEditor(
     endpointConfig?: EndpointConfig;
     portConfig?: PortConfig;
     categories?: CategoryDefinition[];
+    authProvider?: AuthProvider;
   } = {}
 ): Promise<MountedFlowDropApp> {
-  const { nodes = [], endpointConfig, portConfig, categories } = options;
+  const { nodes = [], endpointConfig, portConfig, categories, authProvider } = options;
 
   // Create endpoint configuration
   let config: EndpointConfig | undefined;
@@ -494,7 +495,7 @@ export async function mountWorkflowEditor(
   if (!finalPortConfig && config) {
     // Try to fetch port configuration from API
     try {
-      finalPortConfig = await fetchPortConfig(config);
+      finalPortConfig = await fetchPortConfig(config, authProvider);
     } catch (error) {
       logger.warn('Failed to fetch port config from API, using default:', error);
       finalPortConfig = DEFAULT_PORT_CONFIG;
@@ -510,7 +511,7 @@ export async function mountWorkflowEditor(
     initializeCategories(categories);
   } else if (config) {
     try {
-      const fetchedCategories = await fetchCategories(config);
+      const fetchedCategories = await fetchCategories(config, authProvider);
       initializeCategories(fetchedCategories);
     } catch (error) {
       logger.warn('Failed to fetch categories from API, using defaults:', error);
