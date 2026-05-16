@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-05-16
+
+### Added
+
+- **Kanban pipeline view**: A new `kanban` view in `PipelinePanel` renders a board where columns are driven by the server's `kanban_config` field on the pipeline response. Each column maps one or more execution statuses via `KanbanColumnDef.statuses`, so the board layout is entirely server-configurable without a client-side code change.
+- **`KanbanColumnDef` and `KanbanConfig` types**: New exported types that model a server-defined kanban column (`key`, `label`, `statuses[]`, optional `color`) and the top-level `kanban_config` object (`columns[]`) returned by the pipeline API.
+- **`paused` and `interrupted` execution statuses**: `NodeExecutionStatus` and `ExecutionStatus` now include `'paused'` (orange) and `'interrupted'` (cyan). Both statuses have dedicated icons, color tokens, and labels across the table, graph, and kanban views.
+- **`status_summary` extensions**: `JobStatusSummary` gains `skipped`, `paused`, and `interrupted` count fields, mirroring the API schema update.
+- **Pipeline table accordion rows**: Clicking a row in the pipeline table expands an inline accordion panel showing per-node execution details (start/end times, status, output). A second click collapses it.
+- **`PipelineViewDef` extensibility**: `mountPlaygroundStudio()` now accepts a `pipelineViews` option and `PlaygroundStudio` accepts an `extraPipelineViews` prop. Each entry defines a `key`, `icon`, `label`, and a Svelte component that receives `PipelineViewProps`. The view key is persisted in `localStorage` and validated against built-ins + injected views on restore. `PipelineViewDef` and `PipelineViewProps` are exported from `@flowdrop/flowdrop/playground`.
+- **New playground sub-components exported**: `MessageStream`, `ChatInput`, `ExecutionConsole`, and `ControlPanel` are now exported from `@flowdrop/flowdrop/playground` for hosts that need to compose custom playground layouts.
+- **`getShowLogs()` store helper**: Exposed from `@flowdrop/flowdrop/playground` to read the playground log-panel visibility state.
+- **Locked workflow graph in playground**: When no pipeline execution is running the playground now renders the workflow graph in read-only mode instead of a blank panel, giving users a visual reference of the workflow structure at all times.
+- **Create session button**: When a playground has no sessions at all a prominent "Create session" button is shown directly in the empty state instead of an uninformative blank screen.
+- **Full status coverage in table and graph views**: The pipeline table and execution graph now render distinct icons and color badges for every `NodeExecutionStatus` value, including the new `paused` and `interrupted` states.
+
+### Fixed
+
+- **Polling survives interrupts and terminal statuses**: The playground polling loop was silently cancelled when a pipeline reached a terminal status or transitioned through `awaiting_input`. Polling now resumes correctly after an interrupt is resolved and continues until the session is genuinely idle.
+- **Unreported nodes no longer default to `pending`**: Nodes not mentioned in a pipeline response were being shown as `pending`. They are now left in their previous state (typically `idle`) until the server explicitly reports them.
+- **Panel size re-clamp on container resize**: Draggable panel widths were not re-clamped when the viewport resized, causing the pipeline panel to overflow or jump. A `ResizeObserver` now re-applies the min/max constraints whenever the container dimensions change.
+- **Node type label shows `metadata.id`**: The pipeline table was displaying the internal `universalNode` discriminator instead of the human-readable `metadata.id` value as the node type.
+- **Node interaction disabled when workflow is locked or read-only**: Clicking or dragging nodes in the editor graph is now prevented when the workflow is in a locked or read-only state.
+- **`showLogs` prop syncs reactively**: The log panel visibility was reading a stale prop value; it is now driven by a `$effect` that tracks the prop correctly.
+- **Keyboard accessibility — interrupt prompts**: HITL interrupt dialogs can now be dismissed and confirmed with the keyboard.
+- **Keyboard accessibility — session and pipeline chip dropdowns**: Both dropdowns are now fully navigable via keyboard (Arrow keys, Enter, Escape).
+- **Port handles removed from keyboard tab order**: Port handles on workflow nodes are no longer reachable via Tab, reducing noise for keyboard-only users navigating the editor.
+- **Keyboard-controlled horizontal resizer**: The `PlaygroundStudio` split-pane resizer responds to `ArrowLeft` / `ArrowRight` keys (10 px increments) in addition to mouse drag.
+
+### Changed
+
+- **Playground `i18n` — all UI strings are now message-keyed**: Every hardcoded string in the playground (button labels, status text, empty-state messages) has been extracted into the FlowDrop message map. Hosts that supply a custom `messages` object can now translate or override playground copy.
+- **Playground internals refactored into `PlaygroundStudio`**: The demo `+page.svelte` and the `Playground` component have been restructured around the `PlaygroundStudio` 3-pane layout. This is an internal change with no public API impact.
+
 ## [1.11.0] - 2026-05-11
 
 ### Added
