@@ -81,7 +81,7 @@ interface Props {
 }
 ```
 
-Additional schema properties (like `minDate`, `maxDate`, etc.) are forwarded to your component as props.
+Only the props listed above are guaranteed. Read any additional schema properties (like `schema.minDate`) directly from the schema via the form context — see [Reading sibling field values](#reading-sibling-field-values) below.
 
 ## Matcher Functions
 
@@ -181,3 +181,84 @@ isFieldTypeRegistered('color-picker'); // true or false
 getFieldRegistrySize(); // number of registrations
 clearFieldRegistry(); // clear all (useful in tests)
 ```
+
+## Reading Sibling Field Values
+
+Custom components registered for `format: "autocomplete"` fields receive the full `schema` object as a prop and can read the current values of other fields in the same form using the `FORM_VALUES_KEY` context.
+
+This is the building block for dependent autocomplete fields — for example a `project` field whose suggestions depend on the currently selected `account`.
+
+**1. Define the schema** — use any custom property to declare the dependency:
+
+```json
+{
+  "account": { "type": "string", "title": "Account" },
+  "project": {
+    "type": "string",
+    "format": "autocomplete",
+    "title": "Project",
+    "autocomplete": { "url": "/api/projects", "labelField": "name", "valueField": "id" },
+    "dependencies": { "account": "account" }
+  }
+}
+```
+
+**2. Write the component** — wrap `FormAutocomplete` and patch the URL:
+
+```svelte
+<!-- DependentAutocomplete.svelte -->
+<script lang="ts">
+  import { getContext } from 'svelte';
+  import FormAutocomplete from '@flowdrop/flowdrop/form/autocomplete';
+  import { FORM_VALUES_KEY, type FormValuesGetter, type FieldSchema } from '@flowdrop/flowdrop/form';
+  import type { AutocompleteConfig } from '@flowdrop/flowdrop';
+
+  interface Props {
+    id: string;
+    value: unknown;
+    schema: FieldSchema;
+    autocomplete: AutocompleteConfig;
+    placeholder?: string;
+    required?: boolean;
+    disabled?: boolean;
+    ariaDescribedBy?: string;
+    onChange: (value: unknown) => void;
+  }
+
+  let { schema, autocomplete, ...rest }: Props = $props();
+
+  const getFormValues = getContext<FormValuesGetter | undefined>(FORM_VALUES_KEY);
+
+  const patchedAutocomplete = $derived.by(() => {
+    const values = getFormValues?.() ?? {};
+    const deps = (schema as any).dependencies as Record<string, string> | undefined;
+    if (!deps) return autocomplete;
+
+    const extra = Object.entries(deps)
+      .filter(([, field]) => values[field] != null && values[field] !== '')
+      .map(([param, field]) => `${encodeURIComponent(param)}=${encodeURIComponent(String(values[field]))}`)
+      .join('&');
+
+    const sep = autocomplete.url.includes('?') ? '&' : '?';
+    return { ...autocomplete, url: extra ? `${autocomplete.url}${sep}${extra}` : autocomplete.url };
+  });
+</script>
+
+<FormAutocomplete autocomplete={patchedAutocomplete} {...rest} />
+```
+
+**3. Register it** — match on the custom `dependencies` property:
+
+```typescript
+import { fieldComponentRegistry } from '@flowdrop/flowdrop/form';
+import DependentAutocomplete from './DependentAutocomplete.svelte';
+
+fieldComponentRegistry.register({
+  name: 'dependent-autocomplete',
+  component: DependentAutocomplete,
+  matcher: (schema) => schema.format === 'autocomplete' && 'dependencies' in schema,
+  priority: 150
+});
+```
+
+The registered component is only activated when a schema has both `format: "autocomplete"` and a `dependencies` property. All other autocomplete fields continue to use FlowDrop's built-in `FormAutocomplete`.

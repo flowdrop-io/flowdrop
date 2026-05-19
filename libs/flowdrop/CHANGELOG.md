@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`FORM_VALUES_KEY` context key and `FormValuesGetter` type**: Both are now exported from `@flowdrop/flowdrop/form`. Custom field components registered via `fieldComponentRegistry` can call `getContext(FORM_VALUES_KEY)` to receive a `() => Record<string, unknown>` getter that always returns the current values of all sibling fields in the form. The context is set by both `ConfigForm` and `SchemaForm`. This is the stable public API for building cross-field interactions such as dependent autocomplete fields.
+
+- **`schema` prop on registered autocomplete components**: Custom components registered to handle `format: "autocomplete"` fields (via `fieldComponentRegistry`) now receive the full `FieldSchema` object as a `schema` prop. This gives access to any custom property on the schema definition — for example a `dependencies` map — without FlowDrop needing to anticipate and forward each one individually.
+
 ## [1.12.0] - 2026-05-16
 
 ### Added

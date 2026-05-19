@@ -396,9 +396,9 @@
       <registeredAutocompleteComponent.component
         id={fieldKey}
         value={autocompleteValue}
-        autocomplete={schema.autocomplete}
         placeholder={schema.placeholder ?? ''}
         {required}
+        {schema}
         ariaDescribedBy={descriptionId}
         disabled={isReadOnly}
         {node}

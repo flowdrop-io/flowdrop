@@ -146,3 +146,26 @@ export type {
   FieldComponent,
   FieldComponentRegistration
 } from './fieldRegistry.js';
+
+// ============================================================================
+// Context keys (for custom field components)
+// ============================================================================
+
+/**
+ * Use with Svelte's `getContext` inside custom field components registered
+ * via `fieldComponentRegistry` to read sibling form field values.
+ *
+ * @example
+ * ```svelte
+ * <script lang="ts">
+ *   import { getContext } from 'svelte';
+ *   import { FORM_VALUES_KEY, type FormValuesGetter } from '@flowdrop/flowdrop/form';
+ *
+ *   const getFormValues = getContext<FormValuesGetter | undefined>(FORM_VALUES_KEY);
+ *   const account = $derived(getFormValues?.()['account']);
+ * </script>
+ * ```
+ */
+export const FORM_VALUES_KEY = 'flowdrop:getFormValues' as const;
+
+export type FormValuesGetter = () => Record<string, unknown>;
