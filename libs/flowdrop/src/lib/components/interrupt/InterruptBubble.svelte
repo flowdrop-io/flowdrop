@@ -358,6 +358,9 @@
         >
           <Icon icon="mdi:graph" />
           <span>{t.fromWorkflow}</span>
+          {#if currentInterrupt.workflowId}
+            <span class="interrupt-bubble__workflow">{currentInterrupt.workflowId}</span>
+          {/if}
         </span>
       {/if}
       {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
@@ -571,6 +574,15 @@
     gap: var(--fd-space-3xs);
     font-size: var(--fd-text-2xs);
     color: var(--fd-muted-foreground);
+  }
+
+  .interrupt-bubble__workflow {
+    padding: 0 var(--fd-space-3xs);
+    border-radius: var(--fd-radius-sm);
+    background-color: var(--fd-muted);
+    color: var(--fd-muted-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-2xs);
   }
 
   .interrupt-bubble__cancel-btn {

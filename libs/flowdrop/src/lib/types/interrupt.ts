@@ -266,6 +266,10 @@ export interface Interrupt {
   message: string;
   /** ID of the node that triggered the interrupt */
   nodeId?: string;
+  /** ID of the workflow that owns the node — used for sub-workflow
+   * attribution when a session stream contains interrupts from multiple
+   * workflows */
+  workflowId?: string;
   /** ID of the workflow execution */
   executionId?: string;
   /** ID of the playground session (if applicable) */
@@ -373,6 +377,9 @@ export interface InterruptMessageMetadata {
   response_value?: unknown;
   /** Node ID that triggered the interrupt */
   node_id?: string;
+  /** Workflow ID that owns the node — useful for attribution when an
+   * interrupt comes from a sub-workflow embedded in the parent stream */
+  workflow_id?: string;
   /** Execution ID */
   execution_id?: string;
   /** Whether cancel is allowed */
@@ -442,6 +449,7 @@ export function extractInterruptMetadata(
     default_value: metadata.default_value,
     response_value: metadata.response_value,
     node_id: metadata.node_id as string | undefined,
+    workflow_id: metadata.workflow_id as string | undefined,
     execution_id: metadata.execution_id as string | undefined,
     allow_cancel: metadata.allow_cancel as boolean | undefined,
     confirm_label: metadata.confirm_label as string | undefined,
@@ -481,6 +489,7 @@ export function metadataToInterrupt(
     status: 'pending',
     message: content,
     nodeId: metadata.node_id,
+    workflowId: metadata.workflow_id,
     executionId: metadata.execution_id,
     messageId,
     createdAt: new Date().toISOString(),
