@@ -17,6 +17,8 @@
     PlaygroundMessageMetadata,
     PlaygroundMessageRole
   } from '../../types/playground.js';
+  import type { MessageAttribution } from '../../utils/messageAttribution.js';
+  import AttributionChip from './AttributionChip.svelte';
   import { m } from '$lib/messages/index.js';
 
   /**
@@ -38,6 +40,12 @@
      * @default true
      */
     compactSystemMessages?: boolean;
+    /**
+     * Pre-resolved attribution chips (Run, workflow) for this message.
+     * Computed by MessageStream from the session's executions list so the
+     * bubble itself stays store-agnostic.
+     */
+    attribution?: MessageAttribution;
   }
 
   let {
@@ -45,8 +53,13 @@
     showTimestamp = true,
     isLast = false,
     enableMarkdown = true,
-    compactSystemMessages = true
+    compactSystemMessages = true,
+    attribution
   }: Props = $props();
+
+  const hasRunChip = $derived(!!attribution?.runLabel);
+  const hasWorkflowChip = $derived(!!attribution?.workflowLabel);
+  const hasAttributionChips = $derived(hasRunChip || hasWorkflowChip);
 
   /**
    * Determine if this message should render in compact mode.
@@ -165,6 +178,21 @@
       <span class="system-notice__source">{message.metadata.source}</span>
     {/if}
     <span class="system-notice__text">{message.content}</span>
+    {#if hasRunChip && attribution}
+      <AttributionChip
+        variant="run"
+        label={attribution.runLabel!}
+        title={attribution.runId}
+      />
+    {/if}
+    {#if hasWorkflowChip && attribution}
+      <AttributionChip
+        variant="workflow"
+        label={attribution.workflowLabel!}
+        title={attribution.workflowId}
+        icon="mdi:graph"
+      />
+    {/if}
     {#if showTimestamp}
       <span class="system-notice__timestamp">{formatTimestamp(message.timestamp)}</span>
     {/if}
@@ -187,6 +215,21 @@
       <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId ?? 'log'}</span>
       <span class="log-row__text">{message.content}</span>
     </div>
+    {#if hasRunChip && attribution}
+      <AttributionChip
+        variant="run"
+        label={attribution.runLabel!}
+        title={attribution.runId}
+      />
+    {/if}
+    {#if hasWorkflowChip && attribution}
+      <AttributionChip
+        variant="workflow"
+        label={attribution.workflowLabel!}
+        title={attribution.workflowId}
+        icon="mdi:graph"
+      />
+    {/if}
     {#if showTimestamp}
       <span class="log-row__timestamp">{formatTimestamp(message.timestamp)}</span>
     {/if}
@@ -226,7 +269,7 @@
       </div>
 
       <!-- Metadata Footer -->
-      {#if message.metadata?.duration !== undefined || message.nodeId}
+      {#if message.metadata?.duration !== undefined || message.nodeId || hasAttributionChips}
         <div class="message-bubble__footer">
           {#if message.nodeId}
             <span
@@ -245,6 +288,21 @@
               <Icon icon="mdi:timer-outline" />
               {formatDuration(message.metadata.duration)}
             </span>
+          {/if}
+          {#if hasRunChip && attribution}
+            <AttributionChip
+              variant="run"
+              label={attribution.runLabel!}
+              title={attribution.runId}
+            />
+          {/if}
+          {#if hasWorkflowChip && attribution}
+            <AttributionChip
+              variant="workflow"
+              label={attribution.workflowLabel!}
+              title={attribution.workflowId}
+              icon="mdi:graph"
+            />
           {/if}
         </div>
       {/if}

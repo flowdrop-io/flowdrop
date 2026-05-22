@@ -14,6 +14,7 @@
   import MessageBubble from './MessageBubble.svelte';
   import { InterruptBubble } from '../interrupt/index.js';
   import type { PlaygroundMessage } from '../../types/playground.js';
+  import { resolveMessageAttribution } from '../../utils/messageAttribution.js';
   import {
     isInterruptMetadata,
     extractInterruptMetadata,
@@ -75,6 +76,14 @@
 
   const displayMessages = $derived(
     allowLogs && getShowLogs() ? getMessages() : getChatMessages()
+  );
+
+  const executions = $derived(getCurrentSession()?.executions ?? []);
+
+  const attributionsByMessageId = $derived(
+    new Map(
+      displayMessages.map((m) => [m.id, resolveMessageAttribution(m, executions)])
+    )
   );
 
   let previousMessageCount = 0;
@@ -189,6 +198,7 @@
             {interrupt}
             showTimestamp={showTimestamps}
             onResolved={onInterruptResolved}
+            attribution={attributionsByMessageId.get(message.id)}
           />
         {/if}
       {:else}
@@ -198,6 +208,7 @@
           isLast={index === displayMessages.length - 1}
           {enableMarkdown}
           {compactSystemMessages}
+          attribution={attributionsByMessageId.get(message.id)}
         />
       {/if}
     {/each}

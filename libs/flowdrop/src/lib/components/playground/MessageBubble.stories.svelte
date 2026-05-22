@@ -60,3 +60,87 @@
     }
   }}
 />
+
+<Story
+  name="With Run Chip"
+  args={{
+    message: {
+      id: 'msg-5',
+      role: 'assistant',
+      content: 'Workflow finished successfully.',
+      timestamp: new Date().toISOString(),
+      executionId: 'exec-3'
+    },
+    attribution: {
+      runId: 'exec-3',
+      runLabel: 'Run #3',
+      runNumber: 3,
+      workflowId: undefined,
+      workflowLabel: undefined
+    }
+  }}
+/>
+
+<Story
+  name="With Run + Workflow Chips"
+  args={{
+    message: {
+      id: 'msg-6',
+      role: 'assistant',
+      content: 'Iteration complete.',
+      timestamp: new Date().toISOString(),
+      executionId: 'exec-3'
+    },
+    attribution: {
+      runId: 'exec-3',
+      runLabel: 'Run #3',
+      runNumber: 3,
+      workflowId: 'demo-foreach-loop',
+      workflowLabel: 'demo-foreach-loop'
+    }
+  }}
+/>
+
+<Story
+  name="Sub-workflow Attribution (log)"
+  args={{
+    message: {
+      id: 'msg-7',
+      role: 'log',
+      content: 'greeter said hi',
+      timestamp: new Date().toISOString(),
+      executionId: 'exec-3',
+      workflowId: 'greeter-flow',
+      nodeId: 'node-greet',
+      metadata: { nodeLabel: 'greeter' }
+    },
+    attribution: {
+      runId: 'exec-3',
+      runLabel: 'Run #3',
+      runNumber: 3,
+      workflowId: 'greeter-flow',
+      workflowLabel: 'greeter-flow'
+    }
+  }}
+/>
+
+<Story
+  name="Sub-workflow Attribution (system)"
+  args={{
+    message: {
+      id: 'msg-8',
+      role: 'system',
+      content: 'Sub-workflow finished',
+      timestamp: new Date().toISOString(),
+      executionId: 'exec-3',
+      workflowId: 'greeter-flow'
+    },
+    attribution: {
+      runId: 'exec-3',
+      runLabel: 'Run #3',
+      runNumber: 3,
+      workflowId: 'greeter-flow',
+      workflowLabel: 'greeter-flow'
+    }
+  }}
+/>

@@ -14,6 +14,8 @@
   import TextInputPrompt from './TextInputPrompt.svelte';
   import FormPrompt from './FormPrompt.svelte';
   import ReviewPrompt from './ReviewPrompt.svelte';
+  import AttributionChip from '../playground/AttributionChip.svelte';
+  import type { MessageAttribution } from '../../utils/messageAttribution.js';
   import type {
     Interrupt,
     InterruptType,
@@ -49,9 +51,21 @@
     showTimestamp?: boolean;
     /** Callback to refresh messages after interrupt resolution */
     onResolved?: () => void;
+    /**
+     * Pre-resolved attribution chips (Run, workflow). When omitted, falls back
+     * to displaying the interrupt's raw workflowId so existing consumers that
+     * mount InterruptBubble outside a MessageStream context still see
+     * attribution.
+     */
+    attribution?: MessageAttribution;
   }
 
-  let { interrupt: initialInterrupt, showTimestamp = true, onResolved }: Props = $props();
+  let {
+    interrupt: initialInterrupt,
+    showTimestamp = true,
+    onResolved,
+    attribution
+  }: Props = $props();
 
   /**
    * Get the current interrupt state from the store.
@@ -60,6 +74,15 @@
   const currentInterrupt = $derived(
     getInterruptsMap().get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
   );
+
+  const fallbackWorkflowLabel = $derived(
+    attribution?.workflowLabel ?? currentInterrupt.workflowId
+  );
+  const fallbackWorkflowTooltip = $derived(
+    attribution?.workflowId ?? currentInterrupt.workflowId
+  );
+  const showRunChip = $derived(!!attribution?.runLabel);
+  const showWorkflowChip = $derived(!!fallbackWorkflowLabel);
 
   /**
    * Helper to ensure interrupt has machine state
@@ -349,20 +372,34 @@
   </div>
 
   <!-- Footer -->
-  {#if currentInterrupt.nodeId || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
+  {#if currentInterrupt.nodeId || showRunChip || showWorkflowChip || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
     <div class="interrupt-bubble__footer">
-      {#if currentInterrupt.nodeId}
-        <span
-          class="interrupt-bubble__node"
-          title={t.nodeIdTooltip({ id: currentInterrupt.nodeId })}
-        >
-          <Icon icon="mdi:graph" />
-          <span>{t.fromWorkflow}</span>
-          {#if currentInterrupt.workflowId}
-            <span class="interrupt-bubble__workflow">{currentInterrupt.workflowId}</span>
-          {/if}
-        </span>
-      {/if}
+      <div class="interrupt-bubble__attribution">
+        {#if currentInterrupt.nodeId}
+          <span
+            class="interrupt-bubble__node"
+            title={t.nodeIdTooltip({ id: currentInterrupt.nodeId })}
+          >
+            <Icon icon="mdi:graph" />
+            <span>{t.fromWorkflow}</span>
+          </span>
+        {/if}
+        {#if showRunChip && attribution}
+          <AttributionChip
+            variant="run"
+            label={attribution.runLabel!}
+            title={attribution.runId}
+          />
+        {/if}
+        {#if showWorkflowChip}
+          <AttributionChip
+            variant="workflow"
+            label={fallbackWorkflowLabel!}
+            title={fallbackWorkflowTooltip}
+            icon="mdi:graph"
+          />
+        {/if}
+      </div>
       {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
         <button
           type="button"
@@ -568,21 +605,20 @@
     border-top-color: var(--fd-interrupt-prompt-border-error);
   }
 
+  .interrupt-bubble__attribution {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    min-width: 0;
+  }
+
   .interrupt-bubble__node {
     display: flex;
     align-items: center;
     gap: var(--fd-space-3xs);
     font-size: var(--fd-text-2xs);
     color: var(--fd-muted-foreground);
-  }
-
-  .interrupt-bubble__workflow {
-    padding: 0 var(--fd-space-3xs);
-    border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-muted);
-    color: var(--fd-muted-foreground);
-    font-family: var(--fd-font-mono);
-    font-size: var(--fd-text-2xs);
   }
 
   .interrupt-bubble__cancel-btn {
