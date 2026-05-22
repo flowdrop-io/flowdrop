@@ -86,6 +86,19 @@ export interface PlaygroundExecution {
   id: string;
   startedAt: string;
   status: 'running' | 'completed' | 'failed';
+  /**
+   * Optional human-friendly run label (e.g. "Run #3", "Foreach demo run").
+   * When absent, clients compute "Run #N" from the run's 1-based ordinal in
+   * the session's executions array.
+   */
+  label?: string;
+  /**
+   * ID of the top-level workflow that owns this run. Used as the fallback
+   * workflow attribution for messages that don't carry their own workflowId.
+   */
+  workflowId?: string;
+  /** Human-friendly workflow label; falls back to a truncated workflowId in clients. */
+  workflowLabel?: string;
 }
 
 /**
@@ -141,6 +154,11 @@ export interface PlaygroundMessageMetadata {
   userName?: string;
   /** Subsystem that produced this message (e.g. 'pipeline', 'job', 'queue', 'cron') */
   source?: string;
+  /**
+   * Human-friendly label for the message's workflow. When present, preferred
+   * over the execution's workflowLabel during chip resolution.
+   */
+  workflowLabel?: string;
   /** Allow additional properties */
   [key: string]: unknown;
 }
@@ -184,6 +202,14 @@ export interface PlaygroundMessage {
   parentMessageId?: string;
   /** Pipeline/execution ID that generated this message */
   executionId?: string | null;
+  /**
+   * ID of the (sub-)workflow that produced this message. Servers SHOULD omit
+   * this field when the workflow equals the run's parent workflow — clients
+   * fall back to PlaygroundExecution.workflowId via executionId lookup.
+   * Servers SHOULD set this when a sub-workflow embedded inside the parent
+   * workflow produces the message so clients can attribute correctly.
+   */
+  workflowId?: string;
   /** Associated node ID (for log/assistant messages) */
   nodeId?: string | null;
   /** Additional message metadata */
