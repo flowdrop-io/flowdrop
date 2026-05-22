@@ -4076,6 +4076,15 @@ components:
           type: string
           description: Workflow execution ID that generated this message
           nullable: true
+        workflowId:
+          type: string
+          description: |
+            ID of the (sub-)workflow that produced this message. Servers SHOULD
+            omit this field when the workflow equals the run's parent workflow
+            (i.e. PlaygroundExecution.workflowId) — clients fall back to the
+            run's workflowId via executionId lookup. Servers SHOULD set this
+            when a sub-workflow embedded inside the parent workflow produces
+            the message so clients can attribute correctly.
         nodeId:
           type: string
           description: Associated node ID (for log messages)
@@ -4095,6 +4104,13 @@ components:
               type: object
               additionalProperties: true
               description: Node output data
+            workflowLabel:
+              type: string
+              description: |
+                Human-friendly label for the message's workflow. Preferred over
+                PlaygroundExecution.workflowLabel during chip resolution. When
+                absent, clients fall back to the execution's workflowLabel and
+                then to a truncated workflowId.
           additionalProperties: true
           description: Additional message metadata
       required:
@@ -6034,6 +6050,23 @@ components:
             - completed
             - failed
           description: Current execution status
+        label:
+          type: string
+          description: |
+            Optional human-friendly run label (e.g. "Run #3", "Foreach demo run").
+            When absent, clients compute "Run #N" from the run's 1-based ordinal
+            in PlaygroundSession.executions.
+        workflowId:
+          type: string
+          description: |
+            ID of the top-level workflow that owns this run. Used as the fallback
+            workflow attribution for messages that don't carry their own
+            workflowId.
+        workflowLabel:
+          type: string
+          description: |
+            Human-friendly label for the workflow. Falls back to a truncated
+            workflowId in clients.
       required:
         - id
         - startedAt

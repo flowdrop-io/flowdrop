@@ -106,6 +106,45 @@ pnpm build
 2. Reference in `openapi.yaml` under `components.schemas:`
 3. Use `$ref` in paths to reference the schema
 
+## Playground Message Attribution Contract
+
+Playground sessions can contain messages from multiple pipeline runs and from sub-workflows
+embedded in a parent workflow. To attribute each message correctly, three optional fields
+participate in a documented fallback chain:
+
+**Per-execution (`PlaygroundExecution`):**
+
+- `label` — human-friendly run label (e.g. `"Run #3"`). When absent, clients compute
+  `"Run #N"` from the run's 1-based ordinal in `PlaygroundSession.executions`.
+- `workflowId` — top-level workflow that owns this run. Used by clients as the fallback
+  workflow attribution for messages that don't carry their own `workflowId`.
+- `workflowLabel` — human-friendly label for the workflow.
+
+**Per-message (`PlaygroundMessage`):**
+
+- `workflowId` — id of the (sub-)workflow that produced this message.
+- `metadata.workflowLabel` — human-friendly label for that workflow.
+
+**Fallback chain (client behavior):**
+
+1. **Run label:** `execution.label` > `"Run #N"` (computed from 1-based ordinal in
+   `executions`) > `"Run · {id-prefix}"` (when `executionId` isn't in `executions`).
+2. **Workflow id:** `message.workflowId` > `execution.workflowId` (via `executionId`
+   lookup).
+3. **Workflow label:** `message.metadata.workflowLabel` > `execution.workflowLabel` >
+   truncated `workflowId`.
+
+**Server expectations:**
+
+- Servers SHOULD omit `message.workflowId` when it equals the run's parent workflow
+  (`execution.workflowId`). Clients always fall back via `executionId` lookup, so
+  duplicating the id on every message wastes bytes.
+- Servers SHOULD set `message.workflowId` when a sub-workflow embedded inside the
+  parent workflow produced the message. Without it, the client will mis-attribute
+  the message to the parent workflow.
+- Labels (`execution.label`, `execution.workflowLabel`, `message.metadata.workflowLabel`)
+  are all optional. Clients render truncated ids as a last resort.
+
 ## CI/CD
 
 The API spec is validated in CI:
