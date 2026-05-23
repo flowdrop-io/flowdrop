@@ -290,6 +290,21 @@
     :global(.log-row__timestamp) {
       display: none;
     }
+    /* Drop the source + node chips: source is implied by the level
+       colour, node duplicates the hierarchy trail's last entry. Keeping
+       them at this width forced each chip onto its own line and made
+       log rows 5–6 lines tall. */
+    :global(.log-row__source),
+    :global(.log-row__node) {
+      display: none;
+    }
+    /* Reclaim horizontal room by tightening the row's own padding —
+       can't shrink the stream's padding from inside its own
+       container query. */
+    :global(.log-row) {
+      padding-left: var(--fd-space-xs);
+      padding-right: var(--fd-space-xs);
+    }
   }
 
   .message-stream__typing {

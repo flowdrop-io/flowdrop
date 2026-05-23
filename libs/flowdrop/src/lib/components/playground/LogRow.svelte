@@ -40,7 +40,9 @@
       <span class="log-row__source">{message.metadata.source}</span>
     {/if}
     <HierarchyTrail items={hierarchy} />
-    <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId ?? 'log'}</span>
+    {#if message.metadata?.nodeLabel ?? message.nodeId}
+      <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId}</span>
+    {/if}
     <span class="log-row__text">{message.content}</span>
   </div>
   {#if tags.length > 0}
@@ -144,7 +146,7 @@
     flex: 1;
     min-width: 0;
     white-space: pre-wrap;
-    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .log-row__timestamp {
