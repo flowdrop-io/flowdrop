@@ -4,6 +4,10 @@
   Renders a single server-emitted MessageTag as a compact chip. Semantic
   color comes from tag.color, visual emphasis from tag.variant. Used by
   MessageBubble and InterruptBubble.
+
+  Styling: a single base rule reads from CSS custom properties; one rule
+  per color sets --chip-c, one rule per variant sets bg/fg/border in terms
+  of --chip-c. Adding a color is one line.
 -->
 
 <script lang="ts">
@@ -24,8 +28,7 @@
   class="message-tag-chip"
   data-color={color}
   data-variant={variant}
-  title={tag.id}
-  aria-label={tag.type ? `${tag.type}: ${tag.label}` : tag.label}
+  aria-label={tag.type ? `${tag.type}: ${tag.label}` : undefined}
 >
   {#if tag.icon}
     <Icon icon={tag.icon} class="message-tag-chip__icon" aria-hidden="true" />
@@ -46,11 +49,9 @@
     white-space: nowrap;
     min-width: 0;
     max-width: 100%;
-
-    /* Defaults overridden by data attributes below. */
-    background-color: var(--fd-muted);
-    color: var(--fd-muted-foreground);
-    border: 1px solid transparent;
+    background-color: var(--chip-bg);
+    color: var(--chip-fg);
+    border: 1px solid var(--chip-border, transparent);
   }
 
   .message-tag-chip__label {
@@ -64,84 +65,35 @@
     opacity: 0.8;
   }
 
-  /* ─── Subtle (default) — muted background, no border ────────────── */
+  /* Color hooks — one line per color. To add a color, add a row here. */
+  .message-tag-chip[data-color='muted']   { --chip-c: var(--fd-muted-foreground); --chip-c-on: var(--fd-background); }
+  .message-tag-chip[data-color='primary'] { --chip-c: var(--fd-primary);          --chip-c-on: var(--fd-primary-foreground); }
+  .message-tag-chip[data-color='success'] { --chip-c: var(--fd-success, oklch(55% 0.15 145)); --chip-c-on: white; }
+  .message-tag-chip[data-color='warning'] { --chip-c: var(--fd-warning);          --chip-c-on: var(--fd-background); }
+  .message-tag-chip[data-color='error']   { --chip-c: var(--fd-error);            --chip-c-on: white; }
+  .message-tag-chip[data-color='info']    { --chip-c: var(--fd-info);             --chip-c-on: var(--fd-background); }
+
+  /* Variants — derive bg/fg/border from --chip-c. */
+  .message-tag-chip[data-variant='subtle'] {
+    --chip-bg: color-mix(in srgb, var(--chip-c) 14%, transparent);
+    --chip-fg: var(--chip-c);
+  }
   .message-tag-chip[data-variant='subtle'][data-color='muted'] {
-    background-color: var(--fd-muted);
-    color: var(--fd-muted-foreground);
+    /* Muted is the only color we render against the design's --fd-muted
+       surface for legibility; the color-mix path would lose contrast. */
+    --chip-bg: var(--fd-muted);
+    --chip-fg: var(--fd-muted-foreground);
   }
-  .message-tag-chip[data-variant='subtle'][data-color='primary'] {
-    background-color: color-mix(in srgb, var(--fd-primary) 12%, transparent);
-    color: var(--fd-primary);
+  .message-tag-chip[data-variant='solid'] {
+    --chip-bg: var(--chip-c);
+    --chip-fg: var(--chip-c-on);
   }
-  .message-tag-chip[data-variant='subtle'][data-color='success'] {
-    background-color: color-mix(in srgb, var(--fd-success, oklch(70% 0.15 145)) 14%, transparent);
-    color: var(--fd-success, oklch(50% 0.15 145));
-  }
-  .message-tag-chip[data-variant='subtle'][data-color='warning'] {
-    background-color: color-mix(in srgb, var(--fd-warning) 14%, transparent);
-    color: var(--fd-warning);
-  }
-  .message-tag-chip[data-variant='subtle'][data-color='error'] {
-    background-color: color-mix(in srgb, var(--fd-error) 14%, transparent);
-    color: var(--fd-error);
-  }
-  .message-tag-chip[data-variant='subtle'][data-color='info'] {
-    background-color: color-mix(in srgb, var(--fd-info) 14%, transparent);
-    color: var(--fd-info);
-  }
-
-  /* ─── Solid — full background, contrast text ────────────────────── */
-  .message-tag-chip[data-variant='solid'][data-color='muted'] {
-    background-color: var(--fd-foreground);
-    color: var(--fd-background);
-  }
-  .message-tag-chip[data-variant='solid'][data-color='primary'] {
-    background-color: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-  }
-  .message-tag-chip[data-variant='solid'][data-color='success'] {
-    background-color: var(--fd-success, oklch(55% 0.15 145));
-    color: white;
-  }
-  .message-tag-chip[data-variant='solid'][data-color='warning'] {
-    background-color: var(--fd-warning);
-    color: var(--fd-background);
-  }
-  .message-tag-chip[data-variant='solid'][data-color='error'] {
-    background-color: var(--fd-error);
-    color: white;
-  }
-  .message-tag-chip[data-variant='solid'][data-color='info'] {
-    background-color: var(--fd-info);
-    color: var(--fd-background);
-  }
-
-  /* ─── Outline — transparent bg, colored border ──────────────────── */
   .message-tag-chip[data-variant='outline'] {
-    background-color: transparent;
+    --chip-bg: transparent;
+    --chip-fg: var(--chip-c);
+    --chip-border: var(--chip-c);
   }
   .message-tag-chip[data-variant='outline'][data-color='muted'] {
-    border-color: var(--fd-border);
-    color: var(--fd-muted-foreground);
-  }
-  .message-tag-chip[data-variant='outline'][data-color='primary'] {
-    border-color: var(--fd-primary);
-    color: var(--fd-primary);
-  }
-  .message-tag-chip[data-variant='outline'][data-color='success'] {
-    border-color: var(--fd-success, oklch(55% 0.15 145));
-    color: var(--fd-success, oklch(50% 0.15 145));
-  }
-  .message-tag-chip[data-variant='outline'][data-color='warning'] {
-    border-color: var(--fd-warning);
-    color: var(--fd-warning);
-  }
-  .message-tag-chip[data-variant='outline'][data-color='error'] {
-    border-color: var(--fd-error);
-    color: var(--fd-error);
-  }
-  .message-tag-chip[data-variant='outline'][data-color='info'] {
-    border-color: var(--fd-info);
-    color: var(--fd-info);
+    --chip-border: var(--fd-border);
   }
 </style>
