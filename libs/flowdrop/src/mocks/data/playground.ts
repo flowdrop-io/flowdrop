@@ -169,12 +169,24 @@ export function updateSessionStatus(
 export function addExecutionToSession(
   sessionId: string,
   executionId: string,
-  startedAt: string = new Date().toISOString()
+  startedAt: string = new Date().toISOString(),
+  options?: {
+    label?: string;
+    workflowId?: string;
+    workflowLabel?: string;
+  }
 ): void {
   const session = mockSessions.get(sessionId);
   if (!session) return;
 
-  const entry: PlaygroundExecution = { id: executionId, startedAt, status: 'running' };
+  const entry: PlaygroundExecution = {
+    id: executionId,
+    startedAt,
+    status: 'running',
+    ...(options?.label !== undefined ? { label: options.label } : {}),
+    ...(options?.workflowId !== undefined ? { workflowId: options.workflowId } : {}),
+    ...(options?.workflowLabel !== undefined ? { workflowLabel: options.workflowLabel } : {})
+  };
   session.executions = [...(session.executions ?? []), entry];
   mockSessions.set(sessionId, session);
 }
@@ -236,9 +248,11 @@ export function addMessage(
   options?: {
     nodeId?: string;
     executionId?: string;
+    workflowId?: string;
     level?: PlaygroundMessageLevel;
     duration?: number;
     nodeLabel?: string;
+    workflowLabel?: string;
     parentMessageId?: string;
     status?: PlaygroundMessageStatus;
     metadata?: PlaygroundMessageMetadata;
@@ -267,6 +281,7 @@ export function addMessage(
     sequenceNumber,
     parentMessageId: options?.parentMessageId,
     executionId: options?.executionId ?? null,
+    ...(options?.workflowId !== undefined ? { workflowId: options.workflowId } : {}),
     nodeId: options?.nodeId,
     metadata: {
       ...(options?.metadata ?? {
@@ -274,7 +289,8 @@ export function addMessage(
         duration: options?.duration,
         nodeLabel: options?.nodeLabel
       }),
-      ...(options?.source !== undefined ? { source: options.source } : {})
+      ...(options?.source !== undefined ? { source: options.source } : {}),
+      ...(options?.workflowLabel !== undefined ? { workflowLabel: options.workflowLabel } : {})
     }
   };
 
@@ -694,9 +710,19 @@ export function initializeDemoForeachPlaygroundData(): void {
 
   const session = createSession(workflowId, 'ForEach Demo', undefined, 'sess-foreach-demo');
 
+  // Workflow ids/labels used across both executions
+  const parentWorkflowId = 'demo-foreach-loop';
+  const parentWorkflowLabel = 'ForEach Loop';
+  const subWorkflowId = 'greeter-flow';
+  const subWorkflowLabel = 'Greeter';
+
   // ── Execution 1: completed (pipeline-foreach-001) ────────────────────────
   const exec1Id = 'pipeline-foreach-001';
-  addExecutionToSession(session.id, exec1Id, ts(-120_000));
+  addExecutionToSession(session.id, exec1Id, ts(-120_000), {
+    label: 'Run #1',
+    workflowId: parentWorkflowId,
+    workflowLabel: parentWorkflowLabel
+  });
 
   const userMsg1 = addMessage(session.id, 'user', 'Process the fruit list', {
     executionId: exec1Id,
@@ -720,6 +746,17 @@ export function initializeDemoForeachPlaygroundData(): void {
     timestamp: ts(-119_000),
     source: 'pipeline'
   });
+  addMessage(session.id, 'log', 'Greeter says: Hello Apple!', {
+    executionId: exec1Id,
+    workflowId: subWorkflowId,
+    workflowLabel: subWorkflowLabel,
+    level: 'info',
+    nodeId: 'greeter.1',
+    nodeLabel: 'Greeter',
+    parentMessageId: userMsg1?.id,
+    timestamp: ts(-118_800),
+    source: 'pipeline'
+  });
   addMessage(session.id, 'log', 'Processing item 5/5: Elderberry', {
     executionId: exec1Id,
     level: 'info',
@@ -727,6 +764,17 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg1?.id,
     timestamp: ts(-117_500),
+    source: 'pipeline'
+  });
+  addMessage(session.id, 'log', 'Greeter says: Hello Elderberry!', {
+    executionId: exec1Id,
+    workflowId: subWorkflowId,
+    workflowLabel: subWorkflowLabel,
+    level: 'info',
+    nodeId: 'greeter.1',
+    nodeLabel: 'Greeter',
+    parentMessageId: userMsg1?.id,
+    timestamp: ts(-117_300),
     source: 'pipeline'
   });
   addMessage(
@@ -745,6 +793,7 @@ export function initializeDemoForeachPlaygroundData(): void {
   // Mark exec1 as completed
   updateSessionStatus(session.id, 'completed');
   addMessage(session.id, 'system', 'Run #1 completed', {
+    executionId: exec1Id,
     source: 'pipeline',
     metadata: { [ENABLE_RUN_METADATA_KEY]: true },
     timestamp: ts(-116_500)
@@ -757,7 +806,11 @@ export function initializeDemoForeachPlaygroundData(): void {
 
   // ── Execution 2: failed (pipeline-foreach-002) ───────────────────────────
   const exec2Id = 'pipeline-foreach-002';
-  addExecutionToSession(session.id, exec2Id, ts(-60_000));
+  addExecutionToSession(session.id, exec2Id, ts(-60_000), {
+    label: 'Run #2',
+    workflowId: parentWorkflowId,
+    workflowLabel: parentWorkflowLabel
+  });
 
   const userMsg2 = addMessage(session.id, 'user', 'Run again with the same list', {
     executionId: exec2Id,
@@ -781,6 +834,17 @@ export function initializeDemoForeachPlaygroundData(): void {
     timestamp: ts(-59_000),
     source: 'pipeline'
   });
+  addMessage(session.id, 'log', 'Greeter says: Hello Apple!', {
+    executionId: exec2Id,
+    workflowId: subWorkflowId,
+    workflowLabel: subWorkflowLabel,
+    level: 'info',
+    nodeId: 'greeter.1',
+    nodeLabel: 'Greeter',
+    parentMessageId: userMsg2?.id,
+    timestamp: ts(-58_800),
+    source: 'pipeline'
+  });
   addMessage(session.id, 'log', 'Error processing item 3/5: Cherry — upstream timeout', {
     executionId: exec2Id,
     level: 'error',
@@ -788,6 +852,17 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg2?.id,
     timestamp: ts(-58_500),
+    source: 'pipeline'
+  });
+  addMessage(session.id, 'log', 'Greeter aborted: Cherry never reached', {
+    executionId: exec2Id,
+    workflowId: subWorkflowId,
+    workflowLabel: subWorkflowLabel,
+    level: 'warning',
+    nodeId: 'greeter.1',
+    nodeLabel: 'Greeter',
+    parentMessageId: userMsg2?.id,
+    timestamp: ts(-58_400),
     source: 'pipeline'
   });
   addMessage(session.id, 'assistant', 'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.', {
@@ -800,6 +875,7 @@ export function initializeDemoForeachPlaygroundData(): void {
   });
   updateSessionStatus(session.id, 'failed');
   addMessage(session.id, 'system', 'Run #2 failed', {
+    executionId: exec2Id,
     source: 'pipeline',
     level: 'error',
     timestamp: ts(-58_000)
