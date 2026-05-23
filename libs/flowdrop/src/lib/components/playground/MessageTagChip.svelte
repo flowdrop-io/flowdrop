@@ -25,9 +25,10 @@
   data-color={color}
   data-variant={variant}
   title={tag.id}
+  aria-label={tag.type ? `${tag.type}: ${tag.label}` : tag.label}
 >
   {#if tag.icon}
-    <Icon icon={tag.icon} class="message-tag-chip__icon" />
+    <Icon icon={tag.icon} class="message-tag-chip__icon" aria-hidden="true" />
   {/if}
   <span class="message-tag-chip__label">{tag.label}</span>
 </span>
@@ -43,7 +44,8 @@
     font-size: var(--fd-text-2xs);
     line-height: 1.4;
     white-space: nowrap;
-    max-width: 16rem;
+    min-width: 0;
+    max-width: 100%;
 
     /* Defaults overridden by data attributes below. */
     background-color: var(--fd-muted);

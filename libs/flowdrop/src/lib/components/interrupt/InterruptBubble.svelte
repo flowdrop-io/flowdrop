@@ -289,7 +289,7 @@
   <!-- Header -->
   <div class="interrupt-bubble__header">
     <span class="interrupt-bubble__type">
-      <Icon icon={getTypeIcon(currentInterrupt.type)} />
+      <Icon icon={getTypeIcon(currentInterrupt.type)} aria-hidden="true" />
       {#if isResolved}
         {currentInterrupt.machineState.status === 'cancelled'
           ? t.cancelled
@@ -301,9 +301,13 @@
       {/if}
     </span>
     {#if showTimestamp}
-      <span class="interrupt-bubble__timestamp">
+      <time
+        class="interrupt-bubble__timestamp"
+        datetime={currentInterrupt.resolvedAt ?? currentInterrupt.createdAt}
+        aria-label="sent at {formatTimestamp(currentInterrupt.resolvedAt ?? currentInterrupt.createdAt)}"
+      >
         {formatTimestamp(currentInterrupt.resolvedAt ?? currentInterrupt.createdAt)}
-      </span>
+      </time>
     {/if}
   </div>
 
@@ -384,7 +388,7 @@
             class="interrupt-bubble__node"
             title={t.nodeIdTooltip({ id: currentInterrupt.nodeId })}
           >
-            <Icon icon="mdi:graph" />
+            <Icon icon="mdi:graph" aria-hidden="true" />
             <span>{t.fromWorkflow}</span>
           </span>
         {/if}
@@ -392,9 +396,11 @@
           <BreadcrumbTrail items={breadcrumbItems} />
         {/if}
         {#if hasTags}
-          {#each tagItems as tag (tag.id)}
-            <MessageTagChip {tag} />
-          {/each}
+          <span class="interrupt-bubble__tags" role="group" aria-label="tags">
+            {#each tagItems as tag (tag.id)}
+              <MessageTagChip {tag} />
+            {/each}
+          </span>
         {/if}
       </div>
       {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
@@ -404,7 +410,7 @@
           onclick={handleCancel}
           disabled={isSubmitting}
         >
-          <Icon icon="mdi:close" />
+          <Icon icon="mdi:close" aria-hidden="true" />
           <span>{t.cancel}</span>
         </button>
       {/if}
@@ -579,6 +585,7 @@
   /* Footer */
   .interrupt-bubble__footer {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--fd-space-xs);
@@ -607,6 +614,15 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--fd-space-xs);
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .interrupt-bubble__tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fd-space-2xs);
     min-width: 0;
   }
 
@@ -662,6 +678,20 @@
     .interrupt-bubble__footer {
       padding-left: var(--fd-space-lg);
       padding-right: var(--fd-space-lg);
+    }
+
+    .interrupt-bubble__cancel-btn {
+      min-height: 2.5rem;
+      padding: var(--fd-space-xs) var(--fd-space-md);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .interrupt-bubble {
+      animation: none;
+    }
+    .interrupt-bubble__cancel-btn {
+      transition: none;
     }
   }
 </style>

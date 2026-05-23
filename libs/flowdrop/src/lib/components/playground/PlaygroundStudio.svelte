@@ -156,6 +156,15 @@
       {@const executions = getCurrentSession()?.executions ?? []}
 
       <div class="playground-studio__pipeline" style="width: {pipelineWidth}px;">
+        <button
+          type="button"
+          class="playground-studio__back-to-chat"
+          aria-label="Back to chat"
+          onclick={pipelinePanelActions.toggle}
+        >
+          <Icon icon="mdi:arrow-left" aria-hidden="true" />
+          <span>Back to chat</span>
+        </button>
         <PipelinePanel
           pipelineId={activeId}
           workflow={resolvedWorkflow}
@@ -254,6 +263,13 @@
   .playground-studio__pipeline {
     overflow: hidden;
     flex-shrink: 0;
+    position: relative;
+  }
+
+  /* Mobile-only "back to chat" affordance. Hidden on wider viewports where
+     the ControlPanel's pipeline toggle remains reachable. */
+  .playground-studio__back-to-chat {
+    display: none;
   }
 
   /* Drag handle between the two panes */
@@ -374,5 +390,67 @@
 
   .playground-studio__retry-btn:hover {
     background-color: var(--fd-primary-hover);
+  }
+
+  /* ============================================================
+     Mobile layout (< 768px)
+     Switch from side-by-side panes to one-at-a-time fullscreen.
+     The pipeline panel, when open, covers the chat. Users toggle
+     between them via the pipeline panel button. The resizer is
+     hidden — at this width there's nothing to resize.
+     ============================================================ */
+  @media (max-width: 768px) {
+    .playground-studio__pipeline {
+      /* Override the JS-driven width — take the whole row */
+      width: 100% !important;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .playground-studio__resizer {
+      display: none;
+    }
+
+    /* When pipeline is open (chat is NOT solo), hide chat to give the
+       pipeline the full viewport. When pipeline closes, chat goes back
+       to full-width via the existing --solo class. */
+    .playground-studio__chat:not(.playground-studio__chat--solo) {
+      display: none;
+    }
+
+    .playground-studio__back-to-chat {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--fd-space-2xs);
+      align-self: flex-start;
+      margin: var(--fd-space-xs);
+      padding: var(--fd-space-2xs) var(--fd-space-md);
+      min-height: 2.5rem;
+      font-size: var(--fd-text-sm);
+      font-weight: 500;
+      font-family: inherit;
+      color: var(--fd-foreground);
+      background-color: var(--fd-card);
+      border: 1px solid var(--fd-border);
+      border-radius: var(--fd-radius-md);
+      cursor: pointer;
+      transition: background-color var(--fd-transition-fast);
+    }
+
+    .playground-studio__back-to-chat:hover {
+      background-color: var(--fd-muted);
+    }
+
+    .playground-studio__back-to-chat:focus-visible {
+      outline: 2px solid var(--fd-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .playground-studio__back-to-chat {
+      transition: none;
+    }
   }
 </style>

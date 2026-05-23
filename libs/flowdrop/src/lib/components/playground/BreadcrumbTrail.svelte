@@ -17,24 +17,35 @@
 </script>
 
 {#if items.length > 0}
-  <ol class="breadcrumb-trail" aria-label="message hierarchy">
-    {#each items as item, index (item.id)}
-      <li class="breadcrumb-trail__item" title={item.id}>
-        {#if item.icon}
-          <Icon icon={item.icon} class="breadcrumb-trail__icon" />
-        {/if}
-        <span class="breadcrumb-trail__label">{item.label}</span>
-      </li>
-      {#if index < items.length - 1}
-        <li class="breadcrumb-trail__separator" aria-hidden="true">
-          <Icon icon="mdi:chevron-right" />
+  <nav class="breadcrumb-trail__nav" aria-label="message hierarchy">
+    <ol class="breadcrumb-trail">
+      {#each items as item, index (item.id)}
+        <li
+          class="breadcrumb-trail__item"
+          title={item.id}
+          aria-current={index === items.length - 1 ? 'true' : undefined}
+        >
+          {#if item.icon}
+            <Icon icon={item.icon} class="breadcrumb-trail__icon" aria-hidden="true" />
+          {/if}
+          <span class="breadcrumb-trail__label">{item.label}</span>
         </li>
-      {/if}
-    {/each}
-  </ol>
+        {#if index < items.length - 1}
+          <li class="breadcrumb-trail__separator" aria-hidden="true">
+            <Icon icon="mdi:chevron-right" />
+          </li>
+        {/if}
+      {/each}
+    </ol>
+  </nav>
 {/if}
 
 <style>
+  .breadcrumb-trail__nav {
+    display: inline-flex;
+    min-width: 0;
+  }
+
   .breadcrumb-trail {
     display: inline-flex;
     flex-wrap: wrap;
@@ -59,7 +70,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 12rem;
+    max-width: 8rem;
+  }
+
+  @media (max-width: 640px) {
+    .breadcrumb-trail__label {
+      max-width: 5rem;
+    }
   }
 
   .breadcrumb-trail__separator {

@@ -279,7 +279,7 @@
 
   @media (max-width: 640px) {
     .message-stream {
-      padding: var(--fd-space-xl);
+      padding: var(--fd-space-md) 0;
     }
   }
 </style>

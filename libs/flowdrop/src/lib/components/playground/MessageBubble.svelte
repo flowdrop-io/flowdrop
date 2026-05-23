@@ -172,8 +172,9 @@
     class:system-notice--warning={message.metadata?.level === 'warning'}
     class:system-notice--error={message.metadata?.level === 'error'}
     class:system-notice--debug={message.metadata?.level === 'debug'}
+    role="status"
   >
-    <Icon icon={getLogLevelIcon()} class="system-notice__icon" />
+    <Icon icon={getLogLevelIcon()} class="system-notice__icon" aria-hidden="true" />
     {#if message.metadata?.source}
       <span class="system-notice__source">{message.metadata.source}</span>
     {/if}
@@ -182,12 +183,18 @@
     {/if}
     <span class="system-notice__text">{message.content}</span>
     {#if hasTags}
-      {#each tags as tag (tag.id)}
-        <MessageTagChip {tag} />
-      {/each}
+      <span class="system-notice__tags" role="group" aria-label="tags">
+        {#each tags as tag (tag.id)}
+          <MessageTagChip {tag} />
+        {/each}
+      </span>
     {/if}
     {#if showTimestamp}
-      <span class="system-notice__timestamp">{formatTimestamp(message.timestamp)}</span>
+      <time
+        class="system-notice__timestamp"
+        datetime={message.timestamp}
+        aria-label="sent at {formatTimestamp(message.timestamp)}"
+      >{formatTimestamp(message.timestamp)}</time>
     {/if}
   </div>
 {:else if effectiveDisplay === 'log'}
@@ -197,8 +204,12 @@
     class:log-row--error={message.metadata?.level === 'error'}
     class:log-row--warning={message.metadata?.level === 'warning'}
     class:log-row--debug={message.metadata?.level === 'debug'}
+    role="listitem"
+    aria-label="{message.metadata?.level ?? 'info'} log{message.metadata?.nodeLabel
+      ? ` from ${message.metadata.nodeLabel}`
+      : ''}"
   >
-    <div class="log-row__level">
+    <div class="log-row__level" aria-hidden="true">
       <Icon icon={getLogLevelIcon()} />
     </div>
     <div class="log-row__body">
@@ -212,31 +223,42 @@
       <span class="log-row__text">{message.content}</span>
     </div>
     {#if hasTags}
-      {#each tags as tag (tag.id)}
-        <MessageTagChip {tag} />
-      {/each}
+      <span class="log-row__tags" role="group" aria-label="tags">
+        {#each tags as tag (tag.id)}
+          <MessageTagChip {tag} />
+        {/each}
+      </span>
     {/if}
     {#if showTimestamp}
-      <span class="log-row__timestamp">{formatTimestamp(message.timestamp)}</span>
+      <time
+        class="log-row__timestamp"
+        datetime={message.timestamp}
+        aria-label="sent at {formatTimestamp(message.timestamp)}"
+      >{formatTimestamp(message.timestamp)}</time>
     {/if}
   </div>
 {:else if effectiveDisplay === 'card'}
   <!-- Card layout: breadcrumb (top) · body (middle) · tags (bottom) -->
-  <div
+  <article
     class="message-card"
     class:message-card--last={isLast}
     class:message-card--error={message.metadata?.level === 'error'}
     class:message-card--warning={message.metadata?.level === 'warning'}
+    aria-label={getRoleLabel(message.role, message.metadata)}
   >
     {#if hasBreadcrumb || showTimestamp}
-      <div class="message-card__header">
+      <header class="message-card__header">
         {#if hasBreadcrumb}
           <BreadcrumbTrail items={breadcrumb} />
         {/if}
         {#if showTimestamp}
-          <span class="message-card__timestamp">{formatTimestamp(message.timestamp)}</span>
+          <time
+            class="message-card__timestamp"
+            datetime={message.timestamp}
+            aria-label="sent at {formatTimestamp(message.timestamp)}"
+          >{formatTimestamp(message.timestamp)}</time>
         {/if}
-      </div>
+      </header>
     {/if}
     <div class="message-card__body">
       {#if enableMarkdown && message.role !== 'log'}
@@ -247,23 +269,24 @@
       {/if}
     </div>
     {#if hasTags}
-      <div class="message-card__tags">
+      <div class="message-card__tags" role="group" aria-label="tags">
         {#each tags as tag (tag.id)}
           <MessageTagChip {tag} />
         {/each}
       </div>
     {/if}
-  </div>
+  </article>
 {:else}
-  <div
+  <article
     class="message-bubble"
     class:message-bubble--user={message.role === 'user'}
     class:message-bubble--assistant={message.role === 'assistant'}
     class:message-bubble--system={message.role === 'system'}
     class:message-bubble--last={isLast}
+    aria-label="{getRoleLabel(message.role, message.metadata)} message"
   >
     <!-- Avatar / Icon -->
-    <div class="message-bubble__avatar">
+    <div class="message-bubble__avatar" aria-hidden="true">
       <Icon icon={getRoleIcon(message.role)} />
     </div>
 
@@ -273,7 +296,11 @@
       <div class="message-bubble__header">
         <span class="message-bubble__role">{getRoleLabel(message.role, message.metadata)}</span>
         {#if showTimestamp}
-          <span class="message-bubble__timestamp">{formatTimestamp(message.timestamp)}</span>
+          <time
+            class="message-bubble__timestamp"
+            datetime={message.timestamp}
+            aria-label="sent at {formatTimestamp(message.timestamp)}"
+          >{formatTimestamp(message.timestamp)}</time>
         {/if}
       </div>
 
@@ -302,7 +329,7 @@
               class="message-bubble__node"
               title={m().playground.messageTooltips.nodeId({ id: message.nodeId })}
             >
-              <Icon icon="mdi:vector-square" />
+              <Icon icon="mdi:vector-square" aria-hidden="true" />
               via {message.metadata?.nodeLabel ?? message.nodeId}
             </span>
           {/if}
@@ -310,20 +337,23 @@
             <span
               class="message-bubble__duration"
               title={m().playground.messageTooltips.executionDuration}
+              aria-label="execution duration {formatDuration(message.metadata.duration)}"
             >
-              <Icon icon="mdi:timer-outline" />
+              <Icon icon="mdi:timer-outline" aria-hidden="true" />
               {formatDuration(message.metadata.duration)}
             </span>
           {/if}
           {#if hasTags}
-            {#each tags as tag (tag.id)}
-              <MessageTagChip {tag} />
-            {/each}
+            <span class="message-bubble__tags" role="group" aria-label="tags">
+              {#each tags as tag (tag.id)}
+                <MessageTagChip {tag} />
+              {/each}
+            </span>
           {/if}
         </div>
       {/if}
     </div>
-  </div>
+  </article>
 {/if}
 
 <style>
@@ -348,6 +378,23 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .message-bubble,
+    .message-card {
+      animation: none;
+    }
+  }
+
+  .message-bubble__tags,
+  .log-row__tags,
+  .system-notice__tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fd-space-2xs);
+    min-width: 0;
   }
 
   .message-bubble--user {
@@ -651,14 +698,25 @@
      Responsive
      ============================================================ */
   @media (max-width: 640px) {
+    .message-bubble {
+      padding: 2px var(--fd-space-md);
+      gap: var(--fd-space-xs);
+    }
+
     .message-bubble__content {
-      max-width: 88%;
+      max-width: calc(100% - 2.5rem);
+      padding: var(--fd-space-xs) var(--fd-space-sm);
     }
 
     .message-bubble__avatar {
       width: 1.625rem;
       height: 1.625rem;
       font-size: var(--fd-text-sm);
+    }
+
+    .message-bubble__footer {
+      gap: var(--fd-space-xs);
+      font-size: var(--fd-text-2xs);
     }
   }
 
@@ -669,6 +727,7 @@
 
   .log-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--fd-space-sm);
     padding: 0.1875rem var(--fd-space-xl);
@@ -679,6 +738,7 @@
     color: var(--fd-muted-foreground);
     line-height: var(--fd-leading-normal);
     background-color: transparent;
+    min-width: 0;
   }
 
   .log-row:hover {
@@ -719,9 +779,10 @@
   }
 
   .log-row__body {
-    flex: 1;
+    flex: 1 1 12rem;
     min-width: 0;
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     gap: var(--fd-space-sm);
     overflow: hidden;
@@ -772,6 +833,7 @@
 
   .system-notice {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: var(--fd-space-3xs);
@@ -780,6 +842,12 @@
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
     text-align: center;
+    min-width: 0;
+  }
+
+  .system-notice__text {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .system-notice--last {
@@ -899,5 +967,25 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--fd-space-2xs);
+  }
+
+  @media (max-width: 640px) {
+    .message-card {
+      margin: var(--fd-space-3xs) var(--fd-space-md);
+      padding: var(--fd-space-xs) var(--fd-space-sm);
+    }
+
+    .log-row {
+      padding: 0.1875rem var(--fd-space-md);
+    }
+
+    .log-row__source,
+    .log-row__node {
+      font-size: 0.55rem;
+    }
+
+    .log-row__timestamp {
+      display: none;
+    }
   }
 </style>
