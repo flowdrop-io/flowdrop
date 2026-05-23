@@ -983,6 +983,38 @@
     .log-row__node {
       font-size: 0.55rem;
     }
+  }
+
+  /* ============================================================
+     Container-query layout for log rows
+     When the message stream is narrow (regardless of viewport width),
+     stack the log row into multiple rows so the content stops looking
+     congested:
+       Row 1: level icon · source · breadcrumb · node
+       Row 2: body text
+       Row 3: tags
+     The timestamp drops out at this width — chronology is already implied
+     by message order.
+     ============================================================ */
+  @container fd-message-stream (max-width: 480px) {
+    .log-row {
+      align-items: flex-start;
+      row-gap: var(--fd-space-3xs);
+    }
+
+    /* Body wraps internally; force the text portion onto its own line so
+       source/breadcrumb/node stay on row 1 of the body, text on row 2. */
+    .log-row__text {
+      flex-basis: 100%;
+      min-width: 0;
+    }
+
+    /* Tags drop to a new row inside the outer .log-row. */
+    .log-row__tags {
+      flex-basis: 100%;
+      justify-content: flex-start;
+      margin-left: calc(var(--fd-space-md) + 1rem);
+    }
 
     .log-row__timestamp {
       display: none;

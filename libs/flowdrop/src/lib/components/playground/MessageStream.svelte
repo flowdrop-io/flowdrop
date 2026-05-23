@@ -223,6 +223,12 @@
     min-height: 0;
     overflow-y: auto;
     padding: var(--fd-space-3xl);
+
+    /* Establish a containment context so message rows can adapt to the
+       stream's actual width (not the viewport's). Used by .log-row's
+       multi-row stacking at narrow widths. */
+    container-type: inline-size;
+    container-name: fd-message-stream;
   }
 
   .message-stream__typing {
