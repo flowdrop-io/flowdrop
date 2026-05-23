@@ -8,11 +8,14 @@ import type {
   PlaygroundSession,
   PlaygroundExecution,
   PlaygroundMessage,
+  PlaygroundMessageDisplay,
   PlaygroundSessionStatus,
   PlaygroundMessageRole,
   PlaygroundMessageLevel,
   PlaygroundMessageStatus,
-  PlaygroundMessageMetadata
+  PlaygroundMessageMetadata,
+  MessageBreadcrumbItem,
+  MessageTag
 } from '../../lib/types/playground.js';
 import { ENABLE_RUN_METADATA_KEY } from '../../lib/types/playground.js';
 import {
@@ -169,24 +172,12 @@ export function updateSessionStatus(
 export function addExecutionToSession(
   sessionId: string,
   executionId: string,
-  startedAt: string = new Date().toISOString(),
-  options?: {
-    label?: string;
-    workflowId?: string;
-    workflowLabel?: string;
-  }
+  startedAt: string = new Date().toISOString()
 ): void {
   const session = mockSessions.get(sessionId);
   if (!session) return;
 
-  const entry: PlaygroundExecution = {
-    id: executionId,
-    startedAt,
-    status: 'running',
-    ...(options?.label !== undefined ? { label: options.label } : {}),
-    ...(options?.workflowId !== undefined ? { workflowId: options.workflowId } : {}),
-    ...(options?.workflowLabel !== undefined ? { workflowLabel: options.workflowLabel } : {})
-  };
+  const entry: PlaygroundExecution = { id: executionId, startedAt, status: 'running' };
   session.executions = [...(session.executions ?? []), entry];
   mockSessions.set(sessionId, session);
 }
@@ -248,16 +239,17 @@ export function addMessage(
   options?: {
     nodeId?: string;
     executionId?: string;
-    workflowId?: string;
     level?: PlaygroundMessageLevel;
     duration?: number;
     nodeLabel?: string;
-    workflowLabel?: string;
     parentMessageId?: string;
     status?: PlaygroundMessageStatus;
     metadata?: PlaygroundMessageMetadata;
     timestamp?: string;
     source?: string;
+    breadcrumb?: MessageBreadcrumbItem[];
+    tags?: MessageTag[];
+    display?: PlaygroundMessageDisplay;
   }
 ): PlaygroundMessage | undefined {
   if (!mockSessions.has(sessionId)) {
@@ -281,16 +273,17 @@ export function addMessage(
     sequenceNumber,
     parentMessageId: options?.parentMessageId,
     executionId: options?.executionId ?? null,
-    ...(options?.workflowId !== undefined ? { workflowId: options.workflowId } : {}),
     nodeId: options?.nodeId,
+    ...(options?.breadcrumb !== undefined ? { breadcrumb: options.breadcrumb } : {}),
+    ...(options?.tags !== undefined ? { tags: options.tags } : {}),
+    ...(options?.display !== undefined ? { display: options.display } : {}),
     metadata: {
       ...(options?.metadata ?? {
         level: options?.level,
         duration: options?.duration,
         nodeLabel: options?.nodeLabel
       }),
-      ...(options?.source !== undefined ? { source: options.source } : {}),
-      ...(options?.workflowLabel !== undefined ? { workflowLabel: options.workflowLabel } : {})
+      ...(options?.source !== undefined ? { source: options.source } : {})
     }
   };
 
@@ -710,23 +703,37 @@ export function initializeDemoForeachPlaygroundData(): void {
 
   const session = createSession(workflowId, 'ForEach Demo', undefined, 'sess-foreach-demo');
 
-  // Workflow ids/labels used across both executions
-  const parentWorkflowId = 'demo-foreach-loop';
-  const parentWorkflowLabel = 'ForEach Loop';
-  const subWorkflowId = 'greeter-flow';
-  const subWorkflowLabel = 'Greeter';
+  // Breadcrumb factories for the parent (ForEach Loop) and the embedded
+  // sub-workflow (Greeter). Server in production decides the depth/content.
+  const parentCrumb: MessageBreadcrumbItem[] = [
+    { id: 'demo-foreach-loop', label: 'ForEach Loop', icon: 'mdi:graph' }
+  ];
+  const subCrumb: MessageBreadcrumbItem[] = [
+    { id: 'demo-foreach-loop', label: 'ForEach Loop', icon: 'mdi:graph' },
+    { id: 'greeter-flow', label: 'Greeter', icon: 'mdi:hand-wave' }
+  ];
+  const runTag = (label: string): MessageTag => ({
+    id: 'run',
+    label,
+    icon: 'mdi:play-circle',
+    color: 'info',
+    variant: 'subtle'
+  });
+  const iterTag = (n: number, total: number): MessageTag => ({
+    id: `iter-${n}`,
+    label: `iter ${n}/${total}`,
+    color: 'muted',
+    variant: 'subtle'
+  });
 
   // ── Execution 1: completed (pipeline-foreach-001) ────────────────────────
   const exec1Id = 'pipeline-foreach-001';
-  addExecutionToSession(session.id, exec1Id, ts(-120_000), {
-    label: 'Run #1',
-    workflowId: parentWorkflowId,
-    workflowLabel: parentWorkflowLabel
-  });
+  addExecutionToSession(session.id, exec1Id, ts(-120_000));
 
   const userMsg1 = addMessage(session.id, 'user', 'Process the fruit list', {
     executionId: exec1Id,
-    timestamp: ts(-120_000)
+    timestamp: ts(-120_000),
+    tags: [runTag('Run #1')]
   });
   addMessage(session.id, 'log', 'Starting ForEach loop — 5 items queued', {
     executionId: exec1Id,
@@ -735,7 +742,9 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'JSON Loader',
     parentMessageId: userMsg1?.id,
     timestamp: ts(-119_500),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: parentCrumb,
+    tags: [runTag('Run #1')]
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
     executionId: exec1Id,
@@ -744,18 +753,20 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg1?.id,
     timestamp: ts(-119_000),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: parentCrumb,
+    tags: [runTag('Run #1'), iterTag(1, 5)]
   });
   addMessage(session.id, 'log', 'Greeter says: Hello Apple!', {
     executionId: exec1Id,
-    workflowId: subWorkflowId,
-    workflowLabel: subWorkflowLabel,
     level: 'info',
     nodeId: 'greeter.1',
     nodeLabel: 'Greeter',
     parentMessageId: userMsg1?.id,
     timestamp: ts(-118_800),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: subCrumb,
+    tags: [runTag('Run #1'), iterTag(1, 5)]
   });
   addMessage(session.id, 'log', 'Processing item 5/5: Elderberry', {
     executionId: exec1Id,
@@ -764,18 +775,20 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg1?.id,
     timestamp: ts(-117_500),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: parentCrumb,
+    tags: [runTag('Run #1'), iterTag(5, 5)]
   });
   addMessage(session.id, 'log', 'Greeter says: Hello Elderberry!', {
     executionId: exec1Id,
-    workflowId: subWorkflowId,
-    workflowLabel: subWorkflowLabel,
     level: 'info',
     nodeId: 'greeter.1',
     nodeLabel: 'Greeter',
     parentMessageId: userMsg1?.id,
     timestamp: ts(-117_300),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: subCrumb,
+    tags: [runTag('Run #1'), iterTag(5, 5)]
   });
   addMessage(
     session.id,
@@ -787,7 +800,11 @@ export function initializeDemoForeachPlaygroundData(): void {
       nodeLabel: 'Output',
       duration: 3200,
       parentMessageId: userMsg1?.id,
-      timestamp: ts(-116_800)
+      timestamp: ts(-116_800),
+      tags: [
+        runTag('Run #1'),
+        { id: 'status', label: 'completed', color: 'success', variant: 'solid' }
+      ]
     }
   );
   // Mark exec1 as completed
@@ -796,7 +813,8 @@ export function initializeDemoForeachPlaygroundData(): void {
     executionId: exec1Id,
     source: 'pipeline',
     metadata: { [ENABLE_RUN_METADATA_KEY]: true },
-    timestamp: ts(-116_500)
+    timestamp: ts(-116_500),
+    tags: [runTag('Run #1'), { id: 'status', label: 'completed', color: 'success', variant: 'subtle' }]
   });
   const s1 = mockSessions.get(session.id);
   if (s1) {
@@ -806,15 +824,12 @@ export function initializeDemoForeachPlaygroundData(): void {
 
   // ── Execution 2: failed (pipeline-foreach-002) ───────────────────────────
   const exec2Id = 'pipeline-foreach-002';
-  addExecutionToSession(session.id, exec2Id, ts(-60_000), {
-    label: 'Run #2',
-    workflowId: parentWorkflowId,
-    workflowLabel: parentWorkflowLabel
-  });
+  addExecutionToSession(session.id, exec2Id, ts(-60_000));
 
   const userMsg2 = addMessage(session.id, 'user', 'Run again with the same list', {
     executionId: exec2Id,
-    timestamp: ts(-60_000)
+    timestamp: ts(-60_000),
+    tags: [runTag('Run #2')]
   });
   addMessage(session.id, 'log', 'Starting ForEach loop — 5 items queued', {
     executionId: exec2Id,
@@ -823,7 +838,9 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'JSON Loader',
     parentMessageId: userMsg2?.id,
     timestamp: ts(-59_500),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: parentCrumb,
+    tags: [runTag('Run #2')]
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
     executionId: exec2Id,
@@ -832,38 +849,54 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'ForEach Loop',
     parentMessageId: userMsg2?.id,
     timestamp: ts(-59_000),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: parentCrumb,
+    tags: [runTag('Run #2'), iterTag(1, 5)]
   });
   addMessage(session.id, 'log', 'Greeter says: Hello Apple!', {
     executionId: exec2Id,
-    workflowId: subWorkflowId,
-    workflowLabel: subWorkflowLabel,
     level: 'info',
     nodeId: 'greeter.1',
     nodeLabel: 'Greeter',
     parentMessageId: userMsg2?.id,
     timestamp: ts(-58_800),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: subCrumb,
+    tags: [runTag('Run #2'), iterTag(1, 5)]
   });
-  addMessage(session.id, 'log', 'Error processing item 3/5: Cherry — upstream timeout', {
-    executionId: exec2Id,
-    level: 'error',
-    nodeId: 'foreach.1',
-    nodeLabel: 'ForEach Loop',
-    parentMessageId: userMsg2?.id,
-    timestamp: ts(-58_500),
-    source: 'pipeline'
-  });
+  // Verbose card-style log entry to showcase the `display: 'card'` variant.
+  addMessage(
+    session.id,
+    'log',
+    'Upstream timeout while loading item 3/5 (Cherry). The JSON Loader retried twice with a 500ms backoff but the source remained unreachable. Aborting the loop and propagating the failure to downstream nodes.',
+    {
+      executionId: exec2Id,
+      level: 'error',
+      nodeId: 'foreach.1',
+      nodeLabel: 'ForEach Loop',
+      parentMessageId: userMsg2?.id,
+      timestamp: ts(-58_500),
+      source: 'pipeline',
+      display: 'card' as PlaygroundMessageDisplay,
+      breadcrumb: parentCrumb,
+      tags: [
+        runTag('Run #2'),
+        iterTag(3, 5),
+        { id: 'status', label: 'timeout', color: 'error', variant: 'solid' },
+        { id: 'retries', label: 'retries: 2', color: 'warning', variant: 'outline' }
+      ]
+    }
+  );
   addMessage(session.id, 'log', 'Greeter aborted: Cherry never reached', {
     executionId: exec2Id,
-    workflowId: subWorkflowId,
-    workflowLabel: subWorkflowLabel,
     level: 'warning',
     nodeId: 'greeter.1',
     nodeLabel: 'Greeter',
     parentMessageId: userMsg2?.id,
     timestamp: ts(-58_400),
-    source: 'pipeline'
+    source: 'pipeline',
+    breadcrumb: subCrumb,
+    tags: [runTag('Run #2'), { id: 'status', label: 'aborted', color: 'warning', variant: 'solid' }]
   });
   addMessage(session.id, 'assistant', 'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.', {
     executionId: exec2Id,
@@ -871,14 +904,19 @@ export function initializeDemoForeachPlaygroundData(): void {
     nodeLabel: 'Output',
     duration: 1800,
     parentMessageId: userMsg2?.id,
-    timestamp: ts(-58_200)
+    timestamp: ts(-58_200),
+    tags: [
+      runTag('Run #2'),
+      { id: 'status', label: 'failed', color: 'error', variant: 'solid' }
+    ]
   });
   updateSessionStatus(session.id, 'failed');
   addMessage(session.id, 'system', 'Run #2 failed', {
     executionId: exec2Id,
     source: 'pipeline',
     level: 'error',
-    timestamp: ts(-58_000)
+    timestamp: ts(-58_000),
+    tags: [runTag('Run #2'), { id: 'status', label: 'failed', color: 'error', variant: 'subtle' }]
   });
   // Reset to idle so the playground is ready for a new run
   const s2 = mockSessions.get(session.id);
