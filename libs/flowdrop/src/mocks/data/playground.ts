@@ -14,7 +14,7 @@ import type {
   PlaygroundMessageLevel,
   PlaygroundMessageStatus,
   PlaygroundMessageMetadata,
-  MessageBreadcrumbItem,
+  MessageHierarchyItem,
   MessageTag
 } from '../../lib/types/playground.js';
 import { ENABLE_RUN_METADATA_KEY } from '../../lib/types/playground.js';
@@ -247,7 +247,7 @@ export function addMessage(
     metadata?: PlaygroundMessageMetadata;
     timestamp?: string;
     source?: string;
-    breadcrumb?: MessageBreadcrumbItem[];
+    hierarchy?: MessageHierarchyItem[];
     tags?: MessageTag[];
     display?: PlaygroundMessageDisplay;
   }
@@ -274,16 +274,16 @@ export function addMessage(
     parentMessageId: options?.parentMessageId,
     executionId: options?.executionId ?? null,
     nodeId: options?.nodeId,
-    ...(options?.breadcrumb !== undefined ? { breadcrumb: options.breadcrumb } : {}),
-    ...(options?.tags !== undefined ? { tags: options.tags } : {}),
-    ...(options?.display !== undefined ? { display: options.display } : {}),
+    hierarchy: options?.hierarchy,
+    tags: options?.tags,
+    display: options?.display,
     metadata: {
       ...(options?.metadata ?? {
         level: options?.level,
         duration: options?.duration,
         nodeLabel: options?.nodeLabel
       }),
-      ...(options?.source !== undefined ? { source: options.source } : {})
+      source: options?.source
     }
   };
 
@@ -703,12 +703,12 @@ export function initializeDemoForeachPlaygroundData(): void {
 
   const session = createSession(workflowId, 'ForEach Demo', undefined, 'sess-foreach-demo');
 
-  // Breadcrumb factories for the parent (ForEach Loop) and the embedded
-  // sub-workflow (Greeter). Server in production decides the depth/content.
-  const parentCrumb: MessageBreadcrumbItem[] = [
+  // Hierarchy factories for the parent (ForEach Loop) and the embedded
+  // sub-workflow (Greeter). The server decides the depth/content in production.
+  const parentHierarchy: MessageHierarchyItem[] = [
     { id: 'demo-foreach-loop', label: 'ForEach Loop', icon: 'mdi:graph' }
   ];
-  const subCrumb: MessageBreadcrumbItem[] = [
+  const subHierarchy: MessageHierarchyItem[] = [
     { id: 'demo-foreach-loop', label: 'ForEach Loop', icon: 'mdi:graph' },
     { id: 'greeter-flow', label: 'Greeter', icon: 'mdi:hand-wave' }
   ];
@@ -743,7 +743,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg1?.id,
     timestamp: ts(-119_500),
     source: 'pipeline',
-    breadcrumb: parentCrumb,
+    hierarchy: parentHierarchy,
     tags: [runTag('Run #1')]
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
@@ -754,7 +754,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg1?.id,
     timestamp: ts(-119_000),
     source: 'pipeline',
-    breadcrumb: parentCrumb,
+    hierarchy: parentHierarchy,
     tags: [runTag('Run #1'), iterTag(1, 5)]
   });
   addMessage(session.id, 'log', 'Greeter says: Hello Apple!', {
@@ -765,7 +765,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg1?.id,
     timestamp: ts(-118_800),
     source: 'pipeline',
-    breadcrumb: subCrumb,
+    hierarchy: subHierarchy,
     tags: [runTag('Run #1'), iterTag(1, 5)]
   });
   addMessage(session.id, 'log', 'Processing item 5/5: Elderberry', {
@@ -776,7 +776,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg1?.id,
     timestamp: ts(-117_500),
     source: 'pipeline',
-    breadcrumb: parentCrumb,
+    hierarchy: parentHierarchy,
     tags: [runTag('Run #1'), iterTag(5, 5)]
   });
   addMessage(session.id, 'log', 'Greeter says: Hello Elderberry!', {
@@ -787,7 +787,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg1?.id,
     timestamp: ts(-117_300),
     source: 'pipeline',
-    breadcrumb: subCrumb,
+    hierarchy: subHierarchy,
     tags: [runTag('Run #1'), iterTag(5, 5)]
   });
   addMessage(
@@ -839,7 +839,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg2?.id,
     timestamp: ts(-59_500),
     source: 'pipeline',
-    breadcrumb: parentCrumb,
+    hierarchy: parentHierarchy,
     tags: [runTag('Run #2')]
   });
   addMessage(session.id, 'log', 'Processing item 1/5: Apple', {
@@ -850,7 +850,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg2?.id,
     timestamp: ts(-59_000),
     source: 'pipeline',
-    breadcrumb: parentCrumb,
+    hierarchy: parentHierarchy,
     tags: [runTag('Run #2'), iterTag(1, 5)]
   });
   addMessage(session.id, 'log', 'Greeter says: Hello Apple!', {
@@ -861,7 +861,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg2?.id,
     timestamp: ts(-58_800),
     source: 'pipeline',
-    breadcrumb: subCrumb,
+    hierarchy: subHierarchy,
     tags: [runTag('Run #2'), iterTag(1, 5)]
   });
   // Verbose card-style log entry to showcase the `display: 'card'` variant.
@@ -878,7 +878,7 @@ export function initializeDemoForeachPlaygroundData(): void {
       timestamp: ts(-58_500),
       source: 'pipeline',
       display: 'card' as PlaygroundMessageDisplay,
-      breadcrumb: parentCrumb,
+      hierarchy: parentHierarchy,
       tags: [
         runTag('Run #2'),
         iterTag(3, 5),
@@ -895,7 +895,7 @@ export function initializeDemoForeachPlaygroundData(): void {
     parentMessageId: userMsg2?.id,
     timestamp: ts(-58_400),
     source: 'pipeline',
-    breadcrumb: subCrumb,
+    hierarchy: subHierarchy,
     tags: [runTag('Run #2'), { id: 'status', label: 'aborted', color: 'warning', variant: 'solid' }]
   });
   addMessage(session.id, 'assistant', 'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.', {
