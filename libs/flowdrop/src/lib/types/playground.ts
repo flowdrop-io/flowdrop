@@ -146,13 +146,12 @@ export interface PlaygroundMessageMetadata {
 }
 
 /**
- * A clickable/navigable hierarchy item the server attaches to a message to
- * indicate where it sits in a contextual tree (e.g. workflow > sub-workflow
- * > iteration). Rendered as a chevron-separated trail. Display-only for now —
- * `href` is intentionally not part of the schema.
+ * A node on the contextual tree the server attaches to a message
+ * (e.g. workflow > sub-workflow > iteration). Display-only — this is not a
+ * navigation breadcrumb; `href` is intentionally not part of the schema.
  */
-export interface MessageBreadcrumbItem {
-  /** Stable identifier (for keying and future deep-link use) */
+export interface MessageHierarchyItem {
+  /** Stable identifier (for keying) */
   id: string;
   /** Display label */
   label: string;
@@ -209,6 +208,21 @@ export interface MessageTag {
 export type PlaygroundMessageDisplay = 'bubble' | 'log' | 'notice' | 'card';
 
 /**
+ * Resolve the effective layout for a message. Server-supplied `display` wins;
+ * otherwise we fall back to a role-based default. Pure function so the
+ * dispatcher and tests can share it.
+ */
+export function resolveMessageDisplay(
+  message: Pick<PlaygroundMessage, 'role' | 'display'>,
+  options: { compactSystemMessages?: boolean } = {}
+): PlaygroundMessageDisplay {
+  if (message.display) return message.display;
+  if (message.role === 'system' && options.compactSystemMessages !== false) return 'notice';
+  if (message.role === 'log') return 'log';
+  return 'bubble';
+}
+
+/**
  * Message in a playground session
  *
  * Messages can be user inputs, assistant responses, system notifications,
@@ -254,7 +268,7 @@ export interface PlaygroundMessage {
    * Rendered as a chevron-separated trail. Server-controlled — no
    * client-side derivation.
    */
-  breadcrumb?: MessageBreadcrumbItem[];
+  hierarchy?: MessageHierarchyItem[];
   /**
    * Server-emitted classification chips rendered with the message.
    * Replace any client-side defaults entirely (no merge).

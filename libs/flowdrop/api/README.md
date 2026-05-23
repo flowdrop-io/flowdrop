@@ -106,15 +106,16 @@ pnpm build
 2. Reference in `openapi.yaml` under `components.schemas:`
 3. Use `$ref` in paths to reference the schema
 
-## Playground Message Breadcrumb, Tags, and Display Contract
+## Playground Message Hierarchy, Tags, and Display Contract
 
 A playground message can carry three optional fields that let the server fully control
 how the message is presented in the UI, without the client having to invent or
 derive anything.
 
-**`breadcrumb`** — ordered list of `MessageBreadcrumbItem` (`{ id, label, icon? }`).
-Displayed as a chevron-separated trail. Use it to express hierarchy (e.g. workflow
-> sub-workflow > iteration). Display-only — no navigation is wired up today.
+**`hierarchy`** — ordered list of `MessageHierarchyItem` (`{ id, label, icon? }`).
+Displayed as a chevron-separated trail. Use it to express position in a tree
+(e.g. workflow > sub-workflow > iteration). Display-only — this is not a navigation
+breadcrumb and no `href` is wired up.
 
 **`tags`** — unordered list of `MessageTag` (`{ id, label, icon?, color?, variant?, type? }`).
 Rendered as chips alongside the message. `color` is a closed enum (`muted | primary |
@@ -125,19 +126,19 @@ synthesis.
 **`display`** — closed enum hint that selects the layout:
 
 - `bubble` — chat bubble with avatar, header, body, optional footer
-- `log` — dense one-liner: icon · breadcrumb · body · tags · timestamp
+- `log` — dense one-liner: icon · hierarchy · body · tags · timestamp
 - `notice` — compact centered notice
-- `card` — vertical: breadcrumb (top), body (middle), tags (bottom)
+- `card` — vertical: hierarchy (top), body (middle), tags (bottom)
 
 When `display` is omitted, the client picks a default from the role: `log` → `log`,
 `system` → `notice` (when compactSystemMessages is enabled), everything else → `bubble`.
 
 **Server expectations:**
 
-- All three fields are optional. Omitting `breadcrumb` and `tags` produces a clean,
+- All three fields are optional. Omitting `hierarchy` and `tags` produces a clean,
   unannotated message in the role's default layout.
 - A message's `display` overrides the role-based default. This lets a `log` message
-  be rendered as a `card` when it carries enough hierarchy/context to deserve verbose
+  be rendered as a `card` when it carries enough context to deserve verbose
   presentation.
 - `tags` is authoritative — there is no merge with client-derived chips. To suppress
   any chip rendering, send `tags: []` (or omit the field entirely).

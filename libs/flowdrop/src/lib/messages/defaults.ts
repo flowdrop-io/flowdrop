@@ -319,6 +319,12 @@ export const defaultMessages = {
       nodeId: ({ id }: { id: string }) => `Node ID: ${id}`,
       executionDuration: 'Execution duration'
     },
+    // ARIA labels for message annotations. The hierarchy trail names the
+    // actual path so AT users hear "From: ForEach Loop / Greeter" rather
+    // than a generic "hierarchy".
+    messageAnnotations: {
+      hierarchyOf: ({ path }: { path: string }) => `From: ${path}`
+    },
     sessions: {
       header: 'Sessions',
       newSession: 'New Session',

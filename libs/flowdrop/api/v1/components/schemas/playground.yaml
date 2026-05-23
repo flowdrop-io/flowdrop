@@ -6,6 +6,7 @@ PlaygroundSessionStatus:
   enum:
     - idle
     - running
+    - awaiting_input
     - completed
     - failed
   description: Current status of a playground session
@@ -113,15 +114,15 @@ PlaygroundExecution:
     - startedAt
     - status
 
-MessageBreadcrumbItem:
+MessageHierarchyItem:
   type: object
   description: |
-    A single hierarchy item in a message's breadcrumb trail. Rendered in
-    document order separated by chevrons.
+    A single node on a message's hierarchy path. Rendered in document order
+    separated by chevrons. Display-only — this is not a navigation breadcrumb.
   properties:
     id:
       type: string
-      description: Stable identifier (used for keying; future deep-linking)
+      description: Stable identifier (used for keying)
     label:
       type: string
       description: Display label
@@ -198,10 +199,10 @@ PlaygroundMessageDisplay:
 
     Layouts:
     - `bubble` — chat bubble with avatar, header, body, optional footer
-      containing breadcrumb + tags
-    - `log` — one-liner: icon · breadcrumb · body · tags · timestamp
+      containing hierarchy + tags
+    - `log` — one-liner: icon · hierarchy · body · tags · timestamp
     - `notice` — compact centered notice
-    - `card` — vertical: breadcrumb (top), body (middle), tags (bottom)
+    - `card` — vertical: hierarchy (top), body (middle), tags (bottom)
 
 PlaygroundMessage:
   type: object
@@ -248,14 +249,14 @@ PlaygroundMessage:
       type: string
       description: Associated node ID (for log messages)
       nullable: true
-    breadcrumb:
+    hierarchy:
       type: array
       description: |
         Ordered hierarchy path describing where this message sits (e.g.
         workflow > sub-workflow > iteration). Display-only; rendered as a
         chevron-separated trail. The server decides the depth and content.
       items:
-        $ref: '#/MessageBreadcrumbItem'
+        $ref: '#/MessageHierarchyItem'
     tags:
       type: array
       description: |
