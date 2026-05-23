@@ -9,9 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Server-driven playground message annotations — `hierarchy`, `tags`, `display`**: `PlaygroundMessage` now carries three optional server-emitted fields that let the server fully control message presentation without any client-side derivation:
+  - `hierarchy: MessageHierarchyItem[]` — ordered path (e.g. workflow > sub-workflow > iteration), rendered as a chevron-separated trail. Display-only — this is not a navigation breadcrumb.
+  - `tags: MessageTag[]` — classification chips with a closed-enum `color` (`muted | primary | success | warning | error | info`) and `variant` (`subtle | solid | outline`). When the server emits tags, the client renders exactly those — no merge with client-side defaults.
+  - `display: PlaygroundMessageDisplay` — layout hint (`bubble | log | notice | card`). When omitted, the client picks a default from the role.
+  - Pure `resolveMessageDisplay(message, options)` helper is exported alongside the types so consumers can mirror the dispatch.
+  - Full contract documented in `api/README.md`.
+
+- **`m().playground.messageAnnotations.hierarchyOf({ path })` i18n function**: Names a message's hierarchy trail by the path itself (e.g. `"From: ForEach Loop / Greeter"`). Hosts overriding `messages` should provide a localised function that accepts the joined path string. The tag strip has no aria-label — each chip self-labels and a generic group label was noise.
+
+- **`awaiting_input` added to `PlaygroundSessionStatus` OpenAPI enum**: The TypeScript type already accepted this value; the schema is now in sync.
+
 - **`FORM_VALUES_KEY` context key and `FormValuesGetter` type**: Both are now exported from `@flowdrop/flowdrop/form`. Custom field components registered via `fieldComponentRegistry` can call `getContext(FORM_VALUES_KEY)` to receive a `() => Record<string, unknown>` getter that always returns the current values of all sibling fields in the form. The context is set by both `ConfigForm` and `SchemaForm`. This is the stable public API for building cross-field interactions such as dependent autocomplete fields.
 
 - **`schema` prop on registered autocomplete components**: Custom components registered to handle `format: "autocomplete"` fields (via `fieldComponentRegistry`) now receive the full `FieldSchema` object as a `schema` prop. This gives access to any custom property on the schema definition — for example a `dependencies` map — without FlowDrop needing to anticipate and forward each one individually.
+
+### Changed
+
+- **`MessageBubble` internals split into per-layout components**: `MessageBubble.svelte` is now a thin dispatcher (~50 lines) over `ChatBubble`, `LogRow`, `MessageNotice`, and `MessageCard`. Shared primitives `HierarchyTrail`, `MessageTagStrip`, and `MessageMarkdown` deduplicate the markup. Public props on `MessageBubble` are unchanged, so this is internal-only.
 
 ## [1.12.0] - 2026-05-16
 
