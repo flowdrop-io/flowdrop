@@ -14,11 +14,12 @@
   import { sanitizeHtml } from '../../utils/sanitize.js';
   import type {
     PlaygroundMessage,
+    PlaygroundMessageDisplay,
     PlaygroundMessageMetadata,
     PlaygroundMessageRole
   } from '../../types/playground.js';
-  import type { MessageAttribution } from '../../utils/messageAttribution.js';
-  import AttributionChip from './AttributionChip.svelte';
+  import MessageTagChip from './MessageTagChip.svelte';
+  import BreadcrumbTrail from './BreadcrumbTrail.svelte';
   import { m } from '$lib/messages/index.js';
 
   /**
@@ -35,17 +36,11 @@
     enableMarkdown?: boolean;
     /**
      * Use compact display mode for system messages.
-     * When true, system messages are rendered as minimal inline text
-     * instead of full chat bubbles to reduce visual noise.
+     * When true, system messages with no explicit `display` field default
+     * to the 'notice' layout instead of 'bubble'.
      * @default true
      */
     compactSystemMessages?: boolean;
-    /**
-     * Pre-resolved attribution chips (Run, workflow) for this message.
-     * Computed by MessageStream from the session's executions list so the
-     * bubble itself stays store-agnostic.
-     */
-    attribution?: MessageAttribution;
   }
 
   let {
@@ -53,19 +48,24 @@
     showTimestamp = true,
     isLast = false,
     enableMarkdown = true,
-    compactSystemMessages = true,
-    attribution
+    compactSystemMessages = true
   }: Props = $props();
 
-  const hasRunChip = $derived(!!attribution?.runLabel);
-  const hasWorkflowChip = $derived(!!attribution?.workflowLabel);
-  const hasAttributionChips = $derived(hasRunChip || hasWorkflowChip);
-
   /**
-   * Determine if this message should render in compact mode.
-   * Only system messages use compact mode when enabled.
+   * Resolve the effective layout. Server-supplied `display` always wins;
+   * otherwise we fall back to a role-based default.
    */
-  const useCompactMode = $derived(message.role === 'system' && compactSystemMessages);
+  const effectiveDisplay: PlaygroundMessageDisplay = $derived.by(() => {
+    if (message.display) return message.display;
+    if (message.role === 'system' && compactSystemMessages) return 'notice';
+    if (message.role === 'log') return 'log';
+    return 'bubble';
+  });
+
+  const breadcrumb = $derived(message.breadcrumb ?? []);
+  const tags = $derived(message.tags ?? []);
+  const hasBreadcrumb = $derived(breadcrumb.length > 0);
+  const hasTags = $derived(tags.length > 0);
 
   /**
    * Render content as markdown or plain text
@@ -164,8 +164,8 @@
   }
 </script>
 
-{#if useCompactMode}
-  <!-- Compact system message: minimal inline text without bubble -->
+{#if effectiveDisplay === 'notice'}
+  <!-- Compact notice: minimal inline text without bubble -->
   <div
     class="system-notice"
     class:system-notice--last={isLast}
@@ -177,27 +177,20 @@
     {#if message.metadata?.source}
       <span class="system-notice__source">{message.metadata.source}</span>
     {/if}
-    <span class="system-notice__text">{message.content}</span>
-    {#if hasRunChip && attribution}
-      <AttributionChip
-        variant="run"
-        label={attribution.runLabel!}
-        title={attribution.runId}
-      />
+    {#if hasBreadcrumb}
+      <BreadcrumbTrail items={breadcrumb} />
     {/if}
-    {#if hasWorkflowChip && attribution}
-      <AttributionChip
-        variant="workflow"
-        label={attribution.workflowLabel!}
-        title={attribution.workflowId}
-        icon="mdi:graph"
-      />
+    <span class="system-notice__text">{message.content}</span>
+    {#if hasTags}
+      {#each tags as tag (tag.id)}
+        <MessageTagChip {tag} />
+      {/each}
     {/if}
     {#if showTimestamp}
       <span class="system-notice__timestamp">{formatTimestamp(message.timestamp)}</span>
     {/if}
   </div>
-{:else if message.role === 'log'}
+{:else if effectiveDisplay === 'log'}
   <!-- Compact log row: terminal-style entry, visually distinct from chat bubbles -->
   <div
     class="log-row"
@@ -212,26 +205,53 @@
       {#if message.metadata?.source}
         <span class="log-row__source">{message.metadata.source}</span>
       {/if}
+      {#if hasBreadcrumb}
+        <BreadcrumbTrail items={breadcrumb} />
+      {/if}
       <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId ?? 'log'}</span>
       <span class="log-row__text">{message.content}</span>
     </div>
-    {#if hasRunChip && attribution}
-      <AttributionChip
-        variant="run"
-        label={attribution.runLabel!}
-        title={attribution.runId}
-      />
-    {/if}
-    {#if hasWorkflowChip && attribution}
-      <AttributionChip
-        variant="workflow"
-        label={attribution.workflowLabel!}
-        title={attribution.workflowId}
-        icon="mdi:graph"
-      />
+    {#if hasTags}
+      {#each tags as tag (tag.id)}
+        <MessageTagChip {tag} />
+      {/each}
     {/if}
     {#if showTimestamp}
       <span class="log-row__timestamp">{formatTimestamp(message.timestamp)}</span>
+    {/if}
+  </div>
+{:else if effectiveDisplay === 'card'}
+  <!-- Card layout: breadcrumb (top) · body (middle) · tags (bottom) -->
+  <div
+    class="message-card"
+    class:message-card--last={isLast}
+    class:message-card--error={message.metadata?.level === 'error'}
+    class:message-card--warning={message.metadata?.level === 'warning'}
+  >
+    {#if hasBreadcrumb || showTimestamp}
+      <div class="message-card__header">
+        {#if hasBreadcrumb}
+          <BreadcrumbTrail items={breadcrumb} />
+        {/if}
+        {#if showTimestamp}
+          <span class="message-card__timestamp">{formatTimestamp(message.timestamp)}</span>
+        {/if}
+      </div>
+    {/if}
+    <div class="message-card__body">
+      {#if enableMarkdown && message.role !== 'log'}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        {@html renderedContent}
+      {:else}
+        {message.content}
+      {/if}
+    </div>
+    {#if hasTags}
+      <div class="message-card__tags">
+        {#each tags as tag (tag.id)}
+          <MessageTagChip {tag} />
+        {/each}
+      </div>
     {/if}
   </div>
 {:else}
@@ -257,6 +277,12 @@
         {/if}
       </div>
 
+      {#if hasBreadcrumb}
+        <div class="message-bubble__breadcrumb">
+          <BreadcrumbTrail items={breadcrumb} />
+        </div>
+      {/if}
+
       <!-- Message Text -->
       <div class="message-bubble__text">
         {#if enableMarkdown}
@@ -269,7 +295,7 @@
       </div>
 
       <!-- Metadata Footer -->
-      {#if message.metadata?.duration !== undefined || message.nodeId || hasAttributionChips}
+      {#if message.metadata?.duration !== undefined || message.nodeId || hasTags}
         <div class="message-bubble__footer">
           {#if message.nodeId}
             <span
@@ -289,20 +315,10 @@
               {formatDuration(message.metadata.duration)}
             </span>
           {/if}
-          {#if hasRunChip && attribution}
-            <AttributionChip
-              variant="run"
-              label={attribution.runLabel!}
-              title={attribution.runId}
-            />
-          {/if}
-          {#if hasWorkflowChip && attribution}
-            <AttributionChip
-              variant="workflow"
-              label={attribution.workflowLabel!}
-              title={attribution.workflowId}
-              icon="mdi:graph"
-            />
+          {#if hasTags}
+            {#each tags as tag (tag.id)}
+              <MessageTagChip {tag} />
+            {/each}
           {/if}
         </div>
       {/if}
@@ -598,12 +614,17 @@
     opacity: 0.8;
   }
 
+  .message-bubble__breadcrumb {
+    margin: var(--fd-space-3xs) 0 var(--fd-space-xs);
+  }
+
   /* ============================================================
      Footer — node / duration metadata
      ============================================================ */
   .message-bubble__footer {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--fd-space-md);
     margin-top: var(--fd-space-xs);
     padding-top: var(--fd-space-3xs);
@@ -820,5 +841,63 @@
     .system-notice__timestamp {
       display: none;
     }
+  }
+
+  /* ============================================================
+     Card layout — breadcrumb · body · tags
+     ============================================================ */
+  .message-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-xs);
+    margin: var(--fd-space-3xs) var(--fd-space-xl);
+    padding: var(--fd-space-sm) var(--fd-space-md);
+    border-radius: var(--fd-radius-lg);
+    background-color: var(--fd-card);
+    border: 1px solid var(--fd-border);
+    color: var(--fd-card-foreground);
+    font-size: var(--fd-text-sm);
+    line-height: var(--fd-leading-normal);
+    animation: fadeIn 0.18s ease-out;
+  }
+
+  .message-card--last {
+    margin-bottom: var(--fd-space-xl);
+  }
+
+  .message-card--error {
+    border-color: var(--fd-error);
+    background-color: color-mix(in srgb, var(--fd-error) 6%, var(--fd-card));
+  }
+
+  .message-card--warning {
+    border-color: var(--fd-warning);
+    background-color: color-mix(in srgb, var(--fd-warning) 6%, var(--fd-card));
+  }
+
+  .message-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fd-space-sm);
+    min-width: 0;
+  }
+
+  .message-card__timestamp {
+    flex-shrink: 0;
+    font-size: 0.625rem;
+    font-family: var(--fd-font-mono);
+    color: var(--fd-muted-foreground);
+  }
+
+  .message-card__body {
+    word-break: break-word;
+  }
+
+  .message-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fd-space-2xs);
   }
 </style>

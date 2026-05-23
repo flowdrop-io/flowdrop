@@ -10,6 +10,16 @@
       layout: 'padded'
     }
   });
+
+  const baseBreadcrumb = [
+    { id: 'demo-foreach-loop', label: 'ForEach Loop', icon: 'mdi:graph' },
+    { id: 'greeter-flow', label: 'Greeter', icon: 'mdi:hand-wave' }
+  ];
+
+  const sampleTags = [
+    { id: 'run', label: 'Run #3', icon: 'mdi:play-circle', color: 'info', variant: 'subtle' },
+    { id: 'iteration', label: 'iter 1/5', color: 'muted', variant: 'subtle' }
+  ];
 </script>
 
 <Story
@@ -62,85 +72,80 @@
 />
 
 <Story
-  name="With Run Chip"
+  name="With Tags"
   args={{
     message: {
       id: 'msg-5',
       role: 'assistant',
-      content: 'Workflow finished successfully.',
+      content: 'Iteration complete.',
       timestamp: new Date().toISOString(),
-      executionId: 'exec-3'
-    },
-    attribution: {
-      runId: 'exec-3',
-      runLabel: 'Run #3',
-      runNumber: 3,
-      workflowId: undefined,
-      workflowLabel: undefined
+      tags: sampleTags
     }
   }}
 />
 
 <Story
-  name="With Run + Workflow Chips"
+  name="Tag Colors (each variant)"
   args={{
     message: {
       id: 'msg-6',
-      role: 'assistant',
-      content: 'Iteration complete.',
+      role: 'log',
+      content: 'Showcasing semantic colors and visual variants',
       timestamp: new Date().toISOString(),
-      executionId: 'exec-3'
-    },
-    attribution: {
-      runId: 'exec-3',
-      runLabel: 'Run #3',
-      runNumber: 3,
-      workflowId: 'demo-foreach-loop',
-      workflowLabel: 'demo-foreach-loop'
+      tags: [
+        { id: 't-1', label: 'subtle.muted', color: 'muted', variant: 'subtle' },
+        { id: 't-2', label: 'subtle.success', color: 'success', variant: 'subtle' },
+        { id: 't-3', label: 'subtle.warning', color: 'warning', variant: 'subtle' },
+        { id: 't-4', label: 'subtle.error', color: 'error', variant: 'subtle' },
+        { id: 't-5', label: 'outline.primary', color: 'primary', variant: 'outline' },
+        { id: 't-6', label: 'solid.info', color: 'info', variant: 'solid' }
+      ]
     }
   }}
 />
 
 <Story
-  name="Sub-workflow Attribution (log)"
+  name="With Breadcrumb"
   args={{
     message: {
       id: 'msg-7',
       role: 'log',
-      content: 'greeter said hi',
+      content: 'greeter said hi to Apple',
       timestamp: new Date().toISOString(),
-      executionId: 'exec-3',
-      workflowId: 'greeter-flow',
-      nodeId: 'node-greet',
-      metadata: { nodeLabel: 'greeter' }
-    },
-    attribution: {
-      runId: 'exec-3',
-      runLabel: 'Run #3',
-      runNumber: 3,
-      workflowId: 'greeter-flow',
-      workflowLabel: 'greeter-flow'
+      breadcrumb: baseBreadcrumb,
+      tags: [{ id: 'iter', label: 'iter 1/5', color: 'muted', variant: 'subtle' }]
     }
   }}
 />
 
 <Story
-  name="Sub-workflow Attribution (system)"
+  name="Card Display"
   args={{
     message: {
       id: 'msg-8',
-      role: 'system',
-      content: 'Sub-workflow finished',
+      role: 'log',
+      content:
+        'Greeter aborted because Cherry never reached the queue. The upstream loader returned a timeout after retrying twice — check the JSON Loader configuration for `retries` and `backoffMs`.',
       timestamp: new Date().toISOString(),
-      executionId: 'exec-3',
-      workflowId: 'greeter-flow'
-    },
-    attribution: {
-      runId: 'exec-3',
-      runLabel: 'Run #3',
-      runNumber: 3,
-      workflowId: 'greeter-flow',
-      workflowLabel: 'greeter-flow'
+      display: 'card',
+      breadcrumb: baseBreadcrumb,
+      tags: [
+        { id: 'iter', label: 'iter 3/5', color: 'muted', variant: 'subtle' },
+        { id: 'status', label: 'aborted', color: 'warning', variant: 'solid' }
+      ]
+    }
+  }}
+/>
+
+<Story
+  name="Server-driven display override (log as bubble)"
+  args={{
+    message: {
+      id: 'msg-9',
+      role: 'log',
+      content: 'This log message is rendered as a bubble because the server set display=bubble',
+      timestamp: new Date().toISOString(),
+      display: 'bubble'
     }
   }}
 />

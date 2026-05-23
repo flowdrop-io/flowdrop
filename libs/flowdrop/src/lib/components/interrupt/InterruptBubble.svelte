@@ -14,8 +14,12 @@
   import TextInputPrompt from './TextInputPrompt.svelte';
   import FormPrompt from './FormPrompt.svelte';
   import ReviewPrompt from './ReviewPrompt.svelte';
-  import AttributionChip from '../playground/AttributionChip.svelte';
-  import type { MessageAttribution } from '../../utils/messageAttribution.js';
+  import MessageTagChip from '../playground/MessageTagChip.svelte';
+  import BreadcrumbTrail from '../playground/BreadcrumbTrail.svelte';
+  import type {
+    MessageBreadcrumbItem,
+    MessageTag
+  } from '../../types/playground.js';
   import type {
     Interrupt,
     InterruptType,
@@ -52,19 +56,23 @@
     /** Callback to refresh messages after interrupt resolution */
     onResolved?: () => void;
     /**
-     * Pre-resolved attribution chips (Run, workflow). When omitted, falls back
-     * to displaying the interrupt's raw workflowId so existing consumers that
-     * mount InterruptBubble outside a MessageStream context still see
-     * attribution.
+     * Hierarchy items forwarded from the parent playground message. Rendered
+     * as a breadcrumb trail in the footer.
      */
-    attribution?: MessageAttribution;
+    breadcrumb?: MessageBreadcrumbItem[];
+    /**
+     * Server-emitted tags forwarded from the parent playground message.
+     * Rendered as chips in the footer.
+     */
+    tags?: MessageTag[];
   }
 
   let {
     interrupt: initialInterrupt,
     showTimestamp = true,
     onResolved,
-    attribution
+    breadcrumb,
+    tags
   }: Props = $props();
 
   /**
@@ -75,14 +83,10 @@
     getInterruptsMap().get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
   );
 
-  const fallbackWorkflowLabel = $derived(
-    attribution?.workflowLabel ?? currentInterrupt.workflowId
-  );
-  const fallbackWorkflowTooltip = $derived(
-    attribution?.workflowId ?? currentInterrupt.workflowId
-  );
-  const showRunChip = $derived(!!attribution?.runLabel);
-  const showWorkflowChip = $derived(!!fallbackWorkflowLabel);
+  const breadcrumbItems = $derived(breadcrumb ?? []);
+  const tagItems = $derived(tags ?? []);
+  const hasBreadcrumb = $derived(breadcrumbItems.length > 0);
+  const hasTags = $derived(tagItems.length > 0);
 
   /**
    * Helper to ensure interrupt has machine state
@@ -372,7 +376,7 @@
   </div>
 
   <!-- Footer -->
-  {#if currentInterrupt.nodeId || showRunChip || showWorkflowChip || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
+  {#if currentInterrupt.nodeId || hasBreadcrumb || hasTags || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
     <div class="interrupt-bubble__footer">
       <div class="interrupt-bubble__attribution">
         {#if currentInterrupt.nodeId}
@@ -384,20 +388,13 @@
             <span>{t.fromWorkflow}</span>
           </span>
         {/if}
-        {#if showRunChip && attribution}
-          <AttributionChip
-            variant="run"
-            label={attribution.runLabel!}
-            title={attribution.runId}
-          />
+        {#if hasBreadcrumb}
+          <BreadcrumbTrail items={breadcrumbItems} />
         {/if}
-        {#if showWorkflowChip}
-          <AttributionChip
-            variant="workflow"
-            label={fallbackWorkflowLabel!}
-            title={fallbackWorkflowTooltip}
-            icon="mdi:graph"
-          />
+        {#if hasTags}
+          {#each tagItems as tag (tag.id)}
+            <MessageTagChip {tag} />
+          {/each}
         {/if}
       </div>
       {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}

@@ -86,19 +86,6 @@ export interface PlaygroundExecution {
   id: string;
   startedAt: string;
   status: 'running' | 'completed' | 'failed';
-  /**
-   * Optional human-friendly run label (e.g. "Run #3", "Foreach demo run").
-   * When absent, clients compute "Run #N" from the run's 1-based ordinal in
-   * the session's executions array.
-   */
-  label?: string;
-  /**
-   * ID of the top-level workflow that owns this run. Used as the fallback
-   * workflow attribution for messages that don't carry their own workflowId.
-   */
-  workflowId?: string;
-  /** Human-friendly workflow label; falls back to a truncated workflowId in clients. */
-  workflowLabel?: string;
 }
 
 /**
@@ -154,14 +141,72 @@ export interface PlaygroundMessageMetadata {
   userName?: string;
   /** Subsystem that produced this message (e.g. 'pipeline', 'job', 'queue', 'cron') */
   source?: string;
-  /**
-   * Human-friendly label for the message's workflow. When present, preferred
-   * over the execution's workflowLabel during chip resolution.
-   */
-  workflowLabel?: string;
   /** Allow additional properties */
   [key: string]: unknown;
 }
+
+/**
+ * A clickable/navigable hierarchy item the server attaches to a message to
+ * indicate where it sits in a contextual tree (e.g. workflow > sub-workflow
+ * > iteration). Rendered as a chevron-separated trail. Display-only for now —
+ * `href` is intentionally not part of the schema.
+ */
+export interface MessageBreadcrumbItem {
+  /** Stable identifier (for keying and future deep-link use) */
+  id: string;
+  /** Display label */
+  label: string;
+  /** Optional iconify icon id (e.g. 'mdi:graph') */
+  icon?: string;
+}
+
+/**
+ * Semantic color hooks for a tag. Map to design tokens in the theme.
+ */
+export type MessageTagColor =
+  | 'muted'
+  | 'primary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info';
+
+/**
+ * Visual emphasis for a tag.
+ */
+export type MessageTagVariant = 'solid' | 'outline' | 'subtle';
+
+/**
+ * A server-emitted classification chip rendered alongside a message.
+ * Tags are unordered and replace any UI-side defaults.
+ */
+export interface MessageTag {
+  /** Stable identifier (for keying) */
+  id: string;
+  /** Display label */
+  label: string;
+  /** Optional iconify icon id */
+  icon?: string;
+  /** Semantic color hook; defaults to 'muted' if omitted */
+  color?: MessageTagColor;
+  /** Visual style; defaults to 'subtle' if omitted */
+  variant?: MessageTagVariant;
+  /** Free-form classifier the server may use for future grouping/filtering */
+  type?: string;
+}
+
+/**
+ * Rendering hint the server may set to choose a layout regardless of role.
+ *
+ * - `bubble`: chat bubble shape (default for user/assistant)
+ * - `log`: dense one-liner (default for log role)
+ * - `notice`: compact centered notice (default for system role with
+ *   compactSystemMessages enabled)
+ * - `card`: vertical layout — breadcrumb (top), body (middle), tags (bottom)
+ *
+ * When omitted, the client falls back to the role-based default above.
+ */
+export type PlaygroundMessageDisplay = 'bubble' | 'log' | 'notice' | 'card';
 
 /**
  * Message in a playground session
@@ -202,16 +247,25 @@ export interface PlaygroundMessage {
   parentMessageId?: string;
   /** Pipeline/execution ID that generated this message */
   executionId?: string | null;
-  /**
-   * ID of the (sub-)workflow that produced this message. Servers SHOULD omit
-   * this field when the workflow equals the run's parent workflow — clients
-   * fall back to PlaygroundExecution.workflowId via executionId lookup.
-   * Servers SHOULD set this when a sub-workflow embedded inside the parent
-   * workflow produces the message so clients can attribute correctly.
-   */
-  workflowId?: string;
   /** Associated node ID (for log/assistant messages) */
   nodeId?: string | null;
+  /**
+   * Ordered hierarchy path (e.g. workflow > sub-workflow > iteration).
+   * Rendered as a chevron-separated trail. Server-controlled — no
+   * client-side derivation.
+   */
+  breadcrumb?: MessageBreadcrumbItem[];
+  /**
+   * Server-emitted classification chips rendered with the message.
+   * Replace any client-side defaults entirely (no merge).
+   */
+  tags?: MessageTag[];
+  /**
+   * Layout hint. When omitted, the client picks a default from the role:
+   * - log → 'log', system (when compactSystemMessages) → 'notice',
+   *   user/assistant → 'bubble'.
+   */
+  display?: PlaygroundMessageDisplay;
   /** Additional message metadata */
   metadata?: PlaygroundMessageMetadata;
 }
