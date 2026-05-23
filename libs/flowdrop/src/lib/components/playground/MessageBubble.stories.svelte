@@ -11,7 +11,7 @@
     }
   });
 
-  const baseBreadcrumb = [
+  const baseHierarchy = [
     { id: 'demo-foreach-loop', label: 'ForEach Loop', icon: 'mdi:graph' },
     { id: 'greeter-flow', label: 'Greeter', icon: 'mdi:hand-wave' }
   ];
@@ -105,14 +105,14 @@
 />
 
 <Story
-  name="With Breadcrumb"
+  name="With Hierarchy"
   args={{
     message: {
       id: 'msg-7',
       role: 'log',
       content: 'greeter said hi to Apple',
       timestamp: new Date().toISOString(),
-      breadcrumb: baseBreadcrumb,
+      hierarchy: baseHierarchy,
       tags: [{ id: 'iter', label: 'iter 1/5', color: 'muted', variant: 'subtle' }]
     }
   }}
@@ -128,7 +128,7 @@
         'Greeter aborted because Cherry never reached the queue. The upstream loader returned a timeout after retrying twice — check the JSON Loader configuration for `retries` and `backoffMs`.',
       timestamp: new Date().toISOString(),
       display: 'card',
-      breadcrumb: baseBreadcrumb,
+      hierarchy: baseHierarchy,
       tags: [
         { id: 'iter', label: 'iter 3/5', color: 'muted', variant: 'subtle' },
         { id: 'status', label: 'aborted', color: 'warning', variant: 'solid' }

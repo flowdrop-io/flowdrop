@@ -14,10 +14,10 @@
   import TextInputPrompt from './TextInputPrompt.svelte';
   import FormPrompt from './FormPrompt.svelte';
   import ReviewPrompt from './ReviewPrompt.svelte';
-  import MessageTagChip from '../playground/MessageTagChip.svelte';
-  import BreadcrumbTrail from '../playground/BreadcrumbTrail.svelte';
+  import MessageTagStrip from '../playground/MessageTagStrip.svelte';
+  import HierarchyTrail from '../playground/HierarchyTrail.svelte';
   import type {
-    MessageBreadcrumbItem,
+    MessageHierarchyItem,
     MessageTag
   } from '../../types/playground.js';
   import type {
@@ -57,9 +57,9 @@
     onResolved?: () => void;
     /**
      * Hierarchy items forwarded from the parent playground message. Rendered
-     * as a breadcrumb trail in the footer.
+     * as a chevron-separated trail in the footer.
      */
-    breadcrumb?: MessageBreadcrumbItem[];
+    hierarchy?: MessageHierarchyItem[];
     /**
      * Server-emitted tags forwarded from the parent playground message.
      * Rendered as chips in the footer.
@@ -71,7 +71,7 @@
     interrupt: initialInterrupt,
     showTimestamp = true,
     onResolved,
-    breadcrumb,
+    hierarchy,
     tags
   }: Props = $props();
 
@@ -83,9 +83,9 @@
     getInterruptsMap().get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
   );
 
-  const breadcrumbItems = $derived(breadcrumb ?? []);
+  const hierarchyItems = $derived(hierarchy ?? []);
   const tagItems = $derived(tags ?? []);
-  const hasBreadcrumb = $derived(breadcrumbItems.length > 0);
+  const hasHierarchy = $derived(hierarchyItems.length > 0);
   const hasTags = $derived(tagItems.length > 0);
 
   /**
@@ -380,7 +380,7 @@
   </div>
 
   <!-- Footer -->
-  {#if currentInterrupt.nodeId || hasBreadcrumb || hasTags || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
+  {#if currentInterrupt.nodeId || hasHierarchy || hasTags || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
     <div class="interrupt-bubble__footer">
       <div class="interrupt-bubble__attribution">
         {#if currentInterrupt.nodeId}
@@ -392,16 +392,8 @@
             <span>{t.fromWorkflow}</span>
           </span>
         {/if}
-        {#if hasBreadcrumb}
-          <BreadcrumbTrail items={breadcrumbItems} />
-        {/if}
-        {#if hasTags}
-          <span class="interrupt-bubble__tags" role="group" aria-label="tags">
-            {#each tagItems as tag (tag.id)}
-              <MessageTagChip {tag} />
-            {/each}
-          </span>
-        {/if}
+        <HierarchyTrail items={hierarchyItems} />
+        <MessageTagStrip tags={tagItems} />
       </div>
       {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
         <button
@@ -616,14 +608,6 @@
     gap: var(--fd-space-xs);
     min-width: 0;
     flex: 1 1 auto;
-  }
-
-  .interrupt-bubble__tags {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--fd-space-2xs);
-    min-width: 0;
   }
 
   .interrupt-bubble__node {

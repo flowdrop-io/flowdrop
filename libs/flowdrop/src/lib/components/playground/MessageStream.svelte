@@ -189,7 +189,7 @@
             {interrupt}
             showTimestamp={showTimestamps}
             onResolved={onInterruptResolved}
-            breadcrumb={message.breadcrumb}
+            hierarchy={message.hierarchy}
             tags={message.tags}
           />
         {/if}
@@ -225,10 +225,71 @@
     padding: var(--fd-space-3xl);
 
     /* Establish a containment context so message rows can adapt to the
-       stream's actual width (not the viewport's). Used by .log-row's
-       multi-row stacking at narrow widths. */
+       stream's actual width (not the viewport's). The matching @container
+       queries (for .log-row) live below in the same <style> block, so
+       renaming the container only requires editing this file. */
     container-type: inline-size;
     container-name: fd-message-stream;
+  }
+
+  /* Shared fade-in for newly-appended message rows. `-global-` so
+     ChatBubble.svelte / MessageCard.svelte can reference it without
+     redeclaring. Honour reduced-motion in the same place. */
+  @keyframes -global-fd-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.message-bubble),
+    :global(.message-card) {
+      animation: none;
+    }
+  }
+
+  /* Container-query reshaping for log rows. Lives next to the
+     container-name declaration so the coupling is local — selectors are
+     :global because .log-row is a sibling component's class.
+
+       Tier 1 (≤720px): two rows — level/body, then tags/timestamp.
+       Tier 2 (≤480px): collapse further; body forces internal line break. */
+  @container fd-message-stream (max-width: 720px) {
+    :global(.log-row) {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas:
+        "level body      body"
+        ".     tags      timestamp";
+      align-items: baseline;
+      row-gap: var(--fd-space-2xs);
+      column-gap: var(--fd-space-sm);
+    }
+    :global(.log-row__level) { grid-area: level; }
+    :global(.log-row__body) { grid-area: body; min-width: 0; }
+    :global(.log-row__tags) { grid-area: tags; justify-self: start; }
+    :global(.log-row__timestamp) { grid-area: timestamp; justify-self: end; }
+  }
+
+  @container fd-message-stream (max-width: 480px) {
+    :global(.log-row) {
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "level body"
+        ".     tags";
+    }
+    :global(.log-row__text) {
+      flex-basis: 100%;
+      min-width: 0;
+    }
+    :global(.log-row__timestamp) {
+      display: none;
+    }
   }
 
   .message-stream__typing {
