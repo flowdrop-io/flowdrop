@@ -4076,19 +4076,30 @@ components:
           type: string
           description: Workflow execution ID that generated this message
           nullable: true
-        workflowId:
-          type: string
-          description: |
-            ID of the (sub-)workflow that produced this message. Servers SHOULD
-            omit this field when the workflow equals the run's parent workflow
-            (i.e. PlaygroundExecution.workflowId) — clients fall back to the
-            run's workflowId via executionId lookup. Servers SHOULD set this
-            when a sub-workflow embedded inside the parent workflow produces
-            the message so clients can attribute correctly.
         nodeId:
           type: string
           description: Associated node ID (for log messages)
           nullable: true
+        breadcrumb:
+          type: array
+          description: |
+            Ordered hierarchy path describing where this message sits (e.g.
+            workflow > sub-workflow > iteration). Display-only; rendered as a
+            chevron-separated trail. The server decides the depth and content.
+          items:
+            $ref: '#/components/schemas/MessageBreadcrumbItem'
+        tags:
+          type: array
+          description: |
+            Server-emitted classification chips. When present, the client
+            renders exactly these tags — there is no client-side synthesis.
+          items:
+            $ref: '#/components/schemas/MessageTag'
+        display:
+          $ref: '#/components/schemas/PlaygroundMessageDisplay'
+          description: |
+            Optional layout hint. When omitted, the client picks a default
+            based on the message role.
         metadata:
           type: object
           properties:
@@ -4104,13 +4115,6 @@ components:
               type: object
               additionalProperties: true
               description: Node output data
-            workflowLabel:
-              type: string
-              description: |
-                Human-friendly label for the message's workflow. Preferred over
-                PlaygroundExecution.workflowLabel during chip resolution. When
-                absent, clients fall back to the execution's workflowLabel and
-                then to a truncated workflowId.
           additionalProperties: true
           description: Additional message metadata
       required:
@@ -6050,27 +6054,95 @@ components:
             - completed
             - failed
           description: Current execution status
-        label:
-          type: string
-          description: |
-            Optional human-friendly run label (e.g. "Run #3", "Foreach demo run").
-            When absent, clients compute "Run #N" from the run's 1-based ordinal
-            in PlaygroundSession.executions.
-        workflowId:
-          type: string
-          description: |
-            ID of the top-level workflow that owns this run. Used as the fallback
-            workflow attribution for messages that don't carry their own
-            workflowId.
-        workflowLabel:
-          type: string
-          description: |
-            Human-friendly label for the workflow. Falls back to a truncated
-            workflowId in clients.
       required:
         - id
         - startedAt
         - status
+    MessageBreadcrumbItem:
+      type: object
+      description: |
+        A single hierarchy item in a message's breadcrumb trail. Rendered in
+        document order separated by chevrons.
+      properties:
+        id:
+          type: string
+          description: Stable identifier (used for keying; future deep-linking)
+        label:
+          type: string
+          description: Display label
+        icon:
+          type: string
+          description: Optional iconify icon id (e.g. "mdi:graph")
+      required:
+        - id
+        - label
+    MessageTagColor:
+      type: string
+      enum:
+        - muted
+        - primary
+        - success
+        - warning
+        - error
+        - info
+      description: Semantic color hook for a MessageTag
+    MessageTagVariant:
+      type: string
+      enum:
+        - subtle
+        - solid
+        - outline
+      description: Visual emphasis style for a MessageTag
+    MessageTag:
+      type: object
+      description: |
+        A server-emitted classification chip rendered alongside a message.
+        When a message specifies tags, the client renders exactly those —
+        no client-side synthesis or augmentation.
+      properties:
+        id:
+          type: string
+          description: Stable identifier (used for keying)
+        label:
+          type: string
+          description: Display label
+        icon:
+          type: string
+          description: Optional iconify icon id
+        color:
+          $ref: '#/components/schemas/MessageTagColor'
+          description: Defaults to "muted" if omitted
+        variant:
+          $ref: '#/components/schemas/MessageTagVariant'
+          description: Defaults to "subtle" if omitted
+        type:
+          type: string
+          description: |
+            Free-form classifier the server may use for future grouping or
+            filtering. The client treats this as opaque metadata.
+      required:
+        - id
+        - label
+    PlaygroundMessageDisplay:
+      type: string
+      enum:
+        - bubble
+        - log
+        - notice
+        - card
+      description: |
+        Layout hint chosen by the server. When omitted, the client defaults
+        from the role:
+        - `log` → `log`
+        - `system` (with compactSystemMessages enabled) → `notice`
+        - everything else → `bubble`
+
+        Layouts:
+        - `bubble` — chat bubble with avatar, header, body, optional footer
+          containing breadcrumb + tags
+        - `log` — one-liner: icon · breadcrumb · body · tags · timestamp
+        - `notice` — compact centered notice
+        - `card` — vertical: breadcrumb (top), body (middle), tags (bottom)
     AgentSpecNodeBase:
       type: object
       description: Base properties shared by all Agent Spec nodes

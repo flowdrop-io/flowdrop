@@ -106,44 +106,41 @@ pnpm build
 2. Reference in `openapi.yaml` under `components.schemas:`
 3. Use `$ref` in paths to reference the schema
 
-## Playground Message Attribution Contract
+## Playground Message Breadcrumb, Tags, and Display Contract
 
-Playground sessions can contain messages from multiple pipeline runs and from sub-workflows
-embedded in a parent workflow. To attribute each message correctly, three optional fields
-participate in a documented fallback chain:
+A playground message can carry three optional fields that let the server fully control
+how the message is presented in the UI, without the client having to invent or
+derive anything.
 
-**Per-execution (`PlaygroundExecution`):**
+**`breadcrumb`** — ordered list of `MessageBreadcrumbItem` (`{ id, label, icon? }`).
+Displayed as a chevron-separated trail. Use it to express hierarchy (e.g. workflow
+> sub-workflow > iteration). Display-only — no navigation is wired up today.
 
-- `label` — human-friendly run label (e.g. `"Run #3"`). When absent, clients compute
-  `"Run #N"` from the run's 1-based ordinal in `PlaygroundSession.executions`.
-- `workflowId` — top-level workflow that owns this run. Used by clients as the fallback
-  workflow attribution for messages that don't carry their own `workflowId`.
-- `workflowLabel` — human-friendly label for the workflow.
+**`tags`** — unordered list of `MessageTag` (`{ id, label, icon?, color?, variant?, type? }`).
+Rendered as chips alongside the message. `color` is a closed enum (`muted | primary |
+success | warning | error | info`); `variant` is `subtle | solid | outline`. When
+the server emits `tags`, the client renders exactly those — there is no client-side
+synthesis.
 
-**Per-message (`PlaygroundMessage`):**
+**`display`** — closed enum hint that selects the layout:
 
-- `workflowId` — id of the (sub-)workflow that produced this message.
-- `metadata.workflowLabel` — human-friendly label for that workflow.
+- `bubble` — chat bubble with avatar, header, body, optional footer
+- `log` — dense one-liner: icon · breadcrumb · body · tags · timestamp
+- `notice` — compact centered notice
+- `card` — vertical: breadcrumb (top), body (middle), tags (bottom)
 
-**Fallback chain (client behavior):**
-
-1. **Run label:** `execution.label` > `"Run #N"` (computed from 1-based ordinal in
-   `executions`) > `"Run · {id-prefix}"` (when `executionId` isn't in `executions`).
-2. **Workflow id:** `message.workflowId` > `execution.workflowId` (via `executionId`
-   lookup).
-3. **Workflow label:** `message.metadata.workflowLabel` > `execution.workflowLabel` >
-   truncated `workflowId`.
+When `display` is omitted, the client picks a default from the role: `log` → `log`,
+`system` → `notice` (when compactSystemMessages is enabled), everything else → `bubble`.
 
 **Server expectations:**
 
-- Servers SHOULD omit `message.workflowId` when it equals the run's parent workflow
-  (`execution.workflowId`). Clients always fall back via `executionId` lookup, so
-  duplicating the id on every message wastes bytes.
-- Servers SHOULD set `message.workflowId` when a sub-workflow embedded inside the
-  parent workflow produced the message. Without it, the client will mis-attribute
-  the message to the parent workflow.
-- Labels (`execution.label`, `execution.workflowLabel`, `message.metadata.workflowLabel`)
-  are all optional. Clients render truncated ids as a last resort.
+- All three fields are optional. Omitting `breadcrumb` and `tags` produces a clean,
+  unannotated message in the role's default layout.
+- A message's `display` overrides the role-based default. This lets a `log` message
+  be rendered as a `card` when it carries enough hierarchy/context to deserve verbose
+  presentation.
+- `tags` is authoritative — there is no merge with client-derived chips. To suppress
+  any chip rendering, send `tags: []` (or omit the field entirely).
 
 ## CI/CD
 
