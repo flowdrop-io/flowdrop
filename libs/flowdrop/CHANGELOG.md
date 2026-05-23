@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-05-23
+
 ### Added
 
 - **Server-driven playground message annotations — `hierarchy`, `tags`, `display`**: `PlaygroundMessage` now carries three optional server-emitted fields that let the server fully control message presentation without any client-side derivation:
@@ -20,13 +22,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`awaiting_input` added to `PlaygroundSessionStatus` OpenAPI enum**: The TypeScript type already accepted this value; the schema is now in sync.
 
+- **Dependent autocomplete fields via `autocomplete.params`**: `AutocompleteConfig` gains an optional `params` map (`{ paramName: fieldName }`) that wires sibling form values into the suggestion-fetch URL as query parameters. `FormAutocomplete` reactively clears the selected value and invalidates the suggestion cache when any dependency changes, guarded against firing on initial mount so restored config values are preserved. Added to the OpenAPI YAML schema and regenerated JSON Schema.
+
 - **`FORM_VALUES_KEY` context key and `FormValuesGetter` type**: Both are now exported from `@flowdrop/flowdrop/form`. Custom field components registered via `fieldComponentRegistry` can call `getContext(FORM_VALUES_KEY)` to receive a `() => Record<string, unknown>` getter that always returns the current values of all sibling fields in the form. The context is set by both `ConfigForm` and `SchemaForm`. This is the stable public API for building cross-field interactions such as dependent autocomplete fields.
 
 - **`schema` prop on registered autocomplete components**: Custom components registered to handle `format: "autocomplete"` fields (via `fieldComponentRegistry`) now receive the full `FieldSchema` object as a `schema` prop. This gives access to any custom property on the schema definition — for example a `dependencies` map — without FlowDrop needing to anticipate and forward each one individually.
 
+- **`FormAutocomplete` exposed via `@flowdrop/flowdrop/form/autocomplete` subpath**: Consumers can now import and wrap `FormAutocomplete` directly to build custom autocomplete UIs without reimplementing type-ahead, debounce, and abort logic. `FormField` and `FormFieldLight` also consult `fieldComponentRegistry` for autocomplete fields, rendering registered overrides with the full prop set (including `node`, `edges`, and the resolved `autocomplete` config) before falling through to the built-in component.
+
+- **Mobile responsiveness for the playground**: At ≤768 px viewports, `PlaygroundStudio` switches from side-by-side panes to one-at-a-time fullscreen. The pipeline panel takes the full viewport when open and exposes a "Back to chat" affordance; the drag resizer is hidden. Message bubbles, log rows, system notices, cards, and interrupt footers now flex-wrap and tighten padding at small widths; hierarchy labels truncate to 5 rem and log timestamps hide to recover horizontal space.
+
+- **Container-query log layout**: `.message-stream` is now a CSS container (`container-name: fd-message-stream`). When the stream is ≤480 px wide, log rows stack onto three lines — meta/hierarchy on row 1, message body on row 2, tags on row 3 (indented to align with the body); timestamps hide. Triggered by container size, not viewport, so it fires correctly in narrow embedded mounts regardless of window size. A medium 2-row variant is also available.
+
+- **Accessibility pass on the message stream**: Message bubbles and cards are `<article>` with role-named aria-labels; log rows carry `role="listitem"` + level/source aria-labels; system notices use `role="status"`. Tag groups are `role="group" aria-label="tags"`, individual chips include any `tag.type` in their aria-label, hierarchy trails wrap their `<ol>` in `<nav aria-label="message hierarchy">` and mark the last crumb with `aria-current`. Timestamps are `<time datetime=…>` with natural-language aria-labels. All decorative Iconify icons are `aria-hidden`. `prefers-reduced-motion` is respected on bubble/card fade-in and `InterruptBubble`'s slide-in.
+
+### Fixed
+
+- **Auth headers on `fetchCategories` and `fetchPortConfig`** (#27): Both functions hardcoded only `Content-Type` and ignored both the legacy `endpointConfig.auth` and the `AuthProvider` path. They now accept an optional `AuthProvider`, merge its headers on top of `getEndpointHeaders`, and `mountWorkflowEditor` exposes the same option.
+
+- **`FormAutocomplete` correctness pass**: Four issues fixed —
+  - Dependency-change guard replaced with value-comparison (`prevDepFingerprint`) so it works reliably on deferred and SSR mounts.
+  - `AbortController` timeout race: the 5 s timeout closure now captures the controller in a local const and `clearTimeout` runs in `finally`, so the right request is always aborted regardless of exit path.
+  - Suggestions cleared on blur when `params` is configured, so `fetchOnFocus` always re-fetches with current dependency values instead of showing stale results.
+  - Warns via logger when `params` is non-empty but the `flowdrop:getFormValues` context is absent (silent failure in standalone usage).
+
+- **Compact log rows in narrow panes**: Log rows no longer crammed together in narrow chat panes / embedded mounts — driven by the new container-query layout above.
+
 ### Changed
 
-- **`MessageBubble` internals split into per-layout components**: `MessageBubble.svelte` is now a thin dispatcher (~50 lines) over `ChatBubble`, `LogRow`, `MessageNotice`, and `MessageCard`. Shared primitives `HierarchyTrail`, `MessageTagStrip`, and `MessageMarkdown` deduplicate the markup. Public props on `MessageBubble` are unchanged, so this is internal-only.
+- **`MessageBubble` internals split into per-layout components**: `MessageBubble.svelte` is now a thin dispatcher (~50 lines) over `ChatBubble`, `LogRow`, `MessageNotice`, and `MessageCard`. Shared primitives `HierarchyTrail`, `MessageTagStrip`, and `MessageMarkdown` deduplicate the markup. `MessageTagChip` is driven by CSS custom properties. Public props on `MessageBubble` are unchanged, so this is internal-only.
 
 ## [1.12.0] - 2026-05-16
 
