@@ -987,33 +987,67 @@
 
   /* ============================================================
      Container-query layout for log rows
-     When the message stream is narrow (regardless of viewport width),
-     stack the log row into multiple rows so the content stops looking
-     congested:
-       Row 1: level icon · source · breadcrumb · node
-       Row 2: body text
+     Reshape the row based on the message stream's actual width so the
+     same component looks good in any narrow context (resized chat pane,
+     modal mounts, embeds).
+
+     Tier 1 — medium (<= 720px stream): switch to a 2-row grid.
+       Row 1: level · body (source · breadcrumb · node · text)
+       Row 2: tags · timestamp
+     Six elements on a single line gets crowded long before viewport
+     width tells us so.
+
+     Tier 2 — narrow (<= 480px stream): collapse further into 3 rows.
+       Row 1: level · source · breadcrumb · node
+       Row 2: body text (forced via flex-basis inside the body)
        Row 3: tags
-     The timestamp drops out at this width — chronology is already implied
-     by message order.
+     The timestamp hides — chronology is implied by message order.
      ============================================================ */
-  @container fd-message-stream (max-width: 480px) {
+  @container fd-message-stream (max-width: 720px) {
     .log-row {
-      align-items: flex-start;
-      row-gap: var(--fd-space-3xs);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas:
+        "level body      body"
+        ".     tags      timestamp";
+      align-items: baseline;
+      row-gap: var(--fd-space-2xs);
+      column-gap: var(--fd-space-sm);
     }
 
-    /* Body wraps internally; force the text portion onto its own line so
-       source/breadcrumb/node stay on row 1 of the body, text on row 2. */
-    .log-row__text {
-      flex-basis: 100%;
+    .log-row__level {
+      grid-area: level;
+    }
+
+    .log-row__body {
+      grid-area: body;
       min-width: 0;
     }
 
-    /* Tags drop to a new row inside the outer .log-row. */
     .log-row__tags {
+      grid-area: tags;
+      justify-self: start;
+    }
+
+    .log-row__timestamp {
+      grid-area: timestamp;
+      justify-self: end;
+    }
+  }
+
+  @container fd-message-stream (max-width: 480px) {
+    .log-row {
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "level body"
+        ".     tags";
+    }
+
+    /* Inside body, force the text onto its own internal line so the
+       source/breadcrumb/node chips stay on body's row 1, text on row 2. */
+    .log-row__text {
       flex-basis: 100%;
-      justify-content: flex-start;
-      margin-left: calc(var(--fd-space-md) + 1rem);
+      min-width: 0;
     }
 
     .log-row__timestamp {
