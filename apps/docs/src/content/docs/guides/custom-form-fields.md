@@ -209,7 +209,7 @@ This is the building block for dependent autocomplete fields — for example a `
 <!-- DependentAutocomplete.svelte -->
 <script lang="ts">
   import { getContext } from 'svelte';
-  import FormAutocomplete from '@flowdrop/flowdrop/form/autocomplete';
+  import { FormAutocomplete } from '@flowdrop/flowdrop/form/autocomplete';
   import { FORM_VALUES_KEY, type FormValuesGetter, type FieldSchema } from '@flowdrop/flowdrop/form';
   import type { AutocompleteConfig } from '@flowdrop/flowdrop';
 
@@ -262,3 +262,7 @@ fieldComponentRegistry.register({
 ```
 
 The registered component is only activated when a schema has both `format: "autocomplete"` and a `dependencies` property. All other autocomplete fields continue to use FlowDrop's built-in `FormAutocomplete`.
+
+## Corrections
+
+- **2026-05-24** — Fixed `FormAutocomplete` import example to use the named import (`import { FormAutocomplete } from '@flowdrop/flowdrop/form/autocomplete'`). The default-import form shown previously never worked — the module only exposes a named export.
