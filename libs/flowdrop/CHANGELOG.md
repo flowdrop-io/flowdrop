@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-05-27
+
+### Added
+
+- **OpenAPI spec ships with the package** (`@flowdrop/flowdrop/openapi`): The full backend API spec is copied into `dist/openapi/v1/openapi.yaml` during packaging and exposed via the `@flowdrop/flowdrop/openapi` (and `/openapi/v1`) export, version-matched to the installed release. Consumers — and their AI assistants — can read the node-config (`ConfigProperty`), playground-message, and endpoint schemas without needing the monorepo or api.flowdrop.io. Still browsable at [api.flowdrop.io](https://api.flowdrop.io).
+- **Editor-tuning properties documented in `ConfigProperty`**: `readOnly`, `height`, `darkTheme`, `autoFormat`, `showToolbar`, `showStatusBar`, `spellChecker`, and `placeholderExample` are read by the form renderer for the code/JSON, markdown, and template editor fields but were never declared in the OpenAPI schema. They are now documented, so consumers validating node config against the published spec no longer see them as unknown properties.
+- **Pipeline nesting fields on playground messages — `parentPipelineId`, `rootPipelineId`**: `PlaygroundMessage` now carries authoritative lineage fields so clients can distinguish main-pipeline messages from nested sub-flow messages (the display-only `hierarchy` is not a reliable nesting signal). `parentPipelineId` is `null` for top-level messages; `rootPipelineId` equals the message's own `executionId` for main runs. A session's `executions` list is documented as containing main runs only.
+- **Backward pagination for playground messages**:
+  - API: `GET /playground/sessions/{sessionId}/messages` gains optional `before` (backward cursor) and `latest` (fetch the tail) query params plus a `hasOlder` response field. Additive and non-breaking — omitting them preserves the legacy oldest-first behavior.
+  - Client: `getMessages` takes an options object (`since` / `before` / `latest` / `limit`), the messages response type gains `hasOlder`, and a `messagePageSize` config option is added.
+  - UI: the chat loads the most recent page first and seeds polling from the newest sequence, then pages older messages on scroll-up via an IntersectionObserver sentinel that anchors the viewport so prepends don't shift the reading position.
+
+### Changed
+
+- **Main pipeline kept in focus; sub-flows excluded from the run-switcher**: Runs are classified from their messages' `parentPipelineId`; the sidebar stays on the most recent main run and sub-flow executions are excluded from the run-switcher (selecting one can't render its own graph, so listing them was dead UI). A new main run auto-follows by clearing the pin. All still-running executions are marked terminal when the session ends, since sub-flows mean a session can track more than one execution at once.
+
+### Fixed
+
+- **Playground message-load races**: `loadSession` is guarded against stale concurrent loads, an older-message page is dropped if the session changed mid-fetch, and autoscroll no longer fights the scroll-up anchor.
+- **Run/session dropdown height**: session and run dropdowns are capped in height so the controls below them stay reachable.
+
 ## [1.13.0] - 2026-05-23
 
 ### Added
