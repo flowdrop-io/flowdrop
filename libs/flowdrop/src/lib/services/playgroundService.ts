@@ -23,6 +23,21 @@ import { getEndpointConfig } from './api.js';
 import { logger } from '../utils/logger.js';
 
 /**
+ * Pagination options for {@link PlaygroundService.getMessages}.
+ * `since`, `before`, and `latest` are mutually exclusive.
+ */
+export interface GetMessagesOptions {
+  /** Forward cursor — only messages with sequenceNumber greater than this value */
+  since?: number;
+  /** Backward cursor — the page of messages immediately older than this sequence number */
+  before?: number;
+  /** Return the most recent `limit` messages (conversation tail) */
+  latest?: boolean;
+  /** Maximum number of messages to return */
+  limit?: number;
+}
+
+/**
  * Default polling interval in milliseconds
  */
 const DEFAULT_POLLING_INTERVAL = 1500;
@@ -210,17 +225,21 @@ export class PlaygroundService {
   // =========================================================================
 
   /**
-   * Get messages from a playground session
+   * Get messages from a playground session.
+   *
+   * Three pagination modes (see the OpenAPI spec for the contract):
+   *  - `since`: forward cursor, returns messages with sequenceNumber > value (polling the live tail)
+   *  - `before`: backward cursor, returns the page immediately older than the value (scroll-up)
+   *  - `latest`: returns the most recent `limit` messages (initial load)
+   * `since`, `before`, and `latest` are mutually exclusive.
    *
    * @param sessionId - The session UUID
-   * @param afterSequence - Optional sequence number cursor — returns only messages with sequenceNumber > this value
-   * @param limit - Maximum number of messages to return
+   * @param options - Pagination options
    * @returns Messages and session status
    */
   async getMessages(
     sessionId: string,
-    afterSequence?: number,
-    limit?: number
+    options: GetMessagesOptions = {}
   ): Promise<PlaygroundMessagesApiResponse> {
     const config = this.getConfig();
     let url = buildEndpointUrl(config, config.endpoints.playground.getMessages, {
@@ -228,11 +247,17 @@ export class PlaygroundService {
     });
 
     const params = new URLSearchParams();
-    if (afterSequence !== undefined) {
-      params.append('since', afterSequence.toString());
+    if (options.since !== undefined) {
+      params.append('since', options.since.toString());
     }
-    if (limit !== undefined) {
-      params.append('limit', limit.toString());
+    if (options.before !== undefined) {
+      params.append('before', options.before.toString());
+    }
+    if (options.latest) {
+      params.append('latest', 'true');
+    }
+    if (options.limit !== undefined) {
+      params.append('limit', options.limit.toString());
     }
     const queryString = params.toString();
     if (queryString) {
@@ -331,7 +356,9 @@ export class PlaygroundService {
       }
 
       try {
-        const response = await this.getMessages(sessionId, this.lastSequenceNumber ?? undefined);
+        const response = await this.getMessages(sessionId, {
+          since: this.lastSequenceNumber ?? undefined
+        });
 
         // Update last sequence number cursor
         if (response.data && response.data.length > 0) {

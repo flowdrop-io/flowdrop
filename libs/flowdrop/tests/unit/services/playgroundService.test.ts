@@ -194,6 +194,62 @@ describe('PlaygroundService', () => {
       expect(result.data).toEqual(mockResponse.data);
     });
 
+    function fetchedUrl(): string {
+      return (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    }
+
+    it('should send no pagination params for a bare fetch', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] })
+      });
+      await service.getMessages('session-1');
+      expect(fetchedUrl()).toBe('/api/sessions/session-1/messages');
+    });
+
+    it('should send the forward cursor via since', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] })
+      });
+      await service.getMessages('session-1', { since: 42, limit: 50 });
+      expect(fetchedUrl()).toContain('since=42');
+      expect(fetchedUrl()).toContain('limit=50');
+      expect(fetchedUrl()).not.toContain('before=');
+      expect(fetchedUrl()).not.toContain('latest=');
+    });
+
+    it('should request the tail via latest', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] })
+      });
+      await service.getMessages('session-1', { latest: true, limit: 50 });
+      expect(fetchedUrl()).toContain('latest=true');
+      expect(fetchedUrl()).toContain('limit=50');
+      expect(fetchedUrl()).not.toContain('since=');
+    });
+
+    it('should send the backward cursor via before', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] })
+      });
+      await service.getMessages('session-1', { before: 100, limit: 50 });
+      expect(fetchedUrl()).toContain('before=100');
+      expect(fetchedUrl()).toContain('limit=50');
+      expect(fetchedUrl()).not.toContain('since=');
+    });
+
+    it('should omit latest=false rather than sending it', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] })
+      });
+      await service.getMessages('session-1', { latest: false });
+      expect(fetchedUrl()).toBe('/api/sessions/session-1/messages');
+    });
+
     it('should throw on HTTP error', async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,

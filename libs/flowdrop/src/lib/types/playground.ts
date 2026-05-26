@@ -162,13 +162,7 @@ export interface MessageHierarchyItem {
 /**
  * Semantic color hooks for a tag. Map to design tokens in the theme.
  */
-export type MessageTagColor =
-  | 'muted'
-  | 'primary'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info';
+export type MessageTagColor = 'muted' | 'primary' | 'success' | 'warning' | 'error' | 'info';
 
 /**
  * Visual emphasis for a tag.
@@ -350,6 +344,12 @@ export interface PlaygroundConfig {
   pollingInterval?: number;
   /** Maximum number of messages to display (default: 500) */
   maxMessages?: number;
+  /**
+   * Number of messages to fetch per page (default: 50).
+   * The initial load fetches the most recent page; scrolling up loads
+   * older pages of this size on demand.
+   */
+  messagePageSize?: number;
   /** Auto-scroll to bottom on new messages (default: true) */
   autoScroll?: boolean;
   /** Show timestamps on messages (default: true) */
@@ -505,8 +505,10 @@ export type PlaygroundMessageResponse = PlaygroundApiResponse<PlaygroundMessage>
  * Type alias for messages list response with polling metadata
  */
 export interface PlaygroundMessagesApiResponse extends PlaygroundApiResponse<PlaygroundMessage[]> {
-  /** Whether there are more messages to fetch */
+  /** Whether more recent messages remain after this page (forward pagination via `since`) */
   hasMore?: boolean;
+  /** Whether older messages exist before the first message in this page (backward pagination via `latest`/`before`) */
+  hasOlder?: boolean;
   /** Current session status */
   sessionStatus?: PlaygroundSessionStatus;
 }
