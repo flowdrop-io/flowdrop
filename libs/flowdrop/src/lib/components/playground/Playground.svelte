@@ -70,6 +70,9 @@
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
   let isRefreshing = $state(false);
+  // Monotonic token so a slow session load can't overwrite a newer one when the
+  // user switches sessions faster than the network responds (last-load wins).
+  let loadToken = 0;
 
   const messagePageSize = $derived(config.messagePageSize ?? 50);
 
@@ -237,9 +240,11 @@
   async function loadSession(sessionId: string): Promise<void> {
     playgroundActions.setLoading(true);
     playgroundActions.setError(null);
+    const token = ++loadToken;
 
     try {
       const session = await playgroundService.getSession(sessionId);
+      if (token !== loadToken) return; // a newer session load superseded us
       playgroundActions.setCurrentSession(session);
 
       // Load only the most recent page; older messages load on demand when the
@@ -250,6 +255,7 @@
         latest: true,
         limit: messagePageSize
       });
+      if (token !== loadToken) return;
       playgroundActions.clearMessages();
       applyServerResponse(response);
       setHasOlder(deriveHasOlder(response));
@@ -260,11 +266,12 @@
         startPolling(sessionId, true);
       }
     } catch (err) {
+      if (token !== loadToken) return; // don't surface a superseded load's error
       const errorMessage = err instanceof Error ? err.message : 'Failed to load session';
       playgroundActions.setError(errorMessage);
       logger.error('Failed to load session:', err);
     } finally {
-      playgroundActions.setLoading(false);
+      if (token === loadToken) playgroundActions.setLoading(false);
     }
   }
 
