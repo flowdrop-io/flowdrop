@@ -78,7 +78,7 @@
   const states = $derived(m().playground.states);
 
   /** Reference to the messages container for scrolling */
-  let messagesContainer: HTMLDivElement | undefined;
+  let messagesContainer = $state<HTMLDivElement | undefined>();
 
   const displayMessages = $derived(allowLogs && getShowLogs() ? getMessages() : getChatMessages());
 
@@ -214,7 +214,9 @@
       previousMessageCount = currentCount;
     });
 
-    if (!hasNewMessage || userScrolledUp || isFormFocused()) return;
+    // Don't chase the bottom while a backward page is landing — loadOlder owns
+    // scroll position during a prepend and anchors it to the message in view.
+    if (!hasNewMessage || userScrolledUp || isFormFocused() || isLoadingOlder) return;
 
     tick().then(() => {
       if (messagesContainer) {
