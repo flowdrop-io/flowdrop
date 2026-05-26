@@ -158,6 +158,11 @@ FlowDrop provides tree-shakeable sub-module exports so you can import only what 
 | `@flowdrop/flowdrop/settings`      | SettingsPanel, stores, services                    |
 | `@flowdrop/flowdrop/styles`        | Base CSS stylesheet                                |
 | `@flowdrop/flowdrop/schema`        | Workflow JSON schema                               |
+| `@flowdrop/flowdrop/openapi`       | OpenAPI spec (YAML) for the FlowDrop backend API   |
+
+### OpenAPI spec
+
+The full OpenAPI spec for the FlowDrop backend API ships with the package, version-matched to your installed release. It defines the node-config / form-element schema (`ConfigProperty`), playground messages, and every endpoint. Resolve it from `@flowdrop/flowdrop/openapi`, or read it directly at `node_modules/@flowdrop/flowdrop/dist/openapi/v1/openapi.yaml`. Point your AI assistant at that file when authoring node config schemas. The latest spec is also browsable at [api.flowdrop.io](https://api.flowdrop.io).
 
 ## Integration
 

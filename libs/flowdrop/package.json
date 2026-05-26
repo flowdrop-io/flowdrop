@@ -18,7 +18,7 @@
     "watch:build": "npm-watch build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
-    "prepack": "svelte-kit sync && svelte-package && publint",
+    "prepack": "svelte-kit sync && svelte-package && node scripts/copy-openapi.mjs && publint",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "eslint . && prettier --check .",
@@ -155,6 +155,12 @@
     },
     "./schema/v1": {
       "default": "./dist/schemas/v1/workflow.schema.json"
+    },
+    "./openapi": {
+      "default": "./dist/openapi/v1/openapi.yaml"
+    },
+    "./openapi/v1": {
+      "default": "./dist/openapi/v1/openapi.yaml"
     }
   },
   "peerDependencies": {
