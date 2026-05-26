@@ -391,7 +391,15 @@ PlaygroundMessagesResponse:
             $ref: '#/PlaygroundMessage'
         hasMore:
           type: boolean
-          description: Whether there are more messages to fetch
+          description: |
+            Whether more recent messages remain after this page (forward
+            pagination via `since`).
+        hasOlder:
+          type: boolean
+          description: |
+            Whether older messages exist before the first message in this page.
+            Set on `latest`/`before` (backward pagination) responses so a chat
+            surface knows whether to keep loading on scroll-up.
         sessionStatus:
           $ref: '#/PlaygroundSessionStatus'
           description: Current session status (useful for polling)

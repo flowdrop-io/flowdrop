@@ -1488,11 +1488,35 @@ paths:
           in: query
           description: |
             Sequence number cursor — returns only messages with sequenceNumber
-            greater than this value. Used for efficient polling.
+            greater than this value (forward pagination). Used for efficient
+            polling of the live conversation tail. Mutually exclusive with `before`.
           required: false
           schema:
             type: integer
             minimum: 0
+        - name: before
+          in: query
+          description: |
+            Sequence number cursor for backward pagination — returns the page of
+            messages with sequenceNumber LESS than this value, selecting the
+            `limit` messages with the highest sequence numbers below the cursor
+            (i.e. the page immediately older than the cursor). Used for
+            "load older" on scroll-up. Mutually exclusive with `since`.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: latest
+          in: query
+          description: |
+            When true, return the most recent `limit` messages (the conversation
+            tail), ignoring `since` and `before`. Use for the initial load of a
+            chat surface. Defaults to false, which preserves the legacy
+            oldest-first behavior when no cursor is supplied.
+          required: false
+          schema:
+            type: boolean
+            default: false
         - name: limit
           in: query
           description: Maximum number of messages to return
@@ -4217,7 +4241,15 @@ components:
                 $ref: '#/components/schemas/PlaygroundMessage'
             hasMore:
               type: boolean
-              description: Whether there are more messages to fetch
+              description: |
+                Whether more recent messages remain after this page (forward
+                pagination via `since`).
+            hasOlder:
+              type: boolean
+              description: |
+                Whether older messages exist before the first message in this page.
+                Set on `latest`/`before` (backward pagination) responses so a chat
+                surface knows whether to keep loading on scroll-up.
             sessionStatus:
               $ref: '#/components/schemas/PlaygroundSessionStatus'
               description: Current session status (useful for polling)
