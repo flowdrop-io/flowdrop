@@ -9,7 +9,7 @@
     getPinnedExecutionId,
     getLatestExecutionId,
     getPipelineRefreshTrigger,
-    getCurrentSession,
+    getSelectableExecutions,
     playgroundActions,
   } from '../../stores/playgroundStore.svelte.js';
   import { setEndpointConfig, workflowApi } from '../../services/api.js';
@@ -153,7 +153,7 @@
   <div class="playground-studio__panes" bind:this={splitEl}>
     {#if getPipelinePanelOpen() && resolvedWorkflow && endpointConfig}
       {@const activeId = getActiveExecutionId()}
-      {@const executions = getCurrentSession()?.executions ?? []}
+      {@const executions = getSelectableExecutions()}
 
       <div class="playground-studio__pipeline" style="width: {pipelineWidth}px;">
         <button

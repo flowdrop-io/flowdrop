@@ -74,8 +74,22 @@ let _pipelineRefreshTrigger = $state(0);
 /** Whether log messages are visible in the execution console */
 let _showLogs = $state<boolean>(true);
 
-/** Latest execution ID derived from current session's executions list */
-const _latestExecutionId = $derived(_currentSession?.executions?.at(-1)?.id ?? null);
+/**
+ * The main pipeline runs — the single source of truth for "what's selectable".
+ * Sub-flow runs are tracked for classification but excluded here: selecting one
+ * can't show its own graph (the panel renders the main pipeline regardless), so
+ * listing them would be dead UI. Feeds both the run-switcher and "latest".
+ */
+const _selectableExecutions = $derived(
+  (_currentSession?.executions ?? []).filter((e) => !e.isSubflow)
+);
+
+/**
+ * Latest execution ID: the most recent main run, so the sidebar keeps the main
+ * pipeline in focus and never auto-follows a sub-flow. Null when no main run is
+ * known yet — better an empty panel for a poll than the wrong graph.
+ */
+const _latestExecutionId = $derived(_selectableExecutions.at(-1)?.id ?? null);
 
 /** Active execution: pinned if set, otherwise latest */
 const _activeExecutionId = $derived(_pinnedExecutionId ?? _latestExecutionId);
@@ -294,6 +308,14 @@ export function getActiveExecutionId(): string | null {
 }
 
 /**
+ * Main pipeline runs for the run-switcher. Excludes sub-flow runs, which can't
+ * render their own graph and so aren't user-selectable.
+ */
+export function getSelectableExecutions(): PlaygroundExecution[] {
+  return _selectableExecutions;
+}
+
+/**
  * Counter that increments whenever new messages arrive and the pipeline display
  * should re-fetch — i.e. when following latest or pinned to the latest execution.
  * Pass to PipelinePanel's refreshTrigger prop.
@@ -348,34 +370,51 @@ function sortMessagesChronologically(messageList: PlaygroundMessage[]): Playgrou
 }
 
 /**
+ * Whether a message was produced by a nested sub-flow (vs the main pipeline).
+ * `parentPipelineId` is the authoritative signal — non-null means a parent run
+ * triggered this one. Legacy runs that predate the field carry no nesting info,
+ * so they're treated as main runs (by design — we don't reclassify history).
+ */
+function isSubflowMessage(msg: PlaygroundMessage): boolean {
+  return msg.parentPipelineId != null;
+}
+
+/**
  * Syncs the current session's executions list from incoming messages.
- * When a message has a new executionId not yet tracked, adds it as a new execution entry.
+ *
+ * Each message's `executionId` identifies the run that produced it, and
+ * `parentPipelineId` says whether that run is the main pipeline or a nested
+ * sub-flow (see {@link isSubflowMessage}). A run's classification is fixed by
+ * its first sighting — every message from a run reports the same parent — so we
+ * only act on executionIds we haven't seen before. Sub-flows are tracked but
+ * hidden from the run-switcher; a new *main* run clears the pin so the panel
+ * auto-follows it, while sub-flow runs never take focus.
+ *
+ * Executions are appended in arrival order; new runs land at the tail, which is
+ * why "latest" reads the last main run.
  */
 function syncExecutionsFromMessages(messages: PlaygroundMessage[]): void {
   if (!_currentSession) return;
 
-  const existingIds = new Set((_currentSession.executions ?? []).map((e) => e.id));
-  const newExecutions: PlaygroundExecution[] = [];
+  const executions = [...(_currentSession.executions ?? [])];
+  const seenIds = new Set(executions.map((e) => e.id));
+  let added = false;
+  let gainedMainRun = false;
 
   for (const msg of messages) {
-    if (msg.executionId && !existingIds.has(msg.executionId)) {
-      existingIds.add(msg.executionId);
-      newExecutions.push({
-        id: msg.executionId,
-        startedAt: msg.timestamp,
-        status: 'running'
-      });
-    }
+    if (!msg.executionId || seenIds.has(msg.executionId)) continue;
+    seenIds.add(msg.executionId);
+    const isSubflow = isSubflowMessage(msg);
+    executions.push({ id: msg.executionId, startedAt: msg.timestamp, status: 'running', isSubflow });
+    added = true;
+    if (!isSubflow) gainedMainRun = true;
   }
 
-  if (newExecutions.length > 0) {
-    _currentSession = {
-      ..._currentSession,
-      executions: [...(_currentSession.executions ?? []), ...newExecutions]
-    };
-    // Clear any manual pin so the panel automatically follows the new run.
-    _pinnedExecutionId = null;
-  }
+  if (!added) return;
+  _currentSession = { ..._currentSession, executions };
+
+  // Auto-follow the new main run by dropping any manual pin.
+  if (gainedMainRun) _pinnedExecutionId = null;
 }
 
 // =========================================================================
@@ -423,11 +462,11 @@ export const playgroundActions = {
       };
     }
 
-    // Update the latest execution status when the session reaches a terminal state.
-    // Only the last execution can be running at any time (sessions are single-pipeline),
-    // so we only need to check and update the tail entry.
+    // When the session reaches a terminal state, the whole run is finished —
+    // including any sub-flow executions, which may sit anywhere in the list
+    // (not just the tail), so mark every still-running execution terminal.
     // 'idle' means the run finished normally (server returns 'idle' post-completion,
-    // not 'completed'), so map it to 'completed' for the execution entry.
+    // not 'completed'), so map it to 'completed' for the execution entries.
     const terminalExecutionStatus =
       status === 'failed'
         ? 'failed'
@@ -435,11 +474,14 @@ export const playgroundActions = {
           ? 'completed'
           : null;
     if (terminalExecutionStatus && _currentSession?.executions?.length) {
-      const execs = [..._currentSession.executions];
-      const last = execs[execs.length - 1];
-      if (last.status === 'running') {
-        execs[execs.length - 1] = { ...last, status: terminalExecutionStatus };
-        _currentSession = { ..._currentSession, executions: execs };
+      const hasRunning = _currentSession.executions.some((e) => e.status === 'running');
+      if (hasRunning) {
+        _currentSession = {
+          ..._currentSession,
+          executions: _currentSession.executions.map((e) =>
+            e.status === 'running' ? { ...e, status: terminalExecutionStatus } : e
+          )
+        };
       }
     }
 
@@ -626,8 +668,8 @@ export const playgroundActions = {
 export function applyServerResponse(response: PlaygroundMessagesApiResponse): void {
   if (response.data && response.data.length > 0) {
     playgroundActions.addMessages(response.data);
-    // Refresh pipeline when following latest or pinned to the latest execution.
-    // Skip only when the user is viewing a historical run.
+    // Refresh the pipeline panel when following latest or pinned to the latest
+    // run. Skip when pinned to an older run — a historical view that won't change.
     if (_pinnedExecutionId === null || _pinnedExecutionId === _latestExecutionId) {
       _pipelineRefreshTrigger++;
     }

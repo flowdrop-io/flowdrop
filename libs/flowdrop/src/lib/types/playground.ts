@@ -86,6 +86,14 @@ export interface PlaygroundExecution {
   id: string;
   startedAt: string;
   status: 'running' | 'completed' | 'failed';
+  /**
+   * Client-derived flag: true when this run is a nested sub-flow rather than a
+   * main pipeline run. Inferred from its messages' `parentPipelineId` (with a
+   * `hierarchy` depth ≥ 2 fallback for legacy runs predating that field). Used
+   * to keep the sidebar on the main pipeline and hide sub-flows from the
+   * run-switcher. Not part of the wire contract — the server never sets this.
+   */
+  isSubflow?: boolean;
 }
 
 /**
@@ -119,7 +127,12 @@ export interface PlaygroundSession {
   createdAt: string;
   /** Last activity timestamp (ISO 8601) */
   updatedAt: string;
-  /** Pipeline executions triggered within this session, ordered oldest-first */
+  /**
+   * Main pipeline runs triggered within this session, ordered oldest-first.
+   * Sub-flow (nested) runs are excluded — they're surfaced only on individual
+   * messages via `parentPipelineId`. The run-switcher relies on this being
+   * main-runs-only; runs added from messages are classified client-side.
+   */
   executions?: PlaygroundExecution[];
   /** Custom session metadata */
   metadata?: Record<string, unknown>;
@@ -255,6 +268,19 @@ export interface PlaygroundMessage {
   parentMessageId?: string;
   /** Pipeline/execution ID that generated this message */
   executionId?: string | null;
+  /**
+   * Execution ID of the parent pipeline when this message came from a nested
+   * sub-flow; `null`/absent for top-level (main pipeline) messages. Authoritative
+   * nesting signal (unlike the display-only `hierarchy`) — used to keep the main
+   * pipeline in focus and hide sub-flow runs from the run-switcher.
+   */
+  parentPipelineId?: string | null;
+  /**
+   * Execution ID of the top-level pipeline this message ultimately belongs to.
+   * Equals `executionId` for main-pipeline messages; for sub-flow messages it
+   * points to the main run that triggered the sub-flow.
+   */
+  rootPipelineId?: string | null;
   /** Associated node ID (for log/assistant messages) */
   nodeId?: string | null;
   /**
