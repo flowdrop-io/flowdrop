@@ -291,6 +291,9 @@
         before,
         limit: messagePageSize
       });
+      // The session may have changed while the fetch was in flight — don't
+      // splice an old session's page into the new session's store.
+      if (getCurrentSession()?.id !== sessionId) return;
       if (response.data && response.data.length > 0) {
         playgroundActions.addMessages(response.data);
       }
