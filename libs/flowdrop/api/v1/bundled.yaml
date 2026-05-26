@@ -2912,6 +2912,54 @@ components:
         autocomplete:
           $ref: '#/components/schemas/AutocompleteConfig'
           description: Configuration for autocomplete fields (when format is "autocomplete")
+        readOnly:
+          type: boolean
+          description: |
+            JSON Schema `readOnly` keyword. When true, the field is displayed but
+            cannot be edited (rendered in a disabled state).
+        height:
+          type: string
+          description: |
+            Editor height as a CSS value (e.g. `200px`).
+            Applies to editor fields: `json`/`code`, `markdown`, and `template`.
+            Defaults: `200px` (code), `300px` (markdown), `250px` (template).
+          example: 300px
+        darkTheme:
+          type: boolean
+          description: |
+            Force the editor's dark theme on or off.
+            Applies to `json`/`code` and `template` fields.
+            When omitted, the editor follows the resolved app theme.
+        autoFormat:
+          type: boolean
+          default: true
+          description: |
+            Whether to auto-format JSON on blur.
+            Applies to `json`/`code` editor fields.
+        showToolbar:
+          type: boolean
+          default: true
+          description: |
+            Whether to show the editor toolbar.
+            Applies to `markdown` editor fields.
+        showStatusBar:
+          type: boolean
+          default: true
+          description: |
+            Whether to show the editor status bar.
+            Applies to `markdown` editor fields.
+        spellChecker:
+          type: boolean
+          default: false
+          description: |
+            Whether to enable spell checking.
+            Applies to `markdown` editor fields.
+        placeholderExample:
+          type: string
+          description: |
+            Example template string shown as a placeholder hint.
+            Applies to `template` fields.
+          example: 'Hello {{ name }}, your order #{{ order_id }} is ready!'
       required:
         - type
     AutocompleteConfig:
