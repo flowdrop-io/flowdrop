@@ -33,8 +33,11 @@
     getError,
     playgroundActions,
     applyServerResponse,
-    getLatestSequenceNumber
+    getLatestSequenceNumber,
+    getOldestSequenceNumber,
+    setHasOlder
   } from '../../stores/playgroundStore.svelte.js';
+  import type { PlaygroundMessagesApiResponse } from '../../types/playground.js';
   import { interruptActions } from '../../stores/interruptStore.svelte.js';
   import { logger } from '../../utils/logger.js';
 
@@ -68,6 +71,8 @@
   let autoRunTriggered = $state(false);
   let isRefreshing = $state(false);
 
+  const messagePageSize = $derived(config.messagePageSize ?? 50);
+
   // Vertical resizer state for the ExecutionConsole ↔ ControlPanel split.
   let playgroundContentEl = $state<HTMLElement | null>(null);
   let controlPanelHeight = $state(280);
@@ -90,16 +95,15 @@
     }
   });
 
-  const maxControlPanelHeight = $derived(
-    containerHeight ? Math.round(containerHeight * 0.6) : 600
-  );
+  const maxControlPanelHeight = $derived(containerHeight ? Math.round(containerHeight * 0.6) : 600);
 
   function clampControlPanelHeight(h: number): number {
     return Math.min(Math.max(h, 140), maxControlPanelHeight);
   }
 
   function handleVerticalResizerPointerDown(e: PointerEvent) {
-    if (playgroundContentEl) dragContainerBottom = playgroundContentEl.getBoundingClientRect().bottom;
+    if (playgroundContentEl)
+      dragContainerBottom = playgroundContentEl.getBoundingClientRect().bottom;
     isVerticalResizing = true;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
@@ -133,7 +137,9 @@
         const sessionId = getCurrentSession()?.id;
         if (sessionId) {
           void playgroundService
-            .getMessages(sessionId, playgroundService.getLastSequenceNumber() ?? undefined)
+            .getMessages(sessionId, {
+              since: playgroundService.getLastSequenceNumber() ?? undefined
+            })
             .then((response) => applyServerResponse(response))
             .catch((err) => logger.error('[Playground] Visibility catchup failed:', err));
         }
@@ -236,10 +242,21 @@
       const session = await playgroundService.getSession(sessionId);
       playgroundActions.setCurrentSession(session);
 
-      const response = await playgroundService.getMessages(sessionId);
+      // Load only the most recent page; older messages load on demand when the
+      // user scrolls up (loadOlderMessages). Clear right before applying the
+      // fresh page — not before the await — so switching sessions doesn't blank
+      // the view for the duration of the fetch.
+      const response = await playgroundService.getMessages(sessionId, {
+        latest: true,
+        limit: messagePageSize
+      });
+      playgroundActions.clearMessages();
       applyServerResponse(response);
+      setHasOlder(deriveHasOlder(response));
 
       if (session.status !== 'idle') {
+        // Seed polling from the newest loaded message so it tails live updates
+        // instead of crawling forward from the start of the conversation.
         startPolling(sessionId, true);
       }
     } catch (err) {
@@ -249,6 +266,41 @@
     } finally {
       playgroundActions.setLoading(false);
     }
+  }
+
+  /**
+   * Load the page of messages immediately older than the oldest one currently
+   * shown. Triggered by scroll-up in MessageStream, which serializes calls and
+   * owns the in-flight/anchoring state. Bypasses applyServerResponse so a
+   * historical fetch never disturbs the live polling cursor or pipeline view.
+   */
+  async function loadOlderMessages(): Promise<void> {
+    const sessionId = getCurrentSession()?.id;
+    const before = getOldestSequenceNumber();
+    if (!sessionId || before === null) return;
+
+    try {
+      const response = await playgroundService.getMessages(sessionId, {
+        before,
+        limit: messagePageSize
+      });
+      if (response.data && response.data.length > 0) {
+        playgroundActions.addMessages(response.data);
+      }
+      setHasOlder(deriveHasOlder(response));
+    } catch (err) {
+      logger.error('[Playground] Failed to load older messages:', err);
+    }
+  }
+
+  /**
+   * Whether older messages remain after a backward-pagination response. Prefer
+   * the server's explicit `hasOlder` flag; fall back to inferring from page
+   * fullness for backends that haven't adopted the field yet.
+   */
+  function deriveHasOlder(response: PlaygroundMessagesApiResponse): boolean {
+    if (typeof response.hasOlder === 'boolean') return response.hasOlder;
+    return (response.data?.length ?? 0) >= messagePageSize;
   }
 
   async function handleCreateSession(): Promise<void> {
@@ -320,8 +372,10 @@
       playgroundActions.addMessage(message);
       // Only start polling if not already active — avoids resetting the cursor
       // mid-session and re-fetching messages that are already in the store.
+      // Seed from the newest loaded message so polling tails live updates
+      // rather than crawling forward from the start of the conversation.
       if (!playgroundService.isPolling()) {
-        startPolling(sessionId);
+        startPolling(sessionId, true);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
@@ -370,10 +424,9 @@
     if (!sessionId || isRefreshing) return;
     isRefreshing = true;
     try {
-      const response = await playgroundService.getMessages(
-        sessionId,
-        playgroundService.getLastSequenceNumber() ?? undefined
-      );
+      const response = await playgroundService.getMessages(sessionId, {
+        since: playgroundService.getLastSequenceNumber() ?? undefined
+      });
       applyServerResponse(response);
       if (response.sessionStatus === 'running' && !playgroundService.isPolling()) {
         startPolling(sessionId, true);
@@ -392,10 +445,9 @@
     try {
       // Catch up immediately rather than waiting for the next poll interval.
       // Use the service's sequence cursor so we only fetch new messages.
-      const response = await playgroundService.getMessages(
-        sessionId,
-        playgroundService.getLastSequenceNumber() ?? undefined
-      );
+      const response = await playgroundService.getMessages(sessionId, {
+        since: playgroundService.getLastSequenceNumber() ?? undefined
+      });
       applyServerResponse(response);
     } catch (err) {
       logger.error('[Playground] Failed to refresh after interrupt:', err);
@@ -430,10 +482,7 @@
       </div>
     {/if}
 
-    <div
-      class="playground__content"
-      bind:this={playgroundContentEl}
-    >
+    <div class="playground__content" bind:this={playgroundContentEl}>
       {#if getIsLoading() && !getCurrentSession()}
         <div class="playground__loading">
           <Icon icon="mdi:loading" class="playground__loading-icon" />
@@ -447,6 +496,7 @@
           showLogsInline={config.logDisplayMode === 'inline'}
           onInterruptResolved={handleInterruptResolved}
           onCreateSession={getSessions().length === 0 ? handleCreateSession : undefined}
+          onLoadOlder={loadOlderMessages}
         />
 
         <div

@@ -22,6 +22,8 @@
     onInterruptResolved?: () => void;
     /** Optional callback that, when provided, shows a "New session" CTA in the welcome state */
     onCreateSession?: () => void;
+    /** Called when the user scrolls near the top to load older messages */
+    onLoadOlder?: () => void | Promise<void>;
   }
 
   let {
@@ -31,7 +33,8 @@
     allowLogs = true,
     compactSystemMessages = true,
     onInterruptResolved,
-    onCreateSession
+    onCreateSession,
+    onLoadOlder
   }: Props = $props();
 
   const ec = $derived(m().playground.executionConsole);
@@ -50,6 +53,7 @@
     {allowLogs}
     {compactSystemMessages}
     {onInterruptResolved}
+    {onLoadOlder}
     welcome={welcomeState}
     emptySession={readyState}
   />

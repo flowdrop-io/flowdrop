@@ -39,6 +39,13 @@ let _sessions = $state<PlaygroundSession[]>([]);
 let _messages = $state<PlaygroundMessage[]>([]);
 
 /**
+ * Whether older messages exist before the oldest one currently loaded.
+ * Drives the scroll-up "load older" affordance. Reset whenever the message
+ * set is replaced (session switch / clear).
+ */
+let _hasOlder = $state<boolean>(false);
+
+/**
  * Whether we are currently loading data
  */
 let _isLoading = $state<boolean>(false);
@@ -493,7 +500,7 @@ export const playgroundActions = {
    * @param message - The message to add
    */
   addMessage: (message: PlaygroundMessage): void => {
-    if (_messages.some(m => m.id === message.id)) return;
+    if (_messages.some((m) => m.id === message.id)) return;
     const seq = message.sequenceNumber ?? 0;
     let lo = 0,
       hi = _messages.length;
@@ -535,6 +542,7 @@ export const playgroundActions = {
   clearMessages: (): void => {
     _messages = [];
     _lastPollSequenceNumber = null;
+    _hasOlder = false;
   },
 
   /**
@@ -673,6 +681,36 @@ export function getLatestSequenceNumber(): number | null {
     }
   }
   return null;
+}
+
+/**
+ * Get the sequence number of the oldest loaded message, used as the cursor
+ * for backward "load older" pagination.
+ *
+ * @returns Sequence number of the first message, or null
+ */
+export function getOldestSequenceNumber(): number | null {
+  for (let i = 0; i < _messages.length; i++) {
+    if (_messages[i].sequenceNumber !== undefined) {
+      return _messages[i].sequenceNumber!;
+    }
+  }
+  return null;
+}
+
+/**
+ * Whether older messages exist before the oldest one currently loaded.
+ */
+export function getHasOlder(): boolean {
+  return _hasOlder;
+}
+
+/**
+ * Set whether older messages remain to be loaded, derived from a
+ * backward-pagination response.
+ */
+export function setHasOlder(hasOlder: boolean): void {
+  _hasOlder = hasOlder;
 }
 
 /**
