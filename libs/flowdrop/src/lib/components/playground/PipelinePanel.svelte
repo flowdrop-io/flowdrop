@@ -2,7 +2,7 @@
   const VIEW_MODE_KEY = 'fd-pipeline-view-mode';
   const BUILTIN_VIEWS = ['graph', 'kanban', 'table'] as const;
   // `string & {}` preserves autocomplete for built-in values while still accepting arbitrary strings from extraViews.
-  type ViewMode = typeof BUILTIN_VIEWS[number] | (string & {});
+  type ViewMode = (typeof BUILTIN_VIEWS)[number] | (string & {});
 </script>
 
 <script lang="ts">
@@ -415,6 +415,9 @@
     right: 0;
     z-index: 50;
     min-width: 160px;
+    max-width: 320px;
+    max-height: min(60vh, 420px);
+    overflow-y: auto;
     padding: var(--fd-space-xs);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);

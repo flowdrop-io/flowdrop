@@ -159,35 +159,37 @@
           </button>
           {#if getSessions().length > 0}
             <div class="control-panel__session-popover-divider"></div>
-            {#each getSessions() as session (session.id)}
-              {@const isActive = getCurrentSession()?.id === session.id}
-              <div class="control-panel__session-popover-row">
-                <button
-                  type="button"
-                  role="menuitem"
-                  class="control-panel__session-popover-item"
-                  class:control-panel__session-popover-item--active={isActive}
-                  onclick={() => handleSelect(session.id)}
-                >
-                  {#if isActive}
-                    <Icon icon="mdi:check" class="control-panel__session-popover-check" />
-                  {:else}
-                    <Icon icon="mdi:message-outline" />
-                  {/if}
-                  <span>{session.name}</span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  class="control-panel__session-popover-delete"
-                  onclick={(e) => handleDelete(e, session.id)}
-                  title={cp.deleteSession}
-                  aria-label={cp.deleteSession}
-                >
-                  <Icon icon="mdi:delete-outline" />
-                </button>
-              </div>
-            {/each}
+            <div class="control-panel__session-popover-list">
+              {#each getSessions() as session (session.id)}
+                {@const isActive = getCurrentSession()?.id === session.id}
+                <div class="control-panel__session-popover-row">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="control-panel__session-popover-item"
+                    class:control-panel__session-popover-item--active={isActive}
+                    onclick={() => handleSelect(session.id)}
+                  >
+                    {#if isActive}
+                      <Icon icon="mdi:check" class="control-panel__session-popover-check" />
+                    {:else}
+                      <Icon icon="mdi:message-outline" />
+                    {/if}
+                    <span>{session.name}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="control-panel__session-popover-delete"
+                    onclick={(e) => handleDelete(e, session.id)}
+                    title={cp.deleteSession}
+                    aria-label={cp.deleteSession}
+                  >
+                    <Icon icon="mdi:delete-outline" />
+                  </button>
+                </div>
+              {/each}
+            </div>
           {/if}
         </div>
       {/if}
@@ -333,6 +335,9 @@
     z-index: 50;
     min-width: 220px;
     max-width: 300px;
+    max-height: min(60vh, 420px);
+    display: flex;
+    flex-direction: column;
     padding: var(--fd-space-xs);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
@@ -344,6 +349,13 @@
     height: 1px;
     background-color: var(--fd-border-muted);
     margin: var(--fd-space-xs) 0;
+    flex-shrink: 0;
+  }
+
+  .control-panel__session-popover-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .control-panel__session-popover-row {
@@ -396,6 +408,7 @@
     color: var(--fd-primary);
     font-weight: 500;
     width: 100%;
+    flex: 0 0 auto;
   }
 
   .control-panel__session-popover-item--new :global(svg) {
