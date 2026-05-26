@@ -239,6 +239,8 @@ export function addMessage(
   options?: {
     nodeId?: string;
     executionId?: string;
+    parentPipelineId?: string | null;
+    rootPipelineId?: string | null;
     level?: PlaygroundMessageLevel;
     duration?: number;
     nodeLabel?: string;
@@ -273,6 +275,11 @@ export function addMessage(
     sequenceNumber,
     parentMessageId: options?.parentMessageId,
     executionId: options?.executionId ?? null,
+    // Lineage. parentPipelineId defaults to null (top-level); rootPipelineId
+    // defaults to the executionId, matching the backend contract where a
+    // main-pipeline message's root equals its own execution id.
+    parentPipelineId: options?.parentPipelineId ?? null,
+    rootPipelineId: options?.rootPipelineId ?? options?.executionId ?? null,
     nodeId: options?.nodeId,
     hierarchy: options?.hierarchy,
     tags: options?.tags,
