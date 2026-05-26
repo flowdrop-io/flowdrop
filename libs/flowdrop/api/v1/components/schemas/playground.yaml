@@ -78,7 +78,11 @@ PlaygroundSession:
       description: Last activity timestamp
     executions:
       type: array
-      description: Pipeline executions triggered within this session, ordered oldest-first
+      description: |
+        Main pipeline runs triggered within this session, ordered oldest-first.
+        Sub-flow (nested) executions are intentionally excluded — they are
+        surfaced only on individual messages via `parentPipelineId`. Clients rely
+        on this list being main-runs-only to populate the run-switcher.
       items:
         $ref: '#/PlaygroundExecution'
       nullable: true
@@ -244,6 +248,22 @@ PlaygroundMessage:
     executionId:
       type: string
       description: Workflow execution ID that generated this message
+      nullable: true
+    parentPipelineId:
+      type: string
+      description: |
+        Execution ID of the parent pipeline when this message was produced by a
+        nested sub-flow. `null` for top-level (main pipeline) messages. Unlike
+        the display-only `hierarchy`, this is an authoritative nesting signal:
+        clients use it to keep the main pipeline in focus and exclude sub-flow
+        runs from the run-switcher.
+      nullable: true
+    rootPipelineId:
+      type: string
+      description: |
+        Execution ID of the top-level pipeline this message ultimately belongs
+        to. Equal to `executionId` for main-pipeline messages; for sub-flow
+        messages it points to the main run that triggered the sub-flow.
       nullable: true
     nodeId:
       type: string
