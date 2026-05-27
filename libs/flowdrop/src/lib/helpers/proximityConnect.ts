@@ -11,6 +11,7 @@ import type {
   WorkflowEdge,
   NodePort,
   DynamicPort,
+  AtomUIConfig,
   PortCoordinate,
   PortCoordinateMap
 } from '../types/index.js';
@@ -35,13 +36,33 @@ const PROXIMITY_EDGE_CLASS = 'flowdrop--edge--proximity-preview';
 export class ProximityConnectHelper {
   /**
    * Get ALL ports (static + dynamic + gateway branches) for a node.
+   *
+   * Only reads `type` and `data`, so callers can pass a full node or a lighter
+   * slice (e.g. a renderer that has metadata + config but no position/measured).
    */
-  static getAllPorts(node: WorkflowNodeType, direction: 'input' | 'output'): NodePort[] {
+  static getAllPorts(
+    node: Pick<WorkflowNodeType, 'type' | 'data'>,
+    direction: 'input' | 'output'
+  ): NodePort[] {
     // Static ports from metadata
-    const staticPorts: NodePort[] =
+    let staticPorts: NodePort[] =
       direction === 'output'
         ? (node.data?.metadata?.outputs ?? [])
         : (node.data?.metadata?.inputs ?? []);
+
+    // Atom value-type binding: the bound output port's dataType follows a config
+    // field (e.g. Constant's `valueType`), so connection validation matches the
+    // type the user actually picked. Derived on read — never stored redundantly.
+    if (direction === 'output') {
+      const atom = node.data?.metadata?.extensions?.ui?.atom as AtomUIConfig | undefined;
+      const boundType = atom?.valueTypeKey
+        ? (node.data?.config?.[atom.valueTypeKey] as string | undefined)
+        : undefined;
+      if (boundType) {
+        const portId = atom?.outputPortId ?? staticPorts[0]?.id;
+        staticPorts = staticPorts.map((p) => (p.id === portId ? { ...p, dataType: boundType } : p));
+      }
+    }
 
     // Dynamic ports from config
     const dynamicKey = direction === 'output' ? 'dynamicOutputs' : 'dynamicInputs';

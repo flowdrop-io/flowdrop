@@ -250,6 +250,7 @@ export type BuiltinNodeType =
   | 'note'
   | 'simple'
   | 'square'
+  | 'atom'
   | 'tool'
   | 'gateway'
   | 'terminal'
@@ -579,9 +580,40 @@ export interface ConfigEditOptions {
  * UI-related extension settings for nodes
  * Used to control visual behavior in the workflow editor
  */
+/**
+ * Display/behavior config for minimalist "atom" nodes (Constant, Cast, …).
+ * Lives under `extensions.ui.atom`. The atom renderer reads it to decide what to
+ * show, and `getAllPorts` reads `valueTypeKey` to drive the bound output port's
+ * dataType from config so connection validation stays correct.
+ */
+export interface AtomUIConfig {
+  /** Config key whose value becomes the node body. Falls back to `data.label`. */
+  valueKey?: string;
+  /**
+   * Config key holding the selected value's type (a port dataType id).
+   * The bound output port adopts this dataType.
+   */
+  valueTypeKey?: string;
+  /** Output port id driven by `valueTypeKey`. Defaults to the first output port. */
+  outputPortId?: string;
+  /** Body shape. `'pill'` (default) is fully rounded; `'rectangle'` is lightly rounded. */
+  shape?: 'pill' | 'rectangle';
+  /**
+   * Dimmed affordance rendered before the body (e.g. `'→ '` to mark a transform).
+   * Stays visible while the body value ellipsizes. Hidden in the empty state.
+   */
+  prefix?: string;
+  /** Text shown (dimmed) when the resolved body value is empty/unset. */
+  placeholder?: string;
+  /** Max body width in px before the label ellipsizes. */
+  maxWidth?: number;
+}
+
 export interface NodeUIExtensions {
   /** Show/hide unconnected handles (ports) to reduce visual noise */
   hideUnconnectedHandles?: boolean;
+  /** Display/behavior config for minimalist atom nodes (Constant, Cast, …) */
+  atom?: AtomUIConfig;
   /**
    * Visual-only port display order (no effect on execution).
    * Arrays of port IDs in the desired render order.

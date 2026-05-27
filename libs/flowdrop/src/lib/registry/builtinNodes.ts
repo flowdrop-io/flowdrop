@@ -15,6 +15,7 @@ import type { Component } from 'svelte';
 import WorkflowNode from '../components/nodes/WorkflowNode.svelte';
 import SimpleNode from '../components/nodes/SimpleNode.svelte';
 import SquareNode from '../components/nodes/SquareNode.svelte';
+import AtomNode from '../components/nodes/AtomNode.svelte';
 import ToolNode from '../components/nodes/ToolNode.svelte';
 import GatewayNode from '../components/nodes/GatewayNode.svelte';
 import NotesNode from '../components/nodes/NotesNode.svelte';
@@ -59,6 +60,17 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
     description: 'Minimal square node showing only an icon',
     component: SquareNode,
     icon: 'mdi:square',
+    category: 'visual',
+    source: FLOWDROP_SOURCE,
+    statusPosition: 'top-right',
+    statusSize: 'sm'
+  },
+  {
+    type: 'atom',
+    displayName: 'Atom (Minimal Value/Transform)',
+    description: 'Low-chrome label-only node for constants and inline transforms',
+    component: AtomNode,
+    icon: 'mdi:circle-small',
     category: 'visual',
     source: FLOWDROP_SOURCE,
     statusPosition: 'top-right',
@@ -218,6 +230,7 @@ export type BuiltinNodeType =
   | 'workflowNode'
   | 'simple'
   | 'square'
+  | 'atom'
   | 'tool'
   | 'gateway'
   | 'note'
@@ -231,6 +244,7 @@ export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
   'workflowNode',
   'simple',
   'square',
+  'atom',
   'tool',
   'gateway',
   'note',

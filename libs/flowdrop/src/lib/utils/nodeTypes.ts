@@ -21,6 +21,7 @@ const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
   note: 'Note (sticky note style)',
   simple: 'Simple (compact layout)',
   square: 'Square (geometric layout)',
+  atom: 'Atom (minimal value/transform)',
   tool: 'Tool (specialized for agent tools)',
   gateway: 'Gateway (branching control flow)',
   terminal: 'Terminal (start/end/exit)',
