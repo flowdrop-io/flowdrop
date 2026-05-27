@@ -22,3 +22,7 @@ if [ -n "$API_FILES" ]; then
   echo "🔍 Linting API specs..."
   cd apps/api-docs && pnpm run lint && cd ../..
 fi
+
+# Format staged files with Prettier
+echo "🎨 Formatting staged files..."
+pnpm exec lint-staged
