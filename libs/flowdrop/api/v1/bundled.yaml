@@ -2522,9 +2522,11 @@ components:
         - note
         - simple
         - square
+        - atom
         - tool
         - gateway
         - terminal
+        - idea
         - default
       description: |
         Visual rendering type for the node.
@@ -2533,9 +2535,11 @@ components:
         - `note` - Sticky note with markdown support
         - `simple` - Compact layout with header and description
         - `square` - Minimal square node with centered icon
+        - `atom` - Minimal label-only pill/rectangle for value/transform nodes (uses extensions.ui.atom)
         - `tool` - Specialized node for agent tools
         - `gateway` - Branching control flow with dynamic branches (uses config.branches)
         - `terminal` - Circular node for workflow start/end/exit points
+        - `idea` - Conceptual idea node for BPMN-like flow diagrams
         - `default` - Full-featured workflow node with dynamic port support
 
         ## Dynamic Port Support
@@ -3047,6 +3051,122 @@ components:
       required:
         - type
         - properties
+    TemplateVariablesConfig:
+      type: object
+      description: |
+        Configuration for template variable autocomplete in template fields.
+
+        ## Overview
+
+        When a template field is connected to upstream nodes that have output schemas,
+        FlowDrop automatically derives available variables for autocomplete. This config
+        controls which ports provide variables and how they are presented.
+
+        ## Variable Derivation
+
+        Variables are derived from connected upstream nodes' **output port schemas**.
+        When an output port has a `schema` property with `properties`, those properties
+        become available as template variables.
+
+        ### Default Behavior (includePortName: false)
+
+        Schema properties are **unpacked as top-level variables**:
+
+        ```
+        HTTP Request node (output port "json" with schema):
+          schema.properties: { user: {...}, orders: {...} }
+                                  ↓
+        Template variables: {{ user }}, {{ orders }}
+        ```
+
+        ### With includePortName: true
+
+        Variables are **prefixed with the port name**:
+
+        ```
+        Same schema as above:
+                                  ↓
+        Template variables: {{ data.user }}, {{ data.orders }}
+        ```
+
+        ## Nested Property Access
+
+        The autocomplete supports drilling into nested structures:
+
+        - **Dot notation**: `{{ user.address.city }}`
+        - **Array indices**: `{{ orders[0].product_name }}`
+        - **Combined**: `{{ user.orders[0].items[1].price }}`
+      properties:
+        ports:
+          type: array
+          items:
+            type: string
+          description: |
+            Specifies which input port IDs should provide variables for autocomplete.
+            Only connections to these ports will contribute variables.
+
+            **Behavior:**
+            - If not specified: All input ports with connections are used
+            - If empty array `[]`: No variables derived from ports (use with `schema` for static variables)
+            - If specified: Only the listed ports contribute variables
+
+            **Example:** A node with inputs "data", "context", and "trigger":
+            - `ports: ["data"]` - Only variables from the "data" connection
+            - `ports: ["data", "context"]` - Variables from both connections
+            - Not specified - Variables from all non-trigger connections
+          example:
+            - data
+            - context
+        schema:
+          $ref: '#/components/schemas/VariableSchema'
+          description: |
+            Pre-defined variable schema to provide static variables or override derived ones.
+
+            When both `ports` and `schema` are specified, variables are **merged**:
+            - Variables from connected ports are computed first
+            - Static `schema` variables are added/override existing ones
+
+            **Use cases:**
+            - Provide variables that don't come from connections
+            - Override labels or descriptions for derived variables
+            - Add custom variables for specific use cases
+        includePortName:
+          type: boolean
+          default: false
+          description: |
+            Controls how variables are named when derived from port schemas.
+
+            **When false (default):**
+            Schema properties become top-level variables directly.
+            A port with schema `{ user: {...}, orders: {...} }` produces:
+            - `{{ user }}`
+            - `{{ orders }}`
+
+            **When true:**
+            Variables are prefixed with the input port name.
+            Same schema connected to input port "data" produces:
+            - `{{ data.user }}`
+            - `{{ data.orders }}`
+
+            **When to use true:**
+            - Multiple input ports with potentially overlapping property names
+            - You want to be explicit about data sources in templates
+            - Backward compatibility with existing templates
+        showHints:
+          type: boolean
+          default: true
+          description: |
+            Whether to display clickable variable hints below the editor.
+
+            When enabled, shows a row of buttons for top-level variables that users
+            can click to insert `{{ variableName }}` at the cursor position.
+
+            Disable if the variable list is too long or not useful.
+      example:
+        ports:
+          - data
+        showHints: true
+        includePortName: false
     NodePort:
       type: object
       description: |
@@ -3141,6 +3261,51 @@ components:
         - name
         - type
         - dataType
+    VariableSchema:
+      type: object
+      description: |
+        Schema passed to template editor for autocomplete functionality.
+        Contains all available variables derived from connected upstream nodes.
+
+        This is computed by the frontend based on:
+        1. Finding all edges that connect to the current node's input ports
+        2. Getting the output schemas from the source nodes' output ports
+        3. Building a hierarchical variable structure for autocomplete
+      properties:
+        variables:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/TemplateVariable'
+          description: Map of available variables keyed by variable name
+      required:
+        - variables
+      example:
+        variables:
+          user:
+            name: user
+            type: object
+            label: User Data
+            properties:
+              name:
+                name: name
+                type: string
+              email:
+                name: email
+                type: string
+          items:
+            name: items
+            type: array
+            label: Order Items
+            items:
+              name: item
+              type: object
+              properties:
+                product_name:
+                  name: product_name
+                  type: string
+                price:
+                  name: price
+                  type: number
     DynamicPort:
       type: object
       description: |
@@ -3219,6 +3384,59 @@ components:
         description: Route for high priority items
         condition: priority === 'high'
         isDefault: false
+    AtomUIConfig:
+      type: object
+      description: |
+        Display/behaviour settings for minimalist `atom` nodes (e.g. Constant, Cast).
+        Lives under `extensions.ui.atom`. The atom renderer reads these to decide what
+        to show, and `valueTypeKey` drives the bound output port's `dataType` from
+        config so connection validation matches the type the user picked.
+
+        All fields are optional — an empty object renders a label-only pill using the
+        node's `label`.
+      properties:
+        valueKey:
+          type: string
+          description: |
+            Config key whose value becomes the node body text.
+            Falls back to the node `label` when unset or empty.
+          example: value
+        valueTypeKey:
+          type: string
+          description: |
+            Config key holding the selected value's type (a port dataType id).
+            The bound output port adopts this dataType.
+          example: valueType
+        outputPortId:
+          type: string
+          description: |
+            Output port id driven by `valueTypeKey`.
+            Defaults to the first output port when unset.
+          example: value
+        shape:
+          type: string
+          enum:
+            - pill
+            - rectangle
+          default: pill
+          description: |
+            Body shape. `pill` (default) is fully rounded; `rectangle` is lightly rounded.
+          example: rectangle
+        prefix:
+          type: string
+          description: |
+            Dimmed affordance rendered before the body (e.g. `"→ "` to mark a transform).
+            Stays visible while the body value ellipsizes. Hidden in the empty state.
+          example: '→ '
+        placeholder:
+          type: string
+          description: Text shown (dimmed) when the resolved body value is empty/unset.
+          example: empty
+        maxWidth:
+          type: integer
+          description: Max body width in px before the label ellipsizes.
+          example: 200
+      additionalProperties: false
     NodeUIExtensions:
       type: object
       description: |
@@ -3238,6 +3456,8 @@ components:
             When true, only ports with active connections are displayed.
             Useful for nodes with many optional ports.
           example: true
+        atom:
+          $ref: '#/components/schemas/AtomUIConfig'
         style:
           type: object
           additionalProperties: true
@@ -3475,10 +3695,12 @@ components:
             - `default`: Standard workflow node with full details
             - `simple`: Compact layout with minimal chrome
             - `square`: Geometric square layout (icon-only)
+            - `atom`: Minimal label-only pill/rectangle (uses extensions.ui.atom)
             - `tool`: Specialized style for agent tools
             - `gateway`: Branching control flow visualization
             - `terminal`: Start/end/exit node styling
             - `note`: Sticky note style for annotations
+            - `idea`: Conceptual idea node for BPMN-like flow diagrams
 
             The node's `metadata.supportedTypes` defines which types are allowed.
             If invalid or missing, falls back to `metadata.type` or "default".
@@ -3486,10 +3708,12 @@ components:
             - default
             - simple
             - square
+            - atom
             - tool
             - gateway
             - terminal
             - note
+            - idea
           example: simple
         dynamicInputs:
           type: array
@@ -5942,167 +6166,6 @@ components:
                 name: country
                 type: string
                 label: Country
-    VariableSchema:
-      type: object
-      description: |
-        Schema passed to template editor for autocomplete functionality.
-        Contains all available variables derived from connected upstream nodes.
-
-        This is computed by the frontend based on:
-        1. Finding all edges that connect to the current node's input ports
-        2. Getting the output schemas from the source nodes' output ports
-        3. Building a hierarchical variable structure for autocomplete
-      properties:
-        variables:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/TemplateVariable'
-          description: Map of available variables keyed by variable name
-      required:
-        - variables
-      example:
-        variables:
-          user:
-            name: user
-            type: object
-            label: User Data
-            properties:
-              name:
-                name: name
-                type: string
-              email:
-                name: email
-                type: string
-          items:
-            name: items
-            type: array
-            label: Order Items
-            items:
-              name: item
-              type: object
-              properties:
-                product_name:
-                  name: product_name
-                  type: string
-                price:
-                  name: price
-                  type: number
-    TemplateVariablesConfig:
-      type: object
-      description: |
-        Configuration for template variable autocomplete in template fields.
-
-        ## Overview
-
-        When a template field is connected to upstream nodes that have output schemas,
-        FlowDrop automatically derives available variables for autocomplete. This config
-        controls which ports provide variables and how they are presented.
-
-        ## Variable Derivation
-
-        Variables are derived from connected upstream nodes' **output port schemas**.
-        When an output port has a `schema` property with `properties`, those properties
-        become available as template variables.
-
-        ### Default Behavior (includePortName: false)
-
-        Schema properties are **unpacked as top-level variables**:
-
-        ```
-        HTTP Request node (output port "json" with schema):
-          schema.properties: { user: {...}, orders: {...} }
-                                  ↓
-        Template variables: {{ user }}, {{ orders }}
-        ```
-
-        ### With includePortName: true
-
-        Variables are **prefixed with the port name**:
-
-        ```
-        Same schema as above:
-                                  ↓
-        Template variables: {{ data.user }}, {{ data.orders }}
-        ```
-
-        ## Nested Property Access
-
-        The autocomplete supports drilling into nested structures:
-
-        - **Dot notation**: `{{ user.address.city }}`
-        - **Array indices**: `{{ orders[0].product_name }}`
-        - **Combined**: `{{ user.orders[0].items[1].price }}`
-      properties:
-        ports:
-          type: array
-          items:
-            type: string
-          description: |
-            Specifies which input port IDs should provide variables for autocomplete.
-            Only connections to these ports will contribute variables.
-
-            **Behavior:**
-            - If not specified: All input ports with connections are used
-            - If empty array `[]`: No variables derived from ports (use with `schema` for static variables)
-            - If specified: Only the listed ports contribute variables
-
-            **Example:** A node with inputs "data", "context", and "trigger":
-            - `ports: ["data"]` - Only variables from the "data" connection
-            - `ports: ["data", "context"]` - Variables from both connections
-            - Not specified - Variables from all non-trigger connections
-          example:
-            - data
-            - context
-        schema:
-          $ref: '#/components/schemas/VariableSchema'
-          description: |
-            Pre-defined variable schema to provide static variables or override derived ones.
-
-            When both `ports` and `schema` are specified, variables are **merged**:
-            - Variables from connected ports are computed first
-            - Static `schema` variables are added/override existing ones
-
-            **Use cases:**
-            - Provide variables that don't come from connections
-            - Override labels or descriptions for derived variables
-            - Add custom variables for specific use cases
-        includePortName:
-          type: boolean
-          default: false
-          description: |
-            Controls how variables are named when derived from port schemas.
-
-            **When false (default):**
-            Schema properties become top-level variables directly.
-            A port with schema `{ user: {...}, orders: {...} }` produces:
-            - `{{ user }}`
-            - `{{ orders }}`
-
-            **When true:**
-            Variables are prefixed with the input port name.
-            Same schema connected to input port "data" produces:
-            - `{{ data.user }}`
-            - `{{ data.orders }}`
-
-            **When to use true:**
-            - Multiple input ports with potentially overlapping property names
-            - You want to be explicit about data sources in templates
-            - Backward compatibility with existing templates
-        showHints:
-          type: boolean
-          default: true
-          description: |
-            Whether to display clickable variable hints below the editor.
-
-            When enabled, shows a row of buttons for top-level variables that users
-            can click to insert `{{ variableName }}` at the cursor position.
-
-            Disable if the variable list is too long or not useful.
-      example:
-        ports:
-          - data
-        showHints: true
-        includePortName: false
     KanbanColumnDef:
       type: object
       properties:

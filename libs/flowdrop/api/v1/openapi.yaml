@@ -239,14 +239,20 @@ components:
       $ref: './components/schemas/config.yaml#/AutocompleteConfig'
     ConfigSchema:
       $ref: './components/schemas/config.yaml#/ConfigSchema'
+    TemplateVariablesConfig:
+      $ref: './components/schemas/config.yaml#/TemplateVariablesConfig'
 
     # Node Types
     NodePort:
       $ref: './components/schemas/node.yaml#/NodePort'
+    VariableSchema:
+      $ref: './components/schemas/node.yaml#/VariableSchema'
     DynamicPort:
       $ref: './components/schemas/node.yaml#/DynamicPort'
     Branch:
       $ref: './components/schemas/node.yaml#/Branch'
+    AtomUIConfig:
+      $ref: './components/schemas/node.yaml#/AtomUIConfig'
     NodeUIExtensions:
       $ref: './components/schemas/node.yaml#/NodeUIExtensions'
     NodeExtensions:

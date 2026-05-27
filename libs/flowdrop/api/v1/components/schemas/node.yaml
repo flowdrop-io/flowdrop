@@ -434,6 +434,60 @@ Branch:
     condition: "priority === 'high'"
     isDefault: false
 
+AtomUIConfig:
+  type: object
+  description: |
+    Display/behaviour settings for minimalist `atom` nodes (e.g. Constant, Cast).
+    Lives under `extensions.ui.atom`. The atom renderer reads these to decide what
+    to show, and `valueTypeKey` drives the bound output port's `dataType` from
+    config so connection validation matches the type the user picked.
+
+    All fields are optional — an empty object renders a label-only pill using the
+    node's `label`.
+  properties:
+    valueKey:
+      type: string
+      description: |
+        Config key whose value becomes the node body text.
+        Falls back to the node `label` when unset or empty.
+      example: value
+    valueTypeKey:
+      type: string
+      description: |
+        Config key holding the selected value's type (a port dataType id).
+        The bound output port adopts this dataType.
+      example: valueType
+    outputPortId:
+      type: string
+      description: |
+        Output port id driven by `valueTypeKey`.
+        Defaults to the first output port when unset.
+      example: value
+    shape:
+      type: string
+      enum:
+        - pill
+        - rectangle
+      default: pill
+      description: |
+        Body shape. `pill` (default) is fully rounded; `rectangle` is lightly rounded.
+      example: rectangle
+    prefix:
+      type: string
+      description: |
+        Dimmed affordance rendered before the body (e.g. `"→ "` to mark a transform).
+        Stays visible while the body value ellipsizes. Hidden in the empty state.
+      example: '→ '
+    placeholder:
+      type: string
+      description: Text shown (dimmed) when the resolved body value is empty/unset.
+      example: empty
+    maxWidth:
+      type: integer
+      description: Max body width in px before the label ellipsizes.
+      example: 200
+  additionalProperties: false
+
 NodeUIExtensions:
   type: object
   description: |
@@ -453,6 +507,8 @@ NodeUIExtensions:
         When true, only ports with active connections are displayed.
         Useful for nodes with many optional ports.
       example: true
+    atom:
+      $ref: '#/AtomUIConfig'
     style:
       type: object
       additionalProperties: true
@@ -693,10 +749,12 @@ NodeConfig:
         - `default`: Standard workflow node with full details
         - `simple`: Compact layout with minimal chrome
         - `square`: Geometric square layout (icon-only)
+        - `atom`: Minimal label-only pill/rectangle (uses extensions.ui.atom)
         - `tool`: Specialized style for agent tools
         - `gateway`: Branching control flow visualization
         - `terminal`: Start/end/exit node styling
         - `note`: Sticky note style for annotations
+        - `idea`: Conceptual idea node for BPMN-like flow diagrams
 
         The node's `metadata.supportedTypes` defines which types are allowed.
         If invalid or missing, falls back to `metadata.type` or "default".
@@ -704,10 +762,12 @@ NodeConfig:
         - default
         - simple
         - square
+        - atom
         - tool
         - gateway
         - terminal
         - note
+        - idea
       example: simple
     dynamicInputs:
       type: array

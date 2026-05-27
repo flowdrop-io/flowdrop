@@ -63,9 +63,11 @@ NodeType:
     - note
     - simple
     - square
+    - atom
     - tool
     - gateway
     - terminal
+    - idea
     - default
   description: |
     Visual rendering type for the node.
@@ -74,9 +76,11 @@ NodeType:
     - `note` - Sticky note with markdown support
     - `simple` - Compact layout with header and description
     - `square` - Minimal square node with centered icon
+    - `atom` - Minimal label-only pill/rectangle for value/transform nodes (uses extensions.ui.atom)
     - `tool` - Specialized node for agent tools
     - `gateway` - Branching control flow with dynamic branches (uses config.branches)
     - `terminal` - Circular node for workflow start/end/exit points
+    - `idea` - Conceptual idea node for BPMN-like flow diagrams
     - `default` - Full-featured workflow node with dynamic port support
 
     ## Dynamic Port Support
