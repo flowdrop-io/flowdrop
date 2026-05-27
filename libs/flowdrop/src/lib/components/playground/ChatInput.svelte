@@ -58,7 +58,7 @@
   let runEnabled = $state(true);
 
   let inputValue = $state('');
-  let inputField: HTMLTextAreaElement | undefined;
+  let inputField: HTMLTextAreaElement | undefined = $state();
 
   // Count of enableRun messages seen so far — plain let, not $state.
   // Written with untrack to make the bookkeeping intent explicit.

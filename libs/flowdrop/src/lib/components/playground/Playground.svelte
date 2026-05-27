@@ -503,12 +503,14 @@
           showTimestamps={config.showTimestamps ?? true}
           autoScroll={config.autoScroll ?? true}
           enableMarkdown={config.enableMarkdown ?? true}
-          showLogsInline={config.logDisplayMode === 'inline'}
           onInterruptResolved={handleInterruptResolved}
           onCreateSession={getSessions().length === 0 ? handleCreateSession : undefined}
           onLoadOlder={loadOlderMessages}
         />
 
+        <!-- Focusable ARIA splitter: keyboard/pointer handlers drive the resize -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div
           class="playground__vertical-resizer"
           class:playground__vertical-resizer--active={isVerticalResizing}

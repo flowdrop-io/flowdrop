@@ -177,6 +177,7 @@
             class="pipeline-panel__run-popover"
             bind:this={runPopoverEl}
             role="menu"
+            tabindex="-1"
             onkeydown={(e) => {
               if (e.key === 'Escape') {
                 runDropdownOpen = false;

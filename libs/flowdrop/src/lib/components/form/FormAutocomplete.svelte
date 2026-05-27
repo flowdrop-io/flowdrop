@@ -121,6 +121,7 @@
   // Stable fingerprint — any change triggers selection clearing.
   // JSON.stringify gives a canonical string without null-byte ambiguity.
   const depFingerprint = $derived(JSON.stringify(depParamValues));
+  // svelte-ignore state_referenced_locally — intentional initial snapshot; the effect below tracks subsequent changes
   let prevDepFingerprint = depFingerprint;
 
   $effect(() => {

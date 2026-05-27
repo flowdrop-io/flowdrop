@@ -60,11 +60,14 @@
     extraPipelineViews = [],
   }: Props = $props();
 
+  // svelte-ignore state_referenced_locally — seed mutable state from the prop's initial value; workflow may load asynchronously below
   let resolvedWorkflow = $state<Workflow | null>(workflowProp ?? null);
+  // svelte-ignore state_referenced_locally — initial loading flag derived from whether a workflow was provided up front
   let workflowLoading = $state(workflowProp === undefined);
   let workflowError = $state<string | null>(null);
 
   let splitEl = $state<HTMLElement | null>(null);
+  // svelte-ignore state_referenced_locally — seed mutable width from the initial prop; it changes as the user drags the resizer
   let pipelineWidth = $state(initialPipelineWidth);
   let isResizing = $state(false);
   let containerWidth = $state(0);
@@ -178,6 +181,9 @@
         />
       </div>
 
+      <!-- Focusable ARIA splitter: keyboard/pointer handlers drive the resize -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
         class="playground-studio__resizer"
         class:playground-studio__resizer--active={isResizing}
