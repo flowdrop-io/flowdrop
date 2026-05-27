@@ -5703,6 +5703,130 @@ const flowdropNativeNodes: NodeMetadata[] = [
       type: 'object',
       properties: {}
     }
+  },
+  {
+    id: 'constant',
+    name: 'Constant',
+    type: 'atom',
+    supportedTypes: ['atom'],
+    description: 'Supplies a constant value into the workflow',
+    category: 'inputs',
+    version: '1.0.0',
+    icon: 'mdi:circle-small',
+    tags: ['constant', 'value', 'literal', 'input'],
+    inputs: [],
+    outputs: [
+      {
+        id: 'value',
+        name: 'Value',
+        type: 'output',
+        dataType: 'string',
+        description: 'The constant value supplied to downstream nodes'
+      }
+    ],
+    configSchema: {
+      type: 'object',
+      properties: {
+        valueType: {
+          type: 'string',
+          title: 'Type',
+          description: 'Type of value this constant supplies',
+          // Server-driven: each `const` is a real port dataType id, so the chosen
+          // type is also the output port's dataType (see extensions.ui.atom).
+          oneOf: [
+            { const: 'string', title: 'Text' },
+            { const: 'number', title: 'Number' },
+            { const: 'boolean', title: 'Boolean' }
+          ],
+          default: 'string'
+        },
+        value: {
+          type: 'string',
+          title: 'Value',
+          description: 'The constant value',
+          default: ''
+        }
+      }
+    },
+    config: {
+      valueType: 'string',
+      value: ''
+    },
+    extensions: {
+      ui: {
+        atom: {
+          valueKey: 'value',
+          valueTypeKey: 'valueType',
+          outputPortId: 'value',
+          placeholder: 'empty',
+          maxWidth: 200
+        }
+      }
+    }
+  },
+  {
+    id: 'cast',
+    name: 'Cast',
+    type: 'atom',
+    supportedTypes: ['atom'],
+    description: 'Coerces an incoming value to the selected type',
+    category: 'processing',
+    version: '1.0.0',
+    icon: 'mdi:swap-horizontal',
+    color: '#6366f1',
+    tags: ['cast', 'convert', 'coerce', 'type'],
+    inputs: [
+      {
+        id: 'value',
+        name: 'Value',
+        type: 'input',
+        dataType: 'mixed',
+        required: true,
+        description: 'The value to coerce'
+      }
+    ],
+    outputs: [
+      {
+        id: 'value',
+        name: 'Value',
+        type: 'output',
+        dataType: 'string',
+        description: 'The coerced value'
+      }
+    ],
+    configSchema: {
+      type: 'object',
+      properties: {
+        targetType: {
+          type: 'string',
+          title: 'Cast To',
+          description: 'Type to coerce the incoming value to',
+          // Server-driven: each `const` is a real port dataType id, so the chosen
+          // type is also the output port's dataType (see extensions.ui.atom).
+          oneOf: [
+            { const: 'string', title: 'Text' },
+            { const: 'number', title: 'Number' },
+            { const: 'boolean', title: 'Boolean' }
+          ],
+          default: 'string'
+        }
+      }
+    },
+    config: {
+      targetType: 'string'
+    },
+    extensions: {
+      ui: {
+        atom: {
+          valueKey: 'targetType',
+          valueTypeKey: 'targetType',
+          outputPortId: 'value',
+          shape: 'rectangle',
+          prefix: '→ ',
+          maxWidth: 200
+        }
+      }
+    }
   }
 ];
 
