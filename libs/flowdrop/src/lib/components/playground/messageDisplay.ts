@@ -4,7 +4,11 @@
  * argument; the helper has no runtime dependency on the messages context.
  */
 
-import type { PlaygroundMessage, PlaygroundMessageLevel, PlaygroundMessageRole } from '../../types/playground.js';
+import type {
+  PlaygroundMessage,
+  PlaygroundMessageLevel,
+  PlaygroundMessageRole
+} from '../../types/playground.js';
 import type { Messages } from '../../messages/types.js';
 
 export type RoleLabels = Messages['playground']['roles'];

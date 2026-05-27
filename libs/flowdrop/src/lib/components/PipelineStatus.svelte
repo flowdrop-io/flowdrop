@@ -37,8 +37,17 @@
     ) => void;
   }
 
-  let { pipelineId, workflow, apiClient, baseUrl, endpointConfig, onActionsReady, runLabel, isEmbedded = false, refreshTrigger = 0 }: Props =
-    $props();
+  let {
+    pipelineId,
+    workflow,
+    apiClient,
+    baseUrl,
+    endpointConfig,
+    onActionsReady,
+    runLabel,
+    isEmbedded = false,
+    refreshTrigger = 0
+  }: Props = $props();
 
   // Track previous trigger value so the $effect only fires on increments, not on initial mount.
   // svelte-ignore state_referenced_locally

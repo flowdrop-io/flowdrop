@@ -77,7 +77,13 @@
           <Icon icon="heroicons:arrows-right-left" />
         </button>
       {/if}
-      <button class="config-panel__close" onclick={onClose} aria-label={m().layout.closeConfigPanel}> × </button>
+      <button
+        class="config-panel__close"
+        onclick={onClose}
+        aria-label={m().layout.closeConfigPanel}
+      >
+        ×
+      </button>
     </div>
   </div>
 

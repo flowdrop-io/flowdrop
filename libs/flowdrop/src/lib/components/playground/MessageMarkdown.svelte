@@ -72,9 +72,15 @@
     margin-top: 0;
   }
 
-  .message-markdown :global(h1) { font-size: var(--fd-text-xl); }
-  .message-markdown :global(h2) { font-size: var(--fd-text-lg); }
-  .message-markdown :global(h3) { font-size: var(--fd-text-base); }
+  .message-markdown :global(h1) {
+    font-size: var(--fd-text-xl);
+  }
+  .message-markdown :global(h2) {
+    font-size: var(--fd-text-lg);
+  }
+  .message-markdown :global(h3) {
+    font-size: var(--fd-text-base);
+  }
 
   .message-markdown :global(ul),
   .message-markdown :global(ol) {
@@ -155,6 +161,10 @@
     font-weight: 600;
   }
 
-  .message-markdown :global(strong) { font-weight: 600; }
-  .message-markdown :global(em) { font-style: italic; }
+  .message-markdown :global(strong) {
+    font-weight: 600;
+  }
+  .message-markdown :global(em) {
+    font-style: italic;
+  }
 </style>

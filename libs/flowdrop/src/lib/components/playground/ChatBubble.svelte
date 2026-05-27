@@ -10,12 +10,7 @@
   import HierarchyTrail from './HierarchyTrail.svelte';
   import MessageTagStrip from './MessageTagStrip.svelte';
   import MessageMarkdown from './MessageMarkdown.svelte';
-  import {
-    formatDuration,
-    formatTimestamp,
-    getRoleIcon,
-    getRoleLabel
-  } from './messageDisplay.js';
+  import { formatDuration, formatTimestamp, getRoleIcon, getRoleLabel } from './messageDisplay.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -55,7 +50,8 @@
           class="message-bubble__timestamp"
           datetime={message.timestamp}
           aria-label="sent at {formatTimestamp(message.timestamp)}"
-        >{formatTimestamp(message.timestamp)}</time>
+          >{formatTimestamp(message.timestamp)}</time
+        >
       {/if}
     </div>
 
@@ -157,7 +153,9 @@
     background-color: var(--fd-card);
     border: 1px solid var(--fd-border);
     color: var(--fd-card-foreground);
-    box-shadow: 0 1px 3px 0 oklch(0% 0 0 / 0.06), 0 1px 2px -1px oklch(0% 0 0 / 0.04);
+    box-shadow:
+      0 1px 3px 0 oklch(0% 0 0 / 0.06),
+      0 1px 2px -1px oklch(0% 0 0 / 0.04);
     border-bottom-left-radius: var(--fd-radius-sm);
   }
 

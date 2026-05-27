@@ -405,7 +405,12 @@ function syncExecutionsFromMessages(messages: PlaygroundMessage[]): void {
     if (!msg.executionId || seenIds.has(msg.executionId)) continue;
     seenIds.add(msg.executionId);
     const isSubflow = isSubflowMessage(msg);
-    executions.push({ id: msg.executionId, startedAt: msg.timestamp, status: 'running', isSubflow });
+    executions.push({
+      id: msg.executionId,
+      startedAt: msg.timestamp,
+      status: 'running',
+      isSubflow
+    });
     added = true;
     if (!isSubflow) gainedMainRun = true;
   }

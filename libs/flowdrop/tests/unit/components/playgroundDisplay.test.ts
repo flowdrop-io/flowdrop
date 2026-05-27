@@ -12,10 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  resolveMessageDisplay,
-  type PlaygroundMessage
-} from '$lib/types/playground.js';
+import { resolveMessageDisplay, type PlaygroundMessage } from '$lib/types/playground.js';
 
 function makeMessage(overrides: Partial<PlaygroundMessage> = {}): PlaygroundMessage {
   return {
@@ -70,9 +67,7 @@ describe('resolveMessageDisplay — server display override', () => {
   });
 
   it('honours server display on an assistant message', () => {
-    expect(resolveMessageDisplay(makeMessage({ role: 'assistant', display: 'card' }))).toBe(
-      'card'
-    );
+    expect(resolveMessageDisplay(makeMessage({ role: 'assistant', display: 'card' }))).toBe('card');
   });
 });
 

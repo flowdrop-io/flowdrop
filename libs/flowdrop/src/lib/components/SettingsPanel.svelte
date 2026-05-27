@@ -362,7 +362,11 @@
 
 <div class="flowdrop-settings-panel {className}">
   <!-- Tab Navigation -->
-  <div class="flowdrop-settings-panel__tabs" role="tablist" aria-label={m().layout.settingsCategories}>
+  <div
+    class="flowdrop-settings-panel__tabs"
+    role="tablist"
+    aria-label={m().layout.settingsCategories}
+  >
     {#each categories as category, index (category)}
       <button
         class="flowdrop-settings-panel__tab"

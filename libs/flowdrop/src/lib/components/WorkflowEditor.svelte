@@ -277,7 +277,11 @@
       const rawStatus = statuses[node.id];
       if (!rawStatus) return node;
 
-      const existing = node.data.executionInfo ?? { status: 'idle' as const, executionCount: 0, isExecuting: false };
+      const existing = node.data.executionInfo ?? {
+        status: 'idle' as const,
+        executionCount: 0,
+        isExecuting: false
+      };
       return {
         ...node,
         data: {

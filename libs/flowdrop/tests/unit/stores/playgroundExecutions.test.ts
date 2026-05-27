@@ -98,11 +98,7 @@ describe('playgroundStore sub-flow execution focus', () => {
   });
 
   it('excludes sub-flow runs from the run-switcher list', () => {
-    playgroundActions.addMessages([
-      mainMsg('main-1'),
-      subMsg('sub', 'main-1'),
-      mainMsg('main-2')
-    ]);
+    playgroundActions.addMessages([mainMsg('main-1'), subMsg('sub', 'main-1'), mainMsg('main-2')]);
     // All runs are tracked internally...
     expect(getCurrentSession()?.executions?.map((e) => e.id)).toEqual(['main-1', 'sub', 'main-2']);
     // ...but only main pipeline runs are offered for selection.

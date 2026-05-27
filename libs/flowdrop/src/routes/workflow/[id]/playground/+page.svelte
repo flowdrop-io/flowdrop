@@ -33,9 +33,10 @@
 
     try {
       const sessions = await playgroundService.listSessions(workflowId);
-      const mostRecent = sessions.length > 0
-        ? [...sessions].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).pop()!
-        : null;
+      const mostRecent =
+        sessions.length > 0
+          ? [...sessions].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).pop()!
+          : null;
       const target = mostRecent
         ? mostRecent.id
         : (await playgroundService.createSession(workflowId, 'Session 1')).id;
@@ -53,7 +54,10 @@
 
 <div class="playground-redirect">
   {#if error}
-    <Icon icon="mdi:alert-circle" class="playground-redirect__icon playground-redirect__icon--error" />
+    <Icon
+      icon="mdi:alert-circle"
+      class="playground-redirect__icon playground-redirect__icon--error"
+    />
     <p class="playground-redirect__text">Failed to open playground: {error}</p>
     <a href="/" class="playground-redirect__link">Go to home</a>
   {:else}
@@ -86,8 +90,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .playground-redirect__text {

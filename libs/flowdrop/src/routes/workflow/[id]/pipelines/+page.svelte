@@ -88,7 +88,17 @@
       const data = await response.json();
       const raw = data.data || data.pipelines || [];
       pipelines = raw.map(
-        (p: { id: string; status: string; created?: string; createdAt?: string; updated?: string; description?: string; name?: string; executionCount?: number; lastExecuted?: string }) => ({
+        (p: {
+          id: string;
+          status: string;
+          created?: string;
+          createdAt?: string;
+          updated?: string;
+          description?: string;
+          name?: string;
+          executionCount?: number;
+          lastExecuted?: string;
+        }) => ({
           id: p.id,
           name: p.name || p.id,
           description: p.description || '',

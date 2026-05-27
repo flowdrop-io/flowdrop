@@ -288,11 +288,7 @@
       return;
     }
 
-    if (
-      getBehaviorSettings().chatAutoRetry &&
-      workflowId &&
-      autoRetryCount < MAX_AUTO_RETRIES
-    ) {
+    if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
       autoRetryCount++;
       const errorText = buildBatchErrorMessage(
         completedCount,

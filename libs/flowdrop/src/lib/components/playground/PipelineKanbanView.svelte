@@ -2,10 +2,34 @@
   import type { KanbanColumnDef } from '$lib/types/index.js';
 
   const DEFAULT_COLUMNS: KanbanColumnDef[] = [
-    { key: 'pending',     label: 'Pending',     statuses: ['idle', 'pending'],                    icon: 'mdi:clock-outline',        color: 'var(--fd-muted-foreground)' },
-    { key: 'in_progress', label: 'In Progress', statuses: ['running', 'paused', 'interrupted'],   icon: 'mdi:play-circle-outline',  color: 'var(--fd-warning)'          },
-    { key: 'done',        label: 'Done',        statuses: ['completed', 'skipped'],               icon: 'mdi:check-circle',         color: 'var(--fd-success)'          },
-    { key: 'failed',      label: 'Failed',      statuses: ['failed', 'cancelled'],                icon: 'mdi:alert-circle',         color: 'var(--fd-error)'            },
+    {
+      key: 'pending',
+      label: 'Pending',
+      statuses: ['idle', 'pending'],
+      icon: 'mdi:clock-outline',
+      color: 'var(--fd-muted-foreground)'
+    },
+    {
+      key: 'in_progress',
+      label: 'In Progress',
+      statuses: ['running', 'paused', 'interrupted'],
+      icon: 'mdi:play-circle-outline',
+      color: 'var(--fd-warning)'
+    },
+    {
+      key: 'done',
+      label: 'Done',
+      statuses: ['completed', 'skipped'],
+      icon: 'mdi:check-circle',
+      color: 'var(--fd-success)'
+    },
+    {
+      key: 'failed',
+      label: 'Failed',
+      statuses: ['failed', 'cancelled'],
+      icon: 'mdi:alert-circle',
+      color: 'var(--fd-error)'
+    }
   ];
 </script>
 
@@ -13,7 +37,11 @@
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import { createPipelineDataFetcher, resolveStatus } from './pipelineViewUtils.svelte.js';
-  import { getStatusLabel, getStatusTextColor, getStatusBackgroundColor } from '$lib/utils/nodeStatus.js';
+  import {
+    getStatusLabel,
+    getStatusTextColor,
+    getStatusBackgroundColor
+  } from '$lib/utils/nodeStatus.js';
   import type { NodeStatus } from './pipelineViewUtils.svelte.js';
   import type { Workflow, WorkflowNode } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
@@ -89,10 +117,7 @@
           style="--col-color: {col.color ?? 'var(--fd-muted-foreground)'}"
         >
           <div class="pipeline-kanban__column-header">
-            <Icon
-              icon={col.icon ?? 'mdi:circle-outline'}
-              class="pipeline-kanban__col-icon"
-            />
+            <Icon icon={col.icon ?? 'mdi:circle-outline'} class="pipeline-kanban__col-icon" />
             <span class="pipeline-kanban__col-label">{col.label}</span>
             <span class="pipeline-kanban__col-count">{items.length}</span>
           </div>
@@ -105,8 +130,11 @@
                     {#if showStatusPill}
                       <span
                         class="pipeline-kanban__card-status"
-                        style="color: {getStatusTextColor(status)}; background-color: {getStatusBackgroundColor(status)}"
-                      >{getStatusLabel(status)}</span>
+                        style="color: {getStatusTextColor(
+                          status
+                        )}; background-color: {getStatusBackgroundColor(status)}"
+                        >{getStatusLabel(status)}</span
+                      >
                     {/if}
                   </div>
                   <span class="pipeline-kanban__card-type">{node.data.metadata.id}</span>

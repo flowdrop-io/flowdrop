@@ -6,8 +6,15 @@ import { logger } from '$lib/utils/logger.js';
 export type NodeStatus = NodeExecutionStatus;
 
 const KNOWN_STATUSES = new Set<string>([
-  'idle', 'pending', 'running', 'paused', 'interrupted',
-  'completed', 'skipped', 'failed', 'cancelled'
+  'idle',
+  'pending',
+  'running',
+  'paused',
+  'interrupted',
+  'completed',
+  'skipped',
+  'failed',
+  'cancelled'
 ]);
 
 export interface NodeStatusData {
@@ -53,7 +60,7 @@ export function createPipelineDataFetcher(
           status: info.status,
           last_executed: info.last_executed as string | null | undefined,
           execution_time: info.execution_time as number | null | undefined,
-          error: info.error as string | null | undefined,
+          error: info.error as string | null | undefined
         };
       }
       nodeStatusMap = map;
@@ -65,7 +72,7 @@ export function createPipelineDataFetcher(
           label: col.label,
           statuses: col.statuses as NodeExecutionStatus[],
           icon: col.icon,
-          color: col.color,
+          color: col.color
         }));
       }
     } catch {

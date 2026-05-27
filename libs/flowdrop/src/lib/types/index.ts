@@ -1388,7 +1388,14 @@ export interface NodeExecutionInfo {
 /**
  * Workflow execution status
  */
-export type ExecutionStatus = 'idle' | 'running' | 'completed' | 'failed' | 'cancelled' | 'paused' | 'interrupted';
+export type ExecutionStatus =
+  | 'idle'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'paused'
+  | 'interrupted';
 
 /**
  * Workflow execution result

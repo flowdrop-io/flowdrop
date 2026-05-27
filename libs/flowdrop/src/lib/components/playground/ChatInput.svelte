@@ -65,16 +65,20 @@
   let seenEnableRunCount = 0;
 
   $effect(() => {
-    const count = getMessages().filter(m => hasEnableRunFlag(m.metadata)).length;
+    const count = getMessages().filter((m) => hasEnableRunFlag(m.metadata)).length;
     if (count > seenEnableRunCount) {
-      untrack(() => { seenEnableRunCount = count; });
+      untrack(() => {
+        seenEnableRunCount = count;
+      });
       runEnabled = true;
     }
   });
 
   $effect(() => {
     if (getCurrentSession()?.id) {
-      untrack(() => { seenEnableRunCount = 0; });
+      untrack(() => {
+        seenEnableRunCount = 0;
+      });
       runEnabled = true;
     }
   });
@@ -87,7 +91,9 @@
     if (wasExecuting && !nowExecuting && inputField) {
       tick().then(() => inputField?.focus({ preventScroll: true }));
     }
-    untrack(() => { wasExecuting = nowExecuting; });
+    untrack(() => {
+      wasExecuting = nowExecuting;
+    });
   });
 
   function handleSend(): void {

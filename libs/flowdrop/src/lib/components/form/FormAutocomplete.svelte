@@ -722,11 +722,7 @@
     style={popoverStyle}
     onmousedown={(e) => e.preventDefault()}
   >
-    <ul
-      class="form-autocomplete__listbox"
-      role="listbox"
-      aria-label={t.suggestions}
-    >
+    <ul class="form-autocomplete__listbox" role="listbox" aria-label={t.suggestions}>
       {#if isLoading}
         <li class="form-autocomplete__status form-autocomplete__status--loading">
           <Icon icon="heroicons:arrow-path" class="form-autocomplete__status-icon" />

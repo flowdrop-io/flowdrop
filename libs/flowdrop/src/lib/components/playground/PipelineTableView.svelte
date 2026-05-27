@@ -138,14 +138,24 @@
                 {#if expandable}
                   <Icon
                     icon="mdi:chevron-right"
-                    class="pipeline-table__chevron {expanded ? 'pipeline-table__chevron--open' : ''}"
+                    class="pipeline-table__chevron {expanded
+                      ? 'pipeline-table__chevron--open'
+                      : ''}"
                   />
                 {/if}
               </td>
-              <td class="pipeline-table__td pipeline-table__td--label" title={row.node.data.label}>{row.node.data.label}</td>
-              <td class="pipeline-table__td pipeline-table__td--muted" title={row.node.data.metadata.id}>{row.node.data.metadata.id}</td>
+              <td class="pipeline-table__td pipeline-table__td--label" title={row.node.data.label}
+                >{row.node.data.label}</td
+              >
+              <td
+                class="pipeline-table__td pipeline-table__td--muted"
+                title={row.node.data.metadata.id}>{row.node.data.metadata.id}</td
+              >
               <td class="pipeline-table__td">
-                <span class="pipeline-table__status" style="color: {getStatusTextColor(row.status)}">
+                <span
+                  class="pipeline-table__status"
+                  style="color: {getStatusTextColor(row.status)}"
+                >
                   <Icon
                     icon={STATUS_ICON[row.status] ?? 'mdi:circle-outline'}
                     class="pipeline-table__status-icon"
@@ -153,7 +163,9 @@
                   {row.status}
                 </span>
               </td>
-              <td class="pipeline-table__td pipeline-table__td--id" title={row.node.id}>{row.node.id}</td>
+              <td class="pipeline-table__td pipeline-table__td--id" title={row.node.id}
+                >{row.node.id}</td
+              >
             </tr>
             {#if expanded && expandable}
               <tr class="pipeline-table__detail-row">
@@ -321,7 +333,8 @@
   }
 
   .pipeline-table__detail-cell {
-    padding: var(--fd-space-sm) var(--fd-space-md) var(--fd-space-sm) calc(1.5rem + var(--fd-space-md));
+    padding: var(--fd-space-sm) var(--fd-space-md) var(--fd-space-sm)
+      calc(1.5rem + var(--fd-space-md));
     border-bottom: 1px solid var(--fd-border);
   }
 

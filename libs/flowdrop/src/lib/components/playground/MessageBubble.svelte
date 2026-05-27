@@ -10,10 +10,7 @@
 -->
 
 <script lang="ts">
-  import {
-    resolveMessageDisplay,
-    type PlaygroundMessage
-  } from '../../types/playground.js';
+  import { resolveMessageDisplay, type PlaygroundMessage } from '../../types/playground.js';
   import ChatBubble from './ChatBubble.svelte';
   import LogRow from './LogRow.svelte';
   import MessageNotice from './MessageNotice.svelte';

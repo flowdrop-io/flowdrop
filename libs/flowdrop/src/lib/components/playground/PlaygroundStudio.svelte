@@ -3,14 +3,17 @@
   import Icon from '@iconify/svelte';
   import Playground from './Playground.svelte';
   import PipelinePanel from './PipelinePanel.svelte';
-  import { getPipelinePanelOpen, pipelinePanelActions } from '../../stores/pipelinePanelStore.svelte.js';
+  import {
+    getPipelinePanelOpen,
+    pipelinePanelActions
+  } from '../../stores/pipelinePanelStore.svelte.js';
   import {
     getActiveExecutionId,
     getPinnedExecutionId,
     getLatestExecutionId,
     getPipelineRefreshTrigger,
     getSelectableExecutions,
-    playgroundActions,
+    playgroundActions
   } from '../../stores/playgroundStore.svelte.js';
   import { setEndpointConfig, workflowApi } from '../../services/api.js';
   import { logger } from '../../utils/logger.js';
@@ -57,7 +60,7 @@
     initialPipelineWidth = 500,
     onSessionNavigate,
     onClose,
-    extraPipelineViews = [],
+    extraPipelineViews = []
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally — seed mutable state from the prop's initial value; workflow may load asynchronously below
@@ -103,7 +106,8 @@
 
   async function loadWorkflow(): Promise<void> {
     if (!endpointConfig) {
-      workflowError = 'Provide a workflow prop or an endpointConfig so the workflow can be fetched.';
+      workflowError =
+        'Provide a workflow prop or an endpointConfig so the workflow can be fetched.';
       workflowLoading = false;
       return;
     }
@@ -152,7 +156,11 @@
   }
 </script>
 
-<div class="playground-studio" class:playground-studio--resizing={isResizing} style="--playground-studio-min-chat-width: {minChatWidth}px">
+<div
+  class="playground-studio"
+  class:playground-studio--resizing={isResizing}
+  style="--playground-studio-min-chat-width: {minChatWidth}px"
+>
   <div class="playground-studio__panes" bind:this={splitEl}>
     {#if getPipelinePanelOpen() && resolvedWorkflow && endpointConfig}
       {@const activeId = getActiveExecutionId()}

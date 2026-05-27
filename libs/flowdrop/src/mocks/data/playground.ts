@@ -821,7 +821,10 @@ export function initializeDemoForeachPlaygroundData(): void {
     source: 'pipeline',
     metadata: { [ENABLE_RUN_METADATA_KEY]: true },
     timestamp: ts(-116_500),
-    tags: [runTag('Run #1'), { id: 'status', label: 'completed', color: 'success', variant: 'subtle' }]
+    tags: [
+      runTag('Run #1'),
+      { id: 'status', label: 'completed', color: 'success', variant: 'subtle' }
+    ]
   });
   const s1 = mockSessions.get(session.id);
   if (s1) {
@@ -905,18 +908,20 @@ export function initializeDemoForeachPlaygroundData(): void {
     hierarchy: subHierarchy,
     tags: [runTag('Run #2'), { id: 'status', label: 'aborted', color: 'warning', variant: 'solid' }]
   });
-  addMessage(session.id, 'assistant', 'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.', {
-    executionId: exec2Id,
-    nodeId: 'output.1',
-    nodeLabel: 'Output',
-    duration: 1800,
-    parentMessageId: userMsg2?.id,
-    timestamp: ts(-58_200),
-    tags: [
-      runTag('Run #2'),
-      { id: 'status', label: 'failed', color: 'error', variant: 'solid' }
-    ]
-  });
+  addMessage(
+    session.id,
+    'assistant',
+    'Execution failed on item 3 (Cherry). 2 of 5 items completed before the error.',
+    {
+      executionId: exec2Id,
+      nodeId: 'output.1',
+      nodeLabel: 'Output',
+      duration: 1800,
+      parentMessageId: userMsg2?.id,
+      timestamp: ts(-58_200),
+      tags: [runTag('Run #2'), { id: 'status', label: 'failed', color: 'error', variant: 'solid' }]
+    }
+  );
   updateSessionStatus(session.id, 'failed');
   addMessage(session.id, 'system', 'Run #2 failed', {
     executionId: exec2Id,

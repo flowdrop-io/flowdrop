@@ -135,7 +135,11 @@
   {/if}
 
   <!-- Options -->
-  <div class="choice-prompt__options" role={isMultiple ? 'group' : 'radiogroup'} aria-label={config.message}>
+  <div
+    class="choice-prompt__options"
+    role={isMultiple ? 'group' : 'radiogroup'}
+    aria-label={config.message}
+  >
     {#each config.options as option (option.value)}
       {@const isChecked = isResolved ? isOptionResolved(option) : selectedValues.has(option.value)}
       <label

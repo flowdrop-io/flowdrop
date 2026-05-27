@@ -81,7 +81,11 @@
 <div class="swap-picker">
   <!-- Header -->
   <div class="swap-picker__header">
-    <button class="swap-picker__back" onclick={onCancel} aria-label={m().layout.backToConfiguration}>
+    <button
+      class="swap-picker__back"
+      onclick={onCancel}
+      aria-label={m().layout.backToConfiguration}
+    >
       <Icon icon="heroicons:arrow-left" />
     </button>
     <h2 class="swap-picker__title">Swap Node</h2>

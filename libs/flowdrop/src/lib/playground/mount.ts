@@ -473,7 +473,9 @@ export async function mountPlaygroundStudio(
     throw new Error('container element is required for mountPlaygroundStudio()');
   }
   if (mode === 'modal') {
-    throw new Error('modal mode is not supported by mountPlaygroundStudio() — use mountPlayground() instead');
+    throw new Error(
+      'modal mode is not supported by mountPlaygroundStudio() — use mountPlayground() instead'
+    );
   }
 
   const finalEndpointConfig = await prepareMount({
@@ -504,8 +506,7 @@ export async function mountPlaygroundStudio(
   return buildMountedPlayground(svelteApp, workflowId, config, onSessionStatusChange);
 }
 
-export interface PlaygroundAppMountOptions
-  extends Omit<PlaygroundStudioMountOptions, 'mode'> {
+export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOptions, 'mode'> {
   /**
    * Display mode. Modal is unsupported — use mountPlayground() for that.
    * @default "standalone"

@@ -66,12 +66,30 @@
   }
 
   /* Color hooks — one line per color. To add a color, add a row here. */
-  .message-tag-chip[data-color='muted']   { --chip-c: var(--fd-muted-foreground); --chip-c-on: var(--fd-background); }
-  .message-tag-chip[data-color='primary'] { --chip-c: var(--fd-primary);          --chip-c-on: var(--fd-primary-foreground); }
-  .message-tag-chip[data-color='success'] { --chip-c: var(--fd-success, oklch(55% 0.15 145)); --chip-c-on: white; }
-  .message-tag-chip[data-color='warning'] { --chip-c: var(--fd-warning);          --chip-c-on: var(--fd-background); }
-  .message-tag-chip[data-color='error']   { --chip-c: var(--fd-error);            --chip-c-on: white; }
-  .message-tag-chip[data-color='info']    { --chip-c: var(--fd-info);             --chip-c-on: var(--fd-background); }
+  .message-tag-chip[data-color='muted'] {
+    --chip-c: var(--fd-muted-foreground);
+    --chip-c-on: var(--fd-background);
+  }
+  .message-tag-chip[data-color='primary'] {
+    --chip-c: var(--fd-primary);
+    --chip-c-on: var(--fd-primary-foreground);
+  }
+  .message-tag-chip[data-color='success'] {
+    --chip-c: var(--fd-success, oklch(55% 0.15 145));
+    --chip-c-on: white;
+  }
+  .message-tag-chip[data-color='warning'] {
+    --chip-c: var(--fd-warning);
+    --chip-c-on: var(--fd-background);
+  }
+  .message-tag-chip[data-color='error'] {
+    --chip-c: var(--fd-error);
+    --chip-c-on: white;
+  }
+  .message-tag-chip[data-color='info'] {
+    --chip-c: var(--fd-info);
+    --chip-c-on: var(--fd-background);
+  }
 
   /* Variants — derive bg/fg/border from --chip-c. */
   .message-tag-chip[data-variant='subtle'] {

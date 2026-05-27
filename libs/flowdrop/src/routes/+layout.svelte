@@ -25,7 +25,10 @@
   import { initializeSettings, getUiSettings } from '$lib/stores/settingsStore.svelte.js';
   import { resolveTheme } from '$lib/themes/index.js';
   import type { FlowDropSkinTokens } from '$lib/types/skin.js';
-  import { getPipelinePanelOpen, pipelinePanelActions } from '$lib/stores/pipelinePanelStore.svelte.js';
+  import {
+    getPipelinePanelOpen,
+    pipelinePanelActions
+  } from '$lib/stores/pipelinePanelStore.svelte.js';
 
   let { data, children } = $props();
 

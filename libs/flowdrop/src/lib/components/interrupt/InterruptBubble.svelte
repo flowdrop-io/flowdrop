@@ -16,10 +16,7 @@
   import ReviewPrompt from './ReviewPrompt.svelte';
   import MessageTagStrip from '../playground/MessageTagStrip.svelte';
   import HierarchyTrail from '../playground/HierarchyTrail.svelte';
-  import type {
-    MessageHierarchyItem,
-    MessageTag
-  } from '../../types/playground.js';
+  import type { MessageHierarchyItem, MessageTag } from '../../types/playground.js';
   import type {
     Interrupt,
     InterruptType,
@@ -304,7 +301,9 @@
       <time
         class="interrupt-bubble__timestamp"
         datetime={currentInterrupt.resolvedAt ?? currentInterrupt.createdAt}
-        aria-label="sent at {formatTimestamp(currentInterrupt.resolvedAt ?? currentInterrupt.createdAt)}"
+        aria-label="sent at {formatTimestamp(
+          currentInterrupt.resolvedAt ?? currentInterrupt.createdAt
+        )}"
       >
         {formatTimestamp(currentInterrupt.resolvedAt ?? currentInterrupt.createdAt)}
       </time>

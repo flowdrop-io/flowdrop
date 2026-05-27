@@ -42,7 +42,8 @@
       class="system-notice__timestamp"
       datetime={message.timestamp}
       aria-label="sent at {formatTimestamp(message.timestamp)}"
-    >{formatTimestamp(message.timestamp)}</time>
+      >{formatTimestamp(message.timestamp)}</time
+    >
   {/if}
 </div>
 
