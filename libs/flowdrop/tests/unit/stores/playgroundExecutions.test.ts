@@ -136,7 +136,7 @@ describe('playgroundStore sub-flow execution focus', () => {
 
   it('refreshes the panel while following the latest run', () => {
     playgroundActions.addMessages([mainMsg('main')]);
-    applyServerResponse({ data: [mainMsg('main')] });
+    applyServerResponse({ data: [mainMsg('main')] }, 'sess-1');
     // Following latest → focus stays on the main run.
     expect(getActiveExecutionId()).toBe('main');
   });

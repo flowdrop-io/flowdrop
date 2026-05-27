@@ -288,14 +288,14 @@ function buildMountedPlayground(
       if (session) {
         playgroundService.startPolling(
           session.id,
-          (response) => applyServerResponse(response),
+          (response) => applyServerResponse(response, session.id),
           pollingInterval,
           config.shouldStopPolling,
           playgroundService.getLastSequenceNumber()
         );
       }
     },
-    pushMessages: (response: PlaygroundMessagesApiResponse) => applyServerResponse(response),
+    pushMessages: (response: PlaygroundMessagesApiResponse) => applyServerResponse(response, null),
     reset: () => {
       playgroundService.stopPolling();
       playgroundActions.reset();

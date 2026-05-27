@@ -143,7 +143,7 @@
             .getMessages(sessionId, {
               since: playgroundService.getLastSequenceNumber() ?? undefined
             })
-            .then((response) => applyServerResponse(response))
+            .then((response) => applyServerResponse(response, sessionId))
             .catch((err) => logger.error('[Playground] Visibility catchup failed:', err));
         }
       }
@@ -257,7 +257,7 @@
       });
       if (token !== loadToken) return;
       playgroundActions.clearMessages();
-      applyServerResponse(response);
+      applyServerResponse(response, sessionId);
       setHasOlder(deriveHasOlder(response));
 
       if (session.status !== 'idle') {
@@ -320,6 +320,11 @@
     try {
       const sessionName = `Session ${getSessions().length + 1}`;
       const session = await playgroundService.createSession(workflowId, sessionName);
+
+      // Stop polling the previous (possibly running) session before switching,
+      // mirroring handleSelectSession. Otherwise its next poll keeps the old
+      // 'running' status alive and the new session's chat input stays disabled.
+      playgroundService.stopPolling();
 
       if (onSessionNavigate) {
         onSessionNavigate(session.id);
@@ -422,7 +427,7 @@
 
     playgroundService.startPolling(
       sessionId,
-      (response) => applyServerResponse(response),
+      (response) => applyServerResponse(response, sessionId),
       pollingInterval,
       overrideShouldStopPolling ?? config.shouldStopPolling,
       initialSequenceNumber
@@ -437,7 +442,7 @@
       const response = await playgroundService.getMessages(sessionId, {
         since: playgroundService.getLastSequenceNumber() ?? undefined
       });
-      applyServerResponse(response);
+      applyServerResponse(response, sessionId);
       if (response.sessionStatus === 'running' && !playgroundService.isPolling()) {
         startPolling(sessionId, true);
       }
@@ -458,7 +463,7 @@
       const response = await playgroundService.getMessages(sessionId, {
         since: playgroundService.getLastSequenceNumber() ?? undefined
       });
-      applyServerResponse(response);
+      applyServerResponse(response, sessionId);
     } catch (err) {
       logger.error('[Playground] Failed to refresh after interrupt:', err);
     }

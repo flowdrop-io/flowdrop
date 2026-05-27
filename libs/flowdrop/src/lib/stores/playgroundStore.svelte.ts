@@ -669,8 +669,18 @@ export const playgroundActions = {
  * Apply a server response to the store. All message and status updates from
  * the server flow through here — polling callback, manual fetches, interrupt
  * resolution. Nothing updates messages or session status except this function.
+ *
+ * Pass `sessionId` (the session the response was fetched for) so a response
+ * that resolves after the user switched sessions is dropped instead of writing
+ * the old session's status/messages onto the new current session. Pass `null`
+ * to deliberately opt out of the guard (non-session-scoped callers only) — the
+ * argument is required so every new caller has to make that choice explicitly.
  */
-export function applyServerResponse(response: PlaygroundMessagesApiResponse): void {
+export function applyServerResponse(
+  response: PlaygroundMessagesApiResponse,
+  sessionId: string | null
+): void {
+  if (sessionId !== null && _currentSession?.id !== sessionId) return;
   if (response.data && response.data.length > 0) {
     playgroundActions.addMessages(response.data);
     // Refresh the pipeline panel when following latest or pinned to the latest
@@ -800,7 +810,7 @@ export async function refreshSessionMessages(
 
   try {
     const response = await fetchMessages(session.id);
-    applyServerResponse(response);
+    applyServerResponse(response, session.id);
   } catch (err) {
     logger.error('[playgroundStore] Failed to refresh messages:', err);
   }
