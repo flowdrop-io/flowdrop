@@ -279,6 +279,42 @@
               "description": "Configuration for autocomplete fields (when format is \"autocomplete\")"
             }
           ]
+        },
+        "readOnly": {
+          "type": "boolean",
+          "description": "JSON Schema `readOnly` keyword. When true, the field is displayed but\ncannot be edited (rendered in a disabled state).\n"
+        },
+        "height": {
+          "type": "string",
+          "description": "Editor height as a CSS value (e.g. `200px`).\nApplies to editor fields: `json`/`code`, `markdown`, and `template`.\nDefaults: `200px` (code), `300px` (markdown), `250px` (template).\n"
+        },
+        "darkTheme": {
+          "type": "boolean",
+          "description": "Force the editor's dark theme on or off.\nApplies to `json`/`code` and `template` fields.\nWhen omitted, the editor follows the resolved app theme.\n"
+        },
+        "autoFormat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to auto-format JSON on blur.\nApplies to `json`/`code` editor fields.\n"
+        },
+        "showToolbar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show the editor toolbar.\nApplies to `markdown` editor fields.\n"
+        },
+        "showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show the editor status bar.\nApplies to `markdown` editor fields.\n"
+        },
+        "spellChecker": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to enable spell checking.\nApplies to `markdown` editor fields.\n"
+        },
+        "placeholderExample": {
+          "type": "string",
+          "description": "Example template string shown as a placeholder hint.\nApplies to `template` fields.\n"
         }
       },
       "required": [
