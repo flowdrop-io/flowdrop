@@ -419,11 +419,26 @@ export interface PlaygroundConfig {
    */
   showSidebar?: boolean;
   /**
-   * Whether to show the session header bar (default: true)
-   * When false, the header with session name and close button is hidden.
-   * Typically used together with showSidebar: false for minimal UI.
+   * Whether to show the ControlPanel header bar (default: true)
+   * When false, hides the entire header row: session label, session chip
+   * (with its New Session / session list popover) and the toolbar actions
+   * (Pipeline / Refresh / Logs). Use for a minimal, locked-down playground.
    */
   showSessionHeader?: boolean;
+  /**
+   * Whether to show the "New Session" entry in the session chip popover
+   * (default: true). When false, users cannot create additional sessions
+   * from the UI — useful for single-session playground embeds.
+   * No effect when showSessionHeader is false.
+   */
+  showNewSessionButton?: boolean;
+  /**
+   * Whether to show the session chip selector and its session list (default:
+   * true). When false, the chip dropdown is hidden entirely — users cannot
+   * switch sessions or see other sessions. Useful for locking a playground
+   * embed to a single session. No effect when showSessionHeader is false.
+   */
+  showSessionList?: boolean;
 
   /**
    * Determines if polling should stop for a given session status.

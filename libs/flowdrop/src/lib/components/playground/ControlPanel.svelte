@@ -38,6 +38,10 @@
     showRunButton?: boolean;
     predefinedMessage?: string;
     placeholder?: string;
+    // Session UI config
+    showSessionHeader?: boolean;
+    showNewSessionButton?: boolean;
+    showSessionList?: boolean;
     style?: string;
   }
 
@@ -56,6 +60,9 @@
     showRunButton = true,
     predefinedMessage,
     placeholder,
+    showSessionHeader = true,
+    showNewSessionButton = true,
+    showSessionList = true,
     style
   }: Props = $props();
 
@@ -107,136 +114,144 @@
 </script>
 
 <section class="control-panel" {style}>
-  <header class="control-panel__header">
-    <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
-    <span class="control-panel__label">{cp.sessionsLabel}</span>
+  {#if showSessionHeader}
+    <header class="control-panel__header">
+      <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
+      <span class="control-panel__label">{cp.sessionsLabel}</span>
 
-    <div class="control-panel__session-chip-wrap" bind:this={chipWrapEl}>
-      <button
-        type="button"
-        class="control-panel__session-chip"
-        class:control-panel__session-chip--open={sessionDropdownOpen}
-        bind:this={sessionChipEl}
-        aria-haspopup="menu"
-        aria-expanded={sessionDropdownOpen}
-        onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
-        onkeydown={(e) => {
-          if (e.key === 'Escape') sessionDropdownOpen = false;
-        }}
-        title={cp.switchSession}
-      >
-        <span class="control-panel__session-chip-name">
-          {getCurrentSession()?.name ?? cp.noSession}
-        </span>
-        <Icon
-          icon={sessionDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
-          class="control-panel__session-chip-chevron"
-        />
-      </button>
-
-      {#if sessionDropdownOpen}
-        <div
-          class="control-panel__session-popover"
-          bind:this={sessionPopoverEl}
-          role="menu"
-          tabindex="-1"
-          onkeydown={(e) => {
-            if (e.key === 'Escape') {
-              sessionDropdownOpen = false;
-              sessionChipEl?.focus();
-            }
-          }}
-        >
+      {#if showSessionList}
+        <div class="control-panel__session-chip-wrap" bind:this={chipWrapEl}>
           <button
             type="button"
-            role="menuitem"
-            class="control-panel__session-popover-item control-panel__session-popover-item--new"
-            disabled={getIsLoading()}
-            onclick={handleCreate}
+            class="control-panel__session-chip"
+            class:control-panel__session-chip--open={sessionDropdownOpen}
+            bind:this={sessionChipEl}
+            aria-haspopup="menu"
+            aria-expanded={sessionDropdownOpen}
+            onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
+            onkeydown={(e) => {
+              if (e.key === 'Escape') sessionDropdownOpen = false;
+            }}
+            title={cp.switchSession}
           >
-            <Icon icon="mdi:plus" />
-            <span>{cp.newSession}</span>
+            <span class="control-panel__session-chip-name">
+              {getCurrentSession()?.name ?? cp.noSession}
+            </span>
+            <Icon
+              icon={sessionDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+              class="control-panel__session-chip-chevron"
+            />
           </button>
-          {#if getSessions().length > 0}
-            <div class="control-panel__session-popover-divider"></div>
-            <div class="control-panel__session-popover-list">
-              {#each getSessions() as session (session.id)}
-                {@const isActive = getCurrentSession()?.id === session.id}
-                <div class="control-panel__session-popover-row">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    class="control-panel__session-popover-item"
-                    class:control-panel__session-popover-item--active={isActive}
-                    onclick={() => handleSelect(session.id)}
-                  >
-                    {#if isActive}
-                      <Icon icon="mdi:check" class="control-panel__session-popover-check" />
-                    {:else}
-                      <Icon icon="mdi:message-outline" />
-                    {/if}
-                    <span>{session.name}</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    class="control-panel__session-popover-delete"
-                    onclick={(e) => handleDelete(e, session.id)}
-                    title={cp.deleteSession}
-                    aria-label={cp.deleteSession}
-                  >
-                    <Icon icon="mdi:delete-outline" />
-                  </button>
+
+          {#if sessionDropdownOpen}
+            <div
+              class="control-panel__session-popover"
+              bind:this={sessionPopoverEl}
+              role="menu"
+              tabindex="-1"
+              onkeydown={(e) => {
+                if (e.key === 'Escape') {
+                  sessionDropdownOpen = false;
+                  sessionChipEl?.focus();
+                }
+              }}
+            >
+              {#if showNewSessionButton}
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="control-panel__session-popover-item control-panel__session-popover-item--new"
+                  disabled={getIsLoading()}
+                  onclick={handleCreate}
+                >
+                  <Icon icon="mdi:plus" />
+                  <span>{cp.newSession}</span>
+                </button>
+              {/if}
+              {#if showSessionList && getSessions().length > 0}
+                {#if showNewSessionButton}
+                  <div class="control-panel__session-popover-divider"></div>
+                {/if}
+                <div class="control-panel__session-popover-list">
+                  {#each getSessions() as session (session.id)}
+                    {@const isActive = getCurrentSession()?.id === session.id}
+                    <div class="control-panel__session-popover-row">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        class="control-panel__session-popover-item"
+                        class:control-panel__session-popover-item--active={isActive}
+                        onclick={() => handleSelect(session.id)}
+                      >
+                        {#if isActive}
+                          <Icon icon="mdi:check" class="control-panel__session-popover-check" />
+                        {:else}
+                          <Icon icon="mdi:message-outline" />
+                        {/if}
+                        <span>{session.name}</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        class="control-panel__session-popover-delete"
+                        onclick={(e) => handleDelete(e, session.id)}
+                        title={cp.deleteSession}
+                        aria-label={cp.deleteSession}
+                      >
+                        <Icon icon="mdi:delete-outline" />
+                      </button>
+                    </div>
+                  {/each}
                 </div>
-              {/each}
+              {/if}
             </div>
           {/if}
         </div>
       {/if}
-    </div>
 
-    <div class="control-panel__header-actions">
-      {#if onTogglePanel}
-        {@const pipelineTitle = isPipelinePanelOpen ? cp.hidePipeline : cp.showPipeline}
+      <div class="control-panel__header-actions">
+        {#if onTogglePanel}
+          {@const pipelineTitle = isPipelinePanelOpen ? cp.hidePipeline : cp.showPipeline}
+          <button
+            type="button"
+            class="control-panel__toolbar-btn"
+            class:control-panel__toolbar-btn--active={isPipelinePanelOpen}
+            onclick={onTogglePanel}
+            title={pipelineTitle}
+            aria-label={pipelineTitle}
+          >
+            <Icon icon="mdi:source-branch" />
+            {cp.pipeline}
+          </button>
+        {/if}
+        {#if getCurrentSession()}
+          <button
+            type="button"
+            class="control-panel__toolbar-btn"
+            class:control-panel__toolbar-btn--spinning={isRefreshing}
+            onclick={onRefresh}
+            disabled={isRefreshing}
+            title={cp.refreshTitle}
+            aria-label={cp.refreshTitle}
+          >
+            <Icon icon="mdi:refresh" />
+            {cp.refresh}
+          </button>
+        {/if}
         <button
           type="button"
           class="control-panel__toolbar-btn"
-          class:control-panel__toolbar-btn--active={isPipelinePanelOpen}
-          onclick={onTogglePanel}
-          title={pipelineTitle}
-          aria-label={pipelineTitle}
+          class:control-panel__toolbar-btn--active={getShowLogs()}
+          onclick={() => playgroundActions.toggleShowLogs()}
+          title={logsTitle}
+          aria-label={logsTitle}
         >
-          <Icon icon="mdi:source-branch" />
-          {cp.pipeline}
+          <Icon icon="mdi:console" />
+          {cp.logs}
         </button>
-      {/if}
-      {#if getCurrentSession()}
-        <button
-          type="button"
-          class="control-panel__toolbar-btn"
-          class:control-panel__toolbar-btn--spinning={isRefreshing}
-          onclick={onRefresh}
-          disabled={isRefreshing}
-          title={cp.refreshTitle}
-          aria-label={cp.refreshTitle}
-        >
-          <Icon icon="mdi:refresh" />
-          {cp.refresh}
-        </button>
-      {/if}
-      <button
-        type="button"
-        class="control-panel__toolbar-btn"
-        class:control-panel__toolbar-btn--active={getShowLogs()}
-        onclick={() => playgroundActions.toggleShowLogs()}
-        title={logsTitle}
-        aria-label={logsTitle}
-      >
-        <Icon icon="mdi:console" />
-        {cp.logs}
-      </button>
-    </div>
-  </header>
+      </div>
+    </header>
+  {/if}
 
   <ChatInput
     showTextarea={showChatInput}

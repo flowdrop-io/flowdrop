@@ -550,6 +550,9 @@
           showChatInput={config.showChatInput ?? true}
           showRunButton={config.showRunButton ?? true}
           predefinedMessage={config.predefinedMessage}
+          showSessionHeader={config.showSessionHeader ?? true}
+          showNewSessionButton={config.showNewSessionButton ?? true}
+          showSessionList={config.showSessionList ?? true}
         />
       {/if}
     </div>
