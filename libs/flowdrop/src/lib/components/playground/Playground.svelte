@@ -78,7 +78,7 @@
 
   // Vertical resizer state for the ExecutionConsole ↔ ControlPanel split.
   let playgroundContentEl = $state<HTMLElement | null>(null);
-  let controlPanelHeight = $state(280);
+  let controlPanelHeight = $state(140);
   let isVerticalResizing = $state(false);
   let containerHeight = $state(0);
   let dragContainerBottom = 0;
