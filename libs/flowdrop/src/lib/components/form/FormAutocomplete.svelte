@@ -604,12 +604,14 @@
     const current = depFingerprint;
     if (current === prevDepFingerprint) return;
     prevDepFingerprint = current;
-    // A dependency field changed — abort any in-flight fetch, clear state
+    // A dependency field changed — abort any in-flight fetch and invalidate
+    // cached suggestions/labels (they were keyed by the previous dependency
+    // values). Do NOT clear this field's value here: that policy lives in the
+    // parent form's handleFieldChange so it only fires on user-driven changes,
+    // not on undo/redo, programmatic resets, or collaborative edits (#33).
     abortController?.abort();
     suggestions = [];
     labelCache = new Map();
-    if (multiple) onChange([]);
-    else onChange('');
   });
 
   /**

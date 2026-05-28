@@ -62,7 +62,7 @@
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/index.js';
   import { m, warnDeprecatedProp } from '$lib/messages/index.js';
-  import { mergeWithDefaults } from '$lib/utils/formMerge.js';
+  import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
 
   /**
    * Props interface for SchemaForm component
@@ -235,7 +235,18 @@
    * @param value - New field value
    */
   function handleFieldChange(key: string, value: unknown): void {
+    const previous = formValues[key];
     edits[key] = value;
+
+    // Cascade-clear any autocomplete whose `params` references this field.
+    // Only runs on user-driven edits; undo/redo and external value-prop
+    // replacement flow through `values` and bypass this path (#33).
+    if (previous !== value) {
+      const dependents = cascadeClearAutocompleteDependents(schema, key);
+      for (const [depKey, depValue] of Object.entries(dependents)) {
+        edits[depKey] = depValue;
+      }
+    }
 
     // Notify parent of the change
     if (onChange) {

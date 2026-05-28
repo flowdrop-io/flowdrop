@@ -47,7 +47,7 @@
   import { logger } from '../utils/logger.js';
   import { getDataTypeColorToken, getPortBackgroundColor } from '$lib/utils/colors.js';
   import { applyPortOrder } from '$lib/utils/portUtils.js';
-  import { mergeWithDefaults } from '$lib/utils/formMerge.js';
+  import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -422,10 +422,22 @@
   }
 
   /**
-   * Handle field value changes from FormField components
+   * Handle field value changes from FormField components.
+   *
+   * When a field changes, also clear any sibling autocomplete that declared
+   * this field in its `autocomplete.params` map — its previous value was
+   * computed against the old dependency value and is now stale. The cascade
+   * runs only on user-driven edits via this codepath; undo/redo and external
+   * config replacement flow through `initialConfig` and don't trigger it (#33).
    */
   function handleFieldChange(key: string, value: unknown): void {
+    const previous = configValues[key];
     edits[key] = value;
+    if (previous === value) return;
+    const dependents = cascadeClearAutocompleteDependents(configSchema, key);
+    for (const [depKey, depValue] of Object.entries(dependents)) {
+      edits[depKey] = depValue;
+    }
   }
 
   /**

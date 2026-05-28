@@ -370,8 +370,13 @@ export interface AutocompleteConfig {
    * If the "account" field currently holds "my-jira", the URL becomes:
    * /api/jira/issue-types?account=my-jira&q=...
    *
-   * When any dependency field changes, the autocomplete clears its
-   * current value and invalidates the suggestion cache.
+   * When a dependency field changes, the component invalidates its cached
+   * suggestions and aborts any in-flight fetch. The dependent field's own
+   * value is cleared by the parent form (`ConfigForm` / `SchemaForm`) on
+   * user-driven edits only — undo/redo, programmatic value replacement, and
+   * collaborative edits flow in via props and preserve dependent values.
+   * Standalone consumers of `FormAutocomplete` outside a FlowDrop form
+   * therefore need to clear dependents themselves.
    */
   params?: Record<string, string>;
 }
