@@ -432,6 +432,140 @@ export function getCategoryById(id: string): MockCategory | undefined {
   return mockCategories.find((cat) => cat.id === id);
 }
 
+// ============================================================================
+// Dependent autocomplete demo data (Jira-style cascade: org → project → ...)
+// ----------------------------------------------------------------------------
+// Used by the "Demo: Dependent Autocomplete" workflow to exercise the
+// `autocomplete.params` feature (sibling form values forwarded to the
+// suggestion URL as query parameters). The data is deliberately keyed so each
+// level meaningfully filters the next — picking a different organisation
+// invalidates the project list, picking a different project invalidates the
+// issue-type and assignee lists.
+// ============================================================================
+
+/** Jira-style organisation suggestion. */
+export interface MockJiraOrg {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+/** Jira-style project suggestion. Each project belongs to one organisation. */
+export interface MockJiraProject {
+  id: string;
+  name: string;
+  organizationId: string;
+  key: string;
+}
+
+/** Jira-style issue-type suggestion. Scoped to a specific project. */
+export interface MockJiraIssueType {
+  id: string;
+  name: string;
+  projectId: string;
+  icon?: string;
+}
+
+/** Jira-style assignee suggestion. Scoped to a specific project. */
+export interface MockJiraAssignee {
+  id: string;
+  name: string;
+  projectId: string;
+  role?: string;
+}
+
+export const mockJiraOrgs: MockJiraOrg[] = [
+  { id: 'org-acme', name: 'Acme Corp', description: 'Primary product org' },
+  { id: 'org-globex', name: 'Globex Industries', description: 'SaaS + ML division' }
+];
+
+export const mockJiraProjects: MockJiraProject[] = [
+  { id: 'proj-acme-web', name: 'Acme Web Platform', organizationId: 'org-acme', key: 'AWP' },
+  { id: 'proj-acme-mobile', name: 'Acme Mobile App', organizationId: 'org-acme', key: 'AMA' },
+  { id: 'proj-acme-data', name: 'Acme Data Pipeline', organizationId: 'org-acme', key: 'ADP' },
+  { id: 'proj-globex-saas', name: 'Globex SaaS', organizationId: 'org-globex', key: 'GSA' },
+  { id: 'proj-globex-ml', name: 'Globex ML Platform', organizationId: 'org-globex', key: 'GML' }
+];
+
+export const mockJiraIssueTypes: MockJiraIssueType[] = [
+  { id: 'bug', name: 'Bug', projectId: 'proj-acme-web' },
+  { id: 'story', name: 'Story', projectId: 'proj-acme-web' },
+  { id: 'task', name: 'Task', projectId: 'proj-acme-web' },
+  { id: 'epic', name: 'Epic', projectId: 'proj-acme-web' },
+  { id: 'bug', name: 'Bug', projectId: 'proj-acme-mobile' },
+  { id: 'story', name: 'Story', projectId: 'proj-acme-mobile' },
+  { id: 'task', name: 'Task', projectId: 'proj-acme-mobile' },
+  { id: 'incident', name: 'Incident', projectId: 'proj-acme-data' },
+  { id: 'task', name: 'Task', projectId: 'proj-acme-data' },
+  { id: 'change-request', name: 'Change Request', projectId: 'proj-acme-data' },
+  { id: 'bug', name: 'Bug', projectId: 'proj-globex-saas' },
+  { id: 'story', name: 'Story', projectId: 'proj-globex-saas' },
+  { id: 'support', name: 'Support', projectId: 'proj-globex-saas' },
+  { id: 'experiment', name: 'Experiment', projectId: 'proj-globex-ml' },
+  { id: 'model', name: 'Model', projectId: 'proj-globex-ml' },
+  { id: 'dataset', name: 'Dataset', projectId: 'proj-globex-ml' }
+];
+
+export const mockJiraAssignees: MockJiraAssignee[] = [
+  { id: 'alice', name: 'Alice Johnson', projectId: 'proj-acme-web', role: 'Tech Lead' },
+  { id: 'bob', name: 'Bob Smith', projectId: 'proj-acme-web', role: 'Engineer' },
+  { id: 'charlie', name: 'Charlie Davis', projectId: 'proj-acme-web', role: 'Engineer' },
+  { id: 'dana', name: 'Dana Lee', projectId: 'proj-acme-mobile', role: 'Tech Lead' },
+  { id: 'bob', name: 'Bob Smith', projectId: 'proj-acme-mobile', role: 'Engineer' },
+  { id: 'eve', name: 'Eve Martinez', projectId: 'proj-acme-data', role: 'Data Engineer' },
+  { id: 'frank', name: 'Frank Wilson', projectId: 'proj-acme-data', role: 'Data Lead' },
+  { id: 'greg', name: 'Greg Patel', projectId: 'proj-globex-saas', role: 'Engineer' },
+  { id: 'hannah', name: 'Hannah Kim', projectId: 'proj-globex-saas', role: 'Tech Lead' },
+  { id: 'irene', name: 'Irene Brown', projectId: 'proj-globex-ml', role: 'ML Engineer' },
+  { id: 'jacob', name: 'Jacob Chen', projectId: 'proj-globex-ml', role: 'ML Lead' }
+];
+
+/** Search Jira orgs by query (no parent filter — orgs sit at the root). */
+export function searchJiraOrgs(query: string): MockJiraOrg[] {
+  if (!query || query.trim() === '') return mockJiraOrgs;
+  const q = query.toLowerCase();
+  return mockJiraOrgs.filter(
+    (o) => o.name.toLowerCase().includes(q) || o.id.toLowerCase().includes(q)
+  );
+}
+
+/** Search projects filtered by organisation. Returns empty if org is missing. */
+export function searchJiraProjects(query: string, organizationId?: string): MockJiraProject[] {
+  if (!organizationId) return [];
+  const scoped = mockJiraProjects.filter((p) => p.organizationId === organizationId);
+  if (!query || query.trim() === '') return scoped;
+  const q = query.toLowerCase();
+  return scoped.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.key.toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q)
+  );
+}
+
+/** Search issue types filtered by project. Returns empty if project is missing. */
+export function searchJiraIssueTypes(query: string, projectId?: string): MockJiraIssueType[] {
+  if (!projectId) return [];
+  const scoped = mockJiraIssueTypes.filter((t) => t.projectId === projectId);
+  if (!query || query.trim() === '') return scoped;
+  const q = query.toLowerCase();
+  return scoped.filter((t) => t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q));
+}
+
+/** Search assignees filtered by project. Returns empty if project is missing. */
+export function searchJiraAssignees(query: string, projectId?: string): MockJiraAssignee[] {
+  if (!projectId) return [];
+  const scoped = mockJiraAssignees.filter((a) => a.projectId === projectId);
+  if (!query || query.trim() === '') return scoped;
+  const q = query.toLowerCase();
+  return scoped.filter(
+    (a) =>
+      a.name.toLowerCase().includes(q) ||
+      a.id.toLowerCase().includes(q) ||
+      a.role?.toLowerCase().includes(q)
+  );
+}
+
 /**
  * Sample autocomplete config schemas for testing
  * These demonstrate various autocomplete configurations

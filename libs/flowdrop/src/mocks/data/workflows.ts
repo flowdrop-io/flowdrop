@@ -3640,6 +3640,127 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
 };
 
 /**
+ * Demo workflow: Dependent Autocomplete (issue #31 regression surface)
+ *
+ * Builds a saved `Jira: Create Issue` node with every dependent autocomplete
+ * preloaded — organisation, project, issue type, assignee. Before the fix,
+ * opening this node would clear `project`, `issue_type`, and `assignee` on
+ * mount (the dependent autocompletes captured an empty form snapshot, saw the
+ * fingerprint flip, and called `onChange('')`). After the fix, all four
+ * values should survive the mount.
+ *
+ * The node-metadata payload below mirrors `jira_create_issue` from
+ * `mocks/data/nodes.ts`; we pull it from the registry to stay in sync.
+ */
+export const demoDependentAutocompleteWorkflow: Workflow = (() => {
+  const jiraNode = getNodeById('jira_create_issue');
+  if (!jiraNode) {
+    throw new Error('jira_create_issue node not found in registry');
+  }
+
+  return {
+    id: 'demo_dependent_autocomplete',
+    name: 'Demo: Dependent Autocomplete',
+    description:
+      'Exercises FormAutocomplete `params` (dependent fields) — the saved Jira node should keep all four cascading values after reopening (#31 regression surface).',
+    nodes: [
+      {
+        id: 'notes.dependent_autocomplete',
+        type: 'universalNode',
+        position: { x: -600, y: -260 },
+        deletable: true,
+        data: {
+          label: 'Notes',
+          config: {
+            content:
+              '# Dependent Autocomplete Demo (#31)\n\nThis workflow opens with a **fully preloaded** `Jira: Create Issue` node so you can verify the issue #31 fix.\n\n## What to check\n\n1. **Click the `Jira: Create Issue` node** on the right.\n2. The config panel should show all four cascading fields already populated:\n   - **Organisation:** Acme Corp\n   - **Project:** Acme Mobile App (AMA)\n   - **Issue Type:** Story\n   - **Assignee:** Dana Lee — Tech Lead\n3. **None of these should clear on open.** Before the fix, `Project`, `Issue Type`, and `Assignee` would all blank out as soon as the form mounted (they declare `autocomplete.params` and were caught by the parent→child race).\n\n## What to play with\n\n- Open the **Organisation** dropdown — pick *Globex Industries*. The dependent fields should clear (correct: user-driven dependency change).\n- Pick a new project, issue type, and assignee. Tab out of the form to commit.\n- Reload the page. The form should reopen with whatever you last saved.\n- Press **Ctrl+Z / Cmd+Z** to undo. The reverted values should be reflected in the form, not shadowed by your in-progress edits.\n\n## Cascade shape\n\n- `organization` — independent\n- `project` — `params: { organization }`\n- `issue_type` — `params: { project }`\n- `assignee` — `params: { project }`\n\nSuggestions for each level are served by `/api/flowdrop/autocomplete/jira-*` (see `mocks/handlers/autocomplete.ts`); a missing parent filter returns an empty list, so pick top-down.',
+            noteType: 'info'
+          },
+          metadata: {
+            id: 'notes',
+            name: 'Notes',
+            type: 'note',
+            supportedTypes: ['note'],
+            description: 'Add documentation and comments to your workflow with Markdown support',
+            category: 'tools',
+            icon: 'mdi:note-text',
+            color: '#fbbf24',
+            version: '1.0.0',
+            tags: ['tools', 'notes', 'documentation'],
+            inputs: [],
+            outputs: [
+              {
+                id: 'content',
+                name: 'Note Content',
+                type: 'output',
+                dataType: 'string',
+                required: false,
+                description: 'The markdown content of the note'
+              }
+            ],
+            config: { content: '', noteType: 'info' },
+            configSchema: {
+              type: 'object',
+              properties: {
+                content: {
+                  type: 'string',
+                  title: 'Note Content',
+                  description: 'Documentation or comment text (supports Markdown)',
+                  format: 'markdown',
+                  default: ''
+                },
+                noteType: {
+                  type: 'string',
+                  title: 'Note Type',
+                  description: 'Visual style and colour of the note',
+                  default: 'info',
+                  enum: ['info', 'warning', 'success', 'error', 'note']
+                }
+              }
+            }
+          },
+          nodeId: 'notes.dependent_autocomplete'
+        },
+        measured: { width: 520, height: 620 },
+        selected: false,
+        dragging: false
+      },
+      {
+        id: 'jira_create_issue.1',
+        type: 'universalNode',
+        position: { x: 40, y: -180 },
+        deletable: true,
+        data: {
+          label: 'Jira: Create Issue',
+          // Preloaded — every dependent field must survive form mount.
+          config: {
+            organization: 'org-acme',
+            project: 'proj-acme-mobile',
+            issue_type: 'story',
+            assignee: 'dana',
+            summary: 'Add biometric auth flow',
+            description:
+              'Users should be able to enable Face ID / fingerprint login from Settings.',
+            priority: 'high'
+          },
+          metadata: jiraNode,
+          nodeId: 'jira_create_issue.1'
+        },
+        measured: { width: 320, height: 200 },
+        selected: false,
+        dragging: false
+      }
+    ],
+    edges: [],
+    metadata: {
+      version: '1.0.0',
+      createdAt: '2026-05-28T10:00:00.000Z',
+      updatedAt: '2026-05-28T10:00:00.000Z'
+    }
+  };
+})();
+
+/**
  * Demo workflow: API-Based Variable Suggestions
  * Demonstrates dynamic variable loading from backend API for template fields
  */
@@ -4123,6 +4244,7 @@ export const mockWorkflows: Map<string, Workflow> = new Map([
   [demoTriggerNodeWorkflow.id, demoTriggerNodeWorkflow],
   [demoForEachLoopWorkflow.id, demoForEachLoopWorkflow],
   [demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow],
+  [demoDependentAutocompleteWorkflow.id, demoDependentAutocompleteWorkflow],
   [demoAgentSpecLLMPipelineWorkflow.id, demoAgentSpecLLMPipelineWorkflow],
   [demoAgentSpecCustomerSupportWorkflow.id, demoAgentSpecCustomerSupportWorkflow]
 ]);

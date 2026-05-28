@@ -5565,6 +5565,153 @@ const flowdropNativeNodes: NodeMetadata[] = [
       }
     }
   },
+  // Jira: Create Issue — demonstrates dependent autocompletes via params
+  // (organization → project → issue_type / assignee). Used by the
+  // "Demo: Dependent Autocomplete" workflow and serves as the regression
+  // surface for issue #31 (preloaded dependent values must survive reopening).
+  {
+    id: 'jira_create_issue',
+    name: 'Jira: Create Issue',
+    type: 'default',
+    supportedTypes: ['default', 'simple'],
+    description:
+      'Create a Jira issue with cascading dependent autocompletes: organisation → project → issue type / assignee. Each field forwards sibling values via `autocomplete.params`.',
+    category: 'helpers',
+    icon: 'mdi:bug',
+    color: '#0052cc',
+    version: '1.0.0',
+    tags: ['jira', 'issue', 'autocomplete', 'dependent', 'cascade', 'demo'],
+    inputs: [
+      {
+        id: 'trigger',
+        name: 'Trigger',
+        type: 'input',
+        dataType: 'trigger',
+        required: false,
+        description: 'Trigger issue creation'
+      }
+    ],
+    outputs: [
+      {
+        id: 'issue',
+        name: 'Issue',
+        type: 'output',
+        dataType: 'object',
+        required: false,
+        description: 'Created issue payload'
+      },
+      {
+        id: 'issueKey',
+        name: 'Issue Key',
+        type: 'output',
+        dataType: 'string',
+        required: false,
+        description: 'Human-readable key (e.g. AMA-123)'
+      }
+    ],
+    config: {
+      organization: '',
+      project: '',
+      issue_type: '',
+      assignee: '',
+      summary: '',
+      description: '',
+      priority: 'medium'
+    },
+    configSchema: {
+      type: 'object',
+      properties: {
+        organization: {
+          type: 'string',
+          title: 'Organisation',
+          description: 'Pick the Jira organisation. Independent — drives every field below.',
+          format: 'autocomplete',
+          autocomplete: {
+            url: '/api/flowdrop/autocomplete/jira-orgs',
+            queryParam: 'q',
+            minChars: 0,
+            debounceMs: 250,
+            fetchOnFocus: true,
+            labelField: 'label',
+            valueField: 'value',
+            allowFreeText: false
+          }
+        },
+        project: {
+          type: 'string',
+          title: 'Project',
+          description: 'Pick a project. Suggestions filter by the chosen organisation.',
+          format: 'autocomplete',
+          autocomplete: {
+            url: '/api/flowdrop/autocomplete/jira-projects',
+            queryParam: 'q',
+            minChars: 0,
+            debounceMs: 250,
+            fetchOnFocus: true,
+            labelField: 'label',
+            valueField: 'value',
+            allowFreeText: false,
+            params: { organization: 'organization' }
+          }
+        },
+        issue_type: {
+          type: 'string',
+          title: 'Issue Type',
+          description: 'Pick an issue type. Suggestions filter by the chosen project.',
+          format: 'autocomplete',
+          autocomplete: {
+            url: '/api/flowdrop/autocomplete/jira-issue-types',
+            queryParam: 'q',
+            minChars: 0,
+            debounceMs: 250,
+            fetchOnFocus: true,
+            labelField: 'label',
+            valueField: 'value',
+            allowFreeText: false,
+            params: { project: 'project' }
+          }
+        },
+        assignee: {
+          type: 'string',
+          title: 'Assignee',
+          description: 'Pick an assignee. Suggestions filter by the chosen project.',
+          format: 'autocomplete',
+          autocomplete: {
+            url: '/api/flowdrop/autocomplete/jira-assignees',
+            queryParam: 'q',
+            minChars: 0,
+            debounceMs: 250,
+            fetchOnFocus: true,
+            labelField: 'label',
+            valueField: 'value',
+            allowFreeText: false,
+            params: { project: 'project' }
+          }
+        },
+        summary: {
+          type: 'string',
+          title: 'Summary',
+          description: 'Short summary of the issue',
+          default: ''
+        },
+        description: {
+          type: 'string',
+          title: 'Description',
+          description: 'Detailed description (Markdown supported)',
+          format: 'multiline',
+          default: ''
+        },
+        priority: {
+          type: 'string',
+          title: 'Priority',
+          description: 'Issue priority',
+          enum: ['low', 'medium', 'high', 'urgent'],
+          default: 'medium'
+        }
+      },
+      required: ['organization', 'project', 'issue_type', 'summary']
+    }
+  },
   // Test terminal nodes for multi-handle positioning
   {
     id: 'test_terminal_multi_output',

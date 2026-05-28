@@ -19,6 +19,10 @@ import {
   searchCategories,
   searchProducts,
   searchLocations,
+  searchJiraOrgs,
+  searchJiraProjects,
+  searchJiraIssueTypes,
+  searchJiraAssignees,
   type MockUser,
   type MockTag,
   type MockCategory,
@@ -368,6 +372,65 @@ export const getAuthUsersAutocompleteHandler = http.get(
   }
 );
 
+// ============================================================================
+// Jira-style cascading endpoints for the dependent-autocomplete demo
+// ----------------------------------------------------------------------------
+// Each endpoint reads one or more sibling-form values from the query string,
+// forwarded by FormAutocomplete's `autocomplete.params` mapping. Missing parent
+// filters yield empty results — the UI treats that as "pick the parent first."
+// ============================================================================
+
+export const getJiraOrgsAutocompleteHandler = http.get(
+  `${API_BASE}/autocomplete/jira-orgs`,
+  async ({ request }) => {
+    await delay(getRandomDelay());
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') || '';
+    const orgs = searchJiraOrgs(query);
+    return HttpResponse.json(
+      orgs.map((o) => ({ label: o.name, value: o.id, description: o.description }))
+    );
+  }
+);
+
+export const getJiraProjectsAutocompleteHandler = http.get(
+  `${API_BASE}/autocomplete/jira-projects`,
+  async ({ request }) => {
+    await delay(getRandomDelay());
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') || '';
+    const organizationId = url.searchParams.get('organization') ?? undefined;
+    const projects = searchJiraProjects(query, organizationId);
+    return HttpResponse.json(projects.map((p) => ({ label: `${p.name} (${p.key})`, value: p.id })));
+  }
+);
+
+export const getJiraIssueTypesAutocompleteHandler = http.get(
+  `${API_BASE}/autocomplete/jira-issue-types`,
+  async ({ request }) => {
+    await delay(getRandomDelay());
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') || '';
+    const projectId = url.searchParams.get('project') ?? undefined;
+    const types = searchJiraIssueTypes(query, projectId);
+    return HttpResponse.json(types.map((t) => ({ label: t.name, value: t.id })));
+  }
+);
+
+export const getJiraAssigneesAutocompleteHandler = http.get(
+  `${API_BASE}/autocomplete/jira-assignees`,
+  async ({ request }) => {
+    await delay(getRandomDelay());
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') || '';
+    const projectId = url.searchParams.get('project') ?? undefined;
+    const assignees = searchJiraAssignees(query, projectId);
+    return HttpResponse.json(
+      assignees.map((a) => ({ label: `${a.name}${a.role ? ` — ${a.role}` : ''}`, value: a.id }))
+    );
+  }
+);
+
 /**
  * Export all autocomplete handlers
  */
@@ -380,5 +443,9 @@ export const autocompleteHandlers = [
   getGenericAutocompleteHandler,
   getAutocompleteErrorHandler,
   getAutocompleteSlowHandler,
-  getAuthUsersAutocompleteHandler
+  getAuthUsersAutocompleteHandler,
+  getJiraOrgsAutocompleteHandler,
+  getJiraProjectsAutocompleteHandler,
+  getJiraIssueTypesAutocompleteHandler,
+  getJiraAssigneesAutocompleteHandler
 ];
