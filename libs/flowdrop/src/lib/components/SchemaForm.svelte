@@ -62,6 +62,7 @@
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/index.js';
   import { m, warnDeprecatedProp } from '$lib/messages/index.js';
+  import { mergeWithDefaults } from '$lib/utils/formMerge.js';
 
   /**
    * Props interface for SchemaForm component
@@ -194,24 +195,24 @@
   let formRef: HTMLFormElement | undefined = $state();
 
   /**
-   * Internal reactive state for form values
+   * User edits — only keys the user has changed since the current schema
+   * was loaded. formValues is derived from props + edits, never synchronised
+   * via an effect, so children mount with the correct values already in place.
    */
-  let formValues = $state<Record<string, unknown>>({});
+  let edits = $state<Record<string, unknown>>({});
+
+  const formValues = $derived(mergeWithDefaults(schema, values, edits));
+
   setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => formValues);
 
-  /**
-   * Initialize form values when schema or values change
-   * Merges default values from schema with provided values
-   */
-  $effect(() => {
-    if (schema?.properties) {
-      const mergedValues: Record<string, unknown> = {};
-      Object.entries(schema.properties).forEach(([key, field]) => {
-        const fieldConfig = field as Record<string, unknown>;
-        // Use provided value if available, otherwise use schema default
-        mergedValues[key] = values[key] !== undefined ? values[key] : fieldConfig.default;
-      });
-      formValues = mergedValues;
+  // Drop edits when the schema reference changes (different form mounted).
+  // Identity comparison only — value churn in `values` preserves in-flight edits.
+  // svelte-ignore state_referenced_locally — capturing the initial prop reference is intentional; later changes are picked up by the effect below
+  let prevSchemaRef = schema;
+  $effect.pre(() => {
+    if (schema !== prevSchemaRef) {
+      prevSchemaRef = schema;
+      edits = {};
     }
   });
 
@@ -234,7 +235,7 @@
    * @param value - New field value
    */
   function handleFieldChange(key: string, value: unknown): void {
-    formValues[key] = value;
+    edits[key] = value;
 
     // Notify parent of the change
     if (onChange) {

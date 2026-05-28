@@ -47,6 +47,7 @@
   import { logger } from '../utils/logger.js';
   import { getDataTypeColorToken, getPortBackgroundColor } from '$lib/utils/colors.js';
   import { applyPortOrder } from '$lib/utils/portUtils.js';
+  import { mergeWithDefaults } from '$lib/utils/formMerge.js';
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -187,11 +188,29 @@
   const initialConfig = $derived(values ?? node?.data.config ?? {});
 
   /**
-   * Create reactive configuration values using $state
-   * This fixes the Svelte 5 reactivity warnings
+   * User edits to config — only keys the user has touched since the current
+   * schema was loaded. configValues is derived from props + edits, so children
+   * mount with the correct values already in place (no parent→child race
+   * during the initial flush). Never assign to configValues directly.
    */
-  let configValues = $state<Record<string, unknown>>({});
+  let edits = $state<Record<string, unknown>>({});
+
+  const configValues = $derived(mergeWithDefaults(configSchema, initialConfig, edits));
+
   setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => configValues);
+
+  // Drop edits when the schema reference changes — covers dynamic-schema load
+  // (configSchema flips from undefined → loaded) and "different node opened"
+  // (node prop change → metadata.configSchema reference change). Identity
+  // comparison only — value churn in `initialConfig` preserves in-flight edits.
+  // svelte-ignore state_referenced_locally — capturing the initial derived reference is intentional; later changes are picked up by the effect below
+  let prevSchemaRef = configSchema;
+  $effect.pre(() => {
+    if (configSchema !== prevSchemaRef) {
+      prevSchemaRef = configSchema;
+      edits = {};
+    }
+  });
 
   /**
    * UI Extension values for display settings
@@ -291,22 +310,6 @@
   $effect(() => {
     if (needsDynamicSchemaLoad) {
       loadDynamicSchema();
-    }
-  });
-
-  /**
-   * Initialize config values when node/schema changes
-   */
-  $effect(() => {
-    if (configSchema?.properties) {
-      const mergedConfig: Record<string, unknown> = {};
-      Object.entries(configSchema.properties).forEach(([key, field]) => {
-        const fieldConfig = field as Record<string, unknown>;
-        // Use existing value if available, otherwise use default
-        mergedConfig[key] =
-          initialConfig[key] !== undefined ? initialConfig[key] : fieldConfig.default;
-      });
-      configValues = mergedConfig;
     }
   });
 
@@ -422,7 +425,7 @@
    * Handle field value changes from FormField components
    */
   function handleFieldChange(key: string, value: unknown): void {
-    configValues[key] = value;
+    edits[key] = value;
   }
 
   /**
@@ -434,6 +437,11 @@
     if (onChange) {
       const extensions = showUIExtensions && node ? uiExtensionValues : undefined;
       onChange({ ...configValues }, extensions);
+      // Discharge the edits buffer at the commit boundary. Subsequent prop
+      // changes (parent absorbing the commit, undo/redo, collaboration) then
+      // flow through `initialConfig` cleanly instead of being shadowed by a
+      // stale local edit.
+      edits = {};
     }
   }
 
