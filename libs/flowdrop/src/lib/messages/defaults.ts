@@ -349,7 +349,7 @@ export const defaultMessages = {
       newSession: 'New session'
     },
     controlPanel: {
-      sessionsLabel: 'Sessions',
+      sessionsLabel: 'Session',
       noSession: 'No session',
       switchSession: 'Switch session',
       newSession: 'New session',
