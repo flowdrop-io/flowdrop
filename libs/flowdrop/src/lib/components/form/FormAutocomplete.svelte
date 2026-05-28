@@ -309,10 +309,9 @@
     // Open dropdown
     showDropdown();
 
-    // If allowFreeText and single mode, update the value immediately
-    if (allowFreeText && !multiple) {
-      onChange(inputValue);
-    }
+    // Free-text single mode commits on intent signals (Enter, blur, option select),
+    // NOT per keystroke — see issue #32. Treating the search-box text as the field's
+    // committed value pollutes the parent form's edits buffer and history.
 
     // Fetch suggestions with debounce
     debouncedFetch(inputValue);
@@ -351,6 +350,19 @@
         );
         if (!matchingSuggestion && currentVal.length === 0) {
           inputValue = '';
+        }
+      }
+
+      // Free-text single mode — commit on blur if the user typed something
+      // that differs from the current value. An empty inputValue is just the
+      // resting state of the search box (the value lives in the chip), so it
+      // is NOT an intent signal; clearing happens via the X button or
+      // Backspace-on-empty. Replaces the per-keystroke commit dropped from
+      // handleInput; see issue #32.
+      if (allowFreeText && !multiple && inputValue !== '') {
+        const currentSingle = selectedValues[0] ?? '';
+        if (inputValue !== currentSingle) {
+          onChange(inputValue);
         }
       }
     }, 200);
