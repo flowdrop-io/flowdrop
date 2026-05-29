@@ -61,39 +61,14 @@
       endpointConfig ?? createEndpointConfig(baseUrl || '/api/flowdrop')
     );
 
-  // Pipeline status and job data
+  // Pipeline status — drives breadcrumb label and the 5s poll while running
   let pipelineStatus = $state<string>('unknown');
-  interface PipelineNodeStatus {
-    status: string;
-    [key: string]: unknown;
-  }
+  let totalJobs = $state<number>(0);
 
-  let jobStatusData = $state<{
-    jobs: Record<string, unknown>[];
-    node_statuses: Record<string, PipelineNodeStatus>;
-    status_summary: {
-      total: number;
-      pending: number;
-      running: number;
-      completed: number;
-      failed: number;
-      cancelled: number;
-    };
-  }>({
-    jobs: [],
-    node_statuses: {},
-    status_summary: {
-      total: 0,
-      pending: 0,
-      running: 0,
-      completed: 0,
-      failed: 0,
-      cancelled: 0
-    }
-  });
-
-  // Node statuses for visual indicators
-  let nodeStatuses = $state<Record<string, 'pending' | 'running' | 'completed' | 'error'>>({});
+  // Child refresh counter — increments on every successful fetch so the
+  // embedded canvas (WorkflowEditor) re-pulls execution info from the server.
+  // PipelineStatus no longer owns a denormalized status channel; it just signals.
+  let childRefreshTrigger = $state(0);
 
   // Loading and error states
   let isLoadingJobStatus = $state(false);
@@ -113,39 +88,13 @@
       const pipelineData = await client.getPipelineData(pipelineId);
 
       pipelineStatus = pipelineData.status;
-      jobStatusData = {
-        jobs: pipelineData.jobs || [],
-        node_statuses: pipelineData.node_statuses || {},
-        status_summary: pipelineData.job_status_summary || {
-          total: 0,
-          pending: 0,
-          running: 0,
-          completed: 0,
-          failed: 0,
-          cancelled: 0
-        }
-      };
+      totalJobs = pipelineData.job_status_summary?.total ?? 0;
 
-      // Update node statuses based on job data — only set what the server reported
-      if (jobStatusData.node_statuses) {
-        const newNodeStatuses: Record<string, 'pending' | 'running' | 'completed' | 'error'> = {};
+      // Signal the embedded canvas to re-fetch its own node execution info.
+      // It owns the read; we just tell it when to look again.
+      childRefreshTrigger += 1;
 
-        for (const nodeId in jobStatusData.node_statuses) {
-          const status = jobStatusData.node_statuses[nodeId].status;
-          if (status === 'failed' || status === 'cancelled') {
-            newNodeStatuses[nodeId] = 'error';
-          } else if (status === 'running' || status === 'paused' || status === 'interrupted') {
-            newNodeStatuses[nodeId] = 'running';
-          } else if (status === 'completed' || status === 'skipped') {
-            newNodeStatuses[nodeId] = 'completed';
-          } else if (status === 'pending' || status === 'idle') {
-            newNodeStatuses[nodeId] = 'pending';
-          }
-        }
-        nodeStatuses = newNodeStatuses;
-      }
-
-      addLog('info', `Job status updated: ${jobStatusData.status_summary.total} total jobs`);
+      addLog('info', `Job status updated: ${totalJobs} total jobs`);
     } catch (error) {
       logger.error('Failed to fetch pipeline data:', error);
       addLog(
@@ -319,8 +268,8 @@
     disableSidebar={true}
     lockWorkflow={true}
     readOnly={true}
-    {nodeStatuses}
     {pipelineId}
+    refreshTrigger={childRefreshTrigger}
     {endpointConfig}
   />
 

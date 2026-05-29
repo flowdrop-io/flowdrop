@@ -75,9 +75,14 @@
     // New configuration options for pipeline status mode
     lockWorkflow?: boolean;
     readOnly?: boolean;
-    nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
     // Pipeline ID for fetching node execution info from jobs
     pipelineId?: string;
+    /**
+     * Increments to force a re-fetch of node execution info from the server.
+     * Used by parents (e.g. PipelineStatus) to push poll ticks / chat-message
+     * arrivals down to the canvas without owning a separate status channel.
+     */
+    refreshTrigger?: number;
     // Console toggle
     consoleOpen?: boolean;
     onToggleConsole?: () => void;
@@ -241,14 +246,11 @@
     previousExecWorkflowId = storeValue.id;
     previousExecPipelineId = pipelineId;
 
-    // Cancel any pending timeout / in-flight request
+    // Cancel any pending idle/timeout schedule. In-flight fetches are
+    // cancelled by loadNodeExecutionInfo() itself when it's re-entered.
     if (loadExecutionInfoTimeout) {
       clearTimeout(loadExecutionInfoTimeout);
       loadExecutionInfoTimeout = null;
-    }
-    if (executionInfoAbortController) {
-      executionInfoAbortController.abort();
-      executionInfoAbortController = null;
     }
 
     // Schedule loading with requestIdleCallback (falls back to setTimeout)
@@ -266,34 +268,16 @@
     }
   });
 
-  // Apply nodeStatuses from the parent (PipelineStatus embedded mode) to flowNodes
-  // whenever they change. loadNodeExecutionInfo() only fires on pipelineId change,
-  // so this is the update path for subsequent refreshes (e.g. after HITL resolution).
+  // Re-fetch node execution info when the parent bumps refreshTrigger
+  // (poll ticks, chat-message arrivals, manual refresh). loadNodeExecutionInfo()
+  // is the single writer of executionInfo on flowNodes — no parallel channel.
+  // svelte-ignore state_referenced_locally
+  let _prevExecRefreshTrigger = props.refreshTrigger ?? 0;
   $effect(() => {
-    const statuses = props.nodeStatuses;
-    if (!statuses || Object.keys(statuses).length === 0) return;
-
-    flowNodes = untrack(() => flowNodes).map((node) => {
-      const rawStatus = statuses[node.id];
-      if (!rawStatus) return node;
-
-      const existing = node.data.executionInfo ?? {
-        status: 'idle' as const,
-        executionCount: 0,
-        isExecuting: false
-      };
-      return {
-        ...node,
-        data: {
-          ...node.data,
-          executionInfo: {
-            ...existing,
-            status: rawStatus === 'error' ? ('failed' as const) : rawStatus,
-            isExecuting: rawStatus === 'running'
-          }
-        }
-      };
-    });
+    const t = props.refreshTrigger ?? 0;
+    if (t === 0 || t === _prevExecRefreshTrigger) return;
+    _prevExecRefreshTrigger = t;
+    loadNodeExecutionInfo();
   });
 
   // ---------------------------------------------------------------------------
@@ -319,21 +303,27 @@
   });
 
   /**
-   * Load node execution information for all nodes in the workflow
+   * Load node execution information for all nodes in the workflow.
+   * Cancels any in-flight fetch so concurrent callers (pipelineId change
+   * and refreshTrigger bumps) can't race on flowNodes.
    */
   async function loadNodeExecutionInfo(): Promise<void> {
     const workflow = untrack(() => getWorkflowStore());
     if (!workflow?.nodes || !props.pipelineId) return;
 
-    try {
-      executionInfoAbortController = new AbortController();
+    if (executionInfoAbortController) {
+      executionInfoAbortController.abort();
+    }
+    const controller = new AbortController();
+    executionInfoAbortController = controller;
 
+    try {
       const executionInfo = await NodeOperationsHelper.loadNodeExecutionInfo(
         workflow,
         props.pipelineId
       );
 
-      if (executionInfoAbortController?.signal.aborted) return;
+      if (controller.signal.aborted) return;
 
       const defaultExecutionInfo: NodeExecutionInfo = {
         status: 'idle' as const,
@@ -350,7 +340,9 @@
         }
       }));
 
-      executionInfoAbortController = null;
+      if (executionInfoAbortController === controller) {
+        executionInfoAbortController = null;
+      }
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
         logger.error('Failed to load node execution info:', error);

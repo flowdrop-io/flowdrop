@@ -88,10 +88,10 @@
     lockWorkflow?: boolean;
     /** Read-only mode */
     readOnly?: boolean;
-    /** Node execution statuses */
-    nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
     /** Pipeline ID for fetching node execution info */
     pipelineId?: string;
+    /** Increments to force a refresh of pipeline node status from the server */
+    refreshTrigger?: number;
     /** Custom navbar title */
     navbarTitle?: string;
     /** Custom navbar actions */
@@ -104,6 +104,8 @@
     }>;
     /** Show settings gear icon in navbar */
     showSettings?: boolean;
+    /** Show the "Connected" status indicator in the navbar (default: true) */
+    showStatus?: boolean;
     /** API base URL */
     apiBaseUrl?: string;
     /** Endpoint configuration */
@@ -149,11 +151,12 @@
     disableSidebar = false,
     lockWorkflow = false,
     readOnly = false,
-    nodeStatuses = {},
     pipelineId,
+    refreshTrigger = 0,
     navbarTitle,
     navbarActions = [],
     showSettings = true,
+    showStatus = true,
     apiBaseUrl,
     endpointConfig: propEndpointConfig,
     authProvider,
@@ -1027,7 +1030,7 @@
       <Navbar
         title={breadcrumbTitle}
         primaryActions={navbarActions.length > 0 ? navbarActions : defaultPrimaryActions}
-        showStatus={true}
+        {showStatus}
         {showSettings}
         {settingsCategories}
         {showSettingsSyncButton}
@@ -1327,8 +1330,8 @@
         {closeConfigSidebar}
         {lockWorkflow}
         {readOnly}
-        {nodeStatuses}
         {pipelineId}
+        {refreshTrigger}
         consoleOpen={getUiSettings().consoleOpen}
         onToggleConsole={toggleConsole}
       />

@@ -77,8 +77,6 @@ export interface FlowDropMountOptions {
   // Pipeline mode
   /** Pipeline ID for status display */
   pipelineId?: string;
-  /** Node execution statuses */
-  nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
 
   // Navbar customization
   /** Custom navbar title */
@@ -87,6 +85,8 @@ export interface FlowDropMountOptions {
   navbarActions?: NavbarAction[];
   /** Show settings gear icon in navbar */
   showSettings?: boolean;
+  /** Show the "Connected" status indicator in the navbar (default: true) */
+  showStatus?: boolean;
 
   // NEW: Authentication provider
   /** Authentication provider for API requests */
@@ -221,11 +221,11 @@ export async function mountFlowDropApp(
     disableSidebar,
     lockWorkflow,
     readOnly,
-    nodeStatuses,
     pipelineId,
     navbarTitle,
     navbarActions,
     showSettings,
+    showStatus,
     authProvider,
     eventHandlers,
     features: userFeatures,
@@ -323,11 +323,11 @@ export async function mountFlowDropApp(
       disableSidebar,
       lockWorkflow,
       readOnly,
-      nodeStatuses,
       pipelineId,
       navbarTitle,
       navbarActions,
       showSettings,
+      showStatus,
       endpointConfig: config,
       authProvider,
       eventHandlers,
