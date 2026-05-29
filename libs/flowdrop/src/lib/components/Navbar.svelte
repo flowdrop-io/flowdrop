@@ -59,6 +59,25 @@
   // Hoist the navigation branch — six reads in the template.
   const nav = $derived(m().navigation);
 
+  // Flyout structure: actions after the first split into ungrouped (rendered
+  // flat at the top) and groups (rendered as labeled sections). Group order
+  // follows first occurrence in the source array.
+  const dropdownActions = $derived(primaryActions.slice(1));
+  const ungroupedActions = $derived(dropdownActions.filter((a) => !a.group));
+  const groupedActions = $derived.by(() => {
+    const groups = new Map<string, NavbarAction[]>();
+    for (const action of dropdownActions) {
+      if (!action.group) continue;
+      let bucket = groups.get(action.group);
+      if (!bucket) {
+        bucket = [];
+        groups.set(action.group, bucket);
+      }
+      bucket.push(action);
+    }
+    return Array.from(groups, ([label, items]) => ({ label, items }));
+  });
+
   // Close dropdown when clicking outside
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
@@ -203,7 +222,7 @@
 
             {#if isDropdownOpen}
               <div class="flowdrop-navbar__dropdown-menu">
-                {#each primaryActions.slice(1) as action (action.label)}
+                {#each ungroupedActions as action (action.label)}
                   <a
                     href={action.href}
                     class="flowdrop-navbar__dropdown-item"
@@ -222,6 +241,32 @@
                       <Icon icon="mdi:open-in-new" class="w-3 h-3" />
                     {/if}
                   </a>
+                {/each}
+                {#each groupedActions as group, groupIndex (group.label)}
+                  {#if groupIndex > 0 || ungroupedActions.length > 0}
+                    <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
+                  {/if}
+                  <div class="flowdrop-navbar__dropdown-group-header">{group.label}</div>
+                  {#each group.items as action (action.label)}
+                    <a
+                      href={action.href}
+                      class="flowdrop-navbar__dropdown-item"
+                      onclick={(e) => {
+                        action.onclick?.(e);
+                        isDropdownOpen = false;
+                      }}
+                      target={action.external ? '_blank' : undefined}
+                      rel={action.external ? 'noopener noreferrer' : undefined}
+                    >
+                      {#if action.icon}
+                        <Icon icon={action.icon} class="w-4 h-4" />
+                      {/if}
+                      <span>{action.label}</span>
+                      {#if action.external}
+                        <Icon icon="mdi:open-in-new" class="w-3 h-3" />
+                      {/if}
+                    </a>
+                  {/each}
                 {/each}
               </div>
             {/if}
@@ -566,6 +611,21 @@
 
   .flowdrop-navbar__dropdown-item:last-child {
     border-bottom: none;
+  }
+
+  .flowdrop-navbar__dropdown-divider {
+    height: 1px;
+    background-color: var(--fd-border);
+    margin: 0.25rem 0;
+  }
+
+  .flowdrop-navbar__dropdown-group-header {
+    padding: 0.5rem 1rem 0.25rem;
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--fd-muted-foreground);
   }
 
   .flowdrop-navbar__action {
