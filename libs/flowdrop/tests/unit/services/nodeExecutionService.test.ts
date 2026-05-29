@@ -159,6 +159,23 @@ describe('NodeExecutionService', () => {
       expect(result['node-3'].status).toBe('idle'); // Default for missing
     });
 
+    it('should preserve skipped status (regression: canvas overlay used to flicker to Completed)', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          jobs: [
+            { node_id: 'node-1', status: 'skipped', execution_count: 0 },
+            { node_id: 'node-2', status: 'completed', execution_count: 1 }
+          ]
+        })
+      });
+
+      const result = await service.getMultipleNodeExecutionInfo(['node-1', 'node-2'], 'pipeline-1');
+
+      expect(result['node-1'].status).toBe('skipped');
+      expect(result['node-2'].status).toBe('completed');
+    });
+
     it('should mark API unavailable on 404', async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
