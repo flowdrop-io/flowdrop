@@ -419,9 +419,15 @@ export class HistoryService {
 // =========================================================================
 
 /**
- * Singleton instance of the history service
+ * History service of the page-default FlowDrop instance.
  *
- * Use this for the main workflow editor. For isolated instances,
- * create a new HistoryService directly.
+ * Kept as a module-level export for backward compatibility (re-exported via
+ * `@flowdrop/flowdrop/editor`) — `createFlowDropInstance({ isDefault: true })`
+ * adopts this exact object, so legacy `historyService.undo()` calls keep
+ * operating on the default editor's history stack. Holds no reactive state,
+ * so module-level construction is SSR-safe.
+ *
+ * For additional editor instances, the instance container creates a fresh
+ * `new HistoryService()` — use `getInstance().history` in components.
  */
 export const historyService = new HistoryService();

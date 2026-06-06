@@ -7,6 +7,7 @@
 
 import { getWorkflowStore, workflowActions } from '../stores/workflowStore.svelte.js';
 import { historyService } from '../services/historyService.js';
+import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
 import { buildTypeMap, type CommandContext, type CommandDispatch, type UIAction } from './types.js';
 import type { NodeMetadata } from '../types/index.js';
 
@@ -15,65 +16,75 @@ import type { NodeMetadata } from '../types/index.js';
  *
  * @param nodeTypes - Available node type definitions
  * @param onUIAction - Optional callback for UI-side actions (open config panel, select node)
+ * @param instance - The FlowDrop instance to operate on; falls back to the
+ *   page-default instance when omitted (legacy behavior)
  * @returns CommandContext connected to live stores, or null if no workflow is loaded
  */
 export function createStoreCommandContext(
   nodeTypes: NodeMetadata[],
-  onUIAction?: (action: UIAction) => void
+  onUIAction?: (action: UIAction) => void,
+  instance?: FlowDropInstance
 ): CommandContext | null {
-  const workflow = getWorkflowStore();
+  // Instance-aware accessors. Without an instance, route through the legacy
+  // module shims (page-default instance) so existing callers — and tests that
+  // mock the store modules — keep working unchanged.
+  const readWorkflow = () => (instance ? instance.workflow.current : getWorkflowStore());
+  const actions = instance ? instance.workflow.actions : workflowActions;
+  const history = instance ? instance.history : historyService;
+
+  const workflow = readWorkflow();
   if (!workflow) {
     return null;
   }
 
   const dispatch: CommandDispatch = {
-    addNode: (node) => workflowActions.addNode(node),
-    removeNode: (nodeId) => workflowActions.removeNode(nodeId),
-    updateNode: (nodeId, updates) => workflowActions.updateNode(nodeId, updates),
-    addEdge: (edge) => workflowActions.addEdge(edge),
-    removeEdge: (edgeId) => workflowActions.removeEdge(edgeId),
-    batchUpdate: (updates) => workflowActions.batchUpdate(updates),
+    addNode: (node) => actions.addNode(node),
+    removeNode: (nodeId) => actions.removeNode(nodeId),
+    updateNode: (nodeId, updates) => actions.updateNode(nodeId, updates),
+    addEdge: (edge) => actions.addEdge(edge),
+    removeEdge: (edgeId) => actions.removeEdge(edgeId),
+    batchUpdate: (updates) => actions.batchUpdate(updates),
 
     undo: () => {
-      const previousState = historyService.undo();
+      const previousState = history.undo();
       if (previousState) {
-        workflowActions.restoreFromHistory(previousState);
+        actions.restoreFromHistory(previousState);
         return true;
       }
       return false;
     },
 
     redo: () => {
-      const nextState = historyService.redo();
+      const nextState = history.redo();
       if (nextState) {
-        workflowActions.restoreFromHistory(nextState);
+        actions.restoreFromHistory(nextState);
         return true;
       }
       return false;
     },
 
     startTransaction: (description) => {
-      const currentWorkflow = getWorkflowStore();
+      const currentWorkflow = readWorkflow();
       if (currentWorkflow) {
-        historyService.startTransaction(currentWorkflow, description);
+        history.startTransaction(currentWorkflow, description);
       }
     },
 
-    commitTransaction: () => historyService.commitTransaction(),
+    commitTransaction: () => history.commitTransaction(),
     cancelTransaction: () => {
-      const snapshot = historyService.cancelTransaction();
+      const snapshot = history.cancelTransaction();
       if (snapshot) {
-        workflowActions.restoreFromHistory(snapshot);
+        actions.restoreFromHistory(snapshot);
       }
     },
 
     emitUIAction: onUIAction,
 
-    swapNode: (updates) => workflowActions.swapNode(updates)
+    swapNode: (updates) => actions.swapNode(updates)
   };
 
   return {
-    getWorkflow: () => getWorkflowStore(),
+    getWorkflow: () => readWorkflow(),
     nodeTypes,
     typeMap: buildTypeMap(nodeTypes),
     dispatch

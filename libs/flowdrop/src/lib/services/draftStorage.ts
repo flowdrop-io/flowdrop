@@ -174,18 +174,25 @@ interface StoredDraft {
  *
  * @param workflowId - The workflow ID (optional)
  * @param customKey - Custom storage key provided by enterprise (optional)
+ * @param prefix - Key namespace; pass a FlowDrop instance's `storagePrefix`
+ *   to scope drafts per instance. Defaults to the legacy shared prefix so
+ *   single-instance consumers keep their existing drafts.
  * @returns The storage key to use
  */
-export function getDraftStorageKey(workflowId?: string, customKey?: string): string {
+export function getDraftStorageKey(
+  workflowId?: string,
+  customKey?: string,
+  prefix: string = STORAGE_KEY_PREFIX
+): string {
   if (customKey) {
     return customKey;
   }
 
   if (workflowId) {
-    return `${STORAGE_KEY_PREFIX}:${workflowId}`;
+    return `${prefix}:${workflowId}`;
   }
 
-  return `${STORAGE_KEY_PREFIX}:new`;
+  return `${prefix}:new`;
 }
 
 /**

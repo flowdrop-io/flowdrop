@@ -14,6 +14,7 @@ import {
   workflowActions,
   markAsSaved as storeMarkAsSaved
 } from '$lib/stores/workflowStore.svelte.js';
+import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
 import { workflowApi, setEndpointConfig } from './api.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -60,6 +61,11 @@ export interface GlobalSaveOptions {
    * Use this to update draft storage keys or other ID-dependent state.
    */
   onSaved?: (savedWorkflow: Workflow) => void;
+  /**
+   * The FlowDrop instance whose workflow should be saved.
+   * Falls back to the page-default instance when omitted (legacy behavior).
+   */
+  instance?: FlowDropInstance;
 }
 
 /**
@@ -68,6 +74,11 @@ export interface GlobalSaveOptions {
 export interface GlobalExportOptions {
   /** Feature flags (showToasts). Defaults to DEFAULT_FEATURES. */
   features?: Partial<FlowDropFeatures>;
+  /**
+   * The FlowDrop instance whose workflow should be exported.
+   * Falls back to the page-default instance when omitted (legacy behavior).
+   */
+  instance?: FlowDropInstance;
 }
 
 // ---------------------------------------------------------------------------
@@ -147,14 +158,19 @@ async function flushPendingFormChanges(): Promise<void> {
  *  7. Show toast notifications (respecting features.showToasts)
  */
 export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promise<void> {
-  const { apiClient, eventHandlers, onMarkAsSaved, onSaved } = options;
+  const { apiClient, eventHandlers, onMarkAsSaved, onSaved, instance } = options;
   const features = { ...DEFAULT_FEATURES, ...options.features };
+
+  // Instance-aware store accessors. Without an instance, route through the
+  // legacy module shims (page-default instance) so existing callers — and
+  // tests that mock the workflowStore module — keep working unchanged.
+  const readWorkflow = () => (instance ? instance.workflow.current : getWorkflowStore());
 
   // Step 1 — Flush pending form changes (single location for this logic)
   await flushPendingFormChanges();
 
-  // Get current workflow from global store after flush
-  const currentWorkflow = getWorkflowStore();
+  // Get current workflow from the instance's store after flush
+  const currentWorkflow = readWorkflow();
 
   if (!currentWorkflow) {
     if (features.showToasts) {
@@ -222,7 +238,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
 
     // Step 5 — If the server assigned a new ID, sync the store
     if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
-      workflowActions.batchUpdate({
+      (instance ? instance.workflow.actions : workflowActions).batchUpdate({
         nodes: finalWorkflow.nodes,
         edges: finalWorkflow.edges,
         name: finalWorkflow.name,
@@ -236,6 +252,8 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     // Step 6a — Mark dirty state as clean
     if (onMarkAsSaved) {
       onMarkAsSaved();
+    } else if (instance) {
+      instance.workflow.markAsSaved();
     } else {
       // Fallback: call the store's own markAsSaved if no callback was provided
       storeMarkAsSaved();
@@ -262,7 +280,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
 
     // onSaveError hook
-    const currentWorkflowForError = getWorkflowStore();
+    const currentWorkflowForError = readWorkflow();
     if (eventHandlers?.onSaveError && currentWorkflowForError) {
       await eventHandlers.onSaveError(errorObj, currentWorkflowForError);
     }
@@ -296,7 +314,9 @@ export async function globalExportWorkflow(options: GlobalExportOptions = {}): P
     // Flush pending changes before exporting (same discipline as save)
     await flushPendingFormChanges();
 
-    const currentWorkflow = getWorkflowStore();
+    const currentWorkflow = options.instance
+      ? options.instance.workflow.current
+      : getWorkflowStore();
 
     if (!currentWorkflow) {
       if (features.showToasts) {

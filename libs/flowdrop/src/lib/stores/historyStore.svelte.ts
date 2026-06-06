@@ -1,232 +1,289 @@
 /**
  * History Store for FlowDrop (Svelte 5 Runes)
  *
- * Provides reactive Svelte 5 rune-based bindings for the history service.
+ * Provides reactive Svelte 5 rune-based bindings for a history service.
  * Exposes undo/redo state and actions for the workflow editor.
+ *
+ * The reactive state lives in the {@link HistoryStore} class — one per
+ * FlowDrop instance, created by `createFlowDropInstance()` and resolved in
+ * components via `getInstance().historyBindings`. The module-level functions
+ * at the bottom are backward-compatible shims that delegate to the
+ * page-default instance.
  *
  * @module stores/historyStore
  */
 
-import { historyService, type HistoryState, type PushOptions } from '../services/historyService.js';
+import { HistoryService, type HistoryState, type PushOptions } from '../services/historyService.js';
 import type { Workflow } from '../types/index.js';
-
-// =========================================================================
-// Reactive State (Runes)
-// =========================================================================
+import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 /**
- * Internal reactive state for history, powered by $state.
+ * Undo/redo actions for a {@link HistoryStore}.
+ *
+ * Bound facade — safe to detach (`onclick={fd.historyBindings.actions.undo}`)
+ * because every entry is bound to its store in the constructor.
  */
-let historyState = $state<HistoryState>({
-  canUndo: false,
-  canRedo: false,
-  currentIndex: 0,
-  historyLength: 0,
-  isInTransaction: false
-});
-
-// Subscribe to history service changes and update the rune state.
-// The unsubscribe function is stored so it can be called via
-// cleanupHistorySubscription() when the store is torn down.
-const _unsubscribeHistoryService = historyService.subscribe((state) => {
-  historyState = state;
-});
-
-/**
- * Clean up the historyService subscription created at module initialisation.
- * Call this when tearing down the history store (e.g., in tests or on app
- * unmount) to prevent memory leaks.
- */
-export function cleanupHistorySubscription(): void {
-  _unsubscribeHistoryService();
+export interface HistoryStoreActions {
+  initialize: (workflow: Workflow) => void;
+  pushState: (workflow: Workflow, options?: PushOptions) => void;
+  undo: () => boolean;
+  redo: () => boolean;
+  startTransaction: (workflow: Workflow, description?: string) => void;
+  commitTransaction: () => void;
+  cancelTransaction: () => void;
+  clear: (currentWorkflow?: Workflow) => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  getState: () => HistoryState;
 }
 
 // =========================================================================
-// Reactive Getters
+// HistoryStore (per-instance reactive bindings)
 // =========================================================================
 
 /**
- * Get the current history state snapshot.
+ * Reactive rune bindings around a {@link HistoryService}.
  *
- * Use this for binding to UI elements like undo/redo buttons.
- *
- * @example
- * ```svelte
- * <script>
- *   import { getHistoryState } from "$lib/stores/historyStore.svelte.js";
- *
- *   const state = $derived(getHistoryState());
- * </script>
- *
- * <button disabled={!state.canUndo} onclick={historyActions.undo}>
- *   Undo
- * </button>
- * ```
+ * Subscribes to the service on construction; call {@link cleanup} when the
+ * owning instance is destroyed to release the subscription.
  */
-export function getHistoryState(): HistoryState {
-  return historyState;
-}
+export class HistoryStore {
+  /** Reactive snapshot of the history service state. */
+  #state = $state<HistoryState>({
+    canUndo: false,
+    canRedo: false,
+    currentIndex: 0,
+    historyLength: 0,
+    isInTransaction: false
+  });
 
-/**
- * Convenience getter for canUndo state.
- *
- * @returns Whether undo is currently available
- */
-export function getCanUndo(): boolean {
-  return historyState.canUndo;
-}
-
-/**
- * Convenience getter for canRedo state.
- *
- * @returns Whether redo is currently available
- */
-export function getCanRedo(): boolean {
-  return historyState.canRedo;
-}
-
-// =========================================================================
-// History Actions
-// =========================================================================
-
-/**
- * Callback for when workflow state is restored from history
- *
- * Set this to handle the restored workflow state (e.g., update the workflow store)
- */
-let onRestoreCallback: ((workflow: Workflow) => void) | null = null;
-
-/**
- * Set the callback for restoring workflow state
- *
- * This callback is invoked when undo/redo operations return a workflow.
- * Use this to update the workflow store or other state management.
- *
- * @param callback - Function to call with restored workflow
- */
-export function setOnRestoreCallback(callback: ((workflow: Workflow) => void) | null): void {
-  onRestoreCallback = callback;
-}
-
-/**
- * History actions for undo/redo operations
- *
- * Use these functions to interact with the history service.
- * They handle the coordination between history and workflow state.
- */
-export const historyActions = {
   /**
-   * Initialize history with the current workflow
-   *
-   * Call this when loading a new workflow to reset history.
-   *
-   * @param workflow - The initial workflow state
+   * Callback for when workflow state is restored from history.
+   * Invoked when undo/redo operations return a workflow.
    */
-  initialize: (workflow: Workflow): void => {
-    historyService.initialize(workflow);
-  },
+  #onRestore: ((workflow: Workflow) => void) | null = null;
+
+  /** Unsubscribe handle for the service subscription. */
+  readonly #unsubscribe: () => void;
+
+  /** The underlying (non-reactive) history service. */
+  readonly #service: HistoryService;
+
+  /** Bound action facade — see {@link HistoryStoreActions}. */
+  readonly actions: HistoryStoreActions;
+
+  constructor(service: HistoryService) {
+    this.#service = service;
+    this.#unsubscribe = service.subscribe((state) => {
+      this.#state = state;
+    });
+    this.actions = Object.freeze({
+      initialize: this.initialize.bind(this),
+      pushState: this.pushState.bind(this),
+      undo: this.undo.bind(this),
+      redo: this.redo.bind(this),
+      startTransaction: this.startTransaction.bind(this),
+      commitTransaction: this.commitTransaction.bind(this),
+      cancelTransaction: this.cancelTransaction.bind(this),
+      clear: this.clear.bind(this),
+      canUndo: () => this.#service.canUndo(),
+      canRedo: () => this.#service.canRedo(),
+      getState: () => this.#state
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Reactive getters
+  // -----------------------------------------------------------------------
 
   /**
-   * Push the current state to history before making changes
+   * The current history state snapshot.
+   *
+   * Use this for binding to UI elements like undo/redo buttons.
+   *
+   * @example
+   * ```svelte
+   * <script>
+   *   const fd = getInstance();
+   *   const state = $derived(fd.historyBindings.state);
+   * </script>
+   *
+   * <button disabled={!state.canUndo} onclick={fd.historyBindings.actions.undo}>
+   *   Undo
+   * </button>
+   * ```
+   */
+  get state(): HistoryState {
+    return this.#state;
+  }
+
+  /** Whether undo is currently available (reactive). */
+  get canUndo(): boolean {
+    return this.#state.canUndo;
+  }
+
+  /** Whether redo is currently available (reactive). */
+  get canRedo(): boolean {
+    return this.#state.canRedo;
+  }
+
+  // -----------------------------------------------------------------------
+  // Wiring & lifecycle
+  // -----------------------------------------------------------------------
+
+  /**
+   * Set the callback for restoring workflow state.
+   *
+   * This callback is invoked when undo/redo operations return a workflow.
+   * Use this to update the workflow store or other state management.
+   */
+  setOnRestoreCallback(callback: ((workflow: Workflow) => void) | null): void {
+    this.#onRestore = callback;
+  }
+
+  /**
+   * Release the history service subscription.
+   * Called by the owning instance's destroy(); safe to call repeatedly.
+   */
+  cleanup(): void {
+    this.#unsubscribe();
+  }
+
+  // -----------------------------------------------------------------------
+  // Actions
+  // -----------------------------------------------------------------------
+
+  /** Initialize history with the current workflow (resets history). */
+  initialize(workflow: Workflow): void {
+    this.#service.initialize(workflow);
+  }
+
+  /**
+   * Push the current state to history before making changes.
    *
    * Call this BEFORE modifying the workflow to capture the "before" state.
-   *
-   * @param workflow - The current workflow state (before changes)
-   * @param options - Options for this history entry
    */
-  pushState: (workflow: Workflow, options?: PushOptions): void => {
-    historyService.push(workflow, options);
-  },
+  pushState(workflow: Workflow, options?: PushOptions): void {
+    this.#service.push(workflow, options);
+  }
 
   /**
-   * Undo the last change
+   * Undo the last change.
    *
    * Restores the previous workflow state and invokes the restore callback.
    *
    * @returns true if undo was successful, false if at beginning of history
    */
-  undo: (): boolean => {
-    const previousState = historyService.undo();
-    if (previousState && onRestoreCallback) {
-      onRestoreCallback(previousState);
+  undo(): boolean {
+    const previousState = this.#service.undo();
+    if (previousState && this.#onRestore) {
+      this.#onRestore(previousState);
       return true;
     }
     return previousState !== null;
-  },
+  }
 
   /**
-   * Redo the last undone change
+   * Redo the last undone change.
    *
    * Restores the next workflow state and invokes the restore callback.
    *
    * @returns true if redo was successful, false if at end of history
    */
-  redo: (): boolean => {
-    const nextState = historyService.redo();
-    if (nextState && onRestoreCallback) {
-      onRestoreCallback(nextState);
+  redo(): boolean {
+    const nextState = this.#service.redo();
+    if (nextState && this.#onRestore) {
+      this.#onRestore(nextState);
       return true;
     }
     return false;
-  },
+  }
 
   /**
-   * Start a transaction for grouping multiple changes
+   * Start a transaction for grouping multiple changes.
    *
    * All changes during a transaction are combined into a single undo entry.
-   *
-   * @param workflow - The current workflow state (before changes)
-   * @param description - Description for the combined change
    */
-  startTransaction: (workflow: Workflow, description?: string): void => {
-    historyService.startTransaction(workflow, description);
-  },
+  startTransaction(workflow: Workflow, description?: string): void {
+    this.#service.startTransaction(workflow, description);
+  }
+
+  /** Commit the current transaction. */
+  commitTransaction(): void {
+    this.#service.commitTransaction();
+  }
+
+  /** Cancel the current transaction without committing. */
+  cancelTransaction(): void {
+    this.#service.cancelTransaction();
+  }
 
   /**
-   * Commit the current transaction
-   */
-  commitTransaction: (): void => {
-    historyService.commitTransaction();
-  },
-
-  /**
-   * Cancel the current transaction without committing
-   */
-  cancelTransaction: (): void => {
-    historyService.cancelTransaction();
-  },
-
-  /**
-   * Clear all history
+   * Clear all history.
    *
    * @param currentWorkflow - If provided, keeps this as the initial state
    */
-  clear: (currentWorkflow?: Workflow): void => {
-    historyService.clear(currentWorkflow);
-  },
-
-  /**
-   * Check if undo is available
-   */
-  canUndo: (): boolean => {
-    return historyService.canUndo();
-  },
-
-  /**
-   * Check if redo is available
-   */
-  canRedo: (): boolean => {
-    return historyService.canRedo();
-  },
-
-  /**
-   * Get the current history state synchronously
-   *
-   * @returns The current history state
-   */
-  getState: (): HistoryState => {
-    return historyState;
+  clear(currentWorkflow?: Workflow): void {
+    this.#service.clear(currentWorkflow);
   }
+}
+
+// =========================================================================
+// Backward-compatible module API (delegates to the page-default instance)
+// =========================================================================
+
+const def = (): HistoryStore => getDefaultInstance().historyBindings;
+
+/** Get the current history state snapshot (page-default instance). */
+export function getHistoryState(): HistoryState {
+  return def().state;
+}
+
+/** Convenience getter for canUndo state. */
+export function getCanUndo(): boolean {
+  return def().canUndo;
+}
+
+/** Convenience getter for canRedo state. */
+export function getCanRedo(): boolean {
+  return def().canRedo;
+}
+
+/**
+ * Set the callback for restoring workflow state (page-default instance).
+ */
+export function setOnRestoreCallback(callback: ((workflow: Workflow) => void) | null): void {
+  def().setOnRestoreCallback(callback);
+}
+
+/**
+ * Clean up the page-default instance's history subscription.
+ *
+ * Call this when tearing down the history store (e.g., in tests or on app
+ * unmount) to prevent memory leaks.
+ */
+export function cleanupHistorySubscription(): void {
+  def().cleanup();
+}
+
+/**
+ * History actions for undo/redo operations (page-default instance).
+ *
+ * Explicit forwarding object (not a re-export) so the call shape — and
+ * `vi.mock`ability — matches the pre-class API.
+ */
+export const historyActions: HistoryStoreActions = {
+  initialize: (workflow) => def().initialize(workflow),
+  pushState: (workflow, options) => def().pushState(workflow, options),
+  undo: () => def().undo(),
+  redo: () => def().redo(),
+  startTransaction: (workflow, description) => def().startTransaction(workflow, description),
+  commitTransaction: () => def().commitTransaction(),
+  cancelTransaction: () => def().cancelTransaction(),
+  clear: (currentWorkflow) => def().clear(currentWorkflow),
+  canUndo: () => def().actions.canUndo(),
+  canRedo: () => def().actions.canRedo(),
+  getState: () => def().state
 };
 
 // =========================================================================

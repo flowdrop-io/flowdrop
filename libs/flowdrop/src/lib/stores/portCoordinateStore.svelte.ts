@@ -11,6 +11,13 @@
  * Coordinates are derived from SvelteFlow's InternalNode.internals.handleBounds
  * which SvelteFlow already maintains for all node types. This avoids replicating
  * CSS positioning logic and stays automatically accurate.
+ *
+ * The reactive state lives in the {@link PortCoordinateStore} class — one per
+ * FlowDrop instance, resolved in components via `getInstance().portCoordinates`.
+ * The module-level functions at the bottom are backward-compatible shims that
+ * delegate to the page-default instance.
+ *
+ * @module stores/portCoordinateStore
  */
 
 import { SvelteMap } from 'svelte/reactivity';
@@ -22,14 +29,7 @@ import type {
 } from '../types/index.js';
 import type { InternalNode } from '@xyflow/svelte';
 import { ProximityConnectHelper } from '../helpers/proximityConnect.js';
-
-/**
- * Reactive state holding all port absolute coordinates, keyed by handleId.
- * A single const SvelteMap mutated in place: per-key reads (getPortCoordinate)
- * only react to the keys they touch, and Svelte coalesces synchronous
- * mutations into one flush, so bulk updates stay cheap.
- */
-const coordinates: PortCoordinateMap = new SvelteMap<string, PortCoordinate>();
+import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 /**
  * Parse a handle ID to extract nodeId, direction, and portId.
@@ -122,6 +122,142 @@ function computeNodePortCoordinates(
   return result;
 }
 
+// =========================================================================
+// PortCoordinateStore (per-instance reactive state)
+// =========================================================================
+
+/**
+ * Per-instance absolute port coordinates, keyed by handleId.
+ *
+ * A single SvelteMap mutated in place: per-key reads (getPortCoordinate)
+ * only react to the keys they touch, and Svelte coalesces synchronous
+ * mutations into one flush, so bulk updates stay cheap.
+ */
+export class PortCoordinateStore {
+  /**
+   * Reactive state holding all port absolute coordinates, keyed by handleId.
+   */
+  readonly #coordinates: PortCoordinateMap = new SvelteMap<string, PortCoordinate>();
+
+  /**
+   * Rebuild coordinates for ALL nodes from SvelteFlow internals.
+   * Call on initial workflow load (after render) and after bulk changes.
+   *
+   * @param nodes - All workflow nodes
+   * @param getInternalNode - SvelteFlow's getInternalNode function
+   */
+  rebuildAll(
+    nodes: WorkflowNodeType[],
+    getInternalNode: (id: string) => InternalNode | undefined
+  ): void {
+    this.#coordinates.clear();
+
+    for (const node of nodes) {
+      const internalNode = getInternalNode(node.id);
+      if (!internalNode) continue;
+
+      const coords = computeNodePortCoordinates(node, internalNode);
+      for (const coord of coords) {
+        this.#coordinates.set(coord.handleId, coord);
+      }
+    }
+  }
+
+  /**
+   * Update coordinates for a single node (efficient for drag updates).
+   * Only recomputes ports for the specified node.
+   *
+   * @param node - The workflow node to update
+   * @param getInternalNode - SvelteFlow's getInternalNode function
+   */
+  updateNode(
+    node: WorkflowNodeType,
+    getInternalNode: (id: string) => InternalNode | undefined
+  ): void {
+    const internalNode = getInternalNode(node.id);
+    if (!internalNode) return;
+
+    // Collect this node's stale keys without tracking the read (callers run
+    // inside $effect), then mutate in place — only the touched keys notify.
+    const stale: string[] = [];
+    untrack(() => {
+      for (const [key, coord] of this.#coordinates) {
+        if (coord.nodeId === node.id) stale.push(key);
+      }
+    });
+    for (const key of stale) {
+      this.#coordinates.delete(key);
+    }
+    for (const coord of computeNodePortCoordinates(node, internalNode)) {
+      this.#coordinates.set(coord.handleId, coord);
+    }
+  }
+
+  /**
+   * Remove all coordinates for a node (on node delete).
+   *
+   * @param nodeId - ID of the node to remove
+   */
+  removeNode(nodeId: string): void {
+    const stale: string[] = [];
+    untrack(() => {
+      for (const [key, coord] of this.#coordinates) {
+        if (coord.nodeId === nodeId) stale.push(key);
+      }
+    });
+    for (const key of stale) {
+      this.#coordinates.delete(key);
+    }
+  }
+
+  /**
+   * Clear all port coordinates (lifecycle cleanup).
+   */
+  clear(): void {
+    this.#coordinates.clear();
+  }
+
+  /**
+   * Get coordinates for a specific handle.
+   *
+   * @param handleId - The handle ID to look up
+   * @returns The port coordinate or undefined if not found
+   */
+  get(handleId: string): PortCoordinate | undefined {
+    return this.#coordinates.get(handleId);
+  }
+
+  /**
+   * Get all coordinates for a specific node.
+   *
+   * @param nodeId - The node ID to look up
+   * @returns Array of port coordinates for the node
+   */
+  getForNode(nodeId: string): PortCoordinate[] {
+    const result: PortCoordinate[] = [];
+    for (const coord of this.#coordinates.values()) {
+      if (coord.nodeId === nodeId) {
+        result.push(coord);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * The reactive port coordinate map.
+   * Returns the reactive SvelteMap directly.
+   */
+  get coordinates(): PortCoordinateMap {
+    return this.#coordinates;
+  }
+}
+
+// =========================================================================
+// Backward-compatible module API (delegates to the page-default instance)
+// =========================================================================
+
+const def = (): PortCoordinateStore => getDefaultInstance().portCoordinates;
+
 /**
  * Rebuild coordinates for ALL nodes from SvelteFlow internals.
  * Call on initial workflow load (after render) and after bulk changes.
@@ -133,17 +269,7 @@ export function rebuildAllPortCoordinates(
   nodes: WorkflowNodeType[],
   getInternalNode: (id: string) => InternalNode | undefined
 ): void {
-  coordinates.clear();
-
-  for (const node of nodes) {
-    const internalNode = getInternalNode(node.id);
-    if (!internalNode) continue;
-
-    const coords = computeNodePortCoordinates(node, internalNode);
-    for (const coord of coords) {
-      coordinates.set(coord.handleId, coord);
-    }
-  }
+  def().rebuildAll(nodes, getInternalNode);
 }
 
 /**
@@ -157,23 +283,7 @@ export function updateNodePortCoordinates(
   node: WorkflowNodeType,
   getInternalNode: (id: string) => InternalNode | undefined
 ): void {
-  const internalNode = getInternalNode(node.id);
-  if (!internalNode) return;
-
-  // Collect this node's stale keys without tracking the read (callers run
-  // inside $effect), then mutate in place — only the touched keys notify.
-  const stale: string[] = [];
-  untrack(() => {
-    for (const [key, coord] of coordinates) {
-      if (coord.nodeId === node.id) stale.push(key);
-    }
-  });
-  for (const key of stale) {
-    coordinates.delete(key);
-  }
-  for (const coord of computeNodePortCoordinates(node, internalNode)) {
-    coordinates.set(coord.handleId, coord);
-  }
+  def().updateNode(node, getInternalNode);
 }
 
 /**
@@ -182,22 +292,14 @@ export function updateNodePortCoordinates(
  * @param nodeId - ID of the node to remove
  */
 export function removeNodePortCoordinates(nodeId: string): void {
-  const stale: string[] = [];
-  untrack(() => {
-    for (const [key, coord] of coordinates) {
-      if (coord.nodeId === nodeId) stale.push(key);
-    }
-  });
-  for (const key of stale) {
-    coordinates.delete(key);
-  }
+  def().removeNode(nodeId);
 }
 
 /**
  * Clear all port coordinates (lifecycle cleanup).
  */
 export function clearPortCoordinates(): void {
-  coordinates.clear();
+  def().clear();
 }
 
 /**
@@ -207,7 +309,7 @@ export function clearPortCoordinates(): void {
  * @returns The port coordinate or undefined if not found
  */
 export function getPortCoordinate(handleId: string): PortCoordinate | undefined {
-  return coordinates.get(handleId);
+  return def().get(handleId);
 }
 
 /**
@@ -217,13 +319,7 @@ export function getPortCoordinate(handleId: string): PortCoordinate | undefined 
  * @returns Array of port coordinates for the node
  */
 export function getNodePortCoordinates(nodeId: string): PortCoordinate[] {
-  const result: PortCoordinate[] = [];
-  for (const coord of coordinates.values()) {
-    if (coord.nodeId === nodeId) {
-      result.push(coord);
-    }
-  }
-  return result;
+  return def().getForNode(nodeId);
 }
 
 /**
@@ -233,7 +329,7 @@ export function getNodePortCoordinates(nodeId: string): PortCoordinate[] {
  * @returns Current port coordinate map
  */
 export function getPortCoordinateSnapshot(): PortCoordinateMap {
-  return coordinates;
+  return def().coordinates;
 }
 
 /**
@@ -243,5 +339,5 @@ export function getPortCoordinateSnapshot(): PortCoordinateMap {
  * @returns The reactive port coordinate map
  */
 export function getPortCoordinates(): PortCoordinateMap {
-  return coordinates;
+  return def().coordinates;
 }

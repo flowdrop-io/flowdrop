@@ -28,6 +28,12 @@ interface AutoSaveOptions {
    * Optional callback for successful saves
    */
   onSuccess?: () => void;
+  /**
+   * Dirty-state probe for the owning FlowDrop instance, e.g.
+   * `() => fd.workflow.isDirty`. Falls back to the page-default
+   * instance's dirty state when omitted (legacy behavior).
+   */
+  isDirty?: () => boolean;
 }
 
 /**
@@ -75,7 +81,7 @@ interface AutoSaveState {
  * ```
  */
 export function initAutoSave(options: AutoSaveOptions): () => void {
-  const { onSave, onError, onSuccess } = options;
+  const { onSave, onError, onSuccess, isDirty: isDirtyProbe = isDirty } = options;
 
   const state: AutoSaveState = {
     intervalId: null,
@@ -89,7 +95,7 @@ export function initAutoSave(options: AutoSaveOptions): () => void {
    */
   async function performAutoSave(): Promise<void> {
     // Skip if already saving or not dirty
-    if (state.isSaving || !isDirty()) {
+    if (state.isSaving || !isDirtyProbe()) {
       return;
     }
 
@@ -173,6 +179,7 @@ export class AutoSaveManager {
   private onSave: () => Promise<void>;
   private onError?: (error: Error) => void;
   private onSuccess?: () => void;
+  private isDirtyProbe: () => boolean;
 
   /**
    * Create a new AutoSaveManager
@@ -183,6 +190,7 @@ export class AutoSaveManager {
     this.onSave = options.onSave;
     this.onError = options.onError;
     this.onSuccess = options.onSuccess;
+    this.isDirtyProbe = options.isDirty ?? isDirty;
   }
 
   /**
@@ -266,7 +274,7 @@ export class AutoSaveManager {
    * Perform the save operation
    */
   private async performSave(): Promise<void> {
-    if (this.isSaving || !isDirty()) {
+    if (this.isSaving || !this.isDirtyProbe()) {
       return;
     }
 
