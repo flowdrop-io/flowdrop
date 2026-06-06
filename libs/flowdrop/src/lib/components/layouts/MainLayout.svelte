@@ -17,6 +17,10 @@
    * Configuration props for the MainLayout component
    */
   interface Props {
+    /** Overall layout height (CSS length, or a number of pixels) */
+    height?: string | number;
+    /** Overall layout width (CSS length, or a number of pixels) */
+    width?: string | number;
     /** Height of the header in pixels */
     headerHeight?: number;
     /** Height of the footer in pixels */
@@ -74,6 +78,8 @@
   }
 
   let {
+    height = '100vh',
+    width = '100%',
     headerHeight = 60,
     footerHeight = 48,
     showHeader = true,
@@ -299,6 +305,10 @@
 
   /** Computed CSS variable for bottom panel height */
   const bottomHeightVar = $derived(`${bottomPanelHeightState}px`);
+
+  /** Bare numbers mean pixels; strings pass through as CSS lengths */
+  const layoutHeightVar = $derived(typeof height === 'number' ? `${height}px` : height);
+  const layoutWidthVar = $derived(typeof width === 'number' ? `${width}px` : width);
 </script>
 
 <div
@@ -307,6 +317,8 @@
   class:flowdrop-main-layout--dragging={isDraggingLeft || isDraggingRight || isDraggingBottom}
   class:flowdrop-main-layout--dragging-vertical={isDraggingBottom}
   style="
+		--layout-height: {layoutHeightVar};
+		--layout-width: {layoutWidthVar};
 		--layout-header-height: {headerHeightVar};
 		--layout-footer-height: {footerHeightVar};
 		--layout-left-sidebar-width: {leftWidthVar};
@@ -438,8 +450,8 @@
   .flowdrop-main-layout {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    width: 100%;
+    height: var(--layout-height, 100vh);
+    width: var(--layout-width, 100%);
     background: var(
       --fd-layout-background,
       linear-gradient(135deg, #f9fafb 0%, #e0e7ff 50%, #c7d2fe 100%)

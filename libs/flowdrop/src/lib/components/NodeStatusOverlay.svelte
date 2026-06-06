@@ -101,6 +101,7 @@
 {#if shouldShow}
   <div
     class="node-status-overlay"
+    data-node-id={props.nodeId}
     class:node-status-overlay--hovered={isHovered}
     class:node-status-overlay--top-left={true}
     class:node-status-overlay--sm={size === 'sm'}

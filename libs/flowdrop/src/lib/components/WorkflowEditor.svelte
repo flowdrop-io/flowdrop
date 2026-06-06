@@ -21,12 +21,7 @@
     getEditorSettings,
     getBehaviorSettings
   } from '../stores/settingsStore.svelte.js';
-  import type {
-    WorkflowNode as WorkflowNodeType,
-    NodeMetadata,
-    Workflow,
-    WorkflowEdge
-  } from '../types/index.js';
+  import type { WorkflowNode as WorkflowNodeType, Workflow, WorkflowEdge } from '../types/index.js';
   import CanvasBanner from './CanvasBanner.svelte';
   import CanvasController from './CanvasController.svelte';
   import FlowDropZone from './FlowDropZone.svelte';
@@ -63,14 +58,8 @@
   import Icon from '@iconify/svelte';
 
   interface Props {
-    nodes?: NodeMetadata[];
     endpointConfig?: EndpointConfig;
-    height?: string | number;
-    width?: string | number;
-    isConfigSidebarOpen?: boolean;
-    selectedNodeForConfig?: WorkflowNodeType | null;
     openConfigSidebar?: (node: WorkflowNodeType) => void;
-    closeConfigSidebar?: () => void;
     // New configuration options for pipeline status mode
     lockWorkflow?: boolean;
     readOnly?: boolean;

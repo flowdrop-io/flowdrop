@@ -977,6 +977,8 @@
 <!-- MainLayout wrapper for workflow editor -->
 <div class="flowdrop-root">
   <MainLayout
+    {height}
+    {width}
     showHeader={showNavbar}
     showLeftSidebar={!disableSidebar}
     showRightSidebar={showRightPanel}
@@ -1282,14 +1284,8 @@
 
       <WorkflowEditor
         bind:this={workflowEditorRef}
-        {nodes}
-        {height}
-        {width}
         endpointConfig={endpointConfig ?? undefined}
-        {isConfigSidebarOpen}
-        {selectedNodeForConfig}
         {openConfigSidebar}
-        {closeConfigSidebar}
         {lockWorkflow}
         {readOnly}
         {pipelineId}
