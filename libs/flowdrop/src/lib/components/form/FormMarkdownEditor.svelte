@@ -66,7 +66,7 @@
     height = '300px',
     showToolbar = true,
     showStatusBar = true,
-    spellChecker = false,
+    spellChecker: _spellChecker = false,
     autosave = false,
     autosaveDelay = 10000,
     disabled = false,

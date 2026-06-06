@@ -272,7 +272,6 @@ export const workflowApi = {
       return this.updateWorkflow(workflow.id, workflow);
     } else {
       // Create new workflow
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...workflowData } = workflow;
       return this.createWorkflow(workflowData);
     }

@@ -6,12 +6,7 @@
  * @module services/apiVariableService
  */
 
-import type {
-  VariableSchema,
-  ApiVariablesEndpoint,
-  ApiVariablesConfig,
-  AuthProvider
-} from '../types/index.js';
+import type { VariableSchema, ApiVariablesConfig, AuthProvider } from '../types/index.js';
 import { getEndpointConfig } from './api.js';
 import { logger } from '../utils/logger.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';

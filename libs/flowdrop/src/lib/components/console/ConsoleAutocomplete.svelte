@@ -6,8 +6,6 @@
 -->
 
 <script lang="ts">
-  import { tick } from 'svelte';
-
   export interface Suggestion {
     /** The text to insert into the input */
     value: string;

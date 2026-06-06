@@ -18,7 +18,7 @@
  *
  * TODO: Uncomment when dependencies are installed
  */
-export function renderWithUser<T>(component: T, props?: Record<string, unknown>): unknown {
+export function renderWithUser<T>(_component: T, _props?: Record<string, unknown>): unknown {
   throw new Error(
     'Install @testing-library/svelte and @testing-library/user-event to use renderWithUser'
   );

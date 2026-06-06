@@ -24,7 +24,7 @@
     onBack: () => void;
   }
 
-  const { interactiveState, checker, onConfirm, onCancel, onBack }: Props = $props();
+  const { interactiveState, checker: _checker, onConfirm, onCancel, onBack }: Props = $props();
 
   // Local mutable copy of the interactive state
   // JSON round-trip is intentional: structuredClone fails on Svelte 5 proxies
@@ -172,7 +172,7 @@
 
         {#if inputMappings.length > 0}
           <div class="swap-editor__section-label">Inputs</div>
-          {#each inputMappings as mapping, i (mapping.edge.id)}
+          {#each inputMappings as mapping (mapping.edge.id)}
             {@const globalIndex = localState.portMappings.indexOf(mapping)}
             <PortMappingRow
               {mapping}
@@ -186,7 +186,7 @@
 
         {#if outputMappings.length > 0}
           <div class="swap-editor__section-label">Outputs</div>
-          {#each outputMappings as mapping, i (mapping.edge.id)}
+          {#each outputMappings as mapping (mapping.edge.id)}
             {@const globalIndex = localState.portMappings.indexOf(mapping)}
             <PortMappingRow
               {mapping}

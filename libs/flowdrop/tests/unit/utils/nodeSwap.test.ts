@@ -18,12 +18,7 @@ import {
   compareSemver,
   SwapValidationError
 } from '$lib/utils/nodeSwap.js';
-import type {
-  SwapPreview,
-  SwapStrategy,
-  SwapStrategyContext,
-  InteractiveSwapState
-} from '$lib/utils/nodeSwap.js';
+import type { SwapStrategy } from '$lib/utils/nodeSwap.js';
 import type { WorkflowNode, WorkflowEdge, NodeMetadata, ConfigSchema } from '$lib/types';
 import { PortCompatibilityChecker } from '$lib/utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
@@ -35,8 +30,7 @@ import {
   textFormatterNode,
   mathProcessorNode,
   textInputNode,
-  isolatedNode,
-  gatewayNode
+  isolatedNode
 } from '../../fixtures/nodes.js';
 
 // =========================================================================
@@ -158,7 +152,6 @@ describe('computeSwapPreview', () => {
 
       // Verify the new port IDs are from mathProcessor
       const keptPortIds = preview.keptEdges.map((k) => {
-        const isSource = k.newEdge.source !== 'other.1' || k.newEdge.source === preview.newNodeId;
         const handle =
           k.newEdge.source === preview.newNodeId ? k.newEdge.sourceHandle : k.newEdge.targetHandle;
         return extractPortId(handle ?? undefined);

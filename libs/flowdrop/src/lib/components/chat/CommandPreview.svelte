@@ -32,7 +32,7 @@
 
 <div class="command-preview" role="region" aria-label={t.ariaLabel}>
   <div class="command-preview__list">
-    {#each commands as command, i}
+    {#each commands as command}
       <div class="command-preview__item command-preview__item--{command.status}">
         <span class="command-preview__status">
           {#if command.status === 'pending'}

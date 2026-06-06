@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { gotoEditor, getNodeCount, getEdgeCount, assertStatusBar } from './helpers/editor-helpers';
+import { gotoEditor, getNodeCount, assertStatusBar } from './helpers/editor-helpers';
 
 test.describe('Editor Rendering', () => {
   test.beforeEach(({}, testInfo) => {

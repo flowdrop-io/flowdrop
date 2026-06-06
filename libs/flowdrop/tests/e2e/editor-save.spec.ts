@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { gotoEditor, setupEditorApiMocks } from './helpers/editor-helpers';
+import { gotoEditor } from './helpers/editor-helpers';
 
 test.describe('Save Workflow', () => {
   test.beforeEach(({}, testInfo) => {

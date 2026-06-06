@@ -113,7 +113,7 @@ describe('FormAutocomplete', () => {
     });
 
     it('should return empty array for null data', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const result = mapResponse(null);
 

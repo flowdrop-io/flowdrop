@@ -40,7 +40,7 @@ import { computeAutoLayout } from './autoLayout.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger.js';
 
-import { buildHandleId, extractPortId, extractDirection } from '../../utils/handleIds.js';
+import { buildHandleId, extractPortId } from '../../utils/handleIds.js';
 
 // ============================================================================
 // Property ↔ Port Conversion
@@ -182,7 +182,7 @@ export class AgentSpecAdapter {
     }
 
     // Find start node
-    const startNodeName = this.findStartNodeName(agentSpecNodes, nodeIdToName);
+    const startNodeName = this.findStartNodeName(agentSpecNodes);
 
     return {
       component_type: 'flow',
@@ -249,7 +249,7 @@ export class AgentSpecAdapter {
 
     // Control-flow edges → trigger port connections
     for (const cfEdge of agentSpecFlow.control_flow_connections) {
-      const edge = this.convertFromControlFlowEdge(cfEdge, nameToNodeId, nodes);
+      const edge = this.convertFromControlFlowEdge(cfEdge, nameToNodeId);
       if (edge) edges.push(edge);
     }
 
@@ -665,8 +665,7 @@ export class AgentSpecAdapter {
    */
   private convertFromControlFlowEdge(
     cfEdge: AgentSpecControlFlowEdge,
-    nameToNodeId: Map<string, string>,
-    nodes: StandardNode[]
+    nameToNodeId: Map<string, string>
   ): StandardEdge | null {
     const sourceId = nameToNodeId.get(cfEdge.from_node);
     const targetId = nameToNodeId.get(cfEdge.to_node);
@@ -710,7 +709,7 @@ export class AgentSpecAdapter {
   /**
    * Find the start node name from converted Agent Spec nodes.
    */
-  private findStartNodeName(nodes: AgentSpecNode[], nodeIdToName: Map<string, string>): string {
+  private findStartNodeName(nodes: AgentSpecNode[]): string {
     // Look for an explicit start_node
     const startNode = nodes.find((n) => n.component_type === 'start_node');
     if (startNode) return startNode.name;

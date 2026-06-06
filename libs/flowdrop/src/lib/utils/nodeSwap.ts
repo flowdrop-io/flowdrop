@@ -14,11 +14,10 @@ import type {
   NodePort,
   ConfigSchema,
   ConfigValues,
-  NodeExtensions,
-  WorkflowFormat
+  NodeExtensions
 } from '../types/index.js';
 import type { WorkflowValidationResult } from './validation.js';
-import { buildHandleId, extractPortId, extractDirection } from './handleIds.js';
+import { buildHandleId, extractPortId } from './handleIds.js';
 import type { PortCompatibilityChecker } from './connections.js';
 import { generateNodeId } from './nodeIds.js';
 
@@ -619,11 +618,11 @@ export function computeSwapPreviewWithOptions(
   }
 
   // Config mapping — apply strategy then overrides
-  const {
-    config: baseConfig,
-    carriedOver,
-    reset
-  } = mapConfig(oldNode.data.config, newMetadata.configSchema, newMetadata.config);
+  const { carriedOver, reset } = mapConfig(
+    oldNode.data.config,
+    newMetadata.configSchema,
+    newMetadata.config
+  );
 
   // Apply strategy config overrides
   if (strategyConfigMap) {
@@ -680,7 +679,6 @@ export function computeInteractiveState(
   allNodes: WorkflowNode[],
   options: SwapOptions = {}
 ): InteractiveSwapState {
-  const checker = options.checker ?? null;
   const oldNodeId = oldNode.id;
   const newNodeId = generateNodeId(newMetadata.id, allNodes);
 
@@ -778,7 +776,7 @@ function isPrimitive(value: unknown): boolean {
  */
 export function buildSwapPreviewFromState(
   state: InteractiveSwapState,
-  allEdges: WorkflowEdge[]
+  _allEdges: WorkflowEdge[]
 ): SwapPreview {
   const keptEdges: SwapPreview['keptEdges'] = [];
   const droppedEdges: SwapPreview['droppedEdges'] = [];

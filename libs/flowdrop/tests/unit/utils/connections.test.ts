@@ -184,9 +184,6 @@ describe('Connection Utilities', () => {
     });
 
     it('should throw error when not initialized', () => {
-      // Store current global instance
-      const originalChecker = getPortCompatibilityChecker();
-
       // Test that calling getter without init throws
       // We can't actually clear it, so we just test the error message
       expect(() => {

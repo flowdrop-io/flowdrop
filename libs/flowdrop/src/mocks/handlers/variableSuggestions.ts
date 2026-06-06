@@ -57,7 +57,7 @@ export const variableSuggestionsHandlers = [
 /**
  * Get variable schema based on node and workflow context
  */
-function getVariablesForNode(nodeId: string, workflowId: string): VariableSchema {
+function getVariablesForNode(nodeId: string, _workflowId: string): VariableSchema {
   // Demo: Return different variables based on context
 
   // Email template node

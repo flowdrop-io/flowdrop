@@ -38,7 +38,7 @@
     min = 0,
     max = 100,
     step = 1,
-    required = false,
+    required: _required = false,
     disabled = false,
     ariaDescribedBy,
     onChange

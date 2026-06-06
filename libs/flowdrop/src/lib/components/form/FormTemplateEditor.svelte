@@ -89,7 +89,8 @@
   let {
     id,
     value = '',
-    placeholder = 'Enter your template here...\nUse {{ variable }} for dynamic values.',
+    placeholder:
+      _placeholder = 'Enter your template here...\nUse {{ variable }} for dynamic values.',
     required = false,
     darkTheme = false,
     height = '250px',

@@ -6,7 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { gotoEditor, openNodeConfig, clickCanvas } from './helpers/editor-helpers';
+import { gotoEditor, openNodeConfig } from './helpers/editor-helpers';
 
 test.describe('Node Configuration', () => {
   test.beforeEach(({}, testInfo) => {

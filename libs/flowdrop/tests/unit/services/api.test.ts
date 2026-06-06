@@ -123,7 +123,6 @@ describe('API Service', () => {
       });
 
       it('should handle node not found', async () => {
-        const mockData = mockApiResponses.nodes.notFound;
         global.fetch = vi.fn(() => Promise.resolve(mockFetchError('Node not found', 404)));
 
         await expect(nodeApi.getNode('invalid')).rejects.toThrow();

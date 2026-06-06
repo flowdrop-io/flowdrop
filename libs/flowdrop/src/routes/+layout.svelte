@@ -17,18 +17,12 @@
     defaultEndpointConfig,
     createEndpointConfig
   } from '$lib/config/endpoints.js';
-  import { getDevConfig, getDevConfigSync } from './devConfig';
   import { setEndpointConfig } from '$lib/services/api.js';
   import { Toaster } from 'svelte-5-french-toast';
   import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
-  import type { RuntimeConfig } from '$lib/config/runtimeConfig';
   import { initializeSettings, getUiSettings } from '$lib/stores/settingsStore.svelte.js';
   import { resolveTheme } from '$lib/themes/index.js';
   import type { FlowDropSkinTokens } from '$lib/types/skin.js';
-  import {
-    getPipelinePanelOpen,
-    pipelinePanelActions
-  } from '$lib/stores/pipelinePanelStore.svelte.js';
 
   let { data, children } = $props();
 

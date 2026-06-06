@@ -233,7 +233,6 @@ export const sendMessageHandler = http.post(
     }
 
     let content: string;
-    let inputs: Record<string, unknown> | undefined;
 
     try {
       const body = (await request.json()) as {
@@ -241,7 +240,6 @@ export const sendMessageHandler = http.post(
         inputs?: Record<string, unknown>;
       };
       content = body.content;
-      inputs = body.inputs;
     } catch {
       return HttpResponse.json(
         {

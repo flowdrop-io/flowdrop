@@ -10,7 +10,6 @@
   import PipelineStatus from '$lib/components/PipelineStatus.svelte';
   import {
     buildEndpointUrl,
-    defaultEndpointConfig,
     createEndpointConfig,
     type EndpointConfig
   } from '$lib/config/endpoints.js';

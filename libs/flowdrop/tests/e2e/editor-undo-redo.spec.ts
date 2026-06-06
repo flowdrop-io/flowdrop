@@ -5,7 +5,7 @@
  * after performing workflow operations like node deletion.
  */
 
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { gotoEditor, assertStatusBar, selectNode } from './helpers/editor-helpers';
 
 test.describe('Undo/Redo', () => {

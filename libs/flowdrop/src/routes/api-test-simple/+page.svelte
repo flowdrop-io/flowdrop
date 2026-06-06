@@ -7,7 +7,7 @@
   import { onMount } from 'svelte';
   import { api, setEndpointConfig } from '$lib/services/api.js';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
-  import { getDevConfig, getDevConfigSync } from '../devConfig';
+  import { getDevConfigSync } from '../devConfig';
   import type { NodeMetadata } from '$lib/types/index.js';
 
   // Initialize API service with development config

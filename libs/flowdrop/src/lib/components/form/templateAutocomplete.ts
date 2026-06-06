@@ -22,8 +22,7 @@ import type { VariableSchema, TemplateVariable } from '$lib/types/index.js';
 import {
   getChildVariables,
   getArrayIndexSuggestions,
-  isArrayVariable,
-  hasChildren
+  isArrayVariable
 } from '$lib/services/variableService.js';
 
 /**
@@ -76,11 +75,6 @@ function extractVariablePath(
   if (openBracePos === -1) {
     return null;
   }
-
-  // Check if there's a closing }} after cursor (still inside expression)
-  const afterCursor = text.slice(pos);
-  const closingMatch = afterCursor.match(/^\s*\}\}/);
-  const hasClosing = closingMatch !== null;
 
   // Extract the content between {{ and cursor
   const contentStart = openBracePos + 2;

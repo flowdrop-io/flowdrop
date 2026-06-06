@@ -482,7 +482,7 @@
   /**
    * Handle new connections between nodes
    */
-  async function handleConnect(connection: {
+  async function handleConnect(_connection: {
     source: string;
     target: string;
     sourceHandle?: string;

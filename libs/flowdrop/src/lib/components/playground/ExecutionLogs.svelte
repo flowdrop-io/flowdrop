@@ -9,7 +9,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import { slide } from 'svelte/transition';
-  import type { PlaygroundMessage, PlaygroundMessageLevel } from '../../types/playground.js';
+  import type { PlaygroundMessageLevel } from '../../types/playground.js';
   import { getLogMessages } from '../../stores/playgroundStore.svelte.js';
 
   /**

@@ -4,7 +4,7 @@
  */
 
 import { http, HttpResponse } from 'msw';
-import { mockNodes, getNodesByCategory, searchNodes, getNodeById } from '../data/nodes.js';
+import { mockNodes, getNodesByCategory, getNodeById } from '../data/nodes.js';
 import type { NodeMetadata, NodesResponse, ApiResponse } from '../../lib/types/index.js';
 
 /** Response type for single node */

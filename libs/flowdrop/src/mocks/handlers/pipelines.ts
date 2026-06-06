@@ -11,7 +11,7 @@ import {
   createPipeline,
   updatePipelineStatus
 } from '../data/index.js';
-import type { Pipeline, PipelineStatus, LogEntry } from '../data/pipelines.js';
+import type { PipelineStatus, LogEntry } from '../data/pipelines.js';
 
 /** Base API path for flowdrop endpoints */
 const API_BASE = '/api/flowdrop';
@@ -136,16 +136,14 @@ export const executePipelineHandler = http.post(
     }
 
     // Parse optional execution options
-    let inputs: Record<string, unknown> = {};
-    let options: { timeout?: number; maxSteps?: number } = {};
+    let _options: { timeout?: number; maxSteps?: number } = {};
 
     try {
       const body = (await request.json()) as {
         inputs?: Record<string, unknown>;
-        options?: typeof options;
+        options?: typeof _options;
       };
-      inputs = body.inputs || {};
-      options = body.options || {};
+      _options = body.options || {};
     } catch {
       // Body is optional, continue without it
     }

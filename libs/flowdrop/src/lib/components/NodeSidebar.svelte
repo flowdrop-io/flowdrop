@@ -151,7 +151,7 @@
   /**
    * Handle node click
    */
-  function handleNodeClick(nodeType: NodeMetadata): void {
+  function handleNodeClick(_nodeType: NodeMetadata): void {
     // Handle node click - could be used for preview or configuration
   }
 

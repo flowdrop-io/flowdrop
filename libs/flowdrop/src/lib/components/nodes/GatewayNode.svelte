@@ -250,7 +250,7 @@
   {#if visibleBranches.length > 0}
     <div class="flowdrop-workflow-node__ports">
       <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleBranches as branch, branchIndex (branch.name)}
+        {#each visibleBranches as branch (branch.name)}
           {@const isActive = isBranchActive(branch.name)}
           <div class="flowdrop-workflow-node__port">
             <!-- Port Info: padding lives here so handle position is simple -->

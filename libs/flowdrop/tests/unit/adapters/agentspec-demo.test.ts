@@ -10,10 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { AgentSpecAdapter } from '$lib/adapters/agentspec/AgentSpecAdapter.js';
 import { AgentSpecAgentAdapter } from '$lib/adapters/agentspec/agentAdapter.js';
-import {
-  validateForAgentSpecExport,
-  validateAgentSpecFlow
-} from '$lib/adapters/agentspec/validator.js';
+import { validateForAgentSpecExport } from '$lib/adapters/agentspec/validator.js';
 import {
   getAgentSpecNodeMetadata,
   getDefaultAgentSpecNodeTypes

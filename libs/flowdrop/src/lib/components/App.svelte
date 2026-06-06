@@ -20,13 +20,7 @@
   import Navbar from '$lib/components/Navbar.svelte';
   import { api, setEndpointConfig } from '$lib/services/api.js';
   import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
-  import type {
-    NodeMetadata,
-    Workflow,
-    WorkflowNode,
-    ConfigSchema,
-    NodeUIExtensions
-  } from '$lib/types/index.js';
+  import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
   import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
   import {
     computeInteractiveState,
@@ -304,7 +298,6 @@
 
   // Node swap state
   let swapMode = $state<'idle' | 'picking' | 'mapping'>('idle');
-  let swapTargetMetadata = $state<NodeMetadata | null>(null);
   let swapInteractiveState = $state<InteractiveSwapState | null>(null);
 
   // Built-in workflow settings field names — consumer schemas must not reuse these.
@@ -549,7 +542,6 @@
     isConfigSidebarOpen = true;
     // Reset swap state when switching nodes
     swapMode = 'idle';
-    swapTargetMetadata = null;
     swapInteractiveState = null;
   }
 
@@ -558,7 +550,6 @@
     selectedNodeId = null;
     // Reset swap state when closing
     swapMode = 'idle';
-    swapTargetMetadata = null;
     swapInteractiveState = null;
   }
 
@@ -578,7 +569,6 @@
    */
   function startSwap(): void {
     swapMode = 'picking';
-    swapTargetMetadata = null;
     swapInteractiveState = null;
   }
 
@@ -611,7 +601,6 @@
       strategies: swapStrategies
     });
 
-    swapTargetMetadata = metadata;
     swapInteractiveState = interactive;
     swapMode = 'mapping';
   }
@@ -677,7 +666,6 @@
 
     // Reset swap state
     swapMode = 'idle';
-    swapTargetMetadata = null;
     swapInteractiveState = null;
 
     // Wait for SvelteFlow to process the new node before updating visual state
@@ -698,33 +686,7 @@
    */
   function cancelSwap(): void {
     swapMode = 'idle';
-    swapTargetMetadata = null;
     swapInteractiveState = null;
-  }
-
-  /**
-   * Handle workflow configuration save
-   */
-  async function handleWorkflowSave(config: Record<string, unknown>): Promise<void> {
-    // Update the workflow store
-    if (getWorkflowStore()) {
-      workflowActions.batchUpdate({
-        name: config.name as string | undefined,
-        description: config.description as string | undefined
-      });
-    }
-
-    // Close the sidebar
-    isWorkflowSettingsOpen = false;
-
-    // Also save the workflow to the backend
-    try {
-      await saveWorkflow();
-    } catch (error) {
-      logger.error('Failed to save workflow to backend:', error);
-      // Note: We don't throw the error here to avoid breaking the UI flow
-      // The user can still manually save via the main Save button if needed
-    }
   }
 
   /**
