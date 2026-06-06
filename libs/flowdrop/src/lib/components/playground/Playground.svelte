@@ -25,20 +25,9 @@
   import { playgroundService } from '../../services/playgroundService.js';
   import { interruptService } from '../../services/interruptService.js';
   import { setEndpointConfig } from '../../services/api.js';
-  import {
-    getCurrentSession,
-    getSessions,
-    getIsExecuting,
-    getIsLoading,
-    getError,
-    playgroundActions,
-    applyServerResponse,
-    getLatestSequenceNumber,
-    getOldestSequenceNumber,
-    setHasOlder
-  } from '../../stores/playgroundStore.svelte.js';
+  import { provideInstance } from '../../stores/getInstance.svelte.js';
+  import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
   import type { PlaygroundMessagesApiResponse } from '../../types/playground.js';
-  import { interruptActions } from '../../stores/interruptStore.svelte.js';
   import { logger } from '../../utils/logger.js';
 
   interface Props {
@@ -52,6 +41,7 @@
     onTogglePanel?: () => void;
     isPipelinePanelOpen?: boolean;
     onSessionNavigate?: (sessionId: string) => void;
+    instance?: FlowDropInstance;
   }
 
   let {
@@ -64,8 +54,13 @@
     onClose,
     onTogglePanel,
     isPipelinePanelOpen = false,
-    onSessionNavigate
+    onSessionNavigate,
+    instance
   }: Props = $props();
+
+  // Resolve/provide once at init; the instance prop is a fixed mount-time choice.
+  // svelte-ignore state_referenced_locally
+  const fd = provideInstance(instance);
 
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
@@ -133,17 +128,17 @@
 
   onMount(() => {
     if (endpointConfig) setEndpointConfig(endpointConfig);
-    if (workflow) playgroundActions.setWorkflow(workflow);
+    if (workflow) fd.playground.setWorkflow(workflow);
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && playgroundService.isPolling()) {
-        const sessionId = getCurrentSession()?.id;
+        const sessionId = fd.playground.currentSession?.id;
         if (sessionId) {
           void playgroundService
             .getMessages(sessionId, {
               since: playgroundService.getLastSequenceNumber() ?? undefined
             })
-            .then((response) => applyServerResponse(response, sessionId))
+            .then((response) => fd.playground.applyServerResponse(response, sessionId))
             .catch((err) => logger.error('[Playground] Visibility catchup failed:', err));
         }
       }
@@ -168,7 +163,7 @@
     if (!initialSessionId) return;
     if (loadedInitialSessionId === initialSessionId) return;
 
-    const sessionList = getSessions();
+    const sessionList = fd.playground.sessions;
     if (sessionList.length === 0) return;
 
     void loadInitialSession(initialSessionId);
@@ -194,7 +189,7 @@
   }
 
   async function loadInitialSession(sessionId: string): Promise<void> {
-    const sessionList = getSessions();
+    const sessionList = fd.playground.sessions;
     const sessionExists = sessionList.some((s) => s.id === sessionId);
 
     if (!sessionExists) {
@@ -217,35 +212,35 @@
   onDestroy(() => {
     playgroundService.stopPolling();
     interruptService.stopPolling();
-    playgroundActions.reset();
-    interruptActions.reset();
+    fd.playground.reset();
+    fd.interrupts.reset();
   });
 
   async function loadSessions(): Promise<void> {
-    playgroundActions.setLoading(true);
-    playgroundActions.setError(null);
+    fd.playground.setLoading(true);
+    fd.playground.setError(null);
 
     try {
       const sessionList = await playgroundService.listSessions(workflowId);
-      playgroundActions.setSessions(sessionList);
+      fd.playground.setSessions(sessionList);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
-      playgroundActions.setError(errorMessage);
+      fd.playground.setError(errorMessage);
       logger.error('Failed to load sessions:', err);
     } finally {
-      playgroundActions.setLoading(false);
+      fd.playground.setLoading(false);
     }
   }
 
   async function loadSession(sessionId: string): Promise<void> {
-    playgroundActions.setLoading(true);
-    playgroundActions.setError(null);
+    fd.playground.setLoading(true);
+    fd.playground.setError(null);
     const token = ++loadToken;
 
     try {
       const session = await playgroundService.getSession(sessionId);
       if (token !== loadToken) return; // a newer session load superseded us
-      playgroundActions.setCurrentSession(session);
+      fd.playground.setCurrentSession(session);
 
       // Load only the most recent page; older messages load on demand when the
       // user scrolls up (loadOlderMessages). Clear right before applying the
@@ -256,9 +251,9 @@
         limit: messagePageSize
       });
       if (token !== loadToken) return;
-      playgroundActions.clearMessages();
-      applyServerResponse(response, sessionId);
-      setHasOlder(deriveHasOlder(response));
+      fd.playground.clearMessages();
+      fd.playground.applyServerResponse(response, sessionId);
+      fd.playground.setHasOlder(deriveHasOlder(response));
 
       if (session.status !== 'idle') {
         // Seed polling from the newest loaded message so it tails live updates
@@ -268,10 +263,10 @@
     } catch (err) {
       if (token !== loadToken) return; // don't surface a superseded load's error
       const errorMessage = err instanceof Error ? err.message : 'Failed to load session';
-      playgroundActions.setError(errorMessage);
+      fd.playground.setError(errorMessage);
       logger.error('Failed to load session:', err);
     } finally {
-      if (token === loadToken) playgroundActions.setLoading(false);
+      if (token === loadToken) fd.playground.setLoading(false);
     }
   }
 
@@ -282,8 +277,8 @@
    * historical fetch never disturbs the live polling cursor or pipeline view.
    */
   async function loadOlderMessages(): Promise<void> {
-    const sessionId = getCurrentSession()?.id;
-    const before = getOldestSequenceNumber();
+    const sessionId = fd.playground.currentSession?.id;
+    const before = fd.playground.oldestSequenceNumber;
     if (!sessionId || before === null) return;
 
     try {
@@ -293,11 +288,11 @@
       });
       // The session may have changed while the fetch was in flight — don't
       // splice an old session's page into the new session's store.
-      if (getCurrentSession()?.id !== sessionId) return;
+      if (fd.playground.currentSession?.id !== sessionId) return;
       if (response.data && response.data.length > 0) {
-        playgroundActions.addMessages(response.data);
+        fd.playground.addMessages(response.data);
       }
-      setHasOlder(deriveHasOlder(response));
+      fd.playground.setHasOlder(deriveHasOlder(response));
     } catch (err) {
       logger.error('[Playground] Failed to load older messages:', err);
     }
@@ -314,11 +309,11 @@
   }
 
   async function handleCreateSession(): Promise<void> {
-    playgroundActions.setLoading(true);
-    playgroundActions.setError(null);
+    fd.playground.setLoading(true);
+    fd.playground.setError(null);
 
     try {
-      const sessionName = `Session ${getSessions().length + 1}`;
+      const sessionName = `Session ${fd.playground.sessions.length + 1}`;
       const session = await playgroundService.createSession(workflowId, sessionName);
 
       // Stop polling the previous (possibly running) session before switching,
@@ -331,60 +326,60 @@
         return;
       }
 
-      playgroundActions.addSession(session);
-      playgroundActions.setCurrentSession(session);
-      playgroundActions.clearMessages();
+      fd.playground.addSession(session);
+      fd.playground.setCurrentSession(session);
+      fd.playground.clearMessages();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create session';
-      playgroundActions.setError(errorMessage);
+      fd.playground.setError(errorMessage);
       logger.error('Failed to create session:', err);
     } finally {
-      playgroundActions.setLoading(false);
+      fd.playground.setLoading(false);
     }
   }
 
   async function handleSelectSession(sessionId: string): Promise<void> {
-    playgroundActions.pinExecution(null);
-    const currentSessionId = getCurrentSession()?.id;
+    fd.playground.pinExecution(null);
+    const currentSessionId = fd.playground.currentSession?.id;
     if (currentSessionId === sessionId) return;
 
     playgroundService.stopPolling();
-    playgroundActions.updateSessionStatus('idle');
+    fd.playground.updateSessionStatus('idle');
     await loadSession(sessionId);
   }
 
   async function handleDeleteSession(sessionId: string): Promise<void> {
     try {
       await playgroundService.deleteSession(sessionId);
-      playgroundActions.removeSession(sessionId);
+      fd.playground.removeSession(sessionId);
 
-      if (getCurrentSession()?.id === sessionId) {
+      if (fd.playground.currentSession?.id === sessionId) {
         playgroundService.stopPolling();
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete session';
-      playgroundActions.setError(errorMessage);
+      fd.playground.setError(errorMessage);
       logger.error('Failed to delete session:', err);
     }
   }
 
   async function handleSendMessage(content: string): Promise<void> {
-    if (getIsExecuting()) return;
+    if (fd.playground.isExecuting) return;
 
-    if (!getCurrentSession()) {
+    if (!fd.playground.currentSession) {
       await handleCreateSession();
-      if (!getCurrentSession()) return;
+      if (!fd.playground.currentSession) return;
     }
 
-    const sessionId = getCurrentSession()!.id;
+    const sessionId = fd.playground.currentSession!.id;
 
-    playgroundActions.updateSessionStatus('running');
-    playgroundActions.pinExecution(null);
-    playgroundActions.setError(null);
+    fd.playground.updateSessionStatus('running');
+    fd.playground.pinExecution(null);
+    fd.playground.setError(null);
 
     try {
       const message = await playgroundService.sendMessage(sessionId, content, {});
-      playgroundActions.addMessage(message);
+      fd.playground.addMessage(message);
       // Only start polling if not already active — avoids resetting the cursor
       // mid-session and re-fetching messages that are already in the store.
       // Seed from the newest loaded message so polling tails live updates
@@ -394,25 +389,25 @@
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      playgroundActions.setError(errorMessage);
-      playgroundActions.updateSessionStatus('idle');
+      fd.playground.setError(errorMessage);
+      fd.playground.updateSessionStatus('idle');
       logger.error('Failed to send message:', err);
     }
   }
 
   async function handleStopExecution(): Promise<void> {
-    const sessionId = getCurrentSession()?.id;
+    const sessionId = fd.playground.currentSession?.id;
     if (!sessionId) return;
 
     try {
       await playgroundService.stopExecution(sessionId);
       playgroundService.stopPolling();
-      playgroundActions.updateSessionStatus('idle');
+      fd.playground.updateSessionStatus('idle');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to stop execution';
-      playgroundActions.setError(errorMessage);
+      fd.playground.setError(errorMessage);
       playgroundService.stopPolling();
-      playgroundActions.updateSessionStatus('idle');
+      fd.playground.updateSessionStatus('idle');
       logger.error('Failed to stop execution:', err);
     }
   }
@@ -423,11 +418,11 @@
     overrideShouldStopPolling?: (status: PlaygroundSessionStatus) => boolean
   ): void {
     const pollingInterval = config.pollingInterval ?? 1500;
-    const initialSequenceNumber = seedSequence ? getLatestSequenceNumber() : null;
+    const initialSequenceNumber = seedSequence ? fd.playground.latestSequenceNumber : null;
 
     playgroundService.startPolling(
       sessionId,
-      (response) => applyServerResponse(response, sessionId),
+      (response) => fd.playground.applyServerResponse(response, sessionId),
       pollingInterval,
       overrideShouldStopPolling ?? config.shouldStopPolling,
       initialSequenceNumber
@@ -435,14 +430,14 @@
   }
 
   async function refreshFromServer(): Promise<void> {
-    const sessionId = getCurrentSession()?.id;
+    const sessionId = fd.playground.currentSession?.id;
     if (!sessionId || isRefreshing) return;
     isRefreshing = true;
     try {
       const response = await playgroundService.getMessages(sessionId, {
         since: playgroundService.getLastSequenceNumber() ?? undefined
       });
-      applyServerResponse(response, sessionId);
+      fd.playground.applyServerResponse(response, sessionId);
       if (response.sessionStatus === 'running' && !playgroundService.isPolling()) {
         startPolling(sessionId, true);
       }
@@ -454,7 +449,7 @@
   }
 
   async function handleInterruptResolved(): Promise<void> {
-    const sessionId = getCurrentSession()?.id;
+    const sessionId = fd.playground.currentSession?.id;
     if (!sessionId) return;
 
     try {
@@ -463,7 +458,7 @@
       const response = await playgroundService.getMessages(sessionId, {
         since: playgroundService.getLastSequenceNumber() ?? undefined
       });
-      applyServerResponse(response, sessionId);
+      fd.playground.applyServerResponse(response, sessionId);
     } catch (err) {
       logger.error('[Playground] Failed to refresh after interrupt:', err);
     }
@@ -483,14 +478,14 @@
   class:playground--modal={mode === 'modal'}
 >
   <main class="playground__main">
-    {#if getError()}
+    {#if fd.playground.error}
       <div class="playground__error">
         <Icon icon="mdi:alert-circle" />
-        <span>{getError()}</span>
+        <span>{fd.playground.error}</span>
         <button
           type="button"
           class="playground__error-dismiss"
-          onclick={() => playgroundActions.setError(null)}
+          onclick={() => fd.playground.setError(null)}
         >
           <Icon icon="mdi:close" />
         </button>
@@ -498,7 +493,7 @@
     {/if}
 
     <div class="playground__content" bind:this={playgroundContentEl}>
-      {#if getIsLoading() && !getCurrentSession()}
+      {#if fd.playground.isLoading && !fd.playground.currentSession}
         <div class="playground__loading">
           <Icon icon="mdi:loading" class="playground__loading-icon" />
           <span>Loading...</span>
@@ -509,7 +504,7 @@
           autoScroll={config.autoScroll ?? true}
           enableMarkdown={config.enableMarkdown ?? true}
           onInterruptResolved={handleInterruptResolved}
-          onCreateSession={getSessions().length === 0 ? handleCreateSession : undefined}
+          onCreateSession={fd.playground.sessions.length === 0 ? handleCreateSession : undefined}
           onLoadOlder={loadOlderMessages}
         />
 

@@ -21,7 +21,7 @@
   import { dynamicPortToNodePort } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
-  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { applyPortOrder, getPortTop, isPortVisible } from '../../utils/portUtils.js';
   import CogIcon from '../icons/CogIcon.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
@@ -43,6 +43,8 @@
     isProcessing?: boolean;
     isError?: boolean;
   }>();
+
+  const fd = getInstance();
 
   /**
    * Get UI extension settings from extensions, merging node type defaults with instance overrides.
@@ -141,7 +143,7 @@
         'input',
         hiddenPorts,
         hideUnconnectedHandles,
-        getConnectedHandles(),
+        fd.workflow.connectedHandles,
         props.data.nodeId
       )
     )
@@ -160,7 +162,7 @@
         'output',
         hiddenPorts,
         hideUnconnectedHandles,
-        getConnectedHandles(),
+        fd.workflow.connectedHandles,
         props.data.nodeId
       )
     )

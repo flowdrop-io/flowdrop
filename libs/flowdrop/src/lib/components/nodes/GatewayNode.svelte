@@ -18,7 +18,7 @@
     getCategoryColorToken,
     getPortBackgroundColor
   } from '../../utils/colors.js';
-  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -30,6 +30,8 @@
   }
 
   let props: Props = $props();
+
+  const fd = getInstance();
 
   // Hoist the graph branch — three reads in the template, two inside
   // {#each port} / {#each branch} loops. One getter walk per render.
@@ -80,7 +82,7 @@
 
     // Check if port is connected
     const handleId = `${props.data.nodeId}-${type}-${port.id}`;
-    return getConnectedHandles().has(handleId);
+    return fd.workflow.connectedHandles.has(handleId);
   }
 
   /**
@@ -103,7 +105,7 @@
 
     // Check if branch output is connected
     const handleId = `${props.data.nodeId}-output-${branchName}`;
-    return getConnectedHandles().has(handleId);
+    return fd.workflow.connectedHandles.has(handleId);
   }
 
   // Gateway-specific data - branches are calculated at runtime from config

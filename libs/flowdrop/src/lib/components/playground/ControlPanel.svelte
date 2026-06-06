@@ -10,14 +10,10 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import ChatInput from './ChatInput.svelte';
-  import {
-    getCurrentSession,
-    getSessions,
-    getIsLoading,
-    getShowLogs,
-    playgroundActions
-  } from '../../stores/playgroundStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+
+  const fd = getInstance();
 
   interface Props {
     // Session management
@@ -67,7 +63,7 @@
   }: Props = $props();
 
   const cp = $derived(m().playground.controlPanel);
-  const logsTitle = $derived(getShowLogs() ? cp.hideLogs : cp.showLogs);
+  const logsTitle = $derived(fd.playground.showLogs ? cp.hideLogs : cp.showLogs);
 
   let sessionDropdownOpen = $state(false);
   let chipWrapEl = $state<HTMLElement | null>(null);
@@ -135,7 +131,7 @@
             title={cp.switchSession}
           >
             <span class="control-panel__session-chip-name">
-              {getCurrentSession()?.name ?? cp.noSession}
+              {fd.playground.currentSession?.name ?? cp.noSession}
             </span>
             <Icon
               icon={sessionDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
@@ -161,20 +157,20 @@
                   type="button"
                   role="menuitem"
                   class="control-panel__session-popover-item control-panel__session-popover-item--new"
-                  disabled={getIsLoading()}
+                  disabled={fd.playground.isLoading}
                   onclick={handleCreate}
                 >
                   <Icon icon="mdi:plus" />
                   <span>{cp.newSession}</span>
                 </button>
               {/if}
-              {#if showSessionList && getSessions().length > 0}
+              {#if showSessionList && fd.playground.sessions.length > 0}
                 {#if showNewSessionButton}
                   <div class="control-panel__session-popover-divider"></div>
                 {/if}
                 <div class="control-panel__session-popover-list">
-                  {#each getSessions() as session (session.id)}
-                    {@const isActive = getCurrentSession()?.id === session.id}
+                  {#each fd.playground.sessions as session (session.id)}
+                    {@const isActive = fd.playground.currentSession?.id === session.id}
                     <div class="control-panel__session-popover-row">
                       <button
                         type="button"
@@ -224,7 +220,7 @@
             {cp.pipeline}
           </button>
         {/if}
-        {#if getCurrentSession()}
+        {#if fd.playground.currentSession}
           <button
             type="button"
             class="control-panel__toolbar-btn"
@@ -241,8 +237,8 @@
         <button
           type="button"
           class="control-panel__toolbar-btn"
-          class:control-panel__toolbar-btn--active={getShowLogs()}
-          onclick={() => playgroundActions.toggleShowLogs()}
+          class:control-panel__toolbar-btn--active={fd.playground.showLogs}
+          onclick={() => fd.playground.toggleShowLogs()}
           title={logsTitle}
           aria-label={logsTitle}
         >

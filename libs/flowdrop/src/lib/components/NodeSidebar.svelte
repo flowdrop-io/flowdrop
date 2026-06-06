@@ -10,7 +10,7 @@
   import Icon from '@iconify/svelte';
   import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
   import { getCategoryColorToken } from '../utils/colors.js';
-  import { getCategoryLabel } from '../stores/categoriesStore.svelte.js';
+  import { getInstance } from '../stores/getInstance.svelte.js';
   import { getUiSettings } from '../stores/settingsStore.svelte.js';
   import { extractConfigDefaults } from '../utils/nodeIds.js';
   import { m } from '$lib/messages/index.js';
@@ -26,6 +26,7 @@
   }
 
   let props: Props = $props();
+  const fd = getInstance();
   let searchInput = $state('');
   // initial default, user selects interactively
   // svelte-ignore state_referenced_locally
@@ -146,7 +147,7 @@
    * Falls back to auto-capitalizing the category machine name.
    */
   function getCategoryDisplayName(category: NodeCategory): string {
-    return getCategoryLabel(category);
+    return fd.categories.getLabel(category);
   }
 </script>
 

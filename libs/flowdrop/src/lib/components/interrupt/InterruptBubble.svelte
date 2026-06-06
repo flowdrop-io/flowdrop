@@ -33,11 +33,8 @@
     getErrorMessage,
     getResolvedValue
   } from '../../types/interruptState.js';
-  import {
-    getInterruptsMap,
-    interruptActions,
-    type InterruptWithState
-  } from '../../stores/interruptStore.svelte.js';
+  import { type InterruptWithState } from '../../stores/interruptStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { interruptService } from '../../services/interruptService.js';
   import { logger } from '../../utils/logger.js';
   import { m } from '$lib/messages/index.js';
@@ -72,12 +69,14 @@
     tags
   }: Props = $props();
 
+  const fd = getInstance();
+
   /**
    * Get the current interrupt state from the store.
    * This ensures we react to store updates (like status changes).
    */
   const currentInterrupt = $derived(
-    getInterruptsMap().get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
+    fd.interrupts.getMap().get(initialInterrupt.id) ?? addMachineState(initialInterrupt)
   );
 
   const hierarchyItems = $derived(hierarchy ?? []);
@@ -191,7 +190,7 @@
    */
   async function handleResolve(value: unknown): Promise<void> {
     // Start the submission - state machine validates this transition
-    const startResult = interruptActions.startSubmit(currentInterrupt.id, value);
+    const startResult = fd.interrupts.startSubmit(currentInterrupt.id, value);
     if (!startResult.valid) {
       logger.warn('[InterruptBubble] Cannot submit:', startResult.error);
       return;
@@ -204,14 +203,14 @@
       }
 
       // Mark as successful - transitions to resolved state
-      interruptActions.submitSuccess(currentInterrupt.id);
+      fd.interrupts.submitSuccess(currentInterrupt.id);
 
       // Notify parent to refresh messages
       onResolved?.();
     } catch (err) {
       // Mark as failed - transitions to error state (can retry)
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit response';
-      interruptActions.submitFailure(currentInterrupt.id, errorMessage);
+      fd.interrupts.submitFailure(currentInterrupt.id, errorMessage);
       logger.error('[InterruptBubble] Resolve error:', err);
     }
   }
@@ -221,7 +220,7 @@
    */
   async function handleCancel(): Promise<void> {
     // Start the cancel - state machine validates this transition
-    const startResult = interruptActions.startCancel(currentInterrupt.id);
+    const startResult = fd.interrupts.startCancel(currentInterrupt.id);
     if (!startResult.valid) {
       logger.warn('[InterruptBubble] Cannot cancel:', startResult.error);
       return;
@@ -234,14 +233,14 @@
       }
 
       // Mark as successful - transitions to cancelled state
-      interruptActions.submitSuccess(currentInterrupt.id);
+      fd.interrupts.submitSuccess(currentInterrupt.id);
 
       // Notify parent to refresh messages
       onResolved?.();
     } catch (err) {
       // Mark as failed - transitions to error state (can retry)
       const errorMessage = err instanceof Error ? err.message : 'Failed to cancel';
-      interruptActions.submitFailure(currentInterrupt.id, errorMessage);
+      fd.interrupts.submitFailure(currentInterrupt.id, errorMessage);
       logger.error('[InterruptBubble] Cancel error:', err);
     }
   }
@@ -250,7 +249,7 @@
    * Handle retry after error
    */
   function handleRetry(): void {
-    interruptActions.retry(currentInterrupt.id);
+    fd.interrupts.retry(currentInterrupt.id);
   }
 
   // Typed config getters for each prompt type

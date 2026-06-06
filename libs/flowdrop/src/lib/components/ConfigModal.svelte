@@ -14,6 +14,11 @@
   }
 
   let { onClose, onSave, onCancel, ...props }: Props = $props();
+
+  // Unique per component instance so two FlowDrop editors on one page
+  // don't render colliding DOM ids (a11y).
+  const uid = $props.id();
+  const titleId = `${uid}-config-modal-title`;
   let localConfigValues = $derived.by(() => ({ ...props.configValues }));
 
   function handleCancel() {
@@ -47,14 +52,14 @@
     onkeydown={handleKeydown}
     role="dialog"
     aria-modal="true"
-    aria-labelledby="config-modal-title"
+    aria-labelledby={titleId}
     tabindex="-1"
   >
     <!-- Modal Container -->
     <div class="config-modal">
       <!-- Modal Header -->
       <div class="config-modal__header">
-        <h2 id="config-modal-title" class="config-modal__title">
+        <h2 id={titleId} class="config-modal__title">
           Configure: {props.nodeLabel}
         </h2>
         <button

@@ -20,6 +20,7 @@
     type HelpResultData
   } from '../../commands/index.js';
   import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { updateSettings, getUiSettings } from '../../stores/settingsStore.svelte.js';
   import ConsoleInput from './ConsoleInput.svelte';
   import ConsoleOutput, { type ConsoleEntry } from './ConsoleOutput.svelte';
@@ -41,12 +42,14 @@
 
   let { nodeTypes, onUIAction }: Props = $props();
 
+  const fd = getInstance();
+
   let outputEntries: ConsoleEntry[] = $state([]);
   let commandContext: CommandContext | null = $state(null);
 
   // Recreate context when nodeTypes changes
   $effect(() => {
-    commandContext = createStoreCommandContext(nodeTypes, onUIAction);
+    commandContext = createStoreCommandContext(nodeTypes, onUIAction, fd);
   });
 
   /**

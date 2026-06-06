@@ -4,7 +4,7 @@
   import type { UIAction } from '../../commands/types.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import { chatService } from '../../services/chatService.js';
-  import { getWorkflowStore } from '../../stores/workflowStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { getBehaviorSettings } from '../../stores/settingsStore.svelte.js';
   import { extractCommands } from '../../chat/responseParser.js';
   import { isMutatingCommand } from '../../chat/commandClassifier.js';
@@ -49,6 +49,8 @@
   }
 
   let { nodeTypes, workflowId, onUIAction, placeholder, endpointConfig }: Props = $props();
+
+  const fd = getInstance();
 
   // deprecation warns once per mount; later prop rebinds aren't relevant
   // svelte-ignore state_referenced_locally
@@ -109,7 +111,7 @@
   }
 
   function getWorkflowState(): unknown {
-    const workflow = getWorkflowStore();
+    const workflow = fd.workflow.current;
     if (!workflow) return null;
     return {
       nodes: workflow.nodes.map((n) => ({
@@ -129,7 +131,7 @@
   }
 
   function getCommandContext() {
-    return createStoreCommandContext(nodeTypes, onUIAction);
+    return createStoreCommandContext(nodeTypes, onUIAction, fd);
   }
 
   // =========================================================================

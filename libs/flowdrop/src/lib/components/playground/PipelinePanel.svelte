@@ -1,5 +1,5 @@
 <script module lang="ts">
-  const VIEW_MODE_KEY = 'fd-pipeline-view-mode';
+  const VIEW_MODE_KEY_BASE = 'fd-pipeline-view-mode';
   const BUILTIN_VIEWS = ['graph', 'kanban', 'table'] as const;
   // `string & {}` preserves autocomplete for built-in values while still accepting arbitrary strings from extraViews.
   type ViewMode = (typeof BUILTIN_VIEWS)[number] | (string & {});
@@ -7,6 +7,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import PipelineStatus from '$lib/components/PipelineStatus.svelte';
   import PipelineKanbanView from './PipelineKanbanView.svelte';
   import PipelineTableView from './PipelineTableView.svelte';
@@ -46,10 +47,16 @@
     extraViews = []
   }: Props = $props();
 
+  const fd = getInstance();
+
+  // The default instance keeps the legacy bare key; additional instances get
+  // a scoped key so two editors' view-mode choices don't overwrite each other.
+  const viewModeKey = fd.isDefault ? VIEW_MODE_KEY_BASE : `${VIEW_MODE_KEY_BASE}:${fd.id}`;
+
   let viewMode = $state<ViewMode>('graph');
 
   onMount(() => {
-    const stored = localStorage.getItem(VIEW_MODE_KEY);
+    const stored = localStorage.getItem(viewModeKey);
     if (!stored) return;
     const validKeys = [...BUILTIN_VIEWS, ...extraViews.map((v) => v.key)];
     if (validKeys.includes(stored)) viewMode = stored;
@@ -58,7 +65,7 @@
   function selectViewMode(mode: ViewMode) {
     viewMode = mode;
     try {
-      localStorage.setItem(VIEW_MODE_KEY, mode);
+      localStorage.setItem(viewModeKey, mode);
     } catch (e) {
       logger.warn('[FlowDrop] Could not persist view mode to localStorage:', e);
     }

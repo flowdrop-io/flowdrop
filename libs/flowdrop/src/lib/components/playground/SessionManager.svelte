@@ -10,13 +10,10 @@
   import Icon from '@iconify/svelte';
   import { slide } from 'svelte/transition';
   import type { PlaygroundSession } from '../../types/playground.js';
-  import {
-    getSessions,
-    getCurrentSession,
-    getIsLoading,
-    getSessionCount
-  } from '../../stores/playgroundStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+
+  const fd = getInstance();
 
   /**
    * Component props
@@ -175,8 +172,8 @@
     <div class="session-manager__title">
       <Icon icon="mdi:history" />
       <span>{t.header}</span>
-      {#if getSessionCount() > 0}
-        <span class="session-manager__count">{getSessionCount()}</span>
+      {#if fd.playground.sessionCount > 0}
+        <span class="session-manager__count">{fd.playground.sessionCount}</span>
       {/if}
     </div>
     <Icon
@@ -193,7 +190,7 @@
         type="button"
         class="session-manager__new-btn"
         onclick={onCreateSession}
-        disabled={getIsLoading()}
+        disabled={fd.playground.isLoading}
       >
         <Icon icon="mdi:plus" />
         {t.newSession}
@@ -201,16 +198,16 @@
 
       <!-- Sessions List -->
       <div class="session-manager__list">
-        {#if getSessions().length === 0}
+        {#if fd.playground.sessions.length === 0}
           <div class="session-manager__empty">
             <Icon icon="mdi:chat-outline" />
             <span>{t.empty}</span>
           </div>
         {:else}
-          {#each getSessions() as session (session.id)}
+          {#each fd.playground.sessions as session (session.id)}
             <div
               class="session-manager__item"
-              class:session-manager__item--active={getCurrentSession()?.id === session.id}
+              class:session-manager__item--active={fd.playground.currentSession?.id === session.id}
               role="button"
               tabindex="0"
               onclick={() => handleSelectSession(session.id)}

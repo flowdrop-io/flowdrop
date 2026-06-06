@@ -59,6 +59,11 @@
     class: className = ''
   }: Props = $props();
 
+  // Unique per component instance so two FlowDrop editors on one page
+  // don't render colliding DOM ids (a11y).
+  const uid = $props.id();
+  const titleId = `${uid}-settings-modal-title`;
+
   /**
    * Reference to the modal dialog element
    */
@@ -125,12 +130,12 @@
   onclick={handleBackdropClick}
   onkeydown={handleKeydown}
   onclose={handleDialogClose}
-  aria-labelledby="settings-modal-title"
+  aria-labelledby={titleId}
 >
   <div class="flowdrop-settings-modal__container">
     <!-- Header -->
     <div class="flowdrop-settings-modal__header">
-      <h2 id="settings-modal-title" class="flowdrop-settings-modal__title">
+      <h2 id={titleId} class="flowdrop-settings-modal__title">
         <Icon icon="mdi:cog" class="flowdrop-settings-modal__title-icon" />
         {m().navigation.settingsTitle}
       </h2>

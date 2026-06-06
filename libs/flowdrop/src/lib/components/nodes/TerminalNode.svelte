@@ -15,7 +15,7 @@
   import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
-  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
 
   /**
    * Terminal node variant types
@@ -82,6 +82,8 @@
     isProcessing?: boolean;
     isError?: boolean;
   }>();
+
+  const fd = getInstance();
 
   /**
    * Determine terminal variant from config or metadata
@@ -156,7 +158,7 @@
       return true;
     }
     const handleId = `${props.data.nodeId}-${type}-${port.id}`;
-    return getConnectedHandles().has(handleId);
+    return fd.workflow.connectedHandles.has(handleId);
   }
 
   /**

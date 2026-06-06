@@ -74,6 +74,10 @@
     class: className = ''
   }: Props = $props();
 
+  // Unique per component instance so two FlowDrop editors on one page
+  // don't render colliding tab/panel DOM ids (a11y).
+  const uid = $props.id();
+
   /**
    * Currently active tab
    */
@@ -384,7 +388,8 @@
         class:flowdrop-settings-panel__tab--active={activeTab === category}
         role="tab"
         aria-selected={activeTab === category}
-        aria-controls="panel-{category}"
+        aria-controls="{uid}-panel-{category}"
+        id="{uid}-tab-{category}"
         data-tab={category}
         tabindex={activeTab === category ? 0 : -1}
         onclick={() => (activeTab = category)}
@@ -400,11 +405,11 @@
   <div class="flowdrop-settings-panel__content">
     {#each categories as category (category)}
       <div
-        id="panel-{category}"
+        id="{uid}-panel-{category}"
         class="flowdrop-settings-panel__panel"
         class:flowdrop-settings-panel__panel--active={activeTab === category}
         role="tabpanel"
-        aria-labelledby="tab-{category}"
+        aria-labelledby="{uid}-tab-{category}"
         hidden={activeTab !== category}
       >
         {#if activeTab === category}

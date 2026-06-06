@@ -20,7 +20,7 @@
     WorkflowNode as WorkflowNodeType
   } from '../../types/index.js';
   import { getDataTypeColor } from '$lib/utils/colors.js';
-  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { applyPortOrder, isPortVisible } from '../../utils/portUtils.js';
   import { ProximityConnectHelper } from '../../helpers/proximityConnect.js';
 
@@ -45,6 +45,8 @@
   }
 
   let { data, selected, isProcessing, isError }: Props = $props();
+
+  const fd = getInstance();
 
   const nodeId = $derived(data.nodeId ?? 'unknown');
   const nodeType = $derived(data.metadata?.type ?? 'atom');
@@ -94,7 +96,7 @@
           'input',
           hiddenPorts,
           hideUnconnectedHandles,
-          getConnectedHandles(),
+          fd.workflow.connectedHandles,
           nodeId
         )
     )
@@ -104,7 +106,14 @@
       ProximityConnectHelper.getAllPorts(nodeLike, 'output'),
       portOrder.outputs
     ).filter((p: NodePort) =>
-      isPortVisible(p, 'output', hiddenPorts, hideUnconnectedHandles, getConnectedHandles(), nodeId)
+      isPortVisible(
+        p,
+        'output',
+        hiddenPorts,
+        hideUnconnectedHandles,
+        fd.workflow.connectedHandles,
+        nodeId
+      )
     )
   );
 

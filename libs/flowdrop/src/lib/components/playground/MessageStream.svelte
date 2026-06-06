@@ -19,20 +19,10 @@
     extractInterruptMetadata,
     metadataToInterrupt
   } from '../../types/interrupt.js';
-  import {
-    getMessages,
-    getChatMessages,
-    getIsExecuting,
-    getCurrentSession,
-    getShowLogs,
-    getHasOlder
-  } from '../../stores/playgroundStore.svelte.js';
-  import {
-    getInterruptsMap,
-    interruptActions,
-    getInterruptByMessageId
-  } from '../../stores/interruptStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+
+  const fd = getInstance();
 
   interface Props {
     /** Whether to show timestamps on messages */
@@ -80,7 +70,9 @@
   /** Reference to the messages container for scrolling */
   let messagesContainer = $state<HTMLDivElement | undefined>();
 
-  const displayMessages = $derived(allowLogs && getShowLogs() ? getMessages() : getChatMessages());
+  const displayMessages = $derived(
+    allowLogs && fd.playground.showLogs ? fd.playground.messages : fd.playground.chatMessages
+  );
 
   let previousMessageCount = 0;
   let userScrolledUp = false;
@@ -117,7 +109,7 @@
    * prepend doesn't shift the reading position.
    */
   async function loadOlder() {
-    if (!onLoadOlder || !messagesContainer || isLoadingOlder || !getHasOlder()) return;
+    if (!onLoadOlder || !messagesContainer || isLoadingOlder || !fd.playground.hasOlder) return;
 
     const anchor = topSentinel?.nextElementSibling as HTMLElement | null;
     const anchorTopBefore = anchor?.getBoundingClientRect().top ?? 0;
@@ -160,17 +152,17 @@
     const interruptMessages = displayMessages.filter(isInterruptMessage);
 
     for (const message of interruptMessages) {
-      const existing = getInterruptByMessageId(message.id);
+      const existing = fd.interrupts.getByMessageId(message.id);
       if (!existing) {
         const metadata = extractInterruptMetadata(
           message.metadata as Record<string, unknown> | undefined
         );
         if (metadata) {
           const interrupt = metadataToInterrupt(metadata, message.id, message.content);
-          interruptActions.addInterrupt(interrupt);
+          fd.interrupts.addInterrupt(interrupt);
 
           if (message.status === 'completed') {
-            interruptActions.resolveInterrupt(interrupt.id, metadata.response_value);
+            fd.interrupts.resolveInterrupt(interrupt.id, metadata.response_value);
           }
         }
       }
@@ -179,7 +171,7 @@
 
   const interruptsByMessageId = $derived(
     new Map(
-      Array.from(getInterruptsMap().values())
+      Array.from(fd.interrupts.getMap().values())
         .filter((i) => i.messageId)
         .map((i) => [i.messageId, i])
     )
@@ -189,12 +181,14 @@
     return interruptsByMessageId.get(message.id);
   }
 
-  const showWelcome = $derived(!getCurrentSession() && displayMessages.length === 0);
-  const showEmptyChat = $derived(getCurrentSession() !== null && displayMessages.length === 0);
+  const showWelcome = $derived(!fd.playground.currentSession && displayMessages.length === 0);
+  const showEmptyChat = $derived(
+    fd.playground.currentSession !== null && displayMessages.length === 0
+  );
 
   // Reset scroll-tracking when session changes
   $effect(() => {
-    if (getCurrentSession()) {
+    if (fd.playground.currentSession) {
       userScrolledUp = false;
     }
   });
@@ -271,7 +265,7 @@
       {/if}
     {/each}
 
-    {#if getIsExecuting()}
+    {#if fd.playground.isExecuting}
       <div class="message-stream__typing">
         <div class="message-stream__typing-indicator">
           <span></span>

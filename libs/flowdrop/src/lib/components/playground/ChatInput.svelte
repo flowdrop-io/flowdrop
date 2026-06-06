@@ -12,13 +12,10 @@
   import Icon from '@iconify/svelte';
   import { tick, untrack } from 'svelte';
   import { hasEnableRunFlag } from '../../types/playground.js';
-  import {
-    getMessages,
-    getIsExecuting,
-    getCanSendMessage,
-    getCurrentSession
-  } from '../../stores/playgroundStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+
+  const fd = getInstance();
 
   interface Props {
     placeholder?: string;
@@ -65,7 +62,7 @@
   let seenEnableRunCount = 0;
 
   $effect(() => {
-    const count = getMessages().filter((m) => hasEnableRunFlag(m.metadata)).length;
+    const count = fd.playground.messages.filter((m) => hasEnableRunFlag(m.metadata)).length;
     if (count > seenEnableRunCount) {
       untrack(() => {
         seenEnableRunCount = count;
@@ -75,7 +72,7 @@
   });
 
   $effect(() => {
-    if (getCurrentSession()?.id) {
+    if (fd.playground.currentSession?.id) {
       untrack(() => {
         seenEnableRunCount = 0;
       });
@@ -87,7 +84,7 @@
 
   /** Auto-focus input when execution completes */
   $effect(() => {
-    const nowExecuting = getIsExecuting();
+    const nowExecuting = fd.playground.isExecuting;
     if (wasExecuting && !nowExecuting && inputField) {
       tick().then(() => inputField?.focus({ preventScroll: true }));
     }
@@ -98,7 +95,7 @@
 
   function handleSend(): void {
     const trimmedValue = inputValue.trim();
-    if (!trimmedValue || !getCanSendMessage()) return;
+    if (!trimmedValue || !fd.playground.canSendMessage) return;
 
     onSendMessage?.(trimmedValue);
     inputValue = '';
@@ -124,7 +121,7 @@
   }
 
   function handleRun(): void {
-    if (getIsExecuting() || !runEnabled) return;
+    if (fd.playground.isExecuting || !runEnabled) return;
     runEnabled = false;
     onSendMessage?.(resolvedPredefinedMessage);
   }
@@ -153,14 +150,14 @@
             class="chat-input__textarea"
             placeholder={resolvedPlaceholder}
             rows="1"
-            disabled={getIsExecuting() || !getCurrentSession()}
+            disabled={fd.playground.isExecuting || !fd.playground.currentSession}
             onkeydown={handleKeydown}
             oninput={handleInput}
           ></textarea>
         </div>
       {/if}
 
-      {#if getIsExecuting()}
+      {#if fd.playground.isExecuting}
         <button
           type="button"
           class="chat-input__stop-btn"
@@ -176,7 +173,7 @@
           type="button"
           class="chat-input__send-btn"
           onclick={handleSend}
-          disabled={!inputValue.trim() || !getCanSendMessage()}
+          disabled={!inputValue.trim() || !fd.playground.canSendMessage}
           title={actions.sendTitle}
           aria-label={actions.sendTitle}
         >

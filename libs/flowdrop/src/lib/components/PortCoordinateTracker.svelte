@@ -10,10 +10,7 @@
 <script lang="ts">
   import { useSvelteFlow, type InternalNode } from '@xyflow/svelte';
   import type { WorkflowNode as WorkflowNodeType } from '../types/index.js';
-  import {
-    rebuildAllPortCoordinates,
-    updateNodePortCoordinates
-  } from '../stores/portCoordinateStore.svelte.js';
+  import { getInstance } from '../stores/getInstance.svelte.js';
 
   interface Props {
     /** Node to update coordinates for (e.g., during drag). Set to null when not dragging. */
@@ -25,6 +22,8 @@
   }
 
   let { nodeToUpdate, rebuildTrigger, nodes }: Props = $props();
+
+  const fd = getInstance();
 
   const { getInternalNode } = useSvelteFlow();
 
@@ -40,7 +39,7 @@
     const _trigger = rebuildTrigger;
     if (_trigger > 0) {
       const timeout = setTimeout(() => {
-        rebuildAllPortCoordinates(nodes, getInternal);
+        fd.portCoordinates.rebuildAll(nodes, getInternal);
       }, 150);
       return () => clearTimeout(timeout);
     }
@@ -52,7 +51,7 @@
    */
   $effect(() => {
     if (nodeToUpdate) {
-      updateNodePortCoordinates(nodeToUpdate, getInternal);
+      fd.portCoordinates.updateNode(nodeToUpdate, getInternal);
     }
   });
 </script>

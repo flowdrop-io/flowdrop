@@ -36,8 +36,8 @@
   import ConnectionLine from './ConnectionLine.svelte';
   import FlowDropEdge from './FlowDropEdge.svelte';
   import { m } from '$lib/messages/index.js';
-  import { getWorkflowStore, workflowActions } from '../stores/workflowStore.svelte.js';
-  import { historyActions, setOnRestoreCallback } from '../stores/historyStore.svelte.js';
+  import { provideInstance } from '../stores/getInstance.svelte.js';
+  import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import UniversalNode from './UniversalNode.svelte';
   import {
     EdgeStylingHelper,
@@ -57,7 +57,6 @@
     type ProximityEdgeCandidate
   } from '../helpers/proximityConnect.js';
   import PortCoordinateTracker from './PortCoordinateTracker.svelte';
-  import { getPortCoordinateSnapshot } from '../stores/portCoordinateStore.svelte.js';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
@@ -86,9 +85,17 @@
     // Console toggle
     consoleOpen?: boolean;
     onToggleConsole?: () => void;
+    /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
+    instance?: FlowDropInstance;
   }
 
   let props: Props = $props();
+
+  // Resolve (and provide to children) the per-instance state container.
+  // Must run during component init — provideInstance reads/sets Svelte context.
+  // The instance never changes for a mounted component, so capturing it once is correct.
+  // svelte-ignore state_referenced_locally
+  const fd = provideInstance(props.instance);
 
   // ---------------------------------------------------------------------------
   // Editor State Machine
@@ -127,7 +134,7 @@
    * Key for SvelteFlow component — changes when workflow ID changes.
    * Forces SvelteFlow to remount with fresh state, allowing fitView to work correctly.
    */
-  let svelteFlowKey = $derived(getWorkflowStore()?.id ?? 'default');
+  let svelteFlowKey = $derived(fd.workflow.current?.id ?? 'default');
 
   /**
    * Derive snap grid configuration from editor settings
@@ -169,14 +176,14 @@
   // Helper: sync current flowNodes/flowEdges back to the global store
   // ---------------------------------------------------------------------------
   function syncFlowToStore(): void {
-    const storeValue = untrack(() => getWorkflowStore());
+    const storeValue = untrack(() => fd.workflow.current);
     if (!storeValue) return;
     const updatedWorkflow = WorkflowOperationsHelper.updateWorkflow(
       storeValue,
       flowNodes,
       flowEdges
     );
-    workflowActions.updateWorkflow(updatedWorkflow);
+    fd.workflow.updateWorkflow(updatedWorkflow);
   }
 
   // ---------------------------------------------------------------------------
@@ -187,7 +194,7 @@
   let previousSyncedWorkflowId: string | null = null;
 
   $effect(() => {
-    const storeValue = getWorkflowStore();
+    const storeValue = fd.workflow.current;
 
     // Suppressed during operations — handlers write to flowNodes directly
     if (untrack(() => machine.permissions.suppressEffect)) return;
@@ -233,7 +240,7 @@
   let previousExecPipelineId: string | undefined = undefined;
 
   $effect(() => {
-    const storeValue = getWorkflowStore();
+    const storeValue = fd.workflow.current;
     const pipelineId = props.pipelineId;
 
     if (!storeValue || !pipelineId) return;
@@ -284,10 +291,10 @@
   // History restore callback
   // ---------------------------------------------------------------------------
   $effect(() => {
-    setOnRestoreCallback((restoredWorkflow: Workflow) => {
+    fd.historyBindings.setOnRestoreCallback((restoredWorkflow: Workflow) => {
       machine.send('START_RESTORE');
       // Update the store (effect is suppressed during 'restoring')
-      workflowActions.restoreFromHistory(restoredWorkflow);
+      fd.workflow.restoreFromHistory(restoredWorkflow);
       // Derive flowNodes/flowEdges directly for immediate visual update
       const derived = buildFlowNodesFromStore(restoredWorkflow);
       flowNodes = derived.nodes;
@@ -298,7 +305,12 @@
     });
 
     return () => {
-      setOnRestoreCallback(null);
+      // Reinstate the container's default wiring rather than nulling it: the
+      // default instance survives unmount, and a bare null would make legacy
+      // historyActions.undo() silently restore nothing afterwards.
+      fd.historyBindings.setOnRestoreCallback((restored: Workflow) =>
+        fd.workflow.restoreFromHistory(restored)
+      );
     };
   });
 
@@ -308,7 +320,7 @@
    * and refreshTrigger bumps) can't race on flowNodes.
    */
   async function loadNodeExecutionInfo(): Promise<void> {
-    const workflow = untrack(() => getWorkflowStore());
+    const workflow = untrack(() => fd.workflow.current);
     if (!workflow?.nodes || !props.pipelineId) return;
 
     if (executionInfoAbortController) {
@@ -414,7 +426,7 @@
     const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
 
     // Find the best compatible edge using port-to-port distance
-    const portCoordinates = getPortCoordinateSnapshot();
+    const portCoordinates = fd.portCoordinates.coordinates;
     const candidates =
       portCoordinates.size > 0
         ? ProximityConnectHelper.findCompatibleEdgesByPortCoordinates(
@@ -470,9 +482,9 @@
     syncFlowToStore();
 
     // Push history AFTER the drag completed
-    const storeValue = getWorkflowStore();
+    const storeValue = fd.workflow.current;
     if (storeValue) {
-      workflowActions.pushHistory('Move node', storeValue);
+      fd.workflow.pushHistory('Move node', storeValue);
     }
 
     // Transition to idle — sync effect is now unblocked
@@ -496,9 +508,9 @@
     // Sync to store
     syncFlowToStore();
 
-    const storeValue = getWorkflowStore();
+    const storeValue = fd.workflow.current;
     if (storeValue) {
-      workflowActions.pushHistory('Add connection', storeValue);
+      fd.workflow.pushHistory('Add connection', storeValue);
     }
 
     machine.send('CONNECTION_MADE');
@@ -574,9 +586,9 @@
     } else if (edgeCount > 0) {
       description = `Delete ${edgeCount} connection${edgeCount > 1 ? 's' : ''}`;
     }
-    const storeValue = getWorkflowStore();
+    const storeValue = fd.workflow.current;
     if (storeValue) {
-      workflowActions.pushHistory(description, storeValue);
+      fd.workflow.pushHistory(description, storeValue);
     }
 
     machine.send('DELETE_COMPLETE');
@@ -624,9 +636,9 @@
 
       await tick();
 
-      const storeValue = getWorkflowStore();
+      const storeValue = fd.workflow.current;
       if (storeValue) {
-        workflowActions.pushHistory('Add node', storeValue);
+        fd.workflow.pushHistory('Add node', storeValue);
       }
     } else {
       logger.warn('Failed to create node from drop data');
@@ -656,7 +668,7 @@
           logger.warn('Workflow file drop validation failed:', validation.error);
           return;
         }
-        workflowActions.initialize(data as Workflow);
+        fd.workflow.initialize(data as Workflow);
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
         logger.error('Workflow file drop import failed:', errorObj);
@@ -682,7 +694,7 @@
   /**
    * Update a node's data in the local editor state.
    * Called by App.svelte AFTER it has already updated the global store via
-   * workflowActions.updateNode(). We only need to update flowNodes for
+   * fd.workflow.updateNode(). We only need to update flowNodes for
    * immediate visual feedback — no store sync needed.
    *
    * @param nodeId - The ID of the node to update
@@ -784,14 +796,14 @@
     // Undo: Ctrl+Z (without Shift)
     if (event.key === 'z' && !event.shiftKey) {
       event.preventDefault();
-      historyActions.undo();
+      fd.historyBindings.undo();
       return;
     }
 
     // Redo: Ctrl+Shift+Z or Ctrl+Y
     if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
       event.preventDefault();
-      historyActions.redo();
+      fd.historyBindings.redo();
       return;
     }
   }
@@ -821,6 +833,7 @@
         <FlowDropZone ondrop={handleNodeDrop} onfiledrop={handleWorkflowFileDrop}>
           {#key svelteFlowKey}
             <SvelteFlow
+              id={fd.id}
               bind:nodes={flowNodes}
               bind:edges={flowEdges}
               {nodeTypes}

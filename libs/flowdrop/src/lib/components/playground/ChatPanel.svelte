@@ -14,8 +14,10 @@
   import Icon from '@iconify/svelte';
   import MessageStream from './MessageStream.svelte';
   import ChatInput from './ChatInput.svelte';
-  import { playgroundActions } from '../../stores/playgroundStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+
+  const fd = getInstance();
 
   interface Props {
     showTimestamps?: boolean;
@@ -40,8 +42,9 @@
     predefinedMessage?: string;
     compactSystemMessages?: boolean;
     /**
-     * @deprecated `showLogs` is now managed by playgroundStore.
-     * Setting it here syncs to the store on mount for backwards compatibility.
+     * @deprecated `showLogs` is now managed by the playground store
+     * (`fd.playground`). Setting it here syncs to the store on mount for
+     * backwards compatibility.
      */
     showLogs?: boolean;
   }
@@ -70,7 +73,7 @@
   // Back-compat: sync legacy showLogs prop into the store whenever it changes.
   $effect(() => {
     if (showLogs !== undefined) {
-      playgroundActions.setShowLogs(showLogs);
+      fd.playground.setShowLogs(showLogs);
     }
   });
 </script>

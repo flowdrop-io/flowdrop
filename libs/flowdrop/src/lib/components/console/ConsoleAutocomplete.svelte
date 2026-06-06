@@ -24,9 +24,15 @@
     selectedIndex: number;
     /** Called when a suggestion is accepted */
     onAccept: (suggestion: Suggestion) => void;
+    /**
+     * Listbox element id — supplied by the owning combobox (ConsoleInput) so
+     * its aria-controls/aria-activedescendant match, and unique per instance
+     * so two FlowDrop editors on one page don't render colliding DOM ids.
+     */
+    listboxId: string;
   }
 
-  let { suggestions, visible, selectedIndex, onAccept }: Props = $props();
+  let { suggestions, visible, selectedIndex, onAccept, listboxId }: Props = $props();
 
   let listElement: HTMLDivElement | undefined = $state();
 
@@ -41,18 +47,13 @@
 </script>
 
 {#if visible && suggestions.length > 0}
-  <div
-    class="console-autocomplete"
-    role="listbox"
-    id="console-autocomplete-listbox"
-    bind:this={listElement}
-  >
+  <div class="console-autocomplete" role="listbox" id={listboxId} bind:this={listElement}>
     {#each suggestions as suggestion, i}
       <div
         class="console-autocomplete__item"
         class:console-autocomplete__item--selected={i === selectedIndex}
         role="option"
-        id="console-autocomplete-option-{i}"
+        id="{listboxId}-option-{i}"
         tabindex="-1"
         aria-selected={i === selectedIndex}
         onmousedown={(e: MouseEvent) => {

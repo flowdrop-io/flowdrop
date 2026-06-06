@@ -7,7 +7,7 @@
 
 <script lang="ts">
   import type { NodeMetadata } from '$lib/types/index.js';
-  import { getWorkflowStore } from '../../stores/workflowStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { toShortId, resolveNode } from '../../commands/index.js';
   import ConsoleAutocomplete, { type Suggestion } from './ConsoleAutocomplete.svelte';
 
@@ -25,6 +25,14 @@
   }
 
   let { open, nodeTypes = [], onSubmit, onBatchSubmit, onClose }: Props = $props();
+
+  const fd = getInstance();
+
+  // Unique per component instance so two FlowDrop editors on one page
+  // don't render colliding DOM ids; shared with the autocomplete listbox so
+  // aria-controls/aria-activedescendant stay consistent.
+  const uid = $props.id();
+  const listboxId = `${uid}-console-autocomplete-listbox`;
 
   let inputValue = $state('');
   let inputElement: HTMLInputElement | undefined = $state();
@@ -94,7 +102,7 @@
    * Returns suggestions with short IDs and labels.
    */
   function getWorkflowNodeSuggestions(prefix: string): Suggestion[] {
-    const workflow = getWorkflowStore();
+    const workflow = fd.workflow.current;
     if (!workflow) return [];
 
     const lowerPrefix = prefix.toLowerCase();
@@ -207,7 +215,7 @@
     partial: string,
     filter: 'input' | 'output' | 'all'
   ): Suggestion[] {
-    const workflow = getWorkflowStore();
+    const workflow = fd.workflow.current;
     if (!workflow) return [];
 
     const node = resolveNode(nodeId, workflow.nodes);
@@ -256,7 +264,7 @@
    * Get config key suggestions for a resolved node, filtered by prefix.
    */
   function getConfigKeySuggestions(nodeId: string, partial: string): Suggestion[] {
-    const workflow = getWorkflowStore();
+    const workflow = fd.workflow.current;
     if (!workflow) return [];
 
     const node = resolveNode(nodeId, workflow.nodes);
@@ -657,6 +665,7 @@
         visible={acVisible}
         selectedIndex={acSelectedIndex}
         onAccept={acceptSuggestion}
+        {listboxId}
       />
       <input
         bind:this={inputElement}
@@ -668,9 +677,9 @@
         autocomplete="off"
         role="combobox"
         aria-expanded={acVisible}
-        aria-controls="console-autocomplete-listbox"
+        aria-controls={listboxId}
         aria-activedescendant={acVisible && acSuggestions.length > 0
-          ? `console-autocomplete-option-${acSelectedIndex}`
+          ? `${listboxId}-option-${acSelectedIndex}`
           : undefined}
         onkeydown={handleKeydown}
         oninput={handleInput}

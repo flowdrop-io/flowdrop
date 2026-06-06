@@ -3,18 +3,8 @@
   import Icon from '@iconify/svelte';
   import Playground from './Playground.svelte';
   import PipelinePanel from './PipelinePanel.svelte';
-  import {
-    getPipelinePanelOpen,
-    pipelinePanelActions
-  } from '../../stores/pipelinePanelStore.svelte.js';
-  import {
-    getActiveExecutionId,
-    getPinnedExecutionId,
-    getLatestExecutionId,
-    getPipelineRefreshTrigger,
-    getSelectableExecutions,
-    playgroundActions
-  } from '../../stores/playgroundStore.svelte.js';
+  import { provideInstance } from '../../stores/getInstance.svelte.js';
+  import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
   import { setEndpointConfig, workflowApi } from '../../services/api.js';
   import { logger } from '../../utils/logger.js';
   import type { Workflow, PipelineViewDef } from '../../types/index.js';
@@ -46,6 +36,8 @@
     onClose?: () => void;
     /** Additional pipeline views injected by the consumer */
     extraPipelineViews?: PipelineViewDef[];
+    /** Explicit FlowDrop instance; defaults to context or the page-default instance. */
+    instance?: FlowDropInstance;
   }
 
   let {
@@ -60,8 +52,16 @@
     initialPipelineWidth = 500,
     onSessionNavigate,
     onClose,
-    extraPipelineViews = []
+    extraPipelineViews = [],
+    instance
   }: Props = $props();
+
+  // Resolve/provide once at init; the instance prop is a fixed mount-time choice.
+  // svelte-ignore state_referenced_locally
+  const fd = provideInstance(instance);
+
+  // Pre-bound toggle for detached callback props (onclick / onTogglePanel).
+  const togglePipeline = () => fd.pipelinePanel.toggle();
 
   // seed mutable state from the prop's initial value; workflow may load asynchronously below
   // svelte-ignore state_referenced_locally
@@ -95,9 +95,9 @@
   });
 
   onMount(() => {
-    pipelinePanelActions.init();
+    fd.pipelinePanel.init();
     if (initialPipelineOpen !== undefined) {
-      pipelinePanelActions.setOpen(initialPipelineOpen);
+      fd.pipelinePanel.setOpen(initialPipelineOpen);
     }
     if (endpointConfig) {
       setEndpointConfig(endpointConfig);
@@ -165,16 +165,16 @@
   style="--playground-studio-min-chat-width: {minChatWidth}px"
 >
   <div class="playground-studio__panes" bind:this={splitEl}>
-    {#if getPipelinePanelOpen() && resolvedWorkflow && endpointConfig}
-      {@const activeId = getActiveExecutionId()}
-      {@const executions = getSelectableExecutions()}
+    {#if fd.pipelinePanel.isOpen && resolvedWorkflow && endpointConfig}
+      {@const activeId = fd.playground.activeExecutionId}
+      {@const executions = fd.playground.selectableExecutions}
 
       <div class="playground-studio__pipeline" style="width: {pipelineWidth}px;">
         <button
           type="button"
           class="playground-studio__back-to-chat"
           aria-label="Back to chat"
-          onclick={pipelinePanelActions.toggle}
+          onclick={togglePipeline}
         >
           <Icon icon="mdi:arrow-left" aria-hidden="true" />
           <span>Back to chat</span>
@@ -183,11 +183,11 @@
           pipelineId={activeId}
           workflow={resolvedWorkflow}
           {endpointConfig}
-          isPinned={getPinnedExecutionId() !== null}
+          isPinned={fd.playground.pinnedExecutionId !== null}
           {executions}
-          latestExecutionId={getLatestExecutionId()}
-          onSelectExecution={(id) => playgroundActions.pinExecution(id)}
-          refreshTrigger={getPipelineRefreshTrigger()}
+          latestExecutionId={fd.playground.latestExecutionId}
+          onSelectExecution={(id) => fd.playground.pinExecution(id)}
+          refreshTrigger={fd.playground.pipelineRefreshTrigger}
           extraViews={extraPipelineViews}
         />
       </div>
@@ -217,7 +217,7 @@
 
     <div
       class="playground-studio__chat"
-      class:playground-studio__chat--solo={!getPipelinePanelOpen()}
+      class:playground-studio__chat--solo={!fd.pipelinePanel.isOpen}
     >
       {#if workflowLoading}
         <div class="playground-studio__loading">
@@ -244,8 +244,8 @@
             {config}
             {onClose}
             {onSessionNavigate}
-            onTogglePanel={pipelinePanelActions.toggle}
-            isPipelinePanelOpen={getPipelinePanelOpen()}
+            onTogglePanel={togglePipeline}
+            isPipelinePanelOpen={fd.pipelinePanel.isOpen}
           />
         {/key}
       {/if}

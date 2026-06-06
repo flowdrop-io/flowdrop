@@ -13,6 +13,7 @@
   import Navbar from '../Navbar.svelte';
   import PlaygroundStudio from './PlaygroundStudio.svelte';
   import type { Workflow } from '$lib/types/index.js';
+  import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
   import type { PlaygroundConfig } from '$lib/types/playground.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
@@ -37,6 +38,8 @@
     initialPipelineWidth?: number;
     onClose?: () => void;
     onSessionNavigate?: (sessionId: string) => void;
+    /** Per-instance state container — forwarded to the inner PlaygroundStudio */
+    instance?: FlowDropInstance;
   }
 
   let {
@@ -57,7 +60,8 @@
     minChatWidth,
     initialPipelineWidth,
     onClose,
-    onSessionNavigate
+    onSessionNavigate,
+    instance
   }: Props = $props();
 
   const displayTitle = $derived(navbarTitle ?? workflow?.name ?? 'Playground');
@@ -77,6 +81,7 @@
   {/if}
   <div class="fd-playground-app__content">
     <PlaygroundStudio
+      {instance}
       {workflowId}
       {workflow}
       {mode}

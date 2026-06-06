@@ -38,13 +38,8 @@
   import type { FlowDropTheme, FlowDropThemeName } from '$lib/types/theme.js';
   import type { FlowDropSkinTokens } from '$lib/types/skin.js';
   import { resolveTheme } from '$lib/themes/index.js';
-  import {
-    getWorkflowStore,
-    workflowActions,
-    getWorkflowName,
-    getWorkflowFormat,
-    markAsSaved
-  } from '../stores/workflowStore.svelte.js';
+  import { provideInstance } from '../stores/getInstance.svelte.js';
+  import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
   import { apiToasts, dismissToast } from '$lib/services/toastService.js';
   import { initAutoSave } from '$lib/services/autoSaveService.js';
@@ -134,6 +129,8 @@
      * function call you'd rather not invoke unless the prop is actually read.
      */
     messages?: MessagesOverride | (() => MessagesOverride);
+    /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
+    instance?: FlowDropInstance;
   }
 
   let {
@@ -162,8 +159,15 @@
     showSettingsResetButton,
     swapStrategies,
     workflowSettingsSchema,
-    messages: messagesOverride
+    messages: messagesOverride,
+    instance
   }: Props = $props();
+
+  // Resolve (and provide to children) the per-instance state container.
+  // Must run during component init — provideInstance reads/sets Svelte context.
+  // The instance never changes for a mounted component, so capturing it once is correct.
+  // svelte-ignore state_referenced_locally
+  const fd = provideInstance(instance);
 
   // feature flags don't change at runtime
   // svelte-ignore state_referenced_locally
@@ -269,7 +273,7 @@
       return navbarTitle;
     }
     // Default workflow title logic
-    const wfName = getWorkflowName();
+    const wfName = fd.workflow.name;
     if (!wfName || wfName === 'Untitled Workflow') {
       return 'Workflow / New Workflow';
     }
@@ -350,15 +354,15 @@
 
   // Workflow configuration values
   let workflowConfigValues = $derived({
-    name: getWorkflowName() || '',
-    description: getWorkflowStore()?.description || '',
-    format: getWorkflowStore()?.metadata?.format || 'flowdrop',
-    ...(getWorkflowStore()?.config ?? {})
+    name: fd.workflow.name || '',
+    description: fd.workflow.current?.description || '',
+    format: fd.workflow.current?.metadata?.format || 'flowdrop',
+    ...(fd.workflow.current?.config ?? {})
   });
 
   // Get the current node from the workflow store
   let selectedNodeForConfig = $derived.by(() => {
-    const wf = getWorkflowStore();
+    const wf = fd.workflow.current;
     if (!selectedNodeId || !wf) return null;
     return wf.nodes.find((node) => node.id === selectedNodeId) || null;
   });
@@ -579,11 +583,11 @@
     const node = selectedNodeForConfig;
     if (!node) return;
 
-    const wf = getWorkflowStore();
+    const wf = fd.workflow.current;
     if (!wf) return;
 
     // Format compatibility guard — defence-in-depth behind picker's own filter
-    const currentFormat = getWorkflowFormat();
+    const currentFormat = fd.workflow.format;
     if (metadata.formats?.length && !metadata.formats.includes(currentFormat)) {
       return;
     }
@@ -612,7 +616,7 @@
     const state = finalState ?? swapInteractiveState;
     if (!state) return;
 
-    const wf = getWorkflowStore();
+    const wf = fd.workflow.current;
     if (!wf) return;
 
     const oldLabel = state.oldNode.data.label;
@@ -645,7 +649,7 @@
     }
 
     // Apply as a single atomic swap with descriptive history entry
-    workflowActions.swapNode({
+    fd.workflow.swapNode({
       nodes: result.updatedNodes,
       edges: result.updatedEdges,
       description: `Swap node: ${oldLabel} → ${newLabel}`
@@ -700,7 +704,8 @@
       apiClient: apiClient ?? undefined,
       eventHandlers,
       features,
-      onMarkAsSaved: markAsSaved
+      instance: fd,
+      onMarkAsSaved: () => fd.workflow.markAsSaved()
     });
   }
 
@@ -711,7 +716,7 @@
    * in globalSave.ts — the single source of truth.
    */
   async function exportWorkflow(): Promise<void> {
-    await globalExportWorkflow({ features });
+    await globalExportWorkflow({ features, instance: fd });
   }
 
   /**
@@ -736,7 +741,7 @@
           logger.warn('Workflow import validation failed:', validation.error);
           return;
         }
-        workflowActions.initialize(data as Workflow);
+        fd.workflow.initialize(data as Workflow);
         if (features.showToasts) {
           apiToasts.success('Import workflow', 'Workflow imported successfully');
         }
@@ -803,7 +808,7 @@
 
         // Initialize the workflow store
         if (initialWorkflow) {
-          workflowActions.initialize(initialWorkflow);
+          fd.workflow.initialize(initialWorkflow);
 
           // Emit onWorkflowLoad event
           if (eventHandlers?.onWorkflowLoad) {
@@ -824,7 +829,7 @@
               updatedAt: new Date().toISOString()
             }
           };
-          workflowActions.initialize(defaultWorkflow);
+          fd.workflow.initialize(defaultWorkflow);
         }
       } catch (error) {
         logger.error('Failed to initialize editor:', error);
@@ -840,6 +845,7 @@
 
     // Initialize auto-save based on user settings
     const cleanupAutoSave = initAutoSave({
+      isDirty: () => fd.workflow.isDirty,
       onSave: async () => {
         await saveWorkflow();
       },
@@ -911,7 +917,7 @@
 
   function handleConsoleUIAction(action: UIAction): void {
     if (action.type === 'open_config') {
-      const wf = getWorkflowStore();
+      const wf = fd.workflow.current;
       if (!wf) return;
       const node = wf.nodes.find((n) => n.id === action.nodeId);
       if (node) openConfigSidebar(node);
@@ -1006,7 +1012,7 @@
       <NodeSidebar
         {nodes}
         loading={nodeTypesLoading}
-        activeFormat={getWorkflowFormat()}
+        activeFormat={fd.workflow.format}
         categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
       />
     {/snippet}
@@ -1027,22 +1033,22 @@
         <NodeSwapPicker
           currentNode={selectedNodeForConfig}
           availableNodes={nodes}
-          activeFormat={getWorkflowFormat()}
+          activeFormat={fd.workflow.format}
           onSelect={handleSwapSelect}
           onCancel={cancelSwap}
         />
       {:else if isWorkflowSettingsOpen}
         <ConfigPanel
           title={mergedMessages.navigation.workflowSettingsPanelTitle}
-          id={getWorkflowStore()?.id}
+          id={fd.workflow.current?.id}
           details={[
             {
               label: 'Nodes',
-              value: String(getWorkflowStore()?.nodes?.length ?? 0)
+              value: String(fd.workflow.current?.nodes?.length ?? 0)
             },
             {
               label: 'Connections',
-              value: String(getWorkflowStore()?.edges?.length ?? 0)
+              value: String(fd.workflow.current?.edges?.length ?? 0)
             }
           ]}
           configTitle={mergedMessages.navigation.workflowSettingsPanelSubtitle}
@@ -1055,7 +1061,7 @@
             showUIExtensions={false}
             onChange={(config) => {
               // Sync workflow settings changes immediately on field blur
-              const wf = getWorkflowStore();
+              const wf = fd.workflow.current;
               if (wf) {
                 const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
                 const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
@@ -1076,7 +1082,7 @@
 
                 // Extract built-in fields; everything else belongs in workflow.config
                 const { name, description, format: _format, ...customConfig } = config;
-                workflowActions.batchUpdate({
+                fd.workflow.batchUpdate({
                   name: name as string,
                   description: description as string | undefined,
                   metadata: {
@@ -1112,9 +1118,9 @@
           <ConfigForm
             {authProvider}
             node={currentNode}
-            workflowId={getWorkflowStore()?.id}
-            workflowNodes={getWorkflowStore()?.nodes}
-            workflowEdges={getWorkflowStore()?.edges}
+            workflowId={fd.workflow.current?.id}
+            workflowNodes={fd.workflow.current?.nodes}
+            workflowEdges={fd.workflow.current?.edges}
             onChange={async (updatedConfig, uiExtensions) => {
               // Sync config changes to workflow immediately on field blur
               if (selectedNodeId && currentNode) {
@@ -1137,7 +1143,7 @@
                   data: updatedData
                 };
 
-                workflowActions.updateNode(selectedNodeId, nodeUpdates);
+                fd.workflow.updateNode(selectedNodeId, nodeUpdates);
 
                 // Update the local editor state to reflect config changes immediately
                 // This is needed for nodeType changes to take effect visually
@@ -1186,7 +1192,7 @@
           >
             <AIChatPanel
               nodeTypes={nodes}
-              workflowId={getWorkflowStore()?.id}
+              workflowId={fd.workflow.current?.id}
               onUIAction={handleConsoleUIAction}
               {endpointConfig}
             />

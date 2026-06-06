@@ -22,7 +22,7 @@
     getCategoryColorToken,
     getPortBackgroundColor
   } from '../../utils/colors.js';
-  import { getConnectedHandles } from '../../stores/workflowStore.svelte.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { applyPortOrder } from '../../utils/portUtils.js';
   import { m } from '$lib/messages/index.js';
 
@@ -36,6 +36,8 @@
 
   let props: Props = $props();
   let isHandleInteraction = $state(false);
+
+  const fd = getInstance();
 
   // Hoist the graph branch — three reads in the template, two of them inside
   // {#each port} loops where N×M reads add up. One getter walk per render.
@@ -145,7 +147,7 @@
 
     // Check if port is connected
     const handleId = `${props.data.nodeId}-${type}-${port.id}`;
-    return getConnectedHandles().has(handleId);
+    return fd.workflow.connectedHandles.has(handleId);
   }
 
   /**

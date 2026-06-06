@@ -11,7 +11,7 @@
   import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
   import { getCategoryColorToken } from '../utils/colors.js';
   import { m } from '$lib/messages/index.js';
-  import { getCategoryLabel } from '../stores/categoriesStore.svelte.js';
+  import { getInstance } from '../stores/getInstance.svelte.js';
   import { getVersionUpgrade } from '../utils/nodeSwap.js';
 
   interface Props {
@@ -28,6 +28,8 @@
   }
 
   const { currentNode, availableNodes, activeFormat, onSelect, onCancel }: Props = $props();
+
+  const fd = getInstance();
 
   let searchInput = $state('');
 
@@ -134,7 +136,7 @@
           <!-- Flat style: dot + name rows (shown in minimal skin) -->
           <div class="swap-picker__flat-section">
             <div class="swap-picker__flat-category">
-              {getCategoryLabel(category).toUpperCase()}
+              {fd.categories.getLabel(category).toUpperCase()}
             </div>
             <div class="swap-picker__flat-list">
               {#each categoryNodes as nodeType (nodeType.id)}
@@ -159,7 +161,7 @@
                 <Icon icon={getCategoryIcon(category)} />
               </span>
               <span class="swap-picker__category-name">
-                {getCategoryLabel(category)}
+                {fd.categories.getLabel(category)}
               </span>
               <span class="swap-picker__category-count">
                 {categoryNodes.length}

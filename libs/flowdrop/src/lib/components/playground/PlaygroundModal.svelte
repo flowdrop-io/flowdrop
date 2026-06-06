@@ -10,6 +10,7 @@
   import Icon from '@iconify/svelte';
   import Playground from './Playground.svelte';
   import type { Workflow } from '../../types/index.js';
+  import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import type { PlaygroundConfig } from '../../types/playground.js';
   import { m } from '$lib/messages/index.js';
@@ -30,6 +31,8 @@
     endpointConfig?: EndpointConfig;
     /** Playground configuration options */
     config?: PlaygroundConfig;
+    /** Per-instance state container — forwarded to the inner Playground */
+    instance?: FlowDropInstance;
     /** Callback when modal is closed */
     onClose: () => void;
   }
@@ -41,8 +44,14 @@
     initialSessionId,
     endpointConfig,
     config = {},
+    instance,
     onClose
   }: Props = $props();
+
+  // Unique per component instance so two FlowDrop editors on one page
+  // don't render colliding DOM ids (a11y).
+  const uid = $props.id();
+  const titleId = `${uid}-playground-modal-title`;
 
   /**
    * Close modal on Escape key
@@ -71,7 +80,7 @@
     onkeydown={handleKeydown}
     role="dialog"
     aria-modal="true"
-    aria-labelledby="playground-modal-title"
+    aria-labelledby={titleId}
     tabindex="-1"
   >
     <!-- Modal Container -->
@@ -79,7 +88,7 @@
     <div class="playground-modal" onclick={(e) => e.stopPropagation()} role="presentation">
       <!-- Modal Header -->
       <div class="playground-modal__header">
-        <div class="playground-modal__title" id="playground-modal-title">
+        <div class="playground-modal__title" id={titleId}>
           <Icon icon="mdi:play-circle-outline" />
           <span>Playground</span>
         </div>
@@ -96,6 +105,7 @@
       <!-- Modal Content -->
       <div class="playground-modal__content">
         <Playground
+          {instance}
           {workflowId}
           {workflow}
           mode="modal"
