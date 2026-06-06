@@ -3,10 +3,10 @@ title: Store API Reference
 description: Complete API reference for all FlowDrop reactive stores.
 ---
 
-FlowDrop uses Svelte 5 rune-based stores for state management. All stores are module-level singletons — import and call getter functions directly.
+FlowDrop uses Svelte 5 rune-based stores for state management. The module-level getter functions documented on this page operate on the **page-default instance** (the first editor mounted without an explicit `instanceId`).
 
-:::caution[Single Instance]
-FlowDrop stores are global singletons. Only one FlowDrop editor instance can exist per page. Mounting a second instance will overwrite the first instance's state.
+:::note[Multiple instances]
+Each mount owns an isolated `FlowDropInstance`. For additional editors on a page, reach their stores via `getInstance()` (inside a component) or the `FlowDropInstance` members (`instance.workflow`, `instance.history`, …) rather than these module-level functions. New exports from `@flowdrop/flowdrop/editor`: `createFlowDropInstance`, `getDefaultInstance`, `getInstance`, `provideInstance`, and the `FlowDropInstance` type. See the [multiple instances guide](/guides/multiple-instances/).
 :::
 
 ## workflowStore

@@ -97,9 +97,11 @@ import { FileTree } from '@astrojs/starlight/components';
 
 `mountWorkflowEditor()` mounts just the canvas — no navbar, no sidebar.
 
+Each mount produces one such tree backed by its own instance; node/field registries and settings are shared across all trees on the page.
+
 ## Stores
 
-FlowDrop uses **Svelte 5 runes** for state management. Stores are module-level singletons:
+FlowDrop uses **Svelte 5 runes** for state management. Each mount creates a per-instance `FlowDropInstance` container that holds these stores:
 
 | Store                   | Purpose                | Key state                                   |
 | ----------------------- | ---------------------- | ------------------------------------------- |
@@ -111,9 +113,11 @@ FlowDrop uses **Svelte 5 runes** for state management. Stores are module-level s
 | **categoriesStore**     | Node categories        | category definitions, colors                |
 | **portCoordinateStore** | Handle positions       | port coordinates for edge rendering         |
 
-:::caution[Single Instance]
-FlowDrop uses module-level singleton stores. Only **one FlowDrop editor** can exist per page. Mounting a second instance will share state with the first.
-:::
+### Instance Model
+
+Every mount creates an isolated `FlowDropInstance` container holding the stores above (workflow, history, playground, interrupts, categories, port coordinates, and pipeline-panel state), resolved through Svelte context. Multiple editors can therefore coexist on one page without sharing state.
+
+For backward compatibility, the first mount without an explicit `instanceId` becomes the **page-default instance**: it keeps the legacy (unscoped) storage keys and is the instance the module-level store APIs (`getWorkflowStore()`, `workflowActions`, …) operate on. Registries (custom nodes/fields) and settings (theme, port-compatibility config, API endpoint) remain page-global by design. See the [multiple instances guide](/guides/multiple-instances/) for details.
 
 ## Services
 

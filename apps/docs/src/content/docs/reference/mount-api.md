@@ -69,6 +69,16 @@ interface FlowDropMountOptions {
   /** Node execution statuses for visual overlay */
   nodeStatuses?: Record<string, 'pending' | 'running' | 'completed' | 'error'>;
 
+  // Instance
+  /**
+   * Scope this mount to a named instance. Omit on the first mount of a page to
+   * use the default instance (legacy unscoped storage keys, reachable via the
+   * module-level store APIs). Pass an explicit id to isolate a second editor:
+   * its drafts land under `flowdrop:draft:<instanceId>:<workflowId>` and its
+   * pipeline-panel state under `fd-pipeline-panel-open:<instanceId>`.
+   */
+  instanceId?: string;
+
   // Settings
   /** Initial settings overrides (theme, behavior, editor, ui) */
   settings?: PartialSettings;
@@ -137,11 +147,12 @@ const editor = await mountWorkflowEditor(container, {
   nodes: myNodes,
   endpointConfig: createEndpointConfig('/api/flowdrop'),
   portConfig: myPortConfig, // optional, overrides API
-  categories: myCategories // optional, overrides API
+  categories: myCategories, // optional, overrides API
+  instanceId: 'editor-b' // optional — scope to a named instance for multi-editor pages
 });
 ```
 
-Returns the same `MountedFlowDropApp` interface as `mountFlowDropApp()`.
+Returns the same `MountedFlowDropApp` interface as `mountFlowDropApp()`. `instanceId` follows the same default-instance semantics as `mountFlowDropApp()` above.
 
 ## `mountPlayground()`
 
@@ -165,9 +176,12 @@ const playground = await mountPlayground(container, {
   onClose: () => console.log('Playground closed'), // required for embedded/modal
   height: '600px',
   width: '100%',
-  initialSessionId: 'resume-session-id' // optional
+  initialSessionId: 'resume-session-id', // optional
+  instanceId: 'playground-b' // optional — scope to a named instance
 });
 ```
+
+`instanceId` follows the same default-instance semantics as `mountFlowDropApp()`. Note that while playground **state** (sessions, messages, interrupts) is isolated per instance, live message polling is **page-global**: only one playground can actively poll at a time. Drive a non-polling playground via `pushMessages()` instead.
 
 ### Playground Return Value
 

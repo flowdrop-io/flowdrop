@@ -9,7 +9,7 @@ FlowDrop automatically saves drafts of the current workflow to browser storage (
 
 1. When `autoSaveDraft` is enabled (default: `true`), FlowDrop saves the current workflow to draft storage periodically
 2. The save interval defaults to **30 seconds** (`autoSaveDraftInterval: 30000`)
-3. Drafts are keyed by workflow ID
+3. Drafts are keyed by workflow ID. The default instance uses `flowdrop:draft:<workflowId>` (and `flowdrop:draft:new` for an unsaved workflow). Editors mounted with an `instanceId` get scoped keys: `flowdrop:draft:<instanceId>:<workflowId>`, so multiple editors on one page never collide
 4. When a workflow is loaded, FlowDrop checks for a matching draft and offers to restore it
 5. After a successful save to the backend, the draft is cleared
 
@@ -117,7 +117,7 @@ eventHandlers: {
 
 On the default `'local'` backend, drafts persist until they are explicitly cleared. **FlowDrop has no notion of authentication**, so it cannot clear drafts when the user signs out of your application — you must do this from the host application's logout handler. On a shared browser profile, leftover drafts could otherwise be readable by the next user via DevTools.
 
-The mounted FlowDrop instance exposes `clearAllDrafts()` for this purpose. It removes every key beginning with `flowdrop:draft:` plus the custom `draftStorageKey` you configured at mount time (if any), and returns the number of entries removed.
+The mounted FlowDrop instance exposes `clearAllDrafts()` for this purpose. It removes every key beginning with `flowdrop:draft:` — including instance-scoped sub-namespaces like `flowdrop:draft:<instanceId>:<workflowId>` — plus the custom `draftStorageKey` you configured at mount time (if any), and returns the number of entries removed.
 
 ```typescript
 const app = await mountFlowDropApp(container, {

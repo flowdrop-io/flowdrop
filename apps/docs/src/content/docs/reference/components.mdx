@@ -42,6 +42,7 @@ Full-featured application wrapper with sidebar, editor, navbar, and config panel
 | `nodeStatuses`   | `Record<string, string>` | —       | Node execution statuses for overlay                 |
 | `eventHandlers`  | `FlowDropEventHandlers`  | —       | Lifecycle event handlers                            |
 | `features`       | `FlowDropFeatures`       | —       | Feature flags                                       |
+| `instance`       | `FlowDropInstance`       | —       | Per-instance state container; defaults to context, then the page-default instance |
 
 ### `WorkflowEditor`
 
@@ -65,6 +66,7 @@ Core canvas component using SvelteFlow. Renders nodes and edges with drag-and-dr
 | `lockWorkflow`   | `boolean`                | `false` | Prevent structural changes |
 | `nodeStatuses`   | `Record<string, string>` | —       | Execution status overlay   |
 | `pipelineId`     | `string`                 | —       | Pipeline ID for status     |
+| `instance`       | `FlowDropInstance`       | —       | Per-instance state container; defaults to context, then the page-default instance |
 
 ### `NodeSidebar`
 
@@ -202,6 +204,7 @@ Full interactive playground with chat interface and session management.
 | `endpointConfig`   | `EndpointConfig`   | —              | API configuration                  |
 | `config`           | `PlaygroundConfig` | —              | Playground options                 |
 | `onClose`          | `function`         | —              | Close callback (for embedded mode) |
+| `instance`         | `FlowDropInstance` | —              | Per-instance state container; defaults to context, then the page-default instance |
 
 ### Interrupt Components
 

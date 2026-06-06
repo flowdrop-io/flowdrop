@@ -3,11 +3,16 @@ title: Store System
 description: Understand FlowDrop's reactive state management for programmatic access.
 ---
 
-FlowDrop uses **Svelte 5 runes** for reactive state management. Stores are module-level singletons that hold the editor's state. While most developers won't need to interact with stores directly, they're essential for advanced integrations.
+FlowDrop uses **Svelte 5 runes** for reactive state management. Each mounted editor owns an isolated `FlowDropInstance` container holding its stores. While most developers won't need to interact with stores directly, they're essential for advanced integrations.
 
-:::caution[Single Instance]
-Stores are module-level singletons. Only **one FlowDrop editor** can exist per page. Mounting a second instance shares state with the first.
-:::
+## Two Access Styles
+
+There are two ways to reach a store, depending on whether you run one editor or several on a page:
+
+- **Module-level functions** (`getWorkflowStore()`, `workflowActions`, `historyActions`, …) operate on the **page-default instance** — the first editor mounted without an explicit `instanceId`. This is the legacy API and is fully backward compatible; use it for single-editor pages.
+- **`getInstance()` inside a component**, or holding a `FlowDropInstance` directly, lets you target a specific editor in a multi-instance setup. Read its members — `instance.workflow`, `instance.history`, `instance.playground`, etc. — instead of the module-level getters. Create one with `createFlowDropInstance({ id })` from `@flowdrop/flowdrop/editor` and pass it as the `instance` prop, or let the component resolve it from context.
+
+The module-level functions documented below all act on the page-default instance. See the [multiple instances guide](/guides/multiple-instances/) for scoping multiple editors.
 
 ## Workflow Store
 

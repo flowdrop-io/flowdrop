@@ -159,6 +159,7 @@ export default defineConfig({
 							collapsed: true,
 							items: [
 								{ label: 'Framework Integration', slug: 'guides/integration' },
+								{ label: 'Multiple Instances', slug: 'guides/multiple-instances' },
 								{ label: 'Backend Implementation', slug: 'guides/integration/backend-implementation' },
 								{ label: 'Authentication Patterns', slug: 'guides/integration/authentication-patterns' },
 								{ label: 'Deployment', slug: 'guides/integration/deployment' }

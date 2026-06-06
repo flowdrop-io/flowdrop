@@ -100,13 +100,17 @@ registerMarkdownEditorField();
 
 Register these **before** mounting the editor.
 
-## Multiple Editors Conflict
+## Multiple Editors Share State
 
-**Symptoms:** Two FlowDrop instances share state, or the second instance breaks the first.
+**Symptoms:** Two FlowDrop editors on the same page appear to share workflow or history state.
 
-**Cause:** FlowDrop uses module-level singleton stores. Only **one editor** can exist per page.
+Multiple editors per page are supported natively — each mount gets its own isolated `FlowDropInstance`, so the iframe workaround is no longer needed. If two editors still appear to share state:
 
-**Workaround:** If you need multiple editors, use iframes to isolate each instance in its own JavaScript context.
+1. **The page is on an older FlowDrop version.** Per-page instances landed in a recent release; upgrade `@flowdrop/flowdrop`.
+
+2. **Both mounts omitted `instanceId` and a module-store consumer is involved.** The first mount without an `instanceId` becomes the page-default instance and is what the module-level store APIs (`getWorkflowStore()`, `workflowActions`, …) operate on. Pass an explicit `instanceId` to each additional editor to scope its draft storage (`flowdrop:draft:<instanceId>:<workflowId>`), and use `getInstance()` / `instance.workflow` instead of the module-level APIs to target a specific editor.
+
+Note that some things are still **intentionally shared** across all editors on a page: theme and settings (including UI toggles), port-compatibility config, and the API endpoint config. See the [multiple instances guide](/guides/multiple-instances/).
 
 ## Save Fails Silently
 
@@ -201,7 +205,7 @@ Saving won't work without a backend, but you can use `app.getWorkflow()` to extr
 
 ### Can I have multiple editors on one page?
 
-No. FlowDrop uses singleton stores. Use iframes for multiple instances.
+Yes — supported natively. Each mount gets its own isolated `FlowDropInstance`. Pass an `instanceId` to each editor to scope its draft storage. Theme/settings and port config remain page-global. See the [multiple instances guide](/guides/multiple-instances/).
 
 ### What browsers are supported?
 

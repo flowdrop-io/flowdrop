@@ -68,9 +68,11 @@ npm install codemirror @codemirror/state @codemirror/view @codemirror/commands \
 
 ## Architecture Notes
 
-<Aside type="caution" title="Single Instance Per Page">
-  FlowDrop uses module-level singleton stores. Only **one FlowDrop editor instance** can exist on a
-  page at a time.
+<Aside type="note" title="Multiple Editors Per Page">
+  Multiple FlowDrop editors can run on the same page. Each mount gets its own isolated
+  `FlowDropInstance` (workflow, history, playground, and panel state). When mounting more than one
+  editor with drafts enabled, pass an `instanceId` so their stored drafts don't collide. See the
+  [multiple instances guide](/guides/multiple-instances/).
 </Aside>
 
 - **Svelte 5 required (internally).** FlowDrop uses Svelte 5 runes internally. Your app does not need to be written in Svelte.

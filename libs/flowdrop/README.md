@@ -50,7 +50,7 @@ No vendor lock-in. No data leaving your walls. No surprise bills.
 npm install @flowdrop/flowdrop
 ```
 
-> **Note:** FlowDrop supports **one editor instance per page** (module-level singleton stores). See [Architecture Notes](#architecture-notes) for details.
+> **Note:** FlowDrop supports **multiple editor instances per page** — each mount gets its own isolated state container. See [Architecture Notes](#architecture-notes) for details.
 
 You get a production-ready workflow UI. You keep full control of everything else.
 
@@ -80,7 +80,7 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ## Architecture Notes
 
-- **Single instance per page.** FlowDrop uses module-level singleton stores for state management. Only one FlowDrop editor instance can exist on a page at a time.
+- **Multiple instances per page.** Each mount gets its own `FlowDropInstance` state container (workflow, undo/redo history, playground sessions, drafts), so editors on the same page are fully isolated. The first mount without an `instanceId` becomes the page-default instance and keeps the legacy module-level store APIs working unchanged; pass `instanceId` to additional mounts to scope their draft/panel storage keys. Theme, settings, and port-compatibility config remain page-global by design.
 - **Svelte 5 required.** FlowDrop uses Svelte 5 runes (`$state`, `$derived`, `$effect`) throughout. Svelte 4 is not supported.
 - **Modern browsers only.** The library targets ES2020+ and does not include polyfills for older browsers.
 
