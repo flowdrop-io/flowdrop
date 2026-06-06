@@ -40,7 +40,25 @@ export default ts.config(
           destructuredArrayIgnorePattern: '^_',
           ignoreRestSiblings: true
         }
-      ]
+      ],
+      // This codebase builds collections inside $derived.by/getters and uses
+      // copy-on-write reassignment for $state collections — both patterns are
+      // already reactive without SvelteMap/SvelteSet/SvelteDate. The rule cannot
+      // distinguish those from in-place mutation of reactive state (the actual
+      // footgun), so every current hit is a false positive (audited June 2026,
+      // see .claude/plans/lint-cleanup-rich-harris-report.md). Kept as a warning
+      // so editors still surface the hint if a real in-place-mutation bug appears.
+      'svelte/prefer-svelte-reactivity': 'warn'
+    }
+  },
+  {
+    // src/lib is published library code: hrefs/gotos there render
+    // consumer-supplied URLs and may not even run inside SvelteKit (the README
+    // documents plain-DOM mounting), so SvelteKit's resolve() does not apply.
+    // The rule stays on for src/routes (the dev playground app).
+    files: ['src/lib/**'],
+    rules: {
+      'svelte/no-navigation-without-resolve': 'off'
     }
   },
   {
