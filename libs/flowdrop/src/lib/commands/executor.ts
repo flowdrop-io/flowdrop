@@ -1070,19 +1070,36 @@ function executeSwapNode(
     });
   }
 
+  // Name each dropped edge so the user can see exactly what was lost
+  const droppedEdgeDetails = preview.droppedEdges.map(({ edge }) => {
+    const sourcePort = extractPortId(edge.sourceHandle ?? undefined) ?? '?';
+    const targetPort = extractPortId(edge.targetHandle ?? undefined) ?? '?';
+    return `${toShortId(edge.source)}:${sourcePort} → ${toShortId(edge.target)}:${targetPort}`;
+  });
+
   const resultData: SwapNodeResultData = {
     oldNodeId: toShortId(node.id),
     newNodeId: toShortId(preview.newNodeId),
     newType: command.newTypeId,
     keptEdges: preview.keptEdges.length,
     droppedEdges: preview.droppedEdges.length,
+    droppedEdgeDetails,
     hasDataLoss: preview.hasDataLoss,
     configCarriedOver: preview.configCarriedOver,
     configReset: preview.configReset
   };
 
+  // Cap the inline list — a badly mismatched swap can drop dozens of edges,
+  // and the full list is always available in resultData.droppedEdgeDetails
+  const MAX_NAMED_DROPPED_EDGES = 5;
+  const namedDropped = droppedEdgeDetails.slice(0, MAX_NAMED_DROPPED_EDGES);
+  const unnamedCount = droppedEdgeDetails.length - namedDropped.length;
   const droppedMsg =
-    preview.droppedEdges.length > 0 ? ` (${preview.droppedEdges.length} edge(s) dropped)` : '';
+    preview.droppedEdges.length > 0
+      ? ` (${preview.droppedEdges.length} edge(s) dropped: ${namedDropped.join(', ')}${
+          unnamedCount > 0 ? `, … and ${unnamedCount} more` : ''
+        })`
+      : '';
 
   return {
     ok: true,

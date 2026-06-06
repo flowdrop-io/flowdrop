@@ -195,21 +195,22 @@ describe('computeSwapPreview', () => {
     });
   });
 
-  describe('Pass 3 — dataType fallback', () => {
-    it('should match by compatible dataType when ID and name differ', () => {
-      // Create nodes where only dataType can match
-      const sourceMetadata: NodeMetadata = {
-        ...calculatorNode,
-        id: 'src_type',
-        inputs: [],
-        outputs: [{ id: 'out1', name: 'Alpha', type: 'output', dataType: 'number' }]
-      };
-
+  describe('no fuzzy fallback — exact matches only', () => {
+    it('should drop the edge when neither port ID nor name matches, even if dataType is compatible', () => {
+      // Old port and new port share only the dataType — previously the fuzzy
+      // pass silently rewired such edges to the wrong port
       const targetMetadata: NodeMetadata = {
         ...calculatorNode,
         id: 'tgt_type',
         inputs: [{ id: 'in_x', name: 'Beta', type: 'input', dataType: 'number' }],
         outputs: []
+      };
+
+      const sourceMetadata: NodeMetadata = {
+        ...calculatorNode,
+        id: 'src_type',
+        inputs: [],
+        outputs: [{ id: 'out1', name: 'Alpha', type: 'output', dataType: 'number' }]
       };
 
       const srcNode = makeNode('src_type.1', sourceMetadata);
@@ -230,18 +231,121 @@ describe('computeSwapPreview', () => {
         null
       );
 
-      // Should match by dataType (number → number)
-      expect(preview.keptEdges).toHaveLength(1);
+      expect(preview.keptEdges).toHaveLength(0);
+      expect(preview.droppedEdges).toHaveLength(1);
+      expect(preview.droppedEdges[0].reason).toContain('in_z');
+      expect(preview.hasDataLoss).toBe(true);
+    });
+
+    it('should never rewire a fan-out edge to a different compatible port', () => {
+      // Old node has two outputs (text, assistant_message) with the same dataType.
+      // Two edges leave the `text` port. Both must land on the new `text` port —
+      // the second one must NOT fall through to `assistant_message`.
+      const meta: NodeMetadata = {
+        ...calculatorNode,
+        id: 'llm',
+        inputs: [],
+        outputs: [
+          { id: 'text', name: 'Text', type: 'output', dataType: 'string' },
+          { id: 'assistant_message', name: 'Assistant Message', type: 'output', dataType: 'string' }
+        ]
+      };
+
+      const node = makeNode('llm.1', meta);
+      const tgtA = makeNode('tgt.1', textInputNode);
+      const tgtB = makeNode('tgt.2', textInputNode);
+
+      const edges: WorkflowEdge[] = [
+        makeEdge('e1', 'llm.1', 'text', 'tgt.1', 'value'),
+        makeEdge('e2', 'llm.1', 'text', 'tgt.2', 'value')
+      ];
+
+      // Swap to the same type — every edge must come back on `text`
+      const preview = computeSwapPreview(node, meta, edges, [node, tgtA, tgtB], null);
+
+      expect(preview.keptEdges).toHaveLength(2);
+      expect(preview.droppedEdges).toHaveLength(0);
+      for (const { newEdge } of preview.keptEdges) {
+        expect(extractPortId(newEdge.sourceHandle ?? undefined)).toBe('text');
+      }
+    });
+  });
+
+  describe('multi-connection ports (e.g. tool fan-in)', () => {
+    it('should keep ALL edges anchored on the same input port', () => {
+      // A ToolsAware-style node with one `tools` input that accepts many
+      // tool_availability edges. Previously only the first edge survived a swap.
+      const toolsAwareMeta: NodeMetadata = {
+        ...calculatorNode,
+        id: 'tools_aware',
+        inputs: [{ id: 'tools', name: 'Tools', type: 'input', dataType: 'tool' }],
+        outputs: []
+      };
+
+      const toolMeta: NodeMetadata = {
+        ...calculatorNode,
+        id: 'tool',
+        inputs: [],
+        outputs: [{ id: 'tool', name: 'Tool', type: 'output', dataType: 'tool' }]
+      };
+
+      const node = makeNode('tools_aware.1', toolsAwareMeta);
+      const tools = [1, 2, 3, 4, 5, 6].map((i) => makeNode(`tool.${i}`, toolMeta));
+
+      const edges: WorkflowEdge[] = tools.map((t, i) =>
+        makeEdge(`e${i}`, t.id, 'tool', 'tools_aware.1', 'tools')
+      );
+
+      const preview = computeSwapPreview(node, toolsAwareMeta, edges, [node, ...tools], null);
+
+      expect(preview.keptEdges).toHaveLength(6);
+      expect(preview.droppedEdges).toHaveLength(0);
+      for (const { newEdge } of preview.keptEdges) {
+        expect(extractPortId(newEdge.targetHandle ?? undefined)).toBe('tools');
+      }
+    });
+
+    it('should keep all same-port edges in computeSwapPreviewWithOptions too', () => {
+      const toolsAwareMeta: NodeMetadata = {
+        ...calculatorNode,
+        id: 'tools_aware',
+        inputs: [{ id: 'tools', name: 'Tools', type: 'input', dataType: 'tool' }],
+        outputs: []
+      };
+
+      const toolMeta: NodeMetadata = {
+        ...calculatorNode,
+        id: 'tool',
+        inputs: [],
+        outputs: [{ id: 'tool', name: 'Tool', type: 'output', dataType: 'tool' }]
+      };
+
+      const node = makeNode('tools_aware.1', toolsAwareMeta);
+      const tools = [1, 2, 3].map((i) => makeNode(`tool.${i}`, toolMeta));
+
+      const edges: WorkflowEdge[] = tools.map((t, i) =>
+        makeEdge(`e${i}`, t.id, 'tool', 'tools_aware.1', 'tools')
+      );
+
+      const preview = computeSwapPreviewWithOptions(
+        node,
+        toolsAwareMeta,
+        edges,
+        [node, ...tools],
+        {}
+      );
+
+      expect(preview.keptEdges).toHaveLength(3);
       expect(preview.droppedEdges).toHaveLength(0);
     });
 
-    it('should consume ports in declaration order (no double-matching)', () => {
+    it('should still prevent two DIFFERENT old ports from claiming the same new port', () => {
       const oldMeta: NodeMetadata = {
         ...calculatorNode,
         id: 'old',
         inputs: [
-          { id: 'p1', name: 'First', type: 'input', dataType: 'number' },
-          { id: 'p2', name: 'Second', type: 'input', dataType: 'number' }
+          { id: 'p1', name: 'Shared', type: 'input', dataType: 'number' },
+          { id: 'p2', name: 'Shared', type: 'input', dataType: 'number' }
         ],
         outputs: []
       };
@@ -249,10 +353,7 @@ describe('computeSwapPreview', () => {
       const newMeta: NodeMetadata = {
         ...calculatorNode,
         id: 'new',
-        inputs: [
-          { id: 'x1', name: 'X', type: 'input', dataType: 'number' },
-          { id: 'x2', name: 'Y', type: 'input', dataType: 'number' }
-        ],
+        inputs: [{ id: 'x1', name: 'Shared', type: 'input', dataType: 'number' }],
         outputs: []
       };
 
@@ -266,13 +367,9 @@ describe('computeSwapPreview', () => {
 
       const preview = computeSwapPreview(node, newMeta, edges, [node, srcNode], null);
 
-      expect(preview.keptEdges).toHaveLength(2);
-
-      // Each should map to different new ports
-      const newTargetPorts = preview.keptEdges.map((k) =>
-        extractPortId(k.newEdge.targetHandle ?? undefined)
-      );
-      expect(new Set(newTargetPorts).size).toBe(2);
+      // p1 claims x1 by name; p2 has no remaining match → dropped, not double-mapped
+      expect(preview.keptEdges).toHaveLength(1);
+      expect(preview.droppedEdges).toHaveLength(1);
     });
   });
 
@@ -316,11 +413,11 @@ describe('computeSwapPreview', () => {
         makeEdge('e3', 'src.1', 'value', 'advanced_calculator.1', 'c')
       ];
 
-      // Target: single number input node
+      // Target: single number input node (exact ID match on "a" only)
       const singleInputMeta: NodeMetadata = {
         ...calculatorNode,
         id: 'single',
-        inputs: [{ id: 'x', name: 'X', type: 'input', dataType: 'number' }],
+        inputs: [{ id: 'a', name: 'Number A', type: 'input', dataType: 'number' }],
         outputs: []
       };
 
@@ -520,6 +617,18 @@ describe('executeSwap', () => {
 
     const newNode = result.updatedNodes.find((n) => n.id === preview.newNodeId);
     expect(newNode!.position).toEqual({ x: 350, y: 420 });
+  });
+
+  it('should set data.nodeId to the new node ID (handle IDs derive from it)', () => {
+    const calcNode = makeNode('calculator.1', calculatorNode);
+    const preview = computeSwapPreview(calcNode, advancedCalculatorNode, [], [calcNode], null);
+
+    const result = executeSwap(calcNode, advancedCalculatorNode, preview, [calcNode], []);
+
+    const newNode = result.updatedNodes.find((n) => n.id === preview.newNodeId);
+    // Without data.nodeId the node renders with zero handles and every edge
+    // anchored to it vanishes from the canvas (entity stays intact)
+    expect(newNode!.data.nodeId).toBe(preview.newNodeId);
   });
 
   it('should store original node ID in extensions.swap.previousNodeId', () => {

@@ -265,12 +265,25 @@ export function mapConfig(
 // =========================================================================
 
 /**
+ * Outcome of resolving an old port against the new node's ports.
+ *
+ * Discriminated on `port`: a successful resolution carries the matched port
+ * and nothing else; only a failed one carries a `reason`. This makes it
+ * impossible to read a drop reason off a successful match.
+ */
+type PortResolution = { port: NodePort } | { port: null; reason: string };
+
+/**
  * Find the best matching port on the new node for a given old port.
  *
- * Three-pass strategy:
+ * Two-pass strategy — exact matches only:
  * 1. Exact port ID match with compatible dataType
- * 2. Port name match (case-insensitive) with compatible dataType
- * 3. First available port with compatible dataType
+ * 2. Exact port name match (case-insensitive) with compatible dataType
+ *
+ * There is deliberately no fuzzy "first compatible dataType" fallback:
+ * it silently rewired edges to the wrong port (e.g. a `text` edge landing
+ * on `assistant_message`). If neither ID nor name matches, the edge is
+ * dropped and reported instead.
  */
 function findMatchingPort(
   oldPort: NodePort,
@@ -299,11 +312,7 @@ function findMatchingPort(
   const nameMatch = available.find(
     (p) => p.name.toLowerCase() === oldNameLower && isCompatible(oldPort, p)
   );
-  if (nameMatch) return nameMatch;
-
-  // Pass 3: first compatible dataType
-  const typeMatch = available.find((p) => isCompatible(oldPort, p));
-  return typeMatch ?? null;
+  return nameMatch ?? null;
 }
 
 /**
@@ -332,6 +341,10 @@ function resolvePort(
  *
  * This does NOT mutate anything — it returns a preview that can be displayed
  * to the user for confirmation before executing the swap.
+ *
+ * Thin wrapper over {@link computeSwapPreviewWithOptions} — with no strategies
+ * or overrides the cascade reduces to the built-in exact matching, so both
+ * entry points share one implementation.
  */
 export function computeSwapPreview(
   oldNode: WorkflowNode,
@@ -340,79 +353,7 @@ export function computeSwapPreview(
   allNodes: WorkflowNode[],
   checker: PortCompatibilityChecker | null = null
 ): SwapPreview {
-  const oldNodeId = oldNode.id;
-  const newNodeId = generateNodeId(newMetadata.id, allNodes);
-
-  // Collect all edges connected to the old node
-  const connectedEdges = edges.filter((e) => e.source === oldNodeId || e.target === oldNodeId);
-
-  // Track which ports on the new node have been claimed
-  const usedInputPortIds = new Set<string>();
-  const usedOutputPortIds = new Set<string>();
-
-  const keptEdges: SwapPreview['keptEdges'] = [];
-  const droppedEdges: SwapPreview['droppedEdges'] = [];
-
-  for (const edge of connectedEdges) {
-    const isSource = edge.source === oldNodeId;
-    const direction: 'input' | 'output' = isSource ? 'output' : 'input';
-    const handleId = isSource ? edge.sourceHandle : edge.targetHandle;
-    const usedPorts = isSource ? usedOutputPortIds : usedInputPortIds;
-
-    // Resolve the old port
-    const oldPort = resolvePort(oldNode, handleId, direction);
-    if (!oldPort) {
-      droppedEdges.push({
-        edge,
-        reason: `Port not found on original node`
-      });
-      continue;
-    }
-
-    // Find matching port on new node
-    const newPorts = direction === 'input' ? newMetadata.inputs : newMetadata.outputs;
-    const match = findMatchingPort(oldPort, newPorts, usedPorts, checker);
-
-    if (!match) {
-      droppedEdges.push({
-        edge,
-        reason: `No compatible ${direction} port found on "${newMetadata.name}"`
-      });
-      continue;
-    }
-
-    usedPorts.add(match.id);
-
-    // Build the rewritten edge
-    const newHandleId = buildHandleId(newNodeId, direction, match.id);
-    const newEdge: WorkflowEdge = { ...edge };
-
-    if (isSource) {
-      newEdge.source = newNodeId;
-      newEdge.sourceHandle = newHandleId;
-    } else {
-      newEdge.target = newNodeId;
-      newEdge.targetHandle = newHandleId;
-    }
-
-    keptEdges.push({ edge, newEdge });
-  }
-
-  // Config mapping preview
-  const { carriedOver, reset } = mapConfig(
-    oldNode.data.config,
-    newMetadata.configSchema,
-    newMetadata.config
-  );
-
-  return {
-    keptEdges,
-    droppedEdges,
-    hasDataLoss: droppedEdges.length > 0,
-    newNodeId,
-    configCarriedOver: carriedOver,
-    configReset: reset
-  };
+  return computeSwapPreviewWithOptions(oldNode, newMetadata, edges, allNodes, { checker });
 }
 
 // =========================================================================
@@ -458,6 +399,9 @@ export function executeSwap(
       label: newMetadata.name,
       config: mappedConfig,
       metadata: newMetadata,
+      // Node components derive their handle IDs from data.nodeId — without it
+      // every edge anchored to this node silently disappears from the canvas.
+      nodeId: newNodeId,
       extensions
     }
   };
@@ -535,7 +479,7 @@ function classifyMatch(oldPort: NodePort, matchedPort: NodePort | null): MatchQu
  *
  * Resolution order:
  * 1. Check strategies — first canHandle() match wins for mapPorts()/mapConfig()
- * 2. Fall through to built-in 3-pass for ports not covered by strategy
+ * 2. Fall through to built-in exact matching (ID, then name) for ports not covered by strategy
  * 3. Apply portOverrides on top (highest priority — user's manual overrides)
  * 4. Same cascade for config
  */
@@ -582,9 +526,57 @@ export function computeSwapPreviewWithOptions(
     portOverrideLookup.set(`${override.direction}:${override.oldPortId}`, override.newPortId);
   }
 
-  // Track used ports
+  // Track ports on the new node claimed by a DIFFERENT old port
   const usedInputPortIds = new Set<string>();
   const usedOutputPortIds = new Set<string>();
+
+  // Memoized old-port → new-port resolutions so every edge anchored on the
+  // same old port maps to the same new port (multi-connection ports, fan-outs).
+  const portResolutions = new Map<string, PortResolution>();
+
+  /** Resolve a new port for an old port through the priority cascade. */
+  const resolveNewPort = (
+    oldPort: NodePort,
+    direction: 'input' | 'output',
+    usedPorts: Set<string>
+  ): PortResolution => {
+    const newPorts = direction === 'input' ? newMetadata.inputs : newMetadata.outputs;
+
+    // Priority 1: Manual port override
+    const overrideKey = `${direction}:${oldPort.id}`;
+    if (portOverrideLookup.has(overrideKey)) {
+      const overrideNewPortId = portOverrideLookup.get(overrideKey)!;
+      if (overrideNewPortId === null) {
+        return { port: null, reason: 'Manually dropped' };
+      }
+      const overridePort = newPorts.find((p) => p.id === overrideNewPortId);
+      if (overridePort) {
+        return { port: overridePort };
+      }
+    }
+
+    // Priority 2: Strategy port mapping
+    if (strategyPortMap && oldPort.id in strategyPortMap) {
+      const strategyNewPortId = strategyPortMap[oldPort.id];
+      if (strategyNewPortId === null) {
+        return { port: null, reason: 'Dropped by strategy' };
+      }
+      const strategyPort = newPorts.find((p) => p.id === strategyNewPortId);
+      if (strategyPort && !usedPorts.has(strategyPort.id)) {
+        return { port: strategyPort };
+      }
+    }
+
+    // Priority 3: Built-in exact matching (ID, then name)
+    const match = findMatchingPort(oldPort, newPorts, usedPorts, checker);
+    if (!match) {
+      return {
+        port: null,
+        reason: `No matching ${direction} port for "${oldPort.id}" on "${newMetadata.name}"`
+      };
+    }
+    return { port: match };
+  };
 
   const keptEdges: SwapPreview['keptEdges'] = [];
   const droppedEdges: SwapPreview['droppedEdges'] = [];
@@ -601,71 +593,20 @@ export function computeSwapPreviewWithOptions(
       continue;
     }
 
-    // Priority 1: Manual port override
-    const overrideKey = `${direction}:${oldPort.id}`;
-    if (portOverrideLookup.has(overrideKey)) {
-      const overrideNewPortId = portOverrideLookup.get(overrideKey)!;
-      if (overrideNewPortId === null) {
-        droppedEdges.push({ edge, reason: 'Manually dropped' });
-        continue;
-      }
-      const newPorts = direction === 'input' ? newMetadata.inputs : newMetadata.outputs;
-      const overridePort = newPorts.find((p) => p.id === overrideNewPortId);
-      if (overridePort) {
-        usedPorts.add(overridePort.id);
-        const newHandleId = buildHandleId(newNodeId, direction, overridePort.id);
-        const newEdge: WorkflowEdge = { ...edge };
-        if (isSource) {
-          newEdge.source = newNodeId;
-          newEdge.sourceHandle = newHandleId;
-        } else {
-          newEdge.target = newNodeId;
-          newEdge.targetHandle = newHandleId;
-        }
-        keptEdges.push({ edge, newEdge });
-        continue;
-      }
+    const matchKey = `${direction}:${oldPort.id}`;
+    let resolved = portResolutions.get(matchKey);
+    if (!resolved) {
+      resolved = resolveNewPort(oldPort, direction, usedPorts);
+      portResolutions.set(matchKey, resolved);
+      if (resolved.port) usedPorts.add(resolved.port.id);
     }
 
-    // Priority 2: Strategy port mapping
-    if (strategyPortMap && oldPort.id in strategyPortMap) {
-      const strategyNewPortId = strategyPortMap[oldPort.id];
-      if (strategyNewPortId === null) {
-        droppedEdges.push({ edge, reason: 'Dropped by strategy' });
-        continue;
-      }
-      const newPorts = direction === 'input' ? newMetadata.inputs : newMetadata.outputs;
-      const strategyPort = newPorts.find((p) => p.id === strategyNewPortId);
-      if (strategyPort && !usedPorts.has(strategyPort.id)) {
-        usedPorts.add(strategyPort.id);
-        const newHandleId = buildHandleId(newNodeId, direction, strategyPort.id);
-        const newEdge: WorkflowEdge = { ...edge };
-        if (isSource) {
-          newEdge.source = newNodeId;
-          newEdge.sourceHandle = newHandleId;
-        } else {
-          newEdge.target = newNodeId;
-          newEdge.targetHandle = newHandleId;
-        }
-        keptEdges.push({ edge, newEdge });
-        continue;
-      }
-    }
-
-    // Priority 3: Built-in 3-pass matching
-    const newPorts = direction === 'input' ? newMetadata.inputs : newMetadata.outputs;
-    const match = findMatchingPort(oldPort, newPorts, usedPorts, checker);
-
-    if (!match) {
-      droppedEdges.push({
-        edge,
-        reason: `No compatible ${direction} port found on "${newMetadata.name}"`
-      });
+    if (!resolved.port) {
+      droppedEdges.push({ edge, reason: resolved.reason });
       continue;
     }
 
-    usedPorts.add(match.id);
-    const newHandleId = buildHandleId(newNodeId, direction, match.id);
+    const newHandleId = buildHandleId(newNodeId, direction, resolved.port.id);
     const newEdge: WorkflowEdge = { ...edge };
     if (isSource) {
       newEdge.source = newNodeId;

@@ -2279,6 +2279,111 @@ describe('executeCommand — swap_node', () => {
     expect(result.message).toContain('dropped');
   });
 
+  it('names each dropped edge in the message and result data', () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode('agentspec.llm_node.1', llmMetadata, {
+      data: {
+        label: 'LLM Node',
+        config: {},
+        metadata: llmMetadata,
+        nodeId: 'agentspec.llm_node.1'
+      }
+    });
+    const otherNode = createMockNode('agentspec.api_node.1', apiMetadata);
+    const edge: WorkflowEdge = {
+      id: 'edge-1',
+      source: 'agentspec.api_node.1',
+      target: 'agentspec.llm_node.1',
+      sourceHandle: 'agentspec.api_node.1-output-response',
+      targetHandle: 'agentspec.llm_node.1-input-prompt'
+    } as WorkflowEdge;
+    const workflow = createMockWorkflow([node, otherNode], [edge]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: 'swap_node', nodeId: 'llm_node.1', newTypeId: 'calculator' },
+      context
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as import('../../../src/lib/commands/types.js').SwapNodeResultData;
+    expect(data.droppedEdgeDetails).toHaveLength(1);
+    expect(data.droppedEdgeDetails[0]).toBe('api_node.1:response → llm_node.1:prompt');
+    expect(result.message).toContain('api_node.1:response → llm_node.1:prompt');
+  });
+
+  it('truncates the inline dropped-edge list at 5 but keeps all in result data', () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode('agentspec.llm_node.1', llmMetadata, {
+      data: {
+        label: 'LLM Node',
+        config: {},
+        metadata: llmMetadata,
+        nodeId: 'agentspec.llm_node.1'
+      }
+    });
+    // 7 string edges into llm_node.1's llm_output — calculator has no string ports
+    const sources = Array.from({ length: 7 }, (_, i) =>
+      createMockNode(`agentspec.api_node.${i + 1}`, apiMetadata)
+    );
+    const edges: WorkflowEdge[] = sources.map(
+      (src, i) =>
+        ({
+          id: `edge-${i}`,
+          source: 'agentspec.llm_node.1',
+          target: src.id,
+          sourceHandle: 'agentspec.llm_node.1-output-llm_output',
+          targetHandle: `${src.id}-input-body`
+        }) as WorkflowEdge
+    );
+    const workflow = createMockWorkflow([node, ...sources], edges);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: 'swap_node', nodeId: 'llm_node.1', newTypeId: 'calculator' },
+      context
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as import('../../../src/lib/commands/types.js').SwapNodeResultData;
+    expect(data.droppedEdges).toBe(7);
+    expect(data.droppedEdgeDetails).toHaveLength(7);
+    expect(result.message).toContain('7 edge(s) dropped');
+    expect(result.message).toContain('… and 2 more');
+    // Only 5 edges named inline
+    const namedCount = (result.message.match(/llm_node\.1:llm_output/g) ?? []).length;
+    expect(namedCount).toBe(5);
+  });
+
+  it('writes data.nodeId on the replacement node so its handles render', () => {
+    const dispatch = createMockDispatch();
+    const node = createMockNode('agentspec.llm_node.1', llmMetadata, {
+      data: {
+        label: 'LLM Node',
+        config: {},
+        metadata: llmMetadata,
+        nodeId: 'agentspec.llm_node.1'
+      }
+    });
+    const workflow = createMockWorkflow([node]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      { type: 'swap_node', nodeId: 'llm_node.1', newTypeId: 'api_node' },
+      context
+    );
+
+    expect(result.ok).toBe(true);
+    const update = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const newNode = update.nodes.find(
+      (n: WorkflowNode) => n.data.metadata.id === 'agentspec.api_node'
+    );
+    expect(newNode).toBeDefined();
+    expect(newNode.data.nodeId).toBe(newNode.id);
+  });
+
   it('reports config carried over and reset', () => {
     const dispatch = createMockDispatch();
     const node = createMockNode('agentspec.llm_node.1', llmMetadata, {

@@ -316,6 +316,8 @@ export interface SwapNodeResultData {
   newType: string;
   keptEdges: number;
   droppedEdges: number;
+  /** Human-readable descriptions of each dropped edge, e.g. "node.1:text → node.2:message" */
+  droppedEdgeDetails: string[];
   hasDataLoss: boolean;
   configCarriedOver: string[];
   configReset: string[];

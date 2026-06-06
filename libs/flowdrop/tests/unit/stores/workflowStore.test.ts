@@ -45,6 +45,32 @@ describe('workflowStore', () => {
       expect(getWorkflowStore()).toEqual(testWorkflow);
       expect(isDirty()).toBe(false);
     });
+
+    it('should heal nodes missing data.nodeId on load', () => {
+      // A node without data.nodeId renders with zero handles and all its
+      // edges vanish from the canvas — heal it to node.id on load
+      const broken = createTestNode({ id: 'broken-node' });
+      delete broken.data.nodeId;
+      const intact = createTestNode({ id: 'intact-node' });
+
+      workflowActions.initialize(createTestWorkflow({ nodes: [broken, intact] }));
+
+      const nodes = getWorkflowNodes();
+      expect(nodes.find((n) => n.id === 'broken-node')?.data.nodeId).toBe('broken-node');
+      expect(nodes.find((n) => n.id === 'intact-node')?.data.nodeId).toBe('intact-node');
+      // Healing is a render fix, not a user edit — stays clean
+      expect(isDirty()).toBe(false);
+    });
+
+    it('should preserve existing data.nodeId values as-is', () => {
+      const node = createTestNode({ id: 'ok-node' });
+      node.data.nodeId = 'custom-preserved-value';
+      const workflow = createTestWorkflow({ nodes: [node] });
+
+      workflowActions.initialize(workflow);
+
+      expect(getWorkflowNodes()[0].data.nodeId).toBe('custom-preserved-value');
+    });
   });
 
   describe('dirty state tracking', () => {
