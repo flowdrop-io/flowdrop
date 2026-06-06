@@ -418,7 +418,8 @@ export const defaultMessages = {
       executionsLabel: 'Executions:',
       lastRunLabel: 'Last Run:',
       durationLabel: 'Duration:',
-      errorLabel: 'Error:'
+      errorLabel: 'Error:',
+      historyLabel: 'Runs:'
     }
   }
 } as const;

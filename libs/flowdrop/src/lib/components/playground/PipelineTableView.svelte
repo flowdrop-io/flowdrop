@@ -45,7 +45,6 @@
   import Icon from '@iconify/svelte';
   import { createPipelineDataFetcher, resolveStatus } from './pipelineViewUtils.svelte.js';
   import { getStatusTextColor } from '$lib/utils/nodeStatus.js';
-  import type { NodeStatusData } from './pipelineViewUtils.svelte.js';
   import type { Workflow, WorkflowNode } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
 
@@ -58,10 +57,16 @@
 
   let { pipelineId, workflow, endpointConfig, refreshTrigger = 0 }: Props = $props();
 
-  interface NodeRow {
-    node: WorkflowNode;
+  interface JobRow {
+    /** Stable key: job id, or node id for nodes without a job yet */
+    key: string;
+    label: string;
+    typeId: string;
+    nodeId: string;
     status: NodeStatus;
-    statusData: NodeStatusData | undefined;
+    started?: string | null;
+    executionTime?: number | null;
+    error?: string | null;
   }
 
   // svelte-ignore state_referenced_locally — endpointConfig is consumed once to build the API client; it must be stable
@@ -73,28 +78,69 @@
     return () => clearTimeout(timer);
   });
 
-  const sortedRows = $derived.by((): NodeRow[] =>
-    workflow.nodes
+  // One row per job, timeline style: loop iterations create multiple jobs
+  // for the same node and each shows as its own row (label carries the #N
+  // suffix). Executed jobs sort by start time; never-started jobs keep
+  // pipeline order at the end, followed by nodes that have no job yet.
+  const sortedRows = $derived.by((): JobRow[] => {
+    const nodesById = new Map<string, WorkflowNode>(workflow.nodes.map((node) => [node.id, node]));
+
+    const jobRows: JobRow[] = [];
+    const nodesWithJobs = new Set<string>();
+    for (const job of fetcher.jobs) {
+      const node = nodesById.get(job.nodeId);
+      if (!node) continue;
+      nodesWithJobs.add(job.nodeId);
+      jobRows.push({
+        key: job.id,
+        label: job.label || node.data.label,
+        typeId: node.data.metadata.id,
+        nodeId: job.nodeId,
+        status: resolveStatus({ status: job.status }),
+        started: job.started,
+        executionTime: job.executionTime,
+        error: job.error
+      });
+    }
+
+    const startedRows = jobRows
+      .filter((row) => row.started)
+      .sort((a, b) => Date.parse(a.started!) - Date.parse(b.started!));
+    const neverStartedRows = jobRows.filter((row) => !row.started);
+
+    const nodeRows: JobRow[] = workflow.nodes
+      .filter((node) => !nodesWithJobs.has(node.id))
       .map((node) => {
         const statusData = fetcher.nodeStatusMap[node.id];
-        return { node, status: resolveStatus(statusData), statusData };
+        return {
+          key: node.id,
+          label: node.data.label,
+          typeId: node.data.metadata.id,
+          nodeId: node.id,
+          status: resolveStatus(statusData),
+          started: statusData?.last_executed,
+          executionTime: statusData?.execution_time,
+          error: statusData?.error
+        };
       })
-      .sort((a, b) => (STATUS_ORDER[a.status] ?? Infinity) - (STATUS_ORDER[b.status] ?? Infinity))
-  );
+      .sort((a, b) => (STATUS_ORDER[a.status] ?? Infinity) - (STATUS_ORDER[b.status] ?? Infinity));
+
+    return [...startedRows, ...neverStartedRows, ...nodeRows];
+  });
 
   let expandedIds = $state(new Set<string>());
 
-  function hasDetails(row: NodeRow): boolean {
-    return !!(row.statusData?.last_executed || row.statusData?.error);
+  function hasDetails(row: JobRow): boolean {
+    return !!(row.started || row.error);
   }
 
-  function toggleRow(row: NodeRow) {
+  function toggleRow(row: JobRow) {
     if (!hasDetails(row)) return;
     const next = new Set(expandedIds);
-    if (next.has(row.node.id)) {
-      next.delete(row.node.id);
+    if (next.has(row.key)) {
+      next.delete(row.key);
     } else {
-      next.add(row.node.id);
+      next.add(row.key);
     }
     expandedIds = next;
   }
@@ -125,8 +171,8 @@
           </tr>
         </thead>
         <tbody>
-          {#each sortedRows as row (row.node.id)}
-            {@const expanded = expandedIds.has(row.node.id)}
+          {#each sortedRows as row (row.key)}
+            {@const expanded = expandedIds.has(row.key)}
             {@const expandable = hasDetails(row)}
             <tr
               class="pipeline-table__row"
@@ -144,12 +190,11 @@
                   />
                 {/if}
               </td>
-              <td class="pipeline-table__td pipeline-table__td--label" title={row.node.data.label}
-                >{row.node.data.label}</td
+              <td class="pipeline-table__td pipeline-table__td--label" title={row.label}
+                >{row.label}</td
               >
-              <td
-                class="pipeline-table__td pipeline-table__td--muted"
-                title={row.node.data.metadata.id}>{row.node.data.metadata.id}</td
+              <td class="pipeline-table__td pipeline-table__td--muted" title={row.typeId}
+                >{row.typeId}</td
               >
               <td class="pipeline-table__td">
                 <span
@@ -163,30 +208,30 @@
                   {row.status}
                 </span>
               </td>
-              <td class="pipeline-table__td pipeline-table__td--id" title={row.node.id}
-                >{row.node.id}</td
+              <td class="pipeline-table__td pipeline-table__td--id" title={row.nodeId}
+                >{row.nodeId}</td
               >
             </tr>
             {#if expanded && expandable}
               <tr class="pipeline-table__detail-row">
                 <td colspan="5" class="pipeline-table__detail-cell">
                   <dl class="pipeline-table__details">
-                    {#if row.statusData?.last_executed}
+                    {#if row.started}
                       <div class="pipeline-table__detail-item">
-                        <dt>Last executed</dt>
-                        <dd>{formatDateTime(row.statusData.last_executed)}</dd>
+                        <dt>Started</dt>
+                        <dd>{formatDateTime(row.started)}</dd>
                       </div>
                     {/if}
-                    {#if row.statusData?.execution_time != null}
+                    {#if row.executionTime != null}
                       <div class="pipeline-table__detail-item">
                         <dt>Duration</dt>
-                        <dd>{formatDuration(row.statusData.execution_time)}</dd>
+                        <dd>{formatDuration(row.executionTime)}</dd>
                       </div>
                     {/if}
-                    {#if row.statusData?.error}
+                    {#if row.error}
                       <div class="pipeline-table__detail-item pipeline-table__detail-item--error">
                         <dt>Error</dt>
-                        <dd>{row.statusData.error}</dd>
+                        <dd>{row.error}</dd>
                       </div>
                     {/if}
                   </dl>

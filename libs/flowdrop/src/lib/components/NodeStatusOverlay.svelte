@@ -81,6 +81,13 @@
     executionInfo.status !== 'idle' || executionInfo.executionCount > 0 || executionInfo.isExecuting
   );
 
+  // Number of jobs behind this node's status. Loop iterations create
+  // multiple jobs per node — including a never-started job swept to
+  // "skipped" when the loop exits — so the per-job history (when known)
+  // beats the started-runs count: a skipped node with an earlier completed
+  // run must still flag that there is more to inspect.
+  let runCount = $derived(executionInfo.jobs?.length ?? executionInfo.executionCount);
+
   // Hoist the overlay branch — seven reads in the template.
   const overlay = $derived(m().status.overlay);
 </script>
@@ -126,10 +133,11 @@
       />
     </div>
 
-    <!-- Execution Count Badge -->
-    {#if executionInfo.executionCount > 0}
+    <!-- Run Count Badge: only meaningful when the node has more than one
+         job (loop iterations) — a "1" on every executed node is noise -->
+    {#if runCount > 1}
       <div class="node-status-overlay__count">
-        {executionInfo.executionCount}
+        ×{runCount}
       </div>
     {/if}
 
@@ -168,6 +176,33 @@
             <span class="node-status-overlay__detail-value">{executionInfo.lastError}</span>
           </div>
         {/if}
+        <!-- Per-job history: loop iterations create multiple jobs for the
+             same node; list them so earlier runs stay inspectable -->
+        {#if executionInfo.jobs && executionInfo.jobs.length > 1}
+          <div class="node-status-overlay__history">
+            <span class="node-status-overlay__detail-label">{overlay.historyLabel}</span>
+            {#each executionInfo.jobs as job, i (job.id ?? i)}
+              <div class="node-status-overlay__history-item">
+                <span
+                  class="node-status-overlay__history-dot"
+                  style="background-color: {getStatusColor(job.status)}"
+                ></span>
+                <span class="node-status-overlay__history-label" title={job.label}
+                  >{job.label ?? `#${i + 1}`}</span
+                >
+                <span
+                  class="node-status-overlay__history-status"
+                  style="color: {getStatusColor(job.status)}">{getStatusLabel(job.status)}</span
+                >
+                {#if job.executionTime != null && job.executionTime > 0}
+                  <span class="node-status-overlay__history-duration"
+                    >{formatExecutionDuration(job.executionTime)}</span
+                  >
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
@@ -180,7 +215,9 @@
     align-items: center;
     gap: 0.75rem;
     z-index: 1000;
-    pointer-events: none;
+    /* Must receive pointer events at rest — the hover details panel (and
+       per-job history) is only reachable if mouseenter can fire here. */
+    pointer-events: auto;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     height: 48px;
     width: auto;
@@ -302,6 +339,47 @@
 
   .node-status-overlay__detail-item--error .node-status-overlay__detail-value {
     color: #ef4444;
+  }
+
+  .node-status-overlay__history {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .node-status-overlay__history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .node-status-overlay__history-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .node-status-overlay__history-label {
+    flex: 1;
+    min-width: 0;
+    font-weight: 500;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .node-status-overlay__history-status {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .node-status-overlay__history-duration {
+    color: #6b7280;
+    white-space: nowrap;
   }
 
   /* Size variants */

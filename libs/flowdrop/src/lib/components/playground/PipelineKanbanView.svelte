@@ -65,7 +65,10 @@
   });
 
   interface CardItem {
-    node: WorkflowNode;
+    /** Stable key: job id, or node id for nodes without a job yet */
+    key: string;
+    label: string;
+    typeId: string;
     status: NodeStatus;
   }
 
@@ -85,10 +88,36 @@
       nodesByColumn.set(col.key, []);
     }
 
+    const nodesById = new Map<string, WorkflowNode>(workflow.nodes.map((node) => [node.id, node]));
+
+    // One card per job: loop iterations create multiple jobs for the same
+    // node, and each deserves its own card (label carries the #N suffix).
+    const nodesWithJobs = new Set<string>();
+    for (const job of fetcher.jobs) {
+      const node = nodesById.get(job.nodeId);
+      if (!node) continue;
+      nodesWithJobs.add(job.nodeId);
+      const status = resolveStatus({ status: job.status });
+      const colKey = statusToColumn.get(status) ?? fallbackKey;
+      nodesByColumn.get(colKey)?.push({
+        key: job.id,
+        label: job.label || node.data.label,
+        typeId: node.data.metadata.id,
+        status
+      });
+    }
+
+    // Nodes without a job yet keep a single card (pending / not reached).
     for (const node of workflow.nodes) {
+      if (nodesWithJobs.has(node.id)) continue;
       const status = resolveStatus(fetcher.nodeStatusMap[node.id]);
       const colKey = statusToColumn.get(status) ?? fallbackKey;
-      nodesByColumn.get(colKey)?.push({ node, status });
+      nodesByColumn.get(colKey)?.push({
+        key: node.id,
+        label: node.data.label,
+        typeId: node.data.metadata.id,
+        status
+      });
     }
 
     return { columns, nodesByColumn };
@@ -122,11 +151,11 @@
             <span class="pipeline-kanban__col-count">{items.length}</span>
           </div>
           <div class="pipeline-kanban__cards">
-            {#each items as { node, status } (node.id)}
+            {#each items as { key, label, typeId, status } (key)}
               <div class="pipeline-kanban__card">
                 <div class="pipeline-kanban__card-body">
                   <div class="pipeline-kanban__card-top">
-                    <span class="pipeline-kanban__card-label">{node.data.label}</span>
+                    <span class="pipeline-kanban__card-label">{label}</span>
                     {#if showStatusPill}
                       <span
                         class="pipeline-kanban__card-status"
@@ -137,7 +166,7 @@
                       >
                     {/if}
                   </div>
-                  <span class="pipeline-kanban__card-type">{node.data.metadata.id}</span>
+                  <span class="pipeline-kanban__card-type">{typeId}</span>
                 </div>
               </div>
             {/each}

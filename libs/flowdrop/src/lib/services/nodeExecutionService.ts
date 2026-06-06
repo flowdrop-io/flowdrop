@@ -3,7 +3,7 @@
  * Handles fetching and managing node execution information from the backend
  */
 
-import type { NodeExecutionInfo } from '../types/index.js';
+import type { NodeExecutionInfo, NodeJobExecution } from '../types/index.js';
 import { getEndpointConfig } from './api.js';
 import { buildEndpointUrl } from '../config/endpoints.js';
 import {
@@ -16,6 +16,8 @@ import { logger } from '../utils/logger.js';
  * Internal type for pipeline job data from the API response
  */
 interface PipelineJob {
+  id?: string;
+  label?: string;
   node_id: string;
   status: string;
   execution_count?: number;
@@ -25,6 +27,23 @@ interface PipelineJob {
   execution_time?: number;
   error?: string;
   error_message?: string;
+}
+
+/**
+ * Internal type for a node_statuses entry from the API response.
+ *
+ * The backend resolves one representative entry per node: status comes from
+ * the latest job (loop iterations create multiple jobs per node), timing
+ * from the most recent job that actually ran, and `executions` /
+ * `status_counts` carry the full per-iteration picture.
+ */
+interface NodeStatusEntry {
+  status: string;
+  last_executed?: string | null;
+  execution_time?: number | null;
+  error?: string | null;
+  executions?: number;
+  status_counts?: Record<string, number>;
 }
 
 /**
@@ -73,28 +92,9 @@ export class NodeExecutionService {
       const raw = await response.json();
       const pipelineData = raw.data ?? raw;
       const jobs: PipelineJob[] = pipelineData.jobs || [];
-      const nodeStatuses = pipelineData.node_statuses || {};
+      const nodeStatuses: Record<string, NodeStatusEntry> = pipelineData.node_statuses || {};
 
-      // Find the job for this node
-      const nodeJob = jobs.find((job: PipelineJob) => job.node_id === nodeId);
-      const nodeStatus = nodeStatuses[nodeId];
-
-      if (!nodeJob && !nodeStatus) {
-        return {
-          status: 'idle',
-          executionCount: 0,
-          isExecuting: false
-        };
-      }
-
-      const executionInfo: NodeExecutionInfo = {
-        status: this.mapJobStatusToExecutionStatus(nodeStatus?.status || nodeJob?.status || 'idle'),
-        executionCount: nodeJob?.execution_count || 0,
-        isExecuting: nodeStatus?.status === 'running' || nodeJob?.status === 'running',
-        lastExecuted: nodeJob?.last_executed || nodeStatus?.last_executed,
-        lastExecutionDuration: nodeJob?.execution_time || nodeStatus?.execution_time,
-        lastError: nodeJob?.error || nodeStatus?.error
-      };
+      const executionInfo = this.buildNodeExecutionInfo(nodeId, nodeStatuses[nodeId], jobs);
 
       this.cache.set(nodeId, executionInfo);
       return executionInfo;
@@ -159,32 +159,13 @@ export class NodeExecutionService {
       const raw = await response.json();
       const result = raw.data ?? raw;
       const jobs: PipelineJob[] = result.jobs || [];
+      const nodeStatuses: Record<string, NodeStatusEntry> = result.node_statuses || {};
 
       const executionInfoMap: Record<string, NodeExecutionInfo> = {};
 
-      // Initialize all nodes with default values
       nodeIds.forEach((nodeId) => {
-        executionInfoMap[nodeId] = {
-          status: 'idle',
-          executionCount: 0,
-          isExecuting: false
-        };
-      });
-
-      // Update with actual job data
-      jobs.forEach((job: PipelineJob) => {
-        const nodeId = job.node_id;
-        if (nodeIds.includes(nodeId)) {
-          executionInfoMap[nodeId] = {
-            status: this.mapJobStatusToExecutionStatus(job.status),
-            executionCount: job.execution_count || 0,
-            isExecuting: job.status === 'running',
-            lastExecuted: job.completed || job.started,
-            lastExecutionDuration: job.execution_time,
-            lastError: job.error_message
-          };
-
-          // Update cache
+        executionInfoMap[nodeId] = this.buildNodeExecutionInfo(nodeId, nodeStatuses[nodeId], jobs);
+        if (executionInfoMap[nodeId].status !== 'idle' || executionInfoMap[nodeId].jobs) {
           this.cache.set(nodeId, executionInfoMap[nodeId]);
         }
       });
@@ -278,6 +259,76 @@ export class NodeExecutionService {
   }
 
   /**
+   * Build execution info for one node from the pipeline payload.
+   *
+   * The `node_statuses` entry is the backend-resolved summary (latest job's
+   * status, timing from the most recent run, `executions` count); the per-job
+   * history is attached from the `jobs` array so loop iterations stay
+   * inspectable. Falls back to the node's jobs when no entry exists (older
+   * backends).
+   */
+  private buildNodeExecutionInfo(
+    nodeId: string,
+    entry: NodeStatusEntry | undefined,
+    jobs: PipelineJob[]
+  ): NodeExecutionInfo {
+    const nodeJobs = jobs.filter((job) => job.node_id === nodeId);
+
+    if (!entry && nodeJobs.length === 0) {
+      return {
+        status: 'idle',
+        executionCount: 0,
+        isExecuting: false
+      };
+    }
+
+    // Fallback for payloads without a node_statuses entry: the last job in
+    // pipeline order mirrors the backend's latest-wins resolution.
+    const lastJob = nodeJobs[nodeJobs.length - 1];
+    const status = entry?.status ?? lastJob?.status ?? 'idle';
+    const startedCount = nodeJobs.filter((job) => job.started).length;
+
+    const executionInfo: NodeExecutionInfo = {
+      status: this.mapJobStatusToExecutionStatus(status),
+      executionCount: entry?.executions ?? startedCount,
+      isExecuting: status === 'running' || nodeJobs.some((job) => job.status === 'running'),
+      lastExecuted: entry?.last_executed ?? lastJob?.completed ?? lastJob?.started ?? undefined,
+      lastExecutionDuration: entry?.execution_time ?? lastJob?.execution_time ?? undefined,
+      lastError: entry?.error ?? lastJob?.error_message ?? undefined
+    };
+
+    if (nodeJobs.length > 0) {
+      executionInfo.jobs = nodeJobs.map((job) => this.mapJobToNodeJobExecution(job));
+    }
+
+    return executionInfo;
+  }
+
+  /**
+   * Map a pipeline job payload entry to a NodeJobExecution history item.
+   */
+  private mapJobToNodeJobExecution(job: PipelineJob): NodeJobExecution {
+    let executionTime = job.execution_time;
+    if (executionTime == null && job.started && job.completed) {
+      const started = Date.parse(job.started);
+      const completed = Date.parse(job.completed);
+      if (!Number.isNaN(started) && !Number.isNaN(completed)) {
+        executionTime = completed - started;
+      }
+    }
+
+    return {
+      id: job.id,
+      label: job.label,
+      status: this.mapJobStatusToExecutionStatus(job.status),
+      started: job.started,
+      completed: job.completed,
+      executionTime,
+      error: job.error_message ?? job.error
+    };
+  }
+
+  /**
    * Map job status to execution status
    */
   private mapJobStatusToExecutionStatus(jobStatus: string): NodeExecutionInfo['status'] {
@@ -294,6 +345,10 @@ export class NodeExecutionService {
         return 'cancelled';
       case 'skipped':
         return 'skipped';
+      case 'paused':
+        return 'paused';
+      case 'interrupted':
+        return 'interrupted';
       default:
         return 'idle';
     }

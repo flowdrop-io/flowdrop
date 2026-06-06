@@ -1403,6 +1403,30 @@ export interface PipelineViewDef {
 }
 
 /**
+ * One job execution of a node within a pipeline run.
+ *
+ * Loop-orchestrated workflows create one job per iteration for the same
+ * node (labels carry an iteration suffix, e.g. "Invoke tool #2"), so a node
+ * can have several of these per run.
+ */
+export interface NodeJobExecution {
+  /** Job entity ID */
+  id?: string;
+  /** Job label, carries the iteration suffix (e.g. "Invoke tool #2") */
+  label?: string;
+  /** Job status */
+  status: NodeExecutionStatus;
+  /** ISO timestamp the job started, if it ran */
+  started?: string;
+  /** ISO timestamp the job completed, if it finished */
+  completed?: string;
+  /** Execution duration in milliseconds, if the job ran to completion */
+  executionTime?: number;
+  /** Error message if the job failed */
+  error?: string;
+}
+
+/**
  * Node execution tracking information
  */
 export interface NodeExecutionInfo {
@@ -1420,6 +1444,8 @@ export interface NodeExecutionInfo {
   isExecuting: boolean;
   /** Execution output data (e.g., active branches for gateway nodes) */
   output?: Record<string, unknown>;
+  /** Per-job execution history (loop iterations), in pipeline order */
+  jobs?: NodeJobExecution[];
 }
 
 /**

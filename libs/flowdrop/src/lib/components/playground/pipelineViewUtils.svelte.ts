@@ -22,6 +22,52 @@ export interface NodeStatusData {
   last_executed?: string | null;
   execution_time?: number | null;
   error?: string | null;
+  /** Number of jobs for this node that actually ran (loop iterations) */
+  executions?: number | null;
+  /** Per-status job counts, e.g. { completed: 2, skipped: 1 } */
+  status_counts?: Record<string, number> | null;
+}
+
+/**
+ * One job from the pipeline payload. Loop-orchestrated workflows create one
+ * job per iteration for the same node, so a node can have several of these —
+ * the label carries the iteration suffix (e.g. "Invoke tool #2").
+ */
+export interface PipelineJobItem {
+  id: string;
+  label: string;
+  nodeId: string;
+  status: string;
+  createdAt?: string | null;
+  started?: string | null;
+  completed?: string | null;
+  /** Duration in milliseconds, when the job ran to completion */
+  executionTime?: number | null;
+  error?: string | null;
+}
+
+function toJobItem(raw: Record<string, unknown>, index: number): PipelineJobItem {
+  const started = typeof raw.started === 'string' ? raw.started : null;
+  const completed = typeof raw.completed === 'string' ? raw.completed : null;
+  let executionTime: number | null = null;
+  if (started && completed) {
+    const startMs = Date.parse(started);
+    const endMs = Date.parse(completed);
+    if (!Number.isNaN(startMs) && !Number.isNaN(endMs)) {
+      executionTime = endMs - startMs;
+    }
+  }
+  return {
+    id: typeof raw.id === 'string' || typeof raw.id === 'number' ? String(raw.id) : `job-${index}`,
+    label: typeof raw.label === 'string' ? raw.label : '',
+    nodeId: typeof raw.node_id === 'string' ? raw.node_id : '',
+    status: typeof raw.status === 'string' ? raw.status : 'idle',
+    createdAt: typeof raw.created_at === 'string' ? raw.created_at : null,
+    started,
+    completed,
+    executionTime,
+    error: typeof raw.error_message === 'string' ? raw.error_message : null
+  };
 }
 
 export function resolveStatus(raw: NodeStatusData | undefined): NodeStatus {
@@ -45,6 +91,7 @@ export function createPipelineDataFetcher(
 ) {
   const client = new EnhancedFlowDropApiClient(endpointConfig);
   let nodeStatusMap = $state<Record<string, NodeStatusData>>({});
+  let jobs = $state<PipelineJobItem[]>([]);
   let kanbanConfig = $state<KanbanColumnDef[] | null>(null);
   let isLoading = $state(false);
   let isError = $state(false);
@@ -60,10 +107,13 @@ export function createPipelineDataFetcher(
           status: info.status,
           last_executed: info.last_executed as string | null | undefined,
           execution_time: info.execution_time as number | null | undefined,
-          error: info.error as string | null | undefined
+          error: info.error as string | null | undefined,
+          executions: info.executions as number | null | undefined,
+          status_counts: info.status_counts as Record<string, number> | null | undefined
         };
       }
       nodeStatusMap = map;
+      jobs = (data.jobs ?? []).map(toJobItem);
       if (data.kanban_config?.columns) {
         // Server sends statuses as string[]; trust the server and cast at this
         // boundary. resolveStatus() handles unknown values at read time.
@@ -85,6 +135,9 @@ export function createPipelineDataFetcher(
   return {
     get nodeStatusMap() {
       return nodeStatusMap;
+    },
+    get jobs() {
+      return jobs;
     },
     get kanbanConfig() {
       return kanbanConfig;
