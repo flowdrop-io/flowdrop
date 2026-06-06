@@ -571,7 +571,7 @@
             onclick={() => insertVariable(varName)}
             title={`Insert {{ ${varName} }}`}
           >
-            <code>{'{{ '}{varName}{' }}'}</code>
+            <code>&#123;&#123; {varName} &#125;&#125;</code>
           </button>
         {/each}
       </div>

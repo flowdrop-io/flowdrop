@@ -45,9 +45,10 @@ export interface InterruptWithState extends Interrupt {
  * Uses SvelteMap for deep reactivity with Svelte 5 runes.
  * Key: interrupt ID, Value: Interrupt object with state
  */
-let interrupts: SvelteMap<string, InterruptWithState> = $state(
-  new SvelteMap<string, InterruptWithState>()
-);
+const interrupts: SvelteMap<string, InterruptWithState> = new SvelteMap<
+  string,
+  InterruptWithState
+>();
 
 // =========================================================================
 // Getter Functions (replace derived stores)

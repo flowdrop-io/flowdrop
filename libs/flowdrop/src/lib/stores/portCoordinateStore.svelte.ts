@@ -24,7 +24,9 @@ import type { InternalNode } from '@xyflow/svelte';
 import { ProximityConnectHelper } from '../helpers/proximityConnect.js';
 
 /** Reactive state holding all port absolute coordinates, keyed by handleId */
-let coordinates: PortCoordinateMap = $state(new SvelteMap<string, PortCoordinate>());
+// $state.raw: the SvelteMap is internally reactive; raw keeps the binding
+// reassignable-reactive without a redundant deep wrap
+let coordinates: PortCoordinateMap = $state.raw(new SvelteMap<string, PortCoordinate>());
 
 /**
  * Parse a handle ID to extract nodeId, direction, and portId.

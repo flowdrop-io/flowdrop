@@ -17,7 +17,7 @@ let categoriesState = $state<CategoryDefinition[]>([...DEFAULT_CATEGORIES]);
 /**
  * Derived lookup map: category name → CategoryDefinition
  */
-let categoryMap = $derived(
+const categoryMap = $derived(
   (() => {
     const map = new Map<string, CategoryDefinition>();
     for (const cat of categoriesState) {

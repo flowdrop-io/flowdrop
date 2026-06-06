@@ -27,6 +27,9 @@ export default ts.config(
       // typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
       // see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
       'no-undef': 'off',
+      // Playwright's fixture API requires object destructuring in the first
+      // parameter even when no fixtures are consumed: test.beforeEach(({}, testInfo) => ...)
+      'no-empty-pattern': ['error', { allowObjectPatternsAsParameters: true }],
       // Underscore prefix marks intentionally-unused bindings (existing codebase convention)
       '@typescript-eslint/no-unused-vars': [
         'error',

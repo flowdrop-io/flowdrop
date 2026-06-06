@@ -90,8 +90,8 @@
   // =========================================================================
 
   $effect(() => {
-    displayMessages.length;
-    isLoading;
+    // Read scroll-relevant state so the effect re-runs when messages change
+    const _deps = [displayMessages.length, isLoading];
     tick().then(() => {
       if (messagesElement) {
         messagesElement.scrollTop = messagesElement.scrollHeight;

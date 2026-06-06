@@ -111,7 +111,7 @@ export interface BaseFieldProps<T = unknown> {
 /**
  * Properties for text input fields
  */
-export interface TextFieldProps extends BaseFieldProps<string> {}
+export type TextFieldProps = BaseFieldProps<string>;
 
 /**
  * Properties for multiline text fields (textarea)
