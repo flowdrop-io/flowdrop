@@ -65,14 +65,10 @@ import type { PipelineViewDef } from '../types/index.js';
 import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
-  getCurrentSession,
-  getSessions,
-  getMessages,
-  getIsExecuting,
-  playgroundActions,
-  applyServerResponse,
-  subscribeToSessionStatus
-} from '../stores/playgroundStore.svelte.js';
+  createFlowDropInstance,
+  getDefaultInstance,
+  type FlowDropInstance
+} from '../stores/instanceContainer.svelte.js';
 
 /**
  * Mount options for Playground component
@@ -152,6 +148,22 @@ export interface PlaygroundMountOptions {
    * `settings` option.
    */
   settings?: PartialSettings;
+
+  /**
+   * Identifier for this playground's FlowDrop instance.
+   *
+   * When omitted, the playground uses the page-default instance — matching
+   * the legacy behavior where all playground mounts (and the editor's
+   * built-in playground) shared one session/message store. Pass an explicit
+   * id to isolate this playground's session/message *state* from other
+   * FlowDrop instances on the page.
+   *
+   * Note: live polling is NOT isolated — `playgroundService` keeps one
+   * page-global polling timer, so only one playground can actively poll at
+   * a time regardless of instance. Use `pushMessages()` with your own
+   * transport if two playgrounds need concurrent live updates.
+   */
+  instanceId?: string;
 }
 
 /**
@@ -257,10 +269,27 @@ function sizeContainer(
   if (width !== undefined) container.style.width = width;
 }
 
+/**
+ * Resolve the FlowDrop instance for a playground mount. No `instanceId` →
+ * the page-default instance (legacy shared-store behavior); an explicit id →
+ * a fresh isolated instance owned (and destroyed) by this mount.
+ */
+function acquirePlaygroundInstance(instanceId?: string): {
+  fd: FlowDropInstance;
+  ownsInstance: boolean;
+} {
+  if (instanceId) {
+    return { fd: createFlowDropInstance({ id: instanceId }), ownsInstance: true };
+  }
+  return { fd: getDefaultInstance(), ownsInstance: false };
+}
+
 function buildMountedPlayground(
   svelteApp: ReturnType<typeof mount>,
   workflowId: string,
   config: PlaygroundConfig,
+  fd: FlowDropInstance,
+  ownsInstance: boolean,
   onSessionStatusChange?: (
     status: PlaygroundSessionStatus,
     previousStatus: PlaygroundSessionStatus
@@ -268,37 +297,46 @@ function buildMountedPlayground(
 ): MountedPlayground {
   const pollingInterval = config.pollingInterval ?? 1500;
   const unsubscribeStatus = onSessionStatusChange
-    ? subscribeToSessionStatus(onSessionStatusChange)
+    ? fd.playground.subscribeToSessionStatus(onSessionStatusChange)
     : undefined;
 
   return {
     destroy: () => {
       unsubscribeStatus?.();
+      // Caution (shared default instance): stopPolling is page-global and
+      // reset() clears state other default-mounted playgrounds rely on —
+      // pass `instanceId` to isolate. Preserved legacy behavior.
       playgroundService.stopPolling();
-      playgroundActions.reset();
+      fd.playground.reset();
+      // Fully dispose instances created for this mount; the shared default
+      // instance only gets the reset above (legacy behavior).
+      if (ownsInstance) {
+        fd.destroy();
+      }
       unmount(svelteApp);
     },
-    getCurrentSession: () => getCurrentSession(),
-    getSessions: () => getSessions(),
-    getMessageCount: () => getMessages().length,
-    isExecuting: () => getIsExecuting(),
+    getCurrentSession: () => fd.playground.currentSession,
+    getSessions: () => fd.playground.sessions,
+    getMessageCount: () => fd.playground.messageCount,
+    isExecuting: () => fd.playground.isExecuting,
     stopPolling: () => playgroundService.stopPolling(),
     startPolling: () => {
-      const session = getCurrentSession();
+      const session = fd.playground.currentSession;
       if (session) {
         playgroundService.startPolling(
           session.id,
-          (response) => applyServerResponse(response, session.id),
+          (response) => fd.playground.applyServerResponse(response, session.id),
           pollingInterval,
           config.shouldStopPolling,
           playgroundService.getLastSequenceNumber()
         );
       }
     },
-    pushMessages: (response: PlaygroundMessagesApiResponse) => applyServerResponse(response, null),
+    pushMessages: (response: PlaygroundMessagesApiResponse) =>
+      fd.playground.applyServerResponse(response, null),
     reset: () => {
       playgroundService.stopPolling();
-      playgroundActions.reset();
+      fd.playground.reset();
     }
   };
 }
@@ -347,7 +385,8 @@ export async function mountPlayground(
     width,
     settings: initialSettings,
     onClose,
-    onSessionStatusChange
+    onSessionStatusChange,
+    instanceId
   } = options;
 
   // Validate required parameters
@@ -369,6 +408,8 @@ export async function mountPlayground(
     settings: initialSettings
   });
 
+  const { fd, ownsInstance } = acquirePlaygroundInstance(instanceId);
+
   let targetContainer = container;
 
   if (mode === 'modal') {
@@ -383,6 +424,7 @@ export async function mountPlayground(
       target: targetContainer,
       props: {
         isOpen: true,
+        instance: fd,
         workflowId,
         workflow,
         initialSessionId,
@@ -399,6 +441,7 @@ export async function mountPlayground(
     svelteApp = mount(Playground, {
       target: targetContainer,
       props: {
+        instance: fd,
         workflowId,
         workflow,
         mode,
@@ -410,7 +453,14 @@ export async function mountPlayground(
     });
   }
 
-  return buildMountedPlayground(svelteApp, workflowId, config, onSessionStatusChange);
+  return buildMountedPlayground(
+    svelteApp,
+    workflowId,
+    config,
+    fd,
+    ownsInstance,
+    onSessionStatusChange
+  );
 }
 
 /**
@@ -463,7 +513,8 @@ export async function mountPlaygroundStudio(
     onClose,
     onSessionNavigate,
     onSessionStatusChange,
-    pipelineViews
+    pipelineViews,
+    instanceId
   } = options;
 
   if (!workflowId) {
@@ -483,11 +534,14 @@ export async function mountPlaygroundStudio(
     settings: initialSettings
   });
 
+  const { fd, ownsInstance } = acquirePlaygroundInstance(instanceId);
+
   sizeContainer(container, height, width);
 
   const svelteApp = mount(PlaygroundStudio, {
     target: container,
     props: {
+      instance: fd,
       workflowId,
       workflow,
       mode,
@@ -503,7 +557,14 @@ export async function mountPlaygroundStudio(
     }
   });
 
-  return buildMountedPlayground(svelteApp, workflowId, config, onSessionStatusChange);
+  return buildMountedPlayground(
+    svelteApp,
+    workflowId,
+    config,
+    fd,
+    ownsInstance,
+    onSessionStatusChange
+  );
 }
 
 export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOptions, 'mode'> {
@@ -574,7 +635,8 @@ export async function mountPlaygroundApp(
     settings: initialSettings,
     onClose,
     onSessionNavigate,
-    onSessionStatusChange
+    onSessionStatusChange,
+    instanceId
   } = options;
 
   if (!workflowId) {
@@ -597,11 +659,14 @@ export async function mountPlaygroundApp(
     settings: initialSettings
   });
 
+  const { fd, ownsInstance } = acquirePlaygroundInstance(instanceId);
+
   sizeContainer(container, height, width);
 
   const svelteApp = mount(PlaygroundApp, {
     target: container,
     props: {
+      instance: fd,
       workflowId,
       workflow,
       mode,
@@ -623,5 +688,12 @@ export async function mountPlaygroundApp(
     }
   });
 
-  return buildMountedPlayground(svelteApp, workflowId, config, onSessionStatusChange);
+  return buildMountedPlayground(
+    svelteApp,
+    workflowId,
+    config,
+    fd,
+    ownsInstance,
+    onSessionStatusChange
+  );
 }

@@ -22,14 +22,11 @@ import { initializePortCompatibility } from './utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
 import { fetchCategories } from './services/categoriesApi.js';
-import { initializeCategories } from './stores/categoriesStore.svelte.js';
 import {
-  isDirty,
-  markAsSaved,
-  getWorkflow as getWorkflowFromStore,
-  setOnDirtyStateChange,
-  setOnWorkflowChange
-} from './stores/workflowStore.svelte.js';
+  createFlowDropInstance,
+  getDefaultInstance,
+  type FlowDropInstance
+} from './stores/instanceContainer.svelte.js';
 import {
   DraftAutoSaveManager,
   getDraftStorageKey,
@@ -152,6 +149,21 @@ export interface FlowDropMountOptions {
   showSettingsSyncButton?: boolean;
   /** Show the reset buttons in the settings modal */
   showSettingsResetButton?: boolean;
+
+  // NEW: Multi-instance support
+  /**
+   * Identifier for this FlowDrop instance.
+   *
+   * When omitted, the first mount on the page becomes the *default* instance:
+   * it keeps the legacy (unscoped) draft/panel storage keys and remains
+   * reachable through the module-level store APIs, exactly as before.
+   * Additional mounts get auto-generated ids (`fd-1`, `fd-2`, …).
+   *
+   * Pass an explicit id to opt a mount out of default-instance behavior and
+   * scope its draft/panel storage keys (`flowdrop:draft:<id>:…`) — recommended
+   * whenever you mount more than one editor with drafts enabled.
+   */
+  instanceId?: string;
 }
 
 /**
@@ -213,6 +225,46 @@ interface MountedAppState {
   unsubscribeDraftSettings: (() => void) | null;
 }
 
+// ---------------------------------------------------------------------------
+// Instance acquisition
+// ---------------------------------------------------------------------------
+
+/** Whether a mount currently owns the page-default instance. */
+let defaultInstanceClaimed = false;
+
+/**
+ * Resolve the FlowDrop instance for a new mount.
+ *
+ * No `instanceId` + default unclaimed → the page-default instance (legacy
+ * storage keys, reachable via the module-level store APIs). Everything else
+ * gets its own isolated instance.
+ */
+function acquireInstance(instanceId?: string): { fd: FlowDropInstance; isDefault: boolean } {
+  if (!instanceId && !defaultInstanceClaimed) {
+    defaultInstanceClaimed = true;
+    return { fd: getDefaultInstance(), isDefault: true };
+  }
+  return { fd: createFlowDropInstance({ id: instanceId }), isDefault: false };
+}
+
+/**
+ * Release a mount's instance on destroy.
+ *
+ * Non-default instances are fully destroyed (subscriptions, effect roots,
+ * callbacks). The default instance is only *released* — its callbacks are
+ * cleared but its reactive wiring stays alive, matching the pre-multi-instance
+ * behavior where module stores survived unmount and a later mount reused them.
+ */
+function releaseInstance(fd: FlowDropInstance, isDefault: boolean): void {
+  if (isDefault) {
+    fd.workflow.setOnDirtyStateChange(null);
+    fd.workflow.setOnWorkflowChange(null);
+    defaultInstanceClaimed = false;
+  } else {
+    fd.destroy();
+  }
+}
+
 /**
  * Mount the full FlowDrop App with navbar, sidebars, and workflow editor
  *
@@ -268,8 +320,13 @@ export async function mountFlowDropApp(
     theme,
     settingsCategories,
     showSettingsSyncButton,
-    showSettingsResetButton
+    showSettingsResetButton,
+    instanceId
   } = options;
+
+  // Per-instance state container — this is what allows multiple FlowDrop
+  // editors to coexist on one page without sharing workflow/history state.
+  const { fd, isDefault } = acquireInstance(instanceId);
 
   // Register custom format adapters before mounting
   if (formatAdapters) {
@@ -329,33 +386,36 @@ export async function mountFlowDropApp(
     finalPortConfig = DEFAULT_PORT_CONFIG;
   }
 
+  // Note: port compatibility config is page-global (last mount wins) — see
+  // the multi-instance limitations in the docs.
   initializePortCompatibility(finalPortConfig);
 
-  // Initialize categories
+  // Initialize this instance's categories
   if (categories) {
-    initializeCategories(categories);
+    fd.categories.initialize(categories);
   } else if (config) {
     try {
       const fetchedCategories = await fetchCategories(config, authProvider);
-      initializeCategories(fetchedCategories);
+      fd.categories.initialize(fetchedCategories);
     } catch (error) {
       logger.warn('Failed to fetch categories from API, using defaults:', error);
     }
   }
 
-  // Set up event handler callbacks in the store
+  // Set up event handler callbacks in this instance's store
   if (eventHandlers?.onDirtyStateChange) {
-    setOnDirtyStateChange(eventHandlers.onDirtyStateChange);
+    fd.workflow.setOnDirtyStateChange(eventHandlers.onDirtyStateChange);
   }
 
   if (eventHandlers?.onWorkflowChange) {
-    setOnWorkflowChange(eventHandlers.onWorkflowChange);
+    fd.workflow.setOnWorkflowChange(eventHandlers.onWorkflowChange);
   }
 
   // Create the Svelte App component with configuration
   const svelteApp = mount(App, {
     target: container,
     props: {
+      instance: fd,
       workflow,
       nodes,
       height,
@@ -385,14 +445,16 @@ export async function mountFlowDropApp(
   let unsubscribeDraftSettings: (() => void) | null = null;
 
   if (features.autoSaveDraft) {
-    const storageKey = getDraftStorageKey(workflow?.id, customDraftKey);
+    // Instance-scoped prefix: the default instance keeps the legacy bare
+    // 'flowdrop:draft' namespace; additional instances get ':<id>' sub-keys.
+    const storageKey = getDraftStorageKey(workflow?.id, customDraftKey, fd.storagePrefix);
 
     draftManager = new DraftAutoSaveManager({
       storageKey,
       interval: features.autoSaveDraftInterval,
       enabled: features.autoSaveDraft,
-      getWorkflow: getWorkflowFromStore,
-      isDirty,
+      getWorkflow: () => fd.workflow.current,
+      isDirty: () => fd.workflow.isDirty,
       // User-facing opt-out: the "Store Drafts in Browser" behavior setting.
       // Checked on every save so toggling it takes effect immediately.
       isPersistenceAllowed: () => getBehaviorSettings().storeDraftsInBrowser,
@@ -426,16 +488,16 @@ export async function mountFlowDropApp(
     destroy: () => {
       // Call onBeforeUnmount if provided
       if (state.eventHandlers?.onBeforeUnmount) {
-        const currentWorkflow = getWorkflowFromStore();
+        const currentWorkflow = fd.workflow.current;
         if (currentWorkflow) {
-          state.eventHandlers.onBeforeUnmount(currentWorkflow, isDirty());
+          state.eventHandlers.onBeforeUnmount(currentWorkflow, fd.workflow.isDirty);
         }
       }
 
       // Stop draft manager
       if (state.draftManager) {
         // Save one final draft if dirty (no-op when the user opted out)
-        if (isDirty()) {
+        if (fd.workflow.isDirty) {
           state.draftManager.forceSave();
         }
         state.draftManager.stop();
@@ -447,55 +509,61 @@ export async function mountFlowDropApp(
         state.unsubscribeDraftSettings = null;
       }
 
-      // Clear event callbacks
-      setOnDirtyStateChange(null);
-      setOnWorkflowChange(null);
+      // Release this mount's instance: clears its callbacks (and, for
+      // non-default instances, all subscriptions/effect roots) without
+      // touching sibling instances on the same page.
+      releaseInstance(fd, isDefault);
 
       // Unmount Svelte app
       unmount(state.svelteApp);
     },
 
-    isDirty: () => isDirty(),
+    isDirty: () => fd.workflow.isDirty,
 
     markAsSaved: () => {
-      markAsSaved();
+      fd.workflow.markAsSaved();
       if (state.draftManager) {
         // Migrate the draft key when the host confirms a save. New workflows start
-        // on 'flowdrop:draft:new', a key shared across all tabs. If the host has
+        // on '<prefix>:new', a key shared across all tabs. If the host has
         // written the server-assigned ID back into the store before calling
         // markAsSaved(), we can move to a unique per-workflow key and stop
         // competing with other tabs that may also have unsaved new workflows.
         // Skip when customDraftKey is set — the host manages that key explicitly.
         if (!customDraftKey) {
-          const currentWorkflow = getWorkflowFromStore();
+          const currentWorkflow = fd.workflow.current;
           if (currentWorkflow?.id) {
-            state.draftManager.updateStorageKey(getDraftStorageKey(currentWorkflow.id));
+            state.draftManager.updateStorageKey(
+              getDraftStorageKey(currentWorkflow.id, undefined, fd.storagePrefix)
+            );
           }
         }
         state.draftManager.markAsSaved();
       }
     },
 
-    getWorkflow: () => getWorkflowFromStore(),
+    getWorkflow: () => fd.workflow.current,
 
     save: async () => {
       await globalSaveWorkflow({
+        instance: fd,
         onSaved: (saved) => {
           // globalSaveWorkflow does not write the server-assigned ID back to the
-          // workflow store, so we cannot read it from getWorkflowFromStore() here.
+          // workflow store, so we cannot read it from the store here.
           // Instead we use the savedWorkflow returned by the API directly.
-          // This migrates 'flowdrop:draft:new' to a unique per-workflow key
+          // This migrates '<prefix>:new' to a unique per-workflow key
           // immediately after the first save, preventing cross-tab collisions
           // when multiple new workflows are open simultaneously.
           if (state.draftManager && !customDraftKey && saved.id) {
-            state.draftManager.updateStorageKey(getDraftStorageKey(saved.id));
+            state.draftManager.updateStorageKey(
+              getDraftStorageKey(saved.id, undefined, fd.storagePrefix)
+            );
           }
         }
       });
     },
 
     export: () => {
-      globalExportWorkflow();
+      globalExportWorkflow({ instance: fd });
     },
 
     clearAllDrafts: () => {
@@ -530,9 +598,14 @@ export async function mountWorkflowEditor(
     portConfig?: PortConfig;
     categories?: CategoryDefinition[];
     authProvider?: AuthProvider;
+    /** Instance identifier — see {@link FlowDropMountOptions.instanceId}. */
+    instanceId?: string;
   } = {}
 ): Promise<MountedFlowDropApp> {
-  const { nodes = [], endpointConfig, portConfig, categories, authProvider } = options;
+  const { nodes = [], endpointConfig, portConfig, categories, authProvider, instanceId } = options;
+
+  // Per-instance state container (see mountFlowDropApp)
+  const { fd, isDefault } = acquireInstance(instanceId);
 
   // Create endpoint configuration
   let config: EndpointConfig | undefined;
@@ -571,13 +644,13 @@ export async function mountWorkflowEditor(
 
   initializePortCompatibility(finalPortConfig);
 
-  // Initialize categories
+  // Initialize this instance's categories
   if (categories) {
-    initializeCategories(categories);
+    fd.categories.initialize(categories);
   } else if (config) {
     try {
       const fetchedCategories = await fetchCategories(config, authProvider);
-      initializeCategories(fetchedCategories);
+      fd.categories.initialize(fetchedCategories);
     } catch (error) {
       logger.warn('Failed to fetch categories from API, using defaults:', error);
     }
@@ -587,6 +660,7 @@ export async function mountWorkflowEditor(
   const svelteApp = mount(WorkflowEditor, {
     target: container,
     props: {
+      instance: fd,
       nodes,
       endpointConfig: config
     }
@@ -595,21 +669,22 @@ export async function mountWorkflowEditor(
   // Create the mounted app interface (simpler version)
   const mountedApp: MountedFlowDropApp = {
     destroy: () => {
+      releaseInstance(fd, isDefault);
       unmount(svelteApp);
     },
 
-    isDirty: () => isDirty(),
+    isDirty: () => fd.workflow.isDirty,
 
-    markAsSaved: () => markAsSaved(),
+    markAsSaved: () => fd.workflow.markAsSaved(),
 
-    getWorkflow: () => getWorkflowFromStore(),
+    getWorkflow: () => fd.workflow.current,
 
     save: async () => {
-      await globalSaveWorkflow();
+      await globalSaveWorkflow({ instance: fd });
     },
 
     export: () => {
-      globalExportWorkflow();
+      globalExportWorkflow({ instance: fd });
     },
 
     clearAllDrafts: () => clearAllDraftsFromStorage()

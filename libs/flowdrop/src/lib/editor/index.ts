@@ -5,9 +5,15 @@
  * building visual workflow editors. This module includes @xyflow/svelte
  * and all node components.
  *
- * **Important: Single-instance only.** FlowDrop uses module-level singleton
- * stores for state management. Only one FlowDrop editor instance per page
- * is supported. This is a known architectural limitation.
+ * **Multi-instance support.** Each mount gets its own `FlowDropInstance`
+ * state container (workflow, undo/redo, playground, …), so multiple editors
+ * can coexist on one page. Pass `instanceId` to the mount options to scope
+ * draft/panel storage keys per editor; in Svelte, pass `instance` to <App>
+ * or resolve it in components via `getInstance()`. The module-level store
+ * functions exported below operate on the page-default instance (the first
+ * mount without an `instanceId`), preserving the legacy single-instance API.
+ * Page-global by design: theme/settings, port-compatibility config, and API
+ * endpoint config.
  *
  * @module editor
  *
@@ -140,6 +146,23 @@ export {
 // ============================================================================
 // Stores
 // ============================================================================
+
+// Multi-instance support: per-instance state containers + context helpers.
+// The module-level store functions below operate on the page-default
+// instance; use these to create and address additional instances.
+export {
+  createFlowDropInstance,
+  getDefaultInstance,
+  type FlowDropInstance,
+  type CreateInstanceOptions
+} from '../stores/instanceContainer.svelte.js';
+export {
+  getInstance,
+  provideInstance,
+  FLOWDROP_INSTANCE_KEY
+} from '../stores/getInstance.svelte.js';
+export { WorkflowStore, type WorkflowStoreActions } from '../stores/workflowStore.svelte.js';
+export { HistoryStore, type HistoryStoreActions } from '../stores/historyStore.svelte.js';
 
 export {
   getWorkflowStore,
