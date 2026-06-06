@@ -47,7 +47,8 @@
   const t = $derived(m().interrupt.text);
 
   /** Local state for input value */
-  // svelte-ignore state_referenced_locally — initial default, user edits the input
+  // initial default, user edits the input
+  // svelte-ignore state_referenced_locally
   let inputValue = $state(config.defaultValue ?? '');
 
   /** Display value - either resolved or current input */

@@ -54,7 +54,8 @@
   let _prevRefreshTrigger = refreshTrigger;
 
   // Initialize API client if not provided
-  // svelte-ignore state_referenced_locally — client created once from props
+  // client created once from props
+  // svelte-ignore state_referenced_locally
   const client =
     apiClient ||
     new EnhancedFlowDropApiClient(

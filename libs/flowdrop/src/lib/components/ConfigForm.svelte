@@ -203,7 +203,8 @@
   // (configSchema flips from undefined → loaded) and "different node opened"
   // (node prop change → metadata.configSchema reference change). Identity
   // comparison only — value churn in `initialConfig` preserves in-flight edits.
-  // svelte-ignore state_referenced_locally — capturing the initial derived reference is intentional; later changes are picked up by the effect below
+  // capturing the initial derived reference is intentional; later changes are picked up by the effect below
+  // svelte-ignore state_referenced_locally
   let prevSchemaRef = configSchema;
   $effect.pre(() => {
     if (configSchema !== prevSchemaRef) {

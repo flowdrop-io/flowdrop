@@ -51,7 +51,8 @@
   }: Props = $props();
 
   /** Local state: map of field -> accepted boolean. Default all to true (accept). */
-  // svelte-ignore state_referenced_locally — initial default, user toggles during review
+  // initial default, user toggles during review
+  // svelte-ignore state_referenced_locally
   let decisions = $state<Record<string, boolean>>(
     Object.fromEntries(config.changes.map((c) => [c.field, true]))
   );

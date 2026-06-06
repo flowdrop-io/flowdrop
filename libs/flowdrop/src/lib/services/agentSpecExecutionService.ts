@@ -302,7 +302,6 @@ export class AgentSpecExecutionService {
   /** Get the config, throwing if not configured */
   private getConfig(): AgentSpecEndpointConfig {
     this.ensureConfigured();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return this.config!;
   }
 

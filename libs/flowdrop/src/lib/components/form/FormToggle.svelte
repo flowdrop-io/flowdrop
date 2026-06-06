@@ -42,7 +42,8 @@
     onChange
   }: Props = $props();
 
-  // svelte-ignore state_referenced_locally — deprecation warns once per mount; later prop rebinds aren't relevant
+  // deprecation warns once per mount; later prop rebinds aren't relevant
+  // svelte-ignore state_referenced_locally
   if (onLabel !== undefined) {
     warnDeprecatedProp('FormToggle', 'onLabel', 'messages.form.toggle.enabled');
   }

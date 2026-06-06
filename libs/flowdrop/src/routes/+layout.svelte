@@ -34,7 +34,8 @@
 
   // API configuration from server-side loaded runtime config
   // This is loaded on the server before any components render
-  // svelte-ignore state_referenced_locally — page remounts on navigation
+  // page remounts on navigation
+  // svelte-ignore state_referenced_locally
   let endpointConfig = $state<EndpointConfig>({
     ...defaultEndpointConfig,
     baseUrl: data.runtimeConfig.apiBaseUrl

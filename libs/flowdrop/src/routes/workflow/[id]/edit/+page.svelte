@@ -27,7 +27,8 @@
   let workflowId = $derived($page.params.id);
 
   // API configuration from server-loaded runtime config
-  // svelte-ignore state_referenced_locally — page remounts on navigation
+  // page remounts on navigation
+  // svelte-ignore state_referenced_locally
   let endpointConfig = $state<EndpointConfig>({
     ...defaultEndpointConfig,
     baseUrl: data.runtimeConfig.apiBaseUrl

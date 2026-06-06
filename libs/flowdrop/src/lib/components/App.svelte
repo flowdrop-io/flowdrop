@@ -171,7 +171,8 @@
     messages: messagesOverride
   }: Props = $props();
 
-  // svelte-ignore state_referenced_locally — feature flags don't change at runtime
+  // feature flags don't change at runtime
+  // svelte-ignore state_referenced_locally
   const features = mergeFeatures(propFeatures);
 
   // Messages: merge consumer overrides over defaults; expose via context as a
@@ -1292,7 +1293,8 @@
     {/if}
 
     <!-- Main Editor Area -->
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions — interactive workflow canvas region with keyboard support -->
+    <!-- interactive workflow canvas region with keyboard support -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="flowdrop-editor-main"
       class:pipeline-view={!!pipelineId}

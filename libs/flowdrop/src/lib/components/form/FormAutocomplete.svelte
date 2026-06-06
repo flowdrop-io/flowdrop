@@ -121,7 +121,8 @@
   // Stable fingerprint — any change triggers selection clearing.
   // JSON.stringify gives a canonical string without null-byte ambiguity.
   const depFingerprint = $derived(JSON.stringify(depParamValues));
-  // svelte-ignore state_referenced_locally — intentional initial snapshot; the effect below tracks subsequent changes
+  // intentional initial snapshot; the effect below tracks subsequent changes
+  // svelte-ignore state_referenced_locally
   let prevDepFingerprint = depFingerprint;
 
   $effect(() => {
@@ -135,9 +136,9 @@
   });
 
   // Generate unique IDs for accessibility
-  // svelte-ignore state_referenced_locally — id prop never changes
-  const listboxId = `${id}-listbox`;
+  // id prop never changes
   // svelte-ignore state_referenced_locally
+  const listboxId = `${id}-listbox`;
   const getOptionId = (index: number): string => `${id}-option-${index}`;
 
   /**
@@ -639,7 +640,7 @@
   class:form-autocomplete--has-value={selectedValues.length > 0}
 >
   <!-- Main input container styled like a textfield/textarea -->
-  <!-- svelte-ignore a11y_no_static_element_interactions — role="presentation"; keyboard interaction is handled by the <input> inside -->
+  <!-- role="presentation"; keyboard interaction is handled by the <input> inside -->
   <div
     class="form-autocomplete__field"
     class:form-autocomplete__field--focused={isOpen}
@@ -726,7 +727,7 @@
   </div>
 
   <!-- Dropdown popover (uses Popover API to render in top layer, bypassing stacking contexts) -->
-  <!-- svelte-ignore a11y_no_static_element_interactions — role="presentation" container; onmousedown prevents focus loss from input -->
+  <!-- role="presentation" container; onmousedown prevents focus loss from input -->
   <div
     bind:this={popoverElement}
     id={listboxId}
@@ -757,7 +758,8 @@
         </li>
       {:else}
         {#each suggestions as option, index (option.value)}
-          <!-- svelte-ignore a11y_click_events_have_key_events — WAI-ARIA combobox: keyboard nav handled on input, not individual options -->
+          <!-- WAI-ARIA combobox: keyboard nav handled on input, not individual options -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
           <li
             id={getOptionId(index)}
             class="form-autocomplete__option"

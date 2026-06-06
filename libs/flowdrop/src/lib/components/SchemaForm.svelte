@@ -171,7 +171,8 @@
     baseUrl = ''
   }: Props = $props();
 
-  // svelte-ignore state_referenced_locally — deprecation warns once per mount; later prop rebinds aren't relevant
+  // deprecation warns once per mount; later prop rebinds aren't relevant
+  // svelte-ignore state_referenced_locally
   if (saveLabel !== undefined) {
     warnDeprecatedProp('SchemaForm', 'saveLabel', 'messages.form.schema.save');
   }
@@ -207,7 +208,8 @@
 
   // Drop edits when the schema reference changes (different form mounted).
   // Identity comparison only — value churn in `values` preserves in-flight edits.
-  // svelte-ignore state_referenced_locally — capturing the initial prop reference is intentional; later changes are picked up by the effect below
+  // capturing the initial prop reference is intentional; later changes are picked up by the effect below
+  // svelte-ignore state_referenced_locally
   let prevSchemaRef = schema;
   $effect.pre(() => {
     if (schema !== prevSchemaRef) {

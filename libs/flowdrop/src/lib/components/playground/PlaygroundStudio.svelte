@@ -63,14 +63,17 @@
     extraPipelineViews = []
   }: Props = $props();
 
-  // svelte-ignore state_referenced_locally — seed mutable state from the prop's initial value; workflow may load asynchronously below
+  // seed mutable state from the prop's initial value; workflow may load asynchronously below
+  // svelte-ignore state_referenced_locally
   let resolvedWorkflow = $state<Workflow | null>(workflowProp ?? null);
-  // svelte-ignore state_referenced_locally — initial loading flag derived from whether a workflow was provided up front
+  // initial loading flag derived from whether a workflow was provided up front
+  // svelte-ignore state_referenced_locally
   let workflowLoading = $state(workflowProp === undefined);
   let workflowError = $state<string | null>(null);
 
   let splitEl = $state<HTMLElement | null>(null);
-  // svelte-ignore state_referenced_locally — seed mutable width from the initial prop; it changes as the user drags the resizer
+  // seed mutable width from the initial prop; it changes as the user drags the resizer
+  // svelte-ignore state_referenced_locally
   let pipelineWidth = $state(initialPipelineWidth);
   let isResizing = $state(false);
   let containerWidth = $state(0);

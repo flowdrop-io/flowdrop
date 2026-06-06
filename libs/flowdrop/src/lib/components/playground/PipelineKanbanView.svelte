@@ -56,7 +56,8 @@
 
   let { pipelineId, workflow, endpointConfig, refreshTrigger = 0 }: Props = $props();
 
-  // svelte-ignore state_referenced_locally — endpointConfig is consumed once to build the API client; it must be stable
+  // endpointConfig is consumed once to build the API client; it must be stable
+  // svelte-ignore state_referenced_locally
   const fetcher = createPipelineDataFetcher(() => pipelineId, endpointConfig);
 
   $effect(() => {

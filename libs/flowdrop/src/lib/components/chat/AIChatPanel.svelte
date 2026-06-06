@@ -50,7 +50,8 @@
 
   let { nodeTypes, workflowId, onUIAction, placeholder, endpointConfig }: Props = $props();
 
-  // svelte-ignore state_referenced_locally — deprecation warns once per mount; later prop rebinds aren't relevant
+  // deprecation warns once per mount; later prop rebinds aren't relevant
+  // svelte-ignore state_referenced_locally
   if (placeholder !== undefined) {
     warnDeprecatedProp('AIChatPanel', 'placeholder', 'messages.chat.placeholder');
   }
