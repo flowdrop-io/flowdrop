@@ -42,6 +42,7 @@
     getStatusTextColor,
     getStatusBackgroundColor
   } from '$lib/utils/nodeStatus.js';
+  import { formatMicroseconds } from '$lib/utils/duration.js';
   import type { NodeStatus } from './pipelineViewUtils.svelte.js';
   import type { Workflow, WorkflowNode } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
@@ -70,6 +71,8 @@
     label: string;
     typeId: string;
     status: NodeStatus;
+    /** Duration in microseconds, for finished jobs */
+    durationUs?: number | null;
   }
 
   const columnedNodes = $derived.by(() => {
@@ -103,7 +106,8 @@
         key: job.id,
         label: job.label || node.data.label,
         typeId: node.data.metadata.id,
-        status
+        status,
+        durationUs: job.executionTimeUs
       });
     }
 
@@ -151,7 +155,7 @@
             <span class="pipeline-kanban__col-count">{items.length}</span>
           </div>
           <div class="pipeline-kanban__cards">
-            {#each items as { key, label, typeId, status } (key)}
+            {#each items as { key, label, typeId, status, durationUs } (key)}
               <div class="pipeline-kanban__card">
                 <div class="pipeline-kanban__card-body">
                   <div class="pipeline-kanban__card-top">
@@ -166,7 +170,14 @@
                       >
                     {/if}
                   </div>
-                  <span class="pipeline-kanban__card-type">{typeId}</span>
+                  <div class="pipeline-kanban__card-meta">
+                    <span class="pipeline-kanban__card-type">{typeId}</span>
+                    {#if durationUs != null}
+                      <span class="pipeline-kanban__card-duration"
+                        >{formatMicroseconds(durationUs)}</span
+                      >
+                    {/if}
+                  </div>
                 </div>
               </div>
             {/each}
@@ -325,12 +336,30 @@
     flex-shrink: 0;
   }
 
+  .pipeline-kanban__card-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    min-width: 0;
+  }
+
   .pipeline-kanban__card-type {
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-2xs);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pipeline-kanban__card-duration {
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-2xs);
+    font-family: var(--fd-font-mono, monospace);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .pipeline-kanban__empty {

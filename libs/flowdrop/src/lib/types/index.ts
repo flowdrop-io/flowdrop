@@ -1422,6 +1422,8 @@ export interface NodeJobExecution {
   completed?: string;
   /** Execution duration in milliseconds, if the job ran to completion */
   executionTime?: number;
+  /** Precise execution duration in microseconds, when the backend provides it */
+  executionTimeUs?: number;
   /** Error message if the job failed */
   error?: string;
 }
@@ -1438,6 +1440,8 @@ export interface NodeExecutionInfo {
   lastExecuted?: string;
   /** Last execution duration in milliseconds */
   lastExecutionDuration?: number;
+  /** Precise last execution duration in microseconds, when the backend provides it */
+  lastExecutionDurationUs?: number;
   /** Last error message if execution failed */
   lastError?: string;
   /** Whether the node is currently being executed */

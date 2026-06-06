@@ -21,6 +21,8 @@ export interface NodeStatusData {
   status: string;
   last_executed?: string | null;
   execution_time?: number | null;
+  /** Precise duration in microseconds, from orchestrator-stamped job metadata */
+  execution_time_us?: number | null;
   error?: string | null;
   /** Number of jobs for this node that actually ran (loop iterations) */
   executions?: number | null;
@@ -41,22 +43,31 @@ export interface PipelineJobItem {
   createdAt?: string | null;
   started?: string | null;
   completed?: string | null;
-  /** Duration in milliseconds, when the job ran to completion */
-  executionTime?: number | null;
+  /** Precise duration in microseconds, when the job ran to completion */
+  executionTimeUs?: number | null;
   error?: string | null;
+  retryCount?: number | null;
+  maxRetries?: number | null;
+  inputData?: unknown;
+  outputData?: unknown;
 }
 
 function toJobItem(raw: Record<string, unknown>, index: number): PipelineJobItem {
   const started = typeof raw.started === 'string' ? raw.started : null;
   const completed = typeof raw.completed === 'string' ? raw.completed : null;
-  let executionTime: number | null = null;
-  if (started && completed) {
+
+  // Prefer the orchestrator-stamped microsecond duration; fall back to the
+  // second-granularity timestamps for jobs that predate the metadata stamp.
+  let executionTimeUs: number | null =
+    typeof raw.execution_time_us === 'number' ? raw.execution_time_us : null;
+  if (executionTimeUs == null && started && completed) {
     const startMs = Date.parse(started);
     const endMs = Date.parse(completed);
     if (!Number.isNaN(startMs) && !Number.isNaN(endMs)) {
-      executionTime = endMs - startMs;
+      executionTimeUs = (endMs - startMs) * 1000;
     }
   }
+
   return {
     id: typeof raw.id === 'string' || typeof raw.id === 'number' ? String(raw.id) : `job-${index}`,
     label: typeof raw.label === 'string' ? raw.label : '',
@@ -65,8 +76,12 @@ function toJobItem(raw: Record<string, unknown>, index: number): PipelineJobItem
     createdAt: typeof raw.created_at === 'string' ? raw.created_at : null,
     started,
     completed,
-    executionTime,
-    error: typeof raw.error_message === 'string' ? raw.error_message : null
+    executionTimeUs,
+    error: typeof raw.error_message === 'string' ? raw.error_message : null,
+    retryCount: typeof raw.retry_count === 'number' ? raw.retry_count : null,
+    maxRetries: typeof raw.max_retries === 'number' ? raw.max_retries : null,
+    inputData: raw.input_data ?? null,
+    outputData: raw.output_data ?? null
   };
 }
 
@@ -107,6 +122,7 @@ export function createPipelineDataFetcher(
           status: info.status,
           last_executed: info.last_executed as string | null | undefined,
           execution_time: info.execution_time as number | null | undefined,
+          execution_time_us: info.execution_time_us as number | null | undefined,
           error: info.error as string | null | undefined,
           executions: info.executions as number | null | undefined,
           status_counts: info.status_counts as Record<string, number> | null | undefined

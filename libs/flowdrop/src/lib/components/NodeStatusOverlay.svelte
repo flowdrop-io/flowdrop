@@ -17,7 +17,13 @@
     formatExecutionDuration,
     formatLastExecuted
   } from '../utils/nodeStatus.js';
+  import { formatMicroseconds } from '../utils/duration.js';
   import { m } from '$lib/messages/index.js';
+
+  /** Prefer the precise µs duration; fall back to the legacy ms value. */
+  function formatDuration(us: number | null | undefined, ms: number | null | undefined): string {
+    return formatMicroseconds(us) ?? formatExecutionDuration(ms ?? undefined);
+  }
 
   interface Props {
     nodeId?: string;
@@ -162,11 +168,14 @@
             >
           </div>
         {/if}
-        {#if executionInfo.lastExecutionDuration}
+        {#if executionInfo.lastExecutionDurationUs || executionInfo.lastExecutionDuration}
           <div class="node-status-overlay__detail-item">
             <span class="node-status-overlay__detail-label">{overlay.durationLabel}</span>
             <span class="node-status-overlay__detail-value"
-              >{formatExecutionDuration(executionInfo.lastExecutionDuration)}</span
+              >{formatDuration(
+                executionInfo.lastExecutionDurationUs,
+                executionInfo.lastExecutionDuration
+              )}</span
             >
           </div>
         {/if}
@@ -194,9 +203,9 @@
                   class="node-status-overlay__history-status"
                   style="color: {getStatusColor(job.status)}">{getStatusLabel(job.status)}</span
                 >
-                {#if job.executionTime != null && job.executionTime > 0}
+                {#if (job.executionTimeUs != null && job.executionTimeUs > 0) || (job.executionTime != null && job.executionTime > 0)}
                   <span class="node-status-overlay__history-duration"
-                    >{formatExecutionDuration(job.executionTime)}</span
+                    >{formatDuration(job.executionTimeUs, job.executionTime)}</span
                   >
                 {/if}
               </div>

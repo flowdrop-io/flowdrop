@@ -25,18 +25,25 @@
     idle: 'mdi:circle-outline'
   };
 
-  function formatDuration(ms: number | null | undefined): string | null {
-    if (ms == null) return null;
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
-    const mins = Math.floor(ms / 60000);
-    const secs = Math.floor((ms % 60000) / 1000);
-    return `${mins}m ${secs}s`;
-  }
-
   function formatDateTime(iso: string | null | undefined): string | null {
     if (!iso) return null;
     return new Date(iso).toLocaleString();
+  }
+
+  function formatJson(value: unknown): string {
+    if (typeof value === 'string') return value;
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }
+
+  /** Treat null/undefined and empty objects/arrays as "nothing to show". */
+  function hasData(value: unknown): boolean {
+    if (value == null) return false;
+    if (typeof value === 'object') return Object.keys(value).length > 0;
+    return value !== '';
   }
 </script>
 
@@ -45,6 +52,7 @@
   import Icon from '@iconify/svelte';
   import { createPipelineDataFetcher, resolveStatus } from './pipelineViewUtils.svelte.js';
   import { getStatusTextColor } from '$lib/utils/nodeStatus.js';
+  import { formatMicroseconds } from '$lib/utils/duration.js';
   import type { Workflow, WorkflowNode } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
 
@@ -65,8 +73,14 @@
     nodeId: string;
     status: NodeStatus;
     started?: string | null;
-    executionTime?: number | null;
+    completed?: string | null;
+    /** Duration in microseconds */
+    executionTimeUs?: number | null;
     error?: string | null;
+    retryCount?: number | null;
+    maxRetries?: number | null;
+    inputData?: unknown;
+    outputData?: unknown;
   }
 
   // svelte-ignore state_referenced_locally — endpointConfig is consumed once to build the API client; it must be stable
@@ -98,8 +112,13 @@
         nodeId: job.nodeId,
         status: resolveStatus({ status: job.status }),
         started: job.started,
-        executionTime: job.executionTime,
-        error: job.error
+        completed: job.completed,
+        executionTimeUs: job.executionTimeUs,
+        error: job.error,
+        retryCount: job.retryCount,
+        maxRetries: job.maxRetries,
+        inputData: job.inputData,
+        outputData: job.outputData
       });
     }
 
@@ -119,7 +138,9 @@
           nodeId: node.id,
           status: resolveStatus(statusData),
           started: statusData?.last_executed,
-          executionTime: statusData?.execution_time,
+          executionTimeUs:
+            statusData?.execution_time_us ??
+            (statusData?.execution_time != null ? statusData.execution_time * 1000 : null),
           error: statusData?.error
         };
       })
@@ -131,7 +152,7 @@
   let expandedIds = $state(new Set<string>());
 
   function hasDetails(row: JobRow): boolean {
-    return !!(row.started || row.error);
+    return !!(row.started || row.error || hasData(row.inputData) || hasData(row.outputData));
   }
 
   function toggleRow(row: JobRow) {
@@ -167,6 +188,7 @@
             <th class="pipeline-table__th">Node</th>
             <th class="pipeline-table__th">Type</th>
             <th class="pipeline-table__th">Status</th>
+            <th class="pipeline-table__th pipeline-table__th--duration">Duration</th>
             <th class="pipeline-table__th pipeline-table__th--id">ID</th>
           </tr>
         </thead>
@@ -208,13 +230,16 @@
                   {row.status}
                 </span>
               </td>
+              <td class="pipeline-table__td pipeline-table__td--duration">
+                {formatMicroseconds(row.executionTimeUs) ?? '—'}
+              </td>
               <td class="pipeline-table__td pipeline-table__td--id" title={row.nodeId}
                 >{row.nodeId}</td
               >
             </tr>
             {#if expanded && expandable}
               <tr class="pipeline-table__detail-row">
-                <td colspan="5" class="pipeline-table__detail-cell">
+                <td colspan="6" class="pipeline-table__detail-cell">
                   <dl class="pipeline-table__details">
                     {#if row.started}
                       <div class="pipeline-table__detail-item">
@@ -222,10 +247,24 @@
                         <dd>{formatDateTime(row.started)}</dd>
                       </div>
                     {/if}
-                    {#if row.executionTime != null}
+                    {#if row.completed}
+                      <div class="pipeline-table__detail-item">
+                        <dt>Completed</dt>
+                        <dd>{formatDateTime(row.completed)}</dd>
+                      </div>
+                    {/if}
+                    {#if row.executionTimeUs != null}
                       <div class="pipeline-table__detail-item">
                         <dt>Duration</dt>
-                        <dd>{formatDuration(row.executionTime)}</dd>
+                        <dd>{formatMicroseconds(row.executionTimeUs)}</dd>
+                      </div>
+                    {/if}
+                    {#if row.retryCount != null && row.retryCount > 0}
+                      <div class="pipeline-table__detail-item">
+                        <dt>Retries</dt>
+                        <dd>
+                          {row.retryCount}{row.maxRetries != null ? ` / ${row.maxRetries}` : ''}
+                        </dd>
                       </div>
                     {/if}
                     {#if row.error}
@@ -235,6 +274,18 @@
                       </div>
                     {/if}
                   </dl>
+                  {#if hasData(row.inputData)}
+                    <details class="pipeline-table__data">
+                      <summary class="pipeline-table__data-summary">Input data</summary>
+                      <pre class="pipeline-table__data-pre">{formatJson(row.inputData)}</pre>
+                    </details>
+                  {/if}
+                  {#if hasData(row.outputData)}
+                    <details class="pipeline-table__data">
+                      <summary class="pipeline-table__data-summary">Output data</summary>
+                      <pre class="pipeline-table__data-pre">{formatJson(row.outputData)}</pre>
+                    </details>
+                  {/if}
                 </td>
               </tr>
             {/if}
@@ -313,6 +364,19 @@
 
   .pipeline-table__th--id {
     font-family: var(--fd-font-mono, monospace);
+  }
+
+  .pipeline-table__th--duration,
+  .pipeline-table__td--duration {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pipeline-table__td--duration {
+    font-family: var(--fd-font-mono, monospace);
+    font-size: var(--fd-text-2xs);
+    color: var(--fd-muted-foreground);
   }
 
   .pipeline-table__th--expand {
@@ -418,6 +482,38 @@
     color: var(--fd-error);
     font-family: var(--fd-font-mono, monospace);
     font-size: var(--fd-text-2xs);
+  }
+
+  .pipeline-table__data {
+    margin-top: var(--fd-space-sm);
+  }
+
+  .pipeline-table__data-summary {
+    cursor: pointer;
+    font-size: var(--fd-text-2xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fd-muted-foreground);
+    user-select: none;
+  }
+
+  .pipeline-table__data-summary:hover {
+    color: var(--fd-foreground);
+  }
+
+  .pipeline-table__data-pre {
+    margin: var(--fd-space-2xs) 0 0;
+    padding: var(--fd-space-sm);
+    max-height: 16rem;
+    overflow: auto;
+    font-family: var(--fd-font-mono, monospace);
+    font-size: var(--fd-text-2xs);
+    background-color: var(--fd-muted);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm, 4px);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .pipeline-table__status {

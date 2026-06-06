@@ -25,6 +25,7 @@ interface PipelineJob {
   completed?: string;
   last_executed?: string;
   execution_time?: number;
+  execution_time_us?: number;
   error?: string;
   error_message?: string;
 }
@@ -41,6 +42,7 @@ interface NodeStatusEntry {
   status: string;
   last_executed?: string | null;
   execution_time?: number | null;
+  execution_time_us?: number | null;
   error?: string | null;
   executions?: number;
   status_counts?: Record<string, number>;
@@ -294,6 +296,7 @@ export class NodeExecutionService {
       isExecuting: status === 'running' || nodeJobs.some((job) => job.status === 'running'),
       lastExecuted: entry?.last_executed ?? lastJob?.completed ?? lastJob?.started ?? undefined,
       lastExecutionDuration: entry?.execution_time ?? lastJob?.execution_time ?? undefined,
+      lastExecutionDurationUs: entry?.execution_time_us ?? lastJob?.execution_time_us ?? undefined,
       lastError: entry?.error ?? lastJob?.error_message ?? undefined
     };
 
@@ -324,6 +327,8 @@ export class NodeExecutionService {
       started: job.started,
       completed: job.completed,
       executionTime,
+      executionTimeUs:
+        job.execution_time_us ?? (executionTime != null ? executionTime * 1000 : undefined),
       error: job.error_message ?? job.error
     };
   }
