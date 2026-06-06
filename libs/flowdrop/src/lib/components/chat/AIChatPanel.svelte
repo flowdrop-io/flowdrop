@@ -11,6 +11,11 @@
   import { parseCommand } from '../../commands/parser.js';
   import { executeCommand } from '../../commands/index.js';
   import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
+  import {
+    buildRetryFeedback,
+    type BatchOutcome,
+    type ParseFailure
+  } from '../../chat/batchFeedback.js';
   import CommandPreview from './CommandPreview.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { tick } from 'svelte';
@@ -186,27 +191,20 @@
     return msg;
   }
 
-  /** Execute all pending mutating commands one by one with progressive UI feedback */
+  /**
+   * Execute the parseable commands in a batch one by one with progressive UI
+   * feedback.
+   *
+   * Commands that failed to parse are *isolated* — they stay marked as errors
+   * and are skipped, but they no longer abort the whole batch, so the healthy
+   * subset still applies (matching the long-standing "applied to a certain
+   * extent" expectation). After execution, if anything failed to parse or
+   * execute and auto-retry is enabled, specific feedback is sent back so the
+   * assistant can resend corrected commands.
+   */
   async function handleApproveCommands(messageIndex: number) {
     const msg = displayMessages[messageIndex];
     if (!msg?.commandPreview) return;
-
-    // Refuse to run the batch if any command failed to parse. A corrupted batch
-    // (e.g. multiline set without """) causes partial execution and can hang the
-    // app — rejecting the whole batch is safer than executing the healthy subset.
-    const parseErrorCount = msg.commandPreview.filter((c) => c.status === 'error').length;
-    if (parseErrorCount > 0) {
-      for (const cmd of msg.commandPreview) {
-        if (cmd.status === 'pending') {
-          cmd.status = 'error';
-          cmd.result = 'Batch refused: fix parse errors before executing';
-        }
-      }
-      appendErrorToHistory(
-        `Batch was not executed: ${parseErrorCount} command${parseErrorCount > 1 ? 's have' : ' has'} parse errors. Dismiss this batch and ask the AI to provide corrected commands.`
-      );
-      return;
-    }
 
     const context = getCommandContext();
     if (!context) {
@@ -220,7 +218,13 @@
       return;
     }
 
-    // Parse all pending commands first, before touching any status
+    // Commands that failed to parse (in processResponse) are isolated, not run.
+    // Capture their raw text + reason so we can feed specific corrections back.
+    const parseErrors: ParseFailure[] = msg.commandPreview
+      .filter((c) => c.status === 'error')
+      .map((c) => ({ raw: c.raw, error: c.result ?? 'Parse error' }));
+
+    // Re-parse the pending (parseable) commands, preserving order.
     const pendingItems = msg.commandPreview.filter((c) => c.status === 'pending');
     const parsedCommands: {
       item: CommandPreviewItem;
@@ -230,23 +234,37 @@
     for (const item of pendingItems) {
       const parsed = parseCommand(item.raw);
       if (!parsed.ok) {
+        // Re-parse disagreed with processResponse — isolate it like a parse error.
         item.status = 'error';
         item.result = parsed.error;
-        appendErrorToHistory(`Command parse error for "${item.raw}": ${parsed.error}`);
-        return;
+        parseErrors.push({ raw: item.raw, error: parsed.error });
+        continue;
       }
       parsedCommands.push({ item, command: parsed.command });
     }
 
-    // Execute commands one by one inside a single transaction.
-    // A 100ms pause between commands lets the canvas visibly update at each step.
     const totalCount = parsedCommands.length;
+
+    // Nothing parseable to run — feed the parse errors straight back so the
+    // assistant can resend a corrected batch.
+    if (totalCount === 0) {
+      await resolveBatchOutcome({
+        completedCount: 0,
+        executionError: undefined,
+        rolledBack: false,
+        parseErrors
+      });
+      return;
+    }
+
+    // Execute the healthy subset one by one inside a single transaction.
+    // A 100ms pause between commands lets the canvas visibly update at each step.
     context.dispatch.startTransaction(
       totalCount === 1 ? 'batch: 1 command' : `batch: ${totalCount} commands`
     );
 
     let completedCount = 0;
-    let batchError: string | undefined;
+    let executionError: string | undefined;
 
     try {
       for (let i = 0; i < parsedCommands.length; i++) {
@@ -258,7 +276,7 @@
         if (!result.ok) {
           item.status = 'error';
           item.result = result.error;
-          batchError = result.error;
+          executionError = result.error;
           context.dispatch.cancelTransaction();
           break;
         }
@@ -283,24 +301,48 @@
       return;
     }
 
-    if (!batchError) {
-      context.dispatch.commitTransaction();
+    if (executionError !== undefined) {
+      // An executed command failed — the whole batch is rolled back (atomic,
+      // long-standing behaviour). Retry feedback covers both the execution
+      // failure and any parse-skipped commands.
+      await resolveBatchOutcome({
+        completedCount,
+        executionError,
+        rolledBack: true,
+        parseErrors
+      });
       return;
     }
 
-    if (getBehaviorSettings().chatAutoRetry && workflowId && autoRetryCount < MAX_AUTO_RETRIES) {
-      autoRetryCount++;
-      const errorText = buildBatchErrorMessage(
+    // Every parseable command applied — commit so the subset persists.
+    context.dispatch.commitTransaction();
+
+    // If some commands couldn't be parsed, ask the assistant to resend them.
+    if (parseErrors.length > 0) {
+      await resolveBatchOutcome({
         completedCount,
-        totalCount,
-        batchError,
-        pendingItems
-      );
-      await sendMessageInternal(errorText, autoRetryCount);
+        executionError: undefined,
+        rolledBack: false,
+        parseErrors
+      });
+    }
+  }
+
+  /**
+   * After a batch finishes with failures (parse and/or execution), either
+   * auto-retry with specific feedback so the assistant can self-correct, or —
+   * when auto-retry is off/exhausted — surface the same summary in the log.
+   */
+  async function resolveBatchOutcome(outcome: BatchOutcome) {
+    const feedback = buildRetryFeedback(outcome);
+    const canRetry =
+      getBehaviorSettings().chatAutoRetry && !!workflowId && autoRetryCount < MAX_AUTO_RETRIES;
+
+    if (canRetry) {
+      autoRetryCount++;
+      await sendMessageInternal(feedback, autoRetryCount);
     } else {
-      appendErrorToHistory(
-        `Command execution failed at command ${completedCount + 1}/${totalCount}: ${batchError}`
-      );
+      appendErrorToHistory(feedback);
     }
   }
 
@@ -315,36 +357,6 @@
       role: 'assistant',
       content: `Error: ${errorMessage}`
     });
-  }
-
-  /** Build a structured error report from a failed batch for the LLM */
-  function buildBatchErrorMessage(
-    completedCount: number,
-    totalCount: number,
-    error: string,
-    items: CommandPreviewItem[]
-  ): string {
-    const lines: string[] = [
-      `Batch execution failed at command ${completedCount + 1}/${totalCount}: ${error}`
-    ];
-
-    if (completedCount > 0) {
-      lines.push('\nCommands that succeeded (rolled back):');
-      for (let i = 0; i < completedCount; i++) {
-        lines.push(`  ${i + 1}. ${items[i].raw}`);
-      }
-    }
-
-    lines.push('\nFailed command:');
-    lines.push(`  ${items[completedCount]?.raw ?? '(unknown)'}`);
-
-    const remaining = totalCount - completedCount - 1;
-    if (remaining > 0) {
-      lines.push(`\n${remaining} command(s) were skipped.`);
-    }
-
-    lines.push('\nPlease provide corrected commands to achieve the same goal.');
-    return lines.join('\n');
   }
 
   // =========================================================================
