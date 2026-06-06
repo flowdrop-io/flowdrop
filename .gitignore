@@ -3,6 +3,10 @@ test-results
 .playwright-mcp
 .claude
 
+# Process repo (symlinked from ../.flowdrop-process) and agent instructions
+.dev
+CLAUDE.md
+
 # Output
 .output
 .vercel
