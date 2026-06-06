@@ -1036,14 +1036,14 @@ describe('executeCommand — info', () => {
   it('includes connected edges', () => {
     const llmNode = createMockNode('agentspec.llm_node.1', llmMetadata);
     const apiNode = createMockNode('agentspec.api_node.1', apiMetadata);
-    const edge = {
+    const edge: WorkflowEdge = {
       id: 'edge-1',
       source: 'agentspec.llm_node.1',
       target: 'agentspec.api_node.1',
       sourceHandle: 'agentspec.llm_node.1-output-llm_output',
       targetHandle: 'agentspec.api_node.1-input-body'
     };
-    const workflow = createMockWorkflow([llmNode, apiNode], [edge as any]);
+    const workflow = createMockWorkflow([llmNode, apiNode], [edge]);
     const context = createMockContext(workflow, nodeTypes);
 
     // Info on source node

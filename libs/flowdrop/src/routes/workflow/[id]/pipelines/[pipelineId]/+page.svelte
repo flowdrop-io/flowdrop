@@ -35,8 +35,9 @@
   // Initialize API service with runtime config
   setEndpointConfig(endpointConfig);
 
-  let workflowId = $derived($page.params.id);
-  let pipelineId = $derived($page.params.pipelineId);
+  // [id]/[pipelineId] are required route segments — the params are always present here
+  let workflowId = $derived($page.params.id!);
+  let pipelineId = $derived($page.params.pipelineId!);
 
   // Data state
   let workflow = $state<Workflow | null>(null);

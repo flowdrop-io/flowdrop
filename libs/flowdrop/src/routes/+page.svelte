@@ -9,6 +9,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import {
     buildEndpointUrl,
@@ -148,7 +149,7 @@
 
     switch (operation) {
       case 'edit':
-        goto(`/workflow/${workflowId}/edit`);
+        goto(resolve('/workflow/[id]/edit', { id: workflowId }));
         break;
       case 'delete': {
         // Find the workflow to get its name
@@ -165,10 +166,10 @@
         break;
       }
       case 'view-execution':
-        goto(`/workflow/${workflowId}/pipelines`);
+        goto(resolve('/workflow/[id]/pipelines', { id: workflowId }));
         break;
       case 'playground':
-        goto(`/workflow/${workflowId}/playground`);
+        goto(resolve('/workflow/[id]/playground', { id: workflowId }));
         break;
     }
   }
@@ -250,8 +251,9 @@
             class="workflow-card"
             role="button"
             tabindex="0"
-            onclick={() => goto(`/workflow/${workflow.id}/edit`)}
-            onkeydown={(e) => e.key === 'Enter' && goto(`/workflow/${workflow.id}/edit`)}
+            onclick={() => goto(resolve('/workflow/[id]/edit', { id: workflow.id }))}
+            onkeydown={(e) =>
+              e.key === 'Enter' && goto(resolve('/workflow/[id]/edit', { id: workflow.id }))}
           >
             <div class="workflow-card__icon">
               <Icon icon="mdi:file-document" class="w-5 h-5" />
@@ -384,7 +386,7 @@
               {#if !searchQuery}
                 <button
                   class="flowdrop-btn flowdrop-btn--primary"
-                  onclick={() => goto('/workflow/create')}
+                  onclick={() => goto(resolve('/workflow/create'))}
                 >
                   Create Your First Workflow
                 </button>

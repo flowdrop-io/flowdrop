@@ -8,6 +8,7 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import Icon from '@iconify/svelte';
   import StatusIcon from '$lib/components/StatusIcon.svelte';
   import StatusLabel from '$lib/components/StatusLabel.svelte';
@@ -46,7 +47,8 @@
   let pipelines = $state<PipelineDisplay[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
-  let workflowId = $derived($page.params.id);
+  // [id] is a required route segment — the param is always present here
+  let workflowId = $derived($page.params.id!);
   let workflowName = $state<string>('Workflow');
 
   let searchQuery = $state('');
@@ -173,7 +175,7 @@
   });
 
   function handlePipelineSelect(pipelineId: string) {
-    goto(`/workflow/${workflowId}/pipelines/${pipelineId}`);
+    goto(resolve('/workflow/[id]/pipelines/[pipelineId]', { id: workflowId, pipelineId }));
   }
 </script>
 

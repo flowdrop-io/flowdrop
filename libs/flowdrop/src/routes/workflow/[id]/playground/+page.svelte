@@ -9,6 +9,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import { playgroundService } from '$lib/services/playgroundService.js';
@@ -17,7 +18,8 @@
 
   let { data } = $props();
 
-  const workflowId = $page.params.id;
+  // [id] is a required route segment — the param is always present here
+  const workflowId = $page.params.id!;
 
   let error = $state<string | null>(null);
 
@@ -41,7 +43,12 @@
         ? mostRecent.id
         : (await playgroundService.createSession(workflowId, 'Session 1')).id;
 
-      goto(`/workflow/${workflowId}/playground/${target}`, { replaceState: true });
+      goto(
+        resolve('/workflow/[id]/playground/[sessionId]', { id: workflowId, sessionId: target }),
+        {
+          replaceState: true
+        }
+      );
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load playground';
     }
@@ -59,7 +66,7 @@
       class="playground-redirect__icon playground-redirect__icon--error"
     />
     <p class="playground-redirect__text">Failed to open playground: {error}</p>
-    <a href="/" class="playground-redirect__link">Go to home</a>
+    <a href={resolve('/')} class="playground-redirect__link">Go to home</a>
   {:else}
     <Icon icon="mdi:loading" class="playground-redirect__icon playground-redirect__icon--spin" />
     <p class="playground-redirect__text">Opening playground…</p>

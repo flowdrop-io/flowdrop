@@ -8,14 +8,16 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import PlaygroundStudio from '$lib/components/playground/PlaygroundStudio.svelte';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
   import type { PlaygroundConfig } from '$lib/types/playground.js';
 
   let { data } = $props();
 
-  const workflowId = $derived($page.params.id);
-  const sessionId = $derived($page.params.sessionId);
+  // [id]/[sessionId] are required route segments — the params are always present here
+  const workflowId = $derived($page.params.id!);
+  const sessionId = $derived($page.params.sessionId!);
 
   const endpointConfig = $derived(
     createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
@@ -41,7 +43,9 @@
   });
 
   function handleSessionNavigate(newSessionId: string) {
-    goto(`/workflow/${workflowId}/playground/${newSessionId}`);
+    goto(
+      resolve('/workflow/[id]/playground/[sessionId]', { id: workflowId, sessionId: newSessionId })
+    );
   }
 </script>
 

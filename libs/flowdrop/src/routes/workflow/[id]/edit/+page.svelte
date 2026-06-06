@@ -8,17 +8,16 @@
     defaultEndpointConfig
   } from '$lib/config/endpoints.js';
   import { apiToasts, dismissToast } from '$lib/services/toastService.js';
+  import type { Workflow, WorkflowNode, NodeMetadata } from '$lib/types/index.js';
 
   /**
-   * Workflow edit type (minimal structure for editing)
+   * Workflow edit type — the editable Workflow plus API bookkeeping fields
+   * this page receives but does not render.
    */
-  interface WorkflowEdit {
-    id: string;
-    name: string;
-    description: string;
-    nodes?: unknown[];
-    edges?: unknown[];
-    [key: string]: unknown;
+  interface WorkflowEdit extends Workflow {
+    status?: string;
+    created?: string;
+    changed?: string;
   }
 
   let { data } = $props();
@@ -89,20 +88,20 @@
       const workflowData = data.data;
 
       // Fetch fresh node metadata from the API
-      let refreshedNodes = workflowData.nodes || [];
+      let refreshedNodes: WorkflowNode[] = workflowData.nodes || [];
       if (refreshedNodes.length > 0) {
         try {
           const nodesUrl = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.nodes.list);
           const nodesResponse = await fetch(nodesUrl);
           if (nodesResponse.ok) {
             const nodesData = await nodesResponse.json();
-            const availableNodes = nodesData.data || [];
+            const availableNodes: NodeMetadata[] = nodesData.data || [];
 
             // Refresh metadata for each node
-            refreshedNodes = refreshedNodes.map((node: any) => {
+            refreshedNodes = refreshedNodes.map((node) => {
               const nodeMetadataId = node.data?.metadata?.id;
               if (nodeMetadataId) {
-                const freshMetadata = availableNodes.find((n: any) => n.id === nodeMetadataId);
+                const freshMetadata = availableNodes.find((n) => n.id === nodeMetadataId);
                 if (freshMetadata) {
                   return {
                     ...node,
@@ -187,7 +186,7 @@
       <button onclick={fetchWorkflow} class="retry-button">Retry</button>
     </div>
   {:else if workflow}
-    <App workflow={workflow as any} height={canvasHeight} width={canvasWidth} showNavbar={false} />
+    <App {workflow} height={canvasHeight} width={canvasWidth} showNavbar={false} />
   {:else}
     <div class="no-workflow">
       <h3>Workflow Not Found</h3>

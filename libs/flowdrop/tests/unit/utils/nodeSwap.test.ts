@@ -631,7 +631,7 @@ describe('executeSwap', () => {
     const result = executeSwap(calcNode, advancedCalculatorNode, preview, [calcNode], []);
 
     const newNode = result.updatedNodes.find((n) => n.id === preview.newNodeId);
-    expect((newNode!.data.extensions as any)?.swap?.previousNodeId).toBe('calculator.1');
+    expect(newNode!.data.extensions?.swap?.previousNodeId).toBe('calculator.1');
   });
 
   it('should set new metadata from target NodeMetadata', () => {
