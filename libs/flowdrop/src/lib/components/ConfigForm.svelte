@@ -214,12 +214,6 @@
   });
 
   /**
-   * UI Extension values for display settings
-   * Merges node type defaults with instance overrides
-   */
-  let uiExtensionValues = $state<NodeUIExtensions>({});
-
-  /**
    * Flag to track if workflow save is in progress
    */
   let isSavingWorkflow = $state(false);
@@ -234,6 +228,38 @@
     const instanceOverrides = node.data.extensions?.ui ?? {};
     return { ...typeDefaults, ...instanceOverrides };
   });
+
+  /**
+   * UI Extension values for display settings.
+   * Writable derived: recomputes from the node when it changes (covering both
+   * "different node opened" and the post-save round-trip through node.data),
+   * while local port-management edits overwrite it wholesale via reassignment.
+   * NOTE: the derived value is not a deep $state proxy — update it only by
+   * reassigning the whole object, never by mutating a property.
+   */
+  let uiExtensionValues = $derived.by<NodeUIExtensions>(() => ({
+    hideUnconnectedHandles: initialUIExtensions.hideUnconnectedHandles ?? false,
+    portOrder: initialUIExtensions.portOrder
+      ? {
+          inputs: initialUIExtensions.portOrder.inputs
+            ? [...initialUIExtensions.portOrder.inputs]
+            : undefined,
+          outputs: initialUIExtensions.portOrder.outputs
+            ? [...initialUIExtensions.portOrder.outputs]
+            : undefined
+        }
+      : undefined,
+    hiddenPorts: initialUIExtensions.hiddenPorts
+      ? {
+          inputs: initialUIExtensions.hiddenPorts.inputs
+            ? [...initialUIExtensions.hiddenPorts.inputs]
+            : undefined,
+          outputs: initialUIExtensions.hiddenPorts.outputs
+            ? [...initialUIExtensions.hiddenPorts.outputs]
+            : undefined
+        }
+      : undefined
+  }));
 
   /**
    * Fetch dynamic schema when needed
@@ -315,35 +341,6 @@
   });
 
   /**
-   * Initialize UI extension values when node changes
-   */
-  $effect(() => {
-    uiExtensionValues = {
-      hideUnconnectedHandles: initialUIExtensions.hideUnconnectedHandles ?? false,
-      portOrder: initialUIExtensions.portOrder
-        ? {
-            inputs: initialUIExtensions.portOrder.inputs
-              ? [...initialUIExtensions.portOrder.inputs]
-              : undefined,
-            outputs: initialUIExtensions.portOrder.outputs
-              ? [...initialUIExtensions.portOrder.outputs]
-              : undefined
-          }
-        : undefined,
-      hiddenPorts: initialUIExtensions.hiddenPorts
-        ? {
-            inputs: initialUIExtensions.hiddenPorts.inputs
-              ? [...initialUIExtensions.hiddenPorts.inputs]
-              : undefined,
-            outputs: initialUIExtensions.hiddenPorts.outputs
-              ? [...initialUIExtensions.hiddenPorts.outputs]
-              : undefined
-          }
-        : undefined
-    };
-  });
-
-  /**
    * All input ports in current display order for the port management UI.
    * Combines static metadata inputs + dynamic config inputs, sorted by portOrder.
    */
@@ -380,9 +377,12 @@
     if (newIdx < 0 || newIdx >= list.length) return;
     const newOrder = list.map((p) => p.id);
     [newOrder[idx], newOrder[newIdx]] = [newOrder[newIdx], newOrder[idx]];
-    uiExtensionValues.portOrder = {
-      ...uiExtensionValues.portOrder,
-      [direction]: newOrder
+    uiExtensionValues = {
+      ...uiExtensionValues,
+      portOrder: {
+        ...uiExtensionValues.portOrder,
+        [direction]: newOrder
+      }
     };
     handleFormBlur();
   }
@@ -394,9 +394,12 @@
     const current = uiExtensionValues.hiddenPorts?.[direction] ?? [];
     const isHidden = current.includes(portId);
     const next = isHidden ? current.filter((id) => id !== portId) : [...current, portId];
-    uiExtensionValues.hiddenPorts = {
-      ...uiExtensionValues.hiddenPorts,
-      [direction]: next.length > 0 ? next : undefined
+    uiExtensionValues = {
+      ...uiExtensionValues,
+      hiddenPorts: {
+        ...uiExtensionValues.hiddenPorts,
+        [direction]: next.length > 0 ? next : undefined
+      }
     };
     handleFormBlur();
   }
@@ -409,8 +412,11 @@
     const hidden = { ...uiExtensionValues.hiddenPorts };
     delete order[direction];
     delete hidden[direction];
-    uiExtensionValues.portOrder = Object.keys(order).length > 0 ? order : undefined;
-    uiExtensionValues.hiddenPorts = Object.keys(hidden).length > 0 ? hidden : undefined;
+    uiExtensionValues = {
+      ...uiExtensionValues,
+      portOrder: Object.keys(order).length > 0 ? order : undefined,
+      hiddenPorts: Object.keys(hidden).length > 0 ? hidden : undefined
+    };
     handleFormBlur();
   }
 
@@ -752,7 +758,7 @@
               offLabel="Visible"
               ariaDescribedBy="ext-hideUnconnectedHandles-description"
               onChange={(val) => {
-                uiExtensionValues.hideUnconnectedHandles = val;
+                uiExtensionValues = { ...uiExtensionValues, hideUnconnectedHandles: val };
                 handleFormBlur();
               }}
             />

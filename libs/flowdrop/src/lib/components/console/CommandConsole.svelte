@@ -45,12 +45,11 @@
   const fd = getInstance();
 
   let outputEntries: ConsoleEntry[] = $state([]);
-  let commandContext: CommandContext | null = $state(null);
 
-  // Recreate context when nodeTypes changes
-  $effect(() => {
-    commandContext = createStoreCommandContext(nodeTypes, onUIAction, fd);
-  });
+  // Recreated whenever nodeTypes changes; null while no workflow is loaded
+  const commandContext: CommandContext | null = $derived(
+    createStoreCommandContext(nodeTypes, onUIAction, fd)
+  );
 
   /**
    * Attempts to format CommandResult data into a rich display string.

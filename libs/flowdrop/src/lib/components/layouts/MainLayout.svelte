@@ -109,10 +109,12 @@
     children
   }: Props = $props();
 
-  /** Current width of the left sidebar */
-  // initial default, component owns draggable state
-  // svelte-ignore state_referenced_locally
-  let leftSidebarWidth = $state(initialLeftWidth);
+  /**
+   * Current width of the left sidebar.
+   * Writable derived: recomputes when the prop changes (external control,
+   * e.g. collapsed state), while drag/keyboard resizing assigns over it.
+   */
+  let leftSidebarWidth = $derived(initialLeftWidth);
 
   /** Current width of the right sidebar */
   // svelte-ignore state_referenced_locally
@@ -121,14 +123,6 @@
   /** Current height of the bottom panel */
   // svelte-ignore state_referenced_locally
   let bottomPanelHeightState = $state(initialBottomHeight);
-
-  /**
-   * Sync left sidebar width with prop changes
-   * This allows external control (e.g., collapsed state) to update the width
-   */
-  $effect(() => {
-    leftSidebarWidth = initialLeftWidth;
-  });
 
   /** Whether the user is currently dragging the left divider */
   let isDraggingLeft = $state(false);

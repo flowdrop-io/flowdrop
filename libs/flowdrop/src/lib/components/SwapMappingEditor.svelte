@@ -6,7 +6,6 @@
 -->
 
 <script lang="ts">
-  import { untrack } from 'svelte';
   import type { InteractiveSwapState } from '../utils/nodeSwap.js';
   import Icon from '@iconify/svelte';
   import { getNodeIcon } from '../utils/icons.js';
@@ -24,16 +23,12 @@
 
   const { interactiveState, onConfirm, onCancel, onBack }: Props = $props();
 
-  // Local mutable copy of the interactive state
-  // JSON round-trip is intentional: structuredClone fails on Svelte 5 proxies
-  let localState = $state<InteractiveSwapState>(
-    untrack(() => JSON.parse(JSON.stringify(interactiveState)))
-  );
-
-  // Reinit when interactiveState changes
-  $effect(() => {
-    localState = JSON.parse(JSON.stringify(interactiveState));
-  });
+  // Local editable copy of the interactive state.
+  // JSON round-trip is intentional: structuredClone fails on Svelte 5 proxies.
+  // Writable derived: reinitializes when interactiveState changes; local edits
+  // reassign the whole object below. NOTE: the derived value is not a deep
+  // $state proxy — update it only by reassignment, never by mutating in place.
+  let localState = $derived<InteractiveSwapState>(JSON.parse(JSON.stringify(interactiveState)));
 
   // Derived counts
   let inputMappings = $derived(localState.portMappings.filter((m) => m.direction === 'input'));
@@ -70,27 +65,33 @@
     const mapping = localState.portMappings[index];
     if (!mapping) return;
 
-    // For input ports: if this port is already used by another mapping, unmap the other
-    if (newPortId && mapping.direction === 'input') {
-      for (let i = 0; i < localState.portMappings.length; i++) {
-        if (i === index) continue;
-        const other = localState.portMappings[i];
-        if (other.direction === 'input' && other.selectedNewPortId === newPortId) {
-          localState.portMappings[i] = {
+    localState = {
+      ...localState,
+      portMappings: localState.portMappings.map((other, i) => {
+        if (i === index) {
+          return {
             ...other,
-            selectedNewPortId: null,
-            matchQuality: 'unmapped',
+            selectedNewPortId: newPortId,
+            matchQuality: newPortId ? ('manual' as const) : ('unmapped' as const),
             isOverridden: true
           };
         }
-      }
-    }
-
-    localState.portMappings[index] = {
-      ...mapping,
-      selectedNewPortId: newPortId,
-      matchQuality: newPortId ? 'manual' : 'unmapped',
-      isOverridden: true
+        // For input ports: if this port is already used by another mapping, unmap the other
+        if (
+          newPortId &&
+          mapping.direction === 'input' &&
+          other.direction === 'input' &&
+          other.selectedNewPortId === newPortId
+        ) {
+          return {
+            ...other,
+            selectedNewPortId: null,
+            matchQuality: 'unmapped' as const,
+            isOverridden: true
+          };
+        }
+        return other;
+      })
     };
   }
 
@@ -98,25 +99,32 @@
     const mapping = localState.portMappings[index];
     if (!mapping) return;
 
-    localState.portMappings[index] = {
-      ...mapping,
-      selectedNewPortId: mapping.autoSuggestedPortId,
-      matchQuality: mapping.autoSuggestedPortId
-        ? (interactiveState.portMappings[index]?.matchQuality ?? 'type')
-        : 'unmapped',
-      isOverridden: false
+    localState = {
+      ...localState,
+      portMappings: localState.portMappings.map((other, i) =>
+        i === index
+          ? {
+              ...other,
+              selectedNewPortId: other.autoSuggestedPortId,
+              matchQuality: other.autoSuggestedPortId
+                ? (interactiveState.portMappings[index]?.matchQuality ?? 'type')
+                : 'unmapped',
+              isOverridden: false
+            }
+          : other
+      )
     };
   }
 
   function handleConfigToggle(key: string): void {
-    const idx = localState.configMappings.findIndex((m) => m.key === key);
-    if (idx < 0) return;
-    const mapping = localState.configMappings[idx];
-    if (!mapping.isFlat) return;
+    const mapping = localState.configMappings.find((m) => m.key === key);
+    if (!mapping || !mapping.isFlat) return;
 
-    localState.configMappings[idx] = {
-      ...mapping,
-      carryOver: !mapping.carryOver
+    localState = {
+      ...localState,
+      configMappings: localState.configMappings.map((m) =>
+        m.key === key ? { ...m, carryOver: !m.carryOver } : m
+      )
     };
   }
 
