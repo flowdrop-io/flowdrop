@@ -66,7 +66,7 @@
     height = '300px',
     showToolbar = true,
     showStatusBar = true,
-    spellChecker: _spellChecker = false,
+    spellChecker = false,
     autosave = false,
     autosaveDelay = 10000,
     disabled = false,
@@ -409,11 +409,12 @@
       }),
       EditorView.lineWrapping,
 
-      // Accessibility
+      // Accessibility + browser spellcheck (off by default, opt-in via spellChecker)
       ariaLabelCompartment.of(
         EditorView.contentAttributes.of({
           'aria-label': m().form.markdown.editor,
-          'aria-multiline': 'true'
+          'aria-multiline': 'true',
+          spellcheck: String(spellChecker)
         })
       )
     ];
@@ -495,7 +496,8 @@
         ariaLabelCompartment.reconfigure(
           EditorView.contentAttributes.of({
             'aria-label': ariaLabel,
-            'aria-multiline': 'true'
+            'aria-multiline': 'true',
+            spellcheck: String(spellChecker)
           })
         )
       ]

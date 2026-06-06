@@ -30,7 +30,8 @@
     tooltips,
     Decoration,
     ViewPlugin,
-    MatchDecorator
+    MatchDecorator,
+    placeholder as cmPlaceholder
   } from '@codemirror/view';
   import { EditorState, Compartment } from '@codemirror/state';
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
@@ -89,8 +90,7 @@
   let {
     id,
     value = '',
-    placeholder:
-      _placeholder = 'Enter your template here...\nUse {{ variable }} for dynamic values.',
+    placeholder = 'Enter your template here...\nUse {{ variable }} for dynamic values.',
     required = false,
     darkTheme = false,
     height = '250px',
@@ -351,7 +351,9 @@
         }
       }),
       EditorView.lineWrapping,
-      EditorState.tabSize.of(2)
+      EditorState.tabSize.of(2),
+      // Shown inside the editor while the document is empty
+      cmPlaceholder(placeholder)
     ];
 
     // Add autocomplete compartment (can be reconfigured dynamically)
@@ -571,7 +573,7 @@
             onclick={() => insertVariable(varName)}
             title={`Insert {{ ${varName} }}`}
           >
-            <code>&#123;&#123; {varName} &#125;&#125;</code>
+            <code>{`{{ ${varName} }}`}</code>
           </button>
         {/each}
       </div>

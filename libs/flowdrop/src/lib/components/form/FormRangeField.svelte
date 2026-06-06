@@ -38,7 +38,7 @@
     min = 0,
     max = 100,
     step = 1,
-    required: _required = false,
+    required = false,
     disabled = false,
     ariaDescribedBy,
     onChange
@@ -88,6 +88,7 @@
       {max}
       {step}
       {disabled}
+      {required}
       aria-describedby={ariaDescribedBy}
       aria-valuemin={min}
       aria-valuemax={max}
