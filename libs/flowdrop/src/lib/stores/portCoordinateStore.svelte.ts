@@ -23,10 +23,13 @@ import type {
 import type { InternalNode } from '@xyflow/svelte';
 import { ProximityConnectHelper } from '../helpers/proximityConnect.js';
 
-/** Reactive state holding all port absolute coordinates, keyed by handleId */
-// $state.raw: the SvelteMap is internally reactive; raw keeps the binding
-// reassignable-reactive without a redundant deep wrap
-let coordinates: PortCoordinateMap = $state.raw(new SvelteMap<string, PortCoordinate>());
+/**
+ * Reactive state holding all port absolute coordinates, keyed by handleId.
+ * A single const SvelteMap mutated in place: per-key reads (getPortCoordinate)
+ * only react to the keys they touch, and Svelte coalesces synchronous
+ * mutations into one flush, so bulk updates stay cheap.
+ */
+const coordinates: PortCoordinateMap = new SvelteMap<string, PortCoordinate>();
 
 /**
  * Parse a handle ID to extract nodeId, direction, and portId.
@@ -130,7 +133,7 @@ export function rebuildAllPortCoordinates(
   nodes: WorkflowNodeType[],
   getInternalNode: (id: string) => InternalNode | undefined
 ): void {
-  const map = new SvelteMap<string, PortCoordinate>();
+  coordinates.clear();
 
   for (const node of nodes) {
     const internalNode = getInternalNode(node.id);
@@ -138,11 +141,9 @@ export function rebuildAllPortCoordinates(
 
     const coords = computeNodePortCoordinates(node, internalNode);
     for (const coord of coords) {
-      map.set(coord.handleId, coord);
+      coordinates.set(coord.handleId, coord);
     }
   }
-
-  coordinates = map;
 }
 
 /**
@@ -159,18 +160,20 @@ export function updateNodePortCoordinates(
   const internalNode = getInternalNode(node.id);
   if (!internalNode) return;
 
-  // Build a new map with all entries except this node's, then add recomputed entries.
-  // Single assignment fires one reactive notification instead of N deletes + M sets.
-  const newMap = new SvelteMap<string, PortCoordinate>();
+  // Collect this node's stale keys without tracking the read (callers run
+  // inside $effect), then mutate in place — only the touched keys notify.
+  const stale: string[] = [];
   untrack(() => {
     for (const [key, coord] of coordinates) {
-      if (coord.nodeId !== node.id) newMap.set(key, coord);
+      if (coord.nodeId === node.id) stale.push(key);
     }
   });
-  for (const coord of computeNodePortCoordinates(node, internalNode)) {
-    newMap.set(coord.handleId, coord);
+  for (const key of stale) {
+    coordinates.delete(key);
   }
-  coordinates = newMap;
+  for (const coord of computeNodePortCoordinates(node, internalNode)) {
+    coordinates.set(coord.handleId, coord);
+  }
 }
 
 /**
@@ -179,20 +182,22 @@ export function updateNodePortCoordinates(
  * @param nodeId - ID of the node to remove
  */
 export function removeNodePortCoordinates(nodeId: string): void {
-  const newMap = new SvelteMap<string, PortCoordinate>();
+  const stale: string[] = [];
   untrack(() => {
     for (const [key, coord] of coordinates) {
-      if (coord.nodeId !== nodeId) newMap.set(key, coord);
+      if (coord.nodeId === nodeId) stale.push(key);
     }
   });
-  coordinates = newMap;
+  for (const key of stale) {
+    coordinates.delete(key);
+  }
 }
 
 /**
  * Clear all port coordinates (lifecycle cleanup).
  */
 export function clearPortCoordinates(): void {
-  coordinates = new SvelteMap();
+  coordinates.clear();
 }
 
 /**

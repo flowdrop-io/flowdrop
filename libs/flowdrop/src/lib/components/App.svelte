@@ -1014,16 +1014,8 @@
     <!-- Right Sidebar: Configuration, Swap, or Workflow Settings -->
     {#snippet rightSidebar()}
       {#if swapMode === 'mapping' && swapInteractiveState && selectedNodeForConfig}
-        {@const swapChecker = (() => {
-          try {
-            return getPortCompatibilityChecker();
-          } catch {
-            return null;
-          }
-        })()}
         <SwapMappingEditor
           interactiveState={swapInteractiveState}
-          checker={swapChecker}
           onConfirm={executeNodeSwap}
           onCancel={cancelSwap}
           onBack={() => {

@@ -480,14 +480,11 @@
   }
 
   /**
-   * Handle new connections between nodes
+   * Handle new connections between nodes.
+   * The connection details aren't needed — SvelteFlow auto-creates the edge
+   * via bind:edges; this only drives the state machine and history snapshot.
    */
-  async function handleConnect(_connection: {
-    source: string;
-    target: string;
-    sourceHandle?: string;
-    targetHandle?: string;
-  }): Promise<void> {
+  async function handleConnect(): Promise<void> {
     machine.send('START_CONNECT');
 
     // SvelteFlow auto-creates the edge via bind:edges — wait for DOM update
@@ -829,13 +826,7 @@
               {nodeTypes}
               {edgeTypes}
               {defaultEdgeOptions}
-              onconnect={(connection) =>
-                void handleConnect({
-                  source: connection.source,
-                  target: connection.target,
-                  sourceHandle: connection.sourceHandle ?? undefined,
-                  targetHandle: connection.targetHandle ?? undefined
-                })}
+              onconnect={() => void handleConnect()}
               onbeforedelete={handleBeforeDelete}
               ondelete={handleNodesDelete}
               onnodedragstart={handleNodeDragStart}

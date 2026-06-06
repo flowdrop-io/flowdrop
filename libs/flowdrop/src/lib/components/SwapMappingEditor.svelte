@@ -8,7 +8,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import type { InteractiveSwapState } from '../utils/nodeSwap.js';
-  import type { PortCompatibilityChecker } from '../utils/connections.js';
   import Icon from '@iconify/svelte';
   import { getNodeIcon } from '../utils/icons.js';
   import { getCategoryColorToken } from '../utils/colors.js';
@@ -18,13 +17,12 @@
 
   interface Props {
     interactiveState: InteractiveSwapState;
-    checker: PortCompatibilityChecker | null;
     onConfirm: (state: InteractiveSwapState) => void;
     onCancel: () => void;
     onBack: () => void;
   }
 
-  const { interactiveState, checker: _checker, onConfirm, onCancel, onBack }: Props = $props();
+  const { interactiveState, onConfirm, onCancel, onBack }: Props = $props();
 
   // Local mutable copy of the interactive state
   // JSON round-trip is intentional: structuredClone fails on Svelte 5 proxies

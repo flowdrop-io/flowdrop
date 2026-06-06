@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Playground `ControlPanel` starts at minimum height**: the initial `controlPanelHeight` drops from 280 to 140 (the floor of the existing clamp), giving the `ExecutionConsole` more room by default. The draggable resizer is unchanged — users can still expand the pane.
 - **i18n: "Sessions" label renamed to "Session"**: singular reads more naturally given that most playground configurations focus on a single active session. Hosts overriding `messages` should update the corresponding key.
+- **Dead interaction plumbing removed (internal).** Sidebar node items no longer carry `role="button"`/`tabindex` and no-op click/keydown handlers — they are drag-only and now present as plain list items (`role="list"`/`listitem`) to assistive tech. The internal `SwapMappingEditor` loses its accepted-but-ignored `checker` prop. The port coordinate store mutates a single `SvelteMap` in place (fine-grained per-key reactivity) instead of replacing the whole map per update. None of these are part of the documented API.
 
 ### Fixed
 

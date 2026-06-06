@@ -142,20 +142,6 @@
   }
 
   /**
-   * Handle search input change
-   */
-  function handleSearchChange(): void {
-    // Search is handled reactively through the derived filteredNodes
-  }
-
-  /**
-   * Handle node click
-   */
-  function handleNodeClick(_nodeType: NodeMetadata): void {
-    // Handle node click - could be used for preview or configuration
-  }
-
-  /**
    * Get category display name from the categories store.
    * Falls back to auto-capitalizing the category machine name.
    */
@@ -181,7 +167,6 @@
           placeholder={m().layout.searchComponents}
           class="flowdrop-input flowdrop-join__item flowdrop-w--full"
           bind:value={searchInput}
-          oninput={handleSearchChange}
         />
       </div>
       <button class="flowdrop-btn flowdrop-join__item" aria-label={m().layout.searchComponents}>
@@ -310,21 +295,13 @@
                 <div class="fd-sidebar-flat-category">
                   {getCategoryDisplayName(category).toUpperCase()}
                 </div>
-                <div class="fd-sidebar-flat-list">
+                <div class="fd-sidebar-flat-list" role="list">
                   {#each categoryNodes as nodeType (nodeType.id)}
                     <div
                       class="fd-sidebar-flat-item"
+                      role="listitem"
                       draggable="true"
                       ondragstart={(e) => handleNodeDragStart(e, nodeType)}
-                      onclick={() => handleNodeClick(nodeType)}
-                      role="button"
-                      tabindex="0"
-                      onkeydown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleNodeClick(nodeType);
-                        }
-                      }}
                     >
                       <span
                         class="fd-sidebar-flat-dot"
@@ -355,21 +332,13 @@
                   </div>
                 </summary>
                 <div class="flowdrop-details__content">
-                  <div class="flowdrop-node-list">
+                  <div class="flowdrop-node-list" role="list">
                     {#each categoryNodes as nodeType (nodeType.id)}
                       <div
                         class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
+                        role="listitem"
                         draggable="true"
                         ondragstart={(e) => handleNodeDragStart(e, nodeType)}
-                        onclick={() => handleNodeClick(nodeType)}
-                        role="button"
-                        tabindex="0"
-                        onkeydown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            handleNodeClick(nodeType);
-                          }
-                        }}
                       >
                         <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
                           <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
