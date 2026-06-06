@@ -178,7 +178,7 @@
                   onchange={(e) => updateValue(field, e.currentTarget.value)}
                 >
                   <option value="">Select {field.label}</option>
-                  {#each field.schema?.enum ?? [] as option}
+                  {#each field.schema?.enum ?? [] as option (option)}
                     <option value={String(option)}>{option}</option>
                   {/each}
                 </select>

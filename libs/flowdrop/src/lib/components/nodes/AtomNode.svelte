@@ -157,7 +157,7 @@
   }
 </script>
 
-{#each inPorts as port, index}
+{#each inPorts as port, index (port.id)}
   <Handle
     type="target"
     position={Position.Left}
@@ -187,7 +187,7 @@
   <span class="flowdrop-atom-node__body" title={display.text}>{display.text}</span>
 </div>
 
-{#each outPorts as port, index}
+{#each outPorts as port, index (port.id)}
   <Handle
     type="source"
     position={Position.Right}

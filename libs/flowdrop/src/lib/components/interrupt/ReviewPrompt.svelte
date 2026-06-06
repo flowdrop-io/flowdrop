@@ -347,9 +347,12 @@
           <div class="review-prompt__diff-row">
             <span class="review-prompt__diff-label">{t.original}</span>
             {#if isHtml && !isRawView}
+              <!-- Output of sanitizeHtml() (DOMPurify allowlist) — see utils/sanitize.ts -->
+              <!-- eslint-disable svelte/no-at-html-tags -->
               <span class="review-prompt__diff-value review-prompt__html-content"
                 >{@html sanitizeHtml(String(change.original))}</span
               >
+              <!-- eslint-enable svelte/no-at-html-tags -->
             {:else if isHtml && isRawView}
               <code class="review-prompt__diff-value review-prompt__raw-html"
                 >{change.original}</code
@@ -363,10 +366,13 @@
           <div class="review-prompt__diff-row">
             <span class="review-prompt__diff-label">{t.proposed}</span>
             {#if isHtml && !isRawView}
+              <!-- Output of sanitizeHtml() (DOMPurify allowlist) — see utils/sanitize.ts -->
+              <!-- eslint-disable svelte/no-at-html-tags -->
               <span
                 class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__html-content"
                 >{@html sanitizeHtml(String(change.proposed))}</span
               >
+              <!-- eslint-enable svelte/no-at-html-tags -->
             {:else if isHtml && isRawView}
               <code
                 class="review-prompt__diff-value review-prompt__diff-value--proposed review-prompt__raw-html"
@@ -383,14 +389,14 @@
               <span class="review-prompt__diff-label">{t.diff}</span>
               {#if isMultiLineDiff(diff)}
                 <pre
-                  class="review-prompt__diff-value review-prompt__diff-block">{#each diff as part}{#if part.added}<span
+                  class="review-prompt__diff-value review-prompt__diff-block">{#each diff as part, i (i)}{#if part.added}<span
                         class="review-prompt__diff-token--added">{part.value}</span
                       >{:else if part.removed}<span class="review-prompt__diff-token--removed"
                         >{part.value}</span
                       >{:else}<span>{part.value}</span>{/if}{/each}</pre>
               {:else}
                 <span class="review-prompt__diff-value review-prompt__diff-inline">
-                  {#each diff as part}
+                  {#each diff as part, i (i)}
                     {#if part.added}
                       <span class="review-prompt__diff-token--added">{part.value}</span>
                     {:else if part.removed}

@@ -48,7 +48,7 @@
 
 {#if visible && suggestions.length > 0}
   <div class="console-autocomplete" role="listbox" id={listboxId} bind:this={listElement}>
-    {#each suggestions as suggestion, i}
+    {#each suggestions as suggestion, i (suggestion.value)}
       <div
         class="console-autocomplete__item"
         class:console-autocomplete__item--selected={i === selectedIndex}

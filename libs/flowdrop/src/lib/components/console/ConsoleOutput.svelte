@@ -33,7 +33,8 @@
 </script>
 
 <div class="console-output" bind:this={outputElement} role="log" aria-live="polite">
-  {#each entries as entry}
+  <!-- Append-only log without stable IDs — index is the identity -->
+  {#each entries as entry, i (i)}
     <div class="console-output__entry console-output__entry--{entry.type}">
       {#if entry.type === 'input'}
         <span class="console-output__prefix">&gt;</span>

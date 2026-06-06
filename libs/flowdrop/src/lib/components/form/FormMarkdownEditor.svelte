@@ -527,7 +527,8 @@
       role="toolbar"
       aria-label={m().form.markdown.toolbar}
     >
-      {#each toolbarActions as item}
+      <!-- Separators have no identity of their own — disambiguate repeats by position -->
+      {#each toolbarActions as item, i (item === '|' ? `separator-${i}` : item.id)}
         {#if item === '|'}
           <span class="form-markdown-editor__separator"></span>
         {:else}
@@ -538,6 +539,8 @@
             onclick={item.action}
           >
             {#if item.isSvg}
+              <!-- item.icon is a compile-time SVG constant from toolbarActions, never user input -->
+              <!-- eslint-disable-next-line svelte/no-at-html-tags -->
               <span class="form-markdown-editor__btn-svg">{@html item.icon}</span>
             {:else}
               <span

@@ -63,6 +63,9 @@ export function areEdgeArraysEqual(edges1: WorkflowEdge[], edges2: WorkflowEdge[
  * Throttle function execution to reduce frequency
  * Uses requestAnimationFrame for smooth UI updates
  */
+// `any[]` in a generic constraint is the variance-correct idiom (it's how the TS
+// stdlib types Parameters<T>); `unknown[]` would reject every concrete callback.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function throttle<T extends (...args: any[]) => void>(
   func: T,
   wait: number
@@ -96,6 +99,8 @@ export function throttle<T extends (...args: any[]) => void>(
  * Debounce function execution to reduce frequency
  * Waits for a pause in calls before executing
  */
+// `any[]` constraint: see throttle() above.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => void>(
   func: T,
   wait: number
@@ -117,6 +122,8 @@ export function debounce<T extends (...args: any[]) => void>(
  * RequestAnimationFrame-based throttle for smooth animations
  * Better for visual updates like node dragging
  */
+// `any[]` constraint: see throttle() above.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function rafThrottle<T extends (...args: any[]) => void>(
   func: T
 ): (...args: Parameters<T>) => void {

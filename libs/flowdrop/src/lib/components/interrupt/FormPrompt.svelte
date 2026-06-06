@@ -132,7 +132,7 @@
     <div class="form-prompt__resolved-values">
       <h4 class="form-prompt__resolved-title">{interrupt.form.submittedValuesTitle}</h4>
       <div class="form-prompt__values-list">
-        {#each Object.entries(config.schema.properties ?? {}) as [key, field]}
+        {#each Object.entries(config.schema.properties ?? {}) as [key, field] (key)}
           {@const value = displayValues[key]}
           {@const fieldTitle = ((field as Record<string, unknown>).title as string) ?? key}
           <div class="form-prompt__value-item">

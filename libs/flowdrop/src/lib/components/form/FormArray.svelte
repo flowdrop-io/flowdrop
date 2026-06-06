@@ -391,7 +391,7 @@
                   onchange={(e) => updateItem(index, e.currentTarget.value)}
                   {disabled}
                 >
-                  {#each itemSchema.enum as option}
+                  {#each itemSchema.enum as option (option)}
                     <option value={String(option)}>{String(option)}</option>
                   {/each}
                 </select>
@@ -438,7 +438,7 @@
                               updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
                           >
-                            {#each propFieldSchema.enum as option}
+                            {#each propFieldSchema.enum as option (option)}
                               <option value={String(option)}>{String(option)}</option>
                             {/each}
                           </select>

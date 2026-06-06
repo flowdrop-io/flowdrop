@@ -434,7 +434,8 @@
           <span>{t.helpBuild}</span>
         </div>
       {/if}
-      {#each displayMessages as message, msgIndex}
+      <!-- Append-only chat log without stable IDs — index is the identity -->
+      {#each displayMessages as message, msgIndex (msgIndex)}
         {#if message.retryAttempt !== undefined}
           <div
             class="ai-chat-panel__retry-notice"
@@ -455,7 +456,7 @@
             {/if}
             {#if message.readOnlyResults && message.readOnlyResults.length > 0}
               <div class="ai-chat-panel__readonly-results">
-                {#each message.readOnlyResults as result}
+                {#each message.readOnlyResults as result, i (i)}
                   <pre class="ai-chat-panel__readonly-result">{result}</pre>
                 {/each}
               </div>

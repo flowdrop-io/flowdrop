@@ -180,7 +180,7 @@
 </script>
 
 <!-- Input Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleInputPorts as port, index}
+{#each visibleInputPorts as port, index (port.id)}
   <Handle
     type="target"
     position={Position.Left}
@@ -258,7 +258,7 @@
 </div>
 
 <!-- Output Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleOutputPorts as port, index}
+{#each visibleOutputPorts as port, index (port.id)}
   <Handle
     type="source"
     position={Position.Right}
