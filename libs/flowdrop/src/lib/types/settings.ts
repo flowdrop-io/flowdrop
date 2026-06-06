@@ -94,6 +94,19 @@ export interface BehaviorSettings {
   autoSave: boolean;
   /** Auto-save interval in milliseconds */
   autoSaveInterval: number;
+  /**
+   * Persist workflow drafts in browser storage.
+   *
+   * When enabled (default), unsaved changes are written to browser storage
+   * so they survive page reloads. On the default `localStorage` backend,
+   * drafts remain stored on the device even after the tab or browser is
+   * closed, until they are saved or cleared. Turning this off stops draft
+   * writes and removes the current draft.
+   *
+   * Caveat: the toggle applies per tab. Other tabs that are already open
+   * read settings at load time and keep writing drafts until reloaded.
+   */
+  storeDraftsInBrowser: boolean;
   /** Maximum number of undo history entries */
   undoHistoryLimit: number;
   /** Show confirmation dialog before deleting nodes */
@@ -216,6 +229,7 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
 export const DEFAULT_BEHAVIOR_SETTINGS: BehaviorSettings = {
   autoSave: false,
   autoSaveInterval: 30000,
+  storeDraftsInBrowser: true,
   undoHistoryLimit: 50,
   confirmDelete: false,
   chatAutoRetry: true

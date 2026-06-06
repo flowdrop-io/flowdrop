@@ -286,7 +286,15 @@ export {
   hasDraft,
   getDraftMetadata,
   clearAllDrafts,
+  setDraftStorage,
+  getDraftStorage,
+  resolveDraftStorage,
   DraftAutoSaveManager
+} from '../services/draftStorage.js';
+export type {
+  DraftStorageAdapter,
+  DraftStorageType,
+  DraftStorageOption
 } from '../services/draftStorage.js';
 
 // ============================================================================

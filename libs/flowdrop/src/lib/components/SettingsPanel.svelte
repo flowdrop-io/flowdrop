@@ -216,6 +216,16 @@
           maximum: 300000,
           default: 30000
         },
+        storeDraftsInBrowser: {
+          type: 'boolean',
+          title: 'Store Drafts in Browser',
+          description:
+            'Keep unsaved workflow drafts in browser storage so they survive page reloads. ' +
+            'Warning: drafts (including node configuration values) may stay stored on this ' +
+            'device even after the tab or browser is closed, until they are saved or cleared. ' +
+            'Turn off on shared devices.',
+          default: true
+        },
         undoHistoryLimit: {
           type: 'number',
           title: 'Undo History Limit',

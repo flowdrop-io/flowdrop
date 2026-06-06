@@ -1,7 +1,8 @@
 /**
  * Draft Storage Service for FlowDrop
  *
- * Handles saving and loading workflow drafts to/from localStorage.
+ * Handles saving and loading workflow drafts to/from browser storage
+ * (localStorage by default, configurable via {@link setDraftStorage}).
  * Provides interval-based auto-save functionality.
  *
  * @module services/draftStorage
@@ -14,6 +15,134 @@ import { logger } from '../utils/logger.js';
  * Default storage key prefix
  */
 const STORAGE_KEY_PREFIX = 'flowdrop:draft';
+
+// =========================================================================
+// Storage Adapter
+// =========================================================================
+
+/**
+ * Minimal storage adapter used for draft persistence.
+ *
+ * Implement this to back drafts with anything other than the built-in
+ * `localStorage` / `sessionStorage` options — e.g. an in-memory store, a
+ * key-prefixed wrapper, or a synchronous write-through cache.
+ *
+ * Note the interface is deliberately **synchronous**. Async backends
+ * (IndexedDB, network storage, WebCrypto-encrypted stores) cannot implement
+ * it directly — put a synchronous in-memory cache in front and flush to the
+ * async backend out of band. An `async` method assigned here will type-check
+ * (a Promise is assignable to `void`) but its errors are silently swallowed.
+ */
+export interface DraftStorageAdapter {
+  /** Read a value, or null when absent */
+  getItem(key: string): string | null;
+  /** Write a value */
+  setItem(key: string, value: string): void;
+  /** Remove a value */
+  removeItem(key: string): void;
+  /** List all keys currently held by the adapter */
+  keys(): string[];
+}
+
+/**
+ * Built-in storage backends
+ * - 'local': localStorage — drafts persist on the device even after the tab
+ *   or browser is closed, until saved or cleared
+ * - 'session': sessionStorage — drafts are scoped to the tab and removed
+ *   when it closes (they do not survive crash-and-reopen)
+ */
+export type DraftStorageType = 'local' | 'session';
+
+/** Accepted values for the `draftStorage` mount option */
+export type DraftStorageOption = DraftStorageType | DraftStorageAdapter;
+
+/**
+ * Wrap a Web Storage object (localStorage/sessionStorage) as a DraftStorageAdapter.
+ * The storage global is resolved lazily so SSR and test environments that
+ * replace the globals keep working.
+ */
+function createWebStorageAdapter(getStorage: () => Storage): DraftStorageAdapter {
+  return {
+    getItem: (key) => getStorage().getItem(key),
+    setItem: (key, value) => getStorage().setItem(key, value),
+    removeItem: (key) => getStorage().removeItem(key),
+    keys: () => {
+      const storage = getStorage();
+      const keys: string[] = [];
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (key !== null) {
+          keys.push(key);
+        }
+      }
+      return keys;
+    }
+  };
+}
+
+const WEB_STORAGE_ADAPTERS: Record<DraftStorageType, DraftStorageAdapter> = {
+  local: createWebStorageAdapter(() => localStorage),
+  session: createWebStorageAdapter(() => sessionStorage)
+};
+
+/**
+ * Module-level default adapter (localStorage by default).
+ *
+ * Used by the standalone helpers (`saveDraft`, `clearAllDrafts`, ...) when no
+ * explicit adapter is passed, and as the fallback for managers constructed
+ * without a `storage` option. Per-instance code (each `DraftAutoSaveManager`,
+ * each mounted app) captures its own resolved adapter instead, so multiple
+ * FlowDrop instances with different backends do not interfere.
+ */
+let activeAdapter: DraftStorageAdapter = WEB_STORAGE_ADAPTERS.local;
+
+/**
+ * Resolve a {@link DraftStorageOption} to a concrete adapter.
+ *
+ * `'local'` / `'session'` map to the built-in Web Storage adapters, a custom
+ * adapter is returned as-is, and `undefined` resolves to the current
+ * module-level default (see {@link setDraftStorage}).
+ */
+export function resolveDraftStorage(option?: DraftStorageOption): DraftStorageAdapter {
+  if (option === undefined) {
+    return activeAdapter;
+  }
+  return typeof option === 'string' ? WEB_STORAGE_ADAPTERS[option] : option;
+}
+
+/**
+ * Configure the module-level default for where workflow drafts are persisted.
+ *
+ * - `'local'` (default): `localStorage` — drafts survive reloads and browser
+ *   restarts, and remain stored on the device even after the tab is closed,
+ *   until saved or cleared.
+ * - `'session'`: `sessionStorage` — drafts are scoped to the current tab and
+ *   removed when it closes. Note this also means drafts do not survive a
+ *   crash-and-reopen.
+ * - A custom {@link DraftStorageAdapter} for anything else.
+ *
+ * This sets the default used by the standalone helpers and by managers
+ * constructed without an explicit `storage` option. Mounted apps capture
+ * their own adapter at mount time, so calling this does not retarget
+ * already-running instances. With multiple mounts the most recent mount's
+ * backend wins *for the standalone helpers only*.
+ *
+ * Security note: neither built-in backend protects against same-origin
+ * script access (XSS) — both are readable by any script on the page. If
+ * workflows may contain secrets in node configs, disable drafts via
+ * `features.autoSaveDraft: false` or keep them off-disk with a custom
+ * in-memory adapter.
+ */
+export function setDraftStorage(option: DraftStorageOption): void {
+  activeAdapter = resolveDraftStorage(option);
+}
+
+/**
+ * Get the current module-level default draft storage adapter
+ */
+export function getDraftStorage(): DraftStorageAdapter {
+  return activeAdapter;
+}
 
 /**
  * Draft metadata stored alongside the workflow
@@ -28,7 +157,7 @@ interface DraftMetadata {
 }
 
 /**
- * Complete draft data stored in localStorage
+ * Complete draft data stored in draft storage
  */
 interface StoredDraft {
   /** The workflow data */
@@ -60,13 +189,18 @@ export function getDraftStorageKey(workflowId?: string, customKey?: string): str
 }
 
 /**
- * Save a workflow draft to localStorage
+ * Save a workflow draft to draft storage
  *
  * @param workflow - The workflow to save
  * @param storageKey - The storage key to use
+ * @param storage - Adapter to write to (defaults to the module-level default)
  * @returns true if saved successfully, false otherwise
  */
-export function saveDraft(workflow: Workflow, storageKey: string): boolean {
+export function saveDraft(
+  workflow: Workflow,
+  storageKey: string,
+  storage: DraftStorageAdapter = activeAdapter
+): boolean {
   try {
     const draft: StoredDraft = {
       workflow,
@@ -77,24 +211,28 @@ export function saveDraft(workflow: Workflow, storageKey: string): boolean {
       }
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(draft));
+    storage.setItem(storageKey, JSON.stringify(draft));
     return true;
   } catch (error) {
-    // localStorage might be full or disabled
-    logger.warn('Failed to save draft to localStorage:', error);
+    // Storage might be full or disabled
+    logger.warn('Failed to save draft to storage:', error);
     return false;
   }
 }
 
 /**
- * Load a workflow draft from localStorage
+ * Load a workflow draft from draft storage
  *
  * @param storageKey - The storage key to load from
+ * @param storage - Adapter to read from (defaults to the module-level default)
  * @returns The stored draft, or null if not found
  */
-export function loadDraft(storageKey: string): StoredDraft | null {
+export function loadDraft(
+  storageKey: string,
+  storage: DraftStorageAdapter = activeAdapter
+): StoredDraft | null {
   try {
-    const stored = localStorage.getItem(storageKey);
+    const stored = storage.getItem(storageKey);
     if (!stored) {
       return null;
     }
@@ -103,27 +241,31 @@ export function loadDraft(storageKey: string): StoredDraft | null {
 
     // Validate the draft structure
     if (!draft.workflow || !draft.metadata) {
-      logger.warn('Invalid draft structure in localStorage');
+      logger.warn('Invalid draft structure in storage');
       return null;
     }
 
     return draft;
   } catch (error) {
-    logger.warn('Failed to load draft from localStorage:', error);
+    logger.warn('Failed to load draft from storage:', error);
     return null;
   }
 }
 
 /**
- * Delete a workflow draft from localStorage
+ * Delete a workflow draft from draft storage
  *
  * @param storageKey - The storage key to delete
+ * @param storage - Adapter to delete from (defaults to the module-level default)
  */
-export function deleteDraft(storageKey: string): void {
+export function deleteDraft(
+  storageKey: string,
+  storage: DraftStorageAdapter = activeAdapter
+): void {
   try {
-    localStorage.removeItem(storageKey);
+    storage.removeItem(storageKey);
   } catch (error) {
-    logger.warn('Failed to delete draft from localStorage:', error);
+    logger.warn('Failed to delete draft from storage:', error);
   }
 }
 
@@ -131,11 +273,15 @@ export function deleteDraft(storageKey: string): void {
  * Check if a draft exists for a given storage key
  *
  * @param storageKey - The storage key to check
+ * @param storage - Adapter to check (defaults to the module-level default)
  * @returns true if a draft exists
  */
-export function hasDraft(storageKey: string): boolean {
+export function hasDraft(
+  storageKey: string,
+  storage: DraftStorageAdapter = activeAdapter
+): boolean {
   try {
-    return localStorage.getItem(storageKey) !== null;
+    return storage.getItem(storageKey) !== null;
   } catch {
     return false;
   }
@@ -147,15 +293,19 @@ export function hasDraft(storageKey: string): boolean {
  * Useful for displaying draft information without parsing the entire workflow.
  *
  * @param storageKey - The storage key to check
+ * @param storage - Adapter to read from (defaults to the module-level default)
  * @returns Draft metadata, or null if not found
  */
-export function getDraftMetadata(storageKey: string): DraftMetadata | null {
-  const draft = loadDraft(storageKey);
+export function getDraftMetadata(
+  storageKey: string,
+  storage: DraftStorageAdapter = activeAdapter
+): DraftMetadata | null {
+  const draft = loadDraft(storageKey, storage);
   return draft?.metadata ?? null;
 }
 
 /**
- * Clear all FlowDrop drafts from localStorage
+ * Clear all FlowDrop drafts from draft storage
  *
  * Removes every key beginning with `flowdrop:draft:`. Intended to be called
  * from a host application's logout handler so workflow drafts do not persist
@@ -164,32 +314,35 @@ export function getDraftMetadata(storageKey: string): DraftMetadata | null {
  * @param extraKeys - Additional explicit keys to remove. Pass any custom
  *   `draftStorageKey` values configured at mount time so they are cleared
  *   alongside the default-prefixed keys.
+ * @param storage - Adapter to clear (defaults to the module-level default)
  * @returns The number of entries removed.
  */
-export function clearAllDrafts(extraKeys: readonly string[] = []): number {
+export function clearAllDrafts(
+  extraKeys: readonly string[] = [],
+  storage: DraftStorageAdapter = activeAdapter
+): number {
   try {
     const keysToRemove = new Set<string>();
 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(`${STORAGE_KEY_PREFIX}:`)) {
+    for (const key of storage.keys()) {
+      if (key.startsWith(`${STORAGE_KEY_PREFIX}:`)) {
         keysToRemove.add(key);
       }
     }
 
     for (const key of extraKeys) {
-      if (localStorage.getItem(key) !== null) {
+      if (storage.getItem(key) !== null) {
         keysToRemove.add(key);
       }
     }
 
     for (const key of keysToRemove) {
-      localStorage.removeItem(key);
+      storage.removeItem(key);
     }
 
     return keysToRemove.size;
   } catch (error) {
-    logger.warn('Failed to clear drafts from localStorage:', error);
+    logger.warn('Failed to clear drafts from storage:', error);
     return 0;
   }
 }
@@ -219,6 +372,19 @@ export class DraftAutoSaveManager {
   /** Function to check if workflow is dirty */
   private isDirty: () => boolean;
 
+  /**
+   * Runtime gate for draft persistence (e.g. a user-facing opt-out setting).
+   * Checked on every save, so it can change after construction.
+   */
+  private isPersistenceAllowed: () => boolean;
+
+  /**
+   * Storage adapter this instance writes to.
+   * Captured at construction, so a later `setDraftStorage()` call (e.g. from
+   * another FlowDrop mount on the same page) cannot retarget this manager.
+   */
+  private storage: DraftStorageAdapter;
+
   /** Last saved workflow hash (for change detection) */
   private lastSavedHash: string | null = null;
 
@@ -233,12 +399,18 @@ export class DraftAutoSaveManager {
     enabled: boolean;
     getWorkflow: () => Workflow | null;
     isDirty: () => boolean;
+    /** Optional runtime gate — return false to suppress draft writes (default: always allowed) */
+    isPersistenceAllowed?: () => boolean;
+    /** Storage backend for this instance (default: the module-level default at construction time) */
+    storage?: DraftStorageOption;
   }) {
     this.storageKey = options.storageKey;
     this.interval = options.interval;
     this.enabled = options.enabled;
     this.getWorkflow = options.getWorkflow;
     this.isDirty = options.isDirty;
+    this.isPersistenceAllowed = options.isPersistenceAllowed ?? (() => true);
+    this.storage = resolveDraftStorage(options.storage);
   }
 
   /**
@@ -272,7 +444,7 @@ export class DraftAutoSaveManager {
    * @returns true if a draft was saved
    */
   saveIfDirty(): boolean {
-    if (!this.enabled) {
+    if (!this.enabled || !this.isPersistenceAllowed()) {
       return false;
     }
 
@@ -292,7 +464,7 @@ export class DraftAutoSaveManager {
       return false;
     }
 
-    const saved = saveDraft(workflow, this.storageKey);
+    const saved = saveDraft(workflow, this.storageKey, this.storage);
     if (saved) {
       this.lastSavedHash = currentHash;
     }
@@ -308,12 +480,16 @@ export class DraftAutoSaveManager {
    * @returns true if saved successfully
    */
   forceSave(): boolean {
+    if (!this.isPersistenceAllowed()) {
+      return false;
+    }
+
     const workflow = this.getWorkflow();
     if (!workflow) {
       return false;
     }
 
-    const saved = saveDraft(workflow, this.storageKey);
+    const saved = saveDraft(workflow, this.storageKey, this.storage);
     if (saved) {
       this.lastSavedHash = this.hashWorkflow(workflow);
     }
@@ -325,7 +501,7 @@ export class DraftAutoSaveManager {
    * Clear the draft from storage
    */
   clearDraft(): void {
-    deleteDraft(this.storageKey);
+    deleteDraft(this.storageKey, this.storage);
     this.lastSavedHash = null;
   }
 
@@ -350,10 +526,14 @@ export class DraftAutoSaveManager {
    */
   updateStorageKey(newKey: string): void {
     // If there's an existing draft with the old key, migrate it
-    const existingDraft = loadDraft(this.storageKey);
+    const existingDraft = loadDraft(this.storageKey, this.storage);
     if (existingDraft && this.storageKey !== newKey) {
-      deleteDraft(this.storageKey);
-      saveDraft(existingDraft.workflow, newKey);
+      deleteDraft(this.storageKey, this.storage);
+      // Migration is still a write — respect the user's opt-out. The old
+      // draft is deleted either way, which is in line with opting out.
+      if (this.isPersistenceAllowed()) {
+        saveDraft(existingDraft.workflow, newKey, this.storage);
+      }
     }
 
     this.storageKey = newKey;

@@ -33,11 +33,18 @@ import {
 import {
   DraftAutoSaveManager,
   getDraftStorageKey,
-  clearAllDrafts as clearAllDraftsFromStorage
+  setDraftStorage,
+  resolveDraftStorage,
+  clearAllDrafts as clearAllDraftsFromStorage,
+  type DraftStorageOption
 } from './services/draftStorage.js';
 import { mergeFeatures } from './types/events.js';
 import type { PartialSettings, SettingsCategory } from './types/settings.js';
-import { initializeSettings } from './stores/settingsStore.svelte.js';
+import {
+  initializeSettings,
+  getBehaviorSettings,
+  onSettingsChange
+} from './stores/settingsStore.svelte.js';
 import { logger } from './utils/logger.js';
 import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
 
@@ -105,8 +112,30 @@ export interface FlowDropMountOptions {
   settings?: PartialSettings;
 
   // NEW: Draft storage key
-  /** Custom storage key for localStorage drafts */
+  /** Custom storage key for workflow drafts */
   draftStorageKey?: string;
+
+  // NEW: Draft storage backend
+  /**
+   * Where workflow drafts are persisted.
+   *
+   * - `'local'` (default): `localStorage` — drafts survive reloads and remain
+   *   stored on the device even after the tab or browser is closed, until
+   *   saved or cleared. Call `clearAllDrafts()` on logout for shared devices.
+   * - `'session'`: `sessionStorage` — drafts are scoped to the tab and removed
+   *   when it closes (they do not survive crash-and-reopen).
+   * - A custom `DraftStorageAdapter` — note the adapter interface is
+   *   synchronous, so it suits in-memory stores and write-through caches;
+   *   async backends (IndexedDB, network) need a sync cache in front.
+   *
+   * The resolved adapter is captured per mount, so multiple FlowDrop
+   * instances on one page can use different backends.
+   *
+   * Note: neither built-in backend protects against same-origin script access
+   * (XSS). End users can additionally opt out of draft persistence at runtime
+   * via the "Store Drafts in Browser" behavior setting.
+   */
+  draftStorage?: DraftStorageOption;
 
   // NEW: Workflow format adapters
   /** Custom workflow format adapters to register */
@@ -160,7 +189,8 @@ export interface MountedFlowDropApp {
   export: () => void;
 
   /**
-   * Clear all FlowDrop workflow drafts from `localStorage`.
+   * Clear all FlowDrop workflow drafts from the configured draft storage
+   * (`localStorage` unless changed via the `draftStorage` mount option).
    *
    * Removes every key beginning with `flowdrop:draft:` plus the custom
    * `draftStorageKey` configured at mount time (if any). Call this from
@@ -179,6 +209,8 @@ interface MountedAppState {
   svelteApp: ReturnType<typeof mount>;
   draftManager: DraftAutoSaveManager | null;
   eventHandlers: FlowDropEventHandlers | null;
+  /** Unsubscribe from the draft opt-out settings listener (null when drafts are disabled) */
+  unsubscribeDraftSettings: (() => void) | null;
 }
 
 /**
@@ -231,6 +263,7 @@ export async function mountFlowDropApp(
     features: userFeatures,
     settings: initialSettings,
     draftStorageKey: customDraftKey,
+    draftStorage,
     formatAdapters,
     theme,
     settingsCategories,
@@ -247,6 +280,14 @@ export async function mountFlowDropApp(
 
   // Merge features with defaults
   const features = mergeFeatures(userFeatures);
+
+  // Resolve this instance's draft storage backend. The adapter is captured
+  // here and threaded into the draft manager and clearAllDrafts, so a later
+  // mount with a different backend cannot retarget this instance. The
+  // module-level default is also updated for the standalone helpers
+  // (last mount wins there — instance paths do not depend on it).
+  const draftStorageAdapter = resolveDraftStorage(draftStorage ?? 'local');
+  setDraftStorage(draftStorageAdapter);
 
   // Apply initial settings overrides and initialize theme
   await initializeSettings({
@@ -341,6 +382,7 @@ export async function mountFlowDropApp(
 
   // Set up draft auto-save manager
   let draftManager: DraftAutoSaveManager | null = null;
+  let unsubscribeDraftSettings: (() => void) | null = null;
 
   if (features.autoSaveDraft) {
     const storageKey = getDraftStorageKey(workflow?.id, customDraftKey);
@@ -350,17 +392,33 @@ export async function mountFlowDropApp(
       interval: features.autoSaveDraftInterval,
       enabled: features.autoSaveDraft,
       getWorkflow: getWorkflowFromStore,
-      isDirty
+      isDirty,
+      // User-facing opt-out: the "Store Drafts in Browser" behavior setting.
+      // Checked on every save so toggling it takes effect immediately.
+      isPersistenceAllowed: () => getBehaviorSettings().storeDraftsInBrowser,
+      storage: draftStorageAdapter
     });
 
     draftManager.start();
+
+    // When the user opts out, also remove the draft already in storage.
+    unsubscribeDraftSettings = onSettingsChange((event) => {
+      if (
+        event.category === 'behavior' &&
+        event.key === 'storeDraftsInBrowser' &&
+        event.newValue === false
+      ) {
+        draftManager?.clearDraft();
+      }
+    });
   }
 
   // Store state for cleanup
   const state: MountedAppState = {
     svelteApp,
     draftManager,
-    eventHandlers: eventHandlers ?? null
+    eventHandlers: eventHandlers ?? null,
+    unsubscribeDraftSettings
   };
 
   // Create the mounted app interface
@@ -376,11 +434,17 @@ export async function mountFlowDropApp(
 
       // Stop draft manager
       if (state.draftManager) {
-        // Save one final draft if dirty
+        // Save one final draft if dirty (no-op when the user opted out)
         if (isDirty()) {
           state.draftManager.forceSave();
         }
         state.draftManager.stop();
+      }
+
+      // Stop listening for the draft opt-out setting
+      if (state.unsubscribeDraftSettings) {
+        state.unsubscribeDraftSettings();
+        state.unsubscribeDraftSettings = null;
       }
 
       // Clear event callbacks
@@ -436,7 +500,8 @@ export async function mountFlowDropApp(
 
     clearAllDrafts: () => {
       const extras = customDraftKey ? [customDraftKey] : [];
-      const removed = clearAllDraftsFromStorage(extras);
+      // Clear this instance's backend, not whatever the module default is now
+      const removed = clearAllDraftsFromStorage(extras, draftStorageAdapter);
       if (state.draftManager) {
         state.draftManager.markAsSaved();
       }

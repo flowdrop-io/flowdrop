@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Configurable draft storage backend — `draftStorage` mount option**: workflow drafts (which include node configuration values, potentially secrets) previously always landed in `localStorage`, where they persist on the device even after the tab or browser is closed. The new `draftStorage` option on `mountFlowDropApp` accepts `'local'` (default, unchanged behavior), `'session'` (tab-scoped `sessionStorage` — cleared on tab close, at the cost of crash-and-reopen recovery), or a custom `DraftStorageAdapter` (`getItem`/`setItem`/`removeItem`/`keys`). The adapter interface is **synchronous** — it suits in-memory stores and write-through caches; async backends (IndexedDB, network) need a sync cache in front. The resolved adapter is **captured per mount** (and per `DraftAutoSaveManager`), so multiple FlowDrop instances on one page can use different backends without interfering; the standalone helpers (`saveDraft`, `loadDraft`, `clearAllDrafts`, …) default to the most recent mount's backend and now accept an explicit adapter argument. `setDraftStorage`/`getDraftStorage`/`resolveDraftStorage` and the adapter types are exported from `@flowdrop/flowdrop/editor`. Note neither built-in backend protects against same-origin script access (XSS) — for secrets, prefer `features.autoSaveDraft: false` or an in-memory adapter.
+- **End-user draft opt-out — "Store Drafts in Browser" behavior setting** (`behavior.storeDraftsInBrowser`, default `true`): a user-facing toggle in the settings panel's Behavior tab that gates all draft writes at runtime — including the key migration after a workflow's first save — and removes the current draft when switched off. The setting description warns that drafts may stay stored on the device even after the tab or browser is closed. Applies per tab: already-open tabs read settings at load time and keep writing drafts until reloaded. Hosts can pre-seed it via the `settings` mount option like any other setting.
+
 ## [1.15.0] - 2026-05-28
 
 ### Fixed

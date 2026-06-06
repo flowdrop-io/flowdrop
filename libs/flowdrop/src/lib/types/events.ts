@@ -201,10 +201,13 @@ export interface FlowDropEventHandlers {
  */
 export interface FlowDropFeatures {
   /**
-   * Save drafts to localStorage automatically
+   * Save drafts to browser storage automatically
    *
    * When enabled, FlowDrop will periodically save the current workflow
-   * to localStorage as a draft. This helps prevent data loss.
+   * to draft storage (localStorage by default, configurable via the
+   * `draftStorage` mount option). This helps prevent data loss. End users
+   * can additionally opt out at runtime via the "Store Drafts in Browser"
+   * behavior setting.
    *
    * @default true
    */
@@ -213,7 +216,7 @@ export interface FlowDropFeatures {
   /**
    * Auto-save interval in milliseconds
    *
-   * How often to save drafts to localStorage when autoSaveDraft is enabled.
+   * How often to save drafts to storage when autoSaveDraft is enabled.
    *
    * @default 30000 (30 seconds)
    */

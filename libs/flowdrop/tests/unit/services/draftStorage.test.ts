@@ -13,41 +13,56 @@ import {
   hasDraft,
   getDraftMetadata,
   clearAllDrafts,
-  DraftAutoSaveManager
+  setDraftStorage,
+  getDraftStorage,
+  resolveDraftStorage,
+  DraftAutoSaveManager,
+  type DraftStorageAdapter
 } from '$lib/services/draftStorage.js';
 import { createTestWorkflow } from '../../utils/index.js';
 
+/**
+ * Build a Web Storage mock backed by a Map
+ */
+function createMockWebStorage(backing: Map<string, string>): Storage {
+  return {
+    getItem: vi.fn((key: string) => backing.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      backing.set(key, value);
+    }),
+    removeItem: vi.fn((key: string) => {
+      backing.delete(key);
+    }),
+    clear: vi.fn(() => {
+      backing.clear();
+    }),
+    key: vi.fn((index: number) => {
+      const keys = Array.from(backing.keys());
+      return keys[index] ?? null;
+    }),
+    get length() {
+      return backing.size;
+    }
+  } as Storage;
+}
+
 describe('Draft Storage Service', () => {
-  // Mock localStorage
+  // Mock localStorage / sessionStorage
   let mockStorage: Map<string, string>;
+  let mockSessionStorage: Map<string, string>;
 
   beforeEach(() => {
-    // Create a fresh mock storage for each test
+    // Create fresh mock storages for each test
     mockStorage = new Map();
+    mockSessionStorage = new Map();
 
-    // Mock localStorage
-    global.localStorage = {
-      getItem: vi.fn((key: string) => mockStorage.get(key) ?? null),
-      setItem: vi.fn((key: string, value: string) => {
-        mockStorage.set(key, value);
-      }),
-      removeItem: vi.fn((key: string) => {
-        mockStorage.delete(key);
-      }),
-      clear: vi.fn(() => {
-        mockStorage.clear();
-      }),
-      key: vi.fn((index: number) => {
-        const keys = Array.from(mockStorage.keys());
-        return keys[index] ?? null;
-      }),
-      get length() {
-        return mockStorage.size;
-      }
-    } as Storage;
+    global.localStorage = createMockWebStorage(mockStorage);
+    global.sessionStorage = createMockWebStorage(mockSessionStorage);
   });
 
   afterEach(() => {
+    // Restore the default backend for subsequent tests
+    setDraftStorage('local');
     vi.clearAllMocks();
   });
 
@@ -309,6 +324,111 @@ describe('Draft Storage Service', () => {
     });
   });
 
+  describe('storage backends (setDraftStorage)', () => {
+    it('defaults to localStorage', () => {
+      const workflow = createTestWorkflow();
+      saveDraft(workflow, 'flowdrop:draft:wf-1');
+
+      expect(mockStorage.has('flowdrop:draft:wf-1')).toBe(true);
+      expect(mockSessionStorage.has('flowdrop:draft:wf-1')).toBe(false);
+    });
+
+    it("routes all operations to sessionStorage when set to 'session'", () => {
+      setDraftStorage('session');
+      const workflow = createTestWorkflow();
+
+      saveDraft(workflow, 'flowdrop:draft:wf-1');
+      expect(mockSessionStorage.has('flowdrop:draft:wf-1')).toBe(true);
+      expect(mockStorage.has('flowdrop:draft:wf-1')).toBe(false);
+
+      expect(hasDraft('flowdrop:draft:wf-1')).toBe(true);
+      expect(loadDraft('flowdrop:draft:wf-1')?.workflow).toEqual(workflow);
+
+      deleteDraft('flowdrop:draft:wf-1');
+      expect(mockSessionStorage.has('flowdrop:draft:wf-1')).toBe(false);
+    });
+
+    it("switching back to 'local' does not see session-stored drafts", () => {
+      setDraftStorage('session');
+      saveDraft(createTestWorkflow(), 'flowdrop:draft:wf-1');
+
+      setDraftStorage('local');
+      expect(hasDraft('flowdrop:draft:wf-1')).toBe(false);
+    });
+
+    it('clearAllDrafts operates on the active backend only', () => {
+      const workflow = createTestWorkflow();
+      saveDraft(workflow, 'flowdrop:draft:local-wf'); // localStorage (default)
+
+      setDraftStorage('session');
+      saveDraft(workflow, 'flowdrop:draft:session-wf');
+
+      const removed = clearAllDrafts();
+
+      expect(removed).toBe(1);
+      expect(mockSessionStorage.has('flowdrop:draft:session-wf')).toBe(false);
+      // localStorage draft untouched while session backend is active
+      expect(mockStorage.has('flowdrop:draft:local-wf')).toBe(true);
+    });
+
+    it('supports a custom adapter', () => {
+      const backing = new Map<string, string>();
+      const adapter: DraftStorageAdapter = {
+        getItem: (key) => backing.get(key) ?? null,
+        setItem: (key, value) => {
+          backing.set(key, value);
+        },
+        removeItem: (key) => {
+          backing.delete(key);
+        },
+        keys: () => Array.from(backing.keys())
+      };
+
+      setDraftStorage(adapter);
+      expect(getDraftStorage()).toBe(adapter);
+
+      const workflow = createTestWorkflow();
+      saveDraft(workflow, 'flowdrop:draft:wf-1');
+
+      expect(backing.has('flowdrop:draft:wf-1')).toBe(true);
+      expect(mockStorage.size).toBe(0);
+      expect(mockSessionStorage.size).toBe(0);
+
+      expect(clearAllDrafts()).toBe(1);
+      expect(backing.size).toBe(0);
+    });
+
+    it('standalone helpers accept an explicit adapter, bypassing the module default', () => {
+      const workflow = createTestWorkflow();
+      const sessionAdapter = resolveDraftStorage('session');
+
+      // Module default is 'local' — explicit adapter wins
+      saveDraft(workflow, 'flowdrop:draft:wf-1', sessionAdapter);
+      expect(mockSessionStorage.has('flowdrop:draft:wf-1')).toBe(true);
+      expect(mockStorage.has('flowdrop:draft:wf-1')).toBe(false);
+
+      expect(hasDraft('flowdrop:draft:wf-1', sessionAdapter)).toBe(true);
+      expect(loadDraft('flowdrop:draft:wf-1', sessionAdapter)?.workflow).toEqual(workflow);
+      expect(clearAllDrafts([], sessionAdapter)).toBe(1);
+      expect(mockSessionStorage.size).toBe(0);
+    });
+
+    it('resolveDraftStorage maps names to built-ins and passes adapters through', () => {
+      const adapter: DraftStorageAdapter = {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+        keys: () => []
+      };
+
+      expect(resolveDraftStorage(adapter)).toBe(adapter);
+      expect(resolveDraftStorage('local')).toBe(resolveDraftStorage('local'));
+      expect(resolveDraftStorage('local')).not.toBe(resolveDraftStorage('session'));
+      // undefined resolves to the current module default
+      expect(resolveDraftStorage()).toBe(getDraftStorage());
+    });
+  });
+
   describe('DraftAutoSaveManager', () => {
     let manager: DraftAutoSaveManager;
     let getWorkflow: ReturnType<typeof vi.fn>;
@@ -424,6 +544,164 @@ describe('Draft Storage Service', () => {
         const result = manager.saveIfDirty();
 
         expect(result).toBe(true);
+      });
+    });
+
+    describe('isPersistenceAllowed (user opt-out)', () => {
+      let persistenceAllowed: boolean;
+      let gatedManager: DraftAutoSaveManager;
+
+      beforeEach(() => {
+        persistenceAllowed = true;
+        gatedManager = new DraftAutoSaveManager({
+          storageKey: 'test-gated',
+          interval: 1000,
+          enabled: true,
+          getWorkflow,
+          isDirty,
+          isPersistenceAllowed: () => persistenceAllowed
+        });
+      });
+
+      it('blocks saveIfDirty when persistence is not allowed', () => {
+        getWorkflow.mockReturnValue(createTestWorkflow());
+        isDirty.mockReturnValue(true);
+        persistenceAllowed = false;
+
+        expect(gatedManager.saveIfDirty()).toBe(false);
+        expect(hasDraft('test-gated')).toBe(false);
+      });
+
+      it('blocks forceSave when persistence is not allowed', () => {
+        getWorkflow.mockReturnValue(createTestWorkflow());
+        persistenceAllowed = false;
+
+        expect(gatedManager.forceSave()).toBe(false);
+        expect(hasDraft('test-gated')).toBe(false);
+      });
+
+      it('takes effect immediately when toggled at runtime', () => {
+        getWorkflow.mockReturnValue(createTestWorkflow());
+        isDirty.mockReturnValue(true);
+
+        persistenceAllowed = false;
+        expect(gatedManager.saveIfDirty()).toBe(false);
+
+        persistenceAllowed = true;
+        expect(gatedManager.saveIfDirty()).toBe(true);
+        expect(hasDraft('test-gated')).toBe(true);
+      });
+
+      it('defaults to allowed when the option is omitted', () => {
+        getWorkflow.mockReturnValue(createTestWorkflow());
+        isDirty.mockReturnValue(true);
+
+        expect(manager.saveIfDirty()).toBe(true);
+      });
+
+      it('updateStorageKey deletes the old draft but does not re-save it when opted out', () => {
+        // A stale draft exists under the old key (e.g. written before opting out)
+        saveDraft(createTestWorkflow({ name: 'Stale' }), 'test-gated');
+
+        persistenceAllowed = false;
+        gatedManager.updateStorageKey('test-gated-migrated');
+
+        expect(hasDraft('test-gated')).toBe(false);
+        expect(hasDraft('test-gated-migrated')).toBe(false);
+        expect(gatedManager.getStorageKey()).toBe('test-gated-migrated');
+      });
+
+      it('updateStorageKey migrates normally when persistence is allowed', () => {
+        saveDraft(createTestWorkflow({ name: 'Live' }), 'test-gated');
+
+        gatedManager.updateStorageKey('test-gated-migrated');
+
+        expect(hasDraft('test-gated')).toBe(false);
+        expect(loadDraft('test-gated-migrated')?.workflow.name).toBe('Live');
+      });
+    });
+
+    describe('per-instance storage backend', () => {
+      it('a manager constructed with storage: "session" writes there regardless of the module default', () => {
+        const sessionManager = new DraftAutoSaveManager({
+          storageKey: 'flowdrop:draft:wf-session',
+          interval: 1000,
+          enabled: true,
+          getWorkflow: vi.fn().mockReturnValue(createTestWorkflow()),
+          isDirty: vi.fn().mockReturnValue(true),
+          storage: 'session'
+        });
+
+        sessionManager.forceSave();
+
+        expect(mockSessionStorage.has('flowdrop:draft:wf-session')).toBe(true);
+        expect(mockStorage.has('flowdrop:draft:wf-session')).toBe(false);
+      });
+
+      it('two managers with different backends do not interfere', () => {
+        const make = (storage: 'local' | 'session', name: string) =>
+          new DraftAutoSaveManager({
+            storageKey: 'flowdrop:draft:shared-key',
+            interval: 1000,
+            enabled: true,
+            getWorkflow: vi.fn().mockReturnValue(createTestWorkflow({ name })),
+            isDirty: vi.fn().mockReturnValue(true),
+            storage
+          });
+
+        const localManager = make('local', 'Local Instance');
+        const sessionManager = make('session', 'Session Instance');
+
+        localManager.forceSave();
+        sessionManager.forceSave();
+
+        expect(JSON.parse(mockStorage.get('flowdrop:draft:shared-key')!).workflow.name).toBe(
+          'Local Instance'
+        );
+        expect(JSON.parse(mockSessionStorage.get('flowdrop:draft:shared-key')!).workflow.name).toBe(
+          'Session Instance'
+        );
+
+        // Clearing one instance leaves the other's draft alone
+        localManager.clearDraft();
+        expect(mockStorage.has('flowdrop:draft:shared-key')).toBe(false);
+        expect(mockSessionStorage.has('flowdrop:draft:shared-key')).toBe(true);
+      });
+
+      it('a later setDraftStorage() call does not retarget an existing manager', () => {
+        const captured = new DraftAutoSaveManager({
+          storageKey: 'flowdrop:draft:captured',
+          interval: 1000,
+          enabled: true,
+          getWorkflow: vi.fn().mockReturnValue(createTestWorkflow()),
+          isDirty: vi.fn().mockReturnValue(true)
+          // no storage option — captures the module default ('local') at construction
+        });
+
+        setDraftStorage('session'); // e.g. a second mount on the same page
+
+        captured.forceSave();
+
+        expect(mockStorage.has('flowdrop:draft:captured')).toBe(true);
+        expect(mockSessionStorage.has('flowdrop:draft:captured')).toBe(false);
+      });
+
+      it('updateStorageKey migrates within the instance backend', () => {
+        const sessionManager = new DraftAutoSaveManager({
+          storageKey: 'flowdrop:draft:old',
+          interval: 1000,
+          enabled: true,
+          getWorkflow: vi.fn().mockReturnValue(createTestWorkflow()),
+          isDirty: vi.fn().mockReturnValue(true),
+          storage: 'session'
+        });
+
+        sessionManager.forceSave();
+        sessionManager.updateStorageKey('flowdrop:draft:new-id');
+
+        expect(mockSessionStorage.has('flowdrop:draft:old')).toBe(false);
+        expect(mockSessionStorage.has('flowdrop:draft:new-id')).toBe(true);
+        expect(mockStorage.size).toBe(0);
       });
     });
 
