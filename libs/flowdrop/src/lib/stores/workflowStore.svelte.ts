@@ -15,18 +15,22 @@ import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
 import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 import type { WorkflowChangeType } from '$lib/types/events.js';
 import type { HistoryService } from '../services/historyService.js';
+import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
 
-type WorkflowMetadata = NonNullable<Workflow['metadata']>;
+type WorkflowMetadata = Workflow['metadata'];
 
 /**
  * Safely build updated workflow metadata, providing defaults for required fields.
+ *
+ * Accepts loosely-typed legacy metadata so it can absorb 1.x documents (where
+ * the schema-version field was named `version`) during load-time healing.
  */
 function buildMetadata(
-  existing: Workflow['metadata'],
+  existing?: Partial<WorkflowMetadata> & { version?: string },
   updates?: Partial<WorkflowMetadata>
 ): WorkflowMetadata {
   return {
-    version: existing?.version ?? '1.0',
+    schemaVersion: existing?.schemaVersion ?? existing?.version ?? WORKFLOW_SCHEMA_VERSION,
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     author: existing?.author,
@@ -36,6 +40,42 @@ function buildMetadata(
     format: existing?.format,
     ...updates
   };
+}
+
+/**
+ * Loosely-typed shape a workflow may arrive in before healing — a 1.x document
+ * may have no `metadata`, or metadata carrying the legacy `version` key instead
+ * of `schemaVersion`.
+ */
+type LegacyWorkflow = Omit<Workflow, 'metadata'> & {
+  metadata?: (Partial<WorkflowMetadata> & { version?: string }) | null;
+};
+
+/**
+ * Normalize workflow metadata at load time (the only back-compat path we keep,
+ * mirroring the storage-key migration in commit 8fab9157).
+ *
+ * Rules:
+ * - missing `metadata` → `buildMetadata(undefined)` (fresh required defaults)
+ * - legacy `version` key present → copied to `schemaVersion` when absent, then
+ *   the legacy key is dropped
+ *
+ * Idempotent: re-running on an already-healed workflow returns equivalent
+ * metadata (round-trip stable).
+ */
+export function normalizeWorkflowMetadata(workflow: LegacyWorkflow): Workflow {
+  const raw = workflow.metadata;
+  if (!raw) {
+    return { ...workflow, metadata: buildMetadata(undefined) } as Workflow;
+  }
+
+  const { version: legacyVersion, ...rest } = raw;
+  const healed: WorkflowMetadata = {
+    ...(rest as WorkflowMetadata),
+    schemaVersion: rest.schemaVersion ?? legacyVersion ?? WORKFLOW_SCHEMA_VERSION
+  };
+
+  return { ...workflow, metadata: healed } as Workflow;
 }
 
 /**
@@ -258,7 +298,7 @@ export class WorkflowStore {
   get metadata(): WorkflowMetadata {
     return (
       this.#workflow?.metadata ?? {
-        version: '1.0.0',
+        schemaVersion: WORKFLOW_SCHEMA_VERSION,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         versionId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -301,12 +341,12 @@ export class WorkflowStore {
   }
 
   /** Workflow metadata change summary. */
-  get metadataChangeSummary(): { createdAt: string; updatedAt: string; version: string } {
+  get metadataChangeSummary(): { createdAt: string; updatedAt: string; schemaVersion: string } {
     const metadata = this.metadata;
     return {
       createdAt: metadata.createdAt,
       updatedAt: metadata.updatedAt,
-      version: metadata.version ?? '1.0.0'
+      schemaVersion: metadata.schemaVersion ?? WORKFLOW_SCHEMA_VERSION
     };
   }
 
@@ -450,6 +490,7 @@ export class WorkflowStore {
    * This sets the initial saved snapshot, clears dirty state, and initializes history.
    */
   initialize(workflow: Workflow): void {
+    workflow = normalizeWorkflowMetadata(workflow);
     workflow = healMissingNodeIds(workflow);
     this.#workflow = workflow;
     // Reset version counters — workflow is "clean" after initialization
@@ -481,6 +522,7 @@ export class WorkflowStore {
    */
   restoreFromHistory(workflow: Workflow): void {
     this.#restoringFromHistory = true;
+    workflow = normalizeWorkflowMetadata(workflow);
     this.#workflow = workflow;
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');

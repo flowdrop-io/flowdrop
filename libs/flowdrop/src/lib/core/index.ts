@@ -497,7 +497,7 @@ export type { AgentSpecExecutionHandle } from '../services/agentSpecExecutionSer
 // Workflow JSON Schema
 // ============================================================================
 
-export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schema/index.js';
+export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schemas/index.js';
 
 // ============================================================================
 // Theme System (FlowDrop UI themes — skin + config bundles)

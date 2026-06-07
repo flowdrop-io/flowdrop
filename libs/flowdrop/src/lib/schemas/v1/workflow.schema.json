@@ -1053,9 +1053,9 @@
     "WorkflowMetadata": {
       "type": "object",
       "properties": {
-        "version": {
+        "schemaVersion": {
           "type": "string",
-          "description": "Workflow version"
+          "description": "Workflow schema format version — identifies the document format, not the workflow's own revision."
         },
         "createdAt": {
           "type": "string",
@@ -1093,7 +1093,7 @@
         }
       },
       "required": [
-        "version",
+        "schemaVersion",
         "createdAt",
         "updatedAt"
       ]

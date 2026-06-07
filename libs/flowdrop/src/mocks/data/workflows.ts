@@ -719,7 +719,7 @@ export const demoAIContentWorkflow: Workflow = {
     }
   ] as WorkflowEdge[],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2025-11-12T21:29:32.473Z',
     updatedAt: '2025-11-12T21:29:32.473Z'
   }
@@ -2044,7 +2044,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
   ],
   edges: [],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2025-12-29T08:18:13.515Z',
     updatedAt: '2025-12-29T08:27:18.084Z'
   }
@@ -2572,7 +2572,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
     }
   ],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2025-12-29T08:32:55.061Z',
     updatedAt: '2025-12-29T08:40:01.444Z'
   }
@@ -3075,7 +3075,7 @@ export const demoForEachLoopWorkflow: Workflow = {
     }
   ],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2026-02-05T21:24:59.988Z',
     updatedAt: '2026-02-05T21:24:59.988Z'
   }
@@ -3633,7 +3633,7 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
     }
   ],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2026-02-05T21:22:21.689Z',
     updatedAt: '2026-02-05T21:22:21.689Z'
   }
@@ -3753,7 +3753,7 @@ export const demoDependentAutocompleteWorkflow: Workflow = (() => {
     ],
     edges: [],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2026-05-28T10:00:00.000Z',
       updatedAt: '2026-05-28T10:00:00.000Z'
     }
@@ -3816,7 +3816,7 @@ export const demoApiVariablesWorkflow: Workflow = (() => {
     ] as WorkflowNode[],
     edges: [] as WorkflowEdge[],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       author: 'FlowDrop Demo',
       tags: ['demo', 'api', 'variables', 'template', 'backend'],
       createdAt: '2026-02-03T10:00:00.000Z',
@@ -3967,7 +3967,7 @@ export const demoAgentSpecLLMPipelineWorkflow: Workflow = (() => {
       }
     ] as WorkflowEdge[],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2025-01-15T10:00:00.000Z',
       updatedAt: '2025-01-15T10:00:00.000Z',
       tags: ['agent-spec', 'llm', 'demo'],
@@ -4226,7 +4226,7 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
       }
     ] as WorkflowEdge[],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2025-01-15T10:00:00.000Z',
       updatedAt: '2025-01-15T10:00:00.000Z',
       tags: ['agent-spec', 'branching', 'llm', 'demo'],
@@ -4283,7 +4283,7 @@ export function createWorkflow(data: {
     nodes: data.nodes || [],
     edges: data.edges || [],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: now,
       updatedAt: now,
       author: 'API User',

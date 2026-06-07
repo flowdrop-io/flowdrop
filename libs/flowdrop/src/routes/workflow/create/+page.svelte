@@ -28,7 +28,7 @@
       nodes: [],
       edges: [],
       metadata: {
-        version: '1.0.0',
+        schemaVersion: '1.0.0',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }

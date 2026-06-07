@@ -180,7 +180,68 @@ barrel no longer re-exports `marked`. Each export keeps a single canonical home.
   import { marked } from 'marked';
   ```
 
-## 7. Behavioral notes
+## 7. Workflow `metadata` is required and `version` → `schemaVersion`
+
+The workflow document's `metadata` object is now **required** on the `Workflow`
+type, and its `version` field has been renamed to `schemaVersion`. The rename
+disambiguates the document's _format_ version from any per-workflow revision
+number you may track yourself (and from `NodeMetadata.version`, the node-type
+version, which is **unchanged**).
+
+```ts
+// 1.x
+interface Workflow {
+  /* … */
+  metadata?: {
+    version: string; // ambiguous
+    createdAt: string;
+    updatedAt: string;
+    /* … */
+  };
+}
+
+// 2.0
+interface Workflow {
+  /* … */
+  metadata: {
+    schemaVersion: string; // the workflow schema format version
+    createdAt: string;
+    updatedAt: string;
+    /* … */
+  };
+}
+```
+
+### Load-time healing (automatic)
+
+You do **not** need to migrate stored workflow JSON by hand. Every workflow
+entry point — `WorkflowStore.initialize` (which backs `mountFlowDropApp`'s
+`workflow` option, drag-and-drop file import, and draft load) and
+`WorkflowAdapter.importWorkflow` — normalizes metadata on the way in:
+
+- **Missing `metadata`** → populated with required defaults (`schemaVersion`
+  from `WORKFLOW_SCHEMA_VERSION`, fresh `createdAt`/`updatedAt`).
+- **Legacy `metadata.version`** → copied into `schemaVersion` (when
+  `schemaVersion` is absent), then the legacy `version` key is dropped.
+
+Healing is idempotent: re-running it on an already-healed workflow is a no-op
+(round-trip stable). This mirrors the localStorage key migration in §2 — the
+runtime heals 1.x data on first read so existing documents keep loading.
+
+### What hosts reading workflow JSON need to know
+
+If your application reads or writes FlowDrop workflow JSON directly (outside the
+editor), update your code to read `metadata.schemaVersion` instead of
+`metadata.version`. Documents still on disk with the old `version` key continue
+to load through the editor unchanged, but newly serialized workflows will carry
+`schemaVersion`. The Agent Spec export still uses the namespaced
+`flowdrop:version` key (its source is now `metadata.schemaVersion`); that
+external key name is unchanged.
+
+The JSON Schema published at `@flowdrop/flowdrop/schema` reflects the rename —
+`WorkflowMetadata.required` is now `[schemaVersion, createdAt, updatedAt]`.
+
+## 8. Behavioral notes
 
 - `fieldRegistry.register()` warns in dev when overwriting an existing field
   type. Overwriting still works; the warning flags accidents.

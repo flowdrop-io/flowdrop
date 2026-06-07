@@ -25,10 +25,10 @@ export async function saveWorkflow(workflow: Omit<Workflow, 'id'>): Promise<Work
     ...workflow,
     id,
     metadata: {
-      version: '1.0.0',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...workflow.metadata
+      ...workflow.metadata,
+      schemaVersion: workflow.metadata?.schemaVersion ?? '1.0.0',
+      createdAt: workflow.metadata?.createdAt ?? new Date().toISOString(),
+      updatedAt: workflow.metadata?.updatedAt ?? new Date().toISOString()
     }
   };
 
@@ -53,7 +53,7 @@ export async function updateWorkflow(
     ...workflow,
     id, // Ensure ID doesn't change
     metadata: {
-      version: existing.metadata?.version || '1.0.0',
+      schemaVersion: existing.metadata?.schemaVersion || '1.0.0',
       createdAt: existing.metadata?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       author: workflow.metadata?.author || existing.metadata?.author,
@@ -137,7 +137,7 @@ export async function initializeSampleWorkflows(): Promise<void> {
     nodes: [],
     edges: [],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       author: 'System',

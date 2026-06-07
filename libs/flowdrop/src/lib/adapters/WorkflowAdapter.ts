@@ -15,6 +15,7 @@
  */
 
 import type { Workflow, NodeMetadata, WorkflowFormat } from '../types/index.js';
+import { WORKFLOW_SCHEMA_VERSION } from '../schemas/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { generateNodeId } from '../utils/nodeIds.js';
 
@@ -53,7 +54,7 @@ export interface StandardWorkflow {
   nodes: StandardNode[];
   edges: StandardEdge[];
   metadata?: {
-    version: string;
+    schemaVersion: string;
     createdAt: string;
     updatedAt: string;
     author?: string;
@@ -104,7 +105,7 @@ export class WorkflowAdapter {
       nodes: [],
       edges: [],
       metadata: {
-        version: '1.0.0',
+        schemaVersion: '1.0.0',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -341,13 +342,16 @@ export class WorkflowAdapter {
         throw new Error(`Invalid workflow: ${validation.errors.join(', ')}`);
       }
 
-      // Update metadata
+      // Update metadata — heal legacy 1.x `version` key into `schemaVersion`.
+      const incoming = workflow.metadata as
+        | (StandardWorkflow['metadata'] & { version?: string })
+        | undefined;
       workflow.metadata = {
-        version: workflow.metadata?.version || '1.0.0',
-        createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
+        schemaVersion: incoming?.schemaVersion || incoming?.version || '1.0.0',
+        createdAt: incoming?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        author: workflow.metadata?.author,
-        tags: workflow.metadata?.tags
+        author: incoming?.author,
+        tags: incoming?.tags
       };
 
       return workflow;
@@ -414,7 +418,11 @@ export class WorkflowAdapter {
         sourceHandle: edge.sourceHandle,
         targetHandle: edge.targetHandle
       })),
-      metadata: workflow.metadata
+      metadata: workflow.metadata ?? {
+        schemaVersion: WORKFLOW_SCHEMA_VERSION,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     };
   }
 
@@ -470,7 +478,7 @@ export class WorkflowAdapter {
     cloned.id = uuidv4();
     cloned.name = newName || `${workflow.name} (Copy)`;
     cloned.metadata = {
-      version: cloned.metadata?.version || '1.0.0',
+      schemaVersion: cloned.metadata?.schemaVersion || '1.0.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       author: cloned.metadata?.author,

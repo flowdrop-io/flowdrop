@@ -143,9 +143,9 @@ WorkflowEdge:
 WorkflowMetadata:
   type: object
   properties:
-    version:
+    schemaVersion:
       type: string
-      description: Workflow version
+      description: Workflow schema format version — identifies the document format, not the workflow's own revision.
       example: '1.0.0'
     createdAt:
       type: string
@@ -183,7 +183,7 @@ WorkflowMetadata:
       example: flowdrop
       default: flowdrop
   required:
-    - version
+    - schemaVersion
     - createdAt
     - updatedAt
 

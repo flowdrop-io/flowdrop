@@ -429,7 +429,7 @@ id: ${workflow.id}
 name: ${workflow.name}
 description: ${workflow.description || ''}
 metadata:
-  version: ${workflow.metadata?.version ?? ''}
+  schemaVersion: ${workflow.metadata?.schemaVersion ?? ''}
   createdAt: ${workflow.metadata?.createdAt ?? ''}
   updatedAt: ${workflow.metadata?.updatedAt ?? ''}
   author: ${workflow.metadata?.author || ''}

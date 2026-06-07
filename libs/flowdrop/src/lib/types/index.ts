@@ -1331,8 +1331,9 @@ export interface Workflow {
   description?: string;
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
-  metadata?: {
-    version: string;
+  metadata: {
+    /** Workflow schema format version — identifies the document format, not the workflow's own revision. */
+    schemaVersion: string;
     createdAt: string;
     updatedAt: string;
     author?: string;

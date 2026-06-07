@@ -779,7 +779,7 @@
             nodes: [],
             edges: [],
             metadata: {
-              version: '1.0.0',
+              schemaVersion: '1.0.0',
               format: DEFAULT_WORKFLOW_FORMAT,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()

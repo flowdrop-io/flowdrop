@@ -12,6 +12,9 @@ import {
   type FlowDropInstance
 } from '$lib/stores/instanceContainer.svelte.js';
 import { createTestWorkflow, createTestNode, createTestEdge } from '../../utils/index.js';
+import { normalizeWorkflowMetadata } from '$lib/stores/workflowStore.svelte.js';
+import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
+import type { Workflow } from '$lib/types';
 
 describe('WorkflowStore', () => {
   let fd: FlowDropInstance;
@@ -64,6 +67,98 @@ describe('WorkflowStore', () => {
       fd.workflow.initialize(workflow);
 
       expect(fd.workflow.nodes[0].data.nodeId).toBe('custom-preserved-value');
+    });
+  });
+
+  describe('metadata healing on load (1.x back-compat)', () => {
+    // A bare 1.x document: metadata carries the legacy `version` key and the
+    // base workflow shape, but no `schemaVersion`.
+    function legacyWorkflow(): Record<string, unknown> {
+      return {
+        id: 'legacy-1x',
+        name: 'Legacy 1.x Workflow',
+        description: 'Saved by FlowDrop 1.x',
+        nodes: [],
+        edges: [],
+        metadata: {
+          version: '1.0',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-06-01T00:00:00Z',
+          author: 'legacy-user',
+          tags: ['old']
+        }
+      };
+    }
+
+    it('heals legacy metadata.version into schemaVersion and drops the legacy key', () => {
+      const healed = normalizeWorkflowMetadata(legacyWorkflow() as never);
+
+      expect(healed.metadata.schemaVersion).toBe('1.0');
+      // Legacy key is gone.
+      expect((healed.metadata as Record<string, unknown>).version).toBeUndefined();
+      // Other fields survive untouched.
+      expect(healed.metadata.author).toBe('legacy-user');
+      expect(healed.metadata.tags).toEqual(['old']);
+      expect(healed.metadata.createdAt).toBe('2024-01-01T00:00:00Z');
+      expect(healed.metadata.updatedAt).toBe('2024-06-01T00:00:00Z');
+    });
+
+    it('initialize() heals a loaded 1.x workflow', () => {
+      fd.workflow.initialize(legacyWorkflow() as never);
+
+      const current = fd.workflow.current as Workflow;
+      expect(current.metadata.schemaVersion).toBe('1.0');
+      expect((current.metadata as Record<string, unknown>).version).toBeUndefined();
+    });
+
+    it('supplies buildMetadata defaults when metadata is entirely missing', () => {
+      const bare = {
+        id: 'no-meta',
+        name: 'No Metadata',
+        nodes: [],
+        edges: []
+      };
+
+      const healed = normalizeWorkflowMetadata(bare as never);
+
+      expect(healed.metadata.schemaVersion).toBe(WORKFLOW_SCHEMA_VERSION);
+      expect(healed.metadata.createdAt).toBeDefined();
+      expect(healed.metadata.updatedAt).toBeDefined();
+    });
+
+    it('initialize() supplies defaults for a workflow with no metadata', () => {
+      fd.workflow.initialize({
+        id: 'no-meta',
+        name: 'No Metadata',
+        nodes: [],
+        edges: []
+      } as never);
+
+      const current = fd.workflow.current as Workflow;
+      expect(current.metadata.schemaVersion).toBe(WORKFLOW_SCHEMA_VERSION);
+    });
+
+    it('leaves an already-healed workflow stable (round-trip identity)', () => {
+      const fresh: Workflow = {
+        id: 'modern',
+        name: 'Modern Workflow',
+        nodes: [],
+        edges: [],
+        metadata: {
+          schemaVersion: '1.0.0',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-06-01T00:00:00Z',
+          author: 'me',
+          tags: ['a']
+        }
+      };
+
+      const once = normalizeWorkflowMetadata(fresh);
+      const twice = normalizeWorkflowMetadata(once);
+
+      // heal → heal is identity on already-healed metadata.
+      expect(once.metadata).toEqual(fresh.metadata);
+      expect(twice.metadata).toEqual(once.metadata);
     });
   });
 
@@ -227,7 +322,7 @@ describe('WorkflowStore', () => {
     it('should update timestamp on changes', () => {
       const workflow = createTestWorkflow({
         metadata: {
-          version: '1.0.0',
+          schemaVersion: '1.0.0',
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           versionId: 'v1',
@@ -250,7 +345,7 @@ describe('WorkflowStore', () => {
     it('should increment update number on changes', () => {
       const workflow = createTestWorkflow({
         metadata: {
-          version: '1.0.0',
+          schemaVersion: '1.0.0',
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           versionId: 'v1',
@@ -431,7 +526,7 @@ describe('WorkflowStore', () => {
       fd.workflow.swapNode({ nodes: [node1], edges: [] });
       expect(fd.workflow.editVersion).toBe(++v);
 
-      fd.workflow.updateMetadata({ version: '2.0' });
+      fd.workflow.updateMetadata({ schemaVersion: '2.0' });
       expect(fd.workflow.editVersion).toBe(++v);
 
       fd.workflow.restoreFromHistory(workflow);

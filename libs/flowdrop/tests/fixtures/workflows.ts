@@ -16,7 +16,7 @@ export const emptyWorkflow: Workflow = {
   nodes: [],
   edges: [],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
     versionId: 'v1-empty',
@@ -112,7 +112,7 @@ export const simpleWorkflow: Workflow = {
     }
   ],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
     versionId: 'v1-simple',
@@ -294,7 +294,7 @@ export const complexWorkflow: Workflow = {
     }
   ],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
     versionId: 'v1-complex',
@@ -403,7 +403,7 @@ export const cyclicWorkflow: Workflow = {
     }
   ],
   metadata: {
-    version: '1.0.0',
+    schemaVersion: '1.0.0',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
     versionId: 'v1-cyclic',

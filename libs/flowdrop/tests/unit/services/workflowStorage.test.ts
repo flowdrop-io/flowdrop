@@ -54,7 +54,7 @@ describe('Workflow Storage Service', () => {
       const saved = await saveWorkflow(workflowData);
 
       expect(saved.metadata).toBeDefined();
-      expect(saved.metadata?.version).toBe('1.0.0');
+      expect(saved.metadata?.schemaVersion).toBe('1.0.0');
       expect(saved.metadata?.createdAt).toBeDefined();
       expect(saved.metadata?.updatedAt).toBeDefined();
     });
@@ -62,7 +62,7 @@ describe('Workflow Storage Service', () => {
     it('should preserve provided metadata', async () => {
       const { id: _id, ...workflowData } = createTestWorkflow({
         metadata: {
-          version: '1.0.0',
+          schemaVersion: '1.0.0',
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           author: 'Test Author',
@@ -170,7 +170,7 @@ describe('Workflow Storage Service', () => {
     it('should preserve metadata fields not being updated', async () => {
       const { id: _id, ...workflowData } = createTestWorkflow({
         metadata: {
-          version: '1.0.0',
+          schemaVersion: '1.0.0',
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           author: 'Original Author',
@@ -272,7 +272,7 @@ describe('Workflow Storage Service', () => {
     it('should filter workflows by search term (tags)', async () => {
       const { id: _id1, ...workflow1 } = createTestWorkflow({
         metadata: {
-          version: '1.0.0',
+          schemaVersion: '1.0.0',
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           tags: ['ai', 'chat']
@@ -280,7 +280,7 @@ describe('Workflow Storage Service', () => {
       });
       const { id: _id2, ...workflow2 } = createTestWorkflow({
         metadata: {
-          version: '1.0.0',
+          schemaVersion: '1.0.0',
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           tags: ['image', 'processing']

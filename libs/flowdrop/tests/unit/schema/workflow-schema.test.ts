@@ -104,9 +104,11 @@ describe('Workflow JSON Schema', () => {
       expect(def.required).toEqual(expect.arrayContaining(['id', 'source', 'target']));
     });
 
-    it('WorkflowMetadata should require version, createdAt, and updatedAt', () => {
+    it('WorkflowMetadata should require schemaVersion, createdAt, and updatedAt', () => {
       const def = schema.$defs.WorkflowMetadata;
-      expect(def.required).toEqual(expect.arrayContaining(['version', 'createdAt', 'updatedAt']));
+      expect(def.required).toEqual(
+        expect.arrayContaining(['schemaVersion', 'createdAt', 'updatedAt'])
+      );
     });
 
     it('NodeMetadata should require id, name, description, category, version, inputs, and outputs', () => {

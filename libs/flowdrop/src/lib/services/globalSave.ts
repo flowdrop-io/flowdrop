@@ -183,7 +183,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       edges: currentWorkflow.edges || [],
       metadata: {
         ...currentWorkflow.metadata,
-        version: currentWorkflow.metadata?.version || '1.0.0',
+        schemaVersion: currentWorkflow.metadata?.schemaVersion || '1.0.0',
         format: currentWorkflow.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
         createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -291,7 +291,7 @@ export async function globalExportWorkflow(options: GlobalExportOptions = {}): P
       edges: currentWorkflow.edges || [],
       metadata: {
         ...currentWorkflow.metadata,
-        version: currentWorkflow.metadata?.version || '1.0.0',
+        schemaVersion: currentWorkflow.metadata?.schemaVersion || '1.0.0',
         format: currentWorkflow.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
         createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()

@@ -213,7 +213,7 @@
       }
     ],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z'
     }
@@ -226,7 +226,7 @@
     nodes: [],
     edges: [],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z'
     }
@@ -306,7 +306,7 @@
       }
     ],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z'
     }
@@ -351,7 +351,7 @@
       }
     ],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z'
     }
@@ -388,7 +388,7 @@
     ],
     edges: [],
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z'
     }

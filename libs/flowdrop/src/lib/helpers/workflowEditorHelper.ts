@@ -232,7 +232,7 @@ export class WorkflowOperationsHelper {
   static generateMetadata(existingMetadata?: Workflow['metadata']): Workflow['metadata'] {
     const now = new Date().toISOString();
     return {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: now,
       ...(existingMetadata ?? {}),
       updatedAt: now,
@@ -333,7 +333,7 @@ export class WorkflowOperationsHelper {
         nodes: workflow.nodes || [],
         edges: workflow.edges || [],
         metadata: {
-          version: '1.0.0',
+          schemaVersion: workflow.metadata?.schemaVersion || '1.0.0',
           createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
@@ -382,7 +382,7 @@ export class WorkflowOperationsHelper {
       nodes: workflow.nodes || [],
       edges: workflow.edges || [],
       metadata: {
-        version: '1.0.0',
+        schemaVersion: workflow.metadata?.schemaVersion || '1.0.0',
         createdAt: workflow.metadata?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }

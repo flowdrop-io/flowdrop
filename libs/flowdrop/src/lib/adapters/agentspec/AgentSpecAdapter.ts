@@ -194,7 +194,7 @@ export class AgentSpecAdapter {
       data_flow_connections: dataFlowEdges.length > 0 ? dataFlowEdges : null,
       metadata: {
         'flowdrop:workflow_id': workflow.id,
-        'flowdrop:version': workflow.metadata?.version,
+        'flowdrop:version': workflow.metadata?.schemaVersion,
         ...(workflow.metadata?.author ? { 'flowdrop:author': workflow.metadata.author } : {}),
         ...(workflow.metadata?.tags ? { 'flowdrop:tags': workflow.metadata.tags } : {})
       }
@@ -268,7 +268,7 @@ export class AgentSpecAdapter {
       nodes,
       edges,
       metadata: {
-        version: (agentSpecFlow.metadata?.['flowdrop:version'] as string) || '1.0.0',
+        schemaVersion: (agentSpecFlow.metadata?.['flowdrop:version'] as string) || '1.0.0',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         author: agentSpecFlow.metadata?.['flowdrop:author'] as string | undefined,

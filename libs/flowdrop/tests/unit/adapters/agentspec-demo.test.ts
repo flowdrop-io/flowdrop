@@ -154,7 +154,7 @@ function buildLLMPipelineWorkflow(): StandardWorkflow {
     nodes,
     edges,
     metadata: {
-      version: '1.0.0',
+      schemaVersion: '1.0.0',
       createdAt: '2025-01-01T00:00:00Z',
       updatedAt: '2025-01-01T00:00:00Z'
     }
