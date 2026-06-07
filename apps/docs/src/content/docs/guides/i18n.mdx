@@ -113,7 +113,7 @@ If you mount a flowdrop component (e.g. `<SchemaForm>` standalone, or a Storyboo
 
 ```svelte
 <script>
-  import { setMessages, defaultMessages, mergeMessages } from '@flowdrop/flowdrop';
+  import { setMessages, defaultMessages, mergeMessages } from '@flowdrop/flowdrop/core';
 
   setMessages(() => mergeMessages(defaultMessages, { /* ...overrides */ }));
 </script>

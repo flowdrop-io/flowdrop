@@ -241,7 +241,61 @@ external key name is unchanged.
 The JSON Schema published at `@flowdrop/flowdrop/schema` reflects the rename —
 `WorkflowMetadata.required` is now `[schemaVersion, createdAt, updatedAt]`.
 
-## 8. Behavioral notes
+## 8. The main entry is now a minimal front door
+
+`@flowdrop/flowdrop` (the main entry) no longer re-exports the entire library.
+In 1.x it bundled every sub-module via `export *`; in 2.0 it exposes only the
+small surface most apps need to bootstrap:
+
+- **Values:** `App`, `mountFlowDropApp`, `unmountFlowDropApp`,
+  `createFlowDropInstance`, `getInstance`, `provideInstance`,
+  `createEndpointConfig`, `defaultEndpointConfig`, `NoAuthProvider`,
+  `StaticAuthProvider`, `CallbackAuthProvider`.
+- **Types:** `Workflow`, `WorkflowNode`, `WorkflowEdge`, `NodeMetadata`,
+  `ConfigSchema`, `EndpointConfig`, `AuthProvider`, `FlowDropInstance`,
+  `FlowDropMountOptions`, `MountedFlowDropApp`, `FlowDropEventHandlers`,
+  `Messages`, `MessagesOverride`.
+
+Everything else moves to a sub-module. If you imported a name from
+`@flowdrop/flowdrop` that is not in the list above, switch to the sub-module
+that owns it:
+
+| Name (1.x main entry)                                                                                                                        | 2.0 sub-module                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `WorkflowEditor`, `ConfigForm`, `ConfigModal`, `ConfigPanel`, `Navbar`, `NodeSidebar`, node components                                       | `@flowdrop/flowdrop/editor`            |
+| `mountWorkflowEditor`, editor helper classes, `EnhancedFlowDropApiClient`, `ApiContext`                                                      | `@flowdrop/flowdrop/editor`            |
+| `WorkflowStore`, `HistoryStore`, `HistoryService`, `PortCoordinateStore`                                                                     | `@flowdrop/flowdrop/editor`            |
+| `globalSaveWorkflow`, `globalExportWorkflow`, `saveWorkflow`, `getWorkflow`, draft-storage helpers                                           | `@flowdrop/flowdrop/editor`            |
+| `fetchPortConfig`, `fetchCategories`, dynamic-schema helpers                                                                                 | `@flowdrop/flowdrop/editor`            |
+| `NodeExecutionService`, connection utilities, `PortCompatibilityChecker`                                                                     | `@flowdrop/flowdrop/editor`            |
+| Toast functions (`showSuccess`, `showError`, `showWarning`, `showInfo`, `showLoading`, `dismissToast`, `showPromise`, `showConfirmation`, …) | `@flowdrop/flowdrop/editor`            |
+| `SchemaForm`, `FormField`, `FormSelect`, `FormToggle`, `FormArray`, …, `AutocompleteConfig`                                                  | `@flowdrop/flowdrop/form`              |
+| `FormAutocomplete`                                                                                                                           | `@flowdrop/flowdrop/form/autocomplete` |
+| `registerCodeEditorField`                                                                                                                    | `@flowdrop/flowdrop/form/code`         |
+| `registerMarkdownEditorField`                                                                                                                | `@flowdrop/flowdrop/form/markdown`     |
+| `Playground`, `PlaygroundModal`, `ChatPanel`, `mountPlayground`, `PlaygroundService`                                                         | `@flowdrop/flowdrop/playground`        |
+| `MarkdownDisplay`                                                                                                                            | `@flowdrop/flowdrop/display`           |
+| `setMessages`, `mergeMessages`, `defaultMessages`                                                                                            | `@flowdrop/flowdrop/core`              |
+| Theme/skin exports (`defaultTheme`, `minimalTheme`, `resolveTheme`, `defaultSkin`, `slateSkin`)                                              | `@flowdrop/flowdrop/core`              |
+| Color-preference helpers (`theme`, `resolvedTheme`, `setTheme`, `toggleTheme`, …)                                                            | `@flowdrop/flowdrop/core`              |
+| `WorkflowAdapter`, `AgentSpecAdapter`, command DSL, color/icon utilities, all remaining types                                                | `@flowdrop/flowdrop/core`              |
+| Settings stores/services/components                                                                                                          | `@flowdrop/flowdrop/settings`          |
+
+```js
+// 1.x — everything from the main entry
+import { WorkflowEditor, SchemaForm, showSuccess, defaultTheme } from '@flowdrop/flowdrop';
+
+// 2.0 — import from the owning sub-module
+import { WorkflowEditor, showSuccess } from '@flowdrop/flowdrop/editor';
+import { SchemaForm } from '@flowdrop/flowdrop/form';
+import { defaultTheme } from '@flowdrop/flowdrop/core';
+```
+
+This also tightens tree-shaking: importing `App` and a couple of types from the
+main entry no longer pulls the form, display, playground, and settings barrels
+into your bundle.
+
+## 9. Behavioral notes
 
 - `fieldRegistry.register()` warns in dev when overwriting an existing field
   type. Overwriting still works; the warning flags accidents.

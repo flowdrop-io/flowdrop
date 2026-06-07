@@ -210,8 +210,12 @@ This is the building block for dependent autocomplete fields — for example a `
 <script lang="ts">
   import { getContext } from 'svelte';
   import { FormAutocomplete } from '@flowdrop/flowdrop/form/autocomplete';
-  import { FORM_VALUES_KEY, type FormValuesGetter, type FieldSchema } from '@flowdrop/flowdrop/form';
-  import type { AutocompleteConfig } from '@flowdrop/flowdrop';
+  import {
+    FORM_VALUES_KEY,
+    type FormValuesGetter,
+    type FieldSchema
+  } from '@flowdrop/flowdrop/form';
+  import type { AutocompleteConfig } from '@flowdrop/flowdrop/form';
 
   interface Props {
     id: string;
@@ -236,7 +240,10 @@ This is the building block for dependent autocomplete fields — for example a `
 
     const extra = Object.entries(deps)
       .filter(([, field]) => values[field] != null && values[field] !== '')
-      .map(([param, field]) => `${encodeURIComponent(param)}=${encodeURIComponent(String(values[field]))}`)
+      .map(
+        ([param, field]) =>
+          `${encodeURIComponent(param)}=${encodeURIComponent(String(values[field]))}`
+      )
       .join('&');
 
     const sep = autocomplete.url.includes('?') ? '&' : '?';

@@ -1,78 +1,65 @@
 /**
  * FlowDrop - Visual Workflow Editor Library
  *
- * A Svelte 5 component library built on @xyflow/svelte for creating node-based workflow editors.
+ * A Svelte 5 component library built on @xyflow/svelte for creating node-based
+ * workflow editors.
  *
- * ## Module Structure (Tree-Shakable)
+ * ## The main entry is a minimal front door
  *
- * For optimal bundle size, import from specific sub-modules:
+ * This entry point intentionally exposes only the small surface most apps need
+ * to get started: the `App` component, the `mountFlowDropApp` / `unmountFlowDropApp`
+ * mount helpers, instance plumbing (`createFlowDropInstance` / `getInstance` /
+ * `provideInstance`), endpoint + auth helpers, and the core public types. It does
+ * NOT re-export the entire library.
  *
- * - `@flowdrop/flowdrop/core` - Types and utilities only (no heavy deps)
- * - `@flowdrop/flowdrop/editor` - WorkflowEditor with @xyflow/svelte
+ * Everything else lives in focused sub-modules — import from the one you need:
+ *
+ * - `@flowdrop/flowdrop/core` - Types, utilities, theme/skin, messages helpers (no heavy deps)
+ * - `@flowdrop/flowdrop/editor` - WorkflowEditor, registries, stores, services (adds @xyflow/svelte)
  * - `@flowdrop/flowdrop/form` - SchemaForm with basic fields
- * - `@flowdrop/flowdrop/form/code` - Code editor support (adds CodeMirror)
- * - `@flowdrop/flowdrop/form/markdown` - Markdown editor support (CodeMirror 6)
+ * - `@flowdrop/flowdrop/form/code` - Code editor field (adds CodeMirror)
+ * - `@flowdrop/flowdrop/form/markdown` - Markdown editor field (CodeMirror 6)
  * - `@flowdrop/flowdrop/display` - MarkdownDisplay (adds marked)
  * - `@flowdrop/flowdrop/playground` - Playground for interactive workflow testing
+ * - `@flowdrop/flowdrop/settings` - Settings stores, services, components
  * - `@flowdrop/flowdrop/styles` - CSS styles
- *
- * ## Legacy Import (Full Bundle)
- *
- * Importing from the main entry point includes everything:
- *
- * ```typescript
- * import { WorkflowEditor, SchemaForm } from "@flowdrop/flowdrop";
- * ```
- *
- * **Note**: This will bundle ALL dependencies including @xyflow/svelte,
- * CodeMirror and marked. For smaller bundles, use sub-modules.
  *
  * @module flowdrop
  */
 
 // ============================================================================
-// IMPORTANT: This module re-exports from sub-modules for backward compatibility.
-// New code should import directly from sub-modules for better tree-shaking.
-//
-// The wildcard re-exports below are intentional: each sub-module barrel uses
-// explicit named exports, so the public API surface is fully controlled there.
+// Values
 // ============================================================================
 
-// ============================================================================
-// Core Exports (Types & Utilities - No Heavy Dependencies)
-// ============================================================================
+// App component + vanilla-JS mount lifecycle.
+export { default as App } from './components/App.svelte';
+export { mountFlowDropApp, unmountFlowDropApp } from './svelte-app.js';
 
-export * from './core/index.js';
+// Instance plumbing — per-instance state container + Svelte context helpers.
+export { createFlowDropInstance } from './stores/instanceContainer.svelte.js';
+export { getInstance, provideInstance } from './stores/getInstance.svelte.js';
 
-// ============================================================================
-// Form Exports
-// ============================================================================
+// Endpoint configuration helpers.
+export { createEndpointConfig, defaultEndpointConfig } from './config/endpoints.js';
 
-export * from './form/index.js';
-
-// Note: Heavy form fields (code, markdown) are NOT auto-registered.
-// Users must import from form/code or form/markdown and register explicitly.
-
-// ============================================================================
-// Display Exports
-// ============================================================================
-
-export * from './display/index.js';
+// Authentication providers.
+export { NoAuthProvider, StaticAuthProvider, CallbackAuthProvider } from './types/auth.js';
 
 // ============================================================================
-// Playground Exports
+// Types
 // ============================================================================
 
-export * from './playground/index.js';
+export type {
+  Workflow,
+  WorkflowNode,
+  WorkflowEdge,
+  NodeMetadata,
+  ConfigSchema
+} from './types/index.js';
 
-// ============================================================================
-// Editor Exports (includes @xyflow/svelte and auto-registers builtin nodes)
-// ============================================================================
-
-export * from './editor/index.js';
-
-// ============================================================================
-// Settings Exports (stores, services, components, types)
-// ============================================================================
-
-export * from './settings/index.js';
+export type { EndpointConfig } from './config/endpoints.js';
+export type { AuthProvider } from './types/auth.js';
+export type { FlowDropInstance } from './stores/instanceContainer.svelte.js';
+export type { FlowDropMountOptions, MountedFlowDropApp } from './svelte-app.js';
+export type { FlowDropEventHandlers } from './types/events.js';
+export type { Messages, MessagesOverride } from './messages/index.js';

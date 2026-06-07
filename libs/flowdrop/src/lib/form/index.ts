@@ -108,7 +108,8 @@ export type {
   CheckboxGroupFieldProps,
   ArrayFieldProps,
   FormFieldFactoryProps,
-  FormFieldWrapperProps
+  FormFieldWrapperProps,
+  AutocompleteConfig
 } from '../components/form/types.js';
 
 export {
