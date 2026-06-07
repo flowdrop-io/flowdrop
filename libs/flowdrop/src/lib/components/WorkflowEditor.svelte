@@ -772,21 +772,35 @@
    * - Ctrl+Z (or Cmd+Z on Mac): Undo
    * - Ctrl+Shift+Z (or Cmd+Shift+Z): Redo
    * - Ctrl+Y (or Cmd+Y): Redo (Windows convention)
+   *
+   * Also suppresses WebKit's legacy default action for Backspace outside
+   * editable content — history back-navigation. SvelteFlow's KeyHandler
+   * deletes the selected elements on Backspace but never preventDefaults,
+   * so in embedded WebKit the page navigates away mid-delete. Scoped to
+   * keydowns originating inside the flow canvas so host-page behavior
+   * outside the editor is untouched.
    */
   function handleKeydown(event: KeyboardEvent): void {
-    // Check for Ctrl (Windows/Linux) or Cmd (Mac)
-    const isModifierPressed = event.ctrlKey || event.metaKey;
-
-    if (!isModifierPressed) {
-      return;
-    }
-
     // Don't handle shortcuts if user is typing in an input, textarea, or contenteditable
     const target = event.target as HTMLElement;
     const isInputElement =
       target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
     if (isInputElement) {
+      return;
+    }
+
+    // Backspace/Delete on a canvas element: let SvelteFlow handle the
+    // deletion, but block the browser default (WebKit navigates back).
+    if ((event.key === 'Backspace' || event.key === 'Delete') && target.closest('.svelte-flow')) {
+      event.preventDefault();
+      return;
+    }
+
+    // Check for Ctrl (Windows/Linux) or Cmd (Mac)
+    const isModifierPressed = event.ctrlKey || event.metaKey;
+
+    if (!isModifierPressed) {
       return;
     }
 
