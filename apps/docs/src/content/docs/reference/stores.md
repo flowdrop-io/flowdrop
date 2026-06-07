@@ -3,62 +3,48 @@ title: Store API Reference
 description: Complete API reference for all FlowDrop reactive stores.
 ---
 
-FlowDrop uses Svelte 5 rune-based stores for state management. The module-level getter functions documented on this page operate on the **page-default instance** (the first editor mounted without an explicit `instanceId`).
+FlowDrop uses Svelte 5 rune-based stores for state management. In 2.0 there are **no module-level store functions** — every store lives on the per-mount `FlowDropInstance`.
 
-:::note[Multiple instances]
-Each mount owns an isolated `FlowDropInstance`. For additional editors on a page, reach their stores via `getInstance()` (inside a component) or the `FlowDropInstance` members (`instance.workflow`, `instance.history`, …) rather than these module-level functions. New exports from `@flowdrop/flowdrop/editor`: `createFlowDropInstance`, `getDefaultInstance`, `getInstance`, `provideInstance`, and the `FlowDropInstance` type. See the [multiple instances guide](/guides/multiple-instances/).
+:::note[Reaching a store]
+Resolve the owning instance with `getInstance()` inside a FlowDrop component (it resolves the page-default instance for single-editor embeds), or hold the mount handle's `.instance` outside the component tree. New exports from `@flowdrop/flowdrop/editor`: `createFlowDropInstance`, `getInstance`, `provideInstance`, the `FlowDropInstance` type, and the store classes `WorkflowStore`, `HistoryStore`, `HistoryService`, `PortCoordinateStore` (`PlaygroundStore` and `InterruptStore` export from `@flowdrop/flowdrop/playground`). See the [multiple instances guide](/guides/multiple-instances/).
+
+```typescript
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+```
+
 :::
 
-## workflowStore
+## `fd.workflow` (WorkflowStore)
 
 The primary store for workflow state, dirty tracking, and node/edge mutations.
 
 ### Reactive Getters
 
-```typescript
-import {
-  getWorkflowStore,
-  getIsDirty,
-  getWorkflowId,
-  getWorkflowName,
-  getWorkflowNodes,
-  getWorkflowEdges,
-  getWorkflowMetadata,
-  getWorkflowFormat,
-  getWorkflowChanged,
-  getWorkflowValidation,
-  getConnectedHandles
-} from '@flowdrop/flowdrop/editor';
-```
-
-| Function                  | Returns                                               | Description                          |
-| ------------------------- | ----------------------------------------------------- | ------------------------------------ |
-| `getWorkflowStore()`      | `Workflow \| null`                                    | Current workflow object              |
-| `getIsDirty()`            | `boolean`                                             | Whether workflow has unsaved changes |
-| `getWorkflowId()`         | `string \| null`                                      | Current workflow ID                  |
-| `getWorkflowName()`       | `string`                                              | Workflow display name                |
-| `getWorkflowNodes()`      | `WorkflowNode[]`                                      | All nodes                            |
-| `getWorkflowEdges()`      | `WorkflowEdge[]`                                      | All edges                            |
-| `getWorkflowMetadata()`   | `WorkflowMetadata`                                    | Metadata (created, updated, version) |
-| `getWorkflowFormat()`     | `string`                                              | Workflow format identifier           |
-| `getWorkflowChanged()`    | `{nodes, edges, name}`                                | Reactive change tracker              |
-| `getWorkflowValidation()` | `{hasNodes, hasEdges, nodeCount, edgeCount, isValid}` | Validation summary                   |
-| `getConnectedHandles()`   | `Set<string>`                                         | Set of connected port handle IDs     |
+| Getter                         | Returns                                               | Description                                |
+| ------------------------------ | ----------------------------------------------------- | ------------------------------------------ |
+| `fd.workflow.current`          | `Workflow \| null`                                    | Current workflow object                    |
+| `fd.workflow.isDirty`          | `boolean`                                             | Whether workflow has unsaved changes       |
+| `fd.workflow.id`               | `string \| null`                                      | Current workflow ID                        |
+| `fd.workflow.name`             | `string`                                              | Workflow display name                      |
+| `fd.workflow.nodes`            | `WorkflowNode[]`                                      | All nodes                                  |
+| `fd.workflow.edges`            | `WorkflowEdge[]`                                      | All edges                                  |
+| `fd.workflow.metadata`         | `WorkflowMetadata`                                    | Metadata (created, updated, schemaVersion) |
+| `fd.workflow.format`           | `string`                                              | Workflow format identifier                 |
+| `fd.workflow.validation`       | `{hasNodes, hasEdges, nodeCount, edgeCount, isValid}` | Validation summary                         |
+| `fd.workflow.connectedHandles` | `Set<string>`                                         | Set of connected port handle IDs           |
 
 ### Non-Reactive Utilities
 
 ```typescript
-import { getWorkflow, isDirty, markAsSaved } from '@flowdrop/flowdrop/editor';
-
-const workflow = getWorkflow(); // Snapshot, not reactive
-const dirty = isDirty(); // Snapshot
-markAsSaved(); // Clears dirty flag
+const dirty = fd.workflow.isDirty; // current value
+fd.workflow.markAsSaved(); // Clears dirty flag
 ```
 
 ### Workflow Actions
 
 ```typescript
-import { workflowActions } from '@flowdrop/flowdrop/editor';
+const { actions } = fd.workflow;
 ```
 
 | Method                        | Parameters                                         | Description                       |
@@ -81,40 +67,29 @@ import { workflowActions } from '@flowdrop/flowdrop/editor';
 ### Change Callbacks
 
 ```typescript
-import { setOnDirtyStateChange, setOnWorkflowChange } from '@flowdrop/flowdrop/editor';
-
-setOnDirtyStateChange((isDirty) => {
+fd.workflow.setOnDirtyStateChange((isDirty) => {
   console.log('Dirty state:', isDirty);
 });
 
-setOnWorkflowChange((workflow, changeType) => {
+fd.workflow.setOnWorkflowChange((workflow, changeType) => {
   console.log('Changed:', changeType);
 });
 ```
 
 ---
 
-## historyStore
+## `fd.historyBindings` (HistoryStore)
 
-Manages undo/redo with snapshot-based history.
+Manages undo/redo with snapshot-based history — the reactive rune wrapper around `fd.history` (the underlying `HistoryService`).
 
 ### Reactive Getters
 
-```typescript
-import { getCanUndo, getCanRedo, getHistoryState } from '@flowdrop/flowdrop/editor';
-```
-
-| Function            | Returns        | Description                                 |
-| ------------------- | -------------- | ------------------------------------------- |
-| `getCanUndo()`      | `boolean`      | Whether undo is available                   |
-| `getCanRedo()`      | `boolean`      | Whether redo is available                   |
-| `getHistoryState()` | `HistoryState` | Full history state (entries, current index) |
+| Getter                       | Returns   | Description               |
+| ---------------------------- | --------- | ------------------------- |
+| `fd.historyBindings.canUndo` | `boolean` | Whether undo is available |
+| `fd.historyBindings.canRedo` | `boolean` | Whether redo is available |
 
 ### History Actions
-
-```typescript
-import { historyActions } from '@flowdrop/flowdrop/editor';
-```
 
 | Method                                     | Returns   | Description                        |
 | ------------------------------------------ | --------- | ---------------------------------- |
@@ -127,60 +102,44 @@ import { historyActions } from '@flowdrop/flowdrop/editor';
 | `pushState(workflow, options?)`            | `void`    | Manually push a snapshot           |
 | `initialize(workflow)`                     | `void`    | Initialize with a starting state   |
 
-### Types
-
 ```typescript
-interface HistoryState {
-  entries: HistoryEntry[];
-  currentIndex: number;
-  maxEntries: number;
-}
-
-interface HistoryEntry {
-  workflow: Workflow;
-  timestamp: number;
-  description?: string;
-}
-
-interface PushOptions {
-  description?: string;
-  force?: boolean;
-}
+fd.historyBindings.undo();
+fd.historyBindings.startTransaction(fd.workflow.current, 'Rearrange');
 ```
 
 ---
 
 ## settingsStore
 
-Manages editor settings with localStorage persistence and optional API sync.
+Manages editor settings with localStorage persistence and optional API sync. Settings are **page-global by design** — not instance-scoped, so they remain module-level functions.
 
 ### Reactive Getters
 
 ```typescript
 import {
   getSettings,
-  getThemeSettings,
-  getEditorSettings,
-  getUiSettings,
-  getBehaviorSettings,
-  getApiSettings,
-  getTheme,
-  getResolvedTheme,
-  getSyncStatus
-} from '@flowdrop/flowdrop/settings';
+  themeSettings,
+  editorSettings,
+  uiSettings,
+  behaviorSettings,
+  apiSettings,
+  theme,
+  resolvedTheme,
+  syncStatusStore
+} from '@flowdrop/flowdrop/settings'; // theme/resolvedTheme also on /core
 ```
 
-| Function                | Returns                         | Description                                |
-| ----------------------- | ------------------------------- | ------------------------------------------ |
-| `getSettings()`         | `FlowDropSettings`              | All settings                               |
-| `getThemeSettings()`    | `ThemeSettings`                 | Theme preferences                          |
-| `getEditorSettings()`   | `EditorSettings`                | Editor behavior settings                   |
-| `getUiSettings()`       | `UISettings`                    | UI preferences                             |
-| `getBehaviorSettings()` | `BehaviorSettings`              | Behavior flags                             |
-| `getApiSettings()`      | `ApiSettings`                   | API configuration                          |
-| `getTheme()`            | `ThemePreference`               | `'light' \| 'dark' \| 'auto'`              |
-| `getResolvedTheme()`    | `ResolvedTheme`                 | `'light' \| 'dark'` (after resolving auto) |
-| `getSyncStatus()`       | `{status, lastSyncedAt, error}` | API sync state                             |
+| Function             | Returns                         | Description                                |
+| -------------------- | ------------------------------- | ------------------------------------------ |
+| `getSettings()`      | `FlowDropSettings`              | All settings                               |
+| `themeSettings()`    | `ThemeSettings`                 | Theme preferences                          |
+| `editorSettings()`   | `EditorSettings`                | Editor behavior settings                   |
+| `uiSettings()`       | `UISettings`                    | UI preferences                             |
+| `behaviorSettings()` | `BehaviorSettings`              | Behavior flags                             |
+| `apiSettings()`      | `ApiSettings`                   | API configuration                          |
+| `theme()`            | `ThemePreference`               | `'light' \| 'dark' \| 'auto'`              |
+| `resolvedTheme()`    | `ResolvedTheme`                 | `'light' \| 'dark'` (after resolving auto) |
+| `syncStatusStore()`  | `{status, lastSyncedAt, error}` | API sync state                             |
 
 ### Settings Updates
 
@@ -194,7 +153,7 @@ resetSettings(['theme', 'editor']); // Reset specific categories
 ### Theme Functions
 
 ```typescript
-import { setTheme, toggleTheme, cycleTheme } from '@flowdrop/flowdrop/settings';
+import { setTheme, toggleTheme, cycleTheme } from '@flowdrop/flowdrop/core';
 
 setTheme('dark'); // Set explicit theme
 toggleTheme(); // Toggle light/dark
@@ -206,8 +165,8 @@ cycleTheme(); // Cycle light → dark → auto
 ```typescript
 import { onSettingsChange } from '@flowdrop/flowdrop/settings';
 
-const unsubscribe = onSettingsChange((newSettings, changedKeys) => {
-  console.log('Settings changed:', changedKeys);
+const unsubscribe = onSettingsChange((newSettings, oldSettings) => {
+  console.log('Settings changed');
 });
 
 // Later: unsubscribe();
@@ -215,98 +174,68 @@ const unsubscribe = onSettingsChange((newSettings, changedKeys) => {
 
 ---
 
-## playgroundStore
+## `fd.playground` (PlaygroundStore)
 
 Manages playground sessions, messages, and execution state.
 
 ### Reactive Getters
 
-```typescript
-import {
-  getCurrentSession,
-  getSessions,
-  getMessages,
-  getIsExecuting,
-  getIsLoading,
-  getError,
-  getMessageCount,
-  getChatMessages,
-  getLogMessages,
-  getInputFields,
-  getSessionCount,
-  getCurrentSessionId
-} from '@flowdrop/flowdrop/playground';
-```
-
-| Function                | Returns                     | Description                     |
-| ----------------------- | --------------------------- | ------------------------------- |
-| `getCurrentSession()`   | `PlaygroundSession \| null` | Active session                  |
-| `getSessions()`         | `PlaygroundSession[]`       | All sessions                    |
-| `getMessages()`         | `PlaygroundMessage[]`       | All messages in current session |
-| `getIsExecuting()`      | `boolean`                   | Whether a workflow is running   |
-| `getIsLoading()`        | `boolean`                   | Whether data is loading         |
-| `getError()`            | `string \| null`            | Current error message           |
-| `getMessageCount()`     | `number`                    | Total message count             |
-| `getChatMessages()`     | `PlaygroundMessage[]`       | Chat-type messages only         |
-| `getLogMessages()`      | `PlaygroundMessage[]`       | Log-type messages only          |
-| `getInputFields()`      | `PlaygroundInputField[]`    | Available input fields          |
-| `getSessionCount()`     | `number`                    | Total session count             |
-| `getCurrentSessionId()` | `string \| null`            | Active session ID               |
+| Getter                         | Returns                     | Description                     |
+| ------------------------------ | --------------------------- | ------------------------------- |
+| `fd.playground.currentSession` | `PlaygroundSession \| null` | Active session                  |
+| `fd.playground.sessions`       | `PlaygroundSession[]`       | All sessions                    |
+| `fd.playground.messages`       | `PlaygroundMessage[]`       | All messages in current session |
+| `fd.playground.isExecuting`    | `boolean`                   | Whether a workflow is running   |
+| `fd.playground.isLoading`      | `boolean`                   | Whether data is loading         |
+| `fd.playground.error`          | `string \| null`            | Current error message           |
+| `fd.playground.messageCount`   | `number`                    | Total message count             |
+| `fd.playground.chatMessages`   | `PlaygroundMessage[]`       | Chat-type messages only         |
+| `fd.playground.logMessages`    | `PlaygroundMessage[]`       | Log-type messages only          |
+| `fd.playground.inputFields`    | `PlaygroundInputField[]`    | Available input fields          |
+| `fd.playground.sessionCount`   | `number`                    | Total session count             |
 
 ### Playground Actions
 
 ```typescript
-import { playgroundActions } from '@flowdrop/flowdrop/playground';
+const { actions } = fd.playground;
 ```
 
-| Method                       | Description                   |
-| ---------------------------- | ----------------------------- |
-| `setCurrentSession(session)` | Set the active session        |
-| `addSession(session)`        | Add a new session             |
-| `removeSession(sessionId)`   | Remove a session              |
-| `switchSession(sessionId)`   | Switch to a different session |
-| `addMessage(message)`        | Add a message                 |
-| `addMessages(messages)`      | Add multiple messages         |
-| `clearMessages()`            | Clear all messages            |
-| `setExecuting(executing)`    | Set execution state           |
-| `setLoading(loading)`        | Set loading state             |
-| `setError(error)`            | Set error message             |
-| `reset()`                    | Reset all playground state    |
+| Method                                   | Description                                      |
+| ---------------------------------------- | ------------------------------------------------ |
+| `setCurrentSession(session)`             | Set the active session                           |
+| `addSession(session)`                    | Add a new session                                |
+| `removeSession(sessionId)`               | Remove a session                                 |
+| `switchSession(sessionId)`               | Switch to a different session                    |
+| `addMessage(message)`                    | Add a message                                    |
+| `addMessages(messages)`                  | Add multiple messages                            |
+| `clearMessages()`                        | Clear all messages                               |
+| `updateSessionStatus(sessionId, status)` | Update a session's status (drives `isExecuting`) |
+| `setLoading(loading)`                    | Set loading state                                |
+| `setError(error)`                        | Set error message                                |
+| `reset()`                                | Reset all playground state                       |
 
 ---
 
-## interruptStore
+## `fd.interrupts` (InterruptStore)
 
 Manages human-in-the-loop interrupts with a state machine for each interrupt's lifecycle.
 
-### Reactive Getters
+### Query Methods
 
-```typescript
-import {
-  getPendingInterrupts,
-  getPendingInterruptCount,
-  getResolvedInterrupts,
-  getIsAnySubmitting,
-  getInterrupt,
-  isInterruptPending,
-  isInterruptSubmitting
-} from '@flowdrop/flowdrop/playground';
-```
-
-| Function                     | Returns                           | Description                               |
-| ---------------------------- | --------------------------------- | ----------------------------------------- |
-| `getPendingInterrupts()`     | `InterruptWithState[]`            | Interrupts awaiting action                |
-| `getPendingInterruptCount()` | `number`                          | Count of pending interrupts               |
-| `getResolvedInterrupts()`    | `InterruptWithState[]`            | Completed interrupts                      |
-| `getIsAnySubmitting()`       | `boolean`                         | Whether any interrupt is being submitted  |
-| `getInterrupt(id)`           | `InterruptWithState \| undefined` | Get interrupt by ID                       |
-| `isInterruptPending(id)`     | `boolean`                         | Check if specific interrupt is pending    |
-| `isInterruptSubmitting(id)`  | `boolean`                         | Check if specific interrupt is submitting |
+| Method                               | Returns                           | Description                               |
+| ------------------------------------ | --------------------------------- | ----------------------------------------- |
+| `fd.interrupts.getPending()`         | `InterruptWithState[]`            | Interrupts awaiting action                |
+| `fd.interrupts.getPendingCount()`    | `number`                          | Count of pending interrupts               |
+| `fd.interrupts.getResolved()`        | `InterruptWithState[]`            | Completed interrupts                      |
+| `fd.interrupts.getIsAnySubmitting()` | `boolean`                         | Whether any interrupt is being submitted  |
+| `fd.interrupts.getInterrupt(id)`     | `InterruptWithState \| undefined` | Get interrupt by ID                       |
+| `fd.interrupts.isPending(id)`        | `boolean`                         | Check if specific interrupt is pending    |
+| `fd.interrupts.isSubmitting(id)`     | `boolean`                         | Check if specific interrupt is submitting |
 
 ### Interrupt Actions
 
 ```typescript
-import { interruptActions } from '@flowdrop/flowdrop/playground';
+const { actions } = fd.interrupts;
 ```
 
 | Method                        | Description                   |
@@ -335,29 +264,18 @@ pending → cancelling → cancelled
 
 ---
 
-## categoriesStore
+## `fd.categories` (CategoriesStore)
 
 Manages node category definitions.
 
-```typescript
-import {
-  getCategories,
-  getCategoryLabel,
-  getCategoryIcon,
-  getCategoryColor,
-  getCategoryDefinition,
-  initializeCategories
-} from '@flowdrop/flowdrop/editor';
-```
-
-| Function                           | Returns                           | Description                     |
-| ---------------------------------- | --------------------------------- | ------------------------------- |
-| `getCategories()`                  | `CategoryDefinition[]`            | All categories sorted by weight |
-| `getCategoryLabel(category)`       | `string`                          | Display label for a category    |
-| `getCategoryIcon(category)`        | `string`                          | Iconify icon ID for a category  |
-| `getCategoryColor(category)`       | `string`                          | CSS color for a category        |
-| `getCategoryDefinition(category)`  | `CategoryDefinition \| undefined` | Full definition                 |
-| `initializeCategories(categories)` | `void`                            | Load categories from API        |
+| Member                                  | Returns                           | Description                     |
+| --------------------------------------- | --------------------------------- | ------------------------------- |
+| `fd.categories.categories`              | `CategoryDefinition[]`            | All categories sorted by weight |
+| `fd.categories.getLabel(category)`      | `string`                          | Display label for a category    |
+| `fd.categories.getIcon(category)`       | `string`                          | Iconify icon ID for a category  |
+| `fd.categories.getColor(category)`      | `string`                          | CSS color for a category        |
+| `fd.categories.getDefinition(category)` | `CategoryDefinition \| undefined` | Full definition                 |
+| `fd.categories.initialize(categories)`  | `void`                            | Load categories from API        |
 
 ---
 
@@ -365,4 +283,4 @@ import {
 
 - [Store System Guide](/guides/advanced/store-system/) — patterns and best practices
 - [Event System](/guides/advanced/event-system/) — events that complement store reads
-- [Undo & Redo](/recipes/undo-redo/) — using historyStore in practice
+- [Undo & Redo](/recipes/undo-redo/) — using history in practice

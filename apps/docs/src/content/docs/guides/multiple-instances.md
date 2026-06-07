@@ -55,16 +55,20 @@ the `instance` prop:
 `WorkflowEditor`, `Playground`, `PlaygroundStudio`, `PlaygroundModal`, and
 `PlaygroundApp` accept the same `instance` prop.
 
-## The default instance (backward compatibility)
+## The default instance
 
 You only need `instanceId` when mounting **more than one** editor. The first
-mount without an `instanceId` becomes the **page-default instance**:
+mount without an `instanceId` becomes the **page-default instance**, which is
+what `getInstance()` resolves to for single-editor embeds with no explicit
+provider.
 
-- It keeps the legacy localStorage keys (`flowdrop:draft:<workflowId>`,
-  `fd-pipeline-panel-open`, …), so existing users keep their drafts.
-- All module-level store APIs — `getWorkflowStore()`, `workflowActions`,
-  `historyService`, and friends — operate on it, so existing integration code
-  keeps working unchanged.
+In 2.0 there are **no module-level store APIs** — instances are the API.
+Resolve the owning instance with `getInstance()` inside the component tree, or
+hold the mount handle's `.instance` outside it; there is no global
+`getWorkflowStore()`/`workflowActions`/`historyService` surface. Each instance
+keeps its own scoped localStorage keys (`flowdrop:draft:default:<workflowId>`,
+`fd-pipeline-panel-open:default` for the default instance); 1.x bare keys
+migrate automatically on first read.
 
 Additional mounts without an explicit id get auto-generated ones (`fd-1`,
 `fd-2`, …). Prefer explicit ids whenever drafts are enabled, so each editor's
@@ -72,11 +76,14 @@ drafts land under a stable, predictable key.
 
 ## Instance-scoped storage keys
 
-| State               | Default instance              | Instance with `instanceId: 'left'` |
-| ------------------- | ----------------------------- | ---------------------------------- |
-| Workflow drafts     | `flowdrop:draft:<workflowId>` | `flowdrop:draft:left:<workflowId>` |
-| Pipeline panel open | `fd-pipeline-panel-open`      | `fd-pipeline-panel-open:left`      |
-| Pipeline view mode  | `fd-pipeline-view-mode`       | `fd-pipeline-view-mode:left`       |
+| State               | Default instance                      | Instance with `instanceId: 'left'` |
+| ------------------- | ------------------------------------- | ---------------------------------- |
+| Workflow drafts     | `flowdrop:draft:default:<workflowId>` | `flowdrop:draft:left:<workflowId>` |
+| Pipeline panel open | `fd-pipeline-panel-open:default`      | `fd-pipeline-panel-open:left`      |
+| Pipeline view mode  | `fd-pipeline-view-mode:default`       | `fd-pipeline-view-mode:left`       |
+
+1.x bare keys (`flowdrop:draft:<workflowId>`, `fd-pipeline-panel-open`, …)
+migrate automatically to the `:default` scope on first read.
 
 `clearAllDrafts()` sweeps everything under `flowdrop:draft:` — instance
 sub-namespaces included — so a logout handler still clears all editors at once.
@@ -109,9 +116,11 @@ Some state is deliberately shared across all instances on a page:
 - **Theme and settings** — one `data-theme` and one settings store per page.
   This includes UI toggles like console-open, sidebar-collapsed, and the
   bottom-panel tab: toggling them in one editor affects all editors.
-- **Port-compatibility config** — `initializePortCompatibility` is page-global;
-  the last mount's port config wins.
-- **API endpoint config** — `setEndpointConfig` is page-global.
+- **Port-compatibility config** — each instance owns a `PortCompatibilityChecker`
+  at `fd.portCompatibility`, re-initialized by mount from the backend's port
+  config; the last mount's fetched config wins for shared backends.
+- **API endpoint config** — each instance owns an `ApiContext` at `fd.api`,
+  configured by mount via `fd.api.configure(config, authProvider)`.
 - **Playground live polling** — playground session/message _state_ is isolated
   per instance, but the polling timer is page-global: only one playground
   actively polls at a time. If two playgrounds need concurrent live updates,
@@ -123,17 +132,16 @@ Some state is deliberately shared across all instances on a page:
 The page-default instance is **browser-only** — module-level mutable state on
 the server would leak between requests. During SSR, the provider components
 (`App`, `WorkflowEditor`, …) create a fresh per-render instance automatically,
-so server rendering works without any extra setup. Calling a module-level store
-function (e.g. `getWorkflowStore()`) during SSR outside a FlowDrop component
+so server rendering works without any extra setup. Resolving the default
+instance (e.g. via `getInstance()`) during SSR outside a FlowDrop component
 tree throws with an explanatory error instead of leaking state.
 
 ## Troubleshooting
 
 **Two editors share state** — you're on a FlowDrop version before
-multi-instance support, or a legacy module-level API consumer (e.g. custom code
-calling `workflowActions` directly) is writing to the default instance while a
-second un-keyed mount also claimed it. Pass explicit `instanceId`s and use
-`getInstance()` / the mount handle instead of module-level functions.
+multi-instance support, or two un-keyed mounts both claimed the default
+instance. Pass explicit `instanceId`s and resolve state via `getInstance()` /
+the mount handle's `.instance`.
 
 **Drafts collide between editors** — both mounts omitted `instanceId`, so the
 second got an auto-generated id that changes across reloads. Pass stable

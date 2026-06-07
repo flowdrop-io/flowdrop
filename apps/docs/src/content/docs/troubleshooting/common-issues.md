@@ -83,22 +83,27 @@ description: Solutions to frequently encountered problems when integrating FlowD
 
 **Symptoms:** Config fields with `format: "json"` or `format: "template"` show as plain text inputs.
 
-**Fix:** You must explicitly register CodeMirror fields. They're in a separate module to avoid the ~300KB bundle cost:
+**Fix:** You must explicitly register CodeMirror fields against the instance's `fd.fields` registry. They're in a separate module to avoid the ~300KB bundle cost:
 
 ```typescript
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance(); // or app.instance outside the component tree
+
 import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code';
-registerCodeEditorField();
+registerCodeEditorField(fd.fields);
 
 // For template fields with variable autocomplete:
 import { registerTemplateEditorField } from '@flowdrop/flowdrop/form/code';
-registerTemplateEditorField();
+registerTemplateEditorField(fd.fields);
 
 // For markdown:
 import { registerMarkdownEditorField } from '@flowdrop/flowdrop/form/markdown';
-registerMarkdownEditorField();
+registerMarkdownEditorField(fd.fields);
 ```
 
-Register these **before** mounting the editor.
+Each installer takes the target field registry as its first argument and
+re-checks registration after its dynamic import resolves, so calling it after
+mount (once `fd.fields` is available) is the supported flow.
 
 ## Multiple Editors Share State
 
@@ -108,9 +113,9 @@ Multiple editors per page are supported natively — each mount gets its own iso
 
 1. **The page is on an older FlowDrop version.** Per-page instances landed in a recent release; upgrade `@flowdrop/flowdrop`.
 
-2. **Both mounts omitted `instanceId` and a module-store consumer is involved.** The first mount without an `instanceId` becomes the page-default instance and is what the module-level store APIs (`getWorkflowStore()`, `workflowActions`, …) operate on. Pass an explicit `instanceId` to each additional editor to scope its draft storage (`flowdrop:draft:<instanceId>:<workflowId>`), and use `getInstance()` / `instance.workflow` instead of the module-level APIs to target a specific editor.
+2. **Both mounts omitted `instanceId`.** The first mount without an `instanceId` becomes the page-default instance; a second un-keyed mount can collide with it. Pass an explicit `instanceId` to each additional editor to scope its draft storage (`flowdrop:draft:<instanceId>:<workflowId>`), and resolve state via `getInstance()` / the mount handle's `.instance` to target a specific editor. In 2.0 there are no module-level store APIs — instances are the API.
 
-Note that some things are still **intentionally shared** across all editors on a page: theme and settings (including UI toggles), port-compatibility config, and the API endpoint config. See the [multiple instances guide](/guides/multiple-instances/).
+Note that theme and settings (including UI toggles) are still **intentionally shared** across all editors on a page. Registries (`fd.nodes`/`fd.fields`), the API context (`fd.api`), and port compatibility (`fd.portCompatibility`) are now instance-scoped. See the [multiple instances guide](/guides/multiple-instances/).
 
 ## Save Fails Silently
 

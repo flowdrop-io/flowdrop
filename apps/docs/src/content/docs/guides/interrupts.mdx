@@ -136,26 +136,25 @@ sequenceDiagram
 The `ChatPanel` automatically detects and renders interrupts in messages. For manual integration:
 
 ```typescript
-import {
-  interruptService,
-  interruptActions,
-  getPendingInterrupts,
-  getInterrupt
-} from '@flowdrop/flowdrop/playground';
+import { getInstance } from '@flowdrop/flowdrop/editor';
+import { interruptService } from '@flowdrop/flowdrop/playground';
+
+const fd = getInstance();
 
 // Read pending interrupts reactively
-const pending = $derived(getPendingInterrupts());
+const pending = $derived(fd.interrupts.getPending());
 
 // Resolve an interrupt
 async function resolveInterrupt(interruptId: string, value: unknown) {
-  const result = interruptActions.startSubmit(interruptId, value);
+  const result = fd.interrupts.startSubmit(interruptId, value);
   if (!result.valid) return;
 
   try {
-    await interruptService.resolveInterrupt(interruptId, value);
-    interruptActions.submitSuccess(interruptId);
+    // The service now takes the instance's endpoint config first
+    await interruptService.resolveInterrupt(fd.api.config, interruptId, value);
+    fd.interrupts.submitSuccess(interruptId);
   } catch (error) {
-    interruptActions.submitFailure(interruptId, String(error));
+    fd.interrupts.submitFailure(interruptId, String(error));
   }
 }
 ```

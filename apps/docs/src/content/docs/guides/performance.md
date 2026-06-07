@@ -139,13 +139,12 @@ For workflows with many nodes (50+):
 ### Use batch updates
 
 ```javascript
-const { workflowActions } = app;
+const { actions } = app.instance.workflow;
 
-workflowActions.batchUpdate(() => {
-  // All changes inside are applied as a single reactive update
-  workflowActions.addNode(nodeA);
-  workflowActions.addNode(nodeB);
-  workflowActions.addEdge(edge);
+// Apply nodes and edges in a single reactive update
+actions.batchUpdate({
+  nodes: [...existingNodes, nodeA, nodeB],
+  edges: [...existingEdges, edge]
 });
 ```
 
@@ -154,11 +153,12 @@ workflowActions.batchUpdate(() => {
 Group related changes into a single undo step:
 
 ```javascript
-import { historyActions } from '@flowdrop/flowdrop/editor';
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
 
-historyActions.startTransaction();
+fd.historyBindings.startTransaction(fd.workflow.current, 'Bulk update');
 // ... multiple changes
-historyActions.endTransaction();
+fd.historyBindings.commitTransaction();
 ```
 
 ### Disable auto-save for programmatic updates

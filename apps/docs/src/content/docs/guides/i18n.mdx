@@ -3,7 +3,7 @@ title: i18n & Custom Messages
 description: Override or translate every user-facing string in FlowDrop via the messages prop.
 ---
 
-Every user-facing label, tooltip, placeholder, and notice in FlowDrop is rendered from a single typed `Messages` tree. You can override any subset by passing a `messages` callback to `<FlowDrop>`. Wire that callback to your i18n library and locale changes propagate into FlowDrop without a subscription.
+Every user-facing label, tooltip, placeholder, and notice in FlowDrop is rendered from a single typed `Messages` tree. You can override any subset by passing a `messages` callback to `<App>`. Wire that callback to your i18n library and locale changes propagate into FlowDrop without a subscription.
 
 FlowDrop is **not** an i18n library. It is a consumer of one. Translations live in your app, alongside the rest of your UI copy.
 
@@ -13,10 +13,10 @@ Override a single string with a value:
 
 ```svelte
 <script>
-  import { FlowDrop } from '@flowdrop/flowdrop';
+  import { App } from '@flowdrop/flowdrop';
 </script>
 
-<FlowDrop messages={{ form: { schema: { save: 'Apply' } } }} />
+<App messages={{ form: { schema: { save: 'Apply' } } }} />
 ```
 
 `messages` is `DeepPartial<Messages>` — every key is optional, missing keys fall through to the English defaults.
@@ -24,7 +24,7 @@ Override a single string with a value:
 You can also pass a callback. The two forms are equivalent for static overrides; the callback is useful when your translations come from a function call you'd rather not invoke unless the prop is actually read:
 
 ```svelte
-<FlowDrop messages={() => ({ form: { schema: { save: 'Apply' } } })} />
+<App messages={() => ({ form: { schema: { save: 'Apply' } } })} />
 ```
 
 ## Translating with paraglide-js
@@ -33,7 +33,7 @@ You can also pass a callback. The two forms are equivalent for static overrides;
 
 ```svelte
 <script>
-  import { FlowDrop } from '@flowdrop/flowdrop';
+  import { App } from '@flowdrop/flowdrop';
   import * as p from '$lib/paraglide/messages';
 
   // Paraglide's reactive locale store causes Svelte to re-evaluate the
@@ -56,14 +56,14 @@ You can also pass a callback. The two forms are equivalent for static overrides;
   });
 </script>
 
-<FlowDrop {messages} />
+<App {messages} />
 ```
 
 `paraglide-js` is one option — `sveltekit-i18n`, `typesafe-i18n`, or any reactive store will work. The contract is just: a callback returning a partial tree.
 
 ## The Messages shape
 
-The full default tree lives at `libs/flowdrop/src/lib/messages/defaults.ts` and is exported as `defaultMessages` from `@flowdrop/flowdrop`. The shape is grouped by **domain**, not by component — file paths churn, domains don't.
+The full default tree lives at `libs/flowdrop/src/lib/messages/defaults.ts` and is exported as `defaultMessages` from `@flowdrop/flowdrop/core`. The shape is grouped by **domain**, not by component — file paths churn, domains don't.
 
 | Branch        | What it covers                                                                       |
 | ------------- | ------------------------------------------------------------------------------------ |
@@ -92,24 +92,23 @@ interrupt: {
 
 When you override a parameterised entry, you must supply a function with the same signature. Call sites invoke it with the params object, so a plain string would throw at runtime. If your translation doesn't need the params, ignore them: `({ n: _n }) => 'Move up'`.
 
-## Migrating from deprecated label props
+## Removed label props (was: deprecated in 1.x)
 
-Several components used to accept individual `*Label` props. These are deprecated in **v1.x** and removed in **v2.0**. They keep working but emit a one-shot `console.warn` (development only).
+Several components used to accept individual `*Label` props that duplicated the `messages` tree. In **v2.0** the duplicates are removed — use the corresponding `messages` key instead:
 
-| Component       | Deprecated prop          | Replace with                                |
-| --------------- | ------------------------ | ------------------------------------------- |
-| `<SchemaForm>`  | `saveLabel`              | `messages.form.schema.save`                 |
-| `<SchemaForm>`  | `cancelLabel`            | `messages.form.schema.cancel`               |
-| `<FormToggle>`  | `onLabel`                | `messages.form.toggle.enabled`              |
-| `<FormToggle>`  | `offLabel`               | `messages.form.toggle.disabled`             |
-| `<FormArray>`   | `addLabel`               | `messages.form.array.add`                   |
-| `<AIChatPanel>` | `placeholder`            | `messages.chat.placeholder`                 |
+| Component       | Removed prop  | Replace with                  |
+| --------------- | ------------- | ----------------------------- |
+| `<SchemaForm>`  | `saveLabel`   | `messages.form.schema.save`   |
+| `<SchemaForm>`  | `cancelLabel` | `messages.form.schema.cancel` |
+| `<AIChatPanel>` | `placeholder` | `messages.chat.placeholder`   |
 
-Workflow-level overrides on interrupt configs (`config.confirmLabel`, `config.acceptAllLabel`, etc.) are **not** deprecated — those are runtime data from the workflow author, not component-prop API. They keep their priority over the `messages` defaults.
+`<FormToggle>`'s `onLabel`/`offLabel` and `<FormArray>`'s `addLabel` are **not** removed — they were _un_-deprecated in 2.0. They express per-instance labels the global `messages` system cannot (a toggle's "Hidden"/"Visible", a schema-derived "Add Header" button) and are now documented overrides.
 
-## Components used outside the `<FlowDrop>` provider
+Workflow-level overrides on interrupt configs (`config.confirmLabel`, `config.acceptAllLabel`, etc.) are **not** removed either — those are runtime data from the workflow author, not component-prop API. They keep their priority over the `messages` defaults.
 
-If you mount a flowdrop component (e.g. `<SchemaForm>` standalone, or a Storybook story) outside the root `<FlowDrop>`, it falls back silently to the English `defaultMessages`. There is no error. The trade-off: a missing provider always renders English regardless of locale. To get translations in standalone usage, set up the messages context yourself:
+## Components used outside the `<App>` provider
+
+If you mount a flowdrop component (e.g. `<SchemaForm>` standalone, or a Storybook story) outside the root `<App>`, it falls back silently to the English `defaultMessages`. There is no error. The trade-off: a missing provider always renders English regardless of locale. To get translations in standalone usage, set up the messages context yourself:
 
 ```svelte
 <script>
@@ -119,7 +118,7 @@ If you mount a flowdrop component (e.g. `<SchemaForm>` standalone, or a Storyboo
 </script>
 ```
 
-`setMessages` accepts a getter so reactive overrides propagate the same way they do under `<FlowDrop>`.
+`setMessages` accepts a getter so reactive overrides propagate the same way they do under `<App>`.
 
 ## Reference
 

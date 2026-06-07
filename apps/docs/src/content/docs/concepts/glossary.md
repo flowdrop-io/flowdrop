@@ -64,7 +64,7 @@ The definition of a node type — its name, description, icon, category, ports, 
 The visual representation of a node: `workflowNode` (full-featured), `simple` (compact), `square` (icon only), `tool`, `gateway`, `terminal`, `idea`, or `note`.
 
 **Plugin**
-A package of custom node types registered together via `registerFlowDropPlugin()`. Plugins have a namespace and can define multiple node components. — see [Custom Nodes](/guides/custom-nodes/)
+A package of custom node types registered together via `fd.nodes.registerPlugin()` (or `createPlugin().register(fd.nodes)`). Plugins have a namespace and can define multiple node components. — see [Custom Nodes](/guides/custom-nodes/)
 
 **Playground**
 An interactive testing interface where users can execute workflows, send messages, and see results in a chat-like UI.
@@ -76,7 +76,7 @@ A typed connection point on a node. Input ports receive data; output ports send 
 The global configuration of available data types and compatibility rules. Served by your backend at `GET /port-config`.
 
 **Registry**
-A singleton that stores custom node components (`nodeComponentRegistry`) or custom form fields (`fieldComponentRegistry`). — see [Custom Nodes](/guides/custom-nodes/)
+A per-instance store of custom node components (`fd.nodes`) or custom form fields (`fd.fields`), seeded with builtins in the instance constructor. — see [Custom Nodes](/guides/custom-nodes/)
 
 **Session**
 A playground execution session. Each session has messages, status, and can be resumed.

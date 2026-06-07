@@ -24,19 +24,22 @@ FlowDrop's history store takes **snapshots** of the entire workflow state. Each 
 
 ## Programmatic Access
 
+History lives on the instance — resolve it with `getInstance()` inside the component tree (or use the mount handle's `.instance`):
+
 ```typescript
-import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
 
-// Check availability
-const canUndo = getCanUndo(); // boolean (reactive in Svelte)
-const canRedo = getCanRedo(); // boolean
+// Check availability — reactive getters on historyBindings
+const canUndo = fd.historyBindings.canUndo; // boolean
+const canRedo = fd.historyBindings.canRedo; // boolean
 
-// Perform undo/redo
-const undoSuccess = historyActions.undo(); // returns boolean
-const redoSuccess = historyActions.redo(); // returns boolean
+// Perform undo/redo (HistoryStore actions are bound — safe to detach)
+fd.historyBindings.undo();
+fd.historyBindings.redo();
 
 // Clear history
-historyActions.clear(currentWorkflow);
+fd.historyBindings.clear(fd.workflow.current);
 ```
 
 ## Transactions
@@ -44,53 +47,57 @@ historyActions.clear(currentWorkflow);
 Group multiple changes into a single undo step:
 
 ```typescript
-import { historyActions, workflowActions } from '@flowdrop/flowdrop/editor';
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
 
 // Start a transaction
-historyActions.startTransaction(currentWorkflow, 'Rearrange layout');
+fd.historyBindings.startTransaction(fd.workflow.current, 'Rearrange layout');
 
 // Make multiple changes — none are recorded individually
-workflowActions.updateNode('node-1', { position: { x: 100, y: 200 } });
-workflowActions.updateNode('node-2', { position: { x: 300, y: 200 } });
-workflowActions.updateNode('node-3', { position: { x: 500, y: 200 } });
+fd.workflow.actions.updateNode('node-1', { position: { x: 100, y: 200 } });
+fd.workflow.actions.updateNode('node-2', { position: { x: 300, y: 200 } });
+fd.workflow.actions.updateNode('node-3', { position: { x: 500, y: 200 } });
 
 // Commit — all changes become one undo step
-historyActions.commitTransaction();
+fd.historyBindings.commitTransaction();
 
 // Or cancel — all changes revert
-// historyActions.cancelTransaction();
+// fd.historyBindings.cancelTransaction();
 ```
 
 ## Building Custom Undo/Redo Buttons
 
-```typescript
-import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
+Outside the component tree, hold the mount handle and read `.instance`:
 
-// Create buttons
+```typescript
+const app = await mountFlowDropApp(container, options);
+const fd = app.instance;
+
 const undoBtn = document.getElementById('undo');
 const redoBtn = document.getElementById('redo');
 
-undoBtn.addEventListener('click', () => historyActions.undo());
-redoBtn.addEventListener('click', () => historyActions.redo());
+undoBtn.addEventListener('click', () => fd.historyBindings.undo());
+redoBtn.addEventListener('click', () => fd.historyBindings.redo());
 
 // Update button state (polling — for non-Svelte frameworks)
 setInterval(() => {
-  undoBtn.disabled = !getCanUndo();
-  redoBtn.disabled = !getCanRedo();
+  undoBtn.disabled = !fd.historyBindings.canUndo;
+  redoBtn.disabled = !fd.historyBindings.canRedo;
 }, 500);
 ```
 
-In Svelte, use reactivity instead of polling:
+In Svelte, resolve the instance and use reactivity instead of polling:
 
 ```svelte
 <script>
-  import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
-  const canUndo = $derived(getCanUndo());
-  const canRedo = $derived(getCanRedo());
+  import { getInstance } from '@flowdrop/flowdrop/editor';
+  const fd = getInstance();
+  const canUndo = $derived(fd.historyBindings.canUndo);
+  const canRedo = $derived(fd.historyBindings.canRedo);
 </script>
 
-<button disabled={!canUndo} onclick={() => historyActions.undo()}>Undo</button>
-<button disabled={!canRedo} onclick={() => historyActions.redo()}>Redo</button>
+<button disabled={!canUndo} onclick={() => fd.historyBindings.undo()}>Undo</button>
+<button disabled={!canRedo} onclick={() => fd.historyBindings.redo()}>Redo</button>
 ```
 
 ## Next Steps

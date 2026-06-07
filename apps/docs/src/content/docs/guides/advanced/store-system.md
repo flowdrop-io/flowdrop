@@ -5,132 +5,125 @@ description: Understand FlowDrop's reactive state management for programmatic ac
 
 FlowDrop uses **Svelte 5 runes** for reactive state management. Each mounted editor owns an isolated `FlowDropInstance` container holding its stores. While most developers won't need to interact with stores directly, they're essential for advanced integrations.
 
-## Two Access Styles
+## Reaching a store
 
-There are two ways to reach a store, depending on whether you run one editor or several on a page:
+In 2.0 there are **no module-level store functions** — instances are the API. Reach a store one of two ways:
 
-- **Module-level functions** (`getWorkflowStore()`, `workflowActions`, `historyActions`, …) operate on the **page-default instance** — the first editor mounted without an explicit `instanceId`. This is the legacy API and is fully backward compatible; use it for single-editor pages.
-- **`getInstance()` inside a component**, or holding a `FlowDropInstance` directly, lets you target a specific editor in a multi-instance setup. Read its members — `instance.workflow`, `instance.history`, `instance.playground`, etc. — instead of the module-level getters. Create one with `createFlowDropInstance({ id })` from `@flowdrop/flowdrop/editor` and pass it as the `instance` prop, or let the component resolve it from context.
+- **`getInstance()` inside a FlowDrop component** returns the owning `FlowDropInstance`. For single-editor embeds it resolves the page-default instance automatically.
+- **The mount handle's `.instance`** (`const fd = (await mountFlowDropApp(...)).instance`) lets you reach a specific editor's stores from vanilla JS or another framework. You can also construct one with `createFlowDropInstance({ id })` from `@flowdrop/flowdrop/editor` and pass it as the `instance` prop.
 
-The module-level functions documented below all act on the page-default instance. See the [multiple instances guide](/guides/multiple-instances/) for scoping multiple editors.
+The instance members are `fd.workflow`, `fd.history` / `fd.historyBindings`, `fd.playground`, `fd.interrupts`, `fd.categories`, `fd.portCoordinates`, `fd.pipelinePanel`, `fd.api`, `fd.nodes`, `fd.fields`, `fd.formats`, and `fd.portCompatibility`. See the [multiple instances guide](/guides/multiple-instances/) for scoping multiple editors.
 
-## Workflow Store
+```typescript
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+```
+
+## Workflow Store (`fd.workflow`)
 
 The central store holding the current workflow state.
 
 ### Reading State
 
 ```typescript
-import {
-  getWorkflowStore,
-  getIsDirty,
-  getWorkflowNodes,
-  getWorkflowEdges,
-  getWorkflowName,
-  getWorkflowValidation
-} from '@flowdrop/flowdrop/editor';
-
 // Reactive getters (re-evaluate when state changes)
-const workflow = getWorkflowStore(); // Workflow | null
-const isDirty = getIsDirty(); // boolean
-const nodes = getWorkflowNodes(); // WorkflowNode[]
-const edges = getWorkflowEdges(); // WorkflowEdge[]
-const name = getWorkflowName(); // string
-const validation = getWorkflowValidation();
+const workflow = fd.workflow.current; // Workflow | null
+const isDirty = fd.workflow.isDirty; // boolean
+const nodes = fd.workflow.nodes; // WorkflowNode[]
+const edges = fd.workflow.edges; // WorkflowEdge[]
+const name = fd.workflow.name; // string
+const validation = fd.workflow.validation;
 // { hasNodes, hasEdges, nodeCount, edgeCount, isValid }
 ```
 
 ### Modifying State
 
 ```typescript
-import { workflowActions } from '@flowdrop/flowdrop/editor';
+const { actions } = fd.workflow;
 
 // Initialize with a loaded workflow
-workflowActions.initialize(workflow);
+actions.initialize(workflow);
 
 // Node operations
-workflowActions.addNode(newNode);
-workflowActions.removeNode('node-id');
-workflowActions.updateNode('node-id', { data: { ...updates } });
+actions.addNode(newNode);
+actions.removeNode('node-id');
+actions.updateNode('node-id', { data: { ...updates } });
 
 // Edge operations
-workflowActions.addEdge(newEdge);
-workflowActions.removeEdge('edge-id');
+actions.addEdge(newEdge);
+actions.removeEdge('edge-id');
 
 // Metadata
-workflowActions.updateName('New Workflow Name');
-workflowActions.updateMetadata({ tags: ['production'] });
+actions.updateName('New Workflow Name');
+actions.updateMetadata({ tags: ['production'] });
 
 // Batch update (single history entry)
-workflowActions.batchUpdate({
+actions.batchUpdate({
   nodes: updatedNodes,
   edges: updatedEdges,
   name: 'Updated Name'
 });
 
 // Clear everything
-workflowActions.clear();
+actions.clear();
 ```
 
 ### Dirty State
 
 ```typescript
-import { markAsSaved, isDirty } from '@flowdrop/flowdrop/editor';
-
-// Check dirty state (non-reactive)
-if (isDirty()) {
+// Check dirty state
+if (fd.workflow.isDirty) {
   console.log('There are unsaved changes');
 }
 
 // Clear dirty flag after saving
-markAsSaved();
+fd.workflow.markAsSaved();
 ```
 
-## History Store
+## History Store (`fd.historyBindings`)
 
-Manages undo/redo with snapshot-based history.
+Manages undo/redo with snapshot-based history. `fd.historyBindings` is the reactive rune wrapper around `fd.history` (the underlying `HistoryService`).
 
 ```typescript
-import { getCanUndo, getCanRedo, historyActions } from '@flowdrop/flowdrop/editor';
+// Check availability (reactive getters)
+const canUndo = fd.historyBindings.canUndo; // boolean
+const canRedo = fd.historyBindings.canRedo; // boolean
 
-// Check availability (reactive)
-const canUndo = getCanUndo(); // boolean
-const canRedo = getCanRedo(); // boolean
-
-// Perform undo/redo
-historyActions.undo(); // returns boolean (success)
-historyActions.redo(); // returns boolean (success)
+// Perform undo/redo (bound actions — safe to detach)
+fd.historyBindings.undo(); // returns boolean (success)
+fd.historyBindings.redo(); // returns boolean (success)
 
 // Manual history management
-historyActions.pushState(workflow, { description: 'Bulk import' });
-historyActions.clear(currentWorkflow);
+fd.historyBindings.pushState(workflow, { description: 'Bulk import' });
+fd.historyBindings.clear(fd.workflow.current);
 
 // Transactions (group multiple changes into one undo step)
-historyActions.startTransaction(workflow, 'Rearrange nodes');
+fd.historyBindings.startTransaction(fd.workflow.current, 'Rearrange nodes');
 // ... make multiple changes ...
-historyActions.commitTransaction();
-// or: historyActions.cancelTransaction();
+fd.historyBindings.commitTransaction();
+// or: fd.historyBindings.cancelTransaction();
 ```
 
 ## Settings Store
 
-User preferences for theme, editor behavior, and UI.
+User preferences for theme, editor behavior, and UI. Settings are **page-global by design** — they are not instance-scoped, so these remain module-level functions.
 
 ```typescript
 import {
   getSettings,
-  getThemeSettings,
-  getEditorSettings,
-  getUiSettings,
+  themeSettings,
+  editorSettings,
+  uiSettings,
   updateSettings,
-  resetSettings
+  resetSettings,
+  onSettingsChange
 } from '@flowdrop/flowdrop/settings';
 
 // Read settings (reactive)
 const settings = getSettings(); // FlowDropSettings
-const theme = getThemeSettings(); // ThemeSettings
-const editor = getEditorSettings(); // EditorSettings
-const ui = getUiSettings(); // UISettings
+const theme = themeSettings(); // ThemeSettings
+const editor = editorSettings(); // EditorSettings
+const ui = uiSettings(); // UISettings
 
 // Update settings
 updateSettings({
@@ -151,72 +144,54 @@ const unsubscribe = onSettingsChange((newSettings, oldSettings) => {
 
 ### Theme Control
 
-```typescript
-import {
-  getTheme,
-  getResolvedTheme,
-  setTheme,
-  toggleTheme,
-  cycleTheme
-} from '@flowdrop/flowdrop/core';
+Theme is also page-global:
 
-getTheme(); // 'light' | 'dark' | 'auto'
-getResolvedTheme(); // 'light' | 'dark' (actual applied theme)
+```typescript
+import { theme, resolvedTheme, setTheme, toggleTheme, cycleTheme } from '@flowdrop/flowdrop/core';
+
+theme(); // 'light' | 'dark' | 'auto'
+resolvedTheme(); // 'light' | 'dark' (actual applied theme)
 setTheme('dark');
 toggleTheme(); // light ↔ dark
 cycleTheme(); // light → dark → auto → light
 ```
 
-## Playground Store
+## Playground Store (`fd.playground`)
 
 Manages interactive testing sessions and messages.
 
 ```typescript
-import {
-  getCurrentSession,
-  getSessions,
-  getMessages,
-  getChatMessages,
-  getLogMessages,
-  getIsExecuting,
-  playgroundActions
-} from '@flowdrop/flowdrop/playground';
-
-// Read state (reactive)
-const session = getCurrentSession(); // PlaygroundSession | null
-const sessions = getSessions(); // PlaygroundSession[]
-const messages = getMessages(); // PlaygroundMessage[]
-const chatMsgs = getChatMessages(); // PlaygroundMessage[] (user/assistant only)
-const logMsgs = getLogMessages(); // PlaygroundMessage[] (system only)
-const isRunning = getIsExecuting(); // boolean
+// Read state (reactive getters)
+const session = fd.playground.currentSession; // PlaygroundSession | null
+const sessions = fd.playground.sessions; // PlaygroundSession[]
+const messages = fd.playground.messages; // PlaygroundMessage[]
+const chatMsgs = fd.playground.chatMessages; // PlaygroundMessage[] (user/assistant only)
+const logMsgs = fd.playground.logMessages; // PlaygroundMessage[] (system only)
+const isRunning = fd.playground.isExecuting; // boolean
 ```
 
-## Interrupt Store
+## Interrupt Store (`fd.interrupts`)
 
 Manages human-in-the-loop interrupt state.
 
 ```typescript
-import {
-  getPendingInterrupts,
-  getResolvedInterrupts,
-  interruptActions
-} from '@flowdrop/flowdrop/playground';
-
-// Read state (reactive)
-const pending = getPendingInterrupts(); // Interrupt[]
-const resolved = getResolvedInterrupts(); // Interrupt[]
+// Read state
+const pending = fd.interrupts.getPending(); // InterruptWithState[]
+const resolved = fd.interrupts.getResolved(); // InterruptWithState[]
+const pendingCount = fd.interrupts.getPendingCount(); // number
 ```
 
 ## Using Stores in Svelte Components
 
-Since stores use Svelte 5 runes, you can use them directly in `.svelte` files with `$derived`:
+Since stores use Svelte 5 runes, read their getters inside `$derived`:
 
 ```svelte
 <script>
-  import { getWorkflowNodes, getIsDirty } from '@flowdrop/flowdrop/editor';
+  import { getInstance } from '@flowdrop/flowdrop/editor';
 
-  const nodes = $derived(getWorkflowNodes());
-  const isDirty = $derived(getIsDirty());
+  const fd = getInstance();
+  const nodes = $derived(fd.workflow.nodes);
+  const isDirty = $derived(fd.workflow.isDirty);
 </script>
 
 <p>Nodes: {nodes.length}</p><p>Unsaved: {isDirty ? 'Yes' : 'No'}</p>
@@ -224,13 +199,15 @@ Since stores use Svelte 5 runes, you can use them directly in `.svelte` files wi
 
 ## Using Stores Outside Svelte
 
-For vanilla JS or other frameworks, call the getter functions directly. They return the current value at call time:
+For vanilla JS or other frameworks, hold the mount handle's `.instance` and read its getters at call time:
 
 ```typescript
+const fd = (await mountFlowDropApp(container, options)).instance;
+
 // Polling pattern
 setInterval(() => {
-  const workflow = getWorkflowStore();
-  const dirty = getIsDirty();
+  const workflow = fd.workflow.current;
+  const dirty = fd.workflow.isDirty;
   externalUI.update({ workflow, dirty });
 }, 1000);
 ```

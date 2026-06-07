@@ -7,15 +7,15 @@ FlowDrop ships with 7 built-in node types, but you can register your own custom 
 
 ## Overview
 
-There are three registration methods:
+Registration happens against the instance's node registry, `fd.nodes` (a `NodeComponentRegistry`). There are three methods:
 
-| Approach                       | When to use                                 |
-| ------------------------------ | ------------------------------------------- |
-| **`registerCustomNode()`**     | One-off project-specific nodes              |
-| **`registerFlowDropPlugin()`** | Libraries providing multiple node types     |
-| **`createPlugin()`**           | Same as above, with a chainable builder API |
+| Approach                                | When to use                                 |
+| --------------------------------------- | ------------------------------------------- |
+| **`fd.nodes.registerCustom()`**         | One-off project-specific nodes              |
+| **`fd.nodes.registerPlugin()`**         | Libraries providing multiple node types     |
+| **`createPlugin().register(fd.nodes)`** | Same as above, with a chainable builder API |
 
-Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent conflicts.
+Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent conflicts. Resolve `fd` with `getInstance()` inside the component tree, or use the mount handle's `.instance` outside it. Registration is post-mount; `BaseRegistry`'s version counter invalidates dependent `$derived` reads so late registrations take effect.
 
 ## Quick Start
 
@@ -51,10 +51,11 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 **2. Register it:**
 
 ```typescript
-import { registerCustomNode } from '@flowdrop/flowdrop/editor';
+import { getInstance } from '@flowdrop/flowdrop/editor';
 import CodeEditorNode from './CodeEditorNode.svelte';
 
-registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
+const fd = getInstance(); // or app.instance outside the component tree
+fd.nodes.registerCustom('myapp:code-editor', 'Code Editor', CodeEditorNode, {
   icon: 'mdi:code-braces',
   description: 'A custom code editor node',
   category: 'custom'
@@ -104,9 +105,10 @@ interface NodeComponentProps {
 Register multiple nodes under a shared namespace:
 
 ```typescript
-import { registerFlowDropPlugin } from '@flowdrop/flowdrop/editor';
+import { getInstance } from '@flowdrop/flowdrop/editor';
 
-const result = registerFlowDropPlugin({
+const fd = getInstance();
+const result = fd.nodes.registerPlugin({
   namespace: 'awesome',
   name: 'Awesome Nodes',
   version: '1.0.0',
@@ -132,28 +134,27 @@ const result = registerFlowDropPlugin({
 ### Fluent Builder
 
 ```typescript
-import { createPlugin } from '@flowdrop/flowdrop/editor';
+import { createPlugin, getInstance } from '@flowdrop/flowdrop/editor';
 
+const fd = getInstance();
 createPlugin('awesome', 'Awesome Nodes')
   .version('1.0.0')
   .node('fancy', 'Fancy Node', FancyNode, { icon: 'mdi:sparkles' })
   .node('glow', 'Glowing Node', GlowNode, { icon: 'mdi:lightbulb' })
-  .register();
+  .register(fd.nodes);
 ```
 
 ## Plugin Management
 
-```typescript
-import {
-  unregisterFlowDropPlugin,
-  getRegisteredPlugins,
-  getPluginNodeCount,
-  isValidNamespace
-} from '@flowdrop/flowdrop/editor';
+Plugin lifecycle is managed on `fd.nodes`; `isValidNamespace` remains a standalone helper:
 
-unregisterFlowDropPlugin('awesome'); // Remove all nodes from a plugin
-getRegisteredPlugins(); // List registered namespaces
-getPluginNodeCount('awesome'); // Count nodes in a plugin
+```typescript
+import { isValidNamespace, getInstance } from '@flowdrop/flowdrop/editor';
+
+const fd = getInstance();
+fd.nodes.unregisterPlugin('awesome'); // Remove all nodes from a plugin
+fd.nodes.getRegisteredPlugins(); // List registered namespaces
+fd.nodes.getPluginNodeCount('awesome'); // Count nodes in a plugin
 isValidNamespace('my-lib'); // Validate namespace format
 ```
 

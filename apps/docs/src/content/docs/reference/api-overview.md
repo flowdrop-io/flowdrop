@@ -35,9 +35,10 @@ Visual workflow editor with `@xyflow/svelte`.
 - Node components: `WorkflowNodeComponent`, `SimpleNode`, `ToolNode`, `NotesNode`, `GatewayNode`, `SquareNode`, `TerminalNode`, `UniversalNode`
 - Mount functions: `mountFlowDropApp`, `mountWorkflowEditor`, `unmountFlowDropApp`
 - Helpers: `WorkflowOperationsHelper`, `NodeOperationsHelper`, `EdgeStylingHelper`, `ConfigurationHelper`
-- Stores: workflow store, port coordinates, history
-- Services: API client, toast service, node execution
-- Registration: `registerCustomNode`, `registerFlowDropPlugin`, `createPlugin`
+- Store classes: `WorkflowStore`, `HistoryStore`, `HistoryService`, `PortCoordinateStore` (state lives on the instance — resolve with `getInstance()`)
+- Instance access: `getInstance`, `provideInstance`, `createFlowDropInstance`
+- Services: `EnhancedFlowDropApiClient` / `ApiContext`, toast service, node execution
+- Registration: `NodeComponentRegistry` (`fd.nodes`), `createPlugin`, `isValidNamespace`
 
 ### `@flowdrop/flowdrop/form`
 
@@ -48,7 +49,7 @@ Dynamic form generation from JSON Schema.
 - Components: `SchemaForm`, `FormField`, `FormFieldWrapper`
 - Field types: `FormTextField`, `FormTextarea`, `FormNumberField`, `FormToggle`, `FormSelect`, `FormArray`, `FormCheckboxGroup`, `FormRangeField`
 - UISchema: `FormFieldset`, `FormUISchemaRenderer`
-- Registry: `registerFieldComponent`, `fieldComponentRegistry`, matchers
+- Registry: `FieldComponentRegistry` (`fd.fields`), matchers
 
 ### `@flowdrop/flowdrop/form/code`
 
@@ -57,7 +58,7 @@ Code and JSON editor support (adds ~300KB, requires CodeMirror).
 **Key exports:**
 
 - Components: `FormCodeEditor`, `FormTemplateEditor`
-- Registration: `registerCodeEditorField()`, `registerTemplateEditorField()`
+- Registration: `registerCodeEditorField(fd.fields)`, `registerTemplateEditorField(fd.fields)`
 
 ### `@flowdrop/flowdrop/form/markdown`
 
@@ -66,7 +67,7 @@ Markdown editor support (requires CodeMirror + `@codemirror/lang-markdown`).
 **Key exports:**
 
 - Component: `FormMarkdownEditor`
-- Registration: `registerMarkdownEditorField()`
+- Registration: `registerMarkdownEditorField(fd.fields)`
 
 ### `@flowdrop/flowdrop/display`
 

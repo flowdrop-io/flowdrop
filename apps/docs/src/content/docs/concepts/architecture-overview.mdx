@@ -117,7 +117,7 @@ FlowDrop uses **Svelte 5 runes** for state management. Each mount creates a per-
 
 Every mount creates an isolated `FlowDropInstance` container holding the stores above (workflow, history, playground, interrupts, categories, port coordinates, and pipeline-panel state), resolved through Svelte context. Multiple editors can therefore coexist on one page without sharing state.
 
-For backward compatibility, the first mount without an explicit `instanceId` becomes the **page-default instance**: it keeps the legacy (unscoped) storage keys and is the instance the module-level store APIs (`getWorkflowStore()`, `workflowActions`, …) operate on. Registries (custom nodes/fields) and settings (theme, port-compatibility config, API endpoint) remain page-global by design. See the [multiple instances guide](/guides/multiple-instances/) for details.
+The first mount without an explicit `instanceId` becomes the **page-default instance** — what `getInstance()` resolves to for single-editor embeds. In 2.0 there are no module-level store APIs; instances are the API (`getInstance()` inside the tree, the mount handle's `.instance` outside it). Registries (`fd.nodes`/`fd.fields`/`fd.formats`), the API context (`fd.api`), and port compatibility (`fd.portCompatibility`) are now instance-scoped; theme and settings remain page-global by design. See the [multiple instances guide](/guides/multiple-instances/) for details.
 
 ## Services
 
@@ -183,23 +183,29 @@ FlowDrop has two registries for extending the editor:
 
 ### Node Component Registry
 
-Register custom Svelte components for new node types:
+Register custom Svelte components for new node types against the instance's `fd.nodes` registry:
 
 ```typescript
-import { registerCustomNode } from '@flowdrop/flowdrop/editor';
-registerCustomNode('my-custom-node', MyNodeComponent);
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+fd.nodes.registerCustom('my-custom-node', 'My Custom Node', MyNodeComponent);
 ```
 
 ### Field Component Registry
 
-Register custom form fields for config schemas:
+Register custom form fields for config schemas against `fd.fields`:
 
 ```typescript
-import { registerFieldComponent } from '@flowdrop/flowdrop/form';
-registerFieldComponent(matcher, MyFieldComponent, { priority: 10 });
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+fd.fields.register('my-field', {
+  component: MyFieldComponent,
+  matcher: (schema) => schema.format === 'my-field',
+  priority: 10
+});
 ```
 
-Both registries are **singletons** that persist for the page lifetime. Register before or after mounting.
+Both registries are **instance-scoped** — seeded with builtins in the instance constructor and resolved via `getInstance()`. Register after mounting; `BaseRegistry`'s version counter invalidates dependent `$derived` reads so late registrations take effect.
 
 ## Next Steps
 

@@ -32,15 +32,15 @@ FlowDrop generates configuration forms automatically from JSON Schema. The field
 **2. Register it:**
 
 ```typescript
-import { registerFieldComponent } from '@flowdrop/flowdrop/form';
+import { getInstance } from '@flowdrop/flowdrop/editor';
 import ColorPickerField from './ColorPickerField.svelte';
 
-registerFieldComponent(
-  'color-picker',
-  ColorPickerField,
-  (schema) => schema.format === 'color',
-  100
-);
+const fd = getInstance(); // or app.instance outside the component tree
+fd.fields.register('color-picker', {
+  component: ColorPickerField,
+  matcher: (schema) => schema.format === 'color',
+  priority: 100
+});
 ```
 
 **3. Use it in a config schema:**
@@ -104,15 +104,18 @@ When multiple registrations match, the highest priority wins:
 
 ```typescript
 // Priority 50 — general fallback
-registerFieldComponent('text-basic', BasicTextField, (schema) => schema.type === 'string', 50);
+fd.fields.register('text-basic', {
+  component: BasicTextField,
+  matcher: (schema) => schema.type === 'string',
+  priority: 50
+});
 
 // Priority 100 — more specific, checked first
-registerFieldComponent(
-  'rich-text',
-  RichTextField,
-  (schema) => schema.type === 'string' && schema.format === 'rich-text',
-  100
-);
+fd.fields.register('rich-text', {
+  component: RichTextField,
+  matcher: (schema) => schema.type === 'string' && schema.format === 'rich-text',
+  priority: 100
+});
 ```
 
 You can use this to **override built-in fields** by registering your own component with a higher priority.
@@ -122,21 +125,21 @@ You can use this to **override built-in fields** by registering your own compone
 For heavy dependencies, use dynamic imports:
 
 ```typescript
-let registered = false;
+import type { FieldComponentRegistry } from '@flowdrop/flowdrop/form';
 
-export function registerMyHeavyField(priority = 100): void {
-  if (registered) return;
+export function registerMyHeavyField(fields: FieldComponentRegistry, priority = 100): void {
+  if (fields.has('my-heavy-field')) return;
 
   import('./MyHeavyField.svelte').then((module) => {
-    registerFieldComponent(
-      'my-heavy-field',
-      module.default,
-      (schema) => schema.format === 'heavy',
+    fields.register('my-heavy-field', {
+      component: module.default,
+      matcher: (schema) => schema.format === 'heavy',
       priority
-    );
-    registered = true;
+    });
   });
 }
+
+// Call with the instance's registry: registerMyHeavyField(getInstance().fields)
 ```
 
 ## Built-in Field Types
@@ -158,28 +161,27 @@ These fields are always available without registration:
 
 These require explicit registration (heavy dependencies):
 
-| Schema                               | Import path                        | Registration function           |
-| ------------------------------------ | ---------------------------------- | ------------------------------- |
-| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField()`     |
-| `format: "template"`                 | `@flowdrop/flowdrop/form/code`     | `registerTemplateEditorField()` |
-| `format: "markdown"`                 | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
+Each installer takes the target field registry (`fd.fields`) as its first argument:
+
+| Schema                               | Import path                        | Registration function                    |
+| ------------------------------------ | ---------------------------------- | ---------------------------------------- |
+| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField(fd.fields)`     |
+| `format: "template"`                 | `@flowdrop/flowdrop/form/code`     | `registerTemplateEditorField(fd.fields)` |
+| `format: "markdown"`                 | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField(fd.fields)` |
 
 ## Field Management
 
-```typescript
-import {
-  unregisterFieldComponent,
-  getRegisteredFieldTypes,
-  isFieldTypeRegistered,
-  clearFieldRegistry,
-  getFieldRegistrySize
-} from '@flowdrop/flowdrop/form';
+Field management is done through the instance's `fd.fields` registry (a `FieldComponentRegistry`):
 
-unregisterFieldComponent('color-picker');
-getRegisteredFieldTypes(); // ["color-picker", ...]
-isFieldTypeRegistered('color-picker'); // true or false
-getFieldRegistrySize(); // number of registrations
-clearFieldRegistry(); // clear all (useful in tests)
+```typescript
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance(); // or app.instance outside the component tree
+
+fd.fields.unregister('color-picker'); // returns boolean
+fd.fields.getKeys(); // ["color-picker", ...]
+fd.fields.has('color-picker'); // true or false
+fd.fields.size; // number of registrations
+fd.fields.clear(); // clear all (useful in tests)
 ```
 
 ## Reading Sibling Field Values
@@ -257,11 +259,11 @@ This is the building block for dependent autocomplete fields — for example a `
 **3. Register it** — match on the custom `dependencies` property:
 
 ```typescript
-import { fieldComponentRegistry } from '@flowdrop/flowdrop/form';
+import { getInstance } from '@flowdrop/flowdrop/editor';
 import DependentAutocomplete from './DependentAutocomplete.svelte';
 
-fieldComponentRegistry.register({
-  name: 'dependent-autocomplete',
+const fd = getInstance(); // or app.instance outside the component tree
+fd.fields.register('dependent-autocomplete', {
   component: DependentAutocomplete,
   matcher: (schema) => schema.format === 'autocomplete' && 'dependencies' in schema,
   priority: 150
