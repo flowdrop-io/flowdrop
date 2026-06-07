@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — 2.0.0
+## [2.0.0-beta.1] - 2026-06-07
 
-See [MIGRATION-2.0.md](./MIGRATION-2.0.md) for the upgrade guide.
+Pre-release of 2.0.0, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. See [MIGRATION-2.0.md](./MIGRATION-2.0.md) for the upgrade guide.
 
 ### Breaking Changes
 
