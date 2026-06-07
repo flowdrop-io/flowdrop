@@ -104,7 +104,7 @@
 			(async () => {
 				const params = new URLSearchParams(window.location.search);
 				const config = {
-					readOnly: params.get('readOnly') === 'true',
+					mode: params.get('readOnly') === 'true' ? 'readonly' : 'edit',
 					step: params.get('step') || '',
 					zoom: params.get('zoom') ? parseFloat(params.get('zoom')) : null
 				};
@@ -134,7 +134,7 @@
 							height: '100%',
 							width: '100%',
 							showNavbar: false,
-							readOnly: config.readOnly,
+							mode: config.mode,
 							features: { autoSaveDraft: false },
 							theme: 'minimal',
 							settings: {
@@ -154,7 +154,7 @@
 							height: '100%',
 							width: '100%',
 							showNavbar: false,
-							readOnly: config.readOnly,
+							mode: config.mode,
 							features: { autoSaveDraft: false },
 							theme: 'minimal',
 							settings: {

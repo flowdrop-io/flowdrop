@@ -64,10 +64,29 @@
     showNavbar?: boolean;
     /** Disable the node sidebar */
     disableSidebar?: boolean;
-    /** Lock the workflow (prevent changes) */
-    lockWorkflow?: boolean;
-    /** Read-only mode */
-    readOnly?: boolean;
+    /**
+     * Editor interaction mode. Replaces the former `readOnly` + `lockWorkflow`
+     * boolean pair (2.0 breaking change).
+     *
+     * | mode         | node drag / connect / select | proximity-connect | node swap | bottom console panel + toggle |
+     * |--------------|------------------------------|-------------------|-----------|-------------------------------|
+     * | `'edit'`     | enabled                      | enabled           | enabled   | available                     |
+     * | `'readonly'` | disabled                     | disabled          | disabled  | hidden                        |
+     * | `'locked'`   | disabled                     | disabled          | disabled  | hidden                        |
+     *
+     * In 1.x `readOnly` and `lockWorkflow` gated the exact same set of
+     * interactions and were always combined as `!readOnly && !lockWorkflow`,
+     * so any combination of the two booleans collapsed to "edit" (both false)
+     * or "disabled" (either true). `'readonly'` and `'locked'` therefore behave
+     * identically today; the two names are kept as distinct intents so future
+     * versions can differentiate them without another breaking change.
+     *
+     * Migration: `readOnly` → `mode="readonly"`; `lockWorkflow` →
+     * `mode="locked"`; both `false` (or unset) → `mode="edit"` (the default).
+     *
+     * @default 'edit'
+     */
+    mode?: 'edit' | 'readonly' | 'locked';
     /** Pipeline ID for fetching node execution info */
     pipelineId?: string;
     /** Increments to force a refresh of pipeline node status from the server */
@@ -92,8 +111,23 @@
     endpointConfig?: EndpointConfig;
     /** Authentication provider */
     authProvider?: AuthProvider;
-    /** Event handlers */
-    eventHandlers?: FlowDropEventHandlers;
+    /**
+     * Called before save — return false to cancel. Forwarded to the save
+     * pipeline. (Flattened from the former `eventHandlers` object in 2.0.)
+     */
+    onBeforeSave?: FlowDropEventHandlers['onBeforeSave'];
+    /** Called after a successful save. */
+    onAfterSave?: FlowDropEventHandlers['onAfterSave'];
+    /** Called when a save fails. */
+    onSaveError?: FlowDropEventHandlers['onSaveError'];
+    /** Called on any API error — return true to suppress the default toast. */
+    onApiError?: FlowDropEventHandlers['onApiError'];
+    /** Called after a workflow is loaded/imported. */
+    onWorkflowLoad?: FlowDropEventHandlers['onWorkflowLoad'];
+    /** Called before a node swap — return false to cancel. */
+    onBeforeSwap?: FlowDropEventHandlers['onBeforeSwap'];
+    /** Called after a node swap is applied. */
+    onAfterSwap?: FlowDropEventHandlers['onAfterSwap'];
     /** Feature configuration */
     features?: FlowDropFeatures;
     /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
@@ -131,8 +165,7 @@
     width = '100%',
     showNavbar = false,
     disableSidebar = false,
-    lockWorkflow = false,
-    readOnly = false,
+    mode = 'edit',
     pipelineId,
     refreshTrigger = 0,
     navbarTitle,
@@ -142,7 +175,13 @@
     apiBaseUrl,
     endpointConfig: propEndpointConfig,
     authProvider,
-    eventHandlers,
+    onBeforeSave,
+    onAfterSave,
+    onSaveError,
+    onApiError,
+    onWorkflowLoad,
+    onBeforeSwap,
+    onAfterSwap,
     features: propFeatures,
     theme: themeProp,
     settingsCategories,
@@ -163,6 +202,11 @@
   // feature flags don't change at runtime
   // svelte-ignore state_referenced_locally
   const features = mergeFeatures(propFeatures);
+
+  // `mode` is the public API; internally the canvas only cares whether editing
+  // is disabled. 'readonly' and 'locked' both disable the same interactions
+  // (see the `mode` prop JSDoc for the full matrix).
+  const canvasEditable = $derived(mode === 'edit');
 
   // Messages: merge consumer overrides over defaults; expose via context as a
   // getter so consumer-side reactivity (e.g. paraglide-js locale switches)
@@ -402,8 +446,8 @@
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 
       // Notify parent via event handler
-      if (eventHandlers?.onApiError) {
-        const suppressToast = eventHandlers.onApiError(
+      if (onApiError) {
+        const suppressToast = onApiError(
           err instanceof Error ? err : new Error(errorMessage),
           'fetchNodes'
         );
@@ -595,7 +639,7 @@
     }
 
     // onBeforeSwap hook — abort if returns false
-    if (eventHandlers?.onBeforeSwap) {
+    if (onBeforeSwap) {
       const swapEventCtx: SwapEventContext = {
         oldNode: state.oldNode,
         newMetadata: state.newMetadata,
@@ -603,7 +647,7 @@
         portOverrides: [],
         configOverrides: []
       };
-      const shouldProceed = await eventHandlers.onBeforeSwap(swapEventCtx);
+      const shouldProceed = await onBeforeSwap(swapEventCtx);
       if (shouldProceed === false) return;
     }
 
@@ -615,9 +659,9 @@
     });
 
     // onAfterSwap hook (fire-and-forget — swap is already applied)
-    if (eventHandlers?.onAfterSwap) {
+    if (onAfterSwap) {
       try {
-        eventHandlers.onAfterSwap(result, state.oldNode, state.newNodeId);
+        onAfterSwap(result, state.oldNode, state.newNodeId);
       } catch (err) {
         logger.error('onAfterSwap hook error:', err);
       }
@@ -660,7 +704,7 @@
    */
   async function saveWorkflow(): Promise<void> {
     await globalSaveWorkflow({
-      eventHandlers,
+      eventHandlers: { onBeforeSave, onAfterSave, onSaveError, onApiError },
       features,
       instance: fd,
       onMarkAsSaved: () => fd.workflow.markAsSaved()
@@ -703,8 +747,8 @@
         if (features.showToasts) {
           apiToasts.success('Import workflow', 'Workflow imported successfully');
         }
-        if (eventHandlers?.onWorkflowLoad) {
-          eventHandlers.onWorkflowLoad(data as Workflow);
+        if (onWorkflowLoad) {
+          onWorkflowLoad(data as Workflow);
         }
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
@@ -767,8 +811,8 @@
           fd.workflow.initialize(initialWorkflow);
 
           // Emit onWorkflowLoad event
-          if (eventHandlers?.onWorkflowLoad) {
-            eventHandlers.onWorkflowLoad(initialWorkflow);
+          if (onWorkflowLoad) {
+            onWorkflowLoad(initialWorkflow);
           }
         } else {
           // Initialize with a default empty workflow so the editor is functional
@@ -938,7 +982,7 @@
     showHeader={showNavbar}
     showLeftSidebar={!disableSidebar}
     showRightSidebar={showRightPanel}
-    showBottomPanel={getUiSettings().consoleOpen && !readOnly && !lockWorkflow}
+    showBottomPanel={getUiSettings().consoleOpen && canvasEditable}
     bottomPanelHeight={getUiSettings().consoleHeight}
     showFooter={false}
     headerHeight={60}
@@ -1071,7 +1115,7 @@
             }
           ]}
           onClose={closeConfigSidebar}
-          onSwap={!readOnly && !lockWorkflow && features.enableNodeSwap ? startSwap : undefined}
+          onSwap={canvasEditable && features.enableNodeSwap ? startSwap : undefined}
         >
           <ConfigForm
             {authProvider}
@@ -1241,8 +1285,7 @@
         bind:this={workflowEditorRef}
         endpointConfig={endpointConfig ?? undefined}
         {openConfigSidebar}
-        {lockWorkflow}
-        {readOnly}
+        {mode}
         {pipelineId}
         {refreshTrigger}
         consoleOpen={getUiSettings().consoleOpen}

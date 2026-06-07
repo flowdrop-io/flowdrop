@@ -275,8 +275,7 @@
         width="100%"
         showNavbar={false}
         disableSidebar={true}
-        lockWorkflow={true}
-        readOnly={true}
+        mode="locked"
         {endpointConfig}
       />
     {/if}

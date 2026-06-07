@@ -46,10 +46,8 @@ interface FlowDropMountOptions {
   showNavbar?: boolean;
   /** Disable the node sidebar */
   disableSidebar?: boolean;
-  /** Read-only mode (no editing) */
-  readOnly?: boolean;
-  /** Lock the workflow (prevent structural changes) */
-  lockWorkflow?: boolean;
+  /** Editor interaction mode (replaces readOnly + lockWorkflow). @default 'edit' */
+  mode?: 'edit' | 'readonly' | 'locked';
   /** Editor height (CSS value or number) */
   height?: string | number;
   /** Editor width (CSS value or number) */

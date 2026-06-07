@@ -63,13 +63,15 @@ update. `clearAllDrafts()` still removes everything under `flowdrop:draft:`.
 
 ## 3. Removed component props
 
-| Component        | Removed                                                                                          | Use instead                                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `SchemaForm`     | `saveLabel`, `cancelLabel`                                                                       | `messages.form.schema.save` / `.cancel`                                                                                            |
-| `AIChatPanel`    | `placeholder`                                                                                    | `messages.chat.placeholder`                                                                                                        |
-| `ChatPanel`      | `showChatInput`, `showRunButton`                                                                 | `MessageStream` directly, or `ControlPanel` (keeps both flags)                                                                     |
-| `ChatPanel`      | `showLogs`                                                                                       | `fd.playground.setShowLogs(...)`                                                                                                   |
-| `WorkflowEditor` | `nodes`, `height`, `width`, `isConfigSidebarOpen`, `selectedNodeForConfig`, `closeConfigSidebar` | These never did anything in 1.x. Size via `App`'s `height`/`width` (working since 1.16); node metadata flows through the instance. |
+| Component                | Removed                                                                                          | Use instead                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `SchemaForm`             | `saveLabel`, `cancelLabel`                                                                       | `messages.form.schema.save` / `.cancel`                                                                                            |
+| `AIChatPanel`            | `placeholder`                                                                                    | `messages.chat.placeholder`                                                                                                        |
+| `ChatPanel`              | `showChatInput`, `showRunButton`                                                                 | `MessageStream` directly, or `ControlPanel` (keeps both flags)                                                                     |
+| `ChatPanel`              | `showLogs`                                                                                       | `fd.playground.setShowLogs(...)`                                                                                                   |
+| `WorkflowEditor`         | `nodes`, `height`, `width`, `isConfigSidebarOpen`, `selectedNodeForConfig`, `closeConfigSidebar` | These never did anything in 1.x. Size via `App`'s `height`/`width` (working since 1.16); node metadata flows through the instance. |
+| `App` / `WorkflowEditor` | `readOnly`, `lockWorkflow`                                                                       | A single `mode` prop — see [section 10](#10-mode-prop-replaces-readonly--lockworkflow).                                            |
+| `App`                    | `eventHandlers` (object)                                                                         | Flat `on*` props — see [section 11](#11-app-event-handlers-are-flat-props).                                                        |
 
 `FormToggle.onLabel`/`offLabel` and `FormArray.addLabel` were _un_-deprecated:
 they express per-instance labels the global messages system cannot, and are
@@ -83,6 +85,11 @@ Removed message keys (only the removed ChatPanel branches read them):
 - `workflow` now actually loads the workflow (1.x accepted and ignored it).
 - `nodes` is removed (it fed a prop the editor never read). Use
   `mountFlowDropApp` if you need to pre-seed node metadata.
+- `readOnly` / `lockWorkflow` mount options become a single `mode` option
+  (`'edit' | 'readonly' | 'locked'`) — see
+  [section 10](#10-mode-prop-replaces-readonly--lockworkflow). The grouped
+  `eventHandlers` mount option is **unchanged** (an options bag is fine in a JS
+  mount API); only the `<App>` _component_ prop is flattened.
 
 ## 5. API access is instance-scoped (`fd.api`)
 
@@ -301,3 +308,79 @@ into your bundle.
   type. Overwriting still works; the warning flags accidents.
 - Internal `DEV` gates use `esm-env` instead of `import.meta.env`, so the
   package no longer assumes a Vite host.
+
+## 10. `mode` prop replaces `readOnly` + `lockWorkflow`
+
+`<App>`, `<WorkflowEditor>`, and the `mountFlowDropApp` options bag no longer
+take the `readOnly` and `lockWorkflow` booleans. They are replaced by a single
+`mode` prop/option:
+
+```ts
+mode?: 'edit' | 'readonly' | 'locked'; // default: 'edit'
+```
+
+**Behavior matrix** (what each mode gates):
+
+| mode         | node drag / connect / select | proximity-connect | node swap | bottom console panel + toggle |
+| ------------ | ---------------------------- | ----------------- | --------- | ----------------------------- |
+| `'edit'`     | enabled                      | enabled           | enabled   | available                     |
+| `'readonly'` | disabled                     | disabled          | disabled  | hidden                        |
+| `'locked'`   | disabled                     | disabled          | disabled  | hidden                        |
+
+In 1.x, `readOnly` and `lockWorkflow` gated the **exact same** interactions and
+were always combined as `!readOnly && !lockWorkflow`. Any combination of the two
+booleans therefore collapsed to either "edit" (both `false`) or "fully disabled"
+(either `true`) — there was no orthogonal behavior to lose. `'readonly'` and
+`'locked'` behave identically today; the two names are preserved as distinct
+intents so a future release can differentiate them without another breaking
+change.
+
+**Old → new mapping** (component prop and mount option are identical):
+
+| 1.x                                                        | 2.0                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------ |
+| `readOnly` unset / `false`, `lockWorkflow` unset / `false` | `mode="edit"` (or omit)                                |
+| `readOnly={true}`                                          | `mode="readonly"`                                      |
+| `lockWorkflow={true}`                                      | `mode="locked"`                                        |
+| both `true`                                                | `mode="readonly"` _or_ `mode="locked"` (same behavior) |
+
+```svelte
+<!-- 1.x -->
+<App readOnly={true} />
+<App lockWorkflow={true} />
+
+<!-- 2.0 -->
+<App mode="readonly" />
+<App mode="locked" />
+```
+
+```js
+// 1.x
+mountFlowDropApp(el, { readOnly: true });
+// 2.0
+mountFlowDropApp(el, { mode: 'readonly' });
+```
+
+## 11. `<App>` event handlers are flat props
+
+The `<App>` component no longer takes a grouped `eventHandlers={{ … }}` object.
+The handlers `<App>` consumes are now individual `on*` props, consistent with
+every other component:
+
+```svelte
+<!-- 1.x -->
+<App eventHandlers={{ onApiError, onAfterSave, onWorkflowLoad, onBeforeSwap }} />
+
+<!-- 2.0 -->
+<App {onApiError} {onAfterSave} {onWorkflowLoad} {onBeforeSwap} />
+```
+
+Available `<App>` callback props: `onBeforeSave`, `onAfterSave`, `onSaveError`,
+`onApiError`, `onWorkflowLoad`, `onBeforeSwap`, `onAfterSwap`.
+
+The **`mountFlowDropApp` / `mountPlayground` options bag is unchanged** — keep
+passing the grouped `eventHandlers` object there. The mount functions wire
+`onDirtyStateChange` / `onWorkflowChange` into the instance store, call
+`onBeforeUnmount` on teardown, and forward the remaining handlers to `<App>`'s
+flat props for you. The `FlowDropEventHandlers` type is still exported for use
+with the mount option.

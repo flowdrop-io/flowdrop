@@ -61,9 +61,14 @@
   interface Props {
     endpointConfig?: EndpointConfig;
     openConfigSidebar?: (node: WorkflowNodeType) => void;
-    // New configuration options for pipeline status mode
-    lockWorkflow?: boolean;
-    readOnly?: boolean;
+    /**
+     * Editor interaction mode. `'edit'` allows node drag/connect/select and
+     * proximity-connect; `'readonly'` and `'locked'` disable all canvas
+     * editing (they behave identically today — see App's `mode` prop for the
+     * full matrix). Replaces the former `readOnly` + `lockWorkflow` booleans.
+     * @default 'edit'
+     */
+    mode?: 'edit' | 'readonly' | 'locked';
     // Pipeline ID for fetching node execution info from jobs
     pipelineId?: string;
     /**
@@ -86,6 +91,10 @@
   // The instance never changes for a mounted component, so capturing it once is correct.
   // svelte-ignore state_referenced_locally
   const fd = provideInstance(props.instance);
+
+  // `mode` is the public API; the canvas only needs to know whether editing is
+  // enabled. 'readonly' and 'locked' both disable interaction identically.
+  const canvasEditable = $derived((props.mode ?? 'edit') === 'edit');
 
   // ---------------------------------------------------------------------------
   // Editor State Machine
@@ -396,12 +405,7 @@
     nodes: WorkflowNodeType[];
     event: MouseEvent | TouchEvent;
   }): void {
-    if (
-      !getEditorSettings().proximityConnect ||
-      !targetNode ||
-      props.readOnly ||
-      props.lockWorkflow
-    ) {
+    if (!getEditorSettings().proximityConnect || !targetNode || !canvasEditable) {
       if (currentProximityCandidates.length > 0) {
         flowEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
         currentProximityCandidates = [];
@@ -848,12 +852,12 @@
               {initialViewport}
               colorMode={getResolvedTheme() as ColorMode}
               fitView={getEditorSettings().fitViewOnLoad}
-              nodesDraggable={!props.lockWorkflow && !props.readOnly}
-              nodesConnectable={!props.lockWorkflow && !props.readOnly}
-              elementsSelectable={!props.lockWorkflow && !props.readOnly}
+              nodesDraggable={canvasEditable}
+              nodesConnectable={canvasEditable}
+              elementsSelectable={canvasEditable}
             >
               <Controls />
-              {#if !props.readOnly && !props.lockWorkflow && props.onToggleConsole}
+              {#if canvasEditable && props.onToggleConsole}
                 <button
                   class="flowdrop-console-toggle"
                   class:flowdrop-console-toggle--active={props.consoleOpen}

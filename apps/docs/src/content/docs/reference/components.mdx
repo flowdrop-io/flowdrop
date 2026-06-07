@@ -33,14 +33,13 @@ Full-featured application wrapper with sidebar, editor, navbar, and config panel
 | `width`          | `string \| number`       | —       | Editor width                                        |
 | `showNavbar`     | `boolean`                | `true`  | Show the top navbar                                 |
 | `disableSidebar` | `boolean`                | `false` | Hide the node sidebar                               |
-| `readOnly`       | `boolean`                | `false` | Disable all editing                                 |
-| `lockWorkflow`   | `boolean`                | `false` | Prevent structural changes (add/remove nodes/edges) |
+| `mode`           | `'edit' \| 'readonly' \| 'locked'` | `'edit'` | Interaction mode (replaces `readOnly` + `lockWorkflow`); `'readonly'`/`'locked'` disable all canvas editing |
 | `showSettings`   | `boolean`                | `false` | Show settings gear in navbar                        |
 | `navbarTitle`    | `string`                 | —       | Custom title in navbar                              |
 | `navbarActions`  | `NavbarAction[]`         | —       | Custom action buttons in navbar                     |
 | `pipelineId`     | `string`                 | —       | Pipeline ID for execution status display            |
 | `nodeStatuses`   | `Record<string, string>` | —       | Node execution statuses for overlay                 |
-| `eventHandlers`  | `FlowDropEventHandlers`  | —       | Lifecycle event handlers                            |
+| `on*` handlers   | see below                | —       | Flat lifecycle callbacks: `onBeforeSave`, `onAfterSave`, `onSaveError`, `onApiError`, `onWorkflowLoad`, `onBeforeSwap`, `onAfterSwap` (the `eventHandlers` object is the **mount** API only) |
 | `features`       | `FlowDropFeatures`       | —       | Feature flags                                       |
 | `instance`       | `FlowDropInstance`       | —       | Per-instance state container; defaults to context, then the page-default instance |
 
@@ -62,8 +61,7 @@ Core canvas component using SvelteFlow. Renders nodes and edges with drag-and-dr
 | `endpointConfig` | `EndpointConfig`         | —       | API configuration          |
 | `height`         | `string \| number`       | —       | Canvas height              |
 | `width`          | `string \| number`       | —       | Canvas width               |
-| `readOnly`       | `boolean`                | `false` | Disable editing            |
-| `lockWorkflow`   | `boolean`                | `false` | Prevent structural changes |
+| `mode`           | `'edit' \| 'readonly' \| 'locked'` | `'edit'` | Interaction mode (replaces `readOnly` + `lockWorkflow`) |
 | `nodeStatuses`   | `Record<string, string>` | —       | Execution status overlay   |
 | `pipelineId`     | `string`                 | —       | Pipeline ID for status     |
 | `instance`       | `FlowDropInstance`       | —       | Per-instance state container; defaults to context, then the page-default instance |

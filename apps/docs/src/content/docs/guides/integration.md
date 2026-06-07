@@ -21,9 +21,7 @@ Use FlowDrop components directly in Svelte:
 <App
   {endpointConfig}
   showNavbar={true}
-  eventHandlers={{
-    onAfterSave: async (workflow) => console.log('Saved:', workflow.id)
-  }}
+  onAfterSave={async (workflow) => console.log('Saved:', workflow.id)}
 />
 ```
 
@@ -162,15 +160,19 @@ const app = await mountFlowDropApp(container, {
 
 ## Read-Only & Lock Modes
 
+The `mode` option controls canvas editing (replaces the former `readOnly` /
+`lockWorkflow` booleans). `'readonly'` and `'locked'` both disable node
+dragging, connecting, selecting, proximity-connect, and node swap.
+
 ```typescript
-// Read-only: no editing at all
+// Read-only: no canvas editing
 const app = await mountFlowDropApp(container, {
-  readOnly: true
+  mode: 'readonly'
 });
 
-// Locked: can view and configure nodes, but not add/remove/connect
+// Locked: same disabled interactions, distinct intent
 const app = await mountFlowDropApp(container, {
-  lockWorkflow: true
+  mode: 'locked'
 });
 ```
 

@@ -72,10 +72,15 @@ export interface FlowDropMountOptions {
   showNavbar?: boolean;
   /** Disable the node sidebar */
   disableSidebar?: boolean;
-  /** Lock the workflow (prevent changes) */
-  lockWorkflow?: boolean;
-  /** Read-only mode */
-  readOnly?: boolean;
+  /**
+   * Editor interaction mode. Replaces the former `readOnly` + `lockWorkflow`
+   * mount options (2.0). `'edit'` (default) allows editing; `'readonly'` and
+   * `'locked'` disable all canvas interaction (identical behavior today — see
+   * App's `mode` prop JSDoc for the full matrix). Migration: `readOnly: true`
+   * → `mode: 'readonly'`; `lockWorkflow: true` → `mode: 'locked'`.
+   * @default 'edit'
+   */
+  mode?: 'edit' | 'readonly' | 'locked';
 
   // Pipeline mode
   /** Pipeline ID for status display */
@@ -311,8 +316,7 @@ export async function mountFlowDropApp(
     width = '100%',
     showNavbar = false,
     disableSidebar,
-    lockWorkflow,
-    readOnly,
+    mode,
     pipelineId,
     navbarTitle,
     navbarActions,
@@ -436,8 +440,7 @@ export async function mountFlowDropApp(
       width,
       showNavbar,
       disableSidebar,
-      lockWorkflow,
-      readOnly,
+      mode,
       pipelineId,
       navbarTitle,
       navbarActions,
@@ -445,7 +448,17 @@ export async function mountFlowDropApp(
       showStatus,
       endpointConfig: config,
       authProvider,
-      eventHandlers,
+      // App's event-handler props are flat (the grouped `eventHandlers` option
+      // is a mount-API convenience). onDirtyStateChange / onWorkflowChange are
+      // wired into the instance store above; onBeforeUnmount is handled in
+      // unmount() below; the remaining handlers map 1:1 to App props.
+      onBeforeSave: eventHandlers?.onBeforeSave,
+      onAfterSave: eventHandlers?.onAfterSave,
+      onSaveError: eventHandlers?.onSaveError,
+      onApiError: eventHandlers?.onApiError,
+      onWorkflowLoad: eventHandlers?.onWorkflowLoad,
+      onBeforeSwap: eventHandlers?.onBeforeSwap,
+      onAfterSwap: eventHandlers?.onAfterSwap,
       features,
       theme,
       settingsCategories,
