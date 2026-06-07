@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — 2.0.0
+
+See [MIGRATION-2.0.md](./MIGRATION-2.0.md) for the upgrade guide.
+
+### Breaking Changes
+
+- **Module-level store APIs removed — instances are the API.** The ~95 module-level functions that delegated to the page-default instance (`getWorkflowStore`, `workflowActions`, `historyService`, `getMessages`, `playgroundActions`, `getCategories`, `getHistoryState`, the whole get*/set*/actions surface of `@flowdrop/flowdrop/editor` and `@flowdrop/flowdrop/playground`) are gone. Every mount handle now exposes its state container: `mountFlowDropApp(...).instance` — so `workflowActions.addNode(...)` becomes `app.instance.workflow.actions.addNode(...)`, `historyService.undo()` becomes `app.instance.history.undo()`. Inside components, `getInstance()` is unchanged (including the browser fallback that makes single-editor embeds work without a provider). The `PlaygroundStore`, `InterruptStore`, and `PortCoordinateStore` classes are newly exported for hosts constructing state manually. Settings remain page-global by design.
+- **localStorage keys are instance-scoped.** The page-default instance writes `flowdrop:draft:default:<workflowId>` (was `flowdrop:draft:<workflowId>`) and `fd-pipeline-panel-open:default` (was bare). Existing data migrates automatically on first read — drafts in progress survive the upgrade. Only hosts reading the keys directly need to update; `clearAllDrafts()` still matches everything under `flowdrop:draft:`.
+- **v1.8-deprecated message props removed.** `SchemaForm` loses `saveLabel`/`cancelLabel`, `AIChatPanel` loses `placeholder` — use the `messages` mount option (`messages.form.schema.save`/`.cancel`, `messages.chat.placeholder`). The `warnDeprecatedProp` helper is gone. `FormToggle.onLabel`/`offLabel` and `FormArray.addLabel` were **un-deprecated** instead: they express per-instance labels the global messages system cannot (a visibility toggle's "Hidden"/"Visible", a schema-derived "Add Header" button) and are now documented overrides.
+- **`ChatPanel` loses `showChatInput`, `showRunButton`, `showLogs`.** ChatPanel is the conversational surface — view-only feeds use the `MessageStream` primitive directly or `ControlPanel` (which keeps both flags as supported config); log visibility is store-managed (`fd.playground.setShowLogs`). The orphaned message keys `playground.states.{viewOnlyTitle,viewOnlyText,readyTitle,readyText}` are removed with the branches that read them.
+- **`mountWorkflowEditor` options:** `workflow` now actually loads the workflow (1.x accepted and silently ignored it); `nodes` is removed (it fed a prop the editor never read — use `mountFlowDropApp` to pre-seed node metadata).
+
+### Changed (2.0)
+
+- `fieldRegistry.register()` warns in dev when overwriting an existing field type. Overwriting remains supported (replacing a built-in field is legitimate); the warning exists for the accidental-duplicate case.
+- Internal `DEV` gates use `esm-env` instead of `import.meta.env`, removing the package's implicit assumption of a Vite host (and the svelte-package build warning).
 
 ### Added
 
