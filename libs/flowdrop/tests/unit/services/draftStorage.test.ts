@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   getDraftStorageKey,
+  migrateLegacyDraftKey,
   saveDraft,
   loadDraft,
   deleteDraft,
@@ -73,19 +74,51 @@ describe('Draft Storage Service', () => {
       expect(key).toBe(customKey);
     });
 
-    it('should generate key with workflow ID', () => {
+    it('should generate a default-instance-scoped key with workflow ID', () => {
       const key = getDraftStorageKey('workflow-123');
-      expect(key).toBe('flowdrop:draft:workflow-123');
+      expect(key).toBe('flowdrop:draft:default:workflow-123');
     });
 
     it("should use 'new' suffix when no workflow ID", () => {
       const key = getDraftStorageKey();
-      expect(key).toBe('flowdrop:draft:new');
+      expect(key).toBe('flowdrop:draft:default:new');
     });
 
     it('should prefer custom key over workflow ID', () => {
       const key = getDraftStorageKey('workflow-123', 'custom');
       expect(key).toBe('custom');
+    });
+
+    it('should scope by an explicit instance prefix', () => {
+      const key = getDraftStorageKey('workflow-123', undefined, 'flowdrop:draft:left');
+      expect(key).toBe('flowdrop:draft:left:workflow-123');
+    });
+  });
+
+  describe('migrateLegacyDraftKey', () => {
+    it('moves a 1.x bare-key draft to the scoped key and removes the legacy key', () => {
+      mockStorage.set('flowdrop:draft:wf-1', '{"workflow":{},"metadata":{}}');
+
+      migrateLegacyDraftKey('flowdrop:draft:wf-1', 'flowdrop:draft:default:wf-1');
+
+      expect(mockStorage.get('flowdrop:draft:default:wf-1')).toBe('{"workflow":{},"metadata":{}}');
+      expect(mockStorage.has('flowdrop:draft:wf-1')).toBe(false);
+    });
+
+    it('does not overwrite an existing scoped draft', () => {
+      mockStorage.set('flowdrop:draft:wf-1', 'legacy');
+      mockStorage.set('flowdrop:draft:default:wf-1', 'scoped');
+
+      migrateLegacyDraftKey('flowdrop:draft:wf-1', 'flowdrop:draft:default:wf-1');
+
+      expect(mockStorage.get('flowdrop:draft:default:wf-1')).toBe('scoped');
+      // The legacy key is left alone when the scoped key already exists
+      expect(mockStorage.get('flowdrop:draft:wf-1')).toBe('legacy');
+    });
+
+    it('is a no-op when there is no legacy draft', () => {
+      migrateLegacyDraftKey('flowdrop:draft:wf-1', 'flowdrop:draft:default:wf-1');
+      expect(mockStorage.size).toBe(0);
     });
   });
 

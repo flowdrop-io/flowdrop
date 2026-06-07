@@ -25,11 +25,13 @@ import { fetchCategories } from './services/categoriesApi.js';
 import {
   createFlowDropInstance,
   getDefaultInstance,
+  DEFAULT_DRAFT_PREFIX,
   type FlowDropInstance
 } from './stores/instanceContainer.svelte.js';
 import {
   DraftAutoSaveManager,
   getDraftStorageKey,
+  migrateLegacyDraftKey,
   setDraftStorage,
   resolveDraftStorage,
   clearAllDrafts as clearAllDraftsFromStorage,
@@ -154,14 +156,14 @@ export interface FlowDropMountOptions {
   /**
    * Identifier for this FlowDrop instance.
    *
-   * When omitted, the first mount on the page becomes the *default* instance:
-   * it keeps the legacy (unscoped) draft/panel storage keys and remains
-   * reachable through the module-level store APIs, exactly as before.
-   * Additional mounts get auto-generated ids (`fd-1`, `fd-2`, …).
+   * When omitted, the first mount on the page becomes the *default* instance
+   * (id `default`). Additional mounts get auto-generated ids (`fd-1`,
+   * `fd-2`, …). Every instance scopes its draft/panel storage keys by id
+   * (`flowdrop:draft:<id>:…`); the default instance migrates 1.x bare keys
+   * on first read.
    *
-   * Pass an explicit id to opt a mount out of default-instance behavior and
-   * scope its draft/panel storage keys (`flowdrop:draft:<id>:…`) — recommended
-   * whenever you mount more than one editor with drafts enabled.
+   * Pass an explicit id whenever you mount more than one editor with drafts
+   * enabled, so keys stay stable across page loads.
    */
   instanceId?: string;
 }
@@ -445,9 +447,20 @@ export async function mountFlowDropApp(
   let unsubscribeDraftSettings: (() => void) | null = null;
 
   if (features.autoSaveDraft) {
-    // Instance-scoped prefix: the default instance keeps the legacy bare
-    // 'flowdrop:draft' namespace; additional instances get ':<id>' sub-keys.
+    // Instance-scoped prefix: every instance (including the default) gets
+    // 'flowdrop:draft:<id>' sub-keys.
     const storageKey = getDraftStorageKey(workflow?.id, customDraftKey, fd.storagePrefix);
+
+    // One-time migration: 1.x stored the page-default instance's drafts under
+    // the bare 'flowdrop:draft:<workflowId>' key. Move an existing draft to
+    // the scoped key so an upgrade mid-edit doesn't lose work.
+    if (fd.isDefault && !customDraftKey) {
+      migrateLegacyDraftKey(
+        getDraftStorageKey(workflow?.id, undefined, DEFAULT_DRAFT_PREFIX),
+        storageKey,
+        draftStorageAdapter
+      );
+    }
 
     draftManager = new DraftAutoSaveManager({
       storageKey,

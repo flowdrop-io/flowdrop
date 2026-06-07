@@ -139,14 +139,14 @@ describe('FlowDropInstance container', () => {
     expect(b.history.canUndo()).toBe(false);
   });
 
-  it('scopes storage prefixes per instance, legacy prefix for the default', () => {
+  it('scopes storage prefixes per instance, including the default', () => {
     const a = createFlowDropInstance({ id: 'left' });
     const b = createFlowDropInstance({ id: 'right' });
     expect(a.storagePrefix).toBe(`${DEFAULT_DRAFT_PREFIX}:left`);
     expect(b.storagePrefix).toBe(`${DEFAULT_DRAFT_PREFIX}:right`);
 
     const def = getDefaultInstance();
-    expect(def.storagePrefix).toBe(DEFAULT_DRAFT_PREFIX);
+    expect(def.storagePrefix).toBe(`${DEFAULT_DRAFT_PREFIX}:default`);
   });
 
   it('returns the same default instance on repeated access', () => {

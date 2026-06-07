@@ -88,7 +88,9 @@ let instanceCounter = 0;
 export function createFlowDropInstance(options: CreateInstanceOptions = {}): FlowDropInstance {
   const isDefault = options.isDefault ?? false;
   const id = options.id ?? (isDefault ? 'default' : `fd-${++instanceCounter}`);
-  const storagePrefix = isDefault ? DEFAULT_DRAFT_PREFIX : `${DEFAULT_DRAFT_PREFIX}:${id}`;
+  // Every instance gets an id-scoped prefix — the default instance's 1.x bare
+  // keys are migrated on first read (see migrateLegacyDraftKey / PipelinePanelStore.init).
+  const storagePrefix = `${DEFAULT_DRAFT_PREFIX}:${id}`;
 
   // The default instance reuses the exported singleton (public API via
   // `@flowdrop/flowdrop/editor`) so external `historyService.undo()` etc.
@@ -123,7 +125,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     categories: new CategoriesStore(),
     portCoordinates: new PortCoordinateStore(),
     // The default instance keeps the legacy bare localStorage key.
-    pipelinePanel: new PipelinePanelStore(isDefault ? '' : id),
+    pipelinePanel: new PipelinePanelStore(id),
     destroy() {
       while (cleanups.length > 0) {
         cleanups.pop()?.();

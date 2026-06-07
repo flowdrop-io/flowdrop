@@ -32,19 +32,15 @@ export class PipelinePanelStore {
   #isOpen = $state(false);
 
   /**
-   * The localStorage key for this instance.
-   *
-   * The default instance keeps the legacy bare key; non-default instances get
-   * a scoped key so multiple editors on one page don't clobber each other.
+   * The localStorage key for this instance — always instance-scoped
+   * (`fd-pipeline-panel-open:<instanceId>`) so multiple editors on one page
+   * don't clobber each other.
    */
   readonly #storageKey: string;
 
-  /**
-   * @param storageSuffix - Scope suffix for the localStorage key. Empty (the
-   *   default) keeps the legacy bare key for the page-default instance.
-   */
-  constructor(storageSuffix: string = '') {
-    this.#storageKey = STORAGE_KEY + (storageSuffix ? ':' + storageSuffix : '');
+  /** @param instanceId - Instance id used to scope the localStorage key. */
+  constructor(instanceId: string) {
+    this.#storageKey = `${STORAGE_KEY}:${instanceId}`;
   }
 
   /** Whether the pipeline panel is currently open (reactive). */
@@ -54,9 +50,19 @@ export class PipelinePanelStore {
 
   /** Initialize open state from localStorage. */
   init(): void {
-    if (typeof localStorage !== 'undefined') {
-      this.#isOpen = localStorage.getItem(this.#storageKey) === 'true';
+    if (typeof localStorage === 'undefined') return;
+    let stored = localStorage.getItem(this.#storageKey);
+    // One-time migration: in 1.x the page-default instance stored its state
+    // under the bare key. Adopt it on first read, then remove it.
+    if (stored === null && this.#storageKey === `${STORAGE_KEY}:default`) {
+      const legacy = localStorage.getItem(STORAGE_KEY);
+      if (legacy !== null) {
+        localStorage.setItem(this.#storageKey, legacy);
+        localStorage.removeItem(STORAGE_KEY);
+        stored = legacy;
+      }
     }
+    this.#isOpen = stored === 'true';
   }
 
   /** Toggle the panel open/closed, persisting the new state. */

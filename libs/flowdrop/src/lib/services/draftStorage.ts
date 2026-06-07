@@ -167,6 +167,15 @@ interface StoredDraft {
 }
 
 /**
+ * Storage prefix of the page-default instance (`flowdrop:draft:default`).
+ *
+ * Every instance — including the default — uses an id-scoped prefix since
+ * v2.0. Standalone helper callers that don't pass a prefix get this one, so
+ * they keep addressing the default editor's drafts.
+ */
+export const DEFAULT_INSTANCE_DRAFT_PREFIX = `${STORAGE_KEY_PREFIX}:default`;
+
+/**
  * Generate a storage key for a workflow
  *
  * If a custom key is provided, use it directly.
@@ -175,14 +184,14 @@ interface StoredDraft {
  * @param workflowId - The workflow ID (optional)
  * @param customKey - Custom storage key provided by enterprise (optional)
  * @param prefix - Key namespace; pass a FlowDrop instance's `storagePrefix`
- *   to scope drafts per instance. Defaults to the legacy shared prefix so
- *   single-instance consumers keep their existing drafts.
+ *   to scope drafts per instance. Defaults to the page-default instance's
+ *   prefix.
  * @returns The storage key to use
  */
 export function getDraftStorageKey(
   workflowId?: string,
   customKey?: string,
-  prefix: string = STORAGE_KEY_PREFIX
+  prefix: string = DEFAULT_INSTANCE_DRAFT_PREFIX
 ): string {
   if (customKey) {
     return customKey;
@@ -193,6 +202,36 @@ export function getDraftStorageKey(
   }
 
   return `${prefix}:new`;
+}
+
+/**
+ * One-time migration of a 1.x draft key to its 2.0 scoped equivalent.
+ *
+ * In 1.x the page-default instance stored drafts under the bare
+ * `flowdrop:draft:<workflowId>` key; since 2.0 it uses
+ * `flowdrop:draft:default:<workflowId>`. When the scoped key is empty and the
+ * legacy key holds a draft, the draft is moved (copied, then the legacy key
+ * removed) so users upgrading mid-edit don't lose work.
+ *
+ * @param legacyKey - The 1.x bare-prefix key
+ * @param scopedKey - The 2.0 instance-scoped key
+ * @param storage - Adapter to migrate within (defaults to the module-level default)
+ */
+export function migrateLegacyDraftKey(
+  legacyKey: string,
+  scopedKey: string,
+  storage: DraftStorageAdapter = activeAdapter
+): void {
+  if (legacyKey === scopedKey) return;
+  try {
+    if (storage.getItem(scopedKey) !== null) return;
+    const legacy = storage.getItem(legacyKey);
+    if (legacy === null) return;
+    storage.setItem(scopedKey, legacy);
+    storage.removeItem(legacyKey);
+  } catch (error) {
+    logger.warn('Failed to migrate legacy draft key:', error);
+  }
 }
 
 /**
