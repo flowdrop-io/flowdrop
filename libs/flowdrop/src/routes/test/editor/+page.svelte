@@ -6,17 +6,33 @@
     - ?workflow=empty   -> empty canvas (no nodes)
     - ?workflow=complex  -> branching workflow with 4 nodes, 3 edges
     - (default)          -> simple workflow with 2 nodes, 1 edge
+    - ?settingsDefaults=light|dark|auto -> seed host settings defaults
+      before mounting, mirroring mountFlowDropApp({ settings }) — used by
+      the settings persistence tests
 
   Used by: tests/e2e/editor-*.spec.ts
 -->
 
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import App from '$lib/components/App.svelte';
+  import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
+  import type { ThemePreference } from '$lib/types/settings.js';
 
   // --- Query param for workflow variant ---
   let workflowVariant = $derived($page.url.searchParams.get('workflow') ?? 'simple');
+
+  // --- Host settings defaults (settings persistence e2e) ---
+  // Seeded during component init, before <App> mounts — the same ordering
+  // mountFlowDropApp uses (initializeSettings before mount()).
+  if (browser) {
+    const pref = new URLSearchParams(window.location.search).get('settingsDefaults');
+    if (pref === 'light' || pref === 'dark' || pref === 'auto') {
+      void initializeSettings({ defaults: { theme: { preference: pref as ThemePreference } } });
+    }
+  }
 
   // --- Node type definitions (inlined to avoid import path issues) ---
   const testNodeTypes: NodeMetadata[] = [
