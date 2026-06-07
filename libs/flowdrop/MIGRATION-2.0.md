@@ -149,7 +149,38 @@ config. The standalone connection helpers (`validateConnection`,
 `getPossibleConnections`, `getConnectionSuggestions`) now take the checker as
 their first argument.
 
-## 6. Behavioral notes
+## 6. Barrel de-duplication
+
+The editor barrel no longer re-exports playground internals, and the display
+barrel no longer re-exports `marked`. Each export keeps a single canonical home.
+
+- **Playground exports** (`Playground`, `PlaygroundModal`, `ChatPanel`,
+  `SessionManager`, `InputCollector`, `ExecutionLogs`, `MessageBubble`,
+  `PlaygroundService`, `playgroundService`, `PlaygroundStore`) are removed from
+  `@flowdrop/flowdrop/editor`. Import them from `@flowdrop/flowdrop/playground`
+  instead.
+
+  ```js
+  // 1.x
+  import { Playground, playgroundService } from '@flowdrop/flowdrop/editor';
+
+  // 2.0
+  import { Playground, playgroundService } from '@flowdrop/flowdrop/playground';
+  ```
+
+- **`marked`** is no longer re-exported from `@flowdrop/flowdrop/display`. If you
+  need `marked` directly, install it as a dependency and import it from the
+  package:
+
+  ```js
+  // 1.x
+  import { marked } from '@flowdrop/flowdrop/display';
+
+  // 2.0 — `npm install marked`
+  import { marked } from 'marked';
+  ```
+
+## 7. Behavioral notes
 
 - `fieldRegistry.register()` warns in dev when overwriting an existing field
   type. Overwriting still works; the warning flags accidents.

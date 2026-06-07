@@ -80,15 +80,6 @@ export { default as Logo } from '../components/Logo.svelte';
 // Console Components
 export { default as CommandConsole } from '../components/console/CommandConsole.svelte';
 
-// Playground Components
-export { default as Playground } from '../components/playground/Playground.svelte';
-export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
-export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
-export { default as SessionManager } from '../components/playground/SessionManager.svelte';
-export { default as InputCollector } from '../components/playground/InputCollector.svelte';
-export { default as ExecutionLogs } from '../components/playground/ExecutionLogs.svelte';
-export { default as MessageBubble } from '../components/playground/MessageBubble.svelte';
-
 // ============================================================================
 // Mount Functions
 // ============================================================================
@@ -178,10 +169,6 @@ export {
 } from '../services/toastService.js';
 
 export { NodeExecutionService, nodeExecutionService } from '../services/nodeExecutionService.js';
-
-// Playground Service and Store
-export { PlaygroundService, playgroundService } from '../services/playgroundService.js';
-export { PlaygroundStore } from '../stores/playgroundStore.svelte.js';
 
 export {
   saveWorkflow,

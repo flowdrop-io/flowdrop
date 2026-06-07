@@ -2,7 +2,6 @@
  * FlowDrop Display Module
  *
  * Provides display components for rendering content.
- * This module includes the marked library for markdown rendering.
  *
  * @module display
  *
@@ -31,10 +30,3 @@
 // ============================================================================
 
 export { default as MarkdownDisplay } from '../components/MarkdownDisplay.svelte';
-
-// ============================================================================
-// Re-export marked for advanced usage
-// ============================================================================
-
-// Users can use marked directly if they need more control
-export { marked } from 'marked';
