@@ -56,6 +56,7 @@
   import { validateWorkflowData } from '../utils/validation.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
   import Icon from '@iconify/svelte';
+  import { DEV } from 'esm-env';
 
   interface Props {
     endpointConfig?: EndpointConfig;
@@ -94,7 +95,7 @@
   const machine = createEditorStateMachine();
 
   // Dev-mode transition logging
-  if (import.meta.env?.DEV) {
+  if (DEV) {
     machine.onTransition((from, event, to) => {
       logger.debug(`[EditorFSM] ${from} --${event}--> ${to}`);
     });

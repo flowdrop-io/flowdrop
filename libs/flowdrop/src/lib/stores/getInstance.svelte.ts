@@ -9,6 +9,7 @@
  * @module stores/getInstance
  */
 
+import { DEV } from 'esm-env';
 import { getContext, setContext } from 'svelte';
 import {
   createFlowDropInstance,
@@ -45,7 +46,7 @@ export function getInstance(): FlowDropInstance {
         'setContext(FLOWDROP_INSTANCE_KEY, createFlowDropInstance()).'
     );
   }
-  if (import.meta.env?.DEV && !warnedAboutFallback) {
+  if (DEV && !warnedAboutFallback) {
     warnedAboutFallback = true;
     // eslint-disable-next-line no-console -- intentional one-time dev diagnostic for silent shared-state fallback
     console.warn(

@@ -29,6 +29,7 @@
  * ```
  */
 
+import { DEV } from 'esm-env';
 import type { Component } from 'svelte';
 import type { FieldSchema } from '../components/form/types.js';
 import { BaseRegistry } from '../registry/BaseRegistry.js';
@@ -96,12 +97,23 @@ class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistra
 
   /**
    * Register a field component.
-   * Silently overwrites existing registrations (preserves legacy behavior).
+   *
+   * Re-registering an existing type overwrites it — useful for hosts
+   * replacing a built-in field — but warns in dev, since an *accidental*
+   * duplicate registration silently swallowing a field implementation is a
+   * miserable bug to track down.
    *
    * @param type - Unique identifier for this field type
    * @param registration - The field component registration
    */
   register(type: string, registration: FieldComponentRegistration): void {
+    if (DEV && this.items.has(type)) {
+      // eslint-disable-next-line no-console -- intentional dev diagnostic for accidental duplicate registrations
+      console.warn(
+        `[flowdrop] Field type "${type}" is already registered — overwriting. ` +
+          'If this is intentional (replacing a built-in field), ignore this warning.'
+      );
+    }
     this.items.set(type, registration);
     this.orderedKeys = null;
     this.notifyListeners();

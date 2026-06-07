@@ -299,6 +299,7 @@
   "dependencies": {
     "diff": "^8.0.3",
     "dompurify": "^3.3.1",
+    "esm-env": "^1.2.2",
     "marked": "^16.1.1",
     "svelte-5-french-toast": "^2.0.6",
     "uuid": "^11.1.0"
