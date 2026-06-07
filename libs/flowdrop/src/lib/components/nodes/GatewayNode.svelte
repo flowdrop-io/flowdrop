@@ -176,10 +176,10 @@
       <!-- Node Icon with Squircle Background -->
       <div
         class="flowdrop-workflow-node__icon-wrapper"
-        style="--_icon-color: {getCategoryColorToken(props.data.metadata.category)}"
+        style="--_icon-color: {getCategoryColorToken(fd.categories, props.data.metadata.category)}"
       >
         <Icon
-          icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)}
+          icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
           class="flowdrop-workflow-node__icon"
         />
       </div>

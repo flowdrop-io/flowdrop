@@ -42,7 +42,6 @@
   import { apiToasts, dismissToast } from '$lib/services/toastService.js';
   import { initAutoSave } from '$lib/services/autoSaveService.js';
   import { getUiSettings, updateSettings } from '../stores/settingsStore.svelte.js';
-  import { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
@@ -329,7 +328,7 @@
           type: 'string',
           title: 'Workflow Format',
           description: 'The specification format for this workflow',
-          oneOf: workflowFormatRegistry.getOneOfOptions(),
+          oneOf: fd.formats.getOneOfOptions(),
           default: 'flowdrop'
         },
         ...extraProps
@@ -366,7 +365,7 @@
     // If nodes were provided as props, use them directly (skip API fetch)
     if (propNodes && propNodes.length > 0) {
       // Merge format-provided nodes with prop nodes (deduplicate by ID, props take priority)
-      const formatNodes = workflowFormatRegistry.getAllFormatNodes();
+      const formatNodes = fd.formats.getAllFormatNodes();
       const existingIds = new Set(propNodes.map((n) => n.id));
       const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
       nodes = [...propNodes, ...uniqueFormatNodes];
@@ -383,7 +382,7 @@
       const fetchedNodes: NodeMetadata[] = await fd.api.client.getAvailableNodes();
 
       // Merge format-provided nodes with API nodes (deduplicate by ID, API takes priority)
-      const formatNodes = workflowFormatRegistry.getAllFormatNodes();
+      const formatNodes = fd.formats.getAllFormatNodes();
       const existingIds = new Set(fetchedNodes.map((n) => n.id));
       const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
       nodes = [...fetchedNodes, ...uniqueFormatNodes];

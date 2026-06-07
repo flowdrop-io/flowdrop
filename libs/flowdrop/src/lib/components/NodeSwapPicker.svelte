@@ -143,7 +143,7 @@
                 <button class="swap-picker__flat-item" onclick={() => onSelect(nodeType)}>
                   <span
                     class="swap-picker__flat-dot"
-                    style="background: {getCategoryColorToken(nodeType.category)}"
+                    style="background: {getCategoryColorToken(fd.categories, nodeType.category)}"
                   ></span>
                   <span class="swap-picker__flat-name">{nodeType.name}</span>
                 </button>
@@ -156,9 +156,9 @@
             <div class="swap-picker__category-header">
               <span
                 class="swap-picker__category-icon"
-                style="--_icon-color: {getCategoryColorToken(category)}"
+                style="--_icon-color: {getCategoryColorToken(fd.categories, category)}"
               >
-                <Icon icon={getCategoryIcon(category)} />
+                <Icon icon={getCategoryIcon(fd.categories, category)} />
               </span>
               <span class="swap-picker__category-name">
                 {fd.categories.getLabel(category)}
@@ -172,9 +172,9 @@
                 <button class="swap-picker__item" onclick={() => onSelect(nodeType)}>
                   <span
                     class="swap-picker__item-icon"
-                    style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
+                    style="--_icon-color: {getCategoryColorToken(fd.categories, nodeType.category)}"
                   >
-                    <Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
+                    <Icon icon={getNodeIcon(fd.categories, nodeType.icon, nodeType.category)} />
                   </span>
                   <div class="swap-picker__item-info">
                     <span class="swap-picker__item-name">{nodeType.name}</span>

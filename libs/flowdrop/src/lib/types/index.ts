@@ -261,7 +261,7 @@ export type BuiltinNodeType =
  * Includes built-in types and allows custom registered types.
  *
  * Built-in types: note, simple, square, tool, gateway, terminal, default
- * Custom types: Any string registered via nodeComponentRegistry
+ * Custom types: Any string registered via fd.nodes
  *
  * @example
  * ```typescript

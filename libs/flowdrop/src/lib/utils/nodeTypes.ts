@@ -11,7 +11,7 @@
  */
 
 import type { NodeType, NodeMetadata } from '../types/index.js';
-import { nodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
+import type { NodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
 import { resolveBuiltinAlias, isBuiltinType } from '../registry/builtinNodes.js';
 
 /**
@@ -32,15 +32,19 @@ const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
  * Gets the SvelteFlow component name for a given NodeType.
  * Uses the node component registry to resolve types.
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @param nodeType - The node type identifier
  * @returns The component name to use
  */
-export function getComponentNameForNodeType(nodeType: NodeType | string): string {
+export function getComponentNameForNodeType(
+  registry: NodeComponentRegistry,
+  nodeType: NodeType | string
+): string {
   // Resolve aliases first (e.g., "default" -> "workflowNode")
   const resolvedType = resolveBuiltinAlias(nodeType);
 
   // Check if it's registered in the registry
-  if (nodeComponentRegistry.has(resolvedType)) {
+  if (registry.has(resolvedType)) {
     return resolvedType;
   }
 
@@ -88,11 +92,13 @@ export function getPrimaryNodeType(metadata: NodeMetadata): NodeType | string {
  * 3. First supportedType
  * 4. "default"
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @param metadata - The node metadata
  * @param configNodeType - Optional type from user config
  * @returns The resolved node type
  */
 export function resolveNodeType(
+  registry: NodeComponentRegistry,
   metadata: NodeMetadata,
   configNodeType?: string
 ): NodeType | string {
@@ -112,7 +118,7 @@ export function resolveNodeType(
     }
 
     // Check if it's a registered custom type
-    if (nodeComponentRegistry.has(configNodeType) || nodeComponentRegistry.has(resolvedConfig)) {
+    if (registry.has(configNodeType) || registry.has(resolvedConfig)) {
       return configNodeType;
     }
   }
@@ -125,23 +131,33 @@ export function resolveNodeType(
  * Gets the SvelteFlow component name for resolved node type.
  * This is the main function used by UniversalNode to determine which component to render.
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @param metadata - The node metadata
  * @param configNodeType - Optional type from user config
  * @returns The component name to use
  */
-export function resolveComponentName(metadata: NodeMetadata, configNodeType?: string): string {
-  const nodeType = resolveNodeType(metadata, configNodeType);
-  return getComponentNameForNodeType(nodeType);
+export function resolveComponentName(
+  registry: NodeComponentRegistry,
+  metadata: NodeMetadata,
+  configNodeType?: string
+): string {
+  const nodeType = resolveNodeType(registry, metadata, configNodeType);
+  return getComponentNameForNodeType(registry, nodeType);
 }
 
 /**
  * Validates if a node type is supported by the given metadata.
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @param metadata - The node metadata
  * @param nodeType - The type to check
  * @returns true if the type is supported
  */
-export function isNodeTypeSupported(metadata: NodeMetadata, nodeType: NodeType | string): boolean {
+export function isNodeTypeSupported(
+  registry: NodeComponentRegistry,
+  metadata: NodeMetadata,
+  nodeType: NodeType | string
+): boolean {
   const availableTypes = getAvailableNodeTypes(metadata);
 
   // Check direct match
@@ -156,7 +172,7 @@ export function isNodeTypeSupported(metadata: NodeMetadata, nodeType: NodeType |
   }
 
   // Check if it's a registered custom type that's in the available list
-  if (nodeComponentRegistry.has(nodeType)) {
+  if (registry.has(nodeType)) {
     return availableTypes.some((t) => t === nodeType || resolveBuiltinAlias(t) === nodeType);
   }
 
@@ -171,11 +187,13 @@ export function isNodeTypeSupported(metadata: NodeMetadata, nodeType: NodeType |
  * - Types specified in metadata.supportedTypes
  * - Registered custom types (optionally filtered)
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @param metadata - The node metadata
  * @param includeCustomTypes - Whether to include registered custom types
  * @returns Array of oneOf items with const (type value) and title (display name)
  */
 export function getNodeTypeOneOfOptions(
+  registry: NodeComponentRegistry,
   metadata: NodeMetadata,
   includeCustomTypes = false
 ): Array<{ const: string; title: string }> {
@@ -187,7 +205,7 @@ export function getNodeTypeOneOfOptions(
     includedTypes.add(type);
 
     // Get display name from registry or fallback to built-in names
-    const registration = nodeComponentRegistry.get(type);
+    const registration = registry.get(type);
     let title: string;
     if (registration) {
       title = registration.displayName;
@@ -203,7 +221,7 @@ export function getNodeTypeOneOfOptions(
 
   // Optionally include all registered custom types
   if (includeCustomTypes) {
-    const registrations = nodeComponentRegistry.filter({
+    const registrations = registry.filter({
       predicate: (reg) => !isBuiltinType(reg.type) && !includedTypes.has(reg.type)
     });
 
@@ -222,15 +240,17 @@ export function getNodeTypeOneOfOptions(
  * Uses JSON Schema `oneOf` pattern with `const`/`title` for labeled options,
  * which is the standard approach supported by form components.
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @param metadata - The node metadata
  * @param defaultType - Optional default type override
  * @returns Config schema property object with oneOf for labeled options
  */
 export function createNodeTypeConfigProperty(
+  registry: NodeComponentRegistry,
   metadata: NodeMetadata,
   defaultType?: NodeType | string
 ) {
-  const oneOf = getNodeTypeOneOfOptions(metadata);
+  const oneOf = getNodeTypeOneOfOptions(registry, metadata);
   const primaryType = defaultType ?? getPrimaryNodeType(metadata);
 
   return {
@@ -245,20 +265,22 @@ export function createNodeTypeConfigProperty(
 /**
  * Check if a type string represents a valid registered or built-in type.
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @param type - The type to check
  * @returns true if the type is valid
  */
-export function isValidNodeType(type: string): boolean {
-  return isBuiltinType(type) || nodeComponentRegistry.has(type);
+export function isValidNodeType(registry: NodeComponentRegistry, type: string): boolean {
+  return isBuiltinType(type) || registry.has(type);
 }
 
 /**
  * Get all available node types (built-in + registered).
  *
+ * @param registry - The instance's node component registry (e.g. `fd.nodes`)
  * @returns Array of all valid node type identifiers
  */
-export function getAllNodeTypes(): string[] {
-  return nodeComponentRegistry.getTypes();
+export function getAllNodeTypes(registry: NodeComponentRegistry): string[] {
+  return registry.getTypes();
 }
 
 /**

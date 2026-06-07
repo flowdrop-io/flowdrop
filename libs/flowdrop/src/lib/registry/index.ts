@@ -4,20 +4,25 @@
  */
 
 // Base registry
-export { BaseRegistry } from './BaseRegistry.js';
+export { BaseRegistry } from './BaseRegistry.svelte.js';
 
-// Core registry
+// Core registry (the class — instances live on `fd.nodes`)
 export {
-  nodeComponentRegistry,
+  NodeComponentRegistry,
   createNamespacedType,
   parseNamespacedType,
+  createPlugin,
+  isValidNamespace,
   type NodeComponentProps,
   type NodeTypeInfo,
   type NodeComponentRegistration,
   type NodeComponentCategory,
   type StatusPosition,
   type StatusSize,
-  type NodeRegistrationFilter
+  type NodeRegistrationFilter,
+  type FlowDropPluginConfig,
+  type PluginNodeDefinition,
+  type PluginRegistrationResult
 } from './nodeComponentRegistry.js';
 
 // Built-in nodes
@@ -25,25 +30,8 @@ export {
   BUILTIN_NODE_COMPONENTS,
   BUILTIN_NODE_TYPES,
   FLOWDROP_SOURCE,
-  registerBuiltinNodes,
-  areBuiltinsRegistered,
-  resetBuiltinRegistration,
   resolveBuiltinAlias,
   isBuiltinType,
   getBuiltinTypes,
   type BuiltinNodeType
 } from './builtinNodes.js';
-
-// Plugin system
-export {
-  registerFlowDropPlugin,
-  unregisterFlowDropPlugin,
-  registerCustomNode,
-  createPlugin,
-  isValidNamespace,
-  getRegisteredPlugins,
-  getPluginNodeCount,
-  type FlowDropPluginConfig,
-  type PluginNodeDefinition,
-  type PluginRegistrationResult
-} from './plugin.js';

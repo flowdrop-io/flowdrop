@@ -124,8 +124,8 @@ export {
 // ============================================================================
 
 export {
-  // Registry singleton
-  fieldComponentRegistry,
+  // Registry class (instances live on `fd.fields`)
+  FieldComponentRegistry,
   // Built-in matchers for custom components
   hiddenFieldMatcher,
   checkboxGroupMatcher,
@@ -153,7 +153,7 @@ export type {
 
 /**
  * Use with Svelte's `getContext` inside custom field components registered
- * via `fieldComponentRegistry` to read sibling form field values.
+ * via `fd.fields` to read sibling form field values.
  *
  * @example
  * ```svelte

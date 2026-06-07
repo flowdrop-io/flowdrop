@@ -7,12 +7,14 @@
   import type { Node, ColorMode } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import UniversalNode from '$lib/components/UniversalNode.svelte';
-  import { registerBuiltinNodes } from '$lib/registry/builtinNodes.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { provideInstance } from '$lib/stores/getInstance.svelte.js';
 
   let { data, selected = false }: { data: Record<string, unknown>; selected?: boolean } = $props();
 
-  // Ensure built-in node components are registered
-  registerBuiltinNodes();
+  // Provide an instance so UniversalNode can resolve built-in node components
+  // (the registry is seeded with BUILTIN_NODE_COMPONENTS at construction).
+  provideInstance(getDefaultInstance());
 
   const nodeTypes = {
     universalNode: UniversalNode

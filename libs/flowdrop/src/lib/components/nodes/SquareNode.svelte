@@ -69,13 +69,15 @@
    * Get icon using the same resolution as WorkflowNode
    * Uses getNodeIcon utility with category fallback
    */
-  let squareIcon = $derived(getNodeIcon(props.data.metadata?.icon, props.data.metadata?.category));
+  let squareIcon = $derived(
+    getNodeIcon(fd.categories, props.data.metadata?.icon, props.data.metadata?.category)
+  );
 
   /**
    * Get icon color using category-based color tokens for consistency
    * Falls back to primary color if category not available
    */
-  let squareColor = $derived(getCategoryColorToken(props.data.metadata?.category));
+  let squareColor = $derived(getCategoryColorToken(fd.categories, props.data.metadata?.category));
 
   // Handle configuration sidebar - now using global ConfigSidebar
   function openConfigSidebar(): void {
@@ -207,7 +209,7 @@
     <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
     <span
       class="flowdrop-square-node__color-dot"
-      style="background: {getCategoryColorToken(props.data.metadata?.category)}"
+      style="background: {getCategoryColorToken(fd.categories, props.data.metadata?.category)}"
     ></span>
   </div>
 

@@ -12,7 +12,10 @@
   import { getCategoryColorToken } from '../utils/colors.js';
   import PortMappingRow from './PortMappingRow.svelte';
   import ConfigMappingRow from './ConfigMappingRow.svelte';
+  import { getInstance } from '../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+
+  const fd = getInstance();
 
   interface Props {
     interactiveState: InteractiveSwapState;
@@ -154,9 +157,18 @@
       <div class="swap-editor__node-target">
         <span
           class="swap-editor__node-icon"
-          style="--_icon-color: {getCategoryColorToken(localState.newMetadata.category)}"
+          style="--_icon-color: {getCategoryColorToken(
+            fd.categories,
+            localState.newMetadata.category
+          )}"
         >
-          <Icon icon={getNodeIcon(localState.newMetadata.icon, localState.newMetadata.category)} />
+          <Icon
+            icon={getNodeIcon(
+              fd.categories,
+              localState.newMetadata.icon,
+              localState.newMetadata.category
+            )}
+          />
         </span>
         <span class="swap-editor__node-name">{localState.newMetadata.name}</span>
       </div>

@@ -47,7 +47,8 @@
     isError?: boolean;
   }>();
 
-  const checker = getInstance().portCompatibility;
+  const fd = getInstance();
+  const checker = fd.portCompatibility;
 
   // Prioritize metadata over config for tool nodes (metadata is the node definition)
   let toolIcon = $derived(
@@ -203,7 +204,7 @@
       <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
       <span
         class="flowdrop-tool-node__color-dot"
-        style="background: {getCategoryColorToken(props.data.metadata?.category)}"
+        style="background: {getCategoryColorToken(fd.categories, props.data.metadata?.category)}"
       ></span>
 
       <!-- Tool Info -->

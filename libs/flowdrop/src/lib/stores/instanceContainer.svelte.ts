@@ -25,6 +25,11 @@ import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
+import { NodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
+import { FieldComponentRegistry } from '../form/fieldRegistry.js';
+import { WorkflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
+import { BUILTIN_NODE_COMPONENTS } from '../registry/builtinNodes.js';
+import { getBuiltinFormatAdapters } from '../registry/builtinFormats.js';
 
 /** Storage key prefix shared by the default instance and legacy consumers. */
 export const DEFAULT_DRAFT_PREFIX = 'flowdrop:draft';
@@ -55,6 +60,16 @@ export interface FlowDropInstance {
   readonly interrupts: InterruptStore;
   /** Endpoint configuration, auth provider, and API client for this instance. */
   readonly api: ApiContext;
+  /** Node component registry, seeded with the built-in node components. */
+  readonly nodes: NodeComponentRegistry;
+  /**
+   * Form field component registry. Starts empty (built-in light fields are
+   * resolved inline); heavy editors are registered on demand via
+   * `registerCodeEditorField(fd.fields)` etc.
+   */
+  readonly fields: FieldComponentRegistry;
+  /** Workflow format registry, seeded with the flowdrop + agentspec adapters. */
+  readonly formats: WorkflowFormatRegistry;
   /** Node category definitions. */
   readonly categories: CategoriesStore;
   /**
@@ -134,6 +149,12 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     playground,
     interrupts: new InterruptStore(),
     api: new ApiContext(),
+    nodes: new NodeComponentRegistry({
+      registrations: BUILTIN_NODE_COMPONENTS,
+      defaultType: 'workflowNode'
+    }),
+    fields: new FieldComponentRegistry(),
+    formats: new WorkflowFormatRegistry(getBuiltinFormatAdapters()),
     categories: new CategoriesStore(),
     portCoordinates: new PortCoordinateStore(),
     portCompatibility: new PortCompatibilityChecker(DEFAULT_PORT_CONFIG),

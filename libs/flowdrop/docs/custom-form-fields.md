@@ -8,8 +8,7 @@ FlowDrop generates configuration forms automatically from JSON Schema definition
 - [Quick Start](#quick-start)
 - [Writing a Custom Field Component](#writing-a-custom-field-component)
 - [Registering Custom Fields](#registering-custom-fields)
-  - [registerFieldComponent — Function API](#registerfieldcomponent--function-api)
-  - [fieldComponentRegistry — Class API](#fieldcomponentregistry--class-api)
+  - [fd.fields.register — Class API](#fdfieldsregister--class-api)
 - [Matcher Functions](#matcher-functions)
 - [Priority-Based Resolution](#priority-based-resolution)
 - [Using Custom Fields in Config Schema](#using-custom-fields-in-config-schema)
@@ -60,18 +59,19 @@ Registrations are **priority-ordered** — higher priority matchers are checked 
 />
 ```
 
-**2. Register it:**
+**2. Register it on the editor's instance (after `mountFlowDropApp` resolves):**
 
 ```typescript
-import { registerFieldComponent } from '@flowdrop/flowdrop/form';
 import ColorPickerField from './ColorPickerField.svelte';
 
-registerFieldComponent(
-  'color-picker',
-  ColorPickerField,
-  (schema) => schema.format === 'color',
-  100
-);
+// `app` is the result of `mountFlowDropApp(...)`; `fd` is its instance.
+const fd = app.instance;
+
+fd.fields.register('color-picker', {
+  component: ColorPickerField,
+  matcher: (schema) => schema.format === 'color',
+  priority: 100
+});
 ```
 
 **3. Use it in a node's config schema:**
@@ -160,7 +160,12 @@ You can also access **any custom property** you add to the schema, since `FieldS
 ```
 
 ```typescript
-registerFieldComponent('date-picker', DatePickerField, (schema) => schema.format === 'date', 100);
+const fd = app.instance;
+fd.fields.register('date-picker', {
+  component: DatePickerField,
+  matcher: (schema) => schema.format === 'date',
+  priority: 100
+});
 ```
 
 Schema usage with custom props:
@@ -183,50 +188,45 @@ The `minDate` and `maxDate` properties flow through to your component as props.
 
 ## Registering Custom Fields
 
-### `registerFieldComponent` — Function API
+Field components are registered on a FlowDrop instance's field registry,
+reachable as `fd.fields`. Get the instance from `mountFlowDropApp`'s result
+(`app.instance`) or via `getInstance()` inside a component rendered under
+`<App>`/`<WorkflowEditor>`. Registration is per instance — two editors on a
+page can expose different custom fields.
 
-The simplest way to register a custom field:
-
-```typescript
-import { registerFieldComponent } from '@flowdrop/flowdrop/form';
-
-registerFieldComponent(
-  'my-field', // unique identifier
-  MyComponent, // Svelte component
-  matcherFn, // (schema) => boolean
-  100 // priority (default: 0)
-);
-```
-
-**Signature:**
+### `fd.fields.register` — Class API
 
 ```typescript
-function registerFieldComponent(
-  type: string,
-  component: FieldComponent,
-  matcher: FieldMatcher,
-  priority?: number // default: 0, higher = checked first
-): void;
-```
+import MyComponent from './MyComponent.svelte';
 
-### `fieldComponentRegistry` — Class API
+// `app` is the result of `mountFlowDropApp(...)`; `fd` is its instance.
+const fd = app.instance;
 
-For more control, use the singleton registry directly:
-
-```typescript
-import { fieldComponentRegistry } from '@flowdrop/flowdrop/form';
-
-fieldComponentRegistry.register('my-field', {
+fd.fields.register('my-field', {
   component: MyComponent,
   matcher: (schema) => schema.format === 'my-format',
   priority: 100
 });
 
 // Look up which component handles a schema
-const resolved = fieldComponentRegistry.resolveFieldComponent(schema);
+const resolved = fd.fields.resolveFieldComponent(schema);
 if (resolved) {
   // resolved.component is the Svelte component
 }
+```
+
+**Signature:**
+
+```typescript
+// method on FieldComponentRegistry (e.g. `fd.fields`)
+register(
+  type: string, // unique identifier
+  registration: {
+    component: FieldComponent; // Svelte component
+    matcher: FieldMatcher; // (schema) => boolean
+    priority: number; // higher = checked first
+  }
+): void;
 ```
 
 ---
@@ -262,16 +262,21 @@ You can match on any combination of schema properties:
 When multiple registrations match the same schema, the one with the **highest priority** wins. The registry checks matchers in descending priority order and returns the first match.
 
 ```typescript
+const fd = app.instance;
+
 // Priority 50 — general fallback
-registerFieldComponent('text-basic', BasicTextField, (schema) => schema.type === 'string', 50);
+fd.fields.register('text-basic', {
+  component: BasicTextField,
+  matcher: (schema) => schema.type === 'string',
+  priority: 50
+});
 
 // Priority 100 — more specific, checked first
-registerFieldComponent(
-  'rich-text',
-  RichTextField,
-  (schema) => schema.type === 'string' && schema.format === 'rich-text',
-  100
-);
+fd.fields.register('rich-text', {
+  component: RichTextField,
+  matcher: (schema) => schema.type === 'string' && schema.format === 'rich-text',
+  priority: 100
+});
 ```
 
 For a field with `{ type: "string", format: "rich-text" }`, the rich-text component wins because it has higher priority — even though both matchers match.
@@ -335,31 +340,38 @@ const nodeMetadata = {
 For heavy dependencies, use dynamic imports to keep your initial bundle small. This is the same pattern FlowDrop uses internally for CodeMirror-based editors:
 
 ```typescript
-let registered = false;
+import type { FieldComponentRegistry } from '@flowdrop/flowdrop/form';
 
-export function registerMyHeavyField(priority = 100): void {
-  if (registered) return;
+export function registerMyHeavyField(registry: FieldComponentRegistry, priority = 100): void {
+  // Idempotent per registry — bail if already registered on this instance.
+  if (registry.has('my-heavy-field')) return;
 
   import('./MyHeavyField.svelte').then((module) => {
-    registerFieldComponent(
-      'my-heavy-field',
-      module.default,
-      (schema) => schema.format === 'heavy',
+    registry.register('my-heavy-field', {
+      component: module.default,
+      matcher: (schema) => schema.format === 'heavy',
       priority
-    );
-    registered = true;
+    });
   });
 }
+
+// Call once after mount, against the editor's field registry:
+registerMyHeavyField(app.instance.fields);
 ```
 
-Call this once at app startup. The dynamic import ensures the component is only bundled when actually registered.
+The dynamic import ensures the component is only bundled when actually registered.
 
 For synchronous registration when you've already imported the component:
 
 ```typescript
 import MyField from './MyField.svelte';
 
-registerFieldComponent('my-field', MyField, matcher, 100);
+const fd = app.instance;
+fd.fields.register('my-field', {
+  component: MyField,
+  matcher,
+  priority: 100
+});
 ```
 
 ---
@@ -381,13 +393,25 @@ These fields are always available without registration:
 | `type: "array", items: {...}`                 | Dynamic list                |
 | `format: "hidden"`                            | Hidden (not rendered)       |
 
-These require explicit registration (heavy dependencies):
+These require explicit registration (heavy dependencies). Each registration
+function takes the instance's field registry (`fd.fields`) as its first
+argument:
 
-| Schema                               | Import path                        | Registration function           |
-| ------------------------------------ | ---------------------------------- | ------------------------------- |
-| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField()`     |
-| `format: "template"`                 | `@flowdrop/flowdrop/form/code`     | `registerTemplateEditorField()` |
-| `format: "markdown"`                 | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField()` |
+| Schema                               | Import path                        | Registration function                    |
+| ------------------------------------ | ---------------------------------- | ---------------------------------------- |
+| `format: "json"` or `format: "code"` | `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField(fd.fields)`     |
+| `format: "template"`                 | `@flowdrop/flowdrop/form/code`     | `registerTemplateEditorField(fd.fields)` |
+| `format: "markdown"`                 | `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField(fd.fields)` |
+
+To register everything in one call, use
+`initializeAllFieldTypes(fd.fields)` from `@flowdrop/flowdrop/form/full`.
+
+```typescript
+import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code';
+
+const fd = app.instance;
+registerCodeEditorField(fd.fields);
+```
 
 If a heavy editor format is used but not registered, `FormFieldLight` shows a helpful fallback message with the required import.
 
@@ -417,29 +441,25 @@ import {
 
 ## Field Management
 
+Field management methods live on the instance's field registry (`fd.fields`).
+
 ```typescript
-import {
-  unregisterFieldComponent,
-  getRegisteredFieldTypes,
-  isFieldTypeRegistered,
-  clearFieldRegistry,
-  getFieldRegistrySize
-} from '@flowdrop/flowdrop/form';
+const fd = app.instance;
 
 // Remove a field registration
-unregisterFieldComponent('color-picker'); // returns true if it existed
+fd.fields.unregister('color-picker'); // returns true if it existed
 
 // List all registered field type IDs
-getRegisteredFieldTypes(); // ["color-picker", "date-picker", ...]
+fd.fields.getKeys(); // ["color-picker", "date-picker", ...]
 
 // Check if a specific type is registered
-isFieldTypeRegistered('color-picker'); // true or false
+fd.fields.has('color-picker'); // true or false
 
 // Get total number of registrations
-getFieldRegistrySize(); // 2
+fd.fields.size; // 2
 
 // Clear all registrations (useful in tests)
-clearFieldRegistry();
+fd.fields.clear();
 ```
 
 ---
@@ -511,9 +531,9 @@ interface FieldSchema {
 
 ### Import paths
 
-| Path                               | What it provides                                                                                              |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `@flowdrop/flowdrop/form`          | `registerFieldComponent`, `fieldComponentRegistry`, matchers, `SchemaForm`, all light field components, types |
-| `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField`, `registerTemplateEditorField`, `FormCodeEditor`, `FormTemplateEditor`              |
-| `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField`, `FormMarkdownEditor`                                                           |
-| `@flowdrop/flowdrop/form/full`     | Full form module with all editors pre-bundled                                                                 |
+| Path                               | What it provides                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `@flowdrop/flowdrop/form`          | `FieldComponentRegistry` (class), matchers, `SchemaForm`, all light field components, types      |
+| `@flowdrop/flowdrop/form/code`     | `registerCodeEditorField`, `registerTemplateEditorField`, `FormCodeEditor`, `FormTemplateEditor` |
+| `@flowdrop/flowdrop/form/markdown` | `registerMarkdownEditorField`, `FormMarkdownEditor`                                              |
+| `@flowdrop/flowdrop/form/full`     | Full form module with all editors pre-bundled                                                    |

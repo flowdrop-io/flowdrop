@@ -38,14 +38,6 @@
  */
 
 // ============================================================================
-// Initialize Built-in Nodes
-// This side effect is intentional for the editor module - users importing
-// the editor expect all node types to be available.
-// ============================================================================
-
-import '../registry/builtinNodes.js';
-
-// ============================================================================
 // Main Editor Components
 // ============================================================================
 
@@ -108,27 +100,20 @@ export { mountWorkflowEditor, mountFlowDropApp, unmountFlowDropApp } from '../sv
 // ============================================================================
 
 export {
-  // Core registry
-  nodeComponentRegistry,
+  // Core registry (the class — instances live on `fd.nodes`)
+  NodeComponentRegistry,
   createNamespacedType,
   parseNamespacedType,
   // Built-in nodes
   BUILTIN_NODE_COMPONENTS,
   BUILTIN_NODE_TYPES,
   FLOWDROP_SOURCE,
-  registerBuiltinNodes,
-  areBuiltinsRegistered,
   isBuiltinType,
   getBuiltinTypes,
   resolveBuiltinAlias,
   // Plugin system
-  registerFlowDropPlugin,
-  unregisterFlowDropPlugin,
-  registerCustomNode,
   createPlugin,
-  isValidNamespace,
-  getRegisteredPlugins,
-  getPluginNodeCount
+  isValidNamespace
 } from '../registry/index.js';
 
 // ============================================================================

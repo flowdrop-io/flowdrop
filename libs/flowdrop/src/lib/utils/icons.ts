@@ -4,13 +4,7 @@
  */
 
 import type { NodeCategory } from '../types/index.js';
-import { getDefaultInstance } from '../stores/instanceContainer.svelte.js';
-
-// Category metadata comes from the page-default instance; per-instance category
-// theming would require threading the instance through every icon call site.
-function getCategoryIconFromStore(category: NodeCategory): string {
-  return getDefaultInstance().categories.getIcon(category);
-}
+import type { CategoriesStore } from '../stores/categoriesStore.svelte.js';
 
 /**
  * Default icons for different contexts
@@ -126,11 +120,16 @@ export const CATEGORY_ICONS: Record<string, string> = {
 
 /**
  * Get the appropriate icon for a node
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param nodeIcon - The node's specific icon
  * @param category - The node's category
  * @returns The icon to use
  */
-export function getNodeIcon(nodeIcon?: string, category?: NodeCategory): string {
+export function getNodeIcon(
+  categories: CategoriesStore,
+  nodeIcon?: string,
+  category?: NodeCategory
+): string {
   // If node has a specific icon, use it
   if (nodeIcon) {
     return nodeIcon;
@@ -138,7 +137,7 @@ export function getNodeIcon(nodeIcon?: string, category?: NodeCategory): string 
 
   // If category is provided, use category icon from store (which includes API overrides)
   if (category) {
-    return getCategoryIconFromStore(category);
+    return categories.getIcon(category);
   }
 
   // Fallback to default node icon
@@ -149,11 +148,12 @@ export function getNodeIcon(nodeIcon?: string, category?: NodeCategory): string 
  * Get the appropriate icon for a category.
  * Checks the categories store first (which includes API overrides),
  * then falls back to the static CATEGORY_ICONS map, then to the default.
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The category
  * @returns The icon to use
  */
-export function getCategoryIcon(category: NodeCategory): string {
-  return getCategoryIconFromStore(category);
+export function getCategoryIcon(categories: CategoriesStore, category: NodeCategory): string {
+  return categories.getIcon(category);
 }
 
 /**

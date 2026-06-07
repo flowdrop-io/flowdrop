@@ -45,7 +45,9 @@
   import { getSchemaOptions } from './types.js';
   import type { WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
-  import { fieldComponentRegistry } from '$lib/form/fieldRegistry.js';
+  import { getInstance } from '$lib/stores/getInstance.svelte.js';
+
+  const fd = getInstance();
 
   interface Props {
     /** Unique key/id for the field */
@@ -226,7 +228,7 @@
   });
 
   const registeredAutocompleteComponent = $derived(
-    fieldType === 'autocomplete' ? fieldComponentRegistry.resolveFieldComponent(schema) : null
+    fieldType === 'autocomplete' ? fd.fields.resolveFieldComponent(schema) : null
   );
 
   /**

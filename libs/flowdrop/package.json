@@ -80,9 +80,7 @@
     "!dist/**/*.map"
   ],
   "sideEffects": [
-    "**/*.css",
-    "./dist/styles/base.css",
-    "./dist/editor/index.js"
+    "**/*.css"
   ],
   "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -8,7 +8,8 @@
   import '@xyflow/svelte/dist/style.css';
   import UniversalNode from '$lib/components/UniversalNode.svelte';
   import FlowDropEdge from '$lib/components/FlowDropEdge.svelte';
-  import { registerBuiltinNodes } from '$lib/registry/builtinNodes.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { EDGE_MARKER_SIZES } from '$lib/config/constants.js';
 
   interface Props {
@@ -33,7 +34,9 @@
     targetHandleId = 'input'
   }: Props = $props();
 
-  registerBuiltinNodes();
+  // Provide an instance so UniversalNode can resolve built-in node components
+  // (the registry is seeded with BUILTIN_NODE_COMPONENTS at construction).
+  provideInstance(getDefaultInstance());
 
   const nodeTypes = {
     universalNode: UniversalNode

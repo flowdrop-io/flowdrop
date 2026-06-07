@@ -12,7 +12,7 @@
  * import { registerMarkdownEditorField } from "@flowdrop/flowdrop/form/markdown";
  *
  * // Register markdown editor support (call once at app startup)
- * registerMarkdownEditorField();
+ * registerMarkdownEditorField(fd.fields);
  *
  * // Now SchemaForm will render markdown editors for format: "markdown"
  * const schema = {
@@ -24,8 +24,7 @@
  * ```
  */
 
-import { fieldComponentRegistry } from './fieldRegistry.js';
-import type { FieldComponent } from './fieldRegistry.js';
+import type { FieldComponent, FieldComponentRegistry } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
 
 // Re-export the component for direct usage if needed
@@ -43,21 +42,12 @@ export function markdownEditorFieldMatcher(schema: FieldSchema): boolean {
 }
 
 /**
- * Track if markdown editor is registered
- */
-let markdownEditorRegistered = false;
-
-// Sync registration flag with registry.clear() for test isolation
-fieldComponentRegistry.onClear(() => {
-  markdownEditorRegistered = false;
-});
-
-/**
  * Register the markdown editor field component
  *
  * Call this function once at application startup to enable
  * markdown editor fields in SchemaForm.
  *
+ * @param registry - The instance's field registry (e.g. `fd.fields`)
  * @param priority - Priority for field matching (default: 100)
  *
  * @example
@@ -65,22 +55,29 @@ fieldComponentRegistry.onClear(() => {
  * // In your app's entry point:
  * import { registerMarkdownEditorField } from "@flowdrop/flowdrop/form/markdown";
  *
- * registerMarkdownEditorField();
+ * registerMarkdownEditorField(fd.fields);
  * ```
  */
-export function registerMarkdownEditorField(priority: number = 100): void {
-  if (markdownEditorRegistered) {
+export function registerMarkdownEditorField(
+  registry: FieldComponentRegistry,
+  priority: number = 100
+): void {
+  if (registry.has('markdown-editor')) {
     return;
   }
 
   // Dynamic import to ensure proper code splitting
   import('../components/form/FormMarkdownEditor.svelte').then((module) => {
-    fieldComponentRegistry.register('markdown-editor', {
+    // Re-check inside the async callback: two rapid synchronous calls both pass
+    // the guard above before either import resolves, so guard again here.
+    if (registry.has('markdown-editor')) {
+      return;
+    }
+    registry.register('markdown-editor', {
       component: module.default,
       matcher: markdownEditorFieldMatcher,
       priority
     });
-    markdownEditorRegistered = true;
   });
 }
 
@@ -89,33 +86,37 @@ export function registerMarkdownEditorField(priority: number = 100): void {
  *
  * Use this when you've already imported the component and want immediate registration.
  *
+ * @param registry - The instance's field registry (e.g. `fd.fields`)
+ * @param component - The pre-imported markdown editor component
  * @param priority - Priority for field matching (default: 100)
  *
  * @example
  * ```typescript
  * import { registerMarkdownEditorFieldWithComponent, FormMarkdownEditor } from "@flowdrop/flowdrop/form/markdown";
- * registerMarkdownEditorFieldWithComponent(FormMarkdownEditor);
+ * registerMarkdownEditorFieldWithComponent(fd.fields, FormMarkdownEditor);
  * ```
  */
 export function registerMarkdownEditorFieldWithComponent(
+  registry: FieldComponentRegistry,
   component: FieldComponent,
   priority: number = 100
 ): void {
-  if (markdownEditorRegistered) {
+  if (registry.has('markdown-editor')) {
     return;
   }
 
-  fieldComponentRegistry.register('markdown-editor', {
+  registry.register('markdown-editor', {
     component,
     matcher: markdownEditorFieldMatcher,
     priority
   });
-  markdownEditorRegistered = true;
 }
 
 /**
- * Check if markdown editor field is registered
+ * Check if markdown editor field is registered in the given registry.
+ *
+ * @param registry - The instance's field registry (e.g. `fd.fields`)
  */
-export function isMarkdownEditorRegistered(): boolean {
-  return markdownEditorRegistered;
+export function isMarkdownEditorRegistered(registry: FieldComponentRegistry): boolean {
+  return registry.has('markdown-editor');
 }

@@ -42,8 +42,10 @@
   import FormSelect from './FormSelect.svelte';
   import FormCheckboxGroup from './FormCheckboxGroup.svelte';
   import FormArray from './FormArray.svelte';
-  import { fieldComponentRegistry } from '$lib/form/fieldRegistry.js';
+  import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
+
+  const fd = getInstance();
   import type { FieldSchema } from './types.js';
   import { getSchemaOptions } from './types.js';
 
@@ -84,7 +86,7 @@
   /**
    * Check if there's a registered custom component for this schema
    */
-  const registeredComponent = $derived(fieldComponentRegistry.resolveFieldComponent(schema));
+  const registeredComponent = $derived(fd.fields.resolveFieldComponent(schema));
 
   /**
    * Determine the field type to render (for non-registered components)

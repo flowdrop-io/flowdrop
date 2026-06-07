@@ -9,11 +9,13 @@
 
 <script lang="ts">
   import type { WorkflowNode } from '../types/index.js';
-  import { nodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
   import { resolveBuiltinAlias } from '../registry/builtinNodes.js';
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
   import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
+  import { getInstance } from '../stores/getInstance.svelte.js';
+
+  const fd = getInstance();
 
   let {
     data,
@@ -38,7 +40,7 @@
    * This handles the logic of choosing between config.nodeType and metadata.type.
    */
   let resolvedComponentName = $derived(
-    data.metadata ? resolveComponentName(data.metadata, configNodeType) : 'workflowNode'
+    data.metadata ? resolveComponentName(fd.nodes, data.metadata, configNodeType) : 'workflowNode'
   );
 
   /**
@@ -70,13 +72,13 @@
     const resolvedType = resolveBuiltinAlias(nodeType);
 
     // Get component from registry (defaults to workflowNode if not found)
-    const component = nodeComponentRegistry.getComponent(resolvedType);
+    const component = fd.nodes.getComponent(resolvedType);
     if (component) {
       return component;
     }
 
     // Return the default component from registry
-    return nodeComponentRegistry.getComponent('workflowNode');
+    return fd.nodes.getComponent('workflowNode');
   }
 
   /**
@@ -85,7 +87,7 @@
    */
   function getStatusPosition(): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' {
     // Try registry first
-    const position = nodeComponentRegistry.getStatusPosition(resolvedComponentName);
+    const position = fd.nodes.getStatusPosition(resolvedComponentName);
     if (position) {
       return position;
     }
@@ -109,7 +111,7 @@
    */
   function getStatusSize(): 'sm' | 'md' | 'lg' {
     // Try registry first
-    const size = nodeComponentRegistry.getStatusSize(resolvedComponentName);
+    const size = fd.nodes.getStatusSize(resolvedComponentName);
     if (size) {
       return size;
     }

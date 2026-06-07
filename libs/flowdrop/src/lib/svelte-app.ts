@@ -16,8 +16,6 @@ import type { AuthProvider } from './types/auth.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
 import type { FlowDropTheme, FlowDropThemeName } from './types/theme.js';
 import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
-import { workflowFormatRegistry } from './registry/workflowFormatRegistry.js';
-import './registry/builtinFormats.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
 import { fetchCategories } from './services/categoriesApi.js';
@@ -341,7 +339,7 @@ export async function mountFlowDropApp(
   // Register custom format adapters before mounting
   if (formatAdapters) {
     for (const adapter of formatAdapters) {
-      workflowFormatRegistry.register(adapter);
+      fd.formats.register(adapter);
     }
   }
 

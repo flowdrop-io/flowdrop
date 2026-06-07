@@ -7,7 +7,6 @@
  */
 
 import {
-  nodeComponentRegistry,
   type NodeComponentRegistration,
   type NodeComponentProps
 } from './nodeComponentRegistry.js';
@@ -142,56 +141,6 @@ export const BUILTIN_TYPE_ALIASES: Record<string, string> = {
 };
 
 /**
- * Track whether built-in nodes have been registered.
- * Prevents duplicate registration on hot reload.
- */
-let builtinsRegistered = false;
-
-/**
- * Initialize the registry with built-in components.
- * This is called automatically when the library loads.
- *
- * Safe to call multiple times - will only register once.
- *
- * @example
- * ```typescript
- * // Usually not needed - called automatically
- * // But can be called manually if needed
- * registerBuiltinNodes();
- * ```
- */
-export function registerBuiltinNodes(): void {
-  if (builtinsRegistered) {
-    return;
-  }
-
-  // Register all built-in components
-  nodeComponentRegistry.registerAll(BUILTIN_NODE_COMPONENTS, true);
-
-  // Set the default type
-  nodeComponentRegistry.setDefaultType('workflowNode');
-
-  builtinsRegistered = true;
-}
-
-/**
- * Check if built-in nodes have been registered.
- *
- * @returns true if registerBuiltinNodes() has been called
- */
-export function areBuiltinsRegistered(): boolean {
-  return builtinsRegistered;
-}
-
-/**
- * Reset the registration state.
- * Primarily useful for testing.
- */
-export function resetBuiltinRegistration(): void {
-  builtinsRegistered = false;
-}
-
-/**
  * Get the canonical type for a given type string.
  * Handles aliases like "default" -> "workflowNode".
  *
@@ -251,11 +200,3 @@ export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
   'terminal',
   'idea'
 ];
-
-// Sync registration flag with registry.clear() for test isolation
-nodeComponentRegistry.onClear(() => {
-  builtinsRegistered = false;
-});
-
-// Auto-register built-ins when this module is imported
-registerBuiltinNodes();

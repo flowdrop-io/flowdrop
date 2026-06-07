@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  fieldComponentRegistry,
+  FieldComponentRegistry,
   hiddenFieldMatcher,
   checkboxGroupMatcher,
   enumSelectMatcher,
@@ -23,8 +23,11 @@ import {
 import type { FieldSchema } from '$lib/components/form/types.js';
 
 describe('Field Registry', () => {
+  // Fresh, empty registry per test — no shared singleton state.
+  let registry: FieldComponentRegistry;
+
   beforeEach(() => {
-    fieldComponentRegistry.clear();
+    registry = new FieldComponentRegistry();
   });
 
   describe('register', () => {
@@ -32,35 +35,35 @@ describe('Field Registry', () => {
       const mockComponent = {} as never;
       const mockMatcher: FieldMatcher = () => true;
 
-      fieldComponentRegistry.register('test', {
+      registry.register('test', {
         component: mockComponent,
         matcher: mockMatcher,
         priority: 10
       });
 
-      expect(fieldComponentRegistry.has('test')).toBe(true);
-      expect(fieldComponentRegistry.getKeys()).toContain('test');
+      expect(registry.has('test')).toBe(true);
+      expect(registry.getKeys()).toContain('test');
     });
 
     it('should track registry size correctly', () => {
       const mockComponent = {} as never;
       const mockMatcher: FieldMatcher = () => true;
 
-      expect(fieldComponentRegistry.size).toBe(0);
+      expect(registry.size).toBe(0);
 
-      fieldComponentRegistry.register('type1', {
+      registry.register('type1', {
         component: mockComponent,
         matcher: mockMatcher,
         priority: 0
       });
-      expect(fieldComponentRegistry.size).toBe(1);
+      expect(registry.size).toBe(1);
 
-      fieldComponentRegistry.register('type2', {
+      registry.register('type2', {
         component: mockComponent,
         matcher: mockMatcher,
         priority: 0
       });
-      expect(fieldComponentRegistry.size).toBe(2);
+      expect(registry.size).toBe(2);
     });
   });
 
@@ -69,21 +72,21 @@ describe('Field Registry', () => {
       const mockComponent = {} as never;
       const mockMatcher: FieldMatcher = () => true;
 
-      fieldComponentRegistry.register('test', {
+      registry.register('test', {
         component: mockComponent,
         matcher: mockMatcher,
         priority: 0
       });
-      expect(fieldComponentRegistry.has('test')).toBe(true);
+      expect(registry.has('test')).toBe(true);
 
-      const removed = fieldComponentRegistry.unregister('test');
+      const removed = registry.unregister('test');
 
       expect(removed).toBe(true);
-      expect(fieldComponentRegistry.has('test')).toBe(false);
+      expect(registry.has('test')).toBe(false);
     });
 
     it('should return false when unregistering non-existent type', () => {
-      const removed = fieldComponentRegistry.unregister('nonexistent');
+      const removed = registry.unregister('nonexistent');
 
       expect(removed).toBe(false);
     });
@@ -95,19 +98,19 @@ describe('Field Registry', () => {
       const lowPriorityComponent = { name: 'low' } as never;
       const alwaysTrueMatcher: FieldMatcher = () => true;
 
-      fieldComponentRegistry.register('low', {
+      registry.register('low', {
         component: lowPriorityComponent,
         matcher: alwaysTrueMatcher,
         priority: 10
       });
-      fieldComponentRegistry.register('high', {
+      registry.register('high', {
         component: highPriorityComponent,
         matcher: alwaysTrueMatcher,
         priority: 100
       });
 
       const schema: FieldSchema = { type: 'string' };
-      const result = fieldComponentRegistry.resolveFieldComponent(schema);
+      const result = registry.resolveFieldComponent(schema);
 
       expect(result?.component).toBe(highPriorityComponent);
     });
@@ -116,14 +119,14 @@ describe('Field Registry', () => {
       const mockComponent = {} as never;
       const neverMatcher: FieldMatcher = () => false;
 
-      fieldComponentRegistry.register('test', {
+      registry.register('test', {
         component: mockComponent,
         matcher: neverMatcher,
         priority: 0
       });
 
       const schema: FieldSchema = { type: 'string' };
-      const result = fieldComponentRegistry.resolveFieldComponent(schema);
+      const result = registry.resolveFieldComponent(schema);
 
       expect(result).toBeNull();
     });
@@ -355,13 +358,13 @@ describe('Field Registry', () => {
     });
   });
 
-  describe('fieldComponentRegistry class API', () => {
+  describe('FieldComponentRegistry class API', () => {
     describe('subscribe', () => {
       it('should notify listeners on register', () => {
         let callCount = 0;
-        const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
+        const unsubscribe = registry.subscribe(() => callCount++);
 
-        fieldComponentRegistry.register('test-sub', {
+        registry.register('test-sub', {
           component: {} as never,
           matcher: () => true,
           priority: 0
@@ -369,7 +372,7 @@ describe('Field Registry', () => {
         expect(callCount).toBe(1);
 
         unsubscribe();
-        fieldComponentRegistry.register('test-sub2', {
+        registry.register('test-sub2', {
           component: {} as never,
           matcher: () => true,
           priority: 0
@@ -378,16 +381,16 @@ describe('Field Registry', () => {
       });
 
       it('should notify listeners on unregister', () => {
-        fieldComponentRegistry.register('test-unsub', {
+        registry.register('test-unsub', {
           component: {} as never,
           matcher: () => true,
           priority: 0
         });
 
         let callCount = 0;
-        const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
+        const unsubscribe = registry.subscribe(() => callCount++);
 
-        fieldComponentRegistry.unregister('test-unsub');
+        registry.unregister('test-unsub');
         expect(callCount).toBe(1);
 
         unsubscribe();
@@ -395,9 +398,9 @@ describe('Field Registry', () => {
 
       it('should notify listeners on clear', () => {
         let callCount = 0;
-        const unsubscribe = fieldComponentRegistry.subscribe(() => callCount++);
+        const unsubscribe = registry.subscribe(() => callCount++);
 
-        fieldComponentRegistry.clear();
+        registry.clear();
         expect(callCount).toBe(1);
 
         unsubscribe();
@@ -407,18 +410,18 @@ describe('Field Registry', () => {
     describe('onClear', () => {
       it('should call onClear callbacks when clear is called', () => {
         let cleared = false;
-        const unsubscribe = fieldComponentRegistry.onClear(() => {
+        const unsubscribe = registry.onClear(() => {
           cleared = true;
         });
 
-        fieldComponentRegistry.register('test-onclear', {
+        registry.register('test-onclear', {
           component: {} as never,
           matcher: () => true,
           priority: 0
         });
         expect(cleared).toBe(false);
 
-        fieldComponentRegistry.clear();
+        registry.clear();
         expect(cleared).toBe(true);
 
         unsubscribe();
@@ -426,10 +429,10 @@ describe('Field Registry', () => {
 
       it('should call onClear before subscribe listeners', () => {
         const order: string[] = [];
-        const unsub1 = fieldComponentRegistry.onClear(() => order.push('onClear'));
-        const unsub2 = fieldComponentRegistry.subscribe(() => order.push('listener'));
+        const unsub1 = registry.onClear(() => order.push('onClear'));
+        const unsub2 = registry.subscribe(() => order.push('listener'));
 
-        fieldComponentRegistry.clear();
+        registry.clear();
         expect(order).toEqual(['onClear', 'listener']);
 
         unsub1();
@@ -438,14 +441,14 @@ describe('Field Registry', () => {
     });
 
     describe('resolveFieldComponent via class', () => {
-      it('should resolve via the singleton instance', () => {
-        fieldComponentRegistry.register('test-resolve', {
+      it('should resolve via the class instance', () => {
+        registry.register('test-resolve', {
           component: {} as never,
           matcher: (s) => s.format === 'test',
           priority: 50
         });
 
-        const result = fieldComponentRegistry.resolveFieldComponent({
+        const result = registry.resolveFieldComponent({
           format: 'test'
         } as FieldSchema);
         expect(result).not.toBeNull();

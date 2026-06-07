@@ -18,21 +18,17 @@
  *
  * @example Adding code editor support:
  * ```typescript
- * import { fieldComponentRegistry } from "@flowdrop/flowdrop/form";
- * import { FormCodeEditor, codeEditorFieldMatcher } from "@flowdrop/flowdrop/form/code";
+ * import { registerCodeEditorField } from "@flowdrop/flowdrop/form/code";
  *
- * fieldComponentRegistry.register("code-editor", {
- *   component: FormCodeEditor,
- *   matcher: codeEditorFieldMatcher,
- *   priority: 100
- * });
+ * // Registers the code editor into this instance's field registry.
+ * registerCodeEditorField(fd.fields);
  * ```
  */
 
 import { DEV } from 'esm-env';
 import type { Component } from 'svelte';
 import type { FieldSchema } from '../components/form/types.js';
-import { BaseRegistry } from '../registry/BaseRegistry.js';
+import { BaseRegistry } from '../registry/BaseRegistry.svelte.js';
 
 /**
  * Base field component props that all registered field components should accept.
@@ -91,9 +87,24 @@ export interface FieldComponentRegistration extends FieldMatcherRegistration {
  * Class-based field component registry.
  * Extends BaseRegistry with priority-based field resolution.
  */
-class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistration> {
+export class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistration> {
   /** Cached ordered keys by priority (highest first), invalidated on mutation */
   private orderedKeys: string[] | null = null;
+
+  /**
+   * @param seed - Optional initial field registrations keyed by type. The
+   *   registry starts empty by default — the built-in light fields are
+   *   resolved inline by FormField/FormFieldLight, and heavy editors are
+   *   registered on demand via `form/code`, `form/markdown`, etc.
+   */
+  constructor(seed?: Record<string, FieldComponentRegistration>) {
+    super();
+    if (seed) {
+      for (const [type, registration] of Object.entries(seed)) {
+        this.register(type, registration);
+      }
+    }
+  }
 
   /**
    * Register a field component.
@@ -116,6 +127,7 @@ class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistra
     }
     this.items.set(type, registration);
     this.orderedKeys = null;
+    this.touch();
     this.notifyListeners();
   }
 
@@ -146,6 +158,7 @@ class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistra
    * @returns The matching registration or null if no match
    */
   resolveFieldComponent(schema: FieldSchema): FieldComponentRegistration | null {
+    this.trackVersion(); // reactive dependency — cached orderedKeys path still tracks mutations
     const keys = this.getOrderedKeys();
 
     for (const key of keys) {
@@ -170,9 +183,6 @@ class FieldComponentRegistry extends BaseRegistry<string, FieldComponentRegistra
     return this.orderedKeys;
   }
 }
-
-/** Singleton instance of the field component registry */
-export const fieldComponentRegistry = new FieldComponentRegistry();
 
 // ============================================================================
 // Built-in Field Matchers (for light fields)

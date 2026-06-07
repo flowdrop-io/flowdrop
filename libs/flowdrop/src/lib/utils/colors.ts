@@ -6,15 +6,7 @@
 
 import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
 import type { PortCompatibilityChecker } from './connections.js';
-import { getDefaultInstance } from '../stores/instanceContainer.svelte.js';
-
-// Category metadata comes from the page-default instance; per-instance category
-// theming would require threading the instance through every color call site.
-// Data-type config, by contrast, is threaded explicitly via a
-// PortCompatibilityChecker parameter (see getDataType* helpers below).
-function getCategoryColorFromStore(category: NodeCategory): string {
-  return getDefaultInstance().categories.getColor(category);
-}
+import type { CategoriesStore } from '../stores/categoriesStore.svelte.js';
 
 /**
  * Category color mapping to design tokens (CSS variables)
@@ -79,9 +71,11 @@ const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
  * Get the design token for a category color.
  * Checks the categories store first (which includes API overrides),
  * then falls back to the static CATEGORY_COLOR_TOKENS map, then to slate.
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
+ * @param category - The node category
  */
-export function getCategoryColorToken(category: NodeCategory): string {
-  return getCategoryColorFromStore(category);
+export function getCategoryColorToken(categories: CategoriesStore, category: NodeCategory): string {
+  return categories.getColor(category);
 }
 
 /**
@@ -130,51 +124,57 @@ export const DEFAULT_COLORS = {
 
 /**
  * Get category colors
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @returns The color configuration for the category
  */
-export function getCategoryColors(category: NodeCategory): string {
-  return getCategoryColorFromStore(category);
+export function getCategoryColors(categories: CategoriesStore, category: NodeCategory): string {
+  return categories.getColor(category);
 }
 
 /**
  * Get category background color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @returns The background color class
  */
-export function getCategoryBackground(category: NodeCategory): string {
-  return getCategoryColors(category);
+export function getCategoryBackground(categories: CategoriesStore, category: NodeCategory): string {
+  return getCategoryColors(categories, category);
 }
 
 /**
  * Get category accent color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @returns The accent color class
  */
-export function getCategoryAccent(category: NodeCategory): string {
-  return getCategoryColors(category);
+export function getCategoryAccent(categories: CategoriesStore, category: NodeCategory): string {
+  return getCategoryColors(categories, category);
 }
 
 /**
  * Get category text color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @returns The text color class
  */
-export function getCategoryText(category: NodeCategory): string {
-  return getCategoryColors(category);
+export function getCategoryText(categories: CategoriesStore, category: NodeCategory): string {
+  return getCategoryColors(categories, category);
 }
 
 /**
  * Get category border color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @returns The border color class
  */
-export function getCategoryBorder(category: NodeCategory): string {
-  return getCategoryColors(category);
+export function getCategoryBorder(categories: CategoriesStore, category: NodeCategory): string {
+  return getCategoryColors(categories, category);
 }
 
 /**
  * Get node colors based on category and state
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
@@ -182,12 +182,13 @@ export function getCategoryBorder(category: NodeCategory): string {
  * @returns The color configuration object
  */
 export function getNodeColors(
+  categories: CategoriesStore,
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
   isSelected: boolean = false
 ): { background: string; accent: string; text: string; border: string } {
-  const baseColor = getCategoryColors(category);
+  const baseColor = getCategoryColors(categories, category);
 
   if (isError) {
     return {
@@ -226,6 +227,7 @@ export function getNodeColors(
 
 /**
  * Get node background color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
@@ -233,16 +235,18 @@ export function getNodeColors(
  * @returns The background color
  */
 export function getNodeBackground(
+  categories: CategoriesStore,
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
   isSelected: boolean = false
 ): string {
-  return getNodeColors(category, isError, isProcessing, isSelected).background;
+  return getNodeColors(categories, category, isError, isProcessing, isSelected).background;
 }
 
 /**
  * Get node accent color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
@@ -250,16 +254,18 @@ export function getNodeBackground(
  * @returns The accent color
  */
 export function getNodeAccent(
+  categories: CategoriesStore,
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
   isSelected: boolean = false
 ): string {
-  return getNodeColors(category, isError, isProcessing, isSelected).accent;
+  return getNodeColors(categories, category, isError, isProcessing, isSelected).accent;
 }
 
 /**
  * Get node text color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
@@ -267,16 +273,18 @@ export function getNodeAccent(
  * @returns The text color
  */
 export function getNodeText(
+  categories: CategoriesStore,
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
   isSelected: boolean = false
 ): string {
-  return getNodeColors(category, isError, isProcessing, isSelected).text;
+  return getNodeColors(categories, category, isError, isProcessing, isSelected).text;
 }
 
 /**
  * Get node border color
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @param isError - Whether the node is in error state
  * @param isProcessing - Whether the node is processing
@@ -284,12 +292,13 @@ export function getNodeText(
  * @returns The border color
  */
 export function getNodeBorder(
+  categories: CategoriesStore,
   category: NodeCategory,
   isError: boolean = false,
   isProcessing: boolean = false,
   isSelected: boolean = false
 ): string {
-  return getNodeColors(category, isError, isProcessing, isSelected).border;
+  return getNodeColors(categories, category, isError, isProcessing, isSelected).border;
 }
 
 /**
@@ -477,11 +486,15 @@ export function getContrastTextColorForDataType(
 
 /**
  * Get the appropriate contrast text color for a category badge
+ * @param categories - The instance's categories store (e.g. `fd.categories`)
  * @param category - The node category
  * @returns CSS color value for text that provides good contrast on the category's background
  */
-export function getContrastTextColorForCategory(category: NodeCategory): string {
-  const colorToken = getCategoryColorToken(category);
+export function getContrastTextColorForCategory(
+  categories: CategoriesStore,
+  category: NodeCategory
+): string {
+  const colorToken = getCategoryColorToken(categories, category);
   const hexColor = resolveColorToken(colorToken);
   return getContrastTextColor(hexColor);
 }

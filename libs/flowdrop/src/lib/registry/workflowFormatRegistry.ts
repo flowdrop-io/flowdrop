@@ -14,7 +14,7 @@
 
 import type { StandardWorkflow } from '../adapters/WorkflowAdapter.js';
 import type { NodeMetadata, WorkflowFormat } from '../types/index.js';
-import { BaseRegistry } from './BaseRegistry.js';
+import { BaseRegistry } from './BaseRegistry.svelte.js';
 
 /**
  * Validation result returned by format adapters.
@@ -68,13 +68,15 @@ export interface WorkflowFormatAdapter {
 }
 
 /**
- * Central registry for workflow format adapters.
- * Singleton — extends BaseRegistry for shared mechanics.
+ * Per-instance registry for workflow format adapters.
+ * Extends BaseRegistry for shared mechanics; seeded with the built-in
+ * adapters at construction (see `createFlowDropInstance`). Reach it via
+ * `fd.formats`, or supply adapters through the `formatAdapters` mount option.
  *
  * @example
  * ```typescript
  * // Register a custom format
- * workflowFormatRegistry.register({
+ * fd.formats.register({
  *   id: 'n8n',
  *   name: 'n8n Workflow',
  *   export: (workflow) => JSON.stringify(convertToN8n(workflow)),
@@ -82,10 +84,24 @@ export interface WorkflowFormatAdapter {
  * });
  *
  * // Get an adapter
- * const adapter = workflowFormatRegistry.get('n8n');
+ * const adapter = fd.formats.get('n8n');
  * ```
  */
-class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter> {
+export class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter> {
+  /**
+   * @param seed - Optional initial format adapters. When omitted the registry
+   *   starts empty; instances created via `createFlowDropInstance` pass the
+   *   built-in flowdrop + agentspec adapters (see `builtinFormats.ts`).
+   */
+  constructor(seed?: WorkflowFormatAdapter[]) {
+    super();
+    if (seed) {
+      for (const adapter of seed) {
+        this.register(adapter, true);
+      }
+    }
+  }
+
   /**
    * Register a workflow format adapter.
    *
@@ -101,6 +117,7 @@ class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter>
       );
     }
     this.items.set(adapter.id, adapter);
+    this.touch();
     this.notifyListeners();
   }
 
@@ -120,6 +137,7 @@ class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter>
    * @returns Array of NodeMetadata from all format adapters
    */
   getAllFormatNodes(): NodeMetadata[] {
+    this.trackVersion(); // reactive dependency (reads items directly)
     const allNodes: NodeMetadata[] = [];
     for (const adapter of this.items.values()) {
       if (adapter.nodes && adapter.nodes.length > 0) {
@@ -136,6 +154,7 @@ class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter>
    * @returns Array of NodeMetadata for the format, or empty array
    */
   getFormatNodes(formatId: WorkflowFormat): NodeMetadata[] {
+    this.trackVersion(); // reactive dependency (reads items directly)
     const adapter = this.items.get(formatId);
     return adapter?.nodes ?? [];
   }
@@ -153,6 +172,3 @@ class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatAdapter>
     }));
   }
 }
-
-/** Singleton instance of the workflow format registry */
-export const workflowFormatRegistry = new WorkflowFormatRegistry();

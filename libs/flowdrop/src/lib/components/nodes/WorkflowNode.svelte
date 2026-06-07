@@ -222,17 +222,17 @@
       <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
       <div
         class="flowdrop-workflow-node__icon-wrapper"
-        style="--_icon-color: {getCategoryColorToken(props.data.metadata.category)}"
+        style="--_icon-color: {getCategoryColorToken(fd.categories, props.data.metadata.category)}"
       >
         <Icon
-          icon={getNodeIcon(props.data.metadata.icon, props.data.metadata.category)}
+          icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
           class="flowdrop-workflow-node__icon"
         />
       </div>
       <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
       <span
         class="flowdrop-workflow-node__color-dot"
-        style="background: {getCategoryColorToken(props.data.metadata.category)}"
+        style="background: {getCategoryColorToken(fd.categories, props.data.metadata.category)}"
       ></span>
 
       <!-- Node Title - Icon and Title on same line -->

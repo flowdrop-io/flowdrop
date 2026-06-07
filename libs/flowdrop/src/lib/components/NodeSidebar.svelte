@@ -260,9 +260,12 @@
                     <!-- Node Type Icon with Squircle Background -->
                     <span
                       class="flowdrop-node-icon"
-                      style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
+                      style="--_icon-color: {getCategoryColorToken(
+                        fd.categories,
+                        nodeType.category
+                      )}"
                     >
-                      <Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
+                      <Icon icon={getNodeIcon(fd.categories, nodeType.icon, nodeType.category)} />
                     </span>
 
                     <!-- Node Type Info - Icon and Title only -->
@@ -306,7 +309,10 @@
                     >
                       <span
                         class="fd-sidebar-flat-dot"
-                        style="background: {getCategoryColorToken(nodeType.category)}"
+                        style="background: {getCategoryColorToken(
+                          fd.categories,
+                          nodeType.category
+                        )}"
                       ></span>
                       <span class="fd-sidebar-flat-name">{nodeType.name}</span>
                     </div>
@@ -322,9 +328,9 @@
                   <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
                     <span
                       class="flowdrop-node-icon"
-                      style="--_icon-color: {getCategoryColorToken(category)}"
+                      style="--_icon-color: {getCategoryColorToken(fd.categories, category)}"
                     >
-                      <Icon icon={getCategoryIcon(category)} />
+                      <Icon icon={getCategoryIcon(fd.categories, category)} />
                     </span>
                     <span>{getCategoryDisplayName(category)}</span>
                   </div>
@@ -346,9 +352,14 @@
                             <!-- Node Type Icon with Squircle Background -->
                             <span
                               class="flowdrop-node-icon"
-                              style="--_icon-color: {getCategoryColorToken(nodeType.category)}"
+                              style="--_icon-color: {getCategoryColorToken(
+                                fd.categories,
+                                nodeType.category
+                              )}"
                             >
-                              <Icon icon={getNodeIcon(nodeType.icon, nodeType.category)} />
+                              <Icon
+                                icon={getNodeIcon(fd.categories, nodeType.icon, nodeType.category)}
+                              />
                             </span>
 
                             <!-- Node Type Info - Icon and Title only -->

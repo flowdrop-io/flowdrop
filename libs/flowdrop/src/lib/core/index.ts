@@ -116,7 +116,7 @@ export type {
 } from '../components/form/types.js';
 
 // Base registry
-export { BaseRegistry } from '../registry/BaseRegistry.js';
+export { BaseRegistry } from '../registry/BaseRegistry.svelte.js';
 
 // Registry types
 export type {
@@ -135,19 +135,15 @@ export type {
 // Field registry types (framework-agnostic)
 export type { FieldMatcherRegistration } from '../form/fieldRegistry.js';
 
-// Workflow format registry
-export { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
+// Workflow format registry (the class — instances live on `fd.formats`)
+export { WorkflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
 export type {
   WorkflowFormatAdapter,
   FormatValidationResult
 } from '../registry/workflowFormatRegistry.js';
 
-// Built-in format registration helpers
-export {
-  registerBuiltinFormats,
-  areBuiltinFormatsRegistered,
-  resetBuiltinFormatRegistration
-} from '../registry/builtinFormats.js';
+// Built-in format adapters (used to seed instance format registries)
+export { getBuiltinFormatAdapters } from '../registry/builtinFormats.js';
 
 // Service types
 export type { ToastType, ToastOptions } from '../services/toastService.js';

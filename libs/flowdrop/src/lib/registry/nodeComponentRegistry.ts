@@ -11,7 +11,7 @@
 
 import type { Component } from 'svelte';
 import type { WorkflowNode } from '../types/index.js';
-import { BaseRegistry } from './BaseRegistry.js';
+import { BaseRegistry } from './BaseRegistry.svelte.js';
 
 /**
  * Props interface that all node components must accept.
@@ -92,6 +92,93 @@ export interface NodeRegistrationFilter {
 }
 
 /**
+ * Plugin configuration for external libraries.
+ * Use this to register multiple node types from a library.
+ */
+export interface FlowDropPluginConfig {
+  /**
+   * Unique namespace for this plugin.
+   * Used to prefix all node types (e.g., "mylib" -> "mylib:nodename").
+   * Should be lowercase, alphanumeric with optional hyphens.
+   */
+  namespace: string;
+
+  /** Display name for the plugin (for UI/debugging purposes) */
+  name: string;
+
+  /** Plugin version (optional, for debugging) */
+  version?: string;
+
+  /** Description of what this plugin provides */
+  description?: string;
+
+  /** Node components to register */
+  nodes: PluginNodeDefinition[];
+}
+
+/**
+ * Simplified node definition for plugins.
+ * Provides a cleaner API than full NodeComponentRegistration.
+ */
+export interface PluginNodeDefinition {
+  /**
+   * Type identifier for this node.
+   * Will be prefixed with the plugin namespace (e.g., "fancy" -> "mylib:fancy").
+   */
+  type: string;
+
+  /** Display name shown in UI */
+  displayName: string;
+
+  /** Description of what this node does */
+  description?: string;
+
+  /** The Svelte component to render */
+  component: Component<NodeComponentProps>;
+
+  /** Icon in iconify format (e.g., "mdi:star") */
+  icon?: string;
+
+  /** Category for organizing in UI */
+  category?: NodeComponentCategory;
+
+  /** Status overlay position */
+  statusPosition?: StatusPosition;
+
+  /** Status overlay size */
+  statusSize?: StatusSize;
+}
+
+/**
+ * Result of plugin registration.
+ * Contains information about what was registered and any errors.
+ */
+export interface PluginRegistrationResult {
+  /** Whether all nodes were registered successfully */
+  success: boolean;
+
+  /** The plugin namespace */
+  namespace: string;
+
+  /** Array of successfully registered type identifiers (namespaced) */
+  registeredTypes: string[];
+
+  /** Array of error messages for failed registrations */
+  errors: string[];
+}
+
+/**
+ * Check if a namespace is valid.
+ * Must be lowercase alphanumeric with optional hyphens.
+ *
+ * @param namespace - The namespace to validate
+ * @returns true if valid
+ */
+export function isValidNamespace(namespace: string): boolean {
+  return /^[a-z][a-z0-9-]*$/.test(namespace);
+}
+
+/**
  * Central registry for node component types.
  * Allows built-in and third-party components to be registered and resolved.
  *
@@ -100,7 +187,7 @@ export interface NodeRegistrationFilter {
  * @example
  * ```typescript
  * // Register a custom node
- * nodeComponentRegistry.register({
+ * fd.nodes.register({
  *     type: "myCustomNode",
  *     displayName: "My Custom Node",
  *     component: MyCustomNodeComponent,
@@ -109,15 +196,40 @@ export interface NodeRegistrationFilter {
  * });
  *
  * // Get a component
- * const component = nodeComponentRegistry.getComponent("myCustomNode");
+ * const component = fd.nodes.getComponent("myCustomNode");
  * ```
  */
-class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistration> {
+export class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistration> {
   /** Default type to use when requested type is not found */
   private defaultType: string = 'workflowNode';
 
   /** Initial default type, restored on clear() */
   private static readonly INITIAL_DEFAULT_TYPE = 'workflowNode';
+
+  /**
+   * @param seed - Optional initial registrations and default type. When
+   *   omitted the registry starts empty; instances created via
+   *   `createFlowDropInstance` pass the built-in node components (see
+   *   `builtinNodes.ts`).
+   */
+  constructor(seed?: { registrations?: NodeComponentRegistration[]; defaultType?: string }) {
+    super();
+    if (seed?.registrations) {
+      this.registerAll(seed.registrations, true);
+    }
+    if (seed?.defaultType) {
+      this.defaultType = seed.defaultType;
+    }
+  }
+
+  /**
+   * Clear all registrations and reset default type.
+   */
+  override clear(): void {
+    super.clear();
+    this.defaultType = NodeComponentRegistry.INITIAL_DEFAULT_TYPE;
+    this.touch(); // defaultType changed — invalidate getComponent/getDefaultType reads
+  }
 
   /**
    * Register a node component type.
@@ -128,7 +240,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    *
    * @example
    * ```typescript
-   * nodeComponentRegistry.register({
+   * fd.nodes.register({
    *     type: "fancy",
    *     displayName: "Fancy Node",
    *     component: FancyNode,
@@ -136,14 +248,6 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    * });
    * ```
    */
-  /**
-   * Clear all registrations and reset default type.
-   */
-  override clear(): void {
-    super.clear();
-    this.defaultType = NodeComponentRegistry.INITIAL_DEFAULT_TYPE;
-  }
-
   register(registration: NodeComponentRegistration, overwrite = false): void {
     if (this.items.has(registration.type) && !overwrite) {
       throw new Error(
@@ -152,6 +256,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
       );
     }
     this.items.set(registration.type, registration);
+    this.touch();
     this.notifyListeners();
   }
 
@@ -175,6 +280,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    * @returns The component if found, or the default component
    */
   getComponent(type: string): Component<NodeComponentProps> | undefined {
+    this.trackVersion(); // reactive dependency (reads items + defaultType directly)
     const registration = this.items.get(type) ?? this.items.get(this.defaultType);
     return registration?.component;
   }
@@ -186,6 +292,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    * @returns The metadata if found, undefined otherwise
    */
   getMetadata(type: string): NodeTypeInfo | undefined {
+    this.trackVersion(); // reactive dependency (reads items directly)
     const reg = this.items.get(type);
     if (!reg) return undefined;
     const { component: _, ...metadata } = reg;
@@ -210,10 +317,10 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    * @example
    * ```typescript
    * // Get all visual nodes
-   * const visualNodes = nodeComponentRegistry.filter({ category: "visual" });
+   * const visualNodes = fd.nodes.filter({ category: "visual" });
    *
    * // Get nodes from a specific library
-   * const libNodes = nodeComponentRegistry.filter({ source: "mylib" });
+   * const libNodes = fd.nodes.filter({ source: "mylib" });
    * ```
    */
   filter(filter: NodeRegistrationFilter): NodeComponentRegistration[] {
@@ -262,6 +369,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
       throw new Error(`Cannot set default to unregistered type: ${type}`);
     }
     this.defaultType = type;
+    this.touch(); // defaultType changed — invalidate getComponent/getDefaultType reads
   }
 
   /**
@@ -270,6 +378,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    * @returns The default type identifier
    */
   getDefaultType(): string {
+    this.trackVersion(); // reactive dependency (reads defaultType directly)
     return this.defaultType;
   }
 
@@ -282,7 +391,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    *
    * @example
    * ```typescript
-   * const oneOf = nodeComponentRegistry.getOneOfOptions();
+   * const oneOf = fd.nodes.getOneOfOptions();
    * // Use in configSchema: { type: "string", oneOf }
    * ```
    */
@@ -303,6 +412,7 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    * @returns The status position, or default "top-right"
    */
   getStatusPosition(type: string): StatusPosition {
+    this.trackVersion(); // reactive dependency (reads items directly)
     return this.items.get(type)?.statusPosition ?? 'top-right';
   }
 
@@ -313,12 +423,237 @@ class NodeComponentRegistry extends BaseRegistry<string, NodeComponentRegistrati
    * @returns The status size, or default "md"
    */
   getStatusSize(type: string): StatusSize {
+    this.trackVersion(); // reactive dependency (reads items directly)
     return this.items.get(type)?.statusSize ?? 'md';
+  }
+
+  // ==========================================================================
+  // Plugin system
+  // ==========================================================================
+
+  /**
+   * Register a single custom node without a full plugin.
+   * Useful for project-specific custom nodes.
+   *
+   * @param type - Type identifier (can be namespaced or plain)
+   * @param displayName - Display name for UI
+   * @param component - Svelte component
+   * @param options - Additional options
+   *
+   * @example
+   * ```typescript
+   * fd.nodes.registerCustom("myproject:special", "Special Node", MyNode, {
+   *     icon: "mdi:star",
+   *     description: "A special node for my project"
+   * });
+   * ```
+   */
+  registerCustom(
+    type: string,
+    displayName: string,
+    component: Component<NodeComponentProps>,
+    options: {
+      description?: string;
+      icon?: string;
+      category?: NodeComponentCategory;
+      source?: string;
+      statusPosition?: StatusPosition;
+      statusSize?: StatusSize;
+    } = {}
+  ): void {
+    this.register({
+      type,
+      displayName,
+      component,
+      description: options.description,
+      icon: options.icon,
+      category: options.category ?? 'custom',
+      source: options.source ?? 'custom',
+      statusPosition: options.statusPosition,
+      statusSize: options.statusSize
+    });
+  }
+
+  /**
+   * Register a FlowDrop plugin with custom node components.
+   * All node types are automatically namespaced with the plugin namespace.
+   *
+   * @param config - Plugin configuration with namespace and node definitions
+   * @returns Result object with registered types and any errors
+   */
+  registerPlugin(config: FlowDropPluginConfig): PluginRegistrationResult {
+    const result: PluginRegistrationResult = {
+      success: true,
+      namespace: config.namespace,
+      registeredTypes: [],
+      errors: []
+    };
+
+    // Validate namespace
+    if (!isValidNamespace(config.namespace)) {
+      result.success = false;
+      result.errors.push(
+        `Invalid namespace "${config.namespace}". ` +
+          `Namespace must be lowercase alphanumeric with optional hyphens.`
+      );
+      return result;
+    }
+
+    // Register each node
+    for (const nodeDef of config.nodes) {
+      try {
+        const namespacedType = createNamespacedType(config.namespace, nodeDef.type);
+
+        const registration: NodeComponentRegistration = {
+          type: namespacedType,
+          displayName: nodeDef.displayName,
+          description: nodeDef.description,
+          component: nodeDef.component,
+          icon: nodeDef.icon,
+          category: nodeDef.category ?? 'custom',
+          source: config.namespace,
+          statusPosition: nodeDef.statusPosition,
+          statusSize: nodeDef.statusSize
+        };
+
+        this.register(registration);
+        result.registeredTypes.push(namespacedType);
+      } catch (error) {
+        result.success = false;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.errors.push(
+          `Failed to register ${config.namespace}:${nodeDef.type}: ${errorMessage}`
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Unregister all nodes from a plugin by namespace.
+   *
+   * @param namespace - The plugin namespace to unregister
+   * @returns Array of unregistered type identifiers
+   */
+  unregisterPlugin(namespace: string): string[] {
+    const unregistered: string[] = [];
+    const types = this.getTypes();
+
+    for (const type of types) {
+      if (type.startsWith(`${namespace}:`)) {
+        if (this.unregister(type)) {
+          unregistered.push(type);
+        }
+      }
+    }
+
+    return unregistered;
+  }
+
+  /**
+   * Get all registered plugins (unique namespaces).
+   *
+   * @returns Array of namespace strings
+   */
+  getRegisteredPlugins(): string[] {
+    const sources = new Set<string>();
+    for (const reg of this.getAll()) {
+      if (reg.source && reg.source !== 'flowdrop') {
+        sources.add(reg.source);
+      }
+    }
+    return Array.from(sources);
+  }
+
+  /**
+   * Get the count of nodes registered by a plugin.
+   *
+   * @param namespace - The plugin namespace
+   * @returns Number of nodes registered by this plugin
+   */
+  getPluginNodeCount(namespace: string): number {
+    return this.getBySource(namespace).length;
   }
 }
 
-/** Singleton instance of the node component registry */
-export const nodeComponentRegistry = new NodeComponentRegistry();
+/**
+ * Create a plugin builder for a fluent API experience.
+ *
+ * @param namespace - Plugin namespace
+ * @param name - Plugin name
+ * @returns Plugin builder with chainable methods
+ *
+ * @example
+ * ```typescript
+ * import { createPlugin } from "@flowdrop/flowdrop/editor";
+ *
+ * createPlugin("awesome", "Awesome Nodes")
+ *     .version("1.0.0")
+ *     .node("fancy", "Fancy Node", FancyNode)
+ *     .node("glow", "Glowing Node", GlowNode, { icon: "mdi:lightbulb" })
+ *     .register(fd.nodes);
+ * ```
+ */
+export function createPlugin(namespace: string, name: string) {
+  const config: FlowDropPluginConfig = {
+    namespace,
+    name,
+    nodes: []
+  };
+
+  const builder = {
+    /**
+     * Set plugin version
+     */
+    version(v: string) {
+      config.version = v;
+      return builder;
+    },
+
+    /**
+     * Set plugin description
+     */
+    description(desc: string) {
+      config.description = desc;
+      return builder;
+    },
+
+    /**
+     * Add a node to the plugin
+     */
+    node(
+      type: string,
+      displayName: string,
+      component: Component<NodeComponentProps>,
+      options: Partial<Omit<PluginNodeDefinition, 'type' | 'displayName' | 'component'>> = {}
+    ) {
+      config.nodes.push({
+        type,
+        displayName,
+        component,
+        ...options
+      });
+      return builder;
+    },
+
+    /**
+     * Register the plugin into a node component registry (e.g. `fd.nodes`).
+     */
+    register(registry: NodeComponentRegistry): PluginRegistrationResult {
+      return registry.registerPlugin(config);
+    },
+
+    /**
+     * Get the config without registering (for testing/inspection)
+     */
+    getConfig(): FlowDropPluginConfig {
+      return { ...config };
+    }
+  };
+
+  return builder;
+}
 
 /**
  * Helper function to create a namespaced type identifier.

@@ -14,8 +14,8 @@
  * // Single import that sets up everything
  * import { SchemaForm, initializeAllFieldTypes } from "@flowdrop/flowdrop/form/full";
  *
- * // Call once at app startup
- * initializeAllFieldTypes();
+ * // Call once at app startup, against an instance's field registry
+ * initializeAllFieldTypes(fd.fields);
  *
  * // Now all field types are available
  * ```
@@ -77,7 +77,7 @@ export {
 
 // Field Registry
 export {
-  fieldComponentRegistry,
+  FieldComponentRegistry,
   hiddenFieldMatcher,
   checkboxGroupMatcher,
   enumSelectMatcher,
@@ -93,6 +93,7 @@ export {
 // Import registration functions
 import { registerCodeEditorField, registerTemplateEditorField } from './code.js';
 import { registerMarkdownEditorField } from './markdown.js';
+import type { FieldComponentRegistry } from './fieldRegistry.js';
 
 // Re-export heavy editor components for direct access
 export { FormCodeEditor, FormTemplateEditor } from './code.js';
@@ -116,49 +117,42 @@ export {
 } from './markdown.js';
 
 /**
- * Track if all field types have been initialized
- */
-let allFieldTypesInitialized = false;
-
-/**
  * Initialize all form field types including heavy editors
  *
- * Call this once at application startup to enable all field types.
- * This includes:
+ * Call this once at application startup to enable all field types in the
+ * given instance's field registry. This includes:
  * - Code/JSON editor (CodeMirror)
  * - Template editor (CodeMirror with Twig/Liquid syntax)
  * - Markdown editor (CodeMirror 6)
+ *
+ * Registration is idempotent per registry — each `register*Field` is a no-op
+ * if its field type is already present (see `FieldComponentRegistry.has`).
+ *
+ * @param registry - The instance's field registry (e.g. `fd.fields`)
  *
  * @example
  * ```typescript
  * import { initializeAllFieldTypes } from "@flowdrop/flowdrop/form/full";
  *
  * // In your app's entry point
- * initializeAllFieldTypes();
+ * initializeAllFieldTypes(fd.fields);
  * ```
  */
-export function initializeAllFieldTypes(): void {
-  if (allFieldTypesInitialized) {
-    return;
-  }
-
-  registerCodeEditorField();
-  registerTemplateEditorField();
-  registerMarkdownEditorField();
-
-  allFieldTypesInitialized = true;
+export function initializeAllFieldTypes(registry: FieldComponentRegistry): void {
+  registerCodeEditorField(registry);
+  registerTemplateEditorField(registry);
+  registerMarkdownEditorField(registry);
 }
 
 /**
- * Check if all field types have been initialized
+ * Check if all heavy field types are registered in the given registry.
+ *
+ * @param registry - The instance's field registry (e.g. `fd.fields`)
  */
-export function areAllFieldTypesInitialized(): boolean {
-  return allFieldTypesInitialized;
-}
-
-/**
- * Reset initialization state (useful for testing)
- */
-export function resetFieldTypeInitialization(): void {
-  allFieldTypesInitialized = false;
+export function areAllFieldTypesInitialized(registry: FieldComponentRegistry): boolean {
+  return (
+    registry.has('code-editor') &&
+    registry.has('template-editor') &&
+    registry.has('markdown-editor')
+  );
 }

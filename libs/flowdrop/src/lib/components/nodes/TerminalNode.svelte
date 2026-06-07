@@ -168,7 +168,7 @@
    */
   let terminalIcon = $derived(
     props.data.metadata?.icon
-      ? getNodeIcon(props.data.metadata.icon, props.data.metadata?.category)
+      ? getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata?.category)
       : variantConfig.icon
   );
 
@@ -178,7 +178,7 @@
    */
   let terminalColor = $derived(
     props.data.metadata?.category
-      ? getCategoryColorToken(props.data.metadata.category)
+      ? getCategoryColorToken(fd.categories, props.data.metadata.category)
       : variantConfig.color
   );
 

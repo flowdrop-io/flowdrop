@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseRegistry } from '../../../src/lib/registry/BaseRegistry.js';
+import { BaseRegistry } from '../../../src/lib/registry/BaseRegistry.svelte.js';
 
 interface TestItem {
   id: string;

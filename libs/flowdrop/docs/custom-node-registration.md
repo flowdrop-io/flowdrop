@@ -8,8 +8,8 @@ FlowDrop ships with 8 built-in node types, but you can register your own custom 
 - [Quick Start](#quick-start)
 - [Writing a Custom Node Component](#writing-a-custom-node-component)
 - [Registration Methods](#registration-methods)
-  - [registerCustomNode — Single Node](#registercustomnode--single-node)
-  - [registerFlowDropPlugin — Multi-Node Plugin](#registerflowdropplugin--multi-node-plugin)
+  - [fd.nodes.registerCustom — Single Node](#fdnodesregistercustom--single-node)
+  - [fd.nodes.registerPlugin — Multi-Node Plugin](#fdnodesregisterplugin--multi-node-plugin)
   - [createPlugin — Fluent Builder](#createplugin--fluent-builder)
 - [Making Nodes Available in the Sidebar](#making-nodes-available-in-the-sidebar)
 - [Built-in Node Types Reference](#built-in-node-types-reference)
@@ -20,15 +20,21 @@ FlowDrop ships with 8 built-in node types, but you can register your own custom 
 
 ## Overview
 
-There are three ways to register custom nodes, depending on your use case:
+There are three ways to register custom nodes, depending on your use case. Each
+operates on a FlowDrop instance's node registry, reachable as `fd.nodes`:
 
-| Approach                       | When to use                                 |
-| ------------------------------ | ------------------------------------------- |
-| **`registerCustomNode()`**     | One-off project-specific nodes              |
-| **`registerFlowDropPlugin()`** | Libraries providing multiple node types     |
-| **`createPlugin()`**           | Same as above, with a chainable builder API |
+| Approach                        | When to use                                 |
+| ------------------------------- | ------------------------------------------- |
+| **`fd.nodes.registerCustom()`** | One-off project-specific nodes              |
+| **`fd.nodes.registerPlugin()`** | Libraries providing multiple node types     |
+| **`createPlugin()`**            | Same as above, with a chainable builder API |
 
-All approaches register a Svelte component in the global `nodeComponentRegistry`. The editor's `UniversalNode` resolver looks up components from this registry at render time.
+Every mounted editor owns its own instance. Get it from the value returned by
+`mountFlowDropApp` (`app.instance`), or via `getInstance()` inside a component
+rendered under `<App>`/`<WorkflowEditor>`. Registration is **per instance**, so
+two editors on the same page can expose different custom nodes. The editor's
+`UniversalNode` resolver looks up components from the instance's registry at
+render time.
 
 Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent conflicts with built-in types or other plugins.
 
@@ -65,24 +71,12 @@ Custom node types are **namespaced** (e.g., `"mylib:code-editor"`) to prevent co
 </style>
 ```
 
-**2. Register it:**
-
-```typescript
-import { registerCustomNode } from '@flowdrop/flowdrop/editor';
-import CodeEditorNode from './CodeEditorNode.svelte';
-
-registerCustomNode('myapp:code-editor', 'Code Editor', CodeEditorNode, {
-  icon: 'mdi:code-braces',
-  description: 'A custom code editor node',
-  category: 'custom'
-});
-```
-
-**3. Mount the editor with node metadata:**
+**2. Mount the editor with node metadata, then register the component on its instance:**
 
 ```typescript
 import { mountFlowDropApp } from '@flowdrop/flowdrop/editor';
 import '@flowdrop/flowdrop/styles';
+import CodeEditorNode from './CodeEditorNode.svelte';
 
 const app = await mountFlowDropApp(document.getElementById('editor')!, {
   nodes: [
@@ -116,9 +110,18 @@ const app = await mountFlowDropApp(document.getElementById('editor')!, {
     }
   ]
 });
+
+// Register the visual component on this editor's instance.
+app.instance.nodes.registerCustom('myapp:code-editor', 'Code Editor', CodeEditorNode, {
+  icon: 'mdi:code-braces',
+  description: 'A custom code editor node',
+  category: 'custom'
+});
 ```
 
-Registration can happen **before or after** calling `mountFlowDropApp` — the registry is a singleton that persists for the lifetime of the page.
+Registration lives on the mounted instance (`app.instance.nodes`), so it must
+happen **after** `mountFlowDropApp` resolves. Each instance keeps its own
+registry for the lifetime of the mount.
 
 ---
 
@@ -190,15 +193,18 @@ If you want a button that opens the node's configuration panel:
 
 ## Registration Methods
 
-### `registerCustomNode` — Single Node
+### `fd.nodes.registerCustom` — Single Node
 
-The simplest API. Registers one component with an explicit type string.
+The simplest API. Registers one component with an explicit type string on the
+instance's node registry.
 
 ```typescript
-import { registerCustomNode } from '@flowdrop/flowdrop/editor';
 import MyNode from './MyNode.svelte';
 
-registerCustomNode('myproject:special', 'Special Node', MyNode, {
+// `app` is the result of `mountFlowDropApp(...)`; `fd` is its instance.
+const fd = app.instance;
+
+fd.nodes.registerCustom('myproject:special', 'Special Node', MyNode, {
   description: 'A special node for my project',
   icon: 'mdi:star',
   category: 'custom'
@@ -208,7 +214,8 @@ registerCustomNode('myproject:special', 'Special Node', MyNode, {
 **Signature:**
 
 ```typescript
-function registerCustomNode(
+// method on NodeComponentRegistry (e.g. `fd.nodes`)
+registerCustom(
   type: string,
   displayName: string,
   component: Component<NodeComponentProps>,
@@ -223,16 +230,17 @@ function registerCustomNode(
 ): void;
 ```
 
-### `registerFlowDropPlugin` — Multi-Node Plugin
+### `fd.nodes.registerPlugin` — Multi-Node Plugin
 
 Registers multiple node types under a shared namespace. All type identifiers are automatically prefixed with the namespace (e.g., `"awesome"` + `"fancy"` becomes `"awesome:fancy"`).
 
 ```typescript
-import { registerFlowDropPlugin } from '@flowdrop/flowdrop/editor';
 import FancyNode from './FancyNode.svelte';
 import GlowNode from './GlowNode.svelte';
 
-const result = registerFlowDropPlugin({
+const fd = app.instance;
+
+const result = fd.nodes.registerPlugin({
   namespace: 'awesome',
   name: 'Awesome Nodes',
   version: '1.0.0',
@@ -266,30 +274,32 @@ const result = registerFlowDropPlugin({
 
 ### `createPlugin` — Fluent Builder
 
-A chainable API that builds and registers a plugin in one expression:
+A chainable API that builds a plugin, then registers it into a node registry:
 
 ```typescript
 import { createPlugin } from '@flowdrop/flowdrop/editor';
 import FancyNode from './FancyNode.svelte';
 import GlowNode from './GlowNode.svelte';
 
+const fd = app.instance;
+
 createPlugin('awesome', 'Awesome Nodes')
   .version('1.0.0')
   .description('A collection of awesome nodes')
   .node('fancy', 'Fancy Node', FancyNode, { icon: 'mdi:sparkles' })
   .node('glow', 'Glowing Node', GlowNode, { icon: 'mdi:lightbulb' })
-  .register();
+  .register(fd.nodes);
 ```
 
 **Builder methods:**
 
-| Method                                          | Description                                                    |
-| ----------------------------------------------- | -------------------------------------------------------------- |
-| `.version(v)`                                   | Set plugin version                                             |
-| `.description(desc)`                            | Set plugin description                                         |
-| `.node(type, displayName, component, options?)` | Add a node definition                                          |
-| `.register()`                                   | Register the plugin, returns `PluginRegistrationResult`        |
-| `.getConfig()`                                  | Get the config object without registering (useful for testing) |
+| Method                                          | Description                                                                               |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `.version(v)`                                   | Set plugin version                                                                        |
+| `.description(desc)`                            | Set plugin description                                                                    |
+| `.node(type, displayName, component, options?)` | Add a node definition                                                                     |
+| `.register(registry)`                           | Register the plugin into a registry (e.g. `fd.nodes`), returns `PluginRegistrationResult` |
+| `.getConfig()`                                  | Get the config object without registering (useful for testing)                            |
 
 ---
 
@@ -395,24 +405,24 @@ You can also use `supportedTypes` on `NodeMetadata` to allow users to switch bet
 
 ## Plugin Management
 
+Plugin management methods live on the instance's node registry (`fd.nodes`).
+`isValidNamespace` is a standalone helper exported from `@flowdrop/flowdrop/editor`.
+
 ```typescript
-import {
-  unregisterFlowDropPlugin,
-  getRegisteredPlugins,
-  getPluginNodeCount,
-  isValidNamespace
-} from '@flowdrop/flowdrop/editor';
+import { isValidNamespace } from '@flowdrop/flowdrop/editor';
+
+const fd = app.instance;
 
 // Remove all nodes from a plugin
-const removed = unregisterFlowDropPlugin('awesome');
+const removed = fd.nodes.unregisterPlugin('awesome');
 // Returns ["awesome:fancy", "awesome:glow"]
 
 // List all registered plugin namespaces
-const plugins = getRegisteredPlugins();
+const plugins = fd.nodes.getRegisteredPlugins();
 // Returns ["awesome", "mylib"]
 
 // Count nodes registered by a plugin
-const count = getPluginNodeCount('awesome');
+const count = fd.nodes.getPluginNodeCount('awesome');
 // Returns 2
 
 // Validate a namespace before registration

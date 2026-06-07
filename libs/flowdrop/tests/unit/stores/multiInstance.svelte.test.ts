@@ -188,6 +188,50 @@ describe('FlowDropInstance container', () => {
     expect(b.workflow.name).toBe('B');
   });
 
+  it('isolates the node component registry between two instances', () => {
+    const a = createFlowDropInstance();
+    const b = createFlowDropInstance();
+
+    // Both start with the same built-in seed (no shared singleton).
+    expect(a.nodes).not.toBe(b.nodes);
+    expect(a.nodes.getTypes()).toEqual(b.nodes.getTypes());
+
+    // A custom node registered in A must not leak into B.
+    const mockComponent = (() => {}) as unknown as Parameters<typeof a.nodes.registerCustom>[2];
+    a.nodes.registerCustom('myproj:special', 'Special', mockComponent);
+
+    expect(a.nodes.has('myproj:special')).toBe(true);
+    expect(b.nodes.has('myproj:special')).toBe(false);
+  });
+
+  it('isolates the field and format registries between two instances', () => {
+    const a = createFlowDropInstance();
+    const b = createFlowDropInstance();
+
+    expect(a.fields).not.toBe(b.fields);
+    expect(a.formats).not.toBe(b.formats);
+
+    // Fields start empty; registering into A does not touch B.
+    a.fields.register('custom-field', {
+      component: {} as never,
+      matcher: () => true,
+      priority: 10
+    });
+    expect(a.fields.has('custom-field')).toBe(true);
+    expect(b.fields.has('custom-field')).toBe(false);
+
+    // Formats are seeded with the same built-ins, but registering a new
+    // adapter in A does not appear in B.
+    a.formats.register({
+      id: 'custom-format',
+      name: 'Custom Format',
+      export: (w) => JSON.stringify(w),
+      import: (d) => JSON.parse(d)
+    });
+    expect(a.formats.has('custom-format')).toBe(true);
+    expect(b.formats.has('custom-format')).toBe(false);
+  });
+
   it('destroy() detaches one instance without touching its sibling', () => {
     const a = createFlowDropInstance();
     const b = createFlowDropInstance();

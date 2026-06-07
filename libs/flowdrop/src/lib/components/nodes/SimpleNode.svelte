@@ -218,7 +218,7 @@
       <!-- Node Icon (circle dot) — visibility controlled by --fd-node-circle-display -->
       <span
         class="flowdrop-simple-node__color-dot"
-        style="background: {getCategoryColorToken(props.data.metadata?.category)}"
+        style="background: {getCategoryColorToken(fd.categories, props.data.metadata?.category)}"
       ></span>
 
       <!-- Node Title -->

@@ -1,31 +1,21 @@
 /**
- * Built-in Workflow Format Registration
+ * Built-in Workflow Format Adapters
  *
- * Registers the default FlowDrop and Agent Spec format adapters
- * with the workflow format registry.
- *
- * This module is automatically loaded when imported,
- * ensuring built-in formats are available without user action.
+ * Provides the default FlowDrop and Agent Spec format adapters. These are used
+ * to seed each instance's `WorkflowFormatRegistry` (see `instanceContainer`).
  */
 
-import { workflowFormatRegistry } from './workflowFormatRegistry.js';
 import type { WorkflowFormatAdapter } from './workflowFormatRegistry.js';
 import { AgentSpecAdapter } from '../adapters/agentspec/AgentSpecAdapter.js';
 import { validateForAgentSpecExport } from '../adapters/agentspec/validator.js';
 
 /**
- * Track whether built-in formats have been registered.
- * Prevents duplicate registration on hot reload.
+ * Build the built-in workflow format adapters (FlowDrop native + Agent Spec).
+ *
+ * Returns a fresh array on each call so every instance owns independent
+ * adapter objects (the Agent Spec adapter holds per-conversion state).
  */
-let registered = false;
-
-/**
- * Register all built-in workflow format adapters.
- * Safe to call multiple times — will only register once.
- */
-export function registerBuiltinFormats(): void {
-  if (registered) return;
-
+export function getBuiltinFormatAdapters(): WorkflowFormatAdapter[] {
   // FlowDrop native — passthrough (StandardWorkflow ↔ JSON)
   const flowdropAdapter: WorkflowFormatAdapter = {
     id: 'flowdrop',
@@ -36,8 +26,6 @@ export function registerBuiltinFormats(): void {
     export: (workflow) => JSON.stringify(workflow, null, 2),
     import: (data) => JSON.parse(data)
   };
-
-  workflowFormatRegistry.register(flowdropAdapter);
 
   // Agent Spec — wraps existing AgentSpecAdapter
   // No bundled nodes — Agent Spec node types are user-provided via
@@ -53,30 +41,5 @@ export function registerBuiltinFormats(): void {
     validate: (workflow) => validateForAgentSpecExport(workflow)
   };
 
-  workflowFormatRegistry.register(agentSpecFormatAdapter);
-
-  registered = true;
+  return [flowdropAdapter, agentSpecFormatAdapter];
 }
-
-/**
- * Check if built-in formats have been registered.
- */
-export function areBuiltinFormatsRegistered(): boolean {
-  return registered;
-}
-
-/**
- * Reset the registration state.
- * Primarily useful for testing.
- */
-export function resetBuiltinFormatRegistration(): void {
-  registered = false;
-}
-
-// Sync registration flag with registry.clear() for test isolation
-workflowFormatRegistry.onClear(() => {
-  registered = false;
-});
-
-// Auto-register built-in formats when this module is imported
-registerBuiltinFormats();
