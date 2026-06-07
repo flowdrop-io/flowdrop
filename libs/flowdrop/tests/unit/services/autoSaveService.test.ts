@@ -14,8 +14,16 @@ vi.mock('$lib/stores/settingsStore.svelte.js', () => ({
   onSettingsChange: (...args: unknown[]) => mockOnSettingsChange(...args)
 }));
 
-vi.mock('$lib/stores/workflowStore.svelte.js', () => ({
-  isDirty: () => mockIsDirty()
+// The default dirty probe is getDefaultInstance().workflow.isDirty — mock the
+// instance container so that getter reads from mockIsDirty.
+vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
+  getDefaultInstance: () => ({
+    workflow: {
+      get isDirty() {
+        return mockIsDirty();
+      }
+    }
+  })
 }));
 
 vi.mock('$lib/utils/logger.js', () => ({

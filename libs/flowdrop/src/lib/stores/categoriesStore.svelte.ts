@@ -5,16 +5,13 @@
  * Exposes lookup helpers for icon, color, and label resolution.
  *
  * The reactive state lives in the {@link CategoriesStore} class — one per
- * FlowDrop instance, resolved in components via `getInstance().categories`. The
- * module-level functions at the bottom are backward-compatible shims that
- * delegate to the page-default instance.
+ * FlowDrop instance, resolved in components via `getInstance().categories`.
  *
  * @module stores/categoriesStore
  */
 
 import type { CategoryDefinition, NodeCategory } from '../types/index.js';
 import { DEFAULT_CATEGORIES } from '../config/defaultCategories.js';
-import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 // =========================================================================
 // CategoriesStore (per-instance reactive state)
@@ -98,53 +95,4 @@ export class CategoriesStore {
   getDefinition(category: NodeCategory): CategoryDefinition | undefined {
     return this.#categoryMap.get(category);
   }
-}
-
-// =========================================================================
-// Backward-compatible module API (delegates to the page-default instance)
-// =========================================================================
-
-const def = (): CategoriesStore => getDefaultInstance().categories;
-
-/**
- * Get all category definitions, sorted by weight.
- */
-export function getCategories(): CategoryDefinition[] {
-  return def().categories;
-}
-
-/**
- * Initialize categories with API data, merging with defaults.
- * API categories override defaults by name; custom categories are appended.
- */
-export function initializeCategories(apiCategories: CategoryDefinition[]): void {
-  def().initialize(apiCategories);
-}
-
-/**
- * Get the display label for a category.
- */
-export function getCategoryLabel(category: NodeCategory): string {
-  return def().getLabel(category);
-}
-
-/**
- * Get the icon for a category.
- */
-export function getCategoryIcon(category: NodeCategory): string {
-  return def().getIcon(category);
-}
-
-/**
- * Get the color token for a category.
- */
-export function getCategoryColor(category: NodeCategory): string {
-  return def().getColor(category);
-}
-
-/**
- * Get the full category definition, or undefined if not found.
- */
-export function getCategoryDefinition(category: NodeCategory): CategoryDefinition | undefined {
-  return def().getDefinition(category);
 }

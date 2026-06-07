@@ -5,9 +5,7 @@
  * Ensures valid state transitions and prevents deadlocks.
  *
  * The reactive state lives in the {@link InterruptStore} class — one per
- * FlowDrop instance, resolved in components via `getInstance().interrupts`. The
- * module-level functions and `interruptActions` at the bottom are
- * backward-compatible shims that delegate to the page-default instance.
+ * FlowDrop instance, resolved in components via `getInstance().interrupts`.
  *
  * @module stores/interruptStore
  */
@@ -28,7 +26,6 @@ import {
   toLegacyStatus
 } from '../types/interruptState.js';
 import { logger } from '../utils/logger.js';
-import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 // =========================================================================
 // Types
@@ -470,140 +467,4 @@ export class InterruptStore {
     const interrupt = this.#interrupts.get(interruptId);
     return interrupt ? checkHasError(interrupt.machineState) : false;
   }
-}
-
-// =========================================================================
-// Backward-compatible module API (delegates to the page-default instance)
-// =========================================================================
-
-const def = (): InterruptStore => getDefaultInstance().interrupts;
-
-/**
- * Get the reactive interrupts map.
- * Use this in components within $derived() for reactivity.
- */
-export function getInterruptsMap(): SvelteMap<string, InterruptWithState> {
-  return def().getMap();
-}
-
-/**
- * Get pending interrupt IDs (interrupts not in a terminal state)
- */
-export function getPendingInterruptIds(): string[] {
-  return def().getPendingIds();
-}
-
-/**
- * Get pending interrupts array (interrupts not in a terminal state)
- */
-export function getPendingInterrupts(): InterruptWithState[] {
-  return def().getPending();
-}
-
-/**
- * Get count of pending interrupts
- */
-export function getPendingInterruptCount(): number {
-  return def().getPendingCount();
-}
-
-/**
- * Get resolved interrupts array
- */
-export function getResolvedInterrupts(): InterruptWithState[] {
-  return def().getResolved();
-}
-
-/**
- * Check if any interrupt is currently submitting
- */
-export function getIsAnySubmitting(): boolean {
-  return def().getIsAnySubmitting();
-}
-
-/**
- * Interrupt store actions for modifying state (page-default instance).
- *
- * Explicit forwarding object (not a re-export) so the call shape — and
- * `vi.mock`ability — matches the pre-class API.
- */
-export const interruptActions: InterruptStoreActions = {
-  addInterrupt: (interrupt) => def().addInterrupt(interrupt),
-  addInterrupts: (interruptList) => def().addInterrupts(interruptList),
-  startSubmit: (interruptId, value) => def().startSubmit(interruptId, value),
-  startCancel: (interruptId) => def().startCancel(interruptId),
-  submitSuccess: (interruptId) => def().submitSuccess(interruptId),
-  submitFailure: (interruptId, error) => def().submitFailure(interruptId, error),
-  retry: (interruptId) => def().retry(interruptId),
-  resetInterrupt: (interruptId) => def().resetInterrupt(interruptId),
-  resolveInterrupt: (interruptId, value) => def().resolveInterrupt(interruptId, value),
-  cancelInterrupt: (interruptId) => def().cancelInterrupt(interruptId),
-  removeInterrupt: (interruptId) => def().removeInterrupt(interruptId),
-  clearSessionInterrupts: (sessionId) => def().clearSessionInterrupts(sessionId),
-  clearInterrupts: () => def().clearInterrupts(),
-  reset: () => def().reset()
-};
-
-// =========================================================================
-// Utilities
-// =========================================================================
-
-/**
- * Get an interrupt by ID
- *
- * @param interruptId - The interrupt ID
- * @returns The interrupt or undefined
- */
-export function getInterrupt(interruptId: string): InterruptWithState | undefined {
-  return def().getInterrupt(interruptId);
-}
-
-/**
- * Check if an interrupt is pending (not resolved or cancelled)
- *
- * @param interruptId - The interrupt ID
- * @returns True if the interrupt exists and is pending
- */
-export function isInterruptPending(interruptId: string): boolean {
-  return def().isPending(interruptId);
-}
-
-/**
- * Check if an interrupt is currently submitting
- *
- * @param interruptId - The interrupt ID
- * @returns True if the interrupt is being submitted
- */
-export function isInterruptSubmitting(interruptId: string): boolean {
-  return def().isSubmitting(interruptId);
-}
-
-/**
- * Get the error for an interrupt
- *
- * @param interruptId - The interrupt ID
- * @returns The error message or undefined
- */
-export function getInterruptError(interruptId: string): string | undefined {
-  return def().getError(interruptId);
-}
-
-/**
- * Get an interrupt by its associated message ID
- *
- * @param messageId - The message ID
- * @returns The interrupt or undefined
- */
-export function getInterruptByMessageId(messageId: string): InterruptWithState | undefined {
-  return def().getByMessageId(messageId);
-}
-
-/**
- * Check if an interrupt has an error
- *
- * @param interruptId - The interrupt ID
- * @returns True if the interrupt has an error
- */
-export function interruptHasError(interruptId: string): boolean {
-  return def().hasError(interruptId);
 }

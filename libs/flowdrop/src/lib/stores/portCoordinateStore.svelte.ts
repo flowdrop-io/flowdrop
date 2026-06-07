@@ -14,8 +14,6 @@
  *
  * The reactive state lives in the {@link PortCoordinateStore} class — one per
  * FlowDrop instance, resolved in components via `getInstance().portCoordinates`.
- * The module-level functions at the bottom are backward-compatible shims that
- * delegate to the page-default instance.
  *
  * @module stores/portCoordinateStore
  */
@@ -29,7 +27,6 @@ import type {
 } from '../types/index.js';
 import type { InternalNode } from '@xyflow/svelte';
 import { ProximityConnectHelper } from '../helpers/proximityConnect.js';
-import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 /**
  * Parse a handle ID to extract nodeId, direction, and portId.
@@ -250,94 +247,4 @@ export class PortCoordinateStore {
   get coordinates(): PortCoordinateMap {
     return this.#coordinates;
   }
-}
-
-// =========================================================================
-// Backward-compatible module API (delegates to the page-default instance)
-// =========================================================================
-
-const def = (): PortCoordinateStore => getDefaultInstance().portCoordinates;
-
-/**
- * Rebuild coordinates for ALL nodes from SvelteFlow internals.
- * Call on initial workflow load (after render) and after bulk changes.
- *
- * @param nodes - All workflow nodes
- * @param getInternalNode - SvelteFlow's getInternalNode function
- */
-export function rebuildAllPortCoordinates(
-  nodes: WorkflowNodeType[],
-  getInternalNode: (id: string) => InternalNode | undefined
-): void {
-  def().rebuildAll(nodes, getInternalNode);
-}
-
-/**
- * Update coordinates for a single node (efficient for drag updates).
- * Only recomputes ports for the specified node.
- *
- * @param node - The workflow node to update
- * @param getInternalNode - SvelteFlow's getInternalNode function
- */
-export function updateNodePortCoordinates(
-  node: WorkflowNodeType,
-  getInternalNode: (id: string) => InternalNode | undefined
-): void {
-  def().updateNode(node, getInternalNode);
-}
-
-/**
- * Remove all coordinates for a node (on node delete).
- *
- * @param nodeId - ID of the node to remove
- */
-export function removeNodePortCoordinates(nodeId: string): void {
-  def().removeNode(nodeId);
-}
-
-/**
- * Clear all port coordinates (lifecycle cleanup).
- */
-export function clearPortCoordinates(): void {
-  def().clear();
-}
-
-/**
- * Get coordinates for a specific handle.
- *
- * @param handleId - The handle ID to look up
- * @returns The port coordinate or undefined if not found
- */
-export function getPortCoordinate(handleId: string): PortCoordinate | undefined {
-  return def().get(handleId);
-}
-
-/**
- * Get all coordinates for a specific node.
- *
- * @param nodeId - The node ID to look up
- * @returns Array of port coordinates for the node
- */
-export function getNodePortCoordinates(nodeId: string): PortCoordinate[] {
-  return def().getForNode(nodeId);
-}
-
-/**
- * Get the current snapshot of all port coordinates.
- * Returns the reactive SvelteMap directly.
- *
- * @returns Current port coordinate map
- */
-export function getPortCoordinateSnapshot(): PortCoordinateMap {
-  return def().coordinates;
-}
-
-/**
- * Get the reactive port coordinates state.
- * Useful for components that need to reactively read the coordinates.
- *
- * @returns The reactive port coordinate map
- */
-export function getPortCoordinates(): PortCoordinateMap {
-  return def().coordinates;
 }

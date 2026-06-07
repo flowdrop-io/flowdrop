@@ -173,6 +173,15 @@ export interface FlowDropMountOptions {
  */
 export interface MountedFlowDropApp {
   /**
+   * This mount's state container — workflow, history, playground, interrupts,
+   * categories, and the rest. The 2.0 replacement for the removed
+   * module-level store APIs: where 1.x called `workflowActions.addNode(...)`
+   * or `historyService.undo()`, call `app.instance.workflow.addNode(...)` /
+   * `app.instance.history.undo()` on the mount that owns the editor.
+   */
+  instance: FlowDropInstance;
+
+  /**
    * Destroy the app and clean up resources
    */
   destroy: () => void;
@@ -498,6 +507,8 @@ export async function mountFlowDropApp(
 
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
+    instance: fd,
+
     destroy: () => {
       // Call onBeforeUnmount if provided
       if (state.eventHandlers?.onBeforeUnmount) {
@@ -605,8 +616,8 @@ export async function mountFlowDropApp(
 export async function mountWorkflowEditor(
   container: HTMLElement,
   options: {
+    /** Initial workflow to load into the editor */
     workflow?: Workflow;
-    nodes?: NodeMetadata[];
     endpointConfig?: EndpointConfig;
     portConfig?: PortConfig;
     categories?: CategoryDefinition[];
@@ -615,7 +626,7 @@ export async function mountWorkflowEditor(
     instanceId?: string;
   } = {}
 ): Promise<MountedFlowDropApp> {
-  const { nodes = [], endpointConfig, portConfig, categories, authProvider, instanceId } = options;
+  const { workflow, endpointConfig, portConfig, categories, authProvider, instanceId } = options;
 
   // Per-instance state container (see mountFlowDropApp)
   const { fd, isDefault } = acquireInstance(instanceId);
@@ -669,18 +680,25 @@ export async function mountWorkflowEditor(
     }
   }
 
+  // Seed the instance's workflow before mounting so the editor renders it
+  // immediately. (1.x accepted this option but silently ignored it.)
+  if (workflow) {
+    fd.workflow.initialize(workflow);
+  }
+
   // Create the Svelte component
   const svelteApp = mount(WorkflowEditor, {
     target: container,
     props: {
       instance: fd,
-      nodes,
       endpointConfig: config
     }
   });
 
   // Create the mounted app interface (simpler version)
   const mountedApp: MountedFlowDropApp = {
+    instance: fd,
+
     destroy: () => {
       releaseInstance(fd, isDefault);
       unmount(svelteApp);

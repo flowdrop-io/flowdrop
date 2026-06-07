@@ -1,49 +1,43 @@
 /**
- * Example Unit Test - workflowStore
+ * Unit Test - WorkflowStore
  *
- * This is a complete example showing how to test the workflowStore.
- * Use this as a reference when writing your own tests.
+ * Exercises the per-instance WorkflowStore class directly. Each test gets a
+ * fresh instance via createFlowDropInstance() so state never leaks between
+ * tests.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  getWorkflowStore,
-  workflowActions,
-  getIsDirty,
-  markAsSaved,
-  isDirty,
-  getEditVersion,
-  getWorkflowNodes,
-  getWorkflowEdges,
-  setOnDirtyStateChange
-} from '$lib/stores/workflowStore.svelte.js';
+  createFlowDropInstance,
+  type FlowDropInstance
+} from '$lib/stores/instanceContainer.svelte.js';
 import { createTestWorkflow, createTestNode, createTestEdge } from '../../utils/index.js';
 
-describe('workflowStore', () => {
-  // Reset store before each test
+describe('WorkflowStore', () => {
+  let fd: FlowDropInstance;
+
+  // Fresh instance before each test for isolation
   beforeEach(() => {
-    workflowActions.clear();
+    fd = createFlowDropInstance({ id: `wf-test-${Math.random().toString(36).slice(2)}` });
     vi.clearAllMocks();
   });
 
   describe('initialization', () => {
     it('should start with null workflow', () => {
-      const workflow = getWorkflowStore();
-      expect(workflow).toBeNull();
+      expect(fd.workflow.current).toBeNull();
     });
 
     it('should start with clean state', () => {
-      expect(getIsDirty()).toBe(false);
-      expect(isDirty()).toBe(false);
+      expect(fd.workflow.isDirty).toBe(false);
     });
 
     it('should initialize workflow and mark as clean', () => {
       const testWorkflow = createTestWorkflow();
 
-      workflowActions.initialize(testWorkflow);
+      fd.workflow.initialize(testWorkflow);
 
-      expect(getWorkflowStore()).toEqual(testWorkflow);
-      expect(isDirty()).toBe(false);
+      expect(fd.workflow.current).toEqual(testWorkflow);
+      expect(fd.workflow.isDirty).toBe(false);
     });
 
     it('should heal nodes missing data.nodeId on load', () => {
@@ -53,13 +47,13 @@ describe('workflowStore', () => {
       delete broken.data.nodeId;
       const intact = createTestNode({ id: 'intact-node' });
 
-      workflowActions.initialize(createTestWorkflow({ nodes: [broken, intact] }));
+      fd.workflow.initialize(createTestWorkflow({ nodes: [broken, intact] }));
 
-      const nodes = getWorkflowNodes();
+      const nodes = fd.workflow.nodes;
       expect(nodes.find((n) => n.id === 'broken-node')?.data.nodeId).toBe('broken-node');
       expect(nodes.find((n) => n.id === 'intact-node')?.data.nodeId).toBe('intact-node');
       // Healing is a render fix, not a user edit — stays clean
-      expect(isDirty()).toBe(false);
+      expect(fd.workflow.isDirty).toBe(false);
     });
 
     it('should preserve existing data.nodeId values as-is', () => {
@@ -67,52 +61,52 @@ describe('workflowStore', () => {
       node.data.nodeId = 'custom-preserved-value';
       const workflow = createTestWorkflow({ nodes: [node] });
 
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      expect(getWorkflowNodes()[0].data.nodeId).toBe('custom-preserved-value');
+      expect(fd.workflow.nodes[0].data.nodeId).toBe('custom-preserved-value');
     });
   });
 
   describe('dirty state tracking', () => {
     it('should mark as dirty when node is added', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       const node = createTestNode();
-      workflowActions.addNode(node);
+      fd.workflow.addNode(node);
 
-      expect(isDirty()).toBe(true);
+      expect(fd.workflow.isDirty).toBe(true);
     });
 
     it('should mark as dirty when edge is added', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       const edge = createTestEdge();
-      workflowActions.addEdge(edge);
+      fd.workflow.addEdge(edge);
 
-      expect(isDirty()).toBe(true);
+      expect(fd.workflow.isDirty).toBe(true);
     });
 
     it('should mark as clean after save', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.updateName('New Name');
-      expect(isDirty()).toBe(true);
+      fd.workflow.updateName('New Name');
+      expect(fd.workflow.isDirty).toBe(true);
 
-      markAsSaved();
-      expect(isDirty()).toBe(false);
+      fd.workflow.markAsSaved();
+      expect(fd.workflow.isDirty).toBe(false);
     });
 
     it('should notify on dirty state change', () => {
       const callback = vi.fn();
-      setOnDirtyStateChange(callback);
+      fd.workflow.setOnDirtyStateChange(callback);
 
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.updateName('New Name');
+      fd.workflow.updateName('New Name');
 
       expect(callback).toHaveBeenCalledWith(true);
     });
@@ -121,12 +115,12 @@ describe('workflowStore', () => {
   describe('node operations', () => {
     it('should add node to workflow', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       const node = createTestNode({ id: 'test-node' });
-      workflowActions.addNode(node);
+      fd.workflow.addNode(node);
 
-      const nodes = getWorkflowNodes();
+      const nodes = fd.workflow.nodes;
       expect(nodes).toHaveLength(1);
       expect(nodes[0].id).toBe('test-node');
     });
@@ -136,11 +130,11 @@ describe('workflowStore', () => {
       const workflow = createTestWorkflow({
         nodes: [node]
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.removeNode('test-node');
+      fd.workflow.removeNode('test-node');
 
-      expect(getWorkflowNodes()).toHaveLength(0);
+      expect(fd.workflow.nodes).toHaveLength(0);
     });
 
     it('should update node data', () => {
@@ -148,13 +142,13 @@ describe('workflowStore', () => {
       const workflow = createTestWorkflow({
         nodes: [node]
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.updateNode('test-node', {
+      fd.workflow.updateNode('test-node', {
         data: { ...node.data, label: 'Updated Label' }
       });
 
-      const updatedNode = getWorkflowNodes()[0];
+      const updatedNode = fd.workflow.nodes[0];
       expect(updatedNode.data.label).toBe('Updated Label');
     });
 
@@ -171,24 +165,24 @@ describe('workflowStore', () => {
         nodes: [node1, node2],
         edges: [edge]
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.removeNode('node-1');
+      fd.workflow.removeNode('node-1');
 
-      expect(getWorkflowNodes()).toHaveLength(1);
-      expect(getWorkflowEdges()).toHaveLength(0);
+      expect(fd.workflow.nodes).toHaveLength(1);
+      expect(fd.workflow.edges).toHaveLength(0);
     });
   });
 
   describe('edge operations', () => {
     it('should add edge to workflow', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       const edge = createTestEdge({ id: 'test-edge' });
-      workflowActions.addEdge(edge);
+      fd.workflow.addEdge(edge);
 
-      const edges = getWorkflowEdges();
+      const edges = fd.workflow.edges;
       expect(edges).toHaveLength(1);
       expect(edges[0].id).toBe('test-edge');
     });
@@ -198,30 +192,30 @@ describe('workflowStore', () => {
       const workflow = createTestWorkflow({
         edges: [edge]
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.removeEdge('test-edge');
+      fd.workflow.removeEdge('test-edge');
 
-      expect(getWorkflowEdges()).toHaveLength(0);
+      expect(fd.workflow.edges).toHaveLength(0);
     });
   });
 
   describe('batch operations', () => {
     it('should update multiple properties at once', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       const node = createTestNode();
       const edge = createTestEdge();
 
-      workflowActions.batchUpdate({
+      fd.workflow.batchUpdate({
         name: 'Batch Updated',
         description: 'New description',
         nodes: [node],
         edges: [edge]
       });
 
-      const updated = getWorkflowStore();
+      const updated = fd.workflow.current;
       expect(updated?.name).toBe('Batch Updated');
       expect(updated?.description).toBe('New description');
       expect(updated?.nodes).toHaveLength(1);
@@ -240,15 +234,15 @@ describe('workflowStore', () => {
           updateNumber: 0
         }
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      const beforeUpdate = getWorkflowStore()?.metadata.updatedAt;
+      const beforeUpdate = fd.workflow.current?.metadata.updatedAt;
 
       // Wait a tiny bit to ensure timestamp changes
       setTimeout(() => {
-        workflowActions.updateName('New Name');
+        fd.workflow.updateName('New Name');
 
-        const afterUpdate = getWorkflowStore()?.metadata.updatedAt;
+        const afterUpdate = fd.workflow.current?.metadata.updatedAt;
         expect(afterUpdate).not.toBe(beforeUpdate);
       }, 10);
     });
@@ -263,136 +257,136 @@ describe('workflowStore', () => {
           updateNumber: 0
         }
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       const node = createTestNode();
-      workflowActions.addNode(node);
+      fd.workflow.addNode(node);
 
-      const metadata = getWorkflowStore()?.metadata;
+      const metadata = fd.workflow.current?.metadata;
       // Adding a node updates metadata but doesn't increment updateNumber
       // Only updateNodes and updateEdges increment it
       expect(metadata?.updatedAt).not.toBe(workflow.metadata.updatedAt);
     });
   });
 
-  describe('derived stores', () => {
-    it('should derive workflow nodes correctly', () => {
+  describe('derived reads', () => {
+    it('should expose workflow nodes correctly', () => {
       const node = createTestNode();
       const workflow = createTestWorkflow({
         nodes: [node]
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      expect(getWorkflowNodes()).toEqual([node]);
+      expect(fd.workflow.nodes).toEqual([node]);
     });
 
-    it('should derive workflow edges correctly', () => {
+    it('should expose workflow edges correctly', () => {
       const edge = createTestEdge();
       const workflow = createTestWorkflow({
         edges: [edge]
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      expect(getWorkflowEdges()).toEqual([edge]);
+      expect(fd.workflow.edges).toEqual([edge]);
     });
   });
 
   describe('clear operation', () => {
     it('should clear workflow and reset state', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
-      workflowActions.updateName('Modified');
+      fd.workflow.initialize(workflow);
+      fd.workflow.updateName('Modified');
 
-      workflowActions.clear();
+      fd.workflow.clear();
 
-      expect(getWorkflowStore()).toBeNull();
-      expect(isDirty()).toBe(false);
+      expect(fd.workflow.current).toBeNull();
+      expect(fd.workflow.isDirty).toBe(false);
     });
   });
 
   describe('version counter', () => {
     it('should start at 0 after initialization', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      expect(getEditVersion()).toBe(0);
-      expect(isDirty()).toBe(false);
+      expect(fd.workflow.editVersion).toBe(0);
+      expect(fd.workflow.isDirty).toBe(false);
     });
 
     it('should increment on each mutation', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.updateName('v1');
-      expect(getEditVersion()).toBe(1);
+      fd.workflow.updateName('v1');
+      expect(fd.workflow.editVersion).toBe(1);
 
       const node = createTestNode({ id: 'n1' });
-      workflowActions.addNode(node);
-      expect(getEditVersion()).toBe(2);
+      fd.workflow.addNode(node);
+      expect(fd.workflow.editVersion).toBe(2);
 
       const edge = createTestEdge({ id: 'e1' });
-      workflowActions.addEdge(edge);
-      expect(getEditVersion()).toBe(3);
+      fd.workflow.addEdge(edge);
+      expect(fd.workflow.editVersion).toBe(3);
     });
 
     it('should reset to 0 on clear', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
-      workflowActions.updateName('changed');
-      expect(getEditVersion()).toBe(1);
+      fd.workflow.initialize(workflow);
+      fd.workflow.updateName('changed');
+      expect(fd.workflow.editVersion).toBe(1);
 
-      workflowActions.clear();
-      expect(getEditVersion()).toBe(0);
+      fd.workflow.clear();
+      expect(fd.workflow.editVersion).toBe(0);
     });
 
     it('should reset to 0 on re-initialize', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
-      workflowActions.updateName('changed');
-      expect(getEditVersion()).toBe(1);
+      fd.workflow.initialize(workflow);
+      fd.workflow.updateName('changed');
+      expect(fd.workflow.editVersion).toBe(1);
 
-      workflowActions.initialize(createTestWorkflow());
-      expect(getEditVersion()).toBe(0);
-      expect(isDirty()).toBe(false);
+      fd.workflow.initialize(createTestWorkflow());
+      expect(fd.workflow.editVersion).toBe(0);
+      expect(fd.workflow.isDirty).toBe(false);
     });
 
     it('should mark clean when markAsSaved captures current version', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
-      workflowActions.updateName('v1');
-      workflowActions.addNode(createTestNode({ id: 'n1' }));
-      expect(getEditVersion()).toBe(2);
-      expect(isDirty()).toBe(true);
+      fd.workflow.updateName('v1');
+      fd.workflow.addNode(createTestNode({ id: 'n1' }));
+      expect(fd.workflow.editVersion).toBe(2);
+      expect(fd.workflow.isDirty).toBe(true);
 
-      markAsSaved();
-      expect(isDirty()).toBe(false);
+      fd.workflow.markAsSaved();
+      expect(fd.workflow.isDirty).toBe(false);
 
       // Further mutation makes it dirty again
-      workflowActions.updateName('v2');
-      expect(getEditVersion()).toBe(3);
-      expect(isDirty()).toBe(true);
+      fd.workflow.updateName('v2');
+      expect(fd.workflow.editVersion).toBe(3);
+      expect(fd.workflow.isDirty).toBe(true);
     });
 
     it('should support save verification protocol', () => {
       const workflow = createTestWorkflow();
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       // Step 1: Make edits
-      workflowActions.updateName('save-me');
-      const versionAtSave = getEditVersion();
+      fd.workflow.updateName('save-me');
+      const versionAtSave = fd.workflow.editVersion;
       expect(versionAtSave).toBe(1);
 
       // Step 2: Simulate user edits during save flight
-      workflowActions.addNode(createTestNode({ id: 'concurrent-edit' }));
-      expect(getEditVersion()).toBe(2);
+      fd.workflow.addNode(createTestNode({ id: 'concurrent-edit' }));
+      expect(fd.workflow.editVersion).toBe(2);
 
       // Step 3: Backend responds — version matches what we sent
       // But client has moved on, so still dirty
-      markAsSaved();
-      // markAsSaved captures _editVersion (2), not the submitted version (1)
+      fd.workflow.markAsSaved();
+      // markAsSaved captures editVersion (2), not the submitted version (1)
       // so the workflow is clean at version 2
-      expect(isDirty()).toBe(false);
+      expect(fd.workflow.isDirty).toBe(false);
     });
 
     it('should bump version for all mutation actions', () => {
@@ -407,41 +401,41 @@ describe('workflowStore', () => {
         nodes: [node1, node2],
         edges: [edge]
       });
-      workflowActions.initialize(workflow);
+      fd.workflow.initialize(workflow);
 
       let v = 0;
 
-      workflowActions.updateName('test');
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.updateName('test');
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.addNode(createTestNode({ id: 'n-new' }));
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.addNode(createTestNode({ id: 'n-new' }));
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.removeNode('n-new');
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.removeNode('n-new');
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.addEdge(createTestEdge({ id: 'e-new' }));
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.addEdge(createTestEdge({ id: 'e-new' }));
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.removeEdge('e-new');
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.removeEdge('e-new');
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.updateNode('node-1', {
+      fd.workflow.updateNode('node-1', {
         data: { ...node1.data, label: 'Updated' }
       });
-      expect(getEditVersion()).toBe(++v);
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.batchUpdate({ name: 'batch' });
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.batchUpdate({ name: 'batch' });
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.swapNode({ nodes: [node1], edges: [] });
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.swapNode({ nodes: [node1], edges: [] });
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.updateMetadata({ version: '2.0' });
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.updateMetadata({ version: '2.0' });
+      expect(fd.workflow.editVersion).toBe(++v);
 
-      workflowActions.restoreFromHistory(workflow);
-      expect(getEditVersion()).toBe(++v);
+      fd.workflow.restoreFromHistory(workflow);
+      expect(fd.workflow.editVersion).toBe(++v);
     });
   });
 });

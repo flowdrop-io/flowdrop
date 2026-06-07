@@ -15,7 +15,7 @@
   import { StaticAuthProvider } from '$lib/types/auth.js';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
   import { setEndpointConfig } from '$lib/services/api.js';
-  import { workflowActions } from '$lib/stores/workflowStore.svelte.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
   import type { Workflow, NodeMetadata, AuthProvider } from '$lib/types/index.js';
 
   // Read ?noauth query param to control whether auth is provided
@@ -113,7 +113,7 @@
     const endpointConfig = createEndpointConfig('/api/flowdrop');
     setEndpointConfig(endpointConfig);
 
-    workflowActions.initialize(testWorkflow);
+    getDefaultInstance().workflow.initialize(testWorkflow);
   });
 </script>
 

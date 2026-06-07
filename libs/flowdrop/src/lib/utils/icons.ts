@@ -4,7 +4,13 @@
  */
 
 import type { NodeCategory } from '../types/index.js';
-import { getCategoryIcon as getCategoryIconFromStore } from '../stores/categoriesStore.svelte.js';
+import { getDefaultInstance } from '../stores/instanceContainer.svelte.js';
+
+// Category metadata comes from the page-default instance; per-instance category
+// theming would require threading the instance through every icon call site.
+function getCategoryIconFromStore(category: NodeCategory): string {
+  return getDefaultInstance().categories.getIcon(category);
+}
 
 /**
  * Default icons for different contexts

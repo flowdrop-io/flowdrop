@@ -36,12 +36,19 @@ const {
   mockGetEndpointConfig: vi.fn()
 }));
 
-vi.mock('$lib/stores/workflowStore.svelte.js', () => ({
-  getWorkflowStore: (...args: unknown[]) => mockGetWorkflowStore(...args),
-  workflowActions: {
-    batchUpdate: (...args: unknown[]) => mockWorkflowActionsBatchUpdate(...args)
-  },
-  markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args)
+// globalSave resolves its target via getDefaultInstance().workflow. Mock the
+// instance container so the fake workflow store's `current` getter reads from
+// mockGetWorkflowStore and its mutations route to the mock fns above.
+vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
+  getDefaultInstance: () => ({
+    workflow: {
+      get current() {
+        return mockGetWorkflowStore();
+      },
+      batchUpdate: (...args: unknown[]) => mockWorkflowActionsBatchUpdate(...args),
+      markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args)
+    }
+  })
 }));
 
 vi.mock('$lib/services/api.js', () => ({

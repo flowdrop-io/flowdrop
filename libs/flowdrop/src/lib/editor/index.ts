@@ -9,9 +9,8 @@
  * state container (workflow, undo/redo, playground, …), so multiple editors
  * can coexist on one page. Pass `instanceId` to the mount options to scope
  * draft/panel storage keys per editor; in Svelte, pass `instance` to <App>
- * or resolve it in components via `getInstance()`. The module-level store
- * functions exported below operate on the page-default instance (the first
- * mount without an `instanceId`), preserving the legacy single-instance API.
+ * or resolve it in components via `getInstance()`. State is addressed through
+ * the instance — there is no page-default module-level store API.
  * Page-global by design: theme/settings, port-compatibility config, and API
  * endpoint config.
  *
@@ -148,8 +147,7 @@ export {
 // ============================================================================
 
 // Multi-instance support: per-instance state containers + context helpers.
-// The module-level store functions below operate on the page-default
-// instance; use these to create and address additional instances.
+// All workflow/history/playground state is addressed through an instance.
 export {
   createFlowDropInstance,
   getDefaultInstance,
@@ -164,55 +162,11 @@ export {
 export { WorkflowStore, type WorkflowStoreActions } from '../stores/workflowStore.svelte.js';
 export { HistoryStore, type HistoryStoreActions } from '../stores/historyStore.svelte.js';
 
-export {
-  getWorkflowStore,
-  workflowActions,
-  getWorkflowId,
-  getWorkflowName,
-  getWorkflowNodes,
-  getWorkflowEdges,
-  getWorkflowMetadata,
-  getWorkflowFormat,
-  getWorkflowChanged,
-  getWorkflowValidation,
-  getWorkflowMetadataChanged,
-  getConnectedHandles,
-  // Dirty state tracking & version counter
-  getIsDirty,
-  isDirty,
-  markAsSaved,
-  getEditVersion,
-  getWorkflow as getWorkflowFromStore,
-  setOnDirtyStateChange,
-  setOnWorkflowChange,
-  // History control
-  setHistoryEnabled,
-  isHistoryEnabled,
-  setRestoringFromHistory
-} from '../stores/workflowStore.svelte.js';
-
 // Port Coordinate Store (Svelte 5 runes-based)
-export {
-  rebuildAllPortCoordinates,
-  updateNodePortCoordinates,
-  removeNodePortCoordinates,
-  getPortCoordinate,
-  getNodePortCoordinates,
-  getPortCoordinateSnapshot,
-  getPortCoordinates
-} from '../stores/portCoordinateStore.svelte.js';
+export { PortCoordinateStore } from '../stores/portCoordinateStore.svelte.js';
 
-// History Store and Service
-export {
-  getHistoryState,
-  getCanUndo,
-  getCanRedo,
-  historyActions,
-  setOnRestoreCallback,
-  cleanupHistorySubscription,
-  historyService,
-  HistoryService
-} from '../stores/historyStore.svelte.js';
+// History Service (the undo/redo engine class)
+export { HistoryService } from '../services/historyService.js';
 
 export type { HistoryEntry, HistoryState, PushOptions } from '../stores/historyStore.svelte.js';
 
@@ -247,32 +201,7 @@ export { NodeExecutionService, nodeExecutionService } from '../services/nodeExec
 
 // Playground Service and Store
 export { PlaygroundService, playgroundService } from '../services/playgroundService.js';
-export {
-  getCurrentSession,
-  getSessions,
-  getMessages,
-  getIsExecuting,
-  getCanSendMessage,
-  getIsLoading,
-  getError as getPlaygroundError,
-  getCurrentWorkflow,
-  getLastPollSequenceNumber,
-  getSessionStatus,
-  getMessageCount,
-  getChatMessages,
-  getLogMessages,
-  getLatestMessage,
-  getInputFields,
-  getHasChatInput,
-  getSessionCount,
-  playgroundActions,
-  applyServerResponse,
-  subscribeToSessionStatus,
-  getCurrentSessionId,
-  isSessionSelected,
-  getMessagesSnapshot,
-  getLatestSequenceNumber
-} from '../stores/playgroundStore.svelte.js';
+export { PlaygroundStore } from '../stores/playgroundStore.svelte.js';
 
 export {
   saveWorkflow,

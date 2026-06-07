@@ -13,7 +13,7 @@ import type {
 import { hasCycles, hasInvalidCycles } from '../utils/connections.js';
 import { workflowApi, nodeApi, setEndpointConfig } from '../services/api.js';
 import { v4 as uuidv4 } from 'uuid';
-import { workflowActions } from '../stores/workflowStore.svelte.js';
+import { getDefaultInstance, type FlowDropInstance } from '../stores/instanceContainer.svelte.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
@@ -299,8 +299,15 @@ export class WorkflowOperationsHelper {
 
   /**
    * Save workflow to backend
+   *
+   * @param workflow - The workflow to save
+   * @param instance - The FlowDrop instance whose store should be synced when
+   *   the server assigns a new ID; defaults to the page-default instance
    */
-  static async saveWorkflow(workflow: Workflow | null): Promise<Workflow | null> {
+  static async saveWorkflow(
+    workflow: Workflow | null,
+    instance?: FlowDropInstance
+  ): Promise<Workflow | null> {
     if (!workflow) {
       logger.warn('No workflow data available to save');
       return null;
@@ -333,7 +340,8 @@ export class WorkflowOperationsHelper {
 
       // Update the workflow ID if it changed (new workflow)
       if (savedWorkflow.id && savedWorkflow.id !== workflowToSave.id) {
-        workflowActions.batchUpdate({
+        const fd = instance ?? getDefaultInstance();
+        fd.workflow.batchUpdate({
           nodes: workflowToSave.nodes,
           edges: workflowToSave.edges,
           name: workflowToSave.name,

@@ -11,12 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  playgroundActions,
-  applyServerResponse,
-  getIsExecuting,
-  getMessages
-} from '$lib/stores/playgroundStore.svelte.js';
+import { PlaygroundStore } from '$lib/stores/playgroundStore.svelte.js';
 import type {
   PlaygroundMessage,
   PlaygroundSession,
@@ -50,47 +45,50 @@ function msg(sessionId: string): PlaygroundMessage {
 }
 
 describe('applyServerResponse — session-scoped guard', () => {
+  let store: PlaygroundStore;
+
   beforeEach(() => {
     seq = 0;
-    playgroundActions.reset();
+    store = new PlaygroundStore();
+    store.reset();
   });
 
   it('applies status when the response is for the current session', () => {
-    playgroundActions.setCurrentSession(makeSession('sess-1', 'idle'));
+    store.setCurrentSession(makeSession('sess-1', 'idle'));
 
-    applyServerResponse({ data: [], sessionStatus: 'running' }, 'sess-1');
+    store.applyServerResponse({ data: [], sessionStatus: 'running' }, 'sess-1');
 
-    expect(getIsExecuting()).toBe(true);
+    expect(store.isExecuting).toBe(true);
   });
 
   it('drops a response whose session is no longer current', () => {
     // 'old' is running; user switches to a fresh idle 'new' session.
-    playgroundActions.setCurrentSession(makeSession('new', 'idle'));
+    store.setCurrentSession(makeSession('new', 'idle'));
 
     // A late poll for 'old' resolves and reports 'running'.
-    applyServerResponse({ data: [], sessionStatus: 'running' }, 'old');
+    store.applyServerResponse({ data: [], sessionStatus: 'running' }, 'old');
 
     // The new session must stay idle — input enabled.
-    expect(getIsExecuting()).toBe(false);
+    expect(store.isExecuting).toBe(false);
   });
 
   it("does not splice a stale session's messages into the current session", () => {
-    playgroundActions.setCurrentSession(makeSession('new', 'idle'));
+    store.setCurrentSession(makeSession('new', 'idle'));
 
-    applyServerResponse({ data: [msg('old'), msg('old')], sessionStatus: 'running' }, 'old');
+    store.applyServerResponse({ data: [msg('old'), msg('old')], sessionStatus: 'running' }, 'old');
 
-    expect(getMessages()).toHaveLength(0);
-    expect(getIsExecuting()).toBe(false);
+    expect(store.messages).toHaveLength(0);
+    expect(store.isExecuting).toBe(false);
   });
 
   it('still applies when the guard is explicitly opted out with null', () => {
     // pushMessages() and other generic callers pass null to opt out of the
     // guard — existing behavior must be preserved.
-    playgroundActions.setCurrentSession(makeSession('sess-1', 'idle'));
+    store.setCurrentSession(makeSession('sess-1', 'idle'));
 
-    applyServerResponse({ data: [msg('sess-1')], sessionStatus: 'running' }, null);
+    store.applyServerResponse({ data: [msg('sess-1')], sessionStatus: 'running' }, null);
 
-    expect(getMessages()).toHaveLength(1);
-    expect(getIsExecuting()).toBe(true);
+    expect(store.messages).toHaveLength(1);
+    expect(store.isExecuting).toBe(true);
   });
 });

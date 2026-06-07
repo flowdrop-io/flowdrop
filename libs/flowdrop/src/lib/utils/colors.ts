@@ -6,8 +6,14 @@
 
 import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
 import { getPortCompatibilityChecker } from './connections.js';
-import { getCategoryColor as getCategoryColorFromStore } from '../stores/categoriesStore.svelte.js';
+import { getDefaultInstance } from '../stores/instanceContainer.svelte.js';
 import { logger } from './logger.js';
+
+// Category metadata comes from the page-default instance; per-instance category
+// theming would require threading the instance through every color call site.
+function getCategoryColorFromStore(category: NodeCategory): string {
+  return getDefaultInstance().categories.getColor(category);
+}
 
 /**
  * Category color mapping to design tokens (CSS variables)

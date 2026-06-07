@@ -6,16 +6,13 @@
  *
  * The reactive state lives in the {@link HistoryStore} class — one per
  * FlowDrop instance, created by `createFlowDropInstance()` and resolved in
- * components via `getInstance().historyBindings`. The module-level functions
- * at the bottom are backward-compatible shims that delegate to the
- * page-default instance.
+ * components via `getInstance().historyBindings`.
  *
  * @module stores/historyStore
  */
 
 import { HistoryService, type HistoryState, type PushOptions } from '../services/historyService.js';
 import type { Workflow } from '../types/index.js';
-import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 /**
  * Undo/redo actions for a {@link HistoryStore}.
@@ -229,66 +226,7 @@ export class HistoryStore {
 }
 
 // =========================================================================
-// Backward-compatible module API (delegates to the page-default instance)
-// =========================================================================
-
-const def = (): HistoryStore => getDefaultInstance().historyBindings;
-
-/** Get the current history state snapshot (page-default instance). */
-export function getHistoryState(): HistoryState {
-  return def().state;
-}
-
-/** Convenience getter for canUndo state. */
-export function getCanUndo(): boolean {
-  return def().canUndo;
-}
-
-/** Convenience getter for canRedo state. */
-export function getCanRedo(): boolean {
-  return def().canRedo;
-}
-
-/**
- * Set the callback for restoring workflow state (page-default instance).
- */
-export function setOnRestoreCallback(callback: ((workflow: Workflow) => void) | null): void {
-  def().setOnRestoreCallback(callback);
-}
-
-/**
- * Clean up the page-default instance's history subscription.
- *
- * Call this when tearing down the history store (e.g., in tests or on app
- * unmount) to prevent memory leaks.
- */
-export function cleanupHistorySubscription(): void {
-  def().cleanup();
-}
-
-/**
- * History actions for undo/redo operations (page-default instance).
- *
- * Explicit forwarding object (not a re-export) so the call shape — and
- * `vi.mock`ability — matches the pre-class API.
- */
-export const historyActions: HistoryStoreActions = {
-  initialize: (workflow) => def().initialize(workflow),
-  pushState: (workflow, options) => def().pushState(workflow, options),
-  undo: () => def().undo(),
-  redo: () => def().redo(),
-  startTransaction: (workflow, description) => def().startTransaction(workflow, description),
-  commitTransaction: () => def().commitTransaction(),
-  cancelTransaction: () => def().cancelTransaction(),
-  clear: (currentWorkflow) => def().clear(currentWorkflow),
-  canUndo: () => def().actions.canUndo(),
-  canRedo: () => def().actions.canRedo(),
-  getState: () => def().state
-};
-
-// =========================================================================
 // Re-exports
 // =========================================================================
 
 export type { HistoryEntry, HistoryState, PushOptions } from '../services/historyService.js';
-export { HistoryService, historyService } from '../services/historyService.js';

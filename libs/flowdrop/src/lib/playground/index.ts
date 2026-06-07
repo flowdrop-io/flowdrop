@@ -160,50 +160,7 @@ export { InterruptService, interruptService } from '../services/interruptService
 // Playground Store
 // ============================================================================
 
-export {
-  // Core state getters
-  getCurrentSession,
-  getSessions,
-  getMessages,
-  getIsExecuting,
-  getCanSendMessage,
-  getIsLoading,
-  getError as getPlaygroundError,
-  getCurrentWorkflow,
-  getLastPollSequenceNumber,
-  // Derived getters
-  getSessionStatus,
-  getMessageCount,
-  getChatMessages,
-  getLogMessages,
-  getLatestMessage,
-  getInputFields,
-  getHasChatInput,
-  getSessionCount,
-  // Execution getters (used with PipelinePanel / PlaygroundSplit)
-  getActiveExecutionId,
-  getPinnedExecutionId,
-  getLatestExecutionId,
-  // UI state
-  getShowLogs,
-  // Actions
-  playgroundActions,
-  // Server response application (single update path)
-  applyServerResponse,
-  // Subscription utility
-  subscribeToSessionStatus,
-  // Utilities
-  getCurrentSessionId,
-  isSessionSelected,
-  getMessagesSnapshot,
-  getLatestSequenceNumber
-} from '../stores/playgroundStore.svelte.js';
-
-// ============================================================================
-// Pipeline Panel Store (open/close state, persisted to localStorage)
-// ============================================================================
-
-export { getPipelinePanelOpen, pipelinePanelActions } from '../stores/pipelinePanelStore.svelte.js';
+export { PlaygroundStore } from '../stores/playgroundStore.svelte.js';
 
 // ============================================================================
 // Playground Types
@@ -275,25 +232,7 @@ export {
 // Interrupt Store (Human-in-the-Loop)
 // ============================================================================
 
-export {
-  // Core state accessor
-  getInterruptsMap,
-  // Getter functions (replace derived stores)
-  getPendingInterruptIds,
-  getPendingInterrupts,
-  getPendingInterruptCount,
-  getResolvedInterrupts,
-  getIsAnySubmitting,
-  // Actions
-  interruptActions,
-  // Utilities
-  getInterrupt,
-  isInterruptPending,
-  isInterruptSubmitting,
-  getInterruptError,
-  getInterruptByMessageId,
-  interruptHasError
-} from '../stores/interruptStore.svelte.js';
+export { InterruptStore } from '../stores/interruptStore.svelte.js';
 
 export type { InterruptWithState } from '../stores/interruptStore.svelte.js';
 

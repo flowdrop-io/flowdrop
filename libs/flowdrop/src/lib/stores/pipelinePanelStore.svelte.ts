@@ -6,13 +6,9 @@
  *
  * The reactive state lives in the {@link PipelinePanelStore} class — one per
  * FlowDrop instance, resolved in components via `getInstance().pipelinePanel`.
- * The module-level functions at the bottom are backward-compatible shims that
- * delegate to the page-default instance.
  *
  * @module stores/pipelinePanelStore
  */
-
-import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 /** Base localStorage key for the panel open state. */
 const STORAGE_KEY = 'fd-pipeline-panel-open';
@@ -81,32 +77,3 @@ export class PipelinePanelStore {
     }
   }
 }
-
-// =========================================================================
-// Backward-compatible module API (delegates to the page-default instance)
-// =========================================================================
-
-const def = (): PipelinePanelStore => getDefaultInstance().pipelinePanel;
-
-/** Get the current pipeline panel open state reactively (page-default instance). */
-export function getPipelinePanelOpen(): boolean {
-  return def().isOpen;
-}
-
-/**
- * Pipeline panel actions (page-default instance).
- *
- * Explicit forwarding object (not a re-export) so the call shape — and
- * `vi.mock`ability — matches the pre-class API.
- */
-export const pipelinePanelActions = {
-  init(): void {
-    def().init();
-  },
-  toggle(): void {
-    def().toggle();
-  },
-  setOpen(value: boolean): void {
-    def().setOpen(value);
-  }
-};

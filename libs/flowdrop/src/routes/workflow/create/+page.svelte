@@ -9,7 +9,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import App from '$lib/components/App.svelte';
-  import { workflowActions } from '$lib/stores/workflowStore.svelte.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
 
   // Canvas dimensions - now using full viewport since no top navbar
   let canvasHeight = $state<string>('100vh'); // Full viewport height
@@ -21,7 +21,7 @@
    */
   onMount(() => {
     // Initialize with an empty workflow structure
-    workflowActions.initialize({
+    getDefaultInstance().workflow.initialize({
       id: '',
       name: 'Untitled Workflow',
       description: '',

@@ -8,7 +8,7 @@
  */
 
 import { getBehaviorSettings, onSettingsChange } from '../stores/settingsStore.svelte.js';
-import { isDirty } from '../stores/workflowStore.svelte.js';
+import { getDefaultInstance } from '../stores/instanceContainer.svelte.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -30,8 +30,8 @@ interface AutoSaveOptions {
   onSuccess?: () => void;
   /**
    * Dirty-state probe for the owning FlowDrop instance, e.g.
-   * `() => fd.workflow.isDirty`. Falls back to the page-default
-   * instance's dirty state when omitted (legacy behavior).
+   * `() => fd.workflow.isDirty`. Defaults to the page-default
+   * instance's dirty state when omitted.
    */
   isDirty?: () => boolean;
 }
@@ -81,7 +81,12 @@ interface AutoSaveState {
  * ```
  */
 export function initAutoSave(options: AutoSaveOptions): () => void {
-  const { onSave, onError, onSuccess, isDirty: isDirtyProbe = isDirty } = options;
+  const {
+    onSave,
+    onError,
+    onSuccess,
+    isDirty: isDirtyProbe = () => getDefaultInstance().workflow.isDirty
+  } = options;
 
   const state: AutoSaveState = {
     intervalId: null,
@@ -190,7 +195,7 @@ export class AutoSaveManager {
     this.onSave = options.onSave;
     this.onError = options.onError;
     this.onSuccess = options.onSuccess;
-    this.isDirtyProbe = options.isDirty ?? isDirty;
+    this.isDirtyProbe = options.isDirty ?? (() => getDefaultInstance().workflow.isDirty);
   }
 
   /**

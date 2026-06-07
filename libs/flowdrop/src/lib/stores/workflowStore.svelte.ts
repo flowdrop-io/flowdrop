@@ -6,9 +6,7 @@
  *
  * The reactive state lives in the {@link WorkflowStore} class — one per
  * FlowDrop instance, created by `createFlowDropInstance()` and resolved in
- * components via `getInstance().workflow`. The module-level functions at the
- * bottom of this file are backward-compatible shims that delegate to the
- * page-default instance, so legacy single-instance imports keep working.
+ * components via `getInstance().workflow`.
  *
  * @module stores/workflowStore
  */
@@ -17,7 +15,6 @@ import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
 import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 import type { WorkflowChangeType } from '$lib/types/events.js';
 import type { HistoryService } from '../services/historyService.js';
-import { getDefaultInstance } from './instanceContainer.svelte.js';
 
 type WorkflowMetadata = NonNullable<Workflow['metadata']>;
 
@@ -718,168 +715,3 @@ export class WorkflowStore {
     this.#pushToHistory(description, workflow);
   }
 }
-
-// =========================================================================
-// Backward-compatible module API (delegates to the page-default instance)
-// =========================================================================
-// Browser-only, like the default instance itself. Components being migrated
-// to `getInstance().workflow` should prefer the class getters above.
-
-const def = (): WorkflowStore => getDefaultInstance().workflow;
-
-/** Get the current workflow store value reactively. */
-export function getWorkflowStore(): Workflow | null {
-  return def().current;
-}
-
-/** Get the current dirty state reactively. */
-export function getIsDirty(): boolean {
-  return def().isDirty;
-}
-
-/** Get the workflow ID reactively. */
-export function getWorkflowId(): string | null {
-  return def().id;
-}
-
-/** Get the workflow name reactively. */
-export function getWorkflowName(): string {
-  return def().name;
-}
-
-/** Get the workflow nodes reactively. */
-export function getWorkflowNodes(): WorkflowNode[] {
-  return def().nodes;
-}
-
-/** Get the workflow edges reactively. */
-export function getWorkflowEdges(): WorkflowEdge[] {
-  return def().edges;
-}
-
-/** Get the workflow metadata reactively. */
-export function getWorkflowMetadata(): WorkflowMetadata {
-  return def().metadata;
-}
-
-/** Get the current workflow format reactively. */
-export function getWorkflowFormat(): string {
-  return def().format;
-}
-
-/** Get workflow change summary reactively (useful for triggering saves). */
-export function getWorkflowChanged(): {
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  name: string;
-} {
-  return def().changeSummary;
-}
-
-/** Get workflow validation state reactively. */
-export function getWorkflowValidation(): {
-  hasNodes: boolean;
-  hasEdges: boolean;
-  nodeCount: number;
-  edgeCount: number;
-  isValid: boolean;
-} {
-  return def().validation;
-}
-
-/** Get workflow metadata change summary reactively. */
-export function getWorkflowMetadataChanged(): {
-  createdAt: string;
-  updatedAt: string;
-  version: string;
-} {
-  return def().metadataChangeSummary;
-}
-
-/**
- * Get connected handles reactively.
- *
- * Provides a Set of all handle IDs that are currently connected to edges.
- * Used by node components to implement hideUnconnectedHandles functionality.
- */
-export function getConnectedHandles(): Set<string> {
-  return def().connectedHandles;
-}
-
-/** Set the dirty state change callback. */
-export function setOnDirtyStateChange(callback: ((isDirty: boolean) => void) | null): void {
-  def().setOnDirtyStateChange(callback);
-}
-
-/** Set the workflow change callback. */
-export function setOnWorkflowChange(
-  callback: ((workflow: Workflow, changeType: WorkflowChangeType) => void) | null
-): void {
-  def().setOnWorkflowChange(callback);
-}
-
-/**
- * Mark the current workflow state as saved.
- *
- * Captures the current edit version so isDirty becomes false.
- * Call this after a successful backend save.
- */
-export function markAsSaved(): void {
-  def().markAsSaved();
-}
-
-/** Check if there are unsaved changes (non-reactive version for plain TS). */
-export function isDirty(): boolean {
-  return def().isDirty;
-}
-
-/** Get the current edit version (see WorkflowStore.editVersion for the protocol). */
-export function getEditVersion(): number {
-  return def().editVersion;
-}
-
-/** Enable or disable history recording. */
-export function setHistoryEnabled(enabled: boolean): void {
-  def().historyEnabled = enabled;
-}
-
-/** Check if history recording is enabled. */
-export function isHistoryEnabled(): boolean {
-  return def().historyEnabled;
-}
-
-/** Set the restoring from history flag (used internally by the history store). */
-export function setRestoringFromHistory(restoring: boolean): void {
-  def().setRestoringFromHistory(restoring);
-}
-
-/** Get the current workflow (non-reactive version for plain TS). */
-export function getWorkflow(): Workflow | null {
-  return def().current;
-}
-
-/**
- * Actions for updating the workflow (page-default instance).
- *
- * All actions that modify the workflow will trigger dirty state updates
- * and emit change events. Explicit forwarding object (not a re-export) so
- * the call shape — and `vi.mock`ability — matches the pre-class API.
- */
-export const workflowActions: WorkflowStoreActions = {
-  initialize: (workflow) => def().initialize(workflow),
-  updateWorkflow: (workflow) => def().updateWorkflow(workflow),
-  restoreFromHistory: (workflow) => def().restoreFromHistory(workflow),
-  updateNodes: (nodes) => def().updateNodes(nodes),
-  updateEdges: (edges) => def().updateEdges(edges),
-  updateName: (name) => def().updateName(name),
-  addNode: (node) => def().addNode(node),
-  removeNode: (nodeId) => def().removeNode(nodeId),
-  addEdge: (edge) => def().addEdge(edge),
-  removeEdge: (edgeId) => def().removeEdge(edgeId),
-  updateNode: (nodeId, updates) => def().updateNode(nodeId, updates),
-  clear: () => def().clear(),
-  updateMetadata: (metadata) => def().updateMetadata(metadata),
-  batchUpdate: (updates) => def().batchUpdate(updates),
-  swapNode: (updates) => def().swapNode(updates),
-  pushHistory: (description, workflow) => def().pushHistory(description, workflow)
-};
