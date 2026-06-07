@@ -14,7 +14,6 @@
   import App from '$lib/components/App.svelte';
   import { StaticAuthProvider } from '$lib/types/auth.js';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
-  import { setEndpointConfig } from '$lib/services/api.js';
   import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
   import type { Workflow, NodeMetadata, AuthProvider } from '$lib/types/index.js';
 
@@ -111,7 +110,7 @@
   // Initialize endpoint config and workflow on mount
   onMount(() => {
     const endpointConfig = createEndpointConfig('/api/flowdrop');
-    setEndpointConfig(endpointConfig);
+    getDefaultInstance().api.configure(endpointConfig);
 
     getDefaultInstance().workflow.initialize(testWorkflow);
   });

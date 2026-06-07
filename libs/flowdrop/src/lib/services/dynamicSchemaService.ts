@@ -13,7 +13,7 @@ import type {
   ConfigEditOptions,
   WorkflowNode
 } from '../types/index.js';
-import { getEndpointConfig } from './api.js';
+import type { EndpointConfig } from '../config/endpoints.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 
 /**
@@ -206,6 +206,7 @@ function isCacheValid(entry: SchemaCacheEntry, ttl: number = DEFAULT_CACHE_TTL):
  * ```
  */
 export async function fetchDynamicSchema(
+  endpointConfig: EndpointConfig | null,
   endpoint: DynamicSchemaEndpoint,
   node: WorkflowNode,
   workflowId?: string
@@ -239,13 +240,10 @@ export async function fetchDynamicSchema(
   let url = resolveTemplate(endpoint.url, endpoint.parameterMapping, context);
 
   // If URL is relative, try to prepend base URL from endpoint config
-  if (url.startsWith('/')) {
-    const currentConfig = getEndpointConfig();
-    if (currentConfig?.baseUrl) {
-      // Remove trailing slash from base URL and leading slash from relative URL
-      const baseUrl = currentConfig.baseUrl.replace(/\/$/, '');
-      url = `${baseUrl}${url}`;
-    }
+  if (url.startsWith('/') && endpointConfig?.baseUrl) {
+    // Remove trailing slash from base URL and leading slash from relative URL
+    const baseUrl = endpointConfig.baseUrl.replace(/\/$/, '');
+    url = `${baseUrl}${url}`;
   }
 
   // Prepare request options
@@ -257,18 +255,6 @@ export async function fetchDynamicSchema(
     'Content-Type': 'application/json',
     ...endpoint.headers
   };
-
-  // Add auth headers from endpoint config if available
-  const currentConfig = getEndpointConfig();
-  if (currentConfig?.auth) {
-    if (currentConfig.auth.type === 'bearer' && currentConfig.auth.token) {
-      headers['Authorization'] = `Bearer ${currentConfig.auth.token}`;
-    } else if (currentConfig.auth.type === 'api_key' && currentConfig.auth.apiKey) {
-      headers['X-API-Key'] = currentConfig.auth.apiKey;
-    } else if (currentConfig.auth.type === 'custom' && currentConfig.auth.headers) {
-      Object.assign(headers, currentConfig.auth.headers);
-    }
-  }
 
   // Prepare fetch options
   const fetchOptions: RequestInit = {

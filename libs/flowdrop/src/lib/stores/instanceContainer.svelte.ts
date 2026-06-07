@@ -22,6 +22,9 @@ import { InterruptStore } from './interruptStore.svelte.js';
 import { CategoriesStore } from './categoriesStore.svelte.js';
 import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
+import { ApiContext } from './apiContext.js';
+import { PortCompatibilityChecker } from '../utils/connections.js';
+import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
 
 /** Storage key prefix shared by the default instance and legacy consumers. */
 export const DEFAULT_DRAFT_PREFIX = 'flowdrop:draft';
@@ -50,8 +53,16 @@ export interface FlowDropInstance {
   readonly playground: PlaygroundStore;
   /** Pending interrupt/confirmation dialogs. */
   readonly interrupts: InterruptStore;
+  /** Endpoint configuration, auth provider, and API client for this instance. */
+  readonly api: ApiContext;
   /** Node category definitions. */
   readonly categories: CategoriesStore;
+  /**
+   * Port-to-port data-type compatibility checker for this instance.
+   * Seeded with `DEFAULT_PORT_CONFIG`; re-initialized by mount after the
+   * backend's port config is fetched.
+   */
+  readonly portCompatibility: PortCompatibilityChecker;
   /** Canvas port coordinates. */
   readonly portCoordinates: PortCoordinateStore;
   /** Pipeline panel open/close state (instance-scoped persistence). */
@@ -122,8 +133,10 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     historyBindings,
     playground,
     interrupts: new InterruptStore(),
+    api: new ApiContext(),
     categories: new CategoriesStore(),
     portCoordinates: new PortCoordinateStore(),
+    portCompatibility: new PortCompatibilityChecker(DEFAULT_PORT_CONFIG),
     // The default instance keeps the legacy bare localStorage key.
     pipelinePanel: new PipelinePanelStore(id),
     destroy() {

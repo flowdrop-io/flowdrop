@@ -3,14 +3,14 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NodeExecutionService } from '$lib/services/nodeExecutionService.js';
+import type { EndpointConfig } from '$lib/config/endpoints.js';
 
 // Mock dependencies
-const mockGetEndpointConfig = vi.fn();
 const mockBuildEndpointUrl = vi.fn();
 
-vi.mock('$lib/services/api.js', () => ({
-  getEndpointConfig: () => mockGetEndpointConfig()
-}));
+// Endpoint config is threaded explicitly into each service method (was a module
+// singleton). Tests set this and pass it as the first argument.
+let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args)
@@ -51,7 +51,7 @@ describe('NodeExecutionService', () => {
     service = NodeExecutionService.getInstance();
 
     global.fetch = vi.fn();
-    mockGetEndpointConfig.mockReturnValue(createMockPipelineConfig());
+    endpointConfig = createMockPipelineConfig() as unknown as EndpointConfig;
     mockBuildEndpointUrl.mockImplementation(
       (_config: unknown, path: string, params?: Record<string, string>) => {
         let url = `/api${path}`;
@@ -79,7 +79,7 @@ describe('NodeExecutionService', () => {
 
   describe('getNodeExecutionInfo', () => {
     it('should return null without pipelineId', async () => {
-      const result = await service.getNodeExecutionInfo('node-1');
+      const result = await service.getNodeExecutionInfo(endpointConfig, 'node-1');
       expect(result).toBeNull();
     });
 
@@ -106,7 +106,7 @@ describe('NodeExecutionService', () => {
         })
       });
 
-      const result = await service.getNodeExecutionInfo('node-1', 'pipeline-1');
+      const result = await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'pipeline-1');
       expect(result).not.toBeNull();
       expect(result!.status).toBe('completed');
       expect(result!.executionCount).toBe(3);
@@ -130,7 +130,7 @@ describe('NodeExecutionService', () => {
         })
       });
 
-      const result = await service.getNodeExecutionInfo('node-1', 'pipeline-1');
+      const result = await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'pipeline-1');
       expect(result).not.toBeNull();
       expect(result!.status).toBe('completed');
       expect(result!.executionCount).toBe(1);
@@ -145,7 +145,7 @@ describe('NodeExecutionService', () => {
         })
       });
 
-      const result = await service.getNodeExecutionInfo('node-1', 'pipeline-1');
+      const result = await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'pipeline-1');
       expect(result).not.toBeNull();
       expect(result!.status).toBe('idle');
     });
@@ -156,14 +156,17 @@ describe('NodeExecutionService', () => {
         status: 500
       });
 
-      const result = await service.getNodeExecutionInfo('node-1', 'pipeline-1');
+      const result = await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'pipeline-1');
       expect(result).toBeNull();
     });
   });
 
   describe('getMultipleNodeExecutionInfo', () => {
     it('should return empty object without pipelineId', async () => {
-      const result = await service.getMultipleNodeExecutionInfo(['node-1', 'node-2']);
+      const result = await service.getMultipleNodeExecutionInfo(endpointConfig, [
+        'node-1',
+        'node-2'
+      ]);
       expect(result).toEqual({});
     });
 
@@ -183,6 +186,7 @@ describe('NodeExecutionService', () => {
       });
 
       const result = await service.getMultipleNodeExecutionInfo(
+        endpointConfig,
         ['node-1', 'node-2', 'node-3'],
         'pipeline-1'
       );
@@ -205,7 +209,11 @@ describe('NodeExecutionService', () => {
         })
       });
 
-      const result = await service.getMultipleNodeExecutionInfo(['node-1', 'node-2'], 'pipeline-1');
+      const result = await service.getMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1', 'node-2'],
+        'pipeline-1'
+      );
 
       expect(result['node-1'].status).toBe('skipped');
       expect(result['node-2'].status).toBe('completed');
@@ -238,7 +246,11 @@ describe('NodeExecutionService', () => {
         })
       });
 
-      const result = await service.getMultipleNodeExecutionInfo(['node-1'], 'pipeline-1');
+      const result = await service.getMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1'],
+        'pipeline-1'
+      );
 
       // Graph shows where the run ended up (latest job) ...
       expect(result['node-1'].status).toBe('skipped');
@@ -258,12 +270,20 @@ describe('NodeExecutionService', () => {
         status: 404
       });
 
-      const result = await service.getMultipleNodeExecutionInfo(['node-1'], 'pipeline-1');
+      const result = await service.getMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1'],
+        'pipeline-1'
+      );
       expect(result['node-1'].status).toBe('idle');
 
       // Second call should return defaults without fetching
       (global.fetch as ReturnType<typeof vi.fn>).mockClear();
-      const result2 = await service.getMultipleNodeExecutionInfo(['node-1'], 'pipeline-1');
+      const result2 = await service.getMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1'],
+        'pipeline-1'
+      );
       expect(result2['node-1'].status).toBe('idle');
       expect(global.fetch).not.toHaveBeenCalled();
     });
@@ -274,7 +294,11 @@ describe('NodeExecutionService', () => {
         status: 500
       });
 
-      const result = await service.getMultipleNodeExecutionInfo(['node-1'], 'pipeline-1');
+      const result = await service.getMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1'],
+        'pipeline-1'
+      );
       expect(result['node-1'].status).toBe('idle');
     });
   });
@@ -289,7 +313,7 @@ describe('NodeExecutionService', () => {
         })
       });
 
-      await service.getNodeExecutionInfo('node-1', 'pipeline-1');
+      await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'pipeline-1');
       const cached = service.getCachedNodeExecutionInfo('node-1');
       expect(cached).not.toBeNull();
       expect(cached!.status).toBe('completed');
@@ -357,7 +381,7 @@ describe('NodeExecutionService', () => {
         ok: false,
         status: 404
       });
-      await service.getMultipleNodeExecutionInfo(['node-1'], 'pipeline-1');
+      await service.getMultipleNodeExecutionInfo(endpointConfig, ['node-1'], 'pipeline-1');
 
       // Reset
       service.resetApiAvailability();
@@ -367,7 +391,7 @@ describe('NodeExecutionService', () => {
         ok: true,
         json: async () => ({ jobs: [] })
       });
-      await service.getMultipleNodeExecutionInfo(['node-1'], 'pipeline-1');
+      await service.getMultipleNodeExecutionInfo(endpointConfig, ['node-1'], 'pipeline-1');
       expect(global.fetch).toHaveBeenCalled();
     });
   });

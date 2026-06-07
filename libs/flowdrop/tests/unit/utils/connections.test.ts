@@ -7,8 +7,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   PortCompatibilityChecker,
-  initializePortCompatibility,
-  getPortCompatibilityChecker,
   validateConnection,
   hasCycles,
   getExecutionOrder
@@ -173,31 +171,31 @@ describe('Connection Utilities', () => {
     });
   });
 
-  describe('Global Port Compatibility', () => {
-    beforeEach(() => {
-      initializePortCompatibility(mockPortConfig);
-    });
+  describe('PortCompatibilityChecker.reinitialize', () => {
+    it('rebuilds the compatibility map from a new port config', () => {
+      const checker = new PortCompatibilityChecker(mockPortConfig);
+      expect(checker.areDataTypesCompatible('string', 'string')).toBe(true);
 
-    it('should initialize global checker', () => {
-      const checker = getPortCompatibilityChecker();
-      expect(checker).toBeInstanceOf(PortCompatibilityChecker);
-    });
+      checker.reinitialize({
+        version: '1.0.0',
+        defaultDataType: 'number',
+        dataTypes: [
+          { id: 'number', name: 'Number', description: '', color: '#000', enabled: true }
+        ],
+        compatibilityRules: [{ from: 'number', to: 'number' }]
+      });
 
-    it('should throw error when not initialized', () => {
-      // Test that calling getter without init throws
-      // We can't actually clear it, so we just test the error message
-      expect(() => {
-        // Force re-initialization to null would break other tests
-        // So we just verify the checker is working
-        const checker = getPortCompatibilityChecker();
-        expect(checker).toBeDefined();
-      }).not.toThrow();
+      expect(checker.areDataTypesCompatible('number', 'number')).toBe(true);
+      // 'string' no longer exists in the rebuilt map
+      expect(checker.areDataTypesCompatible('string', 'string')).toBe(false);
     });
   });
 
   describe('validateConnection', () => {
+    // Instance-scoped checker threaded explicitly into validateConnection.
+    let checker: PortCompatibilityChecker;
     beforeEach(() => {
-      initializePortCompatibility(mockPortConfig);
+      checker = new PortCompatibilityChecker(mockPortConfig);
     });
 
     it('should validate a valid connection', () => {
@@ -220,6 +218,7 @@ describe('Connection Utilities', () => {
       });
 
       const result = validateConnection(
+        checker,
         'node-1',
         'result',
         'node-2',
@@ -243,6 +242,7 @@ describe('Connection Utilities', () => {
       });
 
       const result = validateConnection(
+        checker,
         'node-1',
         'result',
         'node-1',
@@ -258,7 +258,15 @@ describe('Connection Utilities', () => {
     it('should reject connection to non-existent source node', () => {
       const node = createTestNode({ id: 'node-1' });
 
-      const result = validateConnection('non-existent', 'output', 'node-1', 'input', [node], []);
+      const result = validateConnection(
+        checker,
+        'non-existent',
+        'output',
+        'node-1',
+        'input',
+        [node],
+        []
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Source node not found');
@@ -267,7 +275,15 @@ describe('Connection Utilities', () => {
     it('should reject connection to non-existent target node', () => {
       const node = createTestNode({ id: 'node-1' });
 
-      const result = validateConnection('node-1', 'output', 'non-existent', 'input', [node], []);
+      const result = validateConnection(
+        checker,
+        'node-1',
+        'output',
+        'non-existent',
+        'input',
+        [node],
+        []
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Target node not found');
@@ -293,6 +309,7 @@ describe('Connection Utilities', () => {
       });
 
       const result = validateConnection(
+        checker,
         'node-1',
         'non-existent-port',
         'node-2',
@@ -325,6 +342,7 @@ describe('Connection Utilities', () => {
       });
 
       const result = validateConnection(
+        checker,
         'node-1',
         'result',
         'node-2',

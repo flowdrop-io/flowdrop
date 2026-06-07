@@ -38,6 +38,7 @@
   let isHandleInteraction = $state(false);
 
   const fd = getInstance();
+  const checker = fd.portCompatibility;
 
   // Hoist the graph branch — three reads in the template, two of them inside
   // {#each port} loops where N×M reads add up. One getter walk per render.
@@ -264,6 +265,7 @@
               id={`${props.data.nodeId}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
+                checker,
                 port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               tabindex={-1}
@@ -276,11 +278,13 @@
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
+                    checker,
                     port.dataType,
                     15
                   )}; color: {getDataTypeColorToken(
+                    checker,
                     port.dataType
-                  )}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
+                  )}; border: 1px solid {getPortBackgroundColor(checker, port.dataType, 30)};"
                 >
                   {port.dataType}
                 </span>
@@ -317,11 +321,13 @@
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
+                    checker,
                     port.dataType,
                     15
                   )}; color: {getDataTypeColorToken(
+                    checker,
                     port.dataType
-                  )}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
+                  )}; border: 1px solid {getPortBackgroundColor(checker, port.dataType, 30)};"
                 >
                   {port.dataType}
                 </span>
@@ -340,6 +346,7 @@
               id={`${props.data.nodeId}-output-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
+                checker,
                 port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               tabindex={-1}

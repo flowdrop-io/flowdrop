@@ -17,14 +17,20 @@ import {
   shouldUseDynamicSchema
 } from '$lib/services/dynamicSchemaService.js';
 import type { WorkflowNode, DynamicSchemaEndpoint, ExternalEditLink } from '$lib/types/index.js';
+import type { EndpointConfig } from '$lib/config/endpoints.js';
 
 // --- Mocks ---
 
-const mockGetEndpointConfig = vi.fn();
+// The endpoint config is now threaded explicitly into fetchDynamicSchema (was a
+// module singleton). Tests set this and pass it via the `callFetch` wrapper.
+let endpointConfig: EndpointConfig | null = null;
 
-vi.mock('$lib/services/api.js', () => ({
-  getEndpointConfig: () => mockGetEndpointConfig()
-}));
+/** Wrapper threading the current endpoint config as fetchDynamicSchema's first arg. */
+function callFetch(
+  ...args: Parameters<typeof fetchDynamicSchema> extends [unknown, ...infer R] ? R : never
+) {
+  return fetchDynamicSchema(endpointConfig, ...args);
+}
 
 vi.mock('$lib/config/constants.js', () => ({
   DEFAULT_CACHE_TTL_MS: 300_000
@@ -98,7 +104,7 @@ describe('dynamicSchemaService', () => {
   beforeEach(() => {
     clearSchemaCache();
     vi.clearAllMocks();
-    mockGetEndpointConfig.mockReturnValue(null);
+    endpointConfig = null;
   });
 
   afterEach(() => {
@@ -112,11 +118,11 @@ describe('dynamicSchemaService', () => {
         const node = makeNode();
         const endpoint = makeEndpoint();
 
-        const first = await fetchDynamicSchema(endpoint, node);
+        const first = await callFetch(endpoint, node);
         expect(first.success).toBe(true);
         expect(first.fromCache).toBe(false);
 
-        const second = await fetchDynamicSchema(endpoint, node);
+        const second = await callFetch(endpoint, node);
         expect(second.success).toBe(true);
         expect(second.fromCache).toBe(true);
 
@@ -129,8 +135,8 @@ describe('dynamicSchemaService', () => {
         const node = makeNode();
         const endpoint = makeEndpoint({ cacheSchema: false });
 
-        await fetchDynamicSchema(endpoint, node);
-        await fetchDynamicSchema(endpoint, node);
+        await callFetch(endpoint, node);
+        await callFetch(endpoint, node);
 
         expect(global.fetch).toHaveBeenCalledTimes(2);
       });
@@ -140,12 +146,12 @@ describe('dynamicSchemaService', () => {
         const node = makeNode();
         const endpoint = makeEndpoint();
 
-        await fetchDynamicSchema(endpoint, node);
+        await callFetch(endpoint, node);
 
         // Advance time past TTL (300 000 ms)
         vi.setSystemTime(Date.now() + 400_000);
 
-        const result = await fetchDynamicSchema(endpoint, node);
+        const result = await callFetch(endpoint, node);
         expect(result.fromCache).toBe(false);
         expect(global.fetch).toHaveBeenCalledTimes(2);
 
@@ -156,35 +162,35 @@ describe('dynamicSchemaService', () => {
     describe('response shape parsing', () => {
       it('accepts a direct ConfigSchema response', async () => {
         global.fetch = fetchOk(validSchema);
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(true);
         expect(result.schema).toEqual(validSchema);
       });
 
       it('accepts a response wrapped in { data: ... }', async () => {
         global.fetch = fetchOk({ data: validSchema });
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(true);
         expect(result.schema).toEqual(validSchema);
       });
 
       it('accepts a response wrapped in { schema: ... }', async () => {
         global.fetch = fetchOk({ schema: validSchema });
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(true);
         expect(result.schema).toEqual(validSchema);
       });
 
       it('accepts a response wrapped in { success: true, data: ... }', async () => {
         global.fetch = fetchOk({ success: true, data: validSchema });
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(true);
         expect(result.schema).toEqual(validSchema);
       });
 
       it('returns failure for an unrecognised schema shape', async () => {
         global.fetch = fetchOk({ unknownKey: 'value' });
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(false);
         expect(result.error).toMatch(/Invalid schema format/);
       });
@@ -193,7 +199,7 @@ describe('dynamicSchemaService', () => {
     describe('error handling', () => {
       it('returns failure on HTTP error responses', async () => {
         global.fetch = fetchFail(404, 'Not Found');
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(false);
         expect(result.error).toMatch(/404/);
       });
@@ -203,21 +209,21 @@ describe('dynamicSchemaService', () => {
         abortError.name = 'AbortError';
         global.fetch = vi.fn().mockRejectedValue(abortError);
 
-        const result = await fetchDynamicSchema(makeEndpoint({ timeout: 100 }), makeNode());
+        const result = await callFetch(makeEndpoint({ timeout: 100 }), makeNode());
         expect(result.success).toBe(false);
         expect(result.error).toMatch(/timed out/);
       });
 
       it('returns failure on generic network errors', async () => {
         global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(false);
         expect(result.error).toBe('Network failure');
       });
 
       it('returns a generic message for non-Error throws', async () => {
         global.fetch = vi.fn().mockRejectedValue('string error');
-        const result = await fetchDynamicSchema(makeEndpoint(), makeNode());
+        const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(false);
         expect(result.error).toMatch(/Unknown error/);
       });
@@ -232,7 +238,7 @@ describe('dynamicSchemaService', () => {
           parameterMapping: { nodeTypeId: 'metadata.id', instanceId: 'id' }
         });
 
-        await fetchDynamicSchema(endpoint, node);
+        await callFetch(endpoint, node);
 
         const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
         expect(calledUrl).toContain('llm-node');
@@ -241,15 +247,13 @@ describe('dynamicSchemaService', () => {
 
       it('prepends baseUrl for relative URLs when endpoint config is available', async () => {
         global.fetch = fetchOk(validSchema);
-        mockGetEndpointConfig.mockReturnValue({
-          baseUrl: 'https://api.example.com'
-        });
+        endpointConfig = { baseUrl: 'https://api.example.com' } as EndpointConfig;
 
         const endpoint = makeEndpoint({
           url: '/api/schema',
           parameterMapping: undefined
         });
-        await fetchDynamicSchema(endpoint, makeNode());
+        await callFetch(endpoint, makeNode());
 
         const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
         expect(calledUrl).toBe('https://api.example.com/api/schema');
@@ -264,56 +268,16 @@ describe('dynamicSchemaService', () => {
           parameterMapping: {}
         });
 
-        await fetchDynamicSchema(endpoint, node);
+        await callFetch(endpoint, node);
 
         const calledUrl = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
         expect(calledUrl).toContain('node-1');
       });
     });
 
-    describe('authentication headers', () => {
-      it('adds Bearer token when auth type is bearer', async () => {
-        global.fetch = fetchOk(validSchema);
-        mockGetEndpointConfig.mockReturnValue({
-          baseUrl: '',
-          auth: { type: 'bearer', token: 'my-token' }
-        });
-
-        await fetchDynamicSchema(makeEndpoint({ url: 'https://api/schema' }), makeNode());
-
-        const headers = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]
-          .headers as Record<string, string>;
-        expect(headers['Authorization']).toBe('Bearer my-token');
-      });
-
-      it('adds X-API-Key header when auth type is api_key', async () => {
-        global.fetch = fetchOk(validSchema);
-        mockGetEndpointConfig.mockReturnValue({
-          baseUrl: '',
-          auth: { type: 'api_key', apiKey: 'key-123' }
-        });
-
-        await fetchDynamicSchema(makeEndpoint({ url: 'https://api/schema' }), makeNode());
-
-        const headers = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]
-          .headers as Record<string, string>;
-        expect(headers['X-API-Key']).toBe('key-123');
-      });
-
-      it('merges custom auth headers when auth type is custom', async () => {
-        global.fetch = fetchOk(validSchema);
-        mockGetEndpointConfig.mockReturnValue({
-          baseUrl: '',
-          auth: { type: 'custom', headers: { 'X-Custom': 'value' } }
-        });
-
-        await fetchDynamicSchema(makeEndpoint({ url: 'https://api/schema' }), makeNode());
-
-        const headers = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]
-          .headers as Record<string, string>;
-        expect(headers['X-Custom']).toBe('value');
-      });
-    });
+    // NOTE: EndpointConfig.auth was removed in 2.0 — authentication now flows
+    // through AuthProvider on the API client, not the dynamic-schema fetch's
+    // endpoint config. The former "authentication headers" tests were dropped.
 
     describe('POST body', () => {
       it('serialises body to JSON for non-GET requests', async () => {
@@ -325,7 +289,7 @@ describe('dynamicSchemaService', () => {
           body: { nodeType: '{nodeTypeId}', static: 42 }
         });
 
-        await fetchDynamicSchema(endpoint, makeNode());
+        await callFetch(endpoint, makeNode());
 
         const fetchOpts = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
         expect(fetchOpts.method).toBe('POST');
@@ -444,11 +408,11 @@ describe('dynamicSchemaService', () => {
       const node = makeNode();
       const endpoint = makeEndpoint();
 
-      await fetchDynamicSchema(endpoint, node);
+      await callFetch(endpoint, node);
       clearSchemaCache();
 
       // Next call should fetch again
-      await fetchDynamicSchema(endpoint, node);
+      await callFetch(endpoint, node);
       expect(global.fetch).toHaveBeenCalledTimes(2);
     });
 
@@ -466,16 +430,16 @@ describe('dynamicSchemaService', () => {
         parameterMapping: {}
       });
 
-      await fetchDynamicSchema(endpoint1, node1);
-      await fetchDynamicSchema(endpoint2, node2);
+      await callFetch(endpoint1, node1);
+      await callFetch(endpoint2, node2);
 
       // Clear only entries matching 'llm-node'
       clearSchemaCache('llm-node');
 
       // node1 cache cleared — will fetch again
-      await fetchDynamicSchema(endpoint1, node1);
+      await callFetch(endpoint1, node1);
       // node2 cache preserved — will NOT fetch again
-      await fetchDynamicSchema(endpoint2, node2);
+      await callFetch(endpoint2, node2);
 
       expect(global.fetch).toHaveBeenCalledTimes(3);
     });
@@ -487,11 +451,11 @@ describe('dynamicSchemaService', () => {
       const node = makeNode();
       const endpoint = makeEndpoint();
 
-      await fetchDynamicSchema(endpoint, node);
+      await callFetch(endpoint, node);
       invalidateSchemaCache(node, endpoint);
 
       // Cache was invalidated — should fetch again
-      await fetchDynamicSchema(endpoint, node);
+      await callFetch(endpoint, node);
       expect(global.fetch).toHaveBeenCalledTimes(2);
     });
   });

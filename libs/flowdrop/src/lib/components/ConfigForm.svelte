@@ -43,6 +43,7 @@
     type DynamicSchemaResult
   } from '$lib/services/dynamicSchemaService.js';
   import { globalSaveWorkflow } from '$lib/services/globalSave.js';
+  import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getAvailableVariables } from '$lib/services/variableService.js';
   import { logger } from '../utils/logger.js';
   import { getDataTypeColorToken, getPortBackgroundColor } from '$lib/utils/colors.js';
@@ -104,6 +105,10 @@
     onSave,
     onCancel
   }: Props = $props();
+
+  // Resolve the active instance for endpoint configuration (dynamic schema fetch).
+  const fd = getInstance();
+  const checker = fd.portCompatibility;
 
   // Set context for child components (e.g., FormAutocomplete)
   // Use getter functions to ensure child components always get the current prop value,
@@ -272,6 +277,7 @@
 
     try {
       const result: DynamicSchemaResult = await fetchDynamicSchema(
+        fd.api.config,
         configEditOptions.dynamicSchema,
         node,
         workflowId
@@ -794,11 +800,13 @@
                     <span
                       class="config-form__port-order-badge"
                       style="background-color:{getPortBackgroundColor(
+                        checker,
                         port.dataType,
                         15
                       )};color:{getDataTypeColorToken(
+                        checker,
                         port.dataType
-                      )};border:1px solid {getPortBackgroundColor(port.dataType, 30)}"
+                      )};border:1px solid {getPortBackgroundColor(checker, port.dataType, 30)}"
                     >
                       {port.dataType}
                     </span>
@@ -870,11 +878,13 @@
                     <span
                       class="config-form__port-order-badge"
                       style="background-color:{getPortBackgroundColor(
+                        checker,
                         port.dataType,
                         15
                       )};color:{getDataTypeColorToken(
+                        checker,
                         port.dataType
-                      )};border:1px solid {getPortBackgroundColor(port.dataType, 30)}"
+                      )};border:1px solid {getPortBackgroundColor(checker, port.dataType, 30)}"
                     >
                       {port.dataType}
                     </span>

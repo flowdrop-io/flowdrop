@@ -19,6 +19,7 @@ import type {
   TemplateVariablesConfig,
   AuthProvider
 } from '../types/index.js';
+import type { EndpointConfig } from '../config/endpoints.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -528,6 +529,7 @@ export function mergeVariableSchemas(
  * ```
  */
 export async function getVariableSchema(
+  endpointConfig: EndpointConfig | null,
   node: WorkflowNode,
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
@@ -543,7 +545,13 @@ export async function getVariableSchema(
       // Import API variable service dynamically to avoid circular dependencies
       const { fetchVariableSchema } = await import('./apiVariableService.js');
 
-      const apiResult = await fetchVariableSchema(workflowId, node.id, config.api, authProvider);
+      const apiResult = await fetchVariableSchema(
+        endpointConfig,
+        workflowId,
+        node.id,
+        config.api,
+        authProvider
+      );
 
       if (apiResult.success && apiResult.schema) {
         resultSchema = apiResult.schema;

@@ -18,7 +18,6 @@ import type { FlowDropTheme, FlowDropThemeName } from './types/theme.js';
 import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
 import { workflowFormatRegistry } from './registry/workflowFormatRegistry.js';
 import './registry/builtinFormats.js';
-import { initializePortCompatibility } from './utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from './config/defaultPortConfig.js';
 import { fetchPortConfig } from './services/portConfigApi.js';
 import { fetchCategories } from './services/categoriesApi.js';
@@ -397,9 +396,15 @@ export async function mountFlowDropApp(
     finalPortConfig = DEFAULT_PORT_CONFIG;
   }
 
-  // Note: port compatibility config is page-global (last mount wins) — see
-  // the multi-instance limitations in the docs.
-  initializePortCompatibility(finalPortConfig);
+  // Configure this instance's API context (endpoints + auth provider) so
+  // <App> and services resolve it via getInstance().api.
+  if (config) {
+    fd.api.configure(config, authProvider);
+  }
+
+  // Re-initialize this instance's port compatibility checker with the resolved
+  // config (it was seeded with DEFAULT_PORT_CONFIG at construction).
+  fd.portCompatibility.reinitialize(finalPortConfig);
 
   // Initialize this instance's categories
   if (categories) {
@@ -666,7 +671,11 @@ export async function mountWorkflowEditor(
     finalPortConfig = DEFAULT_PORT_CONFIG;
   }
 
-  initializePortCompatibility(finalPortConfig);
+  // Configure this instance's API context and port compatibility checker.
+  if (config) {
+    fd.api.configure(config, authProvider);
+  }
+  fd.portCompatibility.reinitialize(finalPortConfig);
 
   // Initialize this instance's categories
   if (categories) {

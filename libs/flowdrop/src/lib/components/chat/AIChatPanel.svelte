@@ -369,7 +369,7 @@
         history: history.slice(0, -1) // all except current message
       };
 
-      const response = await chatService.sendMessage(workflowId, request);
+      const response = await chatService.sendMessage(fd.api.config, workflowId, request);
       const displayMsg = processResponse(response.content);
       displayMessages.push(displayMsg);
     } catch (err) {

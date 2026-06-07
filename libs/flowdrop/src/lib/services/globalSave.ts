@@ -10,7 +10,6 @@
 
 import { tick } from 'svelte';
 import { getDefaultInstance, type FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
-import { workflowApi, setEndpointConfig } from './api.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { Workflow } from '$lib/types/index.js';
@@ -24,22 +23,11 @@ import { DEFAULT_FEATURES } from '$lib/types/events.js';
 // ---------------------------------------------------------------------------
 
 /**
- * Minimal interface for the enhanced API client used when an authProvider is present.
- * Matches the surface of EnhancedFlowDropApiClient that save needs.
- */
-export interface SaveApiClient {
-  saveWorkflow(workflow: Workflow): Promise<Workflow>;
-  updateWorkflow(id: string, workflow: Workflow): Promise<Workflow>;
-}
-
-/**
  * Options accepted by globalSaveWorkflow().
  * All fields are optional — omitting them falls back to the basic behaviour
- * (no event handlers, always show toasts, legacy workflowApi).
+ * (no event handlers, always show toasts).
  */
 export interface GlobalSaveOptions {
-  /** Enhanced API client with authProvider support. Falls back to legacy workflowApi when absent. */
-  apiClient?: SaveApiClient | null;
   /** Event handler hooks (onBeforeSave, onAfterSave, onSaveError, onApiError). */
   eventHandlers?: FlowDropEventHandlers;
   /** Feature flags (showToasts). Defaults to DEFAULT_FEATURES. */
@@ -81,19 +69,13 @@ export interface GlobalExportOptions {
 // ---------------------------------------------------------------------------
 
 /**
- * Ensure API configuration is initialized.
- * This is needed when the global save function is called from the layout component
- * which doesn't initialize the API configuration like the App component does.
+ * Ensure the instance's API context is configured.
+ * This is needed when the global save function is called from the layout
+ * component which doesn't initialize the API configuration like <App> does.
  */
-async function ensureApiConfiguration(): Promise<void> {
-  try {
-    const { getEndpointConfig } = await import('./api.js');
-    const currentConfig = getEndpointConfig();
-    if (currentConfig && currentConfig.baseUrl) {
-      return;
-    }
-  } catch {
-    // Could not check existing API configuration, initializing
+function ensureApiConfiguration(fd: FlowDropInstance): void {
+  if (fd.api.isConfigured() && fd.api.config?.baseUrl) {
+    return;
   }
 
   // API configuration is not initialized — derive URL from window.location when available
@@ -103,9 +85,6 @@ async function ensureApiConfiguration(): Promise<void> {
       : '/api/flowdrop';
 
   const config = createEndpointConfig(apiBaseUrl, {
-    auth: {
-      type: 'none'
-    },
     timeout: 10000,
     retry: {
       enabled: true,
@@ -115,7 +94,7 @@ async function ensureApiConfiguration(): Promise<void> {
     }
   });
 
-  setEndpointConfig(config);
+  fd.api.configure(config);
 }
 
 /**
@@ -147,13 +126,13 @@ async function flushPendingFormChanges(): Promise<void> {
  *  1. Flush pending form changes (blur active element + tick)
  *  2. Optionally call onBeforeSave — return false cancels the save
  *  3. Build the canonical Workflow object (preserving metadata, format, etc.)
- *  4. Persist via enhanced apiClient or legacy workflowApi
+ *  4. Persist via the instance's API client (fd.api.client)
  *  5. Update the store if the server assigned a new ID
  *  6. Call onMarkAsSaved / onAfterSave hooks
  *  7. Show toast notifications (respecting features.showToasts)
  */
 export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promise<void> {
-  const { apiClient, eventHandlers, onMarkAsSaved, onSaved } = options;
+  const { eventHandlers, onMarkAsSaved, onSaved } = options;
   const features = { ...DEFAULT_FEATURES, ...options.features };
 
   // Resolve the target instance; defaults to the page-default instance.
@@ -185,7 +164,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
 
   try {
     // Ensure API configuration is initialised (needed when called outside App.svelte)
-    await ensureApiConfiguration();
+    ensureApiConfiguration(fd);
 
     // Step 3 — Build the canonical workflow object.
     // Preserve all existing metadata fields (format, tags, etc.) so nothing is dropped.
@@ -211,24 +190,12 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       }
     };
 
-    // Step 4 — Persist
-    let savedWorkflow: Workflow;
-
-    if (apiClient) {
-      if (isExistingWorkflow) {
-        savedWorkflow = await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow);
-      } else {
-        savedWorkflow = await apiClient.saveWorkflow(finalWorkflow);
-      }
-    } else {
-      // Legacy path
-      if (isExistingWorkflow) {
-        savedWorkflow = await workflowApi.updateWorkflow(finalWorkflow.id, finalWorkflow);
-      } else {
-        const { id: _id, ...workflowData } = finalWorkflow;
-        savedWorkflow = await workflowApi.createWorkflow(workflowData);
-      }
-    }
+    // Step 4 — Persist via this instance's API client.
+    // id-presence (computed above) decides update vs create — never UUID-regex.
+    const apiClient = fd.api.client;
+    const savedWorkflow: Workflow = isExistingWorkflow
+      ? await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow)
+      : await apiClient.saveWorkflow(finalWorkflow);
 
     // Step 5 — If the server assigned a new ID, sync the store
     if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {

@@ -14,7 +14,8 @@
   import Icon from '@iconify/svelte';
   import { playgroundService } from '$lib/services/playgroundService.js';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
-  import { setEndpointConfig } from '$lib/services/api.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { NoAuthProvider, StaticAuthProvider } from '$lib/types/auth.js';
 
   let { data } = $props();
 
@@ -25,23 +26,27 @@
 
   onMount(async () => {
     const endpointConfig = createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
-      auth: {
-        type: data.runtimeConfig.authType,
-        token: data.runtimeConfig.authToken
-      },
       timeout: data.runtimeConfig.timeout
     });
-    setEndpointConfig(endpointConfig);
+    const authProvider =
+      data.runtimeConfig.authType && data.runtimeConfig.authType !== 'none'
+        ? new StaticAuthProvider({
+            type: data.runtimeConfig.authType,
+            token: data.runtimeConfig.authToken
+          })
+        : new NoAuthProvider();
+    const api = getDefaultInstance().api;
+    api.configure(endpointConfig, authProvider);
 
     try {
-      const sessions = await playgroundService.listSessions(workflowId);
+      const sessions = await playgroundService.listSessions(api.config, workflowId);
       const mostRecent =
         sessions.length > 0
           ? [...sessions].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).pop()!
           : null;
       const target = mostRecent
         ? mostRecent.id
-        : (await playgroundService.createSession(workflowId, 'Session 1')).id;
+        : (await playgroundService.createSession(api.config, workflowId, 'Session 1')).id;
 
       goto(
         resolve('/workflow/[id]/playground/[sessionId]', { id: workflowId, sessionId: target }),

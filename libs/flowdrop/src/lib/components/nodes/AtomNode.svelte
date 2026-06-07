@@ -47,6 +47,7 @@
   let { data, selected, isProcessing, isError }: Props = $props();
 
   const fd = getInstance();
+  const checker = fd.portCompatibility;
 
   const nodeId = $derived(data.nodeId ?? 'unknown');
   const nodeType = $derived(data.metadata?.type ?? 'atom');
@@ -163,6 +164,7 @@
     position={Position.Left}
     id={`${nodeId}-input-${port.id}`}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      checker,
       port.dataType
     )}); top: {portTopPct(index, inPorts.length)}%;"
   />
@@ -193,6 +195,7 @@
     position={Position.Right}
     id={`${nodeId}-output-${port.id}`}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      checker,
       port.dataType
     )}); top: {portTopPct(index, outPorts.length)}%;"
   />

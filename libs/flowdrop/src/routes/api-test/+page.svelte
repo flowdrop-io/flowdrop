@@ -5,21 +5,23 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, setEndpointConfig } from '$lib/services/api.js';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { NoAuthProvider, StaticAuthProvider } from '$lib/types/auth.js';
   import { getDevConfigSync } from '../devConfig';
   import type { NodeMetadata, Workflow } from '$lib/types/index.js';
 
-  // Initialize API service with development config
-  // Initialize with sync config, will be updated on mount
+  // Initialize the default instance's API context with development config
   const devConfig = getDevConfigSync();
-  let endpointConfig = $state(
-    createEndpointConfig(devConfig.apiBaseUrl, {
-      auth: { type: devConfig.authType, token: devConfig.authToken },
-      timeout: devConfig.timeout
-    })
-  );
-  setEndpointConfig(endpointConfig);
+  const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
+    timeout: devConfig.timeout
+  });
+  const authProvider =
+    devConfig.authType && devConfig.authType !== 'none'
+      ? new StaticAuthProvider({ type: devConfig.authType, token: devConfig.authToken })
+      : new NoAuthProvider();
+  getDefaultInstance().api.configure(endpointConfig, authProvider);
+  const apiClient = getDefaultInstance().api.client;
 
   let nodes = $state<NodeMetadata[]>([]);
   let workflows = $state<Workflow[]>([]);
@@ -35,16 +37,16 @@
       testResults.push('Testing Node API...');
 
       // Get all nodes
-      const allNodes = await api.nodes.getNodes();
+      const allNodes = await apiClient.getAvailableNodes();
       testResults.push(`✓ Found ${allNodes.length} nodes`);
 
       // Get nodes by category
-      const llmNodes = await api.nodes.getNodes({ category: 'llm' });
+      const llmNodes = await apiClient.getNodesByCategory('llm');
       testResults.push(`✓ Found ${llmNodes.length} LLM nodes`);
 
       // Get specific node
       if (allNodes.length > 0) {
-        const firstNode = await api.nodes.getNode(allNodes[0].id);
+        const firstNode = await apiClient.getNodeMetadata(allNodes[0].id);
         testResults.push(`✓ Retrieved node: ${firstNode.name}`);
       }
 
@@ -63,11 +65,12 @@
       testResults.push('Testing Workflow API...');
 
       // Get all workflows
-      const allWorkflows = await api.workflows.getWorkflows();
+      const allWorkflows = await apiClient.listWorkflows();
       testResults.push(`✓ Found ${allWorkflows.length} workflows`);
 
       // Create a test workflow
-      const testWorkflow: Omit<Workflow, 'id'> = {
+      const testWorkflow: Workflow = {
+        id: '',
         name: 'Test Workflow',
         description: 'A test workflow created via API',
         nodes: [],
@@ -81,24 +84,24 @@
         }
       };
 
-      const createdWorkflow = await api.workflows.createWorkflow(testWorkflow);
+      const createdWorkflow = await apiClient.saveWorkflow(testWorkflow);
       testResults.push(`✓ Created workflow: ${createdWorkflow.name} (ID: ${createdWorkflow.id})`);
 
       // Update the workflow
-      const updatedWorkflow = await api.workflows.updateWorkflow(createdWorkflow.id, {
+      const updatedWorkflow = await apiClient.updateWorkflow(createdWorkflow.id, {
         description: 'Updated test workflow'
       });
       testResults.push(`✓ Updated workflow: ${updatedWorkflow.description}`);
 
       // Get the updated workflow
-      const retrievedWorkflow = await api.workflows.getWorkflow(createdWorkflow.id);
+      const retrievedWorkflow = await apiClient.loadWorkflow(createdWorkflow.id);
       testResults.push(`✓ Retrieved workflow: ${retrievedWorkflow.name}`);
 
       // Delete the test workflow
-      await api.workflows.deleteWorkflow(createdWorkflow.id);
+      await apiClient.deleteWorkflow(createdWorkflow.id);
       testResults.push(`✓ Deleted test workflow`);
 
-      workflows = await api.workflows.getWorkflows();
+      workflows = await apiClient.listWorkflows();
     } catch (err) {
       testResults.push(
         `✗ Workflow API error: ${err instanceof Error ? err.message : 'Unknown error'}`

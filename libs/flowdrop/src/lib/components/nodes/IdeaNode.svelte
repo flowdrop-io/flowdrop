@@ -11,6 +11,7 @@
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { getDataTypeColor } from '$lib/utils/colors.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
 
   /**
@@ -33,6 +34,8 @@
     isProcessing?: boolean;
     isError?: boolean;
   }>();
+
+  const checker = getInstance().portCompatibility;
 
   /**
    * Instance-specific title override from config.
@@ -151,6 +154,7 @@
       type="target"
       position={Position.Left}
       style="--fd-handle-fill: {getDataTypeColor(
+        checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); z-index: 30;"
       id={`${props.data.nodeId}-input-left`}
@@ -163,6 +167,7 @@
       type="target"
       position={Position.Top}
       style="--fd-handle-fill: {getDataTypeColor(
+        checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); z-index: 30;"
       id={`${props.data.nodeId}-input-top`}
@@ -215,6 +220,7 @@
       type="source"
       position={Position.Right}
       style="--fd-handle-fill: {getDataTypeColor(
+        checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); z-index: 30;"
       id={`${props.data.nodeId}-output-right`}
@@ -227,6 +233,7 @@
       type="source"
       position={Position.Bottom}
       style="--fd-handle-fill: {getDataTypeColor(
+        checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); z-index: 30;"
       id={`${props.data.nodeId}-output-bottom`}

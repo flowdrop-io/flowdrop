@@ -18,7 +18,6 @@ import type {
 import { defaultInterruptPollingConfig } from '../types/interrupt.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
-import { getEndpointConfig } from './api.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -77,23 +76,26 @@ export class InterruptService {
   /**
    * Check if interrupt endpoints are configured
    *
+   * @param config - The instance's endpoint configuration (from fd.api.config)
    * @returns True if interrupt endpoints are available
    */
-  public isConfigured(): boolean {
-    const config = getEndpointConfig();
+  public isConfigured(config: EndpointConfig | null): boolean {
     return Boolean(config?.endpoints?.interrupts);
   }
 
   /**
-   * Get the endpoint configuration
+   * Validate and return the caller-supplied endpoint configuration.
    *
-   * @throws Error if endpoint configuration is not set
+   * Callers thread the config from `getInstance().api.config`.
+   *
+   * @throws Error if endpoint configuration is not set or lacks interrupts
    * @returns The endpoint configuration
    */
-  private getConfig(): EndpointConfig {
-    const config = getEndpointConfig();
+  private getConfig(config: EndpointConfig | null): EndpointConfig {
     if (!config) {
-      throw new Error('Endpoint configuration not set. Call setEndpointConfig() first.');
+      throw new Error(
+        'Endpoint configuration not set. Configure the instance via fd.api.configure().'
+      );
     }
     if (!config.endpoints.interrupts) {
       throw new Error('Interrupt endpoints not configured.');
@@ -104,12 +106,16 @@ export class InterruptService {
   /**
    * Generic API request helper
    *
+   * @param config - The endpoint configuration
    * @param url - The URL to fetch
    * @param options - Fetch options
    * @returns The parsed JSON response
    */
-  private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const config = this.getConfig();
+  private async request<T>(
+    config: EndpointConfig,
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     const headers = getEndpointHeaders(config, 'interrupts');
     const response = await fetch(url, {
       ...options,
@@ -140,13 +146,16 @@ export class InterruptService {
    * @param interruptId - The interrupt UUID
    * @returns The interrupt details
    */
-  async getInterrupt(interruptId: string): Promise<Interrupt> {
-    const config = this.getConfig();
+  async getInterrupt(
+    endpointConfig: EndpointConfig | null,
+    interruptId: string
+  ): Promise<Interrupt> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.interrupts.get, {
       interruptId
     });
 
-    const response = await this.request<InterruptResponse>(url);
+    const response = await this.request<InterruptResponse>(config, url);
 
     if (!response.data) {
       throw new Error('Interrupt not found');
@@ -162,15 +171,19 @@ export class InterruptService {
    * @param value - The user's response value
    * @returns The updated interrupt
    */
-  async resolveInterrupt(interruptId: string, value: unknown): Promise<Interrupt> {
-    const config = this.getConfig();
+  async resolveInterrupt(
+    endpointConfig: EndpointConfig | null,
+    interruptId: string,
+    value: unknown
+  ): Promise<Interrupt> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.interrupts.resolve, {
       interruptId
     });
 
     const resolution: InterruptResolution = { value };
 
-    const response = await this.request<InterruptResponse>(url, {
+    const response = await this.request<InterruptResponse>(config, url, {
       method: 'POST',
       body: JSON.stringify(resolution)
     });
@@ -188,13 +201,16 @@ export class InterruptService {
    * @param interruptId - The interrupt UUID
    * @returns The updated interrupt
    */
-  async cancelInterrupt(interruptId: string): Promise<Interrupt> {
-    const config = this.getConfig();
+  async cancelInterrupt(
+    endpointConfig: EndpointConfig | null,
+    interruptId: string
+  ): Promise<Interrupt> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.interrupts.cancel, {
       interruptId
     });
 
-    const response = await this.request<InterruptResponse>(url, {
+    const response = await this.request<InterruptResponse>(config, url, {
       method: 'POST'
     });
 
@@ -211,13 +227,16 @@ export class InterruptService {
    * @param sessionId - The session UUID
    * @returns Array of interrupts for the session
    */
-  async listSessionInterrupts(sessionId: string): Promise<Interrupt[]> {
-    const config = this.getConfig();
+  async listSessionInterrupts(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string
+  ): Promise<Interrupt[]> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.interrupts.listBySession, {
       sessionId
     });
 
-    const response = await this.request<InterruptListResponse>(url);
+    const response = await this.request<InterruptListResponse>(config, url);
     return response.data ?? [];
   }
 
@@ -227,13 +246,16 @@ export class InterruptService {
    * @param pipelineId - The pipeline UUID
    * @returns Array of interrupts for the pipeline
    */
-  async listPipelineInterrupts(pipelineId: string): Promise<Interrupt[]> {
-    const config = this.getConfig();
+  async listPipelineInterrupts(
+    endpointConfig: EndpointConfig | null,
+    pipelineId: string
+  ): Promise<Interrupt[]> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.interrupts.listByPipeline, {
       pipelineId
     });
 
-    const response = await this.request<InterruptListResponse>(url);
+    const response = await this.request<InterruptListResponse>(config, url);
     return response.data ?? [];
   }
 
@@ -250,7 +272,11 @@ export class InterruptService {
    * @param sessionId - The session UUID to poll
    * @param callback - Callback function to handle new interrupts
    */
-  startPolling(sessionId: string, callback: (interrupts: Interrupt[]) => void): void {
+  startPolling(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string,
+    callback: (interrupts: Interrupt[]) => void
+  ): void {
     if (!this.pollingConfig.enabled) {
       logger.warn('[InterruptService] Polling is disabled. Enable via setPollingConfig().');
       return;
@@ -268,7 +294,7 @@ export class InterruptService {
       }
 
       try {
-        const interrupts = await this.listSessionInterrupts(sessionId);
+        const interrupts = await this.listSessionInterrupts(endpointConfig, sessionId);
         const pendingInterrupts = interrupts.filter((i) => i.status === 'pending');
 
         // Reset backoff on successful request

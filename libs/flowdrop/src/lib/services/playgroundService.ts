@@ -19,7 +19,6 @@ import type {
 import { defaultShouldStopPolling } from '../types/playground.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
-import { getEndpointConfig } from './api.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -75,15 +74,19 @@ export class PlaygroundService {
   }
 
   /**
-   * Get the endpoint configuration
+   * Validate and return the endpoint configuration passed by the caller.
+   *
+   * Callers thread the config from `getInstance().api.config`; this enforces
+   * the legacy "throws if not configured" contract.
    *
    * @throws Error if endpoint configuration is not set
    * @returns The endpoint configuration
    */
-  private getConfig(): EndpointConfig {
-    const config = getEndpointConfig();
+  private getConfig(config: EndpointConfig | null): EndpointConfig {
     if (!config) {
-      throw new Error('Endpoint configuration not set. Call setEndpointConfig() first.');
+      throw new Error(
+        'Endpoint configuration not set. Configure the instance via fd.api.configure().'
+      );
     }
     return config;
   }
@@ -91,12 +94,16 @@ export class PlaygroundService {
   /**
    * Generic API request helper
    *
+   * @param config - The endpoint configuration
    * @param url - The URL to fetch
    * @param options - Fetch options
    * @returns The parsed JSON response
    */
-  private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const config = this.getConfig();
+  private async request<T>(
+    config: EndpointConfig,
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     const headers = getEndpointHeaders(config, 'playground');
     const response = await fetch(url, {
       ...options,
@@ -129,10 +136,11 @@ export class PlaygroundService {
    * @returns Array of playground sessions
    */
   async listSessions(
+    endpointConfig: EndpointConfig | null,
     workflowId: string,
     options?: { limit?: number; offset?: number }
   ): Promise<PlaygroundSession[]> {
-    const config = this.getConfig();
+    const config = this.getConfig(endpointConfig);
     let url = buildEndpointUrl(config, config.endpoints.playground.listSessions, {
       id: workflowId
     });
@@ -149,7 +157,7 @@ export class PlaygroundService {
       url = `${url}?${queryString}`;
     }
 
-    const response = await this.request<PlaygroundSessionsResponse>(url);
+    const response = await this.request<PlaygroundSessionsResponse>(config, url);
     return response.data ?? [];
   }
 
@@ -162,16 +170,17 @@ export class PlaygroundService {
    * @returns The created session
    */
   async createSession(
+    endpointConfig: EndpointConfig | null,
     workflowId: string,
     name?: string,
     metadata?: Record<string, unknown>
   ): Promise<PlaygroundSession> {
-    const config = this.getConfig();
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.createSession, {
       id: workflowId
     });
 
-    const response = await this.request<PlaygroundSessionResponse>(url, {
+    const response = await this.request<PlaygroundSessionResponse>(config, url, {
       method: 'POST',
       body: JSON.stringify({ name, metadata })
     });
@@ -189,13 +198,16 @@ export class PlaygroundService {
    * @param sessionId - The session UUID
    * @returns The session details
    */
-  async getSession(sessionId: string): Promise<PlaygroundSession> {
-    const config = this.getConfig();
+  async getSession(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string
+  ): Promise<PlaygroundSession> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.getSession, {
       sessionId
     });
 
-    const response = await this.request<PlaygroundSessionResponse>(url);
+    const response = await this.request<PlaygroundSessionResponse>(config, url);
 
     if (!response.data) {
       throw new Error('Session not found');
@@ -209,13 +221,13 @@ export class PlaygroundService {
    *
    * @param sessionId - The session UUID
    */
-  async deleteSession(sessionId: string): Promise<void> {
-    const config = this.getConfig();
+  async deleteSession(endpointConfig: EndpointConfig | null, sessionId: string): Promise<void> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.deleteSession, {
       sessionId
     });
 
-    await this.request<{ success: boolean }>(url, {
+    await this.request<{ success: boolean }>(config, url, {
       method: 'DELETE'
     });
   }
@@ -238,10 +250,11 @@ export class PlaygroundService {
    * @returns Messages and session status
    */
   async getMessages(
+    endpointConfig: EndpointConfig | null,
     sessionId: string,
     options: GetMessagesOptions = {}
   ): Promise<PlaygroundMessagesApiResponse> {
-    const config = this.getConfig();
+    const config = this.getConfig(endpointConfig);
     let url = buildEndpointUrl(config, config.endpoints.playground.getMessages, {
       sessionId
     });
@@ -264,7 +277,7 @@ export class PlaygroundService {
       url = `${url}?${queryString}`;
     }
 
-    return this.request<PlaygroundMessagesApiResponse>(url);
+    return this.request<PlaygroundMessagesApiResponse>(config, url);
   }
 
   /**
@@ -276,11 +289,12 @@ export class PlaygroundService {
    * @returns The created message
    */
   async sendMessage(
+    endpointConfig: EndpointConfig | null,
     sessionId: string,
     content: string,
     inputs?: Record<string, unknown>
   ): Promise<PlaygroundMessage> {
-    const config = this.getConfig();
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.sendMessage, {
       sessionId
     });
@@ -293,7 +307,7 @@ export class PlaygroundService {
     const response = await this.request<{
       success: boolean;
       data?: PlaygroundMessage;
-    }>(url, {
+    }>(config, url, {
       method: 'POST',
       body: JSON.stringify(requestBody)
     });
@@ -310,13 +324,13 @@ export class PlaygroundService {
    *
    * @param sessionId - The session UUID
    */
-  async stopExecution(sessionId: string): Promise<void> {
-    const config = this.getConfig();
+  async stopExecution(endpointConfig: EndpointConfig | null, sessionId: string): Promise<void> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.stopExecution, {
       sessionId
     });
 
-    await this.request<{ success: boolean }>(url, {
+    await this.request<{ success: boolean }>(config, url, {
       method: 'POST'
     });
   }
@@ -335,6 +349,7 @@ export class PlaygroundService {
    * @param initialSequenceNumber - Optional sequence number to seed polling from (avoids re-fetching already loaded messages)
    */
   startPolling(
+    endpointConfig: EndpointConfig | null,
     sessionId: string,
     callback: (response: PlaygroundMessagesApiResponse) => void,
     interval: number = DEFAULT_POLLING_INTERVAL,
@@ -356,7 +371,7 @@ export class PlaygroundService {
       }
 
       try {
-        const response = await this.getMessages(sessionId, {
+        const response = await this.getMessages(endpointConfig, sessionId, {
           since: this.lastSequenceNumber ?? undefined
         });
 

@@ -11,9 +11,9 @@ import type {
   NodeExecutionInfo
 } from '../types/index.js';
 import { hasCycles, hasInvalidCycles } from '../utils/connections.js';
-import { workflowApi, nodeApi, setEndpointConfig } from '../services/api.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getDefaultInstance, type FlowDropInstance } from '../stores/instanceContainer.svelte.js';
+import type { ApiContext } from '../stores/apiContext.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
@@ -94,7 +94,10 @@ export class NodeOperationsHelper {
   /**
    * Load nodes from API
    */
-  static async loadNodesFromApi(providedNodes?: NodeMetadata[]): Promise<NodeMetadata[]> {
+  static async loadNodesFromApi(
+    api: ApiContext,
+    providedNodes?: NodeMetadata[]
+  ): Promise<NodeMetadata[]> {
     // If nodes are provided via props, use them
     if (providedNodes && providedNodes.length > 0) {
       return providedNodes;
@@ -102,7 +105,7 @@ export class NodeOperationsHelper {
 
     // Otherwise, load from API
     try {
-      const fetchedNodes = await nodeApi.getNodes();
+      const fetchedNodes = await api.client.getAvailableNodes();
       return fetchedNodes;
     } catch (error) {
       logger.error('Failed to load nodes from API:', error);
@@ -137,6 +140,7 @@ export class NodeOperationsHelper {
    * Load node execution information for all nodes in the workflow
    */
   static async loadNodeExecutionInfo(
+    api: ApiContext,
     workflow: Workflow | null,
     pipelineId?: string
   ): Promise<Record<string, NodeExecutionInfo>> {
@@ -148,6 +152,7 @@ export class NodeOperationsHelper {
     try {
       const nodeIds = workflow.nodes.map((node) => node.id);
       const executionInfo = await nodeExecutionService.getMultipleNodeExecutionInfo(
+        api.config,
         nodeIds,
         pipelineId
       );
@@ -300,11 +305,13 @@ export class WorkflowOperationsHelper {
   /**
    * Save workflow to backend
    *
+   * @param api - The instance's API context (endpoints + client)
    * @param workflow - The workflow to save
    * @param instance - The FlowDrop instance whose store should be synced when
    *   the server assigns a new ID; defaults to the page-default instance
    */
   static async saveWorkflow(
+    api: ApiContext,
     workflow: Workflow | null,
     instance?: FlowDropInstance
   ): Promise<Workflow | null> {
@@ -314,15 +321,11 @@ export class WorkflowOperationsHelper {
     }
 
     try {
-      // Determine the workflow ID based on whether we have an existing workflow
-      let workflowId: string;
-      if (workflow.id) {
-        // Use the existing workflow ID
-        workflowId = workflow.id;
-      } else {
-        // Generate a new UUID for a new workflow
-        workflowId = uuidv4();
-      }
+      // Determine new vs existing BEFORE the uuidv4() fallback: a present id (any
+      // format) means the workflow came from a backend and must be updated. Only
+      // a missing id means "truly new".
+      const isExistingWorkflow = !!workflow.id;
+      const workflowId = workflow.id || uuidv4();
 
       const workflowToSave: Workflow = {
         id: workflowId,
@@ -336,7 +339,9 @@ export class WorkflowOperationsHelper {
         }
       };
 
-      const savedWorkflow = await workflowApi.saveWorkflow(workflowToSave);
+      const savedWorkflow = isExistingWorkflow
+        ? await api.client.updateWorkflow(workflowToSave.id, workflowToSave)
+        : await api.client.saveWorkflow(workflowToSave);
 
       // Update the workflow ID if it changed (new workflow)
       if (savedWorkflow.id && savedWorkflow.id !== workflowToSave.id) {
@@ -494,9 +499,9 @@ export class WorkflowOperationsHelper {
  */
 export class ConfigurationHelper {
   /**
-   * Configure API endpoints
+   * Configure API endpoints on the given instance's API context.
    */
-  static configureEndpoints(config: EndpointConfig): void {
-    setEndpointConfig(config);
+  static configureEndpoints(api: ApiContext, config: EndpointConfig): void {
+    api.configure(config);
   }
 }

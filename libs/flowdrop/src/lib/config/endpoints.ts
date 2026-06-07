@@ -140,14 +140,6 @@ export interface EndpointConfig {
     [key: string]: Record<string, string>;
   };
 
-  /** Authentication configuration */
-  auth?: {
-    type: 'none' | 'bearer' | 'api_key' | 'custom';
-    token?: string;
-    apiKey?: string;
-    headers?: Record<string, string>;
-  };
-
   /** Request timeout in milliseconds */
   timeout?: number;
 
@@ -329,14 +321,8 @@ export function getEndpointHeaders(
     'Content-Type': 'application/json'
   };
 
-  // Add authentication headers
-  if (config.auth?.type === 'bearer' && config.auth.token) {
-    baseHeaders['Authorization'] = `Bearer ${config.auth.token}`;
-  } else if (config.auth?.type === 'api_key' && config.auth.apiKey) {
-    baseHeaders['X-API-Key'] = config.auth.apiKey;
-  } else if (config.auth?.type === 'custom' && config.auth.headers) {
-    Object.assign(baseHeaders, config.auth.headers);
-  }
+  // Authentication is supplied via the AuthProvider passed to the API client /
+  // ApiContext — EndpointConfig no longer carries an `auth` block.
 
   // Add endpoint-specific headers
   const endpointHeaders = config.headers?.[endpointKey];

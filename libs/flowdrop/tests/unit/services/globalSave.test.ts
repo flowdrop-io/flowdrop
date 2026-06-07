@@ -2,8 +2,12 @@
  * Unit Tests - Global Save Service
  *
  * Tests for the globalSaveWorkflow() function, focusing on correct routing
- * between createWorkflow (POST) and updateWorkflow (PUT) based on whether
+ * between saveWorkflow (POST/create) and updateWorkflow (PUT) based on whether
  * the workflow already has a backend-assigned id.
+ *
+ * In 2.0 globalSave persists through the instance's API client (fd.api.client)
+ * — the legacy module workflowApi path was removed. The create-vs-update
+ * decision still hinges on id presence, not the id's format.
  *
  * Regression coverage for: UUID Workflow ID Bug (issue #26)
  * Previously a UUID regex was used to detect new workflows, which caused
@@ -24,21 +28,24 @@ const {
   mockGetWorkflowStore,
   mockWorkflowActionsBatchUpdate,
   mockStoreMarkAsSaved,
-  mockCreateWorkflow,
-  mockUpdateWorkflow,
-  mockGetEndpointConfig
+  mockClientSave,
+  mockClientUpdate,
+  mockApiIsConfigured,
+  mockApiConfigure
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
   mockStoreMarkAsSaved: vi.fn(),
-  mockCreateWorkflow: vi.fn(),
-  mockUpdateWorkflow: vi.fn(),
-  mockGetEndpointConfig: vi.fn()
+  mockClientSave: vi.fn(),
+  mockClientUpdate: vi.fn(),
+  mockApiIsConfigured: vi.fn(),
+  mockApiConfigure: vi.fn()
 }));
 
-// globalSave resolves its target via getDefaultInstance().workflow. Mock the
-// instance container so the fake workflow store's `current` getter reads from
-// mockGetWorkflowStore and its mutations route to the mock fns above.
+// globalSave resolves its target via getDefaultInstance(). Mock the instance
+// container so the fake workflow store's `current` getter reads from
+// mockGetWorkflowStore, mutations route to the mock fns, and the API context
+// exposes a client whose save/update route to mockClientSave/mockClientUpdate.
 vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
   getDefaultInstance: () => ({
     workflow: {
@@ -47,18 +54,21 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
       },
       batchUpdate: (...args: unknown[]) => mockWorkflowActionsBatchUpdate(...args),
       markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args)
+    },
+    api: {
+      isConfigured: (...args: unknown[]) => mockApiIsConfigured(...args),
+      get config() {
+        return { baseUrl: '/api/flowdrop' };
+      },
+      configure: (...args: unknown[]) => mockApiConfigure(...args),
+      get client() {
+        return {
+          saveWorkflow: (...args: unknown[]) => mockClientSave(...args),
+          updateWorkflow: (...args: unknown[]) => mockClientUpdate(...args)
+        };
+      }
     }
   })
-}));
-
-vi.mock('$lib/services/api.js', () => ({
-  workflowApi: {
-    createWorkflow: (...args: unknown[]) => mockCreateWorkflow(...args),
-    updateWorkflow: (...args: unknown[]) => mockUpdateWorkflow(...args),
-    saveWorkflow: vi.fn()
-  },
-  getEndpointConfig: (...args: unknown[]) => mockGetEndpointConfig(...args),
-  setEndpointConfig: vi.fn()
 }));
 
 vi.mock('$lib/services/toastService.js', () => ({
@@ -99,106 +109,65 @@ function backendWorkflow(id: string) {
 describe('globalSaveWorkflow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Simulate a valid endpoint config so ensureApiConfiguration exits early
-    mockGetEndpointConfig.mockReturnValue({ baseUrl: '/api/flowdrop' });
+    // Simulate a configured API context so ensureApiConfiguration exits early.
+    mockApiIsConfigured.mockReturnValue(true);
   });
 
   // -------------------------------------------------------------------------
-  // Legacy path (no apiClient)
+  // create vs update routing (id-presence decides — never UUID-regex)
   // -------------------------------------------------------------------------
 
-  describe('legacy path (no apiClient)', () => {
-    it('calls createWorkflow when workflow has no id (new workflow)', async () => {
+  describe('create vs update routing', () => {
+    it('calls client.saveWorkflow when workflow has no id (new workflow)', async () => {
       const workflow = storeWorkflow('');
       mockGetWorkflowStore.mockReturnValue(workflow);
-      mockCreateWorkflow.mockResolvedValue(backendWorkflow('server-assigned-id'));
+      mockClientSave.mockResolvedValue(backendWorkflow('server-assigned-id'));
 
       await globalSaveWorkflow({});
 
-      expect(mockCreateWorkflow).toHaveBeenCalledTimes(1);
-      expect(mockUpdateWorkflow).not.toHaveBeenCalled();
+      expect(mockClientSave).toHaveBeenCalledTimes(1);
+      expect(mockClientUpdate).not.toHaveBeenCalled();
 
-      // id should be stripped from the POST body
-      const [postedWorkflow] = mockCreateWorkflow.mock.calls[0];
-      expect(postedWorkflow).not.toHaveProperty('id');
+      // The new workflow is sent with the client-generated uuid fallback as its id.
+      const [postedWorkflow] = mockClientSave.mock.calls[0];
+      expect(postedWorkflow.id).toBe(FIXED_UUID);
     });
 
-    it('calls updateWorkflow when workflow has a non-UUID id (existing workflow)', async () => {
+    it('calls client.updateWorkflow when workflow has a non-UUID id (existing workflow)', async () => {
       const workflow = storeWorkflow('123');
       mockGetWorkflowStore.mockReturnValue(workflow);
-      mockUpdateWorkflow.mockResolvedValue(backendWorkflow('123'));
+      mockClientUpdate.mockResolvedValue(backendWorkflow('123'));
 
       await globalSaveWorkflow({});
 
-      expect(mockUpdateWorkflow).toHaveBeenCalledTimes(1);
-      expect(mockUpdateWorkflow).toHaveBeenCalledWith(
-        '123',
-        expect.objectContaining({ id: '123' })
-      );
-      expect(mockCreateWorkflow).not.toHaveBeenCalled();
+      expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+      expect(mockClientUpdate).toHaveBeenCalledWith('123', expect.objectContaining({ id: '123' }));
+      expect(mockClientSave).not.toHaveBeenCalled();
     });
 
-    it('calls updateWorkflow when workflow has a UUID id (regression: issue #26)', async () => {
+    it('calls client.updateWorkflow when workflow has a UUID id (regression: issue #26)', async () => {
       const uuidId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
       const workflow = storeWorkflow(uuidId);
       mockGetWorkflowStore.mockReturnValue(workflow);
-      mockUpdateWorkflow.mockResolvedValue(backendWorkflow(uuidId));
+      mockClientUpdate.mockResolvedValue(backendWorkflow(uuidId));
 
       await globalSaveWorkflow({});
 
-      expect(mockUpdateWorkflow).toHaveBeenCalledTimes(1);
-      expect(mockUpdateWorkflow).toHaveBeenCalledWith(
+      expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+      expect(mockClientUpdate).toHaveBeenCalledWith(
         uuidId,
         expect.objectContaining({ id: uuidId })
       );
-      expect(mockCreateWorkflow).not.toHaveBeenCalled();
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // Enhanced client path
-  // -------------------------------------------------------------------------
-
-  describe('enhanced client path (apiClient provided)', () => {
-    const mockApiClientSave = vi.fn();
-    const mockApiClientUpdate = vi.fn();
-    const apiClient = {
-      saveWorkflow: (...args: unknown[]) => mockApiClientSave(...args),
-      updateWorkflow: (...args: unknown[]) => mockApiClientUpdate(...args)
-    };
-
-    it('calls apiClient.saveWorkflow when workflow has no id (new workflow)', async () => {
-      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      mockApiClientSave.mockResolvedValue(backendWorkflow('server-uuid'));
-
-      await globalSaveWorkflow({ apiClient });
-
-      expect(mockApiClientSave).toHaveBeenCalledTimes(1);
-      expect(mockApiClientUpdate).not.toHaveBeenCalled();
+      expect(mockClientSave).not.toHaveBeenCalled();
     });
 
-    it('calls apiClient.updateWorkflow when workflow has a UUID id (regression: issue #26)', async () => {
-      const uuidId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-      mockGetWorkflowStore.mockReturnValue(storeWorkflow(uuidId));
-      mockApiClientUpdate.mockResolvedValue(backendWorkflow(uuidId));
-
-      await globalSaveWorkflow({ apiClient });
-
-      expect(mockApiClientUpdate).toHaveBeenCalledTimes(1);
-      expect(mockApiClientUpdate).toHaveBeenCalledWith(
-        uuidId,
-        expect.objectContaining({ id: uuidId })
-      );
-      expect(mockApiClientSave).not.toHaveBeenCalled();
-    });
-
-    it('calls apiClient.updateWorkflow when workflow has a non-UUID id', async () => {
+    it('calls client.updateWorkflow when workflow has a slug id', async () => {
       mockGetWorkflowStore.mockReturnValue(storeWorkflow('slug-workflow'));
-      mockApiClientUpdate.mockResolvedValue(backendWorkflow('slug-workflow'));
+      mockClientUpdate.mockResolvedValue(backendWorkflow('slug-workflow'));
 
-      await globalSaveWorkflow({ apiClient });
+      await globalSaveWorkflow({});
 
-      expect(mockApiClientUpdate).toHaveBeenCalledWith(
+      expect(mockClientUpdate).toHaveBeenCalledWith(
         'slug-workflow',
         expect.objectContaining({ id: 'slug-workflow' })
       );
@@ -216,24 +185,24 @@ describe('globalSaveWorkflow', () => {
 
       await globalSaveWorkflow({ eventHandlers: { onBeforeSave } });
 
-      expect(mockCreateWorkflow).not.toHaveBeenCalled();
-      expect(mockUpdateWorkflow).not.toHaveBeenCalled();
+      expect(mockClientSave).not.toHaveBeenCalled();
+      expect(mockClientUpdate).not.toHaveBeenCalled();
     });
 
     it('proceeds with save when onBeforeSave returns true', async () => {
       mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      mockCreateWorkflow.mockResolvedValue(backendWorkflow('new-id'));
+      mockClientSave.mockResolvedValue(backendWorkflow('new-id'));
       const onBeforeSave = vi.fn().mockResolvedValue(true);
 
       await globalSaveWorkflow({ eventHandlers: { onBeforeSave } });
 
-      expect(mockCreateWorkflow).toHaveBeenCalledTimes(1);
+      expect(mockClientSave).toHaveBeenCalledTimes(1);
     });
 
     it('calls onAfterSave with the saved workflow on success', async () => {
       const saved = backendWorkflow('backend-id');
       mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      mockCreateWorkflow.mockResolvedValue(saved);
+      mockClientSave.mockResolvedValue(saved);
       const onAfterSave = vi.fn().mockResolvedValue(undefined);
 
       await globalSaveWorkflow({ eventHandlers: { onAfterSave } });
@@ -251,8 +220,8 @@ describe('globalSaveWorkflow', () => {
 
     await globalSaveWorkflow({});
 
-    expect(mockCreateWorkflow).not.toHaveBeenCalled();
-    expect(mockUpdateWorkflow).not.toHaveBeenCalled();
+    expect(mockClientSave).not.toHaveBeenCalled();
+    expect(mockClientUpdate).not.toHaveBeenCalled();
   });
 
   // -------------------------------------------------------------------------
@@ -260,10 +229,10 @@ describe('globalSaveWorkflow', () => {
   // -------------------------------------------------------------------------
 
   describe('onSaved callback', () => {
-    it('is called with the server-returned workflow after a legacy create', async () => {
+    it('is called with the server-returned workflow after a create', async () => {
       const serverWorkflow = backendWorkflow('server-assigned-id');
       mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      mockCreateWorkflow.mockResolvedValue(serverWorkflow);
+      mockClientSave.mockResolvedValue(serverWorkflow);
       const onSaved = vi.fn();
 
       await globalSaveWorkflow({ onSaved });
@@ -275,7 +244,7 @@ describe('globalSaveWorkflow', () => {
     it('receives the server-assigned ID, not the client UUID, for new workflows', async () => {
       const serverWorkflow = backendWorkflow('server-integer-42');
       mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      mockCreateWorkflow.mockResolvedValue(serverWorkflow);
+      mockClientSave.mockResolvedValue(serverWorkflow);
       const onSaved = vi.fn();
 
       await globalSaveWorkflow({ onSaved });
@@ -285,10 +254,10 @@ describe('globalSaveWorkflow', () => {
       expect(calledWith.id).not.toBe(FIXED_UUID);
     });
 
-    it('is called with the server-returned workflow after a legacy update', async () => {
+    it('is called with the server-returned workflow after an update', async () => {
       const serverWorkflow = backendWorkflow('existing-id');
       mockGetWorkflowStore.mockReturnValue(storeWorkflow('existing-id'));
-      mockUpdateWorkflow.mockResolvedValue(serverWorkflow);
+      mockClientUpdate.mockResolvedValue(serverWorkflow);
       const onSaved = vi.fn();
 
       await globalSaveWorkflow({ onSaved });
@@ -296,23 +265,9 @@ describe('globalSaveWorkflow', () => {
       expect(onSaved).toHaveBeenCalledWith(serverWorkflow);
     });
 
-    it('is called with the server-returned workflow after an enhanced client create', async () => {
-      const serverWorkflow = backendWorkflow('server-uuid');
-      const apiClient = {
-        saveWorkflow: vi.fn().mockResolvedValue(serverWorkflow),
-        updateWorkflow: vi.fn()
-      };
-      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      const onSaved = vi.fn();
-
-      await globalSaveWorkflow({ apiClient, onSaved });
-
-      expect(onSaved).toHaveBeenCalledWith(serverWorkflow);
-    });
-
     it('is not called when the API call fails', async () => {
       mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      mockCreateWorkflow.mockRejectedValue(new Error('Network error'));
+      mockClientSave.mockRejectedValue(new Error('Network error'));
       const onSaved = vi.fn();
 
       await expect(globalSaveWorkflow({ onSaved })).rejects.toThrow('Network error');
@@ -329,7 +284,7 @@ describe('globalSaveWorkflow', () => {
       });
 
       expect(onSaved).not.toHaveBeenCalled();
-      expect(mockCreateWorkflow).not.toHaveBeenCalled();
+      expect(mockClientSave).not.toHaveBeenCalled();
     });
 
     it('is not called when the store is empty', async () => {
@@ -344,7 +299,7 @@ describe('globalSaveWorkflow', () => {
     it('is called after onMarkAsSaved', async () => {
       const callOrder: string[] = [];
       mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
-      mockCreateWorkflow.mockResolvedValue(backendWorkflow('new-id'));
+      mockClientSave.mockResolvedValue(backendWorkflow('new-id'));
 
       await globalSaveWorkflow({
         onMarkAsSaved: () => callOrder.push('markAsSaved'),

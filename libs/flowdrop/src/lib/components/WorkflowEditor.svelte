@@ -321,6 +321,7 @@
 
     try {
       const executionInfo = await NodeOperationsHelper.loadNodeExecutionInfo(
+        fd.api,
         workflow,
         props.pipelineId
       );
@@ -420,12 +421,14 @@
     const candidates =
       portCoordinates.size > 0
         ? ProximityConnectHelper.findCompatibleEdgesByPortCoordinates(
+            fd.portCompatibility,
             targetNode.id,
             portCoordinates,
             baseEdges,
             getEditorSettings().proximityConnectDistance
           )
         : ProximityConnectHelper.findCompatibleEdges(
+            fd.portCompatibility,
             targetNode,
             flowNodes,
             baseEdges,
@@ -589,7 +592,7 @@
   // Configure endpoints when props change
   $effect(() => {
     if (props.endpointConfig) {
-      ConfigurationHelper.configureEndpoints(props.endpointConfig);
+      ConfigurationHelper.configureEndpoints(fd.api, props.endpointConfig);
     }
   });
 

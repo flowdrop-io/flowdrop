@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   executeCommand,
   toShortId,
@@ -20,65 +20,9 @@ import type {
   WorkflowNode,
   WorkflowEdge,
   Workflow,
-  NodeMetadata,
-  PortConfig
+  NodeMetadata
 } from '../../../src/lib/types/index.js';
 import { buildTypeMap } from '../../../src/lib/commands/types.js';
-import { initializePortCompatibility } from '../../../src/lib/utils/connections.js';
-
-// ============================================================================
-// Port Compatibility Setup (needed for connect tests)
-// ============================================================================
-
-const mockPortConfig: PortConfig = {
-  version: '1.0.0',
-  defaultDataType: 'string',
-  dataTypes: [
-    {
-      id: 'trigger',
-      name: 'Trigger',
-      description: 'Control flow',
-      color: '#8b5cf6',
-      category: 'basic',
-      enabled: true
-    },
-    {
-      id: 'string',
-      name: 'String',
-      description: 'Text data',
-      color: '#10b981',
-      category: 'basic',
-      enabled: true
-    },
-    {
-      id: 'number',
-      name: 'Number',
-      description: 'Numeric data',
-      color: '#3b82f6',
-      category: 'numeric',
-      enabled: true
-    },
-    {
-      id: 'tool',
-      name: 'Tool',
-      description: 'Tool call',
-      color: '#f59e0b',
-      category: 'basic',
-      enabled: true
-    }
-  ],
-  compatibilityRules: [
-    { from: 'string', to: 'string' },
-    { from: 'number', to: 'number' },
-    { from: 'trigger', to: 'trigger' },
-    { from: 'tool', to: 'tool' }
-  ]
-};
-
-// Initialize once for all tests that use validateConnection
-beforeAll(() => {
-  initializePortCompatibility(mockPortConfig);
-});
 
 // ============================================================================
 // Test Fixtures

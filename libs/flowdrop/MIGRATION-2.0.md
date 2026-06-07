@@ -84,7 +84,72 @@ Removed message keys (only the removed ChatPanel branches read them):
 - `nodes` is removed (it fed a prop the editor never read). Use
   `mountFlowDropApp` if you need to pre-seed node metadata.
 
-## 5. Behavioral notes
+## 5. API access is instance-scoped (`fd.api`)
+
+The module-level API singleton in `services/api.js` is gone:
+`setEndpointConfig()`, `getEndpointConfig()`, `nodeApi`, `workflowApi`, and the
+`api` aggregate are removed. Each instance now owns an `ApiContext` at
+`fd.api`, which holds the endpoint config + auth provider and lazily builds an
+`EnhancedFlowDropApiClient`.
+
+```js
+// 1.x
+import { setEndpointConfig, workflowApi, nodeApi } from '@flowdrop/flowdrop/editor';
+setEndpointConfig(createEndpointConfig('/api/flowdrop'));
+const nodes = await nodeApi.getNodes();
+const wf = await workflowApi.getWorkflow(id);
+
+// 2.0 — mount configures fd.api automatically; inside components resolve it:
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+const nodes = await fd.api.client.getAvailableNodes();
+const wf = await fd.api.client.loadWorkflow(id);
+```
+
+`mountFlowDropApp` / `mountPlayground` / `<App>` call `fd.api.configure(config,
+authProvider)` for you. Services that previously read the singleton (playground,
+interrupt, chat, node-execution, dynamic-schema, variable) now take the endpoint
+config as their first argument — pass `fd.api.config`.
+
+### `EndpointConfig.auth` is removed — use an `AuthProvider`
+
+The `auth` block on `EndpointConfig` (and its header-injection branch) is gone.
+Authentication is supplied exclusively through an `AuthProvider`, passed to the
+mount/`<App>` `authProvider` option (or `fd.api.configure(config, provider)`).
+`StaticAuthProvider` covers the former static-token cases one-to-one:
+
+```js
+// 1.x
+createEndpointConfig('/api/flowdrop', {
+  auth: { type: 'bearer', token: TOKEN }
+});
+
+// 2.0
+import { StaticAuthProvider } from '@flowdrop/flowdrop';
+mountFlowDropApp(el, {
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  authProvider: new StaticAuthProvider({ type: 'bearer', token: TOKEN })
+});
+```
+
+| 1.x `auth`                    | 2.0 `AuthProvider`                                    |
+| ----------------------------- | ----------------------------------------------------- |
+| `{ type: 'none' }`            | `new NoAuthProvider()` (or omit `authProvider`)       |
+| `{ type: 'bearer', token }`   | `new StaticAuthProvider({ type: 'bearer', token })`   |
+| `{ type: 'api_key', apiKey }` | `new StaticAuthProvider({ type: 'api_key', apiKey })` |
+| `{ type: 'custom', headers }` | `new StaticAuthProvider({ type: 'custom', headers })` |
+
+### Instance-scoped port compatibility
+
+`initializePortCompatibility()`, `getPortCompatibilityChecker()`, and
+`isPortCompatibilityInitialized()` are removed. Each instance owns a
+`PortCompatibilityChecker` at `fd.portCompatibility`, seeded with
+`DEFAULT_PORT_CONFIG` and re-initialized by mount from the backend's port
+config. The standalone connection helpers (`validateConnection`,
+`getPossibleConnections`, `getConnectionSuggestions`) now take the checker as
+their first argument.
+
+## 6. Behavioral notes
 
 - `fieldRegistry.register()` warns in dev when overwriting an existing field
   type. Overwriting still works; the warning flags accidents.

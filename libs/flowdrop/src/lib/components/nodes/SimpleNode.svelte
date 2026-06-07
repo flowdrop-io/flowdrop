@@ -45,6 +45,7 @@
   }>();
 
   const fd = getInstance();
+  const checker = fd.portCompatibility;
 
   /**
    * Get UI extension settings from extensions, merging node type defaults with instance overrides.
@@ -185,6 +186,7 @@
     type="target"
     position={Position.Left}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      checker,
       port.dataType
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,
@@ -263,6 +265,7 @@
     type="source"
     position={Position.Right}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      checker,
       port.dataType
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,

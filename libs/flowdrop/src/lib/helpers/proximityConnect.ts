@@ -16,7 +16,7 @@ import type {
   PortCoordinateMap
 } from '../types/index.js';
 import { dynamicPortToNodePort } from '../types/index.js';
-import { getPortCompatibilityChecker } from '../utils/connections.js';
+import type { PortCompatibilityChecker } from '../utils/connections.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /** A candidate proximity edge before it is finalized */
@@ -132,13 +132,12 @@ export class ProximityConnectHelper {
    * @returns Array with at most ONE ProximityEdgeCandidate
    */
   static findCompatibleEdges(
+    checker: PortCompatibilityChecker,
     draggedNode: WorkflowNodeType,
     allNodes: WorkflowNodeType[],
     existingEdges: WorkflowEdge[],
     minDistance: number
   ): ProximityEdgeCandidate[] {
-    const checker = getPortCompatibilityChecker();
-
     // Build lookup set for O(1) duplicate checks
     const existingEdgeSet = new Set(
       existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)
@@ -253,13 +252,12 @@ export class ProximityConnectHelper {
    * @returns Array with at most ONE ProximityEdgeCandidate
    */
   static findCompatibleEdgesByPortCoordinates(
+    checker: PortCompatibilityChecker,
     draggedNodeId: string,
     portCoordinates: PortCoordinateMap,
     existingEdges: WorkflowEdge[],
     maxDistance: number
   ): ProximityEdgeCandidate[] {
-    const checker = getPortCompatibilityChecker();
-
     // Build lookup set for O(1) duplicate checks
     const existingEdgeSet = new Set(
       existingEdges.map((e) => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`)

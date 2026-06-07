@@ -7,7 +7,7 @@
  */
 
 import type { VariableSchema, ApiVariablesConfig, AuthProvider } from '../types/index.js';
-import { getEndpointConfig } from './api.js';
+import type { EndpointConfig } from '../config/endpoints.js';
 import { logger } from '../utils/logger.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 
@@ -174,6 +174,7 @@ function resolveBodyTemplates(
  * ```
  */
 export async function fetchVariableSchema(
+  endpointConfig: EndpointConfig | null,
   workflowId: string | undefined,
   nodeId: string,
   config: ApiVariablesConfig,
@@ -202,12 +203,9 @@ export async function fetchVariableSchema(
   let url = resolveEndpointUrl(endpoint.url, context);
 
   // If URL is relative, prepend base URL from endpoint config
-  if (url.startsWith('/')) {
-    const currentConfig = getEndpointConfig();
-    if (currentConfig?.baseUrl) {
-      const baseUrl = currentConfig.baseUrl.replace(/\/$/, '');
-      url = `${baseUrl}${url}`;
-    }
+  if (url.startsWith('/') && endpointConfig?.baseUrl) {
+    const baseUrl = endpointConfig.baseUrl.replace(/\/$/, '');
+    url = `${baseUrl}${url}`;
   }
 
   // Prepare request options
@@ -227,18 +225,6 @@ export async function fetchVariableSchema(
       Object.assign(headers, authHeaders);
     } catch (error) {
       logger.warn('Failed to get auth headers:', error);
-    }
-  }
-
-  // Add auth headers from endpoint config as fallback
-  const currentConfig = getEndpointConfig();
-  if (currentConfig?.auth) {
-    if (currentConfig.auth.type === 'bearer' && currentConfig.auth.token) {
-      headers['Authorization'] = headers['Authorization'] ?? `Bearer ${currentConfig.auth.token}`;
-    } else if (currentConfig.auth.type === 'api_key' && currentConfig.auth.apiKey) {
-      headers['X-API-Key'] = headers['X-API-Key'] ?? currentConfig.auth.apiKey;
-    } else if (currentConfig.auth.type === 'custom' && currentConfig.auth.headers) {
-      Object.assign(headers, currentConfig.auth.headers);
     }
   }
 
@@ -274,7 +260,7 @@ export async function fetchVariableSchema(
           const refreshed = await authProvider.onUnauthorized();
           if (refreshed) {
             // Retry with refreshed auth
-            return fetchVariableSchema(workflowId, nodeId, config, authProvider);
+            return fetchVariableSchema(endpointConfig, workflowId, nodeId, config, authProvider);
           }
         }
         return {

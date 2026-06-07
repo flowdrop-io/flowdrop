@@ -62,7 +62,6 @@ import type { PartialSettings, SettingsCategory } from '../types/settings.js';
 import { initializeSettings } from '../stores/settingsStore.svelte.js';
 import type { NavbarAction } from '../types/navbar.js';
 import type { PipelineViewDef } from '../types/index.js';
-import { setEndpointConfig } from '../services/api.js';
 import { playgroundService } from '../services/playgroundService.js';
 import {
   createFlowDropInstance,
@@ -236,7 +235,8 @@ async function resolveEndpointConfig(
     ...endpointConfig,
     endpoints: { ...defaultEndpointConfig.endpoints, ...endpointConfig.endpoints }
   };
-  setEndpointConfig(resolved);
+  // The resolved config is passed to the Playground component, which configures
+  // its instance's ApiContext (fd.api) — no module-level state to set here.
   return resolved;
 }
 
@@ -324,6 +324,7 @@ function buildMountedPlayground(
       const session = fd.playground.currentSession;
       if (session) {
         playgroundService.startPolling(
+          fd.api.config,
           session.id,
           (response) => fd.playground.applyServerResponse(response, session.id),
           pollingInterval,

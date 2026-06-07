@@ -5,12 +5,13 @@
  */
 
 import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
-import { getPortCompatibilityChecker } from './connections.js';
+import type { PortCompatibilityChecker } from './connections.js';
 import { getDefaultInstance } from '../stores/instanceContainer.svelte.js';
-import { logger } from './logger.js';
 
 // Category metadata comes from the page-default instance; per-instance category
 // theming would require threading the instance through every color call site.
+// Data-type config, by contrast, is threaded explicitly via a
+// PortCompatibilityChecker parameter (see getDataType* helpers below).
 function getCategoryColorFromStore(category: NodeCategory): string {
   return getDefaultInstance().categories.getColor(category);
 }
@@ -85,16 +86,13 @@ export function getCategoryColorToken(category: NodeCategory): string {
 
 /**
  * Get the reference color token for a data type (configurable version)
+ * @param checker - The instance's port compatibility checker (provides data-type config)
+ * @param dataType - The data type
  */
-export function getDataTypeColorToken(dataType: string): string {
-  try {
-    const checker = getPortCompatibilityChecker();
-    const config = checker.getDataTypeConfig(dataType);
-    if (config?.color) {
-      return config.color;
-    }
-  } catch {
-    // Fallback to static color mapping if port checker not initialized
+export function getDataTypeColorToken(checker: PortCompatibilityChecker, dataType: string): string {
+  const config = checker.getDataTypeConfig(dataType);
+  if (config?.color) {
+    return config.color;
   }
 
   return DEFAULT_DATA_TYPE_COLORS[dataType.toLowerCase()] || 'var(--fd-node-slate)';
@@ -102,28 +100,22 @@ export function getDataTypeColorToken(dataType: string): string {
 
 /**
  * Get data type configuration from port config
+ * @param checker - The instance's port compatibility checker
+ * @param dataType - The data type
  */
-export function getDataTypeConfig(dataType: string): PortDataTypeConfig | undefined {
-  try {
-    const checker = getPortCompatibilityChecker();
-    return checker.getDataTypeConfig(dataType);
-  } catch (error) {
-    logger.warn('Port compatibility checker not initialized:', error);
-    return undefined;
-  }
+export function getDataTypeConfig(
+  checker: PortCompatibilityChecker,
+  dataType: string
+): PortDataTypeConfig | undefined {
+  return checker.getDataTypeConfig(dataType);
 }
 
 /**
  * Get all available data types from port configuration
+ * @param checker - The instance's port compatibility checker
  */
-export function getAvailableDataTypes(): PortDataTypeConfig[] {
-  try {
-    const checker = getPortCompatibilityChecker();
-    return checker.getEnabledDataTypes();
-  } catch (error) {
-    logger.warn('Port compatibility checker not initialized:', error);
-    return [];
-  }
+export function getAvailableDataTypes(checker: PortCompatibilityChecker): PortDataTypeConfig[] {
+  return checker.getEnabledDataTypes();
 }
 
 /**
@@ -302,19 +294,24 @@ export function getNodeBorder(
 
 /**
  * Get data type color
+ * @param checker - The instance's port compatibility checker
  * @param dataType - The data type
  * @returns The color for the data type
  */
-export function getDataTypeColor(dataType: string): string {
-  return getDataTypeColorToken(dataType);
+export function getDataTypeColor(checker: PortCompatibilityChecker, dataType: string): string {
+  return getDataTypeColorToken(checker, dataType);
 }
 
 /**
  * Parse typed array notation and get display information
+ * @param checker - The instance's port compatibility checker
  * @param dataType - The data type (e.g., "string[]", "number", "object[]")
  * @returns Object with display information
  */
-export function parseDataTypeDisplay(dataType: string): {
+export function parseDataTypeDisplay(
+  checker: PortCompatibilityChecker,
+  dataType: string
+): {
   baseType: string;
   isArray: boolean;
   displayName: string;
@@ -325,7 +322,7 @@ export function parseDataTypeDisplay(dataType: string): {
 
   if (isArray) {
     const elementType = dataType.slice(0, -2); // Remove []
-    const config = getDataTypeConfig(dataType);
+    const config = getDataTypeConfig(checker, dataType);
 
     return {
       baseType: dataType,
@@ -334,7 +331,7 @@ export function parseDataTypeDisplay(dataType: string): {
       elementType: elementType
     };
   } else {
-    const config = getDataTypeConfig(dataType);
+    const config = getDataTypeConfig(checker, dataType);
     return {
       baseType: dataType,
       isArray: false,
@@ -345,11 +342,15 @@ export function parseDataTypeDisplay(dataType: string): {
 
 /**
  * Get formatted display text for a data type
+ * @param checker - The instance's port compatibility checker
  * @param dataType - The data type
  * @returns Formatted display text
  */
-export function getDataTypeDisplayText(dataType: string): string {
-  const parsed = parseDataTypeDisplay(dataType);
+export function getDataTypeDisplayText(
+  checker: PortCompatibilityChecker,
+  dataType: string
+): string {
+  const parsed = parseDataTypeDisplay(checker, dataType);
   return parsed.displayName;
 }
 
@@ -461,11 +462,15 @@ export function resolveColorToken(token: string): string {
 
 /**
  * Get the appropriate contrast text color for a data type badge
+ * @param checker - The instance's port compatibility checker
  * @param dataType - The data type (e.g., "array", "string", "number")
  * @returns CSS color value for text that provides good contrast on the data type's background
  */
-export function getContrastTextColorForDataType(dataType: string): string {
-  const colorToken = getDataTypeColorToken(dataType);
+export function getContrastTextColorForDataType(
+  checker: PortCompatibilityChecker,
+  dataType: string
+): string {
+  const colorToken = getDataTypeColorToken(checker, dataType);
   const hexColor = resolveColorToken(colorToken);
   return getContrastTextColor(hexColor);
 }
@@ -484,22 +489,28 @@ export function getContrastTextColorForCategory(category: NodeCategory): string 
 /**
  * Get a semi-transparent tinted background color for ports
  * Creates a cohesive look with the icon wrapper styling
+ * @param checker - The instance's port compatibility checker
  * @param dataType - The data type
  * @param opacity - Opacity percentage (default 25%)
  * @returns CSS color-mix expression for the tinted background
  */
-export function getPortBackgroundColor(dataType: string, opacity: number = 25): string {
-  const colorToken = getDataTypeColorToken(dataType);
+export function getPortBackgroundColor(
+  checker: PortCompatibilityChecker,
+  dataType: string,
+  opacity: number = 25
+): string {
+  const colorToken = getDataTypeColorToken(checker, dataType);
   return `color-mix(in srgb, ${colorToken} ${opacity}%, transparent)`;
 }
 
 /**
  * Get the border color for ports (solid data type color)
+ * @param checker - The instance's port compatibility checker
  * @param dataType - The data type
  * @returns CSS color value for the port border
  */
-export function getPortBorderColor(dataType: string): string {
-  return getDataTypeColorToken(dataType);
+export function getPortBorderColor(checker: PortCompatibilityChecker, dataType: string): string {
+  return getDataTypeColorToken(checker, dataType);
 }
 
 /**

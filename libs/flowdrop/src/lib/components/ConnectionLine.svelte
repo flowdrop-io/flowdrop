@@ -1,8 +1,10 @@
 <script lang="ts">
   import { getDataTypeColor } from '$lib/utils/colors';
+  import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { useConnection } from '@xyflow/svelte';
 
   const connection = useConnection();
+  const checker = getInstance().portCompatibility;
 
   let path: string | null = $derived.by(() => {
     if (connection.current.inProgress) {
@@ -18,7 +20,7 @@
     fill="none"
     stroke-width={1.5}
     class="animated"
-    stroke={getDataTypeColor(connection.current.fromHandle.id ?? '')}
+    stroke={getDataTypeColor(checker, connection.current.fromHandle.id ?? '')}
     d={path}
   />
   <circle
@@ -26,7 +28,7 @@
     cy={connection.current.to.y}
     fill="#fff"
     r={3}
-    stroke={getDataTypeColor(connection.current.fromHandle.id ?? '')}
+    stroke={getDataTypeColor(checker, connection.current.fromHandle.id ?? '')}
     stroke-width={1.5}
   />
 {/if}

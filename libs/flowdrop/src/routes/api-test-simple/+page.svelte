@@ -5,18 +5,23 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, setEndpointConfig } from '$lib/services/api.js';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { NoAuthProvider, StaticAuthProvider } from '$lib/types/auth.js';
   import { getDevConfigSync } from '../devConfig';
   import type { NodeMetadata } from '$lib/types/index.js';
 
-  // Initialize API service with development config
+  // Initialize the default instance's API context with development config
   const devConfig = getDevConfigSync();
   const endpointConfig = createEndpointConfig(devConfig.apiBaseUrl, {
-    auth: { type: devConfig.authType, token: devConfig.authToken },
     timeout: devConfig.timeout
   });
-  setEndpointConfig(endpointConfig);
+  const authProvider =
+    devConfig.authType && devConfig.authType !== 'none'
+      ? new StaticAuthProvider({ type: devConfig.authType, token: devConfig.authToken })
+      : new NoAuthProvider();
+  getDefaultInstance().api.configure(endpointConfig, authProvider);
+  const apiClient = getDefaultInstance().api.client;
 
   let nodes = $state<NodeMetadata[]>([]);
   let loading = $state(true);
@@ -32,20 +37,12 @@
       testResults.push('Testing Node API...');
 
       // Test basic fetch
-      const allNodes = await api.nodes.getNodes();
+      const allNodes = await apiClient.getAvailableNodes();
       testResults.push(`✅ Fetched ${allNodes.length} nodes`);
 
       // Test category filter
-      const llmNodes = await api.nodes.getNodes({ category: 'llm' });
+      const llmNodes = await apiClient.getNodesByCategory('llm');
       testResults.push(`✅ Found ${llmNodes.length} LLM nodes`);
-
-      // Test search
-      const searchNodes = await api.nodes.getNodes({ search: 'openai' });
-      testResults.push(`✅ Found ${searchNodes.length} nodes matching "openai"`);
-
-      // Test pagination
-      const paginatedNodes = await api.nodes.getNodes({ limit: 2, offset: 0 });
-      testResults.push(`✅ Pagination: ${paginatedNodes.length} nodes (limit: 2)`);
 
       nodes = allNodes;
       testResults.push('🎉 All tests passed!');

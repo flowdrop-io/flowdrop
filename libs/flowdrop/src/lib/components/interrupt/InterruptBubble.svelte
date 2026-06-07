@@ -198,8 +198,8 @@
 
     try {
       // Call API if service is configured
-      if (interruptService.isConfigured()) {
-        await interruptService.resolveInterrupt(currentInterrupt.id, value);
+      if (interruptService.isConfigured(fd.api.config)) {
+        await interruptService.resolveInterrupt(fd.api.config, currentInterrupt.id, value);
       }
 
       // Mark as successful - transitions to resolved state
@@ -228,8 +228,8 @@
 
     try {
       // Call API if service is configured
-      if (interruptService.isConfigured()) {
-        await interruptService.cancelInterrupt(currentInterrupt.id);
+      if (interruptService.isConfigured(fd.api.config)) {
+        await interruptService.cancelInterrupt(fd.api.config, currentInterrupt.id);
       }
 
       // Mark as successful - transitions to cancelled state

@@ -162,6 +162,9 @@ export {
 export { WorkflowStore, type WorkflowStoreActions } from '../stores/workflowStore.svelte.js';
 export { HistoryStore, type HistoryStoreActions } from '../stores/historyStore.svelte.js';
 
+// Per-instance API context (endpoints + auth provider + lazily-built client).
+export { ApiContext } from '../stores/apiContext.js';
+
 // Port Coordinate Store (Svelte 5 runes-based)
 export { PortCoordinateStore } from '../stores/portCoordinateStore.svelte.js';
 
@@ -173,14 +176,6 @@ export type { HistoryEntry, HistoryState, PushOptions } from '../stores/historyS
 // ============================================================================
 // Services
 // ============================================================================
-
-export {
-  setEndpointConfig,
-  getEndpointConfig,
-  nodeApi,
-  workflowApi,
-  api
-} from '../services/api.js';
 
 export {
   showSuccess,
@@ -263,8 +258,6 @@ export {
   isLoopbackEdge,
   isValidLoopbackCycle,
   PortCompatibilityChecker,
-  initializePortCompatibility,
-  getPortCompatibilityChecker,
   getPossibleConnections,
   validateConnection,
   getConnectionSuggestions,

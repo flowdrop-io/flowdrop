@@ -46,6 +46,7 @@
   } from '$lib/types/index.js';
   import { createTemplateAutocomplete } from './templateAutocomplete.js';
   import { getVariableSchema } from '$lib/services/variableService.js';
+  import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { logger } from '../../utils/logger.js';
   import { m } from '$lib/messages/index.js';
 
@@ -106,6 +107,9 @@
     authProvider
   }: Props = $props();
 
+  // Active instance — supplies endpoint configuration for API variable fetching.
+  const fd = getInstance();
+
   /** Loading state for API variable fetching */
   let isLoadingVariables = $state(false);
 
@@ -140,6 +144,7 @@
       try {
         isLoadingVariables = true;
         effectiveVariableSchema = await getVariableSchema(
+          fd.api.config,
           node,
           nodes,
           edges,

@@ -21,10 +21,6 @@
 
   const endpointConfig = $derived(
     createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
-      auth: {
-        type: data.runtimeConfig.authType,
-        token: data.runtimeConfig.authToken
-      },
       timeout: data.runtimeConfig.timeout
     })
   );

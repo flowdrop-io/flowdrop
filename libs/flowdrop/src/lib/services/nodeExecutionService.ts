@@ -4,7 +4,7 @@
  */
 
 import type { NodeExecutionInfo, NodeJobExecution } from '../types/index.js';
-import { getEndpointConfig } from './api.js';
+import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl } from '../config/endpoints.js';
 import {
   NODE_EXECUTION_CACHE_TIMEOUT_MS,
@@ -72,6 +72,7 @@ export class NodeExecutionService {
    * Get execution information for a specific node from pipeline data
    */
   async getNodeExecutionInfo(
+    endpointConfig: EndpointConfig | null,
     nodeId: string,
     pipelineId?: string
   ): Promise<NodeExecutionInfo | null> {
@@ -80,7 +81,6 @@ export class NodeExecutionService {
     }
 
     try {
-      const endpointConfig = getEndpointConfig();
       if (!endpointConfig) throw new Error('Endpoint config not available');
       const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
         id: pipelineId
@@ -110,6 +110,7 @@ export class NodeExecutionService {
    * Get execution information for multiple nodes from pipeline data
    */
   async getMultipleNodeExecutionInfo(
+    endpointConfig: EndpointConfig | null,
     nodeIds: string[],
     pipelineId?: string
   ): Promise<Record<string, NodeExecutionInfo>> {
@@ -131,7 +132,6 @@ export class NodeExecutionService {
     }
 
     try {
-      const endpointConfig = getEndpointConfig();
       if (!endpointConfig) throw new Error('Endpoint config not available');
       const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
         id: pipelineId
@@ -191,9 +191,10 @@ export class NodeExecutionService {
   /**
    * Get all node execution counts
    */
-  async getAllNodeExecutionCounts(): Promise<Record<string, number>> {
+  async getAllNodeExecutionCounts(
+    endpointConfig: EndpointConfig | null
+  ): Promise<Record<string, number>> {
     try {
-      const endpointConfig = getEndpointConfig();
       if (!endpointConfig) throw new Error('Endpoint config not available');
       const url = buildEndpointUrl(endpointConfig, '/node-execution-counts');
 

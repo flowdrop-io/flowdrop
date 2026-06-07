@@ -10,7 +10,6 @@
 import type { ChatRequest, ChatResponse, ChatHistoryMessage } from '../types/chat.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
-import { getEndpointConfig } from './api.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -37,15 +36,18 @@ export class ChatService {
   }
 
   /**
-   * Get the endpoint configuration
+   * Validate and return the caller-supplied endpoint configuration.
+   *
+   * Callers thread the config from `getInstance().api.config`.
    *
    * @throws Error if endpoint configuration is not set
    * @returns The endpoint configuration
    */
-  private getConfig(): EndpointConfig {
-    const config = getEndpointConfig();
+  private getConfig(config: EndpointConfig | null): EndpointConfig {
     if (!config) {
-      throw new Error('Endpoint configuration not set. Call setEndpointConfig() first.');
+      throw new Error(
+        'Endpoint configuration not set. Configure the instance via fd.api.configure().'
+      );
     }
     return config;
   }
@@ -53,12 +55,16 @@ export class ChatService {
   /**
    * Generic API request helper
    *
+   * @param config - The endpoint configuration
    * @param url - The URL to fetch
    * @param options - Fetch options
    * @returns The parsed JSON response
    */
-  private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const config = this.getConfig();
+  private async request<T>(
+    config: EndpointConfig,
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     const headers = getEndpointHeaders(config, 'chat');
     const response = await fetch(url, {
       ...options,
@@ -95,15 +101,19 @@ export class ChatService {
    * @param request - The chat request payload
    * @returns The chat response from the LLM
    */
-  async sendMessage(workflowId: string, request: ChatRequest): Promise<ChatResponse> {
-    const config = this.getConfig();
+  async sendMessage(
+    endpointConfig: EndpointConfig | null,
+    workflowId: string,
+    request: ChatRequest
+  ): Promise<ChatResponse> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.chat.sendMessage, {
       id: workflowId
     });
 
     logger.debug('[ChatService] Sending message to', url);
 
-    return this.request<ChatResponse>(url, {
+    return this.request<ChatResponse>(config, url, {
       method: 'POST',
       body: JSON.stringify(request)
     });
@@ -115,15 +125,18 @@ export class ChatService {
    * @param workflowId - The workflow ID
    * @returns Array of chat history messages
    */
-  async getHistory(workflowId: string): Promise<ChatHistoryMessage[]> {
-    const config = this.getConfig();
+  async getHistory(
+    endpointConfig: EndpointConfig | null,
+    workflowId: string
+  ): Promise<ChatHistoryMessage[]> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.chat.getHistory, {
       id: workflowId
     });
 
     logger.debug('[ChatService] Getting history from', url);
 
-    return this.request<ChatHistoryMessage[]>(url);
+    return this.request<ChatHistoryMessage[]>(config, url);
   }
 
   /**
@@ -131,8 +144,8 @@ export class ChatService {
    *
    * @param workflowId - The workflow ID
    */
-  async clearHistory(workflowId: string): Promise<void> {
-    const config = this.getConfig();
+  async clearHistory(endpointConfig: EndpointConfig | null, workflowId: string): Promise<void> {
+    const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.chat.clearHistory, {
       id: workflowId
     });

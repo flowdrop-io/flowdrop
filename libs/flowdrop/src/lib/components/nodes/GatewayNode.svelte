@@ -32,6 +32,7 @@
   let props: Props = $props();
 
   const fd = getInstance();
+  const checker = fd.portCompatibility;
 
   // Hoist the graph branch — three reads in the template, two inside
   // {#each port} / {#each branch} loops. One getter walk per render.
@@ -210,6 +211,7 @@
               id={`${props.data.nodeId}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
+                checker,
                 port.dataType
               )}; --fd-handle-border-color: var(--fd-handle-border);"
               tabindex={-1}
@@ -222,11 +224,13 @@
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
+                    checker,
                     port.dataType,
                     15
                   )}; color: {getDataTypeColorToken(
+                    checker,
                     port.dataType
-                  )}; border: 1px solid {getPortBackgroundColor(port.dataType, 30)};"
+                  )}; border: 1px solid {getPortBackgroundColor(checker, port.dataType, 30)};"
                 >
                   {port.dataType}
                 </span>
@@ -263,7 +267,7 @@
                 class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end flowdrop-items--center"
               >
                 {#if isActive}
-                  <span style="color: {getDataTypeColorToken('trigger')};">
+                  <span style="color: {getDataTypeColorToken(checker, 'trigger')};">
                     <Icon icon="mdi:check-circle" />
                   </span>
                 {/if}
@@ -276,11 +280,13 @@
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
                   style="background-color: {getPortBackgroundColor(
+                    checker,
                     'trigger',
                     15
                   )}; color: {getDataTypeColorToken(
+                    checker,
                     'trigger'
-                  )}; border: 1px solid {getPortBackgroundColor('trigger', 30)};"
+                  )}; border: 1px solid {getPortBackgroundColor(checker, 'trigger', 30)};"
                 >
                   trigger
                 </span>
@@ -294,8 +300,9 @@
               id={`${props.data.nodeId}-output-${branch.name}`}
               class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
               style="top: 50%; transform: translateY(-50%); --fd-handle-fill: {isActive
-                ? getDataTypeColorToken('trigger')
+                ? getDataTypeColorToken(checker, 'trigger')
                 : getDataTypeColorToken(
+                    checker,
                     'trigger'
                   )}; --fd-handle-border-color: var(--fd-handle-border);"
               tabindex={-1}

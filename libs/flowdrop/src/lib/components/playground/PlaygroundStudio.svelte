@@ -5,7 +5,6 @@
   import PipelinePanel from './PipelinePanel.svelte';
   import { provideInstance } from '../../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
-  import { setEndpointConfig, workflowApi } from '../../services/api.js';
   import { logger } from '../../utils/logger.js';
   import type { Workflow, PipelineViewDef } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
@@ -100,7 +99,7 @@
       fd.pipelinePanel.setOpen(initialPipelineOpen);
     }
     if (endpointConfig) {
-      setEndpointConfig(endpointConfig);
+      fd.api.configure(endpointConfig);
     }
     if (!workflowProp) {
       void loadWorkflow();
@@ -118,7 +117,7 @@
     try {
       workflowLoading = true;
       workflowError = null;
-      resolvedWorkflow = await workflowApi.getWorkflow(workflowId);
+      resolvedWorkflow = await fd.api.client.loadWorkflow(workflowId);
     } catch (err) {
       workflowError = err instanceof Error ? err.message : 'Failed to load workflow';
       logger.error('[PlaygroundStudio] Workflow load failed:', err);

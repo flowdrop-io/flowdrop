@@ -3,15 +3,15 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InterruptService } from '$lib/services/interruptService.js';
+import type { EndpointConfig } from '$lib/config/endpoints.js';
 
 // Mock dependencies
-const mockGetEndpointConfig = vi.fn();
 const mockBuildEndpointUrl = vi.fn();
 const mockGetEndpointHeaders = vi.fn();
 
-vi.mock('$lib/services/api.js', () => ({
-  getEndpointConfig: () => mockGetEndpointConfig()
-}));
+// Endpoint config is threaded explicitly into each service method (was a module
+// singleton). Tests set this and pass it as the first argument.
+let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
@@ -53,7 +53,7 @@ describe('InterruptService', () => {
     service = InterruptService.getInstance();
 
     global.fetch = vi.fn();
-    mockGetEndpointConfig.mockReturnValue(createMockInterruptConfig());
+    endpointConfig = createMockInterruptConfig() as unknown as EndpointConfig;
     mockBuildEndpointUrl.mockImplementation(
       (_config: unknown, path: string, params?: Record<string, string>) => {
         let url = `/api${path}`;
@@ -102,17 +102,15 @@ describe('InterruptService', () => {
 
   describe('isConfigured', () => {
     it('should return true when interrupt endpoints exist', () => {
-      expect(service.isConfigured()).toBe(true);
+      expect(service.isConfigured(endpointConfig)).toBe(true);
     });
 
     it('should return false when no interrupt endpoints', () => {
-      mockGetEndpointConfig.mockReturnValue({ endpoints: {} });
-      expect(service.isConfigured()).toBe(false);
+      expect(service.isConfigured({ endpoints: {} } as unknown as EndpointConfig)).toBe(false);
     });
 
     it('should return false when no config', () => {
-      mockGetEndpointConfig.mockReturnValue(null);
-      expect(service.isConfigured()).toBe(false);
+      expect(service.isConfigured(null)).toBe(false);
     });
   });
 
@@ -128,7 +126,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: mockInterrupt })
       });
 
-      const result = await service.getInterrupt('int-1');
+      const result = await service.getInterrupt(endpointConfig, 'int-1');
       expect(result).toEqual(mockInterrupt);
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/interrupts/int-1',
@@ -142,7 +140,9 @@ describe('InterruptService', () => {
         json: async () => ({ data: null })
       });
 
-      await expect(service.getInterrupt('nonexistent')).rejects.toThrow('Interrupt not found');
+      await expect(service.getInterrupt(endpointConfig, 'nonexistent')).rejects.toThrow(
+        'Interrupt not found'
+      );
     });
 
     it('should throw on HTTP error', async () => {
@@ -153,7 +153,7 @@ describe('InterruptService', () => {
         json: async () => ({ error: 'Server error' })
       });
 
-      await expect(service.getInterrupt('int-1')).rejects.toThrow('Server error');
+      await expect(service.getInterrupt(endpointConfig, 'int-1')).rejects.toThrow('Server error');
     });
   });
 
@@ -169,7 +169,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: mockInterrupt })
       });
 
-      const result = await service.resolveInterrupt('int-1', true);
+      const result = await service.resolveInterrupt(endpointConfig, 'int-1', true);
       expect(result).toEqual(mockInterrupt);
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -184,7 +184,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: null })
       });
 
-      await expect(service.resolveInterrupt('int-1', true)).rejects.toThrow(
+      await expect(service.resolveInterrupt(endpointConfig, 'int-1', true)).rejects.toThrow(
         'Failed to resolve interrupt'
       );
     });
@@ -202,7 +202,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: mockInterrupt })
       });
 
-      const result = await service.cancelInterrupt('int-1');
+      const result = await service.cancelInterrupt(endpointConfig, 'int-1');
       expect(result).toEqual(mockInterrupt);
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -222,7 +222,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: mockInterrupts })
       });
 
-      const result = await service.listSessionInterrupts('session-1');
+      const result = await service.listSessionInterrupts(endpointConfig, 'session-1');
       expect(result).toEqual(mockInterrupts);
       expect(global.fetch).toHaveBeenCalledWith(
         '/api/sessions/session-1/interrupts',
@@ -236,7 +236,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: null })
       });
 
-      const result = await service.listSessionInterrupts('session-1');
+      const result = await service.listSessionInterrupts(endpointConfig, 'session-1');
       expect(result).toEqual([]);
     });
   });
@@ -249,7 +249,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: mockInterrupts })
       });
 
-      const result = await service.listPipelineInterrupts('pipeline-1');
+      const result = await service.listPipelineInterrupts(endpointConfig, 'pipeline-1');
       expect(result).toEqual(mockInterrupts);
     });
   });
@@ -268,7 +268,7 @@ describe('InterruptService', () => {
       service.setPollingConfig({ enabled: false });
       const callback = vi.fn();
 
-      service.startPolling('session-1', callback);
+      service.startPolling(endpointConfig, 'session-1', callback);
       expect(service.isPolling()).toBe(false);
     });
 
@@ -279,7 +279,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: [] })
       });
 
-      service.startPolling('session-1', vi.fn());
+      service.startPolling(endpointConfig, 'session-1', vi.fn());
       expect(service.isPolling()).toBe(true);
       expect(service.getPollingSessionId()).toBe('session-1');
     });
@@ -291,7 +291,7 @@ describe('InterruptService', () => {
         json: async () => ({ data: [] })
       });
 
-      service.startPolling('session-1', vi.fn());
+      service.startPolling(endpointConfig, 'session-1', vi.fn());
       service.stopPolling();
 
       expect(service.isPolling()).toBe(false);

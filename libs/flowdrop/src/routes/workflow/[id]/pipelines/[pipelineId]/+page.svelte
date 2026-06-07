@@ -13,7 +13,8 @@
     createEndpointConfig,
     type EndpointConfig
   } from '$lib/config/endpoints.js';
-  import { setEndpointConfig } from '$lib/services/api.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { NoAuthProvider, StaticAuthProvider } from '$lib/types/auth.js';
   import type { Workflow } from '$lib/types/index.js';
   import Icon from '@iconify/svelte';
 
@@ -24,16 +25,20 @@
   // svelte-ignore state_referenced_locally
   let endpointConfig = $state<EndpointConfig>(
     createEndpointConfig(data.runtimeConfig.apiBaseUrl, {
-      auth: {
-        type: data.runtimeConfig.authType,
-        token: data.runtimeConfig.authToken
-      },
       timeout: data.runtimeConfig.timeout
     })
   );
 
-  // Initialize API service with runtime config
-  setEndpointConfig(endpointConfig);
+  // Configure the default instance's API context with runtime config
+  // svelte-ignore state_referenced_locally
+  const authProvider =
+    data.runtimeConfig.authType && data.runtimeConfig.authType !== 'none'
+      ? new StaticAuthProvider({
+          type: data.runtimeConfig.authType,
+          token: data.runtimeConfig.authToken
+        })
+      : new NoAuthProvider();
+  getDefaultInstance().api.configure(endpointConfig, authProvider);
 
   // [id]/[pipelineId] are required route segments — the params are always present here
   let workflowId = $derived($page.params.id!);

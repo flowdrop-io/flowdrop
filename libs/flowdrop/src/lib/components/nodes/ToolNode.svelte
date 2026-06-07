@@ -8,6 +8,7 @@
   import { Position, Handle } from '@xyflow/svelte';
   import Icon from '@iconify/svelte';
   import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
   import type { NodeMetadata, NodePort } from '../../types/index.js';
   import CogIcon from '../icons/CogIcon.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
@@ -45,6 +46,8 @@
     isProcessing?: boolean;
     isError?: boolean;
   }>();
+
+  const checker = getInstance().portCompatibility;
 
   // Prioritize metadata over config for tool nodes (metadata is the node definition)
   let toolIcon = $derived(
@@ -171,6 +174,7 @@
     position={Position.Left}
     id={`${props.data.nodeId}-input-${toolInputPort.id}`}
     style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      checker,
       portDataType
     )}); --fd-handle-border-color: var(--fd-handle-border);"
   />
@@ -249,6 +253,7 @@
     position={Position.Right}
     id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
     style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+      checker,
       portDataType
     )}); --fd-handle-border-color: var(--fd-handle-border);"
   />

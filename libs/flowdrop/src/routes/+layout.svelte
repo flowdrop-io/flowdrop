@@ -17,7 +17,8 @@
     defaultEndpointConfig,
     createEndpointConfig
   } from '$lib/config/endpoints.js';
-  import { setEndpointConfig } from '$lib/services/api.js';
+  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { NoAuthProvider, StaticAuthProvider } from '$lib/types/auth.js';
   import { Toaster } from 'svelte-5-french-toast';
   import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
   import { initializeSettings, getUiSettings } from '$lib/stores/settingsStore.svelte.js';
@@ -69,13 +70,16 @@
     const runtimeConfig = data.runtimeConfig;
 
     const endpointConfig = createEndpointConfig(runtimeConfig.apiBaseUrl, {
-      auth: {
-        type: runtimeConfig.authType,
-        token: runtimeConfig.authToken
-      },
       timeout: runtimeConfig.timeout
     });
-    setEndpointConfig(endpointConfig);
+    const authProvider =
+      runtimeConfig.authType && runtimeConfig.authType !== 'none'
+        ? new StaticAuthProvider({
+            type: runtimeConfig.authType,
+            token: runtimeConfig.authToken
+          })
+        : new NoAuthProvider();
+    getDefaultInstance().api.configure(endpointConfig, authProvider);
 
     // Listen for breadcrumb updates
     const handleBreadcrumbs = (event: CustomEvent) => {

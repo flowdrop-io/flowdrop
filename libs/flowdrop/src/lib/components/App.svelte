@@ -18,8 +18,6 @@
   import NodeSwapPicker from '$lib/components/NodeSwapPicker.svelte';
   import SwapMappingEditor from '$lib/components/SwapMappingEditor.svelte';
   import Navbar from '$lib/components/Navbar.svelte';
-  import { api, setEndpointConfig } from '$lib/services/api.js';
-  import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
   import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
   import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
   import {
@@ -44,12 +42,6 @@
   import { apiToasts, dismissToast } from '$lib/services/toastService.js';
   import { initAutoSave } from '$lib/services/autoSaveService.js';
   import { getUiSettings, updateSettings } from '../stores/settingsStore.svelte.js';
-  import {
-    initializePortCompatibility,
-    getPortCompatibilityChecker,
-    isPortCompatibilityInitialized
-  } from '$lib/utils/connections.js';
-  import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
   import { workflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
@@ -287,12 +279,6 @@
   let error = $state<string | null>(null);
   let endpointConfig = $state<EndpointConfig | null>(null);
 
-  /**
-   * Enhanced API client with authProvider support
-   * Used when authProvider is provided; otherwise falls back to legacy api service
-   */
-  let apiClient = $state<EnhancedFlowDropApiClient | null>(null);
-
   // ConfigSidebar state
   let isConfigSidebarOpen = $state(false);
   let selectedNodeId = $state<string | null>(null);
@@ -393,13 +379,8 @@
     try {
       error = null;
 
-      // Use enhanced client with authProvider if available, otherwise fall back to legacy api
-      let fetchedNodes: NodeMetadata[];
-      if (apiClient) {
-        fetchedNodes = await apiClient.getAvailableNodes();
-      } else {
-        fetchedNodes = await api.nodes.getNodes();
-      }
+      // Fetch via this instance's API client (configured in initializeApiEndpoints).
+      const fetchedNodes: NodeMetadata[] = await fd.api.client.getAvailableNodes();
 
       // Merge format-provided nodes with API nodes (deduplicate by ID, API takes priority)
       const formatNodes = workflowFormatRegistry.getAllFormatNodes();
@@ -482,28 +463,15 @@
   async function initializeApiEndpoints(): Promise<void> {
     // First priority: Use endpointConfig prop if provided (from mountFlowDropApp)
     if (propEndpointConfig) {
-      setEndpointConfig(propEndpointConfig);
-      endpointConfig = propEndpointConfig;
-
-      // Create enhanced API client with authProvider support if provided
-      if (authProvider) {
-        apiClient = new EnhancedFlowDropApiClient(propEndpointConfig, authProvider);
-      }
+      configureApi(propEndpointConfig);
       return;
     }
 
-    // Second priority: Check if endpoint config is already set (e.g., by parent layout)
-    const { getEndpointConfig } = await import('$lib/services/api.js');
-    const existingConfig = getEndpointConfig();
-
-    // If config already exists and no override provided, use existing
+    // Second priority: Reuse this instance's existing config (e.g. set by a
+    // parent layout that already configured fd.api) when no override is given.
+    const existingConfig = fd.api.config;
     if (existingConfig && !apiBaseUrl) {
-      endpointConfig = existingConfig;
-
-      // Create enhanced API client with authProvider support if provided
-      if (authProvider) {
-        apiClient = new EnhancedFlowDropApiClient(existingConfig, authProvider);
-      }
+      configureApi(existingConfig);
       return;
     }
 
@@ -511,9 +479,6 @@
     const baseUrl = apiBaseUrl || '/api/flowdrop';
 
     const config = createEndpointConfig(baseUrl, {
-      auth: {
-        type: 'none' // No authentication for now
-      },
       timeout: 10000, // 10 second timeout
       retry: {
         enabled: true,
@@ -523,14 +488,16 @@
       }
     });
 
-    setEndpointConfig(config);
-    // Store the configuration for passing to WorkflowEditor
-    endpointConfig = config;
+    configureApi(config);
+  }
 
-    // Create enhanced API client with authProvider support if provided
-    if (authProvider) {
-      apiClient = new EnhancedFlowDropApiClient(config, authProvider);
-    }
+  /**
+   * Configure this instance's ApiContext and mirror its config/client into the
+   * local state used by child components and the save service.
+   */
+  function configureApi(config: EndpointConfig): void {
+    fd.api.configure(config, authProvider);
+    endpointConfig = config;
   }
 
   /**
@@ -592,16 +559,9 @@
       return;
     }
 
-    // Get port compatibility checker (may be null if not initialized)
-    let checker: import('$lib/utils/connections.js').PortCompatibilityChecker | null = null;
-    try {
-      checker = getPortCompatibilityChecker();
-    } catch {
-      // Checker not initialized — computeSwapPreview will use exact dataType matching
-    }
-
+    // Port compatibility comes from this instance's checker.
     const interactive = computeInteractiveState(node, metadata, wf.edges, wf.nodes, {
-      checker,
+      checker: fd.portCompatibility,
       strategies: swapStrategies
     });
 
@@ -701,7 +661,6 @@
    */
   async function saveWorkflow(): Promise<void> {
     await globalSaveWorkflow({
-      apiClient: apiClient ?? undefined,
       eventHandlers,
       features,
       instance: fd,
@@ -797,12 +756,10 @@
       try {
         await initializeApiEndpoints();
 
-        // Ensure port compatibility checker is initialized (needed for proximity connect, etc.)
-        // mountFlowDropApp initializes this before mounting, but SvelteKit routes need it here.
-        // Only initialize with defaults if not already set — preserves custom port configs.
-        if (!isPortCompatibilityInitialized()) {
-          initializePortCompatibility(DEFAULT_PORT_CONFIG);
-        }
+        // The instance's port compatibility checker is seeded with
+        // DEFAULT_PORT_CONFIG at construction; mountFlowDropApp re-initializes
+        // it from the backend's port config. SvelteKit routes that render
+        // <App> directly keep the defaults (no separate fetch here).
 
         await fetchNodeTypes();
 
@@ -1226,8 +1183,7 @@
                 const defaultUrl = '/api/flowdrop';
                 const newUrl = prompt('Enter Backend API URL:', defaultUrl);
                 if (newUrl) {
-                  const endpointConfig = createEndpointConfig(newUrl);
-                  setEndpointConfig(endpointConfig);
+                  configureApi(createEndpointConfig(newUrl));
                   fetchNodeTypes();
                 }
               }}

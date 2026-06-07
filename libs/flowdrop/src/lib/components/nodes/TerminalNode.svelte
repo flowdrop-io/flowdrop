@@ -84,6 +84,7 @@
   }>();
 
   const fd = getInstance();
+  const checker = fd.portCompatibility;
 
   /**
    * Determine terminal variant from config or metadata
@@ -365,6 +366,7 @@
           type="target"
           position={Position.Left}
           style="--fd-handle-fill: {getDataTypeColor(
+            checker,
             port.dataType
           )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
           id={`${props.data.nodeId}-input-${port.id}`}
@@ -388,6 +390,7 @@
           position={Position.Right}
           id={`${props.data.nodeId}-output-${port.id}`}
           style="--fd-handle-fill: {getDataTypeColor(
+            checker,
             port.dataType
           )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
         />

@@ -62,6 +62,16 @@ export class PortCompatibilityChecker {
   }
 
   /**
+   * Replace the port configuration and rebuild the compatibility map in place.
+   * Used by mount to apply the backend-fetched port config to an instance's
+   * checker without swapping the instance field.
+   */
+  public reinitialize(portConfig: PortConfig): void {
+    this.portConfig = portConfig;
+    this.buildCompatibilityMap();
+  }
+
+  /**
    * Build the compatibility map from configuration rules
    */
   private buildCompatibilityMap(): void {
@@ -133,39 +143,11 @@ export class PortCompatibilityChecker {
   }
 }
 
-// Global instance - will be initialized with configuration
-let globalCompatibilityChecker: PortCompatibilityChecker | null = null;
-
-/**
- * Initialize the global port compatibility checker
- */
-export function initializePortCompatibility(portConfig: PortConfig): void {
-  globalCompatibilityChecker = new PortCompatibilityChecker(portConfig);
-}
-
-/**
- * Returns true if the port compatibility checker has been initialized.
- */
-export function isPortCompatibilityInitialized(): boolean {
-  return globalCompatibilityChecker !== null;
-}
-
-/**
- * Get the global port compatibility checker
- */
-export function getPortCompatibilityChecker(): PortCompatibilityChecker {
-  if (!globalCompatibilityChecker) {
-    throw new Error(
-      'Port compatibility checker not initialized. Call initializePortCompatibility() first.'
-    );
-  }
-  return globalCompatibilityChecker;
-}
-
 /**
  * Get all possible connections from a source node to target nodes
  */
 export function getPossibleConnections(
+  checker: PortCompatibilityChecker,
   sourceNode: WorkflowNode,
   targetNodes: WorkflowNode[],
   nodeTypes: NodeMetadata[]
@@ -193,9 +175,6 @@ export function getPossibleConnections(
 
   // Get all output ports from source node
   const sourceOutputs = sourceMetadata.outputs;
-
-  // Get the compatibility checker instance
-  const checker = getPortCompatibilityChecker();
 
   // Check each target node
   for (const targetNode of targetNodes) {
@@ -232,6 +211,7 @@ export function getPossibleConnections(
  * Validate if a specific connection is valid
  */
 export function validateConnection(
+  checker: PortCompatibilityChecker,
   sourceNodeId: string,
   sourcePortId: string,
   targetNodeId: string,
@@ -276,8 +256,7 @@ export function validateConnection(
     return { valid: false, error: 'Target port not found' };
   }
 
-  // Check data type compatibility using the global checker
-  const checker = getPortCompatibilityChecker();
+  // Check data type compatibility using the instance's checker
   if (!checker.areDataTypesCompatible(sourcePort.dataType, targetPort.dataType)) {
     return {
       valid: false,
@@ -292,6 +271,7 @@ export function validateConnection(
  * Get connection suggestions for a node
  */
 export function getConnectionSuggestions(
+  checker: PortCompatibilityChecker,
   nodeId: string,
   nodes: WorkflowNode[],
   nodeTypes: NodeMetadata[]
@@ -322,9 +302,6 @@ export function getConnectionSuggestions(
 
   // Get all other nodes
   const otherNodes = nodes.filter((n) => n.id !== nodeId);
-
-  // Get the compatibility checker instance
-  const checker = getPortCompatibilityChecker();
 
   for (const otherNode of otherNodes) {
     const otherMetadata = nodeTypes.find((nt) => nt.id === otherNode.data.metadata.id);

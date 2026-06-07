@@ -3,15 +3,15 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PlaygroundService } from '$lib/services/playgroundService.js';
+import type { EndpointConfig } from '$lib/config/endpoints.js';
 
 // Mock dependencies
-const mockGetEndpointConfig = vi.fn();
 const mockBuildEndpointUrl = vi.fn();
 const mockGetEndpointHeaders = vi.fn();
 
-vi.mock('$lib/services/api.js', () => ({
-  getEndpointConfig: () => mockGetEndpointConfig()
-}));
+// Endpoint config is threaded explicitly into each service method (was a module
+// singleton). Tests set this and pass it as the first argument.
+let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
@@ -54,7 +54,7 @@ describe('PlaygroundService', () => {
     service = PlaygroundService.getInstance();
 
     global.fetch = vi.fn();
-    mockGetEndpointConfig.mockReturnValue(createMockPlaygroundConfig());
+    endpointConfig = createMockPlaygroundConfig() as unknown as EndpointConfig;
     mockBuildEndpointUrl.mockImplementation(
       (_config: unknown, path: string, params?: Record<string, string>) => {
         let url = `/api${path}`;
@@ -92,7 +92,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: mockSessions })
       });
 
-      const result = await service.listSessions('workflow-1');
+      const result = await service.listSessions(endpointConfig, 'workflow-1');
       expect(result).toEqual(mockSessions);
     });
 
@@ -102,13 +102,12 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: null })
       });
 
-      const result = await service.listSessions('workflow-1');
+      const result = await service.listSessions(endpointConfig, 'workflow-1');
       expect(result).toEqual([]);
     });
 
     it('should throw when no endpoint config', async () => {
-      mockGetEndpointConfig.mockReturnValue(null);
-      await expect(service.listSessions('workflow-1')).rejects.toThrow(
+      await expect(service.listSessions(null, 'workflow-1')).rejects.toThrow(
         'Endpoint configuration not set'
       );
     });
@@ -122,7 +121,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: mockSession })
       });
 
-      const result = await service.createSession('workflow-1', 'New Session');
+      const result = await service.createSession(endpointConfig, 'workflow-1', 'New Session');
       expect(result).toEqual(mockSession);
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -139,7 +138,9 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: null })
       });
 
-      await expect(service.createSession('workflow-1')).rejects.toThrow('Failed to create session');
+      await expect(service.createSession(endpointConfig, 'workflow-1')).rejects.toThrow(
+        'Failed to create session'
+      );
     });
   });
 
@@ -151,7 +152,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: mockSession })
       });
 
-      const result = await service.getSession('session-1');
+      const result = await service.getSession(endpointConfig, 'session-1');
       expect(result).toEqual(mockSession);
     });
 
@@ -161,7 +162,9 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: null })
       });
 
-      await expect(service.getSession('nonexistent')).rejects.toThrow('Session not found');
+      await expect(service.getSession(endpointConfig, 'nonexistent')).rejects.toThrow(
+        'Session not found'
+      );
     });
   });
 
@@ -172,7 +175,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ success: true })
       });
 
-      await service.deleteSession('session-1');
+      await service.deleteSession(endpointConfig, 'session-1');
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(fetchCall[1].method).toBe('DELETE');
@@ -190,7 +193,7 @@ describe('PlaygroundService', () => {
         json: async () => mockResponse
       });
 
-      const result = await service.getMessages('session-1');
+      const result = await service.getMessages(endpointConfig, 'session-1');
       expect(result.data).toEqual(mockResponse.data);
     });
 
@@ -203,7 +206,7 @@ describe('PlaygroundService', () => {
         ok: true,
         json: async () => ({ data: [] })
       });
-      await service.getMessages('session-1');
+      await service.getMessages(endpointConfig, 'session-1');
       expect(fetchedUrl()).toBe('/api/sessions/session-1/messages');
     });
 
@@ -212,7 +215,7 @@ describe('PlaygroundService', () => {
         ok: true,
         json: async () => ({ data: [] })
       });
-      await service.getMessages('session-1', { since: 42, limit: 50 });
+      await service.getMessages(endpointConfig, 'session-1', { since: 42, limit: 50 });
       expect(fetchedUrl()).toContain('since=42');
       expect(fetchedUrl()).toContain('limit=50');
       expect(fetchedUrl()).not.toContain('before=');
@@ -224,7 +227,7 @@ describe('PlaygroundService', () => {
         ok: true,
         json: async () => ({ data: [] })
       });
-      await service.getMessages('session-1', { latest: true, limit: 50 });
+      await service.getMessages(endpointConfig, 'session-1', { latest: true, limit: 50 });
       expect(fetchedUrl()).toContain('latest=true');
       expect(fetchedUrl()).toContain('limit=50');
       expect(fetchedUrl()).not.toContain('since=');
@@ -235,7 +238,7 @@ describe('PlaygroundService', () => {
         ok: true,
         json: async () => ({ data: [] })
       });
-      await service.getMessages('session-1', { before: 100, limit: 50 });
+      await service.getMessages(endpointConfig, 'session-1', { before: 100, limit: 50 });
       expect(fetchedUrl()).toContain('before=100');
       expect(fetchedUrl()).toContain('limit=50');
       expect(fetchedUrl()).not.toContain('since=');
@@ -246,7 +249,7 @@ describe('PlaygroundService', () => {
         ok: true,
         json: async () => ({ data: [] })
       });
-      await service.getMessages('session-1', { latest: false });
+      await service.getMessages(endpointConfig, 'session-1', { latest: false });
       expect(fetchedUrl()).toBe('/api/sessions/session-1/messages');
     });
 
@@ -258,7 +261,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ message: 'Not found' })
       });
 
-      await expect(service.getMessages('session-1')).rejects.toThrow('Not found');
+      await expect(service.getMessages(endpointConfig, 'session-1')).rejects.toThrow('Not found');
     });
   });
 
@@ -270,7 +273,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ success: true, data: mockMessage })
       });
 
-      const result = await service.sendMessage('session-1', 'Hello');
+      const result = await service.sendMessage(endpointConfig, 'session-1', 'Hello');
       expect(result).toEqual(mockMessage);
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -285,7 +288,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ success: true, data: mockMessage })
       });
 
-      await service.sendMessage('session-1', 'Hello', { key: 'value' });
+      await service.sendMessage(endpointConfig, 'session-1', 'Hello', { key: 'value' });
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(JSON.parse(fetchCall[1].body)).toEqual({
@@ -300,7 +303,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ success: true, data: null })
       });
 
-      await expect(service.sendMessage('session-1', 'Hello')).rejects.toThrow(
+      await expect(service.sendMessage(endpointConfig, 'session-1', 'Hello')).rejects.toThrow(
         'Failed to send message'
       );
     });
@@ -313,7 +316,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ success: true })
       });
 
-      await service.stopExecution('session-1');
+      await service.stopExecution(endpointConfig, 'session-1');
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(fetchCall[1].method).toBe('POST');
@@ -336,7 +339,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: [], sessionStatus: 'running' })
       });
 
-      service.startPolling('session-1', vi.fn());
+      service.startPolling(endpointConfig, 'session-1', vi.fn());
       expect(service.isPolling()).toBe(true);
       expect(service.getPollingSessionId()).toBe('session-1');
     });
@@ -347,7 +350,7 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: [], sessionStatus: 'running' })
       });
 
-      service.startPolling('session-1', vi.fn());
+      service.startPolling(endpointConfig, 'session-1', vi.fn());
       service.stopPolling();
 
       expect(service.isPolling()).toBe(false);
@@ -360,8 +363,8 @@ describe('PlaygroundService', () => {
         json: async () => ({ data: [], sessionStatus: 'running' })
       });
 
-      service.startPolling('session-1', vi.fn());
-      service.startPolling('session-2', vi.fn());
+      service.startPolling(endpointConfig, 'session-1', vi.fn());
+      service.startPolling(endpointConfig, 'session-2', vi.fn());
 
       expect(service.getPollingSessionId()).toBe('session-2');
     });
