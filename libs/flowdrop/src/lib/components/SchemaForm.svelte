@@ -58,6 +58,7 @@
   import Icon from '@iconify/svelte';
   import type { ConfigSchema, AuthProvider } from '$lib/types/index.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
+  import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { FormField } from '$lib/components/form/index.js';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/index.js';
@@ -158,6 +159,18 @@
     authProvider,
     baseUrl = ''
   }: Props = $props();
+
+  // SchemaForm is a standalone container: its leaf <FormField>s call
+  // getInstance() and require an instance in context. When rendered without an
+  // <App>/<WorkflowEditor> ancestor (a bare embed), self-provide one so those
+  // leaves resolve. provideInstance() carries the established SSR semantics:
+  //   - context instance present -> reuse it (nested inside a provider)
+  //   - browser, no context       -> the shared page-default instance
+  //   - server, no context        -> a fresh per-render instance (no leakage)
+  // We never destroy here: the browser path returns the shared default (must
+  // outlive this form) and the server path has no teardown — matching how
+  // <App> defers instance lifecycle to whoever created it.
+  provideInstance();
 
   const resolvedSaveLabel = $derived(m().form.schema.save);
   const resolvedCancelLabel = $derived(m().form.schema.cancel);

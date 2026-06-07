@@ -43,7 +43,7 @@
     type DynamicSchemaResult
   } from '$lib/services/dynamicSchemaService.js';
   import { globalSaveWorkflow } from '$lib/services/globalSave.js';
-  import { getInstance } from '$lib/stores/getInstance.svelte.js';
+  import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { getAvailableVariables } from '$lib/services/variableService.js';
   import { logger } from '../utils/logger.js';
   import { getDataTypeColorToken, getPortBackgroundColor } from '$lib/utils/colors.js';
@@ -107,7 +107,14 @@
   }: Props = $props();
 
   // Resolve the active instance for endpoint configuration (dynamic schema fetch).
-  const fd = getInstance();
+  // ConfigForm is a standalone-capable container (exported from /editor and able
+  // to render bare, e.g. with a direct `schema`/`values`). Self-provide so its
+  // leaf <FormField>s resolve and SSR doesn't throw. provideInstance() reuses an
+  // ancestor's context instance when nested in <App>/<WorkflowEditor>, returns
+  // the shared page-default in the browser, and creates a fresh per-render
+  // instance on the server (no cross-request leakage); no destroy here for the
+  // same reasons as SchemaForm (shared/default in the browser, no SSR teardown).
+  const fd = provideInstance();
   const checker = fd.portCompatibility;
 
   // Set context for child components (e.g., FormAutocomplete)
