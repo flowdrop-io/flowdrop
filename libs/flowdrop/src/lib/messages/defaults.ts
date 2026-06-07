@@ -289,12 +289,8 @@ export const defaultMessages = {
       predefinedRun: 'Run workflow'
     },
     states: {
-      viewOnlyTitle: 'View only',
-      viewOnlyText: 'This playground is in view-only mode. No inputs are available.',
       newSessionTitle: 'New session',
       newSessionText: 'Test your flow with a prompt',
-      readyTitle: 'Ready to run',
-      readyText: 'Click Run to execute your workflow',
       processing: 'Processing...',
       viewOnlyHelp: 'View-only mode. Workflow execution is controlled externally.'
     },

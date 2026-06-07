@@ -5,19 +5,15 @@
   MessageStream (message + interrupt feed) and ChatInput (textarea +
   send/run/stop). Use this for chat-style agent interactions.
 
-  For view-only execution surfaces, prefer the MessageStream primitive
-  directly — ChatPanel's showChatInput/showRunButton flags are kept for
-  backwards compatibility but are deprecated.
+  For view-only execution surfaces, use the MessageStream primitive directly.
+  Log visibility is managed by the playground store (fd.playground.setShowLogs).
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import MessageStream from './MessageStream.svelte';
   import ChatInput from './ChatInput.svelte';
-  import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
-
-  const fd = getInstance();
 
   interface Props {
     showTimestamps?: boolean;
@@ -30,23 +26,8 @@
     onInterruptResolved?: () => void;
     /** Render a "New session" CTA in the welcome state */
     onCreateSession?: () => void;
-    /**
-     * @deprecated Use `<MessageStream />` directly for view-only feeds.
-     * Kept for backwards compatibility with PlaygroundConfig URL params.
-     */
-    showChatInput?: boolean;
-    /**
-     * @deprecated Use `<MessageStream />` directly for view-only feeds.
-     */
-    showRunButton?: boolean;
     predefinedMessage?: string;
     compactSystemMessages?: boolean;
-    /**
-     * @deprecated `showLogs` is now managed by the playground store
-     * (`fd.playground`). Setting it here syncs to the store on mount for
-     * backwards compatibility.
-     */
-    showLogs?: boolean;
   }
 
   let {
@@ -59,23 +40,11 @@
     enableMarkdown = true,
     onInterruptResolved,
     onCreateSession,
-    showChatInput = true,
-    showRunButton = true,
     predefinedMessage,
-    compactSystemMessages = true,
-    showLogs
+    compactSystemMessages = true
   }: Props = $props();
 
   const states = $derived(m().playground.states);
-
-  const noInputsAvailable = $derived(!showChatInput && !showRunButton);
-
-  // Back-compat: sync legacy showLogs prop into the store whenever it changes.
-  $effect(() => {
-    if (showLogs !== undefined) {
-      fd.playground.setShowLogs(showLogs);
-    }
-  });
 </script>
 
 <div class="chat-panel">
@@ -90,14 +59,7 @@
     emptySession={emptyChatState}
   />
 
-  <ChatInput
-    {placeholder}
-    {predefinedMessage}
-    {onSendMessage}
-    {onStopExecution}
-    showTextarea={showChatInput}
-    {showRunButton}
-  />
+  <ChatInput {placeholder} {predefinedMessage} {onSendMessage} {onStopExecution} />
 </div>
 
 {#snippet welcomeIcon()}
@@ -118,16 +80,8 @@
 {/snippet}
 
 {#snippet welcomeCopy()}
-  {#if noInputsAvailable}
-    <h2 class="chat-panel__welcome-title">{states.viewOnlyTitle}</h2>
-    <p class="chat-panel__welcome-text">{states.viewOnlyText}</p>
-  {:else if showChatInput}
-    <h2 class="chat-panel__welcome-title">{states.newSessionTitle}</h2>
-    <p class="chat-panel__welcome-text">{states.newSessionText}</p>
-  {:else}
-    <h2 class="chat-panel__welcome-title">{states.readyTitle}</h2>
-    <p class="chat-panel__welcome-text">{states.readyText}</p>
-  {/if}
+  <h2 class="chat-panel__welcome-title">{states.newSessionTitle}</h2>
+  <p class="chat-panel__welcome-text">{states.newSessionText}</p>
 {/snippet}
 
 {#snippet welcomeState()}
