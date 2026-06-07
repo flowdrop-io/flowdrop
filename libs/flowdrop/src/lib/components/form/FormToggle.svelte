@@ -9,7 +9,7 @@
 -->
 
 <script lang="ts">
-  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     /** Field identifier */
@@ -17,11 +17,13 @@
     /** Current value */
     value: boolean;
     /**
-     * @deprecated since v1.8 — use `messages.form.toggle.enabled`. Removed in v2.0.
+     * Per-instance label for the on state (e.g. "Hidden" for a visibility
+     * toggle). Falls back to the global `messages.form.toggle.enabled`.
      */
     onLabel?: string;
     /**
-     * @deprecated since v1.8 — use `messages.form.toggle.disabled`. Removed in v2.0.
+     * Per-instance label for the off state. Falls back to the global
+     * `messages.form.toggle.disabled`.
      */
     offLabel?: string;
     /** Whether the field is disabled (read-only) */
@@ -41,16 +43,6 @@
     ariaDescribedBy,
     onChange
   }: Props = $props();
-
-  // deprecation warns once per mount; later prop rebinds aren't relevant
-  // svelte-ignore state_referenced_locally
-  if (onLabel !== undefined) {
-    warnDeprecatedProp('FormToggle', 'onLabel', 'messages.form.toggle.enabled');
-  }
-  // svelte-ignore state_referenced_locally
-  if (offLabel !== undefined) {
-    warnDeprecatedProp('FormToggle', 'offLabel', 'messages.form.toggle.disabled');
-  }
 
   const resolvedOnLabel = $derived(onLabel ?? m().form.toggle.enabled);
   const resolvedOffLabel = $derived(offLabel ?? m().form.toggle.disabled);

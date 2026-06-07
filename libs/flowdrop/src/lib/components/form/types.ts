@@ -512,20 +512,6 @@ export interface SchemaFormProps {
   showActions?: boolean;
 
   /**
-   * Label text for the save button.
-   * Only used when showActions is true.
-   * @default "Save"
-   */
-  saveLabel?: string;
-
-  /**
-   * Label text for the cancel button.
-   * Only used when showActions is true.
-   * @default "Cancel"
-   */
-  cancelLabel?: string;
-
-  /**
    * Callback fired when the Save button is clicked.
    * Receives the final form values after collecting from DOM.
    * @param values - Final form values

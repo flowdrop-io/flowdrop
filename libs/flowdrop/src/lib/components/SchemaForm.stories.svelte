@@ -87,9 +87,7 @@
       required: ['email']
     },
     values: { email: '', notifications: true },
-    showActions: true,
-    saveLabel: 'Save Settings',
-    cancelLabel: 'Reset'
+    showActions: true
   }}
 />
 

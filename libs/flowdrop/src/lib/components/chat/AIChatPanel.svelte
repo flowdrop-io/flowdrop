@@ -20,7 +20,7 @@
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { tick } from 'svelte';
   import Icon from '@iconify/svelte';
-  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
+  import { m } from '$lib/messages/index.js';
 
   // =========================================================================
   // Internal Display Message Type
@@ -41,28 +41,16 @@
     nodeTypes: NodeMetadata[];
     workflowId?: string;
     onUIAction?: (action: UIAction) => void;
-    /**
-     * @deprecated since v1.8 — use `messages.chat.placeholder`. Removed in v2.0.
-     */
-    placeholder?: string;
     endpointConfig?: EndpointConfig | null;
   }
 
-  let { nodeTypes, workflowId, onUIAction, placeholder, endpointConfig }: Props = $props();
+  let { nodeTypes, workflowId, onUIAction, endpointConfig }: Props = $props();
 
   const fd = getInstance();
-
-  // deprecation warns once per mount; later prop rebinds aren't relevant
-  // svelte-ignore state_referenced_locally
-  if (placeholder !== undefined) {
-    warnDeprecatedProp('AIChatPanel', 'placeholder', 'messages.chat.placeholder');
-  }
 
   // Hoist the chat branch — read in placeholder, header, three welcome states,
   // auto-retry banner, and the send button aria-label.
   const t = $derived(m().chat);
-
-  const resolvedPlaceholder = $derived(placeholder ?? t.placeholder);
 
   // =========================================================================
   // State
@@ -491,7 +479,7 @@
         bind:value={inputValue}
         onkeydown={handleKeydown}
         class="ai-chat-panel__input"
-        placeholder={resolvedPlaceholder}
+        placeholder={t.placeholder}
         rows="1"
         disabled={isLoading}
       ></textarea>

@@ -8,5 +8,4 @@
 export { defaultMessages } from './defaults.js';
 export { mergeMessages } from './merge.js';
 export { setMessages, getMessages, m } from './context.js';
-export { warnDeprecatedProp, __resetDeprecationWarningsForTests } from './deprecation.js';
 export type { Messages, MessagesOverride, DeepPartial } from './types.js';

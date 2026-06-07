@@ -61,7 +61,7 @@
   import { FormField } from '$lib/components/form/index.js';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/index.js';
-  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
+  import { m } from '$lib/messages/index.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
 
   /**
@@ -100,16 +100,6 @@
      * @default false
      */
     showActions?: boolean;
-
-    /**
-     * @deprecated since v1.8 — use `messages.form.schema.save`. Removed in v2.0.
-     */
-    saveLabel?: string;
-
-    /**
-     * @deprecated since v1.8 — use `messages.form.schema.cancel`. Removed in v2.0.
-     */
-    cancelLabel?: string;
 
     /**
      * Callback fired when the Save button is clicked.
@@ -160,8 +150,6 @@
     values = {},
     onChange,
     showActions = false,
-    saveLabel,
-    cancelLabel,
     onSave,
     onCancel,
     loading = false,
@@ -171,18 +159,8 @@
     baseUrl = ''
   }: Props = $props();
 
-  // deprecation warns once per mount; later prop rebinds aren't relevant
-  // svelte-ignore state_referenced_locally
-  if (saveLabel !== undefined) {
-    warnDeprecatedProp('SchemaForm', 'saveLabel', 'messages.form.schema.save');
-  }
-  // svelte-ignore state_referenced_locally
-  if (cancelLabel !== undefined) {
-    warnDeprecatedProp('SchemaForm', 'cancelLabel', 'messages.form.schema.cancel');
-  }
-
-  const resolvedSaveLabel = $derived(saveLabel ?? m().form.schema.save);
-  const resolvedCancelLabel = $derived(cancelLabel ?? m().form.schema.cancel);
+  const resolvedSaveLabel = $derived(m().form.schema.save);
+  const resolvedCancelLabel = $derived(m().form.schema.cancel);
 
   // Set context for child components (e.g., FormAutocomplete)
   // Use getter functions to ensure child components always get the current prop value,

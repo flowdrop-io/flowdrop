@@ -20,7 +20,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { FieldSchema } from './types.js';
-  import { m, warnDeprecatedProp } from '$lib/messages/index.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     /** Field identifier */
@@ -34,7 +34,8 @@
     /** Maximum number of items allowed */
     maxItems?: number;
     /**
-     * @deprecated since v1.8 — use `messages.form.array.add`. Removed in v2.0.
+     * Per-instance label for the add button (e.g. "Add Header" derived from
+     * the item schema title). Falls back to the global `messages.form.array.add`.
      */
     addLabel?: string;
     /** Whether the field is disabled */
@@ -53,12 +54,6 @@
     disabled = false,
     onChange
   }: Props = $props();
-
-  // deprecation warns once per mount; later prop rebinds aren't relevant
-  // svelte-ignore state_referenced_locally
-  if (addLabel !== undefined) {
-    warnDeprecatedProp('FormArray', 'addLabel', 'messages.form.array.add');
-  }
 
   // Hoist the array branch — every {#each} iteration would otherwise re-walk
   // `m().form.array.*` for ~6 keys per item. One getter call instead of N×6.
