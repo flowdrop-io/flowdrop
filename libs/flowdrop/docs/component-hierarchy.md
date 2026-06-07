@@ -265,16 +265,18 @@ FlowDrop Application
 
 ### State Management
 
-- **workflowStore**: Global Svelte store for workflow state
-- **workflowActions**: Actions for updating workflow (nodes, edges, config)
-- **workflowName**: Derived store for workflow name
+State lives on the per-mount `FlowDropInstance`, resolved in components via `getInstance()` (`fd`):
+
+- **fd.workflow** (`WorkflowStore`): instance-scoped workflow state
+- **fd.workflow.actions**: actions for updating the workflow (nodes, edges, config)
+- **fd.workflow.name**: derived workflow name
 
 ### Event Flow
 
 1. **Node Drag**: NodeSidebar → WorkflowEditor → SvelteFlow
 2. **Node Config**: Node Click → App.svelte → ConfigSidebar
-3. **Node Update**: ConfigSidebar → workflowActions → workflowStore → WorkflowEditor
-4. **Save/Export**: Navbar/App → workflowStore → API
+3. **Node Update**: ConfigSidebar → fd.workflow.actions → fd.workflow → WorkflowEditor
+4. **Save/Export**: Navbar/App → fd.workflow → API
 
 ### Props Flow
 
@@ -418,8 +420,8 @@ src/
 
 ### Modifying State
 
-1. Use workflowActions for updates
-2. Never mutate workflowStore directly
+1. Use fd.workflow.actions for updates
+2. Never mutate fd.workflow directly
 3. Use $effect for reactive side effects
 4. Keep derived state in $derived
 

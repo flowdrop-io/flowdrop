@@ -725,7 +725,7 @@ You can render the `ConfigForm` component directly, independent of the workflow 
 
 ```svelte
 <script>
-  import { ConfigForm } from '@flowdrop/flowdrop';
+  import { ConfigForm } from '@flowdrop/flowdrop/form';
 
   const schema = {
     type: 'object',
@@ -805,7 +805,7 @@ import {
   hasConfigEditOptions,
   shouldShowExternalEdit,
   shouldUseDynamicSchema
-} from '@flowdrop/flowdrop';
+} from '@flowdrop/flowdrop/editor';
 ```
 
 ### `fetchDynamicSchema(endpoint, node, workflowId?)`
@@ -857,16 +857,16 @@ Invalidates the cache for a specific node + endpoint combination.
 
 ## TypeScript Types
 
-All types are available from the main package or the `core` export:
+In 2.0 the slim main entry exposes only the bootstrap types (`NodeMetadata`, `WorkflowNode`, `ConfigSchema`, …). All remaining types live on the `core` export; the form-field types are also re-exported from `form`:
 
 ```typescript
 import type {
   // Schema
   ConfigSchema,
   ConfigProperty,
-  FieldSchema,
-  FieldType,
-  FieldFormat,
+  FieldSchema, // also on @flowdrop/flowdrop/form
+  FieldType, // also on @flowdrop/flowdrop/form
+  FieldFormat, // also on @flowdrop/flowdrop/form
 
   // UISchema
   UISchemaElement,
@@ -881,17 +881,13 @@ import type {
   ExternalEditLink,
   HttpMethod,
 
-  // Autocomplete
-  AutocompleteConfig,
-
-  // Template variables
-  TemplateVariablesConfig,
-  TemplateVariable,
-
   // Nodes
   NodeMetadata,
   WorkflowNode
-} from '@flowdrop/flowdrop';
+} from '@flowdrop/flowdrop/core';
+
+// Form-field config types are exported from the form sub-module:
+import type { AutocompleteConfig } from '@flowdrop/flowdrop/form';
 ```
 
 ---

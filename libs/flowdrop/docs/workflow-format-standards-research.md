@@ -165,7 +165,7 @@ These are unique to FlowDrop and would require custom extensions in any standard
 
 - Publish a versioned JSON Schema for the `StandardWorkflow` format
 - Document it as a specification others can adopt
-- Version it (you already have `metadata.version`)
+- Version it (you already have `metadata.schemaVersion`)
 - **Effort**: Low-medium — format is already well-defined, needs formal schema + docs
 
 ### Option C: Hybrid (Formalize + Adapters)

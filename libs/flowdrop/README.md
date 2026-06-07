@@ -58,11 +58,11 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ```svelte
 <script lang="ts">
-  import { WorkflowEditor } from '@flowdrop/flowdrop';
+  import { App } from '@flowdrop/flowdrop';
   import '@flowdrop/flowdrop/styles/base.css';
 </script>
 
-<WorkflowEditor />
+<App />
 ```
 
 **5 lines. One fully-functional workflow editor.**
@@ -80,7 +80,7 @@ You get a production-ready workflow UI. You keep full control of everything else
 
 ## Architecture Notes
 
-- **Multiple instances per page.** Each mount gets its own `FlowDropInstance` state container (workflow, undo/redo history, playground sessions, drafts), so editors on the same page are fully isolated. The first mount without an `instanceId` becomes the page-default instance and keeps the legacy module-level store APIs working unchanged; pass `instanceId` to additional mounts to scope their draft/panel storage keys. Theme, settings, and port-compatibility config remain page-global by design.
+- **Multiple instances per page.** Each mount gets its own `FlowDropInstance` state container (workflow, undo/redo history, playground sessions, registries, API context, drafts), so editors on the same page are fully isolated. In 2.0 there are no module-level store APIs — resolve state with `getInstance()` inside the component tree or the mount handle's `.instance` outside it. The first mount without an `instanceId` becomes the page-default instance; pass `instanceId` to additional mounts to scope their draft/panel storage keys. Theme and settings remain page-global by design.
 - **Svelte 5 required.** FlowDrop uses Svelte 5 runes (`$state`, `$derived`, `$effect`) throughout. Svelte 4 is not supported.
 - **Modern browsers only.** The library targets ES2020+ and does not include polyfills for older browsers.
 
@@ -112,12 +112,12 @@ FlowDrop includes a theme system with built-in light/dark support:
 
 ```svelte
 <script lang="ts">
-  import { WorkflowEditor } from '@flowdrop/flowdrop';
+  import { App } from '@flowdrop/flowdrop';
   import '@flowdrop/flowdrop/styles';
 </script>
 
 <!-- Built-in themes: 'default' or 'minimal' -->
-<WorkflowEditor theme="minimal" />
+<App theme="minimal" />
 ```
 
 Themes bundle a visual skin (CSS token palette) with behavioral UI defaults. You can also pass a custom theme object with your own skin tokens for full control over the light and dark palettes.
@@ -136,7 +136,7 @@ const app = await mountFlowDropApp(container, {
 Every user-facing string flows through a typed `Messages` tree. Pass a callback to override any subset:
 
 ```svelte
-<FlowDrop messages={() => ({ form: { schema: { save: 'Apply' } } })} />
+<App messages={() => ({ form: { schema: { save: 'Apply' } } })} />
 ```
 
 Wire the callback to your i18n library (paraglide-js, sveltekit-i18n, etc.) — locale changes propagate automatically. See the [i18n & Custom Messages guide](https://docs.flowdrop.io/guides/i18n) for the full shape and a paraglide-js worked example.
@@ -145,20 +145,20 @@ Wire the callback to your i18n library (paraglide-js, sveltekit-i18n, etc.) — 
 
 FlowDrop provides tree-shakeable sub-module exports so you can import only what you need:
 
-| Export Path                        | Contents                                           |
-| ---------------------------------- | -------------------------------------------------- |
-| `@flowdrop/flowdrop`               | Full library (components, stores, services, types) |
-| `@flowdrop/flowdrop/core`          | Types and utilities only (no heavy dependencies)   |
-| `@flowdrop/flowdrop/editor`        | WorkflowEditor, stores, services                   |
-| `@flowdrop/flowdrop/form`          | SchemaForm, form fields, registry                  |
-| `@flowdrop/flowdrop/form/code`     | Code editor field (CodeMirror)                     |
-| `@flowdrop/flowdrop/form/markdown` | Markdown editor field                              |
-| `@flowdrop/flowdrop/display`       | MarkdownDisplay component                          |
-| `@flowdrop/flowdrop/playground`    | Playground components and services                 |
-| `@flowdrop/flowdrop/settings`      | SettingsPanel, stores, services                    |
-| `@flowdrop/flowdrop/styles`        | Base CSS stylesheet                                |
-| `@flowdrop/flowdrop/schema`        | Workflow JSON schema                               |
-| `@flowdrop/flowdrop/openapi`       | OpenAPI spec (YAML) for the FlowDrop backend API   |
+| Export Path                        | Contents                                                                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `@flowdrop/flowdrop`               | Slim front door: `App`, mount functions, `createFlowDropInstance`, `getInstance`, auth providers, core bootstrap types |
+| `@flowdrop/flowdrop/core`          | Types and utilities only (no heavy dependencies)                                                                       |
+| `@flowdrop/flowdrop/editor`        | WorkflowEditor, stores, services                                                                                       |
+| `@flowdrop/flowdrop/form`          | SchemaForm, form fields, registry                                                                                      |
+| `@flowdrop/flowdrop/form/code`     | Code editor field (CodeMirror)                                                                                         |
+| `@flowdrop/flowdrop/form/markdown` | Markdown editor field                                                                                                  |
+| `@flowdrop/flowdrop/display`       | MarkdownDisplay component                                                                                              |
+| `@flowdrop/flowdrop/playground`    | Playground components and services                                                                                     |
+| `@flowdrop/flowdrop/settings`      | SettingsPanel, stores, services                                                                                        |
+| `@flowdrop/flowdrop/styles`        | Base CSS stylesheet                                                                                                    |
+| `@flowdrop/flowdrop/schema`        | Workflow JSON schema                                                                                                   |
+| `@flowdrop/flowdrop/openapi`       | OpenAPI spec (YAML) for the FlowDrop backend API                                                                       |
 
 ### OpenAPI spec
 
@@ -170,12 +170,12 @@ The full OpenAPI spec for the FlowDrop backend API ships with the package, versi
 
 ```svelte
 <script>
-  import { WorkflowEditor, NodeSidebar } from '@flowdrop/flowdrop';
+  import { WorkflowEditor, NodeSidebar } from '@flowdrop/flowdrop/editor';
 </script>
 
 <div class="flex h-screen">
   <NodeSidebar {nodes} />
-  <WorkflowEditor {nodes} />
+  <WorkflowEditor />
 </div>
 ```
 

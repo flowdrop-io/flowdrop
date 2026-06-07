@@ -5,6 +5,11 @@ multi-instance refactor and the 1.8 message migration carried is gone. If your
 1.x code ran without deprecation warnings in the console, most of this guide
 does not apply to you.
 
+The sections are ordered by the shape of the change, from the deepest
+architectural moves (instances, the API client, registries) outward to module
+layout, data formats, component props, and storage. Each has a 1.x → 2.0 code
+example.
+
 ## 1. Module-level store APIs are removed (the big one)
 
 All ~95 module-level functions that operated on "the" editor are gone:
@@ -48,50 +53,7 @@ For hosts that construct state manually, the store classes are now exported:
 
 Settings remain page-global by design — `getSettings()` etc. are unchanged.
 
-## 2. localStorage keys are instance-scoped
-
-The page-default instance no longer writes bare keys:
-
-| 1.x                           | 2.0                                   |
-| ----------------------------- | ------------------------------------- |
-| `flowdrop:draft:<workflowId>` | `flowdrop:draft:default:<workflowId>` |
-| `fd-pipeline-panel-open`      | `fd-pipeline-panel-open:default`      |
-
-Existing user data migrates automatically on first read (copy to the scoped
-key, remove the legacy key). Only hosts reading these keys directly need to
-update. `clearAllDrafts()` still removes everything under `flowdrop:draft:`.
-
-## 3. Removed component props
-
-| Component                | Removed                                                                                          | Use instead                                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `SchemaForm`             | `saveLabel`, `cancelLabel`                                                                       | `messages.form.schema.save` / `.cancel`                                                                                            |
-| `AIChatPanel`            | `placeholder`                                                                                    | `messages.chat.placeholder`                                                                                                        |
-| `ChatPanel`              | `showChatInput`, `showRunButton`                                                                 | `MessageStream` directly, or `ControlPanel` (keeps both flags)                                                                     |
-| `ChatPanel`              | `showLogs`                                                                                       | `fd.playground.setShowLogs(...)`                                                                                                   |
-| `WorkflowEditor`         | `nodes`, `height`, `width`, `isConfigSidebarOpen`, `selectedNodeForConfig`, `closeConfigSidebar` | These never did anything in 1.x. Size via `App`'s `height`/`width` (working since 1.16); node metadata flows through the instance. |
-| `App` / `WorkflowEditor` | `readOnly`, `lockWorkflow`                                                                       | A single `mode` prop — see [section 10](#10-mode-prop-replaces-readonly--lockworkflow).                                            |
-| `App`                    | `eventHandlers` (object)                                                                         | Flat `on*` props — see [section 11](#11-app-event-handlers-are-flat-props).                                                        |
-
-`FormToggle.onLabel`/`offLabel` and `FormArray.addLabel` were _un_-deprecated:
-they express per-instance labels the global messages system cannot, and are
-now documented overrides.
-
-Removed message keys (only the removed ChatPanel branches read them):
-`playground.states.viewOnlyTitle`, `.viewOnlyText`, `.readyTitle`, `.readyText`.
-
-## 4. mountWorkflowEditor option changes
-
-- `workflow` now actually loads the workflow (1.x accepted and ignored it).
-- `nodes` is removed (it fed a prop the editor never read). Use
-  `mountFlowDropApp` if you need to pre-seed node metadata.
-- `readOnly` / `lockWorkflow` mount options become a single `mode` option
-  (`'edit' | 'readonly' | 'locked'`) — see
-  [section 10](#10-mode-prop-replaces-readonly--lockworkflow). The grouped
-  `eventHandlers` mount option is **unchanged** (an options bag is fine in a JS
-  mount API); only the `<App>` _component_ prop is flattened.
-
-## 5. API access is instance-scoped (`fd.api`)
+## 2. API access is instance-scoped (`fd.api`)
 
 The module-level API singleton in `services/api.js` is gone:
 `setEndpointConfig()`, `getEndpointConfig()`, `nodeApi`, `workflowApi`, and the
@@ -156,10 +118,91 @@ config. The standalone connection helpers (`validateConnection`,
 `getPossibleConnections`, `getConnectionSuggestions`) now take the checker as
 their first argument.
 
-## 6. Barrel de-duplication
+```js
+// 1.x
+import { initializePortCompatibility, validateConnection } from '@flowdrop/flowdrop/editor';
+initializePortCompatibility(portConfig);
+const ok = validateConnection(source, target);
+
+// 2.0
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+const ok = validateConnection(fd.portCompatibility, source, target);
+```
+
+## 3. Registries are instance-scoped — importing the editor registers nothing
+
+In 1.x the node, field, and format registries were module singletons, and the
+editor barrel ran a side-effecting import that registered every builtin node the
+moment you imported it. In 2.0 each registry lives on the instance —
+`fd.nodes`, `fd.fields`, `fd.formats` — seeded in the constructor from read-only
+builtin definitions. There is no longer any import-time registration, and
+`package.json` `sideEffects` is now CSS-only (`["**/*.css"]`).
+
+The module-level registration functions and the singleton registry constants are
+removed:
+
+- `registerCustomNode()`, `createFlowDropPlugin()` / `registerFlowDropPlugin()`,
+  and `plugin.ts` are gone. Registration is now a registry method:
+  `fd.nodes.registerCustom(...)`, `fd.nodes.registerPlugin(...)`,
+  `fd.nodes.unregisterPlugin(...)`. `createPlugin().register(fd.nodes)` replaces
+  the module plugin functions.
+- The exported singleton consts `nodeComponentRegistry`, `fieldComponentRegistry`,
+  and `workflowFormatRegistry` are removed. Resolve the instance registry instead.
+
+```js
+// 1.x — module singletons + import-time side effects
+import { registerCustomNode, fieldComponentRegistry } from '@flowdrop/flowdrop/editor';
+registerCustomNode('myapp:color', 'Color Node', ColorNode);
+fieldComponentRegistry.register('color', {
+  component: MyColorField,
+  matcher: (schema) => schema.format === 'color'
+});
+
+// 2.0 — register against the instance after mount
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+fd.nodes.registerCustom('myapp:color', 'Color Node', ColorNode);
+fd.fields.register('color', {
+  component: MyColorField,
+  matcher: (schema) => schema.format === 'color'
+});
+```
+
+Because registration is now post-mount by construction, late registrations have
+to invalidate `$derived` reads that already ran. `BaseRegistry` carries a
+`$state` version counter (the `editVersion` pattern) so dependent reads
+re-run when you register after the first paint — no host action required.
+
+The heavy form-field installers (`registerCodeEditorField`,
+`registerMarkdownEditorField`, and the template field) now take the **target
+registry explicitly** and re-check registration after their dynamic import
+resolves:
+
+```js
+// 1.x
+import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code';
+registerCodeEditorField();
+
+// 2.0
+import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code';
+import { getInstance } from '@flowdrop/flowdrop/editor';
+registerCodeEditorField(getInstance().fields);
+```
+
+Category color/icon helpers likewise take a `CategoriesStore` as an explicit
+parameter — the last global-instance fallback in `utils` is gone.
+
+`fd.fields.register()` warns in dev when it overwrites an existing field type.
+Overwriting still works (replacing a built-in field is legitimate); the warning
+flags accidental duplicates.
+
+## 4. Barrel de-duplication and the slim main entry
+
+### Each export keeps a single canonical home
 
 The editor barrel no longer re-exports playground internals, and the display
-barrel no longer re-exports `marked`. Each export keeps a single canonical home.
+barrel no longer re-exports `marked`.
 
 - **Playground exports** (`Playground`, `PlaygroundModal`, `ChatPanel`,
   `SessionManager`, `InputCollector`, `ExecutionLogs`, `MessageBubble`,
@@ -187,68 +230,7 @@ barrel no longer re-exports `marked`. Each export keeps a single canonical home.
   import { marked } from 'marked';
   ```
 
-## 7. Workflow `metadata` is required and `version` → `schemaVersion`
-
-The workflow document's `metadata` object is now **required** on the `Workflow`
-type, and its `version` field has been renamed to `schemaVersion`. The rename
-disambiguates the document's _format_ version from any per-workflow revision
-number you may track yourself (and from `NodeMetadata.version`, the node-type
-version, which is **unchanged**).
-
-```ts
-// 1.x
-interface Workflow {
-  /* … */
-  metadata?: {
-    version: string; // ambiguous
-    createdAt: string;
-    updatedAt: string;
-    /* … */
-  };
-}
-
-// 2.0
-interface Workflow {
-  /* … */
-  metadata: {
-    schemaVersion: string; // the workflow schema format version
-    createdAt: string;
-    updatedAt: string;
-    /* … */
-  };
-}
-```
-
-### Load-time healing (automatic)
-
-You do **not** need to migrate stored workflow JSON by hand. Every workflow
-entry point — `WorkflowStore.initialize` (which backs `mountFlowDropApp`'s
-`workflow` option, drag-and-drop file import, and draft load) and
-`WorkflowAdapter.importWorkflow` — normalizes metadata on the way in:
-
-- **Missing `metadata`** → populated with required defaults (`schemaVersion`
-  from `WORKFLOW_SCHEMA_VERSION`, fresh `createdAt`/`updatedAt`).
-- **Legacy `metadata.version`** → copied into `schemaVersion` (when
-  `schemaVersion` is absent), then the legacy `version` key is dropped.
-
-Healing is idempotent: re-running it on an already-healed workflow is a no-op
-(round-trip stable). This mirrors the localStorage key migration in §2 — the
-runtime heals 1.x data on first read so existing documents keep loading.
-
-### What hosts reading workflow JSON need to know
-
-If your application reads or writes FlowDrop workflow JSON directly (outside the
-editor), update your code to read `metadata.schemaVersion` instead of
-`metadata.version`. Documents still on disk with the old `version` key continue
-to load through the editor unchanged, but newly serialized workflows will carry
-`schemaVersion`. The Agent Spec export still uses the namespaced
-`flowdrop:version` key (its source is now `metadata.schemaVersion`); that
-external key name is unchanged.
-
-The JSON Schema published at `@flowdrop/flowdrop/schema` reflects the rename —
-`WorkflowMetadata.required` is now `[schemaVersion, createdAt, updatedAt]`.
-
-## 8. The main entry is now a minimal front door
+### The main entry is now a minimal front door
 
 `@flowdrop/flowdrop` (the main entry) no longer re-exports the entire library.
 In 1.x it bundled every sub-module via `export *`; in 2.0 it exposes only the
@@ -302,14 +284,98 @@ This also tightens tree-shaking: importing `App` and a couple of types from the
 main entry no longer pulls the form, display, playground, and settings barrels
 into your bundle.
 
-## 9. Behavioral notes
+## 5. Workflow `metadata` is required and `version` → `schemaVersion`
 
-- `fieldRegistry.register()` warns in dev when overwriting an existing field
-  type. Overwriting still works; the warning flags accidents.
-- Internal `DEV` gates use `esm-env` instead of `import.meta.env`, so the
-  package no longer assumes a Vite host.
+The workflow document's `metadata` object is now **required** on the `Workflow`
+type, and its `version` field has been renamed to `schemaVersion`. The rename
+disambiguates the document's _format_ version from any per-workflow revision
+number you may track yourself (and from `NodeMetadata.version`, the node-type
+version, which is **unchanged**).
 
-## 10. `mode` prop replaces `readOnly` + `lockWorkflow`
+```ts
+// 1.x
+interface Workflow {
+  /* … */
+  metadata?: {
+    version: string; // ambiguous
+    createdAt: string;
+    updatedAt: string;
+    /* … */
+  };
+}
+
+// 2.0
+interface Workflow {
+  /* … */
+  metadata: {
+    schemaVersion: string; // the workflow schema format version
+    createdAt: string;
+    updatedAt: string;
+    /* … */
+  };
+}
+```
+
+### Load-time healing (automatic)
+
+You do **not** need to migrate stored workflow JSON by hand. Every workflow
+entry point — `WorkflowStore.initialize` (which backs `mountFlowDropApp`'s
+`workflow` option, drag-and-drop file import, and draft load) and
+`WorkflowAdapter.importWorkflow` — normalizes metadata on the way in:
+
+- **Missing `metadata`** → populated with required defaults (`schemaVersion`
+  from `WORKFLOW_SCHEMA_VERSION`, fresh `createdAt`/`updatedAt`).
+- **Legacy `metadata.version`** → copied into `schemaVersion` (when
+  `schemaVersion` is absent), then the legacy `version` key is dropped.
+
+Healing is idempotent: re-running it on an already-healed workflow is a no-op
+(round-trip stable). This mirrors the localStorage key migration in §8 — the
+runtime heals 1.x data on first read so existing documents keep loading.
+
+### What hosts reading workflow JSON need to know
+
+If your application reads or writes FlowDrop workflow JSON directly (outside the
+editor), update your code to read `metadata.schemaVersion` instead of
+`metadata.version`. Documents still on disk with the old `version` key continue
+to load through the editor unchanged, but newly serialized workflows will carry
+`schemaVersion`. The Agent Spec export still uses the namespaced
+`flowdrop:version` key (its source is now `metadata.schemaVersion`); that
+external key name is unchanged.
+
+The JSON Schema published at `@flowdrop/flowdrop/schema` reflects the rename —
+`WorkflowMetadata.required` is now `[schemaVersion, createdAt, updatedAt]`.
+
+## 6. Removed component props
+
+| Component                | Removed                                                                                          | Use instead                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `SchemaForm`             | `saveLabel`, `cancelLabel`                                                                       | `messages.form.schema.save` / `.cancel`                                                                                            |
+| `AIChatPanel`            | `placeholder`                                                                                    | `messages.chat.placeholder`                                                                                                        |
+| `ChatPanel`              | `showChatInput`, `showRunButton`                                                                 | `MessageStream` directly, or `ControlPanel` (keeps both flags)                                                                     |
+| `ChatPanel`              | `showLogs`                                                                                       | `fd.playground.setShowLogs(...)`                                                                                                   |
+| `WorkflowEditor`         | `nodes`, `height`, `width`, `isConfigSidebarOpen`, `selectedNodeForConfig`, `closeConfigSidebar` | These never did anything in 1.x. Size via `App`'s `height`/`width` (working since 1.16); node metadata flows through the instance. |
+| `App` / `WorkflowEditor` | `readOnly`, `lockWorkflow`                                                                       | A single `mode` prop — see [section 6.2](#62-mode-prop-replaces-readonly--lockworkflow).                                           |
+| `App`                    | `eventHandlers` (object)                                                                         | Flat `on*` props — see [section 6.3](#63-app-event-handlers-are-flat-props).                                                       |
+
+`FormToggle.onLabel`/`offLabel` and `FormArray.addLabel` were _un_-deprecated:
+they express per-instance labels the global messages system cannot, and are
+now documented overrides.
+
+Removed message keys (only the removed ChatPanel branches read them):
+`playground.states.viewOnlyTitle`, `.viewOnlyText`, `.readyTitle`, `.readyText`.
+
+### 6.1 `mountWorkflowEditor` option changes
+
+- `workflow` now actually loads the workflow (1.x accepted and ignored it).
+- `nodes` is removed (it fed a prop the editor never read). Use
+  `mountFlowDropApp` if you need to pre-seed node metadata.
+- `readOnly` / `lockWorkflow` mount options become a single `mode` option
+  (`'edit' | 'readonly' | 'locked'`) — see
+  [section 6.2](#62-mode-prop-replaces-readonly--lockworkflow). The grouped
+  `eventHandlers` mount option is **unchanged** (an options bag is fine in a JS
+  mount API); only the `<App>` _component_ prop is flattened.
+
+### 6.2 `mode` prop replaces `readOnly` + `lockWorkflow`
 
 `<App>`, `<WorkflowEditor>`, and the `mountFlowDropApp` options bag no longer
 take the `readOnly` and `lockWorkflow` booleans. They are replaced by a single
@@ -361,7 +427,7 @@ mountFlowDropApp(el, { readOnly: true });
 mountFlowDropApp(el, { mode: 'readonly' });
 ```
 
-## 11. `<App>` event handlers are flat props
+### 6.3 `<App>` event handlers are flat props
 
 The `<App>` component no longer takes a grouped `eventHandlers={{ … }}` object.
 The handlers `<App>` consumes are now individual `on*` props, consistent with
@@ -384,3 +450,23 @@ passing the grouped `eventHandlers` object there. The mount functions wire
 `onBeforeUnmount` on teardown, and forward the remaining handlers to `<App>`'s
 flat props for you. The `FlowDropEventHandlers` type is still exported for use
 with the mount option.
+
+## 7. localStorage keys are instance-scoped
+
+The page-default instance no longer writes bare keys:
+
+| 1.x                           | 2.0                                   |
+| ----------------------------- | ------------------------------------- |
+| `flowdrop:draft:<workflowId>` | `flowdrop:draft:default:<workflowId>` |
+| `fd-pipeline-panel-open`      | `fd-pipeline-panel-open:default`      |
+
+Existing user data migrates automatically on first read (copy to the scoped
+key, remove the legacy key). Only hosts reading these keys directly need to
+update. `clearAllDrafts()` still removes everything under `flowdrop:draft:`.
+
+## 8. Behavioral notes
+
+- `fd.fields.register()` warns in dev when overwriting an existing field type.
+  Overwriting still works; the warning flags accidents.
+- Internal `DEV` gates use `esm-env` instead of `import.meta.env`, so the
+  package no longer assumes a Vite host.
