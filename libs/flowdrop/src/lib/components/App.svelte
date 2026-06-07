@@ -41,7 +41,11 @@
   import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
   import { apiToasts, dismissToast } from '$lib/services/toastService.js';
   import { initAutoSave } from '$lib/services/autoSaveService.js';
-  import { getUiSettings, updateSettings } from '../stores/settingsStore.svelte.js';
+  import {
+    getUiSettings,
+    updateSettings,
+    initializeTheme
+  } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
@@ -795,6 +799,13 @@
 
   // Load node types on mount
   onMount(() => {
+    // Apply the persisted theme preference to the document and wire its
+    // reactivity. Idempotent — a no-op when mountFlowDropApp already
+    // initialized it; load-bearing for hosts rendering <App> directly,
+    // where nothing else applies data-theme (the persisted light/dark
+    // choice was otherwise never restored on reload).
+    initializeTheme();
+
     (async () => {
       try {
         await initializeApiEndpoints();

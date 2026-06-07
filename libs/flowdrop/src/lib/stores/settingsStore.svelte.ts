@@ -53,11 +53,11 @@ const changeListeners: Set<SettingsChangeCallback> = new Set();
 // =========================================================================
 
 /**
- * Load settings from localStorage
+ * Load the raw persisted settings snapshot from localStorage
  *
- * @returns Saved settings or null if not found/invalid
+ * @returns The parsed partial snapshot, or null if not found/invalid
  */
-function loadFromStorage(): FlowDropSettings | null {
+function loadRawFromStorage(): Partial<FlowDropSettings> | null {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -65,15 +65,27 @@ function loadFromStorage(): FlowDropSettings | null {
   try {
     const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved) as Partial<FlowDropSettings>;
-      // Deep merge with defaults to handle missing properties
-      return deepMergeSettings(DEFAULT_SETTINGS, parsed);
+      return JSON.parse(saved) as Partial<FlowDropSettings>;
     }
   } catch (error) {
     logger.warn('Failed to load settings from localStorage:', error);
   }
 
   return null;
+}
+
+/**
+ * Load settings from localStorage
+ *
+ * @returns Saved settings merged over defaults, or null if not found/invalid
+ */
+function loadFromStorage(): FlowDropSettings | null {
+  const raw = loadRawFromStorage();
+  if (!raw) {
+    return null;
+  }
+  // Deep merge with defaults to handle missing properties
+  return deepMergeSettings(DEFAULT_SETTINGS, raw);
 }
 
 /**
@@ -468,11 +480,14 @@ export function cleanupThemeSubscription(): void {
 
 /**
  * Initialize the theme system
- * Should be called once on app startup
+ * Called on app startup; safe to call more than once (idempotent) — the
+ * mount functions call it before mounting and <App> calls it on mount so
+ * direct component embeds get the persisted theme applied too.
  *
  * This function:
  * 1. Applies the current resolved theme to the document
  * 2. Sets up reactivity to apply theme changes
+ * 3. Subscribes to the system color-scheme so 'auto' tracks it live
  *
  * Note: In Svelte 5, we use $effect for reactivity. Since $effect can only
  * be used in component context or $effect.root, we use $effect.root here
@@ -482,14 +497,28 @@ export function initializeTheme(): void {
   const resolved = getResolvedTheme();
   applyTheme(resolved);
 
+  // Already wired (theme is page-global) — don't stack effect roots or
+  // media-query listeners on repeated mounts.
+  if (themeEffectCleanup) {
+    return;
+  }
+
+  // Track the system preference so 'auto' reacts to OS theme changes.
+  const stopThemeListener = initThemeListener();
+
   // Create a standalone reactive root to watch for theme changes.
   // $effect.root returns a cleanup function.
-  themeEffectCleanup = $effect.root(() => {
+  const stopEffectRoot = $effect.root(() => {
     $effect(() => {
       const currentResolved = getResolvedTheme();
       applyTheme(currentResolved);
     });
   });
+
+  themeEffectCleanup = () => {
+    stopThemeListener();
+    stopEffectRoot();
+  };
 }
 
 /**
@@ -640,18 +669,28 @@ export async function initializeSettings(options?: {
   /** Enable API sync on initialization */
   apiSync?: boolean;
 }): Promise<void> {
-  // Apply custom defaults if provided
+  // Apply custom defaults if provided.
+  //
+  // Precedence (lowest to highest): library DEFAULT_SETTINGS < host
+  // `defaults` < the user's persisted snapshot. Host defaults SEED values
+  // the user has never saved — they must not override a returning user's
+  // persisted choices, and they are not eagerly written to storage
+  // (storage stays user-driven, written by updateSettings on real
+  // changes). Before 2.0.0 this merged host defaults OVER the persisted
+  // snapshot and re-saved it, which reset e.g. the user's dark-mode
+  // preference on every page load for hosts passing a `settings` mount
+  // option.
   if (options?.defaults) {
-    const currentSettings = getSettings();
-    const withDefaults = deepMergeSettings(
-      currentSettings,
+    const seeded = deepMergeSettings(
+      DEFAULT_SETTINGS,
       options.defaults as Partial<FlowDropSettings>
     );
+    const raw = loadRawFromStorage();
+    const withDefaults = raw ? deepMergeSettings(seeded, raw) : seeded;
     storeState = {
       ...storeState,
       settings: withDefaults
     };
-    saveToStorage(withDefaults);
   }
 
   // Initialize theme system
