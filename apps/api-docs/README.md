@@ -1,5 +1,9 @@
 # FlowDrop API Docs
 
+> **Archived** — historical reference only; superseded by the Mintlify site
+> (`.docs/`), which renders the OpenAPI spec natively. See
+> [ARCHIVED.md](./ARCHIVED.md).
+
 Static API documentation site for FlowDrop, built with [Redocly](https://redocly.com/) from the OpenAPI specification. Supports multiple API versions.
 
 **Live docs:** [flowdrop-io.github.io/flowdrop](https://flowdrop-io.github.io/flowdrop/)
@@ -8,9 +12,9 @@ Static API documentation site for FlowDrop, built with [Redocly](https://redocly
 
 Versions are defined in [`libs/flowdrop/api/versions.json`](../../libs/flowdrop/api/versions.json).
 
-| Version | Spec Path | Status |
-|---------|-----------|--------|
-| v1 | `libs/flowdrop/api/v1/` | Current |
+| Version | Spec Path               | Status  |
+| ------- | ----------------------- | ------- |
+| v1      | `libs/flowdrop/api/v1/` | Current |
 
 ### Adding a New Version
 
@@ -89,13 +93,13 @@ Documentation is automatically deployed to GitHub Pages on every push to the `ma
 
 ## Key Files
 
-| File | Description |
-|---|---|
-| [`libs/flowdrop/api/versions.json`](../../libs/flowdrop/api/versions.json) | Version registry |
-| [`libs/flowdrop/api/v1/openapi.yaml`](../../libs/flowdrop/api/v1/openapi.yaml) | v1 OpenAPI 3.0.3 specification |
-| [`libs/flowdrop/api/v1/redocly.yaml`](../../libs/flowdrop/api/v1/redocly.yaml) | v1 Redocly config and linting rules |
-| `dist/index.html` | Version picker landing page (generated) |
-| `dist/v1/index.html` | v1 documentation page (generated) |
+| File                                                                           | Description                             |
+| ------------------------------------------------------------------------------ | --------------------------------------- |
+| [`libs/flowdrop/api/versions.json`](../../libs/flowdrop/api/versions.json)     | Version registry                        |
+| [`libs/flowdrop/api/v1/openapi.yaml`](../../libs/flowdrop/api/v1/openapi.yaml) | v1 OpenAPI 3.0.3 specification          |
+| [`libs/flowdrop/api/v1/redocly.yaml`](../../libs/flowdrop/api/v1/redocly.yaml) | v1 Redocly config and linting rules     |
+| `dist/index.html`                                                              | Version picker landing page (generated) |
+| `dist/v1/index.html`                                                           | v1 documentation page (generated)       |
 
 ## Lint Rules
 
