@@ -157,9 +157,12 @@
 
 <style>
   .flowdrop-notes-node {
+    box-sizing: border-box;
     min-width: var(--fd-notes-node-min-width);
     max-width: var(--fd-notes-node-max-width);
     width: var(--fd-notes-node-width);
+    /* Grid-aligned floor; grows in 20px steps via the chrome + body below. */
+    min-height: var(--fd-notes-node-min-height);
     border-radius: var(--fd-node-radius);
     border: var(--fd-node-border-width) solid var(--fd-note-border);
     background: var(--fd-node-bg);
@@ -239,7 +242,11 @@
 
   /* Display Mode Styles */
   .flowdrop-notes-node__content {
-    padding: var(--fd-space-xl);
+    box-sizing: border-box;
+    /* px on the 20px grid; bottom padding absorbs both node borders so the
+       chrome (padding + 40px header + 20px gap) sums to 100px and the outer
+       node height stays a 20px multiple as the body grows. */
+    padding: 20px 20px calc(20px - var(--fd-node-border-width) * 2);
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -249,14 +256,16 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.75rem;
+    /* one 40px grid block for the icon row + a 20px gap before the body */
+    min-height: 40px;
+    margin-bottom: 20px;
     flex-shrink: 0;
   }
 
   .flowdrop-notes-node__header-left {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-md);
+    gap: 12px;
   }
 
   /* Squircle icon wrapper - Apple-style rounded square background */
@@ -264,9 +273,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.5rem;
+    /* px (not rem) so the icon stays grid-locked regardless of root font-size */
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: color-mix(in srgb, var(--_notes-icon) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
@@ -282,8 +292,8 @@
   }
 
   .flowdrop-notes-node__icon-wrapper :global(.flowdrop-notes-node__icon) {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 20px;
+    height: 20px;
     color: var(--fd-node-icon);
   }
 
@@ -294,10 +304,12 @@
   }
 
   .flowdrop-notes-node__body {
-    margin-bottom: var(--fd-space-xs);
     flex: 1;
     overflow-y: auto;
     color: var(--fd-muted-foreground);
+    /* 20px line rows so plain-text notes grow on the grid (rich markdown with
+       headings/lists may not snap exactly) */
+    line-height: 20px;
   }
 
   /* Markdown content inherits foreground color for better readability */
@@ -305,17 +317,36 @@
     color: var(--fd-foreground);
   }
 
+  /* Put markdown blocks on a 20px baseline so the note grows in clean 20px steps:
+     each block bottom-margins one grid row (browser em-margins would land off-grid),
+     and every line is a 20px row. */
+  .flowdrop-notes-node__body
+    :global(:is(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote, table)) {
+    margin: 0 0 20px;
+    line-height: 20px;
+  }
+
+  .flowdrop-notes-node__body
+    :global(:is(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote, table):last-child) {
+    margin-bottom: 0;
+  }
+
+  .flowdrop-notes-node__body :global(li) {
+    margin: 0;
+    line-height: 20px;
+  }
+
   .flowdrop-notes-node__processing {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-xs);
+    gap: 8px;
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
   }
 
   .flowdrop-notes-node__spinner {
-    width: 0.75rem;
-    height: 0.75rem;
+    width: 12px;
+    height: 12px;
     border: 1px solid color-mix(in srgb, var(--fd-foreground) 30%, transparent);
     border-top-color: var(--fd-foreground);
     border-radius: 50%;
@@ -325,14 +356,14 @@
   .flowdrop-notes-node__error-indicator {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-xs);
+    gap: 8px;
     font-size: var(--fd-text-xs);
     color: var(--fd-error);
   }
 
   :global(.flowdrop-notes-node__error-icon) {
-    width: 0.75rem;
-    height: 0.75rem;
+    width: 12px;
+    height: 12px;
   }
 
   @keyframes spin {
@@ -343,10 +374,10 @@
 
   .flowdrop-notes-node__config-btn {
     position: absolute;
-    top: var(--fd-space-xs);
-    right: var(--fd-space-xs);
-    width: 1.5rem;
-    height: 1.5rem;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
     background-color: var(--fd-backdrop);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-sm);
@@ -376,11 +407,11 @@
   @media (max-width: 640px) {
     .flowdrop-notes-node {
       min-width: 200px;
-      max-width: 350px;
+      max-width: 360px;
     }
 
     .flowdrop-notes-node__content {
-      padding: var(--fd-space-md);
+      padding: 12px;
     }
   }
 </style>

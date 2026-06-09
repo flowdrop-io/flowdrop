@@ -1098,6 +1098,7 @@ p {
   --fd-notes-node-width: 500px;
   --fd-notes-node-min-width: 250px;
   --fd-notes-node-max-width: 500px;
+  --fd-notes-node-min-height: 200px;
   --fd-notes-node-backdrop-filter: blur(8px);
 }
 
