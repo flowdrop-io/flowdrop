@@ -233,11 +233,11 @@
   function getEditorHint(editorType: string): string {
     switch (editorType) {
       case 'code-editor-fallback':
-        return "Code editor requires: import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code'; registerCodeEditorField();";
+        return "Code editor not registered. Register it on the instance's field registry: import { registerCodeEditorField } from '@flowdrop/flowdrop/form/code'; registerCodeEditorField(instance.fields);";
       case 'markdown-editor-fallback':
-        return "Markdown editor requires: import { registerMarkdownEditorField } from '@flowdrop/flowdrop/form/markdown'; registerMarkdownEditorField();";
+        return "Markdown editor not registered. Register it on the instance's field registry: import { registerMarkdownEditorField } from '@flowdrop/flowdrop/form/markdown'; registerMarkdownEditorField(instance.fields);";
       case 'template-editor-fallback':
-        return "Template editor requires: import { registerTemplateEditorField } from '@flowdrop/flowdrop/form/code'; registerTemplateEditorField();";
+        return "Template editor not registered. Register it on the instance's field registry: import { registerTemplateEditorField } from '@flowdrop/flowdrop/form/code'; registerTemplateEditorField(instance.fields);";
       default:
         return 'This field type requires additional registration.';
     }

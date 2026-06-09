@@ -1295,6 +1295,7 @@
         {mode}
         {pipelineId}
         {refreshTrigger}
+        builtinEditors={features.builtinEditors}
         gridVariant={themeConfig?.canvas?.grid ?? 'dots'}
         consoleOpen={getUiSettings().consoleOpen}
         onToggleConsole={toggleConsole}

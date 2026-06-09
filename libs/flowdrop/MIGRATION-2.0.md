@@ -295,6 +295,19 @@ import { getInstance } from '@flowdrop/flowdrop/editor';
 registerCodeEditorField(getInstance().fields);
 ```
 
+**You only need this for the standalone `@flowdrop/flowdrop/form` primitive.**
+The full editor is batteries-included: `<WorkflowEditor>` / `<App>` and the
+playground register the built-in markdown, code, and template editors on their
+own instance's `fields` registry on mount, so node config fields with
+`format: 'markdown' | 'code' | 'template'` render real editors out of the box —
+no host call required. Registration is a dynamic `import()`, so the CodeMirror /
+`marked` chunks stay code-split (the light `/editor` static bundle is
+unaffected) and load lazily on first use. To strip them, pass
+`features: { builtinEditors: false }` to `mountFlowDropApp` (or
+`builtinEditors: false` to `mountWorkflowEditor` / `<WorkflowEditor>`) and either
+accept the textarea fallback or register your own field components via
+`instance.fields.register(...)`.
+
 Category color/icon helpers likewise take a `CategoriesStore` as an explicit
 parameter — the last global-instance fallback in `utils` is gone.
 

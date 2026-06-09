@@ -241,6 +241,25 @@ export interface FlowDropFeatures {
    * @default true
    */
   enableNodeSwap?: boolean;
+
+  /**
+   * Register the built-in heavy form editors (markdown / code / template).
+   *
+   * The full editor is batteries-included: node config fields with
+   * `format: 'markdown'` / `'code'` / `'template'` render real CodeMirror
+   * editors out of the box. Their chunks are code-split and load lazily, so
+   * an editor that never opens such a field never downloads CodeMirror/marked.
+   *
+   * Set to `false` only if you want to strip those editors (e.g. to shave the
+   * lazy chunks) and either live with the textarea fallback or register your
+   * own field components via `instance.fields.register(...)`.
+   *
+   * This does not affect the standalone `@flowdrop/flowdrop/form` primitive,
+   * which stays opt-in regardless.
+   *
+   * @default true
+   */
+  builtinEditors?: boolean;
 }
 
 /**
@@ -252,7 +271,8 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
   autoSaveDraft: true,
   autoSaveDraftInterval: 30000,
   showToasts: true,
-  enableNodeSwap: true
+  enableNodeSwap: true,
+  builtinEditors: true
 };
 
 /**

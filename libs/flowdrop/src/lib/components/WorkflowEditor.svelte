@@ -26,7 +26,7 @@
   import CanvasController from './CanvasController.svelte';
   import FlowDropZone from './FlowDropZone.svelte';
   import EdgeRefresher from './EdgeRefresher.svelte';
-  import { tick, untrack } from 'svelte';
+  import { tick, untrack, onMount } from 'svelte';
   import type { EndpointConfig } from '../config/endpoints.js';
   import type { AuthProvider } from '../types/auth.js';
   import ConnectionLine from './ConnectionLine.svelte';
@@ -93,6 +93,16 @@
      * @default 'dots'
      */
     gridVariant?: FlowDropGridVariant;
+    /**
+     * Register the built-in heavy form editors (markdown / code / template)
+     * on this instance's field registry. Batteries-included by default — node
+     * config fields with `format: 'markdown' | 'code' | 'template'` render real
+     * CodeMirror editors. The chunks are code-split (loaded lazily here), so
+     * the `/editor` static bundle stays light. Set `false` to keep the textarea
+     * fallback or register your own field components. See `features.builtinEditors`.
+     * @default true
+     */
+    builtinEditors?: boolean;
   }
 
   let props: Props = $props();
@@ -102,6 +112,27 @@
   // The instance never changes for a mounted component, so capturing it once is correct.
   // svelte-ignore state_referenced_locally
   const fd = provideInstance(props.instance);
+
+  // Batteries-included: register the built-in heavy form editors (markdown /
+  // code / template) on this instance's field registry so node config fields
+  // render real editors out of the box. Dynamic import is deliberate — the
+  // bundle guard only inspects *static* imports, and `form/markdown`/`form/code`
+  // statically re-export their CodeMirror components, so a static import here
+  // would leak CodeMirror into the light `/editor` entry. Importing lazily on
+  // mount keeps the static graph clean while the chunks load on demand.
+  // register*Field is idempotent per registry, so re-mounts are safe.
+  onMount(() => {
+    if (props.builtinEditors === false) return;
+    void (async () => {
+      const [code, markdown] = await Promise.all([
+        import('../form/code.js'),
+        import('../form/markdown.js')
+      ]);
+      code.registerCodeEditorField(fd.fields);
+      code.registerTemplateEditorField(fd.fields);
+      markdown.registerMarkdownEditorField(fd.fields);
+    })();
+  });
 
   // `mode` is the public API; the canvas only needs to know whether editing is
   // enabled. 'readonly' and 'locked' both disable interaction identically.

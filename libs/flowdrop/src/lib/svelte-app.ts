@@ -640,9 +640,23 @@ export async function mountWorkflowEditor(
     authProvider?: AuthProvider;
     /** Instance identifier — see {@link FlowDropMountOptions.instanceId}. */
     instanceId?: string;
+    /**
+     * Register the built-in markdown/code/template editors. Batteries-included
+     * by default (chunks load lazily). See {@link FlowDropFeatures.builtinEditors}.
+     * @default true
+     */
+    builtinEditors?: boolean;
   } = {}
 ): Promise<MountedFlowDropApp> {
-  const { workflow, endpointConfig, portConfig, categories, authProvider, instanceId } = options;
+  const {
+    workflow,
+    endpointConfig,
+    portConfig,
+    categories,
+    authProvider,
+    instanceId,
+    builtinEditors
+  } = options;
 
   // Per-instance state container (see mountFlowDropApp)
   const { fd, isDefault } = acquireInstance(instanceId);
@@ -712,7 +726,8 @@ export async function mountWorkflowEditor(
     props: {
       instance: fd,
       endpointConfig: config,
-      authProvider
+      authProvider,
+      builtinEditors
     }
   });
 

@@ -13,7 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The full editor renders markdown/code/config editors out of the box again.** The beta.2 light-entry split made the heavy form editors opt-in everywhere, which inadvertently left `<WorkflowEditor>` / `<App>` / the playground showing the "Editor component not registered" textarea fallback for node config fields with `format: 'markdown' | 'code' | 'template'`. The full editor now registers the built-in editors on its own instance's field registry on mount. Registration uses a dynamic `import()`, so the chunks stay code-split (loaded lazily) and the light `/editor` static bundle is unaffected — the bundle guard still passes. The standalone `@flowdrop/flowdrop/form` primitive is unchanged and remains opt-in.
 - **`<App navbarActions>` accepts the full `NavbarAction` shape.** The component prop was typed with an inline subset that silently dropped `external` and `group`, even though the underlying `<Navbar>` (and the `mountFlowDropApp` option) already supported them. It now uses the canonical `NavbarAction` type, so external-link and grouped actions type-check through the component as they always did through the mount API.
+
+### Added
+
+- **`features.builtinEditors` opt-out.** The built-in markdown/code/template editors are batteries-included in the full editor by default. Pass `features: { builtinEditors: false }` to `mountFlowDropApp` (or `builtinEditors: false` to `mountWorkflowEditor` / `<WorkflowEditor>`) to skip registering them — keeping the textarea fallback or leaving room to register your own field components via `instance.fields.register(...)`. The corrected fallback hint now points at the registry-scoped API (`registerMarkdownEditorField(instance.fields)`).
 
 ## [2.0.0-beta.2] - 2026-06-09
 
