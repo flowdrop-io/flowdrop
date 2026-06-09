@@ -55,8 +55,8 @@ export const drafterSkin: FlowDropSkin = {
     ring: '#06b6d4',
 
     /* ----- Canvas: fresh aqua-mint, soft cyan/teal square grid ----- */
-    'canvas-bg': '#f4fbf9',
-    'grid-pattern-color': 'rgba(20, 184, 166, 0.13)',
+    'canvas-bg': '#fbfefd',
+    'grid-pattern-color': 'rgba(20, 184, 166, 0.08)',
 
     /* ----- Nodes: frosted glass, faint inner highlight ----- */
     'node-bg': 'rgba(255, 255, 255, 0.68)',
