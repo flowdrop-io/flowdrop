@@ -170,7 +170,6 @@ export class PlaygroundStore {
   #isExecuting = $derived(this.#currentSession?.status === 'running');
 
   /** Cleanups for active subscribeToSessionStatus effect roots. */
-  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- non-reactive bookkeeping registry; nothing renders from it
   readonly #statusSubscriptions = new Set<() => void>();
 
   /** Bound mutation facade — see {@link PlaygroundStoreActions}. */
@@ -455,7 +454,6 @@ export class PlaygroundStore {
     if (!this.#currentSession) return;
 
     const executions = [...(this.#currentSession.executions ?? [])];
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient local for dedup within this call
     const seenIds = new Set(executions.map((e) => e.id));
     let added = false;
     let gainedMainRun = false;

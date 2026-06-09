@@ -34,7 +34,6 @@ export class CategoriesStore {
   /** Derived lookup map: category name → CategoryDefinition. */
   #categoryMap = $derived(
     (() => {
-      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- rebuilt whole inside $derived, never mutated afterwards
       const map = new Map<string, CategoryDefinition>();
       for (const cat of this.#categories) {
         map.set(cat.name, cat);

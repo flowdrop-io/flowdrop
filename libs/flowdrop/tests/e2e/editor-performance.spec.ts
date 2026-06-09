@@ -64,7 +64,6 @@ test.describe('Editor Performance — large graph', () => {
       await expect(statusBar).toContainText(`${NODE_COUNT - 1} connections`, { timeout: 5000 });
     }
 
-    /* eslint-disable no-console */
     console.log('\n── Editor perf (large graph) ──────────────────────────');
     console.log(`  nodes:                 ${NODE_COUNT}`);
     console.log(`  first node painted:    ${firstNodeMs} ms`);
@@ -74,7 +73,6 @@ test.describe('Editor Performance — large graph', () => {
       console.log(`  load event:            ${nav.load} ms`);
     }
     console.log('───────────────────────────────────────────────────────\n');
-    /* eslint-enable no-console */
 
     expect(allNodesMs).toBeLessThan(MOUNT_BUDGET_MS);
   });
@@ -102,9 +100,7 @@ test.describe('Editor Performance — large graph', () => {
     await page.mouse.up();
     const panMs = Date.now() - start;
 
-    /* eslint-disable no-console */
     console.log(`\n  pan (${NODE_COUNT} nodes, 10 steps): ${panMs} ms\n`);
-    /* eslint-enable no-console */
 
     // Editor should still be interactive afterwards.
     expect(await getNodeCount(page)).toBe(NODE_COUNT);

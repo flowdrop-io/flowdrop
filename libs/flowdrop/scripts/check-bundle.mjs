@@ -49,7 +49,13 @@ const CONTRACTS = [
     name: 'core',
     entry: 'core/index.js',
     // "zero heavy dependencies" — types + utils only.
-    forbid: [...HEAVY.codemirror, ...HEAVY.xyflow, ...HEAVY.marked, ...HEAVY.dompurify, ...HEAVY.diff]
+    forbid: [
+      ...HEAVY.codemirror,
+      ...HEAVY.xyflow,
+      ...HEAVY.marked,
+      ...HEAVY.dompurify,
+      ...HEAVY.diff
+    ]
   },
   {
     name: 'form (light)',
