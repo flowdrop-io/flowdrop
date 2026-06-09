@@ -8,7 +8,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
-  import Logo from './Logo.svelte';
+  import LogoWordmark from './LogoWordmark.svelte';
   import SettingsModal from './SettingsModal.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
   import type { NavbarAction } from '$lib/types/navbar.js';
@@ -97,16 +97,10 @@
 
 <div class="flowdrop-navbar">
   <div class="flowdrop-navbar__start">
-    <!-- Logo and Title -->
+    <!-- Logo (rocket + FlowDrop wordmark) -->
     <div class="flowdrop-logo--container">
-      <div class="flowdrop-flex flowdrop-gap--3">
-        <div class="flowdrop-logo--header">
-          <Logo />
-        </div>
-        <div>
-          <h1 class="flowdrop-text--logo flowdrop-font--bold">{nav.appName}</h1>
-          <p class="flowdrop-text--tagline flowdrop-text--gray">{nav.tagline}</p>
-        </div>
+      <div class="flowdrop-logo--header">
+        <LogoWordmark />
       </div>
     </div>
   </div>
@@ -331,10 +325,10 @@
   }
 
   .flowdrop-logo--header {
-    width: 40px;
-    height: 40px;
-    font-size: 1.25rem;
-    padding: 2px;
+    /* Wordmark lockup is 5:1; keep it within the start column. */
+    height: 32px;
+    width: 160px;
+    padding: 2px 0;
   }
 
   .flowdrop-navbar__center {
@@ -753,38 +747,6 @@
     background-color: var(--fd-success);
   }
 
-  /* Utility classes */
-  .flowdrop-flex {
-    display: flex;
-  }
-
-  .flowdrop-gap--3 {
-    gap: 0.75rem;
-  }
-
-  .flowdrop-text--logo {
-    font-size: 1.125rem;
-    line-height: 0;
-  }
-
-  .flowdrop-text--tagline {
-    font-size: var(--fd-text-xs);
-    line-height: 0.5rem;
-  }
-
-  .flowdrop-text--xs {
-    font-size: var(--fd-text-xs);
-    line-height: 1rem;
-  }
-
-  .flowdrop-text--gray {
-    color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-font--bold {
-    font-weight: 700;
-  }
-
   /* Responsive design */
   @media (max-width: 768px) {
     .flowdrop-navbar {
@@ -832,14 +794,6 @@
     .flowdrop-navbar__primary-action {
       padding: 0.5rem;
       border-radius: var(--fd-radius-md) 0 0 var(--fd-radius-md);
-    }
-
-    .flowdrop-text--logo {
-      display: none;
-    }
-
-    .flowdrop-text--tagline {
-      display: none;
     }
 
     .flowdrop-navbar__title-text {
