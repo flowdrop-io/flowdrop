@@ -9,7 +9,9 @@
   import MainLayout from '$lib/components/layouts/MainLayout.svelte';
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
-  import Icon from '@iconify/svelte';
+  import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
+  import MenuIcon from '$lib/components/icons/MenuIcon.svelte';
+  import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
@@ -1273,18 +1275,22 @@
     >
       <!-- Floating sidebar toggle — always visible on the canvas top-left -->
       {#if !disableSidebar}
-        <button
+        <CanvasIconButton
           class="flowdrop-sidebar-fab"
+          label={isSidebarCollapsed
+            ? mergedMessages.layout.expandSidebar
+            : mergedMessages.layout.collapseSidebar}
+          active={!isSidebarCollapsed}
           onclick={toggleSidebar}
-          aria-label={isSidebarCollapsed
-            ? mergedMessages.layout.expandSidebar
-            : mergedMessages.layout.collapseSidebar}
-          title={isSidebarCollapsed
-            ? mergedMessages.layout.expandSidebar
-            : mergedMessages.layout.collapseSidebar}
         >
-          <Icon icon={isSidebarCollapsed ? 'mdi:menu' : 'mdi:menu-open'} />
-        </button>
+          {#snippet icon()}
+            {#if isSidebarCollapsed}
+              <MenuIcon />
+            {:else}
+              <MenuOpenIcon />
+            {/if}
+          {/snippet}
+        </CanvasIconButton>
       {/if}
 
       <WorkflowEditor
@@ -1409,38 +1415,11 @@
     font-weight: 500;
   }
 
-  /* Floating sidebar toggle button */
-  .flowdrop-sidebar-fab {
-    position: absolute;
+  /* Floating sidebar toggle button — placement only; visuals live in CanvasIconButton */
+  :global(.flowdrop-sidebar-fab) {
     top: 12px;
     left: 12px;
     z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-background);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    box-shadow: var(--fd-shadow-md);
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast),
-      box-shadow var(--fd-transition-fast);
-  }
-
-  .flowdrop-sidebar-fab:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
-    box-shadow: var(--fd-shadow-lg);
-  }
-
-  .flowdrop-sidebar-fab:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
   }
 
   /* Main editor area */

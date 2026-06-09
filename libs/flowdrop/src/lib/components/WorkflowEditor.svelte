@@ -57,7 +57,8 @@
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
-  import Icon from '@iconify/svelte';
+  import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
+  import CommandLineIcon from '$lib/components/icons/CommandLineIcon.svelte';
   import { DEV } from 'esm-env';
 
   interface Props {
@@ -919,16 +920,16 @@
             >
               <Controls />
               {#if canvasEditable && props.onToggleConsole}
-                <button
+                <CanvasIconButton
                   class="flowdrop-console-toggle"
-                  class:flowdrop-console-toggle--active={props.consoleOpen}
+                  label={m().layout.commandConsole}
+                  active={props.consoleOpen}
                   onclick={props.onToggleConsole}
-                  aria-label={m().layout.commandConsole}
-                  title={m().layout.commandConsole}
-                  type="button"
                 >
-                  <Icon icon="heroicons:command-line" width="18" height="18" />
-                </button>
+                  {#snippet icon()}
+                    <CommandLineIcon />
+                  {/snippet}
+                </CanvasIconButton>
               {/if}
               <!-- Always render Background for consistent bg color in dark/light mode -->
               <Background
@@ -1053,48 +1054,11 @@
     justify-content: space-between;
   }
 
-  .flowdrop-console-toggle {
-    position: absolute;
+  /* Console toggle — placement only; visuals live in CanvasIconButton */
+  :global(.flowdrop-console-toggle) {
     bottom: 140px;
     left: 12px;
     z-index: 5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-background);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    box-shadow: var(--fd-shadow-sm);
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast),
-      box-shadow var(--fd-transition-fast);
-  }
-
-  .flowdrop-console-toggle:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
-    box-shadow: var(--fd-shadow-md);
-  }
-
-  .flowdrop-console-toggle:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
-  }
-
-  .flowdrop-console-toggle--active {
-    color: var(--fd-primary);
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary);
-  }
-
-  .flowdrop-console-toggle--active:hover {
-    color: var(--fd-primary);
-    background-color: var(--fd-primary-muted);
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__node:hover) {
