@@ -71,8 +71,9 @@ export { default as SchemaForm } from '../components/SchemaForm.svelte';
 // Use the light version of FormField that uses the registry for heavy editors
 export { default as FormField } from '../components/form/FormFieldLight.svelte';
 
-// Also export the original (full) version for users who want everything
-export { default as FormFieldFull } from '../components/form/FormField.svelte';
+// NOTE: `FormFieldFull` — the variant that *statically* bundles every editor
+// (including CodeMirror) — is intentionally NOT exported here; it would pull
+// CodeMirror into this light entry. Import it from `@flowdrop/flowdrop/form/full`.
 export { default as FormFieldWrapper } from '../components/form/FormFieldWrapper.svelte';
 export { default as FormTextField } from '../components/form/FormTextField.svelte';
 export { default as FormTextarea } from '../components/form/FormTextarea.svelte';

@@ -148,13 +148,13 @@ export {
 // Playground Service
 // ============================================================================
 
-export { PlaygroundService, playgroundService } from '../services/playgroundService.js';
+export { PlaygroundService } from '../services/playgroundService.js';
 
 // ============================================================================
 // Interrupt Service (Human-in-the-Loop)
 // ============================================================================
 
-export { InterruptService, interruptService } from '../services/interruptService.js';
+export { InterruptService } from '../services/interruptService.js';
 
 // ============================================================================
 // Playground Store

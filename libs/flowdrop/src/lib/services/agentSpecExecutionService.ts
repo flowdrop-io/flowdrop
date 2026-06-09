@@ -431,6 +431,3 @@ export class AgentSpecExecutionService {
     }
   }
 }
-
-/** Singleton instance */
-export const agentSpecExecutionService = AgentSpecExecutionService.getInstance();

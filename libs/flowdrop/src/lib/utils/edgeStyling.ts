@@ -6,7 +6,7 @@
  * Used by both the visual editor and the command DSL system.
  */
 
-import { MarkerType } from '@xyflow/svelte';
+import type { MarkerType } from '@xyflow/svelte';
 import type {
   WorkflowNode as WorkflowNodeType,
   WorkflowEdge,
@@ -15,6 +15,12 @@ import type {
 import { extractPortId } from '../utils/handleIds.js';
 import { isLoopbackEdge } from '../utils/connections.js';
 import { EDGE_MARKER_SIZES } from '../config/constants.js';
+
+// xyflow's `MarkerType.ArrowClosed`, inlined as its literal value. This module
+// is shared with the headless command DSL (reachable from `@flowdrop/flowdrop/core`),
+// so it must NOT carry a runtime import of @xyflow/svelte — a type-only import
+// plus this constant keeps the marker type-safe without the dependency.
+const ARROW_CLOSED_MARKER = 'arrowclosed' as MarkerType;
 
 /**
  * Check if a port ID matches a dynamic branch in a Gateway node.
@@ -137,7 +143,7 @@ export function applyConnectionStyling(
         'stroke: var(--fd-edge-loopback); stroke-dasharray: var(--fd-edge-loopback-dasharray); stroke-width: var(--fd-edge-loopback-width); opacity: var(--fd-edge-loopback-opacity);';
       edge.class = 'flowdrop--edge--loopback';
       edge.markerEnd = {
-        type: MarkerType.ArrowClosed,
+        type: ARROW_CLOSED_MARKER,
         ...EDGE_MARKER_SIZES.loopback,
         color: 'var(--fd-edge-loopback)'
       };
@@ -147,7 +153,7 @@ export function applyConnectionStyling(
       edge.style = 'stroke: var(--fd-edge-trigger); stroke-width: var(--fd-edge-trigger-width);';
       edge.class = 'flowdrop--edge--trigger';
       edge.markerEnd = {
-        type: MarkerType.ArrowClosed,
+        type: ARROW_CLOSED_MARKER,
         ...EDGE_MARKER_SIZES.trigger,
         color: 'var(--fd-edge-trigger)'
       };
@@ -157,7 +163,7 @@ export function applyConnectionStyling(
       edge.style = 'stroke: var(--fd-edge-tool); stroke-dasharray: 5 3;';
       edge.class = 'flowdrop--edge--tool';
       edge.markerEnd = {
-        type: MarkerType.ArrowClosed,
+        type: ARROW_CLOSED_MARKER,
         ...EDGE_MARKER_SIZES.tool,
         color: 'var(--fd-edge-tool)'
       };
@@ -168,7 +174,7 @@ export function applyConnectionStyling(
       edge.style = 'stroke: var(--fd-edge-data);';
       edge.class = 'flowdrop--edge--data';
       edge.markerEnd = {
-        type: MarkerType.ArrowClosed,
+        type: ARROW_CLOSED_MARKER,
         ...EDGE_MARKER_SIZES.data,
         color: 'var(--fd-edge-data)'
       };

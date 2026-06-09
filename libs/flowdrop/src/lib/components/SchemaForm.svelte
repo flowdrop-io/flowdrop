@@ -59,9 +59,11 @@
   import type { ConfigSchema, AuthProvider } from '$lib/types/index.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
-  import { FormField } from '$lib/components/form/index.js';
+  // Registry-based light field factory — heavy editors (CodeMirror) are resolved
+  // at runtime via fd.fields, so importing SchemaForm never statically pulls them.
+  import FormField from '$lib/components/form/FormFieldLight.svelte';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
-  import type { FieldSchema } from '$lib/components/form/index.js';
+  import type { FieldSchema } from '$lib/components/form/types.js';
   import { m } from '$lib/messages/index.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
 

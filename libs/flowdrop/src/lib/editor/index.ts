@@ -168,7 +168,7 @@ export {
   pipelineToasts
 } from '../services/toastService.js';
 
-export { NodeExecutionService, nodeExecutionService } from '../services/nodeExecutionService.js';
+export { NodeExecutionService } from '../services/nodeExecutionService.js';
 
 export {
   saveWorkflow,

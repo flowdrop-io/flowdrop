@@ -486,11 +486,8 @@ export {
   getAgentSpecAuthHeaders
 } from '../config/agentSpecEndpoints.js';
 
-// Agent Spec execution service
-export {
-  AgentSpecExecutionService,
-  agentSpecExecutionService
-} from '../services/agentSpecExecutionService.js';
+// Agent Spec execution service (instantiate per instance — no global singleton)
+export { AgentSpecExecutionService } from '../services/agentSpecExecutionService.js';
 export type { AgentSpecExecutionHandle } from '../services/agentSpecExecutionService.js';
 
 // ============================================================================
@@ -524,12 +521,6 @@ export {
   initializeTheme,
   isThemeInitialized
 } from '../stores/settingsStore.svelte.js';
-
-// ============================================================================
-// HTML Sanitization
-// ============================================================================
-
-export { sanitizeHtml } from '../utils/sanitize.js';
 
 // ============================================================================
 // Logger

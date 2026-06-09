@@ -32,9 +32,13 @@
   } from '$lib/types/index.js';
   import { dynamicPortToNodePort } from '$lib/types/index.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
-  import { FormField, FormFieldWrapper, FormToggle } from '$lib/components/form/index.js';
+  // Import the light, registry-based field factory and light fields directly
+  // (not via the form barrel, which aggregates the heavy CodeMirror editors).
+  import FormField from '$lib/components/form/FormFieldLight.svelte';
+  import FormFieldWrapper from '$lib/components/form/FormFieldWrapper.svelte';
+  import FormToggle from '$lib/components/form/FormToggle.svelte';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
-  import type { FieldSchema } from '$lib/components/form/index.js';
+  import type { FieldSchema } from '$lib/components/form/types.js';
   import {
     getEffectiveConfigEditOptions,
     fetchDynamicSchema,

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Breaking Changes
+
+- **Heavy dependencies no longer leak into the light entries.** Three exports moved so that `@flowdrop/flowdrop/core` and the light `@flowdrop/flowdrop/form` never statically pull CodeMirror, `marked`, DOMPurify, or `@xyflow/svelte` (enforced by a new CI bundle guard, see below):
+  - `sanitizeHtml` moved from `@flowdrop/flowdrop/core` to `@flowdrop/flowdrop/display` (it is DOMPurify-backed; `/core` is the zero-heavy-dep entry).
+  - `FormFieldFull` moved from `@flowdrop/flowdrop/form` to `@flowdrop/flowdrop/form/full` — it statically bundles every editor (CodeMirror), so keeping it in the light `/form` entry pulled CodeMirror into every `SchemaForm` import. The `FormField` exported from `/form` remains the registry-based light factory.
+  - Service singleton _instances_ (`playgroundService`, `interruptService` from `/playground`; `nodeExecutionService` from `/editor`; `agentSpecExecutionService` from `/core`) are no longer exported — they were constructed eagerly at import time, pulling the service and its dependencies into the entry's static graph. The classes (`PlaygroundService`, `InterruptService`, `NodeExecutionService`, `AgentSpecExecutionService`) remain; call `getInstance()` for the shared instance. See [MIGRATION-2.0.md section 4](./MIGRATION-2.0.md#keeping-heavy-dependencies-out-of-the-light-entries).
+
+### Changed (internal — no API change)
+
+- `SchemaForm`, `ConfigForm`, and the UISchema renderer now use the registry-based light `FormFieldLight` internally, so importing `SchemaForm` no longer statically pulls CodeMirror (heavy editors stay opt-in via `/form/code` and `/form/markdown`).
+- Built-in node **type metadata** (aliases, `resolveBuiltinAlias`, `isBuiltinType`) split into a component-free `registry/builtinNodeTypes` module so `/core`'s node-type utilities no longer drag in the node components (and transitively `marked`/DOMPurify).
+- `utils/edgeStyling` and the `ConnectionLineType` reference in `types/index.ts` use type-only imports of `@xyflow/svelte`, removing the runtime `@xyflow/svelte` dependency from the headless command DSL reachable from `/core`.
+
+### Added
+
+- **Bundle-size guard (`pnpm run check:bundle`)** and a CI workflow that walk each published entry's static import graph and fail if a heavy dependency (CodeMirror, `@xyflow/svelte`, `marked`, DOMPurify) becomes statically reachable from a light entry (`/core`, `/form`, `/editor`). Dynamic `import()` — how `/form/code` lazy-loads CodeMirror — is intentionally ignored.
+
 ## [2.0.0-beta.1] - 2026-06-07
 
 Pre-release of 2.0.0, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. See [MIGRATION-2.0.md](./MIGRATION-2.0.md) for the upgrade guide.

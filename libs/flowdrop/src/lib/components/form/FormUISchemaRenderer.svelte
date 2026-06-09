@@ -16,7 +16,9 @@
   import type { ConfigSchema, WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
   import type { FieldSchema } from './types.js';
   import { resolveScopeToKey } from '$lib/utils/uischema.js';
-  import FormField from './FormField.svelte';
+  // Use the registry-based light field factory so the UISchema renderer (and
+  // SchemaForm/ConfigForm above it) never statically pull in CodeMirror.
+  import FormField from './FormFieldLight.svelte';
   import FormFieldset from './FormFieldset.svelte';
   import Self from './FormUISchemaRenderer.svelte';
 

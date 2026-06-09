@@ -1,0 +1,53 @@
+name: Bundle Size Guard
+
+on:
+  push:
+    branches:
+      - main
+      - next
+    paths:
+      - 'libs/flowdrop/src/**'
+      - 'libs/flowdrop/package.json'
+      - 'libs/flowdrop/scripts/check-bundle.mjs'
+      - '.github/workflows/flowdrop-bundle.yml'
+  pull_request:
+    branches:
+      - main
+      - next
+    paths:
+      - 'libs/flowdrop/src/**'
+      - 'libs/flowdrop/package.json'
+      - 'libs/flowdrop/scripts/check-bundle.mjs'
+      - '.github/workflows/flowdrop-bundle.yml'
+
+jobs:
+  bundle-guard:
+    name: Heavy deps stay out of light entries
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libs/flowdrop
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: libs/flowdrop/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build package
+        run: pnpm run build
+
+      - name: Check bundle (no heavy-dep leaks into light entries)
+        run: pnpm run check:bundle

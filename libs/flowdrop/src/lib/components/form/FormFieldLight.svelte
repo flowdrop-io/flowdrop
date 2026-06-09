@@ -48,6 +48,8 @@
   const fd = getInstance();
   import type { FieldSchema } from './types.js';
   import { getSchemaOptions } from './types.js';
+  import type { WorkflowNode, WorkflowEdge } from '$lib/types/index.js';
+  import type { AuthProvider } from '$lib/types/auth.js';
 
   interface Props {
     /** Unique key/id for the field */
@@ -60,11 +62,33 @@
     required?: boolean;
     /** Animation delay index for staggered animations */
     animationIndex?: number;
+    /** Current workflow node (optional, forwarded to registered editors for template variable API mode) */
+    node?: WorkflowNode;
+    /** All workflow nodes (optional, forwarded to registered editors for port-derived variables) */
+    nodes?: WorkflowNode[];
+    /** All workflow edges (optional, forwarded to registered editors for port-derived variables) */
+    edges?: WorkflowEdge[];
+    /** Workflow ID (optional, forwarded to registered editors for template variable API mode) */
+    workflowId?: string;
+    /** Auth provider (optional, forwarded to registered editors for API requests) */
+    authProvider?: AuthProvider;
     /** Callback when the field value changes */
     onChange: (value: unknown) => void;
   }
 
-  let { fieldKey, schema, value, required = false, animationIndex = 0, onChange }: Props = $props();
+  let {
+    fieldKey,
+    schema,
+    value,
+    required = false,
+    animationIndex = 0,
+    node,
+    nodes,
+    edges,
+    workflowId,
+    authProvider,
+    onChange
+  }: Props = $props();
 
   /**
    * Computed description ID for ARIA association
@@ -246,6 +270,11 @@
         variables={schema.variables}
         placeholderExample={schema.placeholderExample as string | undefined}
         autocomplete={schema.autocomplete}
+        {node}
+        {nodes}
+        {edges}
+        {workflowId}
+        {authProvider}
         onChange={(val: unknown) => onChange(val)}
       />
     {:else if fieldType === 'checkbox-group'}

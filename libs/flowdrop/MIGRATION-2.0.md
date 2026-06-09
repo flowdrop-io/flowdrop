@@ -206,16 +206,16 @@ barrel no longer re-exports `marked`.
 
 - **Playground exports** (`Playground`, `PlaygroundModal`, `ChatPanel`,
   `SessionManager`, `InputCollector`, `ExecutionLogs`, `MessageBubble`,
-  `PlaygroundService`, `playgroundService`, `PlaygroundStore`) are removed from
+  `PlaygroundService`, `PlaygroundStore`) are removed from
   `@flowdrop/flowdrop/editor`. Import them from `@flowdrop/flowdrop/playground`
   instead.
 
   ```js
   // 1.x
-  import { Playground, playgroundService } from '@flowdrop/flowdrop/editor';
+  import { Playground, PlaygroundStore } from '@flowdrop/flowdrop/editor';
 
   // 2.0
-  import { Playground, playgroundService } from '@flowdrop/flowdrop/playground';
+  import { Playground, PlaygroundStore } from '@flowdrop/flowdrop/playground';
   ```
 
 - **`marked`** is no longer re-exported from `@flowdrop/flowdrop/display`. If you
@@ -283,6 +283,58 @@ import { defaultTheme } from '@flowdrop/flowdrop/core';
 This also tightens tree-shaking: importing `App` and a couple of types from the
 main entry no longer pulls the form, display, playground, and settings barrels
 into your bundle.
+
+### Keeping heavy dependencies out of the light entries
+
+A few more exports moved so that the lightweight entries (`/core`, the light
+`/form`) never statically pull a heavy dependency (CodeMirror, `marked`,
+DOMPurify, `@xyflow/svelte`). These are enforced by a bundle guard in CI, so
+they cannot silently regress.
+
+- **`sanitizeHtml` moved from `@flowdrop/flowdrop/core` to
+  `@flowdrop/flowdrop/display`.** It is DOMPurify-backed, and `/core` is the
+  "zero heavy dependencies" entry, so it now lives alongside `MarkdownDisplay`.
+
+  ```js
+  // before
+  import { sanitizeHtml } from '@flowdrop/flowdrop/core';
+  // 2.0
+  import { sanitizeHtml } from '@flowdrop/flowdrop/display';
+  ```
+
+- **`FormFieldFull` moved from `@flowdrop/flowdrop/form` to
+  `@flowdrop/flowdrop/form/full`.** `FormFieldFull` statically bundles every
+  editor (including CodeMirror); keeping it in the light `/form` entry pulled
+  CodeMirror into every `SchemaForm` import. The default `FormField` exported
+  from `/form` is the registry-based light field factory — register heavy
+  editors via `/form/code` / `/form/markdown` (unchanged). Use `/form/full`
+  only if you specifically want every editor statically bundled.
+
+  ```js
+  // before
+  import { FormFieldFull } from '@flowdrop/flowdrop/form';
+  // 2.0
+  import { FormFieldFull } from '@flowdrop/flowdrop/form/full';
+  ```
+
+- **Service singleton _instances_ are no longer exported.**
+  `playgroundService` and `interruptService` (`@flowdrop/flowdrop/playground`),
+  `nodeExecutionService` (`@flowdrop/flowdrop/editor`), and
+  `agentSpecExecutionService` (`@flowdrop/flowdrop/core`) are removed. They were
+  module-level instances constructed at import time, which forced the service
+  (and its dependencies) to be built the moment the entry was imported. The
+  **classes** remain exported (`PlaygroundService`, `InterruptService`,
+  `NodeExecutionService`, `AgentSpecExecutionService`). Most apps never touched
+  these directly (use `fd.playground` / `fd.interrupts`); if you did, call
+  `getInstance()` to obtain the shared instance:
+
+  ```js
+  // before
+  import { playgroundService } from '@flowdrop/flowdrop/playground';
+  // 2.0
+  import { PlaygroundService } from '@flowdrop/flowdrop/playground';
+  const playgroundService = PlaygroundService.getInstance();
+  ```
 
 ## 5. Workflow `metadata` is required and `version` → `schemaVersion`
 

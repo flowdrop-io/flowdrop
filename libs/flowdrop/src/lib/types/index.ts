@@ -3,8 +3,7 @@
  */
 
 import type { Component } from 'svelte';
-import type { Node, Edge, XYPosition } from '@xyflow/svelte';
-import { ConnectionLineType } from '@xyflow/svelte';
+import type { Node, Edge, XYPosition, ConnectionLineType } from '@xyflow/svelte';
 import type { EndpointConfig } from '../config/endpoints.js';
 
 /**

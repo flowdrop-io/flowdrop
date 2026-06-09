@@ -11,6 +11,7 @@ import {
   type NodeComponentProps
 } from './nodeComponentRegistry.js';
 import type { Component } from 'svelte';
+import { FLOWDROP_SOURCE } from './builtinNodeTypes.js';
 import WorkflowNode from '../components/nodes/WorkflowNode.svelte';
 import SimpleNode from '../components/nodes/SimpleNode.svelte';
 import SquareNode from '../components/nodes/SquareNode.svelte';
@@ -21,10 +22,19 @@ import NotesNode from '../components/nodes/NotesNode.svelte';
 import TerminalNode from '../components/nodes/TerminalNode.svelte';
 import IdeaNode from '../components/nodes/IdeaNode.svelte';
 
-/**
- * Source identifier for built-in FlowDrop components
- */
-export const FLOWDROP_SOURCE = 'flowdrop';
+// Pure type metadata + resolution helpers are re-exported for backward
+// compatibility — they now live in a component-free module so that
+// type-only consumers (e.g. utils/nodeTypes.ts, reachable from `core`) do
+// not statically pull in the node components below.
+export {
+  FLOWDROP_SOURCE,
+  BUILTIN_TYPE_ALIASES,
+  BUILTIN_NODE_TYPES,
+  resolveBuiltinAlias,
+  isBuiltinType,
+  getBuiltinTypes
+} from './builtinNodeTypes.js';
+export type { BuiltinNodeType } from './builtinNodeTypes.js';
 
 /**
  * Built-in FlowDrop node component registrations.
@@ -130,73 +140,4 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
     statusPosition: 'top-right',
     statusSize: 'sm'
   }
-];
-
-/**
- * Alias mapping for type resolution.
- * Maps alternative type names to their canonical registration.
- */
-export const BUILTIN_TYPE_ALIASES: Record<string, string> = {
-  default: 'workflowNode'
-};
-
-/**
- * Get the canonical type for a given type string.
- * Handles aliases like "default" -> "workflowNode".
- *
- * @param type - The type string to resolve
- * @returns The canonical type string
- */
-export function resolveBuiltinAlias(type: string): string {
-  return BUILTIN_TYPE_ALIASES[type] ?? type;
-}
-
-/**
- * Check if a type is a built-in FlowDrop type.
- *
- * @param type - The type to check
- * @returns true if this is a built-in type
- */
-export function isBuiltinType(type: string): boolean {
-  const canonicalType = resolveBuiltinAlias(type);
-  return BUILTIN_NODE_COMPONENTS.some((reg) => reg.type === canonicalType);
-}
-
-/**
- * Get all built-in type identifiers.
- *
- * @returns Array of built-in type strings
- */
-export function getBuiltinTypes(): string[] {
-  return BUILTIN_NODE_COMPONENTS.map((reg) => reg.type);
-}
-
-/**
- * Type for built-in node types.
- * Use this when you specifically need a built-in type.
- */
-export type BuiltinNodeType =
-  | 'workflowNode'
-  | 'simple'
-  | 'square'
-  | 'atom'
-  | 'tool'
-  | 'gateway'
-  | 'note'
-  | 'terminal'
-  | 'idea';
-
-/**
- * Array of built-in type strings for runtime validation.
- */
-export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
-  'workflowNode',
-  'simple',
-  'square',
-  'atom',
-  'tool',
-  'gateway',
-  'note',
-  'terminal',
-  'idea'
 ];

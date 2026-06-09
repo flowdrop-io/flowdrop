@@ -12,7 +12,7 @@
 
 import type { NodeType, NodeMetadata } from '../types/index.js';
 import type { NodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
-import { resolveBuiltinAlias, isBuiltinType } from '../registry/builtinNodes.js';
+import { resolveBuiltinAlias, isBuiltinType } from '../registry/builtinNodeTypes.js';
 
 /**
  * Display names for built-in node types.

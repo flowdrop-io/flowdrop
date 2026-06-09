@@ -22,11 +22,14 @@
  */
 
 // Re-export everything from the light form module
+// The "everything statically bundled" FormField variant lives here (this is the
+// heavy entry), not in the light `@flowdrop/flowdrop/form`.
+export { default as FormFieldFull } from '../components/form/FormField.svelte';
+
 // Components
 export {
   SchemaForm,
   FormField,
-  FormFieldFull,
   FormFieldWrapper,
   FormTextField,
   FormTextarea,
