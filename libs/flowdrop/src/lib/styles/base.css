@@ -8,6 +8,12 @@
   box-sizing: border-box;
 }
 
+/* Drop the UA default margin on paragraphs so block text sits on the grid;
+   contexts that want spacing (e.g. .markdown-display p) opt back in. */
+p {
+  margin: 0;
+}
+
 /* Layout utilities */
 .flowdrop-layout {
   display: flex;

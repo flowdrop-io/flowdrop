@@ -258,13 +258,13 @@
       <div class="flowdrop-workflow-node__ports-list">
         {#each visibleInputPorts as port (port.id)}
           <div class="flowdrop-workflow-node__port">
-            <!-- Input Handle: centered in row, at node edge (ports have no padding) -->
+            <!-- Input Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
             <Handle
               type="target"
               position={Position.Left}
               id={`${props.data.nodeId}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
-              style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
+              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
                 checker,
                 port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
@@ -339,13 +339,13 @@
               {/if}
             </div>
 
-            <!-- Output Handle: centered in row, at node edge (ports have no padding) -->
+            <!-- Output Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
             <Handle
               type="source"
               position={Position.Right}
               id={`${props.data.nodeId}-output-${port.id}`}
               class="flowdrop-workflow-node__handle"
-              style="top: 50%; transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
+              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
                 checker,
                 port.dataType
               )}); --fd-handle-border-color: var(--fd-handle-border);"
@@ -519,21 +519,46 @@
   .flowdrop-workflow-node__ports-list {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-node-header-gap);
-    padding: var(--fd-node-header-gap) 0;
+    gap: 0;
+    /* No vertical padding: sections stack flush and node height stays a
+       multiple of 20. The one exception is the clearance below the header
+       divider, applied to the first section only (below). */
+    padding: 0;
+  }
+
+  /* The first port section sits directly below the header divider; give it a
+     full 20px grid row of clearance so the first port lands on the grid. */
+  .flowdrop-workflow-node__header
+    + .flowdrop-workflow-node__ports
+    .flowdrop-workflow-node__ports-list {
+    padding-top: calc(var(--fd-node-header-gap) * 2);
   }
 
   .flowdrop-workflow-node__port {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0;
-    min-height: var(--fd-node-port-row-height);
-    padding: var(--fd-space-3xs) 0;
+    /* Fixed three-row (60px) height for every port — node height stays
+       predictable whether or not a port carries a description. */
+    height: calc(var(--fd-node-port-row-height) * 3);
+    padding: 0;
     position: relative;
   }
 
   .flowdrop-workflow-node__port-content {
-    padding: 0 var(--fd-space-xl);
+    padding: var(--fd-node-header-gap) var(--fd-space-xl) 0;
+  }
+
+  /* Each line in a port occupies one 20px grid row: a label-only port
+     centers its single row, a label + description fills both. */
+  .flowdrop-workflow-node__port-content > div {
+    min-height: var(--fd-node-port-row-height);
+    align-items: center;
+  }
+
+  .flowdrop-workflow-node__port-content > p {
+    min-height: var(--fd-node-port-row-height);
+    line-height: var(--fd-node-port-row-height);
   }
 
   .flowdrop-badge {
