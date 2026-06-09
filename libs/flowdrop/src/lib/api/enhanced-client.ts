@@ -16,7 +16,7 @@ import type {
   WorkflowsResponse
 } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getEndpointMethod, getEndpointHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl, getEndpointMethod, getRequestHeaders } from '../config/endpoints.js';
 import type { AuthProvider } from '../types/auth.js';
 import { NoAuthProvider } from '../types/auth.js';
 import { getApiSettings } from '../stores/settingsStore.svelte.js';
@@ -125,18 +125,14 @@ export class EnhancedFlowDropApiClient {
   ): Promise<T> {
     const url = buildEndpointUrl(this.config, endpointPath, params);
     const method = options.method ?? getEndpointMethod(this.config, endpointKey);
-    const configHeaders = getEndpointHeaders(this.config, endpointKey);
 
     // Get user settings for timeout and retry
     const userApiSettings = getApiSettings();
 
-    // Get auth headers from provider
-    const authHeaders = await this.authProvider.getAuthHeaders();
-
-    // Merge headers: config headers < auth headers < request-specific headers
+    // Merge headers via the shared path: static endpoint headers < auth headers
+    // < request-specific headers.
     const headers: Record<string, string> = {
-      ...configHeaders,
-      ...authHeaders,
+      ...(await getRequestHeaders(this.config, endpointKey, this.authProvider)),
       ...(options.headers as Record<string, string>)
     };
 
@@ -172,11 +168,9 @@ export class EnhancedFlowDropApiClient {
           if (this.authProvider.onUnauthorized) {
             const refreshed = await this.authProvider.onUnauthorized();
             if (refreshed && attempt < maxAttempts) {
-              // Get new auth headers and retry
-              const newAuthHeaders = await this.authProvider.getAuthHeaders();
+              // Rebuild headers via the shared path to pick up the fresh token.
               fetchConfig.headers = {
-                ...configHeaders,
-                ...newAuthHeaders,
+                ...(await getRequestHeaders(this.config, endpointKey, this.authProvider)),
                 ...(options.headers as Record<string, string>)
               };
               continue; // Retry with new headers

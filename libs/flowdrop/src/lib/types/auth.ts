@@ -2,7 +2,9 @@
  * Authentication Provider Types for FlowDrop
  *
  * Provides interfaces and implementations for authentication in FlowDrop.
- * AuthProvider is passed at mount time and cannot be changed without remounting.
+ * An AuthProvider is supplied at mount time (or via `fd.api.configure`) and can
+ * be swapped at runtime with `fd.api.setAuthProvider(...)` — e.g. on login or
+ * logout — without remounting.
  *
  * @module types/auth
  */
@@ -16,8 +18,7 @@
  * @example
  * ```typescript
  * const authProvider: AuthProvider = {
- *   getAuthHeaders: async () => ({ Authorization: "Bearer token123" }),
- *   isAuthenticated: () => true
+ *   getAuthHeaders: async () => ({ Authorization: "Bearer token123" })
  * };
  * ```
  */
@@ -31,16 +32,6 @@ export interface AuthProvider {
    * @returns Promise resolving to a record of header name-value pairs
    */
   getAuthHeaders(): Promise<Record<string, string>>;
-
-  /**
-   * Check if currently authenticated
-   *
-   * Used to determine if API requests should be attempted.
-   * Should return synchronously for performance.
-   *
-   * @returns true if authenticated, false otherwise
-   */
-  isAuthenticated(): boolean;
 
   /**
    * Called when API returns 401 Unauthorized
@@ -73,6 +64,11 @@ export interface StaticAuthConfig {
   token?: string;
   /** API key (used when type is "api_key") */
   apiKey?: string;
+  /**
+   * Header name to carry the API key (used when type is "api_key").
+   * Defaults to `"X-API-Key"`.
+   */
+  apiKeyHeader?: string;
   /** Custom headers (used when type is "custom") */
   headers?: Record<string, string>;
 }
@@ -128,7 +124,7 @@ export class StaticAuthProvider implements AuthProvider {
         break;
       case 'api_key':
         if (config.apiKey) {
-          this.headers['X-API-Key'] = config.apiKey;
+          this.headers[config.apiKeyHeader ?? 'X-API-Key'] = config.apiKey;
         }
         break;
       case 'custom':
@@ -152,38 +148,6 @@ export class StaticAuthProvider implements AuthProvider {
    */
   async getAuthHeaders(): Promise<Record<string, string>> {
     return this.headers;
-  }
-
-  /**
-   * Check if authenticated
-   *
-   * Returns true if any auth headers are configured.
-   *
-   * @returns true if headers are configured
-   */
-  isAuthenticated(): boolean {
-    return Object.keys(this.headers).length > 0;
-  }
-
-  /**
-   * Handle unauthorized response
-   *
-   * Static provider cannot refresh tokens, so always returns false.
-   *
-   * @returns Promise resolving to false (cannot refresh)
-   */
-  async onUnauthorized(): Promise<boolean> {
-    // Static provider cannot refresh tokens
-    return false;
-  }
-
-  /**
-   * Handle forbidden response
-   *
-   * Static provider has no special handling for 403.
-   */
-  async onForbidden(): Promise<void> {
-    // No special handling for static provider
   }
 }
 
@@ -277,20 +241,6 @@ export class CallbackAuthProvider implements AuthProvider {
   }
 
   /**
-   * Check if authenticated
-   *
-   * For callback-based auth, we assume authenticated if getToken exists.
-   * The actual token validity is checked when making requests.
-   *
-   * @returns true (assumes authenticated, actual check happens on request)
-   */
-  isAuthenticated(): boolean {
-    // For callback-based auth, we assume authenticated if getToken exists
-    // The actual token validity is checked when making requests
-    return true;
-  }
-
-  /**
    * Handle unauthorized response
    *
    * Calls the onUnauthorized callback if provided.
@@ -332,16 +282,5 @@ export class NoAuthProvider implements AuthProvider {
    */
   async getAuthHeaders(): Promise<Record<string, string>> {
     return {};
-  }
-
-  /**
-   * Check if authenticated
-   *
-   * Always returns false (no auth configured).
-   *
-   * @returns false
-   */
-  isAuthenticated(): boolean {
-    return false;
   }
 }

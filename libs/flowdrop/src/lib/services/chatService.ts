@@ -9,7 +9,8 @@
 
 import type { ChatRequest, ChatResponse, ChatHistoryMessage } from '../types/chat.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getRequestHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl } from '../config/endpoints.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import type { AuthProvider } from '../types/auth.js';
 import { logger } from '../utils/logger.js';
 
@@ -67,13 +68,10 @@ export class ChatService {
     options: RequestInit = {},
     authProvider?: AuthProvider
   ): Promise<T> {
-    const headers = await getRequestHeaders(config, 'chat', authProvider);
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...headers,
-        ...options.headers
-      }
+    const response = await authenticatedFetch(url, options, {
+      config,
+      endpointKey: 'chat',
+      authProvider
     });
 
     if (!response.ok) {
@@ -165,10 +163,11 @@ export class ChatService {
 
     logger.debug('[ChatService] Clearing history at', url);
 
-    await fetch(url, {
-      method: 'DELETE',
-      headers: await getRequestHeaders(config, 'chat', authProvider)
-    });
+    await authenticatedFetch(
+      url,
+      { method: 'DELETE' },
+      { config, endpointKey: 'chat', authProvider }
+    );
   }
 }
 

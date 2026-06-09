@@ -12,7 +12,8 @@ import type { FlowDropSettings, PartialSettings } from '$lib/types/settings.js';
 import type { EndpointConfig } from '$lib/config/endpoints.js';
 import type { ApiResponse } from '$lib/types/index.js';
 import type { AuthProvider } from '$lib/types/auth.js';
-import { buildEndpointUrl, getRequestHeaders } from '$lib/config/endpoints.js';
+import { buildEndpointUrl } from '$lib/config/endpoints.js';
+import { authenticatedFetch } from '$lib/utils/fetchWithAuth.js';
 
 // =========================================================================
 // Configuration
@@ -72,11 +73,10 @@ async function settingsRequest<T>(
   }
 
   const url = buildEndpointUrl(endpointConfig, endpointPath);
-  const headers = await getRequestHeaders(endpointConfig, endpointKey, authProvider);
-
-  const response = await fetch(url, {
-    headers,
-    ...options
+  const response = await authenticatedFetch(url, options, {
+    config: endpointConfig,
+    endpointKey,
+    authProvider
   });
 
   // Check if response is JSON

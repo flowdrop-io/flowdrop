@@ -5,7 +5,8 @@
 
 import type { PortConfig } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getRequestHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl } from '../config/endpoints.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
 import { logger } from '../utils/logger.js';
 import type { AuthProvider } from '../types/auth.js';
@@ -19,9 +20,11 @@ export async function fetchPortConfig(
 ): Promise<PortConfig> {
   try {
     const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.portConfig);
-    const response = await fetch(url, {
-      headers: await getRequestHeaders(endpointConfig, 'portConfig', authProvider)
-    });
+    const response = await authenticatedFetch(
+      url,
+      {},
+      { config: endpointConfig, endpointKey: 'portConfig', authProvider }
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);

@@ -128,6 +128,65 @@ mountFlowDropApp(el, {
 | `{ type: 'api_key', apiKey }` | `new StaticAuthProvider({ type: 'api_key', apiKey })` |
 | `{ type: 'custom', headers }` | `new StaticAuthProvider({ type: 'custom', headers })` |
 
+`StaticAuthProvider`'s `api_key` type now accepts an optional `apiKeyHeader` to
+override the header name (defaults to `X-API-Key`):
+
+```js
+new StaticAuthProvider({ type: 'api_key', apiKey: KEY, apiKeyHeader: 'X-Tenant-Key' });
+```
+
+### `AuthProvider.isAuthenticated()` is removed
+
+The `isAuthenticated()` method has been dropped from the `AuthProvider`
+interface and all built-in providers. It was never consulted by the library —
+request authentication is driven entirely by `getAuthHeaders()` and the optional
+`onUnauthorized()` / `onForbidden()` hooks. If you implemented a **custom**
+`AuthProvider`, you can delete the method; no replacement is needed.
+
+```ts
+// 1.x — required
+const provider: AuthProvider = {
+  getAuthHeaders: async () => ({ Authorization: `Bearer ${token}` }),
+  isAuthenticated: () => Boolean(token) // ← remove this
+};
+
+// 2.0
+const provider: AuthProvider = {
+  getAuthHeaders: async () => ({ Authorization: `Bearer ${token}` })
+};
+```
+
+### Auth refresh (`401`) now applies to every request
+
+Previously only the typed workflow/node API (`fd.api.client`) refreshed and
+retried on `401`. The per-instance services (playground, chat, interrupt,
+settings, port config, categories) and form autocomplete attached auth headers
+but did **not** invoke `onUnauthorized()`. They now all route through one
+authenticated-fetch path, so a configured `onUnauthorized()` fires — and the
+request retries once with a refreshed token — uniformly across the library.
+
+This is not a source change for consumers, but if your `onUnauthorized()` had
+side effects (analytics, redirects) it may now be called from request paths
+where it previously was not. Make it idempotent.
+
+### Swap the auth provider at runtime — `fd.api.setAuthProvider()`
+
+The `AuthProvider` is still supplied at mount time, but you no longer have to
+remount to change it (e.g. on login/logout). `ApiContext` gained
+`setAuthProvider()`, which updates the live client and is picked up by services
+on their next request:
+
+```js
+import { getInstance } from '@flowdrop/flowdrop/editor';
+const fd = getInstance();
+
+// after the user logs in / refreshes their session
+fd.api.setAuthProvider(new StaticAuthProvider({ type: 'bearer', token: newToken }));
+
+// on logout
+fd.api.setAuthProvider(new NoAuthProvider());
+```
+
 ### Instance-scoped port compatibility
 
 `initializePortCompatibility()`, `getPortCompatibilityChecker()`, and

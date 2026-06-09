@@ -69,6 +69,22 @@ export class ApiContext {
     this.#client = null;
   }
 
+  /**
+   * Swap the auth provider at runtime — e.g. on login or logout — without
+   * reconfiguring endpoints or remounting. Propagates to the live client so
+   * in-flight components keep working against the same instance.
+   *
+   * Per-instance services read `fd.api.authProvider` per request, so they pick
+   * up the new provider on their next call automatically.
+   *
+   * @param authProvider - The new authentication provider
+   */
+  setAuthProvider(authProvider: AuthProvider): void {
+    this.#authProvider = authProvider;
+    // Keep the cached client (and its in-flight consumers) in sync.
+    this.#client?.setAuthProvider(authProvider);
+  }
+
   /** Whether {@link configure} has been called with a usable config. */
   isConfigured(): boolean {
     return Boolean(this.#config);

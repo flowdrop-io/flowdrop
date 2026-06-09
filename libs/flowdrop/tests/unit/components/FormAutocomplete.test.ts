@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import type { AutocompleteConfig } from '$lib/types/index.js';
 import type { FieldOption } from '$lib/components/form/types.js';
-import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
+import { authenticatedFetch } from '$lib/utils/fetchWithAuth.js';
 import { StaticAuthProvider, CallbackAuthProvider, NoAuthProvider } from '$lib/types/auth.js';
 
 /**
@@ -594,11 +594,30 @@ describe('FormAutocomplete', () => {
     });
   });
 
-  describe('buildFetchHeaders', () => {
-    it('should return default headers when no auth provider is given', async () => {
-      const headers = await buildFetchHeaders(undefined);
+  // FormAutocomplete fetches via authenticatedFetch with only baseHeaders (no
+  // endpoint config), so these assert the headers it sends for each provider.
+  describe('authenticatedFetch header building', () => {
+    let fetchMock: ReturnType<typeof vi.fn>;
 
-      expect(headers).toEqual({
+    beforeEach(() => {
+      fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    /** Run authenticatedFetch and return the headers passed to fetch. */
+    async function sentHeaders(
+      provider?: import('$lib/types/auth.js').AuthProvider
+    ): Promise<Record<string, string>> {
+      await authenticatedFetch('https://example.com/suggest', {}, { authProvider: provider });
+      return fetchMock.mock.calls[0][1].headers as Record<string, string>;
+    }
+
+    it('should return default headers when no auth provider is given', async () => {
+      expect(await sentHeaders(undefined)).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json'
       });
@@ -610,9 +629,7 @@ describe('FormAutocomplete', () => {
         token: 'my-secret-token'
       });
 
-      const headers = await buildFetchHeaders(provider);
-
-      expect(headers).toEqual({
+      expect(await sentHeaders(provider)).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json',
         Authorization: 'Bearer my-secret-token'
@@ -625,12 +642,24 @@ describe('FormAutocomplete', () => {
         apiKey: 'my-api-key'
       });
 
-      const headers = await buildFetchHeaders(provider);
-
-      expect(headers).toEqual({
+      expect(await sentHeaders(provider)).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'X-API-Key': 'my-api-key'
+      });
+    });
+
+    it('should honor a custom apiKeyHeader on StaticAuthProvider', async () => {
+      const provider = new StaticAuthProvider({
+        type: 'api_key',
+        apiKey: 'my-api-key',
+        apiKeyHeader: 'X-Tenant-Key'
+      });
+
+      expect(await sentHeaders(provider)).toEqual({
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Tenant-Key': 'my-api-key'
       });
     });
 
@@ -643,9 +672,7 @@ describe('FormAutocomplete', () => {
         }
       });
 
-      const headers = await buildFetchHeaders(provider);
-
-      expect(headers).toEqual({
+      expect(await sentHeaders(provider)).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'X-Custom-Auth': 'custom-value',
@@ -658,9 +685,7 @@ describe('FormAutocomplete', () => {
         getToken: async () => 'callback-token-456'
       });
 
-      const headers = await buildFetchHeaders(provider);
-
-      expect(headers).toEqual({
+      expect(await sentHeaders(provider)).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json',
         Authorization: 'Bearer callback-token-456'
@@ -672,31 +697,21 @@ describe('FormAutocomplete', () => {
         getToken: async () => null
       });
 
-      const headers = await buildFetchHeaders(provider);
-
-      expect(headers).toEqual({
+      expect(await sentHeaders(provider)).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json'
       });
     });
 
     it('should not add auth headers from NoAuthProvider', async () => {
-      const provider = new NoAuthProvider();
-
-      const headers = await buildFetchHeaders(provider);
-
-      expect(headers).toEqual({
+      expect(await sentHeaders(new NoAuthProvider())).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json'
       });
     });
 
     it('should not add auth headers when StaticAuthProvider has type none', async () => {
-      const provider = new StaticAuthProvider({ type: 'none' });
-
-      const headers = await buildFetchHeaders(provider);
-
-      expect(headers).toEqual({
+      expect(await sentHeaders(new StaticAuthProvider({ type: 'none' }))).toEqual({
         Accept: 'application/json',
         'Content-Type': 'application/json'
       });

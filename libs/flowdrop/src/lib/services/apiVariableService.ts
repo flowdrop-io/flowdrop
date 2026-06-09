@@ -8,8 +8,8 @@
 
 import type { VariableSchema, ApiVariablesConfig, AuthProvider } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { logger } from '../utils/logger.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 
 /**
  * Context for variable API requests
@@ -212,26 +212,9 @@ export async function fetchVariableSchema(
   const method = endpoint.method ?? 'GET';
   const timeout = endpoint.timeout ?? 30000;
 
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...endpoint.headers
-  };
-
-  // Add auth headers from AuthProvider if available
-  if (authProvider) {
-    try {
-      const authHeaders = await authProvider.getAuthHeaders();
-      Object.assign(headers, authHeaders);
-    } catch (error) {
-      logger.warn('Failed to get auth headers:', error);
-    }
-  }
-
   // Prepare fetch options
   const fetchOptions: RequestInit = {
     method,
-    headers,
     signal: AbortSignal.timeout(timeout)
   };
 
@@ -242,7 +225,16 @@ export async function fetchVariableSchema(
   }
 
   try {
-    const response = await fetch(url, fetchOptions);
+    // authenticatedFetch merges auth headers and transparently refreshes +
+    // retries once on 401 via the provider's onUnauthorized hook.
+    const response = await authenticatedFetch(url, fetchOptions, {
+      authProvider,
+      baseHeaders: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...endpoint.headers
+      }
+    });
 
     // Handle 404 as "no variables available"
     if (response.status === 404) {
@@ -254,15 +246,8 @@ export async function fetchVariableSchema(
     }
 
     if (!response.ok) {
-      // Handle authentication errors
+      // Auth errors remain after the provider's refresh attempt.
       if (response.status === 401 || response.status === 403) {
-        if (authProvider?.onUnauthorized) {
-          const refreshed = await authProvider.onUnauthorized();
-          if (refreshed) {
-            // Retry with refreshed auth
-            return fetchVariableSchema(endpointConfig, workflowId, nodeId, config, authProvider);
-          }
-        }
         return {
           success: false,
           error: 'Authentication failed'

@@ -17,7 +17,8 @@ import type {
 } from '../types/interrupt.js';
 import { defaultInterruptPollingConfig } from '../types/interrupt.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getRequestHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl } from '../config/endpoints.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import type { AuthProvider } from '../types/auth.js';
 import { logger } from '../utils/logger.js';
 
@@ -118,13 +119,10 @@ export class InterruptService {
     options: RequestInit = {},
     authProvider?: AuthProvider
   ): Promise<T> {
-    const headers = await getRequestHeaders(config, 'interrupts', authProvider);
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...headers,
-        ...options.headers
-      }
+    const response = await authenticatedFetch(url, options, {
+      config,
+      endpointKey: 'interrupts',
+      authProvider
     });
 
     if (!response.ok) {

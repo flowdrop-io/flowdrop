@@ -25,7 +25,7 @@
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
   import type { FieldOption } from './types.js';
-  import { buildFetchHeaders } from '$lib/utils/fetchWithAuth.js';
+  import { authenticatedFetch } from '$lib/utils/fetchWithAuth.js';
   import { logger } from '../../utils/logger.js';
   import { m } from '$lib/messages/index.js';
 
@@ -245,16 +245,15 @@
 
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     try {
-      // Build headers with authentication (call getter to get current value)
-      const headers = await buildFetchHeaders(getAuthProvider?.());
-
       timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      const response = await fetch(buildUrl(query), {
-        method: 'GET',
-        headers,
-        signal: controller.signal
-      });
+      // authenticatedFetch merges auth headers (call getter for current value)
+      // and applies the 401/403 lifecycle consistently with the rest of the lib.
+      const response = await authenticatedFetch(
+        buildUrl(query),
+        { method: 'GET', signal: controller.signal },
+        { authProvider: getAuthProvider?.() }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

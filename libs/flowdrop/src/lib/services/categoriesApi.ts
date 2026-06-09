@@ -5,7 +5,8 @@
 
 import type { CategoryDefinition } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getRequestHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl } from '../config/endpoints.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import { DEFAULT_CATEGORIES } from '../config/defaultCategories.js';
 import { logger } from '../utils/logger.js';
 import type { AuthProvider } from '../types/auth.js';
@@ -19,9 +20,11 @@ export async function fetchCategories(
 ): Promise<CategoryDefinition[]> {
   try {
     const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.categories);
-    const response = await fetch(url, {
-      headers: await getRequestHeaders(endpointConfig, 'categories', authProvider)
-    });
+    const response = await authenticatedFetch(
+      url,
+      {},
+      { config: endpointConfig, endpointKey: 'categories', authProvider }
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);

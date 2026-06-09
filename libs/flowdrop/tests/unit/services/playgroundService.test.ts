@@ -329,8 +329,7 @@ describe('PlaygroundService', () => {
       });
 
       const authProvider = {
-        getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer token-123' }),
-        isAuthenticated: () => true
+        getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer token-123' })
       };
 
       await service.sendMessage(endpointConfig, 'session-1', 'Hello', undefined, authProvider);
