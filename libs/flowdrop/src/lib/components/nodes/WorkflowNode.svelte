@@ -410,8 +410,6 @@
     padding: var(--fd-node-header-gap) var(--fd-space-xl);
     border-bottom: 1px solid var(--fd-border-muted);
     background: var(--fd-node-header-bg);
-    /* Crisp accent line along the top edge; transparent by default */
-    box-shadow: inset 0 2px 0 0 var(--fd-node-header-accent);
     border-top-left-radius: var(--fd-node-radius);
     border-top-right-radius: var(--fd-node-radius);
     display: flex;

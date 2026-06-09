@@ -16,8 +16,8 @@ import type { FlowDropSkin } from '../types/skin';
  *  - Borders are mostly neutral hairlines; strong/focus borders + node outlines
  *    are teal/cyan ink (--fd-ring / --fd-border-strong / --fd-node-border).
  *  - Focus rings are cyan (--fd-ring), not the default blue.
- *  - Nodes are frosted glass with a crisp cyan top-accent line and a faint
- *    inner highlight; the minimap + zoom controls share the same vocabulary.
+ *  - Nodes are frosted glass with a faint inner highlight; the minimap + zoom
+ *    controls share the same vocabulary.
  *  - Note/instruction cards read as cool annotations (translucent tint + slate
  *    ink border), never as a filled "success" card.
  *  - Emerald/green is reserved for primary actions, selection and live edges
@@ -58,10 +58,9 @@ export const drafterSkin: FlowDropSkin = {
     'canvas-bg': '#eaf7f4',
     'grid-pattern-color': 'rgba(20, 184, 166, 0.22)',
 
-    /* ----- Nodes: frosted glass, crisp cyan top accent, faint inner highlight ----- */
+    /* ----- Nodes: frosted glass, faint inner highlight ----- */
     'node-bg': 'rgba(255, 255, 255, 0.68)',
     'node-header-bg': 'rgba(204, 251, 241, 0.62)',
-    'node-header-accent': '#06b6d4',
     'node-backdrop-filter': 'blur(10px) saturate(1.15)',
     'node-radius': '2px',
     'node-shadow': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6)',
@@ -145,7 +144,6 @@ export const drafterSkin: FlowDropSkin = {
 
     'node-bg': 'rgba(17, 38, 35, 0.62)',
     'node-header-bg': 'rgba(13, 47, 44, 0.6)',
-    'node-header-accent': '#22d3ee',
     'node-backdrop-filter': 'blur(10px) saturate(1.2)',
     'node-shadow': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
     'node-shadow-hover': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.14)',

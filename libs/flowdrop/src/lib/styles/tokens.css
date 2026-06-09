@@ -166,7 +166,6 @@
     --fd-shadow-lg
   ); /* @public  node hover/selected elevation; 'none' for a flat look */
   --fd-node-backdrop-filter: none; /* @public  glass/frost effect behind translucent node bodies; e.g. blur(10px) */
-  --fd-node-header-accent: transparent; /* @public  crisp accent line along the top of a node header; transparent = off */
 
   /* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
   --fd-node-border: var(--_gray-5); /* @public */
