@@ -141,7 +141,7 @@
     return { text: atomCfg.placeholder ?? '', empty: true };
   });
 
-  // Pill height is content-driven (~28px), so fixed px offsets don't fit.
+  // Pill is a fixed 40px tall (20px grid), so a single port centers at 20px.
   // Distribute handles as a % of node height: 50% for one port, evenly otherwise.
   function portTopPct(index: number, count: number): number {
     return ((index + 1) / (count + 1)) * 100;
@@ -183,10 +183,12 @@
   role="button"
   tabindex="0"
 >
-  {#if atomCfg.prefix && !display.empty}
-    <span class="flowdrop-atom-node__prefix" aria-hidden="true">{atomCfg.prefix}</span>
-  {/if}
-  <span class="flowdrop-atom-node__body" title={display.text}>{display.text}</span>
+  <div class="flowdrop-atom-node__pill">
+    {#if atomCfg.prefix && !display.empty}
+      <span class="flowdrop-atom-node__prefix" aria-hidden="true">{atomCfg.prefix}</span>
+    {/if}
+    <span class="flowdrop-atom-node__body" title={display.text}>{display.text}</span>
+  </div>
 </div>
 
 {#each outPorts as port, index (port.id)}
@@ -202,14 +204,31 @@
 {/each}
 
 <style>
+  /* Transparent slot: defines the node's bounding box so handles anchor
+     consistently, while the pill sits narrow and vertically centered inside. */
   .flowdrop-atom-node {
     position: relative;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    /* 40px tall → a single port centers at 20px (50%); capped at 60px / 120px. */
+    min-height: 40px;
+    max-height: 60px;
+    max-width: 120px;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  /* The visible, themed pill — hugs its text and stays compact. */
+  .flowdrop-atom-node__pill {
+    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
-    width: fit-content;
-    min-width: 2rem;
-    min-height: 28px;
-    padding: 2px var(--fd-space-sm);
+    max-width: 100%;
+    min-width: 32px;
+    padding: 4px 10px;
     background-color: var(--fd-node-bg);
     backdrop-filter: var(--fd-node-backdrop-filter);
     /* --fd-atom-node-color is set inline only when the server provides a color;
@@ -218,23 +237,21 @@
     border-radius: 999px;
     box-shadow: var(--fd-shadow-sm);
     color: var(--fd-foreground);
-    cursor: pointer;
     transition:
       box-shadow var(--fd-transition-fast),
       border-color var(--fd-transition-fast);
-    z-index: 10;
   }
 
-  .flowdrop-atom-node--rect {
+  .flowdrop-atom-node--rect .flowdrop-atom-node__pill {
     border-radius: var(--fd-radius-md);
   }
 
-  .flowdrop-atom-node:hover {
+  .flowdrop-atom-node:hover .flowdrop-atom-node__pill {
     box-shadow: var(--fd-node-shadow);
     border-color: var(--fd-atom-node-color, var(--fd-node-border-hover));
   }
 
-  .flowdrop-atom-node--selected {
+  .flowdrop-atom-node--selected .flowdrop-atom-node__pill {
     box-shadow:
       0 0 0 2px color-mix(in srgb, var(--fd-atom-node-color, var(--fd-primary)) 30%, transparent),
       var(--fd-node-shadow);
@@ -242,6 +259,10 @@
   }
 
   .flowdrop-atom-node:focus-visible {
+    outline: none;
+  }
+
+  .flowdrop-atom-node:focus-visible .flowdrop-atom-node__pill {
     outline: 2px solid var(--fd-ring);
     outline-offset: 2px;
   }
@@ -250,7 +271,7 @@
     opacity: 0.7;
   }
 
-  .flowdrop-atom-node--error {
+  .flowdrop-atom-node--error .flowdrop-atom-node__pill {
     border-color: var(--fd-error) !important;
     background-color: var(--fd-error-muted) !important;
   }
@@ -265,14 +286,14 @@
     margin-right: 2px;
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-sm);
-    line-height: 1.2;
+    line-height: 20px;
   }
 
   .flowdrop-atom-node__body {
     /* min-width:0 lets the body ellipsize as a flex sibling of the prefix */
     min-width: 0;
     font-size: var(--fd-text-sm);
-    line-height: 1.2;
+    line-height: 20px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
