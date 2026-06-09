@@ -185,7 +185,7 @@
       </div>
 
       <!-- Node Title - uses instanceTitle override if set -->
-      <h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-truncate flowdrop-flex--1">
+      <h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-flex--1">
         {displayTitle}
       </h3>
     </div>
@@ -376,17 +376,26 @@
 
   .flowdrop-workflow-node__header {
     box-sizing: border-box;
-    padding: var(--fd-node-header-gap) var(--fd-space-xl);
-    border-bottom: 1px solid var(--fd-border-muted);
+    /* Bottom padding absorbs BOTH the node's own top border and the header
+       divider, so the body below the header lands on the 20px grid measured
+       from the node's outer top edge: node-border + header = 100/120/140. */
+    padding: var(--fd-node-header-gap) var(--fd-space-xl)
+      calc(
+        var(--fd-node-header-gap) - var(--fd-node-border-width) -
+          var(--fd-node-header-divider-width)
+      );
+    border-bottom: var(--fd-node-header-divider-width) solid var(--fd-border-muted);
     background: var(--fd-node-header-bg);
     border-top-left-radius: var(--fd-node-radius);
     border-top-right-radius: var(--fd-node-radius);
     display: flex;
     flex-direction: column;
-    gap: var(--fd-node-header-gap);
+    gap: calc(var(--fd-node-header-gap) * 2);
+    /* node-border (1.5) + header = 100/120/140. Header itself is
+       4*gap + title + desc-line - node-border; each extra desc line adds 20. */
     min-height: calc(
-      var(--fd-node-header-gap) * 2 + var(--fd-node-header-title-height) +
-        var(--fd-node-header-desc-line)
+      var(--fd-node-header-gap) * 4 + var(--fd-node-header-title-height) +
+        var(--fd-node-header-desc-line) - var(--fd-node-border-width)
     );
   }
 
@@ -417,9 +426,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.5rem;
+    /* px (not rem) so the icon stays grid-locked regardless of root font-size */
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
@@ -435,15 +445,22 @@
   }
 
   .flowdrop-workflow-node__icon-wrapper :global(.flowdrop-workflow-node__icon) {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 20px;
+    height: 20px;
     color: var(--fd-node-icon);
   }
 
   .flowdrop-workflow-node__header-title h3 {
     margin: 0;
-    line-height: 1;
+    /* half the title block so two lines fill it exactly on the 20px grid */
+    line-height: calc(var(--fd-node-header-title-height) / 2);
     color: var(--fd-foreground);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-width: 0;
   }
 
   .flowdrop-workflow-node__ports {
