@@ -738,8 +738,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'ai_content_analyzer.1',
       type: 'universalNode',
       position: {
-        x: -1590,
-        y: -330
+        x: -1600,
+        y: -340
       },
       deletable: true,
       data: {
@@ -804,7 +804,76 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
               type: 'output',
               dataType: 'array',
               required: false,
-              description: 'Content items with AI analysis results'
+              description: 'Content items with AI analysis results',
+              schema: {
+                type: 'object',
+                properties: {
+                  items: {
+                    type: 'array',
+                    title: 'Analyzed Items',
+                    description: 'Array of analyzed content items',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: {
+                          type: 'string',
+                          description: 'Content item ID'
+                        },
+                        title: {
+                          type: 'string',
+                          description: 'Content title'
+                        },
+                        sentiment: {
+                          type: 'object',
+                          title: 'Sentiment',
+                          description: 'Sentiment analysis results',
+                          properties: {
+                            score: {
+                              type: 'number',
+                              description: 'Sentiment score (-1 to 1)'
+                            },
+                            label: {
+                              type: 'string',
+                              description: 'Sentiment label (positive, neutral, negative)'
+                            },
+                            confidence: {
+                              type: 'number',
+                              description: 'Confidence level (0 to 1)'
+                            }
+                          }
+                        },
+                        keywords: {
+                          type: 'array',
+                          title: 'Keywords',
+                          description: 'Extracted keywords',
+                          items: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }
+                  },
+                  summary: {
+                    type: 'object',
+                    title: 'Summary',
+                    description: 'Analysis summary',
+                    properties: {
+                      total_items: {
+                        type: 'integer',
+                        description: 'Total number of items analyzed'
+                      },
+                      average_sentiment: {
+                        type: 'number',
+                        description: 'Average sentiment score'
+                      },
+                      processing_time_ms: {
+                        type: 'integer',
+                        description: 'Processing time in milliseconds'
+                      }
+                    }
+                  }
+                }
+              }
             },
             {
               id: 'total_analyzed',
@@ -862,8 +931,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 description: 'Choose the visual representation for this node',
                 default: 'tool',
                 oneOf: [
-                  { const: 'tool', title: 'Tool Node (with metadata port)' },
-                  { const: 'default', title: 'Default Node (standard ports)' }
+                  {
+                    const: 'tool',
+                    title: 'Tool Node (with metadata port)'
+                  },
+                  {
+                    const: 'default',
+                    title: 'Default Node (standard ports)'
+                  }
                 ]
               },
               targetText: {
@@ -887,22 +962,23 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
               },
               confidenceThreshold: {
                 type: 'number',
+                format: 'range',
                 title: 'Confidence Threshold',
                 description: 'Minimum confidence level for making replacements (0-1)',
-                format: 'range',
                 minimum: 0,
                 maximum: 1,
                 step: 0.01,
                 default: 0.8
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'ai_content_analyzer.1'
       },
       measured: {
-        width: 288,
-        height: 138
+        width: 280,
+        height: 135
       },
       selected: false,
       dragging: false
@@ -911,8 +987,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'file_upload.1',
       type: 'universalNode',
       position: {
-        x: -1260,
-        y: -330
+        x: -1280,
+        y: -340
       },
       deletable: true,
       data: {
@@ -1011,6 +1087,11 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 type: 'array',
                 title: 'Allowed Extensions',
                 description: 'Allowed file extensions',
+                items: {
+                  type: 'string',
+                  title: 'Extension',
+                  placeholder: 'e.g., pdf'
+                },
                 default: ['txt', 'pdf', 'doc', 'docx']
               },
               maxFileSize: {
@@ -1026,13 +1107,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 default: false
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'file_upload.1'
       },
       measured: {
-        width: 288,
-        height: 641
+        width: 280,
+        height: 597
       },
       selected: false,
       dragging: false
@@ -1042,7 +1124,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       type: 'universalNode',
       position: {
         x: -1920,
-        y: -330
+        y: -340
       },
       deletable: true,
       data: {
@@ -1088,9 +1170,18 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 description: 'Choose the visual representation for this node',
                 default: 'simple',
                 oneOf: [
-                  { const: 'simple', title: 'Simple (compact layout)' },
-                  { const: 'square', title: 'Square (square layout)' },
-                  { const: 'default', title: 'Default' }
+                  {
+                    const: 'simple',
+                    title: 'Simple (compact layout)'
+                  },
+                  {
+                    const: 'square',
+                    title: 'Square (square layout)'
+                  },
+                  {
+                    const: 'default',
+                    title: 'Default'
+                  }
                 ]
               },
               placeholder: {
@@ -1106,13 +1197,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 default: ''
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'text_input.1'
       },
       measured: {
-        width: 288,
-        height: 88
+        width: 280,
+        height: 90
       },
       selected: false,
       dragging: false
@@ -1121,8 +1213,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'if_else.1',
       type: 'universalNode',
       position: {
-        x: -930,
-        y: -330
+        x: -960,
+        y: -340
       },
       deletable: true,
       data: {
@@ -1230,13 +1322,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 }
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'if_else.1'
       },
       measured: {
-        width: 288,
-        height: 345
+        width: 280,
+        height: 310
       },
       selected: false,
       dragging: false
@@ -1300,9 +1393,18 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 description: 'Choose the visual representation for this node',
                 default: 'simple',
                 oneOf: [
-                  { const: 'simple', title: 'Simple (compact layout)' },
-                  { const: 'square', title: 'Square (square layout)' },
-                  { const: 'default', title: 'Default' }
+                  {
+                    const: 'simple',
+                    title: 'Simple (compact layout)'
+                  },
+                  {
+                    const: 'square',
+                    title: 'Square (square layout)'
+                  },
+                  {
+                    const: 'default',
+                    title: 'Default'
+                  }
                 ]
               },
               maxLength: {
@@ -1321,13 +1423,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 enum: ['plain', 'html', 'markdown']
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'text_output.1'
       },
       measured: {
-        width: 288,
-        height: 88
+        width: 280,
+        height: 100
       },
       selected: false,
       dragging: false
@@ -1337,7 +1440,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       type: 'universalNode',
       position: {
         x: -2160,
-        y: -330
+        y: -340
       },
       deletable: true,
       data: {
@@ -1428,12 +1531,30 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 title: 'Event Type',
                 description: 'The type of entity event to trigger on',
                 oneOf: [
-                  { const: 'entity.insert', title: 'Entity Created' },
-                  { const: 'entity.update', title: 'Entity Updated' },
-                  { const: 'entity.delete', title: 'Entity Deleted' },
-                  { const: 'entity.presave', title: 'Before Entity Save' },
-                  { const: 'user.login', title: 'User Login' },
-                  { const: 'user.logout', title: 'User Logout' }
+                  {
+                    const: 'entity.insert',
+                    title: 'Entity Created'
+                  },
+                  {
+                    const: 'entity.update',
+                    title: 'Entity Updated'
+                  },
+                  {
+                    const: 'entity.delete',
+                    title: 'Entity Deleted'
+                  },
+                  {
+                    const: 'entity.presave',
+                    title: 'Before Entity Save'
+                  },
+                  {
+                    const: 'user.login',
+                    title: 'User Login'
+                  },
+                  {
+                    const: 'user.logout',
+                    title: 'User Logout'
+                  }
                 ],
                 default: 'entity.insert'
               },
@@ -1465,13 +1586,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
               }
             },
             required: []
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'trigger.1'
       },
       measured: {
-        width: 72,
-        height: 98
+        width: 80,
+        height: 110
       },
       selected: false,
       dragging: false
@@ -1481,7 +1603,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       type: 'universalNode',
       position: {
         x: -1640,
-        y: -770
+        y: -760
       },
       deletable: true,
       data: {
@@ -1550,7 +1672,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 type: 'string',
                 title: 'Note Content',
                 description: 'Documentation or comment text (supports Markdown)',
-                format: 'multiline',
+                format: 'markdown',
                 default:
                   '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!'
               },
@@ -1562,13 +1684,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 enum: ['info', 'warning', 'success', 'error', 'note']
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'notes.1'
       },
       measured: {
         width: 500,
-        height: 332
+        height: 334
       },
       selected: false,
       dragging: false
@@ -1578,7 +1701,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       type: 'universalNode',
       position: {
         x: -2040,
-        y: -330
+        y: -340
       },
       deletable: true,
       data: {
@@ -1624,9 +1747,18 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 description: 'Choose the visual representation for this node',
                 default: 'simple',
                 oneOf: [
-                  { const: 'simple', title: 'Simple (compact layout)' },
-                  { const: 'square', title: 'Square (square layout)' },
-                  { const: 'default', title: 'Default' }
+                  {
+                    const: 'simple',
+                    title: 'Simple (compact layout)'
+                  },
+                  {
+                    const: 'square',
+                    title: 'Square (square layout)'
+                  },
+                  {
+                    const: 'default',
+                    title: 'Default'
+                  }
                 ]
               },
               placeholder: {
@@ -1642,7 +1774,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 default: ''
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'text_input.2'
       },
@@ -1658,7 +1791,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       type: 'universalNode',
       position: {
         x: -1120,
-        y: -770
+        y: -760
       },
       deletable: true,
       data: {
@@ -1727,7 +1860,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 type: 'string',
                 title: 'Note Content',
                 description: 'Documentation or comment text (supports Markdown)',
-                format: 'multiline',
+                format: 'markdown',
                 default:
                   '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!'
               },
@@ -1739,13 +1872,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 enum: ['info', 'warning', 'success', 'error', 'note']
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'notes.2'
       },
       measured: {
         width: 500,
-        height: 332
+        height: 334
       },
       selected: false,
       dragging: false
@@ -1755,7 +1889,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       type: 'universalNode',
       position: {
         x: -600,
-        y: -770
+        y: -760
       },
       deletable: true,
       data: {
@@ -1824,7 +1958,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 type: 'string',
                 title: 'Note Content',
                 description: 'Documentation or comment text (supports Markdown)',
-                format: 'multiline',
+                format: 'markdown',
                 default:
                   '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!'
               },
@@ -1836,16 +1970,17 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 enum: ['info', 'warning', 'success', 'error', 'note']
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'notes.3'
       },
       measured: {
         width: 500,
-        height: 332
+        height: 334
       },
-      selected: false,
-      dragging: true
+      selected: true,
+      dragging: false
     },
     {
       id: 'notes.4',
@@ -1921,7 +2056,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 type: 'string',
                 title: 'Note Content',
                 description: 'Documentation or comment text (supports Markdown)',
-                format: 'multiline',
+                format: 'markdown',
                 default:
                   '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!'
               },
@@ -1933,13 +2068,14 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 enum: ['info', 'warning', 'success', 'error', 'note']
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'notes.4'
       },
       measured: {
         width: 500,
-        height: 332
+        height: 334
       },
       selected: false,
       dragging: false
@@ -1949,7 +2085,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       type: 'universalNode',
       position: {
         x: -2160,
-        y: -770
+        y: -760
       },
       deletable: true,
       data: {
@@ -2018,7 +2154,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 type: 'string',
                 title: 'Note Content',
                 description: 'Documentation or comment text (supports Markdown)',
-                format: 'multiline',
+                format: 'markdown',
                 default:
                   '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!'
               },
@@ -2030,23 +2166,27 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
                 enum: ['info', 'warning', 'success', 'error', 'note']
               }
             }
-          }
+          },
+          formats: ['flowdrop']
         },
         nodeId: 'notes.5'
       },
       measured: {
         width: 500,
-        height: 332
+        height: 334
       },
       selected: false,
-      dragging: true
+      dragging: false
     }
   ],
   edges: [],
   metadata: {
     schemaVersion: '1.0.0',
     createdAt: '2025-12-29T08:18:13.515Z',
-    updatedAt: '2025-12-29T08:27:18.084Z'
+    updatedAt: '2026-06-09T21:28:16.770Z',
+    versionId: '1781040493994-lc93ut3uf',
+    updateNumber: 11,
+    format: 'flowdrop'
   }
 };
 
