@@ -15,6 +15,7 @@
   import type { Workflow } from '$lib/types/index.js';
   import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
+  import type { AuthProvider } from '$lib/types/auth.js';
   import type { PlaygroundConfig } from '$lib/types/playground.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
   import type { NavbarAction } from '$lib/types/navbar.js';
@@ -24,6 +25,8 @@
     workflow?: Workflow;
     mode?: 'standalone' | 'embedded';
     endpointConfig?: EndpointConfig;
+    /** Auth provider applied to this instance's API requests. */
+    authProvider?: AuthProvider;
     config?: PlaygroundConfig;
     showNavbar?: boolean;
     navbarTitle?: string;
@@ -47,6 +50,7 @@
     workflow,
     mode = 'standalone',
     endpointConfig,
+    authProvider,
     config = {},
     showNavbar = true,
     navbarTitle,
@@ -86,6 +90,7 @@
       {workflow}
       {mode}
       {endpointConfig}
+      {authProvider}
       {config}
       {initialSessionId}
       {initialPipelineOpen}

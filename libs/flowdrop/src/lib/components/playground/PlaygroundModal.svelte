@@ -12,6 +12,7 @@
   import type { Workflow } from '../../types/index.js';
   import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
+  import type { AuthProvider } from '../../types/auth.js';
   import type { PlaygroundConfig } from '../../types/playground.js';
   import { m } from '$lib/messages/index.js';
 
@@ -29,6 +30,8 @@
     initialSessionId?: string;
     /** API endpoint configuration */
     endpointConfig?: EndpointConfig;
+    /** Auth provider applied to this instance's API requests. */
+    authProvider?: AuthProvider;
     /** Playground configuration options */
     config?: PlaygroundConfig;
     /** Per-instance state container — forwarded to the inner Playground */
@@ -43,6 +46,7 @@
     workflow,
     initialSessionId,
     endpointConfig,
+    authProvider,
     config = {},
     instance,
     onClose
@@ -111,6 +115,7 @@
           mode="modal"
           {initialSessionId}
           {endpointConfig}
+          {authProvider}
           {config}
           {onClose}
         />

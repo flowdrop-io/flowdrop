@@ -17,6 +17,7 @@
   import ControlPanel from './ControlPanel.svelte';
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
+  import type { AuthProvider } from '../../types/auth.js';
   import type {
     PlaygroundMode,
     PlaygroundConfig,
@@ -35,6 +36,8 @@
     mode?: PlaygroundMode;
     initialSessionId?: string;
     endpointConfig?: EndpointConfig;
+    /** Auth provider applied to this instance's API requests. */
+    authProvider?: AuthProvider;
     config?: PlaygroundConfig;
     onClose?: () => void;
     onTogglePanel?: () => void;
@@ -49,6 +52,7 @@
     mode = 'standalone',
     initialSessionId,
     endpointConfig,
+    authProvider,
     config = {},
     onClose,
     onTogglePanel,
@@ -126,7 +130,7 @@
   }
 
   onMount(() => {
-    if (endpointConfig) fd.api.configure(endpointConfig);
+    if (endpointConfig) fd.api.configure(endpointConfig, authProvider);
     if (workflow) fd.playground.setWorkflow(workflow);
 
     const handleVisibility = () => {

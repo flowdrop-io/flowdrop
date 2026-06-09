@@ -8,6 +8,7 @@
   import { logger } from '../../utils/logger.js';
   import type { Workflow, PipelineViewDef } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
+  import type { AuthProvider } from '../../types/auth.js';
   import type { PlaygroundConfig, PlaygroundMode } from '../../types/playground.js';
 
   interface Props {
@@ -17,6 +18,8 @@
     workflow?: Workflow;
     /** API endpoint configuration */
     endpointConfig?: EndpointConfig;
+    /** Auth provider applied to this instance's API requests. */
+    authProvider?: AuthProvider;
     /** Display mode (default: standalone) */
     mode?: PlaygroundMode;
     /** Session ID to activate on mount. Changing this prop remounts the Playground. */
@@ -43,6 +46,7 @@
     workflowId,
     workflow: workflowProp,
     endpointConfig,
+    authProvider,
     mode = 'standalone',
     initialSessionId,
     config = {},
@@ -99,7 +103,7 @@
       fd.pipelinePanel.setOpen(initialPipelineOpen);
     }
     if (endpointConfig) {
-      fd.api.configure(endpointConfig);
+      fd.api.configure(endpointConfig, authProvider);
     }
     if (!workflowProp) {
       void loadWorkflow();
@@ -238,6 +242,7 @@
             {workflowId}
             workflow={resolvedWorkflow}
             {endpointConfig}
+            {authProvider}
             {mode}
             {initialSessionId}
             {config}

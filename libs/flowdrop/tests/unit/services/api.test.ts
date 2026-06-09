@@ -44,6 +44,33 @@ describe('ApiContext', () => {
       api.configure(createMockEndpointConfig(), authProvider);
       expect(api.authProvider).toBe(authProvider);
     });
+
+    it('preserves an existing provider when reconfigured without one', () => {
+      // Guards the playground mount path: the mount option configures the
+      // provider, then a nested component re-runs configure(endpointConfig)
+      // with no provider — which must NOT reset auth to NoAuthProvider.
+      const authProvider = new StaticAuthProvider({ type: 'bearer', token: 'tok' });
+      api.configure(createMockEndpointConfig(), authProvider);
+      api.configure(createMockEndpointConfig('/other/api'));
+      expect(api.authProvider).toBe(authProvider);
+    });
+
+    it('swaps the provider at runtime via setAuthProvider()', () => {
+      const first = new StaticAuthProvider({ type: 'bearer', token: 'a' });
+      const second = new StaticAuthProvider({ type: 'bearer', token: 'b' });
+      api.configure(createMockEndpointConfig(), first);
+      api.setAuthProvider(second);
+      expect(api.authProvider).toBe(second);
+    });
+
+    it('propagates setAuthProvider() to the live client', () => {
+      const first = new StaticAuthProvider({ type: 'bearer', token: 'a' });
+      const second = new NoAuthProvider();
+      api.configure(createMockEndpointConfig(), first);
+      const client = api.client; // build + cache the client
+      api.setAuthProvider(second);
+      expect(client.getAuthProvider()).toBe(second);
+    });
   });
 
   describe('client', () => {

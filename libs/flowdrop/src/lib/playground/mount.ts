@@ -51,6 +51,7 @@ import PlaygroundStudio from '../components/playground/PlaygroundStudio.svelte';
 import PlaygroundApp from '../components/playground/PlaygroundApp.svelte';
 import type { Workflow } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
+import type { AuthProvider } from '../types/auth.js';
 import type {
   PlaygroundMode,
   PlaygroundConfig,
@@ -105,6 +106,16 @@ export interface PlaygroundMountOptions {
    * Use createEndpointConfig() to create this
    */
   endpointConfig?: EndpointConfig;
+
+  /**
+   * Authentication provider for API requests.
+   *
+   * Applied to this instance via `fd.api.configure()` so every request the
+   * playground makes (sessions, messages, polling, interrupts) carries the
+   * provider's headers — e.g. an `Authorization` bearer token or an
+   * `X-CSRF-Token`. Omit for unauthenticated backends.
+   */
+  authProvider?: AuthProvider;
 
   /**
    * Playground-specific configuration options
@@ -382,6 +393,7 @@ export async function mountPlayground(
     mode = 'standalone',
     initialSessionId,
     endpointConfig,
+    authProvider,
     config = {},
     height,
     width,
@@ -431,6 +443,7 @@ export async function mountPlayground(
         workflow,
         initialSessionId,
         endpointConfig: finalEndpointConfig,
+        authProvider,
         config,
         onClose: () => {
           if (onClose) {
@@ -449,6 +462,7 @@ export async function mountPlayground(
         mode,
         initialSessionId,
         endpointConfig: finalEndpointConfig,
+        authProvider,
         config,
         onClose
       }
@@ -505,6 +519,7 @@ export async function mountPlaygroundStudio(
     mode = 'standalone',
     initialSessionId,
     endpointConfig,
+    authProvider,
     config = {},
     height,
     width,
@@ -549,6 +564,7 @@ export async function mountPlaygroundStudio(
       mode,
       initialSessionId,
       endpointConfig: finalEndpointConfig,
+      authProvider,
       config,
       onClose,
       onSessionNavigate,
@@ -621,6 +637,7 @@ export async function mountPlaygroundApp(
     mode = 'standalone',
     initialSessionId,
     endpointConfig,
+    authProvider,
     config = {},
     height,
     width,
@@ -674,6 +691,7 @@ export async function mountPlaygroundApp(
       mode,
       initialSessionId,
       endpointConfig: finalEndpointConfig,
+      authProvider,
       config,
       showNavbar,
       navbarTitle,

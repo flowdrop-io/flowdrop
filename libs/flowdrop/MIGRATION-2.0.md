@@ -100,6 +100,20 @@ The settings-sync entry points gained the same optional provider:
 `createSettingsService(config, authProvider?)` — pass an `AuthProvider` if your
 backend's preferences endpoint requires auth.
 
+The standalone playground mounts — `mountPlayground`, `mountPlaygroundStudio`,
+and `mountPlaygroundApp` — accept an `authProvider` option that they wire into
+`fd.api` for you (the editor's built-in playground already inherits the
+provider from `mountFlowDropApp`). Pass it so playground requests (sessions,
+messages, polling, interrupts) carry your auth/CSRF headers:
+
+```js
+mountPlayground(el, {
+  workflowId,
+  endpointConfig: createEndpointConfig('/api/flowdrop'),
+  authProvider: new CallbackAuthProvider({ getToken: () => session.getCsrfToken() })
+});
+```
+
 ### `EndpointConfig.auth` is removed — use an `AuthProvider`
 
 The `auth` block on `EndpointConfig` (and its header-injection branch) is gone.
