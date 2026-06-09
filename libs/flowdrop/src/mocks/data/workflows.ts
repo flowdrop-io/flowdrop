@@ -2177,6 +2177,311 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       },
       selected: false,
       dragging: false
+    },
+    {
+      id: 'constant.1',
+      type: 'universalNode',
+      position: {
+        x: -2160,
+        y: -200
+      },
+      deletable: true,
+      data: {
+        label: 'Constant',
+        config: {
+          valueType: 'string',
+          value: ''
+        },
+        metadata: {
+          id: 'constant',
+          name: 'Constant',
+          type: 'atom',
+          supportedTypes: ['atom'],
+          description: 'Supplies a constant value into the workflow',
+          category: 'inputs',
+          version: '1.0.0',
+          icon: 'mdi:circle-small',
+          tags: ['constant', 'value', 'literal', 'input'],
+          inputs: [],
+          outputs: [
+            {
+              id: 'value',
+              name: 'Value',
+              type: 'output',
+              dataType: 'string',
+              description: 'The constant value supplied to downstream nodes'
+            }
+          ],
+          configSchema: {
+            type: 'object',
+            properties: {
+              valueType: {
+                type: 'string',
+                title: 'Type',
+                description: 'Type of value this constant supplies',
+                oneOf: [
+                  { const: 'string', title: 'Text' },
+                  { const: 'number', title: 'Number' },
+                  { const: 'boolean', title: 'Boolean' }
+                ],
+                default: 'string'
+              },
+              value: {
+                type: 'string',
+                title: 'Value',
+                description: 'The constant value',
+                default: ''
+              }
+            }
+          },
+          config: {
+            valueType: 'string',
+            value: ''
+          },
+          extensions: {
+            ui: {
+              atom: {
+                valueKey: 'value',
+                valueTypeKey: 'valueType',
+                outputPortId: 'value',
+                placeholder: 'empty',
+                maxWidth: 200
+              }
+            }
+          },
+          formats: ['flowdrop']
+        },
+        nodeId: 'constant.1'
+      },
+      measured: {
+        width: 81,
+        height: 40
+      },
+      selected: false,
+      dragging: false
+    },
+    {
+      id: 'idea.1',
+      type: 'universalNode',
+      position: {
+        x: -1920,
+        y: -80
+      },
+      deletable: true,
+      data: {
+        label: 'Idea',
+        config: {
+          title: 'New Idea',
+          description: 'Describe your idea here...',
+          icon: 'mdi:lightbulb-outline',
+          color: '#6366f1',
+          enableLeftPort: true,
+          enableRightPort: true,
+          enableTopPort: false,
+          enableBottomPort: false
+        },
+        metadata: {
+          id: 'idea',
+          name: 'Idea',
+          type: 'idea',
+          supportedTypes: ['idea'],
+          description:
+            'Conceptual idea node for BPMN-like flow diagrams. Chain ideas together without committing to specific implementations.',
+          category: 'helpers',
+          icon: 'mdi:lightbulb-outline',
+          color: '#6366f1',
+          version: '1.0.0',
+          tags: ['idea', 'concept', 'bpmn', 'flow', 'planning', 'brainstorm'],
+          inputs: [],
+          outputs: [],
+          config: {
+            title: 'New Idea',
+            description: 'Describe your idea here...',
+            icon: 'mdi:lightbulb-outline',
+            color: '#6366f1',
+            enableLeftPort: true,
+            enableRightPort: true,
+            enableTopPort: false,
+            enableBottomPort: false
+          },
+          configSchema: {
+            type: 'object',
+            properties: {
+              title: {
+                type: 'string',
+                title: 'Title',
+                description: 'The main title or name of your idea',
+                default: 'New Idea'
+              },
+              description: {
+                type: 'string',
+                title: 'Description',
+                description: 'Detailed description of the idea or concept',
+                format: 'multiline',
+                default: 'Describe your idea here...'
+              },
+              icon: {
+                type: 'string',
+                title: 'Icon',
+                description: 'Custom icon for the idea (Iconify format, e.g., mdi:brain)',
+                default: 'mdi:lightbulb-outline'
+              },
+              color: {
+                type: 'string',
+                title: 'Accent Color',
+                description: 'Accent color for visual grouping (hex format)',
+                default: '#6366f1'
+              },
+              enableLeftPort: {
+                type: 'boolean',
+                title: 'Enable Left Port',
+                description: 'Show connection port on the left side (input)',
+                default: true
+              },
+              enableRightPort: {
+                type: 'boolean',
+                title: 'Enable Right Port',
+                description: 'Show connection port on the right side (output)',
+                default: true
+              },
+              enableTopPort: {
+                type: 'boolean',
+                title: 'Enable Top Port',
+                description: 'Show connection port on the top (input)',
+                default: false
+              },
+              enableBottomPort: {
+                type: 'boolean',
+                title: 'Enable Bottom Port',
+                description: 'Show connection port on the bottom (output)',
+                default: false
+              }
+            }
+          },
+          formats: ['flowdrop']
+        },
+        nodeId: 'idea.1'
+      },
+      measured: {
+        width: 280,
+        height: 93
+      },
+      selected: false,
+      dragging: false
+    },
+    {
+      id: 'idea.2',
+      type: 'universalNode',
+      position: {
+        x: -1920,
+        y: 40
+      },
+      deletable: true,
+      data: {
+        label: 'Idea',
+        config: {
+          title: 'New Idea',
+          description: 'Describe your idea here...',
+          icon: 'mdi:lightbulb-outline',
+          color: '#ff0000',
+          enableLeftPort: true,
+          enableRightPort: true,
+          enableTopPort: false,
+          enableBottomPort: false
+        },
+        metadata: {
+          id: 'idea',
+          name: 'Idea',
+          type: 'idea',
+          supportedTypes: ['idea'],
+          description:
+            'Conceptual idea node for BPMN-like flow diagrams. Chain ideas together without committing to specific implementations.',
+          category: 'helpers',
+          icon: 'mdi:lightbulb-outline',
+          color: '#6366f1',
+          version: '1.0.0',
+          tags: ['idea', 'concept', 'bpmn', 'flow', 'planning', 'brainstorm'],
+          inputs: [],
+          outputs: [],
+          config: {
+            title: 'New Idea',
+            description: 'Describe your idea here...',
+            icon: 'mdi:lightbulb-outline',
+            color: '#6366f1',
+            enableLeftPort: true,
+            enableRightPort: true,
+            enableTopPort: false,
+            enableBottomPort: false
+          },
+          configSchema: {
+            type: 'object',
+            properties: {
+              title: {
+                type: 'string',
+                title: 'Title',
+                description: 'The main title or name of your idea',
+                default: 'New Idea'
+              },
+              description: {
+                type: 'string',
+                title: 'Description',
+                description: 'Detailed description of the idea or concept',
+                format: 'multiline',
+                default: 'Describe your idea here...'
+              },
+              icon: {
+                type: 'string',
+                title: 'Icon',
+                description: 'Custom icon for the idea (Iconify format, e.g., mdi:brain)',
+                default: 'mdi:lightbulb-outline'
+              },
+              color: {
+                type: 'string',
+                title: 'Accent Color',
+                description: 'Accent color for visual grouping (hex format)',
+                default: '#6366f1'
+              },
+              enableLeftPort: {
+                type: 'boolean',
+                title: 'Enable Left Port',
+                description: 'Show connection port on the left side (input)',
+                default: true
+              },
+              enableRightPort: {
+                type: 'boolean',
+                title: 'Enable Right Port',
+                description: 'Show connection port on the right side (output)',
+                default: true
+              },
+              enableTopPort: {
+                type: 'boolean',
+                title: 'Enable Top Port',
+                description: 'Show connection port on the top (input)',
+                default: false
+              },
+              enableBottomPort: {
+                type: 'boolean',
+                title: 'Enable Bottom Port',
+                description: 'Show connection port on the bottom (output)',
+                default: false
+              }
+            }
+          },
+          formats: ['flowdrop']
+        },
+        nodeId: 'idea.2',
+        extensions: {
+          ui: {
+            hideUnconnectedHandles: false
+          }
+        }
+      },
+      measured: {
+        width: 280,
+        height: 93
+      },
+      selected: true,
+      dragging: false
     }
   ],
   edges: [],
