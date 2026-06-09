@@ -175,7 +175,7 @@
   const nodeMinHeight = $derived(
     (() => {
       const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
-      return maxPorts <= 1 ? 80 : 20 + maxPorts * 40;
+      return maxPorts <= 1 ? 80 : maxPorts * 40;
     })()
   );
 </script>
@@ -332,7 +332,8 @@
   }
 
   .flowdrop-simple-node__header {
-    padding: var(--fd-space-xl);
+    /* px (not rem) on the 20px grid: 10px vertical, 20px horizontal. */
+    padding: 10px 20px;
     background: var(--fd-node-header-bg);
     flex: 1;
   }
@@ -348,9 +349,10 @@
     display: var(--fd-node-icon-display, flex);
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.5rem;
+    /* px (not rem) so the icon stays grid-locked regardless of root font-size */
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
@@ -383,8 +385,8 @@
   }
 
   .flowdrop-simple-node__icon-wrapper :global(.flowdrop-simple-node__icon) {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 20px;
+    height: 20px;
     color: var(--fd-node-icon);
   }
 
