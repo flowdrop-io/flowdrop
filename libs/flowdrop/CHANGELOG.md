@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **`mountPlaygroundApp` / `<PlaygroundApp>` no longer render the navbar by default.** `showNavbar` now defaults to `false`, matching `mountFlowDropApp` / `<App>` — so every mount path is navbar-off by default and embedding FlowDrop into a page that already has its own header never double-stacks a header. Pass `showNavbar: true` to opt back into the FlowDrop navbar (logo, branding, settings modal) when FlowDrop owns the whole page.
+
+### Fixed
+
+- **`<App navbarActions>` accepts the full `NavbarAction` shape.** The component prop was typed with an inline subset that silently dropped `external` and `group`, even though the underlying `<Navbar>` (and the `mountFlowDropApp` option) already supported them. It now uses the canonical `NavbarAction` type, so external-link and grouped actions type-check through the component as they always did through the mount API.
+
 ## [2.0.0-beta.2] - 2026-06-09
 
 Second 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). This release tightens the 2.0 package boundaries, finishes `AuthProvider` propagation across the editor and playground runtime surfaces, and adds a regression guard for light-entry bundle size.

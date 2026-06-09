@@ -591,7 +591,7 @@ export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOpt
    * @default "standalone"
    */
   mode?: 'standalone' | 'embedded';
-  /** Render the FlowDrop Navbar above the playground (default: true). */
+  /** Render the FlowDrop Navbar above the playground (default: false). */
   showNavbar?: boolean;
   /** Title shown in the navbar. Falls back to the workflow name, then "Playground". */
   navbarTitle?: string;
@@ -608,17 +608,21 @@ export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOpt
 }
 
 /**
- * Mount the full-page PlaygroundApp (Navbar + PlaygroundStudio) into a container.
+ * Mount the full-page PlaygroundApp (PlaygroundStudio, optionally wrapped in the
+ * FlowDrop Navbar) into a container.
  *
- * Use this when you want the same chrome as the FlowDrop editor — logo,
- * branding, and settings modal — wrapped around the playground. For an
- * embeddable split-pane without the navbar, use mountPlaygroundStudio().
+ * The navbar is opt-in (`showNavbar: true`) — matching the editor mount, so
+ * embedding into a page that already has its own header never double-stacks a
+ * header. Pass `showNavbar: true` when FlowDrop owns the whole page and you want
+ * its chrome (logo, branding, settings modal). For a leaner embeddable
+ * split-pane, mountPlaygroundStudio() omits the navbar wrapper entirely.
  *
  * @example
  * ```typescript
  * const app = await mountPlaygroundApp(container, {
  *   workflowId: 'wf-123',
  *   endpointConfig: createEndpointConfig('/api/flowdrop'),
+ *   showNavbar: true,
  *   navbarTitle: 'My Workflow',
  *   primaryActions: [
  *     { label: 'Edit', href: '/workflows/wf-123/edit', icon: 'mdi:pencil-outline', variant: 'secondary' },
@@ -641,7 +645,7 @@ export async function mountPlaygroundApp(
     config = {},
     height,
     width,
-    showNavbar = true,
+    showNavbar = false,
     navbarTitle,
     primaryActions,
     showSettings = true,

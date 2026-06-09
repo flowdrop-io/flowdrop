@@ -18,6 +18,7 @@
   import NodeSwapPicker from '$lib/components/NodeSwapPicker.svelte';
   import SwapMappingEditor from '$lib/components/SwapMappingEditor.svelte';
   import Navbar from '$lib/components/Navbar.svelte';
+  import type { NavbarAction } from '$lib/types/navbar.js';
   import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
   import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
   import {
@@ -98,13 +99,7 @@
     /** Custom navbar title */
     navbarTitle?: string;
     /** Custom navbar actions */
-    navbarActions?: Array<{
-      label: string;
-      href: string;
-      icon?: string;
-      variant?: 'primary' | 'secondary' | 'outline';
-      onclick?: (event: Event) => void;
-    }>;
+    navbarActions?: NavbarAction[];
     /** Show settings gear icon in navbar */
     showSettings?: boolean;
     /** Show the "Connected" status indicator in the navbar (default: true) */

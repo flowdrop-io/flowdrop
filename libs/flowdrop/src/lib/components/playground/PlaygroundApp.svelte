@@ -52,7 +52,7 @@
     endpointConfig,
     authProvider,
     config = {},
-    showNavbar = true,
+    showNavbar = false,
     navbarTitle,
     primaryActions = [],
     showSettings = true,
