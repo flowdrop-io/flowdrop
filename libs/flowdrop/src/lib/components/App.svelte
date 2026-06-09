@@ -1295,6 +1295,7 @@
       <WorkflowEditor
         bind:this={workflowEditorRef}
         endpointConfig={endpointConfig ?? undefined}
+        {authProvider}
         {openConfigSidebar}
         {mode}
         {pipelineId}

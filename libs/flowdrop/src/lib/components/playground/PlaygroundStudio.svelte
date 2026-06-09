@@ -186,6 +186,7 @@
           pipelineId={activeId}
           workflow={resolvedWorkflow}
           {endpointConfig}
+          {authProvider}
           isPinned={fd.playground.pinnedExecutionId !== null}
           {executions}
           latestExecutionId={fd.playground.latestExecutionId}

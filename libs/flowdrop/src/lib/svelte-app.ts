@@ -711,7 +711,8 @@ export async function mountWorkflowEditor(
     target: container,
     props: {
       instance: fd,
-      endpointConfig: config
+      endpointConfig: config,
+      authProvider
     }
   });
 

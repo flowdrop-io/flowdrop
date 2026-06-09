@@ -5,6 +5,7 @@
 import type { Component } from 'svelte';
 import type { Node, Edge, XYPosition, ConnectionLineType } from '@xyflow/svelte';
 import type { EndpointConfig } from '../config/endpoints.js';
+import type { AuthProvider } from './auth.js';
 
 /**
  * Built-in node categories that ship with FlowDrop.
@@ -1387,6 +1388,8 @@ export interface PipelineViewProps {
   pipelineId: string | null;
   workflow: Workflow;
   endpointConfig: EndpointConfig;
+  /** Auth provider for building authenticated API clients in custom views. */
+  authProvider?: AuthProvider;
   refreshTrigger?: number;
 }
 

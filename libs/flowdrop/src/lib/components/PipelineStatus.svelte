@@ -12,6 +12,7 @@
   import { createEndpointConfig } from '$lib/config/endpoints.js';
   import type { Workflow } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
+  import type { AuthProvider } from '$lib/types/auth.js';
   import { logger } from '../utils/logger.js';
   import { m } from '$lib/messages/index.js';
 
@@ -21,6 +22,8 @@
     apiClient?: EnhancedFlowDropApiClient;
     baseUrl?: string;
     endpointConfig?: EndpointConfig;
+    /** Auth provider used when this component builds its own API client from endpointConfig/baseUrl. */
+    authProvider?: AuthProvider;
     runLabel?: string;
     /** When true, suppresses breadcrumb and layout events (used inside playground panel) */
     isEmbedded?: boolean;
@@ -43,6 +46,7 @@
     apiClient,
     baseUrl,
     endpointConfig,
+    authProvider,
     onActionsReady,
     runLabel,
     isEmbedded = false,
@@ -59,7 +63,8 @@
   const client =
     apiClient ||
     new EnhancedFlowDropApiClient(
-      endpointConfig ?? createEndpointConfig(baseUrl || '/api/flowdrop')
+      endpointConfig ?? createEndpointConfig(baseUrl || '/api/flowdrop'),
+      authProvider
     );
 
   // Pipeline status — drives breadcrumb label and the 5s poll while running

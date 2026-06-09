@@ -1,5 +1,6 @@
 import { EnhancedFlowDropApiClient } from '$lib/api/enhanced-client.js';
 import type { EndpointConfig } from '$lib/config/endpoints.js';
+import type { AuthProvider } from '$lib/types/auth.js';
 import type { NodeExecutionStatus, KanbanColumnDef } from '$lib/types/index.js';
 import { logger } from '$lib/utils/logger.js';
 
@@ -102,9 +103,10 @@ export function resolveStatus(raw: NodeStatusData | undefined): NodeStatus {
  */
 export function createPipelineDataFetcher(
   getPipelineId: () => string,
-  endpointConfig: EndpointConfig
+  endpointConfig: EndpointConfig,
+  authProvider?: AuthProvider
 ) {
-  const client = new EnhancedFlowDropApiClient(endpointConfig);
+  const client = new EnhancedFlowDropApiClient(endpointConfig, authProvider);
   let nodeStatusMap = $state<Record<string, NodeStatusData>>({});
   let jobs = $state<PipelineJobItem[]>([]);
   let kanbanConfig = $state<KanbanColumnDef[] | null>(null);

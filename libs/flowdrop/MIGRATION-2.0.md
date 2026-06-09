@@ -114,6 +114,18 @@ mountPlayground(el, {
 });
 ```
 
+The same plumbing was extended to the editor and pipeline surfaces, which
+previously built unauthenticated API clients from `endpointConfig` alone:
+
+- The exported `<WorkflowEditor>` component accepts an `authProvider` prop
+  (threaded for you by `mountFlowDropApp` / `mountWorkflowEditor` / `<App>`).
+  Pass it when using `<WorkflowEditor>` directly.
+- `<PipelineStatus>` accepts an `authProvider` prop (used when it builds its own
+  client from `endpointConfig` / `baseUrl`; ignored when you pass `apiClient`).
+- `PipelineViewProps` — the contract for custom pipeline views registered via
+  `pipelineViews` — gained an optional `authProvider`, so custom views can build
+  authenticated clients the same way the built-in graph/kanban/table views do.
+
 ### `EndpointConfig.auth` is removed — use an `AuthProvider`
 
 The `auth` block on `EndpointConfig` (and its header-injection branch) is gone.

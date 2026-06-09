@@ -16,12 +16,14 @@
   import { logger } from '$lib/utils/logger.js';
   import type { Workflow, PipelineViewDef } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
+  import type { AuthProvider } from '$lib/types/auth.js';
   import type { PlaygroundExecution } from '$lib/types/playground.js';
 
   interface Props {
     pipelineId: string | null;
     workflow: Workflow;
     endpointConfig: EndpointConfig;
+    authProvider?: AuthProvider;
     isPinned: boolean;
     /** All executions for the current session, oldest-first */
     executions?: PlaygroundExecution[];
@@ -39,6 +41,7 @@
     pipelineId,
     workflow,
     endpointConfig,
+    authProvider,
     isPinned,
     executions = [],
     latestExecutionId = null,
@@ -248,14 +251,27 @@
     {#if pipelineId}
       {#key pipelineId}
         {#if viewMode === 'kanban'}
-          <PipelineKanbanView {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
+          <PipelineKanbanView
+            {pipelineId}
+            {workflow}
+            {endpointConfig}
+            {authProvider}
+            {refreshTrigger}
+          />
         {:else if viewMode === 'table'}
-          <PipelineTableView {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
+          <PipelineTableView
+            {pipelineId}
+            {workflow}
+            {endpointConfig}
+            {authProvider}
+            {refreshTrigger}
+          />
         {:else if viewMode === 'graph'}
           <PipelineStatus
             {pipelineId}
             {workflow}
             {endpointConfig}
+            {authProvider}
             runLabel={pipelineId}
             {refreshTrigger}
             isEmbedded={true}
@@ -264,7 +280,7 @@
           {@const activeView = extraViews.find((v) => v.key === viewMode)}
           {#if activeView}
             {@const View = activeView.component}
-            <View {pipelineId} {workflow} {endpointConfig} {refreshTrigger} />
+            <View {pipelineId} {workflow} {endpointConfig} {authProvider} {refreshTrigger} />
           {/if}
         {/if}
       {/key}
@@ -277,6 +293,7 @@
         disableSidebar={true}
         mode="locked"
         {endpointConfig}
+        {authProvider}
       />
     {/if}
   </div>

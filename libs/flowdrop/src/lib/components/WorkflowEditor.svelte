@@ -28,6 +28,7 @@
   import EdgeRefresher from './EdgeRefresher.svelte';
   import { tick, untrack } from 'svelte';
   import type { EndpointConfig } from '../config/endpoints.js';
+  import type { AuthProvider } from '../types/auth.js';
   import ConnectionLine from './ConnectionLine.svelte';
   import FlowDropEdge from './FlowDropEdge.svelte';
   import { m } from '$lib/messages/index.js';
@@ -60,6 +61,8 @@
 
   interface Props {
     endpointConfig?: EndpointConfig;
+    /** Auth provider applied to this instance's API requests. */
+    authProvider?: AuthProvider;
     openConfigSidebar?: (node: WorkflowNodeType) => void;
     /**
      * Editor interaction mode. `'edit'` allows node drag/connect/select and
@@ -596,7 +599,7 @@
   // Configure endpoints when props change
   $effect(() => {
     if (props.endpointConfig) {
-      ConfigurationHelper.configureEndpoints(fd.api, props.endpointConfig);
+      ConfigurationHelper.configureEndpoints(fd.api, props.endpointConfig, props.authProvider);
     }
   });
 

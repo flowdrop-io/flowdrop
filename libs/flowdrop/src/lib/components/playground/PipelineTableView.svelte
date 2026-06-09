@@ -55,15 +55,17 @@
   import { formatMicroseconds } from '$lib/utils/duration.js';
   import type { Workflow, WorkflowNode } from '$lib/types/index.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
+  import type { AuthProvider } from '$lib/types/auth.js';
 
   interface Props {
     pipelineId: string;
     workflow: Workflow;
     endpointConfig: EndpointConfig;
+    authProvider?: AuthProvider;
     refreshTrigger?: number;
   }
 
-  let { pipelineId, workflow, endpointConfig, refreshTrigger = 0 }: Props = $props();
+  let { pipelineId, workflow, endpointConfig, authProvider, refreshTrigger = 0 }: Props = $props();
 
   interface JobRow {
     /** Stable key: job id, or node id for nodes without a job yet */
@@ -85,7 +87,7 @@
 
   // endpointConfig is consumed once to build the API client; it must be stable
   // svelte-ignore state_referenced_locally
-  const fetcher = createPipelineDataFetcher(() => pipelineId, endpointConfig);
+  const fetcher = createPipelineDataFetcher(() => pipelineId, endpointConfig, authProvider);
 
   $effect(() => {
     if (refreshTrigger <= 0) return;

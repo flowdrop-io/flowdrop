@@ -14,6 +14,7 @@ import { hasCycles, hasInvalidCycles } from '../utils/connections.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getDefaultInstance, type FlowDropInstance } from '../stores/instanceContainer.svelte.js';
 import type { ApiContext } from '../stores/apiContext.js';
+import type { AuthProvider } from '../types/auth.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
@@ -499,9 +500,14 @@ export class WorkflowOperationsHelper {
  */
 export class ConfigurationHelper {
   /**
-   * Configure API endpoints on the given instance's API context.
+   * Configure API endpoints (and optionally the auth provider) on the given
+   * instance's API context.
    */
-  static configureEndpoints(api: ApiContext, config: EndpointConfig): void {
-    api.configure(config);
+  static configureEndpoints(
+    api: ApiContext,
+    config: EndpointConfig,
+    authProvider?: AuthProvider
+  ): void {
+    api.configure(config, authProvider);
   }
 }
