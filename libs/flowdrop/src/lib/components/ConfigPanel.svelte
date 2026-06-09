@@ -110,7 +110,8 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: var(--fd-background);
+    background-color: var(--fd-panel-bg);
+    backdrop-filter: var(--fd-panel-backdrop-filter);
   }
 
   .config-panel__header {
@@ -119,7 +120,7 @@
     align-items: center;
     padding: 0.875rem 1rem;
     border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-muted);
+    background-color: var(--fd-card);
     flex-shrink: 0;
   }
 
@@ -180,7 +181,7 @@
   .config-panel__details {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--fd-border-muted);
-    background-color: var(--fd-muted);
+    background-color: var(--fd-card);
     flex-shrink: 0;
   }
 

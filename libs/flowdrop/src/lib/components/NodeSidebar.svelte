@@ -408,7 +408,8 @@
   /* Components Sidebar - Always Visible */
   .flowdrop-sidebar {
     height: calc(100vh - var(--fd-navbar-height)); /* Account for navbar height */
-    background-color: var(--fd-background);
+    background-color: var(--fd-panel-bg);
+    backdrop-filter: var(--fd-panel-backdrop-filter);
     border-right: 1px solid var(--fd-border);
     display: flex;
     flex-direction: column;
@@ -460,7 +461,7 @@
 
   .flowdrop-sidebar__search {
     padding: 0.75rem 1rem;
-    background-color: var(--fd-background);
+    background-color: transparent;
     border-bottom: 1px solid var(--fd-border);
     display: var(--fd-sidebar-search-display, block);
   }

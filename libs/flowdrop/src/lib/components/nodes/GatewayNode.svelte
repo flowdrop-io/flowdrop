@@ -336,6 +336,7 @@
   .flowdrop-workflow-node {
     position: relative;
     background-color: var(--fd-node-bg);
+    backdrop-filter: var(--fd-node-backdrop-filter);
     border: var(--fd-node-border-width) solid var(--fd-node-border);
     border-radius: var(--fd-node-radius);
     box-shadow: var(--fd-node-shadow);

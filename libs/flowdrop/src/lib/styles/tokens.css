@@ -127,6 +127,13 @@
   --fd-card: #ffffff; /* @public */
   --fd-card-foreground: var(--_gray-9); /* @public */
 
+  /* ----- CHROME PANELS (sidebar + config/inspector panel) -----
+     Large editor-shell panels read from these so a theme can make them
+     glassy/translucent without touching every other surface. Default to the
+     opaque app background + no blur, so existing themes are unchanged. */
+  --fd-panel-bg: var(--fd-background); /* @public  sidebar + config panel surface */
+  --fd-panel-backdrop-filter: none; /* @public  glass/frost behind translucent panels; e.g. blur(14px) */
+
   /* ----- HEADER (Distinct header styling) ----- */
   --fd-header: #f5f7fa; /* @public */
   --fd-header-foreground: var(--_gray-8); /* @public */
@@ -158,11 +165,18 @@
   --fd-node-shadow-hover: var(
     --fd-shadow-lg
   ); /* @public  node hover/selected elevation; 'none' for a flat look */
+  --fd-node-backdrop-filter: none; /* @public  glass/frost effect behind translucent node bodies; e.g. blur(10px) */
+  --fd-node-header-accent: transparent; /* @public  crisp accent line along the top of a node header; transparent = off */
 
   /* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
   --fd-node-border: var(--_gray-5); /* @public */
   --fd-node-border-hover: var(--_gray-6); /* @public */
   --fd-node-border-width: 1.5px; /* @public  node outline thickness; lower for a thinner look */
+  /* Note nodes can carry their own outline so themes can read them as
+     informational/annotation rather than a process node. Defaults to the
+     shared node border so existing themes are unchanged. */
+  --fd-note-border: var(--fd-node-border); /* @public  notes-node outline */
+  --fd-note-border-hover: var(--fd-node-border-hover); /* @public  notes-node outline (hover) */
 
   /* ----- CANVAS GRID (pattern color for the editor background grid; any theme
      can recolor whichever grid variant it picks via config.canvas.grid).

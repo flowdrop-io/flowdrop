@@ -161,7 +161,7 @@
     max-width: var(--fd-notes-node-max-width);
     width: var(--fd-notes-node-width);
     border-radius: var(--fd-node-radius);
-    border: var(--fd-node-border-width) solid var(--fd-node-border);
+    border: var(--fd-node-border-width) solid var(--fd-note-border);
     background: var(--fd-node-bg);
     backdrop-filter: var(--fd-notes-node-backdrop-filter);
     box-shadow: var(--fd-node-shadow);
@@ -171,10 +171,12 @@
     z-index: 5;
   }
 
-  /* Note type: Info (blue) - subtle background tint, neutral border */
+  /* Note type: Info (blue) - subtle background tint, neutral border.
+     Uses the info accent (not primary) so an info note never reads as a
+     primary/success action — primary stays reserved for interactive intent. */
   .flowdrop-notes-node--info {
     background-color: var(--fd-info-muted);
-    --_notes-icon: var(--fd-primary);
+    --_notes-icon: var(--fd-info);
   }
 
   /* Note type: Warning (yellow/amber) - subtle background tint */
@@ -203,7 +205,7 @@
 
   .flowdrop-notes-node:hover {
     box-shadow: var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-border-hover);
+    border-color: var(--fd-note-border-hover);
   }
 
   /* Selected state - matches other node components */

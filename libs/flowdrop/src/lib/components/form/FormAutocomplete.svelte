@@ -787,7 +787,6 @@
   }
 
   .form-autocomplete--disabled {
-    opacity: 0.6;
     pointer-events: none;
   }
 
@@ -804,7 +803,7 @@
     font-size: var(--fd-text-sm);
     font-family: inherit;
     color: var(--fd-foreground);
-    background-color: var(--fd-muted);
+    background-color: var(--fd-background);
     transition: all var(--fd-transition-normal);
     box-shadow: var(--fd-shadow-sm);
     cursor: text;
@@ -817,11 +816,19 @@
   }
 
   .form-autocomplete__field--focused {
-    border-color: var(--fd-primary);
+    border-color: var(--fd-ring);
     background-color: var(--fd-background);
     box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.12),
+      0 0 0 3px color-mix(in srgb, var(--fd-ring) 18%, transparent),
       var(--fd-shadow-sm);
+  }
+
+  .form-autocomplete--disabled .form-autocomplete__field {
+    background-color: var(--fd-muted);
+    border-color: var(--fd-border-muted);
+    color: var(--fd-muted-foreground);
+    cursor: not-allowed;
+    opacity: 1;
   }
 
   /* Multiple mode - textarea-like styling */

@@ -211,6 +211,7 @@
     min-height: 28px;
     padding: 2px var(--fd-space-sm);
     background-color: var(--fd-node-bg);
+    backdrop-filter: var(--fd-node-backdrop-filter);
     /* --fd-atom-node-color is set inline only when the server provides a color;
        otherwise it falls back to the neutral border token. */
     border: var(--fd-node-border-width) solid var(--fd-atom-node-color, var(--fd-node-border));

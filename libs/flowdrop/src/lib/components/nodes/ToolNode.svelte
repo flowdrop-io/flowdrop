@@ -264,6 +264,7 @@
   .flowdrop-tool-node {
     position: relative;
     background-color: var(--fd-node-bg);
+    backdrop-filter: var(--fd-node-backdrop-filter);
     border: 1.5px solid var(--fd-tool-node-color);
     border-radius: var(--fd-node-radius);
     width: var(--fd-node-default-width);
