@@ -11,7 +11,9 @@ export {
   createWorkflow,
   updateWorkflow,
   deleteWorkflow,
-  demoAIContentWorkflow
+  demoAIContentWorkflow,
+  createChainedTriggerWorkflow,
+  perf500ChainWorkflow
 } from './workflows.js';
 
 // Re-export pipeline data

@@ -4238,6 +4238,85 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
 /**
  * All mock workflows as a Map for easy lookup
  */
+/**
+ * Build a synthetic "step" node metadata that exposes a single trigger input
+ * and a single trigger output, so instances can be chained head-to-tail.
+ */
+function createTriggerStepMetadata(index: number): WorkflowNode['data']['metadata'] {
+  return {
+    id: 'trigger_step',
+    name: `Step ${index + 1}`,
+    description: 'Synthetic default node for performance testing',
+    category: 'processing',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:flash',
+    inputs: [{ id: 'trigger', name: 'In', type: 'input', dataType: 'trigger', required: false }],
+    outputs: [{ id: 'trigger', name: 'Out', type: 'output', dataType: 'trigger' }],
+    configSchema: { type: 'object', properties: {} }
+  };
+}
+
+/**
+ * Programmatically build a workflow of `count` default nodes chained linearly
+ * via their trigger ports (node N's trigger output → node N+1's trigger input).
+ *
+ * Used by the performance test harness to exercise large-graph rendering.
+ * Nodes are laid out in a serpentine grid so the canvas has realistic spread.
+ */
+export function createChainedTriggerWorkflow(count: number, id = 'perf-chain'): Workflow {
+  const COLS = 20;
+  const X_GAP = 450;
+  const Y_GAP = 320;
+
+  const nodes: WorkflowNode[] = Array.from({ length: count }, (_, i) => {
+    const col = i % COLS;
+    // serpentine: even rows left→right, odd rows right→left, keeps the chain visually contiguous
+    const row = Math.floor(i / COLS);
+    const x = (row % 2 === 0 ? col : COLS - 1 - col) * X_GAP;
+    const nodeId = `step-${i}`;
+    return {
+      id: nodeId,
+      type: 'universalNode',
+      position: { x, y: row * Y_GAP },
+      data: {
+        nodeId,
+        label: `Step ${i + 1}`,
+        config: {},
+        metadata: createTriggerStepMetadata(i)
+      }
+    };
+  });
+
+  // Handle ids are the composite `${nodeId}-${direction}-${portId}` emitted by
+  // the node components (see WorkflowNode.svelte / utils/handleIds.ts), NOT the
+  // bare port id — bare ids leave the edge unconnected.
+  const edges: WorkflowEdge[] = Array.from({ length: Math.max(0, count - 1) }, (_, i) => ({
+    id: `trigger-edge-${i}`,
+    source: `step-${i}`,
+    target: `step-${i + 1}`,
+    sourceHandle: `step-${i}-output-trigger`,
+    targetHandle: `step-${i + 1}-input-trigger`,
+    data: { metadata: { edgeType: 'trigger' } }
+  }));
+
+  return {
+    id,
+    name: `Performance: ${count} chained nodes`,
+    description: `${count} default nodes chained via trigger ports for render benchmarking`,
+    nodes,
+    edges,
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+}
+
+/** 500-node trigger chain, served by MSW at GET /workflows/perf-500-chain. */
+export const perf500ChainWorkflow: Workflow = createChainedTriggerWorkflow(500, 'perf-500-chain');
+
 export const mockWorkflows: Map<string, Workflow> = new Map([
   [demoAIContentWorkflow.id, demoAIContentWorkflow],
   [demoNodeTypesShowcaseWorkflow.id, demoNodeTypesShowcaseWorkflow],
@@ -4246,7 +4325,8 @@ export const mockWorkflows: Map<string, Workflow> = new Map([
   [demoTemplateAutocompleteWorkflow.id, demoTemplateAutocompleteWorkflow],
   [demoDependentAutocompleteWorkflow.id, demoDependentAutocompleteWorkflow],
   [demoAgentSpecLLMPipelineWorkflow.id, demoAgentSpecLLMPipelineWorkflow],
-  [demoAgentSpecCustomerSupportWorkflow.id, demoAgentSpecCustomerSupportWorkflow]
+  [demoAgentSpecCustomerSupportWorkflow.id, demoAgentSpecCustomerSupportWorkflow],
+  [perf500ChainWorkflow.id, perf500ChainWorkflow]
 ]);
 
 /**

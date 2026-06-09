@@ -20,6 +20,7 @@
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
   import type { ThemePreference } from '$lib/types/settings.js';
+  import { createChainedTriggerWorkflow } from '../../../mocks/data/workflows.js';
 
   // --- Query param for workflow variant ---
   let workflowVariant = $derived($page.url.searchParams.get('workflow') ?? 'simple');
@@ -418,7 +419,17 @@
     uuid: uuidWorkflow
   };
 
-  let selectedWorkflow = $derived(workflows[workflowVariant] ?? simpleWorkflow);
+  // Performance variant: ?workflow=perf builds N default nodes chained via
+  // trigger ports (default 500, override with ?count=N). Used by
+  // tests/e2e/editor-performance.spec.ts.
+  let perfCount = $derived(
+    Math.min(5000, Math.max(1, Number($page.url.searchParams.get('count')) || 500))
+  );
+  let selectedWorkflow = $derived(
+    workflowVariant === 'perf'
+      ? createChainedTriggerWorkflow(perfCount, 'perf-chain')
+      : (workflows[workflowVariant] ?? simpleWorkflow)
+  );
 </script>
 
 <svelte:head>
