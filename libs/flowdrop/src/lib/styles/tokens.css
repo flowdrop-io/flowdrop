@@ -370,6 +370,9 @@
   /* Divider absorbed into header bottom padding so header height stays on the
      20px grid regardless of border thickness. */
   --fd-node-header-divider-width: 1px; /* @public */
+  --fd-node-header-divider-color: var(
+    --fd-border-muted
+  ); /* @public — header bottom divider color */
   --fd-node-port-row-height: 20px; /* @internal */
   --fd-node-terminal-size: 80px; /* @public */
   --fd-node-square-size: 80px; /* @public */

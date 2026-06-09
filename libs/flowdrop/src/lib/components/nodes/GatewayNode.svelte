@@ -384,7 +384,7 @@
         var(--fd-node-header-gap) - var(--fd-node-border-width) -
           var(--fd-node-header-divider-width)
       );
-    border-bottom: var(--fd-node-header-divider-width) solid var(--fd-border-muted);
+    border-bottom: var(--fd-node-header-divider-width) solid var(--fd-node-header-divider-color);
     background: var(--fd-node-header-bg);
     border-top-left-radius: var(--fd-node-radius);
     border-top-right-radius: var(--fd-node-radius);

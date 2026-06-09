@@ -68,6 +68,8 @@ export const drafterSkin: FlowDropSkin = {
     'node-border': '#0f766e',
     'node-border-hover': '#0c5f59',
     'node-border-width': '1.25px',
+    /* Header divider matches the node outline ink (tracks light/dark node-border) */
+    'node-header-divider-color': 'var(--fd-node-border)',
     'handle-border': '#ffffff',
 
     /* Notes read as cool annotations, not filled success cards */
