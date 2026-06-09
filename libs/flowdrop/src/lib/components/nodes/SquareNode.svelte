@@ -256,14 +256,14 @@
 <style>
   .flowdrop-square-node {
     position: relative;
-    background-color: var(--fd-card);
-    border: 1.5px solid var(--fd-node-border);
-    border-radius: var(--fd-radius-xl);
+    background-color: var(--fd-node-bg);
+    border: var(--fd-node-border-width) solid var(--fd-node-border);
+    border-radius: var(--fd-node-radius);
     display: flex;
     flex-direction: column;
     cursor: pointer;
     transition: all var(--fd-transition-fast);
-    box-shadow: var(--fd-shadow-md);
+    box-shadow: var(--fd-node-shadow);
     overflow: visible; /* Changed from hidden to visible to allow handles to be properly accessible */
     z-index: 10;
     color: var(--fd-foreground);
@@ -278,21 +278,21 @@
   }
 
   .flowdrop-square-node:hover {
-    box-shadow: var(--fd-shadow-lg);
+    box-shadow: var(--fd-node-shadow-hover);
     border-color: var(--fd-node-border-hover);
   }
 
   .flowdrop-square-node--selected {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-primary);
   }
 
   .flowdrop-square-node--selected:hover {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-primary);
   }
 

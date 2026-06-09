@@ -160,11 +160,11 @@
     min-width: var(--fd-notes-node-min-width);
     max-width: var(--fd-notes-node-max-width);
     width: var(--fd-notes-node-width);
-    border-radius: var(--fd-radius-xl);
-    border: 1.5px solid var(--fd-node-border);
-    background: var(--fd-card);
+    border-radius: var(--fd-node-radius);
+    border: var(--fd-node-border-width) solid var(--fd-node-border);
+    background: var(--fd-node-bg);
     backdrop-filter: var(--fd-notes-node-backdrop-filter);
-    box-shadow: var(--fd-shadow-md);
+    box-shadow: var(--fd-node-shadow);
     color: var(--fd-foreground);
     transition: all var(--fd-transition-fast);
     overflow: hidden;
@@ -202,7 +202,7 @@
   }
 
   .flowdrop-notes-node:hover {
-    box-shadow: var(--fd-shadow-lg);
+    box-shadow: var(--fd-node-shadow-hover);
     border-color: var(--fd-node-border-hover);
   }
 
@@ -210,14 +210,14 @@
   .flowdrop-notes-node--selected {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-primary);
   }
 
   .flowdrop-notes-node--selected:hover {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-primary);
   }
 

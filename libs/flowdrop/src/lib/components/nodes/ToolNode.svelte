@@ -263,37 +263,37 @@
 <style>
   .flowdrop-tool-node {
     position: relative;
-    background-color: var(--fd-card);
+    background-color: var(--fd-node-bg);
     border: 1.5px solid var(--fd-tool-node-color);
-    border-radius: var(--fd-radius-xl);
+    border-radius: var(--fd-node-radius);
     width: var(--fd-node-default-width);
     min-height: var(--fd-node-tool-min-height);
     display: flex;
     flex-direction: column;
     cursor: pointer;
     transition: all var(--fd-transition-fast);
-    box-shadow: var(--fd-shadow-md);
+    box-shadow: var(--fd-node-shadow);
     overflow: visible;
     z-index: 10;
     color: var(--fd-foreground);
   }
 
   .flowdrop-tool-node:hover {
-    box-shadow: var(--fd-shadow-lg);
+    box-shadow: var(--fd-node-shadow-hover);
     border-color: var(--fd-tool-node-color);
   }
 
   .flowdrop-tool-node--selected {
     box-shadow:
       0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-tool-node-color);
   }
 
   .flowdrop-tool-node--selected:hover {
     box-shadow:
       0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-tool-node-color);
   }
 
@@ -315,7 +315,7 @@
     padding: 1rem;
     /* Light mode: mix tool color with white (95%) for subtle tint */
     background-color: color-mix(in srgb, var(--fd-tool-node-color) 5%, white);
-    border-radius: var(--fd-radius-xl);
+    border-radius: var(--fd-node-radius);
     border: none;
   }
 

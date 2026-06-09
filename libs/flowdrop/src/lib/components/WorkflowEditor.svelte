@@ -902,7 +902,7 @@
               <!-- Always render Background for consistent bg color in dark/light mode -->
               <Background
                 gap={getEditorSettings().gridSize}
-                bgColor="var(--fd-background)"
+                bgColor="var(--fd-canvas-bg)"
                 variant={gridVariant}
                 lineWidth={1}
                 patternColor={getEditorSettings().showGrid

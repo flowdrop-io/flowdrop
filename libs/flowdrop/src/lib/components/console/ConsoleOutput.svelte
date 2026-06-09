@@ -68,12 +68,12 @@
 
   .console-output::-webkit-scrollbar-track {
     background: var(--fd-scrollbar-track);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .console-output::-webkit-scrollbar-thumb {
     background: var(--fd-scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .console-output::-webkit-scrollbar-thumb:hover {

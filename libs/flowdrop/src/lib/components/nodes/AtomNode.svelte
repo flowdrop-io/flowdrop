@@ -210,10 +210,10 @@
     min-width: 2rem;
     min-height: 28px;
     padding: 2px var(--fd-space-sm);
-    background-color: var(--fd-card);
+    background-color: var(--fd-node-bg);
     /* --fd-atom-node-color is set inline only when the server provides a color;
        otherwise it falls back to the neutral border token. */
-    border: 1.5px solid var(--fd-atom-node-color, var(--fd-node-border));
+    border: var(--fd-node-border-width) solid var(--fd-atom-node-color, var(--fd-node-border));
     border-radius: 999px;
     box-shadow: var(--fd-shadow-sm);
     color: var(--fd-foreground);
@@ -229,14 +229,14 @@
   }
 
   .flowdrop-atom-node:hover {
-    box-shadow: var(--fd-shadow-md);
+    box-shadow: var(--fd-node-shadow);
     border-color: var(--fd-atom-node-color, var(--fd-node-border-hover));
   }
 
   .flowdrop-atom-node--selected {
     box-shadow:
       0 0 0 2px color-mix(in srgb, var(--fd-atom-node-color, var(--fd-primary)) 30%, transparent),
-      var(--fd-shadow-md);
+      var(--fd-node-shadow);
     border-color: var(--fd-atom-node-color, var(--fd-primary));
   }
 

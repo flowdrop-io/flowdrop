@@ -1,91 +1,79 @@
 import type { FlowDropSkin } from '../types/skin';
 
 /**
- * Drafter — a "blueprint" skin: a soft mint canvas with a faint emerald square
- * grid and translucent, lightly-outlined nodes (see ref-image.png). Port and
- * category-icon colors are intentionally left untouched (no `port-skin-color`
- * override) so data-type ports and node icons keep their full color, popping
- * against the muted draft surface.
+ * Drafter — a "blueprint" skin scoped to the graph editor: a soft mint canvas
+ * with a faint emerald square grid and translucent, dark-green-outlined nodes
+ * (see ref-image.png), as if sketched with a fine liner.
  *
- * The square grid itself is rendered by WorkflowEditor: when the active theme
- * is `drafter` it switches the xyflow Background to the Lines variant and
- * colors it with `--fd-grid-pattern-color` (defined below).
+ * Deliberately narrow: it only touches the editor canvas + node surfaces
+ * (--fd-canvas-bg, --fd-node-*) and the brand accent (--fd-primary). The app
+ * chrome — navbar, sidebars, panels — is left on the default tokens for a
+ * fresh, neutral white look outside the canvas. Data-type port colors and
+ * category icon colors are untouched (no `port-skin-color`) so they keep their
+ * full color against the muted draft surface. Ships light + dark variants.
+ *
+ * The square grid is rendered by WorkflowEditor: this theme's config.canvas.grid
+ * switches the xyflow Background to the Lines variant; --fd-grid-pattern-color
+ * colors it.
  */
 export const drafterSkin: FlowDropSkin = {
   tokens: {
-    // --- Light "blueprint paper" palette (soft mint) ---
-    background: '#f1faf4',
-    foreground: '#0f231a',
-    muted: '#e3f3ea',
-    'muted-foreground': '#5b7d6b',
-    // Translucent green-tinted node body so the grid faintly reads through
-    card: 'rgba(240, 253, 246, 0.85)',
-    'card-foreground': '#0f231a',
-    border: '#c2e3d0',
-    'border-muted': '#d7ecdf',
-    'border-strong': '#a4d4b8',
-    header: 'rgba(209, 250, 229, 0.7)',
-    'header-foreground': '#13402c',
-    'header-gradient': 'none',
-    'layout-background': 'linear-gradient(135deg, #f3faf6 0%, #e9f6ef 100%)',
-
-    // Faint emerald square grid lines
+    // --- Light blueprint: faintly-mint canvas, emerald square grid ---
+    'canvas-bg': '#f1faf4',
     'grid-pattern-color': 'rgba(16, 185, 129, 0.16)',
 
-    // Emerald brand accent
+    // Translucent green-tinted node body + header so the grid faintly reads through
+    'node-bg': 'rgba(240, 253, 246, 0.85)',
+    'node-header-bg': 'rgba(209, 250, 229, 0.7)',
+
+    // Flat, lightly-sharpened cards — drawn, not lifted (applies to light + dark)
+    'node-radius': '2px',
+    'node-shadow': 'none',
+    'node-shadow-hover': 'none',
+
+    // Thin, dark-green node outline — like a node sketched with a fine liner;
+    // white port ring so colored ports pop. Width applies to light + dark.
+    'node-border': '#047857',
+    'node-border-hover': '#065f46',
+    'node-border-width': '1px',
+    'handle-border': '#ffffff',
+
+    // Drafting chrome: crisp corners + flat resting surfaces, so the navbar,
+    // sidebars and panels share the editor's flat/drawn feel while staying on
+    // the neutral default palette (gray borders, white surfaces). Floating
+    // overlays keep --fd-shadow-lg (untouched) so modals/menus still read.
+    'radius-sm': '2px',
+    'radius-md': '3px',
+    'radius-lg': '4px',
+    'radius-xl': '6px',
+    'scrollbar-radius': '0',
+    'shadow-sm': 'none',
+    'shadow-md': 'none',
+
+    // Emerald brand accent (buttons/links) ties the editor identity together
     primary: '#10b981',
     'primary-hover': '#059669',
     'primary-foreground': '#ffffff',
-    'primary-muted': 'rgba(16, 185, 129, 0.12)',
-
-    // Thin emerald-tinted node outline; white port ring so colored ports pop
-    'node-border': '#86efac',
-    'node-border-hover': '#34d399',
-    'handle-border': '#ffffff',
-
-    // Flat: near-shadowless cards to suit the draft surface
-    'shadow-md': '0 1px 2px rgba(6, 78, 59, 0.06)',
-    'shadow-lg': '0 4px 10px rgba(6, 78, 59, 0.08)',
-
-    // Scrollbar + backdrop tuned to the mint surface
-    'scrollbar-thumb': '#c2e3d0',
-    'scrollbar-track': '#e9f6ef',
-    backdrop: 'rgba(241, 250, 244, 0.9)'
+    'primary-muted': 'rgba(16, 185, 129, 0.12)'
   },
 
   darkTokens: {
-    // --- Dark "blueprint" palette (deep green-slate) ---
-    background: '#0c1f17',
-    foreground: '#d1fae5',
-    muted: '#13291f',
-    'muted-foreground': '#6b9080',
-    card: 'rgba(18, 42, 31, 0.85)',
-    'card-foreground': '#d1fae5',
-    border: '#1d3a2c',
-    'border-muted': '#16302355',
-    'border-strong': '#2a5440',
-    header: 'rgba(15, 36, 25, 0.7)',
-    'header-foreground': '#a7f3d0',
-    'header-gradient': 'none',
-    'layout-background': 'linear-gradient(135deg, #0a1a13 0%, #0c1f17 100%)',
-
+    // --- Dark blueprint: deep green-slate canvas ---
+    'canvas-bg': '#0c1f17',
     'grid-pattern-color': 'rgba(52, 211, 153, 0.12)',
 
-    primary: '#34d399',
-    'primary-hover': '#6ee7b7',
-    'primary-foreground': '#03291c',
-    'primary-muted': 'rgba(52, 211, 153, 0.15)',
+    'node-bg': 'rgba(18, 42, 31, 0.85)',
+    'node-header-bg': 'rgba(15, 36, 25, 0.7)',
 
-    'node-border': '#1f6f4d',
+    // Thin dark-green liner outline; stays readable against the dark canvas
+    'node-border': '#0d8a5f',
     'node-border-hover': '#34d399',
     // Port ring matches the dark canvas so colored ports read as floating dots
     'handle-border': '#0c1f17',
 
-    'shadow-md': '0 1px 3px rgba(0, 0, 0, 0.4)',
-    'shadow-lg': '0 6px 14px rgba(0, 0, 0, 0.45)',
-
-    'scrollbar-thumb': '#1d3a2c',
-    'scrollbar-track': '#0c1f17',
-    backdrop: 'rgba(12, 31, 23, 0.9)'
+    primary: '#34d399',
+    'primary-hover': '#6ee7b7',
+    'primary-foreground': '#03291c',
+    'primary-muted': 'rgba(52, 211, 153, 0.15)'
   }
 };

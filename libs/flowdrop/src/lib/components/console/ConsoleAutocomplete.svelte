@@ -98,7 +98,7 @@
 
   .console-autocomplete::-webkit-scrollbar-thumb {
     background: var(--fd-scrollbar-thumb);
-    border-radius: 3px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .console-autocomplete__item {

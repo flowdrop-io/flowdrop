@@ -254,22 +254,22 @@
 
   .flowdrop-idea-node__card {
     background-color: var(--fd-background);
-    border-radius: var(--fd-radius-xl);
+    border-radius: var(--fd-node-radius);
     border: 1px solid var(--fd-border);
-    box-shadow: var(--fd-shadow-md);
+    box-shadow: var(--fd-node-shadow);
     overflow: hidden;
     transition: all var(--fd-transition-normal);
   }
 
   .flowdrop-idea-node:hover .flowdrop-idea-node__card {
-    box-shadow: var(--fd-shadow-lg);
+    box-shadow: var(--fd-node-shadow-hover);
     transform: translateY(-1px);
   }
 
   .flowdrop-idea-node--selected .flowdrop-idea-node__card {
     border-color: var(--fd-primary);
     box-shadow:
-      var(--fd-shadow-lg),
+      var(--fd-node-shadow-hover),
       0 0 0 3px color-mix(in srgb, var(--fd-primary) 30%, transparent);
   }
 

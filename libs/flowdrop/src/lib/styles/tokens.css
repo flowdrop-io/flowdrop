@@ -141,9 +141,28 @@
   --fd-border-strong: var(--_gray-5); /* @public */
   --fd-ring: var(--_blue-2); /* @public */
 
+  /* ----- EDITOR CANVAS & NODE SURFACES -----
+     Scoped surfaces for the graph editor, kept separate from the general app
+     "chrome" (navbar, sidebars, panels) so a theme can restyle the canvas/nodes
+     without tinting the rest of the UI. Each defaults to its chrome equivalent,
+     so overriding the base token (e.g. --fd-card) still cascades here. */
+  --fd-canvas-bg: var(--fd-background); /* @public  editor canvas (grid) background */
+  --fd-node-bg: var(--fd-card); /* @public  node body surface */
+  --fd-node-header-bg: var(--fd-header); /* @public  node header surface */
+  --fd-node-radius: var(
+    --fd-radius-xl
+  ); /* @public  node card corner radius; lower for sharper corners */
+  --fd-node-shadow: var(
+    --fd-shadow-md
+  ); /* @public  node resting elevation; 'none' for a flat look */
+  --fd-node-shadow-hover: var(
+    --fd-shadow-lg
+  ); /* @public  node hover/selected elevation; 'none' for a flat look */
+
   /* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
   --fd-node-border: var(--_gray-5); /* @public */
   --fd-node-border-hover: var(--_gray-6); /* @public */
+  --fd-node-border-width: 1.5px; /* @public  node outline thickness; lower for a thinner look */
 
   /* ----- CANVAS GRID (pattern color for the editor background grid; any theme
      can recolor whichever grid variant it picks via config.canvas.grid).
@@ -312,6 +331,7 @@
   --fd-scrollbar-thumb: var(--_gray-4); /* @internal */
   --fd-scrollbar-thumb-hover: var(--_gray-5); /* @internal */
   --fd-scrollbar-track: var(--_gray-2); /* @internal */
+  --fd-scrollbar-radius: 4px; /* @public  scrollbar thumb/track corner radius; 0 for square */
 
   /* ----- BACKDROP/OVERLAY ----- */
   --fd-backdrop: rgba(255, 255, 255, 0.8); /* @internal */

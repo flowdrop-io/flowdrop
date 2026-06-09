@@ -455,25 +455,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--fd-shadow-md);
+    box-shadow: var(--fd-node-shadow);
     transition: all var(--fd-transition-normal);
   }
 
   .flowdrop-terminal-node:hover .flowdrop-terminal-node__content {
-    box-shadow: var(--fd-shadow-lg);
+    box-shadow: var(--fd-node-shadow-hover);
     transform: scale(1.05);
   }
 
   .flowdrop-terminal-node--selected .flowdrop-terminal-node__content {
     box-shadow:
-      var(--fd-shadow-lg),
+      var(--fd-node-shadow-hover),
       0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
     border-color: var(--fd-primary);
   }
 
   .flowdrop-terminal-node--selected:hover .flowdrop-terminal-node__content {
     box-shadow:
-      var(--fd-shadow-lg),
+      var(--fd-node-shadow-hover),
       0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
     border-color: var(--fd-primary);
     transform: scale(1.05);

@@ -485,7 +485,7 @@
 
   .flowdrop-sidebar__content::-webkit-scrollbar-thumb {
     background: var(--fd-scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
     min-height: 20px; /* Ensure thumb has minimum height for visibility */
   }
 

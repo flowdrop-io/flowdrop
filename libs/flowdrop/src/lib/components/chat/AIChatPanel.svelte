@@ -552,7 +552,7 @@
 
   .ai-chat-panel__messages::-webkit-scrollbar-thumb {
     background: var(--fd-scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .ai-chat-panel__messages::-webkit-scrollbar-thumb:hover {

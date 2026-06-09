@@ -335,10 +335,10 @@
 <style>
   .flowdrop-workflow-node {
     position: relative;
-    background-color: var(--fd-card);
-    border: 1.5px solid var(--fd-node-border);
-    border-radius: var(--fd-radius-xl);
-    box-shadow: var(--fd-shadow-md);
+    background-color: var(--fd-node-bg);
+    border: var(--fd-node-border-width) solid var(--fd-node-border);
+    border-radius: var(--fd-node-radius);
+    box-shadow: var(--fd-node-shadow);
     width: var(--fd-node-default-width);
     z-index: 10;
     color: var(--fd-foreground);
@@ -350,21 +350,21 @@
   }
 
   .flowdrop-workflow-node:hover {
-    box-shadow: var(--fd-shadow-lg);
+    box-shadow: var(--fd-node-shadow-hover);
     border-color: var(--fd-node-border-hover);
   }
 
   .flowdrop-workflow-node--selected {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-primary);
   }
 
   .flowdrop-workflow-node--selected:hover {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
-      var(--fd-shadow-lg);
+      var(--fd-node-shadow-hover);
     border-color: var(--fd-primary);
   }
 
@@ -377,9 +377,9 @@
     box-sizing: border-box;
     padding: var(--fd-node-header-gap) var(--fd-space-xl);
     border-bottom: 1px solid var(--fd-border-muted);
-    background: var(--fd-header);
-    border-top-left-radius: var(--fd-radius-xl);
-    border-top-right-radius: var(--fd-radius-xl);
+    background: var(--fd-node-header-bg);
+    border-top-left-radius: var(--fd-node-radius);
+    border-top-right-radius: var(--fd-node-radius);
     display: flex;
     flex-direction: column;
     gap: var(--fd-node-header-gap);

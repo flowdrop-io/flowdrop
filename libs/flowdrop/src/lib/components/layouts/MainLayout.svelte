@@ -510,12 +510,12 @@
 
   .flowdrop-main-layout__sidebar::-webkit-scrollbar-track {
     background: var(--fd-scrollbar-track);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .flowdrop-main-layout__sidebar::-webkit-scrollbar-thumb {
     background: var(--fd-scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .flowdrop-main-layout__sidebar::-webkit-scrollbar-thumb:hover {
@@ -669,12 +669,12 @@
 
   .flowdrop-main-layout__panel--bottom::-webkit-scrollbar-track {
     background: var(--fd-scrollbar-track);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .flowdrop-main-layout__panel--bottom::-webkit-scrollbar-thumb {
     background: var(--fd-scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: var(--fd-scrollbar-radius);
   }
 
   .flowdrop-main-layout__panel--bottom::-webkit-scrollbar-thumb:hover {
