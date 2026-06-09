@@ -129,6 +129,13 @@
   );
 
   /**
+   * Vertical center of the first port handle (px). Single source of truth shared
+   * by the input/output handles and the badge overlay, so the badge stays level
+   * with the first port.
+   */
+  const firstPortTop = 40;
+
+  /**
    * Handle configuration sidebar - using global ConfigSidebar
    */
   function openConfigSidebar(): void {
@@ -174,7 +181,7 @@
     type="target"
     position={Position.Left}
     id={`${props.data.nodeId}-input-${toolInputPort.id}`}
-    style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+    style="top: {firstPortTop}px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
       checker,
       portDataType
     )}); --fd-handle-border-color: var(--fd-handle-border);"
@@ -217,8 +224,8 @@
         </div>
       </div>
 
-      <!-- Tool Badge - tinted style matching icon wrappers -->
-      <div class="flowdrop-tool-node__badge">{displayBadge}</div>
+      <!-- Tool Badge - overlay aligned to the first port's vertical center -->
+      <div class="flowdrop-tool-node__badge" style="top: {firstPortTop}px">{displayBadge}</div>
     </div>
 
     <!-- Tool Description - uses instanceDescription override if set -->
@@ -253,7 +260,7 @@
     type="source"
     position={Position.Right}
     id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
-    style="top: 40px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+    style="top: {firstPortTop}px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
       checker,
       portDataType
     )}); --fd-handle-border-color: var(--fd-handle-border);"
@@ -263,12 +270,15 @@
 <style>
   .flowdrop-tool-node {
     position: relative;
+    box-sizing: border-box;
     background-color: var(--fd-node-bg);
     backdrop-filter: var(--fd-node-backdrop-filter);
-    border: 1.5px solid var(--fd-tool-node-color);
+    border: var(--fd-node-border-width) solid var(--fd-tool-node-color);
     border-radius: var(--fd-node-radius);
     width: var(--fd-node-default-width);
-    min-height: var(--fd-node-tool-min-height);
+    /* A tool has at most 2 ports on a side (handles at 40px & 80px), so 100px
+       is the fixed floor; the grid-aligned header keeps it a 20px multiple. */
+    min-height: 100px;
     display: flex;
     flex-direction: column;
     cursor: pointer;
@@ -313,7 +323,15 @@
   }
 
   .flowdrop-tool-node__header {
-    padding: 1rem;
+    box-sizing: border-box;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /* px on the 20px grid. Bottom padding absorbs BOTH node borders (top + bottom)
+       so the OUTER node height lands on a 20px multiple: with a 40px title row and
+       a 20px-per-line description, outer = 60 + 20·lines (80, 100, 120…). */
+    padding: var(--fd-node-header-gap) 20px
+      calc(var(--fd-node-header-gap) - var(--fd-node-border-width) * 2);
     /* Light mode: mix tool color with white (95%) for subtle tint */
     background-color: color-mix(in srgb, var(--fd-tool-node-color) 5%, white);
     border-radius: var(--fd-node-radius);
@@ -330,8 +348,10 @@
   .flowdrop-tool-node__header-content {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    gap: 12px;
+    /* Two grid rows (title + version), so the icon + text block is exactly 40px;
+       the description stacks flush below and each wrapped line adds one 20px row. */
+    min-height: var(--fd-node-header-title-height);
   }
 
   /* Squircle icon wrapper - Apple-style rounded square background */
@@ -339,9 +359,10 @@
     display: var(--fd-node-icon-display, flex);
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.625rem;
+    /* px (not rem) so the icon stays grid-locked regardless of root font-size */
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: color-mix(
       in srgb,
       var(--fd-tool-node-color) var(--fd-node-icon-bg-opacity),
@@ -366,41 +387,64 @@
   }
 
   .flowdrop-tool-node__title {
-    font-size: 1rem;
+    font-size: 16px;
     font-weight: 600;
     color: var(--fd-foreground);
     margin: 0;
-    line-height: 1.4;
+    /* one 20px grid row */
+    line-height: var(--fd-node-port-row-height);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .flowdrop-tool-node__version {
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
     font-weight: 500;
-    margin-top: 0.125rem;
+    /* one 20px grid row */
+    line-height: var(--fd-node-port-row-height);
   }
 
   .flowdrop-tool-node__badge {
+    /* Overlay so it takes no row space — the title gets the full width. The
+       inline `top` is set to the first port's center; translateY keeps the
+       badge vertically aligned with that port. */
+    position: absolute;
+    right: 20px;
+    transform: translateY(-50%);
+    z-index: 12;
     background-color: color-mix(in srgb, var(--fd-tool-node-color) 15%, transparent);
     color: var(--fd-tool-node-color);
     border: 1px solid color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent);
-    font-size: 0.625rem;
+    font-size: 10px;
     font-weight: 700;
-    padding: 0.25rem 0.5rem;
+    padding: 4px 8px;
     border-radius: var(--fd-radius-sm);
     letter-spacing: 0.05em;
+    /* Lay flat: sit back at reduced opacity so it reads as a subtle marker and
+       any title underneath stays legible. */
+    opacity: 0.4;
   }
 
   .flowdrop-tool-node__description {
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
     margin: 0;
-    line-height: 1.3;
+    /* each line is one 20px grid row; clamp so the node grows in clean 20px steps */
+    line-height: var(--fd-node-port-row-height);
+    min-height: var(--fd-node-port-row-height);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   .flowdrop-tool-node__icon-wrapper :global(.flowdrop-tool-node__icon) {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 20px;
+    height: 20px;
     color: var(--fd-node-icon);
   }
 
@@ -438,10 +482,10 @@
 
   .flowdrop-tool-node__config-btn {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    width: 1.5rem;
-    height: 1.5rem;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
     background-color: var(--fd-backdrop);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-sm);
