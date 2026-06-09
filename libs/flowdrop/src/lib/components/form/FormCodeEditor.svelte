@@ -364,7 +364,9 @@
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-lg);
     overflow: hidden;
-    background-color: var(--fd-muted);
+    /* Match plain form fields (FormTextField/Textarea/Select): rest on the
+       input surface, not the recessed --fd-muted. */
+    background-color: var(--fd-background);
     transition: all var(--fd-transition-normal);
     box-shadow: var(--fd-shadow-sm);
   }

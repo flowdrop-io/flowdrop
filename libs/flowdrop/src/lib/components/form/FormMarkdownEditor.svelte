@@ -641,7 +641,8 @@
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-lg);
     overflow: hidden;
-    background-color: var(--fd-muted);
+    /* Match plain form fields: rest on the input surface, not --fd-muted. */
+    background-color: var(--fd-background);
     transition: border-color var(--fd-transition-normal);
   }
 
@@ -702,7 +703,8 @@
 
   .form-markdown-editor__body :global(.cm-editor) {
     height: var(--editor-height, 300px);
-    background-color: var(--fd-muted) !important;
+    /* Match plain form fields: white input surface (overrides oneDark in dark mode). */
+    background-color: var(--fd-background) !important;
     color: var(--fd-foreground) !important;
   }
 
