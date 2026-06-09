@@ -59,8 +59,8 @@ export const drafterSkin: FlowDropSkin = {
     'grid-pattern-color': 'rgba(20, 184, 166, 0.08)',
 
     /* ----- Nodes: frosted glass, faint inner highlight ----- */
-    'node-bg': 'rgba(255, 255, 255, 0.68)',
-    'node-header-bg': 'rgba(204, 251, 241, 0.62)',
+    'node-bg': 'rgba(247, 252, 250, 0.7)',
+    'node-header-bg': 'rgba(214, 245, 236, 0.6)',
     'node-backdrop-filter': 'blur(10px) saturate(1.15)',
     'node-radius': '2px',
     'node-shadow': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.6)',
@@ -75,10 +75,21 @@ export const drafterSkin: FlowDropSkin = {
     'note-border-hover': '#48617a',
 
     /* Translucent status tints so note/instruction cards stay light + glassy */
+    /* Status hues tuned to the cool palette: danger = rose (teal's warm
+       complement, not a generic red), warning = golden amber. Success/info stay
+       on the emerald/cyan family so they read as part of the theme. */
+    success: '#0d9488',
+    'success-hover': '#0f766e',
+    info: '#0891b2',
+    'info-hover': '#0e7490',
+    warning: '#d97706',
+    'warning-hover': '#b45309',
+    error: '#e11d48',
+    'error-hover': '#be123c',
     'info-muted': 'rgba(8, 145, 178, 0.1)',
-    'success-muted': 'rgba(16, 185, 129, 0.1)',
-    'warning-muted': 'rgba(245, 158, 11, 0.12)',
-    'error-muted': 'rgba(239, 68, 68, 0.1)',
+    'success-muted': 'rgba(13, 148, 136, 0.1)',
+    'warning-muted': 'rgba(217, 119, 6, 0.12)',
+    'error-muted': 'rgba(225, 29, 72, 0.1)',
 
     /* ----- Crisp drafting geometry + flat chrome (2–6px radius, no soft shadow) ----- */
     'radius-sm': '2px',
@@ -102,8 +113,8 @@ export const drafterSkin: FlowDropSkin = {
     'controls-button-border': 'rgba(15, 118, 110, 0.25)',
 
     /* ----- Secondary = mint, accent = cyan, primary = the one allowed green ----- */
-    secondary: 'rgba(204, 251, 241, 0.7)',
-    'secondary-hover': 'rgba(153, 246, 228, 0.85)',
+    secondary: 'rgba(206, 230, 223, 0.55)',
+    'secondary-hover': 'rgba(186, 219, 210, 0.7)',
     'secondary-foreground': '#0f3d36',
     accent: '#06b6d4',
     'accent-hover': '#0891b2',
@@ -154,10 +165,18 @@ export const drafterSkin: FlowDropSkin = {
     'note-border': '#7d96b0',
     'note-border-hover': '#9fb4cb',
 
+    success: '#2dd4bf',
+    'success-hover': '#5eead4',
+    info: '#22d3ee',
+    'info-hover': '#67e8f9',
+    warning: '#fbbf24',
+    'warning-hover': '#fcd34d',
+    error: '#fb7185',
+    'error-hover': '#fda4af',
     'info-muted': 'rgba(34, 211, 238, 0.12)',
-    'success-muted': 'rgba(52, 211, 153, 0.12)',
+    'success-muted': 'rgba(45, 212, 191, 0.12)',
     'warning-muted': 'rgba(251, 191, 36, 0.14)',
-    'error-muted': 'rgba(248, 113, 113, 0.12)',
+    'error-muted': 'rgba(251, 113, 133, 0.12)',
 
     'minimap-bg': 'rgba(11, 31, 28, 0.7)',
     'minimap-mask-bg': 'rgba(45, 212, 191, 0.06)',
