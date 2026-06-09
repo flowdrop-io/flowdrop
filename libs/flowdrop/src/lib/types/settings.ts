@@ -73,7 +73,7 @@ export interface UISettings {
   /** Enable compact mode for denser UI */
   compactMode: boolean;
   /** Active theme name — overridden by the theme prop when explicitly provided */
-  theme: 'default' | 'minimal';
+  theme: 'default' | 'minimal' | 'drafter';
   /** Whether the command console panel is open */
   consoleOpen: boolean;
   /** Height of the command console panel in pixels */

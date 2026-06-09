@@ -34,6 +34,7 @@
   import { m } from '$lib/messages/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
+  import type { FlowDropGridVariant } from '../types/theme.js';
   import UniversalNode from './UniversalNode.svelte';
   import {
     EdgeStylingHelper,
@@ -85,6 +86,13 @@
     onToggleConsole?: () => void;
     /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
     instance?: FlowDropInstance;
+    /**
+     * Canvas background grid pattern. Supplied by App from the active theme's
+     * `config.canvas.grid` default; any theme can opt into 'lines' / 'cross'.
+     * Color is driven separately by the `--fd-grid-pattern-color` token.
+     * @default 'dots'
+     */
+    gridVariant?: FlowDropGridVariant;
   }
 
   let props: Props = $props();
@@ -98,6 +106,11 @@
   // `mode` is the public API; the canvas only needs to know whether editing is
   // enabled. 'readonly' and 'locked' both disable interaction identically.
   const canvasEditable = $derived((props.mode ?? 'edit') === 'edit');
+
+  // Canvas grid pattern, supplied by the active theme's config.canvas.grid
+  // (App passes it down). BackgroundVariant's enum values are the same strings
+  // ('dots' | 'lines' | 'cross'), so the theme config maps straight through.
+  const gridVariant = $derived((props.gridVariant ?? 'dots') as BackgroundVariant);
 
   // ---------------------------------------------------------------------------
   // Editor State Machine
@@ -890,8 +903,11 @@
               <Background
                 gap={getEditorSettings().gridSize}
                 bgColor="var(--fd-background)"
-                variant={BackgroundVariant.Dots}
-                patternColor={getEditorSettings().showGrid ? undefined : 'transparent'}
+                variant={gridVariant}
+                lineWidth={1}
+                patternColor={getEditorSettings().showGrid
+                  ? 'var(--fd-grid-pattern-color)'
+                  : 'transparent'}
               />
               {#if getEditorSettings().showMinimap}
                 <MiniMap />

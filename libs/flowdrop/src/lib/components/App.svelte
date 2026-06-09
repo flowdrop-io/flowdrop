@@ -1300,6 +1300,7 @@
         {mode}
         {pipelineId}
         {refreshTrigger}
+        gridVariant={themeConfig?.canvas?.grid ?? 'dots'}
         consoleOpen={getUiSettings().consoleOpen}
         onToggleConsole={toggleConsole}
       />

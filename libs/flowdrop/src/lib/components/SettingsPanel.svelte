@@ -198,7 +198,8 @@
           description: 'Visual style and layout of the editor',
           oneOf: [
             { const: 'default', title: 'Default' },
-            { const: 'minimal', title: 'Minimal' }
+            { const: 'minimal', title: 'Minimal' },
+            { const: 'drafter', title: 'Drafter' }
           ],
           default: 'default'
         }

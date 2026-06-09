@@ -1,10 +1,12 @@
 import type { FlowDropTheme, FlowDropThemeName } from '../types/theme.js';
 import { defaultTheme } from './default.js';
 import { minimalTheme } from './minimal.js';
+import { drafterTheme } from './drafter.js';
 
 const builtinThemes: Record<FlowDropThemeName, FlowDropTheme> = {
   default: defaultTheme,
-  minimal: minimalTheme
+  minimal: minimalTheme,
+  drafter: drafterTheme
 };
 
 /**
@@ -37,6 +39,10 @@ export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefine
         sidebar: {
           ...base.config?.sidebar,
           ...theme.config?.sidebar
+        },
+        canvas: {
+          ...base.config?.canvas,
+          ...theme.config?.canvas
         }
       }
     };
@@ -45,4 +51,4 @@ export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefine
   return theme;
 }
 
-export { defaultTheme, minimalTheme };
+export { defaultTheme, minimalTheme, drafterTheme };

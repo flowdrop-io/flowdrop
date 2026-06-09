@@ -145,6 +145,11 @@
   --fd-node-border: var(--_gray-5); /* @public */
   --fd-node-border-hover: var(--_gray-6); /* @public */
 
+  /* ----- CANVAS GRID (pattern color for the editor background grid; any theme
+     can recolor whichever grid variant it picks via config.canvas.grid).
+     Default matches xyflow's dot-grid color so the default theme is unchanged. */
+  --fd-grid-pattern-color: #91919a; /* @public */
+
   /* ----- PRIMARY (Interactive/Brand) ----- */
   --fd-primary: var(--_blue-2); /* @public */
   --fd-primary-hover: var(--_blue-3); /* @public */
@@ -394,6 +399,9 @@
   /* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
   --fd-node-border: #4a4a52;
   --fd-node-border-hover: #5a5a62;
+
+  /* ----- CANVAS GRID (matches xyflow's dark dot-grid color) ----- */
+  --fd-grid-pattern-color: #777;
 
   /* ----- NODE COLORS (port type labels/badges - lighter for readability on dark surfaces) ----- */
   --fd-node-emerald: #34d399;

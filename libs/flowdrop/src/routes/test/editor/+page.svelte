@@ -25,6 +25,11 @@
   // --- Query param for workflow variant ---
   let workflowVariant = $derived($page.url.searchParams.get('workflow') ?? 'simple');
 
+  // --- Query param for UI theme (?theme=default|minimal|drafter) ---
+  let themeName = $derived(
+    ($page.url.searchParams.get('theme') ?? 'default') as 'default' | 'minimal' | 'drafter'
+  );
+
   // --- Host settings defaults (settings persistence e2e) ---
   // Seeded during component init, before <App> mounts — the same ordering
   // mountFlowDropApp uses (initializeSettings before mount()).
@@ -446,6 +451,7 @@
     showNavbar={true}
     nodes={testNodeTypes}
     workflow={selectedWorkflow}
+    theme={themeName}
   />
 </div>
 

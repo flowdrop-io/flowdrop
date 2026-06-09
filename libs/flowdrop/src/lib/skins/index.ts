@@ -1,10 +1,12 @@
 import type { FlowDropSkin, FlowDropSkinName } from '../types/skin';
 import { defaultSkin } from './default';
 import { slateSkin } from './slate';
+import { drafterSkin } from './drafter';
 
 const builtinSkins: Record<FlowDropSkinName, FlowDropSkin> = {
   default: defaultSkin,
-  slate: slateSkin
+  slate: slateSkin,
+  drafter: drafterSkin
 };
 
 /**
@@ -31,4 +33,4 @@ export function resolveSkin(skin: FlowDropSkin | FlowDropSkinName | undefined): 
   return skin;
 }
 
-export { defaultSkin, slateSkin };
+export { defaultSkin, slateSkin, drafterSkin };
