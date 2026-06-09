@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.2] - 2026-06-09
+
+Second 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). This release tightens the 2.0 package boundaries, finishes `AuthProvider` propagation across the editor and playground runtime surfaces, and adds a regression guard for light-entry bundle size.
+
 ### Breaking Changes
 
 - **Heavy dependencies no longer leak into the light entries.** Three exports moved so that `@flowdrop/flowdrop/core` and the light `@flowdrop/flowdrop/form` never statically pull CodeMirror, `marked`, DOMPurify, or `@xyflow/svelte` (enforced by a new CI bundle guard, see below):
@@ -23,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Bundle-size guard (`pnpm run check:bundle`)** and a CI workflow that walk each published entry's static import graph and fail if a heavy dependency (CodeMirror, `@xyflow/svelte`, `marked`, DOMPurify) becomes statically reachable from a light entry (`/core`, `/form`, `/editor`). Dynamic `import()` — how `/form/code` lazy-loads CodeMirror — is intentionally ignored.
+- **500-node editor render benchmark.** The e2e performance suite now includes a large trigger-chain workflow fixture so regressions in large-canvas rendering show up before release.
+
+### Fixed
+
+- **`AuthProvider` now reaches all documented runtime surfaces.** Playground, chat, interrupt, settings, editor, and pipeline requests now consistently route through the configured provider, including standalone playground mounts and the editor/pipeline views that previously dropped auth headers on secondary requests.
+- **Theme skin tokens clear when switching back to the default skin.** Returning from a custom/base skin to the default theme no longer leaves stale CSS custom properties behind.
+
+### Changed
+
+- **`AuthProvider` request handling is centralized.** Services now share the `fetchWithAuth` path, and the public provider interface is slimmer while preserving bearer, API-key, custom-header, and callback authentication behavior.
 
 ## [2.0.0-beta.1] - 2026-06-07
 
