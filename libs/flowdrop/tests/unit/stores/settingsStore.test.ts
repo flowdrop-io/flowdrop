@@ -24,9 +24,15 @@ async function freshStore(): Promise<SettingsModule> {
   return import('$lib/stores/settingsStore.svelte.js');
 }
 
-function readPersisted(): Record<string, any> | null {
+type PersistedSettings = {
+  theme?: { preference?: string };
+  editor?: { showGrid?: boolean };
+  [key: string]: unknown;
+};
+
+function readPersisted(): PersistedSettings | null {
   const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-  return raw ? JSON.parse(raw) : null;
+  return raw ? (JSON.parse(raw) as PersistedSettings) : null;
 }
 
 describe('settingsStore persistence', () => {
