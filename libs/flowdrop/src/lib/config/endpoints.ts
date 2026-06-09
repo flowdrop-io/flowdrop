@@ -4,6 +4,7 @@
  */
 
 import type { AgentSpecEndpointConfig } from './agentSpecEndpoints.js';
+import type { AuthProvider } from '../types/auth.js';
 
 export interface EndpointConfig {
   /** Base URL for all endpoints */
@@ -331,4 +332,37 @@ export function getEndpointHeaders(
   }
 
   return baseHeaders;
+}
+
+/**
+ * Build request headers for an endpoint, layering the auth provider's headers
+ * over the static endpoint headers.
+ *
+ * This is the single header-building path shared by the per-instance services
+ * (playground, chat, interrupt, settings, port config, categories). Routing all
+ * of them through this helper guarantees a configured {@link AuthProvider}
+ * authenticates every request consistently — matching the behaviour of
+ * {@link EnhancedFlowDropApiClient}, which owns the equivalent merge for the
+ * typed workflow/node API.
+ *
+ * `getAuthHeaders()` is awaited per call so providers can return freshly
+ * refreshed tokens. When no provider is supplied the result is identical to
+ * {@link getEndpointHeaders} (no auth) — keeping unauthenticated callers
+ * working unchanged.
+ *
+ * @param config - The endpoint configuration
+ * @param endpointKey - Key identifying the endpoint (for static header lookup)
+ * @param authProvider - Optional auth provider supplying `Authorization` etc.
+ * @returns Merged headers: static endpoint headers < auth headers
+ */
+export async function getRequestHeaders(
+  config: EndpointConfig,
+  endpointKey: string,
+  authProvider?: AuthProvider
+): Promise<Record<string, string>> {
+  const headers = getEndpointHeaders(config, endpointKey);
+  if (authProvider) {
+    Object.assign(headers, await authProvider.getAuthHeaders());
+  }
+  return headers;
 }

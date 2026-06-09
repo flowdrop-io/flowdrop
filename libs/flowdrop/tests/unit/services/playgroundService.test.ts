@@ -15,7 +15,20 @@ let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
-  getEndpointHeaders: (...args: unknown[]) => mockGetEndpointHeaders(...args)
+  getEndpointHeaders: (...args: unknown[]) => mockGetEndpointHeaders(...args),
+  // Mirrors the real helper: static endpoint headers merged with the auth
+  // provider's headers (when one is supplied).
+  getRequestHeaders: async (
+    config: unknown,
+    endpointKey: unknown,
+    authProvider?: { getAuthHeaders: () => Promise<Record<string, string>> }
+  ) => {
+    const headers = { ...(mockGetEndpointHeaders(config, endpointKey) ?? {}) };
+    if (authProvider) {
+      Object.assign(headers, await authProvider.getAuthHeaders());
+    }
+    return headers;
+  }
 }));
 
 vi.mock('$lib/utils/logger.js', () => ({
@@ -306,6 +319,28 @@ describe('PlaygroundService', () => {
       await expect(service.sendMessage(endpointConfig, 'session-1', 'Hello')).rejects.toThrow(
         'Failed to send message'
       );
+    });
+
+    it('should attach auth headers from the provider', async () => {
+      const mockMessage = { id: 'msg-1', content: 'Hello' };
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: mockMessage })
+      });
+
+      const authProvider = {
+        getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer token-123' }),
+        isAuthenticated: () => true
+      };
+
+      await service.sendMessage(endpointConfig, 'session-1', 'Hello', undefined, authProvider);
+
+      expect(authProvider.getAuthHeaders).toHaveBeenCalledOnce();
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[1].headers).toMatchObject({
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer token-123'
+      });
     });
   });
 

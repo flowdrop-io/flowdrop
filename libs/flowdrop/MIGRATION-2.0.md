@@ -80,6 +80,26 @@ authProvider)` for you. Services that previously read the singleton (playground,
 interrupt, chat, node-execution, dynamic-schema, variable) now take the endpoint
 config as their first argument — pass `fd.api.config`.
 
+These services also accept the instance's `AuthProvider` as an **optional
+trailing argument** so every request they make is authenticated consistently
+with `fd.api.client` (the typed workflow/node API). The built-in components and
+mount helpers pass `fd.api.authProvider` for you — no action is needed for the
+normal mounted flow. Only direct callers of the service singletons need to
+forward it:
+
+```js
+import { playgroundService } from '@flowdrop/flowdrop/playground';
+
+// 2.0 — authenticate playground requests by forwarding the provider
+await playgroundService.listSessions(fd.api.config, workflowId, undefined, fd.api.authProvider);
+await playgroundService.sendMessage(fd.api.config, sessionId, text, undefined, fd.api.authProvider);
+```
+
+The settings-sync entry points gained the same optional provider:
+`setSettingsEndpointConfig(config, authProvider?)` and
+`createSettingsService(config, authProvider?)` — pass an `AuthProvider` if your
+backend's preferences endpoint requires auth.
+
 ### `EndpointConfig.auth` is removed — use an `AuthProvider`
 
 The `auth` block on `EndpointConfig` (and its header-injection branch) is gone.

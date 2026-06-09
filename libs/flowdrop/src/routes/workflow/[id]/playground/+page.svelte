@@ -39,14 +39,27 @@
     api.configure(endpointConfig, authProvider);
 
     try {
-      const sessions = await playgroundService.listSessions(api.config, workflowId);
+      const sessions = await playgroundService.listSessions(
+        api.config,
+        workflowId,
+        undefined,
+        api.authProvider
+      );
       const mostRecent =
         sessions.length > 0
           ? [...sessions].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).pop()!
           : null;
       const target = mostRecent
         ? mostRecent.id
-        : (await playgroundService.createSession(api.config, workflowId, 'Session 1')).id;
+        : (
+            await playgroundService.createSession(
+              api.config,
+              workflowId,
+              'Session 1',
+              undefined,
+              api.authProvider
+            )
+          ).id;
 
       goto(
         resolve('/workflow/[id]/playground/[sessionId]', { id: workflowId, sessionId: target }),

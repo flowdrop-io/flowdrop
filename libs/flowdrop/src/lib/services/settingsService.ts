@@ -11,7 +11,8 @@
 import type { FlowDropSettings, PartialSettings } from '$lib/types/settings.js';
 import type { EndpointConfig } from '$lib/config/endpoints.js';
 import type { ApiResponse } from '$lib/types/index.js';
-import { buildEndpointUrl, getEndpointHeaders } from '$lib/config/endpoints.js';
+import type { AuthProvider } from '$lib/types/auth.js';
+import { buildEndpointUrl, getRequestHeaders } from '$lib/config/endpoints.js';
 
 // =========================================================================
 // Configuration
@@ -23,12 +24,21 @@ import { buildEndpointUrl, getEndpointHeaders } from '$lib/config/endpoints.js';
 let endpointConfig: EndpointConfig | null = null;
 
 /**
- * Set the endpoint configuration for settings API calls
+ * Auth provider reference, applied to every settings request so the backend
+ * sync path authenticates consistently with the rest of the library.
+ */
+let authProvider: AuthProvider | undefined;
+
+/**
+ * Set the endpoint configuration (and optional auth provider) for settings API
+ * calls.
  *
  * @param config - Endpoint configuration
+ * @param provider - Optional auth provider supplying request auth headers
  */
-export function setSettingsEndpointConfig(config: EndpointConfig): void {
+export function setSettingsEndpointConfig(config: EndpointConfig, provider?: AuthProvider): void {
   endpointConfig = config;
+  authProvider = provider;
 }
 
 /**
@@ -62,7 +72,7 @@ async function settingsRequest<T>(
   }
 
   const url = buildEndpointUrl(endpointConfig, endpointPath);
-  const headers = getEndpointHeaders(endpointConfig, endpointKey);
+  const headers = await getRequestHeaders(endpointConfig, endpointKey, authProvider);
 
   const response = await fetch(url, {
     headers,
@@ -207,11 +217,12 @@ export class SettingsService {
    * Create a new settings service instance
    *
    * @param config - Endpoint configuration
+   * @param authProvider - Optional auth provider applied to settings requests
    */
-  constructor(config: EndpointConfig) {
+  constructor(config: EndpointConfig, authProvider?: AuthProvider) {
     this.config = config;
-    // Also set the module-level config
-    setSettingsEndpointConfig(config);
+    // Also set the module-level config + auth provider
+    setSettingsEndpointConfig(config, authProvider);
   }
 
   /**
@@ -250,8 +261,12 @@ export class SettingsService {
  * Create a settings service instance
  *
  * @param config - Endpoint configuration
+ * @param authProvider - Optional auth provider applied to settings requests
  * @returns SettingsService instance
  */
-export function createSettingsService(config: EndpointConfig): SettingsService {
-  return new SettingsService(config);
+export function createSettingsService(
+  config: EndpointConfig,
+  authProvider?: AuthProvider
+): SettingsService {
+  return new SettingsService(config, authProvider);
 }

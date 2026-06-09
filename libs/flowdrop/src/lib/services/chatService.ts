@@ -9,7 +9,8 @@
 
 import type { ChatRequest, ChatResponse, ChatHistoryMessage } from '../types/chat.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl, getRequestHeaders } from '../config/endpoints.js';
+import type { AuthProvider } from '../types/auth.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -63,9 +64,10 @@ export class ChatService {
   private async request<T>(
     config: EndpointConfig,
     url: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    authProvider?: AuthProvider
   ): Promise<T> {
-    const headers = getEndpointHeaders(config, 'chat');
+    const headers = await getRequestHeaders(config, 'chat', authProvider);
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -104,7 +106,8 @@ export class ChatService {
   async sendMessage(
     endpointConfig: EndpointConfig | null,
     workflowId: string,
-    request: ChatRequest
+    request: ChatRequest,
+    authProvider?: AuthProvider
   ): Promise<ChatResponse> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.chat.sendMessage, {
@@ -113,10 +116,15 @@ export class ChatService {
 
     logger.debug('[ChatService] Sending message to', url);
 
-    return this.request<ChatResponse>(config, url, {
-      method: 'POST',
-      body: JSON.stringify(request)
-    });
+    return this.request<ChatResponse>(
+      config,
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify(request)
+      },
+      authProvider
+    );
   }
 
   /**
@@ -127,7 +135,8 @@ export class ChatService {
    */
   async getHistory(
     endpointConfig: EndpointConfig | null,
-    workflowId: string
+    workflowId: string,
+    authProvider?: AuthProvider
   ): Promise<ChatHistoryMessage[]> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.chat.getHistory, {
@@ -136,7 +145,7 @@ export class ChatService {
 
     logger.debug('[ChatService] Getting history from', url);
 
-    return this.request<ChatHistoryMessage[]>(config, url);
+    return this.request<ChatHistoryMessage[]>(config, url, {}, authProvider);
   }
 
   /**
@@ -144,7 +153,11 @@ export class ChatService {
    *
    * @param workflowId - The workflow ID
    */
-  async clearHistory(endpointConfig: EndpointConfig | null, workflowId: string): Promise<void> {
+  async clearHistory(
+    endpointConfig: EndpointConfig | null,
+    workflowId: string,
+    authProvider?: AuthProvider
+  ): Promise<void> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.chat.clearHistory, {
       id: workflowId
@@ -154,7 +167,7 @@ export class ChatService {
 
     await fetch(url, {
       method: 'DELETE',
-      headers: getEndpointHeaders(config, 'chat')
+      headers: await getRequestHeaders(config, 'chat', authProvider)
     });
   }
 }

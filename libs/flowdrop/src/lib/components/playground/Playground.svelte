@@ -134,9 +134,14 @@
         const sessionId = fd.playground.currentSession?.id;
         if (sessionId) {
           void playgroundService
-            .getMessages(fd.api.config, sessionId, {
-              since: playgroundService.getLastSequenceNumber() ?? undefined
-            })
+            .getMessages(
+              fd.api.config,
+              sessionId,
+              {
+                since: playgroundService.getLastSequenceNumber() ?? undefined
+              },
+              fd.api.authProvider
+            )
             .then((response) => fd.playground.applyServerResponse(response, sessionId))
             .catch((err) => logger.error('[Playground] Visibility catchup failed:', err));
         }
@@ -220,7 +225,12 @@
     fd.playground.setError(null);
 
     try {
-      const sessionList = await playgroundService.listSessions(fd.api.config, workflowId);
+      const sessionList = await playgroundService.listSessions(
+        fd.api.config,
+        workflowId,
+        undefined,
+        fd.api.authProvider
+      );
       fd.playground.setSessions(sessionList);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
@@ -237,7 +247,11 @@
     const token = ++loadToken;
 
     try {
-      const session = await playgroundService.getSession(fd.api.config, sessionId);
+      const session = await playgroundService.getSession(
+        fd.api.config,
+        sessionId,
+        fd.api.authProvider
+      );
       if (token !== loadToken) return; // a newer session load superseded us
       fd.playground.setCurrentSession(session);
 
@@ -245,10 +259,15 @@
       // user scrolls up (loadOlderMessages). Clear right before applying the
       // fresh page — not before the await — so switching sessions doesn't blank
       // the view for the duration of the fetch.
-      const response = await playgroundService.getMessages(fd.api.config, sessionId, {
-        latest: true,
-        limit: messagePageSize
-      });
+      const response = await playgroundService.getMessages(
+        fd.api.config,
+        sessionId,
+        {
+          latest: true,
+          limit: messagePageSize
+        },
+        fd.api.authProvider
+      );
       if (token !== loadToken) return;
       fd.playground.clearMessages();
       fd.playground.applyServerResponse(response, sessionId);
@@ -281,10 +300,15 @@
     if (!sessionId || before === null) return;
 
     try {
-      const response = await playgroundService.getMessages(fd.api.config, sessionId, {
-        before,
-        limit: messagePageSize
-      });
+      const response = await playgroundService.getMessages(
+        fd.api.config,
+        sessionId,
+        {
+          before,
+          limit: messagePageSize
+        },
+        fd.api.authProvider
+      );
       // The session may have changed while the fetch was in flight — don't
       // splice an old session's page into the new session's store.
       if (fd.playground.currentSession?.id !== sessionId) return;
@@ -313,7 +337,13 @@
 
     try {
       const sessionName = `Session ${fd.playground.sessions.length + 1}`;
-      const session = await playgroundService.createSession(fd.api.config, workflowId, sessionName);
+      const session = await playgroundService.createSession(
+        fd.api.config,
+        workflowId,
+        sessionName,
+        undefined,
+        fd.api.authProvider
+      );
 
       // Stop polling the previous (possibly running) session before switching,
       // mirroring handleSelectSession. Otherwise its next poll keeps the old
@@ -349,7 +379,7 @@
 
   async function handleDeleteSession(sessionId: string): Promise<void> {
     try {
-      await playgroundService.deleteSession(fd.api.config, sessionId);
+      await playgroundService.deleteSession(fd.api.config, sessionId, fd.api.authProvider);
       fd.playground.removeSession(sessionId);
 
       if (fd.playground.currentSession?.id === sessionId) {
@@ -377,7 +407,13 @@
     fd.playground.setError(null);
 
     try {
-      const message = await playgroundService.sendMessage(fd.api.config, sessionId, content, {});
+      const message = await playgroundService.sendMessage(
+        fd.api.config,
+        sessionId,
+        content,
+        {},
+        fd.api.authProvider
+      );
       fd.playground.addMessage(message);
       // Only start polling if not already active — avoids resetting the cursor
       // mid-session and re-fetching messages that are already in the store.
@@ -399,7 +435,7 @@
     if (!sessionId) return;
 
     try {
-      await playgroundService.stopExecution(fd.api.config, sessionId);
+      await playgroundService.stopExecution(fd.api.config, sessionId, fd.api.authProvider);
       playgroundService.stopPolling();
       fd.playground.updateSessionStatus('idle');
     } catch (err) {
@@ -425,7 +461,8 @@
       (response) => fd.playground.applyServerResponse(response, sessionId),
       pollingInterval,
       overrideShouldStopPolling ?? config.shouldStopPolling,
-      initialSequenceNumber
+      initialSequenceNumber,
+      fd.api.authProvider
     );
   }
 
@@ -434,9 +471,14 @@
     if (!sessionId || isRefreshing) return;
     isRefreshing = true;
     try {
-      const response = await playgroundService.getMessages(fd.api.config, sessionId, {
-        since: playgroundService.getLastSequenceNumber() ?? undefined
-      });
+      const response = await playgroundService.getMessages(
+        fd.api.config,
+        sessionId,
+        {
+          since: playgroundService.getLastSequenceNumber() ?? undefined
+        },
+        fd.api.authProvider
+      );
       fd.playground.applyServerResponse(response, sessionId);
       if (response.sessionStatus === 'running' && !playgroundService.isPolling()) {
         startPolling(sessionId, true);
@@ -455,9 +497,14 @@
     try {
       // Catch up immediately rather than waiting for the next poll interval.
       // Use the service's sequence cursor so we only fetch new messages.
-      const response = await playgroundService.getMessages(fd.api.config, sessionId, {
-        since: playgroundService.getLastSequenceNumber() ?? undefined
-      });
+      const response = await playgroundService.getMessages(
+        fd.api.config,
+        sessionId,
+        {
+          since: playgroundService.getLastSequenceNumber() ?? undefined
+        },
+        fd.api.authProvider
+      );
       fd.playground.applyServerResponse(response, sessionId);
     } catch (err) {
       logger.error('[Playground] Failed to refresh after interrupt:', err);

@@ -199,7 +199,12 @@
     try {
       // Call API if service is configured
       if (interruptService.isConfigured(fd.api.config)) {
-        await interruptService.resolveInterrupt(fd.api.config, currentInterrupt.id, value);
+        await interruptService.resolveInterrupt(
+          fd.api.config,
+          currentInterrupt.id,
+          value,
+          fd.api.authProvider
+        );
       }
 
       // Mark as successful - transitions to resolved state
@@ -229,7 +234,11 @@
     try {
       // Call API if service is configured
       if (interruptService.isConfigured(fd.api.config)) {
-        await interruptService.cancelInterrupt(fd.api.config, currentInterrupt.id);
+        await interruptService.cancelInterrupt(
+          fd.api.config,
+          currentInterrupt.id,
+          fd.api.authProvider
+        );
       }
 
       // Mark as successful - transitions to cancelled state

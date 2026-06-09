@@ -329,7 +329,8 @@ function buildMountedPlayground(
           (response) => fd.playground.applyServerResponse(response, session.id),
           pollingInterval,
           config.shouldStopPolling,
-          playgroundService.getLastSequenceNumber()
+          playgroundService.getLastSequenceNumber(),
+          fd.api.authProvider
         );
       }
     },

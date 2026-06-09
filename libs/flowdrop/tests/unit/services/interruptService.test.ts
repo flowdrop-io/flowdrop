@@ -15,7 +15,20 @@ let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
-  getEndpointHeaders: (...args: unknown[]) => mockGetEndpointHeaders(...args)
+  getEndpointHeaders: (...args: unknown[]) => mockGetEndpointHeaders(...args),
+  // Mirrors the real helper: static endpoint headers merged with the auth
+  // provider's headers (when one is supplied).
+  getRequestHeaders: async (
+    config: unknown,
+    endpointKey: unknown,
+    authProvider?: { getAuthHeaders: () => Promise<Record<string, string>> }
+  ) => {
+    const headers = { ...(mockGetEndpointHeaders(config, endpointKey) ?? {}) };
+    if (authProvider) {
+      Object.assign(headers, await authProvider.getAuthHeaders());
+    }
+    return headers;
+  }
 }));
 
 vi.mock('$lib/utils/logger.js', () => ({

@@ -18,7 +18,8 @@ import type {
 } from '../types/playground.js';
 import { defaultShouldStopPolling } from '../types/playground.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getEndpointHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl, getRequestHeaders } from '../config/endpoints.js';
+import type { AuthProvider } from '../types/auth.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -102,9 +103,10 @@ export class PlaygroundService {
   private async request<T>(
     config: EndpointConfig,
     url: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    authProvider?: AuthProvider
   ): Promise<T> {
-    const headers = getEndpointHeaders(config, 'playground');
+    const headers = await getRequestHeaders(config, 'playground', authProvider);
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -138,7 +140,8 @@ export class PlaygroundService {
   async listSessions(
     endpointConfig: EndpointConfig | null,
     workflowId: string,
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number },
+    authProvider?: AuthProvider
   ): Promise<PlaygroundSession[]> {
     const config = this.getConfig(endpointConfig);
     let url = buildEndpointUrl(config, config.endpoints.playground.listSessions, {
@@ -157,7 +160,7 @@ export class PlaygroundService {
       url = `${url}?${queryString}`;
     }
 
-    const response = await this.request<PlaygroundSessionsResponse>(config, url);
+    const response = await this.request<PlaygroundSessionsResponse>(config, url, {}, authProvider);
     return response.data ?? [];
   }
 
@@ -173,17 +176,23 @@ export class PlaygroundService {
     endpointConfig: EndpointConfig | null,
     workflowId: string,
     name?: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    authProvider?: AuthProvider
   ): Promise<PlaygroundSession> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.createSession, {
       id: workflowId
     });
 
-    const response = await this.request<PlaygroundSessionResponse>(config, url, {
-      method: 'POST',
-      body: JSON.stringify({ name, metadata })
-    });
+    const response = await this.request<PlaygroundSessionResponse>(
+      config,
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify({ name, metadata })
+      },
+      authProvider
+    );
 
     if (!response.data) {
       throw new Error('Failed to create session: No data returned');
@@ -200,14 +209,15 @@ export class PlaygroundService {
    */
   async getSession(
     endpointConfig: EndpointConfig | null,
-    sessionId: string
+    sessionId: string,
+    authProvider?: AuthProvider
   ): Promise<PlaygroundSession> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.getSession, {
       sessionId
     });
 
-    const response = await this.request<PlaygroundSessionResponse>(config, url);
+    const response = await this.request<PlaygroundSessionResponse>(config, url, {}, authProvider);
 
     if (!response.data) {
       throw new Error('Session not found');
@@ -221,15 +231,24 @@ export class PlaygroundService {
    *
    * @param sessionId - The session UUID
    */
-  async deleteSession(endpointConfig: EndpointConfig | null, sessionId: string): Promise<void> {
+  async deleteSession(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string,
+    authProvider?: AuthProvider
+  ): Promise<void> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.deleteSession, {
       sessionId
     });
 
-    await this.request<{ success: boolean }>(config, url, {
-      method: 'DELETE'
-    });
+    await this.request<{ success: boolean }>(
+      config,
+      url,
+      {
+        method: 'DELETE'
+      },
+      authProvider
+    );
   }
 
   // =========================================================================
@@ -252,7 +271,8 @@ export class PlaygroundService {
   async getMessages(
     endpointConfig: EndpointConfig | null,
     sessionId: string,
-    options: GetMessagesOptions = {}
+    options: GetMessagesOptions = {},
+    authProvider?: AuthProvider
   ): Promise<PlaygroundMessagesApiResponse> {
     const config = this.getConfig(endpointConfig);
     let url = buildEndpointUrl(config, config.endpoints.playground.getMessages, {
@@ -277,7 +297,7 @@ export class PlaygroundService {
       url = `${url}?${queryString}`;
     }
 
-    return this.request<PlaygroundMessagesApiResponse>(config, url);
+    return this.request<PlaygroundMessagesApiResponse>(config, url, {}, authProvider);
   }
 
   /**
@@ -292,7 +312,8 @@ export class PlaygroundService {
     endpointConfig: EndpointConfig | null,
     sessionId: string,
     content: string,
-    inputs?: Record<string, unknown>
+    inputs?: Record<string, unknown>,
+    authProvider?: AuthProvider
   ): Promise<PlaygroundMessage> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.sendMessage, {
@@ -307,10 +328,15 @@ export class PlaygroundService {
     const response = await this.request<{
       success: boolean;
       data?: PlaygroundMessage;
-    }>(config, url, {
-      method: 'POST',
-      body: JSON.stringify(requestBody)
-    });
+    }>(
+      config,
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      },
+      authProvider
+    );
 
     if (!response.data) {
       throw new Error('Failed to send message: No data returned');
@@ -324,15 +350,24 @@ export class PlaygroundService {
    *
    * @param sessionId - The session UUID
    */
-  async stopExecution(endpointConfig: EndpointConfig | null, sessionId: string): Promise<void> {
+  async stopExecution(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string,
+    authProvider?: AuthProvider
+  ): Promise<void> {
     const config = this.getConfig(endpointConfig);
     const url = buildEndpointUrl(config, config.endpoints.playground.stopExecution, {
       sessionId
     });
 
-    await this.request<{ success: boolean }>(config, url, {
-      method: 'POST'
-    });
+    await this.request<{ success: boolean }>(
+      config,
+      url,
+      {
+        method: 'POST'
+      },
+      authProvider
+    );
   }
 
   // =========================================================================
@@ -354,7 +389,8 @@ export class PlaygroundService {
     callback: (response: PlaygroundMessagesApiResponse) => void,
     interval: number = DEFAULT_POLLING_INTERVAL,
     shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean,
-    initialSequenceNumber?: number | null
+    initialSequenceNumber?: number | null,
+    authProvider?: AuthProvider
   ): void {
     // Stop any existing polling
     this.stopPolling();
@@ -371,9 +407,14 @@ export class PlaygroundService {
       }
 
       try {
-        const response = await this.getMessages(endpointConfig, sessionId, {
-          since: this.lastSequenceNumber ?? undefined
-        });
+        const response = await this.getMessages(
+          endpointConfig,
+          sessionId,
+          {
+            since: this.lastSequenceNumber ?? undefined
+          },
+          authProvider
+        );
 
         // Update last sequence number cursor
         if (response.data && response.data.length > 0) {
