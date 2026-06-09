@@ -101,7 +101,17 @@
     const skin = resolveTheme(getUiSettings().theme).skin;
     const tokens = skin?.tokens;
     const darkTokens = skin?.darkTokens;
-    if (!tokens && !darkTokens) return;
+
+    let style = document.getElementById('fd-skin-tokens-base') as HTMLStyleElement | null;
+
+    // No skin tokens for the active theme (e.g. switching back to "default"):
+    // clear any previously-injected tokens so the base tokens.css values win
+    // again. Reusing the element by id means we must reset its content here —
+    // unlike App.svelte's tag, this one isn't torn down on re-run.
+    if (!tokens && !darkTokens) {
+      if (style) style.textContent = '';
+      return;
+    }
 
     const toRules = (dict: FlowDropSkinTokens) =>
       Object.entries(dict)
@@ -112,7 +122,6 @@
     if (tokens) css += `:root {\n${toRules(tokens)}\n}\n`;
     if (darkTokens) css += `[data-theme='dark'] {\n${toRules(darkTokens)}\n}\n`;
 
-    let style = document.getElementById('fd-skin-tokens-base') as HTMLStyleElement | null;
     if (!style) {
       style = document.createElement('style');
       style.id = 'fd-skin-tokens-base';
