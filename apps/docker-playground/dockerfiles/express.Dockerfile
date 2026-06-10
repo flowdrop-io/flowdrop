@@ -10,28 +10,24 @@
 # --- Stage 1: Build ---
 FROM node:20-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 WORKDIR /app
 
-COPY apps/example-server-express/package.json apps/example-server-express/pnpm-lock.yaml* ./
+COPY apps/example-server-express/package.json apps/example-server-express/package-lock.json* ./
 
-RUN pnpm install --frozen-lockfile || pnpm install
+RUN npm ci || npm install
 
 COPY apps/example-server-express/src ./src
 COPY apps/example-server-express/tsconfig.json ./
 
-RUN pnpm run build
+RUN npm run build
 
 # --- Stage 2: Production ---
 FROM node:20-alpine
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 WORKDIR /app
 
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml* ./
-RUN pnpm install --prod || pnpm install --prod --no-frozen-lockfile
+COPY --from=builder /app/package.json /app/package-lock.json* ./
+RUN npm ci --omit=dev || npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 

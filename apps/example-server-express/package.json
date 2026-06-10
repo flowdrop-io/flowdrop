@@ -1,6 +1,6 @@
 {
   "name": "@flowdrop/flowdrop-example-server-express",
-  "description": "[PLACEHOLDER] Example Express server for FlowDrop API — not yet ready for use",
+  "description": "Reference Express server implementing the FlowDrop API — the recommended backend to develop a FlowDrop client against",
   "private": true,
   "version": "0.0.1",
   "type": "module",
