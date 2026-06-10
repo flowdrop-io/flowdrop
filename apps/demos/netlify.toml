@@ -34,9 +34,16 @@
 
 # SPA fallback: client-only routes (the editor mounts in the browser) resolve
 # to the prerendered shell on a hard refresh / direct link.
+# Prerendered API endpoints are written as extensionless files; serve them as
+# JSON so they're inspectable (the library's fetch parses regardless).
+[[headers]]
+  for = "/api/flowdrop/*"
+  [headers.values]
+    Content-Type = "application/json; charset=utf-8"
+
 [[redirects]]
   from = "/*"
   to = "/200.html"
   status = 200
-  # Don't shadow prerendered routes or the Storybook subtree.
+  # Don't shadow prerendered routes (incl. /api/flowdrop/*) or the Storybook subtree.
   force = false

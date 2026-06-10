@@ -5,37 +5,42 @@
     unmountFlowDropApp,
     type MountedFlowDropApp
   } from '@flowdrop/flowdrop/editor';
+  import { createEndpointConfig } from '@flowdrop/flowdrop/core';
   import type { FlowDropTheme, FlowDropThemeName } from '@flowdrop/flowdrop/core';
-  import { nodes, portConfig, categories, sampleWorkflow } from './sample-data/index.js';
 
   let { theme, instanceId }: { theme: FlowDropTheme | FlowDropThemeName; instanceId: string } =
     $props();
+
+  // Every demo reads from the same source of truth: the prerendered static API
+  // under /api/flowdrop (backed by src/lib/sample-data). The editor fetches its
+  // node registry, port config and categories from there via endpointConfig;
+  // we fetch the workflow the same way. No backend, but the real API client
+  // code path runs end to end. Mutations (save/run) have no endpoint, so they
+  // fail — which is the intended "browser-only" behaviour.
+  const API_BASE = '/api/flowdrop';
+  const endpointConfig = createEndpointConfig(API_BASE);
 
   let container: HTMLDivElement;
 
   onMount(() => {
     let app: MountedFlowDropApp | undefined;
-    // Fully client-side: workflow, nodes, portConfig and categories are all
-    // supplied inline, so the editor makes zero network calls. Drafts persist
-    // to localStorage, keyed per instanceId so the demos never share state.
-    // onApiError returns true to swallow the toast a manual Save would trigger
-    // (there is no backend in a static demo).
-    void mountFlowDropApp(container, {
-      theme,
-      nodes,
-      portConfig,
-      categories,
-      workflow: sampleWorkflow,
-      showNavbar: false,
-      // App defaults height to '100vh'; here it lives inside our flex layout
-      // (navbar + banner above it), so fill the container instead to avoid
-      // overflowing the viewport and triggering a scrollbar.
-      height: '100%',
-      instanceId,
-      eventHandlers: { onApiError: () => true }
-    }).then((mounted) => {
-      app = mounted;
-    });
+    void (async () => {
+      const res = await fetch(`${API_BASE}/workflows`);
+      const body = await res.json();
+      const workflow = body?.data?.[0];
+
+      app = await mountFlowDropApp(container, {
+        theme,
+        endpointConfig,
+        workflow,
+        showNavbar: false,
+        // App defaults height to '100vh'; here it lives inside our flex layout
+        // (navbar above it), so fill the container to avoid a viewport scrollbar.
+        height: '100%',
+        instanceId,
+        eventHandlers: { onApiError: () => true }
+      });
+    })();
 
     return () => {
       if (app) unmountFlowDropApp(app);

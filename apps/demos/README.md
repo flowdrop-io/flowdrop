@@ -3,9 +3,22 @@
 A static, Netlify-hostable showcase of [FlowDrop](https://github.com/flowdrop-io/flowdrop) — a
 drop-in visual workflow editor.
 
-Every demo runs **fully in the browser**: the node registry, sample workflow, port config and
-categories are bundled inline, so there are **zero network calls** to any FlowDrop backend. Drafts
-persist to `localStorage`.
+Every demo runs **fully in the browser** — there's no backend. Instead of bundling data inline,
+the seed (`src/lib/sample-data/`) is exposed through **prerendered static API endpoints** under
+`/api/flowdrop`, and the editor talks to them through its real API client. One source of truth,
+shared by every demo:
+
+| Endpoint                        | Source                        |
+| ------------------------------- | ----------------------------- |
+| `GET /api/flowdrop/nodes`       | node registry                 |
+| `GET /api/flowdrop/port-config` | port-compatibility config     |
+| `GET /api/flowdrop/categories`  | sidebar categories            |
+| `GET /api/flowdrop/workflows`   | sample workflows (collection) |
+
+These are SvelteKit `+server.ts` routes with `prerender = true`, baked into static files at build
+time. Only **reads** exist: there's no get-by-id (`/workflows/<id>` would clash with the
+`/workflows` file on a static filesystem) and no mutations — so **saving and running a workflow
+fail by design**. Drafts still persist to `localStorage`.
 
 ## Demos
 
