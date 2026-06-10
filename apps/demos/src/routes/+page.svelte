@@ -4,19 +4,19 @@
       href: '/themes/default',
       title: 'Default',
       description: 'Full chrome and node palette — the standard FlowDrop feel.',
-      image: '/screenshots/default.png'
+      image: '/screenshots/default.webp'
     },
     {
       href: '/themes/minimal',
       title: 'Minimal',
       description: 'Quieter chrome for embedding inside an existing UI.',
-      image: '/screenshots/minimal.png'
+      image: '/screenshots/minimal.webp'
     },
     {
       href: '/themes/drafter',
       title: 'Drafter',
       description: 'A sketch-like, low-fidelity whiteboard skin.',
-      image: '/screenshots/drafter.png'
+      image: '/screenshots/drafter.webp'
     }
   ];
 </script>
@@ -27,6 +27,7 @@
 
 <div class="page">
   <h1>FlowDrop Themes</h1>
+  <p class="lead">Pick a theme and explore the editor live, right in your browser.</p>
 
   <section class="grid">
     {#each demos as demo (demo.href)}
@@ -49,6 +50,11 @@
       </a>
     {/each}
   </section>
+
+  <footer class="foot">
+    <span>FlowDrop™</span>
+    <a href="https://github.com/flowdrop-io/flowdrop" target="_blank" rel="noreferrer">GitHub ↗</a>
+  </footer>
 </div>
 
 <style>
@@ -64,8 +70,13 @@
 
   h1 {
     font-size: 28px;
-    margin: 0 0 28px;
+    margin: 0 0 8px;
     letter-spacing: -0.02em;
+  }
+  .lead {
+    margin: 0 0 28px;
+    font-size: 16px;
+    color: #64748b;
   }
 
   /* 3-column grid — one row of three themes. */
@@ -89,7 +100,6 @@
     display: flex;
     flex-direction: column;
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
     overflow: hidden;
     text-decoration: none;
     color: inherit;
@@ -107,19 +117,20 @@
 
   .thumb {
     display: block;
-    aspect-ratio: 16 / 10;
     background: #f1f5f9;
     border-bottom: 1px solid #eef2f7;
     overflow: hidden;
   }
   .thumb img {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
     display: block;
   }
 
   .body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
     padding: 16px 18px 18px;
   }
   .card h2 {
@@ -133,8 +144,26 @@
     margin: 0 0 12px;
   }
   .cta {
+    margin-top: auto;
     font-size: 14px;
     font-weight: 600;
     color: #475569;
+  }
+
+  .foot {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .foot a {
+    color: #64748b;
+    text-decoration: none;
+  }
+  .foot a:hover {
+    color: #0f172a;
   }
 </style>

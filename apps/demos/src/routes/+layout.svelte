@@ -3,13 +3,8 @@
   import { Navbar } from '@flowdrop/flowdrop/editor';
   import type { NavbarAction } from '@flowdrop/flowdrop/core';
   import { page } from '$app/state';
-  import DemoBanner from '$lib/DemoBanner.svelte';
 
   let { children } = $props();
-
-  // The browser-only caveat lives on the landing page only; the editor demos
-  // stay uncluttered so the canvas gets the full height.
-  const showBanner = $derived(page.url.pathname === '/');
 
   const navLinks = [
     { label: 'Home', href: '/', icon: 'mdi:home-outline' },
@@ -45,9 +40,6 @@
 
 <div class="shell">
   <Navbar primaryActions={actions} showStatus={false} showSettings={false} />
-  {#if showBanner}
-    <DemoBanner />
-  {/if}
   <main>
     {@render children()}
   </main>
