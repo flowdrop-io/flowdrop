@@ -1,0 +1,42 @@
+# Netlify config for the FlowDrop demos site.
+#
+# Single site, two artifacts under one domain:
+#   /            → the demos hub (this SvelteKit app, adapter-static)
+#   /storybook   → the library's Storybook, built from libs/flowdrop source
+#
+# In the Netlify UI set the site's **Base directory** to `apps/demos` and point
+# it at this file. The build below `cd`s up to the repo root for the Storybook
+# step, then copies its static output into this app's build dir so both ship
+# from one publish directory.
+#
+# Why two package managers' worth of installs: this repo is NOT a pnpm
+# workspace — each app installs independently. The demos app consumes the
+# PUBLISHED @flowdrop/flowdrop from npm (stable), while Storybook builds from
+# the LOCAL libs/flowdrop source (always current). That split is intentional.
+
+[build]
+  base = "apps/demos"
+  publish = "build"
+  # The demos step uses `npm install` deliberately: npm reads package.json (the
+  # pinned, published @flowdrop/flowdrop) and ignores pnpm-lock.yaml, so the
+  # deploy is immune to a developer's local `pnpm link` to libs/flowdrop. The
+  # Storybook step uses pnpm against local source — that's the point of it.
+  command = """
+    npm install &&
+    npm run build &&
+    (cd ../../libs/flowdrop && pnpm install --frozen-lockfile=false && pnpm run storybook:build) &&
+    mkdir -p build/storybook &&
+    cp -r ../../libs/flowdrop/storybook-static/. build/storybook/
+  """
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback: client-only routes (the editor mounts in the browser) resolve
+# to the prerendered shell on a hard refresh / direct link.
+[[redirects]]
+  from = "/*"
+  to = "/200.html"
+  status = 200
+  # Don't shadow prerendered routes or the Storybook subtree.
+  force = false

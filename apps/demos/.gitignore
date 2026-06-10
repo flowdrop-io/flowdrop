@@ -1,0 +1,13 @@
+node_modules
+/build
+/.svelte-kit
+/package
+
+# Local dev-against-current toggle: `pnpm link ../../libs/flowdrop` writes a
+# `overrides: '@flowdrop/flowdrop': link:...` here. Never commit it — the
+# committed app always resolves the published package (see README).
+pnpm-workspace.yaml
+.env
+.env.*
+!.env.example
+vite.config.ts.timestamp-*
