@@ -193,7 +193,7 @@ export const SETTINGS_CATEGORY_ICONS: Record<SettingsCategory, string> = {
  * Default theme settings
  */
 export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
-  preference: 'dark'
+  preference: 'light'
 };
 
 /**

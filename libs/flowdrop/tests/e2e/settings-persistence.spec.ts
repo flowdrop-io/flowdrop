@@ -76,29 +76,31 @@ test.describe('Settings Persistence', () => {
   test('changing the theme applies data-theme and writes localStorage', async ({ page }) => {
     await gotoEditor(page, 'simple');
 
-    // Library default preference is 'dark'
-    expect(await appliedTheme(page)).toBe('dark');
-
-    await setThemePreference(page, 'light');
-
+    // Library default preference is 'light'
     expect(await appliedTheme(page)).toBe('light');
-    expect(await persistedPreference(page)).toBe('light');
+
+    await setThemePreference(page, 'dark');
+
+    expect(await appliedTheme(page)).toBe('dark');
+    expect(await persistedPreference(page)).toBe('dark');
   });
 
   test('theme preference survives a reload', async ({ page }) => {
     await gotoEditor(page, 'simple');
-    await setThemePreference(page, 'light');
+    // Switch to a non-default value so the reload actually proves persistence
+    // (the library default is now 'light').
+    await setThemePreference(page, 'dark');
 
     await page.reload();
     await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
 
     // Restored from localStorage and re-applied to the document
-    expect(await appliedTheme(page)).toBe('light');
-    expect(await persistedPreference(page)).toBe('light');
+    expect(await appliedTheme(page)).toBe('dark');
+    expect(await persistedPreference(page)).toBe('dark');
 
     // The settings modal reflects the persisted value too
     await openSettings(page);
-    await expect(openModal(page).locator('select#preference')).toHaveValue('light');
+    await expect(openModal(page).locator('select#preference')).toHaveValue('dark');
   });
 
   test('host settings defaults seed the first run', async ({ page }) => {

@@ -112,8 +112,8 @@ describe('settingsStore persistence', () => {
 
       const store = await freshStore();
 
-      // DEFAULT_THEME_SETTINGS.preference is 'dark'
-      expect(store.getTheme()).toBe('dark');
+      // DEFAULT_THEME_SETTINGS.preference is 'light'
+      expect(store.getTheme()).toBe('light');
     });
   });
 
