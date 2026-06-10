@@ -17,12 +17,20 @@
 [build]
   base = "apps/demos"
   publish = "build"
-  # The demos step uses `npm install` deliberately: npm reads package.json (the
-  # pinned, published @flowdrop/flowdrop) and ignores pnpm-lock.yaml, so the
-  # deploy is immune to a developer's local `pnpm link` to libs/flowdrop. The
-  # Storybook step uses pnpm against local source — that's the point of it.
+  # The demos step uses npm deliberately: npm reads package.json (the pinned,
+  # published @flowdrop/flowdrop) and ignores pnpm-lock.yaml, so the deploy is
+  # immune to a developer's local `pnpm link` to libs/flowdrop. The Storybook
+  # step uses pnpm against local source — that's the point of it.
+  #
+  # `npm ci` (not `npm install`): the committed package-lock.json pins the
+  # published deps, so npm reifies a fixed tree instead of rebuilding it from
+  # scratch each deploy. That from-scratch resolution tripped npm 10's arborist
+  # `edgesOut` crash on Netlify; `npm ci` sidesteps it and is reproducible.
+  # IMPORTANT: regenerate package-lock.json in a CLEAN checkout (NOT while
+  # libs/flowdrop is pnpm-linked, which injects unparseable `link:` deps)
+  # whenever this app's deps change.
   command = """
-    npm install &&
+    npm ci &&
     npm run build &&
     (cd ../../libs/flowdrop && pnpm install --frozen-lockfile=false && pnpm run storybook:build) &&
     mkdir -p build/storybook &&
