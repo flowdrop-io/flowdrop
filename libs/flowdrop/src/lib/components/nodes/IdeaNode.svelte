@@ -336,7 +336,7 @@
   }
 
   .flowdrop-idea-node__title {
-    font-size: 0.9375rem;
+    font-size: 15px;
     font-weight: 600;
     color: var(--fd-foreground);
     margin: 0;
@@ -354,7 +354,7 @@
   }
 
   .flowdrop-idea-node__description {
-    font-size: 0.8125rem;
+    font-size: 13px;
     color: var(--fd-muted-foreground);
     margin: 0;
     /* px line-height so the 3-line clamp lands on the 20px grid (3 × 20px) */
