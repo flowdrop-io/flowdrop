@@ -33,6 +33,13 @@
         theme,
         endpointConfig,
         workflow,
+        // The published @flowdrop/flowdrop@2.0.0-beta.2 defaults the theme
+        // preference to 'dark' (fixed to 'light' in source post-beta.2); seed
+        // 'light' so fresh visitors of the deployed demo land on the light
+        // theme regardless. This only seeds the default — it does not override
+        // a returning user's saved choice (made via the navbar settings gear),
+        // which the library merges on top.
+        settings: { theme: { preference: 'light' } },
         showNavbar: false,
         // App defaults height to '100vh'; here it lives inside our flex layout
         // (navbar above it), so fill the container to avoid a viewport scrollbar.

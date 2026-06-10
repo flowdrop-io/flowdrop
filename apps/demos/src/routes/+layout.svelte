@@ -39,7 +39,20 @@
 </script>
 
 <div class="shell">
-  <Navbar primaryActions={actions} showStatus={false} showSettings={false} />
+  <!--
+    Expose the settings gear so visitors can switch the theme (light/dark/auto)
+    themselves. Settings are page-global (the store is shared across mounted
+    instances and theme is applied to the document), so this single gear drives
+    every demo. Limited to the Theme tab — the other categories (API, behavior)
+    don't apply to this static, backendless demo.
+  -->
+  <Navbar
+    primaryActions={actions}
+    showStatus={false}
+    showSettings={true}
+    settingsCategories={['theme']}
+    showSettingsSyncButton={false}
+  />
   <main>
     {@render children()}
   </main>
