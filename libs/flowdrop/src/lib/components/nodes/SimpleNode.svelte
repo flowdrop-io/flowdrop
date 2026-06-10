@@ -426,8 +426,8 @@
     position: absolute;
     top: var(--fd-space-xs);
     right: var(--fd-space-xs);
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 24px;
+    height: 24px;
     background-color: var(--fd-backdrop);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-sm);

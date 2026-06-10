@@ -513,9 +513,9 @@
   }
 
   .flowdrop-badge {
-    padding: 0.125rem var(--fd-space-3xs);
+    padding: 2px 4px;
     border-radius: var(--fd-radius-sm);
-    font-size: 0.625rem;
+    font-size: 10px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -527,8 +527,8 @@
   }
 
   .flowdrop-badge--sm {
-    font-size: 0.625rem;
-    padding: 0.125rem var(--fd-space-3xs);
+    font-size: 10px;
+    padding: 2px 4px;
   }
 
   .workflow-node__no-branches {
@@ -580,12 +580,12 @@
 
   .flowdrop-text--xs {
     font-size: var(--fd-text-xs);
-    line-height: 1rem;
+    line-height: 16px;
   }
 
   .flowdrop-text--sm {
     font-size: var(--fd-text-sm);
-    line-height: 1.25rem;
+    line-height: 20px;
   }
 
   .flowdrop-text--gray {
@@ -615,8 +615,8 @@
     position: absolute;
     top: var(--fd-space-xs);
     right: var(--fd-space-xs);
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 24px;
+    height: 24px;
     background-color: var(--fd-backdrop);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-sm);

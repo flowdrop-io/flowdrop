@@ -587,7 +587,7 @@
   }
 
   .flowdrop-terminal-node__description {
-    font-size: 0.625rem;
+    font-size: 10px;
     color: var(--fd-muted-foreground);
     text-align: center;
     overflow: hidden;
