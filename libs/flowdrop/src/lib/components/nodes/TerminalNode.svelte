@@ -431,7 +431,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--fd-space-xs);
+    /* px (not rem) on the 20px grid */
+    gap: 8px;
     cursor: pointer;
     transition: all var(--fd-transition-normal);
     z-index: 10;
@@ -534,14 +535,15 @@
       0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
   }
 
-  /* Squircle icon wrapper - matching WorkflowNode style */
+  /* Squircle icon wrapper - px (not rem) so the icon stays grid-locked
+     regardless of root font-size */
   .flowdrop-terminal-node__icon-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 0.625rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
@@ -556,8 +558,8 @@
   }
 
   .flowdrop-terminal-node__icon-wrapper :global(.flowdrop-terminal-node__icon) {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 24px;
+    height: 24px;
     color: var(--fd-node-icon);
   }
 
@@ -565,9 +567,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.125rem;
+    gap: 2px;
     background-color: var(--fd-backdrop);
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
+    padding: 4px 8px;
     border-radius: var(--fd-radius-sm);
     box-shadow: var(--fd-shadow-sm);
     max-width: 140px;
@@ -596,7 +598,7 @@
 
   .flowdrop-terminal-node__processing {
     position: absolute;
-    top: 1.5rem;
+    top: 24px;
     right: 0;
   }
 
@@ -611,7 +613,7 @@
 
   .flowdrop-terminal-node__error {
     position: absolute;
-    top: 1.5rem;
+    top: 24px;
     right: 0;
     color: var(--fd-error);
   }
@@ -624,11 +626,11 @@
   /* Config button positioned at top center */
   .flowdrop-terminal-node__config-btn {
     position: absolute;
-    top: -1.5rem;
+    top: -24px;
     left: 50%;
     transform: translateX(-50%);
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 24px;
+    height: 24px;
     background-color: var(--fd-backdrop);
     border: 1px solid var(--fd-border);
     border-radius: 50%;
