@@ -161,7 +161,7 @@
     />
   {/if}
 
-  <!-- Top Port (Target/Input): center at left 150px (multiple of 10), 20px connection area -->
+  <!-- Top Port (Target/Input): center at left 140px (node midpoint, 20px grid), 20px connection area -->
   {#if enableTopPort}
     <Handle
       type="target"
@@ -169,7 +169,7 @@
       style="--fd-handle-fill: {getDataTypeColor(
         checker,
         IDEA_DATA_TYPE
-      )}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); z-index: 30;"
+      )}; --fd-handle-border-color: var(--fd-handle-border); left: 140px; transform: translateX(-50%); z-index: 30;"
       id={`${props.data.nodeId}-input-top`}
     />
   {/if}
@@ -227,7 +227,7 @@
     />
   {/if}
 
-  <!-- Bottom Port (Source/Output): center at left 150px (multiple of 10), 20px connection area -->
+  <!-- Bottom Port (Source/Output): center at left 140px (node midpoint, 20px grid), 20px connection area -->
   {#if enableBottomPort}
     <Handle
       type="source"
@@ -235,7 +235,7 @@
       style="--fd-handle-fill: {getDataTypeColor(
         checker,
         IDEA_DATA_TYPE
-      )}; --fd-handle-border-color: var(--fd-handle-border); left: 150px; transform: translateX(-50%); z-index: 30;"
+      )}; --fd-handle-border-color: var(--fd-handle-border); left: 140px; transform: translateX(-50%); z-index: 30;"
       id={`${props.data.nodeId}-output-bottom`}
     />
   {/if}
@@ -245,7 +245,11 @@
   .flowdrop-idea-node {
     position: relative;
     width: var(--fd-node-default-width);
-    min-height: var(--fd-node-simple-height);
+    /* Floor at 80px, then grow in 20px steps. Fixed chrome = accent 4px +
+       header 48px + body bottom 6px = 58px, plus the card's 1px×2 border = 60px;
+       each description line adds 20px (line-height), so the card lands on
+       80 / 100 / 120px gridlines. */
+    min-height: 80px;
     cursor: pointer;
     transition: all var(--fd-transition-normal);
     z-index: 10;
@@ -263,7 +267,6 @@
 
   .flowdrop-idea-node:hover .flowdrop-idea-node__card {
     box-shadow: var(--fd-node-shadow-hover);
-    transform: translateY(-1px);
   }
 
   .flowdrop-idea-node--selected .flowdrop-idea-node__card {
@@ -293,28 +296,42 @@
   .flowdrop-idea-node__header {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-xs);
+    /* px (not rem) on the 20px grid; 8px top/bottom + 32px icon = 48px header */
+    gap: 10px;
+    padding: 8px 16px;
   }
 
+  /* Squircle icon wrapper - px (not rem) so the icon stays grid-locked
+     regardless of root font-size */
   .flowdrop-idea-node__icon-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 32px;
+    height: 32px;
     background-color: color-mix(
       in srgb,
       var(--idea-accent-color, var(--fd-accent)) var(--fd-node-icon-bg-opacity),
       transparent
     );
-    border-radius: var(--fd-radius-lg);
+    border-radius: 8px;
     flex-shrink: 0;
+    transition: all var(--fd-transition-normal);
+  }
+
+  /* Icon hover effect — matches SimpleNode/ToolNode/NotesNode */
+  .flowdrop-idea-node:hover .flowdrop-idea-node__icon-wrapper {
+    background-color: color-mix(
+      in srgb,
+      var(--idea-accent-color, var(--fd-accent)) var(--fd-node-icon-bg-opacity-hover),
+      transparent
+    );
+    transform: scale(1.05);
   }
 
   :global(.flowdrop-idea-node__icon) {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 20px;
+    height: 20px;
     color: var(--fd-node-icon);
   }
 
@@ -323,22 +340,25 @@
     font-weight: 600;
     color: var(--fd-foreground);
     margin: 0;
-    line-height: 1.3;
+    /* px line-height so multi-line text stays on the 20px grid */
+    line-height: 20px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  /* Body section */
+  /* Body section: 6px bottom (not 8px) compensates the card's 1px×2 border
+     so the card height stays a multiple of 20px. */
   .flowdrop-idea-node__body {
-    padding: 0 var(--fd-space-xl) var(--fd-space-md);
+    padding: 0 16px 6px;
   }
 
   .flowdrop-idea-node__description {
     font-size: 0.8125rem;
     color: var(--fd-muted-foreground);
     margin: 0;
-    line-height: 1.5;
+    /* px line-height so the 3-line clamp lands on the 20px grid (3 × 20px) */
+    line-height: 20px;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     line-clamp: 3;
@@ -350,16 +370,16 @@
   .flowdrop-idea-node__processing {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs) var(--fd-space-xl);
+    gap: 8px;
+    padding: 8px 16px;
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
     border-top: 1px solid var(--fd-border-muted);
   }
 
   .flowdrop-idea-node__spinner {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 14px;
+    height: 14px;
     border: 2px solid var(--fd-border);
     border-top-color: var(--idea-accent-color, var(--fd-accent));
     border-radius: 50%;
@@ -370,8 +390,8 @@
   .flowdrop-idea-node__error {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs) var(--fd-space-xl);
+    gap: 8px;
+    padding: 8px 16px;
     font-size: var(--fd-text-xs);
     color: var(--fd-error);
     border-top: 1px solid color-mix(in srgb, var(--fd-error) 30%, transparent);
@@ -379,8 +399,8 @@
   }
 
   :global(.flowdrop-idea-node__error-icon) {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 14px;
+    height: 14px;
   }
 
   @keyframes idea-spin {
@@ -392,10 +412,10 @@
   /* Config button */
   .flowdrop-idea-node__config-btn {
     position: absolute;
-    top: 0.625rem;
-    right: 0.625rem;
-    width: 1.5rem;
-    height: 1.5rem;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
     background-color: var(--fd-backdrop);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-md);
@@ -441,15 +461,15 @@
   /* Responsive design */
   @media (max-width: 640px) {
     .flowdrop-idea-node {
-      width: 16rem;
+      width: 256px;
     }
 
     .flowdrop-idea-node__header {
-      padding: 0.625rem 0.75rem 0.375rem;
+      padding: 8px 12px;
     }
 
     .flowdrop-idea-node__body {
-      padding: 0 0.75rem 0.625rem;
+      padding: 0 12px 6px;
     }
 
     .flowdrop-idea-node__title {
