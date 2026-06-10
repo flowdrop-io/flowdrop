@@ -187,54 +187,58 @@
   />
 {/each}
 
-<!-- Square Node -->
+<!-- Square Node: outer is a transparent bounding box (height grows with ports so
+     handles anchor in-bounds); the visible square inside stays a fixed 80×80. -->
 <div
-  class="flowdrop-square-node flowdrop-square-node--compact"
+  class="flowdrop-square-node"
   class:flowdrop-square-node--selected={props.selected}
   class:flowdrop-square-node--processing={props.isProcessing}
   class:flowdrop-square-node--error={props.isError}
-  style="height: {nodeSize}px; width: {nodeSize}px"
+  style="height: {nodeSize}px"
   onclick={handleClick}
   ondblclick={handleDoubleClick}
   onkeydown={handleKeydown}
   role="button"
   tabindex="0"
 >
-  <!-- Square Layout: Always compact with centered icon in squircle wrapper -->
-  <div class="flowdrop-square-node__compact-content">
-    <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
-    <div class="flowdrop-square-node__icon-wrapper" style="--_icon-color: {squareColor}">
-      <Icon icon={squareIcon} class="flowdrop-square-node__icon" />
+  <!-- The visible, themed square — fixed 80×80, vertically centered in the slot -->
+  <div class="flowdrop-square-node__square">
+    <!-- Square Layout: Always compact with centered icon in squircle wrapper -->
+    <div class="flowdrop-square-node__compact-content">
+      <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
+      <div class="flowdrop-square-node__icon-wrapper" style="--_icon-color: {squareColor}">
+        <Icon icon={squareIcon} class="flowdrop-square-node__icon" />
+      </div>
+      <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
+      <span
+        class="flowdrop-square-node__color-dot"
+        style="background: {getCategoryColorToken(fd.categories, props.data.metadata?.category)}"
+      ></span>
     </div>
-    <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
-    <span
-      class="flowdrop-square-node__color-dot"
-      style="background: {getCategoryColorToken(fd.categories, props.data.metadata?.category)}"
-    ></span>
+
+    <!-- Processing indicator -->
+    {#if props.isProcessing}
+      <div class="flowdrop-square-node__processing">
+        <div class="flowdrop-square-node__spinner"></div>
+      </div>
+    {/if}
+
+    <!-- Error indicator -->
+    {#if props.isError}
+      <div class="flowdrop-square-node__error">
+        <AlertCircleIcon />
+      </div>
+    {/if}
+
+    <!-- Config button -->
+    <button
+      class="flowdrop-square-node__config-btn"
+      onclick={openConfigSidebar}
+      title="Configure node"
+    >
+      <CogIcon />
+    </button>
   </div>
-
-  <!-- Processing indicator -->
-  {#if props.isProcessing}
-    <div class="flowdrop-square-node__processing">
-      <div class="flowdrop-square-node__spinner"></div>
-    </div>
-  {/if}
-
-  <!-- Error indicator -->
-  {#if props.isError}
-    <div class="flowdrop-square-node__error">
-      <AlertCircleIcon />
-    </div>
-  {/if}
-
-  <!-- Config button -->
-  <button
-    class="flowdrop-square-node__config-btn"
-    onclick={openConfigSidebar}
-    title="Configure node"
-  >
-    <CogIcon />
-  </button>
 </div>
 
 <!-- Output Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
@@ -254,43 +258,51 @@
 {/each}
 
 <style>
+  /* Transparent slot: defines the node's bounding box so handles anchor
+     consistently (height grows with port count), while the square sits fixed
+     and vertically centered inside. */
   .flowdrop-square-node {
     position: relative;
-    background-color: var(--fd-node-bg);
-    backdrop-filter: var(--fd-node-backdrop-filter);
-    border: var(--fd-node-border-width) solid var(--fd-node-border);
-    border-radius: var(--fd-node-radius);
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: var(--fd-node-square-size);
     cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    box-shadow: var(--fd-node-shadow);
-    overflow: visible; /* Changed from hidden to visible to allow handles to be properly accessible */
     z-index: 10;
     color: var(--fd-foreground);
   }
 
-  /* Square layout (always compact) */
-  .flowdrop-square-node--compact {
+  /* The visible, themed square — fixed 80×80, never expands. */
+  .flowdrop-square-node__square {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: var(--fd-node-square-size);
     height: var(--fd-node-square-size);
-    justify-content: center;
-    align-items: center;
+    background-color: var(--fd-node-bg);
+    backdrop-filter: var(--fd-node-backdrop-filter);
+    border: var(--fd-node-border-width) solid var(--fd-node-border);
+    border-radius: var(--fd-node-radius);
+    box-shadow: var(--fd-node-shadow);
+    transition: all var(--fd-transition-fast);
+    color: var(--fd-foreground);
   }
 
-  .flowdrop-square-node:hover {
+  .flowdrop-square-node:hover .flowdrop-square-node__square {
     box-shadow: var(--fd-node-shadow-hover);
     border-color: var(--fd-node-border-hover);
   }
 
-  .flowdrop-square-node--selected {
+  .flowdrop-square-node--selected .flowdrop-square-node__square {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
       var(--fd-node-shadow-hover);
     border-color: var(--fd-primary);
   }
 
-  .flowdrop-square-node--selected:hover {
+  .flowdrop-square-node--selected:hover .flowdrop-square-node__square {
     box-shadow:
       0 0 0 2px var(--fd-primary-muted),
       var(--fd-node-shadow-hover);
@@ -298,6 +310,10 @@
   }
 
   .flowdrop-square-node:focus-visible {
+    outline: none;
+  }
+
+  .flowdrop-square-node:focus-visible .flowdrop-square-node__square {
     outline: 2px solid var(--fd-ring);
     outline-offset: 2px;
   }
@@ -306,7 +322,7 @@
     opacity: 0.7;
   }
 
-  .flowdrop-square-node--error {
+  .flowdrop-square-node--error .flowdrop-square-node__square {
     border-color: var(--fd-error) !important;
     background-color: var(--fd-error-muted) !important;
   }
@@ -320,14 +336,15 @@
     height: 100%;
   }
 
-  /* Squircle icon wrapper - matching WorkflowNode style */
+  /* Squircle icon wrapper - px (not rem) so the icon stays grid-locked
+     regardless of root font-size */
   .flowdrop-square-node__icon-wrapper {
     display: var(--fd-node-icon-display, flex);
     align-items: center;
     justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    border-radius: 0.625rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
     background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
@@ -343,8 +360,8 @@
   }
 
   .flowdrop-square-node__icon-wrapper :global(.flowdrop-square-node__icon) {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 28px;
+    height: 28px;
     color: var(--fd-node-icon);
   }
 
@@ -393,8 +410,8 @@
     position: absolute;
     top: var(--fd-space-xs);
     right: var(--fd-space-xs);
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 24px;
+    height: 24px;
     background-color: var(--fd-backdrop);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-sm);
