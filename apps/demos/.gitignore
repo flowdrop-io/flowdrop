@@ -6,7 +6,13 @@ node_modules
 # Local dev-against-current toggle: `pnpm link ../../libs/flowdrop` writes a
 # `overrides: '@flowdrop/flowdrop': link:...` here. Never commit it — the
 # committed app always resolves the published package (see README).
+# pnpm-lock.yaml is gitignored for the same reason: when generated with the
+# link override active it bakes that `overrides:` block into the lockfile,
+# which makes Netlify auto-detect pnpm and run a frozen install that fails
+# (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH) since the workspace file isn't deployed.
+# The deploy is npm-only: package.json + package-lock.json via `npm ci`.
 pnpm-workspace.yaml
+pnpm-lock.yaml
 .env
 .env.*
 !.env.example
