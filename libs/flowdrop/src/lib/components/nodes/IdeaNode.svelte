@@ -10,6 +10,7 @@
   import { Position, Handle } from '@xyflow/svelte';
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
+  import NodeConfigButton from './NodeConfigButton.svelte';
   import { getDataTypeColor } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
@@ -210,9 +211,7 @@
   </div>
 
   <!-- Config button -->
-  <button class="flowdrop-idea-node__config-btn" onclick={openConfigSidebar} title="Configure idea">
-    <Icon icon="mdi:cog" />
-  </button>
+  <NodeConfigButton onclick={openConfigSidebar} title="Configure idea" />
 
   <!-- Right Port (Source/Output): center at top 40px (multiple of 10), 20px connection area -->
   {#if enableRightPort}
@@ -409,37 +408,9 @@
     }
   }
 
-  /* Config button */
-  .flowdrop-idea-node__config-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 24px;
-    height: 24px;
-    background-color: var(--fd-backdrop);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all var(--fd-transition-normal);
-    backdrop-filter: var(--fd-backdrop-blur);
-    z-index: 15;
-    font-size: var(--fd-text-sm);
-  }
-
-  .flowdrop-idea-node:hover .flowdrop-idea-node__config-btn {
-    opacity: 1;
-  }
-
-  .flowdrop-idea-node__config-btn:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-    color: var(--fd-foreground);
-    transform: scale(1.05);
+  /* Reveal the NodeConfigButton (gear) when the node is hovered. */
+  .flowdrop-idea-node:hover {
+    --fd-config-btn-opacity: 1;
   }
 
   /* Handle: 20px/12px from base.css; position offsets for 20px handle */

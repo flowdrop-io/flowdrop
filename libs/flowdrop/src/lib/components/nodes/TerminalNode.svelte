@@ -12,6 +12,7 @@
   import { Position, Handle } from '@xyflow/svelte';
   import type { ConfigValues, NodeMetadata, NodeExtensions, NodePort } from '../../types/index.js';
   import Icon from '@iconify/svelte';
+  import NodeConfigButton from './NodeConfigButton.svelte';
   import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
@@ -348,13 +349,7 @@
   aria-label="{variant} node: {displayTitle}"
 >
   <!-- Config button at top -->
-  <button
-    class="flowdrop-terminal-node__config-btn"
-    onclick={openConfigSidebar}
-    title="Configure node"
-  >
-    <Icon icon="mdi:cog" />
-  </button>
+  <NodeConfigButton onclick={openConfigSidebar} title="Configure node" placement="top-center" />
 
   <!-- Circle wrapper for proper handle positioning -->
   <div class="flowdrop-terminal-node__circle-wrapper">
@@ -623,39 +618,9 @@
     height: 14px;
   }
 
-  /* Config button positioned at top center */
-  .flowdrop-terminal-node__config-btn {
-    position: absolute;
-    top: -24px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 24px;
-    height: 24px;
-    background-color: var(--fd-backdrop);
-    border: 1px solid var(--fd-border);
-    border-radius: 50%;
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all var(--fd-transition-normal);
-    backdrop-filter: var(--fd-backdrop-blur);
-    z-index: 15;
-    font-size: var(--fd-text-xs);
-    box-shadow: var(--fd-shadow-sm);
-  }
-
-  .flowdrop-terminal-node:hover .flowdrop-terminal-node__config-btn {
-    opacity: 1;
-  }
-
-  .flowdrop-terminal-node__config-btn:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-    color: var(--fd-foreground);
-    transform: translateX(-50%) scale(1.1);
+  /* Reveal the NodeConfigButton (gear) when the node is hovered. */
+  .flowdrop-terminal-node:hover {
+    --fd-config-btn-opacity: 1;
   }
 
   @keyframes spin {

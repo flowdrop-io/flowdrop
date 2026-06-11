@@ -24,7 +24,7 @@
   import { getNodeIcon } from '../../utils/icons.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { applyPortOrder, getPortTop, isPortVisible } from '../../utils/portUtils.js';
-  import CogIcon from '../icons/CogIcon.svelte';
+  import NodeConfigButton from './NodeConfigButton.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   const props = $props<{
@@ -231,13 +231,7 @@
     {/if}
 
     <!-- Config button -->
-    <button
-      class="flowdrop-square-node__config-btn"
-      onclick={openConfigSidebar}
-      title="Configure node"
-    >
-      <CogIcon />
-    </button>
+    <NodeConfigButton onclick={openConfigSidebar} title="Configure node" />
   </div>
 </div>
 
@@ -401,40 +395,9 @@
     height: 12px;
   }
 
-  .flowdrop-square-node__config-btn :global(svg) {
-    width: 14px;
-    height: 14px;
-  }
-
-  .flowdrop-square-node__config-btn {
-    position: absolute;
-    top: var(--fd-space-xs);
-    right: var(--fd-space-xs);
-    width: 24px;
-    height: 24px;
-    background-color: var(--fd-backdrop);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all var(--fd-transition-normal);
-    backdrop-filter: var(--fd-backdrop-blur);
-    z-index: 15;
-    font-size: var(--fd-text-sm);
-  }
-
-  .flowdrop-square-node:hover .flowdrop-square-node__config-btn {
-    opacity: 1;
-  }
-
-  .flowdrop-square-node__config-btn:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-    color: var(--fd-foreground);
+  /* Reveal the NodeConfigButton (gear) when the node is hovered. */
+  .flowdrop-square-node:hover {
+    --fd-config-btn-opacity: 1;
   }
 
   @keyframes spin {

@@ -10,7 +10,7 @@
   import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import type { NodeMetadata, NodePort } from '../../types/index.js';
-  import CogIcon from '../icons/CogIcon.svelte';
+  import NodeConfigButton from './NodeConfigButton.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface ToolNodeParameter {
@@ -249,9 +249,7 @@
   {/if}
 
   <!-- Config button -->
-  <button class="flowdrop-tool-node__config-btn" onclick={openConfigSidebar} title="Configure tool">
-    <CogIcon />
-  </button>
+  <NodeConfigButton onclick={openConfigSidebar} title="Configure tool" />
 </div>
 
 <!-- Tool Output Handle (optional): center at 40px (multiple of 10), 20px connection area -->
@@ -475,40 +473,9 @@
     height: 12px;
   }
 
-  .flowdrop-tool-node__config-btn :global(svg) {
-    width: 14px;
-    height: 14px;
-  }
-
-  .flowdrop-tool-node__config-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
-    background-color: var(--fd-backdrop);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all var(--fd-transition-normal);
-    backdrop-filter: blur(4px);
-    z-index: 15;
-    font-size: var(--fd-text-sm);
-  }
-
-  .flowdrop-tool-node:hover .flowdrop-tool-node__config-btn {
-    opacity: 1;
-  }
-
-  .flowdrop-tool-node__config-btn:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-    color: var(--fd-foreground);
+  /* Reveal the NodeConfigButton (gear) when the node is hovered. */
+  .flowdrop-tool-node:hover {
+    --fd-config-btn-opacity: 1;
   }
 
   @keyframes spin {

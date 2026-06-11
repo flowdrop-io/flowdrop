@@ -12,6 +12,7 @@
   import { Position, Handle } from '@xyflow/svelte';
   import type { WorkflowNode, NodePort, Branch } from '../../types/index.js';
   import Icon from '@iconify/svelte';
+  import NodeConfigButton from './NodeConfigButton.svelte';
   import { getNodeIcon } from '../../utils/icons.js';
   import {
     getDataTypeColorToken,
@@ -323,13 +324,7 @@
   <!-- Note: When all branches are hidden due to hideUnconnectedHandles, we don't show anything -->
 
   <!-- Config button -->
-  <button
-    class="flowdrop-workflow-node__config-btn"
-    onclick={handleNodeDoubleClick}
-    title="Configure node"
-  >
-    <Icon icon="mdi:cog" />
-  </button>
+  <NodeConfigButton onclick={handleNodeDoubleClick} title="Configure node" />
 </div>
 
 <style>
@@ -611,34 +606,8 @@
     text-align: right;
   }
 
-  .flowdrop-workflow-node__config-btn {
-    position: absolute;
-    top: var(--fd-space-xs);
-    right: var(--fd-space-xs);
-    width: 24px;
-    height: 24px;
-    background-color: var(--fd-backdrop);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all var(--fd-transition-normal);
-    backdrop-filter: blur(4px);
-    z-index: 15;
-    font-size: var(--fd-text-sm);
-  }
-
-  .flowdrop-workflow-node:hover .flowdrop-workflow-node__config-btn {
-    opacity: 1;
-  }
-
-  .flowdrop-workflow-node__config-btn:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-    color: var(--fd-foreground);
+  /* Reveal the NodeConfigButton (gear) when the node is hovered. */
+  .flowdrop-workflow-node:hover {
+    --fd-config-btn-opacity: 1;
   }
 </style>
