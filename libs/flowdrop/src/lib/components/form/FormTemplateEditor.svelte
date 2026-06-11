@@ -634,12 +634,13 @@
     background-color: var(--fd-background);
   }
 
+  /* Compound widget: ring drawn on the container via :focus-within, using the
+     standard --fd-ring tokens (outline isn't clipped by the container overflow). */
   .form-template-editor__container:focus-within {
     border-color: var(--fd-accent);
     background-color: var(--fd-background);
-    box-shadow:
-      0 0 0 3px rgba(168, 85, 247, 0.12),
-      var(--fd-shadow-sm);
+    outline: var(--fd-ring-width) solid var(--fd-ring);
+    outline-offset: var(--fd-ring-offset);
   }
 
   /* Dark theme overrides */

@@ -165,12 +165,6 @@
       0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  .form-range-field:focus::-webkit-slider-thumb {
-    box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.2),
-      0 4px 12px rgba(59, 130, 246, 0.35);
-  }
-
   /* Firefox - Track */
   .form-range-field::-moz-range-track {
     height: 6px;
@@ -205,20 +199,7 @@
       0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  .form-range-field:focus::-moz-range-thumb {
-    box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.2),
-      0 4px 12px rgba(59, 130, 246, 0.35);
-  }
-
-  /* Focus styles */
-  .form-range-field:focus {
-    outline: none;
-  }
-
-  .form-range-field:focus-visible {
-    outline: none;
-  }
+  /* Focus ring is centralized in base.css (outline on the range input). */
 
   /* Value display row */
   .form-range-values {

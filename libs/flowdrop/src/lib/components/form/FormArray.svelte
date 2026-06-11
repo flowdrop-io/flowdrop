@@ -670,9 +670,7 @@
   }
 
   .form-array__item-toggle:focus-visible {
-    outline: none;
     border-color: var(--fd-primary);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 
   .form-array__item-toggle :global(svg) {
@@ -715,11 +713,6 @@
   .form-array__action-btn :global(svg) {
     width: 1rem;
     height: 1rem;
-  }
-
-  .form-array__action-btn:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
   }
 
   .form-array__action-btn:disabled {
@@ -800,9 +793,7 @@
   }
 
   .form-array__input:focus {
-    outline: none;
     border-color: var(--fd-primary);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
   }
 
   .form-array__input--number {
@@ -837,9 +828,7 @@
   }
 
   .form-array__select:focus {
-    outline: none;
     border-color: var(--fd-primary);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
   }
 
   /* ============================================
@@ -1000,11 +989,6 @@
     background-color: var(--fd-success-muted);
     border-color: var(--fd-success-hover);
     color: var(--fd-success-hover);
-  }
-
-  .form-array__add-btn:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
   }
 
   .form-array__add-btn:active:not(:disabled) {

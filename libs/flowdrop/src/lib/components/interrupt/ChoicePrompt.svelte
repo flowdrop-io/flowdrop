@@ -313,11 +313,6 @@
     border: 0;
   }
 
-  .choice-prompt__option:focus-within {
-    outline: 2px solid var(--fd-ring);
-    outline-offset: 2px;
-  }
-
   .choice-prompt__checkmark {
     flex-shrink: 0;
     font-size: 1.25rem;
@@ -388,11 +383,6 @@
     background: var(--fd-interrupt-btn-primary-bg-hover);
     box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
     transform: translateY(-1px);
-  }
-
-  .choice-prompt__submit:focus-visible {
-    outline: 2px solid var(--fd-ring);
-    outline-offset: 2px;
   }
 
   .choice-prompt__submit:disabled {

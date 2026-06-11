@@ -14,6 +14,30 @@ p {
   margin: 0;
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   Standardized focus ring — THE single source of truth.
+
+   The entire library draws ONE focus ring: a solid outline in --fd-ring, sized
+   by --fd-ring-width / --fd-ring-offset. Components must NOT declare their own
+   focus rings (no per-element :focus outline/box-shadow). :focus-visible keeps
+   it to keyboard navigation; browsers still surface it for text fields on
+   click. Scoped to the library roots so it never leaks into the host app.
+   ─────────────────────────────────────────────────────────────────────────── */
+.flowdrop-root :focus-visible,
+.svelte-flow :focus-visible {
+  outline: var(--fd-ring-width) solid var(--fd-ring);
+  outline-offset: var(--fd-ring-offset);
+}
+
+/* xyflow hard-disables the node wrapper outline
+   (.svelte-flow__node.selectable:focus-visible { outline: none }). That wrapper
+   is our single focusable node element, so re-assert the standard ring at
+   matching specificity. */
+.svelte-flow .svelte-flow__node.selectable:focus-visible {
+  outline: var(--fd-ring-width) solid var(--fd-ring);
+  outline-offset: var(--fd-ring-offset);
+}
+
 /* Layout utilities */
 .flowdrop-layout {
   display: flex;
@@ -99,9 +123,11 @@ p {
   background-color: var(--fd-primary);
 }
 
+/* Handles are tabindex="-1" (programmatic focus only, so :focus-visible won't
+   fire) — keep a :focus ring, but draw it from the same tokens. */
 .svelte-flow .svelte-flow__handle:focus {
-  outline: 2px solid var(--fd-ring);
-  outline-offset: 2px;
+  outline: var(--fd-ring-width) solid var(--fd-ring);
+  outline-offset: var(--fd-ring-offset);
 }
 
 /* Centralized handle edge positioning — offset derived from --fd-handle-size */
@@ -141,10 +167,7 @@ p {
   border-color: var(--fd-border);
 }
 
-.flowdrop-btn:focus {
-  outline: 2px solid var(--fd-ring);
-  outline-offset: 2px;
-}
+/* Focus ring is centralized (see top of file). */
 
 .flowdrop-btn--primary {
   background-color: var(--fd-primary);
@@ -217,10 +240,9 @@ p {
     box-shadow var(--fd-transition-normal);
 }
 
+/* Active-field hint only; the focus ring itself is centralized (top of file). */
 .flowdrop-input:focus {
-  outline: none;
-  border-color: var(--fd-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--fd-ring);
 }
 
 .flowdrop-input--sm {

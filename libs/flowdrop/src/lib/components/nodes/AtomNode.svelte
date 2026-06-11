@@ -254,14 +254,8 @@
     border-color: var(--fd-atom-node-color, var(--fd-primary));
   }
 
-  .flowdrop-atom-node:focus-visible {
-    outline: none;
-  }
-
-  .flowdrop-atom-node:focus-visible .flowdrop-atom-node__pill {
-    outline: 2px solid var(--fd-ring);
-    outline-offset: 2px;
-  }
+  /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
+     wrapper, which is the focusable element). */
 
   .flowdrop-atom-node--processing {
     opacity: 0.7;

@@ -369,9 +369,7 @@
   .input-collector__input:focus,
   .input-collector__select:focus,
   .input-collector__textarea:focus {
-    outline: none;
     border-color: var(--fd-primary);
-    box-shadow: 0 0 0 3px var(--fd-primary-muted);
   }
 
   .input-collector__input::placeholder,

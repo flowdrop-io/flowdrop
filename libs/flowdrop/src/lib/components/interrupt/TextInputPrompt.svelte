@@ -254,7 +254,6 @@
   .text-prompt__input:focus,
   .text-prompt__textarea:focus {
     border-color: var(--fd-interrupt-completed-border);
-    box-shadow: 0 0 0 3px var(--fd-interrupt-completed-shadow);
   }
 
   .text-prompt__input:disabled,
@@ -314,11 +313,6 @@
     background: var(--fd-interrupt-btn-primary-bg-hover);
     box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
     transform: translateY(-1px);
-  }
-
-  .text-prompt__submit:focus-visible {
-    outline: 2px solid var(--fd-ring);
-    outline-offset: 2px;
   }
 
   .text-prompt__submit:disabled {

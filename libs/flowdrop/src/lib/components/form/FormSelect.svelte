@@ -98,12 +98,8 @@
   }
 
   .form-select:focus {
-    outline: none;
     border-color: var(--fd-ring);
     background-color: var(--fd-background);
-    box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--fd-ring) 18%, transparent),
-      var(--fd-shadow-sm);
   }
 
   .form-select:disabled {

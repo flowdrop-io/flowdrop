@@ -539,11 +539,6 @@
     color: var(--fd-primary-foreground);
   }
 
-  .flowdrop-settings-panel__tab:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
-  }
-
   :global(.flowdrop-settings-panel__tab-icon) {
     font-size: var(--fd-text-base);
   }

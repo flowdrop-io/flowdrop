@@ -135,11 +135,6 @@
     border-color: var(--fd-border-strong);
   }
 
-  .flowdrop-theme-toggle:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
-  }
-
   .flowdrop-theme-toggle:active {
     transform: scale(0.98);
   }

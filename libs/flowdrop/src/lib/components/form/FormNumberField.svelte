@@ -102,11 +102,7 @@
   }
 
   .form-number-field:focus {
-    outline: none;
     border-color: var(--fd-primary);
     background-color: var(--fd-background);
-    box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.12),
-      var(--fd-shadow-sm);
   }
 </style>

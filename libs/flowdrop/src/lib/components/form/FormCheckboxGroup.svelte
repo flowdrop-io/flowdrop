@@ -143,10 +143,6 @@
     transform: scale(1);
   }
 
-  .form-checkbox__input:focus-visible + .form-checkbox__custom {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  }
-
   .form-checkbox__label {
     font-size: var(--fd-text-sm);
     color: var(--fd-foreground);

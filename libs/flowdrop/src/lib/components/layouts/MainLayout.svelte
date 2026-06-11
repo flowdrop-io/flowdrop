@@ -585,7 +585,6 @@
   }
 
   .flowdrop-main-layout__divider:focus {
-    outline: none;
     background-color: var(--fd-primary-muted);
   }
 

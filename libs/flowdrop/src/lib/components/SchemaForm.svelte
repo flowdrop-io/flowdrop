@@ -473,11 +473,6 @@
     color: var(--fd-foreground);
   }
 
-  .schema-form__button--secondary:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  }
-
   .schema-form__button--primary {
     background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
     color: var(--fd-primary-foreground);
@@ -496,13 +491,6 @@
 
   .schema-form__button--primary:active:not(:disabled) {
     transform: translateY(0);
-  }
-
-  .schema-form__button--primary:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.4),
-      0 4px 12px rgba(59, 130, 246, 0.35);
   }
 
   .schema-form__button-spinner {

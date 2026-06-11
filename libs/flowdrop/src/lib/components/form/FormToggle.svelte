@@ -120,10 +120,6 @@
     transform: translateX(1.25rem);
   }
 
-  .form-toggle__input:focus-visible + .form-toggle__track {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  }
-
   .form-toggle__label {
     font-size: var(--fd-text-sm);
     color: var(--fd-muted-foreground);

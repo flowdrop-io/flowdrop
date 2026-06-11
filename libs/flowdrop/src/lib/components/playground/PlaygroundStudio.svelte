@@ -463,11 +463,6 @@
     .playground-studio__back-to-chat:hover {
       background-color: var(--fd-muted);
     }
-
-    .playground-studio__back-to-chat:focus-visible {
-      outline: 2px solid var(--fd-ring);
-      outline-offset: 2px;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {

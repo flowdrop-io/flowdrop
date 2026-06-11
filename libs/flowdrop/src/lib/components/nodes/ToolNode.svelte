@@ -288,10 +288,8 @@
     border-color: var(--fd-tool-node-color);
   }
 
-  .flowdrop-tool-node:focus-visible {
-    outline: 2px solid var(--fd-ring);
-    outline-offset: 2px;
-  }
+  /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
+     wrapper, which is the focusable element). */
 
   .flowdrop-tool-node--processing {
     opacity: 0.7;
@@ -478,11 +476,6 @@
 
   :global(.svelte-flow__node-tool .svelte-flow__handle:hover::before) {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--fd-tool-node-color) 30%, transparent) !important;
-  }
-
-  :global(.svelte-flow__node-tool .svelte-flow__handle:focus) {
-    outline: 2px solid var(--fd-tool-node-color) !important;
-    outline-offset: 2px !important;
   }
 
   /* Circle dot icon — shown in minimal skin via --fd-node-circle-display */

@@ -611,9 +611,7 @@
   }
 
   .flowdrop-input:focus {
-    outline: none;
     border-color: var(--fd-ring);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-ring) 20%, transparent);
   }
 
   .flowdrop-input::placeholder {
@@ -647,11 +645,6 @@
   .flowdrop-btn:active {
     background-color: var(--fd-border);
     border-color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-ring) 20%, transparent);
   }
 
   .flowdrop-btn:disabled {
@@ -694,7 +687,6 @@
 
   .flowdrop-join:focus-within {
     border-color: var(--fd-ring);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-ring) 20%, transparent);
   }
 
   /* Utility classes */

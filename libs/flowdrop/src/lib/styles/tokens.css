@@ -147,6 +147,11 @@
   --fd-border-muted: var(--_gray-3); /* @public */
   --fd-border-strong: var(--_gray-5); /* @public */
   --fd-ring: var(--_blue-2); /* @public */
+  /* Focus-ring geometry. The whole library draws ONE focus ring from these
+     (see base.css). Color is theme-aware (--fd-ring); width/offset are not, so
+     they live only here. */
+  --fd-ring-width: 2px; /* @public */
+  --fd-ring-offset: 2px; /* @public */
 
   /* ----- EDITOR CANVAS & NODE SURFACES -----
      Scoped surfaces for the graph editor, kept separate from the general app

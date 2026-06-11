@@ -656,12 +656,13 @@
     border-color: var(--fd-border-strong);
   }
 
+  /* Compound widget: ring drawn on the body via :focus-within, using the
+     standard --fd-ring tokens (outline isn't clipped by the container overflow). */
   .form-markdown-editor__body:focus-within {
     border-color: var(--fd-primary);
     background-color: var(--fd-background);
-    box-shadow:
-      0 0 0 3px var(--fd-primary-muted),
-      var(--fd-shadow-sm);
+    outline: var(--fd-ring-width) solid var(--fd-ring);
+    outline-offset: var(--fd-ring-offset);
   }
 
   /* ── Status bar ────────────────────────────────── */

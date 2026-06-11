@@ -232,7 +232,6 @@
 
   .chat-input__wrapper:focus-within {
     border-color: var(--fd-primary);
-    box-shadow: 0 0 0 3px var(--fd-primary-muted);
   }
 
   .chat-input__textarea {

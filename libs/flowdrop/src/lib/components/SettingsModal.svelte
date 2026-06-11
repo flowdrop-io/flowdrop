@@ -259,11 +259,6 @@
     color: var(--fd-foreground);
   }
 
-  .flowdrop-settings-modal__close:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
-  }
-
   /* Content */
   .flowdrop-settings-modal__content {
     flex: 1;

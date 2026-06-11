@@ -63,11 +63,6 @@
     box-shadow: var(--fd-shadow-lg);
   }
 
-  .flowdrop-canvas-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--fd-ring);
-  }
-
   .flowdrop-canvas-btn--active {
     color: var(--fd-primary);
     background-color: var(--fd-primary-muted);

@@ -457,10 +457,8 @@
     transform: scale(1.05);
   }
 
-  .flowdrop-terminal-node:focus-visible .flowdrop-terminal-node__content {
-    outline: 2px solid var(--fd-ring);
-    outline-offset: 2px;
-  }
+  /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
+     wrapper, which is the focusable element). */
 
   .flowdrop-terminal-node--processing .flowdrop-terminal-node__content {
     opacity: 0.7;
@@ -625,11 +623,6 @@
 
   :global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle:hover) {
     transform: translate(-50%, -50%) scale(1.2) !important;
-  }
-
-  :global(.flowdrop-terminal-node__circle-wrapper .svelte-flow__handle:focus) {
-    outline: 2px solid var(--fd-ring) !important;
-    outline-offset: 2px !important;
   }
 
   /* Also keep node-level handle styles for fallback */

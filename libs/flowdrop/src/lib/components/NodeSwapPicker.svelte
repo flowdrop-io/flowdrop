@@ -313,9 +313,7 @@
   }
 
   .swap-picker__input:focus {
-    outline: none;
     border-color: var(--fd-ring);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-ring) 20%, transparent);
   }
 
   .swap-picker__input::placeholder {

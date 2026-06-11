@@ -1073,11 +1073,6 @@
     color: var(--fd-foreground);
   }
 
-  .config-form__button--secondary:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  }
-
   .config-form__button--primary {
     background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
     color: var(--fd-primary-foreground);
@@ -1096,13 +1091,6 @@
 
   .config-form__button--primary:active {
     transform: translateY(0);
-  }
-
-  .config-form__button--primary:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.4),
-      0 4px 12px rgba(59, 130, 246, 0.35);
   }
 
   /* ============================================
@@ -1558,12 +1546,5 @@
 
   .config-form__button--external:active {
     transform: translateY(0);
-  }
-
-  .config-form__button--external:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 3px rgba(99, 102, 241, 0.4),
-      0 4px 12px rgba(99, 102, 241, 0.35);
   }
 </style>
