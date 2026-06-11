@@ -7,18 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.3] - 2026-06-12
+
+Third 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release finishes the navbar/theme defaults pass started in beta.2 (navbar opt-in everywhere, light as the default theme, the FlowDrop wordmark in the header), adds the **Drafter** blueprint theme with per-theme canvas grids, and lands a keyboard-navigation and focus-ring overhaul alongside the 20px node-grid alignment.
+
 ### Breaking Changes
 
 - **`mountPlaygroundApp` / `<PlaygroundApp>` no longer render the navbar by default.** `showNavbar` now defaults to `false`, matching `mountFlowDropApp` / `<App>` — so every mount path is navbar-off by default and embedding FlowDrop into a page that already has its own header never double-stacks a header. Pass `showNavbar: true` to opt back into the FlowDrop navbar (logo, branding, settings modal) when FlowDrop owns the whole page.
 
-### Fixed
-
-- **The full editor renders markdown/code/config editors out of the box again.** The beta.2 light-entry split made the heavy form editors opt-in everywhere, which inadvertently left `<WorkflowEditor>` / `<App>` / the playground showing the "Editor component not registered" textarea fallback for node config fields with `format: 'markdown' | 'code' | 'template'`. The full editor now registers the built-in editors on its own instance's field registry on mount. Registration uses a dynamic `import()`, so the chunks stay code-split (loaded lazily) and the light `/editor` static bundle is unaffected — the bundle guard still passes. The standalone `@flowdrop/flowdrop/form` primitive is unchanged and remains opt-in.
-- **`<App navbarActions>` accepts the full `NavbarAction` shape.** The component prop was typed with an inline subset that silently dropped `external` and `group`, even though the underlying `<Navbar>` (and the `mountFlowDropApp` option) already supported them. It now uses the canonical `NavbarAction` type, so external-link and grouped actions type-check through the component as they always did through the mount API.
-
 ### Added
 
+- **Drafter blueprint theme.** A third built-in editor theme (`'drafter'`), shipping light + dark variants: a blueprint aesthetic with a soft mint canvas, a subtle emerald line grid, and translucent green-tinted flat nodes. Data-type port colors and category icon colors are left untouched so they keep popping against the muted draft surface. Selectable from the Settings → UI Theme picker; the `FlowDropSkinName` / theme / skin name unions gain `'drafter'`.
+- **Per-theme canvas grid.** A new `FlowDropGridVariant` type (`'dots' | 'lines' | 'cross'`) and `themeConfig.canvas.grid` config let any theme drive the editor's background grid (previously hardcoded to dots). The grid pattern color is the `--fd-grid-pattern-color` token, whose default matches xyflow's dot color, so the default/minimal themes render unchanged. `resolveTheme` now merges `config.canvas` alongside `config.sidebar`.
 - **`features.builtinEditors` opt-out.** The built-in markdown/code/template editors are batteries-included in the full editor by default. Pass `features: { builtinEditors: false }` to `mountFlowDropApp` (or `builtinEditors: false` to `mountWorkflowEditor` / `<WorkflowEditor>`) to skip registering them — keeping the textarea fallback or leaving room to register your own field components via `instance.fields.register(...)`. The corrected fallback hint now points at the registry-scoped API (`registerMarkdownEditorField(instance.fields)`).
+- **FlowDrop wordmark logo in the navbar.** The header now renders the FlowDrop wordmark in place of the plain text title.
+
+### Changed
+
+- **The default theme preference is now `'light'` (was `'dark'`).** `DEFAULT_THEME_SETTINGS.preference` was hardcoded to `'dark'`, so any embed with no persisted theme choice rendered dark. Embeds now default to light; hosts that want dark by default should set the preference explicitly.
+- **Editor / node / chrome surface tokens are scoped per surface,** refining how themes (including Drafter) tint the canvas, nodes, and surrounding chrome independently.
+
+### Fixed
+
+- **Nodes are a single tab stop again.** The node config (gear) button sat in the tab order, so leaving a node required a second `Tab` press. The gear button is removed from the tab order (it stays mouse/Enter-activatable), and node focus defers to xyflow's own node focus — Tab now moves one node per press. `nodesFocusable` redundancy was removed to eliminate the duplicate stop.
+- **The full editor renders markdown/code/config editors out of the box again.** The beta.2 light-entry split made the heavy form editors opt-in everywhere, which inadvertently left `<WorkflowEditor>` / `<App>` / the playground showing the "Editor component not registered" textarea fallback for node config fields with `format: 'markdown' | 'code' | 'template'`. The full editor now registers the built-in editors on its own instance's field registry on mount. Registration uses a dynamic `import()`, so the chunks stay code-split (loaded lazily) and the light `/editor` static bundle is unaffected — the bundle guard still passes. The standalone `@flowdrop/flowdrop/form` primitive is unchanged and remains opt-in.
+- **`<App navbarActions>` accepts the full `NavbarAction` shape.** The component prop was typed with an inline subset that silently dropped `external` and `group`, even though the underlying `<Navbar>` (and the `mountFlowDropApp` option) already supported them. It now uses the canonical `NavbarAction` type, so external-link and grouped actions type-check through the component as they always did through the mount API.
+- **The node header no longer shows a top-accent line.**
+
+### Changed (internal — no API change)
+
+- **One centralized focus ring across the whole component library.** New `--fd-ring-width` / `--fd-ring-offset` tokens and a single `.flowdrop-root :focus-visible` rule in `base.css` replace ~200 lines of component-local focus CSS (mismatched outlines, hardcoded `rgba(59,130,246)` box-shadow glows, `color-mix` rings) removed across 41 files. CodeMirror editors in `overflow:hidden` containers use a `:focus-within` ring (outline paints outside the box and would clip); range-input thumbs ring on the parent.
+- **Extracted shared `NodeConfigButton` and `CanvasIconButton` components,** replacing per-node config-button and per-canvas floating-button duplication (including an inline-SVG cog) with one keyboard-correct implementation each.
+- **Node geometry converted from `rem` to `px` and snapped to a 20px grid** across all eight node types — header, port rows (fixed 60px), icon sizes, paddings, gaps, and font sizes — so nodes stay aligned to the canvas coordinate grid regardless of the host's root font-size.
+- **The code / markdown / template editors now rest on the shared input surface** instead of carrying their own background.
 
 ## [2.0.0-beta.2] - 2026-06-09
 
