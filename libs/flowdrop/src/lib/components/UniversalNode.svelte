@@ -17,6 +17,9 @@
 
   const fd = getInstance();
 
+  // Element ref used only to reach xyflow's node wrapper (our ancestor).
+  let universalNodeEl: HTMLDivElement;
+
   let {
     data,
     selected = false
@@ -60,6 +63,34 @@
   let shouldShowStatus = $derived(
     shouldShowNodeStatus(executionInfo) && resolvedComponentName !== 'note'
   );
+
+  // Keyboard activation lives on xyflow's node wrapper — the single focusable,
+  // arrow-movable element SvelteFlow manages. Because the wrapper is our
+  // ancestor, its keydown events never bubble down into our markup, so we bind
+  // directly to it. Enter/Space opens the node's config, mirroring the
+  // double-click (and single-click for square/atom) mouse paths. Node selection
+  // and arrow-key movement remain SvelteFlow's job.
+  $effect(() => {
+    const wrapper = universalNodeEl?.closest<HTMLElement>('.svelte-flow__node');
+    if (!wrapper) return;
+
+    function onWrapperKeydown(event: KeyboardEvent): void {
+      // Only when the node itself is focused — not an inner field (e.g. an
+      // editable note) — so we don't hijack typing.
+      if (event.target !== wrapper) return;
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        data.onConfigOpen?.({
+          id: data.nodeId ?? 'unknown',
+          type: resolvedComponentName,
+          data
+        });
+      }
+    }
+
+    wrapper.addEventListener('keydown', onWrapperKeydown);
+    return () => wrapper.removeEventListener('keydown', onWrapperKeydown);
+  });
 
   /**
    * Get the node component for the given type from the registry.
@@ -129,7 +160,7 @@
   }
 </script>
 
-<div class="universal-node">
+<div class="universal-node" bind:this={universalNodeEl}>
   <!-- Render the node component dynamically (Svelte 5 dynamic component syntax) -->
   {#if nodeComponent}
     <!-- Svelte 5 dynamic component limitation; reactivity maintained via $derived -->

@@ -102,13 +102,6 @@
     openConfigSidebar();
   }
 
-  // Handle keyboard events
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openConfigSidebar();
-    }
-  }
   const dynamicInputs = $derived(
     ((props.data.config?.dynamicInputs as DynamicPort[]) || []).map((port) =>
       dynamicPortToNodePort(port, 'input')
@@ -189,6 +182,11 @@
 
 <!-- Square Node: outer is a transparent bounding box (height grows with ports so
      handles anchor in-bounds); the visible square inside stays a fixed 80×80. -->
+<!-- Presentational: focus, keyboard and selection live on xyflow's node wrapper
+     (see UniversalNode, which maps Enter/Space to opening config). click/
+     double-click are mouse conveniences. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   class="flowdrop-square-node"
   class:flowdrop-square-node--selected={props.selected}
@@ -197,9 +195,6 @@
   style="height: {nodeSize}px"
   onclick={handleClick}
   ondblclick={handleDoubleClick}
-  onkeydown={handleKeydown}
-  role="button"
-  tabindex="0"
 >
   <!-- The visible, themed square — fixed 80×80, vertically centered in the slot -->
   <div class="flowdrop-square-node__square">

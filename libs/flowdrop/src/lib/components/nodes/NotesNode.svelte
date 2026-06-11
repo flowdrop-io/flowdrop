@@ -89,28 +89,17 @@
   function handleDoubleClick(): void {
     openConfigSidebar();
   }
-
-  /**
-   * Handles keyboard events for accessibility
-   * @param event - The keyboard event
-   */
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleDoubleClick();
-    }
-  }
 </script>
 
+<!-- Presentational: focus, keyboard and selection live on xyflow's node
+     wrapper (see UniversalNode). double-click is a mouse convenience. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="flowdrop-notes-node {currentType.typeClass}"
   class:flowdrop-notes-node--selected={props.selected}
   class:flowdrop-notes-node--processing={props.isProcessing}
   class:flowdrop-notes-node--has-error={props.isError}
   ondblclick={handleDoubleClick}
-  onkeydown={handleKeydown}
-  role="button"
-  tabindex="0"
 >
   <!-- Display Mode -->
   <div class="flowdrop-notes-node__content">

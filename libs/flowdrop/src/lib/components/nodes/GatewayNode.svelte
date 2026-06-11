@@ -122,13 +122,6 @@
   const visibleBranches = $derived(branches.filter((branch) => isBranchVisible(branch.name)));
 
   /**
-   * Handle node click - only handle selection, no config opening
-   */
-  function handleNodeClick(): void {
-    // Node selection is handled by Svelte Flow
-  }
-
-  /**
    * Handle double-click to open config
    */
   function handleNodeDoubleClick(): void {
@@ -142,16 +135,6 @@
   }
 
   /**
-   * Handle keyboard events for accessibility
-   */
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleNodeClick();
-    }
-  }
-
-  /**
    * Check if a branch is active
    */
   function isBranchActive(branchName: string): boolean {
@@ -160,14 +143,13 @@
 </script>
 
 <!-- Node Container -->
+<!-- Presentational: focus, keyboard and selection live on xyflow's node
+     wrapper (see UniversalNode). double-click is a mouse convenience. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="flowdrop-workflow-node flowdrop-workflow-node--gateway"
   class:flowdrop-workflow-node--selected={props.selected}
-  onclick={handleNodeClick}
   ondblclick={handleNodeDoubleClick}
-  onkeydown={handleKeydown}
-  role="button"
-  tabindex="0"
   aria-label={graph.gatewayNode({ title: displayTitle })}
   aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >

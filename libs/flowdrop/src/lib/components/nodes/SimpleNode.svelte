@@ -106,19 +106,6 @@
     openConfigSidebar();
   }
 
-  // Handle single click - only handle selection, no config opening
-  function handleClick(): void {
-    // Node selection is handled by Svelte Flow
-  }
-
-  // Handle keyboard events
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleDoubleClick();
-    }
-  }
-
   const dynamicInputs = $derived(
     ((props.data.config?.dynamicInputs as DynamicPort[]) || []).map((port) =>
       dynamicPortToNodePort(port, 'input')
@@ -197,17 +184,16 @@
 {/each}
 
 <!-- Simple Node -->
+<!-- Presentational: focus, keyboard and selection live on xyflow's node
+     wrapper (see UniversalNode). double-click is a mouse convenience. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="flowdrop-simple-node flowdrop-simple-node--normal"
   class:flowdrop-simple-node--selected={props.selected}
   class:flowdrop-simple-node--processing={props.isProcessing}
   class:flowdrop-simple-node--error={props.isError}
   style="min-height: {nodeMinHeight}px"
-  onclick={handleClick}
   ondblclick={handleDoubleClick}
-  onkeydown={handleKeydown}
-  role="button"
-  tabindex="0"
 >
   <div class="flowdrop-simple-node__header">
     <div class="flowdrop-simple-node__header-content">

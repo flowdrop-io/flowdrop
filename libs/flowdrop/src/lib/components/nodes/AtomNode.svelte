@@ -150,12 +150,6 @@
   function openConfig(): void {
     data.onConfigOpen?.({ id: nodeId, type: nodeType, data });
   }
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openConfig();
-    }
-  }
 </script>
 
 {#each inPorts as port, index (port.id)}
@@ -170,6 +164,11 @@
   />
 {/each}
 
+<!-- Presentational: focus, keyboard and selection live on xyflow's node wrapper
+     (see UniversalNode, which maps Enter/Space to opening config). click is a
+     mouse convenience. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   class="flowdrop-atom-node"
   class:flowdrop-atom-node--selected={selected}
@@ -179,9 +178,6 @@
   class:flowdrop-atom-node--rect={isRect}
   style={nodeStyle}
   onclick={openConfig}
-  onkeydown={handleKeydown}
-  role="button"
-  tabindex="0"
 >
   <div class="flowdrop-atom-node__pill">
     {#if atomCfg.prefix && !display.empty}

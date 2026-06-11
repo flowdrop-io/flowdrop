@@ -115,38 +115,19 @@
   function handleDoubleClick(): void {
     openConfigSidebar();
   }
-
-  /**
-   * Handle single click - selection handled by SvelteFlow
-   */
-  function handleClick(): void {
-    // Node selection is handled by Svelte Flow
-  }
-
-  /**
-   * Handles keyboard events for accessibility
-   * @param event - The keyboard event
-   */
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleDoubleClick();
-    }
-  }
 </script>
 
 <!-- Idea Node -->
+<!-- Presentational: focus, keyboard and selection live on xyflow's node
+     wrapper (see UniversalNode). double-click is a mouse convenience. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="flowdrop-idea-node"
   class:flowdrop-idea-node--selected={props.selected}
   class:flowdrop-idea-node--processing={props.isProcessing}
   class:flowdrop-idea-node--error={props.isError}
   style="--idea-accent-color: {ideaColor};"
-  onclick={handleClick}
   ondblclick={handleDoubleClick}
-  onkeydown={handleKeydown}
-  role="button"
-  tabindex="0"
   aria-label={m().nodes.graph.ideaNode({ title: displayTitle })}
 >
   <!-- Left Port (Target/Input): center at top 40px (multiple of 10), 20px connection area -->

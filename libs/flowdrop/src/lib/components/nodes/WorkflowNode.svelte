@@ -166,13 +166,6 @@
   );
 
   /**
-   * Handle node click - only handle selection, no config opening
-   */
-  function handleNodeClick(): void {
-    // Node selection is handled by Svelte Flow
-  }
-
-  /**
    * Handle double-click to open config
    */
   function handleDoubleClick(): void {
@@ -196,23 +189,17 @@
 </script>
 
 <!-- Node Container -->
+<!-- Presentational: focus, keyboard and selection live on xyflow's node
+     wrapper (see UniversalNode). double-click is a mouse convenience. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="flowdrop-workflow-node"
   class:flowdrop-workflow-node--selected={props.selected}
-  onclick={handleNodeClick}
   ondblclick={handleDoubleClick}
   onmouseup={() => {
     isHandleInteraction = false;
   }}
   data-handle-interaction={isHandleInteraction}
-  role="button"
-  tabindex="0"
-  onkeydown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleDoubleClick();
-    }
-  }}
   aria-label={graph.workflowNode({ name: props.data.metadata.name })}
   aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
 >
