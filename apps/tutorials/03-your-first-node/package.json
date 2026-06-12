@@ -1,0 +1,22 @@
+{
+  "name": "@flowdrop/tutorial-03-your-first-node",
+  "description": "Tutorial step 3 — define a node and a category. Companion to /tutorial/03-your-first-node.",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@flowdrop/flowdrop": "2.0.0-beta.3",
+    "@iconify/svelte": "^5.0.0",
+    "@xyflow/svelte": "^1.2"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "svelte": "^5.0.0",
+    "vite": "^6.2.6"
+  }
+}
