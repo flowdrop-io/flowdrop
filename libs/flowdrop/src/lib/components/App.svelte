@@ -10,6 +10,7 @@
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
   import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
+  import EditorStatusBar from '$lib/components/EditorStatusBar.svelte';
   import MenuIcon from '$lib/components/icons/MenuIcon.svelte';
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
@@ -1212,53 +1213,21 @@
     {/snippet}
 
     <!-- Main Content: Workflow Editor with Error Status -->
-    <!-- Status Display: aria-live announces API errors dynamically without requiring focus -->
     {#if error}
-      <div class="flowdrop-status flowdrop-status--error" aria-live="polite" aria-atomic="true">
-        <div class="flowdrop-status__content">
-          <div class="flowdrop-flex flowdrop-gap--3">
-            <div class="flowdrop-status__indicator flowdrop-status__indicator--error"></div>
-            <span class="flowdrop-text--sm flowdrop-font--medium">Error: {error}</span>
-          </div>
-          <div class="flowdrop-flex flowdrop-gap--2">
-            <button
-              class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--primary"
-              onclick={retryLoad}
-              type="button"
-            >
-              Retry
-            </button>
-            <button
-              class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
-              onclick={() => {
-                const defaultUrl = '/api/flowdrop';
-                const newUrl = prompt('Enter Backend API URL:', defaultUrl);
-                if (newUrl) {
-                  configureApi(createEndpointConfig(newUrl));
-                  fetchNodeTypes();
-                }
-              }}
-              type="button"
-            >
-              Set API URL
-            </button>
-            <button
-              class="flowdrop-btn flowdrop-btn--sm flowdrop-btn--outline"
-              onclick={testApiConnection}
-              type="button"
-            >
-              Test API
-            </button>
-            <button
-              class="flowdrop-btn flowdrop-btn--ghost flowdrop-btn--sm"
-              onclick={() => (error = null)}
-              type="button"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      </div>
+      <EditorStatusBar
+        {error}
+        onRetry={retryLoad}
+        onSetApiUrl={() => {
+          const defaultUrl = '/api/flowdrop';
+          const newUrl = prompt('Enter Backend API URL:', defaultUrl);
+          if (newUrl) {
+            configureApi(createEndpointConfig(newUrl));
+            fetchNodeTypes();
+          }
+        }}
+        onTestApi={testApiConnection}
+        onDismiss={() => (error = null)}
+      />
     {/if}
 
     <!-- Main Editor Area -->
@@ -1313,106 +1282,6 @@
 <style>
   .flowdrop-root {
     display: contents;
-  }
-  /* Status bar styles */
-  .flowdrop-status {
-    background-color: var(--fd-info-muted);
-    border-bottom: 1px solid var(--fd-info);
-    padding: 1rem;
-  }
-
-  .flowdrop-status--error {
-    background-color: var(--fd-error-muted);
-    border-bottom: 1px solid var(--fd-error);
-  }
-
-  .flowdrop-status__content {
-    max-width: 80rem;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .flowdrop-status__indicator {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-  }
-
-  .flowdrop-status__indicator--error {
-    background-color: var(--fd-error);
-  }
-
-  /* Button styles */
-  .flowdrop-btn {
-    padding: 0.375rem 0.75rem;
-    border-radius: var(--fd-radius-md);
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all var(--fd-transition-fast);
-  }
-
-  .flowdrop-btn--sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.625rem;
-  }
-
-  .flowdrop-btn--outline {
-    background-color: transparent;
-    border-color: var(--fd-border);
-    color: var(--fd-foreground);
-  }
-
-  .flowdrop-btn--outline:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-  }
-
-  .flowdrop-btn--primary {
-    background-color: var(--fd-primary);
-    border-color: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-  }
-
-  .flowdrop-btn--primary:hover {
-    background-color: var(--fd-primary-hover);
-    border-color: var(--fd-primary-hover);
-  }
-
-  .flowdrop-btn--ghost {
-    background-color: transparent;
-    border-color: transparent;
-    color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-btn--ghost:hover {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
-  }
-
-  /* Utility classes */
-  .flowdrop-flex {
-    display: flex;
-  }
-
-  .flowdrop-gap--2 {
-    gap: 0.5rem;
-  }
-
-  .flowdrop-gap--3 {
-    gap: 0.75rem;
-  }
-
-  .flowdrop-text--sm {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  .flowdrop-font--medium {
-    font-weight: 500;
   }
 
   /* Floating sidebar toggle button — placement only; visuals live in CanvasIconButton */
