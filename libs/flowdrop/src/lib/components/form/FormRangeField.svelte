@@ -94,7 +94,7 @@
       aria-valuemax={max}
       aria-valuenow={numericValue}
       oninput={handleInput}
-      style="--progress: {progressPercentage}%"
+      style="--progress: {progressPercentage}"
     />
   </div>
   <div class="form-range-values">
@@ -119,6 +119,16 @@
   }
 
   .form-range-field {
+    /* Thumb width; the fill edge is offset by half of this so it tracks the
+       thumb centre instead of the raw 0–100% of the track. */
+    --fd-range-thumb-size: 18px;
+    /* `--progress` is a unitless 0–100 set inline. The browser keeps the thumb
+       inside the track, so its centre travels from thumb/2 to (100% − thumb/2);
+       mirror that here so the colour fill lines up at every value, on load too. */
+    --fd-range-fill: calc(
+      var(--fd-range-thumb-size) / 2 + (100% - var(--fd-range-thumb-size)) * var(--progress, 0) /
+        100
+    );
     width: 100%;
     height: 6px;
     border-radius: 3px;
@@ -127,8 +137,8 @@
     background: linear-gradient(
       to right,
       var(--fd-primary) 0%,
-      var(--fd-primary) var(--progress, 0%),
-      var(--fd-border) var(--progress, 0%),
+      var(--fd-primary) var(--fd-range-fill),
+      var(--fd-border) var(--fd-range-fill),
       var(--fd-border) 100%
     );
     cursor: pointer;
@@ -145,8 +155,8 @@
   .form-range-field::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
+    width: var(--fd-range-thumb-size);
+    height: var(--fd-range-thumb-size);
     border-radius: 50%;
     background: linear-gradient(135deg, var(--fd-background) 0%, var(--fd-muted) 100%);
     border: 2px solid var(--fd-primary);
@@ -180,8 +190,8 @@
 
   /* Firefox - Thumb */
   .form-range-field::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
+    width: var(--fd-range-thumb-size);
+    height: var(--fd-range-thumb-size);
     border-radius: 50%;
     background: linear-gradient(135deg, var(--fd-background) 0%, var(--fd-muted) 100%);
     border: 2px solid var(--fd-primary);
