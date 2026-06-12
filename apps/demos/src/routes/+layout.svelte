@@ -1,6 +1,7 @@
 <script lang="ts">
   import '@flowdrop/flowdrop/styles';
   import { Navbar } from '@flowdrop/flowdrop/editor';
+  import { ThemeToggle } from '@flowdrop/flowdrop/settings';
   import type { NavbarAction } from '@flowdrop/flowdrop/core';
   import { page } from '$app/state';
 
@@ -40,19 +41,17 @@
 
 <div class="shell">
   <!--
-    Expose the settings gear so visitors can switch the theme (light/dark/auto)
-    themselves. Settings are page-global (the store is shared across mounted
-    instances and theme is applied to the document), so this single gear drives
-    every demo. Limited to the Theme tab — the other categories (API, behavior)
-    don't apply to this static, backendless demo.
+    Expose a direct theme toggle (light → dark → auto) instead of the settings
+    gear. Theme state is page-global — the store is shared across mounted
+    instances and applied to the document — so this single toggle drives every
+    demo. The gear's other tabs (API, behavior) don't apply to this static,
+    backendless demo, so dropping it loses nothing here.
   -->
-  <Navbar
-    primaryActions={actions}
-    showStatus={false}
-    showSettings={true}
-    settingsCategories={['theme']}
-    showSettingsSyncButton={false}
-  />
+  <Navbar primaryActions={actions} showStatus={false} showSettings={false}>
+    {#snippet end()}
+      <ThemeToggle size="md" showLabel />
+    {/snippet}
+  </Navbar>
   <main>
     {@render children()}
   </main>
