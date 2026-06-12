@@ -22,6 +22,7 @@
   import Input from '../Input.svelte';
   import Select from '../Select.svelte';
   import Textarea from '../Textarea.svelte';
+  import IconButton from '../IconButton.svelte';
   import type { FieldSchema } from './types.js';
   import { m } from '$lib/messages/index.js';
 
@@ -287,40 +288,37 @@
             <!-- Action buttons group -->
             <div class="form-array__actions">
               <!-- Move Up button -->
-              <button
-                type="button"
-                class="form-array__action-btn form-array__action-btn--move"
+              <IconButton
+                variant="primary"
                 onclick={() => moveItemUp(index)}
                 disabled={index === 0 || disabled}
-                aria-label={t.moveItemUp({ n: index + 1 })}
+                ariaLabel={t.moveItemUp({ n: index + 1 })}
                 title={t.moveUp}
               >
                 <Icon icon="heroicons:arrow-up" />
-              </button>
+              </IconButton>
 
               <!-- Move Down button -->
-              <button
-                type="button"
-                class="form-array__action-btn form-array__action-btn--move"
+              <IconButton
+                variant="primary"
                 onclick={() => moveItemDown(index)}
                 disabled={index === items.length - 1 || disabled}
-                aria-label={t.moveItemDown({ n: index + 1 })}
+                ariaLabel={t.moveItemDown({ n: index + 1 })}
                 title={t.moveDown}
               >
                 <Icon icon="heroicons:arrow-down" />
-              </button>
+              </IconButton>
 
               <!-- Delete button -->
-              <button
-                type="button"
-                class="form-array__action-btn form-array__action-btn--delete"
+              <IconButton
+                variant="danger"
                 onclick={() => removeItem(index)}
                 disabled={!canRemoveItem || disabled}
-                aria-label={t.deleteItem({ n: index + 1 })}
+                ariaLabel={t.deleteItem({ n: index + 1 })}
                 title={t.delete}
               >
                 <Icon icon="heroicons:trash" />
-              </button>
+              </IconButton>
             </div>
           </div>
 
@@ -692,62 +690,8 @@
     margin-left: auto;
   }
 
-  .form-array__action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    border: 1px solid transparent;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .form-array__action-btn :global(svg) {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .form-array__action-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-
-  /* Move Up/Down buttons - Blue semantic color */
-  .form-array__action-btn--move {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary);
-    color: var(--fd-primary-hover);
-  }
-
-  .form-array__action-btn--move:hover:not(:disabled) {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary-hover);
-    color: var(--fd-primary-hover);
-  }
-
-  .form-array__action-btn--move:active:not(:disabled) {
-    background-color: var(--fd-primary);
-  }
-
-  /* Delete button - Red/Warning semantic color */
-  .form-array__action-btn--delete {
-    background-color: var(--fd-error-muted);
-    border-color: var(--fd-error);
-    color: var(--fd-error);
-  }
-
-  .form-array__action-btn--delete:hover:not(:disabled) {
-    background-color: var(--fd-error-muted);
-    border-color: var(--fd-error-hover);
-    color: var(--fd-error-hover);
-  }
-
-  .form-array__action-btn--delete:active:not(:disabled) {
-    background-color: var(--fd-error);
-  }
+  /* Action buttons (move/delete) now render through IconButton.svelte —
+     geometry + semantic tints live in base.css (.flowdrop-btn--icon*). */
 
   /* ============================================
 	   ITEM CONTENT

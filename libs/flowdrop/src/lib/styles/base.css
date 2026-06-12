@@ -226,6 +226,130 @@ p {
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+   Icon buttons — square, icon-only. The typed primitive IconButton.svelte
+   routes here (the same way Button.svelte routes through .flowdrop-btn). It
+   composes onto .flowdrop-btn, then overrides geometry to a fixed square and
+   layers a tint variant. Corners follow --fd-control-radius so the Drafter
+   theme gets crisp icon buttons alongside its form controls.
+
+   Sizes: md (default) is 32px with a 16px glyph — the dominant size across the
+   library (form-array actions, modal closes, toolbars). sm maps to the
+   canonical --fd-size-icon-btn token (28px); lg is 36px (canvas-scale). */
+.flowdrop-btn--icon {
+  width: 2rem;
+  height: 2rem;
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--fd-control-radius);
+  color: var(--fd-muted-foreground);
+}
+
+.flowdrop-btn--icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.flowdrop-btn--icon.flowdrop-btn--sm {
+  width: var(--fd-size-icon-btn);
+  height: var(--fd-size-icon-btn);
+  padding: 0;
+}
+
+.flowdrop-btn--icon.flowdrop-btn--sm svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.flowdrop-btn--icon.flowdrop-btn--lg {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+}
+
+.flowdrop-btn--icon.flowdrop-btn--lg svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Ghost (default for icon buttons) — transparent until hover. */
+.flowdrop-btn--icon.flowdrop-btn--ghost:hover:not(:disabled) {
+  background-color: var(--fd-muted);
+  color: var(--fd-foreground);
+  border-color: transparent;
+}
+
+/* Default — flat --fd-background surface with a resting border. */
+.flowdrop-btn--icon-default {
+  background-color: var(--fd-background);
+  border-color: var(--fd-border);
+}
+
+.flowdrop-btn--icon-default:hover:not(:disabled) {
+  background-color: var(--fd-muted);
+  color: var(--fd-foreground);
+}
+
+/* Tinted semantic variants — muted fill + semantic border/text, solid on press.
+   Unlike the solid text-button --primary, the icon flavour stays a quiet tint
+   so a row of action buttons reads as a group, not a wall of colour. */
+.flowdrop-btn--icon-primary {
+  background-color: var(--fd-primary-muted);
+  border-color: var(--fd-primary);
+  color: var(--fd-primary-hover);
+}
+
+.flowdrop-btn--icon-primary:hover:not(:disabled) {
+  border-color: var(--fd-primary-hover);
+  color: var(--fd-primary-hover);
+}
+
+.flowdrop-btn--icon-primary:active:not(:disabled) {
+  background-color: var(--fd-primary);
+}
+
+.flowdrop-btn--icon-danger {
+  background-color: var(--fd-error-muted);
+  border-color: var(--fd-error);
+  color: var(--fd-error);
+}
+
+.flowdrop-btn--icon-danger:hover:not(:disabled) {
+  border-color: var(--fd-error-hover);
+  color: var(--fd-error-hover);
+}
+
+.flowdrop-btn--icon-danger:active:not(:disabled) {
+  background-color: var(--fd-error);
+}
+
+.flowdrop-btn--icon-success {
+  background-color: var(--fd-success-muted);
+  border-color: var(--fd-success);
+  color: var(--fd-success);
+}
+
+.flowdrop-btn--icon-success:hover:not(:disabled) {
+  border-color: var(--fd-success-hover);
+  color: var(--fd-success-hover);
+}
+
+.flowdrop-btn--icon-success:active:not(:disabled) {
+  background-color: var(--fd-success);
+}
+
+/* Active / toggled state (e.g. a pressed canvas control) — primary tint. */
+.flowdrop-btn--icon.is-active {
+  color: var(--fd-primary);
+  background-color: var(--fd-primary-muted);
+  border-color: var(--fd-primary);
+}
+
+.flowdrop-btn--icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
    Form controls — THE single source of truth for input/select/textarea look.
 
    The typed primitives Input.svelte / Select.svelte / Textarea.svelte route
