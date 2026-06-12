@@ -430,7 +430,7 @@ const authProvider = new CallbackAuthProvider({
 });
 ```
 
-See [API Documentation](https://flowdrop-io.github.io/flowdrop/) for full REST API specification.
+See [API Documentation](https://flowdrop.mintlify.app/api-reference/introduction) for full REST API specification.
 
 ---
 
@@ -494,4 +494,4 @@ svelte-5-french-toast is themed via design tokens:
 | `docs/configEdit-feature.md`                 | Dynamic config editing          |
 | `docs/interrupt-feature.md`                  | Human-in-the-Loop interrupts    |
 
-[api-docs]: https://flowdrop-io.github.io/flowdrop/
+[api-docs]: https://flowdrop.mintlify.app/api-reference/introduction

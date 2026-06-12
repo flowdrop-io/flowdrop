@@ -648,6 +648,6 @@ import {
 
 ## See Also
 
-- [API Documentation](https://flowdrop-io.github.io/flowdrop/) - REST API documentation (GitHub Pages)
+- [API Documentation](https://flowdrop.mintlify.app/api-reference/introduction) - REST API reference (Mintlify)
 - [api/v1/openapi.yaml](../api/v1/openapi.yaml) - OpenAPI specification
 - [configEdit-feature.md](./configEdit-feature.md) - Dynamic configuration editing

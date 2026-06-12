@@ -158,11 +158,12 @@ The API spec is validated in CI:
 
 ## Hosted Documentation
 
-API documentation is automatically deployed to GitHub Pages on every push to `main`:
+The API reference is rendered natively from this OpenAPI spec by the unified
+Mintlify docs site:
 
-**https://flowdrop-io.github.io/flowdrop/**
+**https://flowdrop.mintlify.app/api-reference/introduction**
 
-The docs are built using [Redoc](https://redocly.com/redoc/) and include:
+The hosted reference includes:
 
 - Interactive endpoint explorer
 - Schema documentation
@@ -172,4 +173,4 @@ The docs are built using [Redoc](https://redocly.com/redoc/) and include:
 
 - [OpenAPI 3.0 Specification](https://spec.openapis.org/oas/v3.0.3)
 - [Redocly Configuration](https://redocly.com/docs/cli/configuration/)
-- [FlowDrop API Documentation](https://flowdrop-io.github.io/flowdrop/)
+- [FlowDrop API Documentation](https://flowdrop.mintlify.app/api-reference/introduction)

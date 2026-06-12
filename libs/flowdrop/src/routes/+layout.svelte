@@ -200,7 +200,7 @@
         },
         {
           label: 'API Docs',
-          href: 'https://flowdrop-io.github.io/flowdrop/',
+          href: 'https://flowdrop.mintlify.app/api-reference/introduction',
           icon: 'mdi:api',
           variant: 'outline' as const,
           external: true
@@ -471,7 +471,7 @@
       },
       {
         label: 'API Docs',
-        href: 'https://flowdrop-io.github.io/flowdrop/',
+        href: 'https://flowdrop.mintlify.app/api-reference/introduction',
         icon: 'mdi:api',
         variant: 'outline' as const,
         external: true

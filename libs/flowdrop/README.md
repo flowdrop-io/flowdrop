@@ -23,10 +23,10 @@
 </p>
 
 <p align="center">
-  <a href="https://docs.flowdrop.io/getting-started/installation">Quickstart</a> •
+  <a href="https://flowdrop.mintlify.app/docs/quickstart">Quickstart</a> •
   <a href="#features">Features</a> •
   <a href="#integration">Integration</a> •
-  <a href="https://docs.flowdrop.io">Docs</a>
+  <a href="https://flowdrop.mintlify.app">Docs</a>
 </p>
 
 <p align="center">
@@ -139,7 +139,7 @@ Every user-facing string flows through a typed `Messages` tree. Pass a callback 
 <App messages={() => ({ form: { schema: { save: 'Apply' } } })} />
 ```
 
-Wire the callback to your i18n library (paraglide-js, sveltekit-i18n, etc.) — locale changes propagate automatically. See the [i18n & Custom Messages guide](https://docs.flowdrop.io/guides/i18n) for the full shape and a paraglide-js worked example.
+Wire the callback to your i18n library (paraglide-js, sveltekit-i18n, etc.) — locale changes propagate automatically. See the [i18n & Custom Messages guide](https://flowdrop.mintlify.app/guides/i18n) for the full shape and a paraglide-js worked example.
 
 ## Sub-Module Exports
 
@@ -283,8 +283,8 @@ Runtime configuration means you build once and deploy to staging, production, or
 
 | Resource                                                                                     | Description              |
 | -------------------------------------------------------------------------------------------- | ------------------------ |
-| [QUICK_START.md](https://docs.flowdrop.io/getting-started/installation/)                     | Get running in 5 minutes |
-| [API Documentation](https://api.flowdrop.io/v1/)                                             | REST API specification   |
+| [QUICK_START.md](https://flowdrop.mintlify.app/docs/quickstart)                              | Get running in 5 minutes |
+| [API Documentation](https://flowdrop.mintlify.app/api-reference/introduction)                | REST API specification   |
 | [CHANGELOG.md](https://github.com/flowdrop-io/flowdrop/blob/main/libs/flowdrop/CHANGELOG.md) | Version history          |
 
 ## Development

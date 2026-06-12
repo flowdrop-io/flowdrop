@@ -4,9 +4,16 @@
 > (`.docs/`), which renders the OpenAPI spec natively. See
 > [ARCHIVED.md](./ARCHIVED.md).
 
-Static API documentation site for FlowDrop, built with [Redocly](https://redocly.com/) from the OpenAPI specification. Supports multiple API versions.
+Formerly the static API documentation site for FlowDrop, built with [Redocly](https://redocly.com/) from the OpenAPI specification. The hosted site is retired — the live API reference now lives on the Mintlify docs site.
 
-**Live docs:** [flowdrop-io.github.io/flowdrop](https://flowdrop-io.github.io/flowdrop/)
+**Live API reference:** [flowdrop.mintlify.app/api-reference/introduction](https://flowdrop.mintlify.app/api-reference/introduction)
+
+> **Why this directory is kept:** only the _rendering_ moved to Mintlify. The
+> `scripts/{lint,bundle}.mjs` here (via `@redocly/cli`) are still the OpenAPI
+> lint/bundle tooling behind `libs/flowdrop`'s `api:lint` / `api:bundle` scripts
+> and the `api-lint` CI workflow. The spec source stays canonical at
+> `libs/flowdrop/api/v1/`. Don't add new doc content here — see
+> [ARCHIVED.md](./ARCHIVED.md).
 
 ## API Versions
 

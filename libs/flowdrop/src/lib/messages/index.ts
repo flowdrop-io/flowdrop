@@ -2,7 +2,7 @@
  * Messages module — typed, overridable, translation-ready user-facing strings.
  *
  * See `./defaults.ts` for the canonical shape, `./context.ts` for the runtime
- * plumbing, and the i18n guide in `apps/docs` for consumer recipes.
+ * plumbing, and the i18n guide in the docs site (`.docs/`) for consumer recipes.
  */
 
 export { defaultMessages } from './defaults.js';
