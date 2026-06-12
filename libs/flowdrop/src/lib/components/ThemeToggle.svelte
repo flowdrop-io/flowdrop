@@ -1,12 +1,15 @@
 <!--
   Theme Toggle Component
-  A button that cycles through light, dark, and auto theme modes
-  Displays appropriate icon for current theme state
-  Styled with BEM syntax
+  A button that cycles through light, dark, and auto theme modes.
+  Displays the icon for the current theme state.
+
+  Built on the shared Button primitive so it stays visually and dimensionally
+  aligned with every other control (height, focus ring, hover) for free.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from './Button.svelte';
   import { getTheme, getResolvedTheme, cycleTheme } from '../stores/settingsStore.svelte.js';
   import type { ThemePreference } from '../types/settings.js';
 
@@ -47,7 +50,7 @@
   }
 
   /**
-   * Get accessible label for the current theme
+   * Get the label text for the current theme
    */
   const themeLabel = $derived(getThemeLabel(getTheme()));
 
@@ -80,100 +83,23 @@
     const next = currentTheme === 'light' ? 'Dark' : 'Auto';
     return `Theme: ${currentTheme === 'light' ? 'Light' : 'Dark'}. Click to switch to ${next}`;
   }
-
-  /**
-   * Handle click to cycle theme
-   */
-  function handleClick(): void {
-    cycleTheme();
-  }
-
-  /**
-   * Handle keyboard events for accessibility
-   */
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      cycleTheme();
-    }
-  }
 </script>
 
-<button
-  class="flowdrop-theme-toggle flowdrop-theme-toggle--{size} {className}"
-  onclick={handleClick}
-  onkeydown={handleKeydown}
+<Button
+  variant="outline"
+  {size}
+  class={className}
   title={tooltipText}
-  aria-label={tooltipText}
-  type="button"
+  ariaLabel={tooltipText}
+  onclick={cycleTheme}
 >
-  <span class="flowdrop-theme-toggle__icon">
-    <Icon icon={themeIcon} />
-  </span>
+  <Icon icon={themeIcon} />
   {#if showLabel}
     <span class="flowdrop-theme-toggle__label">{themeLabel}</span>
   {/if}
-</button>
+</Button>
 
 <style>
-  .flowdrop-theme-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-xs);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
-    cursor: pointer;
-    transition: all var(--fd-transition-normal);
-    font-family: inherit;
-  }
-
-  .flowdrop-theme-toggle:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
-  }
-
-  .flowdrop-theme-toggle:active {
-    transform: scale(0.98);
-  }
-
-  /* Size variants */
-  .flowdrop-theme-toggle--sm {
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
-    font-size: var(--fd-text-xs);
-  }
-
-  .flowdrop-theme-toggle--sm .flowdrop-theme-toggle__icon {
-    font-size: var(--fd-text-sm);
-  }
-
-  .flowdrop-theme-toggle--md {
-    padding: var(--fd-space-xs) var(--fd-space-md);
-    font-size: var(--fd-text-sm);
-  }
-
-  .flowdrop-theme-toggle--md .flowdrop-theme-toggle__icon {
-    font-size: var(--fd-text-base);
-  }
-
-  .flowdrop-theme-toggle--lg {
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    font-size: var(--fd-text-base);
-  }
-
-  .flowdrop-theme-toggle--lg .flowdrop-theme-toggle__icon {
-    font-size: var(--fd-text-lg);
-  }
-
-  .flowdrop-theme-toggle__icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-  }
-
   .flowdrop-theme-toggle__label {
     font-weight: 500;
   }

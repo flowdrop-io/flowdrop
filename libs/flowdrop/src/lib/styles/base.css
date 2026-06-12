@@ -149,6 +149,7 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--fd-space-xs);
   padding: var(--fd-space-xs) var(--fd-space-xl);
   border: 1px solid transparent;
   border-radius: var(--fd-radius-md);
