@@ -7,6 +7,7 @@
 -->
 
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import Icon from '@iconify/svelte';
   import LogoWordmark from './LogoWordmark.svelte';
   import SettingsModal from './SettingsModal.svelte';
@@ -37,6 +38,8 @@
     showSettingsSyncButton?: boolean;
     /** Show the reset buttons in the settings modal */
     showSettingsResetButton?: boolean;
+    /** Custom content rendered in the trailing (right) region, before the settings gear */
+    end?: Snippet;
   }
 
   let {
@@ -47,7 +50,8 @@
     showSettings = true,
     settingsCategories,
     showSettingsSyncButton,
-    showSettingsResetButton
+    showSettingsResetButton,
+    end
   }: Props = $props();
 
   // Dropdown state
@@ -271,6 +275,7 @@
   </div>
 
   <div class="flowdrop-navbar__end">
+    {@render end?.()}
     {#if showSettings}
       <button
         class="flowdrop-navbar__settings-btn"
@@ -519,7 +524,7 @@
     transition: all var(--fd-transition-normal);
     font-weight: 500;
     font-size: var(--fd-text-sm);
-    height: 2.5rem;
+    height: var(--fd-size-btn-min);
     box-sizing: border-box;
     background-color: var(--fd-background);
     color: var(--fd-foreground);
@@ -535,7 +540,7 @@
     position: relative;
     display: flex;
     align-items: center;
-    height: 2.5rem;
+    height: var(--fd-size-btn-min);
   }
 
   .flowdrop-navbar__dropdown-trigger {
@@ -543,7 +548,7 @@
     align-items: center;
     justify-content: center;
     width: 2rem;
-    height: 2.5rem;
+    height: var(--fd-size-btn-min);
     border: 1px solid var(--fd-border-strong);
     border-left: none;
     border-radius: 0 var(--fd-radius-md) var(--fd-radius-md) 0;
