@@ -38,8 +38,8 @@ info:
     url: https://www.drupal.org/project/issues/flowdrop?categories=All
 
 servers:
-  - url: http://localhost:5173/api/flowdrop
-    description: Local development server (Svelte)
+  - url: http://localhost:7104/api/flowdrop
+    description: Local development server
   - url: https://flowdrop.ddev.site/api/flowdrop
     description: Local Drupal server
 
