@@ -7,6 +7,7 @@
 <script lang="ts">
   import type { NodeMetadata, NodeCategory, WorkflowFormat } from '../types/index.js';
   import LoadingSpinner from './LoadingSpinner.svelte';
+  import Input from './Input.svelte';
   import Icon from '@iconify/svelte';
   import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
   import { getCategoryColorToken } from '../utils/colors.js';
@@ -161,19 +162,17 @@
 >
   <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
   <div class="flowdrop-sidebar__search">
-    <div class="flowdrop-join flowdrop-w--full">
-      <div class="flowdrop-join__item flowdrop-flex--1">
-        <input
-          type="text"
-          placeholder={m().layout.searchComponents}
-          class="flowdrop-input flowdrop-join__item flowdrop-w--full"
-          bind:value={searchInput}
-        />
-      </div>
-      <button class="flowdrop-btn flowdrop-join__item" aria-label={m().layout.searchComponents}>
-        <Icon icon="mdi:magnify" class="flowdrop-icon" />
-      </button>
-    </div>
+    <Input
+      type="text"
+      placeholder={m().layout.searchComponents}
+      aria-label={m().layout.searchComponents}
+      value={searchInput}
+      oninput={(e) => (searchInput = e.currentTarget.value)}
+    >
+      {#snippet leading()}
+        <Icon icon="mdi:magnify" />
+      {/snippet}
+    </Input>
   </div>
 
   <!-- Node Types List -->
@@ -594,106 +593,9 @@
     margin-left: 0;
   }
 
-  /* Form Elements - Matching App Design System */
-  .flowdrop-input {
-    padding: 0.625rem 0.75rem;
-    border: 1px solid var(--fd-border-strong);
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    transition:
-      border-color var(--fd-transition-normal),
-      box-shadow var(--fd-transition-normal);
-    width: 100%;
-    height: 2.5rem;
-    box-sizing: border-box;
-  }
-
-  .flowdrop-input:focus {
-    border-color: var(--fd-ring);
-  }
-
-  .flowdrop-input::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-btn {
-    padding: 0.625rem 0.75rem;
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-normal);
-    border: 1px solid var(--fd-border-strong);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
-    height: 2.5rem;
-    min-width: 2.5rem;
-    box-sizing: border-box;
-  }
-
-  .flowdrop-btn:hover {
-    background-color: var(--fd-subtle);
-    border-color: var(--fd-border-strong);
-  }
-
-  .flowdrop-btn:active {
-    background-color: var(--fd-border);
-    border-color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-btn:disabled {
-    background-color: var(--fd-muted-foreground);
-    border-color: var(--fd-muted-foreground);
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  /* Join component styles - Seamless integration */
-  .flowdrop-join {
-    display: flex;
-    width: 100%;
-    border-radius: var(--fd-radius-md);
-    overflow: hidden;
-    border: 1px solid var(--fd-border-strong);
-    background-color: var(--fd-background);
-  }
-
-  .flowdrop-join__item {
-    border: none;
-    border-radius: 0;
-    background-color: transparent;
-  }
-
-  .flowdrop-join__item:first-child {
-    border-right: 1px solid var(--fd-border-strong);
-    flex: 1;
-  }
-
-  .flowdrop-join__item:last-child {
-    border-left: none;
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
-  }
-
-  .flowdrop-join__item:last-child:hover {
-    background-color: var(--fd-subtle);
-  }
-
-  .flowdrop-join:focus-within {
-    border-color: var(--fd-ring);
-  }
+  /* Search field renders through the shared Input primitive (base.css). */
 
   /* Utility classes */
-  .flowdrop-w--full {
-    width: 100%;
-  }
-
   .flowdrop-flex--1 {
     flex: 1;
   }

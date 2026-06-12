@@ -9,6 +9,8 @@
 -->
 
 <script lang="ts">
+  import Textarea from '../Textarea.svelte';
+
   interface Props {
     /** Field identifier */
     id: string;
@@ -48,9 +50,8 @@
   }
 </script>
 
-<textarea
+<Textarea
   {id}
-  class="form-textarea"
   value={value ?? ''}
   {placeholder}
   {rows}
@@ -58,44 +59,4 @@
   aria-describedby={ariaDescribedBy}
   aria-required={required}
   oninput={handleInput}
-></textarea>
-
-<style>
-  .form-textarea {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-sm);
-    font-family: inherit;
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    transition: all var(--fd-transition-normal);
-    box-shadow: var(--fd-shadow-sm);
-    resize: vertical;
-    min-height: 5rem;
-    line-height: 1.5;
-  }
-
-  .form-textarea::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .form-textarea:hover {
-    border-color: var(--fd-border-strong);
-    background-color: var(--fd-background);
-  }
-
-  .form-textarea:focus {
-    border-color: var(--fd-ring);
-    background-color: var(--fd-background);
-  }
-
-  .form-textarea:disabled {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-muted);
-    color: var(--fd-muted-foreground);
-    cursor: not-allowed;
-    opacity: 1;
-  }
-</style>
+/>

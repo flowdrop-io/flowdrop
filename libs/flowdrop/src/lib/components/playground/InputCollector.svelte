@@ -8,6 +8,9 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Input from '../Input.svelte';
+  import Select from '../Select.svelte';
+  import Textarea from '../Textarea.svelte';
   import { slide } from 'svelte/transition';
   import type { PlaygroundInputField } from '../../types/playground.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
@@ -171,9 +174,8 @@
 
               {#if hasEnumOptions(field)}
                 <!-- Select for enum fields -->
-                <select
+                <Select
                   id="input-{field.nodeId}-{field.fieldId}"
-                  class="input-collector__select"
                   value={getValue(field)}
                   onchange={(e) => updateValue(field, e.currentTarget.value)}
                 >
@@ -181,17 +183,16 @@
                   {#each field.schema?.enum ?? [] as option (option)}
                     <option value={String(option)}>{option}</option>
                   {/each}
-                </select>
+                </Select>
               {:else if getInputType(field) === 'textarea'}
                 <!-- Textarea for multiline -->
-                <textarea
+                <Textarea
                   id="input-{field.nodeId}-{field.fieldId}"
-                  class="input-collector__textarea"
                   placeholder={field.schema?.description ?? `Enter ${field.label}`}
                   value={String(getValue(field) ?? '')}
                   oninput={(e) => updateValue(field, e.currentTarget.value)}
-                  rows="3"
-                ></textarea>
+                  rows={3}
+                />
               {:else if getInputType(field) === 'checkbox'}
                 <!-- Checkbox for boolean -->
                 <label class="input-collector__checkbox-wrapper">
@@ -208,10 +209,10 @@
                 </label>
               {:else if getInputType(field) === 'number'}
                 <!-- Number input -->
-                <input
+                <Input
                   id="input-{field.nodeId}-{field.fieldId}"
                   type="number"
-                  class="input-collector__input"
+                  class="flowdrop-input--numeric"
                   placeholder={field.schema?.description ?? `Enter ${field.label}`}
                   value={Number(getValue(field) ?? 0)}
                   min={field.schema?.minimum}
@@ -220,10 +221,9 @@
                 />
               {:else}
                 <!-- Text input (default) -->
-                <input
+                <Input
                   id="input-{field.nodeId}-{field.fieldId}"
                   type="text"
-                  class="input-collector__input"
                   placeholder={field.schema?.description ?? `Enter ${field.label}`}
                   value={String(getValue(field) ?? '')}
                   oninput={(e) => updateValue(field, e.currentTarget.value)}
@@ -349,41 +349,6 @@
 
   .input-collector__required {
     color: var(--fd-error);
-  }
-
-  .input-collector__input,
-  .input-collector__select,
-  .input-collector__textarea {
-    padding: var(--fd-space-xs) var(--fd-space-md);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-sm);
-    font-family: inherit;
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    transition:
-      border-color var(--fd-transition-normal),
-      box-shadow var(--fd-transition-normal);
-  }
-
-  .input-collector__input:focus,
-  .input-collector__select:focus,
-  .input-collector__textarea:focus {
-    border-color: var(--fd-primary);
-  }
-
-  .input-collector__input::placeholder,
-  .input-collector__textarea::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .input-collector__textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-
-  .input-collector__select {
-    cursor: pointer;
   }
 
   .input-collector__checkbox-wrapper {

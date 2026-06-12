@@ -253,6 +253,12 @@
   --fd-radius-2xl: 1rem; /* @public  16px */
   --fd-radius-full: 9999px; /* @public */
 
+  /* Corner radius shared by form controls (input/select/textarea) and their
+     group containers (array item boxes, fieldsets, checkbox groups, config
+     sections). Defaults to --fd-radius-lg; themes can tighten it independently
+     of cards/panels — e.g. Drafter sets 2px for crisp drafting corners. */
+  --fd-control-radius: var(--fd-radius-lg); /* @public */
+
   /* ----- SHADOWS (Refined layered shadows for modern depth) ----- */
   --fd-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06); /* @public */
   --fd-shadow-md: 0 4px 8px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.04); /* @public */

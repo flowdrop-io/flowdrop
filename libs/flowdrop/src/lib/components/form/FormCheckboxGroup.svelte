@@ -86,7 +86,7 @@
     padding: 0.75rem;
     background-color: var(--fd-muted);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
   }
 
   .form-checkbox-item {

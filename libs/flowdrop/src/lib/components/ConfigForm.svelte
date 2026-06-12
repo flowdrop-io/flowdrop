@@ -1044,7 +1044,7 @@
     justify-content: center;
     gap: var(--fd-space-xs);
     padding: 0.625rem var(--fd-space-xl);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     font-size: var(--fd-text-sm);
     font-weight: 600;
     font-family: inherit;
@@ -1100,7 +1100,7 @@
   .config-form__extensions {
     background-color: var(--fd-muted);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
     margin-top: var(--fd-space-xs);
   }
@@ -1271,7 +1271,7 @@
   .config-form__debug {
     background-color: var(--fd-warning-muted);
     border: 1px solid var(--fd-warning);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
   }
 
@@ -1425,7 +1425,7 @@
   .config-form__error {
     background-color: var(--fd-error-muted);
     border: 1px solid var(--fd-error);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
   }
 

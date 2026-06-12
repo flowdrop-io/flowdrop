@@ -225,35 +225,152 @@ p {
   min-height: var(--fd-space-6xl);
 }
 
-/* Input styles */
+/* ───────────────────────────────────────────────────────────────────────────
+   Form controls — THE single source of truth for input/select/textarea look.
+
+   The typed primitives Input.svelte / Select.svelte / Textarea.svelte route
+   here (the same way Button.svelte routes through .flowdrop-btn) so every field
+   across the library — config form, sidebar search, playground, prompts —
+   renders identically. Resting fields are ALWAYS the flat --fd-background
+   surface; `:disabled` is the ONLY muted state. Components must not re-declare
+   control backgrounds/borders locally. */
 .flowdrop-input {
   display: block;
   width: 100%;
-  padding: var(--fd-space-xs) var(--fd-space-md);
+  padding: 0.625rem 0.875rem;
   border: 1px solid var(--fd-border);
-  border-radius: var(--fd-radius-md);
+  border-radius: var(--fd-control-radius);
   font-size: var(--fd-text-sm);
+  font-family: inherit;
   line-height: 1.25rem;
   color: var(--fd-foreground);
   background-color: var(--fd-background);
+  box-shadow: var(--fd-shadow-sm);
   transition:
     border-color var(--fd-transition-normal),
     box-shadow var(--fd-transition-normal);
 }
 
+.flowdrop-input::placeholder {
+  color: var(--fd-muted-foreground);
+}
+
 /* Active-field hint only; the focus ring itself is centralized (top of file). */
+.flowdrop-input:hover:not(:disabled):not(:focus) {
+  border-color: var(--fd-border-strong);
+}
+
 .flowdrop-input:focus {
   border-color: var(--fd-ring);
 }
 
+.flowdrop-input:disabled {
+  background-color: var(--fd-muted);
+  border-color: var(--fd-border-muted);
+  color: var(--fd-muted-foreground);
+  cursor: not-allowed;
+}
+
+/* Invalid keeps its error border even on hover. */
+.flowdrop-input--invalid,
+.flowdrop-input--invalid:hover:not(:disabled) {
+  border-color: var(--fd-error);
+}
+
+/* Sizes */
 .flowdrop-input--sm {
-  padding: var(--fd-space-2xs) var(--fd-space-xs);
+  padding: 0.375rem 0.625rem;
   font-size: var(--fd-text-xs);
 }
 
 .flowdrop-input--lg {
-  padding: var(--fd-space-md) var(--fd-space-xl);
+  padding: 0.75rem 1rem;
   font-size: var(--fd-text-base);
+}
+
+/* Tabular figures for numeric entry (aligned digits). */
+.flowdrop-input--numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Multiline */
+.flowdrop-input--textarea {
+  min-height: 5rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+/* Select: room for the chevron overlay; native arrow removed. */
+.flowdrop-input--select {
+  padding-right: 2.5rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Select shell carries the chevron; the <select> keeps the field look. */
+.flowdrop-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.flowdrop-select-wrap__icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  pointer-events: none;
+  color: var(--fd-muted-foreground);
+  transition: color var(--fd-transition-fast);
+}
+
+.flowdrop-select-wrap:focus-within .flowdrop-select-wrap__icon {
+  color: var(--fd-primary);
+}
+
+.flowdrop-select-wrap__icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Input with a leading/trailing affordance (e.g. a search magnifier). */
+.flowdrop-input-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.flowdrop-input-wrap__icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  color: var(--fd-muted-foreground);
+}
+
+.flowdrop-input-wrap__icon--leading {
+  left: 0.75rem;
+}
+
+.flowdrop-input-wrap__icon--trailing {
+  right: 0.75rem;
+}
+
+.flowdrop-input-wrap__icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.flowdrop-input--has-leading {
+  padding-left: 2.25rem;
+}
+
+.flowdrop-input--has-trailing {
+  padding-right: 2.25rem;
 }
 
 /* Card styles */

@@ -9,7 +9,7 @@
 -->
 
 <script lang="ts">
-  import Icon from '@iconify/svelte';
+  import Select from '../Select.svelte';
   import { normalizeOptions, type FieldOption } from './types.js';
 
   interface Props {
@@ -53,81 +53,15 @@
   }
 </script>
 
-<div class="form-select-wrapper">
-  <select
-    {id}
-    class="form-select"
-    value={value ?? ''}
-    {disabled}
-    aria-describedby={ariaDescribedBy}
-    aria-required={required}
-    onchange={handleChange}
-  >
-    {#each normalizedOptions as option (option.value)}
-      <option value={option.value}>{option.label}</option>
-    {/each}
-  </select>
-  <span class="form-select__icon" aria-hidden="true">
-    <Icon icon="heroicons:chevron-down" />
-  </span>
-</div>
-
-<style>
-  .form-select-wrapper {
-    position: relative;
-  }
-
-  .form-select {
-    width: 100%;
-    padding: 0.625rem 2.5rem 0.625rem 0.875rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-sm);
-    font-family: inherit;
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    transition: all var(--fd-transition-normal);
-    box-shadow: var(--fd-shadow-sm);
-    cursor: pointer;
-    appearance: none;
-  }
-
-  .form-select:hover {
-    border-color: var(--fd-border-strong);
-    background-color: var(--fd-background);
-  }
-
-  .form-select:focus {
-    border-color: var(--fd-ring);
-    background-color: var(--fd-background);
-  }
-
-  .form-select:disabled {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-muted);
-    color: var(--fd-muted-foreground);
-    cursor: not-allowed;
-    opacity: 1;
-  }
-
-  .form-select__icon {
-    position: absolute;
-    right: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: var(--fd-muted-foreground);
-    display: flex;
-    align-items: center;
-    transition: color var(--fd-transition-normal);
-  }
-
-  .form-select__icon :global(svg) {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .form-select:focus + .form-select__icon {
-    color: var(--fd-primary);
-  }
-</style>
+<Select
+  {id}
+  value={value ?? ''}
+  {disabled}
+  aria-describedby={ariaDescribedBy}
+  aria-required={required}
+  onchange={handleChange}
+>
+  {#each normalizedOptions as option (option.value)}
+    <option value={option.value}>{option.label}</option>
+  {/each}
+</Select>

@@ -9,6 +9,8 @@
 -->
 
 <script lang="ts">
+  import Input from '../Input.svelte';
+
   interface Props {
     /** Field identifier */
     id: string;
@@ -62,10 +64,10 @@
   }
 </script>
 
-<input
+<Input
   {id}
   type="number"
-  class="form-number-field"
+  class="flowdrop-input--numeric"
   value={value ?? ''}
   {placeholder}
   {min}
@@ -76,33 +78,3 @@
   aria-required={required}
   oninput={handleInput}
 />
-
-<style>
-  .form-number-field {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-sm);
-    font-family: inherit;
-    font-variant-numeric: tabular-nums;
-    color: var(--fd-foreground);
-    background-color: var(--fd-muted);
-    transition: all var(--fd-transition-normal);
-    box-shadow: var(--fd-shadow-sm);
-  }
-
-  .form-number-field::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .form-number-field:hover {
-    border-color: var(--fd-border-strong);
-    background-color: var(--fd-background);
-  }
-
-  .form-number-field:focus {
-    border-color: var(--fd-primary);
-    background-color: var(--fd-background);
-  }
-</style>

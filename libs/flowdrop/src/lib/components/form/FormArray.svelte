@@ -19,6 +19,9 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Input from '../Input.svelte';
+  import Select from '../Select.svelte';
+  import Textarea from '../Textarea.svelte';
   import type { FieldSchema } from './types.js';
   import { m } from '$lib/messages/index.js';
 
@@ -330,18 +333,16 @@
               <!-- Simple type: render inline input -->
               {#if itemSchema.type === 'string'}
                 {#if itemSchema.format === 'multiline'}
-                  <textarea
-                    class="form-array__input form-array__textarea"
+                  <Textarea
                     value={String(item ?? '')}
                     placeholder={itemSchema.placeholder ?? ''}
                     rows={3}
                     oninput={(e) => updateItem(index, e.currentTarget.value)}
                     {disabled}
-                  ></textarea>
+                  />
                 {:else}
-                  <input
+                  <Input
                     type="text"
-                    class="form-array__input"
                     value={String(item ?? '')}
                     placeholder={itemSchema.placeholder ?? ''}
                     oninput={(e) => updateItem(index, e.currentTarget.value)}
@@ -349,9 +350,9 @@
                   />
                 {/if}
               {:else if itemSchema.type === 'number' || itemSchema.type === 'integer'}
-                <input
+                <Input
                   type="number"
-                  class="form-array__input form-array__input--number"
+                  class="flowdrop-input--numeric"
                   value={item as number}
                   placeholder={itemSchema.placeholder ?? ''}
                   min={itemSchema.minimum}
@@ -380,8 +381,7 @@
                 </label>
               {:else if itemSchema.enum}
                 <!-- Enum: render select -->
-                <select
-                  class="form-array__select"
+                <Select
                   value={String(item ?? '')}
                   onchange={(e) => updateItem(index, e.currentTarget.value)}
                   {disabled}
@@ -389,12 +389,11 @@
                   {#each itemSchema.enum as option (option)}
                     <option value={String(option)}>{String(option)}</option>
                   {/each}
-                </select>
+                </Select>
               {:else}
                 <!-- Fallback to text -->
-                <input
+                <Input
                   type="text"
-                  class="form-array__input"
                   value={String(item ?? '')}
                   placeholder={itemSchema.placeholder ?? ''}
                   oninput={(e) => updateItem(index, e.currentTarget.value)}
@@ -425,9 +424,8 @@
 
                       <div class="form-array__subform-input">
                         {#if propFieldSchema.enum}
-                          <select
+                          <Select
                             id="{id}-{index}-{propKey}"
-                            class="form-array__select"
                             value={String(propValue ?? '')}
                             onchange={(e) =>
                               updateObjectProperty(index, propKey, e.currentTarget.value)}
@@ -436,23 +434,21 @@
                             {#each propFieldSchema.enum as option (option)}
                               <option value={String(option)}>{String(option)}</option>
                             {/each}
-                          </select>
+                          </Select>
                         {:else if propFieldSchema.type === 'string' && propFieldSchema.format === 'multiline'}
-                          <textarea
+                          <Textarea
                             id="{id}-{index}-{propKey}"
-                            class="form-array__input form-array__textarea"
                             value={String(propValue ?? '')}
                             placeholder={propFieldSchema.placeholder ?? ''}
                             rows={3}
                             oninput={(e) =>
                               updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
-                          ></textarea>
+                          />
                         {:else if propFieldSchema.type === 'string'}
-                          <input
+                          <Input
                             id="{id}-{index}-{propKey}"
                             type="text"
-                            class="form-array__input"
                             value={String(propValue ?? '')}
                             placeholder={propFieldSchema.placeholder ?? ''}
                             oninput={(e) =>
@@ -460,10 +456,10 @@
                             {disabled}
                           />
                         {:else if propFieldSchema.type === 'number' || propFieldSchema.type === 'integer'}
-                          <input
+                          <Input
                             id="{id}-{index}-{propKey}"
                             type="number"
-                            class="form-array__input form-array__input--number"
+                            class="flowdrop-input--numeric"
                             value={propValue as number}
                             placeholder={propFieldSchema.placeholder ?? ''}
                             min={propFieldSchema.minimum}
@@ -493,10 +489,9 @@
                             </span>
                           </label>
                         {:else}
-                          <input
+                          <Input
                             id="{id}-{index}-{propKey}"
                             type="text"
-                            class="form-array__input"
                             value={String(propValue ?? '')}
                             placeholder={propFieldSchema.placeholder ?? ''}
                             oninput={(e) =>
@@ -596,7 +591,7 @@
     flex-direction: column;
     background-color: var(--fd-muted);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
     animation: itemFadeIn 0.25s ease-out forwards;
     opacity: 0;
@@ -772,65 +767,6 @@
 	   INPUTS (Simple Types)
 	   ============================================ */
 
-  .form-array__input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    font-family: inherit;
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    transition: all var(--fd-transition-normal);
-  }
-
-  .form-array__input::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .form-array__input:hover {
-    border-color: var(--fd-border-strong);
-  }
-
-  .form-array__input:focus {
-    border-color: var(--fd-primary);
-  }
-
-  .form-array__input--number {
-    font-variant-numeric: tabular-nums;
-  }
-
-  .form-array__textarea {
-    resize: vertical;
-    min-height: 4rem;
-    line-height: 1.5;
-  }
-
-  .form-array__select {
-    width: 100%;
-    padding: 0.5rem 2rem 0.5rem 0.75rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    font-family: inherit;
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 1rem;
-  }
-
-  .form-array__select:hover {
-    border-color: var(--fd-border-strong);
-  }
-
-  .form-array__select:focus {
-    border-color: var(--fd-primary);
-  }
-
   /* ============================================
 	   TOGGLE (Boolean in Array)
 	   ============================================ */
@@ -947,7 +883,7 @@
     padding: 2rem 1rem;
     background-color: var(--fd-muted);
     border: 2px dashed var(--fd-border-strong);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
   }
 
   .form-array__empty :global(svg) {
@@ -975,7 +911,7 @@
     gap: 0.5rem;
     padding: 0.625rem 1rem;
     border: 1px solid var(--fd-success);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     background-color: var(--fd-success-muted);
     color: var(--fd-success-hover);
     font-size: 0.8125rem;

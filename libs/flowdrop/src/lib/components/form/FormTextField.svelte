@@ -9,6 +9,8 @@
 -->
 
 <script lang="ts">
+  import Input from '../Input.svelte';
+
   interface Props {
     /** Field identifier */
     id: string;
@@ -45,10 +47,9 @@
   }
 </script>
 
-<input
+<Input
   {id}
   type="text"
-  class="form-text-field"
   value={value ?? ''}
   {placeholder}
   {disabled}
@@ -56,40 +57,3 @@
   aria-required={required}
   oninput={handleInput}
 />
-
-<style>
-  .form-text-field {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-sm);
-    font-family: inherit;
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    transition: all var(--fd-transition-normal);
-    box-shadow: var(--fd-shadow-sm);
-  }
-
-  .form-text-field::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .form-text-field:hover {
-    border-color: var(--fd-border-strong);
-    background-color: var(--fd-background);
-  }
-
-  .form-text-field:focus {
-    border-color: var(--fd-ring);
-    background-color: var(--fd-background);
-  }
-
-  .form-text-field:disabled {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-muted);
-    color: var(--fd-muted-foreground);
-    cursor: not-allowed;
-    opacity: 1;
-  }
-</style>

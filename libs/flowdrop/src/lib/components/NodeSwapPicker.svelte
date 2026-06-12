@@ -8,6 +8,7 @@
 <script lang="ts">
   import type { NodeMetadata, NodeCategory, WorkflowFormat, WorkflowNode } from '../types/index.js';
   import Icon from '@iconify/svelte';
+  import Input from './Input.svelte';
   import { getNodeIcon, getCategoryIcon } from '../utils/icons.js';
   import { getCategoryColorToken } from '../utils/colors.js';
   import { m } from '$lib/messages/index.js';
@@ -115,12 +116,17 @@
 
   <!-- Search (hidden in minimal via --fd-sidebar-search-display) -->
   <div class="swap-picker__search">
-    <input
+    <Input
       type="text"
       placeholder="Search node types..."
-      class="swap-picker__input"
-      bind:value={searchInput}
-    />
+      aria-label="Search node types"
+      value={searchInput}
+      oninput={(e) => (searchInput = e.currentTarget.value)}
+    >
+      {#snippet leading()}
+        <Icon icon="mdi:magnify" />
+      {/snippet}
+    </Input>
   </div>
 
   <!-- Node list -->
@@ -296,28 +302,6 @@
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--fd-border);
     flex-shrink: 0;
-  }
-
-  .swap-picker__input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--fd-border-strong);
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
-    background-color: var(--fd-background);
-    box-sizing: border-box;
-    transition:
-      border-color var(--fd-transition-normal),
-      box-shadow var(--fd-transition-normal);
-  }
-
-  .swap-picker__input:focus {
-    border-color: var(--fd-ring);
-  }
-
-  .swap-picker__input::placeholder {
-    color: var(--fd-muted-foreground);
   }
 
   .swap-picker__list {

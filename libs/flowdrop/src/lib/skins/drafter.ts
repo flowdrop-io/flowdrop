@@ -30,12 +30,16 @@ import type { FlowDropSkin } from '../types/skin';
  */
 export const drafterSkin: FlowDropSkin = {
   tokens: {
-    /* ----- Shell surfaces: fresh white chrome, not all-cyan ----- */
+    /* ----- Shell surfaces: fresh white shell + pale mint chrome ----- */
+    /* Neutral greys read as cold admin chrome and fight the mint canvas, so the
+       quiet surfaces carry a faint aqua-mint tint instead. muted-foreground is
+       a darker teal-slate (≈6.5:1 on white) so secondary/helper text clears
+       WCAG AA comfortably — grey body text was the accessibility problem. */
     background: '#ffffff',
     foreground: '#10201c',
-    muted: '#f4f6f7',
-    'muted-foreground': '#5f6f6b',
-    subtle: '#eef3f2',
+    muted: '#eaf5f0',
+    'muted-foreground': '#46635b',
+    subtle: '#e1f0ea',
     card: '#ffffff',
     'card-foreground': '#10201c',
     header: '#ffffff',
@@ -48,9 +52,9 @@ export const drafterSkin: FlowDropSkin = {
     'panel-backdrop-filter': 'blur(10px) saturate(1.04)',
     backdrop: 'rgba(255, 255, 255, 0.92)',
 
-    /* ----- Borders: neutral chrome; strong/focus = teal-cyan accent ----- */
-    border: '#e3e8e7',
-    'border-muted': '#eef2f2',
+    /* ----- Borders: soft mint hairlines; strong/focus = teal-cyan accent ----- */
+    border: '#d3e6df',
+    'border-muted': '#e4f0eb',
     'border-strong': 'rgba(15, 118, 110, 0.42)',
     ring: '#06b6d4',
 
@@ -76,7 +80,6 @@ export const drafterSkin: FlowDropSkin = {
     'note-border': '#5b7891',
     'note-border-hover': '#48617a',
 
-    /* Translucent status tints so note/instruction cards stay light + glassy */
     /* Status hues tuned to the cool palette: danger = rose (teal's warm
        complement, not a generic red), warning = golden amber. Success/info stay
        on the emerald/cyan family so they read as part of the theme. */
@@ -88,16 +91,24 @@ export const drafterSkin: FlowDropSkin = {
     'warning-hover': '#b45309',
     error: '#e11d48',
     'error-hover': '#be123c',
-    'info-muted': 'rgba(8, 145, 178, 0.1)',
-    'success-muted': 'rgba(13, 148, 136, 0.1)',
-    'warning-muted': 'rgba(217, 119, 6, 0.12)',
-    'error-muted': 'rgba(225, 29, 72, 0.1)',
+    /* Status/accent tints are FLAT + OPAQUE (not alpha) so the action buttons
+       that use them as fills (form add/move/delete, canvas toggles, secondary)
+       read as solid chips, never see-through to the grid. Values are the opaque
+       equivalent of the former translucent tints over the white shell. */
+    'info-muted': '#e6f4f7',
+    'success-muted': '#e7f4f3',
+    'warning-muted': '#faefe1',
+    'error-muted': '#fce8ed',
 
     /* ----- Crisp drafting geometry + flat chrome (2–6px radius, no soft shadow) ----- */
     'radius-sm': '2px',
     'radius-md': '3px',
     'radius-lg': '4px',
     'radius-xl': '6px',
+    /* Form controls + their group containers (fields, array item boxes,
+       fieldsets) get the sharpest 2px corner so the config panel reads as
+       crisp drafting geometry, not rounded admin chrome. */
+    'control-radius': '2px',
     'scrollbar-radius': '0',
     'shadow-sm': 'none',
     'shadow-md': 'none',
@@ -108,24 +119,24 @@ export const drafterSkin: FlowDropSkin = {
     'minimap-mask-stroke': 'rgba(15, 118, 110, 0.35)',
     'minimap-node-bg': 'rgba(15, 118, 110, 0.3)',
     'minimap-node-stroke': 'rgba(15, 118, 110, 0.45)',
-    'controls-button-bg': 'rgba(255, 255, 255, 0.86)',
-    'controls-button-bg-hover': 'rgba(204, 251, 241, 0.9)',
+    'controls-button-bg': '#ffffff',
+    'controls-button-bg-hover': '#ccfbf1',
     'controls-button-color': '#0f766e',
     'controls-button-color-hover': '#0c5f59',
     'controls-button-border': 'rgba(15, 118, 110, 0.25)',
 
     /* ----- Secondary = mint, accent = cyan, primary = the one allowed green ----- */
-    secondary: 'rgba(206, 230, 223, 0.55)',
-    'secondary-hover': 'rgba(186, 219, 210, 0.7)',
+    secondary: '#e4f1ed',
+    'secondary-hover': '#cfe6e0',
     'secondary-foreground': '#0f3d36',
     accent: '#06b6d4',
     'accent-hover': '#0891b2',
     'accent-foreground': '#ffffff',
-    'accent-muted': 'rgba(6, 182, 212, 0.12)',
+    'accent-muted': '#e1f6fa',
     primary: '#10b981',
     'primary-hover': '#059669',
     'primary-foreground': '#ffffff',
-    'primary-muted': 'rgba(16, 185, 129, 0.14)'
+    'primary-muted': '#def5ed'
   },
 
   darkTokens: {
@@ -175,32 +186,34 @@ export const drafterSkin: FlowDropSkin = {
     'warning-hover': '#fcd34d',
     error: '#fb7185',
     'error-hover': '#fda4af',
-    'info-muted': 'rgba(34, 211, 238, 0.12)',
-    'success-muted': 'rgba(45, 212, 191, 0.12)',
-    'warning-muted': 'rgba(251, 191, 36, 0.14)',
-    'error-muted': 'rgba(251, 113, 133, 0.12)',
+    /* Flat + opaque tints (opaque equivalent of the former alpha tints over the
+       deep teal-slate shell) so button fills never go see-through. */
+    'info-muted': '#10393a',
+    'success-muted': '#123934',
+    'warning-muted': '#2f3a21',
+    'error-muted': '#2a2d2d',
 
     'minimap-bg': 'rgba(11, 31, 28, 0.7)',
     'minimap-mask-bg': 'rgba(45, 212, 191, 0.06)',
     'minimap-mask-stroke': 'rgba(45, 212, 191, 0.3)',
     'minimap-node-bg': 'rgba(45, 212, 191, 0.28)',
     'minimap-node-stroke': 'rgba(45, 212, 191, 0.45)',
-    'controls-button-bg': 'rgba(17, 38, 35, 0.8)',
-    'controls-button-bg-hover': 'rgba(13, 47, 44, 0.9)',
+    'controls-button-bg': '#102522',
+    'controls-button-bg-hover': '#0d2d2a',
     'controls-button-color': '#2dd4bf',
     'controls-button-color-hover': '#5eead4',
     'controls-button-border': 'rgba(45, 212, 191, 0.3)',
 
-    secondary: 'rgba(13, 47, 44, 0.8)',
-    'secondary-hover': 'rgba(20, 60, 54, 0.9)',
+    secondary: '#0d2d2a',
+    'secondary-hover': '#133a34',
     'secondary-foreground': '#d8f0ea',
     accent: '#22d3ee',
     'accent-hover': '#67e8f9',
     'accent-foreground': '#03291c',
-    'accent-muted': 'rgba(34, 211, 238, 0.14)',
+    'accent-muted': '#113d3e',
     primary: '#34d399',
     'primary-hover': '#6ee7b7',
     'primary-foreground': '#03291c',
-    'primary-muted': 'rgba(52, 211, 153, 0.16)'
+    'primary-muted': '#144034'
   }
 };

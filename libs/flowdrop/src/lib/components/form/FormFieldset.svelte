@@ -121,7 +121,7 @@
 
   .form-fieldset--static {
     border: 1px solid var(--fd-border-muted);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     padding: var(--fd-space-xl);
     margin: 0;
   }
