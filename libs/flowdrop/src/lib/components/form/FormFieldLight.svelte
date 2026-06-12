@@ -48,6 +48,7 @@
   const fd = getInstance();
   import type { FieldSchema } from './types.js';
   import { getSchemaOptions } from './types.js';
+  import { resolveBaseFieldType } from './resolveFieldType.js';
   import type { WorkflowNode, WorkflowEdge } from '$lib/types/index.js';
   import type { AuthProvider } from '$lib/types/auth.js';
 
@@ -144,50 +145,10 @@
       return 'code-editor-fallback';
     }
 
-    // Enum with multiple selection -> checkbox group
-    if (schema.enum && schema.multiple) {
-      return 'checkbox-group';
-    }
-
-    // Enum with single selection -> select
-    if (schema.enum) {
-      return 'select-enum';
-    }
-
-    // oneOf with labeled options (standard JSON Schema) -> select
-    // Must be checked before basic type checks since oneOf schemas often have type: 'string'
-    if (schema.oneOf && schema.oneOf.length > 0) {
-      return 'select-options';
-    }
-
-    // Multiline string -> textarea
-    if (schema.type === 'string' && schema.format === 'multiline') {
-      return 'textarea';
-    }
-
-    // Range slider for number/integer with format: "range"
-    if ((schema.type === 'number' || schema.type === 'integer') && schema.format === 'range') {
-      return 'range';
-    }
-
-    // String -> text field
-    if (schema.type === 'string') {
-      return 'text';
-    }
-
-    // Number or integer -> number field
-    if (schema.type === 'number' || schema.type === 'integer') {
-      return 'number';
-    }
-
-    // Boolean -> toggle
-    if (schema.type === 'boolean') {
-      return 'toggle';
-    }
-
-    // Array type
-    if (schema.type === 'array') {
-      return 'array';
+    // Shared basic field resolution (enum/oneOf/primitive types).
+    const base = resolveBaseFieldType(schema);
+    if (base) {
+      return base;
     }
 
     // Fallback to text

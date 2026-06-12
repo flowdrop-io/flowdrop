@@ -30,3 +30,6 @@ vite.config.ts.timestamp-*
 storybook-static
 coverage/
 playwright-report/
+
+# jscpd duplication reports (generated)
+report/

@@ -279,6 +279,69 @@ function releaseInstance(fd: FlowDropInstance, isDefault: boolean): void {
 }
 
 /**
+ * Resolve endpoint config, port config and categories from mount options and
+ * apply them to the given instance (API context, port-compatibility checker,
+ * categories). Shared by `mountFlowDropApp` and `mountWorkflowEditor`.
+ *
+ * @returns the resolved {@link EndpointConfig} (merged with defaults), which the
+ *   callers forward to their mounted component.
+ */
+async function configureInstance(
+  fd: FlowDropInstance,
+  options: {
+    endpointConfig?: EndpointConfig;
+    portConfig?: PortConfig;
+    categories?: CategoryDefinition[];
+    authProvider?: AuthProvider;
+  }
+): Promise<EndpointConfig> {
+  const { endpointConfig, portConfig, categories, authProvider } = options;
+
+  // Create endpoint configuration, merging with defaults so all required
+  // endpoints are present.
+  const { defaultEndpointConfig } = await import('./config/endpoints.js');
+  const config: EndpointConfig = endpointConfig
+    ? {
+        ...defaultEndpointConfig,
+        ...endpointConfig,
+        endpoints: {
+          ...defaultEndpointConfig.endpoints,
+          ...endpointConfig.endpoints
+        }
+      }
+    : defaultEndpointConfig;
+
+  // Initialize port configuration (fetch from API when not supplied).
+  let finalPortConfig = portConfig;
+  if (!finalPortConfig) {
+    try {
+      finalPortConfig = await fetchPortConfig(config, authProvider);
+    } catch (error) {
+      logger.warn('Failed to fetch port config from API, using default:', error);
+      finalPortConfig = DEFAULT_PORT_CONFIG;
+    }
+  }
+
+  // Configure this instance's API context and port compatibility checker.
+  fd.api.configure(config, authProvider);
+  fd.portCompatibility.reinitialize(finalPortConfig);
+
+  // Initialize this instance's categories (fetch from API when not supplied).
+  if (categories) {
+    fd.categories.initialize(categories);
+  } else {
+    try {
+      const fetchedCategories = await fetchCategories(config, authProvider);
+      fd.categories.initialize(fetchedCategories);
+    } catch (error) {
+      logger.warn('Failed to fetch categories from API, using defaults:', error);
+    }
+  }
+
+  return config;
+}
+
+/**
  * Mount the full FlowDrop App with navbar, sidebars, and workflow editor
  *
  * Use this for a complete workflow editing experience with all UI components.
@@ -363,62 +426,14 @@ export async function mountFlowDropApp(
     defaults: initialSettings
   });
 
-  // Create endpoint configuration
-  let config: EndpointConfig | undefined;
-
-  if (endpointConfig) {
-    // Merge with default configuration to ensure all required endpoints are present
-    const { defaultEndpointConfig } = await import('./config/endpoints.js');
-    config = {
-      ...defaultEndpointConfig,
-      ...endpointConfig,
-      endpoints: {
-        ...defaultEndpointConfig.endpoints,
-        ...endpointConfig.endpoints
-      }
-    };
-  } else {
-    // Use default configuration if none provided
-    const { defaultEndpointConfig } = await import('./config/endpoints.js');
-    config = defaultEndpointConfig;
-  }
-
-  // Initialize port configuration
-  let finalPortConfig = portConfig;
-
-  if (!finalPortConfig && config) {
-    // Try to fetch port configuration from API
-    try {
-      finalPortConfig = await fetchPortConfig(config, authProvider);
-    } catch (error) {
-      logger.warn('Failed to fetch port config from API, using default:', error);
-      finalPortConfig = DEFAULT_PORT_CONFIG;
-    }
-  } else if (!finalPortConfig) {
-    finalPortConfig = DEFAULT_PORT_CONFIG;
-  }
-
-  // Configure this instance's API context (endpoints + auth provider) so
-  // <App> and services resolve it via getInstance().api.
-  if (config) {
-    fd.api.configure(config, authProvider);
-  }
-
-  // Re-initialize this instance's port compatibility checker with the resolved
-  // config (it was seeded with DEFAULT_PORT_CONFIG at construction).
-  fd.portCompatibility.reinitialize(finalPortConfig);
-
-  // Initialize this instance's categories
-  if (categories) {
-    fd.categories.initialize(categories);
-  } else if (config) {
-    try {
-      const fetchedCategories = await fetchCategories(config, authProvider);
-      fd.categories.initialize(fetchedCategories);
-    } catch (error) {
-      logger.warn('Failed to fetch categories from API, using defaults:', error);
-    }
-  }
+  // Resolve and apply endpoint config, port config and categories to this
+  // instance (see configureInstance).
+  const config = await configureInstance(fd, {
+    endpointConfig,
+    portConfig,
+    categories,
+    authProvider
+  });
 
   // Set up event handler callbacks in this instance's store
   if (eventHandlers?.onDirtyStateChange) {
@@ -661,58 +676,14 @@ export async function mountWorkflowEditor(
   // Per-instance state container (see mountFlowDropApp)
   const { fd, isDefault } = acquireInstance(instanceId);
 
-  // Create endpoint configuration
-  let config: EndpointConfig | undefined;
-
-  if (endpointConfig) {
-    // Merge with default configuration to ensure all required endpoints are present
-    const { defaultEndpointConfig } = await import('./config/endpoints.js');
-    config = {
-      ...defaultEndpointConfig,
-      ...endpointConfig,
-      endpoints: {
-        ...defaultEndpointConfig.endpoints,
-        ...endpointConfig.endpoints
-      }
-    };
-  } else {
-    // Use default configuration if none provided
-    const { defaultEndpointConfig } = await import('./config/endpoints.js');
-    config = defaultEndpointConfig;
-  }
-
-  // Initialize port configuration
-  let finalPortConfig = portConfig;
-
-  if (!finalPortConfig && config) {
-    // Try to fetch port configuration from API
-    try {
-      finalPortConfig = await fetchPortConfig(config, authProvider);
-    } catch (error) {
-      logger.warn('Failed to fetch port config from API, using default:', error);
-      finalPortConfig = DEFAULT_PORT_CONFIG;
-    }
-  } else if (!finalPortConfig) {
-    finalPortConfig = DEFAULT_PORT_CONFIG;
-  }
-
-  // Configure this instance's API context and port compatibility checker.
-  if (config) {
-    fd.api.configure(config, authProvider);
-  }
-  fd.portCompatibility.reinitialize(finalPortConfig);
-
-  // Initialize this instance's categories
-  if (categories) {
-    fd.categories.initialize(categories);
-  } else if (config) {
-    try {
-      const fetchedCategories = await fetchCategories(config, authProvider);
-      fd.categories.initialize(fetchedCategories);
-    } catch (error) {
-      logger.warn('Failed to fetch categories from API, using defaults:', error);
-    }
-  }
+  // Resolve and apply endpoint config, port config and categories to this
+  // instance (see configureInstance).
+  const config = await configureInstance(fd, {
+    endpointConfig,
+    portConfig,
+    categories,
+    authProvider
+  });
 
   // Seed the instance's workflow before mounting so the editor renders it
   // immediately. (1.x accepted this option but silently ignored it.)
