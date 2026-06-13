@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.4] - 2026-06-13
+
+Fourth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release is mostly an internal design-system consolidation pass — new shared `Button` / `IconButton` / `Input` / `Select` / `Textarea` primitives route every control through the `base.css` class system as the single source of truth, so themes (including Drafter) style fields and buttons consistently. User-visible changes are a navbar `end` snippet for embedding custom trailing controls, a new `--fd-control-radius` theming token, a range-slider fill fix, and opaque Drafter buttons. The archived Astro docs site is retired in favor of the Mintlify docs at `flowdrop.mintlify.app`.
+
+### Added
+
+- **`end` snippet on the navbar.** A new `end` snippet prop renders custom trailing content in the navbar (before the settings gear), letting consuming apps inject their own controls — e.g. a theme toggle — without forking the navbar.
+- **`--fd-control-radius` theming token.** Form controls (inputs, selects, textareas, the array action buttons, fieldset/checkbox-group/config-form borders) now read their corner radius from `--fd-control-radius`, so themes can tighten field corners independently of cards and panels. Drafter sets it to `2px` for its crisp blueprint look; other themes inherit the existing radius.
+
+### Fixed
+
+- **Range slider fill now tracks the thumb center.** The colored fill measured 0–100% of the raw track width while the browser keeps the thumb inside the track, so the fill and thumb drifted apart — worst at the extremes and visible on load. The fill now mirrors the thumb's actual travel (`thumb/2` to `100% − thumb/2`) via a new `--fd-range-fill` calc, with the thumb size tokenized.
+- **Drafter buttons are opaque and flat.** Several buttons in the Drafter skin (file-upload node config, canvas toggles) rendered with translucent backgrounds and read as see-through; they are now flat and opaque.
+
+### Changed (internal — no API change)
+
+- **Shared form-control and button primitives.** New typed `Button`, `IconButton`, `Input`, `Select`, and `Textarea` wrappers sit over the existing `.flowdrop-btn*` / `.flowdrop-input*` / `.flowdrop-btn--icon*` classes in `base.css`, making it the single source for control look (`:disabled` is the only muted state). `ThemeToggle`, the config form, sidebar search, the node swap picker, `FormArray` move/delete buttons, `InputCollector`, and the playground inputs were migrated onto them, dropping their hand-rolled, duplicated CSS. The primitives are internal (not exported), so their APIs aren't frozen before GA; public component prop APIs (e.g. `ThemeToggle`) are unchanged.
+- **`EditorStatusBar` extracted onto the shared button system.** The endpoint-error banner — previously inline in `App.svelte` with its own button CSS and a centered `80rem` layout — is now an `EditorStatusBar` component that routes actions through the `Button` primitive, spans the editor chrome flush, and uses a proper `CloseIcon` for dismissal. Added Storybook stories for `Button` and `EditorStatusBar`.
+- **Navbar control heights from one token.** Three hardcoded `height: 2.5rem` rules now use `var(--fd-size-btn-min)`, sharing a single source of truth with `.flowdrop-btn`.
+- **Extracted shared logic flagged by the duplication review.** `connections.ts` gains a shared `detectCycles()` (used by both `hasCycles` / `hasInvalidCycles`); `svelte-app.ts` extracts a `configureInstance()` shared by `mountFlowDropApp` / `mountWorkflowEditor`; and `FormField` / `FormFieldLight` share a `resolveBaseFieldType()` for the basic-type switch (with a unit test pinning resolution order) while keeping the deliberate full/light rendering split for the bundle-guard contract. No behavioral change.
+
+### Docs
+
+- **Retired the archived Astro/Starlight docs site (`apps/docs`)** and its docker-publish workflow; the Mintlify site at `flowdrop.mintlify.app` is canonical. All live documentation links (README, AGENTS, quick-start, i18n guide, API README, dev playground navbar, docker-playground landing, interrupt-feature doc) were repointed there. `apps/api-docs` is kept only to back the `api:lint` / `api:bundle` tooling and CI. Corrected the local dev-server port reference to the recommended Express demo.
+
 ## [2.0.0-beta.3] - 2026-06-12
 
 Third 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release finishes the navbar/theme defaults pass started in beta.2 (navbar opt-in everywhere, light as the default theme, the FlowDrop wordmark in the header), adds the **Drafter** blueprint theme with per-theme canvas grids, and lands a keyboard-navigation and focus-ring overhaul alongside the 20px node-grid alignment.
