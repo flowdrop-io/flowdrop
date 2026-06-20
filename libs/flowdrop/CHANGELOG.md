@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.5] - 2026-06-20
+
+Fifth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release is a node-identity cleanup: node components now derive their instance id from the canonical `id` prop SvelteFlow already passes, dropping the duplicate `data.nodeId` copy and its load-time healing, and the node-_type_ entity id is renamed `metadata.id` → `metadata.node_type_id` to disambiguate it from the instance id. Six node components were also moved off the type-erasing `$props<T>()` onto a typed `interface Props`, which surfaced and fixed latent config-access errors in `ToolNode`.
+
+### Breaking Changes
+
+- **Node-type entity id renamed `metadata.id` → `metadata.node_type_id`.** The node-type entity id collided conceptually with the node _instance_ id; it is now `metadata.node_type_id` to disambiguate the two. It is a server-owned wire field, so the library preserves the snake_case name as a non-opinionated passthrough — adapters, the command type-map, connection validation, and the dynamic-schema paths were all updated to match. Consumers reading `metadata.id` for the node type must read `metadata.node_type_id`.
+- **Dropped the duplicate `data.nodeId` field.** Node components now derive their id from the canonical `id` prop that SvelteFlow already passes to every node, instead of a copy stored in `data.nodeId`. Handle ids, config-open callbacks, and status overlays read `id` directly. The field and its load-time "healing" are gone, so an intact graph can no longer look corrupted from a missing copy.
+
+### Changed (internal — no API change)
+
+- **Six node components typed properly.** The node components that used `$props<T>()` — which returns `any` and silently disabled type-checking — now declare an `interface Props` with `let props: Props = $props()`. This surfaced and fixed latent config-access errors in `ToolNode`.
+
 ## [2.0.0-beta.4] - 2026-06-13
 
 Fourth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release is mostly an internal design-system consolidation pass — new shared `Button` / `IconButton` / `Input` / `Select` / `Textarea` primitives route every control through the `base.css` class system as the single source of truth, so themes (including Drafter) style fields and buttons consistently. User-visible changes are a navbar `end` snippet for embedding custom trailing controls, a new `--fd-control-radius` theming token, a range-slider fill fix, and opaque Drafter buttons. The archived Astro docs site is retired in favor of the Mintlify docs at `flowdrop.mintlify.app`.
