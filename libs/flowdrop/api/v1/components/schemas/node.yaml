@@ -570,7 +570,7 @@ NodeMetadata:
     - Use `extensions.ui.hideUnconnectedHandles` to hide unconnected ports by default
     - Use namespaced keys for custom integrations (e.g., "myapp:settings")
   properties:
-    id:
+    node_type_id:
       type: string
       description: Node type unique identifier
       example: calculator
@@ -660,7 +660,7 @@ NodeMetadata:
         Default extension properties for all instances of this node type.
         Can be overridden at the instance level via WorkflowNode.data.extensions.
   required:
-    - id
+    - node_type_id
     - name
     - description
     - category

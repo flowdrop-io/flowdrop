@@ -19,7 +19,7 @@ WorkflowNode:
       description: Node instance UUID
     type:
       type: string
-      description: Node type ID (references NodeMetadata.id)
+      description: Node type ID (references NodeMetadata.node_type_id)
       example: calculator
     position:
       $ref: './common.yaml#/Position'
@@ -43,9 +43,6 @@ WorkflowNode:
         error:
           type: string
           description: Error message if node execution failed
-        nodeId:
-          type: string
-          description: Alternative node ID
         executionInfo:
           $ref: './node.yaml#/NodeExecutionInfo'
         extensions:

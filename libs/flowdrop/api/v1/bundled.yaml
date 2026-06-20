@@ -250,7 +250,7 @@ paths:
                   value:
                     success: true
                     data:
-                      - id: openai_chat_executor
+                      - node_type_id: openai_chat_executor
                         name: OpenAI Chat
                         description: Chat completion using OpenAI's GPT models
                         category: ai
@@ -563,7 +563,7 @@ paths:
                         config:
                           placeholder: Enter your question
                         metadata:
-                          id: text_input
+                          node_type_id: text_input
                           name: Text Input
                           description: Text input field for user data
                           category: inputs
@@ -3517,7 +3517,7 @@ components:
         - Use `extensions.ui.hideUnconnectedHandles` to hide unconnected ports by default
         - Use namespaced keys for custom integrations (e.g., "myapp:settings")
       properties:
-        id:
+        node_type_id:
           type: string
           description: Node type unique identifier
           example: calculator
@@ -3607,7 +3607,7 @@ components:
             Default extension properties for all instances of this node type.
             Can be overridden at the instance level via WorkflowNode.data.extensions.
       required:
-        - id
+        - node_type_id
         - name
         - description
         - category
@@ -3801,7 +3801,7 @@ components:
           description: Node instance UUID
         type:
           type: string
-          description: Node type ID (references NodeMetadata.id)
+          description: Node type ID (references NodeMetadata.node_type_id)
           example: calculator
         position:
           $ref: '#/components/schemas/Position'
@@ -3825,9 +3825,6 @@ components:
             error:
               type: string
               description: Error message if node execution failed
-            nodeId:
-              type: string
-              description: Alternative node ID
             executionInfo:
               $ref: '#/components/schemas/NodeExecutionInfo'
             extensions:

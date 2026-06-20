@@ -125,7 +125,7 @@
                       config:
                         placeholder: Enter your question
                       metadata:
-                        id: text_input
+                        node_type_id: text_input
                         name: Text Input
                         description: Text input field for user data
                         category: inputs
