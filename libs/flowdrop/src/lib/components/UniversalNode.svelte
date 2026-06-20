@@ -21,11 +21,12 @@
   let universalNodeEl: HTMLDivElement;
 
   let {
+    id,
     data,
     selected = false
   }: {
+    id: string;
     data: WorkflowNode['data'] & {
-      nodeId?: string;
       onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
     selected?: boolean;
@@ -81,7 +82,7 @@
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         data.onConfigOpen?.({
-          id: data.nodeId ?? 'unknown',
+          id,
           type: resolvedComponentName,
           data
         });
@@ -165,13 +166,13 @@
   {#if nodeComponent}
     <!-- Svelte 5 dynamic component limitation; reactivity maintained via $derived -->
     {@const NodeComponent = nodeComponent}
-    <NodeComponent {data} {selected} />
+    <NodeComponent {id} {data} {selected} />
   {/if}
 
   <!-- Status overlay - only show if there's meaningful status information -->
   {#if shouldShowStatus}
     <NodeStatusOverlay
-      nodeId={data.nodeId ?? 'unknown'}
+      nodeId={id}
       {executionInfo}
       position={getStatusPosition()}
       size={getStatusSize()}

@@ -33,7 +33,7 @@ export const demoAIContentWorkflow: Workflow = {
           fields: ['title', 'body']
         },
         metadata: {
-          id: 'content_loader',
+          node_type_id: 'content_loader',
           name: 'Content Loader',
           type: 'tool',
           supportedTypes: ['tool', 'default'],
@@ -164,8 +164,7 @@ export const demoAIContentWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'content_loader.1'
+        }
       },
       deletable: true,
       measured: { width: 288, height: 120 },
@@ -186,7 +185,7 @@ export const demoAIContentWorkflow: Workflow = {
           confidenceThreshold: 0.8
         },
         metadata: {
-          id: 'ai_content_analyzer',
+          node_type_id: 'ai_content_analyzer',
           name: 'AI Content Analyzer',
           type: 'tool',
           supportedTypes: ['tool', 'default'],
@@ -332,8 +331,7 @@ export const demoAIContentWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'ai_content_analyzer.1'
+        }
       },
       deletable: true,
       measured: { width: 288, height: 142 },
@@ -352,7 +350,7 @@ export const demoAIContentWorkflow: Workflow = {
           maxTokens: 1000
         },
         metadata: {
-          id: 'simple_agent',
+          node_type_id: 'simple_agent',
           name: 'Simple Agent',
           type: 'default',
           supportedTypes: ['default'],
@@ -472,8 +470,7 @@ export const demoAIContentWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'simple_agent.1'
+        }
       },
       deletable: true,
       measured: { width: 288, height: 815 },
@@ -492,7 +489,7 @@ export const demoAIContentWorkflow: Workflow = {
           defaultValue: ''
         },
         metadata: {
-          id: 'text_input',
+          node_type_id: 'text_input',
           name: 'Text Input',
           type: 'simple',
           supportedTypes: ['simple', 'square', 'default'],
@@ -546,8 +543,7 @@ export const demoAIContentWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'text_input.1'
+        }
       },
       deletable: true,
       measured: { width: 288, height: 88 },
@@ -566,7 +562,7 @@ export const demoAIContentWorkflow: Workflow = {
           format: 'plain'
         },
         metadata: {
-          id: 'text_output',
+          node_type_id: 'text_output',
           name: 'Text Output',
           type: 'simple',
           supportedTypes: ['square', 'simple', 'default'],
@@ -631,8 +627,7 @@ export const demoAIContentWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'text_output.1'
+        }
       },
       deletable: true,
       measured: { width: 288, height: 88 },
@@ -752,7 +747,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           confidenceThreshold: 0.8
         },
         metadata: {
-          id: 'ai_content_analyzer',
+          node_type_id: 'ai_content_analyzer',
           name: 'AI Content Analyzer',
           type: 'tool',
           supportedTypes: ['tool', 'default'],
@@ -973,8 +968,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'ai_content_analyzer.1'
+        }
       },
       measured: {
         width: 280,
@@ -1000,7 +994,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           overwrite: false
         },
         metadata: {
-          id: 'file_upload',
+          node_type_id: 'file_upload',
           name: 'File Upload',
           type: 'default',
           supportedTypes: ['default'],
@@ -1109,8 +1103,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'file_upload.1'
+        }
       },
       measured: {
         width: 280,
@@ -1135,7 +1128,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           defaultValue: ''
         },
         metadata: {
-          id: 'text_input',
+          node_type_id: 'text_input',
           name: 'Text Input',
           type: 'simple',
           supportedTypes: ['simple', 'square', 'default'],
@@ -1199,8 +1192,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'text_input.1'
+        }
       },
       measured: {
         width: 280,
@@ -1235,7 +1227,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           ]
         },
         metadata: {
-          id: 'if_else',
+          node_type_id: 'if_else',
           name: 'If/Else',
           type: 'gateway',
           supportedTypes: ['gateway'],
@@ -1324,8 +1316,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'if_else.1'
+        }
       },
       measured: {
         width: 280,
@@ -1350,7 +1341,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           format: 'plain'
         },
         metadata: {
-          id: 'text_output',
+          node_type_id: 'text_output',
           name: 'Text Output',
           type: 'simple',
           supportedTypes: ['square', 'simple', 'default'],
@@ -1425,8 +1416,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'text_output.1'
+        }
       },
       measured: {
         width: 280,
@@ -1457,7 +1447,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           orchestrator: 'default'
         },
         metadata: {
-          id: 'trigger',
+          node_type_id: 'trigger',
           name: 'Trigger',
           type: 'terminal',
           supportedTypes: ['terminal'],
@@ -1588,8 +1578,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             required: []
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'trigger.1'
+        }
       },
       measured: {
         width: 80,
@@ -1614,7 +1603,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           noteType: 'info'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -1686,8 +1675,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'notes.1'
+        }
       },
       measured: {
         width: 500,
@@ -1712,7 +1700,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           defaultValue: ''
         },
         metadata: {
-          id: 'text_input',
+          node_type_id: 'text_input',
           name: 'Text Input',
           type: 'simple',
           supportedTypes: ['simple', 'square', 'default'],
@@ -1776,8 +1764,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'text_input.2'
+        }
       },
       measured: {
         width: 80,
@@ -1802,7 +1789,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           noteType: 'warning'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -1874,8 +1861,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'notes.2'
+        }
       },
       measured: {
         width: 500,
@@ -1900,7 +1886,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           noteType: 'success'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -1972,8 +1958,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'notes.3'
+        }
       },
       measured: {
         width: 500,
@@ -1998,7 +1983,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           noteType: 'error'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -2070,8 +2055,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'notes.4'
+        }
       },
       measured: {
         width: 500,
@@ -2096,7 +2080,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           noteType: 'note'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -2168,8 +2152,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'notes.5'
+        }
       },
       measured: {
         width: 500,
@@ -2193,7 +2176,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           value: ''
         },
         metadata: {
-          id: 'constant',
+          node_type_id: 'constant',
           name: 'Constant',
           type: 'atom',
           supportedTypes: ['atom'],
@@ -2250,8 +2233,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'constant.1'
+        }
       },
       measured: {
         width: 81,
@@ -2281,7 +2263,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           enableBottomPort: false
         },
         metadata: {
-          id: 'idea',
+          node_type_id: 'idea',
           name: 'Idea',
           type: 'idea',
           supportedTypes: ['idea'],
@@ -2359,8 +2341,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        nodeId: 'idea.1'
+        }
       },
       measured: {
         width: 280,
@@ -2390,7 +2371,7 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           enableBottomPort: false
         },
         metadata: {
-          id: 'idea',
+          node_type_id: 'idea',
           name: 'Idea',
           type: 'idea',
           supportedTypes: ['idea'],
@@ -2469,7 +2450,6 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
           },
           formats: ['flowdrop']
         },
-        nodeId: 'idea.2',
         extensions: {
           ui: {
             hideUnconnectedHandles: false
@@ -2520,7 +2500,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
           defaultValue: ''
         },
         metadata: {
-          id: 'text_input',
+          node_type_id: 'text_input',
           name: 'Text Input',
           type: 'simple',
           supportedTypes: ['simple', 'square', 'default'],
@@ -2574,8 +2554,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'text_input.1'
+        }
       },
       measured: {
         width: 288,
@@ -2601,7 +2580,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
           directory: 'public://flowdrop/'
         },
         metadata: {
-          id: 'save_to_file',
+          node_type_id: 'save_to_file',
           name: 'Save to File',
           type: 'default',
           supportedTypes: ['default'],
@@ -2713,8 +2692,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'save_to_file.1'
+        }
       },
       measured: {
         width: 288,
@@ -2749,7 +2727,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
           ]
         },
         metadata: {
-          id: 'if_else',
+          node_type_id: 'if_else',
           name: 'If/Else',
           type: 'gateway',
           supportedTypes: ['gateway'],
@@ -2837,8 +2815,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'if_else.1'
+        }
       },
       measured: {
         width: 288,
@@ -2863,7 +2840,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
           noteType: 'note'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -2934,8 +2911,7 @@ export const demoTriggerNodeWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'notes.1'
+        }
       },
       measured: {
         width: 500,
@@ -3045,7 +3021,7 @@ export const demoForEachLoopWorkflow: Workflow = {
           jsonData: '["Apple", "Banana", "Cherry", "Date", "Elderberry"]'
         },
         metadata: {
-          id: 'json_loader',
+          node_type_id: 'json_loader',
           name: 'JSON Loader',
           type: 'default',
           supportedTypes: ['default'],
@@ -3090,8 +3066,7 @@ export const demoForEachLoopWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'json_loader.1'
+        }
       },
       measured: {
         width: 290,
@@ -3116,7 +3091,7 @@ export const demoForEachLoopWorkflow: Workflow = {
           continueOnError: false
         },
         metadata: {
-          id: 'foreach',
+          node_type_id: 'foreach',
           name: 'ForEach Loop',
           type: 'default',
           supportedTypes: ['default', 'simple'],
@@ -3245,7 +3220,6 @@ export const demoForEachLoopWorkflow: Workflow = {
             }
           }
         },
-        nodeId: 'foreach.1',
         extensions: {
           ui: {
             hideUnconnectedHandles: true
@@ -3273,7 +3247,7 @@ export const demoForEachLoopWorkflow: Workflow = {
           operation: 'uppercase'
         },
         metadata: {
-          id: 'process_item',
+          node_type_id: 'process_item',
           name: 'Process Item',
           type: 'default',
           supportedTypes: ['default'],
@@ -3335,7 +3309,6 @@ export const demoForEachLoopWorkflow: Workflow = {
             }
           }
         },
-        nodeId: 'process_item.1',
         extensions: {
           ui: {
             hideUnconnectedHandles: true
@@ -3365,7 +3338,7 @@ export const demoForEachLoopWorkflow: Workflow = {
           noteType: 'info'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -3436,8 +3409,7 @@ export const demoForEachLoopWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'notes.1'
+        }
       },
       measured: {
         width: 500,
@@ -3550,7 +3522,7 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
           noteType: 'info'
         },
         metadata: {
-          id: 'notes',
+          node_type_id: 'notes',
           name: 'Notes',
           type: 'note',
           supportedTypes: ['note'],
@@ -3621,8 +3593,7 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
               }
             }
           }
-        },
-        nodeId: 'notes.autocomplete'
+        }
       },
       measured: {
         width: 500,
@@ -3650,7 +3621,7 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
           follow_redirects: true
         },
         metadata: {
-          id: 'http_request',
+          node_type_id: 'http_request',
           name: 'HTTP Request',
           type: 'default',
           supportedTypes: ['default'],
@@ -3885,7 +3856,6 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
             }
           }
         },
-        nodeId: 'http_request.1',
         extensions: {
           ui: {
             hideUnconnectedHandles: true
@@ -3917,7 +3887,7 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
           fallbackValue: ''
         },
         metadata: {
-          id: 'prompt_template',
+          node_type_id: 'prompt_template',
           name: 'Prompt Template',
           type: 'default',
           supportedTypes: ['default'],
@@ -4037,7 +4007,6 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
             }
           }
         },
-        nodeId: 'prompt_template.1',
         extensions: {
           ui: {
             hideUnconnectedHandles: true
@@ -4122,7 +4091,7 @@ export const demoDependentAutocompleteWorkflow: Workflow = (() => {
             noteType: 'info'
           },
           metadata: {
-            id: 'notes',
+            node_type_id: 'notes',
             name: 'Notes',
             type: 'note',
             supportedTypes: ['note'],
@@ -4163,8 +4132,7 @@ export const demoDependentAutocompleteWorkflow: Workflow = (() => {
                 }
               }
             }
-          },
-          nodeId: 'notes.dependent_autocomplete'
+          }
         },
         measured: { width: 520, height: 620 },
         selected: false,
@@ -4188,8 +4156,7 @@ export const demoDependentAutocompleteWorkflow: Workflow = (() => {
               'Users should be able to enable Face ID / fingerprint login from Settings.',
             priority: 'high'
           },
-          metadata: jiraNode,
-          nodeId: 'jira_create_issue.1'
+          metadata: jiraNode
         },
         measured: { width: 320, height: 200 },
         selected: false,
@@ -4238,8 +4205,7 @@ export const demoApiVariablesWorkflow: Workflow = (() => {
             includeUnsubscribeLink: true,
             trackOpens: true
           },
-          metadata: emailTemplateNode,
-          nodeId: 'email_template.1'
+          metadata: emailTemplateNode
         }
       },
       {
@@ -4254,8 +4220,7 @@ export const demoApiVariablesWorkflow: Workflow = (() => {
               'Your order for {{ order.items[0].name }} and {{ order.total }} more items is confirmed!',
             priority: 'high'
           },
-          metadata: notificationNode,
-          nodeId: 'notification.1'
+          metadata: notificationNode
         }
       }
     ] as WorkflowNode[],
@@ -4295,7 +4260,6 @@ export const demoAgentSpecLLMPipelineWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 0, y: 100 },
         data: {
-          nodeId: 'agentspec.start_node.1',
           label: 'Start',
           config: {},
           metadata: {
@@ -4318,7 +4282,6 @@ export const demoAgentSpecLLMPipelineWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 350, y: 100 },
         data: {
-          nodeId: 'agentspec.llm_node.1',
           label: 'Summarizer LLM',
           config: {
             prompt_template: '{{prompt}}',
@@ -4354,7 +4317,6 @@ export const demoAgentSpecLLMPipelineWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 700, y: 100 },
         data: {
-          nodeId: 'agentspec.end_node.1',
           label: 'End',
           config: {},
           metadata: {
@@ -4443,7 +4405,6 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 0, y: 200 },
         data: {
-          nodeId: 'agentspec.start_node.1',
           label: 'Intake',
           config: {},
           metadata: {
@@ -4466,7 +4427,6 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 350, y: 200 },
         data: {
-          nodeId: 'agentspec.llm_node.1',
           label: 'Classifier',
           config: {
             prompt_template: '{{message}}',
@@ -4504,7 +4464,6 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 700, y: 200 },
         data: {
-          nodeId: 'agentspec.branching_node.1',
           label: 'Router',
           config: {
             branches: [
@@ -4546,7 +4505,6 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 1050, y: 50 },
         data: {
-          nodeId: 'agentspec.end_node.1',
           label: 'Billing Response',
           config: {},
           metadata: {
@@ -4568,7 +4526,6 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 1050, y: 200 },
         data: {
-          nodeId: 'agentspec.end_node.2',
           label: 'Tech Response',
           config: {},
           metadata: {
@@ -4590,7 +4547,6 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
         type: 'universalNode',
         position: { x: 1050, y: 350 },
         data: {
-          nodeId: 'agentspec.end_node.3',
           label: 'General Response',
           config: {},
           metadata: {
@@ -4689,7 +4645,7 @@ export const demoAgentSpecCustomerSupportWorkflow: Workflow = (() => {
  */
 function createTriggerStepMetadata(index: number): WorkflowNode['data']['metadata'] {
   return {
-    id: 'trigger_step',
+    node_type_id: 'trigger_step',
     name: `Step ${index + 1}`,
     description: 'Synthetic default node for performance testing',
     category: 'processing',

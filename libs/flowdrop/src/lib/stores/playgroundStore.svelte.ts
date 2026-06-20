@@ -293,7 +293,7 @@ export class PlaygroundStore {
     // Find input nodes in the workflow
     workflow.nodes.forEach((node: WorkflowNode) => {
       const category = node.data.metadata?.category;
-      const nodeTypeId = node.data.metadata?.id ?? node.type;
+      const nodeTypeId = node.data.metadata?.node_type_id ?? node.type;
 
       // Check if this is an input-type node
       // The category can be "inputs" (standard) or variations like "input"

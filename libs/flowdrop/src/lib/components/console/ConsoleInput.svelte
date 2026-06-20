@@ -341,10 +341,10 @@
     if (nodeTypeContext !== null) {
       const prefix = nodeTypeContext.toLowerCase();
       return nodeTypes
-        .filter((nt) => nt.id.toLowerCase().startsWith(prefix))
+        .filter((nt) => nt.node_type_id.toLowerCase().startsWith(prefix))
         .map((nt) => ({
-          value: nt.id,
-          label: nt.id,
+          value: nt.node_type_id,
+          label: nt.node_type_id,
           detail: `${nt.name} (${nt.category})`
         }))
         .slice(0, 50);

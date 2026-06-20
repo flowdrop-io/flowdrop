@@ -18,9 +18,10 @@ import { BaseRegistry } from './BaseRegistry.svelte.js';
  * Any component registered in the registry must be compatible with these props.
  */
 export interface NodeComponentProps {
+  /** The SvelteFlow node id */
+  id: string;
   /** Node data containing label, config, metadata, executionInfo */
   data: WorkflowNode['data'] & {
-    nodeId?: string;
     onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
   };
   /** Whether the node is currently selected */

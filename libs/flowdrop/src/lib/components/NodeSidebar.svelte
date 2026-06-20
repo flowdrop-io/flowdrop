@@ -121,7 +121,7 @@
     // Create a new node instance from the node type
     const newNodeData = {
       type: 'node',
-      nodeType: nodeType.id,
+      nodeType: nodeType.node_type_id,
       nodeData: {
         label: nodeType.name,
         config: extractConfigDefaults(nodeType.configSchema),
@@ -246,7 +246,7 @@
           </div>
         {:else}
           <div class="flowdrop-node-list">
-            {#each filteredNodes as nodeType (nodeType.id)}
+            {#each filteredNodes as nodeType (nodeType.node_type_id)}
               <div
                 class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
                 draggable="true"
@@ -299,7 +299,7 @@
                   {getCategoryDisplayName(category).toUpperCase()}
                 </div>
                 <div class="fd-sidebar-flat-list" role="list">
-                  {#each categoryNodes as nodeType (nodeType.id)}
+                  {#each categoryNodes as nodeType (nodeType.node_type_id)}
                     <div
                       class="fd-sidebar-flat-item"
                       role="listitem"
@@ -339,7 +339,7 @@
                 </summary>
                 <div class="flowdrop-details__content">
                   <div class="flowdrop-node-list" role="list">
-                    {#each categoryNodes as nodeType (nodeType.id)}
+                    {#each categoryNodes as nodeType (nodeType.node_type_id)}
                       <div
                         class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
                         role="listitem"

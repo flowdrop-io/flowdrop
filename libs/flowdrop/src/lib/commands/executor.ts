@@ -104,7 +104,7 @@ function executeAddNode(
   }
 
   const position = command.position ?? computeAutoPosition(workflow.nodes);
-  const nodeId = generateNodeId(metadata.id, workflow.nodes);
+  const nodeId = generateNodeId(metadata.node_type_id, workflow.nodes);
   const config = extractConfigDefaults(metadata.configSchema);
 
   const node: WorkflowNode = {
@@ -115,8 +115,7 @@ function executeAddNode(
     data: {
       label: metadata.name,
       config,
-      metadata,
-      nodeId
+      metadata
     }
   };
 
@@ -450,7 +449,7 @@ function executeInfo(
   const resultData: InfoResultData = {
     nodeId: shortId,
     label: node.data.label ?? metadata?.name ?? '',
-    type: metadata?.id ? toShortTypeId(metadata.id) : '',
+    type: metadata?.node_type_id ? toShortTypeId(metadata.node_type_id) : '',
     position: node.position,
     config: (node.data.config as Record<string, unknown>) ?? {},
     inputs,
@@ -711,7 +710,7 @@ function executeListNodes(context: CommandContext): CommandResult {
   const nodes = workflow.nodes.map((n) => ({
     nodeId: toShortId(n.id),
     label: n.data.label ?? n.data.metadata?.name ?? '',
-    type: n.data.metadata?.id ? toShortTypeId(n.data.metadata.id) : ''
+    type: n.data.metadata?.node_type_id ? toShortTypeId(n.data.metadata.node_type_id) : ''
   }));
 
   const resultData: ListNodesResultData = { nodes };
@@ -751,7 +750,7 @@ function executeListEdges(context: CommandContext): CommandResult {
 
 function executeListTypes(context: CommandContext): CommandResult {
   const types = context.nodeTypes.map((m) => ({
-    typeId: toShortTypeId(m.id),
+    typeId: toShortTypeId(m.node_type_id),
     name: m.name,
     category: m.category
   }));

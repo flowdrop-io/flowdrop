@@ -9,12 +9,12 @@
    * NotesNode component props
    * Displays a styled note with markdown content
    */
-  const props = $props<{
+  interface Props {
+    id: string;
     data: {
       label: string;
       config: ConfigValues;
       metadata: NodeMetadata;
-      nodeId?: string;
       onConfigOpen?: (node: {
         id: string;
         type: string;
@@ -24,7 +24,9 @@
     selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
-  }>();
+  }
+
+  let props: Props = $props();
 
   // Hoist the notes branch — read for placeholder, every type name, processing,
   // error, and configure tooltip.
@@ -75,7 +77,7 @@
   function openConfigSidebar(): void {
     if (props.data.onConfigOpen) {
       const nodeForConfig = {
-        id: props.data.nodeId || 'unknown',
+        id: props.id,
         type: 'note',
         data: props.data
       };

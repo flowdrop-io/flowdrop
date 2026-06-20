@@ -19,7 +19,7 @@
 
   const testNodeTypes: NodeMetadata[] = [
     {
-      id: 'text_input',
+      node_type_id: 'text_input',
       name: 'Text Input',
       description: 'Accept text input from user',
       category: 'inputs',
@@ -38,7 +38,7 @@
       tags: ['input', 'text']
     },
     {
-      id: 'text_output',
+      node_type_id: 'text_output',
       name: 'Text Output',
       description: 'Display text output',
       category: 'outputs',
@@ -64,7 +64,6 @@
           type: 'universalNode',
           position: { x, y: 150 },
           data: {
-            nodeId: `node-input-${suffix}`,
             label: `Text Input (${suffix.toUpperCase()})`,
             config: { defaultValue: suffix },
             metadata: testNodeTypes[0]
@@ -75,7 +74,6 @@
           type: 'universalNode',
           position: { x: x + 350, y: 150 },
           data: {
-            nodeId: `node-output-${suffix}`,
             label: `Text Output (${suffix.toUpperCase()})`,
             config: {},
             metadata: testNodeTypes[1]

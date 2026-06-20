@@ -165,7 +165,7 @@ describe('computeSwapPreview', () => {
       // Create custom metadata with different case names
       const upperCaseNode: NodeMetadata = {
         ...calculatorNode,
-        id: 'upper_calc',
+        node_type_id: 'upper_calc',
         inputs: [{ id: 'x', name: 'NUMBER A', type: 'input', dataType: 'number' }],
         outputs: []
       };
@@ -194,14 +194,14 @@ describe('computeSwapPreview', () => {
       // pass silently rewired such edges to the wrong port
       const targetMetadata: NodeMetadata = {
         ...calculatorNode,
-        id: 'tgt_type',
+        node_type_id: 'tgt_type',
         inputs: [{ id: 'in_x', name: 'Beta', type: 'input', dataType: 'number' }],
         outputs: []
       };
 
       const sourceMetadata: NodeMetadata = {
         ...calculatorNode,
-        id: 'src_type',
+        node_type_id: 'src_type',
         inputs: [],
         outputs: [{ id: 'out1', name: 'Alpha', type: 'output', dataType: 'number' }]
       };
@@ -209,7 +209,7 @@ describe('computeSwapPreview', () => {
       const srcNode = makeNode('src_type.1', sourceMetadata);
       const oldTarget = makeNode('old.1', {
         ...calculatorNode,
-        id: 'old_type',
+        node_type_id: 'old_type',
         inputs: [{ id: 'in_z', name: 'Gamma', type: 'input', dataType: 'number' }],
         outputs: []
       });
@@ -236,7 +236,7 @@ describe('computeSwapPreview', () => {
       // the second one must NOT fall through to `assistant_message`.
       const meta: NodeMetadata = {
         ...calculatorNode,
-        id: 'llm',
+        node_type_id: 'llm',
         inputs: [],
         outputs: [
           { id: 'text', name: 'Text', type: 'output', dataType: 'string' },
@@ -270,14 +270,14 @@ describe('computeSwapPreview', () => {
       // tool_availability edges. Previously only the first edge survived a swap.
       const toolsAwareMeta: NodeMetadata = {
         ...calculatorNode,
-        id: 'tools_aware',
+        node_type_id: 'tools_aware',
         inputs: [{ id: 'tools', name: 'Tools', type: 'input', dataType: 'tool' }],
         outputs: []
       };
 
       const toolMeta: NodeMetadata = {
         ...calculatorNode,
-        id: 'tool',
+        node_type_id: 'tool',
         inputs: [],
         outputs: [{ id: 'tool', name: 'Tool', type: 'output', dataType: 'tool' }]
       };
@@ -301,14 +301,14 @@ describe('computeSwapPreview', () => {
     it('should keep all same-port edges in computeSwapPreviewWithOptions too', () => {
       const toolsAwareMeta: NodeMetadata = {
         ...calculatorNode,
-        id: 'tools_aware',
+        node_type_id: 'tools_aware',
         inputs: [{ id: 'tools', name: 'Tools', type: 'input', dataType: 'tool' }],
         outputs: []
       };
 
       const toolMeta: NodeMetadata = {
         ...calculatorNode,
-        id: 'tool',
+        node_type_id: 'tool',
         inputs: [],
         outputs: [{ id: 'tool', name: 'Tool', type: 'output', dataType: 'tool' }]
       };
@@ -335,7 +335,7 @@ describe('computeSwapPreview', () => {
     it('should still prevent two DIFFERENT old ports from claiming the same new port', () => {
       const oldMeta: NodeMetadata = {
         ...calculatorNode,
-        id: 'old',
+        node_type_id: 'old',
         inputs: [
           { id: 'p1', name: 'Shared', type: 'input', dataType: 'number' },
           { id: 'p2', name: 'Shared', type: 'input', dataType: 'number' }
@@ -345,7 +345,7 @@ describe('computeSwapPreview', () => {
 
       const newMeta: NodeMetadata = {
         ...calculatorNode,
-        id: 'new',
+        node_type_id: 'new',
         inputs: [{ id: 'x1', name: 'Shared', type: 'input', dataType: 'number' }],
         outputs: []
       };
@@ -396,7 +396,7 @@ describe('computeSwapPreview', () => {
       const advNode = makeNode('advanced_calculator.1', advancedCalculatorNode);
       const srcNode = makeNode('src.1', {
         ...textInputNode,
-        id: 'num_src',
+        node_type_id: 'num_src',
         outputs: [{ id: 'value', name: 'Value', type: 'output', dataType: 'number' }]
       });
 
@@ -409,7 +409,7 @@ describe('computeSwapPreview', () => {
       // Target: single number input node (exact ID match on "a" only)
       const singleInputMeta: NodeMetadata = {
         ...calculatorNode,
-        id: 'single',
+        node_type_id: 'single',
         inputs: [{ id: 'a', name: 'Number A', type: 'input', dataType: 'number' }],
         outputs: []
       };
@@ -612,16 +612,17 @@ describe('executeSwap', () => {
     expect(newNode!.position).toEqual({ x: 350, y: 420 });
   });
 
-  it('should set data.nodeId to the new node ID (handle IDs derive from it)', () => {
+  it('gives the swapped node the new node ID (handle IDs derive from it)', () => {
     const calcNode = makeNode('calculator.1', calculatorNode);
     const preview = computeSwapPreview(calcNode, advancedCalculatorNode, [], [calcNode], null);
 
     const result = executeSwap(calcNode, advancedCalculatorNode, preview, [calcNode], []);
 
     const newNode = result.updatedNodes.find((n) => n.id === preview.newNodeId);
-    // Without data.nodeId the node renders with zero handles and every edge
-    // anchored to it vanishes from the canvas (entity stays intact)
-    expect(newNode!.data.nodeId).toBe(preview.newNodeId);
+    // Node components derive their handle IDs from the SvelteFlow `id`, so the
+    // replacement must carry the new id (the entity stays intact).
+    expect(newNode).toBeDefined();
+    expect(newNode!.id).toBe(preview.newNodeId);
   });
 
   it('should store original node ID in extensions.swap.previousNodeId', () => {
@@ -641,7 +642,7 @@ describe('executeSwap', () => {
     const result = executeSwap(calcNode, advancedCalculatorNode, preview, [calcNode], []);
 
     const newNode = result.updatedNodes.find((n) => n.id === preview.newNodeId);
-    expect(newNode!.data.metadata.id).toBe('advanced_calculator');
+    expect(newNode!.data.metadata.node_type_id).toBe('advanced_calculator');
     expect(newNode!.data.metadata.version).toBe('2.0.0');
   });
 
@@ -917,7 +918,7 @@ describe('integration — full swap flow', () => {
     expect(result.updatedNodes.find((n) => n.id === 'calculator.1')).toBeUndefined();
     const newNode = result.updatedNodes.find((n) => n.id === preview.newNodeId);
     expect(newNode).toBeDefined();
-    expect(newNode!.data.metadata.id).toBe('advanced_calculator');
+    expect(newNode!.data.metadata.node_type_id).toBe('advanced_calculator');
 
     // Verify: 2 edges, both rewritten
     expect(result.updatedEdges).toHaveLength(2);
@@ -991,7 +992,7 @@ describe('integration — full swap flow', () => {
     });
     const srcNode = makeNode('src.1', {
       ...textInputNode,
-      id: 'num_src',
+      node_type_id: 'num_src',
       outputs: [{ id: 'value', name: 'Value', type: 'output', dataType: 'number' }]
     });
 
@@ -1349,7 +1350,7 @@ describe('buildSwapPreviewFromState', () => {
   it('should preserve connections when port is remapped to different ID (text → message)', () => {
     // Simulate the user's bug: old node has port "text", new node has port "message"
     const chatbotNode: NodeMetadata = {
-      id: 'chatbot',
+      node_type_id: 'chatbot',
       name: 'Chatbot',
       description: 'Simple chatbot',
       category: 'processing',
@@ -1379,7 +1380,7 @@ describe('buildSwapPreviewFromState', () => {
     };
 
     const llmAgentNode: NodeMetadata = {
-      id: 'llm_agent',
+      node_type_id: 'llm_agent',
       name: 'LLM Agent',
       description: 'Advanced LLM agent',
       category: 'processing',
@@ -1447,7 +1448,7 @@ describe('buildSwapPreviewFromState', () => {
     // Verify the new node exists
     const newNode = result.updatedNodes.find((n) => n.id === state.newNodeId);
     expect(newNode).toBeDefined();
-    expect(newNode!.data.metadata.id).toBe('llm_agent');
+    expect(newNode!.data.metadata.node_type_id).toBe('llm_agent');
 
     // Verify edges reference the new node with correct handle IDs
     expect(result.updatedEdges).toHaveLength(2);
@@ -1491,7 +1492,7 @@ describe('performSwap', () => {
     expect(result.updatedNodes).toHaveLength(2);
     expect(result.updatedEdges).toHaveLength(1);
     const newNode = result.updatedNodes.find((n) => n.id !== 'src.1');
-    expect(newNode!.data.metadata.id).toBe('advanced_calculator');
+    expect(newNode!.data.metadata.node_type_id).toBe('advanced_calculator');
   });
 
   it('should throw SwapValidationError for non-existent node', () => {

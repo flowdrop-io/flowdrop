@@ -12,7 +12,7 @@ import { AGENTSPEC_NAMESPACE } from '../../lib/adapters/agentspec/componentTypeD
  */
 const flowdropNativeNodes: NodeMetadata[] = [
   {
-    id: 'ai_content_analyzer',
+    node_type_id: 'ai_content_analyzer',
     name: 'AI Content Analyzer',
     type: 'tool',
     supportedTypes: ['tool', 'default'],
@@ -228,7 +228,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'calculator',
+    node_type_id: 'calculator',
     name: 'Calculator',
     type: 'default',
     supportedTypes: ['default'],
@@ -322,7 +322,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'chat_model',
+    node_type_id: 'chat_model',
     name: 'Chat Model',
     type: 'default',
     supportedTypes: ['default'],
@@ -426,7 +426,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'chat_output',
+    node_type_id: 'chat_output',
     name: 'Chat Output',
     type: 'default',
     supportedTypes: ['default'],
@@ -506,7 +506,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'content_classifier',
+    node_type_id: 'content_classifier',
     name: 'Content Classifier',
     type: 'tool',
     supportedTypes: ['tool', 'default'],
@@ -685,7 +685,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'content_loader',
+    node_type_id: 'content_loader',
     name: 'Content Loader',
     type: 'tool',
     supportedTypes: ['tool', 'default'],
@@ -818,7 +818,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'conversation_buffer',
+    node_type_id: 'conversation_buffer',
     name: 'Conversation Buffer',
     type: 'default',
     supportedTypes: ['default'],
@@ -930,7 +930,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'conversation_history',
+    node_type_id: 'conversation_history',
     name: 'Conversation History',
     type: 'conversation_history',
     supportedTypes: ['conversation_history'],
@@ -1127,7 +1127,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'data_extractor',
+    node_type_id: 'data_extractor',
     name: 'Data Extractor',
     type: 'default',
     supportedTypes: ['default'],
@@ -1204,7 +1204,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'data_operations',
+    node_type_id: 'data_operations',
     name: 'Data Operations',
     type: 'default',
     supportedTypes: ['default'],
@@ -1315,7 +1315,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'data_to_dataframe',
+    node_type_id: 'data_to_dataframe',
     name: 'Data to DataFrame',
     type: 'default',
     supportedTypes: ['default'],
@@ -1421,7 +1421,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'data_to_json',
+    node_type_id: 'data_to_json',
     name: 'Data to JSON',
     type: 'default',
     supportedTypes: ['default'],
@@ -1471,7 +1471,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     configSchema: { type: 'object', properties: {} }
   },
   {
-    id: 'dataframe_operations',
+    node_type_id: 'dataframe_operations',
     name: 'DataFrame Operations',
     type: 'default',
     supportedTypes: ['default'],
@@ -1587,7 +1587,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'date_time',
+    node_type_id: 'date_time',
     name: 'Date & Time',
     type: 'default',
     supportedTypes: ['default'],
@@ -1697,7 +1697,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'file_upload',
+    node_type_id: 'file_upload',
     name: 'File Upload',
     type: 'default',
     supportedTypes: ['default'],
@@ -1807,7 +1807,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'form_data_receiver',
+    node_type_id: 'form_data_receiver',
     name: 'Form Data Receiver',
     type: 'tool',
     supportedTypes: ['tool', 'default'],
@@ -1966,7 +1966,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'http_request',
+    node_type_id: 'http_request',
     name: 'HTTP Request',
     type: 'default',
     supportedTypes: ['default'],
@@ -2203,7 +2203,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'huggingface_embeddings',
+    node_type_id: 'huggingface_embeddings',
     name: 'HuggingFace Embeddings',
     type: 'default',
     supportedTypes: ['default'],
@@ -2313,7 +2313,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'if_else',
+    node_type_id: 'if_else',
     name: 'If/Else',
     type: 'gateway',
     supportedTypes: ['gateway'],
@@ -2394,7 +2394,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'switch',
+    node_type_id: 'switch',
     name: 'Switch',
     type: 'gateway',
     supportedTypes: ['gateway'],
@@ -2487,7 +2487,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'foreach',
+    node_type_id: 'foreach',
     name: 'ForEach Loop',
     type: 'default',
     supportedTypes: ['default', 'simple'],
@@ -2610,7 +2610,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'json_to_data',
+    node_type_id: 'json_to_data',
     name: 'JSON to Data',
     type: 'default',
     supportedTypes: ['default'],
@@ -2660,7 +2660,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     configSchema: { type: 'object', properties: {} }
   },
   {
-    id: 'message_to_data',
+    node_type_id: 'message_to_data',
     name: 'Message to Data',
     type: 'default',
     supportedTypes: ['default'],
@@ -2743,7 +2743,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'notes',
+    node_type_id: 'notes',
     name: 'Notes',
     type: 'note',
     supportedTypes: ['note'],
@@ -2816,7 +2816,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'openai_chat',
+    node_type_id: 'openai_chat',
     name: 'OpenAI Chat',
     type: 'default',
     supportedTypes: undefined,
@@ -2837,7 +2837,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     configSchema: { type: 'object', properties: {} }
   },
   {
-    id: 'openai_embeddings',
+    node_type_id: 'openai_embeddings',
     name: 'OpenAI Embeddings',
     type: 'default',
     supportedTypes: ['default'],
@@ -2933,7 +2933,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'regex_extractor',
+    node_type_id: 'regex_extractor',
     name: 'Regex Extractor',
     type: 'default',
     supportedTypes: ['default'],
@@ -3029,7 +3029,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'save_to_file',
+    node_type_id: 'save_to_file',
     name: 'Save to File',
     type: 'default',
     supportedTypes: ['default'],
@@ -3140,7 +3140,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'simple_agent',
+    node_type_id: 'simple_agent',
     name: 'Simple Agent',
     type: 'default',
     supportedTypes: ['default'],
@@ -3258,7 +3258,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'split_text',
+    node_type_id: 'split_text',
     name: 'Split Text',
     type: 'default',
     supportedTypes: ['default'],
@@ -3347,7 +3347,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'structured_output',
+    node_type_id: 'structured_output',
     name: 'Structured Output',
     type: 'default',
     supportedTypes: ['default'],
@@ -3444,7 +3444,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'text_find_replace',
+    node_type_id: 'text_find_replace',
     name: 'Text Find & Replace',
     type: 'default',
     supportedTypes: ['default'],
@@ -3558,7 +3558,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'text_input',
+    node_type_id: 'text_input',
     name: 'Text Input',
     type: 'simple',
     supportedTypes: ['simple', 'square', 'default'],
@@ -3614,7 +3614,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'text_output',
+    node_type_id: 'text_output',
     name: 'Text Output',
     type: 'simple',
     supportedTypes: ['square', 'simple', 'default'],
@@ -3677,7 +3677,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'trigger',
+    node_type_id: 'trigger',
     name: 'Trigger',
     type: 'terminal',
     supportedTypes: ['terminal'],
@@ -3787,7 +3787,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'url_fetch',
+    node_type_id: 'url_fetch',
     name: 'URL Fetch',
     type: 'default',
     supportedTypes: ['default'],
@@ -3910,7 +3910,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'webhook',
+    node_type_id: 'webhook',
     name: 'Webhook',
     type: 'default',
     supportedTypes: ['default'],
@@ -4013,7 +4013,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'custom_function',
+    node_type_id: 'custom_function',
     name: 'Custom Function',
     type: 'default',
     supportedTypes: ['default'],
@@ -4197,7 +4197,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'data_mapper',
+    node_type_id: 'data_mapper',
     name: 'Data Mapper',
     type: 'default',
     supportedTypes: ['default'],
@@ -4366,7 +4366,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'synchronizer',
+    node_type_id: 'synchronizer',
     name: 'Synchronizer',
     type: 'default',
     supportedTypes: ['default'],
@@ -4473,7 +4473,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'json_validator',
+    node_type_id: 'json_validator',
     name: 'JSON Validator',
     type: 'default',
     supportedTypes: ['default'],
@@ -4574,7 +4574,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'prompt_template',
+    node_type_id: 'prompt_template',
     name: 'Prompt Template',
     type: 'default',
     supportedTypes: ['default'],
@@ -4699,7 +4699,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
   // Demo nodes showcasing configEdit feature
   // ==========================================
   {
-    id: 'dynamic_config_demo',
+    node_type_id: 'dynamic_config_demo',
     name: 'Dynamic Config Demo',
     type: 'default',
     supportedTypes: ['default'],
@@ -4759,7 +4759,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
         description:
           'This node requires advanced configuration. Click to open the admin portal where you can configure all options.',
         parameterMapping: {
-          nodeTypeId: 'metadata.id',
+          nodeTypeId: 'metadata.node_type_id',
           instanceId: 'id',
           workflowId: 'workflowId'
         },
@@ -4771,7 +4771,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
         url: '/nodes/{nodeTypeId}/schema',
         method: 'GET',
         parameterMapping: {
-          nodeTypeId: 'metadata.id'
+          nodeTypeId: 'metadata.node_type_id'
         },
         headers: {
           'X-FlowDrop-Instance': '{instanceId}'
@@ -4787,7 +4787,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'external_only_config_demo',
+    node_type_id: 'external_only_config_demo',
     name: 'External Config Only Demo',
     type: 'default',
     supportedTypes: ['default'],
@@ -4836,14 +4836,14 @@ const flowdropNativeNodes: NodeMetadata[] = [
         description:
           'Configuration for this integration is managed in the external settings portal. Click to configure authentication, API keys, and advanced options.',
         parameterMapping: {
-          nodeTypeId: 'metadata.id'
+          nodeTypeId: 'metadata.node_type_id'
         },
         openInNewTab: true
       }
     }
   },
   {
-    id: 'dynamic_schema_only_demo',
+    node_type_id: 'dynamic_schema_only_demo',
     name: 'Dynamic Schema Only Demo',
     type: 'default',
     supportedTypes: ['default'],
@@ -4896,7 +4896,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
         url: '/nodes/{nodeTypeId}/schema?version=latest',
         method: 'GET',
         parameterMapping: {
-          nodeTypeId: 'metadata.id'
+          nodeTypeId: 'metadata.node_type_id'
         },
         cacheSchema: true,
         timeout: 15000
@@ -4907,7 +4907,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'idea',
+    node_type_id: 'idea',
     name: 'Idea',
     type: 'idea',
     supportedTypes: ['idea'],
@@ -4987,7 +4987,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
   },
   // Task Assignment Node - demonstrates autocomplete form fields
   {
-    id: 'task_assignment',
+    node_type_id: 'task_assignment',
     name: 'Task Assignment',
     type: 'default',
     supportedTypes: ['default', 'simple'],
@@ -5152,7 +5152,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
   },
   // User Notification Node - another autocomplete example
   {
-    id: 'user_notification',
+    node_type_id: 'user_notification',
     name: 'User Notification',
     type: 'default',
     supportedTypes: ['default', 'simple'],
@@ -5248,7 +5248,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'email_template_generator',
+    node_type_id: 'email_template_generator',
     name: 'Email Template Generator',
     type: 'default',
     supportedTypes: ['default'],
@@ -5453,7 +5453,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'notification_template',
+    node_type_id: 'notification_template',
     name: 'Notification Template',
     type: 'simple',
     supportedTypes: ['simple', 'default'],
@@ -5570,7 +5570,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
   // "Demo: Dependent Autocomplete" workflow and serves as the regression
   // surface for issue #31 (preloaded dependent values must survive reopening).
   {
-    id: 'jira_create_issue',
+    node_type_id: 'jira_create_issue',
     name: 'Jira: Create Issue',
     type: 'default',
     supportedTypes: ['default', 'simple'],
@@ -5714,7 +5714,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
   },
   // Test terminal nodes for multi-handle positioning
   {
-    id: 'test_terminal_multi_output',
+    node_type_id: 'test_terminal_multi_output',
     name: 'Test Multi-Output Start',
     type: 'terminal',
     supportedTypes: ['terminal'],
@@ -5760,7 +5760,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'test_terminal_multi_input',
+    node_type_id: 'test_terminal_multi_input',
     name: 'Test Multi-Input End',
     type: 'terminal',
     supportedTypes: ['terminal'],
@@ -5798,7 +5798,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'test_terminal_four_inputs',
+    node_type_id: 'test_terminal_four_inputs',
     name: 'Test 4-Input End',
     type: 'terminal',
     supportedTypes: ['terminal'],
@@ -5852,7 +5852,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'constant',
+    node_type_id: 'constant',
     name: 'Constant',
     type: 'atom',
     supportedTypes: ['atom'],
@@ -5912,7 +5912,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
-    id: 'cast',
+    node_type_id: 'cast',
     name: 'Cast',
     type: 'atom',
     supportedTypes: ['atom'],
@@ -5992,7 +5992,7 @@ const flowdropNativeNodes: NodeMetadata[] = [
  */
 const customAgentSpecNodes: NodeMetadata[] = [
   {
-    id: `${AGENTSPEC_NAMESPACE}.code_executor`,
+    node_type_id: `${AGENTSPEC_NAMESPACE}.code_executor`,
     name: 'Code Executor',
     type: 'default',
     description: 'Execute code snippets in a sandboxed runtime and return the result.',
@@ -6073,7 +6073,7 @@ const customAgentSpecNodes: NodeMetadata[] = [
     extensions: { 'agentspec:component_type': 'code_executor' }
   },
   {
-    id: `${AGENTSPEC_NAMESPACE}.data_transform`,
+    node_type_id: `${AGENTSPEC_NAMESPACE}.data_transform`,
     name: 'Data Transform',
     type: 'default',
     description: 'Transform data between formats using JSONPath, JMESPath, or Jinja templates.',
@@ -6138,7 +6138,7 @@ const customAgentSpecNodes: NodeMetadata[] = [
     extensions: { 'agentspec:component_type': 'data_transform' }
   },
   {
-    id: `${AGENTSPEC_NAMESPACE}.human_review`,
+    node_type_id: `${AGENTSPEC_NAMESPACE}.human_review`,
     name: 'Human Review',
     type: 'gateway',
     description: 'Pause flow execution and wait for human approval before continuing.',
@@ -6238,7 +6238,7 @@ export const mockNodesCount = mockNodes.length;
  * Get a node by ID
  */
 export function getNodeById(id: string): NodeMetadata | undefined {
-  return mockNodes.find((node) => node.id === id);
+  return mockNodes.find((node) => node.node_type_id === id);
 }
 
 /**

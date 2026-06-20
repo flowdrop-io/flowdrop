@@ -14,7 +14,7 @@ function createMockMetadata(
   overrides?: Partial<NodeMetadata>
 ): NodeMetadata {
   return {
-    id,
+    node_type_id: id,
     name,
     category: 'ai',
     inputs: [],
@@ -41,8 +41,7 @@ function createMockNode(id: string, metadata: NodeMetadata): WorkflowNode {
     data: {
       label: metadata.name,
       config: { model: 'gpt-4' },
-      metadata,
-      nodeId: id
+      metadata
     }
   } as WorkflowNode;
 }

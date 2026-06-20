@@ -123,27 +123,6 @@ function hasWorkflowDataChanged(
 }
 
 /**
- * Heal nodes that are missing `data.nodeId`.
- *
- * Node components derive their handle IDs from `data.nodeId` — a node without
- * it renders with zero handles and SvelteFlow silently drops every edge
- * anchored to it, making an intact graph look corrupted on the canvas.
- * `data.nodeId` always equals the node's own `id`, so it is safe to restore.
- */
-function healMissingNodeIds(workflow: Workflow): Workflow {
-  if (!workflow.nodes?.some((node) => !node.data.nodeId)) {
-    return workflow;
-  }
-
-  return {
-    ...workflow,
-    nodes: workflow.nodes.map((node) =>
-      node.data.nodeId ? node : { ...node, data: { ...node.data, nodeId: node.id } }
-    )
-  };
-}
-
-/**
  * Mutation actions for a {@link WorkflowStore}.
  *
  * Bound facade — safe to detach (`onclick={fd.workflow.actions.undo}`)
@@ -491,7 +470,6 @@ export class WorkflowStore {
    */
   initialize(workflow: Workflow): void {
     workflow = normalizeWorkflowMetadata(workflow);
-    workflow = healMissingNodeIds(workflow);
     this.#workflow = workflow;
     // Reset version counters — workflow is "clean" after initialization
     this.#editVersion = 0;

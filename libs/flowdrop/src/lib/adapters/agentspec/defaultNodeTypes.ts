@@ -49,7 +49,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('start_node', {
     componentType: 'start_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.start_node`,
+      node_type_id: `${AGENTSPEC_NS}.start_node`,
       name: 'Start',
       type: 'terminal',
       description: 'Flow entry point. Defines the initial inputs for the flow.',
@@ -75,7 +75,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('end_node', {
     componentType: 'end_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.end_node`,
+      node_type_id: `${AGENTSPEC_NS}.end_node`,
       name: 'End',
       type: 'terminal',
       description: 'Flow exit point. Defines the final outputs of the flow.',
@@ -101,7 +101,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('llm_node', {
     componentType: 'llm_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.llm_node`,
+      node_type_id: `${AGENTSPEC_NS}.llm_node`,
       name: 'LLM',
       type: 'default',
       description: 'Generate text using a large language model with configurable prompts.',
@@ -167,7 +167,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('branching_node', {
     componentType: 'branching_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.branching_node`,
+      node_type_id: `${AGENTSPEC_NS}.branching_node`,
       name: 'Branch',
       type: 'gateway',
       description: 'Route execution to different paths based on conditions.',
@@ -236,7 +236,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('tool_node', {
     componentType: 'tool_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.tool_node`,
+      node_type_id: `${AGENTSPEC_NS}.tool_node`,
       name: 'Tool',
       type: 'tool',
       description: 'Execute a tool function with inputs and receive outputs.',
@@ -295,7 +295,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('api_node', {
     componentType: 'api_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.api_node`,
+      node_type_id: `${AGENTSPEC_NS}.api_node`,
       name: 'API Call',
       type: 'default',
       description: 'Make an HTTP API call with configurable endpoint, method, and headers.',
@@ -367,7 +367,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('agent_node', {
     componentType: 'agent_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.agent_node`,
+      node_type_id: `${AGENTSPEC_NS}.agent_node`,
       name: 'Agent',
       type: 'default',
       description: 'Run a multi-round agent conversation within the flow.',
@@ -426,7 +426,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('flow_node', {
     componentType: 'flow_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.flow_node`,
+      node_type_id: `${AGENTSPEC_NS}.flow_node`,
       name: 'Sub-Flow',
       type: 'simple',
       description: 'Execute another flow as a sub-routine within this flow.',
@@ -478,7 +478,7 @@ function buildRegistry(): Map<AgentSpecNodeComponentType, NodeTypeEntry> {
   registry.set('map_node', {
     componentType: 'map_node',
     metadata: {
-      id: `${AGENTSPEC_NS}.map_node`,
+      node_type_id: `${AGENTSPEC_NS}.map_node`,
       name: 'Map',
       type: 'default',
       description: 'Apply a flow or operation to each item in a collection (map-reduce).',

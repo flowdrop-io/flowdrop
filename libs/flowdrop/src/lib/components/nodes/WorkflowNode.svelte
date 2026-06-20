@@ -27,8 +27,8 @@
   import { m } from '$lib/messages/index.js';
 
   interface Props {
+    id: string;
     data: WorkflowNode['data'] & {
-      nodeId?: string;
       onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
     selected?: boolean;
@@ -147,7 +147,7 @@
     }
 
     // Check if port is connected
-    const handleId = `${props.data.nodeId}-${type}-${port.id}`;
+    const handleId = `${props.id}-${type}-${port.id}`;
     return fd.workflow.connectedHandles.has(handleId);
   }
 
@@ -179,7 +179,7 @@
     if (props.data.onConfigOpen) {
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
-        id: props.data.nodeId || 'unknown',
+        id: props.id,
         type: 'workflowNode',
         data: props.data
       };
@@ -201,7 +201,7 @@
   }}
   data-handle-interaction={isHandleInteraction}
   aria-label={graph.workflowNode({ name: props.data.metadata.name })}
-  aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
+  aria-describedby="node-description-{props.id}"
 >
   <!-- Default Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
   <div class="flowdrop-workflow-node__header">
@@ -231,10 +231,7 @@
       <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"></div>
     </div>
     <!-- Node Description - line-height 20px so header grows in steps of 10 -->
-    <p
-      class="flowdrop-workflow-node__header-desc"
-      id="node-description-{props.data.nodeId || 'unknown'}"
-    >
+    <p class="flowdrop-workflow-node__header-desc" id="node-description-{props.id}">
       {displayDescription}
     </p>
   </div>
@@ -249,7 +246,7 @@
             <Handle
               type="target"
               position={Position.Left}
-              id={`${props.data.nodeId}-input-${port.id}`}
+              id={`${props.id}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
                 checker,
@@ -330,7 +327,7 @@
             <Handle
               type="source"
               position={Position.Right}
-              id={`${props.data.nodeId}-output-${port.id}`}
+              id={`${props.id}-output-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
                 checker,

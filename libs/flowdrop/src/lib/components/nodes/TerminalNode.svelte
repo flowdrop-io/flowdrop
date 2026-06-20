@@ -66,12 +66,12 @@
     }
   };
 
-  const props = $props<{
+  interface Props {
+    id: string;
     data: {
       label: string;
       config: ConfigValues;
       metadata: NodeMetadata;
-      nodeId?: string;
       extensions?: NodeExtensions;
       onConfigOpen?: (node: {
         id: string;
@@ -82,7 +82,9 @@
     selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
-  }>();
+  }
+
+  let props: Props = $props();
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
@@ -111,7 +113,7 @@
     }
 
     // Check metadata id/name for hints
-    const idLower = (props.data.metadata?.id || '').toLowerCase();
+    const idLower = (props.data.metadata?.node_type_id || '').toLowerCase();
     const nameLower = (props.data.metadata?.name || '').toLowerCase();
     if (idLower.includes('start') || nameLower.includes('start')) {
       return 'start';
@@ -159,7 +161,7 @@
     if (port.required) {
       return true;
     }
-    const handleId = `${props.data.nodeId}-${type}-${port.id}`;
+    const handleId = `${props.id}-${type}-${port.id}`;
     return fd.workflow.connectedHandles.has(handleId);
   }
 
@@ -298,7 +300,7 @@
   function openConfigSidebar(): void {
     if (props.data.onConfigOpen) {
       const nodeForConfig = {
-        id: props.data.nodeId || 'unknown',
+        id: props.id,
         type: 'terminal',
         data: props.data
       };
@@ -346,7 +348,7 @@
             checker,
             port.dataType
           )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
-          id={`${props.data.nodeId}-input-${port.id}`}
+          id={`${props.id}-input-${port.id}`}
         />
       {/each}
     {/if}
@@ -365,7 +367,7 @@
         <Handle
           type="source"
           position={Position.Right}
-          id={`${props.data.nodeId}-output-${port.id}`}
+          id={`${props.id}-output-${port.id}`}
           style="--fd-handle-fill: {getDataTypeColor(
             checker,
             port.dataType

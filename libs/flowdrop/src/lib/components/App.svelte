@@ -412,8 +412,8 @@
     if (propNodes && propNodes.length > 0) {
       // Merge format-provided nodes with prop nodes (deduplicate by ID, props take priority)
       const formatNodes = fd.formats.getAllFormatNodes();
-      const existingIds = new Set(propNodes.map((n) => n.id));
-      const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
+      const existingIds = new Set(propNodes.map((n) => n.node_type_id));
+      const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.node_type_id));
       nodes = [...propNodes, ...uniqueFormatNodes];
       nodeTypesLoading = false;
       return;
@@ -429,8 +429,8 @@
 
       // Merge format-provided nodes with API nodes (deduplicate by ID, API takes priority)
       const formatNodes = fd.formats.getAllFormatNodes();
-      const existingIds = new Set(fetchedNodes.map((n) => n.id));
-      const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.id));
+      const existingIds = new Set(fetchedNodes.map((n) => n.node_type_id));
+      const uniqueFormatNodes = formatNodes.filter((n) => !existingIds.has(n.node_type_id));
       nodes = [...fetchedNodes, ...uniqueFormatNodes];
       error = null;
       nodeTypesLoading = false;

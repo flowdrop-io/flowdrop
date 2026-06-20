@@ -398,9 +398,6 @@ export function executeSwap(
       label: newMetadata.name,
       config: mappedConfig,
       metadata: newMetadata,
-      // Node components derive their handle IDs from data.nodeId — without it
-      // every edge anchored to this node silently disappears from the canvas.
-      nodeId: newNodeId,
       extensions
     }
   };
@@ -449,7 +446,7 @@ export function getVersionUpgrade(
   currentMetadata: NodeMetadata,
   allNodeTypes: NodeMetadata[]
 ): NodeMetadata | null {
-  const available = allNodeTypes.find((n) => n.id === currentMetadata.id);
+  const available = allNodeTypes.find((n) => n.node_type_id === currentMetadata.node_type_id);
   if (!available) return null;
 
   if (compareSemver(available.version, currentMetadata.version) > 0) {
@@ -491,7 +488,7 @@ export function computeSwapPreviewWithOptions(
 ): SwapPreview {
   const checker = options.checker ?? null;
   const oldNodeId = oldNode.id;
-  const newNodeId = generateNodeId(newMetadata.id, allNodes);
+  const newNodeId = generateNodeId(newMetadata.node_type_id, allNodes);
 
   // Collect connected edges
   const connectedEdges = edges.filter((e) => e.source === oldNodeId || e.target === oldNodeId);
@@ -680,7 +677,7 @@ export function computeInteractiveState(
   options: SwapOptions = {}
 ): InteractiveSwapState {
   const oldNodeId = oldNode.id;
-  const newNodeId = generateNodeId(newMetadata.id, allNodes);
+  const newNodeId = generateNodeId(newMetadata.node_type_id, allNodes);
 
   const connectedEdges = edges.filter((e) => e.source === oldNodeId || e.target === oldNodeId);
 

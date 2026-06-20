@@ -28,7 +28,6 @@
     label: string;
     config: ConfigValues;
     metadata: NodeMetadata;
-    nodeId?: string;
     extensions?: NodeExtensions;
     onConfigOpen?: (node: {
       id: string;
@@ -38,18 +37,19 @@
   }
 
   interface Props {
+    id: string;
     data: AtomNodeData;
     selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
   }
 
-  let { data, selected, isProcessing, isError }: Props = $props();
+  let { id, data, selected, isProcessing, isError }: Props = $props();
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
 
-  const nodeId = $derived(data.nodeId ?? 'unknown');
+  const nodeId = $derived(id);
   const nodeType = $derived(data.metadata?.type ?? 'atom');
 
   // Instance extensions override node-type defaults.

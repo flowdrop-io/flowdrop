@@ -71,16 +71,16 @@ const DEFAULT_CACHE_TTL = DEFAULT_CACHE_TTL_MS;
 
 /**
  * Resolves a template variable path from the node context.
- * Supports dot-notation paths like "metadata.id", "config.apiKey", "id"
+ * Supports dot-notation paths like "metadata.node_type_id", "config.apiKey", "id"
  *
  * @param context - The node context containing all available data
- * @param path - Dot-notation path to resolve (e.g., "metadata.id")
+ * @param path - Dot-notation path to resolve (e.g., "metadata.node_type_id")
  * @returns The resolved value as a string, or undefined if not found
  *
  * @example
  * ```typescript
- * const context = { id: "node-1", metadata: { id: "llm-node" } };
- * resolveVariablePath(context, "metadata.id"); // Returns "llm-node"
+ * const context = { id: "node-1", metadata: { node_type_id: "llm-node" } };
+ * resolveVariablePath(context, "metadata.node_type_id"); // Returns "llm-node"
  * resolveVariablePath(context, "id"); // Returns "node-1"
  * ```
  */
@@ -118,8 +118,8 @@ function resolveVariablePath(context: NodeContext, path: string): string | undef
  * @example
  * ```typescript
  * const url = "/api/nodes/{nodeTypeId}/schema?instance={instanceId}";
- * const mapping = { nodeTypeId: "metadata.id", instanceId: "id" };
- * const context = { id: "node-1", metadata: { id: "llm-node" } };
+ * const mapping = { nodeTypeId: "metadata.node_type_id", instanceId: "id" };
+ * const context = { id: "node-1", metadata: { node_type_id: "llm-node" } };
  * resolveTemplate(url, mapping, context);
  * // Returns "/api/nodes/llm-node/schema?instance=node-1"
  * ```
@@ -196,7 +196,7 @@ function isCacheValid(entry: SchemaCacheEntry, ttl: number = DEFAULT_CACHE_TTL):
  * const endpoint: DynamicSchemaEndpoint = {
  *   url: "/api/nodes/{nodeTypeId}/schema",
  *   method: "GET",
- *   parameterMapping: { nodeTypeId: "metadata.id" }
+ *   parameterMapping: { nodeTypeId: "metadata.node_type_id" }
  * };
  *
  * const result = await fetchDynamicSchema(endpoint, node);
@@ -365,7 +365,7 @@ export async function fetchDynamicSchema(
  * ```typescript
  * const link: ExternalEditLink = {
  *   url: "https://admin.example.com/nodes/{nodeTypeId}/edit/{instanceId}",
- *   parameterMapping: { nodeTypeId: "metadata.id", instanceId: "id" }
+ *   parameterMapping: { nodeTypeId: "metadata.node_type_id", instanceId: "id" }
  * };
  *
  * const url = resolveExternalEditUrl(link, node, workflowId);

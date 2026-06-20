@@ -42,32 +42,6 @@ describe('WorkflowStore', () => {
       expect(fd.workflow.current).toEqual(testWorkflow);
       expect(fd.workflow.isDirty).toBe(false);
     });
-
-    it('should heal nodes missing data.nodeId on load', () => {
-      // A node without data.nodeId renders with zero handles and all its
-      // edges vanish from the canvas — heal it to node.id on load
-      const broken = createTestNode({ id: 'broken-node' });
-      delete broken.data.nodeId;
-      const intact = createTestNode({ id: 'intact-node' });
-
-      fd.workflow.initialize(createTestWorkflow({ nodes: [broken, intact] }));
-
-      const nodes = fd.workflow.nodes;
-      expect(nodes.find((n) => n.id === 'broken-node')?.data.nodeId).toBe('broken-node');
-      expect(nodes.find((n) => n.id === 'intact-node')?.data.nodeId).toBe('intact-node');
-      // Healing is a render fix, not a user edit — stays clean
-      expect(fd.workflow.isDirty).toBe(false);
-    });
-
-    it('should preserve existing data.nodeId values as-is', () => {
-      const node = createTestNode({ id: 'ok-node' });
-      node.data.nodeId = 'custom-preserved-value';
-      const workflow = createTestWorkflow({ nodes: [node] });
-
-      fd.workflow.initialize(workflow);
-
-      expect(fd.workflow.nodes[0].data.nodeId).toBe('custom-preserved-value');
-    });
   });
 
   describe('metadata healing on load (1.x back-compat)', () => {

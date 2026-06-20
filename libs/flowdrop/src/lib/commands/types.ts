@@ -437,20 +437,20 @@ export function buildTypeMap(nodeTypes: NodeMetadata[]): Map<string, NodeMetadat
 
   // First pass: register full IDs and count short ID occurrences
   for (const metadata of nodeTypes) {
-    map.set(metadata.id, metadata);
+    map.set(metadata.node_type_id, metadata);
 
-    const dotIndex = metadata.id.indexOf('.');
+    const dotIndex = metadata.node_type_id.indexOf('.');
     if (dotIndex !== -1) {
-      const shortId = metadata.id.substring(dotIndex + 1);
+      const shortId = metadata.node_type_id.substring(dotIndex + 1);
       shortIdCounts.set(shortId, (shortIdCounts.get(shortId) ?? 0) + 1);
     }
   }
 
   // Second pass: register unique short IDs
   for (const metadata of nodeTypes) {
-    const dotIndex = metadata.id.indexOf('.');
+    const dotIndex = metadata.node_type_id.indexOf('.');
     if (dotIndex !== -1) {
-      const shortId = metadata.id.substring(dotIndex + 1);
+      const shortId = metadata.node_type_id.substring(dotIndex + 1);
       if (shortIdCounts.get(shortId) === 1) {
         map.set(shortId, metadata);
       }

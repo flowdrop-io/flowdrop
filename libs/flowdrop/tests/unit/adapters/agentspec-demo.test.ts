@@ -171,7 +171,9 @@ describe('Demo 1: Agent Spec Node Type Registry', () => {
 
     console.log('\n=== All Agent Spec Node Types ===');
     for (const meta of allTypes) {
-      console.log(`  ${meta.id.padEnd(28)} | ${meta.name.padEnd(15)} | category: ${meta.category}`);
+      console.log(
+        `  ${meta.node_type_id.padEnd(28)} | ${meta.name.padEnd(15)} | category: ${meta.category}`
+      );
     }
     console.log(`  Total: ${allTypes.length} node types\n`);
 
@@ -182,7 +184,7 @@ describe('Demo 1: Agent Spec Node Type Registry', () => {
     const llmMeta = getAgentSpecNodeMetadata('llm_node');
 
     console.log('\n=== LLM Node Metadata ===');
-    console.log(`  ID:          ${llmMeta!.id}`);
+    console.log(`  ID:          ${llmMeta!.node_type_id}`);
     console.log(`  Name:        ${llmMeta!.name}`);
     console.log(`  Type:        ${llmMeta!.type}`);
     console.log(`  Category:    ${llmMeta!.category}`);
@@ -191,7 +193,7 @@ describe('Demo 1: Agent Spec Node Type Registry', () => {
     console.log(`  Outputs:     ${llmMeta!.outputs.map((p) => p.id).join(', ')}\n`);
 
     expect(llmMeta).toBeDefined();
-    expect(llmMeta!.id).toBe('agentspec.llm_node');
+    expect(llmMeta!.node_type_id).toBe('agentspec.llm_node');
   });
 });
 
@@ -373,7 +375,7 @@ describe('Demo 3: Import Agent Spec JSON into FlowDrop', () => {
     console.log(`  Nodes: ${flowDropWorkflow.nodes.length}`);
     for (const node of flowDropWorkflow.nodes) {
       console.log(
-        `    - ${node.id} (${node.data.metadata.id}) at (${node.position.x}, ${node.position.y})`
+        `    - ${node.id} (${node.data.metadata.node_type_id}) at (${node.position.x}, ${node.position.y})`
       );
       console.log(
         `      inputs:  [${node.data.metadata.inputs.map((p) => `${p.id}:${p.dataType}`).join(', ')}]`
@@ -426,8 +428,8 @@ describe('Demo 4: Round-trip conversion preserves workflow semantics', () => {
     expect(reimported.name).toBe(original.name);
 
     // Each original node type is present after round-trip
-    const originalTypes = new Set(original.nodes.map((n) => n.data.metadata.id));
-    const reimportedTypes = new Set(reimported.nodes.map((n) => n.data.metadata.id));
+    const originalTypes = new Set(original.nodes.map((n) => n.data.metadata.node_type_id));
+    const reimportedTypes = new Set(reimported.nodes.map((n) => n.data.metadata.node_type_id));
     console.log(`  Original types:   ${[...originalTypes].join(', ')}`);
     console.log(`  Reimported types: ${[...reimportedTypes].join(', ')}`);
 
@@ -568,7 +570,7 @@ describe('Demo 7: Unknown component types', () => {
     console.log('\n=== Unknown Component Type Import ===');
     for (const node of workflow.nodes) {
       console.log(
-        `  ${node.data.label.padEnd(10)} | type: ${node.data.metadata.id.padEnd(30)} | category: ${node.data.metadata.category}`
+        `  ${node.data.label.padEnd(10)} | type: ${node.data.metadata.node_type_id.padEnd(30)} | category: ${node.data.metadata.category}`
       );
     }
 

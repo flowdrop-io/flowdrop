@@ -27,12 +27,12 @@
   import NodeConfigButton from './NodeConfigButton.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
-  const props = $props<{
+  interface Props {
+    id: string;
     data: {
       label: string;
       config: ConfigValues;
       metadata: NodeMetadata;
-      nodeId?: string;
       extensions?: NodeExtensions;
       onConfigOpen?: (node: {
         id: string;
@@ -43,7 +43,9 @@
     selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
-  }>();
+  }
+
+  let props: Props = $props();
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
@@ -84,7 +86,7 @@
     if (props.data.onConfigOpen) {
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
-        id: props.data.nodeId || 'unknown',
+        id: props.id,
         type: 'square',
         data: props.data
       };
@@ -128,7 +130,7 @@
         hiddenPorts,
         hideUnconnectedHandles,
         fd.workflow.connectedHandles,
-        props.data.nodeId
+        props.id
       )
     )
   );
@@ -147,7 +149,7 @@
         hiddenPorts,
         hideUnconnectedHandles,
         fd.workflow.connectedHandles,
-        props.data.nodeId
+        props.id
       )
     )
   );
@@ -176,7 +178,7 @@
       index,
       visibleInputPorts.length
     )}px; transform: translateY(-50%); z-index: 30;"
-    id={`${props.data.nodeId}-input-${port.id}`}
+    id={`${props.id}-input-${port.id}`}
   />
 {/each}
 
@@ -242,7 +244,7 @@
       index,
       visibleOutputPorts.length
     )}px; transform: translateY(-50%); z-index: 30;"
-    id={`${props.data.nodeId}-output-${port.id}`}
+    id={`${props.id}-output-${port.id}`}
   />
 {/each}
 

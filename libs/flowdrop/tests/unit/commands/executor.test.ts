@@ -34,7 +34,7 @@ function createMockMetadata(
   overrides?: Partial<NodeMetadata>
 ): NodeMetadata {
   return {
-    id,
+    node_type_id: id,
     name,
     category: 'ai',
     inputs: [],
@@ -69,8 +69,7 @@ function createMockNode(
     data: {
       label: metadata.name,
       config: { model: 'gpt-4', temperature: 0.7 },
-      metadata,
-      nodeId: id
+      metadata
     },
     ...overrides
   } as WorkflowNode;
@@ -181,7 +180,7 @@ describe('executeCommand — add_node', () => {
     expect(addedNode.id).toBe('agentspec.llm_node.1');
     expect(addedNode.type).toBe('universalNode');
     expect(addedNode.deletable).toBe(true);
-    expect(addedNode.data.nodeId).toBe('agentspec.llm_node.1');
+    expect(addedNode.id).toBe('agentspec.llm_node.1');
     expect(addedNode.data.label).toBe('LLM Node');
     expect(addedNode.data.metadata).toBe(llmMetadata);
     expect(addedNode.data.config).toEqual({ model: 'gpt-4', temperature: 0.7 });
@@ -633,8 +632,7 @@ describe('executeCommand — set_config validation', () => {
       data: {
         label: 'LLM Node',
         config: { model: 'gpt-4', temperature: 0.7, stream: false },
-        metadata: enumMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: enumMetadata
       }
     });
   }
@@ -766,8 +764,7 @@ describe('executeCommand — set_config validation', () => {
       data: {
         label: 'Basic Node',
         config: {},
-        metadata: noSchemaMetadata,
-        nodeId: 'agentspec.basic_node.1'
+        metadata: noSchemaMetadata
       }
     });
     const dispatch = createMockDispatch();
@@ -2140,8 +2137,7 @@ describe('executeCommand — swap_node', () => {
       data: {
         label: 'LLM Node',
         config: { model: 'gpt-4', temperature: 0.7 },
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     const workflow = createMockWorkflow([node]);
@@ -2171,8 +2167,7 @@ describe('executeCommand — swap_node', () => {
       data: {
         label: 'LLM Node',
         config: { model: 'gpt-4', temperature: 0.7 },
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     const workflow = createMockWorkflow([node]);
@@ -2194,8 +2189,7 @@ describe('executeCommand — swap_node', () => {
       data: {
         label: 'LLM Node',
         config: { model: 'gpt-4', temperature: 0.7 },
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     const otherNode = createMockNode('agentspec.api_node.1', apiMetadata);
@@ -2229,8 +2223,7 @@ describe('executeCommand — swap_node', () => {
       data: {
         label: 'LLM Node',
         config: {},
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     const otherNode = createMockNode('agentspec.api_node.1', apiMetadata);
@@ -2263,8 +2256,7 @@ describe('executeCommand — swap_node', () => {
       data: {
         label: 'LLM Node',
         config: {},
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     // 7 string edges into llm_node.1's llm_output — calculator has no string ports
@@ -2301,14 +2293,13 @@ describe('executeCommand — swap_node', () => {
     expect(namedCount).toBe(5);
   });
 
-  it('writes data.nodeId on the replacement node so its handles render', () => {
+  it('gives the replacement node a real id so its handles render', () => {
     const dispatch = createMockDispatch();
     const node = createMockNode('agentspec.llm_node.1', llmMetadata, {
       data: {
         label: 'LLM Node',
         config: {},
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     const workflow = createMockWorkflow([node]);
@@ -2322,10 +2313,10 @@ describe('executeCommand — swap_node', () => {
     expect(result.ok).toBe(true);
     const update = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock.calls[0][0];
     const newNode = update.nodes.find(
-      (n: WorkflowNode) => n.data.metadata.id === 'agentspec.api_node'
+      (n: WorkflowNode) => n.data.metadata.node_type_id === 'agentspec.api_node'
     );
     expect(newNode).toBeDefined();
-    expect(newNode.data.nodeId).toBe(newNode.id);
+    expect(newNode.id).toBeTruthy();
   });
 
   it('reports config carried over and reset', () => {
@@ -2334,8 +2325,7 @@ describe('executeCommand — swap_node', () => {
       data: {
         label: 'LLM Node',
         config: { model: 'gpt-4', temperature: 0.7 },
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     const workflow = createMockWorkflow([node]);
@@ -2409,8 +2399,7 @@ describe('executeCommand — swap_node', () => {
       data: {
         label: 'LLM Node',
         config: { model: 'gpt-4', temperature: 0.7 },
-        metadata: llmMetadata,
-        nodeId: 'agentspec.llm_node.1'
+        metadata: llmMetadata
       }
     });
     const workflow = createMockWorkflow([node]);

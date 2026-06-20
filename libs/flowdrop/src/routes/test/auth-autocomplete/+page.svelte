@@ -32,7 +32,7 @@
 
   // Node metadata for a task_assignment node with auth-required autocomplete
   const taskAssignmentNode: NodeMetadata = {
-    id: 'task_assignment_auth_test',
+    node_type_id: 'task_assignment_auth_test',
     name: 'Task Assignment (Auth Test)',
     type: 'default',
     description: 'Task assignment node with auth-required autocomplete endpoint',
@@ -92,7 +92,6 @@
         type: 'universalNode',
         position: { x: 600, y: 200 },
         data: {
-          nodeId: 'node-1',
           label: 'Task Assignment (Auth Test)',
           config: { assignee: '' },
           metadata: taskAssignmentNode

@@ -111,7 +111,7 @@
       jobRows.push({
         key: job.id,
         label: job.label || node.data.label,
-        typeId: node.data.metadata.id,
+        typeId: node.data.metadata.node_type_id,
         nodeId: job.nodeId,
         status: resolveStatus({ status: job.status }),
         started: job.started,
@@ -137,7 +137,7 @@
         return {
           key: node.id,
           label: node.data.label,
-          typeId: node.data.metadata.id,
+          typeId: node.data.metadata.node_type_id,
           nodeId: node.id,
           status: resolveStatus(statusData),
           started: statusData?.last_executed,

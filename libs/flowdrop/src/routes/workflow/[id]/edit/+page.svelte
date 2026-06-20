@@ -99,9 +99,9 @@
 
             // Refresh metadata for each node
             refreshedNodes = refreshedNodes.map((node) => {
-              const nodeMetadataId = node.data?.metadata?.id;
+              const nodeMetadataId = node.data?.metadata?.node_type_id;
               if (nodeMetadataId) {
-                const freshMetadata = availableNodes.find((n) => n.id === nodeMetadataId);
+                const freshMetadata = availableNodes.find((n) => n.node_type_id === nodeMetadataId);
                 if (freshMetadata) {
                   return {
                     ...node,

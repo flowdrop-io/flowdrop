@@ -37,7 +37,7 @@ function createMockMetadata(
   overrides?: Partial<NodeMetadata>
 ): NodeMetadata {
   return {
-    id,
+    node_type_id: id,
     name,
     category: 'ai',
     inputs: [],
@@ -64,8 +64,7 @@ function createMockNode(id: string, metadata: NodeMetadata): WorkflowNode {
     data: {
       label: metadata.name,
       config: { model: 'gpt-4' },
-      metadata,
-      nodeId: id
+      metadata
     }
   } as WorkflowNode;
 }
@@ -157,7 +156,7 @@ describe('Integration: parse → execute round-trip', () => {
 
     expect(node.type).toBe('universalNode');
     expect(node.deletable).toBe(true);
-    expect(node.data.nodeId).toBe(node.id);
+    expect(node.id).toBeTruthy();
     expect(node.data.config).toEqual({ model: 'gpt-4' }); // config defaults populated
     expect(node.data.label).toBe('LLM Node');
     expect(node.data.metadata).toBe(llmMeta);

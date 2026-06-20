@@ -40,9 +40,7 @@ export function createTestNode(overrides?: Partial<WorkflowNode>): WorkflowNode 
     data: {
       label: 'Test Node',
       config: {},
-      metadata: createTestNodeMetadata(),
-      // Real nodes carry their own id in data.nodeId (handle IDs derive from it)
-      nodeId: id
+      metadata: createTestNodeMetadata()
     },
     ...overrides
   };
@@ -67,7 +65,7 @@ export function createTestEdge(overrides?: Partial<WorkflowEdge>): WorkflowEdge 
  */
 export function createTestNodeMetadata(overrides?: Partial<NodeMetadata>): NodeMetadata {
   return {
-    id: 'test_node',
+    node_type_id: 'test_node',
     name: 'Test Node',
     description: 'A node for testing',
     category: 'processing',

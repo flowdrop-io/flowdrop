@@ -12,7 +12,7 @@ import type { ConfigSchema } from '../types/index.js';
  */
 interface NodeWithMetadata {
   id: string;
-  data?: { metadata?: { id?: string } };
+  data?: { metadata?: { node_type_id?: string } };
 }
 
 /**
@@ -23,7 +23,7 @@ interface NodeWithMetadata {
 export function generateNodeId(nodeTypeId: string, existingNodes: NodeWithMetadata[]): string {
   // Count how many nodes of this type already exist
   const existingNodeIds = existingNodes
-    .filter((node) => node.data?.metadata?.id === nodeTypeId)
+    .filter((node) => node.data?.metadata?.node_type_id === nodeTypeId)
     .map((node) => node.id);
 
   // Extract the numbers from existing IDs with the same prefix

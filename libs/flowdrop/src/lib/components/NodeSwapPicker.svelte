@@ -145,7 +145,7 @@
               {fd.categories.getLabel(category).toUpperCase()}
             </div>
             <div class="swap-picker__flat-list">
-              {#each categoryNodes as nodeType (nodeType.id)}
+              {#each categoryNodes as nodeType (nodeType.node_type_id)}
                 <button class="swap-picker__flat-item" onclick={() => onSelect(nodeType)}>
                   <span
                     class="swap-picker__flat-dot"
@@ -174,7 +174,7 @@
               </span>
             </div>
             <div class="swap-picker__category-items">
-              {#each categoryNodes as nodeType (nodeType.id)}
+              {#each categoryNodes as nodeType (nodeType.node_type_id)}
                 <button class="swap-picker__item" onclick={() => onSelect(nodeType)}>
                   <span
                     class="swap-picker__item-icon"

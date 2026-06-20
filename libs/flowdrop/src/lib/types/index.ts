@@ -392,7 +392,7 @@ export interface AutocompleteConfig {
  *   method: "GET",
  *   headers: { "X-Custom-Header": "value" },
  *   parameterMapping: {
- *     nodeTypeId: "metadata.id",
+ *     nodeTypeId: "metadata.node_type_id",
  *     instanceId: "id"
  *   }
  * };
@@ -420,7 +420,7 @@ export interface DynamicSchemaEndpoint {
   /**
    * Maps template variables to their source paths.
    * Keys are variable names used in the URL, values are dot-notation paths
-   * to resolve from the node context (e.g., "metadata.id", "config.apiKey", "id")
+   * to resolve from the node context (e.g., "metadata.node_type_id", "config.apiKey", "id")
    */
   parameterMapping?: Record<string, string>;
 
@@ -453,7 +453,7 @@ export interface DynamicSchemaEndpoint {
  *   url: "https://admin.example.com/nodes/{nodeTypeId}/edit/{instanceId}",
  *   label: "Configure in Admin Panel",
  *   parameterMapping: {
- *     nodeTypeId: "metadata.id",
+ *     nodeTypeId: "metadata.node_type_id",
  *     instanceId: "id"
  *   },
  *   openInNewTab: true
@@ -483,7 +483,7 @@ export interface ExternalEditLink {
   /**
    * Maps template variables to their source paths.
    * Keys are variable names used in the URL, values are dot-notation paths
-   * to resolve from the node context (e.g., "metadata.id", "config.apiKey", "id")
+   * to resolve from the node context (e.g., "metadata.node_type_id", "config.apiKey", "id")
    */
   parameterMapping?: Record<string, string>;
 
@@ -688,7 +688,8 @@ export interface NodeExtensions {
  * Node configuration metadata
  */
 export interface NodeMetadata {
-  id: string;
+  /** The node type entity id — the runtime's resolution anchor. */
+  node_type_id: string;
   name: string;
   type?: NodeType;
   /**
@@ -1272,8 +1273,6 @@ export interface WorkflowNode extends Node {
     isProcessing?: boolean;
     /** Error message if the node execution failed */
     error?: string;
-    /** Alternative node identifier */
-    nodeId?: string;
     /** Node execution tracking information */
     executionInfo?: NodeExecutionInfo;
     /**

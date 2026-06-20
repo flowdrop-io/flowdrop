@@ -160,7 +160,9 @@ export function getPossibleConnections(
   targetPort: NodePort;
   compatible: boolean;
 }> {
-  const sourceMetadata = nodeTypes.find((nt) => nt.id === sourceNode.data.metadata.id);
+  const sourceMetadata = nodeTypes.find(
+    (nt) => nt.node_type_id === sourceNode.data.metadata.node_type_id
+  );
   if (!sourceMetadata) return [];
 
   const possibleConnections: Array<{
@@ -180,7 +182,9 @@ export function getPossibleConnections(
   for (const targetNode of targetNodes) {
     if (targetNode.id === sourceNode.id) continue; // Skip self-connection
 
-    const targetMetadata = nodeTypes.find((nt) => nt.id === targetNode.data.metadata.id);
+    const targetMetadata = nodeTypes.find(
+      (nt) => nt.node_type_id === targetNode.data.metadata.node_type_id
+    );
     if (!targetMetadata) continue;
 
     // Get all input ports from target node
@@ -237,8 +241,12 @@ export function validateConnection(
   }
 
   // Get node metadata
-  const sourceMetadata = nodeTypes.find((nt) => nt.id === sourceNode.data.metadata.id);
-  const targetMetadata = nodeTypes.find((nt) => nt.id === targetNode.data.metadata.id);
+  const sourceMetadata = nodeTypes.find(
+    (nt) => nt.node_type_id === sourceNode.data.metadata.node_type_id
+  );
+  const targetMetadata = nodeTypes.find(
+    (nt) => nt.node_type_id === targetNode.data.metadata.node_type_id
+  );
 
   if (!sourceMetadata || !targetMetadata) {
     return { valid: false, error: 'Node metadata not found' };
@@ -287,7 +295,7 @@ export function getConnectionSuggestions(
   const node = nodes.find((n) => n.id === nodeId);
   if (!node) return [];
 
-  const metadata = nodeTypes.find((nt) => nt.id === node.data.metadata.id);
+  const metadata = nodeTypes.find((nt) => nt.node_type_id === node.data.metadata.node_type_id);
   if (!metadata) return [];
 
   const suggestions: Array<{
@@ -304,7 +312,9 @@ export function getConnectionSuggestions(
   const otherNodes = nodes.filter((n) => n.id !== nodeId);
 
   for (const otherNode of otherNodes) {
-    const otherMetadata = nodeTypes.find((nt) => nt.id === otherNode.data.metadata.id);
+    const otherMetadata = nodeTypes.find(
+      (nt) => nt.node_type_id === otherNode.data.metadata.node_type_id
+    );
     if (!otherMetadata) continue;
 
     // Check outputs from other nodes to inputs of current node

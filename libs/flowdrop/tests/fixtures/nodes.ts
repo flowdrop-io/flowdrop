@@ -10,7 +10,7 @@ import type { NodeMetadata } from '$lib/types';
  * Basic text input node
  */
 export const textInputNode: NodeMetadata = {
-  id: 'text_input',
+  node_type_id: 'text_input',
   name: 'Text Input',
   description: 'Accept text input from user',
   category: 'inputs',
@@ -58,7 +58,7 @@ export const textInputNode: NodeMetadata = {
  * Calculator node for testing processing
  */
 export const calculatorNode: NodeMetadata = {
-  id: 'calculator',
+  node_type_id: 'calculator',
   name: 'Calculator',
   description: 'Perform mathematical operations',
   category: 'processing',
@@ -109,7 +109,7 @@ export const calculatorNode: NodeMetadata = {
  * Gateway node for conditional branching
  */
 export const gatewayNode: NodeMetadata = {
-  id: 'gateway',
+  node_type_id: 'gateway',
   name: 'Gateway',
   description: 'Route data based on conditions',
   category: 'control',
@@ -167,7 +167,7 @@ export const gatewayNode: NodeMetadata = {
  * Terminal node (start/end)
  */
 export const terminalNode: NodeMetadata = {
-  id: 'terminal',
+  node_type_id: 'terminal',
   name: 'Terminal',
   description: 'Workflow start or end point',
   category: 'control',
@@ -202,7 +202,7 @@ export const terminalNode: NodeMetadata = {
  * Note node for documentation
  */
 export const noteNode: NodeMetadata = {
-  id: 'note',
+  node_type_id: 'note',
   name: 'Note',
   description: 'Add documentation notes',
   category: 'helpers',
@@ -230,7 +230,7 @@ export const noteNode: NodeMetadata = {
  * Node with dynamic inputs/outputs
  */
 export const dynamicNode: NodeMetadata = {
-  id: 'dynamic_processor',
+  node_type_id: 'dynamic_processor',
   name: 'Dynamic Processor',
   description: 'Node with user-defined ports',
   category: 'processing',
@@ -297,7 +297,7 @@ export const dynamicNode: NodeMetadata = {
  * Advanced calculator — overlapping ports/config with calculatorNode (for swap testing)
  */
 export const advancedCalculatorNode: NodeMetadata = {
-  id: 'advanced_calculator',
+  node_type_id: 'advanced_calculator',
   name: 'Advanced Calculator',
   description: 'Perform advanced mathematical operations',
   category: 'processing',
@@ -389,7 +389,7 @@ export const calculatorNodeV2: NodeMetadata = {
  * Node with completely different ports (for data loss testing)
  */
 export const textFormatterNode: NodeMetadata = {
-  id: 'text_formatter',
+  node_type_id: 'text_formatter',
   name: 'Text Formatter',
   description: 'Format text strings',
   category: 'processing',
@@ -431,7 +431,7 @@ export const textFormatterNode: NodeMetadata = {
  * Node with ports that match by name but not ID (for name-based matching tests)
  */
 export const mathProcessorNode: NodeMetadata = {
-  id: 'math_processor',
+  node_type_id: 'math_processor',
   name: 'Math Processor',
   description: 'Process mathematical expressions',
   category: 'processing',
@@ -472,7 +472,7 @@ export const mathProcessorNode: NodeMetadata = {
  * Node with no ports at all (for edge case testing)
  */
 export const isolatedNode: NodeMetadata = {
-  id: 'isolated',
+  node_type_id: 'isolated',
   name: 'Isolated Node',
   description: 'A node with no ports',
   category: 'helpers',

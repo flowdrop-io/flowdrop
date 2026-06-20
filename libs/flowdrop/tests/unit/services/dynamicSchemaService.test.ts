@@ -47,7 +47,7 @@ function makeNode(overrides: Partial<WorkflowNode> = {}): WorkflowNode {
       label: 'LLM Node',
       config: { apiKey: 'secret' },
       metadata: {
-        id: 'llm-node',
+        node_type_id: 'llm-node',
         name: 'LLM Node',
         description: 'An LLM node',
         category: 'ai',
@@ -66,7 +66,7 @@ function makeEndpoint(overrides: Partial<DynamicSchemaEndpoint> = {}): DynamicSc
   return {
     url: '/api/nodes/{nodeTypeId}/schema',
     method: 'GET',
-    parameterMapping: { nodeTypeId: 'metadata.id' },
+    parameterMapping: { nodeTypeId: 'metadata.node_type_id' },
     ...overrides
   };
 }
@@ -235,7 +235,7 @@ describe('dynamicSchemaService', () => {
         const node = makeNode();
         const endpoint = makeEndpoint({
           url: '/api/nodes/{nodeTypeId}/schema?instance={instanceId}',
-          parameterMapping: { nodeTypeId: 'metadata.id', instanceId: 'id' }
+          parameterMapping: { nodeTypeId: 'metadata.node_type_id', instanceId: 'id' }
         });
 
         await callFetch(endpoint, node);
@@ -285,7 +285,7 @@ describe('dynamicSchemaService', () => {
         const endpoint = makeEndpoint({
           url: 'https://api/schema',
           method: 'POST',
-          parameterMapping: { nodeTypeId: 'metadata.id' },
+          parameterMapping: { nodeTypeId: 'metadata.node_type_id' },
           body: { nodeType: '{nodeTypeId}', static: 42 }
         });
 
@@ -303,7 +303,7 @@ describe('dynamicSchemaService', () => {
   describe('resolveExternalEditUrl', () => {
     const link: ExternalEditLink = {
       url: 'https://admin.example.com/nodes/{nodeTypeId}/edit/{instanceId}',
-      parameterMapping: { nodeTypeId: 'metadata.id', instanceId: 'id' }
+      parameterMapping: { nodeTypeId: 'metadata.node_type_id', instanceId: 'id' }
     };
 
     it('resolves template variables in the URL', () => {
@@ -329,7 +329,7 @@ describe('dynamicSchemaService', () => {
     it('uses & separator when URL already has query params', () => {
       const linkWithQuery: ExternalEditLink = {
         url: 'https://admin.example.com/edit?nodeType={nodeTypeId}',
-        parameterMapping: { nodeTypeId: 'metadata.id' },
+        parameterMapping: { nodeTypeId: 'metadata.node_type_id' },
         callbackUrlParam: 'return'
       };
       const url = resolveExternalEditUrl(

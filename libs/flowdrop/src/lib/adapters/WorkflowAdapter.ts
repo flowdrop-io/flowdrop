@@ -121,7 +121,7 @@ export class WorkflowAdapter {
     position: { x: number; y: number },
     config?: Record<string, unknown>
   ): StandardNode {
-    const metadata = this.nodeTypes.find((nt) => nt.id === nodeType);
+    const metadata = this.nodeTypes.find((nt) => nt.node_type_id === nodeType);
     if (!metadata) {
       throw new Error(`Node type '${nodeType}' not found`);
     }
@@ -372,7 +372,7 @@ export class WorkflowAdapter {
       description: svelteFlowWorkflow.description,
       nodes: svelteFlowWorkflow.nodes.map((node) => ({
         id: node.id,
-        type: node.data.metadata.id,
+        type: node.data.metadata.node_type_id,
         position: node.position,
         data: {
           label: node.data.label,
@@ -407,8 +407,7 @@ export class WorkflowAdapter {
         data: {
           label: node.data.label,
           config: node.data.config,
-          metadata: node.data.metadata,
-          nodeId: node.id
+          metadata: node.data.metadata
         }
       })),
       edges: workflow.edges.map((edge) => ({
@@ -457,7 +456,7 @@ export class WorkflowAdapter {
 
     cloned.nodes.forEach((node) => {
       const oldId = node.id;
-      const nodeTypeId = node.data.metadata.id;
+      const nodeTypeId = node.data.metadata.node_type_id;
 
       // Get the current count for this node type
       const currentCount = nodeTypeCounts.get(nodeTypeId) || 0;

@@ -328,7 +328,7 @@ export class AgentSpecAdapter {
       metadata: {
         'flowdrop:position': node.position,
         'flowdrop:node_id': node.id,
-        'flowdrop:node_type_id': node.data.metadata.id
+        'flowdrop:node_type_id': node.data.metadata.node_type_id
       }
     } as AgentSpecNode;
 
@@ -418,7 +418,7 @@ export class AgentSpecAdapter {
     }
 
     // Infer from FlowDrop node type ID
-    const fromId = extractComponentType(node.data.metadata.id);
+    const fromId = extractComponentType(node.data.metadata.node_type_id);
     if (fromId) return fromId as AgentSpecNodeComponentType;
 
     // Infer from FlowDrop visual type + category
@@ -470,7 +470,7 @@ export class AgentSpecAdapter {
       `${AGENTSPEC_NAMESPACE}.${asNode.component_type}`;
 
     const metadata: NodeMetadata = {
-      id: nodeTypeId,
+      node_type_id: nodeTypeId,
       name: defaults.defaultName,
       type: defaults.visualType,
       description: asNode.description || defaults.defaultDescription,

@@ -9,7 +9,7 @@
   import Icon from '@iconify/svelte';
   import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import type { NodeMetadata, NodePort } from '../../types/index.js';
+  import type { ConfigValues, NodeMetadata, NodePort } from '../../types/index.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
@@ -19,10 +19,11 @@
     description?: string;
   }
 
-  const props = $props<{
+  interface Props {
+    id: string;
     data: {
       label: string;
-      config: {
+      config: ConfigValues & {
         icon?: string;
         color?: string;
         toolName?: string;
@@ -31,7 +32,6 @@
         parameters?: ToolNodeParameter[];
       };
       metadata: NodeMetadata;
-      nodeId?: string;
       onConfigOpen?: (node: {
         id: string;
         type: string;
@@ -45,7 +45,9 @@
     selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
-  }>();
+  }
+
+  let props: Props = $props();
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
@@ -142,7 +144,7 @@
     if (props.data.onConfigOpen) {
       // Create a WorkflowNodeType-like object for the global ConfigSidebar
       const nodeForConfig = {
-        id: props.data.nodeId || 'unknown',
+        id: props.id,
         type: 'tool',
         data: props.data
       };
@@ -163,7 +165,7 @@
   <Handle
     type="target"
     position={Position.Left}
-    id={`${props.data.nodeId}-input-${toolInputPort.id}`}
+    id={`${props.id}-input-${toolInputPort.id}`}
     style="top: {firstPortTop}px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
       checker,
       portDataType
@@ -239,7 +241,7 @@
   <Handle
     type="source"
     position={Position.Right}
-    id={`${props.data.nodeId}-output-${toolOutputPort.id}`}
+    id={`${props.id}-output-${toolOutputPort.id}`}
     style="top: {firstPortTop}px; transform: translateY(-50%); z-index: 30; --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
       checker,
       portDataType

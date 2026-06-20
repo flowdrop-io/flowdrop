@@ -114,7 +114,7 @@ export class NodeOperationsHelper {
       // Use fallback sample nodes
       return [
         {
-          id: 'text-input',
+          node_type_id: 'text-input',
           name: 'Text Input',
           category: 'inputs',
           description: 'Simple text input field',
@@ -124,7 +124,7 @@ export class NodeOperationsHelper {
           outputs: [{ id: 'text', name: 'text', type: 'output', dataType: 'string' }]
         },
         {
-          id: 'text-output',
+          node_type_id: 'text-output',
           name: 'Text Output',
           category: 'outputs',
           description: 'Display text output',
@@ -200,7 +200,7 @@ export class NodeOperationsHelper {
       }
 
       // Generate node ID based on node type and existing nodes
-      const newNodeId = generateNodeId(nodeType.id, existingNodes);
+      const newNodeId = generateNodeId(nodeType.node_type_id, existingNodes);
 
       // All nodes use "universalNode" type
       // UniversalNode component handles internal switching based on metadata and config
@@ -210,8 +210,7 @@ export class NodeOperationsHelper {
         position, // Use the position calculated from the drop event
         deletable: true,
         data: {
-          ...nodeData,
-          nodeId: newNodeId // Use the same ID
+          ...nodeData
         }
       };
 

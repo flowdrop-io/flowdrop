@@ -108,7 +108,7 @@
       nodesByColumn.get(colKey)?.push({
         key: job.id,
         label: job.label || node.data.label,
-        typeId: node.data.metadata.id,
+        typeId: node.data.metadata.node_type_id,
         status,
         durationUs: job.executionTimeUs
       });
@@ -122,7 +122,7 @@
       nodesByColumn.get(colKey)?.push({
         key: node.id,
         label: node.data.label,
-        typeId: node.data.metadata.id,
+        typeId: node.data.metadata.node_type_id,
         status
       });
     }

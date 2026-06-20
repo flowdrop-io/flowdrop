@@ -43,7 +43,7 @@
   // --- Node type definitions (inlined to avoid import path issues) ---
   const testNodeTypes: NodeMetadata[] = [
     {
-      id: 'text_input',
+      node_type_id: 'text_input',
       name: 'Text Input',
       description: 'Accept text input from user',
       category: 'inputs',
@@ -67,7 +67,7 @@
       tags: ['input', 'text']
     },
     {
-      id: 'text_output',
+      node_type_id: 'text_output',
       name: 'Text Output',
       description: 'Display text output',
       category: 'outputs',
@@ -92,7 +92,7 @@
       tags: ['output', 'text']
     },
     {
-      id: 'calculator',
+      node_type_id: 'calculator',
       name: 'Calculator',
       description: 'Perform mathematical operations',
       category: 'processing',
@@ -132,7 +132,7 @@
       tags: ['math', 'processing']
     },
     {
-      id: 'gateway',
+      node_type_id: 'gateway',
       name: 'Gateway',
       description: 'Route data based on conditions',
       category: 'control',
@@ -171,7 +171,7 @@
       tags: ['control', 'branching']
     },
     {
-      id: 'terminal',
+      node_type_id: 'terminal',
       name: 'Terminal',
       description: 'Workflow start or end point',
       category: 'control',
@@ -207,7 +207,6 @@
         type: 'universalNode',
         position: { x: 200, y: 200 },
         data: {
-          nodeId: 'node-input',
           label: 'Text Input',
           config: { defaultValue: 'hello', placeholder: 'Enter text...' },
           metadata: testNodeTypes[0]
@@ -218,7 +217,6 @@
         type: 'universalNode',
         position: { x: 600, y: 200 },
         data: {
-          nodeId: 'node-output',
           label: 'Text Output',
           config: {},
           metadata: testNodeTypes[1]
@@ -264,7 +262,6 @@
         type: 'universalNode',
         position: { x: 100, y: 200 },
         data: {
-          nodeId: 'node-start',
           label: 'Start',
           config: { terminalType: 'start' },
           metadata: testNodeTypes[4]
@@ -275,7 +272,6 @@
         type: 'universalNode',
         position: { x: 350, y: 200 },
         data: {
-          nodeId: 'node-input',
           label: 'Text Input',
           config: { defaultValue: '' },
           metadata: testNodeTypes[0]
@@ -286,7 +282,6 @@
         type: 'universalNode',
         position: { x: 600, y: 100 },
         data: {
-          nodeId: 'node-calc',
           label: 'Calculator',
           config: { operation: 'add' },
           metadata: testNodeTypes[2]
@@ -297,7 +292,6 @@
         type: 'universalNode',
         position: { x: 600, y: 300 },
         data: {
-          nodeId: 'node-output',
           label: 'Text Output',
           config: {},
           metadata: testNodeTypes[1]
@@ -345,7 +339,6 @@
         type: 'universalNode',
         position: { x: 200, y: 200 },
         data: {
-          nodeId: 'node-input',
           label: 'Text Input',
           config: { defaultValue: 'hello', placeholder: 'Enter text...' },
           metadata: testNodeTypes[0]
@@ -356,7 +349,6 @@
         type: 'universalNode',
         position: { x: 600, y: 200 },
         data: {
-          nodeId: 'node-output',
           label: 'Text Output',
           config: {},
           metadata: testNodeTypes[1]
@@ -390,7 +382,6 @@
         type: 'universalNode',
         position: { x: 200, y: 200 },
         data: {
-          nodeId: 'node-input',
           label: 'Text Input',
           config: { defaultValue: '' },
           metadata: testNodeTypes[0]
@@ -401,7 +392,6 @@
         type: 'universalNode',
         position: { x: 600, y: 200 },
         data: {
-          nodeId: 'node-output',
           label: 'Text Output',
           config: {},
           metadata: testNodeTypes[1]

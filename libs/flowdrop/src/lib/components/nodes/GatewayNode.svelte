@@ -23,8 +23,8 @@
   import { m } from '$lib/messages/index.js';
 
   interface Props {
+    id: string;
     data: WorkflowNode['data'] & {
-      nodeId?: string;
       onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
     selected?: boolean;
@@ -83,7 +83,7 @@
     }
 
     // Check if port is connected
-    const handleId = `${props.data.nodeId}-${type}-${port.id}`;
+    const handleId = `${props.id}-${type}-${port.id}`;
     return fd.workflow.connectedHandles.has(handleId);
   }
 
@@ -106,7 +106,7 @@
     }
 
     // Check if branch output is connected
-    const handleId = `${props.data.nodeId}-output-${branchName}`;
+    const handleId = `${props.id}-output-${branchName}`;
     return fd.workflow.connectedHandles.has(handleId);
   }
 
@@ -127,7 +127,7 @@
   function handleNodeDoubleClick(): void {
     if (props.data.onConfigOpen) {
       props.data.onConfigOpen({
-        id: props.data.nodeId || '',
+        id: props.id,
         type: 'gateway',
         data: props.data
       });
@@ -151,7 +151,7 @@
   class:flowdrop-workflow-node--selected={props.selected}
   ondblclick={handleNodeDoubleClick}
   aria-label={graph.gatewayNode({ title: displayTitle })}
-  aria-describedby="node-description-{props.data.nodeId || 'unknown'}"
+  aria-describedby="node-description-{props.id}"
 >
   <!-- Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
   <div class="flowdrop-workflow-node__header">
@@ -173,10 +173,7 @@
       </h3>
     </div>
     <!-- Node Description - line-height 20px so header grows in steps of 10 -->
-    <p
-      class="flowdrop-workflow-node__header-desc"
-      id="node-description-{props.data.nodeId || 'unknown'}"
-    >
+    <p class="flowdrop-workflow-node__header-desc" id="node-description-{props.id}">
       {displayDescription}
     </p>
   </div>
@@ -191,7 +188,7 @@
             <Handle
               type="target"
               position={Position.Left}
-              id={`${props.data.nodeId}-input-${port.id}`}
+              id={`${props.id}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
               style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
                 checker,
@@ -280,7 +277,7 @@
             <Handle
               type="source"
               position={Position.Right}
-              id={`${props.data.nodeId}-output-${branch.name}`}
+              id={`${props.id}-output-${branch.name}`}
               class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
               style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: {isActive
                 ? getDataTypeColorToken(checker, 'trigger')

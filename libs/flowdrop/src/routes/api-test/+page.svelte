@@ -46,7 +46,7 @@
 
       // Get specific node
       if (allNodes.length > 0) {
-        const firstNode = await apiClient.getNodeMetadata(allNodes[0].id);
+        const firstNode = await apiClient.getNodeMetadata(allNodes[0].node_type_id);
         testResults.push(`✓ Retrieved node: ${firstNode.name}`);
       }
 
@@ -201,7 +201,7 @@
               Available Node Types ({nodes.length})
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {#each nodes as node (node.id)}
+              {#each nodes as node (node.node_type_id)}
                 <div class="card bg-base-100 shadow-sm">
                   <div class="card-body p-4">
                     <div class="flex items-center gap-2 mb-2">

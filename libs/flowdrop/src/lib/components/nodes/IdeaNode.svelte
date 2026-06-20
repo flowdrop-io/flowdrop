@@ -19,12 +19,12 @@
    * IdeaNode component props
    * Displays a card-style node for conceptual flow diagrams
    */
-  const props = $props<{
+  interface Props {
+    id: string;
     data: {
       label: string;
       config: ConfigValues;
       metadata: NodeMetadata;
-      nodeId?: string;
       onConfigOpen?: (node: {
         id: string;
         type: string;
@@ -34,7 +34,9 @@
     selected?: boolean;
     isProcessing?: boolean;
     isError?: boolean;
-  }>();
+  }
+
+  let props: Props = $props();
 
   const checker = getInstance().portCompatibility;
 
@@ -101,7 +103,7 @@
   function openConfigSidebar(): void {
     if (props.data.onConfigOpen) {
       const nodeForConfig = {
-        id: props.data.nodeId || 'unknown',
+        id: props.id,
         type: 'idea',
         data: props.data
       };
@@ -139,7 +141,7 @@
         checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); z-index: 30;"
-      id={`${props.data.nodeId}-input-left`}
+      id={`${props.id}-input-left`}
     />
   {/if}
 
@@ -152,7 +154,7 @@
         checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); left: 140px; transform: translateX(-50%); z-index: 30;"
-      id={`${props.data.nodeId}-input-top`}
+      id={`${props.id}-input-top`}
     />
   {/if}
 
@@ -203,7 +205,7 @@
         checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); top: 40px; transform: translateY(-50%); z-index: 30;"
-      id={`${props.data.nodeId}-output-right`}
+      id={`${props.id}-output-right`}
     />
   {/if}
 
@@ -216,7 +218,7 @@
         checker,
         IDEA_DATA_TYPE
       )}; --fd-handle-border-color: var(--fd-handle-border); left: 140px; transform: translateX(-50%); z-index: 30;"
-      id={`${props.data.nodeId}-output-bottom`}
+      id={`${props.id}-output-bottom`}
     />
   {/if}
 </div>
