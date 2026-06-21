@@ -1,4 +1,4 @@
-import type { NodePort } from '$lib/types/index.js';
+import type { ExposedPortsConfig, NodePort } from '$lib/types/index.js';
 
 /**
  * Sort ports by an ordered array of port IDs.
@@ -26,25 +26,22 @@ export function getPortTop(index: number, count: number): number {
 }
 
 /**
- * Determine whether a port should be rendered.
+ * Whether a port is exposed, and so rendered on the canvas.
  *
- * Priority:
- * 1. Manual hide (`hiddenPorts`) — always wins, regardless of connections
- * 2. `hideUnconnectedHandles` — hide if not present in the connected handles set
- * 3. Default — visible
+ * In v2 exposure is semantic, not cosmetic: a not-exposed port is hidden, not
+ * wireable, and not runtime-overridable. Effective exposure is the instance's
+ * explicit `data.config.exposedPorts` override for the port, falling back to
+ * the port's metadata `exposedByDefault` (which itself defaults to exposed).
+ *
+ * @see .claude/plans/exposed-ports.md
  */
 export function isPortVisible(
   port: NodePort,
   direction: 'input' | 'output',
-  hiddenPorts: { inputs?: string[]; outputs?: string[] },
-  hideUnconnectedHandles: boolean,
-  connectedHandles: Set<string>,
-  nodeId: string | undefined
+  exposedPorts: ExposedPortsConfig | undefined
 ): boolean {
-  const hiddenList = direction === 'input' ? hiddenPorts.inputs : hiddenPorts.outputs;
-  if (hiddenList?.includes(port.id)) return false;
-  if (hideUnconnectedHandles) {
-    return connectedHandles.has(`${nodeId}-${direction}-${port.id}`);
-  }
-  return true;
+  const overrides = direction === 'input' ? exposedPorts?.inputs : exposedPorts?.outputs;
+  const override = overrides?.[port.id];
+  if (override !== undefined) return override;
+  return port.exposedByDefault ?? true;
 }

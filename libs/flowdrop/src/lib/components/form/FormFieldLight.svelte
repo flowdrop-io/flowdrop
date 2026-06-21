@@ -42,6 +42,7 @@
   import FormSelect from './FormSelect.svelte';
   import FormCheckboxGroup from './FormCheckboxGroup.svelte';
   import FormArray from './FormArray.svelte';
+  import FormExposedPorts from './FormExposedPorts.svelte';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
 
@@ -138,6 +139,11 @@
 
     if (schema.format === 'template') {
       return 'template-editor-fallback';
+    }
+
+    // Injected port-exposure widget (the `exposedPorts` reserved config prop).
+    if (schema.format === 'exposed-ports') {
+      return 'exposed-ports';
     }
 
     // Object type without specific format would use code editor
@@ -319,6 +325,14 @@
         minItems={schema.minItems}
         maxItems={schema.maxItems}
         addLabel={`Add ${schema.items.title ?? 'Item'}`}
+        onChange={(val) => onChange(val)}
+      />
+    {:else if fieldType === 'exposed-ports'}
+      <FormExposedPorts
+        id={fieldKey}
+        {value}
+        ariaDescribedBy={descriptionId}
+        {node}
         onChange={(val) => onChange(val)}
       />
     {:else if fieldType.endsWith('-fallback')}

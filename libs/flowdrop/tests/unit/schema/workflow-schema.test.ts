@@ -111,11 +111,11 @@ describe('Workflow JSON Schema', () => {
       );
     });
 
-    it('NodeMetadata should require id, name, description, category, version, inputs, and outputs', () => {
+    it('NodeMetadata should require node_type_id, name, description, category, version, inputs, and outputs', () => {
       const def = schema.$defs.NodeMetadata;
       expect(def.required).toEqual(
         expect.arrayContaining([
-          'id',
+          'node_type_id',
           'name',
           'description',
           'category',

@@ -17,9 +17,10 @@
     NodeExtensions,
     NodePort,
     AtomUIConfig,
+    ExposedPortsConfig,
     WorkflowNode as WorkflowNodeType
   } from '../../types/index.js';
-  import { getDataTypeColor } from '$lib/utils/colors.js';
+  import { getPortColorToken } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { applyPortOrder, isPortVisible } from '../../utils/portUtils.js';
   import { ProximityConnectHelper } from '../../helpers/proximityConnect.js';
@@ -56,13 +57,8 @@
   const atomCfg = $derived<AtomUIConfig>(
     data.extensions?.ui?.atom ?? data.metadata?.extensions?.ui?.atom ?? {}
   );
-  const hideUnconnectedHandles = $derived(
-    data.extensions?.ui?.hideUnconnectedHandles ??
-      data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false
-  );
-  const hiddenPorts = $derived(
-    data.extensions?.ui?.hiddenPorts ?? data.metadata?.extensions?.ui?.hiddenPorts ?? {}
+  const exposedPorts = $derived(
+    (data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
   );
   const portOrder = $derived(
     data.extensions?.ui?.portOrder ?? data.metadata?.extensions?.ui?.portOrder ?? {}
@@ -91,31 +87,14 @@
 
   const inPorts = $derived(
     applyPortOrder(ProximityConnectHelper.getAllPorts(nodeLike, 'input'), portOrder.inputs).filter(
-      (p: NodePort) =>
-        isPortVisible(
-          p,
-          'input',
-          hiddenPorts,
-          hideUnconnectedHandles,
-          fd.workflow.connectedHandles,
-          nodeId
-        )
+      (p: NodePort) => isPortVisible(p, 'input', exposedPorts)
     )
   );
   const outPorts = $derived(
     applyPortOrder(
       ProximityConnectHelper.getAllPorts(nodeLike, 'output'),
       portOrder.outputs
-    ).filter((p: NodePort) =>
-      isPortVisible(
-        p,
-        'output',
-        hiddenPorts,
-        hideUnconnectedHandles,
-        fd.workflow.connectedHandles,
-        nodeId
-      )
-    )
+    ).filter((p: NodePort) => isPortVisible(p, 'output', exposedPorts))
   );
 
   /** Friendly label for a value, using the field's oneOf titles when present. */
@@ -157,9 +136,9 @@
     type="target"
     position={Position.Left}
     id={`${nodeId}-input-${port.id}`}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
-      port.dataType
+      port
     )}); top: {portTopPct(index, inPorts.length)}%;"
   />
 {/each}
@@ -192,9 +171,9 @@
     type="source"
     position={Position.Right}
     id={`${nodeId}-output-${port.id}`}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
-      port.dataType
+      port
     )}); top: {portTopPct(index, outPorts.length)}%;"
   />
 {/each}

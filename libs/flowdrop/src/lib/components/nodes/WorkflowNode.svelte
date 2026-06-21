@@ -4,26 +4,26 @@
   Uses SvelteFlow's Handle for connection ports
   Styled with BEM syntax
   
-  UI Extensions Support:
-  - hideUnconnectedHandles: Hides ports that are not connected to reduce visual clutter
+  Port rendering:
+  - Exposure (data.config.exposedPorts, falling back to each port's
+    exposedByDefault) decides which ports render — a not-exposed port is hidden.
   - portOrder: Visual-only reordering of input/output ports (no effect on execution)
-  - hiddenPorts: Manually hidden ports per direction (required ports cannot be hidden)
 -->
 
 <script lang="ts">
   import { Position, Handle } from '@xyflow/svelte';
-  import type { WorkflowNode, NodePort, DynamicPort } from '../../types/index.js';
+  import type { WorkflowNode, DynamicPort, ExposedPortsConfig } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { getNodeIcon } from '../../utils/icons.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import {
-    getDataTypeColorToken,
     getCategoryColorToken,
-    getPortBackgroundColor
+    getPortColorToken,
+    getPortBackgroundColorForPort
   } from '../../utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { applyPortOrder } from '../../utils/portUtils.js';
+  import { applyPortOrder, isPortVisible } from '../../utils/portUtils.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -61,13 +61,11 @@
   );
 
   /**
-   * Get the hideUnconnectedHandles setting from extensions
-   * Merges node type defaults with instance overrides
+   * Per-instance port exposure overrides (semantic: a not-exposed port is
+   * hidden, not wireable, not runtime-overridable). Lives in config.
    */
-  const hideUnconnectedHandles = $derived(
-    props.data.extensions?.ui?.hideUnconnectedHandles ??
-      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false
+  const exposedPorts = $derived(
+    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
   );
 
   /**
@@ -76,14 +74,6 @@
    */
   const portOrder = $derived(
     props.data.extensions?.ui?.portOrder ?? props.data.metadata?.extensions?.ui?.portOrder ?? {}
-  );
-
-  /**
-   * Get the hiddenPorts setting from extensions (visual-only, no effect on execution)
-   * Merges node type defaults with instance overrides
-   */
-  const hiddenPorts = $derived(
-    props.data.extensions?.ui?.hiddenPorts ?? props.data.metadata?.extensions?.ui?.hiddenPorts ?? {}
   );
 
   /**
@@ -123,46 +113,17 @@
   );
 
   /**
-   * Check if a port should be visible based on connection state and settings
-   * @param port - The port to check
-   * @param type - Whether this is an 'input' or 'output' port
-   * @returns true if the port should be visible
+   * Derived list of exposed input ports (static + dynamic).
    */
-  function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
-    // Manual hide takes precedence (required ports are prevented from being hidden in ConfigForm)
-    const manuallyHidden =
-      type === 'input'
-        ? hiddenPorts.inputs?.includes(port.id)
-        : hiddenPorts.outputs?.includes(port.id);
-    if (manuallyHidden) return false;
-
-    // Always show if hideUnconnectedHandles is disabled
-    if (!hideUnconnectedHandles) {
-      return true;
-    }
-
-    // Always show required ports
-    if (port.required) {
-      return true;
-    }
-
-    // Check if port is connected
-    const handleId = `${props.id}-${type}-${port.id}`;
-    return fd.workflow.connectedHandles.has(handleId);
-  }
+  const visibleInputPorts = $derived(
+    allInputPorts.filter((port) => isPortVisible(port, 'input', exposedPorts))
+  );
 
   /**
-   * Derived list of visible input ports based on hideUnconnectedHandles setting
-   * Now includes both static and dynamic inputs
-   */
-  const visibleInputPorts = $derived(allInputPorts.filter((port) => isPortVisible(port, 'input')));
-
-  /**
-   * Derived list of visible output ports based on hideUnconnectedHandles setting
-   * Now includes both static and dynamic outputs
+   * Derived list of exposed output ports (static + dynamic).
    */
   const visibleOutputPorts = $derived(
-    allOutputPorts.filter((port) => isPortVisible(port, 'output'))
+    allOutputPorts.filter((port) => isPortVisible(port, 'output', exposedPorts))
   );
 
   /**
@@ -248,9 +209,9 @@
               position={Position.Left}
               id={`${props.id}-input-${port.id}`}
               class="flowdrop-workflow-node__handle"
-              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
+              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
                 checker,
-                port.dataType
+                port
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               tabindex={-1}
             />
@@ -261,14 +222,14 @@
                 <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
-                  style="background-color: {getPortBackgroundColor(
+                  style="background-color: {getPortBackgroundColorForPort(
                     checker,
-                    port.dataType,
+                    port,
                     15
-                  )}; color: {getDataTypeColorToken(
+                  )}; color: {getPortColorToken(
                     checker,
-                    port.dataType
-                  )}; border: 1px solid {getPortBackgroundColor(checker, port.dataType, 30)};"
+                    port
+                  )}; border: 1px solid {getPortBackgroundColorForPort(checker, port, 30)};"
                 >
                   {port.dataType}
                 </span>
@@ -304,14 +265,14 @@
                 <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
                 <span
                   class="flowdrop-badge flowdrop-badge--sm"
-                  style="background-color: {getPortBackgroundColor(
+                  style="background-color: {getPortBackgroundColorForPort(
                     checker,
-                    port.dataType,
+                    port,
                     15
-                  )}; color: {getDataTypeColorToken(
+                  )}; color: {getPortColorToken(
                     checker,
-                    port.dataType
-                  )}; border: 1px solid {getPortBackgroundColor(checker, port.dataType, 30)};"
+                    port
+                  )}; border: 1px solid {getPortBackgroundColorForPort(checker, port, 30)};"
                 >
                   {port.dataType}
                 </span>
@@ -329,9 +290,9 @@
               position={Position.Right}
               id={`${props.id}-output-${port.id}`}
               class="flowdrop-workflow-node__handle"
-              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColorToken(
+              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
                 checker,
-                port.dataType
+                port
               )}); --fd-handle-border-color: var(--fd-handle-border);"
               tabindex={-1}
             />

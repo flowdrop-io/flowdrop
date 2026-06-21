@@ -2449,11 +2449,6 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
             }
           },
           formats: ['flowdrop']
-        },
-        extensions: {
-          ui: {
-            hideUnconnectedHandles: false
-          }
         }
       },
       measured: {
@@ -3219,11 +3214,6 @@ export const demoForEachLoopWorkflow: Workflow = {
               }
             }
           }
-        },
-        extensions: {
-          ui: {
-            hideUnconnectedHandles: true
-          }
         }
       },
       measured: {
@@ -3307,11 +3297,6 @@ export const demoForEachLoopWorkflow: Workflow = {
                 enum: ['uppercase', 'lowercase', 'passthrough']
               }
             }
-          }
-        },
-        extensions: {
-          ui: {
-            hideUnconnectedHandles: true
           }
         }
       },
@@ -3855,11 +3840,6 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
               }
             }
           }
-        },
-        extensions: {
-          ui: {
-            hideUnconnectedHandles: true
-          }
         }
       },
       measured: {
@@ -4005,11 +3985,6 @@ export const demoTemplateAutocompleteWorkflow: Workflow = {
                 default: ''
               }
             }
-          }
-        },
-        extensions: {
-          ui: {
-            hideUnconnectedHandles: true
           }
         }
       },

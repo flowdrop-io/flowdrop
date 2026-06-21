@@ -10,12 +10,19 @@
 
 <script lang="ts">
   import { Position, Handle } from '@xyflow/svelte';
-  import type { ConfigValues, NodeMetadata, NodeExtensions, NodePort } from '../../types/index.js';
+  import type {
+    ConfigValues,
+    NodeMetadata,
+    NodeExtensions,
+    NodePort,
+    ExposedPortsConfig
+  } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
-  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
+  import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
+  import { isPortVisible } from '../../utils/portUtils.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
 
   /**
@@ -142,28 +149,12 @@
   let variantConfig = $derived(VARIANT_CONFIGS[variant]);
 
   /**
-   * Get the hideUnconnectedHandles setting from extensions
-   * Merges node type defaults with instance overrides
+   * Per-instance port exposure overrides (semantic: a not-exposed port is
+   * hidden, not wireable, not runtime-overridable). Lives in config.
    */
-  const hideUnconnectedHandles = $derived(
-    props.data.extensions?.ui?.hideUnconnectedHandles ??
-      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false
+  const exposedPorts = $derived(
+    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
   );
-
-  /**
-   * Check if a port should be visible based on connection state and settings
-   */
-  function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
-    if (!hideUnconnectedHandles) {
-      return true;
-    }
-    if (port.required) {
-      return true;
-    }
-    const handleId = `${props.id}-${type}-${port.id}`;
-    return fd.workflow.connectedHandles.has(handleId);
-  }
 
   /**
    * Get icon using the same resolution as WorkflowNode
@@ -271,17 +262,17 @@
   );
 
   /**
-   * Visible input ports filtered by hideUnconnectedHandles setting
+   * Exposed input ports.
    */
   let visibleInputPorts = $derived(
-    inputPorts.filter((port: NodePort) => isPortVisible(port, 'input'))
+    inputPorts.filter((port: NodePort) => isPortVisible(port, 'input', exposedPorts))
   );
 
   /**
-   * Visible output ports filtered by hideUnconnectedHandles setting
+   * Exposed output ports.
    */
   let visibleOutputPorts = $derived(
-    outputPorts.filter((port: NodePort) => isPortVisible(port, 'output'))
+    outputPorts.filter((port: NodePort) => isPortVisible(port, 'output', exposedPorts))
   );
 
   /**
@@ -344,9 +335,9 @@
         <Handle
           type="target"
           position={Position.Left}
-          style="--fd-handle-fill: {getDataTypeColor(
+          style="--fd-handle-fill: {getPortColorToken(
             checker,
-            port.dataType
+            port
           )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
           id={`${props.id}-input-${port.id}`}
         />
@@ -368,9 +359,9 @@
           type="source"
           position={Position.Right}
           id={`${props.id}-output-${port.id}`}
-          style="--fd-handle-fill: {getDataTypeColor(
+          style="--fd-handle-fill: {getPortColorToken(
             checker,
-            port.dataType
+            port
           )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
         />
       {/each}

@@ -35,8 +35,6 @@
   // Import the light, registry-based field factory and light fields directly
   // (not via the form barrel, which aggregates the heavy CodeMirror editors).
   import FormField from '$lib/components/form/FormFieldLight.svelte';
-  import FormFieldWrapper from '$lib/components/form/FormFieldWrapper.svelte';
-  import FormToggle from '$lib/components/form/FormToggle.svelte';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/types.js';
   import {
@@ -50,7 +48,7 @@
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { getAvailableVariables } from '$lib/services/variableService.js';
   import { logger } from '../utils/logger.js';
-  import { getDataTypeColorToken, getPortBackgroundColor } from '$lib/utils/colors.js';
+  import { getPortColorToken, getPortBackgroundColorForPort } from '$lib/utils/colors.js';
   import { applyPortOrder } from '$lib/utils/portUtils.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
 
@@ -254,7 +252,6 @@
    * reassigning the whole object, never by mutating a property.
    */
   let uiExtensionValues = $derived.by<NodeUIExtensions>(() => ({
-    hideUnconnectedHandles: initialUIExtensions.hideUnconnectedHandles ?? false,
     portOrder: initialUIExtensions.portOrder
       ? {
           inputs: initialUIExtensions.portOrder.inputs
@@ -262,16 +259,6 @@
             : undefined,
           outputs: initialUIExtensions.portOrder.outputs
             ? [...initialUIExtensions.portOrder.outputs]
-            : undefined
-        }
-      : undefined,
-    hiddenPorts: initialUIExtensions.hiddenPorts
-      ? {
-          inputs: initialUIExtensions.hiddenPorts.inputs
-            ? [...initialUIExtensions.hiddenPorts.inputs]
-            : undefined,
-          outputs: initialUIExtensions.hiddenPorts.outputs
-            ? [...initialUIExtensions.hiddenPorts.outputs]
             : undefined
         }
       : undefined
@@ -405,34 +392,14 @@
   }
 
   /**
-   * Toggle manual visibility of a port. Required ports cannot be hidden.
-   */
-  function togglePortHidden(direction: 'inputs' | 'outputs', portId: string): void {
-    const current = uiExtensionValues.hiddenPorts?.[direction] ?? [];
-    const isHidden = current.includes(portId);
-    const next = isHidden ? current.filter((id) => id !== portId) : [...current, portId];
-    uiExtensionValues = {
-      ...uiExtensionValues,
-      hiddenPorts: {
-        ...uiExtensionValues.hiddenPorts,
-        [direction]: next.length > 0 ? next : undefined
-      }
-    };
-    handleFormBlur();
-  }
-
-  /**
-   * Reset all port customizations (order + hidden) for a direction back to defaults.
+   * Reset the port display order for a direction back to metadata order.
    */
   function resetPortCustomizations(direction: 'inputs' | 'outputs'): void {
     const order = { ...uiExtensionValues.portOrder };
-    const hidden = { ...uiExtensionValues.hiddenPorts };
     delete order[direction];
-    delete hidden[direction];
     uiExtensionValues = {
       ...uiExtensionValues,
-      portOrder: Object.keys(order).length > 0 ? order : undefined,
-      hiddenPorts: Object.keys(hidden).length > 0 ? hidden : undefined
+      portOrder: Object.keys(order).length > 0 ? order : undefined
     };
     handleFormBlur();
   }
@@ -758,40 +725,21 @@
     {#if showUIExtensions && node}
       <div class="config-form__extensions">
         <div class="config-form__extensions-header">
-          <Icon icon="heroicons:adjustments-horizontal" class="config-form__extensions-icon" />
-          <span>Display Settings</span>
+          <Icon icon="heroicons:bars-arrow-down" class="config-form__extensions-icon" />
+          <span>Port Order</span>
         </div>
         <div class="config-form__extensions-content">
-          <!-- Hide Unconnected Handles Toggle -->
-          <FormFieldWrapper
-            id="ext-hideUnconnectedHandles"
-            label="Hide Unconnected Ports"
-            description="Hide input and output ports that are not connected to reduce visual clutter"
-          >
-            <FormToggle
-              id="ext-hideUnconnectedHandles"
-              value={Boolean(uiExtensionValues.hideUnconnectedHandles)}
-              onLabel="Hidden"
-              offLabel="Visible"
-              ariaDescribedBy="ext-hideUnconnectedHandles-description"
-              onChange={(val) => {
-                uiExtensionValues = { ...uiExtensionValues, hideUnconnectedHandles: val };
-                handleFormBlur();
-              }}
-            />
-          </FormFieldWrapper>
-
-          <!-- Input Port Order & Visibility -->
+          <!-- Input Port Order (visual only; exposure lives in the Ports group) -->
           {#if allInputPortsForUI.length > 0}
             <div class="config-form__port-order">
               <div class="config-form__port-order-header">
                 <span class="config-form__port-order-label">Input Ports</span>
-                {#if uiExtensionValues.portOrder?.inputs?.length || uiExtensionValues.hiddenPorts?.inputs?.length}
+                {#if uiExtensionValues.portOrder?.inputs?.length}
                   <button
                     type="button"
                     class="config-form__port-order-reset"
                     onclick={() => resetPortCustomizations('inputs')}
-                    title="Reset to default order and visibility"
+                    title="Reset to default order"
                   >
                     <Icon icon="heroicons:arrow-uturn-left" />
                     Reset
@@ -800,41 +748,22 @@
               </div>
               <ul class="config-form__port-order-list">
                 {#each allInputPortsForUI as port, i (port.id)}
-                  {@const isHidden =
-                    uiExtensionValues.hiddenPorts?.inputs?.includes(port.id) ?? false}
-                  {@const isRequired = port.required ?? false}
-                  <li
-                    class="config-form__port-order-item"
-                    class:config-form__port-order-item--hidden={isHidden}
-                  >
+                  <li class="config-form__port-order-item">
                     <span class="config-form__port-order-name">{port.name}</span>
                     <span
                       class="config-form__port-order-badge"
-                      style="background-color:{getPortBackgroundColor(
+                      style="background-color:{getPortBackgroundColorForPort(
                         checker,
-                        port.dataType,
+                        port,
                         15
-                      )};color:{getDataTypeColorToken(
+                      )};color:{getPortColorToken(
                         checker,
-                        port.dataType
-                      )};border:1px solid {getPortBackgroundColor(checker, port.dataType, 30)}"
+                        port
+                      )};border:1px solid {getPortBackgroundColorForPort(checker, port, 30)}"
                     >
                       {port.dataType}
                     </span>
                     <div class="config-form__port-order-actions">
-                      <button
-                        type="button"
-                        disabled={isRequired}
-                        title={isRequired
-                          ? 'Required ports cannot be hidden'
-                          : isHidden
-                            ? 'Show port'
-                            : 'Hide port'}
-                        class:active={isHidden}
-                        onclick={() => togglePortHidden('inputs', port.id)}
-                      >
-                        <Icon icon={isHidden ? 'heroicons:eye-slash' : 'heroicons:eye'} />
-                      </button>
                       <button
                         type="button"
                         disabled={i === 0 || allInputPortsForUI.length === 1}
@@ -859,17 +788,17 @@
             </div>
           {/if}
 
-          <!-- Output Port Order & Visibility -->
+          <!-- Output Port Order (visual only; exposure lives in the Ports group) -->
           {#if allOutputPortsForUI.length > 0}
             <div class="config-form__port-order">
               <div class="config-form__port-order-header">
                 <span class="config-form__port-order-label">Output Ports</span>
-                {#if uiExtensionValues.portOrder?.outputs?.length || uiExtensionValues.hiddenPorts?.outputs?.length}
+                {#if uiExtensionValues.portOrder?.outputs?.length}
                   <button
                     type="button"
                     class="config-form__port-order-reset"
                     onclick={() => resetPortCustomizations('outputs')}
-                    title="Reset to default order and visibility"
+                    title="Reset to default order"
                   >
                     <Icon icon="heroicons:arrow-uturn-left" />
                     Reset
@@ -878,41 +807,22 @@
               </div>
               <ul class="config-form__port-order-list">
                 {#each allOutputPortsForUI as port, i (port.id)}
-                  {@const isHidden =
-                    uiExtensionValues.hiddenPorts?.outputs?.includes(port.id) ?? false}
-                  {@const isRequired = port.required ?? false}
-                  <li
-                    class="config-form__port-order-item"
-                    class:config-form__port-order-item--hidden={isHidden}
-                  >
+                  <li class="config-form__port-order-item">
                     <span class="config-form__port-order-name">{port.name}</span>
                     <span
                       class="config-form__port-order-badge"
-                      style="background-color:{getPortBackgroundColor(
+                      style="background-color:{getPortBackgroundColorForPort(
                         checker,
-                        port.dataType,
+                        port,
                         15
-                      )};color:{getDataTypeColorToken(
+                      )};color:{getPortColorToken(
                         checker,
-                        port.dataType
-                      )};border:1px solid {getPortBackgroundColor(checker, port.dataType, 30)}"
+                        port
+                      )};border:1px solid {getPortBackgroundColorForPort(checker, port, 30)}"
                     >
                       {port.dataType}
                     </span>
                     <div class="config-form__port-order-actions">
-                      <button
-                        type="button"
-                        disabled={isRequired}
-                        title={isRequired
-                          ? 'Required ports cannot be hidden'
-                          : isHidden
-                            ? 'Show port'
-                            : 'Hide port'}
-                        class:active={isHidden}
-                        onclick={() => togglePortHidden('outputs', port.id)}
-                      >
-                        <Icon icon={isHidden ? 'heroicons:eye-slash' : 'heroicons:eye'} />
-                      </button>
                       <button
                         type="button"
                         disabled={i === 0 || allOutputPortsForUI.length === 1}
@@ -1197,10 +1107,6 @@
     transition: opacity var(--fd-transition-fast);
   }
 
-  .config-form__port-order-item--hidden {
-    opacity: 0.4;
-  }
-
   .config-form__port-order-name {
     flex: 1;
     font-size: var(--fd-text-xs);
@@ -1252,11 +1158,6 @@
   .config-form__port-order-actions button:disabled {
     opacity: 0.3;
     cursor: not-allowed;
-  }
-
-  .config-form__port-order-actions button.active {
-    color: var(--fd-foreground);
-    border-color: var(--fd-border-strong);
   }
 
   .config-form__port-order-actions button :global(svg) {

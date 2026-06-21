@@ -168,103 +168,49 @@ describe('getPortTop', () => {
 
 describe('isPortVisible', () => {
   const port = makePort('data-1');
-  const triggerPort = makePort('trigger-1', 'trigger');
-  const nodeId = 'node-42';
+  // A reserved port that ships not-exposed (e.g. the error output).
+  const hiddenByDefault: NodePort = {
+    ...makePort('error'),
+    type: 'output',
+    exposedByDefault: false
+  };
 
-  describe('manual hide (hiddenPorts)', () => {
-    it('hides an input port listed in hiddenPorts.inputs', () => {
-      const result = isPortVisible(port, 'input', { inputs: ['data-1'] }, false, new Set(), nodeId);
-      expect(result).toBe(false);
+  describe('default exposure (no override)', () => {
+    it('shows a port with no exposedByDefault (missing key reads as exposed)', () => {
+      expect(isPortVisible(port, 'input', undefined)).toBe(true);
+      expect(isPortVisible(port, 'input', {})).toBe(true);
     });
 
-    it('hides an output port listed in hiddenPorts.outputs', () => {
-      const result = isPortVisible(
-        port,
-        'output',
-        { outputs: ['data-1'] },
-        false,
-        new Set(),
-        nodeId
-      );
-      expect(result).toBe(false);
+    it('shows a port with exposedByDefault: true', () => {
+      const p = { ...port, exposedByDefault: true };
+      expect(isPortVisible(p, 'input', {})).toBe(true);
     });
 
-    it('does not hide an input port listed only in hiddenPorts.outputs', () => {
-      const result = isPortVisible(
-        port,
-        'input',
-        { outputs: ['data-1'] },
-        false,
-        new Set(),
-        nodeId
-      );
-      expect(result).toBe(true);
-    });
-
-    it('manual hide wins even when the port is connected', () => {
-      const connected = new Set([`${nodeId}-input-data-1`]);
-      const result = isPortVisible(port, 'input', { inputs: ['data-1'] }, false, connected, nodeId);
-      expect(result).toBe(false);
-    });
-
-    it('shows port not listed in hiddenPorts', () => {
-      const result = isPortVisible(
-        port,
-        'input',
-        { inputs: ['other-port'] },
-        false,
-        new Set(),
-        nodeId
-      );
-      expect(result).toBe(true);
-    });
-
-    it('shows port when hiddenPorts is empty', () => {
-      const result = isPortVisible(port, 'input', {}, false, new Set(), nodeId);
-      expect(result).toBe(true);
+    it('hides a port with exposedByDefault: false (e.g. the error output)', () => {
+      expect(isPortVisible(hiddenByDefault, 'output', undefined)).toBe(false);
+      expect(isPortVisible(hiddenByDefault, 'output', {})).toBe(false);
     });
   });
 
-  describe('hideUnconnectedHandles', () => {
-    it('hides an unconnected port when hideUnconnectedHandles is true', () => {
-      const result = isPortVisible(port, 'input', {}, true, new Set(), nodeId);
+  describe('instance overrides win over the default', () => {
+    it('hides a default-exposed port when overridden to false', () => {
+      const result = isPortVisible(port, 'input', { inputs: { 'data-1': false } });
       expect(result).toBe(false);
     });
 
-    it('shows a connected port when hideUnconnectedHandles is true', () => {
-      const connected = new Set([`${nodeId}-input-data-1`]);
-      const result = isPortVisible(port, 'input', {}, true, connected, nodeId);
+    it('exposes a default-hidden port when overridden to true', () => {
+      const result = isPortVisible(hiddenByDefault, 'output', { outputs: { error: true } });
       expect(result).toBe(true);
     });
 
-    it('uses the correct handle ID format: nodeId-direction-portId', () => {
-      // Only the exact handle ID format should match
-      const wrongFormat = new Set([`data-1`, `input-data-1`, `node-42-data-1`]);
-      const result = isPortVisible(port, 'input', {}, true, wrongFormat, nodeId);
-      expect(result).toBe(false);
-    });
-
-    it('distinguishes input and output handle IDs', () => {
-      // Port is connected as output but we're checking as input — should be hidden
-      const connected = new Set([`${nodeId}-output-data-1`]);
-      const result = isPortVisible(port, 'input', {}, true, connected, nodeId);
-      expect(result).toBe(false);
-    });
-
-    it('shows all ports when hideUnconnectedHandles is false regardless of connections', () => {
-      const result = isPortVisible(port, 'input', {}, false, new Set(), nodeId);
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('default behaviour', () => {
-    it('shows port when hiddenPorts is empty and hideUnconnectedHandles is false', () => {
-      const result = isPortVisible(triggerPort, 'input', {}, false, new Set(), nodeId);
+    it('reads the override from the matching direction only', () => {
+      // An outputs override must not affect an input port of the same id.
+      const result = isPortVisible(port, 'input', { outputs: { 'data-1': false } });
       expect(result).toBe(true);
     });
 
-    it('shows port when nodeId is undefined and neither hide flag applies', () => {
-      const result = isPortVisible(port, 'output', {}, false, new Set(), undefined);
+    it('ignores an override for a different port id', () => {
+      const result = isPortVisible(port, 'input', { inputs: { other: false } });
       expect(result).toBe(true);
     });
   });

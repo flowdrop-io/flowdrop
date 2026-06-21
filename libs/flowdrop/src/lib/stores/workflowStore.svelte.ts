@@ -332,7 +332,7 @@ export class WorkflowStore {
   /**
    * Set of all handle IDs currently connected to edges.
    *
-   * Used by node components to implement hideUnconnectedHandles.
+   * Handle IDs are formatted `{nodeId}-{direction}-{portId}`.
    */
   get connectedHandles(): Set<string> {
     const handles = new Set<string>();

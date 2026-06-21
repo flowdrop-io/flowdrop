@@ -91,10 +91,11 @@ NodeType:
       for user-defined input/output handles
     - **gateway**: Supports `config.branches` for conditional branching paths
 
-    ## UI Extensions
+    ## Port exposure
 
-    All node types support `extensions.ui.hideUnconnectedHandles` to control
-    visibility of unconnected ports.
+    Which ports render is controlled by exposure: each port's metadata
+    `exposedByDefault`, overridable per instance via `config.exposedPorts`. A
+    not-exposed port is hidden, not wireable, and not runtime-overridable.
 
 NodeExecutionStatus:
   type: string

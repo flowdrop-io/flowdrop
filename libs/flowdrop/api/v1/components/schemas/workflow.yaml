@@ -53,7 +53,7 @@ WorkflowNode:
             Use for instance-specific UI states or custom data.
 
             Common use cases:
-            - `extensions.ui.hideUnconnectedHandles`: Hide ports without connections
+            - `extensions.ui.portOrder`: Reorder a node's ports (visual only)
             - `extensions.ui.style`: Custom styling for this node instance
       required:
         - label

@@ -147,10 +147,31 @@ export interface NodePort {
   description?: string;
   defaultValue?: unknown;
   /**
+   * Whether this port is exposed when the instance sets no explicit exposure
+   * for it. Defaults to `true` (a missing key reads as exposed). Reserved ports
+   * that ship hidden until an author opts in (e.g. the `error` output) carry
+   * `false`. Effective exposure XORs this with the instance's `exposedPorts`
+   * config override. See `.claude/plans/exposed-ports.md`.
+   */
+  exposedByDefault?: boolean;
+  /**
    * Optional JSON Schema describing the structure of data on this port.
    * Used for template variable autocomplete to drill into nested properties.
    */
   schema?: OutputSchema | InputSchema;
+}
+
+/**
+ * Per-instance port exposure overrides, stored in `data.config.exposedPorts`.
+ *
+ * A sparse map of explicit per-port decisions. A port absent from the map
+ * falls back to its metadata `exposedByDefault`. In v2 exposure is semantic:
+ * a not-exposed port is hidden on the canvas, not wireable, and not
+ * runtime-overridable. See `.claude/plans/exposed-ports.md`.
+ */
+export interface ExposedPortsConfig {
+  inputs?: Record<string, boolean>;
+  outputs?: Record<string, boolean>;
 }
 
 /**
@@ -615,8 +636,6 @@ export interface AtomUIConfig {
 }
 
 export interface NodeUIExtensions {
-  /** Show/hide unconnected handles (ports) to reduce visual noise */
-  hideUnconnectedHandles?: boolean;
   /** Display/behavior config for minimalist atom nodes (Constant, Cast, …) */
   atom?: AtomUIConfig;
   /**
@@ -625,14 +644,6 @@ export interface NodeUIExtensions {
    * Ports not listed appear at the end in metadata order.
    */
   portOrder?: {
-    inputs?: string[];
-    outputs?: string[];
-  };
-  /**
-   * Manually hidden ports (visual only, no effect on execution).
-   * Required ports cannot be added here — enforced in the UI.
-   */
-  hiddenPorts?: {
     inputs?: string[];
     outputs?: string[];
   };
@@ -650,7 +661,7 @@ export interface NodeUIExtensions {
  * ```typescript
  * const extensions: NodeExtensions = {
  *   ui: {
- *     hideUnconnectedHandles: true,
+ *     portOrder: { inputs: ['value', 'trigger'] },
  *     style: { opacity: 0.8 }
  *   },
  *   "myapp:analytics": {

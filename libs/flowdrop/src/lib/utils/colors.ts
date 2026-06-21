@@ -527,6 +527,39 @@ export function getPortBorderColor(checker: PortCompatibilityChecker, dataType: 
 }
 
 /**
+ * Whether a port is the reserved `error` output port.
+ *
+ * The reserved error output carries an arbitrary data type (json) but should
+ * read as an error affordance (red) wherever it surfaces. See
+ * `.claude/plans/exposed-ports.md`.
+ */
+export function isErrorPort(port: { id: string; type?: string }): boolean {
+  return port.id === 'error' && port.type !== 'input';
+}
+
+/**
+ * Port colour token: red for the reserved error output, else its data type.
+ */
+export function getPortColorToken(
+  checker: PortCompatibilityChecker,
+  port: { id: string; type?: string; dataType: string }
+): string {
+  return isErrorPort(port) ? 'var(--fd-node-red)' : getDataTypeColorToken(checker, port.dataType);
+}
+
+/**
+ * Port background tint, honouring the reserved error port's red affordance.
+ */
+export function getPortBackgroundColorForPort(
+  checker: PortCompatibilityChecker,
+  port: { id: string; type?: string; dataType: string },
+  opacity: number = 25
+): string {
+  const colorToken = getPortColorToken(checker, port);
+  return `color-mix(in srgb, ${colorToken} ${opacity}%, transparent)`;
+}
+
+/**
  * Convert RGB components to hex color string
  * @param r - Red component (0-255)
  * @param g - Green component (0-255)

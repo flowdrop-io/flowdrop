@@ -3,9 +3,9 @@
   A simple square node with optional input and output ports
   Styled with BEM syntax
 
-  UI Extensions Support:
-  - hideUnconnectedHandles: Hides ports that are not connected to reduce visual clutter
-  - hiddenPorts: Manually hide individual ports (visual-only, no effect on execution)
+  Port rendering:
+  - Exposure (data.config.exposedPorts, falling back to each port's
+    exposedByDefault) decides which ports render — a not-exposed port is hidden.
   - portOrder: Reorder ports by ID array (unspecified ports appear at end in original order)
 -->
 
@@ -16,11 +16,12 @@
     NodeMetadata,
     NodeExtensions,
     NodePort,
-    DynamicPort
+    DynamicPort,
+    ExposedPortsConfig
   } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import Icon from '@iconify/svelte';
-  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
+  import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { applyPortOrder, getPortTop, isPortVisible } from '../../utils/portUtils.js';
@@ -51,16 +52,11 @@
   const checker = fd.portCompatibility;
 
   /**
-   * Get UI extension settings from extensions, merging node type defaults with instance overrides.
+   * Per-instance port exposure overrides (semantic: a not-exposed port is
+   * hidden, not wireable, not runtime-overridable). Lives in config.
    */
-  const hideUnconnectedHandles = $derived(
-    props.data.extensions?.ui?.hideUnconnectedHandles ??
-      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false
-  );
-
-  const hiddenPorts = $derived(
-    props.data.extensions?.ui?.hiddenPorts ?? props.data.metadata?.extensions?.ui?.hiddenPorts ?? {}
+  const exposedPorts = $derived(
+    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
   );
 
   const portOrder = $derived(
@@ -123,16 +119,7 @@
     applyPortOrder(
       [...(props.data.metadata?.inputs ?? []), ...dynamicInputs],
       portOrder.inputs
-    ).filter((p: NodePort) =>
-      isPortVisible(
-        p,
-        'input',
-        hiddenPorts,
-        hideUnconnectedHandles,
-        fd.workflow.connectedHandles,
-        props.id
-      )
-    )
+    ).filter((p: NodePort) => isPortVisible(p, 'input', exposedPorts))
   );
 
   /**
@@ -142,16 +129,7 @@
     applyPortOrder(
       [...(props.data.metadata?.outputs ?? []), ...dynamicOutputs],
       portOrder.outputs
-    ).filter((p: NodePort) =>
-      isPortVisible(
-        p,
-        'output',
-        hiddenPorts,
-        hideUnconnectedHandles,
-        fd.workflow.connectedHandles,
-        props.id
-      )
-    )
+    ).filter((p: NodePort) => isPortVisible(p, 'output', exposedPorts))
   );
 
   /**
@@ -171,9 +149,9 @@
   <Handle
     type="target"
     position={Position.Left}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
-      port.dataType
+      port
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,
       visibleInputPorts.length
@@ -237,9 +215,9 @@
   <Handle
     type="source"
     position={Position.Right}
-    style="--fd-handle-fill: var(--fd-port-skin-color, {getDataTypeColor(
+    style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
-      port.dataType
+      port
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
       index,
       visibleOutputPorts.length

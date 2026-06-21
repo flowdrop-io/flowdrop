@@ -3,14 +3,16 @@
   Visual representation of gateway/branch nodes with branching flow indicators
   Shows active branches and execution paths
   Styled with BEM syntax following WorkflowNode pattern
-  
-  UI Extensions Support:
-  - hideUnconnectedHandles: Hides ports that are not connected to reduce visual clutter
+
+  Port rendering:
+  - Input-port exposure (data.config.exposedPorts, falling back to each port's
+    exposedByDefault) decides which input ports render. Branches are authored
+    output paths and always render.
 -->
 
 <script lang="ts">
   import { Position, Handle } from '@xyflow/svelte';
-  import type { WorkflowNode, NodePort, Branch } from '../../types/index.js';
+  import type { WorkflowNode, Branch, ExposedPortsConfig } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import { getNodeIcon } from '../../utils/icons.js';
@@ -20,6 +22,7 @@
     getPortBackgroundColor
   } from '../../utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
+  import { isPortVisible } from '../../utils/portUtils.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -56,59 +59,19 @@
   );
 
   /**
-   * Get the hideUnconnectedHandles setting from extensions
-   * Merges node type defaults with instance overrides
+   * Per-instance port exposure overrides (semantic: a not-exposed port is
+   * hidden, not wireable, not runtime-overridable). Lives in config.
    */
-  const hideUnconnectedHandles = $derived(
-    props.data.extensions?.ui?.hideUnconnectedHandles ??
-      props.data.metadata?.extensions?.ui?.hideUnconnectedHandles ??
-      false
+  const exposedPorts = $derived(
+    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
   );
 
   /**
-   * Check if a port should be visible based on connection state and settings
-   * @param port - The port to check
-   * @param type - Whether this is an 'input' or 'output' port
-   * @returns true if the port should be visible
-   */
-  function isPortVisible(port: NodePort, type: 'input' | 'output'): boolean {
-    // Always show if hideUnconnectedHandles is disabled
-    if (!hideUnconnectedHandles) {
-      return true;
-    }
-
-    // Always show required ports
-    if (port.required) {
-      return true;
-    }
-
-    // Check if port is connected
-    const handleId = `${props.id}-${type}-${port.id}`;
-    return fd.workflow.connectedHandles.has(handleId);
-  }
-
-  /**
-   * Derived list of visible input ports based on hideUnconnectedHandles setting
+   * Derived list of exposed input ports.
    */
   const visibleInputPorts = $derived(
-    props.data.metadata.inputs.filter((port) => isPortVisible(port, 'input'))
+    props.data.metadata.inputs.filter((port) => isPortVisible(port, 'input', exposedPorts))
   );
-
-  /**
-   * Check if a branch output should be visible based on connection state
-   * @param branchName - The branch name to check
-   * @returns true if the branch should be visible
-   */
-  function isBranchVisible(branchName: string): boolean {
-    // Always show if hideUnconnectedHandles is disabled
-    if (!hideUnconnectedHandles) {
-      return true;
-    }
-
-    // Check if branch output is connected
-    const handleId = `${props.id}-output-${branchName}`;
-    return fd.workflow.connectedHandles.has(handleId);
-  }
 
   // Gateway-specific data - branches are calculated at runtime from config
   let branches = $derived((props.data.config?.branches as Branch[]) || []);
@@ -117,9 +80,9 @@
   );
 
   /**
-   * Derived list of visible branches based on hideUnconnectedHandles setting
+   * Branches are authored output paths, so they always render.
    */
-  const visibleBranches = $derived(branches.filter((branch) => isBranchVisible(branch.name)));
+  const visibleBranches = $derived(branches);
 
   /**
    * Handle double-click to open config
@@ -178,7 +141,7 @@
     </p>
   </div>
 
-  <!-- Input Ports Container (filtered based on hideUnconnectedHandles) -->
+  <!-- Input Ports Container (exposed input ports) -->
   {#if visibleInputPorts.length > 0}
     <div class="flowdrop-workflow-node__ports">
       <div class="flowdrop-workflow-node__ports-list">
@@ -232,7 +195,7 @@
     </div>
   {/if}
 
-  <!-- Branches Section (Output Ports) - filtered based on hideUnconnectedHandles -->
+  <!-- Branches Section (Output Ports) -->
   {#if visibleBranches.length > 0}
     <div class="flowdrop-workflow-node__ports">
       <div class="flowdrop-workflow-node__ports-list">
@@ -300,7 +263,7 @@
       </div>
     </div>
   {/if}
-  <!-- Note: When all branches are hidden due to hideUnconnectedHandles, we don't show anything -->
+  <!-- Note: When there are no branches, we don't show anything -->
 
   <!-- Config button -->
   <NodeConfigButton onclick={handleNodeDoubleClick} title="Configure node" />
