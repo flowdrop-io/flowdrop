@@ -1,14 +1,22 @@
 /**
  * Unit Tests - Port Utilities
  *
- * Tests for applyPortOrder, getPortTop, and isPortVisible.
+ * Tests for applyPortOrder, byDefaultOrder, orderPortsFor, getPortTop,
+ * isPortExposed, and isPortVisible.
  */
 
 import { describe, it, expect } from 'vitest';
-import { applyPortOrder, getPortTop, isPortVisible } from '$lib/utils/portUtils.js';
+import {
+  applyPortOrder,
+  byDefaultOrder,
+  orderPortsFor,
+  getPortTop,
+  isPortExposed,
+  isPortVisible
+} from '$lib/utils/portUtils.js';
 import type { NodePort } from '$lib/types/index.js';
 
-// Minimal port factory — only the fields applyPortOrder cares about
+// Minimal port factory — only the fields the helpers care about
 function makePort(id: string, dataType = 'string'): NodePort {
   return { id, name: id, type: 'input', dataType };
 }
@@ -166,6 +174,66 @@ describe('getPortTop', () => {
   });
 });
 
+describe('byDefaultOrder', () => {
+  function withOrder(id: string, displayOrder?: number): NodePort {
+    return { ...makePort(id), displayOrder };
+  }
+
+  it('keeps declaration order when no weights are set (stable)', () => {
+    const result = byDefaultOrder([A, B, C]);
+    expect(result.map((p) => p.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('sorts ascending by displayOrder, defaulting missing weight to 0', () => {
+    const ports = [withOrder('trigger', 100), withOrder('value'), withOrder('error', 120)];
+    expect(byDefaultOrder(ports).map((p) => p.id)).toEqual(['value', 'trigger', 'error']);
+  });
+
+  it('breaks ties on declaration order', () => {
+    const ports = [withOrder('a', 5), withOrder('b', 5), withOrder('c', 5)];
+    expect(byDefaultOrder(ports).map((p) => p.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('does not mutate the input', () => {
+    const ports = [withOrder('z', 9), withOrder('a', 1)];
+    const original = [...ports];
+    byDefaultOrder(ports);
+    expect(ports).toEqual(original);
+  });
+});
+
+describe('orderPortsFor', () => {
+  const trigger: NodePort = { ...makePort('trigger'), displayOrder: 100 };
+
+  it('falls back to default order when no entries are given', () => {
+    const result = orderPortsFor([A, trigger, B], undefined);
+    // trigger's weight pushes it to the bottom
+    expect(result.map((p) => p.id)).toEqual(['a', 'b', 'trigger']);
+  });
+
+  it('applies the instance override over the default order', () => {
+    const result = orderPortsFor([A, trigger, B], [{ id: 'trigger' }, { id: 'a' }]);
+    // listed first in entry order, then the rest in default order
+    expect(result.map((p) => p.id)).toEqual(['trigger', 'a', 'b']);
+  });
+});
+
+describe('isPortExposed', () => {
+  const port = makePort('data-1');
+  const hiddenByDefault: NodePort = { ...makePort('error'), exposedByDefault: false };
+
+  it('reads exposedByDefault when no entry overrides it', () => {
+    expect(isPortExposed(port, undefined)).toBe(true);
+    expect(isPortExposed(port, [])).toBe(true);
+    expect(isPortExposed(hiddenByDefault, [{ id: 'error' }])).toBe(false);
+  });
+
+  it('honors an explicit entry override', () => {
+    expect(isPortExposed(port, [{ id: 'data-1', exposed: false }])).toBe(false);
+    expect(isPortExposed(hiddenByDefault, [{ id: 'error', exposed: true }])).toBe(true);
+  });
+});
+
 describe('isPortVisible', () => {
   const port = makePort('data-1');
   // A reserved port that ships not-exposed (e.g. the error output).
@@ -176,14 +244,9 @@ describe('isPortVisible', () => {
   };
 
   describe('default exposure (no override)', () => {
-    it('shows a port with no exposedByDefault (missing key reads as exposed)', () => {
+    it('shows a port with no exposedByDefault (missing entry reads as exposed)', () => {
       expect(isPortVisible(port, 'input', undefined)).toBe(true);
       expect(isPortVisible(port, 'input', {})).toBe(true);
-    });
-
-    it('shows a port with exposedByDefault: true', () => {
-      const p = { ...port, exposedByDefault: true };
-      expect(isPortVisible(p, 'input', {})).toBe(true);
     });
 
     it('hides a port with exposedByDefault: false (e.g. the error output)', () => {
@@ -194,23 +257,25 @@ describe('isPortVisible', () => {
 
   describe('instance overrides win over the default', () => {
     it('hides a default-exposed port when overridden to false', () => {
-      const result = isPortVisible(port, 'input', { inputs: { 'data-1': false } });
+      const result = isPortVisible(port, 'input', { inputs: [{ id: 'data-1', exposed: false }] });
       expect(result).toBe(false);
     });
 
     it('exposes a default-hidden port when overridden to true', () => {
-      const result = isPortVisible(hiddenByDefault, 'output', { outputs: { error: true } });
+      const result = isPortVisible(hiddenByDefault, 'output', {
+        outputs: [{ id: 'error', exposed: true }]
+      });
       expect(result).toBe(true);
     });
 
     it('reads the override from the matching direction only', () => {
       // An outputs override must not affect an input port of the same id.
-      const result = isPortVisible(port, 'input', { outputs: { 'data-1': false } });
+      const result = isPortVisible(port, 'input', { outputs: [{ id: 'data-1', exposed: false }] });
       expect(result).toBe(true);
     });
 
     it('ignores an override for a different port id', () => {
-      const result = isPortVisible(port, 'input', { inputs: { other: false } });
+      const result = isPortVisible(port, 'input', { inputs: [{ id: 'other', exposed: false }] });
       expect(result).toBe(true);
     });
   });

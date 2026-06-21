@@ -1,4 +1,4 @@
-import type { ExposedPortsConfig, NodePort } from '$lib/types/index.js';
+import type { NodePort, PortConfigEntry, PortsConfig } from '$lib/types/index.js';
 
 /**
  * Sort ports by an ordered array of port IDs.
@@ -16,6 +16,46 @@ export function applyPortOrder(ports: NodePort[], orderedIds: string[] | undefin
 }
 
 /**
+ * Sort ports by their metadata `displayOrder` weight (ascending), breaking ties
+ * on declaration order (stable). This is the default order before any
+ * instance-level reordering — reserved injected ports (trigger/tool/error)
+ * carry a high weight so they land at the bottom.
+ */
+export function byDefaultOrder(ports: NodePort[]): NodePort[] {
+  return ports
+    .map((port, index) => ({ port, index }))
+    .sort((a, b) => (a.port.displayOrder ?? 0) - (b.port.displayOrder ?? 0) || a.index - b.index)
+    .map(({ port }) => port);
+}
+
+/**
+ * Effective render order for a direction: the metadata default order, then the
+ * instance's `ports` config override (listed ports first in their stored order,
+ * the rest following in default order).
+ */
+export function orderPortsFor(
+  ports: NodePort[],
+  entries: PortConfigEntry[] | undefined
+): NodePort[] {
+  const base = byDefaultOrder(ports);
+  return applyPortOrder(
+    base,
+    entries?.map((entry) => entry.id)
+  );
+}
+
+/**
+ * Effective exposure for a port: the instance's explicit `exposed` override if
+ * present, else the port's metadata `exposedByDefault` (which itself defaults to
+ * exposed).
+ */
+export function isPortExposed(port: NodePort, entries: PortConfigEntry[] | undefined): boolean {
+  const entry = entries?.find((candidate) => candidate.id === port.id);
+  if (entry && entry.exposed !== undefined) return entry.exposed;
+  return port.exposedByDefault ?? true;
+}
+
+/**
  * Compute the CSS `top` offset (px) for a port handle.
  * - 1 port: centered at 40px
  * - N ports: 20px start, 40px gap between each
@@ -30,18 +70,16 @@ export function getPortTop(index: number, count: number): number {
  *
  * In v2 exposure is semantic, not cosmetic: a not-exposed port is hidden, not
  * wireable, and not runtime-overridable. Effective exposure is the instance's
- * explicit `data.config.exposedPorts` override for the port, falling back to
- * the port's metadata `exposedByDefault` (which itself defaults to exposed).
+ * explicit `data.config.ports` override for the port, falling back to the port's
+ * metadata `exposedByDefault` (which itself defaults to exposed).
  *
  * @see .claude/plans/exposed-ports.md
  */
 export function isPortVisible(
   port: NodePort,
   direction: 'input' | 'output',
-  exposedPorts: ExposedPortsConfig | undefined
+  ports: PortsConfig | undefined
 ): boolean {
-  const overrides = direction === 'input' ? exposedPorts?.inputs : exposedPorts?.outputs;
-  const override = overrides?.[port.id];
-  if (override !== undefined) return override;
-  return port.exposedByDefault ?? true;
+  const entries = direction === 'input' ? ports?.inputs : ports?.outputs;
+  return isPortExposed(port, entries);
 }

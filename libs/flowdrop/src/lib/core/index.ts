@@ -35,6 +35,8 @@ export type {
   NodeMetadata,
   NodeExtensions,
   NodeUIExtensions,
+  PortsConfig,
+  PortConfigEntry,
   ConfigValues,
   WorkflowNode,
   WorkflowEdge,

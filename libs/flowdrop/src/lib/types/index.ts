@@ -148,12 +148,19 @@ export interface NodePort {
   defaultValue?: unknown;
   /**
    * Whether this port is exposed when the instance sets no explicit exposure
-   * for it. Defaults to `true` (a missing key reads as exposed). Reserved ports
+   * for it. Defaults to `true` (a missing flag reads as exposed). Reserved ports
    * that ship hidden until an author opts in (e.g. the `error` output) carry
-   * `false`. Effective exposure XORs this with the instance's `exposedPorts`
-   * config override. See `.claude/plans/exposed-ports.md`.
+   * `false`. The instance's `ports` config can override it per port. See
+   * `.claude/plans/exposed-ports.md`.
    */
   exposedByDefault?: boolean;
+  /**
+   * Default sort weight for the port's render position, ascending; ties break
+   * on declaration order. Author-declared ports default to `0`; reserved
+   * injected ports (trigger/tool/error) carry a high weight so they default to
+   * the bottom. Cosmetic only. The instance's `ports` config order overrides it.
+   */
+  displayOrder?: number;
   /**
    * Optional JSON Schema describing the structure of data on this port.
    * Used for template variable autocomplete to drill into nested properties.
@@ -162,16 +169,33 @@ export interface NodePort {
 }
 
 /**
- * Per-instance port exposure overrides, stored in `data.config.exposedPorts`.
- *
- * A sparse map of explicit per-port decisions. A port absent from the map
- * falls back to its metadata `exposedByDefault`. In v2 exposure is semantic:
- * a not-exposed port is hidden on the canvas, not wireable, and not
- * runtime-overridable. See `.claude/plans/exposed-ports.md`.
+ * One entry in a {@link PortsConfig} direction list: a port id, with display
+ * order encoded by its position and an optional exposure override.
  */
-export interface ExposedPortsConfig {
-  inputs?: Record<string, boolean>;
-  outputs?: Record<string, boolean>;
+export interface PortConfigEntry {
+  id: string;
+  /**
+   * Explicit exposure for this port. Stored only when it diverges from the
+   * port's metadata `exposedByDefault`. In v2 exposure is semantic: a
+   * not-exposed port is hidden on the canvas, not wireable, and not
+   * runtime-overridable.
+   */
+  exposed?: boolean;
+}
+
+/**
+ * Per-instance port order + exposure, stored in `data.config.ports`.
+ *
+ * A per-direction ordered list of the node's ports: array index encodes display
+ * order relative to the metadata default, and the optional `exposed` flag
+ * overrides the port's `exposedByDefault`. A port the author never touched is
+ * absent from the list; an untouched node stores no `ports` key at all. Order
+ * is cosmetic (the engine ignores it); exposure is semantic. See
+ * `.claude/plans/exposed-ports.md`.
+ */
+export interface PortsConfig {
+  inputs?: PortConfigEntry[];
+  outputs?: PortConfigEntry[];
 }
 
 /**
@@ -638,15 +662,6 @@ export interface AtomUIConfig {
 export interface NodeUIExtensions {
   /** Display/behavior config for minimalist atom nodes (Constant, Cast, …) */
   atom?: AtomUIConfig;
-  /**
-   * Visual-only port display order (no effect on execution).
-   * Arrays of port IDs in the desired render order.
-   * Ports not listed appear at the end in metadata order.
-   */
-  portOrder?: {
-    inputs?: string[];
-    outputs?: string[];
-  };
   /** Custom styles or theme overrides */
   style?: Record<string, unknown>;
   /** Any other UI-specific settings */
@@ -661,7 +676,6 @@ export interface NodeUIExtensions {
  * ```typescript
  * const extensions: NodeExtensions = {
  *   ui: {
- *     portOrder: { inputs: ['value', 'trigger'] },
  *     style: { opacity: 0.8 }
  *   },
  *   "myapp:analytics": {
