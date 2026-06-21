@@ -24,13 +24,9 @@
     ConfigSchema,
     WorkflowNode,
     WorkflowEdge,
-    NodeUIExtensions,
-    NodePort,
-    DynamicPort,
     ConfigEditOptions,
     AuthProvider
   } from '$lib/types/index.js';
-  import { dynamicPortToNodePort } from '$lib/types/index.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
   // Import the light, registry-based field factory and light fields directly
   // (not via the form barrel, which aggregates the heavy CodeMirror editors).
@@ -48,8 +44,6 @@
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { getAvailableVariables } from '$lib/services/variableService.js';
   import { logger } from '../utils/logger.js';
-  import { getPortColorToken, getPortBackgroundColorForPort } from '$lib/utils/colors.js';
-  import { applyPortOrder } from '$lib/utils/portUtils.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
 
   interface Props {
@@ -66,8 +60,6 @@
     uiSchema?: UISchemaElement;
     /** Direct config values (used when node is not provided) */
     values?: Record<string, unknown>;
-    /** Whether to show UI extension settings section */
-    showUIExtensions?: boolean;
     /** Optional workflow ID for context in external links */
     workflowId?: string;
     /** Whether to also save the workflow when saving config */
@@ -85,9 +77,9 @@
     /** Auth provider for API requests (used for template variable API mode) */
     authProvider?: AuthProvider;
     /** Callback when any field value changes (fired on blur for immediate sync) */
-    onChange?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
-    /** Callback when form is saved (includes both config and extensions if enabled) */
-    onSave?: (config: Record<string, unknown>, uiExtensions?: NodeUIExtensions) => void;
+    onChange?: (config: Record<string, unknown>) => void;
+    /** Callback when form is saved */
+    onSave?: (config: Record<string, unknown>) => void;
     /** Callback when form is cancelled */
     onCancel?: () => void;
   }
@@ -97,7 +89,6 @@
     schema,
     uiSchema,
     values,
-    showUIExtensions = true,
     workflowId,
     saveWorkflowWhenSavingConfig = false,
     workflowNodes = [],
@@ -117,7 +108,6 @@
   // instance on the server (no cross-request leakage); no destroy here for the
   // same reasons as SchemaForm (shared/default in the browser, no SSR teardown).
   const fd = provideInstance();
-  const checker = fd.portCompatibility;
 
   // Set context for child components (e.g., FormAutocomplete)
   // Use getter functions to ensure child components always get the current prop value,
@@ -233,38 +223,6 @@
   let isSavingWorkflow = $state(false);
 
   /**
-   * Get initial UI extensions from node (instance level overrides type level)
-   */
-  const initialUIExtensions = $derived.by<NodeUIExtensions>(() => {
-    if (!node) return {};
-    // Merge type-level defaults with instance-level overrides
-    const typeDefaults = node.data.metadata?.extensions?.ui ?? {};
-    const instanceOverrides = node.data.extensions?.ui ?? {};
-    return { ...typeDefaults, ...instanceOverrides };
-  });
-
-  /**
-   * UI Extension values for display settings.
-   * Writable derived: recomputes from the node when it changes (covering both
-   * "different node opened" and the post-save round-trip through node.data),
-   * while local port-management edits overwrite it wholesale via reassignment.
-   * NOTE: the derived value is not a deep $state proxy — update it only by
-   * reassigning the whole object, never by mutating a property.
-   */
-  let uiExtensionValues = $derived.by<NodeUIExtensions>(() => ({
-    portOrder: initialUIExtensions.portOrder
-      ? {
-          inputs: initialUIExtensions.portOrder.inputs
-            ? [...initialUIExtensions.portOrder.inputs]
-            : undefined,
-          outputs: initialUIExtensions.portOrder.outputs
-            ? [...initialUIExtensions.portOrder.outputs]
-            : undefined
-        }
-      : undefined
-  }));
-
-  /**
    * Fetch dynamic schema when needed
    */
   async function loadDynamicSchema(): Promise<void> {
@@ -345,66 +303,6 @@
   });
 
   /**
-   * All input ports in current display order for the port management UI.
-   * Combines static metadata inputs + dynamic config inputs, sorted by portOrder.
-   */
-  const allInputPortsForUI = $derived.by<NodePort[]>(() => {
-    if (!node) return [];
-    const staticInputs = node.data.metadata.inputs ?? [];
-    const dynInputs = ((node.data.config?.dynamicInputs as DynamicPort[]) || []).map((p) =>
-      dynamicPortToNodePort(p, 'input')
-    );
-    return applyPortOrder([...staticInputs, ...dynInputs], uiExtensionValues.portOrder?.inputs);
-  });
-
-  /**
-   * All output ports in current display order for the port management UI.
-   * Combines static metadata outputs + dynamic config outputs, sorted by portOrder.
-   */
-  const allOutputPortsForUI = $derived.by<NodePort[]>(() => {
-    if (!node) return [];
-    const staticOutputs = node.data.metadata.outputs ?? [];
-    const dynOutputs = ((node.data.config?.dynamicOutputs as DynamicPort[]) || []).map((p) =>
-      dynamicPortToNodePort(p, 'output')
-    );
-    return applyPortOrder([...staticOutputs, ...dynOutputs], uiExtensionValues.portOrder?.outputs);
-  });
-
-  /**
-   * Move a port one position up or down in the display order.
-   */
-  function movePort(direction: 'inputs' | 'outputs', portId: string, delta: -1 | 1): void {
-    const list = direction === 'inputs' ? allInputPortsForUI : allOutputPortsForUI;
-    const idx = list.findIndex((p) => p.id === portId);
-    if (idx === -1) return;
-    const newIdx = idx + delta;
-    if (newIdx < 0 || newIdx >= list.length) return;
-    const newOrder = list.map((p) => p.id);
-    [newOrder[idx], newOrder[newIdx]] = [newOrder[newIdx], newOrder[idx]];
-    uiExtensionValues = {
-      ...uiExtensionValues,
-      portOrder: {
-        ...uiExtensionValues.portOrder,
-        [direction]: newOrder
-      }
-    };
-    handleFormBlur();
-  }
-
-  /**
-   * Reset the port display order for a direction back to metadata order.
-   */
-  function resetPortCustomizations(direction: 'inputs' | 'outputs'): void {
-    const order = { ...uiExtensionValues.portOrder };
-    delete order[direction];
-    uiExtensionValues = {
-      ...uiExtensionValues,
-      portOrder: Object.keys(order).length > 0 ? order : undefined
-    };
-    handleFormBlur();
-  }
-
-  /**
    * Check if a field is required based on schema
    */
   function isFieldRequired(key: string): boolean {
@@ -438,8 +336,7 @@
    */
   function handleFormBlur(): void {
     if (onChange) {
-      const extensions = showUIExtensions && node ? uiExtensionValues : undefined;
-      onChange({ ...configValues }, extensions);
+      onChange({ ...configValues });
       // Discharge the edits buffer at the commit boundary. Subsequent prop
       // changes (parent absorbing the commit, undo/redo, collaboration) then
       // flow through `initialConfig` cleanly instead of being shadowed by a
@@ -450,8 +347,7 @@
 
   /**
    * Handle form submission
-   * Collects both config values and UI extension values
-   * Optionally saves the workflow if the option is enabled
+   * Collects config values and optionally saves the workflow.
    */
   async function handleSave(): Promise<void> {
     // Collect all form values including hidden fields
@@ -498,13 +394,8 @@
       );
     }
 
-    // Pass UI extensions only if enabled
     if (onSave) {
-      if (showUIExtensions && node) {
-        onSave(updatedConfig, uiExtensionValues);
-      } else {
-        onSave(updatedConfig);
-      }
+      onSave(updatedConfig);
     }
 
     // Save workflow if the option is enabled
@@ -721,135 +612,6 @@
       </div>
     {/if}
 
-    <!-- UI Extensions Section -->
-    {#if showUIExtensions && node}
-      <div class="config-form__extensions">
-        <div class="config-form__extensions-header">
-          <Icon icon="heroicons:bars-arrow-down" class="config-form__extensions-icon" />
-          <span>Port Order</span>
-        </div>
-        <div class="config-form__extensions-content">
-          <!-- Input Port Order (visual only; exposure lives in the Ports group) -->
-          {#if allInputPortsForUI.length > 0}
-            <div class="config-form__port-order">
-              <div class="config-form__port-order-header">
-                <span class="config-form__port-order-label">Input Ports</span>
-                {#if uiExtensionValues.portOrder?.inputs?.length}
-                  <button
-                    type="button"
-                    class="config-form__port-order-reset"
-                    onclick={() => resetPortCustomizations('inputs')}
-                    title="Reset to default order"
-                  >
-                    <Icon icon="heroicons:arrow-uturn-left" />
-                    Reset
-                  </button>
-                {/if}
-              </div>
-              <ul class="config-form__port-order-list">
-                {#each allInputPortsForUI as port, i (port.id)}
-                  <li class="config-form__port-order-item">
-                    <span class="config-form__port-order-name">{port.name}</span>
-                    <span
-                      class="config-form__port-order-badge"
-                      style="background-color:{getPortBackgroundColorForPort(
-                        checker,
-                        port,
-                        15
-                      )};color:{getPortColorToken(
-                        checker,
-                        port
-                      )};border:1px solid {getPortBackgroundColorForPort(checker, port, 30)}"
-                    >
-                      {port.dataType}
-                    </span>
-                    <div class="config-form__port-order-actions">
-                      <button
-                        type="button"
-                        disabled={i === 0 || allInputPortsForUI.length === 1}
-                        onclick={() => movePort('inputs', port.id, -1)}
-                        title="Move up"
-                      >
-                        <Icon icon="heroicons:chevron-up" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={i === allInputPortsForUI.length - 1 ||
-                          allInputPortsForUI.length === 1}
-                        onclick={() => movePort('inputs', port.id, 1)}
-                        title="Move down"
-                      >
-                        <Icon icon="heroicons:chevron-down" />
-                      </button>
-                    </div>
-                  </li>
-                {/each}
-              </ul>
-            </div>
-          {/if}
-
-          <!-- Output Port Order (visual only; exposure lives in the Ports group) -->
-          {#if allOutputPortsForUI.length > 0}
-            <div class="config-form__port-order">
-              <div class="config-form__port-order-header">
-                <span class="config-form__port-order-label">Output Ports</span>
-                {#if uiExtensionValues.portOrder?.outputs?.length}
-                  <button
-                    type="button"
-                    class="config-form__port-order-reset"
-                    onclick={() => resetPortCustomizations('outputs')}
-                    title="Reset to default order"
-                  >
-                    <Icon icon="heroicons:arrow-uturn-left" />
-                    Reset
-                  </button>
-                {/if}
-              </div>
-              <ul class="config-form__port-order-list">
-                {#each allOutputPortsForUI as port, i (port.id)}
-                  <li class="config-form__port-order-item">
-                    <span class="config-form__port-order-name">{port.name}</span>
-                    <span
-                      class="config-form__port-order-badge"
-                      style="background-color:{getPortBackgroundColorForPort(
-                        checker,
-                        port,
-                        15
-                      )};color:{getPortColorToken(
-                        checker,
-                        port
-                      )};border:1px solid {getPortBackgroundColorForPort(checker, port, 30)}"
-                    >
-                      {port.dataType}
-                    </span>
-                    <div class="config-form__port-order-actions">
-                      <button
-                        type="button"
-                        disabled={i === 0 || allOutputPortsForUI.length === 1}
-                        onclick={() => movePort('outputs', port.id, -1)}
-                        title="Move up"
-                      >
-                        <Icon icon="heroicons:chevron-up" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={i === allOutputPortsForUI.length - 1 ||
-                          allOutputPortsForUI.length === 1}
-                        onclick={() => movePort('outputs', port.id, 1)}
-                        title="Move down"
-                      >
-                        <Icon icon="heroicons:chevron-down" />
-                      </button>
-                    </div>
-                  </li>
-                {/each}
-              </ul>
-            </div>
-          {/if}
-        </div>
-      </div>
-    {/if}
-
     <!-- Footer Actions - Only shown when onSave is provided and onChange is not -->
     <!-- With onChange (on-blur sync), changes are saved automatically, so no Save button needed -->
     {#if onSave && !onChange}
@@ -1001,168 +763,6 @@
 
   .config-form__button--primary:active {
     transform: translateY(0);
-  }
-
-  /* ============================================
-	   UI EXTENSIONS SECTION
-	   ============================================ */
-
-  .config-form__extensions {
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-control-radius);
-    overflow: hidden;
-    margin-top: var(--fd-space-xs);
-  }
-
-  .config-form__extensions-header {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background-color: var(--fd-subtle);
-    border-bottom: 1px solid var(--fd-border);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
-  .config-form__extensions-header :global(svg) {
-    width: 1rem;
-    height: 1rem;
-    color: var(--fd-muted-foreground);
-  }
-
-  .config-form__extensions-content {
-    padding: var(--fd-space-xl);
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-xl);
-  }
-
-  /* ============================================
-     PORT ORDER & VISIBILITY
-     ============================================ */
-
-  .config-form__port-order {
-    border-top: 1px solid var(--fd-border-muted);
-    padding-top: var(--fd-space-md);
-    margin-top: calc(var(--fd-space-xl) * -0.25);
-  }
-
-  .config-form__port-order-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--fd-space-xs);
-  }
-
-  .config-form__port-order-label {
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .config-form__port-order-reset {
-    background: none;
-    border: none;
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: 0;
-    transition: color var(--fd-transition-fast);
-  }
-
-  .config-form__port-order-reset:hover {
-    color: var(--fd-foreground);
-  }
-
-  .config-form__port-order-reset :global(svg) {
-    width: 0.75rem;
-    height: 0.75rem;
-  }
-
-  .config-form__port-order-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-3xs);
-  }
-
-  .config-form__port-order-item {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
-    background: var(--fd-muted);
-    border-radius: var(--fd-radius-sm);
-    border: 1px solid var(--fd-border-muted);
-    transition: opacity var(--fd-transition-fast);
-  }
-
-  .config-form__port-order-name {
-    flex: 1;
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    color: var(--fd-foreground);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .config-form__port-order-badge {
-    padding: 0.125rem var(--fd-space-3xs);
-    border-radius: var(--fd-radius-sm);
-    font-size: 0.625rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    flex-shrink: 0;
-  }
-
-  .config-form__port-order-actions {
-    display: flex;
-    gap: var(--fd-space-3xs);
-    flex-shrink: 0;
-  }
-
-  .config-form__port-order-actions button {
-    width: 1.25rem;
-    height: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--fd-card);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    padding: 0;
-    transition: all var(--fd-transition-fast);
-  }
-
-  .config-form__port-order-actions button:hover:not(:disabled) {
-    background: var(--fd-backdrop);
-    color: var(--fd-foreground);
-    border-color: var(--fd-border-strong);
-  }
-
-  .config-form__port-order-actions button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .config-form__port-order-actions button :global(svg) {
-    width: 0.75rem;
-    height: 0.75rem;
   }
 
   /* ============================================

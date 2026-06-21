@@ -1069,7 +1069,6 @@
             {authProvider}
             schema={workflowConfigSchema}
             values={workflowConfigValues}
-            showUIExtensions={false}
             onChange={(config) => {
               // Sync workflow settings changes immediately on field blur
               const wf = fd.workflow.current;
@@ -1132,7 +1131,7 @@
             workflowId={fd.workflow.current?.id}
             workflowNodes={fd.workflow.current?.nodes}
             workflowEdges={fd.workflow.current?.edges}
-            onChange={async (updatedConfig, uiExtensions) => {
+            onChange={async (updatedConfig) => {
               // Sync config changes to workflow immediately on field blur
               if (selectedNodeId && currentNode) {
                 // Build the updated node data
@@ -1140,14 +1139,6 @@
                   ...currentNode.data,
                   config: updatedConfig
                 };
-
-                // Include UI extensions if provided
-                if (uiExtensions) {
-                  updatedData.extensions = {
-                    ...currentNode.data.extensions,
-                    ui: uiExtensions
-                  };
-                }
 
                 // Update the node in the workflow store
                 const nodeUpdates: Record<string, unknown> = {

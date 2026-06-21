@@ -37,7 +37,7 @@
   import FormSelect from './FormSelect.svelte';
   import FormCheckboxGroup from './FormCheckboxGroup.svelte';
   import FormArray from './FormArray.svelte';
-  import FormExposedPorts from './FormExposedPorts.svelte';
+  import FormPorts from './FormPorts.svelte';
   import FormCodeEditor from './FormCodeEditor.svelte';
   import FormMarkdownEditor from './FormMarkdownEditor.svelte';
   import FormTemplateEditor from './FormTemplateEditor.svelte';
@@ -141,9 +141,9 @@
       return 'template-editor';
     }
 
-    // Injected port-exposure widget (the `exposedPorts` reserved config prop).
-    if (schema.format === 'exposed-ports') {
-      return 'exposed-ports';
+    // Injected port order + exposure widget (the `ports` reserved config prop).
+    if (schema.format === 'ports') {
+      return 'ports';
     }
 
     // Shared basic field resolution (enum/oneOf/primitive types).
@@ -313,8 +313,8 @@
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
-    {:else if fieldType === 'exposed-ports'}
-      <FormExposedPorts
+    {:else if fieldType === 'ports'}
+      <FormPorts
         id={fieldKey}
         {value}
         ariaDescribedBy={descriptionId}

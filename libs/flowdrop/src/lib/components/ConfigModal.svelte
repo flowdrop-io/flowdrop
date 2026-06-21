@@ -77,7 +77,6 @@
         <ConfigForm
           schema={props.configSchema}
           values={localConfigValues}
-          showUIExtensions={false}
           onSave={(config) => {
             onSave?.(config);
           }}
