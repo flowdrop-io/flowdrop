@@ -4,9 +4,10 @@
   Styled with BEM syntax
 
   Port rendering:
-  - Exposure (data.config.exposedPorts, falling back to each port's
-    exposedByDefault) decides which ports render — a not-exposed port is hidden.
-  - portOrder: Reorder ports by ID array (unspecified ports appear at end in original order)
+  - Exposure (data.config.ports, falling back to each port's exposedByDefault)
+    decides which ports render — a not-exposed port is hidden.
+  - Order: data.config.ports order overrides the metadata default (displayOrder);
+    unlisted ports follow in default order.
 -->
 
 <script lang="ts">
@@ -17,13 +18,13 @@
     NodeExtensions,
     NodePort,
     DynamicPort,
-    ExposedPortsConfig
+    PortsConfig
   } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { applyPortOrder, getPortTop, isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, getPortTop, isPortVisible } from '../../utils/portUtils.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
@@ -51,16 +52,11 @@
   const checker = fd.portCompatibility;
 
   /**
-   * Per-instance port exposure overrides (semantic: a not-exposed port is
-   * hidden, not wireable, not runtime-overridable). Lives in config.
+   * Per-instance port order + exposure, in config. Order overrides the metadata
+   * default; exposure is semantic (a not-exposed port is hidden, not wireable,
+   * not runtime-overridable).
    */
-  const exposedPorts = $derived(
-    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
-  );
-
-  const portOrder = $derived(
-    props.data.extensions?.ui?.portOrder ?? props.data.metadata?.extensions?.ui?.portOrder ?? {}
-  );
+  const portsConfig = $derived((props.data.config?.ports as PortsConfig | undefined) ?? {});
 
   // Prioritize metadata icon over config icon for simple nodes (metadata is the node definition)
   let nodeIcon = $derived(
@@ -120,20 +116,20 @@
    * All visible input ports in user-defined order.
    */
   const visibleInputPorts = $derived(
-    applyPortOrder(
+    orderPortsFor(
       [...(props.data.metadata?.inputs ?? []), ...dynamicInputs],
-      portOrder.inputs
-    ).filter((p: NodePort) => isPortVisible(p, 'input', exposedPorts))
+      portsConfig.inputs
+    ).filter((p: NodePort) => isPortVisible(p, 'input', portsConfig))
   );
 
   /**
    * All visible output ports in user-defined order.
    */
   const visibleOutputPorts = $derived(
-    applyPortOrder(
+    orderPortsFor(
       [...(props.data.metadata?.outputs ?? []), ...dynamicOutputs],
-      portOrder.outputs
-    ).filter((p: NodePort) => isPortVisible(p, 'output', exposedPorts))
+      portsConfig.outputs
+    ).filter((p: NodePort) => isPortVisible(p, 'output', portsConfig))
   );
 
   /**

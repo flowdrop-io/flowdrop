@@ -15,14 +15,14 @@
     NodeMetadata,
     NodeExtensions,
     NodePort,
-    ExposedPortsConfig
+    PortsConfig
   } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
-  import { isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
 
   /**
@@ -149,12 +149,11 @@
   let variantConfig = $derived(VARIANT_CONFIGS[variant]);
 
   /**
-   * Per-instance port exposure overrides (semantic: a not-exposed port is
-   * hidden, not wireable, not runtime-overridable). Lives in config.
+   * Per-instance port order + exposure, in config. Order overrides the metadata
+   * default; exposure is semantic (a not-exposed port is hidden, not wireable,
+   * not runtime-overridable).
    */
-  const exposedPorts = $derived(
-    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
-  );
+  const portsConfig = $derived((props.data.config?.ports as PortsConfig | undefined) ?? {});
 
   /**
    * Get icon using the same resolution as WorkflowNode
@@ -262,17 +261,21 @@
   );
 
   /**
-   * Exposed input ports.
+   * Exposed input ports, in effective order.
    */
   let visibleInputPorts = $derived(
-    inputPorts.filter((port: NodePort) => isPortVisible(port, 'input', exposedPorts))
+    orderPortsFor(inputPorts, portsConfig.inputs).filter((port: NodePort) =>
+      isPortVisible(port, 'input', portsConfig)
+    )
   );
 
   /**
-   * Exposed output ports.
+   * Exposed output ports, in effective order.
    */
   let visibleOutputPorts = $derived(
-    outputPorts.filter((port: NodePort) => isPortVisible(port, 'output', exposedPorts))
+    orderPortsFor(outputPorts, portsConfig.outputs).filter((port: NodePort) =>
+      isPortVisible(port, 'output', portsConfig)
+    )
   );
 
   /**

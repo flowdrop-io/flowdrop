@@ -5,14 +5,14 @@
   Styled with BEM syntax following WorkflowNode pattern
 
   Port rendering:
-  - Input-port exposure (data.config.exposedPorts, falling back to each port's
-    exposedByDefault) decides which input ports render. Branches are authored
-    output paths and always render.
+  - Input-port exposure (data.config.ports, falling back to each port's
+    exposedByDefault) decides which input ports render, in effective order.
+    Branches are authored output paths and always render.
 -->
 
 <script lang="ts">
   import { Position, Handle } from '@xyflow/svelte';
-  import type { WorkflowNode, Branch, ExposedPortsConfig } from '../../types/index.js';
+  import type { WorkflowNode, Branch, PortsConfig } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import { getNodeIcon } from '../../utils/icons.js';
@@ -22,7 +22,7 @@
     getPortBackgroundColor
   } from '../../utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -59,18 +59,19 @@
   );
 
   /**
-   * Per-instance port exposure overrides (semantic: a not-exposed port is
-   * hidden, not wireable, not runtime-overridable). Lives in config.
+   * Per-instance port order + exposure, in config. Order overrides the metadata
+   * default; exposure is semantic (a not-exposed port is hidden, not wireable,
+   * not runtime-overridable).
    */
-  const exposedPorts = $derived(
-    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
-  );
+  const portsConfig = $derived((props.data.config?.ports as PortsConfig | undefined) ?? {});
 
   /**
-   * Derived list of exposed input ports.
+   * Derived list of exposed input ports, in effective order.
    */
   const visibleInputPorts = $derived(
-    props.data.metadata.inputs.filter((port) => isPortVisible(port, 'input', exposedPorts))
+    orderPortsFor(props.data.metadata.inputs, portsConfig.inputs).filter((port) =>
+      isPortVisible(port, 'input', portsConfig)
+    )
   );
 
   // Gateway-specific data - branches are calculated at runtime from config

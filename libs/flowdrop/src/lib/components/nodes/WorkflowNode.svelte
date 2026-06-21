@@ -5,14 +5,15 @@
   Styled with BEM syntax
   
   Port rendering:
-  - Exposure (data.config.exposedPorts, falling back to each port's
-    exposedByDefault) decides which ports render — a not-exposed port is hidden.
-  - portOrder: Visual-only reordering of input/output ports (no effect on execution)
+  - Exposure (data.config.ports, falling back to each port's exposedByDefault)
+    decides which ports render — a not-exposed port is hidden.
+  - Order: data.config.ports order overrides the metadata default (displayOrder);
+    cosmetic only, no effect on execution.
 -->
 
 <script lang="ts">
   import { Position, Handle } from '@xyflow/svelte';
-  import type { WorkflowNode, DynamicPort, ExposedPortsConfig } from '../../types/index.js';
+  import type { WorkflowNode, DynamicPort, PortsConfig } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { getNodeIcon } from '../../utils/icons.js';
@@ -23,7 +24,7 @@
     getPortBackgroundColorForPort
   } from '../../utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { applyPortOrder, isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -61,20 +62,11 @@
   );
 
   /**
-   * Per-instance port exposure overrides (semantic: a not-exposed port is
-   * hidden, not wireable, not runtime-overridable). Lives in config.
+   * Per-instance port order + exposure, in config. Order overrides the metadata
+   * default; exposure is semantic (a not-exposed port is hidden, not wireable,
+   * not runtime-overridable).
    */
-  const exposedPorts = $derived(
-    (props.data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
-  );
-
-  /**
-   * Get the portOrder setting from extensions (visual-only, no effect on execution)
-   * Merges node type defaults with instance overrides
-   */
-  const portOrder = $derived(
-    props.data.extensions?.ui?.portOrder ?? props.data.metadata?.extensions?.ui?.portOrder ?? {}
-  );
+  const portsConfig = $derived((props.data.config?.ports as PortsConfig | undefined) ?? {});
 
   /**
    * Dynamic inputs from config - user-defined input ports
@@ -98,32 +90,32 @@
 
   /**
    * Combined input ports: static metadata inputs + dynamic config inputs,
-   * sorted by portOrder if set (visual-only)
+   * in effective order (metadata default, then config override; cosmetic).
    */
   const allInputPorts = $derived(
-    applyPortOrder([...props.data.metadata.inputs, ...dynamicInputs], portOrder.inputs)
+    orderPortsFor([...props.data.metadata.inputs, ...dynamicInputs], portsConfig.inputs)
   );
 
   /**
    * Combined output ports: static metadata outputs + dynamic config outputs,
-   * sorted by portOrder if set (visual-only)
+   * in effective order (metadata default, then config override; cosmetic).
    */
   const allOutputPorts = $derived(
-    applyPortOrder([...props.data.metadata.outputs, ...dynamicOutputs], portOrder.outputs)
+    orderPortsFor([...props.data.metadata.outputs, ...dynamicOutputs], portsConfig.outputs)
   );
 
   /**
    * Derived list of exposed input ports (static + dynamic).
    */
   const visibleInputPorts = $derived(
-    allInputPorts.filter((port) => isPortVisible(port, 'input', exposedPorts))
+    allInputPorts.filter((port) => isPortVisible(port, 'input', portsConfig))
   );
 
   /**
    * Derived list of exposed output ports (static + dynamic).
    */
   const visibleOutputPorts = $derived(
-    allOutputPorts.filter((port) => isPortVisible(port, 'output', exposedPorts))
+    allOutputPorts.filter((port) => isPortVisible(port, 'output', portsConfig))
   );
 
   /**

@@ -17,12 +17,12 @@
     NodeExtensions,
     NodePort,
     AtomUIConfig,
-    ExposedPortsConfig,
+    PortsConfig,
     WorkflowNode as WorkflowNodeType
   } from '../../types/index.js';
   import { getPortColorToken } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { applyPortOrder, isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { ProximityConnectHelper } from '../../helpers/proximityConnect.js';
 
   interface AtomNodeData {
@@ -57,12 +57,7 @@
   const atomCfg = $derived<AtomUIConfig>(
     data.extensions?.ui?.atom ?? data.metadata?.extensions?.ui?.atom ?? {}
   );
-  const exposedPorts = $derived(
-    (data.config?.exposedPorts as ExposedPortsConfig | undefined) ?? {}
-  );
-  const portOrder = $derived(
-    data.extensions?.ui?.portOrder ?? data.metadata?.extensions?.ui?.portOrder ?? {}
-  );
+  const portsConfig = $derived((data.config?.ports as PortsConfig | undefined) ?? {});
 
   // Optional, server-driven accent. When unset the inline custom property is
   // omitted, so CSS falls back to the neutral border — uncolored atoms are
@@ -86,15 +81,15 @@
   const nodeLike = $derived<Pick<WorkflowNodeType, 'type' | 'data'>>({ type: nodeType, data });
 
   const inPorts = $derived(
-    applyPortOrder(ProximityConnectHelper.getAllPorts(nodeLike, 'input'), portOrder.inputs).filter(
-      (p: NodePort) => isPortVisible(p, 'input', exposedPorts)
+    orderPortsFor(ProximityConnectHelper.getAllPorts(nodeLike, 'input'), portsConfig.inputs).filter(
+      (p: NodePort) => isPortVisible(p, 'input', portsConfig)
     )
   );
   const outPorts = $derived(
-    applyPortOrder(
+    orderPortsFor(
       ProximityConnectHelper.getAllPorts(nodeLike, 'output'),
-      portOrder.outputs
-    ).filter((p: NodePort) => isPortVisible(p, 'output', exposedPorts))
+      portsConfig.outputs
+    ).filter((p: NodePort) => isPortVisible(p, 'output', portsConfig))
   );
 
   /** Friendly label for a value, using the field's oneOf titles when present. */
