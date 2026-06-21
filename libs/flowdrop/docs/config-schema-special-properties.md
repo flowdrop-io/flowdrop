@@ -22,6 +22,7 @@ These property names in `config` have special meaning and trigger automatic beha
 | `instanceTitle`       | `string`        | Per-instance title override (replaces `label` display)                      |
 | `instanceDescription` | `string`        | Per-instance description override (replaces `metadata.description` display) |
 | `nodeType`            | `string`        | Changes the visual rendering type of the node                               |
+| `maxRetries`          | `integer`       | Per-node retry budget (injected on every executable node; `0` = no retry)   |
 | `dynamicInputs`       | `DynamicPort[]` | Creates user-defined input handles                                          |
 | `dynamicOutputs`      | `DynamicPort[]` | Creates user-defined output handles                                         |
 | `branches`            | `Branch[]`      | Creates conditional output branches (Gateway nodes)                         |
