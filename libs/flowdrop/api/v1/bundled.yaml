@@ -2550,11 +2550,12 @@ components:
           for user-defined input/output handles
         - **gateway**: Supports `config.branches` for conditional branching paths
 
-        ## Port exposure
+        ## Port order + exposure
 
-        Which ports render is controlled by exposure: each port's metadata
-        `exposedByDefault`, overridable per instance via `config.exposedPorts`. A
-        not-exposed port is hidden, not wireable, and not runtime-overridable.
+        Render order and exposure are controlled per instance via `config.ports`
+        (a per-direction ordered list of `{id, exposed?}`), over each port's metadata
+        `displayOrder` / `exposedByDefault` defaults. Order is cosmetic; a not-exposed
+        port is hidden, not wireable, and not runtime-overridable.
     NodeExecutionStatus:
       type: string
       enum:
@@ -3219,11 +3220,20 @@ components:
           default: true
           description: |
             Whether the port is exposed when the instance sets no explicit exposure
-            for it (in `data.config.exposedPorts`). Defaults to true — a missing key
+            for it (in `data.config.ports`). Defaults to true — a missing override
             reads as exposed. Reserved ports that ship hidden until an author opts in
             (e.g. the `error` output) carry false. In v2 exposure is semantic: a
             not-exposed port is hidden on the canvas, not wireable, and not
             runtime-overridable.
+        displayOrder:
+          type: integer
+          default: 0
+          description: |
+            Default sort weight for the port's render position, ascending; ties
+            break on declaration order. Author-declared ports default to 0; reserved
+            injected ports (trigger/tool/error) carry a high weight so they default
+            to the bottom. Cosmetic only. The instance's `config.ports` order
+            overrides this when present.
         schema:
           $ref: '#/components/schemas/PortDataSchema'
           description: |
@@ -3460,22 +3470,6 @@ components:
 
         Instance-level settings take precedence over type-level defaults.
       properties:
-        portOrder:
-          type: object
-          description: |
-            Visual-only port display order (no effect on execution). Arrays of port
-            IDs in the desired render order; ports not listed appear at the end in
-            metadata order.
-          properties:
-            inputs:
-              type: array
-              items:
-                type: string
-            outputs:
-              type: array
-              items:
-                type: string
-          additionalProperties: false
         atom:
           $ref: '#/components/schemas/AtomUIConfig'
         style:
@@ -3512,10 +3506,6 @@ components:
       additionalProperties: true
       example:
         ui:
-          portOrder:
-            inputs:
-              - value
-              - trigger
           style:
             opacity: 0.8
         agentspec:component_type: llm_node
@@ -3537,8 +3527,9 @@ components:
         ## Extensions Support
 
         The `extensions` property allows storing UI settings and 3rd party data:
-        - Use `extensions.ui.portOrder` to reorder a node's ports (visual only)
+        - Use `extensions.ui.style` for custom per-node styling
         - Use namespaced keys for custom integrations (e.g., "myapp:settings")
+        (Port order + exposure live in `config.ports`, not here.)
       properties:
         node_type_id:
           type: string
@@ -3858,8 +3849,8 @@ components:
                 Use for instance-specific UI states or custom data.
 
                 Common use cases:
-                - `extensions.ui.portOrder`: Reorder a node's ports (visual only)
                 - `extensions.ui.style`: Custom styling for this node instance
+                (Port order + exposure live in `config.ports`, not here.)
           required:
             - label
             - config

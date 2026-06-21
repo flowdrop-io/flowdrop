@@ -91,11 +91,12 @@ NodeType:
       for user-defined input/output handles
     - **gateway**: Supports `config.branches` for conditional branching paths
 
-    ## Port exposure
+    ## Port order + exposure
 
-    Which ports render is controlled by exposure: each port's metadata
-    `exposedByDefault`, overridable per instance via `config.exposedPorts`. A
-    not-exposed port is hidden, not wireable, and not runtime-overridable.
+    Render order and exposure are controlled per instance via `config.ports`
+    (a per-direction ordered list of `{id, exposed?}`), over each port's metadata
+    `displayOrder` / `exposedByDefault` defaults. Order is cosmetic; a not-exposed
+    port is hidden, not wireable, and not runtime-overridable.
 
 NodeExecutionStatus:
   type: string

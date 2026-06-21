@@ -52,11 +52,20 @@ NodePort:
       default: true
       description: |
         Whether the port is exposed when the instance sets no explicit exposure
-        for it (in `data.config.exposedPorts`). Defaults to true — a missing key
+        for it (in `data.config.ports`). Defaults to true — a missing override
         reads as exposed. Reserved ports that ship hidden until an author opts in
         (e.g. the `error` output) carry false. In v2 exposure is semantic: a
         not-exposed port is hidden on the canvas, not wireable, and not
         runtime-overridable.
+    displayOrder:
+      type: integer
+      default: 0
+      description: |
+        Default sort weight for the port's render position, ascending; ties
+        break on declaration order. Author-declared ports default to 0; reserved
+        injected ports (trigger/tool/error) carry a high weight so they default
+        to the bottom. Cosmetic only. The instance's `config.ports` order
+        overrides this when present.
     schema:
       $ref: '#/PortDataSchema'
       description: |
@@ -510,22 +519,6 @@ NodeUIExtensions:
 
     Instance-level settings take precedence over type-level defaults.
   properties:
-    portOrder:
-      type: object
-      description: |
-        Visual-only port display order (no effect on execution). Arrays of port
-        IDs in the desired render order; ports not listed appear at the end in
-        metadata order.
-      properties:
-        inputs:
-          type: array
-          items:
-            type: string
-        outputs:
-          type: array
-          items:
-            type: string
-      additionalProperties: false
     atom:
       $ref: '#/AtomUIConfig'
     style:
@@ -563,8 +556,6 @@ NodeExtensions:
   additionalProperties: true
   example:
     ui:
-      portOrder:
-        inputs: [value, trigger]
       style:
         opacity: 0.8
     'agentspec:component_type': llm_node
@@ -587,8 +578,9 @@ NodeMetadata:
     ## Extensions Support
 
     The `extensions` property allows storing UI settings and 3rd party data:
-    - Use `extensions.ui.portOrder` to reorder a node's ports (visual only)
+    - Use `extensions.ui.style` for custom per-node styling
     - Use namespaced keys for custom integrations (e.g., "myapp:settings")
+    (Port order + exposure live in `config.ports`, not here.)
   properties:
     node_type_id:
       type: string

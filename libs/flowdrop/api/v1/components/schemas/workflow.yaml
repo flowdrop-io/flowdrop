@@ -53,8 +53,8 @@ WorkflowNode:
             Use for instance-specific UI states or custom data.
 
             Common use cases:
-            - `extensions.ui.portOrder`: Reorder a node's ports (visual only)
             - `extensions.ui.style`: Custom styling for this node instance
+            (Port order + exposure live in `config.ports`, not here.)
       required:
         - label
         - config

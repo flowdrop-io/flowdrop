@@ -560,7 +560,7 @@
     },
     "NodeMetadata": {
       "type": "object",
-      "description": "Complete metadata for a node type including ports, configuration schema, and extensions.\n\n## Dynamic Port Support\n\nNodes can support user-defined dynamic ports through their configSchema:\n- Add `dynamicInputs` array property to allow custom input handles\n- Add `dynamicOutputs` array property to allow custom output handles\n- Add `branches` array property for gateway nodes with conditional paths\n\n## Extensions Support\n\nThe `extensions` property allows storing UI settings and 3rd party data:\n- Use `extensions.ui.portOrder` to reorder a node's ports (visual only)\n- Use namespaced keys for custom integrations (e.g., \"myapp:settings\")\n",
+      "description": "Complete metadata for a node type including ports, configuration schema, and extensions.\n\n## Dynamic Port Support\n\nNodes can support user-defined dynamic ports through their configSchema:\n- Add `dynamicInputs` array property to allow custom input handles\n- Add `dynamicOutputs` array property to allow custom output handles\n- Add `branches` array property for gateway nodes with conditional paths\n\n## Extensions Support\n\nThe `extensions` property allows storing UI settings and 3rd party data:\n- Use `extensions.ui.style` for custom per-node styling\n- Use namespaced keys for custom integrations (e.g., \"myapp:settings\")\n(Port order + exposure live in `config.ports`, not here.)\n",
       "properties": {
         "node_type_id": {
           "type": "string",
@@ -698,7 +698,12 @@
         "exposedByDefault": {
           "type": "boolean",
           "default": true,
-          "description": "Whether the port is exposed when the instance sets no explicit exposure\nfor it (in `data.config.exposedPorts`). Defaults to true — a missing key\nreads as exposed. Reserved ports that ship hidden until an author opts in\n(e.g. the `error` output) carry false. In v2 exposure is semantic: a\nnot-exposed port is hidden on the canvas, not wireable, and not\nruntime-overridable.\n"
+          "description": "Whether the port is exposed when the instance sets no explicit exposure\nfor it (in `data.config.ports`). Defaults to true — a missing override\nreads as exposed. Reserved ports that ship hidden until an author opts in\n(e.g. the `error` output) carry false. In v2 exposure is semantic: a\nnot-exposed port is hidden on the canvas, not wireable, and not\nruntime-overridable.\n"
+        },
+        "displayOrder": {
+          "type": "integer",
+          "default": 0,
+          "description": "Default sort weight for the port's render position, ascending; ties\nbreak on declaration order. Author-declared ports default to 0; reserved\ninjected ports (trigger/tool/error) carry a high weight so they default\nto the bottom. Cosmetic only. The instance's `config.ports` order\noverrides this when present.\n"
         },
         "schema": {
           "allOf": [
@@ -731,31 +736,12 @@
         "idea",
         "default"
       ],
-      "description": "Visual rendering type for the node.\n\nBuilt-in types:\n- `note` - Sticky note with markdown support\n- `simple` - Compact layout with header and description\n- `square` - Minimal square node with centered icon\n- `atom` - Minimal label-only pill/rectangle for value/transform nodes (uses extensions.ui.atom)\n- `tool` - Specialized node for agent tools\n- `gateway` - Branching control flow with dynamic branches (uses config.branches)\n- `terminal` - Circular node for workflow start/end/exit points\n- `idea` - Conceptual idea node for BPMN-like flow diagrams\n- `default` - Full-featured workflow node with dynamic port support\n\n## Dynamic Port Support\n\nThe `default` and `gateway` node types support dynamic ports:\n\n- **default**: Supports `config.dynamicInputs` and `config.dynamicOutputs`\n  for user-defined input/output handles\n- **gateway**: Supports `config.branches` for conditional branching paths\n\n## Port exposure\n\nWhich ports render is controlled by exposure: each port's metadata\n`exposedByDefault`, overridable per instance via `config.exposedPorts`. A\nnot-exposed port is hidden, not wireable, and not runtime-overridable.\n"
+      "description": "Visual rendering type for the node.\n\nBuilt-in types:\n- `note` - Sticky note with markdown support\n- `simple` - Compact layout with header and description\n- `square` - Minimal square node with centered icon\n- `atom` - Minimal label-only pill/rectangle for value/transform nodes (uses extensions.ui.atom)\n- `tool` - Specialized node for agent tools\n- `gateway` - Branching control flow with dynamic branches (uses config.branches)\n- `terminal` - Circular node for workflow start/end/exit points\n- `idea` - Conceptual idea node for BPMN-like flow diagrams\n- `default` - Full-featured workflow node with dynamic port support\n\n## Dynamic Port Support\n\nThe `default` and `gateway` node types support dynamic ports:\n\n- **default**: Supports `config.dynamicInputs` and `config.dynamicOutputs`\n  for user-defined input/output handles\n- **gateway**: Supports `config.branches` for conditional branching paths\n\n## Port order + exposure\n\nRender order and exposure are controlled per instance via `config.ports`\n(a per-direction ordered list of `{id, exposed?}`), over each port's metadata\n`displayOrder` / `exposedByDefault` defaults. Order is cosmetic; a not-exposed\nport is hidden, not wireable, and not runtime-overridable.\n"
     },
     "NodeUIExtensions": {
       "type": "object",
       "description": "UI-related extension settings for nodes.\nUsed to control visual behavior in the workflow editor.\n\nThese settings can be defined at two levels:\n1. **Node Type Level** (`metadata.extensions.ui`): Default settings for all instances\n2. **Instance Level** (`data.extensions.ui`): Override for specific node instances\n\nInstance-level settings take precedence over type-level defaults.\n",
       "properties": {
-        "portOrder": {
-          "type": "object",
-          "description": "Visual-only port display order (no effect on execution). Arrays of port\nIDs in the desired render order; ports not listed appear at the end in\nmetadata order.\n",
-          "properties": {
-            "inputs": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "outputs": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
-        },
         "atom": {
           "$ref": "#/$defs/AtomUIConfig"
         },
@@ -1168,7 +1154,7 @@
                   "$ref": "#/$defs/NodeExtensions"
                 },
                 {
-                  "description": "Per-instance extension properties for 3rd party integrations.\nOverrides or extends the node type extensions defined in metadata.extensions.\nUse for instance-specific UI states or custom data.\n\nCommon use cases:\n- `extensions.ui.portOrder`: Reorder a node's ports (visual only)\n- `extensions.ui.style`: Custom styling for this node instance\n"
+                  "description": "Per-instance extension properties for 3rd party integrations.\nOverrides or extends the node type extensions defined in metadata.extensions.\nUse for instance-specific UI states or custom data.\n\nCommon use cases:\n- `extensions.ui.style`: Custom styling for this node instance\n(Port order + exposure live in `config.ports`, not here.)\n"
                 }
               ]
             }
