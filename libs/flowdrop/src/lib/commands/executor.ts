@@ -21,7 +21,7 @@ import type {
   HelpResultData,
   SwapNodeResultData
 } from './types.js';
-import type { ConfigProperty, Branch } from '../types/index.js';
+import type { ConfigProperty, Branch, DynamicPort } from '../types/index.js';
 import type { WorkflowNode, WorkflowEdge } from '../types/index.js';
 import { generateNodeId } from '../utils/nodeIds.js';
 import { extractConfigDefaults } from '../utils/nodeIds.js';
@@ -481,31 +481,45 @@ function findPort(
   direction: 'input' | 'output';
 } | null {
   const metadata = node.data?.metadata;
-  if (!metadata) return null;
+  const config = node.data?.config;
+  if (!metadata && !config) return null;
 
-  const outputPort = metadata.outputs?.find((p) => p.id === portId);
-  const inputPort = metadata.inputs?.find((p) => p.id === portId);
+  // Resolve an output port from static metadata or config-driven ports. The
+  // latter are not in metadata.outputs: gateway branches live in config.branches
+  // and user-defined handles live in config.dynamicOutputs (both keyed by name).
+  const resolveOutput = (): { id: string; name: string; dataType: string } | null => {
+    const meta = metadata?.outputs?.find((p) => p.id === portId);
+    if (meta) return meta;
+    const branch = (config?.branches as Branch[] | undefined)?.find((b) => b.name === portId);
+    if (branch) return { id: portId, name: branch.label ?? portId, dataType: 'trigger' };
+    const dynamic = (config?.dynamicOutputs as DynamicPort[] | undefined)?.find(
+      (p) => p.name === portId
+    );
+    if (dynamic) return { id: portId, name: dynamic.label ?? portId, dataType: dynamic.dataType };
+    return null;
+  };
 
-  if (preferDirection === 'output') {
-    if (outputPort) return { port: outputPort, direction: 'output' };
-    if (inputPort) return { port: inputPort, direction: 'input' };
-  } else if (preferDirection === 'input') {
+  // Resolve an input port from static metadata or config.dynamicInputs.
+  const resolveInput = (): { id: string; name: string; dataType: string } | null => {
+    const meta = metadata?.inputs?.find((p) => p.id === portId);
+    if (meta) return meta;
+    const dynamic = (config?.dynamicInputs as DynamicPort[] | undefined)?.find(
+      (p) => p.name === portId
+    );
+    if (dynamic) return { id: portId, name: dynamic.label ?? portId, dataType: dynamic.dataType };
+    return null;
+  };
+
+  const outputPort = resolveOutput();
+  const inputPort = resolveInput();
+
+  if (preferDirection === 'input') {
     if (inputPort) return { port: inputPort, direction: 'input' };
     if (outputPort) return { port: outputPort, direction: 'output' };
   } else {
+    // Default and explicit 'output' both prefer the output port first.
     if (outputPort) return { port: outputPort, direction: 'output' };
     if (inputPort) return { port: inputPort, direction: 'input' };
-  }
-
-  // Gateway nodes have dynamic branch ports stored in config.branches, not metadata.outputs
-  if (metadata.type === 'gateway') {
-    const branches = node.data.config?.branches as Branch[] | undefined;
-    if (branches?.some((b) => b.name === portId)) {
-      return {
-        port: { id: portId, name: portId, dataType: 'trigger' },
-        direction: 'output'
-      };
-    }
   }
 
   return null;
@@ -592,6 +606,25 @@ function executeConnect(
 
   // Generate edge ID
   const edgeId = `${sourceNode.id}-${sourceHandle}-${targetNode.id}-${targetHandle}`;
+
+  // Idempotency guard: re-applying the same connection (e.g. a second
+  // AI-assistant Apply that re-emits an existing edge) must not append a
+  // duplicate. Two edges sharing an id crash the canvas with Svelte's
+  // `each_key_duplicate`. Treat an existing identical connection as a no-op.
+  const alreadyConnected = workflow.edges.some(
+    (e) =>
+      e.id === edgeId ||
+      (e.source === sourceNode.id &&
+        e.target === targetNode.id &&
+        e.sourceHandle === sourceHandle &&
+        e.targetHandle === targetHandle)
+  );
+  if (alreadyConnected) {
+    return {
+      ok: true,
+      message: `Already connected ${toShortId(sourceNode.id)}:${command.sourcePort} → ${toShortId(targetNode.id)}:${command.targetPort}`
+    };
+  }
 
   // Build edge
   const edge: WorkflowEdge = {

@@ -267,6 +267,21 @@ describe('WorkflowStore', () => {
 
       expect(fd.workflow.edges).toHaveLength(0);
     });
+
+    it('should not append an edge whose id already exists', () => {
+      const workflow = createTestWorkflow();
+      fd.workflow.initialize(workflow);
+
+      fd.workflow.addEdge(createTestEdge({ id: 'dup-edge' }));
+      const versionAfterFirst = fd.workflow.version;
+      // Re-adding the same id must be a silent no-op (SvelteFlow keys edges by id;
+      // a duplicate throws each_key_duplicate and crashes the canvas).
+      fd.workflow.addEdge(createTestEdge({ id: 'dup-edge' }));
+
+      expect(fd.workflow.edges).toHaveLength(1);
+      // No mutation means no version bump / history entry.
+      expect(fd.workflow.version).toBe(versionAfterFirst);
+    });
   });
 
   describe('batch operations', () => {

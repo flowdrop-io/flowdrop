@@ -1314,6 +1314,101 @@ describe('executeCommand — connect', () => {
     expect(result.error).toContain('input');
     expect(result.error).toContain('not an output');
   });
+
+  // N2: config-driven ports (dynamicOutputs/dynamicInputs) are not in
+  // metadata.outputs/inputs, but connect must still resolve them.
+  it('resolves a config-driven dynamicOutputs port as a source', () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode('agentspec.llm_node.1', llmMetadata);
+    llmNode.data.config = {
+      ...llmNode.data.config,
+      dynamicOutputs: [{ name: 'extra_out', label: 'Extra Out', dataType: 'string' }]
+    };
+    const apiNode = createMockNode('agentspec.api_node.1', apiMetadata);
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: 'connect',
+        sourceNodeId: 'llm_node.1',
+        sourcePort: 'extra_out',
+        targetNodeId: 'api_node.1',
+        targetPort: 'body'
+      },
+      context
+    );
+
+    expect(result.ok).toBe(true);
+    expect(dispatch.addEdge).toHaveBeenCalledOnce();
+    const edge = (dispatch.addEdge as ReturnType<typeof vi.fn>).mock.calls[0][0] as WorkflowEdge;
+    expect(edge.sourceHandle).toBe('agentspec.llm_node.1-output-extra_out');
+  });
+
+  it('resolves a config-driven dynamicInputs port as a target', () => {
+    const dispatch = createMockDispatch();
+    const llmNode = createMockNode('agentspec.llm_node.1', llmMetadata);
+    const apiNode = createMockNode('agentspec.api_node.1', apiMetadata);
+    apiNode.data.config = {
+      ...apiNode.data.config,
+      dynamicInputs: [{ name: 'extra_in', label: 'Extra In', dataType: 'string' }]
+    };
+    const workflow = createMockWorkflow([llmNode, apiNode]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(
+      {
+        type: 'connect',
+        sourceNodeId: 'llm_node.1',
+        sourcePort: 'llm_output',
+        targetNodeId: 'api_node.1',
+        targetPort: 'extra_in'
+      },
+      context
+    );
+
+    expect(result.ok).toBe(true);
+    expect(dispatch.addEdge).toHaveBeenCalledOnce();
+    const edge = (dispatch.addEdge as ReturnType<typeof vi.fn>).mock.calls[0][0] as WorkflowEdge;
+    expect(edge.targetHandle).toBe('agentspec.api_node.1-input-extra_in');
+  });
+
+  // N3: re-applying an existing connection (e.g. a second AI-assistant Apply)
+  // must be an idempotent no-op, never a duplicate edge (which crashes the
+  // canvas with `each_key_duplicate`).
+  it('treats an already-existing connection as an idempotent no-op', () => {
+    // First connect to capture the deterministic edge it produces.
+    const firstDispatch = createMockDispatch();
+    const llmNode = createMockNode('agentspec.llm_node.1', llmMetadata);
+    const apiNode = createMockNode('agentspec.api_node.1', apiMetadata);
+    const firstContext = createMockContext(
+      createMockWorkflow([llmNode, apiNode]),
+      nodeTypes,
+      firstDispatch
+    );
+    const command = {
+      type: 'connect' as const,
+      sourceNodeId: 'llm_node.1',
+      sourcePort: 'llm_output',
+      targetNodeId: 'api_node.1',
+      targetPort: 'body'
+    };
+    executeCommand(command, firstContext);
+    const existingEdge = (firstDispatch.addEdge as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as WorkflowEdge;
+
+    // Re-run against a workflow that already holds that edge.
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow([llmNode, apiNode], [existingEdge]);
+    const context = createMockContext(workflow, nodeTypes, dispatch);
+
+    const result = executeCommand(command, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain('Already connected');
+    expect(dispatch.addEdge).not.toHaveBeenCalled();
+  });
 });
 
 // ============================================================================

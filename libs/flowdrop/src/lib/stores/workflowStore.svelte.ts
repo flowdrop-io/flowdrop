@@ -603,8 +603,12 @@ export class WorkflowStore {
 
   /** Add an edge. */
   addEdge(edge: WorkflowEdge): void {
-    this.#pushToHistory('Add connection');
     if (!this.#workflow) return;
+    // Never append an edge whose id already exists — SvelteFlow keys edges by id
+    // and a duplicate throws `each_key_duplicate`, taking down the canvas. Guard
+    // before touching history so a no-op stays a no-op.
+    if (this.#workflow.edges.some((e) => e.id === edge.id)) return;
+    this.#pushToHistory('Add connection');
     this.#workflow = {
       ...this.#workflow,
       edges: [...this.#workflow.edges, edge],
