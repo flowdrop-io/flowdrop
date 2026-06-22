@@ -37,7 +37,7 @@
     value = 0,
     min = 0,
     max = 100,
-    step = 1,
+    step,
     required = false,
     disabled = false,
     ariaDescribedBy,
@@ -55,6 +55,40 @@
     const parsed = Number(value);
     return isNaN(parsed) ? min : parsed;
   });
+
+  /** Count the decimal places of a finite number (e.g. 0.7 -> 1, 3 -> 0). */
+  function decimalPlaces(n: number): number {
+    if (!Number.isFinite(n)) return 0;
+    const text = String(n);
+    const dot = text.indexOf('.');
+    return dot === -1 ? 0 : text.length - dot - 1;
+  }
+
+  /**
+   * Resolve the step the native input should use.
+   *
+   * The backend often omits `step`, and a default of 1 makes the browser snap a
+   * fractional value (0.7) to the nearest integer (1) — the thumb jumps to that
+   * snapped position while our fill/label still show the raw value, so they
+   * disagree on load. When no step is given, infer one from the precision of the
+   * initial value/min/max so a value like 0.7 yields a step of 0.1.
+   *
+   * Granularity is a property of the field, not the live value, so it is captured
+   * ONCE. Recomputing from the live value would coarsen the step back to 1 the
+   * instant the user drags onto a whole number (e.g. 1.0), stranding the slider
+   * on integer increments.
+   */
+  const initialNumeric = typeof value === 'number' ? value : Number(value);
+  const inferredStep = ((): number => {
+    const places = Math.max(
+      decimalPlaces(Number.isNaN(initialNumeric) ? min : initialNumeric),
+      decimalPlaces(min),
+      decimalPlaces(max)
+    );
+    return places > 0 ? Math.pow(10, -places) : 1;
+  })();
+
+  const effectiveStep = $derived(typeof step === 'number' && step > 0 ? step : inferredStep);
 
   /**
    * Compute the percentage position for the filled track
@@ -79,14 +113,20 @@
 
 <div class="form-range-container">
   <div class="form-range-slider">
+    <!--
+      Order matters: min/max/step must be applied BEFORE value. A range input
+      defaults to step=1, so setting value=0.7 first snaps it to 1, and the later
+      step=0.1 does not re-validate the already-snapped value. Setting the bounds
+      and step first lets the value land truthfully.
+    -->
     <input
       {id}
       type="range"
       class="form-range-field"
-      value={numericValue}
       {min}
       {max}
-      {step}
+      step={effectiveStep}
+      value={numericValue}
       {disabled}
       {required}
       aria-describedby={ariaDescribedBy}
