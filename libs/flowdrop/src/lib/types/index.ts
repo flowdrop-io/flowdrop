@@ -156,9 +156,11 @@ export interface NodePort {
   exposedByDefault?: boolean;
   /**
    * Default sort weight for the port's render position, ascending; ties break
-   * on declaration order. Author-declared ports default to `0`; reserved
-   * injected ports (trigger/tool/error) carry a high weight so they default to
-   * the bottom. Cosmetic only. The instance's `ports` config order overrides it.
+   * on declaration order. Author-declared ports default to `0`. Reserved ports
+   * (the `error` output and `trigger`/`tool` control ports) need no value — the
+   * library sinks them to the bottom automatically (see
+   * `RESERVED_PORT_DISPLAY_ORDER`); set this only to override that. Cosmetic
+   * only. The instance's `ports` config order overrides it.
    */
   displayOrder?: number;
   /**

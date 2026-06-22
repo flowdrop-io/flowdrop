@@ -62,10 +62,11 @@ NodePort:
       default: 0
       description: |
         Default sort weight for the port's render position, ascending; ties
-        break on declaration order. Author-declared ports default to 0; reserved
-        injected ports (trigger/tool/error) carry a high weight so they default
-        to the bottom. Cosmetic only. The instance's `config.ports` order
-        overrides this when present.
+        break on declaration order. Author-declared ports default to 0. Reserved
+        ports (the `error` output and `trigger`/`tool` control ports) need no
+        value — the renderer sinks them to the bottom automatically; set this
+        only to override that. Cosmetic only. The instance's `config.ports`
+        order overrides this when present.
     schema:
       $ref: '#/PortDataSchema'
       description: |

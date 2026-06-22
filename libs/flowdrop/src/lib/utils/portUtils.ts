@@ -1,4 +1,31 @@
 import type { NodePort, PortConfigEntry, PortsConfig } from '$lib/types/index.js';
+import { isErrorPort } from '$lib/utils/colors.js';
+
+/**
+ * Default sort weight applied to reserved ports (the `error` output and the
+ * `trigger`/`tool` control-flow ports) that don't set an explicit
+ * `displayOrder`. High enough to sink them below author-declared ports, which
+ * default to `0`. The single home for the "high weight" the docs refer to — an
+ * explicit `displayOrder` on the port still overrides it.
+ */
+export const RESERVED_PORT_DISPLAY_ORDER = 100;
+
+/**
+ * Whether a port is a reserved one that should default to the bottom of its
+ * direction: the reserved `error` output, or a `trigger`/`tool` control-flow
+ * port (identified by data type, mirroring the port config's control types).
+ */
+export function isReservedPort(port: { id: string; type?: string; dataType?: string }): boolean {
+  return isErrorPort(port) || port.dataType === 'trigger' || port.dataType === 'tool';
+}
+
+/**
+ * The port's effective default sort weight: its explicit `displayOrder` if set,
+ * else a high weight for reserved ports, else `0`.
+ */
+function defaultWeight(port: NodePort): number {
+  return port.displayOrder ?? (isReservedPort(port) ? RESERVED_PORT_DISPLAY_ORDER : 0);
+}
 
 /**
  * Sort ports by an ordered array of port IDs.
@@ -16,15 +43,15 @@ export function applyPortOrder(ports: NodePort[], orderedIds: string[] | undefin
 }
 
 /**
- * Sort ports by their metadata `displayOrder` weight (ascending), breaking ties
+ * Sort ports by their effective `displayOrder` weight (ascending), breaking ties
  * on declaration order (stable). This is the default order before any
- * instance-level reordering — reserved injected ports (trigger/tool/error)
- * carry a high weight so they land at the bottom.
+ * instance-level reordering — reserved ports (trigger/tool/error) carry a high
+ * default weight so they land at the bottom without authors hand-setting it.
  */
 export function byDefaultOrder(ports: NodePort[]): NodePort[] {
   return ports
     .map((port, index) => ({ port, index }))
-    .sort((a, b) => (a.port.displayOrder ?? 0) - (b.port.displayOrder ?? 0) || a.index - b.index)
+    .sort((a, b) => defaultWeight(a.port) - defaultWeight(b.port) || a.index - b.index)
     .map(({ port }) => port);
 }
 

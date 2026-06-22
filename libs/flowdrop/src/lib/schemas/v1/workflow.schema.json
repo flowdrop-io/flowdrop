@@ -703,7 +703,7 @@
         "displayOrder": {
           "type": "integer",
           "default": 0,
-          "description": "Default sort weight for the port's render position, ascending; ties\nbreak on declaration order. Author-declared ports default to 0; reserved\ninjected ports (trigger/tool/error) carry a high weight so they default\nto the bottom. Cosmetic only. The instance's `config.ports` order\noverrides this when present.\n"
+          "description": "Default sort weight for the port's render position, ascending; ties\nbreak on declaration order. Author-declared ports default to 0. Reserved\nports (the `error` output and `trigger`/`tool` control ports) need no\nvalue — the renderer sinks them to the bottom automatically; set this\nonly to override that. Cosmetic only. The instance's `config.ports`\norder overrides this when present.\n"
         },
         "schema": {
           "allOf": [

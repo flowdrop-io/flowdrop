@@ -103,6 +103,9 @@
     if (orderChanged || hasExposureOverride) next[direction] = entries;
     else delete next[direction];
 
+    // We carry the untouched direction over verbatim from `portsConfig`, but an
+    // earlier edit there may have left an empty array; prune it so an all-default
+    // node collapses to `undefined` below rather than persisting `{inputs: []}`.
     const other: Direction = direction === 'inputs' ? 'outputs' : 'inputs';
     if (!next[other] || next[other]?.length === 0) delete next[other];
     onChange(Object.keys(next).length === 0 ? undefined : next);

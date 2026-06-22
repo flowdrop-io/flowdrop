@@ -9,6 +9,7 @@ import { describe, it, expect } from 'vitest';
 import {
   applyPortOrder,
   byDefaultOrder,
+  isReservedPort,
   orderPortsFor,
   getPortTop,
   isPortExposed,
@@ -199,6 +200,48 @@ describe('byDefaultOrder', () => {
     const original = [...ports];
     byDefaultOrder(ports);
     expect(ports).toEqual(original);
+  });
+
+  it('sinks reserved ports below author ports without an explicit weight', () => {
+    const trigger: NodePort = {
+      id: 'trigger',
+      name: 'Trigger',
+      type: 'input',
+      dataType: 'trigger'
+    };
+    const tool: NodePort = { id: 'tool', name: 'Tool', type: 'input', dataType: 'tool' };
+    const error: NodePort = { id: 'error', name: 'Error', type: 'output', dataType: 'string' };
+    // Reserved ports declared first; they should still land at the bottom.
+    const result = byDefaultOrder([trigger, error, A, tool, B]);
+    expect(result.map((p) => p.id)).toEqual(['a', 'b', 'trigger', 'error', 'tool']);
+  });
+
+  it('lets an explicit displayOrder override the reserved default', () => {
+    const trigger: NodePort = {
+      id: 'trigger',
+      name: 'Trigger',
+      type: 'input',
+      dataType: 'trigger',
+      displayOrder: -1
+    };
+    expect(byDefaultOrder([A, trigger, B]).map((p) => p.id)).toEqual(['trigger', 'a', 'b']);
+  });
+});
+
+describe('isReservedPort', () => {
+  it('flags trigger/tool control ports by data type', () => {
+    expect(isReservedPort({ id: 'x', type: 'input', dataType: 'trigger' })).toBe(true);
+    expect(isReservedPort({ id: 'y', type: 'input', dataType: 'tool' })).toBe(true);
+  });
+
+  it('flags the reserved error output (id `error`, not an input)', () => {
+    expect(isReservedPort({ id: 'error', type: 'output', dataType: 'string' })).toBe(true);
+    // An input named `error` is not the reserved output port.
+    expect(isReservedPort({ id: 'error', type: 'input', dataType: 'string' })).toBe(false);
+  });
+
+  it('does not flag ordinary author ports', () => {
+    expect(isReservedPort({ id: 'value', type: 'input', dataType: 'string' })).toBe(false);
   });
 });
 
