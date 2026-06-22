@@ -129,6 +129,11 @@ export interface UISchemaGroup extends UISchemaElementBase {
    * @default true
    */
   defaultOpen?: boolean;
+  /**
+   * Optional Iconify icon name shown in the group's header bar.
+   * Falls back to a neutral default when omitted.
+   */
+  icon?: string;
 }
 
 /**

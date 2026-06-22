@@ -29,18 +29,22 @@
 
   const isCollapsible = $derived(group.collapsible !== false);
   const isDefaultOpen = $derived(group.defaultOpen !== false);
+  const headerIcon = $derived(group.icon ?? 'heroicons:adjustments-horizontal');
 </script>
 
 {#if isCollapsible}
   <details class="flowdrop-details form-fieldset" open={isDefaultOpen}>
     <summary class="flowdrop-details__summary form-fieldset__summary">
-      <div class="form-fieldset__label">
-        <Icon icon="heroicons:chevron-right" class="form-fieldset__chevron" />
+      <span class="form-fieldset__label">
+        <Icon icon={headerIcon} class="form-fieldset__icon" />
         <span class="form-fieldset__title">{group.label}</span>
-      </div>
-      {#if group.description}
-        <span class="form-fieldset__badge">{group.description}</span>
-      {/if}
+      </span>
+      <span class="form-fieldset__meta">
+        {#if group.description}
+          <span class="form-fieldset__badge">{group.description}</span>
+        {/if}
+        <Icon icon="heroicons:chevron-right" class="form-fieldset__chevron" />
+      </span>
     </summary>
     <div class="flowdrop-details__content form-fieldset__content">
       <div class="form-fieldset__fields">
@@ -62,18 +66,48 @@
 
 <style>
   /* ============================================
-	   COLLAPSIBLE FIELDSET
-	   Extends .flowdrop-details from base.css
+	   COLLAPSIBLE FIELDSET — filled header bar
+	   Extends .flowdrop-details from base.css, overriding the summary
+	   into a distinct header bar (subtle fill + bottom divider when open)
+	   over a card body. Scoped to .form-fieldset so other .flowdrop-details
+	   consumers (e.g. NodeSidebar) are unaffected.
 	   ============================================ */
 
   .form-fieldset__summary {
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-sm);
+    padding: var(--fd-space-md) var(--fd-space-xl);
+    background: var(--fd-subtle);
+    border-radius: 0;
+  }
+
+  .form-fieldset__summary:hover {
+    background-color: var(--fd-muted);
+  }
+
+  /* Divider between header bar and body — only while expanded */
+  details.form-fieldset[open] > .form-fieldset__summary {
+    border-bottom: 1px solid var(--fd-border-muted);
   }
 
   .form-fieldset__label {
     display: flex;
     align-items: center;
     gap: var(--fd-space-xs);
+    min-width: 0;
+  }
+
+  .form-fieldset__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-sm);
+    flex-shrink: 0;
+  }
+
+  .form-fieldset :global(.form-fieldset__icon) {
+    width: 1rem;
+    height: 1rem;
+    color: var(--fd-muted-foreground);
+    flex-shrink: 0;
   }
 
   .form-fieldset__title {
@@ -106,7 +140,7 @@
   }
 
   .form-fieldset__content {
-    padding-top: var(--fd-space-xs);
+    padding: var(--fd-space-xl);
   }
 
   .form-fieldset__fields {
