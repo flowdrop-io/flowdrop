@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.6] - 2026-06-22
+
+Sixth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release unifies port **order** and **exposure** into a single per-instance `data.config.ports` value and makes exposure semantic — "what you see is what runs": a not-exposed port is hidden on the canvas, not wireable, and not runtime-overridable. The two older, separate mechanisms (`extensions.ui.portOrder` for order and `hideUnconnectedHandles` for visibility) are removed. A single combined "Ports" widget in the config panel now handles both reorder and expose/hide per port, and reserved ports (the `error` output and `trigger`/`tool` control ports) sort to the bottom automatically.
+
+### Breaking Changes
+
+- **Port order + exposure unified into `data.config.ports`.** Order and exposure are now one per-direction ordered list of `{ id, exposed? }` entries (`PortsConfig`): array position encodes display order, and the optional `exposed` flag overrides the port's metadata `exposedByDefault` — stored only when it diverges. An untouched node persists no `ports` key. This replaces `extensions.ui.portOrder` (removed) and the interim `exposedPorts` map. Consumers that read or write either must migrate to `config.ports`; the OpenAPI/JSON schema (`PortsConfig`, `PortConfigEntry`, `NodePort.displayOrder`) was updated to match.
+- **`hideUnconnectedHandles` removed end-to-end.** Visibility is no longer derived from connection state. A port renders iff it is exposed (`config.ports` override, else metadata `exposedByDefault`, which defaults to exposed). Dropped from `NodeUIExtensions`, every node renderer, the config form, fixtures, and the schema; `hiddenPorts` retired with it.
+
+### Added
+
+- **Combined `FormPorts` widget.** A single "Ports" group in the config panel renders one row per port with reorder (up/down) and an expose/hide toggle, replacing the separate Port Order panel and the interim exposed-ports widget. Edits write the minimal `config.ports` value and collapse back to `undefined` on the default order with no exposure override.
+- **`NodePort.displayOrder` + automatic reserved-port ordering.** A cosmetic default sort weight (ascending; ties on declaration order). Reserved ports — the `error` output and `trigger`/`tool` control ports — sink to the bottom of their direction automatically via `RESERVED_PORT_DISPLAY_ORDER`, with no value required from authors; an explicit `displayOrder` overrides. New `byDefaultOrder`, `orderPortsFor`, `isPortExposed`, and `isReservedPort` utilities.
+
+### Fixed
+
+- **OpenAPI `NodeMetadata` aligned with the `node_type_id` rename.** Follow-up to beta.5: the spec's `NodeMetadata` now references `node_type_id` consistently (the bundled spec shipped in the package was regenerated).
+
+### Docs
+
+- **`maxRetries` added to the reserved config-property table.**
+
 ## [2.0.0-beta.5] - 2026-06-20
 
 Fifth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release is a node-identity cleanup: node components now derive their instance id from the canonical `id` prop SvelteFlow already passes, dropping the duplicate `data.nodeId` copy and its load-time healing, and the node-_type_ entity id is renamed `metadata.id` → `metadata.node_type_id` to disambiguate it from the instance id. Six node components were also moved off the type-erasing `$props<T>()` onto a typed `interface Props`, which surfaced and fixed latent config-access errors in `ToolNode`.
