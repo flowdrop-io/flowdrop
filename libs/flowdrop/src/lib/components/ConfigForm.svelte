@@ -37,6 +37,7 @@
     getEffectiveConfigEditOptions,
     fetchDynamicSchema,
     resolveExternalEditUrl,
+    resolveDynamicSchemaKey,
     invalidateSchemaCache,
     type DynamicSchemaResult
   } from '$lib/services/dynamicSchemaService.js';
@@ -45,6 +46,7 @@
   import { getAvailableVariables } from '$lib/services/variableService.js';
   import { logger } from '../utils/logger.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
+  import { applyFetchedSchema } from '$lib/utils/schemaMerge.js';
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -120,6 +122,9 @@
   let dynamicSchemaLoading = $state(false);
   let dynamicSchemaError = $state<string | null>(null);
   let fetchedDynamicSchema = $state<ConfigSchema | null>(null);
+  // A uiSchema the endpoint returned alongside the schema (server-hydrated
+  // forms). Held next to fetchedDynamicSchema and cleared in lockstep with it.
+  let fetchedDynamicUiSchema = $state<UISchemaElement | null>(null);
 
   /**
    * Get the admin edit configuration for the node
@@ -154,37 +159,72 @@
    * Priority: fetchedDynamicSchema > direct schema prop > node metadata configSchema
    */
   const configSchema = $derived.by<ConfigSchema | undefined>(() => {
-    // If we have a fetched dynamic schema, use it
+    const staticSchema = schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
+    // A fetched dynamic schema is layered onto the static one per the endpoint's
+    // mergeStrategy/target (default 'replace' → fetched wins wholesale). With no
+    // static schema, the fetched schema is the form.
     if (fetchedDynamicSchema) {
-      return fetchedDynamicSchema;
+      const endpoint = configEditOptions?.dynamicSchema;
+      return endpoint
+        ? applyFetchedSchema(staticSchema, fetchedDynamicSchema, endpoint)
+        : fetchedDynamicSchema;
     }
-    // Otherwise use the direct prop or node metadata
-    return schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
+    return staticSchema;
   });
 
   /**
-   * Get the UI schema from direct prop or node metadata
-   * Priority: direct uiSchema prop > node metadata uiSchema
+   * Get the UI schema for the active configSchema.
+   * Priority: direct uiSchema prop > fetched dynamic uiSchema > node metadata.
+   *
+   * When the dynamic fetch returned a uiSchema, it wins over the node's static
+   * metadata uiSchema: the static one references only the static schema's
+   * properties, so it can't lay out a server-provided (hydrated) schema — its
+   * controls would point at fields that aren't rendered while the fetched
+   * fields would have no controls at all. The endpoint is expected to return a
+   * uiSchema describing the schema it served.
    */
   const configUISchema = $derived.by<UISchemaElement | undefined>(() => {
-    return uiSchema ?? (node?.data.metadata?.uiSchema as UISchemaElement | undefined);
+    if (uiSchema) return uiSchema;
+    if (fetchedDynamicSchema && fetchedDynamicUiSchema) return fetchedDynamicUiSchema;
+    return node?.data.metadata?.uiSchema as UISchemaElement | undefined;
   });
 
   /**
-   * Check if the node needs dynamic schema loading
-   * Loads when: no static schema OR preferDynamicSchema is true
+   * Whether this node sources its schema dynamically: dynamic schema is
+   * configured and used, and it actually contributes to the form — either there
+   * is no static schema to fall back on, it is explicitly preferred, or it is
+   * configured to merge/target (in which case it layers onto the static schema
+   * rather than replacing it, so we fetch even when a static schema exists).
    */
-  const needsDynamicSchemaLoad = $derived.by(() => {
-    if (!node) return false;
+  const wantsDynamicSchema = $derived.by(() => {
+    if (!node || !useDynamicSchema) return false;
+    const endpoint = configEditOptions?.dynamicSchema;
+    const layersOntoStatic = endpoint?.mergeStrategy === 'merge' || endpoint?.target != null;
     const staticSchema = schema ?? node.data.metadata?.configSchema;
-    // Need to load if: (no static schema OR preferDynamicSchema is true) AND dynamic schema is configured
-    return (
-      (!staticSchema || configEditOptions?.preferDynamicSchema === true) &&
-      useDynamicSchema &&
-      !fetchedDynamicSchema &&
-      !dynamicSchemaLoading
-    );
+    return !staticSchema || configEditOptions?.preferDynamicSchema === true || layersOntoStatic;
   });
+
+  /**
+   * Resolved fetch key for the dynamic schema endpoint. Read from the committed
+   * `node.data.config` (not the in-flight `edits`/`configValues`), so it moves
+   * at the commit boundary: a field edit reaches it only once `handleFormBlur`
+   * fires `onChange` and the parent writes the value back onto the node. It
+   * therefore recomputes when a committed config value the endpoint's
+   * parameterMapping references changes (e.g. a trigger node's event_type),
+   * driving the auto-refetch effect below. Relies on `node` being a deep
+   * reactive proxy whose `.data.config` is mutated in place; a replaced node or
+   * a plain snapshot would not re-run this derived.
+   */
+  const dynamicSchemaKey = $derived.by<string | null>(() => {
+    if (!node || !configEditOptions?.dynamicSchema || !wantsDynamicSchema) return null;
+    return resolveDynamicSchemaKey(configEditOptions.dynamicSchema, node, workflowId);
+  });
+
+  /**
+   * Key of the schema currently loaded or in flight. Guards the effect from
+   * re-fetching a schema whose inputs have not changed.
+   */
+  let loadedSchemaKey = $state<string | null>(null);
 
   /**
    * Get the current configuration from node or direct prop
@@ -241,6 +281,7 @@
 
       if (result.success && result.schema) {
         fetchedDynamicSchema = result.schema;
+        fetchedDynamicUiSchema = result.uiSchema ?? null;
       } else {
         dynamicSchemaError =
           result.error ?? configEditOptions.errorMessage ?? 'Failed to load configuration schema';
@@ -262,8 +303,9 @@
     if (!node || !configEditOptions?.dynamicSchema) return;
 
     // Invalidate the cache first
-    invalidateSchemaCache(node, configEditOptions.dynamicSchema);
+    invalidateSchemaCache(node, configEditOptions.dynamicSchema, workflowId);
     fetchedDynamicSchema = null;
+    fetchedDynamicUiSchema = null;
 
     // Reload the schema
     await loadDynamicSchema();
@@ -294,12 +336,31 @@
   }
 
   /**
-   * Auto-load dynamic schema on mount if needed
+   * Load — and reload — the dynamic schema when its resolved key changes.
+   *
+   * Covers both the initial fetch (loadedSchemaKey starts null) and refetching
+   * after a config value the endpoint depends on changes (e.g. picking a
+   * different trigger event_type). A load already in flight is left to finish;
+   * the effect re-runs when it settles and picks up any newer key then.
+   *
+   * The `dynamicSchemaLoading` read is load-bearing in both directions: it
+   * guards against re-entering while a fetch is in flight, AND — because it is
+   * a tracked read — flipping back to false on settle is what re-runs this
+   * effect to pick up a newer key. Don't hoist or drop it; the settle-and-
+   * refetch depends on it.
+   *
+   * loadedSchemaKey is set BEFORE the fetch (not after success) on purpose: a
+   * failed load consumes the key so a persistent error can't loop the effect
+   * into a refetch storm. Recovery from an error is manual, via
+   * refreshDynamicSchema().
    */
   $effect(() => {
-    if (needsDynamicSchemaLoad) {
-      loadDynamicSchema();
+    const key = dynamicSchemaKey;
+    if (key === null || key === loadedSchemaKey || dynamicSchemaLoading) {
+      return;
     }
+    loadedSchemaKey = key;
+    loadDynamicSchema();
   });
 
   /**
@@ -336,7 +397,11 @@
    */
   function handleFormBlur(): void {
     if (onChange) {
-      onChange({ ...configValues });
+      // Spread `initialConfig` first so config keys the active schema doesn't
+      // own (e.g. after a dynamic schema narrows the field set) pass through
+      // untouched instead of being silently dropped; `configValues` then wins
+      // for every field the schema actually renders.
+      onChange({ ...initialConfig, ...configValues });
       // Discharge the edits buffer at the commit boundary. Subsequent prop
       // changes (parent absorbing the commit, undo/redo, collaboration) then
       // flow through `initialConfig` cleanly instead of being shadowed by a
@@ -350,9 +415,12 @@
    * Collects config values and optionally saves the workflow.
    */
   async function handleSave(): Promise<void> {
-    // Collect all form values including hidden fields
+    // Collect all form values including hidden fields. Start from
+    // `initialConfig` so keys the active schema doesn't own survive the save
+    // (see handleFormBlur); `configValues` and the DOM scrape below then take
+    // precedence for every field the schema renders.
     const form = document.querySelector('.config-form');
-    const updatedConfig: Record<string, unknown> = { ...configValues };
+    const updatedConfig: Record<string, unknown> = { ...initialConfig, ...configValues };
 
     if (form) {
       const inputs = form.querySelectorAll('input, select, textarea');

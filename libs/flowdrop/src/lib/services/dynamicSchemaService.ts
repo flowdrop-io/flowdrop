@@ -11,6 +11,7 @@ import type {
   DynamicSchemaEndpoint,
   ExternalEditLink,
   ConfigEditOptions,
+  UISchemaElement,
   WorkflowNode
 } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
@@ -42,6 +43,13 @@ export interface DynamicSchemaResult {
   success: boolean;
   /** The fetched config schema (if successful) */
   schema?: ConfigSchema;
+  /**
+   * The fetched uiSchema, when the endpoint returns one alongside the schema.
+   * Lets a server-hydrated response carry its own field grouping/layout so the
+   * form isn't stuck with the node's static-metadata uiSchema (which only
+   * references the static schema's properties).
+   */
+  uiSchema?: UISchemaElement;
   /** Error message (if failed) */
   error?: string;
   /** Whether the schema was loaded from cache */
@@ -54,6 +62,8 @@ export interface DynamicSchemaResult {
 interface SchemaCacheEntry {
   /** The cached schema */
   schema: ConfigSchema;
+  /** The cached uiSchema, when the endpoint returned one */
+  uiSchema?: UISchemaElement;
   /** Timestamp when the schema was cached */
   cachedAt: number;
   /** Cache key used */
@@ -173,6 +183,54 @@ function generateCacheKey(endpoint: DynamicSchemaEndpoint, context: NodeContext)
 }
 
 /**
+ * Builds the template-resolution context for a node.
+ *
+ * Shared by every function that resolves a dynamic-schema URL, external-edit
+ * URL, or cache key, so they all read identical values — and therefore compute
+ * matching keys — from a single place.
+ *
+ * @param node - The workflow node instance
+ * @param workflowId - Optional workflow ID for context
+ * @returns The node context used for template resolution
+ */
+function buildNodeContext(node: WorkflowNode, workflowId?: string): NodeContext {
+  return {
+    id: node.id,
+    type: node.type,
+    metadata: node.data.metadata,
+    config: node.data.config,
+    extensions: node.data.extensions,
+    workflowId
+  };
+}
+
+/**
+ * Resolves the fetch key for a node's dynamic-schema endpoint: the endpoint URL
+ * with all template variables substituted from the node context.
+ *
+ * The key changes whenever a config value the endpoint's `parameterMapping`
+ * references changes (e.g. a trigger node's `event_type`). Callers watch it to
+ * refetch the schema when the inputs that shape it change, keeping the rendered
+ * form in step with the current configuration.
+ *
+ * @param endpoint - The dynamic schema endpoint configuration
+ * @param node - The workflow node instance
+ * @param workflowId - Optional workflow ID for context
+ * @returns The resolved endpoint URL, used as a reactive refetch key
+ */
+export function resolveDynamicSchemaKey(
+  endpoint: DynamicSchemaEndpoint,
+  node: WorkflowNode,
+  workflowId?: string
+): string {
+  return resolveTemplate(
+    endpoint.url,
+    endpoint.parameterMapping,
+    buildNodeContext(node, workflowId)
+  );
+}
+
+/**
  * Checks if a cached schema is still valid (not expired).
  *
  * @param entry - The cache entry to check
@@ -212,14 +270,7 @@ export async function fetchDynamicSchema(
   workflowId?: string
 ): Promise<DynamicSchemaResult> {
   // Build the context from the node
-  const context: NodeContext = {
-    id: node.id,
-    type: node.type,
-    metadata: node.data.metadata,
-    config: node.data.config,
-    extensions: node.data.extensions,
-    workflowId
-  };
+  const context = buildNodeContext(node, workflowId);
 
   // Generate cache key
   const cacheKey = generateCacheKey(endpoint, context);
@@ -231,6 +282,7 @@ export async function fetchDynamicSchema(
       return {
         success: true,
         schema: cached.schema,
+        uiSchema: cached.uiSchema,
         fromCache: true
       };
     }
@@ -317,10 +369,18 @@ export async function fetchDynamicSchema(
       };
     }
 
+    // A companion uiSchema may ride alongside the schema (server-hydrated
+    // forms). Look for it next to wherever the schema was found — sibling of
+    // the envelope, or nested in the same `data`/`schema` wrapper.
+    const uiSchema = (data.uiSchema ?? data.data?.uiSchema ?? data.schema?.uiSchema) as
+      | UISchemaElement
+      | undefined;
+
     // Cache the schema (if caching is enabled)
     if (endpoint.cacheSchema !== false) {
       schemaCache.set(cacheKey, {
         schema,
+        uiSchema,
         cachedAt: Date.now(),
         cacheKey
       });
@@ -329,6 +389,7 @@ export async function fetchDynamicSchema(
     return {
       success: true,
       schema,
+      uiSchema,
       fromCache: false
     };
   } catch (error) {
@@ -379,14 +440,7 @@ export function resolveExternalEditUrl(
   callbackUrl?: string
 ): string {
   // Build the context from the node
-  const context: NodeContext = {
-    id: node.id,
-    type: node.type,
-    metadata: node.data.metadata,
-    config: node.data.config,
-    extensions: node.data.extensions,
-    workflowId
-  };
+  const context = buildNodeContext(node, workflowId);
 
   // Resolve the URL with template variables
   let url = resolveTemplate(link.url, link.parameterMapping, context);
@@ -470,19 +524,20 @@ export function clearSchemaCache(pattern?: string): void {
 /**
  * Invalidates a specific schema cache entry for a node.
  *
+ * The workflow ID must match the value passed when the schema was fetched:
+ * endpoints whose URL references `{workflowId}` resolve to a different cache key
+ * without it, so omitting it here would miss the entry the fetch created.
+ *
  * @param node - The workflow node to invalidate cache for
  * @param endpoint - The dynamic schema endpoint configuration
+ * @param workflowId - Optional workflow ID, matching the fetch context
  */
-export function invalidateSchemaCache(node: WorkflowNode, endpoint: DynamicSchemaEndpoint): void {
-  const context: NodeContext = {
-    id: node.id,
-    type: node.type,
-    metadata: node.data.metadata,
-    config: node.data.config,
-    extensions: node.data.extensions
-  };
-
-  const cacheKey = generateCacheKey(endpoint, context);
+export function invalidateSchemaCache(
+  node: WorkflowNode,
+  endpoint: DynamicSchemaEndpoint,
+  workflowId?: string
+): void {
+  const cacheKey = generateCacheKey(endpoint, buildNodeContext(node, workflowId));
   schemaCache.delete(cacheKey);
 }
 

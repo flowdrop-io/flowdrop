@@ -488,6 +488,37 @@ export interface DynamicSchemaEndpoint {
    * @default true
    */
   cacheSchema?: boolean;
+
+  /**
+   * How the fetched schema combines with the node's static schema
+   * (the direct `schema` prop or `metadata.configSchema`).
+   *
+   * - `"replace"` (default): the fetched schema is used as-is and the static
+   *   schema is ignored. This is the historical behaviour.
+   * - `"merge"`: the fetched schema is layered onto the static schema —
+   *   properties are merged (fetched wins per key) and `required` is unioned —
+   *   so the endpoint only has to return the fields it actually drives.
+   *
+   * When there is no static schema to combine with, both strategies behave
+   * identically: the fetched schema is the form.
+   *
+   * @default "replace"
+   */
+  mergeStrategy?: 'replace' | 'merge';
+
+  /**
+   * Restricts the fetched schema to a region of the static schema instead of
+   * the whole form. A dot-path of property keys descending through nested
+   * object `properties` (e.g. `"advanced"` or `"advanced.retry"`); the fetched
+   * schema is spliced in at that location and every other field stays static.
+   *
+   * Use this to make just one section (or one field) server-driven while
+   * authoring the rest of the form locally. `mergeStrategy` then decides whether
+   * the fetched schema replaces or merges into the property at that path.
+   *
+   * When omitted, the fetch applies at the form root (per `mergeStrategy`).
+   */
+  target?: string;
 }
 
 /**

@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   fetchDynamicSchema,
   resolveExternalEditUrl,
+  resolveDynamicSchemaKey,
   getEffectiveConfigEditOptions,
   clearSchemaCache,
   invalidateSchemaCache,
@@ -193,6 +194,22 @@ describe('dynamicSchemaService', () => {
         const result = await callFetch(makeEndpoint(), makeNode());
         expect(result.success).toBe(false);
         expect(result.error).toMatch(/Invalid schema format/);
+      });
+
+      it('captures a uiSchema returned alongside the schema', async () => {
+        const uiSchema = { type: 'VerticalLayout', elements: [] };
+        global.fetch = fetchOk({ success: true, data: validSchema, uiSchema });
+        const result = await callFetch(makeEndpoint(), makeNode());
+        expect(result.success).toBe(true);
+        expect(result.schema).toEqual(validSchema);
+        expect(result.uiSchema).toEqual(uiSchema);
+      });
+
+      it('leaves uiSchema undefined when the response omits it', async () => {
+        global.fetch = fetchOk(validSchema);
+        const result = await callFetch(makeEndpoint(), makeNode());
+        expect(result.success).toBe(true);
+        expect(result.uiSchema).toBeUndefined();
       });
     });
 
@@ -457,6 +474,63 @@ describe('dynamicSchemaService', () => {
       // Cache was invalidated — should fetch again
       await callFetch(endpoint, node);
       expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('matches the fetch key when the URL references {workflowId}', async () => {
+      global.fetch = fetchOk(validSchema);
+      const node = makeNode();
+      const endpoint = makeEndpoint({
+        url: '/api/schema?workflow={workflowId}',
+        parameterMapping: {}
+      });
+
+      // Fetch caches under the key that includes the workflow ID.
+      await fetchDynamicSchema(endpointConfig, endpoint, node, 'wf-1');
+
+      // Passing the same workflow ID targets the same key.
+      invalidateSchemaCache(node, endpoint, 'wf-1');
+
+      await fetchDynamicSchema(endpointConfig, endpoint, node, 'wf-1');
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('resolveDynamicSchemaKey', () => {
+    it('resolves mapped config values into the endpoint URL', () => {
+      const node = makeNode({
+        data: { ...makeNode().data, config: { event_type: 'entity.insert' } }
+      });
+      const endpoint = makeEndpoint({
+        url: '/api/triggers/schema?event_type={eventType}',
+        parameterMapping: { eventType: 'config.event_type' }
+      });
+
+      expect(resolveDynamicSchemaKey(endpoint, node)).toBe(
+        '/api/triggers/schema?event_type=entity.insert'
+      );
+    });
+
+    it('changes when a referenced config value changes (drives refetch)', () => {
+      const endpoint = makeEndpoint({
+        url: '/api/triggers/schema?event_type={eventType}',
+        parameterMapping: { eventType: 'config.event_type' }
+      });
+      const nodeWith = (eventType: string) =>
+        makeNode({ data: { ...makeNode().data, config: { event_type: eventType } } });
+
+      const before = resolveDynamicSchemaKey(endpoint, nodeWith('entity.insert'));
+      const after = resolveDynamicSchemaKey(endpoint, nodeWith('cron.run'));
+      expect(before).not.toBe(after);
+    });
+
+    it('includes the workflow ID when the URL references {workflowId}', () => {
+      const endpoint = makeEndpoint({
+        url: '/api/triggers/schema?workflow={workflowId}&node={nodeId}',
+        parameterMapping: { workflowId: 'workflowId', nodeId: 'id' }
+      });
+      expect(resolveDynamicSchemaKey(endpoint, makeNode(), 'wf-42')).toBe(
+        '/api/triggers/schema?workflow=wf-42&node=node-1'
+      );
     });
   });
 
