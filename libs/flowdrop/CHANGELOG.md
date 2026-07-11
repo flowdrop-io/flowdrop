@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.8] - 2026-07-11
+
+Eighth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release makes auxiliary surfaces relocatable: the config panel and the console/AI Assistant group are no longer pinned to fixed spots — each can be hosted in the **right sidebar**, a **centered modal overlay**, or the **bottom panel**, chosen independently per surface. Surfaces routed to the same host coexist as tabs. Defaults are unchanged (config in the sidebar, console/chat in the bottom panel), so existing embeds look and behave exactly as before.
+
+### Added
+
+- **Configurable surface placement.** A new `SurfacePlacement` enum (`'sidebar' | 'modal' | 'below'`) with two UI settings — `configPlacement` (default `sidebar`) and `consolePlacement` (default `below`) — controls where the config panel and the console/AI Assistant group are hosted. Both are exposed in the Settings panel and as `configPlacement` / `consolePlacement` mount options; the mount options **seed** the setting on first load without overriding a returning user's persisted choice (library default < host default < user snapshot), via the new `seedUiDefaults` store helper. Modelled as one enum per surface so invalid combinations (two hosts at once, or none) are unrepresentable.
+- **`TabbedSurface` component.** A reusable tabbed container that hosts one or more surfaces in the sidebar, bottom panel, or modal. All tab bodies stay mounted (toggled via `display`) so surface state — console scrollback, chat history, in-progress form edits — survives tab switches, and the tab bar hides itself when only a single surface is present so a lone surface reads as a plain panel.
+- **`SurfaceOverlay` component + `portal` action.** A modal shell that hosts a surface (or a `TabbedSurface` of several) in the `modal` placement, closable via Esc, backdrop click, or the close button. It portals to `document.body` through a new `portal` Svelte action so its fixed backdrop escapes any ancestor that establishes a containing block (`transform`, `filter`, `backdrop-filter`, …); the action is a no-op during SSR.
+
 ## [2.0.0-beta.7] - 2026-07-09
 
 Seventh 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. Dynamic config schemas become composable and self-refreshing. A dynamic-schema endpoint can now **layer onto** a node's static schema instead of replacing the whole form — merging in the fields it owns, or targeting a single region — so an endpoint only returns what it actually drives and the rest of the form stays exactly as authored. The fetched form also **refetches on its own** when a config value its URL depends on changes (e.g. picking a different trigger `event_type`), rather than loading only once on mount. All additive: the historical whole-form `replace` behaviour is still the default, so existing dynamic-schema configs are unchanged.
