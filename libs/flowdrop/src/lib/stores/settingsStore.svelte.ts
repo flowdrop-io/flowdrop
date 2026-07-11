@@ -349,6 +349,37 @@ function getCategoryAsRecord(
 }
 
 /**
+ * Seed UI settings from host-provided defaults (e.g. mount props) without
+ * overriding a returning user's persisted choices.
+ *
+ * For each provided key, the value is applied only when that key is **absent**
+ * from the persisted snapshot — so a mount prop sets the initial behavior but a
+ * value the user has actually changed always wins. Seeded values are not
+ * written to storage (storage stays user-driven), matching the precedence used
+ * by {@link initializeSettings}: library default < host default < user snapshot.
+ *
+ * @param partial - UI defaults to seed
+ */
+export function seedUiDefaults(partial: Partial<UISettings>): void {
+  const persistedUi = loadRawFromStorage()?.ui ?? {};
+  const seeded: Partial<UISettings> = {};
+  for (const key of Object.keys(partial) as (keyof UISettings)[]) {
+    if (partial[key] === undefined) continue;
+    if (key in persistedUi) continue;
+    (seeded as Record<string, unknown>)[key] = partial[key];
+  }
+  if (Object.keys(seeded).length === 0) return;
+
+  storeState = {
+    ...storeState,
+    settings: {
+      ...storeState.settings,
+      ui: { ...storeState.settings.ui, ...seeded }
+    }
+  };
+}
+
+/**
  * Update settings with partial values
  *
  * @param partial - Partial settings to merge

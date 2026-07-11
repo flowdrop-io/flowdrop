@@ -15,8 +15,12 @@
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
+  import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
   import AIChatPanel from '$lib/components/chat/AIChatPanel.svelte';
+  import TabbedSurface from '$lib/components/surfaces/TabbedSurface.svelte';
+  import type { SurfaceTab } from '$lib/components/surfaces/TabbedSurface.svelte';
+  import SurfaceOverlay from '$lib/components/surfaces/SurfaceOverlay.svelte';
   import type { UIAction } from '$lib/commands/index.js';
   import NodeSwapPicker from '$lib/components/NodeSwapPicker.svelte';
   import SwapMappingEditor from '$lib/components/SwapMappingEditor.svelte';
@@ -48,11 +52,12 @@
   import {
     getUiSettings,
     updateSettings,
+    seedUiDefaults,
     initializeTheme
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
-  import type { SettingsCategory } from '$lib/types/settings.js';
+  import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
   import { defaultMessages, mergeMessages, setMessages } from '$lib/messages/index.js';
   import type { MessagesOverride } from '$lib/messages/index.js';
 
@@ -72,6 +77,19 @@
     showNavbar?: boolean;
     /** Disable the node sidebar */
     disableSidebar?: boolean;
+    /**
+     * Default host for the node/workflow configuration panel: `sidebar` (right
+     * rail), `modal` (centered overlay), or `below` (bottom panel). Seeds the
+     * user setting on first load — a value the user later changes wins.
+     * @default 'sidebar'
+     */
+    configPlacement?: SurfacePlacement;
+    /**
+     * Default host for the console / AI Assistant group. Seeds the user setting
+     * on first load — a value the user later changes wins.
+     * @default 'below'
+     */
+    consolePlacement?: SurfacePlacement;
     /**
      * Editor interaction mode. Replaces the former `readOnly` + `lockWorkflow`
      * boolean pair (2.0 breaking change).
@@ -167,6 +185,8 @@
     width = '100%',
     showNavbar = false,
     disableSidebar = false,
+    configPlacement: configPlacementProp,
+    consolePlacement: consolePlacementProp,
     mode = 'edit',
     pipelineId,
     refreshTrigger = 0,
@@ -330,6 +350,12 @@
 
   // Workflow settings sidebar state
   let isWorkflowSettingsOpen = $state(false);
+
+  // Which surface (`config` | `console` | `chat`) is focused in its host. A
+  // single selector across hosts: each TabbedSurface highlights this id when it
+  // hosts that surface, else falls back to its own first tab. Opening config
+  // focuses it wherever it lives (sidebar/modal/below).
+  let activeSurface = $state<string>(getUiSettings().bottomPanelTab);
 
   // Node swap state
   let swapMode = $state<'idle' | 'picking' | 'mapping'>('idle');
@@ -556,6 +582,7 @@
     }
     selectedNodeId = node.id;
     isConfigSidebarOpen = true;
+    activeSurface = 'config';
     // Reset swap state when switching nodes
     swapMode = 'idle';
     swapInteractiveState = null;
@@ -577,6 +604,7 @@
     // Close config sidebar if opening workflow settings
     if (isWorkflowSettingsOpen) {
       closeConfigSidebar();
+      activeSurface = 'config';
     }
   }
 
@@ -804,6 +832,13 @@
     // choice was otherwise never restored on reload).
     initializeTheme();
 
+    // Seed placement defaults from mount props without clobbering a returning
+    // user's persisted choices (host default < user snapshot).
+    seedUiDefaults({
+      configPlacement: configPlacementProp,
+      consolePlacement: consolePlacementProp
+    });
+
     (async () => {
       try {
         await initializeApiEndpoints();
@@ -873,14 +908,83 @@
     };
   });
 
+  // =========================================================================
+  // Surface placement — where the config panel and console/chat are hosted.
+  // =========================================================================
+
+  const configPlacement = $derived(getUiSettings().configPlacement);
+  const consolePlacement = $derived(getUiSettings().consolePlacement);
+
+  /** Config surface has something to show (node config or workflow settings). */
+  const configActive = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig);
+  /** Console/chat group is available (editable canvas, console toggled open). */
+  const consoleActive = $derived(getUiSettings().consoleOpen && canvasEditable);
+  /** Node-swap sub-flow occupies the right sidebar regardless of placement. */
+  const swapActive = $derived(swapMode !== 'idle');
+
+  const configHere = (loc: SurfacePlacement) => configActive && configPlacement === loc;
+  const consoleHere = (loc: SurfacePlacement) => consoleActive && consolePlacement === loc;
+
+  /** Any surface routed to a given host location is present there. */
+  const anyHere = (loc: SurfacePlacement) => configHere(loc) || consoleHere(loc);
+
   /**
-   * Derived value for showing the right config panel
-   * Config panel always appears on the right side
+   * Metadata for the active config surface, independent of its host. The form
+   * itself is rendered by the host via the `configBody` snippet.
    */
-  const hasConfigPanelOpen = $derived(
-    isWorkflowSettingsOpen || !!selectedNodeForConfig || swapMode !== 'idle'
+  const activeConfig = $derived.by(() => {
+    if (isWorkflowSettingsOpen) {
+      return {
+        kind: 'workflow' as const,
+        title: mergedMessages.navigation.workflowSettingsPanelTitle,
+        id: fd.workflow.current?.id,
+        description: undefined as string | undefined,
+        details: [
+          { label: 'Nodes', value: String(fd.workflow.current?.nodes?.length ?? 0) },
+          { label: 'Connections', value: String(fd.workflow.current?.edges?.length ?? 0) }
+        ],
+        configTitle: mergedMessages.navigation.workflowSettingsPanelSubtitle
+      };
+    }
+    const node = selectedNodeForConfig;
+    if (node) {
+      return {
+        kind: 'node' as const,
+        node,
+        title: node.data.label,
+        id: node.id,
+        description:
+          node.data.metadata?.description || mergedMessages.navigation.nodeConfigDescription,
+        details: [
+          { label: 'Type', value: node.data.metadata?.type || node.type },
+          { label: 'Category', value: node.data.metadata?.category || 'general' }
+        ],
+        configTitle: undefined as string | undefined
+      };
+    }
+    return null;
+  });
+
+  /** Close whichever config surface is currently open. */
+  function closeActiveConfig(): void {
+    if (isWorkflowSettingsOpen) {
+      isWorkflowSettingsOpen = false;
+    } else {
+      closeConfigSidebar();
+    }
+  }
+
+  /** Select a surface tab; console/chat also persist as the last bottom tab. */
+  function selectSurface(id: string): void {
+    activeSurface = id;
+    if (id === 'console' || id === 'chat') {
+      updateSettings({ ui: { bottomPanelTab: id } });
+    }
+  }
+
+  const showRightPanel = $derived(
+    !disableSidebar && (swapActive || configHere('sidebar') || consoleHere('sidebar'))
   );
-  const showRightPanel = $derived(!disableSidebar && hasConfigPanelOpen);
 
   /**
    * Calculate left sidebar width based on collapsed state
@@ -965,6 +1069,11 @@
       }
     });
   }
+
+  /** Close the console/chat group (used by the modal host's close button). */
+  function closeConsole(): void {
+    updateSettings({ ui: { consoleOpen: false } });
+  }
 </script>
 
 <svelte:window onkeydown={handleGlobalKeydown} />
@@ -983,6 +1092,194 @@
   onchange={handleImportFileChange}
 />
 
+<!--
+  Surface content snippets — each rendered by exactly one host (a surface has a
+  single placement), so the once-per-render Snippet constraint always holds.
+-->
+
+{#snippet nodeConfigFormEl(node: WorkflowNode)}
+  <ConfigForm
+    {authProvider}
+    {node}
+    workflowId={fd.workflow.current?.id}
+    workflowNodes={fd.workflow.current?.nodes}
+    workflowEdges={fd.workflow.current?.edges}
+    onChange={async (updatedConfig) => {
+      // Sync config changes to workflow immediately on field blur
+      if (node.id) {
+        const updatedData = {
+          ...node.data,
+          config: updatedConfig
+        };
+        const nodeUpdates: Record<string, unknown> = { data: updatedData };
+
+        fd.workflow.updateNode(node.id, nodeUpdates);
+
+        // Reflect config changes immediately (needed for nodeType changes)
+        workflowEditorRef?.updateNodeData(node.id, updatedData);
+
+        // Refresh edge positions in case config changes affect handles
+        await workflowEditorRef?.refreshEdgePositions(node.id);
+      }
+    }}
+  />
+{/snippet}
+
+{#snippet workflowConfigFormEl()}
+  <ConfigForm
+    {authProvider}
+    schema={workflowConfigSchema}
+    values={workflowConfigValues}
+    onChange={(config) => {
+      // Sync workflow settings changes immediately on field blur
+      const wf = fd.workflow.current;
+      if (wf) {
+        const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
+        const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
+
+        // Warn about incompatible nodes when format changes
+        if (newFormat !== currentFormat) {
+          const incompatibleNodes = wf.nodes?.filter((node) => {
+            const formats = node.data?.metadata?.formats;
+            return formats && formats.length > 0 && !formats.includes(newFormat);
+          });
+          if (incompatibleNodes && incompatibleNodes.length > 0) {
+            logger.warn(
+              `Format changed to '${newFormat}'. ${incompatibleNodes.length} node(s) are not compatible with this format and may not export correctly:`,
+              incompatibleNodes.map((n) => n.data?.label || n.type)
+            );
+          }
+        }
+
+        // Extract built-in fields; everything else belongs in workflow.config
+        const { name, description, format: _format, ...customConfig } = config;
+        fd.workflow.batchUpdate({
+          name: name as string,
+          description: description as string | undefined,
+          metadata: {
+            ...wf.metadata,
+            format: newFormat
+          },
+          ...(workflowSettingsSchema && { config: customConfig as Record<string, unknown> })
+        });
+      }
+    }}
+  />
+{/snippet}
+
+<!--
+  Chromeless config body for tabbed/overlay hosts. `showHeader` draws a slim
+  title + close bar when the host doesn't provide one (bottom / shared sidebar);
+  the modal host supplies its own header, so it passes `false`.
+-->
+{#snippet configBody(showHeader: boolean)}
+  {#if activeConfig}
+    <div class="config-surface">
+      {#if showHeader}
+        <div class="config-surface__header">
+          <h2 class="config-surface__title">{activeConfig.title}</h2>
+          <button
+            class="config-surface__close"
+            onclick={closeActiveConfig}
+            aria-label={mergedMessages.layout.closeConfigPanel}
+          >
+            ×
+          </button>
+        </div>
+      {/if}
+      {#if activeConfig.id}
+        <div class="config-surface__details">
+          <ReadOnlyDetails
+            id={activeConfig.id}
+            description={activeConfig.description}
+            details={activeConfig.details}
+          />
+        </div>
+      {/if}
+      <div class="config-surface__content">
+        <div class="config-surface__section">
+          <h3 class="config-surface__section-title">
+            {activeConfig.configTitle ?? 'Configuration'}
+          </h3>
+          {#if activeConfig.kind === 'node'}
+            {@render nodeConfigFormEl(activeConfig.node)}
+          {:else}
+            {@render workflowConfigFormEl()}
+          {/if}
+        </div>
+      </div>
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet configTabContent()}
+  {@render configBody(true)}
+{/snippet}
+
+{#snippet configBareContent()}
+  {@render configBody(false)}
+{/snippet}
+
+{#snippet consoleSurfaceBody()}
+  <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
+{/snippet}
+
+{#snippet chatSurfaceBody()}
+  <AIChatPanel
+    nodeTypes={nodes}
+    workflowId={fd.workflow.current?.id}
+    onUIAction={handleConsoleUIAction}
+    {endpointConfig}
+  />
+{/snippet}
+
+<!--
+  Console + chat tabs, shared by whichever host the console group is routed to.
+-->
+{#snippet consoleChatTabs()}
+  {@const tabs = [
+    {
+      id: 'console',
+      label: mergedMessages.navigation.bottomPanel.console,
+      content: consoleSurfaceBody,
+      display: 'contents' as const
+    },
+    {
+      id: 'chat',
+      label: mergedMessages.navigation.bottomPanel.chat,
+      content: chatSurfaceBody
+    }
+  ]}
+  <TabbedSurface {tabs} activeId={activeSurface} onSelect={selectSurface} />
+{/snippet}
+
+<!--
+  Rich config panel for the common case: config is the sole occupant of the
+  right sidebar. Keeps ConfigPanel's full chrome (swap, ad-hoc pop-out, details)
+  so the default experience is unchanged.
+-->
+{#snippet configPanelSidebar()}
+  {#if activeConfig}
+    <ConfigPanel
+      title={activeConfig.title}
+      id={activeConfig.id}
+      description={activeConfig.description}
+      details={activeConfig.details}
+      configTitle={activeConfig.configTitle ?? 'Configuration'}
+      onClose={closeActiveConfig}
+      onSwap={activeConfig.kind === 'node' && canvasEditable && features.enableNodeSwap
+        ? startSwap
+        : undefined}
+    >
+      {#if activeConfig.kind === 'node'}
+        {@render nodeConfigFormEl(activeConfig.node)}
+      {:else}
+        {@render workflowConfigFormEl()}
+      {/if}
+    </ConfigPanel>
+  {/if}
+{/snippet}
+
 <!-- MainLayout wrapper for workflow editor -->
 <div class="flowdrop-root">
   <MainLayout
@@ -991,7 +1288,7 @@
     showHeader={showNavbar}
     showLeftSidebar={!disableSidebar}
     showRightSidebar={showRightPanel}
-    showBottomPanel={getUiSettings().consoleOpen && canvasEditable}
+    showBottomPanel={anyHere('below')}
     bottomPanelHeight={getUiSettings().consoleHeight}
     showFooter={false}
     headerHeight={60}
@@ -1028,7 +1325,11 @@
       />
     {/snippet}
 
-    <!-- Right Sidebar: Configuration, Swap, or Workflow Settings -->
+    <!--
+      Right Sidebar. Node-swap sub-flow takes over when active. Otherwise the
+      rail hosts whichever surfaces are placed `sidebar`: a lone config surface
+      keeps the rich ConfigPanel; anything shared coexists as tabs.
+    -->
     {#snippet rightSidebar()}
       {#if swapMode === 'mapping' && swapInteractiveState && selectedNodeForConfig}
         <SwapMappingEditor
@@ -1048,159 +1349,71 @@
           onSelect={handleSwapSelect}
           onCancel={cancelSwap}
         />
-      {:else if isWorkflowSettingsOpen}
-        <ConfigPanel
-          title={mergedMessages.navigation.workflowSettingsPanelTitle}
-          id={fd.workflow.current?.id}
-          details={[
-            {
-              label: 'Nodes',
-              value: String(fd.workflow.current?.nodes?.length ?? 0)
-            },
-            {
-              label: 'Connections',
-              value: String(fd.workflow.current?.edges?.length ?? 0)
-            }
-          ]}
-          configTitle={mergedMessages.navigation.workflowSettingsPanelSubtitle}
-          onClose={() => (isWorkflowSettingsOpen = false)}
-        >
-          <ConfigForm
-            {authProvider}
-            schema={workflowConfigSchema}
-            values={workflowConfigValues}
-            onChange={(config) => {
-              // Sync workflow settings changes immediately on field blur
-              const wf = fd.workflow.current;
-              if (wf) {
-                const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
-                const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
-
-                // Warn about incompatible nodes when format changes
-                if (newFormat !== currentFormat) {
-                  const incompatibleNodes = wf.nodes?.filter((node) => {
-                    const formats = node.data?.metadata?.formats;
-                    return formats && formats.length > 0 && !formats.includes(newFormat);
-                  });
-                  if (incompatibleNodes && incompatibleNodes.length > 0) {
-                    logger.warn(
-                      `Format changed to '${newFormat}'. ${incompatibleNodes.length} node(s) are not compatible with this format and may not export correctly:`,
-                      incompatibleNodes.map((n) => n.data?.label || n.type)
-                    );
-                  }
+      {:else if configHere('sidebar') && !consoleHere('sidebar')}
+        {@render configPanelSidebar()}
+      {:else if configHere('sidebar') || consoleHere('sidebar')}
+        {@const tabs = [
+          ...(configHere('sidebar')
+            ? [
+                {
+                  id: 'config',
+                  label: activeConfig?.title ?? 'Configuration',
+                  content: configTabContent
                 }
-
-                // Extract built-in fields; everything else belongs in workflow.config
-                const { name, description, format: _format, ...customConfig } = config;
-                fd.workflow.batchUpdate({
-                  name: name as string,
-                  description: description as string | undefined,
-                  metadata: {
-                    ...wf.metadata,
-                    format: newFormat
-                  },
-                  ...(workflowSettingsSchema && { config: customConfig as Record<string, unknown> })
-                });
-              }
-            }}
-          />
-        </ConfigPanel>
-      {:else if selectedNodeForConfig}
-        {@const currentNode = selectedNodeForConfig}
-        <ConfigPanel
-          title={currentNode.data.label}
-          id={currentNode.id}
-          description={currentNode.data.metadata?.description ||
-            mergedMessages.navigation.nodeConfigDescription}
-          details={[
-            {
-              label: 'Type',
-              value: currentNode.data.metadata?.type || currentNode.type
-            },
-            {
-              label: 'Category',
-              value: currentNode.data.metadata?.category || 'general'
-            }
-          ]}
-          onClose={closeConfigSidebar}
-          onSwap={canvasEditable && features.enableNodeSwap ? startSwap : undefined}
-        >
-          <ConfigForm
-            {authProvider}
-            node={currentNode}
-            workflowId={fd.workflow.current?.id}
-            workflowNodes={fd.workflow.current?.nodes}
-            workflowEdges={fd.workflow.current?.edges}
-            onChange={async (updatedConfig) => {
-              // Sync config changes to workflow immediately on field blur
-              if (selectedNodeId && currentNode) {
-                // Build the updated node data
-                const updatedData = {
-                  ...currentNode.data,
-                  config: updatedConfig
-                };
-
-                // Update the node in the workflow store
-                const nodeUpdates: Record<string, unknown> = {
-                  data: updatedData
-                };
-
-                fd.workflow.updateNode(selectedNodeId, nodeUpdates);
-
-                // Update the local editor state to reflect config changes immediately
-                // This is needed for nodeType changes to take effect visually
-                workflowEditorRef?.updateNodeData(selectedNodeId, updatedData);
-
-                // Refresh edge positions in case config changes affect handles
-                await workflowEditorRef?.refreshEdgePositions(selectedNodeId);
-              }
-            }}
-          />
-        </ConfigPanel>
+              ]
+            : []),
+          ...(consoleHere('sidebar')
+            ? [
+                {
+                  id: 'console',
+                  label: mergedMessages.navigation.bottomPanel.console,
+                  content: consoleSurfaceBody,
+                  display: 'contents' as const
+                },
+                {
+                  id: 'chat',
+                  label: mergedMessages.navigation.bottomPanel.chat,
+                  content: chatSurfaceBody
+                }
+              ]
+            : [])
+        ] as SurfaceTab[]}
+        <TabbedSurface {tabs} activeId={activeSurface} onSelect={selectSurface} />
       {/if}
     {/snippet}
 
-    <!-- Bottom Panel: Tabbed Console / AI Assistant -->
+    <!--
+      Bottom Panel. Hosts whichever surfaces are placed `below` — config,
+      console, chat — as a single tab strip (hidden when only one is present).
+    -->
     {#snippet bottomPanel()}
-      <div class="bottom-panel-tabs">
-        <div class="bottom-panel-tabs__bar">
-          <button
-            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'console'
-              ? 'bottom-panel-tabs__tab--active'
-              : ''}"
-            onclick={() => updateSettings({ ui: { bottomPanelTab: 'console' } })}
-          >
-            {mergedMessages.navigation.bottomPanel.console}
-          </button>
-          <button
-            class="bottom-panel-tabs__tab {getUiSettings().bottomPanelTab === 'chat'
-              ? 'bottom-panel-tabs__tab--active'
-              : ''}"
-            onclick={() => updateSettings({ ui: { bottomPanelTab: 'chat' } })}
-          >
-            {mergedMessages.navigation.bottomPanel.chat}
-          </button>
-        </div>
-        <div class="bottom-panel-tabs__content">
-          <div
-            class="bottom-panel-tabs__panel"
-            style:display={getUiSettings().bottomPanelTab === 'console' ? 'contents' : 'none'}
-          >
-            <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
-          </div>
-          <div
-            class="bottom-panel-tabs__panel"
-            style:display={getUiSettings().bottomPanelTab === 'chat' ? 'flex' : 'none'}
-          >
-            <AIChatPanel
-              nodeTypes={nodes}
-              workflowId={fd.workflow.current?.id}
-              onUIAction={handleConsoleUIAction}
-              {endpointConfig}
-            />
-          </div>
-        </div>
-      </div>
+      {@const tabs = [
+        ...(configHere('below')
+          ? [
+              {
+                id: 'config',
+                label: activeConfig?.title ?? 'Configuration',
+                content: configTabContent
+              }
+            ]
+          : []),
+        ...(consoleHere('below')
+          ? [
+              {
+                id: 'console',
+                label: mergedMessages.navigation.bottomPanel.console,
+                content: consoleSurfaceBody,
+                display: 'contents' as const
+              },
+              {
+                id: 'chat',
+                label: mergedMessages.navigation.bottomPanel.chat,
+                content: chatSurfaceBody
+              }
+            ]
+          : [])
+      ] as SurfaceTab[]}
+      <TabbedSurface {tabs} activeId={activeSurface} onSelect={selectSurface} />
     {/snippet}
 
     <!-- Main Content: Workflow Editor with Error Status -->
@@ -1270,6 +1483,52 @@
   </MainLayout>
 </div>
 
+<!--
+  Modal host — floats surfaces routed to `modal` above the canvas. Portalled to
+  <body> by SurfaceOverlay. When both config and console are modal they coexist
+  as tabs inside one overlay.
+-->
+{#if configHere('modal') && consoleHere('modal')}
+  <SurfaceOverlay
+    title={activeConfig?.title ?? mergedMessages.navigation.workflowSettingsPanelTitle}
+    closeLabel={mergedMessages.layout.closeConfigPanel}
+    onClose={() => {
+      closeActiveConfig();
+      closeConsole();
+    }}
+  >
+    {@const tabs = [
+      { id: 'config', label: activeConfig?.title ?? 'Configuration', content: configBareContent },
+      {
+        id: 'console',
+        label: mergedMessages.navigation.bottomPanel.console,
+        content: consoleSurfaceBody,
+        display: 'contents' as const
+      },
+      { id: 'chat', label: mergedMessages.navigation.bottomPanel.chat, content: chatSurfaceBody }
+    ] as SurfaceTab[]}
+    <TabbedSurface {tabs} activeId={activeSurface} onSelect={selectSurface} />
+  </SurfaceOverlay>
+{:else if configHere('modal')}
+  <SurfaceOverlay
+    title={activeConfig?.title ?? 'Configuration'}
+    closeLabel={mergedMessages.layout.closeConfigPanel}
+    onClose={closeActiveConfig}
+  >
+    {@render configBareContent()}
+  </SurfaceOverlay>
+{:else if consoleHere('modal')}
+  <SurfaceOverlay
+    title={activeSurface === 'chat'
+      ? mergedMessages.navigation.bottomPanel.chat
+      : mergedMessages.navigation.bottomPanel.console}
+    closeLabel={mergedMessages.layout.closeConfigPanel}
+    onClose={closeConsole}
+  >
+    {@render consoleChatTabs()}
+  </SurfaceOverlay>
+{/if}
+
 <style>
   .flowdrop-root {
     display: contents;
@@ -1292,55 +1551,81 @@
     background: var(--fd-layout-background);
   }
 
-  /* Bottom panel tab system */
-  .bottom-panel-tabs {
+  /*
+    Chromeless config surface (bottom / modal / shared-sidebar hosts). Mirrors
+    ConfigPanel's inner layout; the host owns any outer chrome.
+  */
+  .config-surface {
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    min-height: 0;
+    background-color: var(--fd-panel-bg);
+    backdrop-filter: var(--fd-panel-backdrop-filter);
   }
 
-  .bottom-panel-tabs__bar {
+  .config-surface__header {
     display: flex;
-    gap: 0;
-    background: var(--fd-muted);
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.875rem 1rem;
     border-bottom: 1px solid var(--fd-border);
+    background-color: var(--fd-card);
     flex-shrink: 0;
   }
 
-  .bottom-panel-tabs__tab {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
+  .config-surface__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--fd-foreground);
+  }
+
+  .config-surface__close {
+    background: none;
     border: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
     color: var(--fd-muted-foreground);
-    transition: all var(--fd-transition-fast);
+    padding: 0.25rem;
+    border-radius: var(--fd-radius-sm);
+    transition:
+      color var(--fd-transition-fast),
+      background-color var(--fd-transition-fast);
   }
 
-  .bottom-panel-tabs__tab:hover {
+  .config-surface__close:hover {
     color: var(--fd-foreground);
-    background: var(--fd-background);
+    background-color: var(--fd-subtle);
   }
 
-  .bottom-panel-tabs__tab--active {
-    color: var(--fd-foreground);
-    border-bottom-color: var(--fd-primary);
-    background: var(--fd-background);
+  .config-surface__details {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--fd-border-muted);
+    background-color: var(--fd-card);
+    flex-shrink: 0;
   }
 
-  .bottom-panel-tabs__content {
+  .config-surface__content {
     flex: 1;
-    overflow: hidden;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+
+  .config-surface__section {
     display: flex;
     flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .bottom-panel-tabs__panel {
-    flex: 1;
-    overflow: hidden;
-    flex-direction: column;
+  .config-surface__section-title {
+    margin: 0;
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    color: var(--fd-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 </style>

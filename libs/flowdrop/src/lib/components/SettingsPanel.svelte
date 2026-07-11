@@ -202,6 +202,28 @@
             { const: 'drafter', title: 'Drafter' }
           ],
           default: 'default'
+        },
+        configPlacement: {
+          type: 'string',
+          title: 'Config Panel Location',
+          description: 'Where the node/workflow configuration panel opens',
+          oneOf: [
+            { const: 'sidebar', title: 'Right sidebar' },
+            { const: 'modal', title: 'Modal window' },
+            { const: 'below', title: 'Bottom panel' }
+          ],
+          default: 'sidebar'
+        },
+        consolePlacement: {
+          type: 'string',
+          title: 'Console / AI Assistant Location',
+          description: 'Where the console and AI Assistant open',
+          oneOf: [
+            { const: 'sidebar', title: 'Right sidebar' },
+            { const: 'modal', title: 'Modal window' },
+            { const: 'below', title: 'Bottom panel' }
+          ],
+          default: 'below'
         }
       }
     },

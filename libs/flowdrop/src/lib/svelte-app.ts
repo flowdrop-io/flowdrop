@@ -35,7 +35,7 @@ import {
   type DraftStorageOption
 } from './services/draftStorage.js';
 import { mergeFeatures } from './types/events.js';
-import type { PartialSettings, SettingsCategory } from './types/settings.js';
+import type { PartialSettings, SettingsCategory, SurfacePlacement } from './types/settings.js';
 import {
   initializeSettings,
   getBehaviorSettings,
@@ -72,6 +72,17 @@ export interface FlowDropMountOptions {
   showNavbar?: boolean;
   /** Disable the node sidebar */
   disableSidebar?: boolean;
+  /**
+   * Default host for the config panel: `sidebar` (default), `modal`, or
+   * `below`. Seeds the user setting on first load; a later user change wins.
+   */
+  configPlacement?: SurfacePlacement;
+  /**
+   * Default host for the console / AI Assistant group: `below` (default),
+   * `sidebar`, or `modal`. Seeds the user setting on first load; a later user
+   * change wins.
+   */
+  consolePlacement?: SurfacePlacement;
   /**
    * Editor interaction mode. Replaces the former `readOnly` + `lockWorkflow`
    * mount options (2.0). `'edit'` (default) allows editing; `'readonly'` and
@@ -379,6 +390,8 @@ export async function mountFlowDropApp(
     width = '100%',
     showNavbar = false,
     disableSidebar,
+    configPlacement,
+    consolePlacement,
     mode,
     pipelineId,
     navbarTitle,
@@ -455,6 +468,8 @@ export async function mountFlowDropApp(
       width,
       showNavbar,
       disableSidebar,
+      configPlacement,
+      consolePlacement,
       mode,
       pipelineId,
       navbarTitle,

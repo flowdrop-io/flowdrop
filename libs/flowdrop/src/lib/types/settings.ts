@@ -63,6 +63,19 @@ export interface EditorSettings {
 // =========================================================================
 
 /**
+ * Where an auxiliary surface (config panel, console/chat) is hosted.
+ *
+ * - `sidebar` — the right rail.
+ * - `modal` — a centered overlay floating above the canvas.
+ * - `below` — the bottom panel.
+ *
+ * Surfaces routed to the same host coexist as tabs. Modelled as one enum per
+ * surface (rather than a boolean per host) so invalid combinations — two hosts
+ * at once, or none — are unrepresentable.
+ */
+export type SurfacePlacement = 'sidebar' | 'modal' | 'below';
+
+/**
  * UI layout and display settings
  */
 export interface UISettings {
@@ -80,6 +93,10 @@ export interface UISettings {
   consoleHeight: number;
   /** Active tab in the bottom panel */
   bottomPanelTab: 'console' | 'chat';
+  /** Where the node/workflow configuration panel is hosted. Default `sidebar`. */
+  configPlacement: SurfacePlacement;
+  /** Where the console / AI Assistant group is hosted. Default `below`. */
+  consolePlacement: SurfacePlacement;
 }
 
 // =========================================================================
@@ -220,7 +237,9 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
   theme: 'default',
   consoleOpen: false,
   consoleHeight: 300,
-  bottomPanelTab: 'console'
+  bottomPanelTab: 'console',
+  configPlacement: 'sidebar',
+  consolePlacement: 'below'
 };
 
 /**
