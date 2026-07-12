@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.9] - 2026-07-12
+
+Ninth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. A follow-up fix to the relocatable surfaces shipped in beta.8: config surfaces hosted in the modal placement (and the config panel's pop-out) now keep the editor's font instead of falling back to the host page's default.
+
+### Fixed
+
+- **Modal config surfaces no longer inherit the host page's font.** The `SurfaceOverlay` (modal placement) and the `ConfigPanel` pop-out both portal to `document.body` so their fixed backdrop escapes any ancestor that establishes a containing block. That also moved them out of the mount container that carries the app font, so — since the library sets no base font of its own and relies on inheriting the host's — the modal fell back to the page default (rendering as serif on a bare Drupal editor page, whose `<body>` resolves to `Times`) while the rest of the editor stayed sans-serif. Each portalled backdrop now re-declares `font-family: var(--fd-font-family, system-ui, -apple-system, sans-serif)`, mirroring the mount container's own declaration, so a portalled surface matches the editor and still honours a consumer's `--fd-font-family` override.
+
 ## [2.0.0-beta.8] - 2026-07-11
 
 Eighth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release makes auxiliary surfaces relocatable: the config panel and the console/AI Assistant group are no longer pinned to fixed spots — each can be hosted in the **right sidebar**, a **centered modal overlay**, or the **bottom panel**, chosen independently per surface. Surfaces routed to the same host coexist as tabs. Defaults are unchanged (config in the sidebar, console/chat in the bottom panel), so existing embeds look and behave exactly as before.
