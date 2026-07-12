@@ -72,6 +72,13 @@
   .surface-overlay__backdrop {
     position: fixed;
     inset: 0;
+    /*
+      Portalled to document.body, this shell sits outside the editor container
+      that carries the app font, so it would otherwise inherit the host page's
+      default (e.g. serif on a bare Drupal page). Re-establish the font here,
+      mirroring the mount container's declaration.
+    */
+    font-family: var(--fd-font-family, system-ui, -apple-system, sans-serif);
     background-color: var(--fd-backdrop, rgba(0, 0, 0, 0.5));
     display: flex;
     align-items: center;
