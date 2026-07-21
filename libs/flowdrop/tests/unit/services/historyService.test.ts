@@ -125,6 +125,68 @@ describe('HistoryService', () => {
     });
   });
 
+  describe('multi-step undo/redo (issue #39)', () => {
+    // Post-change model: the stack top is the current committed state, so each
+    // undo steps back exactly one change. This is invisible with a single edit
+    // (the pre-change snapshot equals the initial state) and only surfaces with
+    // two or more sequential distinct edits — the gap that hid the original bug.
+    it('undoes one committed change per undo across sequential edits', () => {
+      const s0 = createTestWorkflow({ name: 'S0' });
+      const s1 = createTestWorkflow({ name: 'S1' });
+      const s2 = createTestWorkflow({ name: 'S2' });
+      const s3 = createTestWorkflow({ name: 'S3' });
+
+      service.initialize(s0);
+      service.push(s1, { description: 'edit 1' });
+      service.push(s2, { description: 'edit 2' });
+      service.push(s3, { description: 'edit 3' });
+
+      // One undo lands on the immediately-previous state, not two steps back.
+      expect(service.undo()?.name).toBe('S2');
+      expect(service.undo()?.name).toBe('S1');
+      expect(service.undo()?.name).toBe('S0');
+      expect(service.undo()).toBeNull(); // at the initial state
+    });
+
+    it('redoes one committed change per redo, restoring the undone state', () => {
+      const s0 = createTestWorkflow({ name: 'S0' });
+      const s1 = createTestWorkflow({ name: 'S1' });
+      const s2 = createTestWorkflow({ name: 'S2' });
+
+      service.initialize(s0);
+      service.push(s1, { description: 'edit 1' });
+      service.push(s2, { description: 'edit 2' });
+
+      expect(service.undo()?.name).toBe('S1');
+      expect(service.undo()?.name).toBe('S0');
+
+      // Redo walks forward through exactly the states that were undone.
+      expect(service.redo()?.name).toBe('S1');
+      expect(service.redo()?.name).toBe('S2');
+      expect(service.redo()).toBeNull();
+    });
+
+    it('commits a transaction as one step at its post-change state', () => {
+      const s0 = createTestWorkflow({ name: 'S0' });
+      const s1 = createTestWorkflow({ name: 'S1' });
+      const sFinal = createTestWorkflow({ name: 'SFinal' });
+
+      service.initialize(s0);
+      service.push(s1, { description: 'edit 1' });
+
+      // A grouped edit session: intermediate pushes are suppressed; commit
+      // records the final state passed to it.
+      service.startTransaction(s1, 'session');
+      service.push(createTestWorkflow({ name: 'intermediate' }), { description: 'keystroke' });
+      service.commitTransaction(sFinal);
+
+      // One undo reverts the whole session to the state before it began.
+      expect(service.undo()?.name).toBe('S1');
+      // Redo restores the session's committed (final) state, not an intermediate.
+      expect(service.redo()?.name).toBe('SFinal');
+    });
+  });
+
   describe('redo', () => {
     it('should return next state after undo', () => {
       const workflow = createTestWorkflow();

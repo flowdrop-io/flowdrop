@@ -217,4 +217,70 @@ test.describe('Node Configuration', () => {
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
     await expect(field).toHaveValue('hello');
   });
+
+  test('a single undo reverts only the most recent field edit, not two at once (issue #39)', async ({
+    page
+  }) => {
+    // Two sequential edits to *different* fields, each finalized as its own undo
+    // step. The bug: because history stored pre-change snapshots and undo returned
+    // the new stack top, one undo skipped a step and reverted BOTH edits. This
+    // walks the full undo/redo path asserting each move is exactly one step.
+    await page.route('**/api/flowdrop/workflows/**', async (route) => {
+      const method = route.request().method();
+      if (method === 'PUT' || method === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: { id: 'test-workflow-simple' } })
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await gotoEditor(page, 'simple');
+    await openNodeConfig(page, 0);
+
+    // simple fixture: node-input config = { defaultValue: 'hello', placeholder: 'Enter text...' }
+    const defaultValue = page.locator('.config-form input#defaultValue');
+    const placeholder = page.locator('.config-form input#placeholder');
+    await expect(defaultValue).toHaveValue('hello');
+    await expect(placeholder).toHaveValue('Enter text...');
+
+    // Edit 1: defaultValue 'hello' -> 'hello!', finalized by blurring.
+    await defaultValue.click();
+    await defaultValue.press('End');
+    await defaultValue.pressSequentially('!');
+    await defaultValue.blur();
+    await expect(defaultValue).toHaveValue('hello!');
+
+    // Edit 2: placeholder 'Enter text...' -> 'Enter text...?', finalized by blurring.
+    await placeholder.click();
+    await placeholder.press('End');
+    await placeholder.pressSequentially('?');
+    await placeholder.blur();
+    await expect(placeholder).toHaveValue('Enter text...?');
+
+    const undo = () => page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+    const redo = () =>
+      page.keyboard.press(process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+Shift+z');
+
+    // One undo reverts ONLY edit 2 — edit 1 must survive.
+    await undo();
+    await expect(placeholder).toHaveValue('Enter text...');
+    await expect(defaultValue).toHaveValue('hello!');
+
+    // A second undo reverts edit 1.
+    await undo();
+    await expect(defaultValue).toHaveValue('hello');
+    await expect(placeholder).toHaveValue('Enter text...');
+
+    // Redo walks forward one field edit at a time.
+    await redo();
+    await expect(defaultValue).toHaveValue('hello!');
+    await expect(placeholder).toHaveValue('Enter text...');
+    await redo();
+    await expect(placeholder).toHaveValue('Enter text...?');
+    await expect(defaultValue).toHaveValue('hello!');
+  });
 });

@@ -64,6 +64,13 @@ export interface PushOptions {
  * a complete copy of the workflow state. This trades memory for simplicity
  * and reliability.
  *
+ * Snapshot model: the undo stack holds *committed* states, and its **top is the
+ * current live state**. `initialize()` seeds it with the starting state, and each
+ * mutation pushes the state *after* the change. One `undo()` moves the top back by
+ * exactly one committed change, and `redo()` restores the state that was undone.
+ * (Callers must push the post-change state — pushing pre-change snapshots makes a
+ * single undo skip a step once there are ≥2 sequential edits; see issue #39.)
+ *
  * @example
  * ```typescript
  * const historyService = new HistoryService();
@@ -71,7 +78,7 @@ export interface PushOptions {
  * // Initialize with current workflow
  * historyService.initialize(workflow);
  *
- * // Push state before making changes
+ * // Push state AFTER making changes (the new committed state)
  * historyService.push(workflow, { description: "Add node" });
  *
  * // Undo/Redo
@@ -140,12 +147,13 @@ export class HistoryService {
   }
 
   /**
-   * Push the current state to history before making changes
+   * Push a new committed state to history
    *
-   * Call this BEFORE modifying the workflow to capture the "before" state.
+   * Call this AFTER modifying the workflow, with the resulting ("after") state:
+   * the stack top is the current live state, so one undo == one committed change.
    * The redo stack is cleared when new changes are pushed.
    *
-   * @param workflow - The current workflow state (before changes)
+   * @param workflow - The workflow state after the change
    * @param options - Options for this history entry
    */
   push(workflow: Workflow, options: PushOptions = {}): void {
@@ -230,9 +238,13 @@ export class HistoryService {
    * Start a transaction for grouping multiple changes
    *
    * All changes made during a transaction are combined into a single undo entry.
-   * Useful for operations like "delete node" which also removes connected edges.
+   * Useful for operations like "delete node" which also removes connected edges,
+   * or coalescing a burst of live config edits into one step. While open, `push()`
+   * is suppressed; `commitTransaction()` records a single post-change entry.
    *
-   * @param workflow - The current workflow state (before changes)
+   * @param workflow - The current workflow state at transaction start. Retained so
+   *   {@link cancelTransaction} can restore it; the committed entry is the *final*
+   *   state passed to {@link commitTransaction}, not this snapshot.
    * @param description - Description for the combined change
    */
   startTransaction(workflow: Workflow, description?: string): void {
@@ -249,16 +261,28 @@ export class HistoryService {
   /**
    * Commit the current transaction
    *
-   * Pushes the state captured at transaction start to the history stack.
+   * Pushes the transaction's *post-change* state as a single history entry, so one
+   * undo reverts the whole grouped operation and redo restores its result.
+   *
+   * @param finalWorkflow - The workflow state after the grouped change. Pass the
+   *   current live state (that is the entry we commit). If omitted — e.g. an
+   *   auto-commit triggered from {@link undo}/{@link redo} where the live state is
+   *   not on hand — this falls back to the start snapshot, which still yields a
+   *   correct undo target (the pre-transaction state) even if redo can't restore
+   *   the uncommitted edit.
    */
-  commitTransaction(): void {
+  commitTransaction(finalWorkflow?: Workflow): void {
     if (!this.inTransaction || !this.transactionSnapshot) {
       logger.warn('HistoryService: No transaction in progress, ignoring commitTransaction');
       return;
     }
 
-    // Push the snapshot captured at transaction start
-    this.pushInternal(this.transactionSnapshot, this.transactionDescription ?? undefined);
+    // Record the post-change state (the transaction's result). Fall back to the
+    // start snapshot only when the caller couldn't supply the live state.
+    this.pushInternal(
+      finalWorkflow ?? this.transactionSnapshot,
+      this.transactionDescription ?? undefined
+    );
 
     // Clear transaction state
     this.inTransaction = false;

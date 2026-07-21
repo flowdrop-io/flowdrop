@@ -66,7 +66,9 @@ export function createStoreCommandContext(
       }
     },
 
-    commitTransaction: () => history.commitTransaction(),
+    // Commit the transaction's post-change (current) state so one undo reverts
+    // the whole batch and redo restores its result (issue #39).
+    commitTransaction: () => history.commitTransaction(readWorkflow() ?? undefined),
     cancelTransaction: () => {
       const snapshot = history.cancelTransaction();
       if (snapshot) {

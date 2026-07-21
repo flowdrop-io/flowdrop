@@ -465,9 +465,14 @@ export class WorkflowStore {
   }
 
   /**
-   * Push current state to history before making changes.
+   * Record the current (post-change) state to history.
    *
-   * @param description - Description of the change about to be made
+   * Call this AFTER mutating `#workflow` so the entry captures the new committed
+   * state — the history stack's top is the live state, making one undo == one
+   * change (see issue #39). Passing the pre-change state instead makes a single
+   * undo skip a step once there are two or more sequential edits.
+   *
+   * @param description - Description of the change that was just made
    * @param workflow - Optional workflow to push (uses store state if not provided)
    */
   #pushToHistory(description?: string, workflow?: Workflow): void {
@@ -595,13 +600,13 @@ export class WorkflowStore {
 
   /** Add a node. */
   addNode(node: WorkflowNode): void {
-    this.#pushToHistory('Add node');
     if (!this.#workflow) return;
     this.#workflow = {
       ...this.#workflow,
       nodes: [...this.#workflow.nodes, node],
       metadata: buildMetadata(this.#workflow.metadata)
     };
+    this.#pushToHistory('Add node');
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_add');
   }
@@ -613,7 +618,6 @@ export class WorkflowStore {
    * A single undo will restore both the node and its edges.
    */
   removeNode(nodeId: string): void {
-    this.#pushToHistory('Delete node');
     if (!this.#workflow) return;
     this.#workflow = {
       ...this.#workflow,
@@ -623,6 +627,7 @@ export class WorkflowStore {
       ),
       metadata: buildMetadata(this.#workflow.metadata)
     };
+    this.#pushToHistory('Delete node');
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_remove');
   }
@@ -634,25 +639,25 @@ export class WorkflowStore {
     // and a duplicate throws `each_key_duplicate`, taking down the canvas. Guard
     // before touching history so a no-op stays a no-op.
     if (this.#workflow.edges.some((e) => e.id === edge.id)) return;
-    this.#pushToHistory('Add connection');
     this.#workflow = {
       ...this.#workflow,
       edges: [...this.#workflow.edges, edge],
       metadata: buildMetadata(this.#workflow.metadata)
     };
+    this.#pushToHistory('Add connection');
     this.#bumpVersion();
     this.#notifyWorkflowChange('edge_add');
   }
 
   /** Remove an edge. */
   removeEdge(edgeId: string): void {
-    this.#pushToHistory('Delete connection');
     if (!this.#workflow) return;
     this.#workflow = {
       ...this.#workflow,
       edges: this.#workflow.edges.filter((edge) => edge.id !== edgeId),
       metadata: buildMetadata(this.#workflow.metadata)
     };
+    this.#pushToHistory('Delete connection');
     this.#bumpVersion();
     this.#notifyWorkflowChange('edge_remove');
   }
@@ -663,7 +668,6 @@ export class WorkflowStore {
    * Used for config changes. Pushes to history for undo support.
    */
   updateNode(nodeId: string, updates: Partial<WorkflowNode>): void {
-    this.#pushToHistory('Update node config');
     if (!this.#workflow) return;
     this.#workflow = {
       ...this.#workflow,
@@ -672,6 +676,7 @@ export class WorkflowStore {
       ),
       metadata: buildMetadata(this.#workflow.metadata)
     };
+    this.#pushToHistory('Update node config');
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_config');
   }
@@ -740,7 +745,8 @@ export class WorkflowStore {
     if (this.#configEditKey === null) return;
     this.#configEditKey = null;
     if (this.#historyEnabled) {
-      this.#history.commitTransaction();
+      // Commit the session's *final* state (post-change) as one undo step.
+      this.#history.commitTransaction(this.#workflow ?? undefined);
     }
     this.#notifyWorkflowChange(changeType);
   }
@@ -786,7 +792,6 @@ export class WorkflowStore {
     metadata?: Partial<Workflow['metadata']>;
     config?: Record<string, unknown>;
   }): void {
-    this.#pushToHistory('Batch update');
     if (!this.#workflow) return;
     this.#workflow = {
       ...this.#workflow,
@@ -799,6 +804,7 @@ export class WorkflowStore {
       ...(updates.config !== undefined && { config: updates.config }),
       metadata: buildMetadata(this.#workflow.metadata, updates.metadata ?? undefined)
     };
+    this.#pushToHistory('Batch update');
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');
   }
@@ -810,7 +816,6 @@ export class WorkflowStore {
    * records a meaningful description for the undo history.
    */
   swapNode(updates: { nodes: WorkflowNode[]; edges: WorkflowEdge[]; description?: string }): void {
-    this.#pushToHistory(updates.description ?? 'Swap node');
     if (!this.#workflow) return;
     this.#workflow = {
       ...this.#workflow,
@@ -818,17 +823,19 @@ export class WorkflowStore {
       edges: updates.edges,
       metadata: buildMetadata(this.#workflow.metadata)
     };
+    this.#pushToHistory(updates.description ?? 'Swap node');
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_swap');
   }
 
   /**
-   * Push current state to history manually.
+   * Push the current (post-change) state to history manually.
    *
-   * Use this before operations that modify the workflow through other means
-   * (e.g., drag operations handled by SvelteFlow directly).
+   * Use this AFTER operations that modify the workflow through other means
+   * (e.g., drag operations handled by SvelteFlow directly), passing the
+   * resulting state so undo returns to the state before the operation.
    *
-   * @param description - Description of the upcoming change
+   * @param description - Description of the change that was just made
    * @param workflow - Optional workflow to push (uses store state if not provided)
    */
   pushHistory(description?: string, workflow?: Workflow): void {

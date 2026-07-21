@@ -326,6 +326,55 @@ describe('WorkflowStore', () => {
       fd.workflow.finalizeNodeConfig();
       expect(onChange).not.toHaveBeenCalled();
     });
+
+    it('undoes exactly one committed edit after two sequential field edits (issue #39)', () => {
+      const node = withConfigNode(); // { title: 'a', subtitle: 'x' }
+
+      // Edit 1: title 'a' -> 'b' (finalized as its own step).
+      editConfig(node, { title: 'b', subtitle: 'x' }, 'title');
+      fd.workflow.finalizeNodeConfig();
+      // Edit 2: subtitle 'x' -> 'y' (a distinct, later step).
+      editConfig(node, { title: 'b', subtitle: 'y' }, 'subtitle');
+      fd.workflow.finalizeNodeConfig();
+
+      expect(fd.workflow.nodes[0].data.config).toEqual({ title: 'b', subtitle: 'y' });
+
+      // A single undo reverts ONLY the second edit — it must not skip back past
+      // the first edit (the original off-by-one that this issue fixed).
+      fd.historyBindings.undo();
+      expect(fd.workflow.nodes[0].data.config).toEqual({ title: 'b', subtitle: 'x' });
+
+      // A second undo reverts the first edit, and redo walks back forward.
+      fd.historyBindings.undo();
+      expect(fd.workflow.nodes[0].data.config).toEqual({ title: 'a', subtitle: 'x' });
+      fd.historyBindings.redo();
+      expect(fd.workflow.nodes[0].data.config).toEqual({ title: 'b', subtitle: 'x' });
+      fd.historyBindings.redo();
+      expect(fd.workflow.nodes[0].data.config).toEqual({ title: 'b', subtitle: 'y' });
+    });
+  });
+
+  describe('multi-step undo/redo for plain mutations (issue #39)', () => {
+    it('undoes one node addition per undo across sequential adds', () => {
+      fd.workflow.initialize(createTestWorkflow({ nodes: [] }));
+
+      fd.workflow.addNode(createTestNode({ id: 'n1' }));
+      fd.workflow.addNode(createTestNode({ id: 'n2' }));
+      fd.workflow.addNode(createTestNode({ id: 'n3' }));
+      expect(fd.workflow.nodes.map((n) => n.id)).toEqual(['n1', 'n2', 'n3']);
+
+      // Each undo removes exactly the most recent node, not two at a time.
+      fd.historyBindings.undo();
+      expect(fd.workflow.nodes.map((n) => n.id)).toEqual(['n1', 'n2']);
+      fd.historyBindings.undo();
+      expect(fd.workflow.nodes.map((n) => n.id)).toEqual(['n1']);
+
+      // Redo walks forward one step at a time.
+      fd.historyBindings.redo();
+      expect(fd.workflow.nodes.map((n) => n.id)).toEqual(['n1', 'n2']);
+      fd.historyBindings.redo();
+      expect(fd.workflow.nodes.map((n) => n.id)).toEqual(['n1', 'n2', 'n3']);
+    });
   });
 
   describe('edge operations', () => {
