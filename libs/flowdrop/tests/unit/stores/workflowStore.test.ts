@@ -243,6 +243,91 @@ describe('WorkflowStore', () => {
     });
   });
 
+  describe('live config edits (updateNodeConfig / finalizeNodeConfig — #38 root cause)', () => {
+    /** A node whose config starts as `{ title: 'a', subtitle: 'x' }`. */
+    function withConfigNode(): WorkflowNode {
+      const node = createTestNode({ id: 'n1' });
+      node.data.config = { title: 'a', subtitle: 'x' };
+      fd.workflow.initialize(createTestWorkflow({ nodes: [node] }));
+      return node;
+    }
+
+    function editConfig(node: WorkflowNode, config: Record<string, unknown>, fieldKey: string) {
+      fd.workflow.updateNodeConfig('n1', { data: { ...node.data, config } }, { fieldKey });
+    }
+
+    it('applies the value immediately but defers the change event until finalize', () => {
+      const node = withConfigNode();
+      const onChange = vi.fn();
+      fd.workflow.setOnWorkflowChange(onChange);
+
+      editConfig(node, { title: 'ab', subtitle: 'x' }, 'title');
+
+      // The store reflects the value right away (so a save mid-session is
+      // correct — this is what makes the on-blur commit unnecessary, killing #38)...
+      expect(fd.workflow.nodes[0].data.config.title).toBe('ab');
+      // ...but the external change event is deferred to the session boundary.
+      expect(onChange).not.toHaveBeenCalled();
+
+      fd.workflow.finalizeNodeConfig();
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('coalesces many edits of one field into a single undo step', () => {
+      const node = withConfigNode();
+
+      // Three "keystrokes" on the same field — one session.
+      for (const title of ['ab', 'abc', 'abcd']) {
+        editConfig(node, { title, subtitle: 'x' }, 'title');
+      }
+      fd.workflow.finalizeNodeConfig();
+      expect(fd.workflow.nodes[0].data.config.title).toBe('abcd');
+
+      // A single undo reverts the whole session, not one keystroke.
+      fd.historyBindings.undo();
+      expect(fd.workflow.nodes[0].data.config.title).toBe('a');
+    });
+
+    it('auto-finalizes the previous session when the edited field changes', () => {
+      const node = withConfigNode();
+      const onChange = vi.fn();
+      fd.workflow.setOnWorkflowChange(onChange);
+
+      editConfig(node, { title: 'A', subtitle: 'x' }, 'title');
+      expect(onChange).not.toHaveBeenCalled(); // title session still open
+
+      // Editing a different field closes the title session (per-field boundary)
+      // before opening the subtitle one — so the title edit is committed on its
+      // own, without waiting for an explicit finalize.
+      editConfig(node, { title: 'A', subtitle: 'X' }, 'subtitle');
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires the change event once per field session, not per edit', () => {
+      const node = withConfigNode();
+      const onChange = vi.fn();
+      fd.workflow.setOnWorkflowChange(onChange);
+
+      editConfig(node, { title: 'ab', subtitle: 'x' }, 'title');
+      editConfig(node, { title: 'abc', subtitle: 'x' }, 'title');
+      // Field switch finalizes the title session (1st event).
+      editConfig(node, { title: 'abc', subtitle: 'xy' }, 'subtitle');
+      // Explicit finalize ends the subtitle session (2nd event).
+      fd.workflow.finalizeNodeConfig();
+
+      expect(onChange).toHaveBeenCalledTimes(2);
+    });
+
+    it('finalizeNodeConfig is a no-op when no session is open', () => {
+      withConfigNode();
+      const onChange = vi.fn();
+      fd.workflow.setOnWorkflowChange(onChange);
+
+      fd.workflow.finalizeNodeConfig();
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
+
   describe('edge operations', () => {
     it('should add edge to workflow', () => {
       const workflow = createTestWorkflow();

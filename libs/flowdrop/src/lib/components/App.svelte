@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import MainLayout from '$lib/components/layouts/MainLayout.svelte';
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
@@ -732,7 +732,43 @@
    * All save logic (blur flush, metadata construction, API call, event hooks,
    * toast notifications) lives in globalSave.ts — the single source of truth.
    */
+  // --- Node config live-edit sessions --------------------------------------
+  // Config fields commit live (per change) into the store via
+  // fd.workflow.updateNodeConfig(), which coalesces a field-editing session
+  // into a single undo step and defers the external change event. We finalize
+  // that session — commit the undo step, fire the deferred event, and refresh
+  // edge geometry ONCE — on blur, panel close, node switch, and save. Edges are
+  // refreshed only here, never per keystroke (that per-change recompute, plus a
+  // full-workflow history clone per keystroke, was the original editor freeze).
+  let pendingConfigNodeId: string | null = null;
+
+  function flushNodeConfigEdit(): void {
+    const nodeId = pendingConfigNodeId;
+    pendingConfigNodeId = null;
+    fd.workflow.finalizeNodeConfig();
+    if (nodeId) {
+      // Handle geometry can only have changed via config (e.g. gateway
+      // branches); refresh once now that the session is done.
+      void workflowEditorRef?.refreshEdgePositions(nodeId);
+    }
+  }
+
+  // Finalize the previous field session when the open config node changes
+  // (switching nodes, or closing the panel). Tracks the node id reactively;
+  // the flush itself is untracked so it can't feed back into the effect.
+  let lastConfigNodeId: string | null = null;
+  $effect(() => {
+    const id = activeConfig?.kind === 'node' ? activeConfig.node.id : null;
+    if (id !== lastConfigNodeId) {
+      lastConfigNodeId = id;
+      untrack(() => flushNodeConfigEdit());
+    }
+  });
+
   async function saveWorkflow(): Promise<void> {
+    // Commit any in-flight config edit so the save and its history are
+    // consistent (the value itself is already live in the store).
+    flushNodeConfigEdit();
     await globalSaveWorkflow({
       eventHandlers: { onBeforeSave, onAfterSave, onSaveError, onApiError },
       features,
@@ -1101,26 +1137,28 @@
   <ConfigForm
     {authProvider}
     {node}
+    commitMode="live"
     workflowId={fd.workflow.current?.id}
     workflowNodes={fd.workflow.current?.nodes}
     workflowEdges={fd.workflow.current?.edges}
-    onChange={async (updatedConfig) => {
-      // Sync config changes to workflow immediately on field blur
-      if (node.id) {
-        const updatedData = {
-          ...node.data,
-          config: updatedConfig
-        };
-        const nodeUpdates: Record<string, unknown> = { data: updatedData };
+    onChange={(updatedConfig, meta) => {
+      if (!node.id) return;
+      const updatedData = { ...node.data, config: updatedConfig };
 
-        fd.workflow.updateNode(node.id, nodeUpdates);
-
-        // Reflect config changes immediately (needed for nodeType changes)
-        workflowEditorRef?.updateNodeData(node.id, updatedData);
-
-        // Refresh edge positions in case config changes affect handles
-        await workflowEditorRef?.refreshEdgePositions(node.id);
+      // Blur / end-of-session: commit the coalesced undo step + fire the
+      // change event once, and refresh edges once.
+      if (meta?.commit) {
+        pendingConfigNodeId = node.id;
+        flushNodeConfigEdit();
+        return;
       }
+
+      // Live edit (every change): update the store cheaply — no history clone,
+      // no external event; both are deferred to the session flush above. Also
+      // reflect the change on the canvas immediately (e.g. nodeType changes).
+      pendingConfigNodeId = node.id;
+      fd.workflow.updateNodeConfig(node.id, { data: updatedData }, { fieldKey: meta?.fieldKey });
+      workflowEditorRef?.updateNodeData(node.id, updatedData);
     }}
   />
 {/snippet}
@@ -1130,6 +1168,7 @@
     {authProvider}
     schema={workflowConfigSchema}
     values={workflowConfigValues}
+    commitMode="blur"
     onChange={(config) => {
       // Sync workflow settings changes immediately on field blur
       const wf = fd.workflow.current;

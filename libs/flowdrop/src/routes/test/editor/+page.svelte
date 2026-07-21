@@ -61,7 +61,10 @@
             type: 'string',
             title: 'Placeholder',
             default: 'Enter text...'
-          }
+          },
+          // Discrete boolean control — regression coverage for #38 (WebKit
+          // on-blur commit). See editor-config.spec.ts.
+          required: { type: 'boolean', title: 'Required', default: false }
         }
       },
       tags: ['input', 'text']

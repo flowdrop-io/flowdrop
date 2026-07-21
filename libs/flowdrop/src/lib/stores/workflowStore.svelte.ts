@@ -140,6 +140,12 @@ export interface WorkflowStoreActions {
   addEdge: (edge: WorkflowEdge) => void;
   removeEdge: (edgeId: string) => void;
   updateNode: (nodeId: string, updates: Partial<WorkflowNode>) => void;
+  updateNodeConfig: (
+    nodeId: string,
+    updates: Partial<WorkflowNode>,
+    opts?: { fieldKey?: string }
+  ) => void;
+  finalizeNodeConfig: (changeType?: WorkflowChangeType) => void;
   clear: () => void;
   updateMetadata: (metadata: Partial<Workflow['metadata']>) => void;
   batchUpdate: (updates: {
@@ -205,6 +211,20 @@ export class WorkflowStore {
   /** Whether history recording is enabled (disable for bulk operations). */
   #historyEnabled = true;
 
+  /**
+   * Identifies the config-edit session currently in progress, as
+   * `${nodeId}::${fieldKey}`, or null when no field is being edited.
+   *
+   * Config fields commit live on every change (see {@link updateNodeConfig}),
+   * but a whole field-editing session — however many keystrokes — should be a
+   * single undo step and fire the external change event only once. The session
+   * is a history transaction: opened lazily on the first change, coalescing all
+   * live edits, and closed by {@link finalizeNodeConfig}. A change to a
+   * different node/field auto-finalizes the previous session first, giving
+   * one-undo-step-per-field granularity.
+   */
+  #configEditKey: string | null = null;
+
   /** Undo/redo engine for this instance (constructor-injected). */
   readonly #history: HistoryService;
 
@@ -225,6 +245,8 @@ export class WorkflowStore {
       addEdge: this.addEdge.bind(this),
       removeEdge: this.removeEdge.bind(this),
       updateNode: this.updateNode.bind(this),
+      updateNodeConfig: this.updateNodeConfig.bind(this),
+      finalizeNodeConfig: this.finalizeNodeConfig.bind(this),
       clear: this.clear.bind(this),
       updateMetadata: this.updateMetadata.bind(this),
       batchUpdate: this.batchUpdate.bind(this),
@@ -469,6 +491,7 @@ export class WorkflowStore {
    * This sets the initial saved snapshot, clears dirty state, and initializes history.
    */
   initialize(workflow: Workflow): void {
+    this.#configEditKey = null;
     workflow = normalizeWorkflowMetadata(workflow);
     this.#workflow = workflow;
     // Reset version counters — workflow is "clean" after initialization
@@ -499,6 +522,9 @@ export class WorkflowStore {
    * This bypasses history recording to prevent recursive loops.
    */
   restoreFromHistory(workflow: Workflow): void {
+    // Undo/redo supersedes any in-progress config edit; drop the session marker
+    // (the history service already closed the transaction).
+    this.#configEditKey = null;
     this.#restoringFromHistory = true;
     workflow = normalizeWorkflowMetadata(workflow);
     this.#workflow = workflow;
@@ -651,11 +677,81 @@ export class WorkflowStore {
   }
 
   /**
+   * Apply a live config edit to a node.
+   *
+   * Unlike {@link updateNode}, this is cheap enough to call on every keystroke:
+   * it does NOT snapshot the workflow to history and does NOT fire the external
+   * change event per call. Instead it opens (lazily) a single history
+   * transaction for the field-editing session and defers the change event to
+   * {@link finalizeNodeConfig}. Editing a different node or field first
+   * finalizes the previous session, so undo granularity is one step per field.
+   *
+   * The store always reflects the latest value immediately (the mutation and
+   * version bump happen here), so a save mid-session persists the current
+   * value even if the session hasn't been finalized yet.
+   *
+   * @param nodeId - Node whose config is being edited
+   * @param updates - Partial node updates (typically `{ data }`)
+   * @param opts.fieldKey - The config field being edited; drives per-field
+   *   session boundaries. Omit to treat the whole node as one session.
+   */
+  updateNodeConfig(
+    nodeId: string,
+    updates: Partial<WorkflowNode>,
+    opts?: { fieldKey?: string }
+  ): void {
+    if (!this.#workflow) return;
+
+    const sessionKey = `${nodeId}::${opts?.fieldKey ?? ''}`;
+    // Moving to a different field/node closes the previous field's session.
+    if (this.#configEditKey !== null && this.#configEditKey !== sessionKey) {
+      this.finalizeNodeConfig();
+    }
+    // Open a transaction for this session on first touch. `push()` calls are
+    // no-ops until it commits, so the per-keystroke edits below never clone.
+    if (this.#configEditKey === null) {
+      if (this.#historyEnabled && !this.#restoringFromHistory) {
+        this.#history.startTransaction(this.#workflow, 'Update node config');
+      }
+      this.#configEditKey = sessionKey;
+    }
+
+    this.#workflow = {
+      ...this.#workflow,
+      nodes: this.#workflow.nodes.map((node) =>
+        node.id === nodeId ? { ...node, ...updates } : node
+      ),
+      metadata: buildMetadata(this.#workflow.metadata)
+    };
+    this.#bumpVersion();
+    // Deliberately no #pushToHistory (coalesced into the transaction) and no
+    // #notifyWorkflowChange (deferred to finalize) — that is the whole point.
+  }
+
+  /**
+   * Finalize the in-progress config-edit session, if any.
+   *
+   * Commits the session's history transaction (one undo step for the whole
+   * session) and fires the external change event once. Idempotent: a no-op
+   * when no session is open. Call on blur, panel close, node switch, and before
+   * save. Undo/redo finalize implicitly via the history service.
+   */
+  finalizeNodeConfig(changeType: WorkflowChangeType = 'node_config'): void {
+    if (this.#configEditKey === null) return;
+    this.#configEditKey = null;
+    if (this.#historyEnabled) {
+      this.#history.commitTransaction();
+    }
+    this.#notifyWorkflowChange(changeType);
+  }
+
+  /**
    * Clear the workflow.
    *
    * Resets the workflow and clears history.
    */
   clear(): void {
+    this.#configEditKey = null;
     this.#workflow = null;
     this.#editVersion = 0;
     this.#savedVersion = 0;

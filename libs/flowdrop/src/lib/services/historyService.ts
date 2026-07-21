@@ -170,6 +170,14 @@ export class HistoryService {
    * @returns The previous workflow state, or null if cannot undo
    */
   undo(): Workflow | null {
+    // Finalize any open transaction first so an in-flight edit session (e.g. a
+    // live config edit that hasn't been committed on blur yet) becomes a single
+    // committed step, which this call then undoes. Without this, undo would read
+    // a stack that doesn't yet contain the pending edit.
+    if (this.inTransaction) {
+      this.commitTransaction();
+    }
+
     // Need at least 2 entries to undo (initial + 1 change)
     if (this.undoStack.length <= 1) {
       return null;
@@ -196,6 +204,13 @@ export class HistoryService {
    * @returns The next workflow state, or null if cannot redo
    */
   redo(): Workflow | null {
+    // A pending edit session must not straddle a redo. Commit it first; it
+    // clears the redo stack (a new change invalidates redo), so this correctly
+    // becomes a no-op return afterwards.
+    if (this.inTransaction) {
+      this.commitTransaction();
+    }
+
     if (this.redoStack.length === 0) {
       return null;
     }

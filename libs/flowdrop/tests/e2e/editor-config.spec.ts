@@ -99,4 +99,122 @@ test.describe('Node Configuration', () => {
     // Config panel should close
     await expect(configPanel).not.toBeVisible({ timeout: 5000 });
   });
+
+  test('boolean toggle persists on save without focusing another field (regression: issue #38)', async ({
+    page
+  }) => {
+    // Capture the workflow save payload so we can assert the toggled value made
+    // it to the wire. This is the crux of #38: in WebKit/Safari a checkbox does
+    // NOT receive focus on click, so the config form's on-blur (`focusout`)
+    // commit never fires when the user clicks the app Save button next — the
+    // staged edit is dropped and the stale value is saved. The fix commits
+    // discrete controls immediately in `handleFieldChange`. Under `--project=webkit`
+    // this test fails without the fix and passes with it; other browsers commit
+    // on the natural blur regardless, so it's a cross-browser guard.
+    await page.route('**/api/flowdrop/workflows/**', async (route) => {
+      const method = route.request().method();
+      if (method === 'PUT' || method === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: { id: 'test-workflow-simple' },
+            message: 'Workflow saved'
+          })
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await gotoEditor(page, 'simple');
+
+    // The Text Input node (index 0) has a boolean "Required" toggle.
+    await openNodeConfig(page, 0);
+
+    // The checkbox is a visually-hidden input inside a styled toggle label, so
+    // click the label. `toBeChecked()` reads the input's state without needing
+    // it to be visible.
+    const toggleInput = page.locator('.config-form input#required[type="checkbox"]');
+    const toggleLabel = page.locator('.config-form label.form-toggle');
+    await expect(toggleLabel).toBeVisible({ timeout: 5000 });
+    await expect(toggleInput).not.toBeChecked();
+
+    // Flip the toggle. Crucially, do NOT click into any text field afterwards —
+    // go straight to the app Save button, mirroring the reported repro.
+    await toggleLabel.click();
+    await expect(toggleInput).toBeChecked();
+
+    const saveButton = page.locator('.flowdrop-navbar__primary-action', {
+      hasText: 'Save'
+    });
+    await expect(saveButton).toBeVisible({ timeout: 5000 });
+
+    // Read the payload straight off the awaited request (no dependence on the
+    // route handler having run first — that ordering is racy under load).
+    const saveRequestPromise = page.waitForRequest(
+      (req) =>
+        req.url().includes('/api/flowdrop/workflows/') &&
+        (req.method() === 'PUT' || req.method() === 'POST'),
+      { timeout: 5000 }
+    );
+    await saveButton.click();
+    const saveRequest = await saveRequestPromise;
+
+    const body = saveRequest.postDataJSON() as {
+      nodes: Array<{ id: string; data: { config: Record<string, unknown> } }>;
+    };
+    const inputNode = body.nodes.find((n) => n.id === 'node-input');
+    expect(inputNode?.data.config.required).toBe(true);
+  });
+
+  test('typing in a config field is a single undo step, not one per keystroke (issue #38 root cause)', async ({
+    page
+  }) => {
+    // The live-commit pipeline coalesces a field-editing session into one undo
+    // entry via a history transaction. Without that coalescing, each keystroke
+    // would be its own entry (and each would deep-clone the whole workflow —
+    // the original editor freeze). We verify granularity: type several
+    // characters, then a single undo restores the field's prior value in one
+    // step.
+    await page.route('**/api/flowdrop/workflows/**', async (route) => {
+      const method = route.request().method();
+      if (method === 'PUT' || method === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: { id: 'test-workflow-simple' } })
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await gotoEditor(page, 'simple');
+    await openNodeConfig(page, 0);
+
+    // "Default Value" starts as "hello" in the simple fixture.
+    const field = page.locator('.config-form input#defaultValue');
+    await expect(field).toBeVisible({ timeout: 5000 });
+    await expect(field).toHaveValue('hello');
+
+    // Append several characters, then end the field session by blurring
+    // (blur also moves focus off the input, so the undo shortcut below isn't
+    // swallowed by the editor's "ignore shortcuts while typing" guard).
+    await field.click();
+    await field.press('End');
+    await field.pressSequentially(' world');
+    await expect(field).toHaveValue('hello world');
+    await field.blur();
+
+    // Live edit reached the store and stuck.
+    await expect(field).toHaveValue('hello world');
+
+    // A single undo must revert the whole " world" session at once, back to
+    // "hello" — not drop a single character (which is what per-keystroke
+    // history entries would produce).
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+    await expect(field).toHaveValue('hello');
+  });
 });

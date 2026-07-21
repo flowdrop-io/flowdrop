@@ -78,8 +78,27 @@
     workflowEdges?: WorkflowEdge[];
     /** Auth provider for API requests (used for template variable API mode) */
     authProvider?: AuthProvider;
-    /** Callback when any field value changes (fired on blur for immediate sync) */
-    onChange?: (config: Record<string, unknown>) => void;
+    /**
+     * How edits are committed to the parent via `onChange`:
+     * - `'blur'` (default): committed on focus-out. Discrete controls
+     *   (checkbox/enum) additionally commit immediately, because WebKit doesn't
+     *   focus them on click so no focus-out fires (see handleFieldChange).
+     * - `'live'`: committed on every change, with the edited `fieldKey` in the
+     *   `onChange` meta, plus a final `{ commit: true }` on focus-out. Lets the
+     *   parent coalesce a field-editing session into one undo step without
+     *   depending on focus events at all.
+     */
+    commitMode?: 'blur' | 'live';
+    /**
+     * Callback when field values change.
+     * @param config - The current merged config values.
+     * @param meta - `fieldKey` names the changed field (live mode); `commit`
+     *   marks the end-of-session flush fired on focus-out (live mode).
+     */
+    onChange?: (
+      config: Record<string, unknown>,
+      meta?: { fieldKey?: string; commit?: boolean }
+    ) => void;
     /** Callback when form is saved */
     onSave?: (config: Record<string, unknown>) => void;
     /** Callback when form is cancelled */
@@ -96,6 +115,7 @@
     workflowNodes = [],
     workflowEdges = [],
     authProvider,
+    commitMode = 'blur',
     onChange,
     onSave,
     onCancel
@@ -388,26 +408,57 @@
     for (const [depKey, depValue] of Object.entries(dependents)) {
       edits[depKey] = depValue;
     }
+
+    if (commitMode === 'live') {
+      // Commit every change, tagging the field so the parent can coalesce a
+      // whole field-editing session into one undo step. Nothing depends on a
+      // focus event, so WebKit not focusing checkboxes/selects on click (#38)
+      // is a non-issue. Keep the edits buffer until the session ends (blur) so
+      // fast typing never briefly reverts on the parent's value round-trip.
+      commitEdits({ fieldKey: key }, false);
+      return;
+    }
+
+    // Blur mode: text/number fields commit on focus-out (one store write per
+    // field, not per keystroke). Discrete controls (checkbox/toggle, enum)
+    // commit immediately — WebKit doesn't focus them on click, so no focus-out
+    // ever fires and the edit would otherwise be lost on save (#38).
+    const prop = configSchema?.properties?.[key];
+    if (prop && (prop.type === 'boolean' || Array.isArray(prop.enum))) {
+      commitEdits();
+    }
   }
 
   /**
-   * Handle form field blur - sync changes to workflow immediately
-   * Uses focusout which bubbles from child elements
-   * This enables auto-save behavior without requiring explicit Save button clicks
+   * Emit the current merged config to the parent.
+   *
+   * @param meta - Passed through to `onChange` (live mode: `fieldKey` /
+   *   `commit`).
+   * @param clearBuffer - Discharge the local `edits` buffer after emitting, so
+   *   subsequent prop changes (parent absorbing the commit, undo/redo,
+   *   collaboration) flow through `initialConfig` cleanly instead of being
+   *   shadowed by a stale local edit. Done at every commit boundary in blur
+   *   mode, but only at session end (blur) in live mode.
+   */
+  function commitEdits(meta?: { fieldKey?: string; commit?: boolean }, clearBuffer = true): void {
+    if (!onChange) return;
+    // Spread `initialConfig` first so config keys the active schema doesn't own
+    // (e.g. after a dynamic schema narrows the field set) pass through untouched
+    // instead of being silently dropped; `configValues` then wins for every
+    // field the schema actually renders.
+    onChange({ ...initialConfig, ...configValues }, meta);
+    if (clearBuffer) edits = {};
+  }
+
+  /**
+   * Focus-out handler (bubbles from child fields).
+   *
+   * Blur mode: the primary commit. Live mode: edits are already committed per
+   * change, so this just signals end-of-session (`commit: true`) so the parent
+   * can finalize the coalesced undo step, and discharges the edits buffer.
    */
   function handleFormBlur(): void {
-    if (onChange) {
-      // Spread `initialConfig` first so config keys the active schema doesn't
-      // own (e.g. after a dynamic schema narrows the field set) pass through
-      // untouched instead of being silently dropped; `configValues` then wins
-      // for every field the schema actually renders.
-      onChange({ ...initialConfig, ...configValues });
-      // Discharge the edits buffer at the commit boundary. Subsequent prop
-      // changes (parent absorbing the commit, undo/redo, collaboration) then
-      // flow through `initialConfig` cleanly instead of being shadowed by a
-      // stale local edit.
-      edits = {};
-    }
+    commitEdits(commitMode === 'live' ? { commit: true } : undefined);
   }
 
   /**
