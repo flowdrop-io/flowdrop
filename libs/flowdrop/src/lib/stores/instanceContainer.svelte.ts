@@ -128,12 +128,17 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   // Default wiring: undo/redo restores into this instance's workflow store.
   // WorkflowEditor overrides this with a richer callback while mounted.
   historyBindings.setOnRestoreCallback((restored) => workflow.restoreFromHistory(restored));
+  // Before any undo/redo, flush a pending config-edit session into a committed
+  // step so it can be undone atomically (the history service won't commit a
+  // dangling transaction itself — it has no access to the live state).
+  historyBindings.setBeforeNavigateCallback(() => workflow.finalizeNodeConfig());
 
   const playground = new PlaygroundStore();
 
   const cleanups: Array<() => void> = [
     () => historyBindings.cleanup(),
     () => historyBindings.setOnRestoreCallback(null),
+    () => historyBindings.setBeforeNavigateCallback(null),
     () => workflow.setOnDirtyStateChange(null),
     () => workflow.setOnWorkflowChange(null),
     () => playground.dispose()

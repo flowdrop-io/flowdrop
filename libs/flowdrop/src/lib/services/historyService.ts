@@ -178,12 +178,16 @@ export class HistoryService {
    * @returns The previous workflow state, or null if cannot undo
    */
   undo(): Workflow | null {
-    // Finalize any open transaction first so an in-flight edit session (e.g. a
-    // live config edit that hasn't been committed on blur yet) becomes a single
-    // committed step, which this call then undoes. Without this, undo would read
-    // a stack that doesn't yet contain the pending edit.
+    // A transaction is the store's to finalize (it holds the live state), and it
+    // must do so BEFORE calling undo — the facade and command dispatch both
+    // finalize first, and the editor's blur commits earlier still. If one is
+    // still open here, the caller violated that contract; abandon it (rather than
+    // guess a snapshot to commit) so the flag can't wedge future pushes, and warn.
     if (this.inTransaction) {
-      this.commitTransaction();
+      logger.warn(
+        'HistoryService: undo() called with an open transaction; finalize the edit session first. Abandoning it.'
+      );
+      this.clearTransaction();
     }
 
     // Need at least 2 entries to undo (initial + 1 change)
@@ -212,11 +216,14 @@ export class HistoryService {
    * @returns The next workflow state, or null if cannot redo
    */
   redo(): Workflow | null {
-    // A pending edit session must not straddle a redo. Commit it first; it
-    // clears the redo stack (a new change invalidates redo), so this correctly
-    // becomes a no-op return afterwards.
+    // Same contract as undo(): the caller must finalize any open edit session
+    // first. A dangling transaction here is a caller bug — abandon it and warn
+    // rather than committing a state we don't have.
     if (this.inTransaction) {
-      this.commitTransaction();
+      logger.warn(
+        'HistoryService: redo() called with an open transaction; finalize the edit session first. Abandoning it.'
+      );
+      this.clearTransaction();
     }
 
     if (this.redoStack.length === 0) {
@@ -261,33 +268,24 @@ export class HistoryService {
   /**
    * Commit the current transaction
    *
-   * Pushes the transaction's *post-change* state as a single history entry, so one
-   * undo reverts the whole grouped operation and redo restores its result.
+   * Records the transaction's *post-change* state as a single history entry, so
+   * one undo reverts the whole grouped operation and redo restores its result.
    *
-   * @param finalWorkflow - The workflow state after the grouped change. Pass the
-   *   current live state (that is the entry we commit). If omitted — e.g. an
-   *   auto-commit triggered from {@link undo}/{@link redo} where the live state is
-   *   not on hand — this falls back to the start snapshot, which still yields a
-   *   correct undo target (the pre-transaction state) even if redo can't restore
-   *   the uncommitted edit.
+   * The final state is required: the transaction's owner (the store) holds the
+   * live workflow and must supply it. There is deliberately no "commit whatever
+   * you captured at start" fallback — that would silently record a pre-change
+   * snapshot and reintroduce the off-by-one this model exists to prevent (#39).
+   *
+   * @param finalWorkflow - The workflow state after the grouped change.
    */
-  commitTransaction(finalWorkflow?: Workflow): void {
+  commitTransaction(finalWorkflow: Workflow): void {
     if (!this.inTransaction || !this.transactionSnapshot) {
       logger.warn('HistoryService: No transaction in progress, ignoring commitTransaction');
       return;
     }
 
-    // Record the post-change state (the transaction's result). Fall back to the
-    // start snapshot only when the caller couldn't supply the live state.
-    this.pushInternal(
-      finalWorkflow ?? this.transactionSnapshot,
-      this.transactionDescription ?? undefined
-    );
-
-    // Clear transaction state
-    this.inTransaction = false;
-    this.transactionSnapshot = null;
-    this.transactionDescription = null;
+    this.pushInternal(finalWorkflow, this.transactionDescription ?? undefined);
+    this.clearTransaction();
   }
 
   /**
@@ -299,10 +297,15 @@ export class HistoryService {
    */
   cancelTransaction(): Workflow | null {
     const snapshot = this.transactionSnapshot;
+    this.clearTransaction();
+    return snapshot;
+  }
+
+  /** Reset the in-progress transaction bookkeeping. */
+  private clearTransaction(): void {
     this.inTransaction = false;
     this.transactionSnapshot = null;
     this.transactionDescription = null;
-    return snapshot;
   }
 
   /**

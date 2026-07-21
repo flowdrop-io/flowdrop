@@ -26,7 +26,7 @@ export interface HistoryStoreActions {
   undo: () => boolean;
   redo: () => boolean;
   startTransaction: (workflow: Workflow, description?: string) => void;
-  commitTransaction: () => void;
+  commitTransaction: (finalWorkflow: Workflow) => void;
   cancelTransaction: () => void;
   clear: (currentWorkflow?: Workflow) => void;
   canUndo: () => boolean;
@@ -59,6 +59,12 @@ export class HistoryStore {
    * Invoked when undo/redo operations return a workflow.
    */
   #onRestore: ((workflow: Workflow) => void) | null = null;
+
+  /**
+   * Callback run immediately before an undo/redo, to flush any pending edit
+   * session into a committed history step (see {@link setBeforeNavigateCallback}).
+   */
+  #onBeforeNavigate: (() => void) | null = null;
 
   /** Unsubscribe handle for the service subscription. */
   readonly #unsubscribe: () => void;
@@ -139,6 +145,19 @@ export class HistoryStore {
   }
 
   /**
+   * Set the callback run just before every undo/redo.
+   *
+   * Use this to finalize an in-progress edit session (e.g. the workflow store's
+   * `finalizeNodeConfig`) so it is committed as one history step *before* being
+   * undone. The history service intentionally does not commit dangling
+   * transactions itself — it has no access to the live state — so this hook is
+   * how the owner of that state flushes it first.
+   */
+  setBeforeNavigateCallback(callback: (() => void) | null): void {
+    this.#onBeforeNavigate = callback;
+  }
+
+  /**
    * Release the history service subscription.
    * Called by the owning instance's destroy(); safe to call repeatedly.
    */
@@ -172,6 +191,9 @@ export class HistoryStore {
    * @returns true if undo was successful, false if at beginning of history
    */
   undo(): boolean {
+    // Flush any pending edit session into a committed step first, so undo reverts
+    // exactly that step rather than skipping over an uncommitted edit.
+    this.#onBeforeNavigate?.();
     const previousState = this.#service.undo();
     if (previousState && this.#onRestore) {
       this.#onRestore(previousState);
@@ -188,6 +210,9 @@ export class HistoryStore {
    * @returns true if redo was successful, false if at end of history
    */
   redo(): boolean {
+    // A pending edit session invalidates the redo stack (it is a new change), so
+    // finalize it first; redo then correctly reports nothing to redo.
+    this.#onBeforeNavigate?.();
     const nextState = this.#service.redo();
     if (nextState && this.#onRestore) {
       this.#onRestore(nextState);
@@ -205,9 +230,13 @@ export class HistoryStore {
     this.#service.startTransaction(workflow, description);
   }
 
-  /** Commit the current transaction. */
-  commitTransaction(): void {
-    this.#service.commitTransaction();
+  /**
+   * Commit the current transaction with its final (post-change) state.
+   *
+   * @param finalWorkflow - The workflow state after the grouped change.
+   */
+  commitTransaction(finalWorkflow: Workflow): void {
+    this.#service.commitTransaction(finalWorkflow);
   }
 
   /** Cancel the current transaction without committing. */

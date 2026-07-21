@@ -42,6 +42,8 @@ export function createStoreCommandContext(
     batchUpdate: (updates) => actions.batchUpdate(updates),
 
     undo: () => {
+      // Flush a pending edit session into a committed step before undoing it.
+      actions.finalizeNodeConfig();
       const previousState = history.undo();
       if (previousState) {
         actions.restoreFromHistory(previousState);
@@ -51,6 +53,7 @@ export function createStoreCommandContext(
     },
 
     redo: () => {
+      actions.finalizeNodeConfig();
       const nextState = history.redo();
       if (nextState) {
         actions.restoreFromHistory(nextState);
@@ -68,7 +71,12 @@ export function createStoreCommandContext(
 
     // Commit the transaction's post-change (current) state so one undo reverts
     // the whole batch and redo restores its result (issue #39).
-    commitTransaction: () => history.commitTransaction(readWorkflow() ?? undefined),
+    commitTransaction: () => {
+      const currentWorkflow = readWorkflow();
+      if (currentWorkflow) {
+        history.commitTransaction(currentWorkflow);
+      }
+    },
     cancelTransaction: () => {
       const snapshot = history.cancelTransaction();
       if (snapshot) {

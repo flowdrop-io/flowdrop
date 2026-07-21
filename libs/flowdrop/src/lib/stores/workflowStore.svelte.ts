@@ -739,14 +739,16 @@ export class WorkflowStore {
    * Commits the session's history transaction (one undo step for the whole
    * session) and fires the external change event once. Idempotent: a no-op
    * when no session is open. Call on blur, panel close, node switch, and before
-   * save. Undo/redo finalize implicitly via the history service.
+   * save. Undo/redo call this first (via the history facade / command dispatch)
+   * so a session becomes a committed step before it is undone.
    */
   finalizeNodeConfig(changeType: WorkflowChangeType = 'node_config'): void {
     if (this.#configEditKey === null) return;
     this.#configEditKey = null;
-    if (this.#historyEnabled) {
-      // Commit the session's *final* state (post-change) as one undo step.
-      this.#history.commitTransaction(this.#workflow ?? undefined);
+    // A session can only be open when a workflow is loaded, so #workflow is
+    // non-null here; commit its final (post-change) state as one undo step.
+    if (this.#historyEnabled && this.#workflow) {
+      this.#history.commitTransaction(this.#workflow);
     }
     this.#notifyWorkflowChange(changeType);
   }

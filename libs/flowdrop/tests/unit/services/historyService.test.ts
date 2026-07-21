@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HistoryService } from '$lib/services/historyService.js';
+import { logger } from '$lib/utils/logger.js';
 import { createTestWorkflow, createTestNode } from '../../utils/test-helpers.js';
 
 describe('HistoryService', () => {
@@ -87,7 +88,7 @@ describe('HistoryService', () => {
 
       service.startTransaction(workflow, 'Batch');
       service.push(workflow, { description: 'Should be skipped' });
-      service.commitTransaction();
+      service.commitTransaction(workflow);
 
       // Only 2 entries: initial + transaction commit
       expect(service.getState().historyLength).toBe(2);
@@ -227,7 +228,7 @@ describe('HistoryService', () => {
       service.push(workflow, { description: 'Delete node' });
       service.push(workflow, { description: 'Delete edge 1' });
       service.push(workflow, { description: 'Delete edge 2' });
-      service.commitTransaction();
+      service.commitTransaction(workflow);
 
       expect(service.getState().historyLength).toBe(2); // initial + 1 commit
     });
@@ -258,9 +259,34 @@ describe('HistoryService', () => {
       const workflow = createTestWorkflow();
       service.initialize(workflow);
 
-      // Should not throw
-      service.commitTransaction();
+      // Should not throw (guard returns before touching the passed workflow)
+      service.commitTransaction(workflow);
       expect(service.getState().historyLength).toBe(1);
+    });
+
+    it('abandons a dangling transaction on undo instead of committing a stale snapshot', () => {
+      // Callers must finalize an edit session before undo (the store owns the
+      // live state); the service must not guess a snapshot to commit. If a
+      // transaction is still open, undo warns and abandons it rather than
+      // recording a pre-change entry (the #39 off-by-one).
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const s0 = createTestWorkflow({ name: 'S0' });
+      const s1 = createTestWorkflow({ name: 'S1' });
+      service.initialize(s0);
+      service.push(s1, { description: 'edit' });
+
+      service.startTransaction(s0, 'dangling session');
+      const result = service.undo(); // called without finalizing — contract violation
+
+      expect(warn).toHaveBeenCalled();
+      expect(service.getState().isInTransaction).toBe(false);
+      // The dangling session added NO entry: undo stepped back the one real edit
+      // to S0. Had the service committed a stale snapshot instead, canUndo would
+      // still be true here (an extra bogus entry would remain) — that's the bug.
+      expect(result?.name).toBe('S0');
+      expect(service.canUndo()).toBe(false);
+      expect(service.canRedo()).toBe(true);
+      warn.mockRestore();
     });
   });
 
