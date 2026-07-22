@@ -94,6 +94,15 @@
     left: 0;
     right: 0;
     bottom: 0;
+    /*
+      This modal is exported (@flowdrop/flowdrop/editor) and embedders like fddo
+      mount it standalone, outside the editor container that carries the app
+      font. The library's text/inputs use `font-family: inherit`, so without
+      this they'd fall back to the host page's default (e.g. serif on a bare
+      Drupal page). Re-establish the font here, mirroring SurfaceOverlay /
+      ConfigPanel.
+    */
+    font-family: var(--fd-font-family, system-ui, -apple-system, sans-serif);
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
