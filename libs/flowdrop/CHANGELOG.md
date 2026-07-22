@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.0-beta.9] - 2026-07-12
+## [2.0.0-beta.10] - 2026-07-22
+
+Tenth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release reworks how node-config edits are committed and how the undo stack records state, fixing two editor bugs (a Safari save failure and a multi-step undo that reverted more than one edit) and the freeze that the prior on-blur commit was working around. It also re-establishes the editor font on the standalone `ConfigModal` export.
+
+### Fixed
+
+- **Safari dropped config edits toggled with a checkbox or select (#38).** Node config committed only on the config form's `focusout`, but WebKit doesn't focus checkboxes/selects on click — so toggling one and clicking Save never fired `focusout` and the edit was lost. Node config now commits **live** per change (no focus dependency), making the bug structurally impossible. Workflow settings keep the blur-commit path but retain an immediate commit for discrete controls, so they stay correct on Safari too.
+- **A single undo reverted more than one edit (#39).** The undo stack stored the _pre-change_ state of each mutation, so after two or more sequential edits a single undo skipped a step (reverting two edits at once) and redo could not reconstruct the intermediate state. The stack now stores **post-change** snapshots — the stack top is the current committed state — so one undo == one edit. `WorkflowStore` mutations (`addNode`/`removeNode`/`addEdge`/`removeEdge`/`updateNode`/`batchUpdate`/`swapNode`) push after mutating, and config-edit transactions commit their final state.
+- **The editor no longer freezes while typing in a config field.** The old on-blur commit was itself a workaround for committing on every change deep-cloning the whole workflow onto the undo stack, pushing a per-keystroke undo entry, firing `onWorkflowChange`, and recomputing edge geometry — all per keystroke. A field-editing session now applies each change cheaply inside a lazily-opened history transaction and coalesces into a single undo step; the workflow event fires and edges refresh once per session, on finalize.
+- **Standalone `ConfigModal` inherited the host page's font.** `ConfigModal` (exported via `@flowdrop/flowdrop/editor`) is mounted standalone by embedders on bare host pages, so its `font-family: inherit` text fell back to the host theme font (e.g. serif on Drupal) instead of the FlowDrop sans. It now declares its own `font-family` on the modal root, mirroring the `SurfaceOverlay` / `ConfigPanel` fix from beta.9.
+
+### Changed
+
+- **History commits now require the final state, and undo/redo finalize any open edit first.** Hardening follow-up to the #39 fix: `commitTransaction(finalWorkflow)` is now required (the pre-change `?? transactionSnapshot` fallback that could silently reintroduce the off-by-one is gone). The service no longer guesses at the live state to auto-commit a dangling transaction inside `undo()`/`redo()`; instead the state owners finalize first (a `HistoryStore` before-navigate hook wired to `finalizeNodeConfig()`, and command-dispatch undo/redo), and if the service still finds an open transaction it abandons it with a warning rather than committing wrong state. New shared `clearTransaction()` internally.
 
 Ninth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. A follow-up fix to the relocatable surfaces shipped in beta.8: config surfaces hosted in the modal placement (and the config panel's pop-out) now keep the editor's font instead of falling back to the host page's default.
 
