@@ -6,7 +6,8 @@
   
   Features:
   - Dynamic form generation from JSON Schema using modular form components
-  - UI Extensions support for display settings (e.g., hide unconnected handles)
+  - Node-level settings the editor contributes for every node (port order +
+    exposure), rendered even when the node type declares no config schema
   - Extensible architecture for complex schema types (array, object)
   - Admin/Edit support for external configuration links and dynamic schema fetching
   
@@ -47,6 +48,7 @@
   import { logger } from '../utils/logger.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
   import { applyFetchedSchema } from '$lib/utils/schemaMerge.js';
+  import { PORTS_CONFIG_KEY, withPortsControl, withPortsField } from '$lib/utils/nodeFormSchema.js';
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -175,10 +177,11 @@
   });
 
   /**
-   * Get the configuration schema from node metadata, direct prop, or fetched dynamic schema
+   * The node type's own configuration schema: direct prop, node metadata, or a
+   * dynamically fetched one layered on top.
    * Priority: fetchedDynamicSchema > direct schema prop > node metadata configSchema
    */
-  const configSchema = $derived.by<ConfigSchema | undefined>(() => {
+  const typeConfigSchema = $derived.by<ConfigSchema | undefined>(() => {
     const staticSchema = schema ?? (node?.data.metadata?.configSchema as ConfigSchema | undefined);
     // A fetched dynamic schema is layered onto the static one per the endpoint's
     // mergeStrategy/target (default 'replace' → fetched wins wholesale). With no
@@ -193,6 +196,22 @@
   });
 
   /**
+   * The schema the form actually renders: the node type's, plus the node-level
+   * fields the editor contributes for every node (the reserved `ports` widget).
+   *
+   * The injection is what keeps a node type that declares no `configSchema` from
+   * falling through to the empty state and losing its node-level settings with
+   * it (#34) — it now has a schema of exactly those settings. Purely a display
+   * concern: nothing is written to the node until the user edits a field.
+   */
+  const configSchema = $derived(withPortsField(typeConfigSchema, node));
+
+  /** Whether the ports field above was contributed by us rather than authored. */
+  const portsFieldInjected = $derived(
+    configSchema !== typeConfigSchema && configSchema?.properties?.[PORTS_CONFIG_KEY] !== undefined
+  );
+
+  /**
    * Get the UI schema for the active configSchema.
    * Priority: direct uiSchema prop > fetched dynamic uiSchema > node metadata.
    *
@@ -204,9 +223,14 @@
    * uiSchema describing the schema it served.
    */
   const configUISchema = $derived.by<UISchemaElement | undefined>(() => {
-    if (uiSchema) return uiSchema;
-    if (fetchedDynamicSchema && fetchedDynamicUiSchema) return fetchedDynamicUiSchema;
-    return node?.data.metadata?.uiSchema as UISchemaElement | undefined;
+    const authored = uiSchema
+      ? uiSchema
+      : fetchedDynamicSchema && fetchedDynamicUiSchema
+        ? fetchedDynamicUiSchema
+        : (node?.data.metadata?.uiSchema as UISchemaElement | undefined);
+    // An authored tree lists only the author's own controls, so the injected
+    // ports field needs a control of its own or it would never render.
+    return withPortsControl(authored, portsFieldInjected);
   });
 
   /**

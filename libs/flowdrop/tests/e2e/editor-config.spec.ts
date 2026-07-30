@@ -136,8 +136,12 @@ test.describe('Node Configuration', () => {
     // The checkbox is a visually-hidden input inside a styled toggle label, so
     // click the label. `toBeChecked()` reads the input's state without needing
     // it to be visible.
+    // Scope the label to the `required` field's own toggle — the form also
+    // carries the node-level port settings, whose rows are toggles too.
     const toggleInput = page.locator('.config-form input#required[type="checkbox"]');
-    const toggleLabel = page.locator('.config-form label.form-toggle');
+    const toggleLabel = page.locator('.config-form label.form-toggle', {
+      has: page.locator('input#required')
+    });
     await expect(toggleLabel).toBeVisible({ timeout: 5000 });
     await expect(toggleInput).not.toBeChecked();
 
