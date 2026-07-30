@@ -56,6 +56,7 @@
   import PortCoordinateTracker from './PortCoordinateTracker.svelte';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
+  import { suppressPortDragSelection } from '../utils/canvasSelection.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
   import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
   import CommandLineIcon from '$lib/components/icons/CommandLineIcon.svelte';
@@ -887,8 +888,10 @@
   <div class="flowdrop-workflow-editor">
     <!-- Main Editor Area -->
     <div class="flowdrop-workflow-editor__main">
-      <!-- Flow Canvas -->
-      <div class="flowdrop-canvas">
+      <!-- Flow Canvas.
+           Capture-phase mousedown so dragging from a port never turns into a
+           WebKit text-selection drag — see suppressPortDragSelection. -->
+      <div class="flowdrop-canvas" onmousedowncapture={suppressPortDragSelection}>
         <FlowDropZone ondrop={handleNodeDrop} onfiledrop={handleWorkflowFileDrop}>
           {#key svelteFlowKey}
             <SvelteFlow
