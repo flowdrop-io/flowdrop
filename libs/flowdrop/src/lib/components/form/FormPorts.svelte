@@ -135,7 +135,8 @@
         <span class="fd-ports__group-label">{group.label}</span>
         <ul class="fd-ports__list">
           {#each ordered as port, i (port.id)}
-            <li class="fd-ports__item">
+            {@const exposed = isPortExposed(port, portsConfig[direction])}
+            <li class="fd-ports__item" class:fd-ports__item--hidden={!exposed}>
               <div class="fd-ports__reorder">
                 <button
                   type="button"
@@ -156,9 +157,10 @@
                   <Icon icon="heroicons:chevron-down" />
                 </button>
               </div>
-              <span class="fd-ports__name">{port.name}</span>
+              <span class="fd-ports__name" title={port.name}>{port.name}</span>
               <span
                 class="fd-ports__badge"
+                title={port.dataType}
                 style="background-color:{getPortBackgroundColorForPort(
                   checker,
                   port,
@@ -172,10 +174,11 @@
               </span>
               <FormToggle
                 id={`${id}-${direction}-${port.id}`}
-                value={isPortExposed(port, portsConfig[direction])}
+                value={exposed}
                 onLabel="Exposed"
                 offLabel="Hidden"
                 {disabled}
+                hideLabel
                 onChange={(exposed) => setExposed(direction, port.id, exposed)}
               />
             </li>
@@ -225,6 +228,13 @@
     border: 1px solid var(--fd-border-muted);
   }
 
+  /* The switch alone carries the state now that its label is screen-reader
+     only, so dim the row to keep "hidden" legible at a glance. */
+  .fd-ports__item--hidden .fd-ports__name,
+  .fd-ports__item--hidden .fd-ports__badge {
+    opacity: 0.55;
+  }
+
   .fd-ports__reorder {
     display: flex;
     flex-direction: column;
@@ -247,10 +257,15 @@
     cursor: default;
   }
 
+  /* min-width:0 so a long port name ellipsizes instead of widening the row. */
   .fd-ports__name {
     flex: 1;
+    min-width: 0;
     font-size: var(--fd-text-xs);
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .fd-ports__badge {
@@ -258,5 +273,8 @@
     padding: 0 var(--fd-space-1, 0.25rem);
     border-radius: var(--fd-radius-sm, 4px);
     white-space: nowrap;
+    max-width: 10ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>

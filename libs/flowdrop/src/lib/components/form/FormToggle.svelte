@@ -26,6 +26,11 @@
      * `messages.form.toggle.disabled`.
      */
     offLabel?: string;
+    /**
+     * Keep the state label as the switch's accessible name only, without
+     * rendering it. For dense rows where the switch alone carries the state.
+     */
+    hideLabel?: boolean;
     /** Whether the field is disabled (read-only) */
     disabled?: boolean;
     /** ARIA description ID */
@@ -39,6 +44,7 @@
     value = false,
     onLabel,
     offLabel,
+    hideLabel = false,
     disabled = false,
     ariaDescribedBy,
     onChange
@@ -56,7 +62,7 @@
   }
 </script>
 
-<label class="form-toggle">
+<label class="form-toggle" class:form-toggle--compact={hideLabel}>
   <input
     {id}
     type="checkbox"
@@ -69,7 +75,7 @@
   <span class="form-toggle__track">
     <span class="form-toggle__thumb"></span>
   </span>
-  <span class="form-toggle__label">
+  <span class="form-toggle__label" class:form-toggle__label--sr-only={hideLabel}>
     {value ? resolvedOnLabel : resolvedOffLabel}
   </span>
 </label>
@@ -129,5 +135,24 @@
 
   .form-toggle__input:checked ~ .form-toggle__label {
     color: var(--fd-primary-hover);
+  }
+
+  /* Compact: switch only, no reserved label column and no vertical padding. */
+  .form-toggle--compact {
+    gap: 0;
+    padding: 0;
+  }
+
+  .form-toggle__label--sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-width: 0;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 </style>
