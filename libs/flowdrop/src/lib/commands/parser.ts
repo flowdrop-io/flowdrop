@@ -19,6 +19,33 @@ type ParserRule = {
 };
 
 /**
+ * Count the `"""` delimiters in a string, ignoring escaped ones.
+ *
+ * `\"""` is the escape for a literal triple-quote inside a value (unescaped
+ * when the value is parsed), so it is content, not a delimiter. Occurrences are
+ * counted non-overlapping, left to right — an odd total means a value was left
+ * open.
+ *
+ * Shared with the chat response parser, which uses the same parity rule to
+ * decide where a multiline value ends.
+ */
+export function countTripleQuotes(input: string): number {
+  let count = 0;
+  let i = 0;
+  while (i <= input.length - 3) {
+    if (input.startsWith('"""', i)) {
+      if (i === 0 || input[i - 1] !== '\\') {
+        count++;
+      }
+      i += 3;
+    } else {
+      i++;
+    }
+  }
+  return count;
+}
+
+/**
  * Parse a coordinate pair like "200,300" or "-50, 100"
  */
 function parseCoords(x: string, y: string): { x: number; y: number } {
@@ -277,14 +304,14 @@ export function parseCommand(input: string): ParseResult {
   }
 
   // Detect an unclosed multiline """ block — common when a low-quality LLM
-  // omits the closing """ on its own line. The opener pattern is `"""\n`
-  // (triple-quote followed by a newline), and a well-formed value must end
-  // with `"""`. If we see the opener but not the closer, surface a clear
-  // error instead of falling through to a generic "Invalid syntax".
-  if (trimmed.includes('"""\n') && !trimmed.endsWith('"""')) {
+  // omits the closing """. Delimiters come in pairs (escaped `\"""` excluded),
+  // so an odd count means a value was left open, whether it was opened on its
+  // own line or inline after the key. Surface a clear error instead of falling
+  // through to a generic "Invalid syntax".
+  if (countTripleQuotes(trimmed) % 2 === 1) {
     return {
       ok: false,
-      error: 'Unclosed """ block — missing closing """ on its own line',
+      error: 'Unclosed """ block — no matching closing """',
       input
     };
   }

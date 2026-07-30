@@ -7,6 +7,7 @@
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { getBehaviorSettings } from '../../stores/settingsStore.svelte.js';
   import { extractCommands } from '../../chat/responseParser.js';
+  import { buildApiHistory } from '../../chat/historyBuilder.js';
   import { isMutatingCommand, isLayoutCommand } from '../../chat/commandClassifier.js';
   import { parseCommand } from '../../commands/parser.js';
   import { executeCommand } from '../../commands/index.js';
@@ -29,12 +30,20 @@
   interface DisplayMessage {
     role: 'user' | 'assistant';
     content: string;
+    /**
+     * The unmodified LLM response, kept when `content` is the explanation-only
+     * display text. Sent as history so the assistant sees the DSL it emitted
+     * (issue #35).
+     */
+    rawContent?: string;
     /** Set on auto-retry messages — renders as a muted notice, not a user bubble */
     retryAttempt?: number;
     /** Mutating commands awaiting approval */
     commandPreview?: CommandPreviewItem[];
     /** Results from auto-executed read-only commands */
     readOnlyResults?: string[];
+    /** Set when the user dismissed this message's command preview */
+    commandsDismissed?: boolean;
   }
 
   interface Props {
@@ -93,9 +102,14 @@
   // Helpers
   // =========================================================================
 
-  /** Build conversation history from display messages for API requests */
+  /**
+   * Build conversation history from display messages for API requests.
+   *
+   * Read at send time, so each assistant entry reports the *current* status of
+   * the commands it emitted — applied, dismissed, failed or still pending.
+   */
   function getHistory(): ChatHistoryMessage[] {
-    return displayMessages.map((m) => ({ role: m.role, content: m.content }));
+    return buildApiHistory(displayMessages);
   }
 
   function getWorkflowState(): unknown {
@@ -169,7 +183,8 @@
 
     const msg: DisplayMessage = {
       role: 'assistant',
-      content: explanation || responseContent
+      content: explanation || responseContent,
+      rawContent: responseContent
     };
 
     if (readOnlyResults.length > 0) {
@@ -355,8 +370,12 @@
   }
 
   /** Dismiss a command preview without executing — CommandPreview shows its own cancelled state */
-  function handleCancelCommands(_messageIndex: number) {
-    // Intentionally empty: CommandPreview owns the "Dismissed" display via resolvedAction state
+  function handleCancelCommands(messageIndex: number) {
+    // CommandPreview owns the "Dismissed" *display* via its resolvedAction state;
+    // the flag here is what tells the assistant, on the next turn, that these
+    // commands were rejected rather than still waiting (issue #35).
+    const msg = displayMessages[messageIndex];
+    if (msg) msg.commandsDismissed = true;
   }
 
   /** Append an error message to conversation history so the LLM can self-correct */

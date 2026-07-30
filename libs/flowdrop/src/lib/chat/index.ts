@@ -34,6 +34,7 @@ export { default as CommandPreview } from '../components/chat/CommandPreview.sve
 
 export { extractCommands } from './responseParser.js';
 export { isMutatingCommand, isLayoutCommand } from './commandClassifier.js';
+export { buildApiHistory, type ChatLogEntry } from './historyBuilder.js';
 
 // ============================================================================
 // Chat Types

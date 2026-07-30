@@ -287,6 +287,30 @@ describe('parseCommand', () => {
         });
       });
 
+      it('parses a value whose """ delimiters sit inline with the content', () => {
+        // How LLMs actually write it — no newline after the opener, closer at
+        // the end of the last content line (issue #35).
+        const input = 'set template.1:template """{{prefix}}\n\n{{summary}}"""';
+        expect(parseCommand(input)).toEqual({
+          ok: true,
+          command: {
+            type: 'set_config',
+            nodeId: 'template.1',
+            key: 'template',
+            value: '{{prefix}}\n\n{{summary}}'
+          }
+        });
+      });
+
+      it('returns a clear error when an inline """ value is never closed', () => {
+        const input = 'set template.1:template """{{prefix}}\n\n{{summary}}';
+        expect(parseCommand(input)).toEqual({
+          ok: false,
+          error: 'Unclosed """ block — no matching closing """',
+          input
+        });
+      });
+
       it('returns a clear error when """ block is opened but never closed', () => {
         // responseParser surfaces dangling multiline buffers as commands so
         // that the parser can flag them here instead of failing silently.
@@ -294,7 +318,7 @@ describe('parseCommand', () => {
         const result = parseCommand(input);
         expect(result).toEqual({
           ok: false,
-          error: 'Unclosed """ block — missing closing """ on its own line',
+          error: 'Unclosed """ block — no matching closing """',
           input
         });
       });

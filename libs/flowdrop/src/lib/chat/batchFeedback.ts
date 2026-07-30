@@ -61,7 +61,9 @@ export function buildRetryFeedback(outcome: BatchOutcome): string {
       const preview = pe.raw.includes('\n') ? `${firstLine} …` : firstLine;
       lines.push(`  • ${preview}\n    reason: ${pe.error}`);
     }
-    lines.push('\nNote: multiline values must close with """ on its own line.');
+    lines.push(
+      '\nNote: a multiline value must be closed by a matching """ (on its own line or at the end of the last content line). Escape a literal triple-quote inside the value as \\""".'
+    );
   }
 
   if (rolledBack) {

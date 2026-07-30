@@ -130,6 +130,12 @@ Do not make up information.
 
 The leading and trailing newlines are automatically trimmed, so the stored value starts at `You are...` and ends at `...information.`
 
+Rules for the delimiters:
+
+- Every opening `"""` needs a matching closing `"""`. It may sit on its own line (as above) or at the end of the last content line — `set template.1:template """{{prefix}}\n\n{{summary}}"""` is valid. An unmatched `"""` makes the whole command fail.
+- To put a literal `"""` **inside** the value, escape it as `\"""`.
+- A single-line value keeps its double quotes as-is: `set n.1:headers {"Authorization":"Bearer x"}` and `set n.1:title "chore(deps): update"` both work — do not add backslashes to the inner quotes of a JSON value.
+
 ---
 
 ## Port Types & Connection Rules
@@ -330,6 +336,8 @@ type CommandErrorCode =
 
 <!-- Runtime: inject the serialized WorkflowState JSON (nodes + edges). Inject "empty" or {} for a blank canvas. -->
 
+**This state is current and authoritative** — it is captured after every command already applied in this conversation. Trust it over your own memory of what you emitted earlier.
+
 ---
 
 ## Conversation History
@@ -337,6 +345,8 @@ type CommandErrorCode =
 {{CHAT_HISTORY}}
 
 <!-- Runtime: inject array of { role: "user" | "assistant", content: string } messages, or omit if first turn. -->
+
+Your earlier turns include the DSL you emitted plus a `[command outcomes]` report saying, per command, whether it was `APPLIED` or not applied (failed, skipped, dismissed by the user, or still awaiting approval). Never re-send a command reported as `APPLIED` — the node or edge it created is already in the workflow state above, and re-sending it duplicates it. Send only the commands that are still needed.
 
 ---
 

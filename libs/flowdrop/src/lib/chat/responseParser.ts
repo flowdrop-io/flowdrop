@@ -9,6 +9,7 @@
  */
 
 import type { ExtractedCommands } from '../types/chat.js';
+import { countTripleQuotes } from '../commands/parser.js';
 
 /**
  * Extract DSL commands from an LLM response string.
@@ -29,6 +30,9 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
   let isFlowdropBlock = false;
   let currentExplanation: string[] = [];
   let multilineBuffer: string[] | null = null;
+  // Running count of unescaped """ delimiters seen since the buffer opened.
+  // The block is closed when the count is even again (issue #35).
+  let multilineDelimiters = 0;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -36,15 +40,16 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
     // Handle multiline buffer FIRST — prevents code fences inside """...""" from
     // closing the outer flowdrop block or being misinterpreted as control lines.
     if (multilineBuffer !== null) {
-      // Closing """ must be a standalone line (exact match after trimming).
-      // This prevents content lines that end with """ from prematurely closing
-      // the block (e.g. `Use Python """docstrings"""` or JSON ending with """).
-      if (trimmed === '"""') {
-        multilineBuffer.push(line);
+      multilineBuffer.push(line); // preserve raw indentation inside value
+      multilineDelimiters += countTripleQuotes(trimmed);
+      // Delimiters balance out — the value ended on this line. Parity (rather
+      // than "the line is exactly \"\"\"") lets the closer sit at the end of a
+      // content line, which is how LLMs actually write it
+      // (`set n.1:t """line one\nline two"""`), while a content line carrying a
+      // balanced pair (`Use Python """docstrings"""`) keeps the block open.
+      if (multilineDelimiters % 2 === 0) {
         commands.push(multilineBuffer.join('\n'));
         multilineBuffer = null;
-      } else {
-        multilineBuffer.push(line); // preserve raw indentation inside value
       }
       continue;
     }
@@ -75,12 +80,12 @@ export function extractCommands(llmResponse: string): ExtractedCommands {
         continue;
       }
 
-      // Detect opening triple-quote without a closing one on the same line —
+      // An odd number of unescaped """ leaves a value open at end of line —
       // start accumulating a multiline value block
-      const tripleOpen = trimmed.indexOf('"""');
-      if (tripleOpen !== -1 && trimmed.indexOf('"""', tripleOpen + 3) === -1) {
-        // Opening triple-quote with no closing on this line — start buffer
+      const delimiters = countTripleQuotes(trimmed);
+      if (delimiters % 2 === 1) {
         multilineBuffer = [trimmed];
+        multilineDelimiters = delimiters;
         continue;
       }
 
