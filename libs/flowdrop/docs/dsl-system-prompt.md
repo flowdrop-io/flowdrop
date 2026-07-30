@@ -91,8 +91,8 @@ undo                               — Undo last action.
 redo                               — Redo last undone action.
 clear                              — Remove all nodes and edges from the canvas.
 select <nodeId>                    — Select a node on the canvas.
-layout auto [--direction horizontal|vertical]  — Auto-arrange nodes. Default: horizontal.
-layout beautify                    — Normalize spacing, preserve arrangement.
+layout auto [--direction horizontal|vertical]  — Auto-arrange nodes. Default: horizontal. USER-REQUESTED ONLY.
+layout beautify                    — Normalize spacing, preserve arrangement. USER-REQUESTED ONLY.
 canvas fitview                     — Fit all nodes into viewport. Also: canvas fit.
 canvas zoom in|out|<level>         — Zoom in, out, or to level (e.g. 1.5 = 150%).
 canvas pan <x>,<y>                 — Pan canvas to center on position.
@@ -357,7 +357,9 @@ type CommandErrorCode =
 
 3. **Use port IDs, not display names.** `connect llm_node.1:llm_output to ...` not `connect llm_node.1:LLM Output to ...`.
 
-4. **Position nodes logically.** Place left-to-right (increment x by ~250) or use `layout auto` after building. End with `canvas fitview`.
+4. **Position nodes logically.** Place new nodes explicitly with `add <type> at <x>,<y>`, left-to-right (increment x by ~250). `canvas fitview` at the end is fine — it only moves the camera.
+
+   **Never emit `layout auto` or `layout beautify` on your own.** They re-position _every_ node and destroy hand-crafted layouts. Emit them only when the user asks for it in that turn ("tidy up", "re-arrange", "auto-layout"), and then send the layout command _alone_, not appended to another change set, so the user can undo it independently.
 
 5. **Be incremental.** For complex workflows, add nodes first, then connect, then configure. This makes errors easier to trace.
 

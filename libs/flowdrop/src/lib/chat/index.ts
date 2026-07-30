@@ -33,7 +33,7 @@ export { default as CommandPreview } from '../components/chat/CommandPreview.sve
 // ============================================================================
 
 export { extractCommands } from './responseParser.js';
-export { isMutatingCommand } from './commandClassifier.js';
+export { isMutatingCommand, isLayoutCommand } from './commandClassifier.js';
 
 // ============================================================================
 // Chat Types

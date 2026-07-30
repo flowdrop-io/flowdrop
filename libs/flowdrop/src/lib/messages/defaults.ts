@@ -279,7 +279,8 @@ export const defaultMessages = {
       applied: 'Applied',
       dismissed: 'Dismissed',
       applyAll: 'Apply All',
-      cancel: 'Cancel'
+      cancel: 'Cancel',
+      layoutSkipped: 'Skipped — AI layout changes are disabled in Settings'
     }
   },
 

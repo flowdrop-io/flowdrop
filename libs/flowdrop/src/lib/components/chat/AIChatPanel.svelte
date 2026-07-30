@@ -7,7 +7,7 @@
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { getBehaviorSettings } from '../../stores/settingsStore.svelte.js';
   import { extractCommands } from '../../chat/responseParser.js';
-  import { isMutatingCommand } from '../../chat/commandClassifier.js';
+  import { isMutatingCommand, isLayoutCommand } from '../../chat/commandClassifier.js';
   import { parseCommand } from '../../commands/parser.js';
   import { executeCommand } from '../../commands/index.js';
   import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
@@ -222,6 +222,12 @@
       command: import('../../commands/types.js').Command;
     }[] = [];
 
+    // Layout commands rewrite every node's position, so they wipe a hand-crafted
+    // arrangement. Honour the user's opt-out by skipping them instead of running
+    // them — a skip is not a failure, so the rest of the batch still applies and
+    // no retry feedback is sent (issue #36).
+    const allowLayoutChanges = getBehaviorSettings().chatAllowLayoutChanges;
+
     for (const item of pendingItems) {
       const parsed = parseCommand(item.raw);
       if (!parsed.ok) {
@@ -231,10 +237,21 @@
         parseErrors.push({ raw: item.raw, error: parsed.error });
         continue;
       }
+      if (!allowLayoutChanges && isLayoutCommand(parsed.command.type)) {
+        item.status = 'skipped';
+        item.result = t.commandPreview.layoutSkipped;
+        continue;
+      }
       parsedCommands.push({ item, command: parsed.command });
     }
 
     const totalCount = parsedCommands.length;
+
+    // Everything was intentionally skipped (layout commands with layout changes
+    // off) — nothing failed, so there is nothing to report or retry.
+    if (totalCount === 0 && parseErrors.length === 0) {
+      return;
+    }
 
     // Nothing parseable to run — feed the parse errors straight back so the
     // assistant can resend a corrected batch.

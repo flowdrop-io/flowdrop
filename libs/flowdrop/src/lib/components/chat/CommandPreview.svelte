@@ -44,10 +44,12 @@
             <Icon icon="mdi:check-circle" />
           {:else if command.status === 'error'}
             <Icon icon="mdi:alert-circle" />
+          {:else if command.status === 'skipped'}
+            <Icon icon="mdi:debug-step-over" />
           {/if}
         </span>
         <pre class="command-preview__command">{command.raw}</pre>
-        {#if command.status === 'error' && command.result}
+        {#if (command.status === 'error' || command.status === 'skipped') && command.result}
           <span class="command-preview__error">{command.result}</span>
         {/if}
       </div>
@@ -161,6 +163,13 @@
 
   .command-preview__item--error .command-preview__command {
     color: var(--fd-error);
+  }
+
+  /* Skipped isn't a failure — mute it instead of colouring it like an error. */
+  .command-preview__item--skipped .command-preview__status,
+  .command-preview__item--skipped .command-preview__command,
+  .command-preview__item--skipped .command-preview__error {
+    color: var(--fd-muted-foreground);
   }
 
   .command-preview__error {

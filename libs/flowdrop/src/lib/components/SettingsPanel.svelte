@@ -273,6 +273,15 @@
           title: 'AI Assistant Auto-retry',
           description: 'Automatically ask the AI to self-correct when commands fail',
           default: true
+        },
+        chatAllowLayoutChanges: {
+          type: 'boolean',
+          title: 'AI Assistant Layout Changes',
+          description:
+            'Let the AI assistant re-arrange node positions (layout auto / layout beautify). ' +
+            'Turn off to keep a hand-crafted layout — those commands are then skipped and ' +
+            'the rest of the batch still applies.',
+          default: true
         }
       }
     },

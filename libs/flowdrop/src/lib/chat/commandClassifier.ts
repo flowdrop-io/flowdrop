@@ -30,3 +30,25 @@ const READ_ONLY_COMMANDS = new Set([
 export function isMutatingCommand(commandType: string): boolean {
   return !READ_ONLY_COMMANDS.has(commandType);
 }
+
+/**
+ * Commands that rewrite the position of *existing* nodes.
+ *
+ * Viewport commands (`canvas fitview`, zoom, pan) are deliberately absent —
+ * they only move the camera and leave the stored arrangement intact.
+ */
+const LAYOUT_COMMANDS = new Set(['auto_layout', 'beautify_layout']);
+
+/**
+ * Determine whether a DSL command type re-arranges existing node positions.
+ *
+ * Used by the AI panel to honour the `chatAllowLayoutChanges` behaviour setting:
+ * when layout changes are disallowed, these commands are skipped instead of
+ * executed so a hand-crafted layout survives an assistant batch (issue #36).
+ *
+ * @param commandType - The command type string (e.g., "beautify_layout")
+ * @returns true if the command repositions existing nodes
+ */
+export function isLayoutCommand(commandType: string): boolean {
+  return LAYOUT_COMMANDS.has(commandType);
+}

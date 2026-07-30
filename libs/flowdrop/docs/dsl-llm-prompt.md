@@ -85,18 +85,18 @@ Every node has an ID in the format `<type>.<number>`, e.g., `my_node.1`, `my_nod
 
 ### History & Canvas
 
-| Command             | Syntax                                           | Description                                                |
-| ------------------- | ------------------------------------------------ | ---------------------------------------------------------- |
-| **undo**            | `undo`                                           | Undo the last action.                                      |
-| **redo**            | `redo`                                           | Redo the last undone action.                               |
-| **clear**           | `clear`                                          | Remove all nodes and edges from the canvas.                |
-| **select**          | `select <nodeId>`                                | Select a node on the canvas.                               |
-| **layout auto**     | `layout auto [--direction horizontal\|vertical]` | Auto-arrange all nodes. Default: horizontal.               |
-| **layout beautify** | `layout beautify`                                | Normalize spacing while preserving arrangement.            |
-| **canvas fitview**  | `canvas fitview`                                 | Fit all nodes into viewport. Also accepts `canvas fit`.    |
-| **canvas zoom**     | `canvas zoom in\|out\|<level>`                   | Zoom in, out, or to a specific level (e.g., `1.5` = 150%). |
-| **canvas pan**      | `canvas pan <x>,<y>`                             | Pan the canvas to center on a position.                    |
-| **canvas reset**    | `canvas reset`                                   | Reset viewport to default position and zoom.               |
+| Command             | Syntax                                           | Description                                                              |
+| ------------------- | ------------------------------------------------ | ------------------------------------------------------------------------ |
+| **undo**            | `undo`                                           | Undo the last action.                                                    |
+| **redo**            | `redo`                                           | Redo the last undone action.                                             |
+| **clear**           | `clear`                                          | Remove all nodes and edges from the canvas.                              |
+| **select**          | `select <nodeId>`                                | Select a node on the canvas.                                             |
+| **layout auto**     | `layout auto [--direction horizontal\|vertical]` | Auto-arrange all nodes. Default: horizontal. **User-requested only.**    |
+| **layout beautify** | `layout beautify`                                | Normalize spacing while preserving arrangement. **User-requested only.** |
+| **canvas fitview**  | `canvas fitview`                                 | Fit all nodes into viewport. Also accepts `canvas fit`.                  |
+| **canvas zoom**     | `canvas zoom in\|out\|<level>`                   | Zoom in, out, or to a specific level (e.g., `1.5` = 150%).               |
+| **canvas pan**      | `canvas pan <x>,<y>`                             | Pan the canvas to center on a position.                                  |
+| **canvas reset**    | `canvas reset`                                   | Reset viewport to default position and zoom.                             |
 
 ---
 
@@ -361,9 +361,9 @@ Multiple commands in one code block execute as an **atomic batch**:
 2. **Use `info <nodeId>`** to inspect a node's ports and config before connecting or configuring it. For gateway nodes, this is the only way to discover the current branch port names — `metadata.outputs` is always empty for gateways.
 3. **Connections use port IDs, not port names.** For example, use `output_1` not `"Output 1"`.
 4. **Always connect trigger ports** to establish execution flow between nodes.
-5. **Position nodes logically** — place them left-to-right or top-to-bottom following the flow direction. Use `layout auto` to auto-arrange after building.
+5. **Position nodes logically** — place them left-to-right or top-to-bottom following the flow direction, using `add <type> at <x>,<y>`.
 6. **Explain your changes** — always include a brief explanation outside the code block so the user understands what you're doing and why.
 7. **Be incremental** — for complex workflows, build step by step. Add nodes first, then connect them, then configure.
-8. **Use `canvas fitview`** after making significant layout changes so the user can see the full workflow.
+8. **Never re-arrange the layout unasked.** `layout auto` and `layout beautify` re-position _every_ node and destroy hand-crafted layouts, so emit them only when the user asks for it in that turn ("tidy up", "re-arrange", "auto-layout") — and then send the layout command on its own, not appended to another change set, so it can be undone independently. `canvas fitview` is safe (camera only) and may be used after adding nodes so the user sees the full workflow.
 9. **Respect existing work.** When modifying a workflow, only change what the user asked for.
 10. **Handle errors gracefully.** If a previous command result shows an error, explain what went wrong and suggest a fix rather than retrying blindly.

@@ -70,8 +70,12 @@ export interface ExtractedCommands {
 
 /**
  * Status of a single command in the preview
+ *
+ * `skipped` means the command was intentionally not run (e.g. a layout command
+ * while `chatAllowLayoutChanges` is off) — it is not a failure and does not
+ * trigger retry feedback.
  */
-export type CommandExecutionStatus = 'pending' | 'executing' | 'success' | 'error';
+export type CommandExecutionStatus = 'pending' | 'executing' | 'success' | 'error' | 'skipped';
 
 /**
  * A single command shown in the command preview UI

@@ -130,6 +130,17 @@ export interface BehaviorSettings {
   confirmDelete: boolean;
   /** Automatically re-submit batch failures to the AI for self-correction */
   chatAutoRetry: boolean;
+  /**
+   * Allow the AI assistant's commands to reposition nodes
+   * (`layout auto`, `layout beautify`).
+   *
+   * Turn off to protect a hand-crafted layout: those commands are then skipped
+   * (not failed) when a batch is applied, so the rest of the change set still
+   * lands. Positioning nodes explicitly via `add ... at <x>,<y>` and viewport
+   * commands (`canvas fitview`) are unaffected — they don't overwrite the
+   * arrangement of existing nodes.
+   */
+  chatAllowLayoutChanges: boolean;
 }
 
 // =========================================================================
@@ -251,7 +262,8 @@ export const DEFAULT_BEHAVIOR_SETTINGS: BehaviorSettings = {
   storeDraftsInBrowser: true,
   undoHistoryLimit: 50,
   confirmDelete: false,
-  chatAutoRetry: true
+  chatAutoRetry: true,
+  chatAllowLayoutChanges: true
 };
 
 /**
