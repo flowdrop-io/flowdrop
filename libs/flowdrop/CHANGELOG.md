@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0-beta.11] - 2026-07-31
+
+Eleventh 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release gives the playground an **operator control lane**: slash commands typed in the composer act on a session or on a running pipeline without entering the conversation as chat turns, and a run can now be started without fabricating a user message. It also stops the AI assistant re-arranging hand-made layouts unasked, tells it what actually happened to the commands it emitted, and fixes an empty config panel for node types that contribute no schema.
+
+### Added
+
+- **Slash commands in the playground composer.** A leading `/` routes input to the control plane instead of the pipeline, so composer input stops meaning exactly one thing ("launch a run with this as input"). Ships `/help`, `/run`, `/new`, `/stop`, `/reset`, `/delete`, `/pause`, `/resume` and `/cancel`. Commands never become session messages — control traffic that entered the conversation would be replayed as chat input on the following turn — and their results render as transient composer feedback instead. Opt-in per surface via `enableCommands` (default `false`), because the lane is only safe where the send handler actually dispatches commands: a surface that forwards input straight to a backend would post `/stop` as literal text. `//` escapes a literal leading slash, consuming exactly one so the rule composes, and an unrecognised command reports itself as unknown with distance-1 suggestions rather than being forwarded as a message — a typo must not launch a run with `/stpo` as its input.
+- **Pipeline signals — `pause`, `resume`, `cancel`.** Signals travel _into_ a running pipeline, the opposite direction from interrupts, which a node raises and awaits. Acceptance is not application: backends observe signals cooperatively between steps, so the in-flight step always finishes first and the new `PipelineSignalService` reports `accepted` rather than claiming the run is paused, leaving the status poll to report what actually happened. Refusals ("the run already finished", "not paused", "already pending") come back as typed results rather than thrown errors, since they are outcomes to render. New `signals` endpoint block, with its own group-level `baseUrl`.
+- **Starting a run without posting a message.** New `WorkflowLaunchService` and a `workflows.run` endpoint. Sending a message to start a run fabricates a user turn that is indistinguishable downstream from something the user actually typed; hosts that wire `onRunWorkflow` get a RUN button and a `/run` command that launch instead. `/run --key=value` passes named inputs. A rejected launch distinguishes bad inputs (the caller's to fix) from an invalid workflow (an authoring problem), surfacing the backend's own per-field locators.
+- **Command autocomplete palette.** Typing `/` offers the commands available against the current configuration, reusing the editor console's listbox so both surfaces look and behave alike. Completes command _names_ only — argument values would mean guessing a workflow's declared launch inputs, which live server-side, and offering inputs the backend then rejects.
+- **Optional session reset endpoint.** `playground.resetSession` plus `PlaygroundService.resetSession()`, for returning a stuck session to idle.
+- **`behavior.chatAllowLayoutChanges` (default `true`).** When off, `AIChatPanel` skips layout commands rather than executing them. See the layout fix below; the default preserves existing behaviour.
+- **`hideLabel` on `FormToggle`.** Keeps the state text as the switch's accessible name without rendering it. Defaults to `false`, so every other toggle is unchanged.
+
+Commands are available **only where their endpoint is configured** — a host pointed at a backend without session reset gets no `/reset`, rather than a command that 404s. Commands bind to endpoint _keys_, never to paths or to any one backend's vocabulary, so this works against any API implementing the shape.
+
+### Fixed
+
+- **The assistant re-arranged hand-made layouts unasked (#36).** Auto-beautify re-positions every node, so an unrequested `layout auto` / `layout beautify` destroyed a hand-crafted layout. The root cause was the prompt rather than the executor: the DSL prompt docs told the assistant to auto-arrange after building and to always end with `canvas fitview`. Both mandates are gone, layout commands are marked user-requested-only and must be emitted alone so they can be undone independently. Since the library cannot control how a remote backend renders those prompts, `chatAllowLayoutChanges` adds a local enforcement point.
+- **Triple-quoted blocks swallowed every later command (#35).** The response _extractor_ only closed a `"""` block when a line was exactly `"""`; an assistant that put the closer at the end of a content line left the buffer open, collapsing 7 commands to 2 and consuming the closing fence and trailing prose. Both the extractor and the parser now track delimiter _parity_ (escaped `\"""` excluded), so a closer is valid inline or on its own line.
+- **The assistant was never told what happened to its commands (#35).** `getHistory()` sent only the explanation, and approve/dismiss outcomes lived purely in UI state — which is what drove the duplicate-node loop on "try again". History now carries the raw response plus a per-command outcome report (APPLIED / FAILED / SKIPPED / DISMISSED / NOT APPLIED YET), read at send time so it is always current.
+- **Node-level settings vanished for node types with no config schema (#34).** `ConfigForm` rendered its whole form inside one `{:else if configSchema}` branch, so a node whose type contributes no schema fell through to "No configuration options available" — taking the node-level settings the editor owns (port order and exposure) down with it. A reserved `ports` field is now composed into the node's effective schema, so a schema-less node with ports simply has a schema. No-op when a backend already serves a `ports` property, when there is no node, or when the node has no ports to configure. Nothing is persisted on panel open.
+- **Port drags started a text selection in Safari (#37).** Dragging from a port handle text-selected content outside the canvas. xyflow sets `user-select: none`, but WebKit still _begins_ a selection drag from a mousedown on unselectable content, anchoring at the nearest selectable text; node and pane drags call `preventDefault()`, xyflow's `Handle` does not. A capture-phase `mousedown` on the canvas wrapper now suppresses the gesture for primary-button presses inside `.svelte-flow__handle` and re-applies the focus the default action would have moved.
+
+### Changed
+
+- **`CommandExecutionStatus` gains `'skipped'`.** A widened union: consumers switching exhaustively on it will need to handle the new member. A skip is a non-failure, so the rest of a batch still applies and no retry feedback is generated.
+- **Port rows in the ports widget are more compact.** The written "Exposed"/"Hidden" label next to each switch reserved a label column and let long port names widen the row. The switch alone now carries the state; a hidden row's name and type badge are dimmed to stay legible, and both ellipsize with `title` attributes preserving the full text.
+- **`buildEndpointUrl` accepts a base-URL override**, so a group of endpoints can sit under a different prefix from the rest of the config. Additive — existing three-argument calls are unchanged.
+
+### Internal
+
+- The range field's one-time step inference reads its initial value inside `untrack()`, making the read-once intent explicit and clearing a `state_referenced_locally` warning. No behaviour change.
+- Restored the missing `## [2.0.0-beta.9]` heading below: that release's summary and its "Fixed" section had been absorbed into beta.10's section since the beta.10 release commit.
+
 ## [2.0.0-beta.10] - 2026-07-22
 
 Tenth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release reworks how node-config edits are committed and how the undo stack records state, fixing two editor bugs (a Safari save failure and a multi-step undo that reverted more than one edit) and the freeze that the prior on-blur commit was working around. It also re-establishes the editor font on the standalone `ConfigModal` export.
@@ -21,6 +56,8 @@ Tenth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/
 ### Changed
 
 - **History commits now require the final state, and undo/redo finalize any open edit first.** Hardening follow-up to the #39 fix: `commitTransaction(finalWorkflow)` is now required (the pre-change `?? transactionSnapshot` fallback that could silently reintroduce the off-by-one is gone). The service no longer guesses at the live state to auto-commit a dangling transaction inside `undo()`/`redo()`; instead the state owners finalize first (a `HistoryStore` before-navigate hook wired to `finalizeNodeConfig()`, and command-dispatch undo/redo), and if the service still finds an open transaction it abandons it with a warning rather than committing wrong state. New shared `clearTransaction()` internally.
+
+## [2.0.0-beta.9] - 2026-07-12
 
 Ninth 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. A follow-up fix to the relocatable surfaces shipped in beta.8: config surfaces hosted in the modal placement (and the config panel's pop-out) now keep the editor's font instead of falling back to the host page's default.
 
