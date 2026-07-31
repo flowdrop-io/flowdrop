@@ -157,6 +157,37 @@ export { PlaygroundService } from '../services/playgroundService.js';
 export { InterruptService } from '../services/interruptService.js';
 
 // ============================================================================
+// Pipeline Signal Service (operator control)
+// ============================================================================
+
+/**
+ * Launching a run is its own verb, distinct from posting a message. Exported so
+ * hosts can build a RUN affordance that starts a run without fabricating a
+ * chat turn.
+ */
+export {
+  WorkflowLaunchService,
+  workflowLaunchService,
+  type LaunchResult,
+  type LaunchOptions,
+  type LaunchInputError
+} from '../services/workflowLaunchService.js';
+
+/**
+ * Signals travel *into* a running pipeline, the opposite direction from
+ * interrupts. Exported so hosts can drive pause/resume/cancel from their own
+ * chrome rather than only through the composer's command lane.
+ */
+export {
+  PipelineSignalService,
+  pipelineSignalService,
+  type SignalType,
+  type SignalResult,
+  type SignalRefusal,
+  type SendSignalOptions
+} from '../services/pipelineSignalService.js';
+
+// ============================================================================
 // Playground Store
 // ============================================================================
 
@@ -263,3 +294,36 @@ export {
   buildEndpointUrl,
   type EndpointConfig
 } from '../config/endpoints.js';
+
+// ============================================================================
+// Slash Commands
+// ============================================================================
+
+/**
+ * The composer's out-of-band control lane. Exported so hosts can inspect what
+ * is available against their configuration (`getAvailableCommands`) or reuse
+ * the parser — including its escape rule — in their own surfaces.
+ */
+export { resolveRunAction, type RunAction, type ResolveRunActionOptions } from './runAction.js';
+
+export {
+  parseSlashCommand,
+  isKnownCommand,
+  isCommandInput,
+  dispatchCommand,
+  COMMAND_NAMES,
+  COMMAND_DESCRIPTORS,
+  getDescriptor,
+  getAvailableCommands,
+  isCommandAvailable,
+  type SlashCommand,
+  type SlashCommandName,
+  type SlashCommandDescriptor,
+  type CommandLabel,
+  type CommandLabels,
+  type ParseResult,
+  type CommandOutcome,
+  type CommandHandlers,
+  type CommandContext,
+  type CommandMessages
+} from './commands/index.js';

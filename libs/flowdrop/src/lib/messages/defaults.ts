@@ -295,6 +295,68 @@ export const defaultMessages = {
       processing: 'Processing...',
       viewOnlyHelp: 'View-only mode. Workflow execution is controlled externally.'
     },
+    // Slash commands — the composer's out-of-band control lane. Feedback is
+    // transient UI, never a session message: control traffic must not enter
+    // conversation history, or it feeds back into the next turn's input.
+    commands: {
+      unknown: ({ name }: { name: string }) => `Unknown command: /${name}`,
+      unknownWithSuggestions: ({ name, suggestions }: { name: string; suggestions: string }) =>
+        `Unknown command: /${name}. Did you mean ${suggestions}?`,
+      unavailable: ({ name }: { name: string }) => `/${name} is not supported by this backend`,
+      needsSession: ({ name }: { name: string }) => `/${name} needs an active session`,
+      helpHeading: 'Available commands',
+      helpEscapeHint: 'To send a message starting with a slash, type it twice: //like this',
+      // Display text for each command, shown by `/help` and by the palette.
+      // Lives here rather than in the command registry so translators reach it
+      // through the same channel as everything else; the registry keeps only
+      // the structural facts (does it take arguments, is it available).
+      catalog: {
+        help: { usage: '/help', summary: 'List the commands available here' },
+        run: {
+          usage: '/run [--input=value ...]',
+          summary: 'Start a run, optionally with named inputs'
+        },
+        new: { usage: '/new', summary: 'Start a new session' },
+        stop: { usage: '/stop', summary: 'Stop what this session is running' },
+        reset: { usage: '/reset', summary: 'Reset a stuck session to idle' },
+        delete: { usage: '/delete', summary: 'Delete the current session' },
+        pause: { usage: '/pause [reason]', summary: 'Ask the active run to pause' },
+        resume: { usage: '/resume [reason]', summary: 'Resume the paused run' },
+        cancel: { usage: '/cancel [reason]', summary: 'Cancel the active run — cannot be undone' }
+      },
+      dismiss: 'Dismiss',
+      stopped: 'Execution stopped',
+      reset: 'Session reset',
+      created: 'New session created',
+      deleted: 'Session deleted',
+      failed: ({ name, error }: { name: string; error: string }) => `/${name} failed: ${error}`,
+      // Pipeline signals. Wording matters: a backend acknowledges a signal
+      // before acting on it, so these say "requested" and let the status poll
+      // report the real state. Claiming "Paused" on acknowledgement would be
+      // wrong exactly when the current step is slow.
+      needsRun: ({ name }: { name: string }) => `/${name} needs an active run`,
+      signalPending: ({ signal }: { signal: string }) =>
+        `A ${signal} is already pending for this run`,
+      pauseRequested: 'Pause requested — finishing the current step',
+      resumeRequested: 'Resume requested',
+      cancelRequested: 'Cancel requested — finishing the current step',
+      refusedTerminal: ({ name }: { name: string }) => `Cannot ${name}: the run already finished`,
+      refusedDuplicate: 'A signal is already pending for this run',
+      refusedNotPaused: 'Nothing to resume — this run is not paused',
+      refusedNotFound: 'That run no longer exists',
+      refusedForbidden: ({ name }: { name: string }) =>
+        `You do not have permission to ${name} this run`,
+      refusedOther: ({ name, error }: { name: string; error: string }) =>
+        `/${name} refused: ${error}`,
+      // Launch. Bad inputs and an invalid workflow are separated on purpose —
+      // one is the caller's to fix, the other is an authoring problem.
+      runStarted: 'Run started',
+      runInvalidInput: ({ error }: { error: string }) => `Cannot start: ${error}`,
+      runInvalidWorkflow: ({ error }: { error: string }) =>
+        `Cannot start — this workflow has errors: ${error}`,
+      runInvalidWorkflowDetail: ({ locator, message }: { locator: string; message: string }) =>
+        locator ? `  • ${locator}: ${message}` : `  • ${message}`
+    },
     actions: {
       stopTitle: 'Stop execution',
       stop: 'Stop',
